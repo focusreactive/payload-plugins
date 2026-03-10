@@ -1,0 +1,70 @@
+{
+  "name": "@focus-reactive/payload-plugin-presets",
+  "version": "0.1.1",
+  "description": "Presets plugin for Payload CMS - save and apply reusable block configurations",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./client": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "payload",
+    "payload-cms",
+    "payload-plugin",
+    "presets",
+    "blocks"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/focus-reactive/payload-plugins",
+    "directory": "packages/payload-plugin-presets"
+  },
+  "bugs": {
+    "url": "https://github.com/focus-reactive/payload-plugins/issues"
+  },
+  "homepage": "https://github.com/focus-reactive/payload-plugins/tree/main/packages/payload-plugin-presets",
+  "scripts": {
+    "build": "bun run build:swc && bun run build:types && bun run copyfiles",
+    "build:swc": "swc ./src -d ./dist --config-file .swcrc --strip-leading-paths",
+    "build:types": "tsc --emitDeclarationOnly --outDir dist",
+    "copyfiles": "copyfiles -u 1 \"src/**/*.scss\" dist",
+    "clean": "rm -rf dist",
+    "dev": "bun run build:swc -- --watch"
+  },
+  "peerDependencies": {
+    "@payloadcms/ui": "3.73.0",
+    "next": "^14.0.0 || ^15.0.0",
+    "payload": "3.73.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@payloadcms/ui": "3.73.0",
+    "@swc/cli": "^0.4.0",
+    "@swc/core": "^1.7.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.2.3",
+    "copyfiles": "^2.4.1",
+    "next": "^15.0.0",
+    "payload": "3.73.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.5.0"
+  }
+}

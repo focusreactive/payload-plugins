@@ -1,0 +1,132 @@
+{
+  "name": "@focus-reactive/payload-plugin-ab",
+  "version": "2.0.1",
+  "description": "A/B testing plugin for Payload CMS",
+  "keywords": [
+    "payload-cms",
+    "payload-plugin",
+    "ab-testing",
+    "split-testing",
+    "a-b-testing",
+    "page-variants",
+    "next.js",
+    "vercel-edge",
+    "edge-config",
+    "middleware",
+    "typescript",
+    "cms",
+    "conversion-optimization"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/focus-reactive/payload-plugins",
+    "directory": "packages/payload-plugin-ab"
+  },
+  "author": "Kiryl Pekarski <kiryl.pekarski@fr.team>",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "typesVersions": {
+    "*": {
+      "adapters/payload-global": [
+        "./dist/adapters/payloadGlobal/index.d.ts"
+      ],
+      "adapters/vercel-edge": [
+        "./dist/adapters/vercelEdge/index.d.ts"
+      ],
+      "analytics": [
+        "./dist/analytics/index.d.ts"
+      ],
+      "analytics/client": [
+        "./dist/analytics/client.d.ts"
+      ],
+      "analytics/adapters/google-analytics": [
+        "./dist/analytics/adapters/googleAnalytics/index.d.ts"
+      ],
+      "middleware": [
+        "./dist/middleware/index.d.ts"
+      ],
+      "admin/VariantsField": [
+        "./dist/admin/VariantsField.d.ts"
+      ]
+    }
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./adapters/payload-global": {
+      "import": "./dist/adapters/payloadGlobal/index.js",
+      "types": "./dist/adapters/payloadGlobal/index.d.ts"
+    },
+    "./adapters/vercel-edge": {
+      "import": "./dist/adapters/vercelEdge/index.js",
+      "types": "./dist/adapters/vercelEdge/index.d.ts"
+    },
+    "./analytics": {
+      "import": "./dist/analytics/index.js",
+      "types": "./dist/analytics/index.d.ts"
+    },
+    "./analytics/client": {
+      "import": "./dist/analytics/client.js",
+      "types": "./dist/analytics/client.d.ts"
+    },
+    "./analytics/adapters/google-analytics": {
+      "import": "./dist/analytics/adapters/googleAnalytics/index.js",
+      "types": "./dist/analytics/adapters/googleAnalytics/index.d.ts"
+    },
+    "./middleware": {
+      "import": "./dist/middleware/index.js",
+      "types": "./dist/middleware/index.d.ts"
+    },
+    "./admin/VariantsField": {
+      "import": "./dist/admin/VariantsField.js",
+      "types": "./dist/admin/VariantsField.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write src/",
+    "format:check": "prettier --check src/"
+  },
+  "peerDependencies": {
+    "next": "^14.0.0 || ^15.0.0",
+    "payload": "^3.0.0",
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "optionalDependencies": {
+    "@vercel/edge-config": "^1.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@payloadcms/ui": "3.70.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "next": "15.4.10",
+    "payload": "3.70.0",
+    "prettier": "^3.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}
