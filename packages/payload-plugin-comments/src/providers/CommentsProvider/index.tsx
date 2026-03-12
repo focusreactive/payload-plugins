@@ -317,15 +317,15 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
         loadError,
         filter,
         fieldLabelRegistry,
+        syncCommentsStatus,
+        usernameFieldPath,
         setFilter,
         hydrateComments,
-        syncCommentsStatus,
         syncComments,
         addComment,
         removeComment,
         resolveComment,
         updateDocumentTitle,
-        usernameFieldPath,
       }}>
       {children}
     </CommentsContext.Provider>

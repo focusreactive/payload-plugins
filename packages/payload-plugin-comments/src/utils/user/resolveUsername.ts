@@ -5,9 +5,9 @@ import { getValueByPath } from "../general/getValueByPath";
 export function resolveUsername(
   user: User | null | undefined,
   usernameFieldPath: string = USERNAME_DEFAULT_FIELD_PATH,
-  unknownLabel: string,
+  fallbackLabel: string,
 ) {
-  if (!user) return unknownLabel;
+  if (!user) return fallbackLabel;
 
   const customValue = getValueByPath(user, usernameFieldPath);
   if (customValue != null) return customValue;
@@ -15,5 +15,5 @@ export function resolveUsername(
   const { email } = user;
   if (email) return email;
 
-  return unknownLabel;
+  return fallbackLabel;
 }

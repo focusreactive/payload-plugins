@@ -2,12 +2,12 @@
 
 import { useEffect } from "react";
 import { useComments } from "../CommentsProvider";
-import type { CollectionLabels, Comment, DocumentTitles, GlobalFieldLabelRegistry, MentionUser } from "../../types";
+import type { CollectionLabels, Comment, DocumentTitles, GlobalFieldLabelRegistry, User } from "../../types";
 
 interface Props {
   comments: Comment[];
   documentTitles: DocumentTitles;
-  mentionUsers: MentionUser[];
+  mentionUsers: User[];
   fieldLabels: GlobalFieldLabelRegistry;
   collectionLabels: CollectionLabels;
   loadError: boolean;

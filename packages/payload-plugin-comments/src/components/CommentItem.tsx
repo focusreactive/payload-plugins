@@ -7,6 +7,7 @@ import type { Comment } from "../types";
 import { useComments } from "../providers/CommentsProvider";
 import { renderCommentText } from "../utils/comment/renderCommentText";
 import { resolveUsername } from "../utils/user/resolveUsername";
+import { FALLBACK_DELETED_USERNAME, FALLBACK_USERNAME } from "../constants";
 
 function formatDate(iso: string) {
   try {
@@ -33,7 +34,8 @@ export function CommentItem({ comment, currentUserId }: Props) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const unknownLabel = t("comments:unknownAuthor" as never);
+  const deletedUserLabel = t("comments:deletedUser" as never) ?? FALLBACK_DELETED_USERNAME;
+  const unknownLabel = t("comments:unknownAuthor" as never) ?? FALLBACK_USERNAME;
   const narrowedAuthor = typeof comment.author === "object" ? comment.author : null;
   const authorName = resolveUsername(narrowedAuthor, usernameFieldPath, unknownLabel);
   const authorInitial = authorName.charAt(0).toUpperCase();
@@ -79,7 +81,13 @@ export function CommentItem({ comment, currentUserId }: Props) {
           </div>
 
           <p className="m-0 text-sm leading-normal text-(--theme-text) whitespace-pre-wrap wrap-break-word">
-            {renderCommentText(comment.text, comment.mentions, currentUserId, usernameFieldPath)}
+            {renderCommentText({
+              text: comment.text,
+              mentions: comment.mentions,
+              currentUserId,
+              usernameFieldPath,
+              fallbackDeletedUsername: deletedUserLabel,
+            })}
           </p>
 
           <div className="flex gap-3 mt-2">

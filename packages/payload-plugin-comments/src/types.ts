@@ -126,11 +126,6 @@ export type NormalizedCollectionConfig = Map<string, { titleField: string }>;
 
 export type CommentsPluginConfigOverrides = CommentsPluginConfig["overrides"];
 
-export interface MentionUser {
-  id: number;
-  name: string;
-}
-
 export interface CommentsPluginConfigStorage {
   collections?: string[];
   documentTitleFields?: Record<string, string>;

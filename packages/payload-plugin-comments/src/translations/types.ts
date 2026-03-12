@@ -19,6 +19,7 @@ export interface CommentsTranslations {
   failedToDelete: string;
   failedToAdd: string;
   unknownAuthor: string;
+  deletedUser: string;
   noOpenComments: string;
   noResolvedComments: string;
   noMentionedComments: string;

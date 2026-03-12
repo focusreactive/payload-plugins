@@ -22,6 +22,7 @@ export const en: { comments: CommentsTranslations } = {
     failedToDelete: "Failed to delete comment",
     failedToAdd: "Failed to add comment",
     unknownAuthor: "Unknown",
+    deletedUser: "Deleted user",
     noOpenComments: "No open comments",
     noResolvedComments: "No resolved comments",
     noMentionedComments: "No comments mentioning you",

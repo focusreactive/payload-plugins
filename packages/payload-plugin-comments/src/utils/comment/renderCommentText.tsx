@@ -8,12 +8,21 @@ import { FALLBACK_DELETED_USERNAME } from "../../constants";
 const MENTION_SPLIT = /(@\(\d+\))/;
 const MENTION_EXTRACT = /^@\((\d+)\)$/;
 
-export function renderCommentText(
-  text: string,
-  mentions: Comment["mentions"],
-  currentUserId?: number | null,
-  usernameFieldPath?: string,
-): ReactNode {
+interface Props {
+  text: string;
+  mentions: Comment["mentions"];
+  currentUserId?: number | null;
+  usernameFieldPath?: string;
+  fallbackDeletedUsername?: string;
+}
+
+export function renderCommentText({
+  text,
+  mentions,
+  currentUserId,
+  usernameFieldPath,
+  fallbackDeletedUsername,
+}: Props): ReactNode {
   const userMap: Record<number, User> = {};
 
   if (Array.isArray(mentions)) {
@@ -35,7 +44,7 @@ export function renderCommentText(
           const userId = Number(match[1]);
           const user = userMap[userId];
           const isSelf = isSelfMention(currentUserId, userId);
-          const name = resolveUsername(user, usernameFieldPath, FALLBACK_DELETED_USERNAME);
+          const name = resolveUsername(user, usernameFieldPath, fallbackDeletedUsername ?? FALLBACK_DELETED_USERNAME);
 
           return <MentionLabel key={i} name={name} isSelf={isSelf} />;
         }

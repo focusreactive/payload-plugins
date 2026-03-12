@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useRef, useImperativeHandle, type RefObject } from "react";
-import { useAuth } from "@payloadcms/ui";
+import { useAuth, useTranslation } from "@payloadcms/ui";
 import { useComments } from "../../providers/CommentsProvider";
 import { MentionDropdown } from "../MentionDropdown";
 import { MentionLabel } from "../MentionLabel";
 import { serializeEditor } from "../../utils/comment/serializeEditor";
 import { isSelfMention } from "../../utils/mention/isSelfMention";
 import { createRoot } from "react-dom/client";
-import type { MentionUser } from "../../types";
+import type { User } from "../../types";
+import { FALLBACK_USERNAME } from "../../constants";
+import { resolveUsername } from "../../utils/user/resolveUsername";
 
 export interface CommentEditorHandle {
   getValue: () => string;
@@ -39,8 +41,13 @@ export function CommentEditor({
 
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [triggerRange, setTriggerRange] = useState<Range | null>(null);
-  const [filteredUsers, setFilteredUsers] = useState<MentionUser[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const { usernameFieldPath } = useComments();
+  const { t } = useTranslation();
+
+  const unknownLabel = t("comments:unknownAuthor" as never) ?? FALLBACK_USERNAME;
 
   const editorRef = useRef<HTMLDivElement>(null);
   const currentUserId = user?.id;
@@ -80,7 +87,11 @@ export function CommentEditor({
         atRange.setEnd(node, offset);
         setTriggerRange(atRange.cloneRange());
         setMentionQuery(query);
-        setFilteredUsers(users.filter((u) => u.name.toLowerCase().includes(query.toLowerCase())));
+        setFilteredUsers(
+          users.filter((u) =>
+            resolveUsername(u, usernameFieldPath, unknownLabel).toLowerCase().includes(query.toLowerCase()),
+          ),
+        );
         setSelectedIndex(0);
 
         return;
@@ -92,7 +103,7 @@ export function CommentEditor({
     setMentionQuery(null);
   };
 
-  const insertMention = (user: MentionUser) => {
+  const insertMention = (user: User) => {
     if (!triggerRange || !editorRef.current) return;
 
     const sel = window.getSelection();
@@ -102,12 +113,17 @@ export function CommentEditor({
     sel.addRange(triggerRange);
     sel.deleteFromDocument();
 
-    const { id: userId, name } = user;
+    const { id: userId } = user;
 
     const mentionLabelContainer = document.createElement("span");
     const mentionLabelContainerRoot = createRoot(mentionLabelContainer);
 
-    mentionLabelContainerRoot.render(<MentionLabel name={name} isSelf={isSelfMention(currentUserId, userId)} />);
+    mentionLabelContainerRoot.render(
+      <MentionLabel
+        name={resolveUsername(user, usernameFieldPath, unknownLabel)}
+        isSelf={isSelfMention(currentUserId, userId)}
+      />,
+    );
 
     mentionLabelContainer.contentEditable = "false";
     mentionLabelContainer.dataset.mentionId = String(userId);
