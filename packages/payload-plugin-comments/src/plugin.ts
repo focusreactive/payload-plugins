@@ -10,7 +10,7 @@ import { mergeTranslations } from "./utils/config/mergeTranslations";
 export const commentsPlugin =
   (config: CommentsPluginConfig = {}): Plugin =>
   (incomingConfig: Config): Config => {
-    const { enabled = true, collections: collectionEntries, overrides } = config;
+    const { enabled = true, collections: collectionEntries, overrides, usernameFieldPath } = config;
 
     if (!enabled) {
       return incomingConfig;
@@ -62,6 +62,7 @@ export const commentsPlugin =
             collections: allCollectionSlugs,
             documentTitleFields,
             tenant: config.tenant,
+            usernameFieldPath,
           },
         },
       },

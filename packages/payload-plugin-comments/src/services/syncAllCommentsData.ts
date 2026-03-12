@@ -12,15 +12,15 @@ import type {
   CommentsPluginConfigStorage,
   DocumentTitles,
   GlobalFieldLabelRegistry,
-  MentionUser,
   Response,
+  User,
 } from "../types";
 import { extractPayload } from "../utils/payload/extractPayload";
 
 interface SyncResult {
   comments: Comment[];
   documentTitles: DocumentTitles;
-  mentionUsers: MentionUser[];
+  mentionUsers: User[];
   fieldLabels: GlobalFieldLabelRegistry;
   collectionLabels: CollectionLabels;
 }

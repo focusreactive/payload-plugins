@@ -1,51 +1,45 @@
 "use server";
 
 import type { Where } from "payload";
-import type { BaseServiceOptions, MentionUser, Response } from "../types";
+import type { BaseServiceOptions, CommentsPluginConfigStorage, Response, User } from "../types";
+import { resolveUsername } from "../utils/user/resolveUsername";
 import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
 import { extractPayload } from "../utils/payload/extractPayload";
 import { getCurrentTenantId } from "./getCurrentTenantId";
+import { FALLBACK_USERNAME, USERNAME_DEFAULT_FIELD_PATH } from "../constants";
 
-export async function fetchMentionableUsers(options?: BaseServiceOptions): Promise<Response<MentionUser[]>> {
+export async function fetchMentionableUsers(options?: BaseServiceOptions): Promise<Response<User[]>> {
   try {
     const payload = await extractPayload(options?.payload);
+
+    const pluginConfig = payload.config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
+    const usernameFieldPath = pluginConfig?.usernameFieldPath ?? USERNAME_DEFAULT_FIELD_PATH;
 
     const tenantId = await getCurrentTenantId(payload);
 
     const where: Where =
       tenantId ?
         {
-          or: [
-            {
-              tenant: {
-                equals: tenantId,
-              },
-            },
-            {
-              tenant: {
-                exists: false,
-              },
-            },
-          ],
+          or: [{ tenant: { equals: tenantId } }, { tenant: { exists: false } }],
         }
       : {};
 
-    const users = await payload.find({
+    const usersRes = await payload.find({
       collection: "users",
       overrideAccess: true,
       limit: 200,
       where: Object.keys(where).length ? where : undefined,
       select: {
         id: true,
-        name: true,
         email: true,
+        [usernameFieldPath]: true,
       },
     });
 
-    const data = users.docs.map(({ id, name, email }) => ({
-      id,
-      name: name ?? email ?? "Unknown",
-    })) as MentionUser[];
+    const data = usersRes.docs.map((user) => ({
+      id: user.id,
+      [usernameFieldPath]: resolveUsername(user as User, usernameFieldPath, FALLBACK_USERNAME),
+    })) as User[];
 
     return {
       success: true,

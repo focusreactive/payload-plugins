@@ -23,7 +23,6 @@ import type {
   GlobalFieldLabelRegistry,
   LoadingStatus,
   DocumentTitles,
-  MentionUser,
   Mode,
 } from "../../types";
 import { parseMentionIds } from "../../utils/mention/parseMentionIds";
@@ -59,20 +58,21 @@ interface CommentsContextProps {
   mode: Mode;
   collectionSlug: string | null | undefined;
   documentId: number | null | undefined;
-  mentionUsers: MentionUser[];
+  mentionUsers: User[];
   loadError: boolean;
   filter: FilterMode;
   fieldLabelRegistry: GlobalFieldLabelRegistry;
+  syncCommentsStatus: LoadingStatus;
+  usernameFieldPath: string | undefined;
   setFilter: Dispatch<SetStateAction<FilterMode>>;
   hydrateComments: (
     incoming?: Comment[],
     incomingTitles?: DocumentTitles,
-    incomingMentionUsers?: MentionUser[],
+    incomingMentionUsers?: User[],
     fieldLabels?: GlobalFieldLabelRegistry,
     incomingCollectionLabels?: CollectionLabels,
     nextLoadError?: boolean,
   ) => void;
-  syncCommentsStatus: LoadingStatus;
   syncComments: () => Promise<void>;
   addComment: (
     text: string,
@@ -90,9 +90,10 @@ const CommentsContext = createContext<CommentsContextProps | null>(null);
 
 interface Props {
   children: ReactNode;
+  usernameFieldPath?: string;
 }
 
-export function CommentsProvider({ children }: Props) {
+export function CommentsProvider({ children, usernameFieldPath }: Props) {
   const { user } = useAuth();
   const pathname = usePathname();
   const { code: currentLocale } = useLocale();
@@ -105,7 +106,7 @@ export function CommentsProvider({ children }: Props) {
 
   const [documentTitles, setDocumentTitles] = useState<DocumentTitles>({});
   const [collectionLabels, setCollectionLabels] = useState<CollectionLabels>({});
-  const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
+  const [mentionUsers, setMentionUsers] = useState<User[]>([]);
   const [fieldLabelRegistry, setFieldLabelRegistry] = useState<GlobalFieldLabelRegistry>({});
   const [filter, setFilter] = useState<FilterMode>("open");
   const [loadError, setLoadError] = useState(false);
@@ -125,7 +126,7 @@ export function CommentsProvider({ children }: Props) {
     (
       incoming?: Comment[],
       incomingTitles?: DocumentTitles,
-      incomingMentionUsers?: MentionUser[],
+      incomingMentionUsers?: User[],
       fieldLabels?: GlobalFieldLabelRegistry,
       incomingCollectionLabels?: CollectionLabels,
       nextLoadError = false,
@@ -176,7 +177,7 @@ export function CommentsProvider({ children }: Props) {
 
     const mentionIds = parseMentionIds(text);
     const selectedMentionUsers = mentionUsers.filter(({ id }) => mentionIds.includes(id));
-    const mentions = selectedMentionUsers.map((user) => ({ id: null, user: user as User }));
+    const mentions = selectedMentionUsers.map((user) => ({ id: null, user }));
 
     const optimisticComment: Comment = {
       id: tempId,
@@ -189,7 +190,7 @@ export function CommentsProvider({ children }: Props) {
       mentions,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      author: user as unknown as Comment["author"],
+      author: user as Comment["author"],
     };
 
     applyOptimistic({ type: "add", comment: optimisticComment });
@@ -324,6 +325,7 @@ export function CommentsProvider({ children }: Props) {
         removeComment,
         resolveComment,
         updateDocumentTitle,
+        usernameFieldPath,
       }}>
       {children}
     </CommentsContext.Provider>
