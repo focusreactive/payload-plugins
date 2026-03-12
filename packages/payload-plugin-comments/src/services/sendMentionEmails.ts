@@ -1,7 +1,8 @@
 import { Resend } from "resend";
 import { getServerSideURL } from "../utils/general/getURL";
-import type { BaseServiceOptions, User } from "../types";
+import type { BaseServiceOptions, CommentsPluginConfigStorage, User } from "../types";
 import { extractPayload } from "../utils/payload/extractPayload";
+import { FALLBACK_USERNAME, USERNAME_DEFAULT_FIELD_PATH } from "../constants";
 
 interface SendMentionEmailsProps extends BaseServiceOptions {
   mentionIds: number[];
@@ -21,6 +22,9 @@ export async function sendMentionEmails({
 }: SendMentionEmailsProps) {
   const payload = await extractPayload(payloadProp);
 
+  const pluginConfig = payload.config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
+  const usernameFieldPath = pluginConfig?.usernameFieldPath ?? USERNAME_DEFAULT_FIELD_PATH;
+
   const userDocs = await payload.find({
     collection: "users",
     overrideAccess: true,
@@ -30,24 +34,26 @@ export async function sendMentionEmails({
     },
     select: {
       id: true,
-      name: true,
       email: true,
+      [usernameFieldPath]: true,
     },
   });
 
   const users = userDocs.docs as User[];
 
   const userMap: Record<number, string> = {};
-  for (const { id, name, email } of users) {
-    userMap[Number(id)] = name ?? email ?? "Unknown";
+  for (const user of users) {
+    const { id, email } = user;
+    const name = user[usernameFieldPath] as string;
+    userMap[id] = name ?? email ?? FALLBACK_USERNAME;
   }
 
   const resolvedText = commentText.replace(/@\((\d+)\)/g, (_match, id) => {
-    return `@${userMap[Number(id)] ?? "Unknown"}`;
+    return `@${userMap[Number(id)]}`;
   });
 
   const resolvedTextHtml = commentText.replace(/@\((\d+)\)/g, (_match, id) => {
-    return `@<strong>${userMap[Number(id)] ?? "Unknown"}</strong>`;
+    return `@<strong>${userMap[Number(id)]}</strong>`;
   });
 
   const adminUrl = `${getServerSideURL()}/admin/collections/${collectionSlug}/${documentId}`;
