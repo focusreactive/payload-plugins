@@ -1,6 +1,6 @@
 # @focus-reactive/payload-plugin-ab
 
-A/B testing plugin for [Payload CMS](https://payloadcms.com/) v3 + Next.js. Create page variants directly inside the Payload admin, assign traffic percentages, and route users at the edge — no extra collections, no manual wiring..
+A/B testing plugin for [Payload CMS](https://payloadcms.com/) v3 + Next.js. Create page variants directly inside the Payload admin, assign traffic percentages, and route users at the edge — no extra collections, no manual wiring.
 
 Variants live in the same collection as the original page. The plugin injects the admin UI, hooks, and a variant manifest that Next.js middleware reads to route traffic without a database round-trip.
 
