@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/payload-plugin-ab",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "A/B testing plugin for Payload CMS",
   "keywords": [
     "payload-cms",
