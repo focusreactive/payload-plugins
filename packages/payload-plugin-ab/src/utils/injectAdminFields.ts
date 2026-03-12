@@ -1,6 +1,6 @@
 import type { CollectionConfig, Field, Where } from "payload";
 import type { CollectionABConfig } from "../types/config";
-import { AB_PASS_PERCENTAGE_FIELD, AB_VARIANT_OF_FIELD, DEFAULT_SLUG_FIELD } from "../constants";
+import { AB_PASS_PERCENTAGE_FIELD, AB_VARIANT_OF_FIELD, AB_VARIANT_PERCENTAGES_FIELD, DEFAULT_SLUG_FIELD } from "../constants";
 
 const VARIANTS_FIELD_PATH = "@focus-reactive/payload-plugin-ab/admin/VariantsField#VariantsField";
 
@@ -41,6 +41,7 @@ export function injectAdminFields<TVariantData extends object>(
     name: AB_VARIANT_OF_FIELD,
     type: "relationship",
     relationTo: collectionSlug as CollectionConfig["slug"],
+    label: "Variant of",
     admin: {
       position: "sidebar",
       readOnly: true,
@@ -53,8 +54,8 @@ export function injectAdminFields<TVariantData extends object>(
   const passPercentageField: Field = {
     name: AB_PASS_PERCENTAGE_FIELD,
     type: "number",
-    min: 0,
-    max: 100,
+    min: 1,
+    max: 99,
     admin: {
       hidden: true,
     },
@@ -73,6 +74,18 @@ export function injectAdminFields<TVariantData extends object>(
     },
   };
 
+  // 5. _abVariantPercentages — hidden JSON buffer on original documents only.
+  //    Stores { [variantId]: percentage } pending changes until parent is saved.
+  //    The afterChange hook reads this and applies values to variant docs.
+  const variantPercentagesField: Field = {
+    name: AB_VARIANT_PERCENTAGES_FIELD,
+    type: "json",
+    admin: {
+      hidden: true,
+      condition: (data: Record<string, unknown>) => !isVariant(data),
+    },
+  };
+
   // 4. Hide slug on variant pages (auto-generated slug must not be changed manually).
   let patchedFields = patchField(collection.fields ?? [], slugField, hideOnVariant);
 
@@ -82,11 +95,12 @@ export function injectAdminFields<TVariantData extends object>(
     patchedFields = patchField(patchedFields, topLevelTenantFieldName, hideOnVariant);
   }
 
-  // 6. Assemble: internal data fields first, then user fields, then sidebar UI last.
+  // 6. Assemble: pass percentage first (hidden), then user fields, then sidebar UI last.
   const newFields: Field[] = [
-    variantOfField,
     passPercentageField,
     ...patchedFields,
+    variantOfField,
+    variantPercentagesField,
     variantsUiField,
   ];
 

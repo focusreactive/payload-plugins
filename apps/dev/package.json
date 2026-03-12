@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build",
-    "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
+    "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev --port 4040",
     "devsafe": "rm -rf .next && cross-env NODE_OPTIONS=--no-deprecation next dev",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
@@ -15,6 +15,10 @@
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start"
   },
   "dependencies": {
+    "@focus-reactive/payload-plugin-ab": "workspace:*",
+    "@focus-reactive/payload-plugin-presets": "workspace:*",
+    "@payloadcms/db-sqlite": "3.79.0",
+    "@payloadcms/live-preview-react": "3.79.0",
     "@payloadcms/next": "3.79.0",
     "@payloadcms/richtext-lexical": "3.79.0",
     "@payloadcms/ui": "3.79.0",
@@ -25,10 +29,7 @@
     "payload": "3.79.0",
     "react": "19.2.1",
     "react-dom": "19.2.1",
-    "sharp": "0.34.2",
-    "@payloadcms/db-sqlite": "3.79.0",
-    "@focus-reactive/payload-plugin-ab": "workspace:*",
-    "@focus-reactive/payload-plugin-presets": "workspace:*"
+    "sharp": "0.34.2"
   },
   "devDependencies": {
     "@types/node": "22.19.9",

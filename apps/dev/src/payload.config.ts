@@ -13,6 +13,7 @@ import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { heroFields } from './blocks/Hero'
+import { copyFields } from './blocks/Copy'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -26,6 +27,12 @@ export default buildConfig({
     user: Users.slug,
     importMap: {
       baseDir: path.resolve(dirname),
+    },
+    livePreview: {
+      breakpoints: [
+        { label: 'Mobile', name: 'mobile', width: 375, height: 667 },
+        { label: 'Desktop', name: 'desktop', width: 1280, height: 900 },
+      ],
     },
   },
   collections: [Users, Media, Pages],
@@ -59,6 +66,11 @@ export default buildConfig({
           value: 'hero',
           label: { en: 'Hero' },
           fields: heroFields,
+        },
+        {
+          value: 'copy',
+          label: { en: 'Copy' },
+          fields: copyFields,
         },
       ],
     }),

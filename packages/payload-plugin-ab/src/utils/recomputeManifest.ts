@@ -43,7 +43,8 @@ export async function recomputeManifestForParent<TVariantData extends object>(
     const { docs: variantDocs } = await payload.find({
       collection: parentCollectionSlug as CollectionSlug,
       where: whereClause,
-      depth: 0,
+      depth: 1,
+      draft: false,
       locale: locale as TypedLocale,
       overrideAccess: true,
       limit: 100,

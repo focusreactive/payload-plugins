@@ -30,6 +30,7 @@ export function buildParentBeforeChangeHook<TVariantData extends object>(
       collection: parentCollectionSlug as CollectionSlug,
       where: { and: conditions },
       depth: 0,
+      draft: false,
       overrideAccess: true,
       req,
     });

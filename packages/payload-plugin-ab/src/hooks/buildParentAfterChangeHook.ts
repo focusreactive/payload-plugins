@@ -1,6 +1,6 @@
-import type { CollectionAfterChangeHook } from "payload";
+import type { CollectionAfterChangeHook, CollectionSlug } from "payload";
 import type { AbTestingPluginConfig, CollectionABConfig } from "../types/config";
-import { AB_VARIANT_OF_FIELD } from "../constants";
+import { AB_PASS_PERCENTAGE_FIELD, AB_VARIANT_OF_FIELD, AB_VARIANT_PERCENTAGES_FIELD } from "../constants";
 import { resolveId } from "../utils/resolveId";
 import { recomputeManifestForParent } from "../utils/recomputeManifest";
 
@@ -14,15 +14,41 @@ export function buildParentAfterChangeHook<TVariantData extends object>(
     if (!payload) return;
 
     const variantOfValue = doc[AB_VARIANT_OF_FIELD];
+    const isDraft = doc._status === "draft";
 
     if (variantOfValue) {
       // This doc is a variant — recompute manifest for its parent
+      if (isDraft) return;
       const parentId = resolveId(variantOfValue);
       if (!parentId) return;
       await recomputeManifestForParent(parentId, parentCollectionSlug, abConfig, pluginConfig, req);
     } else {
-      // This doc is an original — recompute manifest using its own variants
-      await recomputeManifestForParent(doc.id, parentCollectionSlug, abConfig, pluginConfig, req);
+      // This doc is an original — apply pending % changes to variant docs, then recompute.
+      const pending = doc[AB_VARIANT_PERCENTAGES_FIELD] as Record<string, number> | undefined | null;
+
+      if (pending && typeof pending === "object" && Object.keys(pending).length > 0) {
+        await Promise.all(
+          Object.entries(pending).map(([variantId, percentage]) => {
+            if (typeof percentage !== "number") return Promise.resolve();
+            return payload
+              .update({
+                collection: parentCollectionSlug as CollectionSlug,
+                id: variantId,
+                data: { [AB_PASS_PERCENTAGE_FIELD]: percentage },
+                ...(isDraft ? { draft: true } : {}),
+                overrideAccess: true,
+                req,
+              })
+              .catch(() => {
+                // non-fatal: variant may have been deleted between edit and save
+              });
+          }),
+        );
+      }
+
+      if (!isDraft) {
+        await recomputeManifestForParent(doc.id, parentCollectionSlug, abConfig, pluginConfig, req);
+      }
     }
   };
 }

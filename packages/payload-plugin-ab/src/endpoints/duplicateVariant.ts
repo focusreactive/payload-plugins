@@ -56,7 +56,7 @@ export const duplicateVariantHandler: PayloadHandler = async (req) => {
       data: {
         [slugField]: `${originalSlug}--${nanoid()}`,
         [AB_VARIANT_OF_FIELD]: docId,
-        [AB_PASS_PERCENTAGE_FIELD]: 0,
+        [AB_PASS_PERCENTAGE_FIELD]: 1,
       },
       overrideAccess: true,
       req,
