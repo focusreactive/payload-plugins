@@ -1,0 +1,12 @@
+@import "tailwindcss/theme";
+@import "tailwindcss/utilities";
+
+@source "./**/*.{ts,tsx}";
+
+.comments-drawer .gutter {
+  padding: 0 20px !important;
+}
+
+.comments-drawer .drawer__content {
+  --gutter-h: 20px;
+}
