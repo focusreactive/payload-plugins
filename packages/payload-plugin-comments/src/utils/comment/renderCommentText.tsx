@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import type { Comment, User } from "../../types";
 import { MentionLabel } from "../../components/MentionLabel";
 import { isSelfMention } from "../mention/isSelfMention";
+import { resolveUsername } from "../user/resolveUsername";
+import { FALLBACK_DELETED_USERNAME } from "../../constants";
 
 const MENTION_SPLIT = /(@\(\d+\))/;
 const MENTION_EXTRACT = /^@\((\d+)\)$/;
@@ -10,6 +12,7 @@ export function renderCommentText(
   text: string,
   mentions: Comment["mentions"],
   currentUserId?: number | null,
+  usernameFieldPath?: string,
 ): ReactNode {
   const userMap: Record<number, User> = {};
 
@@ -31,10 +34,10 @@ export function renderCommentText(
         if (match) {
           const userId = Number(match[1]);
           const user = userMap[userId];
-          const name = user ? user.name : "deleted user";
           const isSelf = isSelfMention(currentUserId, userId);
+          const name = resolveUsername(user, usernameFieldPath, FALLBACK_DELETED_USERNAME);
 
-          return <MentionLabel key={i} name={name ?? "deleted user"} isSelf={isSelf} />;
+          return <MentionLabel key={i} name={name} isSelf={isSelf} />;
         }
 
         return <span key={i}>{part}</span>;

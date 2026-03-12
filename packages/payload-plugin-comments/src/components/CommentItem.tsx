@@ -6,22 +6,7 @@ import { cn } from "../utils/general/cn";
 import type { Comment } from "../types";
 import { useComments } from "../providers/CommentsProvider";
 import { renderCommentText } from "../utils/comment/renderCommentText";
-
-function getAuthorName(author: Comment["author"], unknownLabel: string) {
-  const defaultValue = unknownLabel;
-
-  if (!author) return defaultValue;
-
-  if (typeof author === "object" && "name" in author) {
-    return author.name || author.email || defaultValue;
-  }
-
-  return defaultValue;
-}
-
-function getAuthorInitial(author: Comment["author"], unknownLabel: string) {
-  return getAuthorName(author, unknownLabel).charAt(0).toUpperCase();
-}
+import { resolveUsername } from "../utils/user/resolveUsername";
 
 function formatDate(iso: string) {
   try {
@@ -43,14 +28,15 @@ interface Props {
 }
 
 export function CommentItem({ comment, currentUserId }: Props) {
-  const { resolveComment, removeComment } = useComments();
+  const { resolveComment, removeComment, usernameFieldPath } = useComments();
   const { t } = useTranslation();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   const unknownLabel = t("comments:unknownAuthor" as never);
-  const authorName = getAuthorName(comment.author, unknownLabel);
-  const authorInitial = getAuthorInitial(comment.author, unknownLabel);
+  const narrowedAuthor = typeof comment.author === "object" ? comment.author : null;
+  const authorName = resolveUsername(narrowedAuthor, usernameFieldPath, unknownLabel);
+  const authorInitial = authorName.charAt(0).toUpperCase();
   const isResolved = comment.isResolved ?? false;
 
   const authorId =
@@ -93,7 +79,7 @@ export function CommentItem({ comment, currentUserId }: Props) {
           </div>
 
           <p className="m-0 text-sm leading-normal text-(--theme-text) whitespace-pre-wrap wrap-break-word">
-            {renderCommentText(comment.text, comment.mentions, currentUserId)}
+            {renderCommentText(comment.text, comment.mentions, currentUserId, usernameFieldPath)}
           </p>
 
           <div className="flex gap-3 mt-2">
