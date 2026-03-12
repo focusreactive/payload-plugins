@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/payload-plugin-ab",
-  "version": "2.0.1",
+  "version": "2.3.1",
   "description": "A/B testing plugin for Payload CMS",
   "keywords": [
     "payload-cms",
@@ -20,7 +20,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/focus-reactive/payload-plugins",
+    "url": "https://github.com/focusreactive/payload-plugins",
     "directory": "packages/payload-plugin-ab"
   },
   "author": "Kiryl Pekarski <kiryl.pekarski@fr.team>",
