@@ -1,3 +1,5 @@
+## @focus-reactive/payload-plugin-ab [2.3.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.3.1...@focus-reactive/payload-plugin-ab@2.3.2) (2026-03-12)
+
 ## [1.1.2](https://github.com/focusreactive/payload-plugin-ab/compare/v1.1.1...v1.1.2) (2026-03-02)
 
 
