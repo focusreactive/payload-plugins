@@ -112,6 +112,14 @@ export interface CommentsPluginConfig {
    * }
    */
   translations?: Translations;
+  /**
+   * Dot-notation path to the field on the users collection used as the
+   * display name in the comments UI.
+   * @default "name"
+   * @example "firstName"
+   * @example "profile.displayName"
+   */
+  usernameFieldPath?: string;
 }
 
 export type NormalizedCollectionConfig = Map<string, { titleField: string }>;
@@ -127,6 +135,7 @@ export interface CommentsPluginConfigStorage {
   collections?: string[];
   documentTitleFields?: Record<string, string>;
   tenant?: TenantPluginConfig;
+  usernameFieldPath?: string;
 }
 
 export type DocumentTitles = Record<string, Record<string, string>>;
@@ -148,8 +157,8 @@ export type LoadingStatus = "idle" | "loading" | "error" | "success";
 
 export interface User {
   id: number;
-  name?: string | null;
   email?: string | null;
+  [key: string]: unknown;
 }
 
 export interface CommentMention {
