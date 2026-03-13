@@ -31,21 +31,19 @@ export function FieldGroupSection({
 
   return (
     <>
-      {fields.has(null) && (
-        <CollapsibleGroup
-          groupKey={generalGroupKey}
-          label={t("comments:general" as never)}
-          count={generalComments.filter((c) => !c.isResolved).length}
-          level="field">
-          <div data-field-path="__document__">
-            {generalComments.map((comment) => (
-              <CommentItem key={comment.id} comment={comment} currentUserId={userId} />
-            ))}
+      <CollapsibleGroup
+        groupKey={generalGroupKey}
+        label={t("comments:general" as never)}
+        count={generalComments.filter((c) => !c.isResolved).length}
+        level="field">
+        <div data-field-path="__document__">
+          {generalComments.map((comment) => (
+            <CommentItem key={comment.id} comment={comment} currentUserId={userId} />
+          ))}
 
-            <AddCommentForm fieldPath={null} collectionSlug={collectionSlug} documentId={documentId} />
-          </div>
-        </CollapsibleGroup>
-      )}
+          <AddCommentForm fieldPath={null} collectionSlug={collectionSlug} documentId={documentId} />
+        </div>
+      </CollapsibleGroup>
 
       {fieldEntries.map(([fieldPath, fieldComments]) => (
         <CollapsibleGroup
