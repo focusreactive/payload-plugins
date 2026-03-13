@@ -1,0 +1,42 @@
+{
+  "name": "@focus-reactive/payload-plugin-schedule-publication",
+  "version": "1.0.0",
+  "description": "Schedule publication plugin for Payload CMS",
+  "keywords": [
+    "payload-cms",
+    "payload-plugin",
+    "schedule-publication",
+    "cms"
+  ],
+  "license": "MIT",
+  "author": "Kiryl Pekarski <kiryl.pekarski@fr.team>",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write src/",
+    "format:check": "prettier --check src/"
+  },
+  "peerDependencies": {
+    "payload": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "payload": "3.79.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}
