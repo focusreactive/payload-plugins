@@ -11,8 +11,6 @@ interface Props {
 }
 
 export function extractVisibleComments({ comments, mode, collectionSlug, documentId, currentLocale }: Props) {
-  if (mode === "create") return [];
-
   const localeFilteredComments = filterCommentsByLocale(comments, currentLocale);
 
   return mode === "document" && collectionSlug && documentId ?

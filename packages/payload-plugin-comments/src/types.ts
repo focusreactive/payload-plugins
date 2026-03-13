@@ -139,7 +139,7 @@ export type CollectionLabels = Record<string, string | Record<string, string>>;
 
 export type FieldPathsMap = Map<string, Map<number, Set<string>>>;
 
-export type Mode = "document" | "global" | "create";
+export type Mode = "document" | "global";
 
 export type FilterMode = "open" | "resolved" | "mentioned";
 

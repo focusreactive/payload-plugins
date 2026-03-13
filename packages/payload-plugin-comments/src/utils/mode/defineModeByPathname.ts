@@ -1,35 +1,29 @@
 import type { CollectionSlug } from "payload";
 import type { Mode } from "../../types";
+import { EXCLUDED_ADMIN_ROUTES } from "../../constants";
 
 interface ModeData {
   mode: Mode;
-  collectionSlug: CollectionSlug;
+  collectionSlug: CollectionSlug | null;
   documentId: number | null;
 }
 
 export function defineModeByPathname(pathname: string): ModeData {
-  const createModeMatch = pathname?.match(/\/admin\/collections\/([^/]+)\/create$/);
-
-  if (createModeMatch) {
-    const collectionSlug = createModeMatch[1] as CollectionSlug;
-
-    return {
-      mode: "create",
-      collectionSlug,
-      documentId: null,
-    };
+  // 1. Excluded admin routes — return global immediately
+  if (EXCLUDED_ADMIN_ROUTES.some((route) => pathname?.startsWith(route))) {
+    return { mode: 'global', collectionSlug: null, documentId: null }
   }
 
-  const documentModeMatch = pathname?.match(/\/admin\/collections\/([^/]+)\/(\d+)/);
+  // 2. Document mode — /admin/collections/{slug}/{numericId}
+  const documentModeMatch = pathname?.match(/\/admin\/collections\/([^/]+)\/(\d+)/)
+  if (documentModeMatch) {
+    return {
+      mode: 'document',
+      collectionSlug: documentModeMatch[1] as CollectionSlug,
+      documentId: Number(documentModeMatch[2]),
+    }
+  }
 
-  const mode = documentModeMatch ? "document" : "global";
-
-  const collectionSlug = (documentModeMatch?.[1] as CollectionSlug) ?? null;
-  const documentId = Number(documentModeMatch?.[2]) || null;
-
-  return {
-    mode,
-    collectionSlug,
-    documentId,
-  };
+  // 3. Global fallback (includes /create pages)
+  return { mode: 'global', collectionSlug: null, documentId: null }
 }

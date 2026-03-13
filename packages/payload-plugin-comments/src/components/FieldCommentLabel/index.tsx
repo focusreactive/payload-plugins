@@ -28,7 +28,7 @@ export function FieldCommentLabel({ field, htmlFor, path: fieldPath }: Props) {
   const { t } = useTranslation();
   const { code: locale } = useLocale();
   const { open: openDrawer, setScrollTargetPath } = useCommentsDrawer();
-  const { visibleComments, addComment, setFilter } = useComments();
+  const { visibleComments, addComment, setFilter, mode } = useComments();
 
   const [isHovered, setIsHovered] = useState(false);
   const [showPopover, setShowPopover] = useState(false);
@@ -103,7 +103,7 @@ export function FieldCommentLabel({ field, htmlFor, path: fieldPath }: Props) {
         </label>
       )}
 
-      {fieldPath && (
+      {fieldPath && mode === 'document' && (
         <div className="relative flex items-center">
           {openCommentsCount > 0 ?
             <CommentsButton
