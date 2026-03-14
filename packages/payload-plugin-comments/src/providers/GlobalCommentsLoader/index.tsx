@@ -1,13 +1,8 @@
-import { findAllComments } from "../../services/findAllComments";
-import { getDocumentTitles } from "../../services/getDocumentTitles";
-import { fetchMentionableUsers } from "../../services/fetchMentionableUsers";
-import { fetchFieldLabels } from "../../services/fieldLabels/fetchFieldLabels";
-import { getEntitiesLabels } from "../../services/getEntitiesLabels";
 import { setPayloadConfig } from "../../config";
 import { GlobalCommentsHydrator } from "./GlobalCommentsHydrator";
 import type { Payload } from "payload";
 import type { ReactNode } from "react";
-import type { CommentsPluginConfigStorage } from "../../types";
+import { syncAllCommentsData } from "../../services/syncAllCommentsData";
 
 interface Props {
   children: ReactNode;
@@ -18,38 +13,27 @@ interface Props {
 export async function GlobalCommentsLoader({ children, payload, locale }: Props) {
   setPayloadConfig(payload.config);
 
-  const pluginConfig = payload?.config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
+  const res = await syncAllCommentsData({ payload, locale });
 
-  const commentsResult = await findAllComments({
-    enabledCollections: pluginConfig?.collections,
-    enabledGlobals: pluginConfig?.globals,
-    options: { payload },
-  });
+  if (res.success) {
+    const { comments, documentTitles, mentionUsers, fieldLabels, collectionLabels, globalLabels } = res.data;
 
-  const comments = commentsResult.success ? commentsResult.data : [];
+    return (
+      <>
+        <GlobalCommentsHydrator
+          comments={comments}
+          documentTitles={documentTitles}
+          mentionUsers={mentionUsers}
+          fieldLabels={fieldLabels}
+          collectionLabels={collectionLabels}
+          globalLabels={globalLabels}
+          loadError={false}
+        />
 
-  const [titlesResult, mentionUsersResult, fieldLabels] = await Promise.all([
-    getDocumentTitles(comments, pluginConfig?.documentTitleFields ?? {}, { payload, locale }),
-    fetchMentionableUsers({ payload }),
-    fetchFieldLabels(comments, { payload }),
-  ]);
+        {children}
+      </>
+    );
+  }
 
-  const collectionLabels = getEntitiesLabels(payload.config.collections, pluginConfig?.collections ?? []);
-  const globalLabels = getEntitiesLabels(payload.config.globals, pluginConfig?.globals ?? []);
-
-  return (
-    <>
-      <GlobalCommentsHydrator
-        comments={comments}
-        documentTitles={titlesResult.success ? titlesResult.data : {}}
-        mentionUsers={mentionUsersResult.success ? mentionUsersResult.data : []}
-        fieldLabels={fieldLabels}
-        collectionLabels={collectionLabels}
-        globalLabels={globalLabels}
-        loadError={!commentsResult.success}
-      />
-
-      {children}
-    </>
-  );
+  return children;
 }
