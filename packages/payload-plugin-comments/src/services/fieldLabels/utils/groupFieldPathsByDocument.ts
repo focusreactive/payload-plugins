@@ -1,4 +1,6 @@
-import type { Comment, FieldPathsMap } from "../../../types";
+import type { Comment } from "../../../types";
+
+type FieldPathsMap = Map<string, Map<number, Set<string>>>;
 
 export function groupFieldPathsByDocument(comments: Comment[]) {
   const fieldPathsMap: FieldPathsMap = new Map();

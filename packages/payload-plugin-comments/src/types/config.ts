@@ -1,20 +1,13 @@
-import type { CollectionConfig, Field, Payload, SanitizedCollectionConfig, SanitizedGlobalConfig } from "payload";
-import type { Translations } from "./translations/types";
-
-export interface BaseServiceOptions {
-  payload?: Payload;
-  locale?: string | null;
-}
-
-export type FieldLabelSegment = { type: "field"; label: string } | { type: "row"; id: string; position: number };
-
-export type GlobalFieldLabelRegistry = Record<string, Record<number, Record<string, FieldLabelSegment[]>>>;
+import type { CollectionConfig, Field } from "payload";
+import type { Translations } from "../translations/types";
 
 /**
  * Specify which field is used as the document title in the comments UI.
- *
  * @example
- * { slug: "pages", titleField: "title" }
+ * {
+ *   slug: "pages",
+ *   titleField: "title"
+ * }
  */
 export interface CollectionEntry {
   slug: string;
@@ -48,11 +41,6 @@ export interface TenantPluginConfig {
 
 /**
  * Configuration options for the `commentsPlugin`.
- *
- * Pass this object to the plugin factory to customise which collections
- * support comments, enable multi-tenancy, and override the generated
- * `comments` collection.
- *
  * @example
  * commentsPlugin({
  *   collections: [
@@ -118,10 +106,6 @@ export interface CommentsPluginConfig {
   usernameFieldPath?: string;
 }
 
-export type NormalizedCollectionConfig = Map<string, { titleField: string }>;
-
-export type CommentsPluginConfigOverrides = CommentsPluginConfig["overrides"];
-
 export interface CommentsPluginConfigStorage {
   collections?: string[];
   documentTitleFields?: Record<string, string>;
@@ -129,55 +113,3 @@ export interface CommentsPluginConfigStorage {
   tenant?: TenantPluginConfig;
   usernameFieldPath?: string;
 }
-
-export type DocumentTitles = Record<string, Record<string, string>>;
-
-export type FieldPathsMap = Map<string, Map<number, Set<string>>>;
-
-export type Mode = "document" | "global-document" | "global";
-
-export type FilterMode = "open" | "resolved" | "mentioned";
-
-export interface BaseDocument {
-  id: string | number;
-  [key: string]: unknown;
-}
-
-export type LoadingStatus = "idle" | "loading" | "error" | "success";
-
-export interface User {
-  id: number;
-  email?: string | null;
-  [key: string]: unknown;
-}
-
-export interface CommentMention {
-  id: string | number | null;
-  user: number | User;
-}
-
-export interface Comment {
-  id: number;
-  documentId?: number | null;
-  collectionSlug?: string | null;
-  globalSlug?: string | null;
-  fieldPath?: string | null;
-  locale?: string | null;
-  text: string;
-  mentions?: CommentMention[] | null;
-  author: number | User;
-  isResolved: boolean;
-  resolvedBy?: number | User | null;
-  resolvedAt?: string | null;
-  tenant?: number | string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export type Response<T> = { success: true; data: T } | { success: false; error: string };
-
-export type EntityConfig = SanitizedCollectionConfig | SanitizedGlobalConfig;
-
-export type EntityLabel = string | Record<string, string>;
-
-export type EntityLabelsMap = Record<string, EntityLabel>;

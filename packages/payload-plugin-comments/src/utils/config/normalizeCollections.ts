@@ -1,4 +1,6 @@
-import type { CollectionEntry, NormalizedCollectionConfig } from "../../types";
+import type { CollectionEntry } from "../../types";
+
+type NormalizedCollectionConfig = Map<string, { titleField: string }>;
 
 const DEFAULT_TITLE_FIELD = "id";
 
