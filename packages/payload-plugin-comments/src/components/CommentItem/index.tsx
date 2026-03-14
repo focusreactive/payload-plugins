@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { startTransition, useState } from "react";
 import { useTranslation } from "@payloadcms/ui";
-import { cn } from "../utils/general/cn";
-import type { Comment } from "../types";
-import { useComments } from "../providers/CommentsProvider";
-import { renderCommentText } from "../utils/comment/renderCommentText";
-import { resolveUsername } from "../utils/user/resolveUsername";
-import { FALLBACK_DELETED_USERNAME, FALLBACK_USERNAME } from "../constants";
+import { cn } from "../../utils/general/cn";
+import type { Comment } from "../../types";
+import { useComments } from "../../providers/CommentsProvider";
+import { renderCommentText } from "../../utils/comment/renderCommentText";
+import { resolveUsername } from "../../utils/user/resolveUsername";
+import { FALLBACK_DELETED_USERNAME, FALLBACK_USERNAME } from "../../constants";
+import { ToolsPanel } from "./ToolsPanel";
 
 function formatDate(iso: string) {
   try {
@@ -31,7 +32,6 @@ interface Props {
 export function CommentItem({ comment, currentUserId }: Props) {
   const { resolveComment, removeComment, usernameFieldPath } = useComments();
   const { t } = useTranslation();
-  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   const deletedUserLabel = t("comments:deletedUser" as never) ?? FALLBACK_DELETED_USERNAME;
@@ -64,11 +64,14 @@ export function CommentItem({ comment, currentUserId }: Props) {
   }
 
   return (
-    <div
-      className={cn(
-        "py-3 border-b border-(--theme-elevation-100) transition-opacity duration-150",
-        isPending ? "opacity-60" : "opacity-100",
-      )}>
+    <div className={cn("group relative py-3 border-b border-(--theme-elevation-100)")}>
+      <ToolsPanel
+        isResolved={isResolved}
+        canDelete={canDelete}
+        onDelete={handleDelete}
+        onResolve={handleToggleResolve}
+      />
+
       <div className="flex gap-2.5 items-start">
         <div className="shrink-0 w-8 h-8 rounded-full bg-(--theme-elevation-150) text-(--theme-text) flex items-center justify-center text-[13px] font-semibold">
           {authorInitial}
@@ -76,7 +79,7 @@ export function CommentItem({ comment, currentUserId }: Props) {
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-[13px] text-(--theme-text)">{authorName}</span>
+            <span className="font-semibold text-sm text-(--theme-text)">{authorName}</span>
             <span className="text-[11px] text-(--theme-elevation-450)">{formatDate(comment.createdAt)}</span>
           </div>
 
@@ -89,31 +92,6 @@ export function CommentItem({ comment, currentUserId }: Props) {
               fallbackDeletedUsername: deletedUserLabel,
             })}
           </p>
-
-          <div className="flex gap-3 mt-2">
-            <button
-              type="button"
-              onClick={handleToggleResolve}
-              disabled={isPending}
-              className={cn(
-                "border-none bg-transparent p-0 text-xs font-medium disabled:cursor-not-allowed",
-                isResolved ?
-                  "cursor-pointer text-(--theme-elevation-450)"
-                : "cursor-pointer text-(--theme-success-500,#2d9a6a)",
-              )}>
-              {isResolved ? t("comments:reopen" as never) : t("comments:resolve" as never)}
-            </button>
-
-            {canDelete && (
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={isPending}
-                className="cursor-pointer border-none bg-transparent p-0 text-xs font-medium text-(--theme-error-500,#c0392b) disabled:cursor-not-allowed">
-                {t("comments:delete" as never)}
-              </button>
-            )}
-          </div>
 
           {error && <p className="text-(--theme-error-500) text-xs mt-1 m-0">{error}</p>}
         </div>
