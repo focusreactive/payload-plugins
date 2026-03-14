@@ -49,16 +49,19 @@ export function CollapsibleGroup({ groupKey, label, count, children, level }: Co
         aria-expanded={!isCollapsed}
         className={`flex w-full items-center gap-2 cursor-pointer select-none ${styles.wrapper}`}>
         <span className={`flex-1 truncate ${styles.label}`}>{label}</span>
+
         {!isFieldLevel && count > 0 && (
           <span className="shrink-0 min-w-5 h-5 px-1.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-xs font-medium flex items-center justify-center">
             {count}
           </span>
         )}
+
         <ChevronDown
           size={styles.chevron}
           className={`shrink-0 text-gray-400 transition-transform duration-200 ${isCollapsed ? "-rotate-90" : ""}`}
         />
       </div>
+
       {!isCollapsed && <div className={styles.childWrapper}>{children}</div>}
     </div>
   );

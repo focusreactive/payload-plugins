@@ -11,9 +11,10 @@ interface AddCommentFormProps {
   fieldPath?: string | null;
   documentId?: number;
   collectionSlug?: string;
+  globalSlug?: string;
 }
 
-export function AddCommentForm({ fieldPath, documentId, collectionSlug }: AddCommentFormProps) {
+export function AddCommentForm({ fieldPath, documentId, collectionSlug, globalSlug }: AddCommentFormProps) {
   const { addComment } = useComments();
   const { code: locale } = useLocale();
   const { t } = useTranslation();
@@ -31,7 +32,7 @@ export function AddCommentForm({ fieldPath, documentId, collectionSlug }: AddCom
     editorRef.current?.clear();
 
     startTransition(async () => {
-      const result = await addComment(serialized, fieldPath, documentId, collectionSlug, locale);
+      const result = await addComment(serialized, fieldPath, documentId, collectionSlug, locale, globalSlug);
 
       if (!result.success) {
         setError(result.error ?? t("comments:failedToPost" as never));

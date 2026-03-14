@@ -4,7 +4,6 @@ import { useTranslation } from "@payloadcms/ui";
 import type { Comment } from "../../../types";
 import { useComments } from "../../../providers/CommentsProvider";
 import { groupCommentsByFieldPath } from "../utils/groupCommentsByFieldPath";
-import { resolveLabel } from "../utils/resolveLabel";
 import { FILTER_NO_COMMENTS_KEYS } from "../constants";
 import { FieldGroupSection } from "./FieldGroupSection";
 
@@ -16,7 +15,7 @@ interface Props {
 
 export function DocumentView({ comments, userId, className }: Props) {
   const { t } = useTranslation();
-  const { fieldLabelRegistry, collectionSlug, documentId, filter } = useComments();
+  const { filter } = useComments();
 
   const fields = groupCommentsByFieldPath(comments);
 
@@ -28,17 +27,7 @@ export function DocumentView({ comments, userId, className }: Props) {
         </p>
       )}
 
-      <FieldGroupSection
-        fields={fields}
-        userId={userId}
-        labelResolver={(fp) =>
-          collectionSlug != null && documentId != null ?
-            resolveLabel(fieldLabelRegistry, collectionSlug, documentId, fp)
-          : fp
-        }
-        generalGroupKey="g::"
-        fieldGroupKeyPrefix="f::"
-      />
+      <FieldGroupSection fields={fields} userId={userId} />
     </div>
   );
 }
