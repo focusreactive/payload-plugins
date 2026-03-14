@@ -28,6 +28,8 @@ export async function getDocumentTitles(
     const documentIdsMap = new Map<string, Set<number>>();
 
     for (const { collectionSlug, documentId } of comments) {
+      if (!collectionSlug || documentId == null) continue;
+
       if (!documentIdsMap.has(collectionSlug)) {
         documentIdsMap.set(collectionSlug, new Set());
       }

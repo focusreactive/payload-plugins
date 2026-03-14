@@ -9,11 +9,12 @@ import { getCurrentTenantId } from "./getCurrentTenantId";
 
 interface Props {
   enabledCollections?: string[];
+  enabledGlobals?: string[];
   user?: TypedUser | null;
   options?: BaseServiceOptions;
 }
 
-export async function findAllComments({ enabledCollections, options }: Props = {}): Promise<Response<Comment[]>> {
+export async function findAllComments({ enabledCollections, enabledGlobals, options }: Props = {}): Promise<Response<Comment[]>> {
   try {
     const payload = await extractPayload(options?.payload);
 
@@ -21,8 +22,14 @@ export async function findAllComments({ enabledCollections, options }: Props = {
 
     const where: Where = {};
 
-    if (enabledCollections?.length) {
-      where.collectionSlug = { in: enabledCollections };
+    const hasCollections = (enabledCollections?.length ?? 0) > 0;
+    const hasGlobals = (enabledGlobals?.length ?? 0) > 0;
+
+    if (hasCollections || hasGlobals) {
+      where.or = [
+        ...(hasCollections ? [{ collectionSlug: { in: enabledCollections } }] : []),
+        ...(hasGlobals ? [{ globalSlug: { in: enabledGlobals } }] : []),
+      ];
     }
 
     if (tenantId) {

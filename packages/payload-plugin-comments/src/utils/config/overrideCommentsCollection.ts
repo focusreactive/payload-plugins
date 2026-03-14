@@ -1,7 +1,7 @@
 import type { CollectionConfig } from "payload";
 import type { CommentsPluginConfigOverrides } from "../../types";
 
-export function overrideCollection(
+export function overrideCommentsCollection(
   config: CollectionConfig,
   overrides: CommentsPluginConfigOverrides,
 ): CollectionConfig {

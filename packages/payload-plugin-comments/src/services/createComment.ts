@@ -3,13 +3,14 @@
 import { headers } from "next/headers";
 import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
 import type { Response, Comment, BaseServiceOptions } from "../types";
-import { DEFAULT_COLLECTION_SLUG } from "../constants";
+import { DEFAULT_COLLECTION_SLUG, FALLBACK_USERNAME } from "../constants";
 import { sendMentionEmails } from "./sendMentionEmails";
 import { extractPayload } from "../utils/payload/extractPayload";
 
 interface Props extends BaseServiceOptions {
-  documentId: number;
-  collectionSlug: string;
+  documentId?: number | null;
+  collectionSlug?: string | null;
+  globalSlug?: string | null;
   text: string;
   fieldPath?: string | null;
   mentionIds?: number[];
@@ -18,6 +19,7 @@ interface Props extends BaseServiceOptions {
 export async function createComment({
   documentId,
   collectionSlug,
+  globalSlug,
   text,
   fieldPath = null,
   mentionIds = [],
@@ -35,20 +37,42 @@ export async function createComment({
       };
     }
 
+    if (!globalSlug && (!documentId || !collectionSlug)) {
+      return {
+        success: false,
+        error: "No document registered",
+      };
+    }
+
     const mentions = mentionIds.map((id) => ({ user: id }));
+
+    const data =
+      globalSlug ?
+        {
+          globalSlug,
+          documentId: null,
+          collectionSlug: null,
+          fieldPath,
+          locale,
+          text,
+          author: user.id,
+          isResolved: false,
+          mentions,
+        }
+      : {
+          documentId,
+          collectionSlug,
+          fieldPath,
+          locale,
+          text,
+          author: user.id,
+          isResolved: false,
+          mentions,
+        };
 
     const comment = (await payload.create({
       collection: DEFAULT_COLLECTION_SLUG,
-      data: {
-        documentId,
-        collectionSlug,
-        fieldPath,
-        locale,
-        text,
-        author: user.id,
-        isResolved: false,
-        mentions,
-      },
+      data,
       overrideAccess: false,
       user,
     })) as Comment;
@@ -56,10 +80,10 @@ export async function createComment({
     if (mentionIds.length > 0) {
       sendMentionEmails({
         mentionIds,
-        authorName: user.name ?? user.email ?? "Someone",
+        authorName: user.name ?? user.email ?? FALLBACK_USERNAME,
         commentText: text,
-        collectionSlug,
-        documentId,
+        collectionSlug: collectionSlug ?? globalSlug ?? "",
+        documentId: documentId,
         payload,
       });
     }

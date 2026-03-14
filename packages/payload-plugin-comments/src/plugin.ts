@@ -1,11 +1,12 @@
 import type { Config, Plugin } from "payload";
 import { baseCollection as getBaseCollection } from "./collection";
 import type { CommentsPluginConfig } from "./types";
-import { overrideCollection } from "./utils/config/overrideCollection";
+import { overrideCommentsCollection } from "./utils/config/overrideCommentsCollection";
 import { getComponentPath } from "./utils/path/getComponentPath";
 import { normalizeCollections } from "./utils/config/normalizeCollections";
-import { injectFieldCommentComponents } from "./utils/config/injectFieldCommentComponents";
 import { mergeTranslations } from "./utils/config/mergeTranslations";
+import { overrideCollections } from "./utils/config/overrideCollections";
+import { overrideGlobals } from "./utils/config/overrideGlobals";
 
 export const commentsPlugin =
   (config: CommentsPluginConfig = {}): Plugin =>
@@ -16,20 +17,17 @@ export const commentsPlugin =
       return incomingConfig;
     }
 
+    const baseCollection = getBaseCollection(config.tenant);
+    const finalCollection = overrideCommentsCollection(baseCollection, overrides);
+
+    const allGlobalSlugs = (incomingConfig.globals ?? []).map((g) => g.slug);
+    const allCollectionSlugs = (incomingConfig.collections ?? []).map((c) => c.slug);
+
     const normalizedCollections = normalizeCollections(collectionEntries);
     const documentTitleFields =
       normalizedCollections ?
         Object.fromEntries([...normalizedCollections.entries()].map(([k, v]) => [k, v.titleField]))
       : {};
-
-    const baseCollection = getBaseCollection(config.tenant);
-    const finalCollection = overrideCollection(baseCollection, overrides);
-
-    const allCollectionSlugs = (incomingConfig.collections ?? []).map((c) => c.slug);
-
-    const patchedCollections = (incomingConfig.collections ?? []).map((collection) =>
-      injectFieldCommentComponents(collection),
-    );
 
     const userTranslations = config.translations ?? {};
     const incomingConfigTranslations = (incomingConfig.i18n?.translations as Record<string, object> | undefined) ?? {};
@@ -61,11 +59,13 @@ export const commentsPlugin =
           commentsPlugin: {
             collections: allCollectionSlugs,
             documentTitleFields,
+            globals: allGlobalSlugs,
             tenant: config.tenant,
             usernameFieldPath,
           },
         },
       },
-      collections: [...patchedCollections, finalCollection],
+      collections: [...overrideCollections(incomingConfig.collections), finalCollection],
+      globals: overrideGlobals(incomingConfig.globals),
     };
   };

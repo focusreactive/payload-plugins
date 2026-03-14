@@ -7,15 +7,22 @@ interface Props {
   mode: Mode;
   collectionSlug?: CollectionSlug | null;
   documentId?: number | null;
+  globalSlug?: string | null;
   currentLocale?: string | null;
 }
 
-export function extractVisibleComments({ comments, mode, collectionSlug, documentId, currentLocale }: Props) {
+export function extractVisibleComments({ comments, mode, collectionSlug, documentId, globalSlug, currentLocale }: Props) {
   const localeFilteredComments = filterCommentsByLocale(comments, currentLocale);
 
-  return mode === "document" && collectionSlug && documentId ?
-      localeFilteredComments.filter(
-        ({ collectionSlug: slug, documentId: id }) => slug === collectionSlug && id === documentId,
-      )
-    : localeFilteredComments;
+  if (mode === "document" && collectionSlug && documentId) {
+    return localeFilteredComments.filter(
+      ({ collectionSlug: slug, documentId: id }) => slug === collectionSlug && id === documentId,
+    );
+  }
+
+  if (mode === "global-document" && globalSlug) {
+    return localeFilteredComments.filter((c) => c.globalSlug === globalSlug);
+  }
+
+  return localeFilteredComments;
 }

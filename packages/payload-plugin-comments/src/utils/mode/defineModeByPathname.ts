@@ -6,24 +6,43 @@ interface ModeData {
   mode: Mode;
   collectionSlug: CollectionSlug | null;
   documentId: number | null;
+  globalSlug: string | null;
 }
 
 export function defineModeByPathname(pathname: string): ModeData {
-  // 1. Excluded admin routes — return global immediately
   if (EXCLUDED_ADMIN_ROUTES.some((route) => pathname?.startsWith(route))) {
-    return { mode: 'global', collectionSlug: null, documentId: null }
+    return {
+      mode: "global",
+      collectionSlug: null,
+      documentId: null,
+      globalSlug: null,
+    };
   }
 
-  // 2. Document mode — /admin/collections/{slug}/{numericId}
-  const documentModeMatch = pathname?.match(/\/admin\/collections\/([^/]+)\/(\d+)/)
+  const documentModeMatch = pathname?.match(/\/admin\/collections\/([^/]+)\/(\d+)/);
   if (documentModeMatch) {
     return {
-      mode: 'document',
+      mode: "document",
       collectionSlug: documentModeMatch[1] as CollectionSlug,
       documentId: Number(documentModeMatch[2]),
-    }
+      globalSlug: null,
+    };
   }
 
-  // 3. Global fallback (includes /create pages)
-  return { mode: 'global', collectionSlug: null, documentId: null }
+  const globalDocumentMatch = pathname?.match(/\/admin\/globals\/([^/]+)$/);
+  if (globalDocumentMatch) {
+    return {
+      mode: "global-document",
+      globalSlug: globalDocumentMatch[1] ?? null,
+      collectionSlug: null,
+      documentId: null,
+    };
+  }
+
+  return {
+    mode: "global",
+    collectionSlug: null,
+    documentId: null,
+    globalSlug: null,
+  };
 }

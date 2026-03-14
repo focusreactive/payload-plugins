@@ -12,19 +12,12 @@ import {
 } from "react";
 import { useAuth, useLocale } from "@payloadcms/ui";
 import { usePathname } from "next/navigation";
-import type { Comment, User } from "../../types";
+import type { Comment, EntityLabelsMap, User } from "../../types";
 import { createComment } from "../../services/createComment";
 import { deleteComment } from "../../services/deleteComment";
 import { resolveComment as resolveCommentService } from "../../services/resolveComment";
 import { syncAllCommentsData } from "../../services/syncAllCommentsData";
-import type {
-  CollectionLabels,
-  FilterMode,
-  GlobalFieldLabelRegistry,
-  LoadingStatus,
-  DocumentTitles,
-  Mode,
-} from "../../types";
+import type { FilterMode, GlobalFieldLabelRegistry, LoadingStatus, DocumentTitles, Mode } from "../../types";
 import { parseMentionIds } from "../../utils/mention/parseMentionIds";
 import { defineModeByPathname } from "../../utils/mode/defineModeByPathname";
 import { extractVisibleComments } from "../../utils/comment/extractVisibleComments";
@@ -54,10 +47,12 @@ interface CommentsContextProps {
   allComments: Comment[];
   visibleComments: Comment[];
   documentTitles: DocumentTitles;
-  collectionLabels: CollectionLabels;
+  collectionLabels: EntityLabelsMap;
+  globalLabels: EntityLabelsMap;
   mode: Mode;
   collectionSlug: string | null | undefined;
   documentId: number | null | undefined;
+  globalSlug: string | null;
   mentionUsers: User[];
   loadError: boolean;
   filter: FilterMode;
@@ -70,8 +65,9 @@ interface CommentsContextProps {
     incomingTitles?: DocumentTitles,
     incomingMentionUsers?: User[],
     fieldLabels?: GlobalFieldLabelRegistry,
-    incomingCollectionLabels?: CollectionLabels,
+    incomingCollectionLabels?: EntityLabelsMap,
     nextLoadError?: boolean,
+    incomingGlobalLabels?: EntityLabelsMap,
   ) => void;
   syncComments: () => Promise<void>;
   addComment: (
@@ -80,6 +76,7 @@ interface CommentsContextProps {
     documentId?: number,
     collectionSlug?: string,
     locale?: string | null,
+    globalSlugOverride?: string,
   ) => Promise<MutationResult>;
   removeComment: (id: string | number) => Promise<MutationResult>;
   resolveComment: (id: string | number, resolved: boolean) => Promise<MutationResult>;
@@ -105,20 +102,22 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
   );
 
   const [documentTitles, setDocumentTitles] = useState<DocumentTitles>({});
-  const [collectionLabels, setCollectionLabels] = useState<CollectionLabels>({});
+  const [collectionLabels, setCollectionLabels] = useState<EntityLabelsMap>({});
+  const [globalLabels, setGlobalLabels] = useState<EntityLabelsMap>({});
   const [mentionUsers, setMentionUsers] = useState<User[]>([]);
   const [fieldLabelRegistry, setFieldLabelRegistry] = useState<GlobalFieldLabelRegistry>({});
   const [filter, setFilter] = useState<FilterMode>("open");
   const [loadError, setLoadError] = useState(false);
   const [syncCommentsStatus, setSyncCommentsStatus] = useState<LoadingStatus>("idle");
 
-  const { mode, collectionSlug, documentId } = defineModeByPathname(pathname);
+  const { mode, collectionSlug, documentId, globalSlug } = defineModeByPathname(pathname);
 
   const visibleComments = extractVisibleComments({
     comments: optimisticComments,
     mode,
     collectionSlug,
     documentId,
+    globalSlug,
     currentLocale,
   });
 
@@ -128,8 +127,9 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
       incomingTitles?: DocumentTitles,
       incomingMentionUsers?: User[],
       fieldLabels?: GlobalFieldLabelRegistry,
-      incomingCollectionLabels?: CollectionLabels,
+      incomingCollectionLabels?: EntityLabelsMap,
       nextLoadError = false,
+      incomingGlobalLabels?: EntityLabelsMap,
     ) => {
       if (incoming !== undefined) {
         setAllComments(incoming);
@@ -151,6 +151,10 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
         setCollectionLabels(incomingCollectionLabels);
       }
 
+      if (incomingGlobalLabels) {
+        setGlobalLabels(incomingGlobalLabels);
+      }
+
       setLoadError(nextLoadError);
     },
     [],
@@ -162,11 +166,13 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
     documentIdOverride?: number,
     collectionSlugOverride?: string,
     locale?: string | null,
+    globalSlugOverride?: string,
   ): Promise<MutationResult> => {
+    const resolvedGlobalSlug = globalSlugOverride ?? (mode === "global-document" ? globalSlug : null);
     const resolvedDocId = documentIdOverride ?? documentId;
     const resolvedSlug = collectionSlugOverride ?? collectionSlug;
 
-    if (!resolvedDocId || !resolvedSlug) {
+    if (!resolvedGlobalSlug && (!resolvedDocId || !resolvedSlug)) {
       return {
         success: false,
         error: "No document registered",
@@ -184,8 +190,9 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
       text,
       fieldPath,
       locale: locale ?? null,
-      documentId: resolvedDocId,
-      collectionSlug: resolvedSlug,
+      documentId: resolvedGlobalSlug ? null : resolvedDocId,
+      collectionSlug: resolvedGlobalSlug ? null : resolvedSlug,
+      globalSlug: resolvedGlobalSlug ?? null,
       isResolved: false,
       mentions,
       createdAt: new Date().toISOString(),
@@ -196,8 +203,9 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
     applyOptimistic({ type: "add", comment: optimisticComment });
 
     const result = await createComment({
-      documentId: resolvedDocId,
-      collectionSlug: resolvedSlug,
+      documentId: resolvedGlobalSlug ? null : resolvedDocId,
+      collectionSlug: resolvedGlobalSlug ? null : resolvedSlug,
+      globalSlug: resolvedGlobalSlug,
       text,
       fieldPath,
       mentionIds,
@@ -251,6 +259,7 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
       mentionUsers,
       fieldLabels,
       collectionLabels: syncedLabels,
+      globalLabels: syncedGlobalLabels,
     } = allCommentsDataResult.data;
 
     setAllComments((prev) => {
@@ -263,6 +272,7 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
     setMentionUsers(mentionUsers);
     setFieldLabelRegistry(fieldLabels);
     setCollectionLabels(syncedLabels);
+    setGlobalLabels(syncedGlobalLabels);
     setSyncCommentsStatus("success");
   };
 
@@ -310,9 +320,11 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
         visibleComments,
         documentTitles,
         collectionLabels,
+        globalLabels,
         mode,
         collectionSlug,
         documentId,
+        globalSlug,
         mentionUsers,
         loadError,
         filter,

@@ -1,4 +1,4 @@
-import type { CollectionConfig, Field, Payload } from "payload";
+import type { CollectionConfig, Field, Payload, SanitizedCollectionConfig, SanitizedGlobalConfig } from "payload";
 import type { Translations } from "./translations/types";
 
 export interface BaseServiceOptions {
@@ -69,18 +69,14 @@ export interface TenantPluginConfig {
  * })
  */
 export interface CommentsPluginConfig {
-  /**
-   * List of collection slugs (or detailed config objects) whose documents
-   * should support comments. Each entry creates a comments sidebar for
-   * documents inside that collection.
-   *
-   * By default, all collections have comments.
-   */
-  collections?: CollectionEntry[];
   /** Set to `false` to disable the plugin entirely.
    * @default false
    */
   enabled?: boolean;
+  /**
+   * List of collection config objects to tune collection document comments. In any way all collections have comments.
+   */
+  collections?: CollectionEntry[];
   /** Optional multi-tenancy settings. Omit if your project is single-tenant. */
   tenant?: TenantPluginConfig;
   /**
@@ -129,17 +125,16 @@ export type CommentsPluginConfigOverrides = CommentsPluginConfig["overrides"];
 export interface CommentsPluginConfigStorage {
   collections?: string[];
   documentTitleFields?: Record<string, string>;
+  globals?: string[];
   tenant?: TenantPluginConfig;
   usernameFieldPath?: string;
 }
 
 export type DocumentTitles = Record<string, Record<string, string>>;
 
-export type CollectionLabels = Record<string, string | Record<string, string>>;
-
 export type FieldPathsMap = Map<string, Map<number, Set<string>>>;
 
-export type Mode = "document" | "global";
+export type Mode = "document" | "global-document" | "global";
 
 export type FilterMode = "open" | "resolved" | "mentioned";
 
@@ -163,8 +158,9 @@ export interface CommentMention {
 
 export interface Comment {
   id: number;
-  documentId: number;
-  collectionSlug: string;
+  documentId?: number | null;
+  collectionSlug?: string | null;
+  globalSlug?: string | null;
   fieldPath?: string | null;
   locale?: string | null;
   text: string;
@@ -179,3 +175,9 @@ export interface Comment {
 }
 
 export type Response<T> = { success: true; data: T } | { success: false; error: string };
+
+export type EntityConfig = SanitizedCollectionConfig | SanitizedGlobalConfig;
+
+export type EntityLabel = string | Record<string, string>;
+
+export type EntityLabelsMap = Record<string, EntityLabel>;

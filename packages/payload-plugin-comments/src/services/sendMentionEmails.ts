@@ -9,7 +9,7 @@ interface SendMentionEmailsProps extends BaseServiceOptions {
   authorName: string;
   commentText: string;
   collectionSlug: string;
-  documentId: number;
+  documentId: number | null | undefined;
 }
 
 export async function sendMentionEmails({

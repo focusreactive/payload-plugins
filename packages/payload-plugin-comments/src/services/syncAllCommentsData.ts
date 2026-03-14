@@ -4,10 +4,10 @@ import { findAllComments } from "./findAllComments";
 import { getDocumentTitles } from "./getDocumentTitles";
 import { fetchMentionableUsers } from "./fetchMentionableUsers";
 import { fetchFieldLabels } from "./fieldLabels/fetchFieldLabels";
-import { getCollectionLabels } from "./getCollectionLabels";
+import { getEntitiesLabels } from "./getEntitiesLabels";
 import type {
   BaseServiceOptions,
-  CollectionLabels,
+  EntityLabelsMap,
   Comment,
   CommentsPluginConfigStorage,
   DocumentTitles,
@@ -22,7 +22,8 @@ interface SyncResult {
   documentTitles: DocumentTitles;
   mentionUsers: User[];
   fieldLabels: GlobalFieldLabelRegistry;
-  collectionLabels: CollectionLabels;
+  collectionLabels: EntityLabelsMap;
+  globalLabels: EntityLabelsMap;
 }
 
 const errorResult: Response<SyncResult> = {
@@ -36,6 +37,7 @@ export async function syncAllCommentsData(options?: BaseServiceOptions): Promise
 
   const commentsResult = await findAllComments({
     enabledCollections: pluginConfig?.collections,
+    enabledGlobals: pluginConfig?.globals,
     options: {
       payload,
     },
@@ -55,7 +57,8 @@ export async function syncAllCommentsData(options?: BaseServiceOptions): Promise
 
   if (!success) return errorResult;
 
-  const collectionLabels = getCollectionLabels(payload, pluginConfig?.collections ?? []);
+  const collectionLabels = getEntitiesLabels(payload.config.collections, pluginConfig?.collections ?? []);
+  const globalLabels = getEntitiesLabels(payload.config.globals, pluginConfig?.globals ?? []);
 
   return {
     success: true,
@@ -65,6 +68,7 @@ export async function syncAllCommentsData(options?: BaseServiceOptions): Promise
       mentionUsers: mentionUsersResult.data,
       fieldLabels,
       collectionLabels,
+      globalLabels,
     },
   };
 }

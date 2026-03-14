@@ -1,6 +1,7 @@
-import type { CollectionAfterDeleteHook, CollectionConfig, Field } from "payload";
+import type { CollectionConfig, Field, GlobalConfig } from "payload";
 import { getComponentConfig } from "../path/getComponentPath";
-import { DEFAULT_COLLECTION_SLUG } from "../../constants";
+
+export type EntityConfig = CollectionConfig | GlobalConfig;
 
 type BaseField = Field & {
   name?: string | null | undefined;
@@ -34,7 +35,6 @@ function injectIntoField(field: Field, parentPath: string): Field {
   if (field.type === "ui") return field;
 
   const f = field as BaseField;
-
   const { name } = f;
   const currentPath = name ? buildPath(parentPath, name) : parentPath;
 
@@ -87,29 +87,9 @@ function injectIntoFields(fields: Field[], parentPath: string): Field[] {
   return fields.map((field) => injectIntoField(field, parentPath));
 }
 
-export function injectFieldCommentComponents(collection: CollectionConfig): CollectionConfig {
-  if (collection.slug === DEFAULT_COLLECTION_SLUG) {
-    return collection;
-  }
-
+export function injectFieldCommentComponents<T extends EntityConfig>(entity: T): T {
   return {
-    ...collection,
-    fields: injectIntoFields(collection.fields, ""),
-    hooks: {
-      ...collection.hooks,
-      afterDelete: [
-        ...(collection.hooks?.afterDelete ?? []),
-        (async ({ doc, req }) => {
-          await req.payload.delete({
-            collection: DEFAULT_COLLECTION_SLUG,
-            where: {
-              and: [{ collectionSlug: { equals: collection.slug } }, { documentId: { equals: Number(doc.id) } }],
-            },
-            req,
-            overrideAccess: true,
-          });
-        }) satisfies CollectionAfterDeleteHook,
-      ],
-    },
-  };
+    ...entity,
+    fields: injectIntoFields(entity.fields, ""),
+  } as T;
 }

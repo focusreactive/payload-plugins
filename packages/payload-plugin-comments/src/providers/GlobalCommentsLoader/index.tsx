@@ -2,7 +2,7 @@ import { findAllComments } from "../../services/findAllComments";
 import { getDocumentTitles } from "../../services/getDocumentTitles";
 import { fetchMentionableUsers } from "../../services/fetchMentionableUsers";
 import { fetchFieldLabels } from "../../services/fieldLabels/fetchFieldLabels";
-import { getCollectionLabels } from "../../services/getCollectionLabels";
+import { getEntitiesLabels } from "../../services/getEntitiesLabels";
 import { setPayloadConfig } from "../../config";
 import { GlobalCommentsHydrator } from "./GlobalCommentsHydrator";
 import type { Payload } from "payload";
@@ -22,6 +22,7 @@ export async function GlobalCommentsLoader({ children, payload, locale }: Props)
 
   const commentsResult = await findAllComments({
     enabledCollections: pluginConfig?.collections,
+    enabledGlobals: pluginConfig?.globals,
     options: { payload },
   });
 
@@ -33,7 +34,8 @@ export async function GlobalCommentsLoader({ children, payload, locale }: Props)
     fetchFieldLabels(comments, { payload }),
   ]);
 
-  const collectionLabels = getCollectionLabels(payload, pluginConfig?.collections ?? []);
+  const collectionLabels = getEntitiesLabels(payload.config.collections, pluginConfig?.collections ?? []);
+  const globalLabels = getEntitiesLabels(payload.config.globals, pluginConfig?.globals ?? []);
 
   return (
     <>
@@ -43,6 +45,7 @@ export async function GlobalCommentsLoader({ children, payload, locale }: Props)
         mentionUsers={mentionUsersResult.success ? mentionUsersResult.data : []}
         fieldLabels={fieldLabels}
         collectionLabels={collectionLabels}
+        globalLabels={globalLabels}
         loadError={!commentsResult.success}
       />
 

@@ -1,10 +1,6 @@
-import type { CollectionLabels } from "../../../types";
+import type { EntityLabel } from "../../../types";
 
-export function resolveCollectionLabel(
-  label: CollectionLabels[string] | undefined,
-  locale: string,
-  fallback: string,
-): string {
+export function resolveCollectionLabel(label: EntityLabel | undefined, locale: string, fallback: string) {
   if (label === undefined) return fallback;
   if (typeof label === "string") return label;
 

@@ -30,24 +30,27 @@ export const baseCollection = (tenantConfig?: TenantPluginConfig): CollectionCon
     {
       name: "documentId",
       type: "number",
-      required: true,
       index: true,
     },
     {
       name: "collectionSlug",
       type: "text",
-      required: true,
       index: true,
+    },
+    {
+      name: "globalSlug",
+      type: "text",
+      index: true,
+      admin: {
+        description: "Slug of the Payload global being commented on. Null = collection document comment.",
+      },
     },
     {
       name: "fieldPath",
       type: "text",
       index: true,
       admin: {
-        description: {
-          en: "Dot-notation path of the field being commented on. Null = document-level.",
-          es: "Ruta en notación punto del campo comentado. Null = nivel de documento.",
-        },
+        description: "Dot-notation path of the field being commented on. Null = document-level.",
       },
     },
     {
@@ -56,26 +59,22 @@ export const baseCollection = (tenantConfig?: TenantPluginConfig): CollectionCon
       required: false,
       index: true,
       admin: {
-        description: {
-          en: "Locale for field-level comments. Null = document-level (shown in all locales).",
-          es: "Locale para comentarios de campo. Null = nivel de documento (visible en todos los locales).",
-        },
+        description: "Locale for field-level comments. Null = document-level (shown in all locales).",
       },
     },
     {
       name: "text",
       type: "textarea",
       required: true,
-      label: {
-        en: "Comment",
-        es: "Comentario",
-      },
+      label: "Comment",
     },
     {
       name: "mentions",
       type: "array",
-      label: { en: "Mentions", es: "Menciones" },
-      admin: { readOnly: true },
+      label: "Mentions",
+      admin: {
+        readOnly: true,
+      },
       fields: [
         {
           name: "user",
@@ -90,10 +89,7 @@ export const baseCollection = (tenantConfig?: TenantPluginConfig): CollectionCon
       type: "relationship",
       relationTo: "users",
       required: true,
-      label: {
-        en: "Author",
-        es: "Autor",
-      },
+      label: "Author",
       admin: {
         position: "sidebar",
       },
@@ -102,10 +98,7 @@ export const baseCollection = (tenantConfig?: TenantPluginConfig): CollectionCon
       name: "isResolved",
       type: "checkbox",
       defaultValue: false,
-      label: {
-        en: "Resolved",
-        es: "Resuelto",
-      },
+      label: "Resolved",
       admin: {
         position: "sidebar",
       },
@@ -114,10 +107,7 @@ export const baseCollection = (tenantConfig?: TenantPluginConfig): CollectionCon
       name: "resolvedBy",
       type: "relationship",
       relationTo: "users",
-      label: {
-        en: "Resolved by",
-        es: "Resuelto por",
-      },
+      label: "Resolved by",
       admin: {
         position: "sidebar",
         condition: (_data, siblingData) => siblingData?.status === "resolved",
@@ -126,10 +116,7 @@ export const baseCollection = (tenantConfig?: TenantPluginConfig): CollectionCon
     {
       name: "resolvedAt",
       type: "date",
-      label: {
-        en: "Resolved at",
-        es: "Resuelto el",
-      },
+      label: "Resolved at",
       admin: {
         position: "sidebar",
         condition: (_data, siblingData) => siblingData?.status === "resolved",
@@ -142,10 +129,7 @@ export const baseCollection = (tenantConfig?: TenantPluginConfig): CollectionCon
           type: "relationship" as const,
           relationTo: (tenantConfig.collectionSlug ?? "tenants") as CollectionSlug,
           index: true,
-          label: {
-            en: "Tenant",
-            es: "Inquilino",
-          },
+          label: "Tenant",
           admin: {
             position: "sidebar" as const,
           },
