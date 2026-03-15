@@ -46,7 +46,7 @@ export function CommentItem({ comment, currentUserId }: Props) {
   };
 
   return (
-    <div className={cn("group relative py-3")}>
+    <div className={cn("group relative")}>
       <ToolsPanel
         isResolved={isResolved}
         canDelete={canDelete}
@@ -59,7 +59,7 @@ export function CommentItem({ comment, currentUserId }: Props) {
 
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-[14px] text-(--theme-text)">{authorName}</span>
+            <span className="font-semibold text-[13px] text-(--theme-text)">{authorName}</span>
             <span className="text-[11px] text-(--theme-elevation-450)">{createdAtRelativeDate}</span>
           </div>
 

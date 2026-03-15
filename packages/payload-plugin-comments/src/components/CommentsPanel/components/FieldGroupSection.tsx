@@ -29,9 +29,8 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
       <CollapsibleGroup
         groupKey={createCollapsibleGroupKey({ collectionSlug, documentId, globalSlug, fieldPath: null })}
         label={t("comments:general" as never)}
-        count={generalComments.filter((c) => !c.isResolved).length}
         level="field">
-        <div>
+        <div className="flex flex-col gap-3">
           {generalComments.map((comment) => (
             <CommentItem key={comment.id} comment={comment} currentUserId={userId} />
           ))}
@@ -50,9 +49,8 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
           key={fieldPath}
           groupKey={createCollapsibleGroupKey({ collectionSlug, documentId, globalSlug, fieldPath })}
           label={resolveFieldLabel({ registry: fieldLabelRegistry, collectionSlug, documentId, globalSlug, fieldPath })}
-          count={fieldComments.filter((c) => !c.isResolved).length}
           level="field">
-          <div data-field-path={fieldPath}>
+          <div className="flex flex-col gap-3" data-field-path={fieldPath}>
             {fieldComments.map((comment) => (
               <CommentItem key={comment.id} comment={comment} currentUserId={userId} />
             ))}

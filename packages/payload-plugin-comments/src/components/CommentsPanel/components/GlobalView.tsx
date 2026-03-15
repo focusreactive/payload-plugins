@@ -33,20 +33,15 @@ export function GlobalView({ comments, userId, className }: Props) {
       {groupedComments.map((entry) => {
         if (entry.type === "collection") {
           const { slug, docs } = entry;
-          const slugOpenCount = [...docs.values()]
-            .flatMap((fields) => [...fields.values()].flat())
-            .filter((c) => !c.isResolved).length;
 
           return (
             <CollapsibleGroup
               key={slug}
               groupKey={slug}
               label={resolveEntityLabel(collectionLabels[slug], locale, slug)}
-              count={slugOpenCount}
               level="collection">
               {[...docs.entries()].map(([docId, fields]) => {
                 const title = documentTitles[slug]?.[String(docId)] ?? String(docId);
-                const docOpenCount = [...fields.values()].flat().filter((c) => !c.isResolved).length;
                 const documentId = Number(docId);
 
                 return (
@@ -54,7 +49,6 @@ export function GlobalView({ comments, userId, className }: Props) {
                     key={docId}
                     groupKey={createCollapsibleGroupKey({ collectionSlug: slug, documentId })}
                     label={title}
-                    count={docOpenCount}
                     level="document">
                     <FieldGroupSection fields={fields} userId={userId} collectionSlug={slug} documentId={documentId} />
                   </CollapsibleGroup>
@@ -65,14 +59,12 @@ export function GlobalView({ comments, userId, className }: Props) {
         }
 
         const { slug, fields } = entry;
-        const openCount = [...fields.values()].flat().filter((c) => !c.isResolved).length;
 
         return (
           <CollapsibleGroup
             key={slug}
             groupKey={slug}
             label={resolveEntityLabel(globalLabels[slug], locale, slug)}
-            count={openCount}
             level="collection">
             <FieldGroupSection fields={fields} userId={userId} globalSlug={slug} />
           </CollapsibleGroup>
