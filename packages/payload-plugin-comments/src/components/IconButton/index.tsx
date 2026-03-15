@@ -7,6 +7,7 @@ const variants = cva(
     variants: {
       variant: {
         neutral: "bg-transparent hover:bg-(--theme-elevation-50) text-(--theme-elevation-450)",
+        neutralSecondary: "bg-(--theme-elevation-100) hover:bg-(--theme-elevation-150) text-(--theme-elevation-600)",
         primary: "bg-(--theme-elevation-1000) hover:bg-(--theme-elevation-800) text-(--theme-elevation-0)",
       },
     },
@@ -20,7 +21,7 @@ interface Props {
   className?: string;
   title?: string;
   children: React.ReactNode;
-  variant?: "neutral" | "primary";
+  variant?: "neutral" | "neutralSecondary" | "primary";
   onClick: () => void;
 }
 
