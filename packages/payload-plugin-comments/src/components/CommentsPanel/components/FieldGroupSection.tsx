@@ -4,10 +4,10 @@ import { useTranslation } from "@payloadcms/ui";
 import type { Comment } from "../../../types/comment";
 import { CollapsibleGroup } from "./CollapsibleGroup";
 import { CommentItem } from "../../CommentItem";
-import { AddCommentForm } from "../../AddCommentForm";
 import { createCollapsibleGroupKey } from "../utils/createCollapsibleGroupKey";
 import { resolveFieldLabel } from "../utils/resolveFieldLabel";
 import { useComments } from "../../../providers/CommentsProvider";
+import { CommentEditor } from "../../CommentEditor";
 
 interface Props {
   fields: Map<string | null, Comment[]>;
@@ -36,7 +36,7 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
             <CommentItem key={comment.id} comment={comment} currentUserId={userId} />
           ))}
 
-          <AddCommentForm
+          <CommentEditor
             fieldPath={null}
             collectionSlug={collectionSlug}
             documentId={documentId}
@@ -57,7 +57,7 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
               <CommentItem key={comment.id} comment={comment} currentUserId={userId} />
             ))}
 
-            <AddCommentForm
+            <CommentEditor
               fieldPath={fieldPath}
               collectionSlug={collectionSlug}
               documentId={documentId}

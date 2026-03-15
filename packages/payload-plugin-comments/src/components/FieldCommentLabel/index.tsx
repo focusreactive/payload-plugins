@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation, useLocale } from "@payloadcms/ui";
 import { MessageSquareIcon, MessageSquarePlus } from "lucide-react";
 import { cn } from "../../utils/general/cn";
@@ -28,12 +28,10 @@ export function FieldCommentLabel({ field, htmlFor, path: fieldPath }: Props) {
   const { t } = useTranslation();
   const { code: locale } = useLocale();
   const { open: openDrawer, setScrollTargetPath } = useCommentsDrawer();
-  const { visibleComments, addComment, setFilter, mode, globalSlug } = useComments();
+  const { visibleComments, setFilter, mode, globalSlug } = useComments();
 
   const [isHovered, setIsHovered] = useState(false);
   const [showPopover, setShowPopover] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
 
   const popoverRef = useRef<HTMLDivElement>(null);
   const commentEditorRef = useRef<CommentEditorHandle>(null);
@@ -66,31 +64,6 @@ export function FieldCommentLabel({ field, htmlFor, path: fieldPath }: Props) {
     openDrawer();
   };
 
-  const handleSubmit = () => {
-    const trimmedComment = (commentEditorRef.current?.getValue() ?? "").trim();
-
-    if (!trimmedComment || isPending) return;
-
-    setSubmitError(null);
-
-    startTransition(async () => {
-      const result = await addComment(
-        trimmedComment,
-        stablePath || undefined,
-        undefined,
-        undefined,
-        stablePath ? locale : null,
-        mode === 'global-document' ? (globalSlug ?? undefined) : undefined,
-      );
-
-      if (result.success) {
-        setShowPopover(false);
-      } else {
-        setSubmitError(result.error ?? t("comments:failedToAdd" as never));
-      }
-    });
-  };
-
   return (
     <div
       className="flex items-center gap-1.5 pb-1.25"
@@ -104,7 +77,7 @@ export function FieldCommentLabel({ field, htmlFor, path: fieldPath }: Props) {
         </label>
       )}
 
-      {fieldPath && (mode === 'document' || mode === 'global-document') && (
+      {fieldPath && (mode === "document" || mode === "global-document") && (
         <div className="relative flex items-center">
           {openCommentsCount > 0 ?
             <CommentsButton
@@ -133,39 +106,13 @@ export function FieldCommentLabel({ field, htmlFor, path: fieldPath }: Props) {
 
               <CommentEditor
                 ref={commentEditorRef}
+                fieldPath={stablePath || undefined}
+                globalSlug={mode === "global-document" ? (globalSlug ?? undefined) : undefined}
                 autoFocus
-                disabled={isPending}
-                onEnterPress={handleSubmit}
+                onSuccessAddComment={() => setShowPopover(false)}
                 onEscapePress={() => setShowPopover(false)}
                 placeholder={`${t("comments:writeComment" as never)}…`}
               />
-
-              {submitError && <p className="m-0 mt-1 text-[11px] text-(--theme-error-500)">{submitError}</p>}
-
-              <div className="flex justify-end gap-2 mt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowPopover(false);
-                    setSubmitError(null);
-                  }}
-                  className="px-3 py-1 rounded border border-(--theme-elevation-200) bg-transparent text-(--theme-text) text-[12px] cursor-pointer hover:bg-(--theme-elevation-100) transition-colors">
-                  {t("comments:cancel" as never)}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={isPending}
-                  className={cn(
-                    "px-3 py-1 rounded border-none text-[12px] font-semibold transition-colors",
-                    !isPending ?
-                      "cursor-pointer bg-(--theme-success-500,#2d9a6a) text-white"
-                    : "cursor-not-allowed bg-(--theme-elevation-150) text-(--theme-elevation-450)",
-                  )}>
-                  {isPending ? `${t("saving" as never)}…` : t("comments:comment" as never)}
-                </button>
-              </div>
             </div>
           )}
         </div>

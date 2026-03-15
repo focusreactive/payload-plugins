@@ -58,6 +58,7 @@
     "format:check": "prettier --check src/"
   },
   "dependencies": {
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.577.0",
     "resend": "^4.0.0",

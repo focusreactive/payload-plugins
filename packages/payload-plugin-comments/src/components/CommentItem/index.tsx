@@ -10,6 +10,7 @@ import { resolveUsername } from "../../utils/user/resolveUsername";
 import { FALLBACK_DELETED_USERNAME, FALLBACK_USERNAME } from "../../constants";
 import { ToolsPanel } from "./ToolsPanel";
 import { useRelativeDate } from "../../hooks/useRelativeDate";
+import { Avatar } from "../Avatar";
 
 interface Props {
   comment: Comment;
@@ -25,7 +26,7 @@ export function CommentItem({ comment, currentUserId }: Props) {
   const unknownLabel = t("comments:unknownAuthor" as never) ?? FALLBACK_USERNAME;
   const narrowedAuthor = typeof comment.author === "object" ? comment.author : null;
   const authorName = resolveUsername(narrowedAuthor, usernameFieldPath, unknownLabel);
-  const authorInitial = authorName.charAt(0).toUpperCase();
+
   const isResolved = comment.isResolved ?? false;
 
   const authorId =
@@ -54,9 +55,7 @@ export function CommentItem({ comment, currentUserId }: Props) {
       />
 
       <div className="flex gap-2.5 items-start">
-        <div className="shrink-0 w-9 h-9 rounded-full bg-(--theme-elevation-150) text-(--theme-text) flex items-center justify-center text-[14px] font-semibold">
-          {authorInitial}
-        </div>
+        <Avatar user={narrowedAuthor} usernameFieldPath={usernameFieldPath} fallbackName={unknownLabel} />
 
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">

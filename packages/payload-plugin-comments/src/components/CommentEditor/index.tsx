@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useImperativeHandle, type RefObject } from "react";
-import { useAuth, useTranslation } from "@payloadcms/ui";
+import { useState, useRef, useImperativeHandle, type RefObject, startTransition } from "react";
+import { useAuth, useLocale, useTranslation } from "@payloadcms/ui";
 import { useComments } from "../../providers/CommentsProvider";
 import { MentionDropdown } from "../MentionDropdown";
 import { MentionLabel } from "../MentionLabel";
@@ -11,6 +11,8 @@ import { createRoot } from "react-dom/client";
 import type { User } from "../../types";
 import { FALLBACK_USERNAME } from "../../constants";
 import { resolveUsername } from "../../utils/user/resolveUsername";
+import { ActionPanel } from "./ActionPanel";
+import { Avatar } from "../Avatar";
 
 export interface CommentEditorHandle {
   getValue: () => string;
@@ -24,6 +26,11 @@ interface CommentEditorProps {
   autoFocus?: boolean;
   placeholder?: string;
   ref?: RefObject<CommentEditorHandle | null>;
+  fieldPath?: string | null;
+  documentId?: number;
+  collectionSlug?: string;
+  globalSlug?: string;
+  onSuccessAddComment?: () => void;
   onEnterPress?: () => void;
   onEscapePress?: () => void;
 }
@@ -31,12 +38,18 @@ interface CommentEditorProps {
 export function CommentEditor({
   disabled,
   autoFocus,
-  placeholder = "Add a comment",
+  placeholder: placeholderProp,
   ref,
+  fieldPath,
+  documentId,
+  collectionSlug,
+  globalSlug,
+  onSuccessAddComment,
   onEnterPress,
   onEscapePress,
 }: CommentEditorProps) {
-  const { mentionUsers: users } = useComments();
+  const { mentionUsers: users, addComment } = useComments();
+  const { code: locale } = useLocale();
   const { user } = useAuth();
 
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
@@ -47,11 +60,13 @@ export function CommentEditor({
   const { usernameFieldPath } = useComments();
   const { t } = useTranslation();
 
-  const unknownLabel = t("comments:unknownAuthor" as never) ?? FALLBACK_USERNAME;
-
   const editorRef = useRef<HTMLDivElement>(null);
-  const currentUserId = user?.id;
 
+  const unknownLabel = t("comments:unknownAuthor" as never) ?? FALLBACK_USERNAME;
+  const currentUserId = user?.id;
+  const placeholder = placeholderProp ?? t("comments:writeComment" as never) ?? "Add a comment";
+
+  // Methods
   const detectMention = () => {
     const sel = window.getSelection();
 
@@ -172,6 +187,47 @@ export function CommentEditor({
     editor.classList.toggle("is-empty", isEmpty);
   };
 
+  // Editor API
+  const getEditorValue = () => {
+    if (!editorRef.current) return "";
+
+    return serializeEditor(editorRef.current).trim();
+  };
+
+  const clearEditor = () => {
+    if (editorRef.current) {
+      editorRef.current.innerHTML = "";
+      editorRef.current.classList.add("is-empty");
+    }
+  };
+
+  const focusEditor = () => {
+    editorRef.current?.focus();
+  };
+
+  useImperativeHandle(ref, () => ({
+    getValue: getEditorValue,
+    clear: clearEditor,
+    focus: focusEditor,
+    insertAt,
+  }));
+
+  // Handlers
+  const handleAddComment = () => {
+    const serialized = getEditorValue();
+    if (!serialized) return;
+
+    clearEditor();
+
+    startTransition(async () => {
+      const res = await addComment(serialized, fieldPath, documentId, collectionSlug, locale, globalSlug);
+
+      if (res.success) {
+        onSuccessAddComment?.();
+      }
+    });
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (mentionQuery !== null) {
       if (e.key === "ArrowDown") {
@@ -199,6 +255,8 @@ export function CommentEditor({
 
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
+
+      handleAddComment();
       onEnterPress?.();
     } else if (e.key === "Escape") {
       onEscapePress?.();
@@ -210,43 +268,37 @@ export function CommentEditor({
     updateEmptyClass();
   };
 
-  useImperativeHandle(ref, () => ({
-    getValue() {
-      if (!editorRef.current) return "";
-
-      return serializeEditor(editorRef.current).trim();
-    },
-    clear() {
-      if (editorRef.current) {
-        editorRef.current.innerHTML = "";
-        editorRef.current.classList.add("is-empty");
-      }
-    },
-    focus() {
-      editorRef.current?.focus();
-    },
-    insertAt,
-  }));
-
   return (
     <div className="relative">
-      <div
-        className={`
-          is-empty w-full min-h-18 px-2.5 py-2 rounded border border-(--theme-elevation-200) bg-(--theme-elevation-0)
-          text-(--theme-text) text-[13px] outline-none box-border
-          [&.is-empty]:before:content-[attr(data-placeholder)] [&.is-empty]:before:text-(--theme-elevation-450)
-          [&.is-empty]:before:pointer-events-none [&.is-empty]:before:absolute
-        `}
-        ref={editorRef}
-        contentEditable={!disabled}
-        autoFocus={autoFocus}
-        role="textbox"
-        aria-multiline="true"
-        aria-label={placeholder}
-        data-placeholder={placeholder}
-        onInput={handleInput}
-        onKeyDown={handleKeyDown}
-      />
+      <div className="flex gap-2.5 items-start">
+        <Avatar className="shrink-0" user={user} usernameFieldPath={usernameFieldPath} fallbackName={unknownLabel} />
+
+        <div className="flex-1 group px-2.5 py-2 rounded-md border border-transparent focus-within:border-(--theme-elevation-150) bg-transparent transition-colors">
+          <div
+            className={`
+              is-empty relative w-full min-h-5 leading-5
+              text-(--theme-text) text-[13px] outline-none box-border
+              [&.is-empty]:before:content-[attr(data-placeholder)] [&.is-empty]:before:text-(--theme-elevation-450)
+              [&.is-empty]:before:pointer-events-none [&.is-empty]:before:absolute
+            `}
+            ref={editorRef}
+            contentEditable={!disabled}
+            autoFocus={autoFocus}
+            role="textbox"
+            aria-multiline="true"
+            aria-label={placeholder}
+            data-placeholder={placeholder}
+            onInput={handleInput}
+            onKeyDown={handleKeyDown}
+          />
+
+          <ActionPanel
+            className="hidden group-focus-within:flex"
+            onMention={() => insertAt()}
+            onAddComment={handleAddComment}
+          />
+        </div>
+      </div>
 
       {mentionQuery !== null && filteredUsers.length > 0 && (
         <MentionDropdown users={filteredUsers} selectedIndex={selectedIndex} onSelect={insertMention} />
