@@ -42,6 +42,9 @@ next-env.d.ts
 
 /media
 
+# SQLite dev database
+*.db
+
 # Playwright
 node_modules/
 /test-results/

@@ -8,8 +8,7 @@ export const Pages: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     livePreview: {
-      url: ({ data }) =>
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/${data.slug}`,
+      url: ({ data }) => `${process.env.NEXT_PUBLIC_SERVER_URL}/${data.slug}`,
     },
   },
   fields: [

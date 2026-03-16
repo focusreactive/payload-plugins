@@ -5,15 +5,18 @@ import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
-import { abTestingPlugin } from '@focus-reactive/payload-plugin-ab'
-import { payloadGlobalAdapter } from '@focus-reactive/payload-plugin-ab/adapters/payload-global'
-import { presetsPlugin } from '@focus-reactive/payload-plugin-presets'
-
+import { Header } from './globals/Header'
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { heroFields } from './blocks/Hero'
 import { copyFields } from './blocks/Copy'
+
+import { abTestingPlugin } from '@focus-reactive/payload-plugin-ab'
+import { payloadGlobalAdapter } from '@focus-reactive/payload-plugin-ab/adapters/payload-global'
+import { presetsPlugin } from 'node_modules/@focus-reactive/payload-plugin-presets/dist/plugin'
+import { schedulePublicationPlugin } from '@focus-reactive/payload-plugin-schedule-publication'
+import { commentsPlugin } from '@focus-reactive/payload-plugin-comments'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -36,6 +39,7 @@ export default buildConfig({
     },
   },
   collections: [Users, Media, Pages],
+  globals: [Header],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
@@ -73,6 +77,19 @@ export default buildConfig({
           fields: copyFields,
         },
       ],
+    }),
+    schedulePublicationPlugin({
+      secret: 'secret',
+      collections: ['pages', 'users'],
+    }),
+    commentsPlugin({
+      collections: [
+        {
+          slug: 'pages',
+          titleField: 'title',
+        },
+      ],
+      usernameFieldPath: 'name',
     }),
   ],
 })
