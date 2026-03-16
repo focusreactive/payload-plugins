@@ -4,8 +4,9 @@ import { cn } from "../../utils/general/cn";
 const variants = cva("flex justify-center items-center p-0 rounded border-none transition-colors cursor-pointer", {
   variants: {
     variant: {
-      neutral: "bg-transparent hover:bg-(--theme-elevation-50) text-(--theme-elevation-450)",
-      neutralSecondary: "bg-(--theme-elevation-100) hover:bg-(--theme-elevation-150) text-(--theme-elevation-600)",
+      neutral: "bg-transparent hover:bg-(--theme-elevation-50) text-(--theme-elevation-450) hover:text-(--theme-text)",
+      neutralSecondary:
+        "bg-(--theme-elevation-100) hover:bg-(--theme-elevation-150) text-(--theme-elevation-600) hover:text-(--theme-text)",
       primary: "bg-(--theme-elevation-1000) hover:bg-(--theme-elevation-800) text-(--theme-elevation-0)",
     },
     size: {

@@ -1,9 +1,11 @@
 "use client";
 
-import { useModal, useTranslation } from "@payloadcms/ui";
+import { SelectInput, useModal, useTranslation } from "@payloadcms/ui";
 import { useComments } from "../../../providers/CommentsProvider";
 import type { FilterMode } from "../../../types";
 import { LoaderCircleIcon, XIcon } from "lucide-react";
+import type { OptionObject } from "payload";
+import { IconButton } from "../../IconButton";
 
 interface HeaderProps {
   slug: string;
@@ -34,24 +36,18 @@ export function Header({ slug }: HeaderProps) {
       )}
 
       <div className="flex items-center gap-2 ml-auto">
-        <select
+        <SelectInput
+          name="filter"
+          path="filter"
+          options={options}
           value={filter}
-          onChange={(e) => setFilter(e.target.value as FilterMode)}
-          className="py-1 px-2 rounded border border-(--theme-elevation-200) bg-(--theme-bg) text-(--theme-text) text-sm cursor-pointer">
-          {options.map(({ label, value }) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
+          onChange={(option) => setFilter((option as OptionObject).value as FilterMode)}
+          isClearable={false}
+        />
 
-        <button
-          type="button"
-          onClick={() => closeModal(slug)}
-          aria-label={t("comments:close" as never)}
-          className="flex items-center justify-center rounded border-none aspect-square p-1 bg-transparent cursor-pointer text-(--theme-elevation-450) hover:text-(--theme-text) hover:bg-(--theme-elevation-100) transition-colors">
-          <XIcon width={18} height={18} />
-        </button>
+        <IconButton onClick={() => closeModal(slug)} title={t("comments:close" as never)}>
+          <XIcon width={16} height={16} />
+        </IconButton>
       </div>
     </header>
   );
