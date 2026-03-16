@@ -13,17 +13,13 @@ import { heroFields } from './blocks/Hero'
 import { copyFields } from './blocks/Copy'
 
 import { abTestingPlugin } from '@focus-reactive/payload-plugin-ab'
-import { payloadGlobalAdapter } from '@focus-reactive/payload-plugin-ab/adapters/payload-global'
 import { presetsPlugin } from 'node_modules/@focus-reactive/payload-plugin-presets/dist/plugin'
 import { schedulePublicationPlugin } from '@focus-reactive/payload-plugin-schedule-publication'
 import { commentsPlugin } from '@focus-reactive/payload-plugin-comments'
+import { abAdapter } from './lib/ab-testing/dbAdapter'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
-
-const abAdapter = payloadGlobalAdapter({
-  serverURL: process.env.NEXT_PUBLIC_SERVER_URL ?? '',
-})
 
 export default buildConfig({
   admin: {

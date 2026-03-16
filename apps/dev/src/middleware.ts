@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createResolveAbRewrite } from '@focus-reactive/payload-plugin-ab/middleware'
-import { payloadGlobalAdapter } from '@focus-reactive/payload-plugin-ab/adapters/payload-global'
+import { abAdapter as storage } from './lib/ab-testing/dbAdapter'
+import { VariantData } from './lib/ab-testing/types'
 
-const storage = payloadGlobalAdapter({
-  serverURL: process.env.NEXT_PUBLIC_SERVER_URL ?? '',
-})
-
-const resolveAbRewrite = createResolveAbRewrite({
+const resolveAbRewrite = createResolveAbRewrite<VariantData>({
   storage,
   getBucket: (v) => v.bucket,
   getRewritePath: (v) => v.rewritePath,
@@ -16,7 +13,7 @@ const resolveAbRewrite = createResolveAbRewrite({
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const result = await resolveAbRewrite(request, pathname, pathname, pathname)
+  const result = await resolveAbRewrite(request as any, pathname, pathname, pathname)
   return result ?? NextResponse.next()
 }
 
