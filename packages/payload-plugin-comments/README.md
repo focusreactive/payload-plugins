@@ -2,10 +2,11 @@
 
 [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-comments)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-comments)
 
-A collaborative commenting plugin for [Payload CMS](https://payloadcms.com/) v3. Adds a full-featured comments system to the Payload admin panel — supporting document-level and field-level comments, @mentions with email notifications, comment resolution, multi-tenancy, and locale-aware filtering.
+A collaborative commenting plugin for [Payload CMS](https://payloadcms.com/) v3. Adds a full-featured comments system to the Payload admin panel — supporting document-level and field-level comments on both collections and globals, @mentions with email notifications, comment resolution, multi-tenancy, and locale-aware filtering.
 
 ## Table of Contents
 
+- [AI Integration Prompt](#ai-integration-prompt)
 - [UI Screenshots](#ui-screenshots)
 - [Features](#features)
 - [Prerequisites](#prerequisites)
@@ -15,9 +16,126 @@ A collaborative commenting plugin for [Payload CMS](https://payloadcms.com/) v3.
 - [Translations](#translations)
 - [Environment Variables](#environment-variables)
 - [Architecture Overview](#architecture-overview)
+- [Exports Reference](#exports-reference)
 - [Available Scripts](#available-scripts)
 - [Contributing](#contributing)
 - [License](#license)
+
+---
+
+## AI Integration Prompt
+
+> Copy and paste this prompt into your AI assistant (Cursor, Claude, etc.) to integrate the plugin into an existing Payload v3 project.
+
+```
+I want to add a collaborative commenting system to my Payload CMS v3 project using @focus-reactive/payload-plugin-comments.
+
+## How it works
+
+The plugin injects into every collection and global:
+- A field-level comment badge on every field label — shows comment count, opens a popup to post
+- A document-level comments drawer (sidebar) scoped to the current document
+- A global comments panel (header button) listing all comments across every document and global
+
+Comments are stored in an auto-generated `comments` collection (hidden from the sidebar). Each comment records:
+- documentId / collectionSlug / globalSlug — what it belongs to
+- fieldPath — dot-notation field path (null = document-level)
+- locale — for field-level comments (null = shown in all locales)
+- text — may contain @(userId) mention tokens
+- author, mentions, isResolved, resolvedBy, resolvedAt
+- tenant (optional, when multi-tenancy is enabled)
+
+@mentions use autocomplete from the users collection. Mentioned users receive email notifications via Resend.
+Comments are automatically deleted when their parent document is deleted.
+
+## Installation
+
+pnpm add @focus-reactive/payload-plugin-comments
+
+## Step 1 — Register the plugin in payload.config.ts
+
+import { buildConfig } from 'payload'
+import { commentsPlugin } from '@focus-reactive/payload-plugin-comments'
+
+export default buildConfig({
+  plugins: [
+    commentsPlugin({
+      // Optional: specify which field to use as document title in the UI
+      collections: [
+        { slug: 'pages', titleField: 'title' },
+        { slug: 'products', titleField: 'name' },
+      ],
+      // Optional: customize the display name field on users
+      usernameFieldPath: 'name', // default
+    }),
+  ],
+})
+
+## Step 2 — Import the stylesheet
+
+In your global CSS or admin layout:
+
+@import "@focus-reactive/payload-plugin-comments/styles.css";
+
+Or in a TypeScript/JS file:
+
+import "@focus-reactive/payload-plugin-comments/styles.css";
+
+## Step 3 — Regenerate the import map
+
+Run this after adding the plugin so Payload registers the plugin's admin components:
+
+npx payload generate:importmap
+
+(Or the equivalent for your package manager: pnpm payload generate:importmap / bunx payload generate:importmap)
+If you skip this step the comment badges, drawer, and header button will not appear in the admin UI.
+
+## Step 4 — Create and run a migration (SQL adapters only)
+
+The plugin adds a `comments` collection to your database. If you use PostgreSQL or SQLite, create and apply a migration:
+
+npx payload migrate:create create_comments
+npx payload migrate
+
+Skip this step if you use the MongoDB adapter.
+
+## Optional: Multi-tenancy
+
+commentsPlugin({
+  tenant: {
+    enabled: true,
+    collectionSlug: 'tenants',       // default
+    documentTenantField: 'tenant',   // default
+  },
+})
+
+## Optional: Collection overrides
+
+commentsPlugin({
+  overrides: {
+    access: { /* custom access control */ },
+    fields: (defaultFields) => [...defaultFields],
+    hooks: {
+      afterChange: [async ({ doc }) => { /* ... */ }],
+    },
+  },
+})
+
+## Environment variables (for email notifications)
+
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxx
+RESEND_FROM_EMAIL=comments@yourdomain.com
+
+## Important notes
+
+- All collections and globals automatically get field-level comments — `collections` config only sets UI metadata (titleField).
+- Comments on globals use globalSlug instead of collectionSlug/documentId.
+- Field-level comments are locale-scoped; document-level comments show in all locales.
+- The `comments` collection is hidden from the admin sidebar by default.
+- Auto-cleanup: when a document is deleted, all its comments are deleted too.
+- usernameFieldPath supports dot-notation (e.g. "profile.displayName").
+- If RESEND_FROM_EMAIL is not set, mention emails are silently skipped.
+```
 
 ---
 
@@ -53,12 +171,13 @@ The comment button embedded in the field label has two visual states: no comment
 
 ## Features
 
-- **Document-level comments** — Leave comments on any document in any collection
+- **Document-level comments** — Leave comments on any document in any collection or global
 - **Field-level comments** — Comment directly on individual fields; the field label shows a badge with the comment count
+- **Global support** — Field-level and document-level comments work on Payload Globals, not just collections
 - **@mention users** — Mention other users in comments using `@name` autocomplete
 - **Email notifications** — Mentioned users receive email notifications via [Resend](https://resend.com/)
 - **Resolve comments** — Mark comments as resolved/unresolved; filter by open, resolved, or mentioned
-- **Global comments panel** — A header button opens a drawer showing all comments across all documents
+- **Global comments panel** — A header button opens a drawer showing all comments across all documents and globals
 - **Optimistic UI** — Comments appear instantly before the server confirms
 - **Multi-tenancy** — Scope comments to tenants via `@payloadcms/plugin-multi-tenant`
 - **Locale-aware** — Field-level comments are tied to a locale; document-level comments are shown in all locales
@@ -88,6 +207,8 @@ npm install @focus-reactive/payload-plugin-comments
 yarn add @focus-reactive/payload-plugin-comments
 ```
 
+**Peer dependencies:** `payload ^3.0.0`, `@payloadcms/ui ^3.0.0`. `next ^14 || ^15`, `react ^18 || ^19`, `react-dom`, and `@payloadcms/plugin-multi-tenant` are optional.
+
 ---
 
 ## Setup
@@ -102,12 +223,10 @@ import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 export default buildConfig({
   plugins: [
     commentsPlugin({
-      // All collections will get comments. You can specify title field for UI.
+      // Optional: customize which field is used as the document title in the UI
       collections: [
-        {
-          slug: "pages",
-          titleField: "title",
-        },
+        { slug: "pages", titleField: "title" },
+        { slug: "products", titleField: "name" },
       ],
     }),
   ],
@@ -130,6 +249,35 @@ Or import it in a layout/page file:
 import "@focus-reactive/payload-plugin-comments/styles.css";
 ```
 
+### 3. Regenerate the import map
+
+Payload needs its import map regenerated whenever you add or remove a plugin that registers admin components. Run:
+
+```bash
+npx payload generate:importmap
+```
+
+This command works regardless of your package manager (`npm`, `pnpm`, `yarn`, `bun`). Alternatively use the equivalent for your package manager:
+
+```bash
+pnpm payload generate:importmap
+# yarn payload generate:importmap
+# bunx payload generate:importmap
+```
+
+If you skip this step the plugin's admin components (comment badges, drawer, header button) will not appear in the Payload admin UI.
+
+### 4. Create and run a migration
+
+The plugin adds a `comments` collection to your database. If you use a SQL adapter (PostgreSQL, SQLite), create and apply a migration:
+
+```bash
+npx payload migrate:create create_comments
+npx payload migrate
+```
+
+Skip this step if you use the MongoDB adapter — Payload creates collections automatically.
+
 ---
 
 ## Configuration
@@ -142,17 +290,18 @@ commentsPlugin(config?: CommentsPluginConfig)
 
 ### `CommentsPluginConfig`
 
-| Option         | Type                  | Default         | Description                                   |
-| -------------- | --------------------- | --------------- | --------------------------------------------- |
-| `collections`  | `CollectionEntry[]`   | all collections | Collections whose documents support comments  |
-| `enabled`      | `boolean`             | `true`          | Set to `false` to disable the plugin entirely |
-| `tenant`       | `TenantPluginConfig`  | —               | Multi-tenancy settings (see below)            |
-| `overrides`    | `CollectionOverrides` | —               | Customize the generated `comments` collection |
-| `translations` | `Translations`        | —               | Override UI strings per locale (see below)    |
+| Option              | Type                  | Default  | Description                                                                         |
+| ------------------- | --------------------- | -------- | ----------------------------------------------------------------------------------- |
+| `collections`       | `CollectionEntry[]`   | —        | UI metadata for collections (title field). All collections get comments regardless. |
+| `enabled`           | `boolean`             | `true`   | Set to `false` to disable the plugin entirely                                       |
+| `tenant`            | `TenantPluginConfig`  | —        | Multi-tenancy settings (see below)                                                  |
+| `overrides`         | `CollectionOverrides` | —        | Customize the generated `comments` collection                                       |
+| `translations`      | `Translations`        | —        | Override UI strings per locale (see below)                                          |
+| `usernameFieldPath` | `string`              | `"name"` | Dot-notation path to the display name field on the users collection                 |
 
 ### `CollectionEntry`
 
-Each entry in `collections` can be a plain slug string or an object:
+Each entry in `collections` is an object that provides UI metadata for a specific collection:
 
 ```ts
 interface CollectionEntry {
@@ -161,14 +310,28 @@ interface CollectionEntry {
 }
 ```
 
+> **Note:** You do not need to list every collection. All collections (and all globals) automatically support comments. The `collections` array only sets display metadata like the title field.
+
 **Examples:**
 
 ```ts
 commentsPlugin({
   collections: [
-    { slug: "pages", titleField: "title" }, // Uses "title" field as display name
+    { slug: "pages", titleField: "title" },
     { slug: "products", titleField: "name" },
   ],
+});
+```
+
+### `usernameFieldPath`
+
+Specifies which field on the `users` collection is used as the display name in comment UI and @mention autocomplete. Supports dot-notation for nested fields.
+
+```ts
+commentsPlugin({
+  usernameFieldPath: "name", // default
+  // usernameFieldPath: "firstName",
+  // usernameFieldPath: "profile.displayName",
 });
 ```
 
@@ -216,7 +379,9 @@ commentsPlugin({
 });
 ```
 
-### Translations
+---
+
+## Translations
 
 Use `translations` to override any UI string for one or more locales. Each key is a locale code; the value is a partial object of the `CommentsTranslations` shape — keys you omit fall back to the built-in English defaults.
 
@@ -264,19 +429,21 @@ All translatable keys (with their English defaults):
 | `failedToDelete`      | `"Failed to delete comment"`   |
 | `failedToAdd`         | `"Failed to add comment"`      |
 | `unknownAuthor`       | `"Unknown"`                    |
+| `deletedUser`         | `"Deleted user"`               |
 | `noOpenComments`      | `"No open comments"`           |
 | `noResolvedComments`  | `"No resolved comments"`       |
 | `noMentionedComments` | `"No comments mentioning you"` |
 | `filterOpen`          | `"Open"`                       |
 | `filterResolved`      | `"Resolved"`                   |
 | `filterMentioned`     | `"Mentioned me"`               |
+| `noMentionMatches`    | `"No matches"`                 |
 
-The `Translations` type is exported from the package so you can type your translation objects:
+The `CommentsTranslations` type is exported from the package so you can type your translation objects:
 
 ```ts
-import type { Translations } from "@focus-reactive/payload-plugin-comments";
+import type { CommentsTranslations } from "@focus-reactive/payload-plugin-comments";
 
-const myTranslations: Translations = {
+const myTranslations: Record<string, Partial<CommentsTranslations>> = {
   fr: { label: "Commentaires" },
   de: { label: "Kommentare" },
 };
@@ -314,42 +481,53 @@ RESEND_FROM_EMAIL=comments@yourdomain.com
 
 1. The plugin receives a `CommentsPluginConfig` and returns a standard Payload `Plugin` function.
 2. It creates a `comments` collection (hidden from the admin sidebar by default).
-3. It patches every configured collection to inject `FieldCommentLabel` into each field's admin label — this shows a comment count badge next to each field.
-4. It registers two admin providers (`CommentsProviderWrapper`, `GlobalCommentsLoader`) and one admin action (`CommentsHeaderButton`).
+3. It patches **every collection** to inject `FieldCommentLabel` into each field's admin label and registers an `afterDelete` hook that cascade-deletes comments when a document is removed.
+4. It patches **every global** to inject `FieldCommentLabel` into each field's admin label.
+5. It registers two admin providers (`CommentsProviderWrapper`, `GlobalCommentsLoader`) and one admin action (`CommentsHeaderButton`).
 
 **Data loading** (`GlobalCommentsLoader`):
 
 - This server component runs on every admin page load.
-- It fetches all comments, document titles, mentionable users, field labels, and collection labels in parallel.
+- It fetches all comments, document titles, mentionable users, field labels, collection labels, and global labels in parallel.
 - Results are passed to `GlobalCommentsHydrator` (a client component) which hydrates the `CommentsContext`.
 
 **State management** (`CommentsProvider`):
 
 - Holds `allComments` in React state with optimistic updates via `useOptimistic`.
-- `visibleComments` is derived: filtered to the current document/collection/locale based on the Next.js `pathname`.
+- `visibleComments` is derived: filtered to the current document/collection/global/locale based on the Next.js `pathname`.
 - Exposes `addComment`, `removeComment`, `resolveComment`, and `syncComments` mutations.
 
 **Field-level comments** (`FieldCommentLabel`):
 
-- The plugin overrides the `Label` component for every named field in every configured collection.
+- The plugin overrides the `Label` component for every named field in every configured collection and global.
 - The label reads comments from context and filters by field path, showing a badge with the count.
 - Clicking the badge opens the comments drawer pre-scrolled to that field's comment group.
 
 **Comments collection schema:**
 
-| Field            | Type                    | Description                                            |
-| ---------------- | ----------------------- | ------------------------------------------------------ |
-| `documentId`     | number                  | ID of the document being commented on                  |
-| `collectionSlug` | text                    | Slug of the collection                                 |
-| `fieldPath`      | text                    | Dot-notation path of the field (null = document-level) |
-| `locale`         | text                    | Locale of the comment (null = shown in all locales)    |
-| `text`           | textarea                | Comment body (may contain `@(userId)` mention tokens)  |
-| `mentions`       | array → relationship    | Users mentioned in this comment                        |
-| `author`         | relationship → users    | Comment author (set automatically)                     |
-| `isResolved`     | checkbox                | Whether the comment is resolved                        |
-| `resolvedBy`     | relationship → users    | Who resolved it                                        |
-| `resolvedAt`     | date                    | When it was resolved                                   |
-| `tenant`         | relationship (optional) | Tenant scope (when multi-tenancy is enabled)           |
+| Field            | Type                    | Description                                                        |
+| ---------------- | ----------------------- | ------------------------------------------------------------------ |
+| `documentId`     | number                  | ID of the document being commented on (null for globals)           |
+| `collectionSlug` | text                    | Slug of the collection (null for global comments)                  |
+| `globalSlug`     | text                    | Slug of the Payload global (null for collection document comments) |
+| `fieldPath`      | text                    | Dot-notation path of the field (null = document-level)             |
+| `locale`         | text                    | Locale of the comment (null = shown in all locales)                |
+| `text`           | textarea                | Comment body (may contain `@(userId)` mention tokens)              |
+| `mentions`       | array → relationship    | Users mentioned in this comment                                    |
+| `author`         | relationship → users    | Comment author (set automatically)                                 |
+| `isResolved`     | checkbox                | Whether the comment is resolved                                    |
+| `resolvedBy`     | relationship → users    | Who resolved it                                                    |
+| `resolvedAt`     | date                    | When it was resolved                                               |
+| `tenant`         | relationship (optional) | Tenant scope (when multi-tenancy is enabled)                       |
+
+---
+
+## Exports Reference
+
+| Import path                                          | Exports                                                                                            |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `@focus-reactive/payload-plugin-comments`            | `commentsPlugin`, `CommentsPluginConfig` (type), `CommentsTranslations` (type), `setPayloadConfig` |
+| `@focus-reactive/payload-plugin-comments/styles.css` | Plugin stylesheet (Tailwind-compiled CSS)                                                          |
 
 ---
 
