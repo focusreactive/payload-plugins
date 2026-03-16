@@ -61,6 +61,7 @@ export function CommentEditor({
   const { t } = useTranslation();
 
   const editorRef = useRef<HTMLDivElement>(null);
+  const editorWrapperRef = useRef<HTMLDivElement>(null);
 
   const unknownLabel = t("comments:unknownAuthor" as never) ?? FALLBACK_USERNAME;
   const currentUserId = user?.id;
@@ -157,6 +158,7 @@ export function CommentEditor({
 
     setMentionQuery(null);
     setTriggerRange(null);
+    editorRef.current?.focus();
   };
 
   const insertAt = () => {
@@ -195,6 +197,9 @@ export function CommentEditor({
   };
 
   const clearEditor = () => {
+    setMentionQuery(null);
+    setTriggerRange(null);
+
     if (editorRef.current) {
       editorRef.current.innerHTML = "";
       editorRef.current.classList.add("is-empty");
@@ -232,11 +237,13 @@ export function CommentEditor({
     if (mentionQuery !== null) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
+        e.stopPropagation();
         setSelectedIndex((prev) => (prev + 1) % filteredUsers.length);
         return;
       }
       if (e.key === "ArrowUp") {
         e.preventDefault();
+        e.stopPropagation();
         setSelectedIndex((prev) => (prev - 1 + filteredUsers.length) % filteredUsers.length);
         return;
       }
@@ -247,6 +254,7 @@ export function CommentEditor({
         return;
       }
       if (e.key === "Escape") {
+        e.stopPropagation();
         setMentionQuery(null);
         setTriggerRange(null);
         return;
@@ -273,7 +281,9 @@ export function CommentEditor({
       <div className="flex gap-2.5 items-start">
         <Avatar className="shrink-0" user={user} usernameFieldPath={usernameFieldPath} fallbackName={unknownLabel} />
 
-        <div className="relative flex-1 group px-2.5 py-2 rounded-md border border-transparent focus-within:border-(--theme-elevation-150) bg-transparent transition-colors">
+        <div
+          ref={editorWrapperRef}
+          className="relative flex-1 group px-2.5 py-2 rounded-md border border-transparent focus-within:border-(--theme-elevation-150) bg-transparent transition-colors">
           <div className="relative">
             <div
               className={`
@@ -295,7 +305,17 @@ export function CommentEditor({
           </div>
 
           {mentionQuery !== null && (
-            <MentionDropdown users={filteredUsers} selectedIndex={selectedIndex} onSelect={insertMention} />
+            <MentionDropdown
+              users={filteredUsers}
+              selectedIndex={selectedIndex}
+              onSelect={insertMention}
+              onClose={() => {
+                setMentionQuery(null);
+                setTriggerRange(null);
+                editorRef.current?.focus();
+              }}
+              anchorRef={editorWrapperRef}
+            />
           )}
 
           <ActionPanel

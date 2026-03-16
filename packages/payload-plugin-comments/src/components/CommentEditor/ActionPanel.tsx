@@ -5,7 +5,7 @@ import { cn } from "../../utils/general/cn";
 
 interface Props {
   className?: string;
-  onMention: () => void;
+  onMention: (e: React.MouseEvent) => void;
   onAddComment: () => void;
 }
 
@@ -13,7 +13,7 @@ export function ActionPanel({ className, onMention, onAddComment }: Props) {
   const { t } = useTranslation();
 
   return (
-    <div className={cn("flex justify-end items-center gap-1 pt-2", className)}>
+    <div className={cn("flex justify-end items-center gap-1 pt-2", className)} data-popup-prevent-close>
       <IconButton title="Mention user" onClick={onMention}>
         <AtSign size={16} />
       </IconButton>

@@ -26,17 +26,19 @@ interface Props {
   children: React.ReactNode;
   variant?: "neutral" | "neutralSecondary" | "primary";
   size?: "sm" | "md";
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  tabIndex?: number;
 }
 
-export function IconButton({ className, title, children, variant, size, onClick }: Props) {
+export function IconButton({ className, title, children, variant, size, onClick, tabIndex }: Props) {
   return (
     <button
       className={cn(variants({ variant, size }), className)}
       type="button"
       title={title}
       aria-label={title}
-      onClick={onClick}>
+      onClick={onClick}
+      tabIndex={tabIndex}>
       {children}
     </button>
   );
