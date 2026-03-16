@@ -1,10 +1,9 @@
 "use client";
 
-import { useTranslation } from "@payloadcms/ui";
+import { PopupList, useTranslation } from "@payloadcms/ui";
 import { FALLBACK_USERNAME } from "../constants";
 import { useComments } from "../providers/CommentsProvider";
 import type { User } from "../types";
-import { cn } from "../utils/general/cn";
 import { resolveUsername } from "../utils/user/resolveUsername";
 
 interface MentionDropdownProps {
@@ -20,26 +19,21 @@ export function MentionDropdown({ users, selectedIndex, onSelect }: MentionDropd
   const unknownLabel = t("comments:unknownAuthor" as never) ?? FALLBACK_USERNAME;
 
   return (
-    <ul
-      role="listbox"
-      className="absolute bottom-full left-0 mb-1 w-full max-h-48 overflow-y-auto rounded border border-(--theme-elevation-200) bg-(--theme-elevation-0) shadow-md z-50">
-      {users.map((user, index) => (
-        <li
-          key={user.id}
-          role="option"
-          aria-selected={index === selectedIndex}
-          onMouseDown={(e) => {
-            e.preventDefault();
-
-            onSelect(user);
-          }}
-          className={cn(
-            "px-3 py-1.5 text-[13px] text-(--theme-text) cursor-pointer",
-            index === selectedIndex && "bg-(--theme-elevation-100)",
-          )}>
-          @{resolveUsername(user, usernameFieldPath, unknownLabel)}
-        </li>
-      ))}
-    </ul>
+    <div
+      className="absolute bottom-[calc(100%+6px)] left-0 w-full z-50 bg-(--theme-elevation-0) rounded-md shadow-[0_-2px_16px_-2px_rgba(0,0,0,0.2)]"
+      onMouseDown={(e) => e.preventDefault()}>
+      <PopupList.ButtonGroup>
+        {users.length === 0 ?
+          <p className="m-0 px-3 py-1.5 text-[13px] text-(--theme-elevation-500)">
+            {t("comments:noMentionMatches" as never)}
+          </p>
+        : users.map((user, index) => (
+            <PopupList.Button key={user.id} active={index === selectedIndex} onClick={() => onSelect(user)}>
+              @{resolveUsername(user, usernameFieldPath, unknownLabel)}
+            </PopupList.Button>
+          ))
+        }
+      </PopupList.ButtonGroup>
+    </div>
   );
 }

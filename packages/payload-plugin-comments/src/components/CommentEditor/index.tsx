@@ -273,24 +273,30 @@ export function CommentEditor({
       <div className="flex gap-2.5 items-start">
         <Avatar className="shrink-0" user={user} usernameFieldPath={usernameFieldPath} fallbackName={unknownLabel} />
 
-        <div className="flex-1 group px-2.5 py-2 rounded-md border border-transparent focus-within:border-(--theme-elevation-150) bg-transparent transition-colors">
-          <div
-            className={`
-              is-empty relative w-full min-h-5 leading-5
-              text-(--theme-text) text-[13px] outline-none box-border
-              [&.is-empty]:before:content-[attr(data-placeholder)] [&.is-empty]:before:text-(--theme-elevation-450)
-              [&.is-empty]:before:pointer-events-none [&.is-empty]:before:absolute
-            `}
-            ref={editorRef}
-            contentEditable={!disabled}
-            autoFocus={autoFocus}
-            role="textbox"
-            aria-multiline="true"
-            aria-label={placeholder}
-            data-placeholder={placeholder}
-            onInput={handleInput}
-            onKeyDown={handleKeyDown}
-          />
+        <div className="relative flex-1 group px-2.5 py-2 rounded-md border border-transparent focus-within:border-(--theme-elevation-150) bg-transparent transition-colors">
+          <div className="relative">
+            <div
+              className={`
+                is-empty w-full min-h-5 leading-5
+                text-(--theme-text) text-[13px] outline-none box-border
+                [&.is-empty]:before:content-[attr(data-placeholder)] [&.is-empty]:before:text-(--theme-elevation-450)
+                [&.is-empty]:before:pointer-events-none [&.is-empty]:before:absolute
+              `}
+              ref={editorRef}
+              contentEditable={!disabled}
+              autoFocus={autoFocus}
+              role="textbox"
+              aria-multiline="true"
+              aria-label={placeholder}
+              data-placeholder={placeholder}
+              onInput={handleInput}
+              onKeyDown={handleKeyDown}
+            />
+          </div>
+
+          {mentionQuery !== null && (
+            <MentionDropdown users={filteredUsers} selectedIndex={selectedIndex} onSelect={insertMention} />
+          )}
 
           <ActionPanel
             className="hidden group-focus-within:flex"
@@ -299,10 +305,6 @@ export function CommentEditor({
           />
         </div>
       </div>
-
-      {mentionQuery !== null && filteredUsers.length > 0 && (
-        <MentionDropdown users={filteredUsers} selectedIndex={selectedIndex} onSelect={insertMention} />
-      )}
     </div>
   );
 }

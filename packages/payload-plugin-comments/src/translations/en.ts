@@ -29,5 +29,6 @@ export const en: { comments: CommentsTranslations } = {
     filterOpen: "Open",
     filterResolved: "Resolved",
     filterMentioned: "Mentioned me",
+    noMentionMatches: "No matches",
   },
 };

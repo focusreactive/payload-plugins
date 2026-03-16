@@ -26,6 +26,7 @@ export interface CommentsTranslations {
   filterOpen: string;
   filterResolved: string;
   filterMentioned: string;
+  noMentionMatches: string;
 }
 
 export type Translations = Record<string, Partial<CommentsTranslations>>;
