@@ -10,10 +10,12 @@
 ```
 apps/dev/               → local Payload CMS dev environment (private, never published)
 packages/
-  payload-plugin-ab/    → @focus-reactive/payload-plugin-ab (published)
-  payload-plugin-presets/ → @focus-reactive/payload-plugin-presets (published)
-  eslint-config/        → @repo/eslint-config (private)
-  typescript-config/    → @repo/typescript-config (private)
+  payload-plugin-ab/                  → @focus-reactive/payload-plugin-ab (published)
+  payload-plugin-presets/             → @focus-reactive/payload-plugin-presets (published)
+  payload-plugin-comments/            → @focus-reactive/payload-plugin-comments (published)
+  payload-plugin-schedule-publication/ → @focus-reactive/payload-plugin-schedule-publication (published)
+  eslint-config/                      → @repo/eslint-config (private)
+  typescript-config/                  → @repo/typescript-config (private)
 ```
 
 ## Key Commands

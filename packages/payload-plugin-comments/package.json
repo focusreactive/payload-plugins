@@ -16,8 +16,14 @@
     "nextjs",
     "typescript"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/focusreactive/payload-plugins",
+    "directory": "packages/payload-plugin-comments"
+  },
+  "private": false,
   "publishConfig": {
-    "access": "restricted"
+    "access": "public"
   },
   "type": "module",
   "main": "./dist/index.js",
