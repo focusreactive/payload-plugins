@@ -1,0 +1,107 @@
+{
+  "name": "@focus-reactive/payload-plugin-comments",
+  "version": "1.1.0",
+  "license": "MIT",
+  "author": "Kiryl Pekarski <kiryl.pekarski@fr.team>",
+  "keywords": [
+    "payload",
+    "payloadcms",
+    "payload-plugin",
+    "comments",
+    "cms",
+    "plugin",
+    "collaboration",
+    "annotations",
+    "react",
+    "nextjs",
+    "typescript"
+  ],
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./components/CommentsHeaderButton": {
+      "import": "./dist/components/CommentsHeaderButton/index.js",
+      "types": "./dist/components/CommentsHeaderButton/index.d.ts"
+    },
+    "./components/FieldCommentLabel": {
+      "import": "./dist/components/FieldCommentLabel/index.js",
+      "types": "./dist/components/FieldCommentLabel/index.d.ts"
+    },
+    "./providers/CommentsProviderWrapper": {
+      "import": "./dist/providers/CommentsProviderWrapper/index.js",
+      "types": "./dist/providers/CommentsProviderWrapper/index.d.ts"
+    },
+    "./providers/GlobalCommentsLoader": {
+      "import": "./dist/providers/GlobalCommentsLoader/index.js",
+      "types": "./dist/providers/GlobalCommentsLoader/index.d.ts"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "scripts": {
+    "build": "node node_modules/tsup/dist/cli-default.js && tsc --emitDeclarationOnly --declarationMap",
+    "dev": "node node_modules/tsup/dist/cli-default.js --watch",
+    "prepare": "node node_modules/tsup/dist/cli-default.js && tsc --emitDeclarationOnly --declarationMap",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write src/",
+    "format:check": "prettier --check src/"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.577.0",
+    "resend": "^4.0.0",
+    "tailwind-merge": "^3.5.0"
+  },
+  "peerDependencies": {
+    "@payloadcms/plugin-multi-tenant": "^3.0.0",
+    "@payloadcms/ui": "^3.0.0",
+    "next": "^14.0.0 || ^15.0.0",
+    "payload": "^3.0.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "@payloadcms/plugin-multi-tenant": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@faceless-ui/modal": "^3.0.0",
+    "@tailwindcss/cli": "^4.2.1",
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "next": "15.4.10",
+    "payload": "3.79.0",
+    "@payloadcms/ui": "3.79.0",
+    "@payloadcms/plugin-multi-tenant": "3.79.0",
+    "prettier": "^3.0.0",
+    "tailwindcss": "^4.2.1",
+    "tsup": "^8.0.0",
+    "typescript": "5.7.3",
+    "typescript-eslint": "^8.0.0"
+  }
+}

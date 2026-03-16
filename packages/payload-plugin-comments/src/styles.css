@@ -1,0 +1,31 @@
+@import "tailwindcss/theme";
+@import "tailwindcss/utilities";
+
+@source "./**/*.{ts,tsx}";
+
+.comments-drawer .gutter {
+  padding: 0 20px !important;
+}
+
+.comments-drawer .drawer__content {
+  --gutter-h: 1px;
+}
+
+.comments-drawer header .rs__control {
+  min-height: 0;
+  min-width: 120px;
+  padding: 2px 4px;
+  font-size: 13px;
+}
+
+.comments-drawer header .rs__single-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comments-drawer header .rs__option {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
