@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/payload-plugin-scheduling",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Schedule publication plugin for Payload CMS",
   "keywords": [
     "payload-cms",
