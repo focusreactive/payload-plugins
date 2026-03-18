@@ -15,7 +15,7 @@ interface Props {
 
 export function DocumentView({ comments, userId, className }: Props) {
   const { t } = useTranslation();
-  const { filter } = useComments();
+  const { filter, collectionSlug, documentId } = useComments();
 
   const fields = groupCommentsByFieldPath(comments);
 
@@ -27,7 +27,12 @@ export function DocumentView({ comments, userId, className }: Props) {
         </p>
       )}
 
-      <FieldGroupSection fields={fields} userId={userId} />
+      <FieldGroupSection
+        fields={fields}
+        userId={userId}
+        collectionSlug={collectionSlug ?? undefined}
+        documentId={documentId ?? undefined}
+      />
     </div>
   );
 }
