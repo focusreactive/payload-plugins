@@ -1,6 +1,8 @@
-# payload-plugins
+# Monorepo with Payload CMS plugins
 
-Monorepo of Payload CMS plugins by [Focus Reactive](https://focusreactive.com).
+## Skill to add new plugin
+
+[payload-plugins-add-package](https://github.com/focusreactive/payload-plugins/blob/main/.claude/skills/payload-plugins-add-package/SKILL.md)
 
 ## Packages
 
