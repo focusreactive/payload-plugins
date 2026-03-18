@@ -2,6 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-comments)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-comments)
 
+
 A collaborative commenting plugin for [Payload CMS](https://payloadcms.com/) v3. Adds a full-featured comments system to the Payload admin panel — supporting document-level and field-level comments on both collections and globals, @mentions with email notifications, comment resolution, multi-tenancy, and locale-aware filtering.
 
 ## Table of Contents
