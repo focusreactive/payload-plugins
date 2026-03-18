@@ -145,27 +145,28 @@ RESEND_FROM_EMAIL=comments@yourdomain.com
 
 A header button in the Payload admin opens a drawer listing all comments across every document and collection.
 
-![Global comments panel](docs/screenshots/global-comments-panel.png)
+![Global comments panel](https://github.com/user-attachments/assets/ff1dd13c-42a8-4434-825f-8903e75d840c)
 
 ### Document Comments Panel
 
 When viewing a document, a side panel shows all comments scoped to that document with filter tabs (Open / Resolved / Mentioned me).
 
-![Document comments panel](docs/screenshots/document-comments-panel.png)
+![Document comments panel](https://github.com/user-attachments/assets/3525ff5e-eb80-48dc-936e-0da3b317ffbb)
 
 ### Field Comment Popup
 
 Clicking the comment badge on a field label opens a popup where you can write and post a new comment for that specific field.
 
-![Field comment popup](docs/screenshots/field-comment-popup.png)
+![Field comment popup](https://github.com/user-attachments/assets/259c7dc6-5b0e-4bcd-9d49-b7e520682f01)
 
 ### Field Label Button — Two States
 
 The comment button embedded in the field label has two visual states: no comments (inactive, appears on hover) and one or more open comments (active, showing the count badge).
 
-| Inactive (no comments)                                                             | Active (has comments)                                                          |
-| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| ![Field label button — inactive](docs/screenshots/field-label-button-inactive.png) | ![Field label button — active](docs/screenshots/field-label-button-active.png) |
+| Inactive (no comments)                                                                                            | Active (has comments)                                                                                           |
+| ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| ![Field label button — inactive](https://github.com/user-attachments/assets/f540d6a4-c4e9-473f-883c-c34803da4d2f) | ![Field label button — active](https://github.com/user-attachments/assets/dcfbe20e-7b6e-4fa4-9d30-a0e8bd44b7c0) |
+|  |
 
 ---
 
