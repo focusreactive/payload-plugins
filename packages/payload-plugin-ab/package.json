@@ -23,7 +23,7 @@
     "url": "https://github.com/focusreactive/payload-plugins",
     "directory": "packages/payload-plugin-ab"
   },
-  "author": "Kiryl Pekarski <kiryl.pekarski@fr.team>",
+  "author": "FocusReactive <ship@focusreactive.com>",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

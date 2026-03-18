@@ -1,19 +1,19 @@
 {
-  "name": "@focus-reactive/payload-plugin-schedule-publication",
+  "name": "@focus-reactive/payload-plugin-scheduling",
   "version": "1.0.0",
   "description": "Schedule publication plugin for Payload CMS",
   "keywords": [
     "payload-cms",
     "payload-plugin",
-    "schedule-publication",
+    "scheduling",
     "cms"
   ],
   "license": "MIT",
-  "author": "Kiryl Pekarski <kiryl.pekarski@fr.team>",
+  "author": "FocusReactive <ship@focusreactive.com>",
   "repository": {
     "type": "git",
     "url": "https://github.com/focusreactive/payload-plugins",
-    "directory": "packages/payload-plugin-schedule-publication"
+    "directory": "packages/payload-plugin-scheduling"
   },
   "private": false,
   "publishConfig": {

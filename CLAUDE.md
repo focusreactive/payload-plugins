@@ -13,7 +13,7 @@ packages/
   payload-plugin-ab/                  → @focus-reactive/payload-plugin-ab (published)
   payload-plugin-presets/             → @focus-reactive/payload-plugin-presets (published)
   payload-plugin-comments/            → @focus-reactive/payload-plugin-comments (published)
-  payload-plugin-schedule-publication/ → @focus-reactive/payload-plugin-schedule-publication (published)
+  payload-plugin-scheduling/           → @focus-reactive/payload-plugin-scheduling (published)
   eslint-config/                      → @repo/eslint-config (private)
   typescript-config/                  → @repo/typescript-config (private)
 ```

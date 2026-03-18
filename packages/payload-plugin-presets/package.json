@@ -3,6 +3,7 @@
   "version": "0.2.0",
   "description": "Presets plugin for Payload CMS - save and apply reusable block configurations",
   "license": "MIT",
+  "author": "FocusReactive <ship@focusreactive.com>",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
