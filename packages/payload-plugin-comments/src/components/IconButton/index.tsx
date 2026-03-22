@@ -20,7 +20,7 @@ const variants = cva("flex justify-center items-center p-0 rounded border-none t
   },
 });
 
-interface Props {
+interface Props extends React.HTMLAttributes<HTMLButtonElement> {
   className?: string;
   title?: string;
   children: React.ReactNode;
@@ -30,7 +30,16 @@ interface Props {
   tabIndex?: number;
 }
 
-export function IconButton({ className, title, children, variant, size, onClick, tabIndex }: Props) {
+export function IconButton({
+  className,
+  title,
+  children,
+  variant,
+  size,
+  onClick,
+  tabIndex,
+  ...nativeButtonProps
+}: Props) {
   return (
     <button
       className={cn(variants({ variant, size }), className)}
@@ -38,7 +47,8 @@ export function IconButton({ className, title, children, variant, size, onClick,
       title={title}
       aria-label={title}
       onClick={onClick}
-      tabIndex={tabIndex}>
+      tabIndex={tabIndex}
+      {...nativeButtonProps}>
       {children}
     </button>
   );

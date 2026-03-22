@@ -1,26 +1,48 @@
 import { AtSign, SendHorizontal } from "lucide-react";
+import { useRef, useEffect } from "react";
 import { IconButton } from "../IconButton";
 import { useTranslation } from "@payloadcms/ui";
 import { cn } from "../../utils/general/cn";
 
 interface Props {
   className?: string;
-  onMention: (e: React.MouseEvent) => void;
+  onMention: () => void;
   onAddComment: () => void;
 }
 
 export function ActionPanel({ className, onMention, onAddComment }: Props) {
   const { t } = useTranslation();
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+
+    const handleClick = (e: MouseEvent) => {
+      e.stopPropagation();
+
+      const target = e.target as HTMLElement;
+
+      const action = target.closest("[data-action]")?.getAttribute("data-action");
+
+      if (action === "mention") onMention();
+      if (action === "add-comment") onAddComment();
+    };
+
+    wrapper.addEventListener("click", handleClick);
+
+    return () => wrapper.removeEventListener("click", handleClick);
+  }, [onMention, onAddComment]);
 
   return (
-    <div className={cn("flex justify-end items-center gap-1 pt-2", className)} data-popup-prevent-close>
-      <IconButton title="Mention user" onClick={onMention}>
+    <div ref={wrapperRef} className={cn("flex justify-end items-center gap-1 pt-2", className)}>
+      <IconButton title="Mention user" data-action="mention">
         <AtSign size={16} />
       </IconButton>
 
       <hr className="w-px h-[20px] bg-(--theme-elevation-150) m-0" />
 
-      <IconButton variant="primary" title={t("comments:comment" as never)} onClick={onAddComment}>
+      <IconButton variant="primary" title={t("comments:comment" as never)} data-action="add-comment">
         <SendHorizontal size={16} />
       </IconButton>
     </div>
