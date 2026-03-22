@@ -1,3 +1,41 @@
+## @focus-reactive/payload-plugin-comments [1.0.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.0.1...@focus-reactive/payload-plugin-comments@1.0.2) (2026-03-18)
+
+## @focus-reactive/payload-plugin-comments [1.0.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.0.0...@focus-reactive/payload-plugin-comments@1.0.1) (2026-03-18)
+
+# @focus-reactive/payload-plugin-comments 1.0.0 (2026-03-18)
+
+
+### Bug Fixes
+
+* **payload-plugin-comments:** add usernameFieldPath to sendMentionEmails ([9df90bb](https://github.com/focusreactive/payload-plugins/commit/9df90bb22d96de8672d7f79a296091d5b6e628c8))
+* **payload-plugin-comments:** display general document comments by default ([281bcb1](https://github.com/focusreactive/payload-plugins/commit/281bcb1f1be8988b883df06c712954ceaca8cd77))
+* **payload-plugin-comments:** focus mention options on keyboard ([3a7919c](https://github.com/focusreactive/payload-plugins/commit/3a7919c3d8f413df01fa1598782d4b20b8a3609f))
+* **payload-plugin-comments:** group comments globally with a single return; add global slug to AddCommentForm ([b0320fa](https://github.com/focusreactive/payload-plugins/commit/b0320fa47fb452ac3ad1b8105b0ec5aa9216f457))
+* **payload-plugin-comments:** hide field comment buttons on create and excluded admin routes ([d948f67](https://github.com/focusreactive/payload-plugins/commit/d948f675291874e44727d1387c1edab367090818))
+* **payload-plugin-comments:** resolve field labels in document mode ([242d8cb](https://github.com/focusreactive/payload-plugins/commit/242d8cb8ff71b31d0406cfa6525f980fc3ff6412))
+* **payload-plugin-comments:** split types into separate domain files ([05da488](https://github.com/focusreactive/payload-plugins/commit/05da48841fceb9849889e3f0242cd047357442c0))
+* **payload-plugin-comments:** support username detection by usernameFieldPath everywhere ([e4d1ba2](https://github.com/focusreactive/payload-plugins/commit/e4d1ba237b975743f2daeb98942f2a66c073aa1d))
+* **payload-plugin-comments:** sync comments data in GlobalCommentsLoader ([bbe1659](https://github.com/focusreactive/payload-plugins/commit/bbe1659f1d210f5f44978192b57db87b8ed2ffd2))
+* **payload-plugin-comments:** update Payload packages versions ([660f5fe](https://github.com/focusreactive/payload-plugins/commit/660f5fe3fde98fa2500176d5fc1dc4b158b1015f))
+
+
+### Features
+
+* **/payload-plugin-comments:** fetch mentionable users considering usernameFieldPath ([0ddd42b](https://github.com/focusreactive/payload-plugins/commit/0ddd42b30239f0f9e1e1f51619c5d4d7340f5a76))
+* **payload-plugin-comments:** add comments for globals ([ed252f9](https://github.com/focusreactive/payload-plugins/commit/ed252f9617a86d835bd089e641caa9d3b7901332))
+* **payload-plugin-comments:** add overlay to CommentsDrawer ([d7c2e26](https://github.com/focusreactive/payload-plugins/commit/d7c2e2602ea102451ebe0508b119cffb26c660b4))
+* **payload-plugin-comments:** add tools panel to CommentItem ([178def9](https://github.com/focusreactive/payload-plugins/commit/178def988c69058c67af2a9b94ac5e08c834d684))
+* **payload-plugin-comments:** cerate resolveUserName utility ([b57a1c7](https://github.com/focusreactive/payload-plugins/commit/b57a1c72c2f64450e6fe0d286b95ae19d3a997dc))
+* **payload-plugin-comments:** format createdAt label to relative date ([9d68ccf](https://github.com/focusreactive/payload-plugins/commit/9d68ccf024c271ac90b88995594e9e3ac17509f8))
+* **payload-plugin-comments:** set up plugin ([ac12a2f](https://github.com/focusreactive/payload-plugins/commit/ac12a2ff1b87ed42d2110aea38d698f28860dd3b))
+* **payload-plugin-comments:** style AddCommentPopup component ([bf40c26](https://github.com/focusreactive/payload-plugins/commit/bf40c26df11f8799d5c817c98f2a1714619597e5))
+* **payload-plugin-comments:** style CollapsibleGroup component ([0c4a785](https://github.com/focusreactive/payload-plugins/commit/0c4a78551757aacc142cd8f7d0f7ead4d82dd784))
+* **payload-plugin-comments:** style CommentsDrawer header ([e83f3e7](https://github.com/focusreactive/payload-plugins/commit/e83f3e7e1132623fe6a68dd8de5dfe0243703437))
+* **payload-plugin-comments:** style CommentsEditor component ([b264b03](https://github.com/focusreactive/payload-plugins/commit/b264b038a33fd449786b518e33b074955528685a))
+* **payload-plugin-comments:** style CommentsHeaderButton component ([35f677b](https://github.com/focusreactive/payload-plugins/commit/35f677bfbdc0462ccdecb7a59d4ef7648607a10c))
+* **payload-plugin-comments:** style MentionDropdown component ([49829eb](https://github.com/focusreactive/payload-plugins/commit/49829ebe77bfe4a28361a483fd590249d3723d4a))
+* **payload-plugin-comments:** update CommentItem according to usernameFieldPath ([f34c059](https://github.com/focusreactive/payload-plugins/commit/f34c059c80ca8d955f82fa91a32f53bfae76ab53))
+
 # [1.1.0](https://github.com/focusreactive/payload-plugin-comments/compare/v1.0.0...v1.1.0) (2026-03-11)
 
 

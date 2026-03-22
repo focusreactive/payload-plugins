@@ -22,7 +22,7 @@
         "@focus-reactive/payload-plugin-ab": "workspace:*",
         "@focus-reactive/payload-plugin-comments": "workspace:*",
         "@focus-reactive/payload-plugin-presets": "workspace:*",
-        "@focus-reactive/payload-plugin-schedule-publication": "workspace:*",
+        "@focus-reactive/payload-plugin-scheduling": "workspace:*",
         "@payloadcms/db-sqlite": "3.79.0",
         "@payloadcms/live-preview-react": "3.79.0",
         "@payloadcms/next": "3.79.0",
@@ -161,8 +161,8 @@
         "react-dom": "^18.0.0 || ^19.0.0",
       },
     },
-    "packages/payload-plugin-schedule-publication": {
-      "name": "@focus-reactive/payload-plugin-schedule-publication",
+    "packages/payload-plugin-scheduling": {
+      "name": "@focus-reactive/payload-plugin-scheduling",
       "version": "1.0.0",
       "devDependencies": {
         "@types/node": "^20.0.0",
@@ -356,7 +356,7 @@
 
     "@focus-reactive/payload-plugin-presets": ["@focus-reactive/payload-plugin-presets@workspace:packages/payload-plugin-presets"],
 
-    "@focus-reactive/payload-plugin-schedule-publication": ["@focus-reactive/payload-plugin-schedule-publication@workspace:packages/payload-plugin-schedule-publication"],
+    "@focus-reactive/payload-plugin-scheduling": ["@focus-reactive/payload-plugin-scheduling@workspace:packages/payload-plugin-scheduling"],
 
     "@humanfs/core": ["@humanfs/core@0.19.1", "", {}, "sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA=="],
 
