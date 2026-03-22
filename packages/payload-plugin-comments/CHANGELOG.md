@@ -1,3 +1,11 @@
+## @focus-reactive/payload-plugin-comments [1.0.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.0.2...@focus-reactive/payload-plugin-comments@1.0.3) (2026-03-22)
+
+
+### Bug Fixes
+
+* **payload-plugin-comments:** hide add comment button on popup close ([1fad02f](https://github.com/focusreactive/payload-plugins/commit/1fad02fbd612cb106e9f5b6085db6a5a44caff99))
+* **payload-plugin-comments:** hide field label completely if label is false ([c27ff47](https://github.com/focusreactive/payload-plugins/commit/c27ff47ef9f066f11af395baa8d5dfb34bbf9f07))
+
 ## @focus-reactive/payload-plugin-comments [1.0.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.0.1...@focus-reactive/payload-plugin-comments@1.0.2) (2026-03-18)
 
 ## @focus-reactive/payload-plugin-comments [1.0.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.0.0...@focus-reactive/payload-plugin-comments@1.0.1) (2026-03-18)
