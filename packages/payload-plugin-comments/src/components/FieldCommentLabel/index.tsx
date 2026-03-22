@@ -46,18 +46,18 @@ export function FieldCommentLabel({ field, htmlFor, path: fieldPath }: Props) {
     setIsPopupOpen(isOpen);
   };
 
+  if (!resolvedLabel) return null;
+
   return (
     <div
       className="flex items-center gap-1.5 pb-1.25"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}>
-      {resolvedLabel && (
-        <label className="field-label p-0" htmlFor={htmlFor}>
-          {resolvedLabel}
+      <label className="field-label p-0" htmlFor={htmlFor}>
+        {resolvedLabel}
 
-          {required && <span className="required">*</span>}
-        </label>
-      )}
+        {required && <span className="required">*</span>}
+      </label>
 
       {fieldPath && (mode === "document" || mode === "global-document") && (
         <div className="relative flex items-center">
