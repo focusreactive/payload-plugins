@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-comments [1.1.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.1.0...@focus-reactive/payload-plugin-comments@1.1.1) (2026-03-22)
+
+
+### Bug Fixes
+
+* **payload-plugin-comments:** remove auto focus from CommentEditor ([4439e83](https://github.com/focusreactive/payload-plugins/commit/4439e831699568845289a3dc138936cd276c4607))
+
 # @focus-reactive/payload-plugin-comments [1.1.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.0.3...@focus-reactive/payload-plugin-comments@1.1.0) (2026-03-22)
 
 
