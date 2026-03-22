@@ -47,7 +47,6 @@ export function AddCommentPopup({ fieldPath, showTrigger, onToggle }: Props) {
             ref={editorAPI}
             fieldPath={fieldPath}
             globalSlug={mode === "global-document" ? (globalSlug ?? undefined) : undefined}
-            autoFocus
             onSuccessAddComment={close}
             onEscapePress={close}
             placeholder={`${t("comments:writeComment" as never)}…`}
