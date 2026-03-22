@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-comments [1.1.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.0.3...@focus-reactive/payload-plugin-comments@1.1.0) (2026-03-22)
+
+
+### Features
+
+* **payload-plugin-comments:** add on click listeners directly to action panel in CommentEditor to prevent native payload popup event handle ([ad6de01](https://github.com/focusreactive/payload-plugins/commit/ad6de013a3c6c0ee9768105c01870a4b9b68d321))
+
 ## @focus-reactive/payload-plugin-comments [1.0.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.0.1...@focus-reactive/payload-plugin-comments@1.0.2) (2026-03-18)
 
 ## @focus-reactive/payload-plugin-comments [1.0.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.0.0...@focus-reactive/payload-plugin-comments@1.0.1) (2026-03-18)
