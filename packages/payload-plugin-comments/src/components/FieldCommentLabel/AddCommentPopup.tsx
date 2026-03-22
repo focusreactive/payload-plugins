@@ -36,6 +36,7 @@ export function AddCommentPopup({ fieldPath, showTrigger, onToggle }: Props) {
         setTimeout(() => editorAPI.current?.focus());
       }}
       onToggleClose={() => {
+        onToggle(false);
         editorAPI.current?.clear();
       }}
       render={({ close }) => (
