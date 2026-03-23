@@ -23,7 +23,7 @@ export function Header({ slug }: HeaderProps) {
   ];
 
   return (
-    <header className="sticky top-0 flex items-center gap-3 py-5 bg-(--theme-bg)">
+    <header className="sticky top-0 z-10 flex items-center gap-3 py-5 bg-(--theme-bg)">
       <h2 className="m-0 text-2xl font-bold">{t("comments:label" as never)}</h2>
 
       {syncCommentsStatus === "loading" && (
