@@ -20,12 +20,7 @@ export interface CommentsTranslations {
   failedToAdd: string;
   unknownAuthor: string;
   deletedUser: string;
-  noOpenComments: string;
-  noResolvedComments: string;
-  noMentionedComments: string;
-  filterOpen: string;
-  filterResolved: string;
-  filterMentioned: string;
+  noComments: string;
   noMentionMatches: string;
 }
 

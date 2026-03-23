@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  type Dispatch,
-  type ReactNode,
-  type SetStateAction,
-  useCallback,
-  useContext,
-  useOptimistic,
-  useState,
-} from "react";
+import { createContext, type ReactNode, useCallback, useContext, useOptimistic, useState } from "react";
 import { useAuth, useLocale } from "@payloadcms/ui";
 import { usePathname } from "next/navigation";
 import type { Comment, EntityLabelsMap, User } from "../../types";
@@ -17,7 +8,7 @@ import { createComment } from "../../services/createComment";
 import { deleteComment } from "../../services/deleteComment";
 import { resolveComment as resolveCommentService } from "../../services/resolveComment";
 import { syncAllCommentsData } from "../../services/syncAllCommentsData";
-import type { FilterMode, GlobalFieldLabelRegistry, LoadingStatus, DocumentTitles, Mode } from "../../types";
+import type { GlobalFieldLabelRegistry, LoadingStatus, DocumentTitles, Mode } from "../../types";
 import { parseMentionIds } from "../../utils/mention/parseMentionIds";
 import { defineModeByPathname } from "../../utils/mode/defineModeByPathname";
 import { extractVisibleComments } from "../../utils/comment/extractVisibleComments";
@@ -55,11 +46,9 @@ interface CommentsContextProps {
   globalSlug: string | null;
   mentionUsers: User[];
   loadError: boolean;
-  filter: FilterMode;
   fieldLabelRegistry: GlobalFieldLabelRegistry;
   syncCommentsStatus: LoadingStatus;
   usernameFieldPath: string | undefined;
-  setFilter: Dispatch<SetStateAction<FilterMode>>;
   hydrateComments: (
     incoming?: Comment[],
     incomingTitles?: DocumentTitles,
@@ -106,7 +95,6 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
   const [globalLabels, setGlobalLabels] = useState<EntityLabelsMap>({});
   const [mentionUsers, setMentionUsers] = useState<User[]>([]);
   const [fieldLabelRegistry, setFieldLabelRegistry] = useState<GlobalFieldLabelRegistry>({});
-  const [filter, setFilter] = useState<FilterMode>("open");
   const [loadError, setLoadError] = useState(false);
   const [syncCommentsStatus, setSyncCommentsStatus] = useState<LoadingStatus>("idle");
 
@@ -327,11 +315,9 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
         globalSlug,
         mentionUsers,
         loadError,
-        filter,
         fieldLabelRegistry,
         syncCommentsStatus,
         usernameFieldPath,
-        setFilter,
         hydrateComments,
         syncComments,
         addComment,

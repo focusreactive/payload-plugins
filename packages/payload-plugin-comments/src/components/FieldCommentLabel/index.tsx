@@ -26,7 +26,7 @@ export function FieldCommentLabel({ field, htmlFor, path: fieldPath }: Props) {
   const { t } = useTranslation();
   const { code: locale } = useLocale();
   const { open: openDrawer, setScrollTargetPath } = useCommentsDrawer();
-  const { visibleComments, setFilter, mode } = useComments();
+  const { visibleComments, mode } = useComments();
 
   const [isHovered, setIsHovered] = useState(false);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -37,7 +37,6 @@ export function FieldCommentLabel({ field, htmlFor, path: fieldPath }: Props) {
   const openCommentsCount = fieldComments.length;
 
   const handleOpenDrawer = () => {
-    setFilter("open");
     setScrollTargetPath(stablePath || null);
     openDrawer();
   };
