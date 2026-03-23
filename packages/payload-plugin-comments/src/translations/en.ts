@@ -12,6 +12,7 @@ export const en: { comments: CommentsTranslations } = {
     posting: "Posting…",
     resolve: "Resolve",
     reopen: "Reopen",
+    resolved: "Resolved",
     delete: "Delete",
     general: "General",
     close: "Close",

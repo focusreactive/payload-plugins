@@ -9,6 +9,7 @@ export interface CommentsTranslations {
   posting: string;
   resolve: string;
   reopen: string;
+  resolved: string;
   delete: string;
   general: string;
   close: string;
