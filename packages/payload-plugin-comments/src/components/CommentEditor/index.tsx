@@ -283,7 +283,7 @@ export function CommentEditor({
 
         <div
           ref={editorWrapperRef}
-          className="relative flex-1 min-w-0 group px-2.5 py-2 rounded-md border border-transparent focus-within:border-(--theme-elevation-150) bg-transparent transition-colors">
+          className="relative flex-1 min-w-0 group px-2.5 py-2 rounded-md border border-transparent focus-within:border-(--theme-elevation-150) bg-transparent">
           <div className="relative">
             <div
               className={`
