@@ -57,7 +57,7 @@ export function CommentItem({ comment, currentUserId }: Props) {
       <div className="flex gap-2.5 items-start">
         <Avatar user={narrowedAuthor} usernameFieldPath={usernameFieldPath} fallbackName={unknownLabel} />
 
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="font-semibold text-[13px] text-(--theme-text)">{authorName}</span>
             <span className="text-[11px] text-(--theme-elevation-450)">{createdAtRelativeDate}</span>
