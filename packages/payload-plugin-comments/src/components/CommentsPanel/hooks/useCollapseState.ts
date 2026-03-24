@@ -18,7 +18,7 @@ function writeStorage(data: Record<string, boolean>) {
   } catch {}
 }
 
-export function useCollapseState(groupKey: string): [isCollapsed: boolean, toggle: () => void] {
+export function useCollapseState(groupKey: string): [isCollapsed: boolean, toggle: () => void, open: () => void] {
   const [isCollapsed, setIsCollapsed] = useState(() => {
     const stored = readStorage();
 
@@ -47,5 +47,9 @@ export function useCollapseState(groupKey: string): [isCollapsed: boolean, toggl
     });
   };
 
-  return [isCollapsed, toggle];
+  const open = () => {
+    setIsCollapsed(false);
+  };
+
+  return [isCollapsed, toggle, open];
 }

@@ -1,17 +1,22 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useImperativeHandle, type ReactNode, type RefObject } from "react";
 import { ChevronDown } from "lucide-react";
 import { cva } from "class-variance-authority";
 import { useCollapseState } from "../hooks/useCollapseState";
 import { cn } from "../../../utils/general/cn";
+
+export interface CollapsibleGroupHandle {
+  open: () => void;
+  toggle: () => void;
+}
 
 interface CollapsibleGroupProps {
   groupKey: string;
   label: string;
   children: ReactNode;
   level: "collection" | "document" | "field";
-  forceExpanded?: boolean;
+  ref?: RefObject<CollapsibleGroupHandle | null>;
 }
 
 const collapsibleGroupVariants = {
@@ -44,9 +49,13 @@ const collapsibleGroupVariants = {
   }),
 };
 
-export function CollapsibleGroup({ groupKey, label, children, level, forceExpanded }: CollapsibleGroupProps) {
-  const [storedCollapsed, toggle] = useCollapseState(groupKey);
-  const isCollapsed = forceExpanded ? false : storedCollapsed;
+export function CollapsibleGroup({ groupKey, label, children, level, ref }: CollapsibleGroupProps) {
+  const [isCollapsed, toggle, open] = useCollapseState(groupKey);
+
+  useImperativeHandle(ref, () => ({
+    open,
+    toggle,
+  }));
 
   return (
     <div>

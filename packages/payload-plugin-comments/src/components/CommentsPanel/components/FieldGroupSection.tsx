@@ -3,7 +3,7 @@
 import { useRef, useEffect } from "react";
 import { useTranslation } from "@payloadcms/ui";
 import type { Comment } from "../../../types/comment";
-import { CollapsibleGroup } from "./CollapsibleGroup";
+import { CollapsibleGroup, type CollapsibleGroupHandle } from "./CollapsibleGroup";
 import { CommentItem } from "../../CommentItem";
 import { createCollapsibleGroupKey } from "../utils/createCollapsibleGroupKey";
 import { resolveFieldLabel } from "../utils/resolveFieldLabel";
@@ -25,8 +25,9 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
   const { t } = useTranslation();
   const { queryContext } = useComments();
   const { data: fieldLabelRegistry = {} } = useFieldLabelsQuery(queryContext);
-  const { pendingField, clearPendingField } = useCommentsDrawer();
+  const { pendingField } = useCommentsDrawer();
   const editorRef = useRef<CommentEditorHandle | null>(null);
+  const pendingFieldCollapsibleGroup = useRef<CollapsibleGroupHandle | null>(null);
 
   const generalComments = fields.get(null) ?? [];
   const fieldEntries = [...fields.entries()].filter((entry): entry is [string, Comment[]] => entry[0] !== null);
@@ -38,6 +39,8 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
 
   useEffect(() => {
     if (!pendingField) return;
+
+    pendingFieldCollapsibleGroup.current?.open();
 
     const id = setTimeout(() => editorRef.current?.focus(), 300);
 
@@ -70,14 +73,14 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
         return (
           <CollapsibleGroup
             key={fieldPath}
+            ref={isPending ? pendingFieldCollapsibleGroup : undefined}
             groupKey={createCollapsibleGroupKey({ collectionSlug, documentId, globalSlug, fieldPath })}
             label={
               isPending ?
                 pendingField.label
               : resolveFieldLabel({ registry: fieldLabelRegistry, collectionSlug, documentId, globalSlug, fieldPath })
             }
-            level="field"
-            forceExpanded={isPending}>
+            level="field">
             <div className="flex flex-col gap-3" data-field-path={fieldPath}>
               {fieldComments.map((comment) => (
                 <CommentItem key={comment.id} comment={comment} currentUserId={userId} />
@@ -85,7 +88,6 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
 
               <CommentEditor
                 ref={isPending ? editorRef : undefined}
-                onSuccessAddComment={isPending ? clearPendingField : undefined}
                 fieldPath={fieldPath}
                 collectionSlug={collectionSlug}
                 documentId={documentId}
