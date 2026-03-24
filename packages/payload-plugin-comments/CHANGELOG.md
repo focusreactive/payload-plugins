@@ -1,3 +1,27 @@
+# @focus-reactive/payload-plugin-comments [1.2.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.1.1...@focus-reactive/payload-plugin-comments@1.2.0) (2026-03-24)
+
+
+### Bug Fixes
+
+* **payload-plugin-comments:** consider the count of all comments for the field ([73ca933](https://github.com/focusreactive/payload-plugins/commit/73ca9336e77a8a50f3f6f1d9bcc35f1f3de86a8d))
+* **payload-plugin-comments:** fetch comments data on mount of components that use this data ([e651b95](https://github.com/focusreactive/payload-plugins/commit/e651b95316d7aea2f3ef9330a6d006fdd2a78eb8))
+* **payload-plugin-comments:** hide white blur bg under the comments drawer ([5174845](https://github.com/focusreactive/payload-plugins/commit/517484579a8eb6800d1c16e5e5edaf9d3cf6222f))
+* **payload-plugin-comments:** make the default focus animation seamless ([65be36c](https://github.com/focusreactive/payload-plugins/commit/65be36cd474576efdb178c1f88cbdc600dc07569))
+* **payload-plugin-comments:** open CollapsibleGroup on add comment button click ([b421dfc](https://github.com/focusreactive/payload-plugins/commit/b421dfcd269bf7723fe892ae3cf6a87822c658b8))
+* **payload-plugin-comments:** prevent text overflow in CommentEditor and CommentItem ([33c2d04](https://github.com/focusreactive/payload-plugins/commit/33c2d0459560931277fad4ab1446dc19d20cdca3))
+* **payload-plugin-comments:** remove filter ([7f8cd5a](https://github.com/focusreactive/payload-plugins/commit/7f8cd5acea11dcf66b263344e1d3c5b6b30f3b20))
+* **payload-plugin-comments:** remove no comments fallback from general group ([d3f8037](https://github.com/focusreactive/payload-plugins/commit/d3f80376618ece076c0cfa8bf71f20a1e6b062a0))
+* **payload-plugin-comments:** show header in drawer at the highest layer ([b7670be](https://github.com/focusreactive/payload-plugins/commit/b7670be6788effd8e8103879570ce17c687c11f2))
+* **payload-plugin-comments:** truncate long username in comment ([c8dea67](https://github.com/focusreactive/payload-plugins/commit/c8dea67258fa4fc923b30cf8e5daf16d0a882038))
+
+
+### Features
+
+* **payload-plugin-comments:** change icon to bell for CommentsHeaderButton ([34fcfda](https://github.com/focusreactive/payload-plugins/commit/34fcfda3cface827f0666d8511538c739bc74ea7))
+* **payload-plugin-comments:** cross out resolved comment ([9ff8945](https://github.com/focusreactive/payload-plugins/commit/9ff89453de15922f16a814d56e1730d1cec1aaba))
+* **payload-plugin-comments:** open drawer on add comment button click in FieldCommentLabel ([597332e](https://github.com/focusreactive/payload-plugins/commit/597332e349335bf6d9ede232a8ef46346efec9f5))
+* **payload-plugin-comments:** reorganize data manipulation structure ([c0a7a07](https://github.com/focusreactive/payload-plugins/commit/c0a7a07c23bb07475fdfab303805e95c73f13e91))
+
 ## @focus-reactive/payload-plugin-comments [1.1.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.1.0...@focus-reactive/payload-plugin-comments@1.1.1) (2026-03-22)
 
 
