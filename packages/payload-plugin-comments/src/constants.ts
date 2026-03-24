@@ -11,3 +11,5 @@ export const FALLBACK_DELETED_USERNAME = "Deleted user";
 export const EXCLUDED_ADMIN_ROUTES = ["/admin/account", "/admin/create-first-user"];
 
 export const REFETCH_INTERVAL = 15000;
+
+export const DRAWER_OPENING_TIME = 350;

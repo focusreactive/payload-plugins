@@ -1,3 +1,4 @@
+import { DRAWER_OPENING_TIME } from "../../../constants";
 import { useCommentsDrawer } from "../../../providers/CommentsDrawerProvider";
 import { useLayoutEffect } from "react";
 
@@ -20,21 +21,18 @@ export function useScrollToTargetFieldGroup() {
       }
 
       if (!scrollContainer || scrollContainer === document.documentElement) {
-        section.scrollIntoView({ behavior: "smooth", block: "start" });
+        section.scrollIntoView({ behavior: "smooth", block: "end" });
         setScrollTargetPath(null);
         return;
       }
 
-      const header = scrollContainer.querySelector("header");
-      const headerHeight = header?.getBoundingClientRect().height ?? 0;
-
-      const sectionTop = section.getBoundingClientRect().top;
-      const containerTop = scrollContainer.getBoundingClientRect().top;
-      const scrollOffset = sectionTop - containerTop - headerHeight + scrollContainer.scrollTop;
+      const sectionBottom = section.getBoundingClientRect().bottom;
+      const containerBottom = scrollContainer.getBoundingClientRect().bottom;
+      const scrollOffset = scrollContainer.scrollTop + (sectionBottom - containerBottom) + 10;
 
       scrollContainer.scrollTo({ top: scrollOffset, behavior: "smooth" });
       setScrollTargetPath(null);
-    }, 300);
+    }, DRAWER_OPENING_TIME + 10);
 
     return () => clearTimeout(id);
   }, [scrollTargetPath, setScrollTargetPath]);

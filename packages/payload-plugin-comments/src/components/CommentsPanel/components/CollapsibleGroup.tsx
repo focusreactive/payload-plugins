@@ -13,6 +13,7 @@ export interface CollapsibleGroupHandle {
 
 interface CollapsibleGroupProps {
   groupKey: string;
+  fieldPath?: string;
   label: string;
   children: ReactNode;
   level: "collection" | "document" | "field";
@@ -49,7 +50,7 @@ const collapsibleGroupVariants = {
   }),
 };
 
-export function CollapsibleGroup({ groupKey, label, children, level, ref }: CollapsibleGroupProps) {
+export function CollapsibleGroup({ groupKey, fieldPath, label, children, level, ref }: CollapsibleGroupProps) {
   const [isCollapsed, toggle, open] = useCollapseState(groupKey);
 
   useImperativeHandle(ref, () => ({
@@ -58,7 +59,7 @@ export function CollapsibleGroup({ groupKey, label, children, level, ref }: Coll
   }));
 
   return (
-    <div>
+    <div data-field-path={fieldPath ?? null}>
       <div
         role="button"
         tabIndex={0}
