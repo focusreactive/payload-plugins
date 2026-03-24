@@ -7,6 +7,8 @@ import { CommentsDrawerProvider } from "../CommentsDrawerProvider";
 import { CommentsProvider } from "../CommentsProvider";
 import type { CommentsPluginConfigStorage } from "../../types";
 
+import "../../styles.css";
+
 interface Props {
   children: ReactNode;
 }

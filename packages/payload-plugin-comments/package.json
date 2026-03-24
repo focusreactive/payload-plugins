@@ -47,8 +47,7 @@
     "./providers/CommentsProviderWrapper": {
       "import": "./dist/providers/CommentsProviderWrapper/index.js",
       "types": "./dist/providers/CommentsProviderWrapper/index.d.ts"
-    },
-    "./styles.css": "./dist/styles.css"
+    }
   },
   "scripts": {
     "build": "node node_modules/tsup/dist/cli-default.js && tsc --emitDeclarationOnly --declarationMap",
