@@ -26,5 +26,6 @@ export const en: { comments: CommentsTranslations } = {
     deletedUser: "Deleted user",
     noComments: "No comments",
     noMentionMatches: "No matches",
+    loadingComments: "Loading comments…",
   },
 };

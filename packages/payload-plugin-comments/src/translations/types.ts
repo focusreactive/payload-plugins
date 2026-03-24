@@ -23,6 +23,7 @@ export interface CommentsTranslations {
   deletedUser: string;
   noComments: string;
   noMentionMatches: string;
+  loadingComments: string;
 }
 
 export type Translations = Record<string, Partial<CommentsTranslations>>;

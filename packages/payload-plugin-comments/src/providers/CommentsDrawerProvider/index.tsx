@@ -3,7 +3,6 @@
 import { useDrawerSlug, useModal } from "@payloadcms/ui";
 import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
 import { COMMENTS_DRAWER_BASE_SLUG } from "../../constants";
-import { useComments } from "../CommentsProvider";
 
 interface PendingField {
   path: string;
@@ -12,6 +11,7 @@ interface PendingField {
 
 interface CommentsDrawerContextProps {
   slug: string;
+  isOpen: boolean;
   scrollTargetPath: string | null;
   pendingField: PendingField | null;
   open: () => void;
@@ -32,33 +32,30 @@ export function CommentsDrawerProvider({ children }: Props) {
 
   const slug = useDrawerSlug(COMMENTS_DRAWER_BASE_SLUG);
   const { openModal, modalState } = useModal();
-  const { syncComments } = useComments();
+
+  const isOpen = modalState[slug]?.isOpen ?? false;
 
   const open = () => {
     openModal(slug);
-
-    void syncComments();
   };
 
   const openForField = (path: string, label: string) => {
     setScrollTargetPath(path);
     setPendingField({ path, label });
     openModal(slug);
-
-    void syncComments();
   };
 
   const clearPendingField = () => setPendingField(null);
 
   useEffect(() => {
-    if (!modalState[slug]?.isOpen) {
+    if (!isOpen) {
       setPendingField(null);
     }
-  }, [modalState, slug]);
+  }, [isOpen]);
 
   return (
     <CommentsDrawerContext.Provider
-      value={{ slug, scrollTargetPath, pendingField, open, setScrollTargetPath, openForField, clearPendingField }}>
+      value={{ slug, isOpen, scrollTargetPath, pendingField, open, setScrollTargetPath, openForField, clearPendingField }}>
       {children}
     </CommentsDrawerContext.Provider>
   );

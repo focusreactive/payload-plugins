@@ -48,10 +48,6 @@
       "import": "./dist/providers/CommentsProviderWrapper/index.js",
       "types": "./dist/providers/CommentsProviderWrapper/index.d.ts"
     },
-    "./providers/GlobalCommentsLoader": {
-      "import": "./dist/providers/GlobalCommentsLoader/index.js",
-      "types": "./dist/providers/GlobalCommentsLoader/index.d.ts"
-    },
     "./styles.css": "./dist/styles.css"
   },
   "scripts": {
@@ -64,6 +60,7 @@
     "format:check": "prettier --check src/"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.577.0",

@@ -3,6 +3,7 @@
 import { useState, useRef, useImperativeHandle, type RefObject, startTransition } from "react";
 import { useAuth, useLocale, useTranslation } from "@payloadcms/ui";
 import { useComments } from "../../providers/CommentsProvider";
+import { useMentionableUsersQuery } from "../../api/queries/useMentionableUsersQuery";
 import { MentionDropdown } from "../MentionDropdown";
 import { MentionLabel } from "../MentionLabel";
 import { serializeEditor } from "../../utils/comment/serializeEditor";
@@ -48,7 +49,8 @@ export function CommentEditor({
   onEnterPress,
   onEscapePress,
 }: CommentEditorProps) {
-  const { mentionUsers: users, addComment } = useComments();
+  const { addComment } = useComments();
+  const { data: users = [] } = useMentionableUsersQuery();
   const { code: locale } = useLocale();
   const { user } = useAuth();
 

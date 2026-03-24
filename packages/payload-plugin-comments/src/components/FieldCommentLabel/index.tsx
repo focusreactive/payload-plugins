@@ -12,6 +12,9 @@ import { useFieldBreadcrumb } from "./hooks/useFieldBreadcrumb";
 import { useCommentsDrawer } from "../../providers/CommentsDrawerProvider";
 import { IconButton } from "../IconButton";
 import { resolveFieldLabel } from "../CommentsPanel/utils/resolveFieldLabel";
+import { useCommentsQuery } from "../../api/queries/useCommentsQuery";
+import { useFieldLabelsQuery } from "../../api/queries/useFieldLabelsQuery";
+import { filterCommentsByLocale } from "../../utils/comment/filterCommentsByLocale";
 
 interface Props extends FieldLabelClientProps {
   field: FieldLabelClientProps["field"] & {
@@ -25,12 +28,17 @@ export function FieldCommentLabel({ field, htmlFor, path: fieldPath }: Props) {
 
   const { t } = useTranslation();
   const { code: locale } = useLocale();
+
   const { openForField } = useCommentsDrawer();
-  const { visibleComments, mode, fieldLabelRegistry, collectionSlug, documentId, globalSlug } = useComments();
+  const { mode, queryContext, collectionSlug, documentId, globalSlug } = useComments();
+  const { data: allComments = [] } = useCommentsQuery(queryContext);
+  const { data: fieldLabelRegistry } = useFieldLabelsQuery(queryContext);
 
   const resolvedLabel = resolveLabel(label, locale);
   const stablePath = useStablePath(fieldPath ?? "");
-  const fieldComments = excludeComments(visibleComments, stablePath || undefined, locale);
+
+  const localeFiltered = filterCommentsByLocale(allComments, locale);
+  const fieldComments = excludeComments(localeFiltered, stablePath || undefined, locale);
   const openCommentsCount = fieldComments.length;
 
   const clientBreadcrumb = useFieldBreadcrumb(fieldPath, resolvedLabel, collectionSlug, globalSlug);
@@ -39,7 +47,7 @@ export function FieldCommentLabel({ field, htmlFor, path: fieldPath }: Props) {
     if (!stablePath) return;
 
     const serverLabel = resolveFieldLabel({
-      registry: fieldLabelRegistry,
+      registry: fieldLabelRegistry ?? {},
       collectionSlug: collectionSlug ?? undefined,
       documentId: documentId ?? undefined,
       globalSlug: globalSlug ?? undefined,

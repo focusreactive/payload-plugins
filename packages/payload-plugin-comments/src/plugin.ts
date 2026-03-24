@@ -7,6 +7,7 @@ import { normalizeCollections } from "./utils/config/normalizeCollections";
 import { mergeTranslations } from "./utils/config/mergeTranslations";
 import { overrideCollections } from "./utils/config/overrideCollections";
 import { overrideGlobals } from "./utils/config/overrideGlobals";
+import { setPayloadConfig } from "./config";
 
 export const commentsPlugin =
   (config: CommentsPluginConfig = {}): Plugin =>
@@ -47,7 +48,6 @@ export const commentsPlugin =
           providers: [
             ...(incomingConfig.admin?.components?.providers ?? []),
             getComponentPath("providers/CommentsProviderWrapper", "CommentsProviderWrapper"),
-            getComponentPath("providers/GlobalCommentsLoader", "GlobalCommentsLoader"),
           ],
           actions: [
             ...(incomingConfig.admin?.components?.actions ?? []),
@@ -64,6 +64,11 @@ export const commentsPlugin =
             usernameFieldPath,
           },
         },
+      },
+      onInit: async (payload) => {
+        setPayloadConfig(payload.config);
+
+        await incomingConfig.onInit?.(payload);
       },
       collections: [...overrideCollections(incomingConfig.collections), finalCollection],
       globals: overrideGlobals(incomingConfig.globals),

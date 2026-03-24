@@ -2,7 +2,7 @@ export type { BaseServiceOptions, BaseDocument } from "./base";
 export type { CommentMention, Comment } from "./comment";
 export type { CollectionEntry, TenantPluginConfig, CommentsPluginConfig, CommentsPluginConfigStorage } from "./config";
 export type { User } from "./user";
-export type { LoadingStatus, Response } from "./general";
+export type { Response } from "./general";
 export type { DocumentTitles } from "./collection";
 export type {
   EntityConfig,
@@ -12,3 +12,4 @@ export type {
   GlobalFieldLabelRegistry,
   Mode,
 } from "./entity";
+export type { QueryContext } from "./query";

@@ -12,30 +12,62 @@ interface Props {
   enabledGlobals?: string[];
   user?: TypedUser | null;
   options?: BaseServiceOptions;
+  docId?: string | number;
+  filterCollectionSlug?: string;
+  filterGlobalSlug?: string;
 }
 
-export async function findAllComments({ enabledCollections, enabledGlobals, options }: Props = {}): Promise<Response<Comment[]>> {
+export async function findAllComments({
+  enabledCollections,
+  enabledGlobals,
+  options,
+  docId,
+  filterCollectionSlug,
+  filterGlobalSlug,
+}: Props = {}): Promise<Response<Comment[]>> {
   try {
     const payload = await extractPayload(options?.payload);
-
     const tenantId = await getCurrentTenantId(payload);
 
     const where: Where = {};
 
-    const hasCollections = (enabledCollections?.length ?? 0) > 0;
-    const hasGlobals = (enabledGlobals?.length ?? 0) > 0;
-
-    if (hasCollections || hasGlobals) {
-      where.or = [
-        ...(hasCollections ? [{ collectionSlug: { in: enabledCollections } }] : []),
-        ...(hasGlobals ? [{ globalSlug: { in: enabledGlobals } }] : []),
+    if (docId && filterCollectionSlug) {
+      where.and = [
+        {
+          documentId: { equals: docId },
+        },
+        {
+          collectionSlug: { equals: filterCollectionSlug },
+        },
       ];
+    } else if (filterGlobalSlug) {
+      where.globalSlug = { equals: filterGlobalSlug };
+    } else {
+      const hasCollections = (enabledCollections?.length ?? 0) > 0;
+      const hasGlobals = (enabledGlobals?.length ?? 0) > 0;
+
+      if (hasCollections || hasGlobals) {
+        where.or = [
+          ...(hasCollections ?
+            [
+              {
+                collectionSlug: { in: enabledCollections },
+              },
+            ]
+          : []),
+          ...(hasGlobals ?
+            [
+              {
+                globalSlug: { in: enabledGlobals },
+              },
+            ]
+          : []),
+        ];
+      }
     }
 
     if (tenantId) {
-      where.tenant = {
-        equals: tenantId,
-      };
+      where.tenant = { equals: tenantId };
     }
 
     const { docs: comments } = await payload.find({
@@ -53,7 +85,6 @@ export async function findAllComments({ enabledCollections, enabledGlobals, opti
     };
   } catch (e) {
     console.error("findAllComments failed:", e);
-
     return {
       success: false,
       error: getDefaultErrorMessage(e),

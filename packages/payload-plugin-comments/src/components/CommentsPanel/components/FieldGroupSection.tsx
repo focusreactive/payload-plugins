@@ -11,6 +11,7 @@ import { useComments } from "../../../providers/CommentsProvider";
 import { CommentEditor } from "../../CommentEditor";
 import type { CommentEditorHandle } from "../../CommentEditor";
 import { useCommentsDrawer } from "../../../providers/CommentsDrawerProvider";
+import { useFieldLabelsQuery } from "../../../api/queries/useFieldLabelsQuery";
 
 interface Props {
   fields: Map<string | null, Comment[]>;
@@ -22,7 +23,8 @@ interface Props {
 
 export function FieldGroupSection({ fields, userId, collectionSlug, documentId, globalSlug }: Props) {
   const { t } = useTranslation();
-  const { fieldLabelRegistry } = useComments();
+  const { queryContext } = useComments();
+  const { data: fieldLabelRegistry = {} } = useFieldLabelsQuery(queryContext);
   const { pendingField, clearPendingField } = useCommentsDrawer();
   const editorRef = useRef<CommentEditorHandle | null>(null);
 

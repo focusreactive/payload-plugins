@@ -3,6 +3,7 @@
 import { useLocale } from "@payloadcms/ui";
 import type { Comment } from "../../../types/comment";
 import { useComments } from "../../../providers/CommentsProvider";
+import { useDocumentTitlesQuery } from "../../../api/queries/useDocumentTitlesQuery";
 import { groupCommentsGlobally } from "../utils/groupCommentsGlobally";
 import { resolveEntityLabel } from "../utils/resolveEntityLabel";
 import { CollapsibleGroup } from "./CollapsibleGroup";
@@ -16,7 +17,8 @@ interface Props {
 }
 
 export function GlobalView({ comments, userId, className }: Props) {
-  const { documentTitles, collectionLabels, globalLabels } = useComments();
+  const { collectionLabels, globalLabels, queryContext } = useComments();
+  const { data: documentTitles = {} } = useDocumentTitlesQuery(queryContext);
   const { code: locale } = useLocale();
   const groupedComments = groupCommentsGlobally(comments);
 
