@@ -42,7 +42,6 @@ export function useCommentsQuery(ctx: QueryContext) {
       
       return res.data;
     },
-    enabled: isOpen,
     staleTime: 0,
     refetchInterval: isOpen ? REFETCH_INTERVAL : false,
     refetchIntervalInBackground: false,
