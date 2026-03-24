@@ -12,6 +12,7 @@ import { CommentEditor } from "../../CommentEditor";
 import type { CommentEditorHandle } from "../../CommentEditor";
 import { useCommentsDrawer } from "../../../providers/CommentsDrawerProvider";
 import { useFieldLabelsQuery } from "../../../api/queries/useFieldLabelsQuery";
+import { DRAWER_OPENING_TIME } from "../../../constants";
 
 interface Props {
   fields: Map<string | null, Comment[]>;
@@ -42,7 +43,7 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
 
     pendingFieldCollapsibleGroup.current?.open();
 
-    const id = setTimeout(() => editorRef.current?.focus(), 300);
+    const id = setTimeout(() => editorRef.current?.focus(), DRAWER_OPENING_TIME);
 
     return () => clearTimeout(id);
   }, [pendingField]);
@@ -73,6 +74,7 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
         return (
           <CollapsibleGroup
             key={fieldPath}
+            fieldPath={fieldPath}
             ref={isPending ? pendingFieldCollapsibleGroup : undefined}
             groupKey={createCollapsibleGroupKey({ collectionSlug, documentId, globalSlug, fieldPath })}
             label={
@@ -81,7 +83,7 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
               : resolveFieldLabel({ registry: fieldLabelRegistry, collectionSlug, documentId, globalSlug, fieldPath })
             }
             level="field">
-            <div className="flex flex-col gap-3" data-field-path={fieldPath}>
+            <div className="flex flex-col gap-3">
               {fieldComments.map((comment) => (
                 <CommentItem key={comment.id} comment={comment} currentUserId={userId} />
               ))}
