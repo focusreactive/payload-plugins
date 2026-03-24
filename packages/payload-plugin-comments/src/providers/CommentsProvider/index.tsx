@@ -1,42 +1,20 @@
 "use client";
 
-import {
-  createContext,
-  type Dispatch,
-  type ReactNode,
-  type SetStateAction,
-  useCallback,
-  useContext,
-  useOptimistic,
-  useState,
-} from "react";
-import { useAuth, useLocale } from "@payloadcms/ui";
+import { createContext, type ReactNode, useCallback, useContext } from "react";
+import { useAuth, useConfig } from "@payloadcms/ui";
 import { usePathname } from "next/navigation";
-import type { Comment, EntityLabelsMap, User } from "../../types";
-import { createComment } from "../../services/createComment";
-import { deleteComment } from "../../services/deleteComment";
-import { resolveComment as resolveCommentService } from "../../services/resolveComment";
-import { syncAllCommentsData } from "../../services/syncAllCommentsData";
-import type { FilterMode, GlobalFieldLabelRegistry, LoadingStatus, DocumentTitles, Mode } from "../../types";
-import { parseMentionIds } from "../../utils/mention/parseMentionIds";
+import type { EntityLabelsMap, Comment, CommentsPluginConfigStorage } from "../../types";
+import type { QueryContext } from "../../types";
+import { toQueryContext } from "../../utils/query/toQueryContext";
 import { defineModeByPathname } from "../../utils/mode/defineModeByPathname";
-import { extractVisibleComments } from "../../utils/comment/extractVisibleComments";
-
-type OptimisticAction =
-  | { type: "add"; comment: Comment }
-  | { type: "remove"; id: string | number }
-  | { type: "update"; comment: Comment };
-
-function optimisticReducer(state: Comment[], action: OptimisticAction) {
-  switch (action.type) {
-    case "add":
-      return [action.comment, ...state];
-    case "remove":
-      return state.filter(({ id }) => id !== action.id);
-    case "update":
-      return state.map((c) => (c.id === action.comment.id ? action.comment : c));
-  }
-}
+import { getEntitiesLabels } from "../../services/getEntitiesLabels";
+import type { EntityConfig } from "../../types";
+import { parseMentionIds } from "../../utils/mention/parseMentionIds";
+import { getDefaultErrorMessage } from "../../utils/error/getDefaultErrorMessage";
+import { useAddCommentMutation } from "../../api/mutations/useAddCommentMutation";
+import { useDeleteCommentMutation } from "../../api/mutations/useDeleteCommentMutation";
+import { useResolveCommentMutation } from "../../api/mutations/useResolveCommentMutation";
+import type { Mode } from "../../types";
 
 interface MutationResult {
   success: boolean;
@@ -44,32 +22,14 @@ interface MutationResult {
 }
 
 interface CommentsContextProps {
-  allComments: Comment[];
-  visibleComments: Comment[];
-  documentTitles: DocumentTitles;
-  collectionLabels: EntityLabelsMap;
-  globalLabels: EntityLabelsMap;
   mode: Mode;
   collectionSlug: string | null | undefined;
   documentId: number | null | undefined;
   globalSlug: string | null;
-  mentionUsers: User[];
-  loadError: boolean;
-  filter: FilterMode;
-  fieldLabelRegistry: GlobalFieldLabelRegistry;
-  syncCommentsStatus: LoadingStatus;
+  queryContext: QueryContext;
+  collectionLabels: EntityLabelsMap;
+  globalLabels: EntityLabelsMap;
   usernameFieldPath: string | undefined;
-  setFilter: Dispatch<SetStateAction<FilterMode>>;
-  hydrateComments: (
-    incoming?: Comment[],
-    incomingTitles?: DocumentTitles,
-    incomingMentionUsers?: User[],
-    fieldLabels?: GlobalFieldLabelRegistry,
-    incomingCollectionLabels?: EntityLabelsMap,
-    nextLoadError?: boolean,
-    incomingGlobalLabels?: EntityLabelsMap,
-  ) => void;
-  syncComments: () => Promise<void>;
   addComment: (
     text: string,
     fieldPath?: string | null,
@@ -80,7 +40,6 @@ interface CommentsContextProps {
   ) => Promise<MutationResult>;
   removeComment: (id: string | number) => Promise<MutationResult>;
   resolveComment: (id: string | number, resolved: boolean) => Promise<MutationResult>;
-  updateDocumentTitle: (collectionSlug: string, documentId: string, value: string) => void;
 }
 
 const CommentsContext = createContext<CommentsContextProps | null>(null);
@@ -93,251 +52,141 @@ interface Props {
 export function CommentsProvider({ children, usernameFieldPath }: Props) {
   const { user } = useAuth();
   const pathname = usePathname();
-  const { code: currentLocale } = useLocale();
-
-  const [allComments, setAllComments] = useState<Comment[]>([]);
-  const [optimisticComments, applyOptimistic] = useOptimistic<Comment[], OptimisticAction>(
-    allComments,
-    optimisticReducer,
-  );
-
-  const [documentTitles, setDocumentTitles] = useState<DocumentTitles>({});
-  const [collectionLabels, setCollectionLabels] = useState<EntityLabelsMap>({});
-  const [globalLabels, setGlobalLabels] = useState<EntityLabelsMap>({});
-  const [mentionUsers, setMentionUsers] = useState<User[]>([]);
-  const [fieldLabelRegistry, setFieldLabelRegistry] = useState<GlobalFieldLabelRegistry>({});
-  const [filter, setFilter] = useState<FilterMode>("open");
-  const [loadError, setLoadError] = useState(false);
-  const [syncCommentsStatus, setSyncCommentsStatus] = useState<LoadingStatus>("idle");
+  const { config } = useConfig();
 
   const { mode, collectionSlug, documentId, globalSlug } = defineModeByPathname(pathname);
+  const queryContext = toQueryContext(mode, collectionSlug, documentId, globalSlug);
 
-  const visibleComments = extractVisibleComments({
-    comments: optimisticComments,
-    mode,
-    collectionSlug,
-    documentId,
-    globalSlug,
-    currentLocale,
-  });
-
-  const hydrateComments = useCallback(
-    (
-      incoming?: Comment[],
-      incomingTitles?: DocumentTitles,
-      incomingMentionUsers?: User[],
-      fieldLabels?: GlobalFieldLabelRegistry,
-      incomingCollectionLabels?: EntityLabelsMap,
-      nextLoadError = false,
-      incomingGlobalLabels?: EntityLabelsMap,
-    ) => {
-      if (incoming !== undefined) {
-        setAllComments(incoming);
-      }
-
-      if (incomingTitles) {
-        setDocumentTitles(incomingTitles);
-      }
-
-      if (incomingMentionUsers) {
-        setMentionUsers(incomingMentionUsers);
-      }
-
-      if (fieldLabels) {
-        setFieldLabelRegistry(fieldLabels);
-      }
-
-      if (incomingCollectionLabels) {
-        setCollectionLabels(incomingCollectionLabels);
-      }
-
-      if (incomingGlobalLabels) {
-        setGlobalLabels(incomingGlobalLabels);
-      }
-
-      setLoadError(nextLoadError);
-    },
-    [],
+  const pluginConfig = config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
+  const collectionLabels = getEntitiesLabels(
+    (config.collections ?? []) as unknown as EntityConfig[],
+    pluginConfig?.collections ?? [],
+  );
+  const globalLabels = getEntitiesLabels(
+    (config.globals ?? []) as unknown as EntityConfig[],
+    pluginConfig?.globals ?? [],
   );
 
-  const addComment = async (
-    text: string,
-    fieldPath?: string | null,
-    documentIdOverride?: number,
-    collectionSlugOverride?: string,
-    locale?: string | null,
-    globalSlugOverride?: string,
-  ): Promise<MutationResult> => {
-    const resolvedGlobalSlug = globalSlugOverride ?? (mode === "global-document" ? globalSlug : null);
-    const resolvedDocId = documentIdOverride ?? documentId;
-    const resolvedSlug = collectionSlugOverride ?? collectionSlug;
+  const addMutation = useAddCommentMutation();
+  const deleteMutation = useDeleteCommentMutation();
+  const resolveMutation = useResolveCommentMutation();
 
-    if (!resolvedGlobalSlug && (!resolvedDocId || !resolvedSlug)) {
-      return {
-        success: false,
-        error: "No document registered",
-      };
-    }
+  const addComment = useCallback(
+    async (
+      text: string,
+      fieldPath?: string | null,
+      documentIdOverride?: number,
+      collectionSlugOverride?: string,
+      locale?: string | null,
+      globalSlugOverride?: string,
+    ): Promise<MutationResult> => {
+      const resolvedGlobalSlug = globalSlugOverride ?? (mode === "global-document" ? globalSlug : null);
+      const resolvedDocId = documentIdOverride ?? documentId;
+      const resolvedSlug = collectionSlugOverride ?? collectionSlug;
 
-    const tempId = -Date.now();
+      if (!resolvedGlobalSlug && (!resolvedDocId || !resolvedSlug)) {
+        return {
+          success: false,
+          error: "No document registered",
+        };
+      }
 
-    const mentionIds = parseMentionIds(text);
-    const selectedMentionUsers = mentionUsers.filter(({ id }) => mentionIds.includes(id));
-    const mentions = selectedMentionUsers.map((user) => ({ id: null, user }));
+      try {
+        const res = await addMutation.mutateAsync({
+          ctx: queryContext,
+          text,
+          fieldPath: fieldPath ?? null,
+          documentId: resolvedGlobalSlug ? null : resolvedDocId,
+          collectionSlug: resolvedGlobalSlug ? null : resolvedSlug,
+          globalSlug: resolvedGlobalSlug ?? null,
+          locale: locale ?? null,
+          mentionIds: parseMentionIds(text),
+          currentUser: user as Comment["author"],
+        });
 
-    const optimisticComment: Comment = {
-      id: tempId,
-      text,
-      fieldPath,
-      locale: locale ?? null,
-      documentId: resolvedGlobalSlug ? null : resolvedDocId,
-      collectionSlug: resolvedGlobalSlug ? null : resolvedSlug,
-      globalSlug: resolvedGlobalSlug ?? null,
-      isResolved: false,
-      mentions,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      author: user as Comment["author"],
-    };
+        if (!res.success)
+          return {
+            success: false,
+            error: res.error,
+          };
 
-    applyOptimistic({ type: "add", comment: optimisticComment });
+        return { success: true };
+      } catch (e) {
+        return {
+          success: false,
+          error: getDefaultErrorMessage(e),
+        };
+      }
+    },
+    [addMutation, mode, globalSlug, documentId, collectionSlug, queryContext, user],
+  );
 
-    const result = await createComment({
-      documentId: resolvedGlobalSlug ? null : resolvedDocId,
-      collectionSlug: resolvedGlobalSlug ? null : resolvedSlug,
-      globalSlug: resolvedGlobalSlug,
-      text,
-      fieldPath,
-      mentionIds,
-      locale,
-    });
+  const removeComment = useCallback(
+    async (id: string | number): Promise<MutationResult> => {
+      try {
+        const res = await deleteMutation.mutateAsync({
+          ctx: queryContext,
+          commentId: id,
+        });
 
-    if (result.success) {
-      applyOptimistic({ type: "remove", id: tempId });
-      setAllComments((prev) => [result.data, ...prev.filter((c) => c.id !== tempId)]);
+        if (!res.success)
+          return {
+            success: false,
+            error: res.error,
+          };
 
-      return { success: true };
-    }
+        return { success: true };
+      } catch (e) {
+        return {
+          success: false,
+          error: getDefaultErrorMessage(e),
+        };
+      }
+    },
+    [deleteMutation, queryContext],
+  );
 
-    return {
-      success: false,
-      error: result.error,
-    };
-  };
+  const resolveComment = useCallback(
+    async (id: string | number, resolved: boolean): Promise<MutationResult> => {
+      try {
+        const res = await resolveMutation.mutateAsync({
+          ctx: queryContext,
+          commentId: id,
+          resolved,
+          currentUser: user as Comment["author"],
+        });
 
-  const removeComment = async (id: string | number): Promise<MutationResult> => {
-    applyOptimistic({ type: "remove", id });
+        if (!res.success)
+          return {
+            success: false,
+            error: res.error,
+          };
 
-    const result = await deleteComment(id);
-
-    if (result.success) {
-      setAllComments((prev) => prev.filter((c) => c.id !== id));
-
-      return { success: true };
-    }
-
-    return {
-      success: false,
-      error: result.error,
-    };
-  };
-
-  const syncComments = async () => {
-    setSyncCommentsStatus("loading");
-
-    const allCommentsDataResult = await syncAllCommentsData({ locale: currentLocale });
-
-    if (!allCommentsDataResult.success) {
-      setSyncCommentsStatus("error");
-
-      return;
-    }
-
-    const {
-      comments,
-      documentTitles,
-      mentionUsers,
-      fieldLabels,
-      collectionLabels: syncedLabels,
-      globalLabels: syncedGlobalLabels,
-    } = allCommentsDataResult.data;
-
-    setAllComments((prev) => {
-      const serverIds = new Set(comments.map((c) => c.id));
-      const localOnly = prev.filter((c) => c.id > 0 && !serverIds.has(c.id));
-
-      return [...localOnly, ...comments];
-    });
-    setDocumentTitles(documentTitles);
-    setMentionUsers(mentionUsers);
-    setFieldLabelRegistry(fieldLabels);
-    setCollectionLabels(syncedLabels);
-    setGlobalLabels(syncedGlobalLabels);
-    setSyncCommentsStatus("success");
-  };
-
-  const resolveComment = async (id: string | number, resolved: boolean): Promise<MutationResult> => {
-    const existing = optimisticComments.find((c) => c.id === id);
-
-    if (existing) {
-      applyOptimistic({
-        type: "update",
-        comment: {
-          ...existing,
-          isResolved: resolved,
-        },
-      });
-    }
-
-    const result = await resolveCommentService(id, resolved);
-
-    if (result.success) {
-      setAllComments((prev) => prev.map((c) => (c.id === id ? result.data : c)));
-
-      return { success: true };
-    }
-
-    return {
-      success: false,
-      error: result.error,
-    };
-  };
-
-  const updateDocumentTitle = (collectionSlug: string, documentId: string, value: string) => {
-    setDocumentTitles((prev) => ({
-      ...prev,
-      [collectionSlug]: {
-        ...prev[collectionSlug],
-        [documentId]: value,
-      },
-    }));
-  };
+        return { success: true };
+      } catch (e) {
+        return {
+          success: false,
+          error: getDefaultErrorMessage(e),
+        };
+      }
+    },
+    [resolveMutation, queryContext, user],
+  );
 
   return (
     <CommentsContext.Provider
       value={{
-        allComments: optimisticComments,
-        visibleComments,
-        documentTitles,
-        collectionLabels,
-        globalLabels,
         mode,
         collectionSlug,
         documentId,
         globalSlug,
-        mentionUsers,
-        loadError,
-        filter,
-        fieldLabelRegistry,
-        syncCommentsStatus,
+        queryContext,
+        collectionLabels,
+        globalLabels,
         usernameFieldPath,
-        setFilter,
-        hydrateComments,
-        syncComments,
         addComment,
         removeComment,
         resolveComment,
-        updateDocumentTitle,
       }}>
       {children}
     </CommentsContext.Provider>

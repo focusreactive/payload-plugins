@@ -9,6 +9,7 @@ export interface CommentsTranslations {
   posting: string;
   resolve: string;
   reopen: string;
+  resolved: string;
   delete: string;
   general: string;
   close: string;
@@ -20,13 +21,8 @@ export interface CommentsTranslations {
   failedToAdd: string;
   unknownAuthor: string;
   deletedUser: string;
-  noOpenComments: string;
-  noResolvedComments: string;
-  noMentionedComments: string;
-  filterOpen: string;
-  filterResolved: string;
-  filterMentioned: string;
   noMentionMatches: string;
+  loadingComments: string;
 }
 
 export type Translations = Record<string, Partial<CommentsTranslations>>;

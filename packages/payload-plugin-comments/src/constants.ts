@@ -8,7 +8,6 @@ export const USERNAME_DEFAULT_FIELD_PATH = "name";
 export const FALLBACK_USERNAME = "Unknown user";
 export const FALLBACK_DELETED_USERNAME = "Deleted user";
 
-export const EXCLUDED_ADMIN_ROUTES = [
-  '/admin/account',
-  '/admin/create-first-user',
-]
+export const EXCLUDED_ADMIN_ROUTES = ["/admin/account", "/admin/create-first-user"];
+
+export const REFETCH_INTERVAL = 15000;
