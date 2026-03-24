@@ -11,6 +11,7 @@ interface CollapsibleGroupProps {
   label: string;
   children: ReactNode;
   level: "collection" | "document" | "field";
+  forceExpanded?: boolean;
 }
 
 const collapsibleGroupVariants = {
@@ -43,8 +44,9 @@ const collapsibleGroupVariants = {
   }),
 };
 
-export function CollapsibleGroup({ groupKey, label, children, level }: CollapsibleGroupProps) {
-  const [isCollapsed, toggle] = useCollapseState(groupKey);
+export function CollapsibleGroup({ groupKey, label, children, level, forceExpanded }: CollapsibleGroupProps) {
+  const [storedCollapsed, toggle] = useCollapseState(groupKey);
+  const isCollapsed = forceExpanded ? false : storedCollapsed;
 
   return (
     <div>
