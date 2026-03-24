@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-comments [1.4.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.3.0...@focus-reactive/payload-plugin-comments@1.4.0) (2026-03-24)
+
+
+### Features
+
+* **payload-plugin-comments:** import css styles internally inside the plugin ([d54bf4c](https://github.com/focusreactive/payload-plugins/commit/d54bf4cb586903ea078a0932dcde6b70bf3d49bb))
+
 # @focus-reactive/payload-plugin-comments [1.3.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.2.0...@focus-reactive/payload-plugin-comments@1.3.0) (2026-03-24)
 
 
