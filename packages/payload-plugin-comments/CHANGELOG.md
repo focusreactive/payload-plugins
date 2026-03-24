@@ -1,3 +1,15 @@
+# @focus-reactive/payload-plugin-comments [1.3.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.2.0...@focus-reactive/payload-plugin-comments@1.3.0) (2026-03-24)
+
+
+### Bug Fixes
+
+* **payload-plugin-comments:** scroll to the bottom of the collapsible group ([6c35928](https://github.com/focusreactive/payload-plugins/commit/6c35928f2686468d32f67a209453f189c8e8d4ff))
+
+
+### Features
+
+* **payload-plugin-comments:** filter all comments by locale ([8d5123f](https://github.com/focusreactive/payload-plugins/commit/8d5123f7c17d29a9cb28822333341a8703aadab9))
+
 # @focus-reactive/payload-plugin-comments [1.2.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.1.1...@focus-reactive/payload-plugin-comments@1.2.0) (2026-03-24)
 
 
