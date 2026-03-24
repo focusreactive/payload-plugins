@@ -51,11 +51,9 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
         label={t("comments:general" as never)}
         level="field">
         <div className="flex flex-col gap-3">
-          {generalComments.length === 0 ?
-            <p className="text-(--theme-elevation-450) text-[13px] text-center py-6 m-0">
-              {t("comments:noComments" as never)}
-            </p>
-          : generalComments.map((comment) => <CommentItem key={comment.id} comment={comment} currentUserId={userId} />)}
+          {generalComments.map((comment) => (
+            <CommentItem key={comment.id} comment={comment} currentUserId={userId} />
+          ))}
 
           <CommentEditor
             fieldPath={null}

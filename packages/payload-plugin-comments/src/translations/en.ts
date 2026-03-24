@@ -24,7 +24,6 @@ export const en: { comments: CommentsTranslations } = {
     failedToAdd: "Failed to add comment",
     unknownAuthor: "Unknown",
     deletedUser: "Deleted user",
-    noComments: "No comments",
     noMentionMatches: "No matches",
     loadingComments: "Loading comments…",
   },
