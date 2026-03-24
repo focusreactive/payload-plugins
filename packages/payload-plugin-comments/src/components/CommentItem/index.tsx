@@ -63,13 +63,13 @@ export function CommentItem({ comment, currentUserId }: Props) {
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-[13px] text-(--theme-text)">{authorName}</span>
+            <span className="font-semibold text-[13px] text-(--theme-text) truncate">{authorName}</span>
 
             {isResolved && (
               <CircleCheck size={14} className="text-green-500 shrink-0" aria-label={t("comments:resolved" as never)} />
             )}
 
-            <span className="text-[11px] text-(--theme-elevation-450)">{createdAtRelativeDate}</span>
+            <span className="text-[11px] text-(--theme-elevation-450) shrink-0">{createdAtRelativeDate}</span>
           </div>
 
           <p
