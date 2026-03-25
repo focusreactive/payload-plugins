@@ -1,0 +1,28 @@
+.remove-preset {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  border-radius: 0.25rem;
+  border: none;
+  cursor: pointer;
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke,
+    opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+  background-color: var(--theme-error-100);
+  color: var(--theme-error-600);
+  opacity: 0;
+
+  &:hover {
+    background-color: var(--theme-error-150);
+    color: var(--theme-error-600);
+  }
+}

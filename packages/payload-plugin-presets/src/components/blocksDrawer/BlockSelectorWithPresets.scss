@@ -24,6 +24,13 @@
       flex-direction: row;
       align-items: center;
       gap: calc(var(--base) * 0.5);
+      position: relative;
+
+      &:hover {
+        .remove-preset {
+          opacity: 1;
+        }
+      }
     }
 
     .thumbnail-card__thumbnail {

@@ -8,11 +8,11 @@ import {
   ShimmerEffect,
   ChevronIcon,
 } from "@payloadcms/ui";
-import type { ClientBlock, CollectionSlug } from "payload";
+import type { ClientBlock } from "payload";
 import { usePresetsConfig } from "../usePresetsConfig.js";
 import { DefaultBlockImage, type Preset } from "../shared/index.js";
 import "./BlockSelectorWithPresets.scss";
-import { PresetAdminComponentCell } from "../PresetAdminComponentCell.js";
+import { PresetItem } from "./PresetItem/index.js";
 
 type BlockSelectorWithPresetsProps = {
   blocks: (ClientBlock | string)[];
@@ -24,7 +24,7 @@ export const BlockSelectorWithPresets: React.FC<
   BlockSelectorWithPresetsProps
 > = ({ blocks, onSelect, tenantId }) => {
   const { slug: presetsCollectionSlug, presetTypes } = usePresetsConfig();
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [activeBlockSlug, setActiveBlockSlug] = useState<string | null>(null);
@@ -135,7 +135,9 @@ export const BlockSelectorWithPresets: React.FC<
       <div className="block-search">
         <input
           className="block-search__input"
-          placeholder="Search for a block"
+          placeholder={t(
+            "presetsPlugin:blocksDrawer:searchPlaceholder" as never,
+          )}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -307,57 +309,28 @@ const PresetsList: React.FC<PresetsListProps> = ({
   onSelect,
 }) => {
   const filteredPresets = presets.filter((preset) => preset.type === blockSlug);
-  const { slug: presetsCollectionSlug, mediaCollection } = usePresetsConfig();
+  const { mediaCollection } = usePresetsConfig();
   const { t } = useTranslation();
 
   return (
     <div className="blocks-drawer__presets-popup">
       {/* Empty option */}
-      <button
-        type="button"
-        className="popover__thumbnail-card thumbnail-card thumbnail-card--has-on-click thumbnail-card--align-label-center"
-        onClick={() => onSelect(null)}
-      >
-        <div className="thumbnail-card__thumbnail">
-          <PresetAdminComponentCell
-            collectionSlug={presetsCollectionSlug}
-            rowData={{}}
-            cellData={null}
-            field={{
-              type: "upload",
-              name: "preview",
-              relationTo: mediaCollection as CollectionSlug,
-            }}
-          />
-        </div>
-        <div style={{ fontWeight: "normal" }} className="thumbnail-card__label">
-          Empty {label}
-        </div>
-      </button>
+      <PresetItem
+        preset={null}
+        mediaCollection={mediaCollection}
+        label={label}
+        onSelect={onSelect}
+      />
 
       {/* Presets list */}
       {filteredPresets.length > 0 &&
         filteredPresets.map((preset) => (
-          <button
+          <PresetItem
             key={preset.id}
-            type="button"
-            className="popover__thumbnail-card thumbnail-card thumbnail-card--has-on-click thumbnail-card--align-label-center"
-            onClick={() => onSelect(preset)}
-          >
-            <div className="thumbnail-card__thumbnail">
-              <PresetAdminComponentCell
-                collectionSlug={presetsCollectionSlug}
-                rowData={preset}
-                cellData={preset.preview}
-                field={{
-                  type: "upload",
-                  name: "preview",
-                  relationTo: mediaCollection as CollectionSlug,
-                }}
-              />
-            </div>
-            <div className="thumbnail-card__label">{preset.name}</div>
-          </button>
+            preset={preset}
+            mediaCollection={mediaCollection}
+            onSelect={onSelect}
+          />
         ))}
 
       {/* No presets message */}

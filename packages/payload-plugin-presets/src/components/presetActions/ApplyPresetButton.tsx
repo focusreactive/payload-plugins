@@ -91,7 +91,7 @@ export function ApplyPresetButton() {
       closeDrawer()
     } catch (err) {
       console.error('Apply preset error:', err)
-      toast.error('Failed to apply preset structure')
+      toast.error(t('presetsPlugin:applyPreset:errorApplyFailed' as never))
     }
   }
 
