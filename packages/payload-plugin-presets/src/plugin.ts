@@ -63,6 +63,11 @@ export interface PresetsPluginConfig {
   labels?: CollectionConfig['labels']
   enabled?: boolean
   /**
+   * Hide the presets collection from the admin sidebar.
+   * Useful during development or when you want to manage presets programmatically.
+   */
+  debug?: boolean
+  /**
    * Override package name for component resolution.
    * Defaults to '@focusreactive/payload-plugin-presets'.
    * Set to a local path (e.g. '@/plugins/presetsPlugin') for local dev without npm.
@@ -98,6 +103,7 @@ const createPresetsCollection = (config: PresetsPluginConfig): CollectionConfig<
     labels = { singular: { en: 'Preset', es: 'Preset' }, plural: { en: 'Presets', es: 'Presets' } },
     packageName,
     mediaCollection = 'media',
+    debug = false,
   } = config
 
   const previewFieldPath = getPluginComponentPath(
@@ -187,6 +193,7 @@ const createPresetsCollection = (config: PresetsPluginConfig): CollectionConfig<
         en: 'One preset = one type. After choosing type, fill the matching section below.',
         es: 'Un preset = un tipo. Tras elegir tipo, rellena la sección correspondiente.',
       },
+      hidden: debug,
       ...overrides.admin,
     },
     fields: finalFields,
