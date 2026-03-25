@@ -60,6 +60,27 @@
   }
 }
 
+.thumbnail-card--has-on-click {
+  .thumbnail-card__label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .thumbnail-card__chevron {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    color: currentColor;
+    transition: transform 0.2s ease;
+
+    &--open {
+      transform: rotate(-180deg);
+    }
+  }
+}
+
 .thumbnail-card--active {
   border-color: var(--theme-elevation-500);
   background: var(--theme-elevation-100);
