@@ -265,6 +265,13 @@ const pluginTranslations = {
         presetPreview: 'Preset Preview',
         successAddedWithPreset: 'Added {{blockType}} with preset: {{name}}',
       },
+      deletePreset: {
+        heading: 'Confirm deletion',
+        body: 'You are about to delete the preset "{{name}}". Are you sure?',
+        confirm: 'Delete',
+        confirming: 'Deleting...',
+        cancel: 'Cancel',
+      },
     },
   },
   es: {
@@ -298,6 +305,13 @@ const pluginTranslations = {
         imagePlaceholder: 'Marcador de posición',
         presetPreview: 'Vista previa del preset',
         successAddedWithPreset: '{{blockType}} añadido con preset: {{name}}',
+      },
+      deletePreset: {
+        heading: 'Confirmar eliminación',
+        body: 'Estás a punto de eliminar el preset "{{name}}". ¿Estás seguro?',
+        confirm: 'Eliminar',
+        confirming: 'Eliminando...',
+        cancel: 'Cancelar',
       },
     },
   },

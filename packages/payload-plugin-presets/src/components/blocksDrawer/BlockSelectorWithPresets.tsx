@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
   useTranslation,
@@ -98,6 +98,10 @@ export const BlockSelectorWithPresets: React.FC<
     setActiveBlockSlug(null);
   };
 
+  const handleDeletePreset = (id: string | number) => {
+    setPresetsCache((prev) => prev.filter((p) => p.id !== id));
+  };
+
   // Get presets for specific block from cache
   const getBlockPresets = (blockSlug: string): Preset[] => {
     return presetsCache.filter((preset) => preset.type === blockSlug);
@@ -183,6 +187,7 @@ export const BlockSelectorWithPresets: React.FC<
                       }
                       onPresetSelect={handlePresetSelect}
                       onClose={() => setActiveBlockSlug(null)}
+                      onDelete={handleDeletePreset}
                     />
                   </li>
                 );
@@ -205,6 +210,7 @@ type BlockCardProps = {
   onBlockClick: () => void;
   onPresetSelect: (blockType: string, preset: Preset | null) => void;
   onClose: () => void;
+  onDelete: (presetId: string | number) => void;
 };
 
 const BlockCard: React.FC<BlockCardProps> = ({
@@ -216,7 +222,30 @@ const BlockCard: React.FC<BlockCardProps> = ({
   onBlockClick,
   onPresetSelect,
   onClose,
+  onDelete,
 }) => {
+  const ref = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!isActive) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const isInsideButton = ref.current?.contains(target);
+      const isInsidePopup = document
+        .querySelector(".blocks-drawer__presets-popup-wrapper")
+        ?.contains(target);
+
+      if (!isInsideButton && !isInsidePopup) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isActive, onClose]);
+
   if (!hasPresets) {
     return (
       <button
@@ -236,15 +265,14 @@ const BlockCard: React.FC<BlockCardProps> = ({
       buttonType="custom"
       forceOpen={isActive}
       horizontalAlign="right"
-      onToggleOpen={(open) => {
-        if (!open) onClose();
-      }}
-      className="blocks-drawer__presets-popup-wrapper"
+      portalClassName="blocks-drawer__presets-popup-wrapper"
       render={({ close }) => (
         <PresetsList
           blockSlug={block.slug}
           label={label}
           presets={presets}
+          onDeleteButtonClick={onClose}
+          onDelete={onDelete}
           onSelect={(preset) => {
             onPresetSelect(block.slug, preset);
             close();
@@ -256,6 +284,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
       verticalAlign="top"
       button={
         <button
+          ref={ref}
           className={`thumbnail-card thumbnail-card--has-on-click thumbnail-card--align-label-center ${isActive ? "thumbnail-card--active" : ""}`}
           title={label}
           type="button"
@@ -300,6 +329,8 @@ type PresetsListProps = {
   label: string;
   presets: Preset[];
   onSelect: (preset: Preset | null) => void;
+  onDeleteButtonClick: () => void;
+  onDelete: (presetId: string | number) => void;
 };
 
 const PresetsList: React.FC<PresetsListProps> = ({
@@ -307,6 +338,8 @@ const PresetsList: React.FC<PresetsListProps> = ({
   label,
   presets,
   onSelect,
+  onDeleteButtonClick,
+  onDelete,
 }) => {
   const filteredPresets = presets.filter((preset) => preset.type === blockSlug);
   const { mediaCollection } = usePresetsConfig();
@@ -314,7 +347,7 @@ const PresetsList: React.FC<PresetsListProps> = ({
 
   return (
     <div className="blocks-drawer__presets-popup">
-      {/* Empty option */}
+      {/* Empty option — no delete on the null preset */}
       <PresetItem
         preset={null}
         mediaCollection={mediaCollection}
@@ -330,6 +363,8 @@ const PresetsList: React.FC<PresetsListProps> = ({
             preset={preset}
             mediaCollection={mediaCollection}
             onSelect={onSelect}
+            onDeleteButtonClick={onDeleteButtonClick}
+            onDelete={onDelete}
           />
         ))}
 
