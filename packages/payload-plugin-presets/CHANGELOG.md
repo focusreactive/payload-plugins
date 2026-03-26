@@ -1,3 +1,21 @@
+# @focus-reactive/payload-plugin-presets [0.4.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.3.2...@focus-reactive/payload-plugin-presets@0.4.0) (2026-03-26)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** adapt popups ([9f5140d](https://github.com/focusreactive/payload-plugins/commit/9f5140d4e80eda469751a14bd51b86fc747d1399))
+* **payload-plugin-presets:** check for right media while fetching preview ([f5a33a6](https://github.com/focusreactive/payload-plugins/commit/f5a33a6e2d988de9a2b6473f9a17895cc28b9b08))
+* **payload-plugin-presets:** correct z-index to --z-popup and remove redundant thumbnail-card styles in popover content ([9e4b4f6](https://github.com/focusreactive/payload-plugins/commit/9e4b4f602c17a76e9222d6cd1dd55e3b8a6bcc3a))
+* **payload-plugin-presets:** move save as preset button to the top of the menu list ([cb7bc0e](https://github.com/focusreactive/payload-plugins/commit/cb7bc0e9ebf9cf72b273abc21b58add67cad40e6))
+* **payload-plugin-presets:** remove redundant onClose call and revert unrelated SaveAsPreset changes ([fefa187](https://github.com/focusreactive/payload-plugins/commit/fefa187f6427138f121f2fe35cb7106f171212d6))
+* **payload-plugin-presets:** replace add block title ([21ec362](https://github.com/focusreactive/payload-plugins/commit/21ec362a21b8c87bf5624288ba57ea4ad291d62e))
+* **payload-plugin-presets:** simplify redundant preset count filter in BlockCard ([1fe0bbb](https://github.com/focusreactive/payload-plugins/commit/1fe0bbbdc54367e6f32a48dafa607c3d833cc7e4))
+
+
+### Features
+
+* **payload-plugin-presets:** replace Payload Popup with Radix Popover in BlockCard ([3a6c5fe](https://github.com/focusreactive/payload-plugins/commit/3a6c5fe7714431eab98a023ccb4b817509518ccf))
+
 ## @focus-reactive/payload-plugin-presets [0.3.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.3.1...@focus-reactive/payload-plugin-presets@0.3.2) (2026-03-26)
 
 
