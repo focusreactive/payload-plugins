@@ -67,7 +67,7 @@ export interface PresetsPluginConfig {
   labels?: CollectionConfig["labels"];
   enabled?: boolean;
   /**
-   * Hide the presets collection from the admin sidebar.
+   * Show the presets collection.
    * Useful during development or when you want to manage presets programmatically.
    */
   debug?: boolean;
@@ -207,7 +207,7 @@ const createPresetsCollection = (
         en: "One preset = one type. After choosing type, fill the matching section below.",
         es: "Un preset = un tipo. Tras elegir tipo, rellena la sección correspondiente.",
       },
-      hidden: debug,
+      hidden: !debug,
       ...overrides.admin,
     },
     fields: finalFields,
