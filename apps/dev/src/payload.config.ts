@@ -13,7 +13,7 @@ import { heroFields } from './blocks/Hero'
 import { copyFields } from './blocks/Copy'
 
 import { abTestingPlugin } from '@focus-reactive/payload-plugin-ab'
-import { presetsPlugin } from 'node_modules/@focus-reactive/payload-plugin-presets/dist/plugin'
+import { presetsPlugin } from '@focus-reactive/payload-plugin-presets'
 import { schedulePublicationPlugin } from '@focus-reactive/payload-plugin-scheduling'
 import { commentsPlugin } from '@focus-reactive/payload-plugin-comments'
 import { abAdapter } from './lib/ab-testing/dbAdapter'
