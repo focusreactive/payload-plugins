@@ -281,7 +281,6 @@ const BlockCard: React.FC<BlockCardProps> = ({
             onDelete={onDelete}
             onSelect={(preset) => {
               onPresetSelect(block.slug, preset);
-              onClose();
             }}
           />
         </Popover.Content>
