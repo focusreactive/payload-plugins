@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-presets [0.3.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.3.1...@focus-reactive/payload-plugin-presets@0.3.2) (2026-03-26)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** replace the fragile class-based query with a proper ref attached inside the render prop ([5d83f71](https://github.com/focusreactive/payload-plugins/commit/5d83f710cef0f8f4def10296a27f865bfc94c6cc))
+
 ## @focus-reactive/payload-plugin-presets [0.3.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.3.0...@focus-reactive/payload-plugin-presets@0.3.1) (2026-03-26)
 
 
