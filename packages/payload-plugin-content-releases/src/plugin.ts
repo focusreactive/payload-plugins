@@ -1,6 +1,9 @@
 import type { Config, Plugin } from "payload";
 import type { ContentReleasesPluginConfig } from "./types";
 import { PLUGIN_NAME, DEFAULT_CONFLICT_STRATEGY, DEFAULT_PUBLISH_BATCH_SIZE } from "./constants";
+
+const SIDEBAR_FIELD_PATH =
+  "@focus-reactive/payload-plugin-content-releases/client#ReleaseSidebarField";
 import { buildReleasesCollection } from "./collections/releases";
 import { buildReleaseItemsCollection } from "./collections/releaseItems";
 import { releasesBeforeChange } from "./hooks/releasesBeforeChange";
@@ -70,10 +73,40 @@ export function contentReleasesPlugin(
       });
     }
 
+    // Patch enabled collections to inject sidebar UI field
+    const patchedCollections = (config.collections ?? []).map((collection) => {
+      if (!enabledCollections.includes(collection.slug)) return collection;
+      return {
+        ...collection,
+        fields: [
+          ...collection.fields,
+          {
+            name: "_releases",
+            type: "ui" as const,
+            admin: {
+              position: "sidebar" as const,
+              components: {
+                Field: SIDEBAR_FIELD_PATH,
+              },
+            },
+          },
+        ],
+      };
+    });
+
     return {
       ...config,
+      admin: {
+        ...config.admin,
+        custom: {
+          ...(config.admin as any)?.custom,
+          contentReleases: {
+            enabledCollections,
+          },
+        },
+      },
       collections: [
-        ...(config.collections ?? []),
+        ...patchedCollections,
         releasesCollection,
         releaseItemsCollection,
       ],
