@@ -143,10 +143,12 @@ export function SaveAsPresetButton() {
 
       <DocumentDrawer
         initialData={data}
-        onSave={() => {
+        onSave={({ doc }) => {
+          const document = doc as Data;
+
           toast.success(
             t("presetsPlugin:presetActions:successSaved" as never, {
-              name: data?.name,
+              name: document.name,
             }),
           );
           closeDrawer();
