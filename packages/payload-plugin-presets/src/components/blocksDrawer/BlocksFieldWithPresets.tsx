@@ -88,7 +88,12 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
           subFieldState: subFieldState as FormState,
         });
 
-        toast.success(t('presetsPlugin:blocksDrawer:successAddedWithPreset' as never, { blockType, name: preset.name }));
+        toast.success(
+          t("presetsPlugin:blocksDrawer:successAddedWithPreset" as never, {
+            blockType,
+            name: preset.name,
+          }),
+        );
       } else {
         addFieldRow({ path, rowIndex: addRowIndex, schemaPath, blockType });
       }
@@ -124,6 +129,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
           <button
             className="blocks-field__drawer-toggler"
             type="button"
+            style={{ display: "block" }}
             onClick={handleOpenDrawer}
           >
             <span
