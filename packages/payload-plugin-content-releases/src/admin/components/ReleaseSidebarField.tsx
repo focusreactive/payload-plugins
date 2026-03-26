@@ -104,7 +104,6 @@ export function ReleaseSidebarField() {
 
       <Button
         size="small"
-        buttonStyle="pill"
         onClick={() => {
           const formData = getData();
           setCurrentSnapshot(formData);
@@ -116,7 +115,6 @@ export function ReleaseSidebarField() {
 
       <Button
         size="small"
-        buttonStyle="pill"
         onClick={() => setShowVersionDrawer(true)}
       >
         Add Version to Release
