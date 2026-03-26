@@ -29,6 +29,10 @@ export const PresetAdminComponentPreview: React.FC = () => {
       return;
     }
 
+    if (media?.id === mediaId) {
+      return;
+    }
+
     setIsLoading(true);
     fetch(`/api/${mediaCollection}/${mediaId}`)
       .then((res) => res.json())
