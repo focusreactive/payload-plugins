@@ -24,6 +24,6 @@ export default defineConfig([
     banner: {
       js: '"use client";',
     },
-    external: ["payload", "@payloadcms/ui", "react", "react/jsx-runtime"],
+    external: ["payload", "@payloadcms/ui", "react", "react-dom", "react/jsx-runtime"],
   },
 ]);

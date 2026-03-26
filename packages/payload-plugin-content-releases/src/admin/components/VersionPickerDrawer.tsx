@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { ReleaseDrawer } from "./ReleaseDrawer";
+import { DrawerOverlay } from "./DrawerOverlay";
 
 interface VersionEntry {
   id: string;
@@ -70,30 +71,7 @@ export function VersionPickerDrawer({
 
   // Step 1: Show version list
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.5)",
-        zIndex: 1000,
-        display: "flex",
-        justifyContent: "flex-end",
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div
-        style={{
-          width: 420,
-          background: "var(--theme-elevation-0)",
-          padding: 24,
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: 16,
-        }}
-      >
+    <DrawerOverlay onClose={onClose}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h3 style={{ margin: 0 }}>Select Version</h3>
           <button
@@ -161,7 +139,6 @@ export function VersionPickerDrawer({
         >
           View all versions →
         </a>
-      </div>
-    </div>
+    </DrawerOverlay>
   );
 }

@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { Button, toast } from "@payloadcms/ui";
+import { DrawerOverlay } from "./DrawerOverlay";
 
 interface Release {
   id: string;
@@ -137,30 +138,7 @@ export function ReleaseDrawer({
   }, [newName, newDescription, addToRelease]);
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.5)",
-        zIndex: 1000,
-        display: "flex",
-        justifyContent: "flex-end",
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div
-        style={{
-          width: 420,
-          background: "var(--theme-elevation-0)",
-          padding: 24,
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: 16,
-        }}
-      >
+    <DrawerOverlay onClose={onClose}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -277,7 +255,6 @@ export function ReleaseDrawer({
             ))}
           </div>
         )}
-      </div>
-    </div>
+    </DrawerOverlay>
   );
 }
