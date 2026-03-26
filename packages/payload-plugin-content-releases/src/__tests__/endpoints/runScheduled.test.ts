@@ -31,8 +31,8 @@ describe("runScheduled handler", () => {
       headers: { get: () => "Bearer test-secret" },
       payload: {
         find: vi.fn()
-          .mockResolvedValueOnce({ docs: [dueRelease] })
-          .mockResolvedValueOnce({ docs: [] }),
+          .mockResolvedValueOnce({ docs: [dueRelease] })  // find due releases
+          .mockResolvedValueOnce({ docs: [] }),            // find items (empty -> failed)
         findByID: vi.fn().mockResolvedValue(dueRelease),
         update: vi.fn().mockResolvedValue({}),
       },

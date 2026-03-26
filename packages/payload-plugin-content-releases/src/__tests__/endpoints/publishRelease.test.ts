@@ -9,6 +9,7 @@ function makeReq({
 } = {}) {
   return {
     routeParams: { id: releaseId },
+    user: { id: "user-1" },
     payload: {
       findByID: vi.fn().mockResolvedValue(releaseData),
       find: vi.fn().mockResolvedValue({ docs: releaseItems }),
@@ -23,6 +24,13 @@ describe("publishRelease handler", () => {
     publishBatchSize: 20,
   });
 
+  it("should reject unauthenticated requests", async () => {
+    const req = makeReq();
+    (req as any).user = undefined;
+    const response = await handler(req as any);
+    expect(response.status).toBe(401);
+  });
+
   it("should reject publishing a non-draft release", async () => {
     const req = makeReq({ releaseData: { status: "published", name: "Test" } });
     const response = await handler(req as any);
@@ -31,12 +39,12 @@ describe("publishRelease handler", () => {
     expect(body.error).toContain("draft");
   });
 
-  it("should reject publishing an empty release", async () => {
+  it("should handle publishing an empty release as failed", async () => {
     const req = makeReq({ releaseItems: [] });
     const response = await handler(req as any);
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body.error).toContain("no items");
+    expect(body.status).toBe("failed");
   });
 
   it("should return 200 on successful publish", async () => {

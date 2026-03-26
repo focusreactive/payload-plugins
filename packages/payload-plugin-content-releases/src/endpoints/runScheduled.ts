@@ -1,7 +1,7 @@
 import type { PayloadHandler } from "payload";
 import type { ConflictStrategy } from "../types";
-import { RELEASES_SLUG, RELEASE_ITEMS_SLUG } from "../constants";
-import { executePublish } from "../publish/executePublish";
+import { RELEASES_SLUG } from "../constants";
+import { orchestratePublish } from "../publish/orchestratePublish";
 
 interface RunScheduledConfig {
   secret: string;
@@ -25,59 +25,22 @@ export function createRunScheduledHandler(config: RunScheduledConfig): PayloadHa
           { scheduledAt: { less_than_equal: now } },
         ],
       },
-      limit: 0,
+      limit: 10000,
     });
 
     const results: Array<{ releaseId: string; status: string; published: number; failed: number }> = [];
 
     for (const release of dueReleases) {
-      const { docs: items } = await req.payload.find({
-        collection: RELEASE_ITEMS_SLUG as any,
-        where: { release: { equals: (release as any).id } },
-        limit: 0,
-      });
-
-      if (items.length === 0) {
-        await req.payload.update({
-          collection: RELEASES_SLUG as any,
-          id: (release as any).id,
-          data: { status: "failed", errorLog: [{ error: "No items in release" }] } as any,
-        });
-        results.push({ releaseId: (release as any).id, status: "failed", published: 0, failed: 0 });
-        continue;
-      }
-
-      await req.payload.update({
-        collection: RELEASES_SLUG as any,
-        id: (release as any).id,
-        data: { status: "publishing" } as any,
-      });
-
-      const result = await executePublish({
-        items: items as any,
+      const result = await orchestratePublish({
+        releaseId: (release as any).id,
         payload: req.payload,
         conflictStrategy: config.conflictStrategy,
         batchSize: config.publishBatchSize,
       });
 
-      const hasFailures = result.failed.length > 0;
-      const finalStatus = hasFailures ? "failed" : "published";
-
-      await req.payload.update({
-        collection: RELEASES_SLUG as any,
-        id: (release as any).id,
-        data: {
-          status: finalStatus,
-          ...(hasFailures ? { errorLog: result.failed } : { publishedAt: new Date().toISOString() }),
-          rollbackSnapshot: result.rollbackSnapshot,
-        } as any,
-      });
-
       results.push({
         releaseId: (release as any).id,
-        status: finalStatus,
-        published: result.published.length,
-        failed: result.failed.length,
+        ...result,
       });
     }
 

@@ -24,9 +24,5 @@ export const releasesBeforeChange: CollectionBeforeChangeHook = ({
     );
   }
 
-  if (newStatus === "published") {
-    return { ...data, publishedAt: new Date().toISOString() };
-  }
-
   return data;
 };

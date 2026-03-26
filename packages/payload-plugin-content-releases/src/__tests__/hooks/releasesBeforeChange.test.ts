@@ -67,10 +67,10 @@ describe("releasesBeforeChange", () => {
     expect(result.name).toBe("Updated");
   });
 
-  it("should set publishedAt when transitioning to published", () => {
+  it("should allow valid transition to published without setting publishedAt", () => {
     const result = releasesBeforeChange(
       makeArgs({ status: "published" }, { status: "publishing" }) as any,
     );
-    expect(result.publishedAt).toBeDefined();
+    expect(result.publishedAt).toBeUndefined();
   });
 });

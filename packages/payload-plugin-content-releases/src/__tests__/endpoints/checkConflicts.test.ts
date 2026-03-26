@@ -4,9 +4,22 @@ import { createCheckConflictsHandler } from "../../endpoints/checkConflicts";
 describe("checkConflicts handler", () => {
   const handler = createCheckConflictsHandler();
 
+  it("should reject unauthenticated requests", async () => {
+    const req = {
+      routeParams: { id: "rel-1" },
+      payload: {
+        find: vi.fn().mockResolvedValue({ docs: [] }),
+        findByID: vi.fn(),
+      },
+    };
+    const response = await handler(req as any);
+    expect(response.status).toBe(401);
+  });
+
   it("should return empty conflicts for items with matching versions", async () => {
     const req = {
       routeParams: { id: "rel-1" },
+      user: { id: "user-1" },
       payload: {
         find: vi.fn().mockResolvedValue({
           docs: [
@@ -24,6 +37,7 @@ describe("checkConflicts handler", () => {
   it("should return conflicts for modified documents", async () => {
     const req = {
       routeParams: { id: "rel-1" },
+      user: { id: "user-1" },
       payload: {
         find: vi.fn().mockResolvedValue({
           docs: [

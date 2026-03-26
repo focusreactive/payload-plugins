@@ -1,7 +1,7 @@
 import type { PayloadHandler } from "payload";
 import type { ConflictStrategy } from "../types";
-import { RELEASES_SLUG, RELEASE_ITEMS_SLUG } from "../constants";
-import { executePublish } from "../publish/executePublish";
+import { RELEASES_SLUG } from "../constants";
+import { orchestratePublish } from "../publish/orchestratePublish";
 
 interface PublishReleaseConfig {
   conflictStrategy: ConflictStrategy;
@@ -14,6 +14,10 @@ interface PublishReleaseConfig {
 
 export function createPublishReleaseHandler(config: PublishReleaseConfig): PayloadHandler {
   return async (req) => {
+    if (!req.user) {
+      return Response.json({ error: "Authentication required" }, { status: 401 });
+    }
+
     const releaseId = (req.routeParams as any)?.id as string;
     if (!releaseId) {
       return Response.json({ error: "Missing release ID" }, { status: 400 });
@@ -32,74 +36,20 @@ export function createPublishReleaseHandler(config: PublishReleaseConfig): Paylo
         );
       }
 
-      const { docs: items } = await req.payload.find({
-        collection: RELEASE_ITEMS_SLUG as any,
-        where: { release: { equals: releaseId } },
-        limit: 0,
-      });
-
-      if (items.length === 0) {
-        return Response.json({ error: "Release has no items to publish" }, { status: 400 });
-      }
-
-      // Set status to publishing
-      await req.payload.update({
-        collection: RELEASES_SLUG as any,
-        id: releaseId,
-        data: { status: "publishing" } as any,
-      });
-
-      const result = await executePublish({
-        items: items as any,
+      const result = await orchestratePublish({
+        releaseId,
         payload: req.payload,
         conflictStrategy: config.conflictStrategy,
         batchSize: config.publishBatchSize,
       });
 
-      // Update item statuses
-      for (const p of result.published) {
-        await req.payload.update({
-          collection: RELEASE_ITEMS_SLUG as any,
-          id: p.itemId,
-          data: { status: "published" } as any,
-        });
-      }
-      for (const f of result.failed) {
-        await req.payload.update({
-          collection: RELEASE_ITEMS_SLUG as any,
-          id: f.itemId,
-          data: { status: "failed" } as any,
-        });
-      }
-
-      const hasFailures = result.failed.length > 0;
-      const finalStatus = hasFailures ? "failed" : "published";
-
-      await req.payload.update({
-        collection: RELEASES_SLUG as any,
-        id: releaseId,
-        data: {
-          status: finalStatus,
-          ...(hasFailures
-            ? { errorLog: result.failed }
-            : { publishedAt: new Date().toISOString() }),
-          rollbackSnapshot: result.rollbackSnapshot,
-        } as any,
-      });
-
-      if (hasFailures && config.hooks?.onPublishError) {
-        await config.hooks.onPublishError({ releaseId, errors: result.failed, req });
-      } else if (!hasFailures && config.hooks?.afterPublish) {
+      if (result.status === "failed" && config.hooks?.onPublishError) {
+        await config.hooks.onPublishError({ releaseId, errors: result.errors ?? [], req });
+      } else if (result.status === "published" && config.hooks?.afterPublish) {
         await config.hooks.afterPublish({ releaseId, req });
       }
 
-      return Response.json({
-        ok: true,
-        status: finalStatus,
-        published: result.published.length,
-        failed: result.failed.length,
-        errors: hasFailures ? result.failed : undefined,
-      });
+      return Response.json({ ok: true, ...result });
     } catch (err) {
       return Response.json(
         { error: err instanceof Error ? err.message : "Internal server error" },
