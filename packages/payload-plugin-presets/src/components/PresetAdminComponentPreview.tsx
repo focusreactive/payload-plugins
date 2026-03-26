@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { useField, useTranslation } from "@payloadcms/ui";
+import { useField, useTranslation, ShimmerEffect } from "@payloadcms/ui";
 import { EmptyPlaceholder, type MediaData } from "./shared/index.js";
 import { usePresetsConfig } from "./usePresetsConfig.js";
 
@@ -47,11 +47,7 @@ export const PresetAdminComponentPreview: React.FC = () => {
   }, [mediaId, value, mediaCollection]);
 
   if (isLoading) {
-    return (
-      <div className="preset-admin-preview">
-        <div className="preset-admin-preview__skeleton" />
-      </div>
-    );
+    return <ShimmerEffect height="300px" className="preset-admin-preview" />;
   }
 
   return (

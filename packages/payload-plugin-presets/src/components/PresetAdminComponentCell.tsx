@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { EmptyPlaceholder, type MediaData } from "./shared/index.js";
-import { useTranslation } from "@payloadcms/ui";
+import { ShimmerEffect, useTranslation } from "@payloadcms/ui";
 
 import "./PresetAdminComponent.scss";
 
@@ -16,9 +16,11 @@ export function PresetAdminComponentCell({ media, isLoading }: Props) {
 
   if (isLoading) {
     return (
-      <div className="file">
-        <div className="thumbnail thumbnail--size-small file__thumbnail preset-preview-cell__skeleton" />
-      </div>
+      <ShimmerEffect
+        height="40px"
+        width="40px"
+        className="min-w-[40px] thumbnail thumbnail--size-small file__thumbnail"
+      />
     );
   }
 
