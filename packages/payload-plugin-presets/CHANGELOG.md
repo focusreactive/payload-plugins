@@ -1,3 +1,11 @@
+## @focus-reactive/payload-plugin-presets [0.4.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.4.1...@focus-reactive/payload-plugin-presets@0.4.2) (2026-03-26)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** move save as preset button to the top of the menu lis ([8e23f47](https://github.com/focusreactive/payload-plugins/commit/8e23f47f9c166937e2814ec70ae814104e3ce363))
+* **payload-plugin-resets:** replace custom skeleton animation components with ShimmerEffect ([ca1a54e](https://github.com/focusreactive/payload-plugins/commit/ca1a54e757be7669de8648af6b84e2679df63758))
+
 ## @focus-reactive/payload-plugin-presets [0.4.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.4.0...@focus-reactive/payload-plugin-presets@0.4.1) (2026-03-26)
 
 
