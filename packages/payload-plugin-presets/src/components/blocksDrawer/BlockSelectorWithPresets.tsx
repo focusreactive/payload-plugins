@@ -225,6 +225,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
   onDelete,
 }) => {
   const ref = useRef<HTMLButtonElement | null>(null);
+  const popupContentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!isActive) return;
@@ -232,9 +233,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       const isInsideButton = ref.current?.contains(target);
-      const isInsidePopup = document
-        .querySelector(".blocks-drawer__presets-popup-wrapper")
-        ?.contains(target);
+      const isInsidePopup = popupContentRef.current?.contains(target);
 
       if (!isInsideButton && !isInsidePopup) {
         onClose();
@@ -265,19 +264,20 @@ const BlockCard: React.FC<BlockCardProps> = ({
       buttonType="custom"
       forceOpen={isActive}
       horizontalAlign="right"
-      portalClassName="blocks-drawer__presets-popup-wrapper"
       render={({ close }) => (
-        <PresetsList
-          blockSlug={block.slug}
-          label={label}
-          presets={presets}
-          onDeleteButtonClick={onClose}
-          onDelete={onDelete}
-          onSelect={(preset) => {
-            onPresetSelect(block.slug, preset);
-            close();
-          }}
-        />
+        <div ref={popupContentRef}>
+          <PresetsList
+            blockSlug={block.slug}
+            label={label}
+            presets={presets}
+            onDeleteButtonClick={onClose}
+            onDelete={onDelete}
+            onSelect={(preset) => {
+              onPresetSelect(block.slug, preset);
+              close();
+            }}
+          />
+        </div>
       )}
       showOnHover={false}
       size="large"
