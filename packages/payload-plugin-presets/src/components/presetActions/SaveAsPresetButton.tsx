@@ -55,7 +55,9 @@ export function SaveAsPresetButton() {
   const presetType = presetTypeFromPath ?? blockData?.blockType;
 
   const anchorRef = useRef<HTMLDivElement>(null);
-  const [popupList, setPopupList] = useState<Element | null>(null);
+  const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!presetType) return;
@@ -73,7 +75,19 @@ export function SaveAsPresetButton() {
           ".popup__content .popup-button-list",
         );
 
-        if (list) setPopupList(list);
+        if (list) {
+          const existing = list.querySelector(
+            "[data-save-as-preset-container]",
+          ) as HTMLDivElement | null;
+          if (existing) {
+            setPortalContainer(existing);
+          } else {
+            const container = document.createElement("div");
+            container.setAttribute("data-save-as-preset-container", "true");
+            list.insertBefore(container, list.firstChild);
+            setPortalContainer(container);
+          }
+        }
       }, 0);
     };
 
@@ -97,17 +111,17 @@ export function SaveAsPresetButton() {
       <div ref={anchorRef} style={{ display: "none" }} />
 
       {presetType &&
-        popupList &&
+        portalContainer &&
         createPortal(
-          <div data-save-as-preset="true">
+          <div>
             <PopupList.Button
               className="popup-button-list__button array-actions__action"
               onClick={openDrawer}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
+                width="17"
+                height="17"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -124,7 +138,7 @@ export function SaveAsPresetButton() {
               {t("presetsPlugin:presetActions:saveButton" as never)}
             </PopupList.Button>
           </div>,
-          popupList,
+          portalContainer,
         )}
 
       <DocumentDrawer
