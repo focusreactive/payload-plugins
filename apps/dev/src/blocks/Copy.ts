@@ -1,5 +1,5 @@
 import type { Block, Field } from 'payload'
-import { createPresetActionsField } from '@focus-reactive/payload-plugin-presets'
+import { injectSaveAsPresetButton } from '@focus-reactive/payload-plugin-presets'
 
 export const copyFields: Field[] = [
   {
@@ -12,5 +12,5 @@ export const copyFields: Field[] = [
 export const CopyBlock: Block = {
   slug: 'copy',
   labels: { singular: 'Copy', plural: 'Copy Sections' },
-  fields: [...copyFields, createPresetActionsField()],
+  fields: [...copyFields, injectSaveAsPresetButton()],
 }

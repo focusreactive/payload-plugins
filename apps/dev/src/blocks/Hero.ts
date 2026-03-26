@@ -1,5 +1,5 @@
 import type { Block, Field } from 'payload'
-import { createPresetActionsField } from '@focus-reactive/payload-plugin-presets'
+import { injectSaveAsPresetButton } from '@focus-reactive/payload-plugin-presets'
 
 export const heroFields: Field[] = [
   {
@@ -16,5 +16,5 @@ export const heroFields: Field[] = [
 export const HeroBlock: Block = {
   slug: 'hero',
   labels: { singular: 'Hero', plural: 'Heroes' },
-  fields: [...heroFields, createPresetActionsField()],
+  fields: [...heroFields, injectSaveAsPresetButton()],
 }
