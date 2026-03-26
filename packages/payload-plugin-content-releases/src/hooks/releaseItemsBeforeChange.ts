@@ -11,9 +11,21 @@ export function buildReleaseItemsBeforeChange(): CollectionBeforeChangeHook {
       id: releaseId,
     });
 
-    if ((release as any).status !== "draft") {
+    const releaseStatus = (release as any).status;
+
+    // Allow status-only updates when release is "publishing" (orchestrator updating item outcomes)
+    if (releaseStatus === "publishing" && operation === "update") {
+      const isStatusOnlyUpdate =
+        Object.keys(data).every((k) => k === "status" || k === "release") ||
+        (data.status && originalDoc);
+      if (isStatusOnlyUpdate) {
+        return data;
+      }
+    }
+
+    if (releaseStatus !== "draft") {
       throw new Error(
-        `Release items can only be modified when the release is in "draft" status. Current status: "${(release as any).status}"`,
+        `Release items can only be modified when the release is in "draft" status. Current status: "${releaseStatus}"`,
       );
     }
 

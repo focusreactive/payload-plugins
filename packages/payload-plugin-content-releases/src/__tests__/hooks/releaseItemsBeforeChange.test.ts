@@ -72,6 +72,31 @@ describe("releaseItemsBeforeChange", () => {
     ).rejects.toThrow(/already exists in this release/i);
   });
 
+  it("should allow status-only updates when release is publishing", async () => {
+    const payload = makePayload("publishing", []);
+    const data = {
+      release: "rel-1",
+      status: "published",
+    };
+    const result = await hook(
+      makeArgs(data, payload, "update", { id: "item-1", status: "pending" }) as any,
+    );
+    expect(result.status).toBe("published");
+  });
+
+  it("should reject content updates when release is publishing", async () => {
+    const payload = makePayload("publishing", []);
+    const data = {
+      release: "rel-1",
+      targetCollection: "pages",
+      targetDoc: "doc-1",
+      snapshot: { title: "Sneaky edit" },
+    };
+    await expect(
+      hook(makeArgs(data, payload, "update", { id: "item-1" }) as any),
+    ).rejects.toThrow(/can only be modified.*draft/i);
+  });
+
   it("should allow updates to existing items in draft releases", async () => {
     const payload = makePayload("draft", []);
     const data = {
