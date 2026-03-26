@@ -7,6 +7,7 @@ import { releasesBeforeChange } from "./hooks/releasesBeforeChange";
 import { buildReleaseItemsBeforeChange } from "./hooks/releaseItemsBeforeChange";
 import { createPublishReleaseHandler } from "./endpoints/publishRelease";
 import { createCheckConflictsHandler } from "./endpoints/checkConflicts";
+import { createRunScheduledHandler } from "./endpoints/runScheduled";
 
 export function contentReleasesPlugin(
   options: ContentReleasesPluginConfig,
@@ -39,6 +40,36 @@ export function contentReleasesPlugin(
       },
     );
 
+    const endpoints: NonNullable<Config["endpoints"]> = [
+      ...(config.endpoints ?? []),
+      {
+        path: "/content-releases/:id/publish",
+        method: "post",
+        handler: createPublishReleaseHandler({
+          conflictStrategy: options.conflictStrategy ?? DEFAULT_CONFLICT_STRATEGY,
+          publishBatchSize: options.publishBatchSize ?? DEFAULT_PUBLISH_BATCH_SIZE,
+          hooks: options.hooks,
+        }),
+      },
+      {
+        path: "/content-releases/:id/conflicts",
+        method: "get",
+        handler: createCheckConflictsHandler(),
+      },
+    ];
+
+    if (options.schedulerSecret) {
+      endpoints.push({
+        path: "/content-releases/run-scheduled",
+        method: "get",
+        handler: createRunScheduledHandler({
+          secret: options.schedulerSecret,
+          conflictStrategy: options.conflictStrategy ?? DEFAULT_CONFLICT_STRATEGY,
+          publishBatchSize: options.publishBatchSize ?? DEFAULT_PUBLISH_BATCH_SIZE,
+        }),
+      });
+    }
+
     return {
       ...config,
       collections: [
@@ -46,23 +77,7 @@ export function contentReleasesPlugin(
         releasesCollection,
         releaseItemsCollection,
       ],
-      endpoints: [
-        ...(config.endpoints ?? []),
-        {
-          path: "/content-releases/:id/publish",
-          method: "post",
-          handler: createPublishReleaseHandler({
-            conflictStrategy: options.conflictStrategy ?? DEFAULT_CONFLICT_STRATEGY,
-            publishBatchSize: options.publishBatchSize ?? DEFAULT_PUBLISH_BATCH_SIZE,
-            hooks: options.hooks,
-          }),
-        },
-        {
-          path: "/content-releases/:id/conflicts",
-          method: "get",
-          handler: createCheckConflictsHandler(),
-        },
-      ],
+      endpoints,
     };
   };
 }
