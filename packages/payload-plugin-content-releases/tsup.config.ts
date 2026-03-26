@@ -1,14 +1,29 @@
 import { defineConfig } from "tsup";
 
-export default defineConfig({
-  entry: {
-    index: "src/index.ts",
-    client: "src/client.ts",
+export default defineConfig([
+  {
+    entry: {
+      index: "src/index.ts",
+    },
+    format: ["esm"],
+    dts: true,
+    sourcemap: true,
+    splitting: false,
+    clean: true,
+    external: ["payload"],
   },
-  format: ["esm"],
-  dts: true,
-  sourcemap: true,
-  splitting: false,
-  clean: true,
-  external: ["payload", "@payloadcms/ui", "react"],
-});
+  {
+    entry: {
+      client: "src/client.ts",
+    },
+    format: ["esm"],
+    dts: true,
+    sourcemap: true,
+    splitting: false,
+    clean: false,
+    banner: {
+      js: '"use client";',
+    },
+    external: ["payload", "@payloadcms/ui", "react", "react/jsx-runtime"],
+  },
+]);
