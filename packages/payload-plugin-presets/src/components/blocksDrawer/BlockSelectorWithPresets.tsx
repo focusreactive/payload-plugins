@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import * as Popover from "@radix-ui/react-popover";
 import {
   useTranslation,
-  Popup,
   ShimmerEffect,
   ChevronIcon,
+  ConfirmationModal,
+  useModal,
 } from "@payloadcms/ui";
 import type { ClientBlock } from "payload";
 import { usePresetsConfig } from "../usePresetsConfig.js";
@@ -28,6 +30,7 @@ export const BlockSelectorWithPresets: React.FC<
 
   const [searchTerm, setSearchTerm] = useState("");
   const [activeBlockSlug, setActiveBlockSlug] = useState<string | null>(null);
+  const isMobile = useIsMobile();
   const [isLoadingPresets, setIsLoadingPresets] = useState(false);
   const [presetsCache, setPresetsCache] = useState<Preset[]>([]);
 
@@ -179,6 +182,7 @@ export const BlockSelectorWithPresets: React.FC<
                       label={label}
                       hasPresets={hasPresets}
                       isActive={isActive}
+                      isMobile={isMobile}
                       presets={blockPresets}
                       onBlockClick={() =>
                         hasPresets
@@ -201,11 +205,24 @@ export const BlockSelectorWithPresets: React.FC<
 };
 
 // Reusable BlockCard component
+function useIsMobile(breakpoint = 500): boolean {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint}px)`);
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 type BlockCardProps = {
   block: ClientBlock;
   label: string;
   hasPresets: boolean;
   isActive: boolean;
+  isMobile: boolean;
   presets: Preset[];
   onBlockClick: () => void;
   onPresetSelect: (blockType: string, preset: Preset | null) => void;
@@ -218,32 +235,24 @@ const BlockCard: React.FC<BlockCardProps> = ({
   label,
   hasPresets,
   isActive,
+  isMobile,
   presets,
   onBlockClick,
   onPresetSelect,
   onClose,
   onDelete,
 }) => {
-  const ref = useRef<HTMLButtonElement | null>(null);
-  const popupContentRef = useRef<HTMLDivElement | null>(null);
+  const [deletingPreset, setDeletingPreset] = useState<Preset | null>(null);
+  const { openModal } = useModal();
+  const { slug: presetsCollectionSlug } = usePresetsConfig();
+  const { t } = useTranslation();
 
-  useEffect(() => {
-    if (!isActive) return;
+  const modalSlug = `delete-preset-${block.slug}`;
 
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const isInsideButton = ref.current?.contains(target);
-      const isInsidePopup = popupContentRef.current?.contains(target);
-
-      if (!isInsideButton && !isInsidePopup) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isActive, onClose]);
+  const handleDeleteRequest = (preset: Preset) => {
+    setDeletingPreset(preset);
+    openModal(modalSlug);
+  };
 
   if (!hasPresets) {
     return (
@@ -260,49 +269,78 @@ const BlockCard: React.FC<BlockCardProps> = ({
   }
 
   return (
-    <Popup
-      buttonType="custom"
-      forceOpen={isActive}
-      horizontalAlign="right"
-      render={({ close }) => (
-        <div ref={popupContentRef}>
-          <PresetsList
-            blockSlug={block.slug}
-            label={label}
-            presets={presets}
-            onDeleteButtonClick={onClose}
-            onDelete={onDelete}
-            onSelect={(preset) => {
-              onPresetSelect(block.slug, preset);
-              close();
-            }}
-          />
-        </div>
-      )}
-      showOnHover={false}
-      size="large"
-      verticalAlign="top"
-      button={
-        <button
-          ref={ref}
-          className={`thumbnail-card thumbnail-card--has-on-click thumbnail-card--align-label-center ${isActive ? "thumbnail-card--active" : ""}`}
-          title={label}
-          type="button"
-          onClick={onBlockClick}
-        >
-          <BlockThumbnail imageURL={block.imageURL} label={label} />
-          <div className="thumbnail-card__label">
-            {label}{" "}
-            {presets.length > 0
-              ? `(${presets.filter((preset) => preset.type === block.slug).length})`
-              : ""}
-            <ChevronIcon
-              className={`thumbnail-card__chevron ${isActive ? "thumbnail-card__chevron--open" : ""}`}
+    <>
+      <Popover.Root
+        open={isActive}
+        onOpenChange={(open) => {
+          if (!open) onClose();
+        }}
+      >
+        <Popover.Trigger asChild>
+          <button
+            className={`thumbnail-card thumbnail-card--has-on-click thumbnail-card--align-label-center ${isActive ? "thumbnail-card--active" : ""}`}
+            title={label}
+            type="button"
+            onClick={onBlockClick}
+          >
+            <BlockThumbnail imageURL={block.imageURL} label={label} />
+            <div className="thumbnail-card__label">
+              {label}{" "}
+              {presets.length > 0 ? `(${presets.length})` : ""}
+              <ChevronIcon
+                className={`thumbnail-card__chevron ${isActive ? "thumbnail-card__chevron--open" : ""}`}
+              />
+            </div>
+          </button>
+        </Popover.Trigger>
+        <Popover.Portal>
+          <Popover.Content
+            className="blocks-drawer__popover-content"
+            side={isMobile ? "bottom" : "right"}
+            align="start"
+            sideOffset={8}
+            avoidCollisions
+            collisionPadding={8}
+            onOpenAutoFocus={(e) => e.preventDefault()}
+          >
+            <PresetsList
+              blockSlug={block.slug}
+              label={label}
+              presets={presets}
+              onDeleteRequest={handleDeleteRequest}
+              onSelect={(preset) => {
+                onPresetSelect(block.slug, preset);
+              }}
             />
-          </div>
-        </button>
-      }
-    />
+          </Popover.Content>
+        </Popover.Portal>
+      </Popover.Root>
+
+      {deletingPreset && (
+        <ConfirmationModal
+          className="confirmation-modal"
+          modalSlug={modalSlug}
+          heading={t("presetsPlugin:deletePreset:heading" as never)}
+          body={t("presetsPlugin:deletePreset:body" as never, {
+            name: deletingPreset.name,
+          })}
+          confirmingLabel={t("presetsPlugin:deletePreset:confirming" as never)}
+          confirmLabel={t("presetsPlugin:deletePreset:confirm" as never)}
+          cancelLabel={t("presetsPlugin:deletePreset:cancel" as never)}
+          onConfirm={async () => {
+            const res = await fetch(
+              `/api/${presetsCollectionSlug}/${deletingPreset.id}`,
+              { method: "DELETE" },
+            );
+            if (res.ok) {
+              onDelete(deletingPreset.id);
+              setDeletingPreset(null);
+              onClose();
+            }
+          }}
+        />
+      )}
+    </>
   );
 };
 
@@ -329,8 +367,7 @@ type PresetsListProps = {
   label: string;
   presets: Preset[];
   onSelect: (preset: Preset | null) => void;
-  onDeleteButtonClick: () => void;
-  onDelete: (presetId: string | number) => void;
+  onDeleteRequest: (preset: Preset) => void;
 };
 
 const PresetsList: React.FC<PresetsListProps> = ({
@@ -338,8 +375,7 @@ const PresetsList: React.FC<PresetsListProps> = ({
   label,
   presets,
   onSelect,
-  onDeleteButtonClick,
-  onDelete,
+  onDeleteRequest,
 }) => {
   const filteredPresets = presets.filter((preset) => preset.type === blockSlug);
   const { mediaCollection } = usePresetsConfig();
@@ -363,8 +399,7 @@ const PresetsList: React.FC<PresetsListProps> = ({
             preset={preset}
             mediaCollection={mediaCollection}
             onSelect={onSelect}
-            onDeleteButtonClick={onDeleteButtonClick}
-            onDelete={onDelete}
+            onDeleteRequest={onDeleteRequest}
           />
         ))}
 

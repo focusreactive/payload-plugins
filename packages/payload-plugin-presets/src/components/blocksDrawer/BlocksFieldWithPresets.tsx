@@ -138,7 +138,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
             >
               <span className="btn__content">
                 <span className="btn__label">
-                  {t("presetsPlugin:blocksDrawer:addBlockWithPreset" as never)}
+                  {t("presetsPlugin:blocksDrawer:addBlockTitle" as never)}
                 </span>
                 <span className="btn__icon">
                   <svg

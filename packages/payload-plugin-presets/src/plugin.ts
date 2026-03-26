@@ -275,7 +275,6 @@ const pluginTranslations = {
       },
       blocksDrawer: {
         noPresetsAvailable: "No presets available",
-        addBlockWithPreset: "Add block with preset",
         addBlockTitle: "Add block",
         empty: "Empty",
         preview: "Preview",
@@ -317,7 +316,6 @@ const pluginTranslations = {
       },
       blocksDrawer: {
         noPresetsAvailable: "No hay presets disponibles",
-        addBlockWithPreset: "Añadir bloque con preset",
         addBlockTitle: "Añadir bloque",
         empty: "Vacío",
         preview: "Vista previa",
