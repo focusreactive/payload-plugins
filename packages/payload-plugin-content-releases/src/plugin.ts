@@ -3,6 +3,8 @@ import type { ContentReleasesPluginConfig } from "./types";
 import { PLUGIN_NAME } from "./constants";
 import { buildReleasesCollection } from "./collections/releases";
 import { buildReleaseItemsCollection } from "./collections/releaseItems";
+import { releasesBeforeChange } from "./hooks/releasesBeforeChange";
+import { buildReleaseItemsBeforeChange } from "./hooks/releaseItemsBeforeChange";
 
 export function contentReleasesPlugin(
   options: ContentReleasesPluginConfig,
@@ -20,11 +22,19 @@ export function contentReleasesPlugin(
 
     const releasesCollection = buildReleasesCollection({
       access: access?.releases,
+      hooks: {
+        beforeChange: [releasesBeforeChange],
+      },
     });
 
     const releaseItemsCollection = buildReleaseItemsCollection(
       enabledCollections,
-      { access: access?.releaseItems },
+      {
+        access: access?.releaseItems,
+        hooks: {
+          beforeChange: [buildReleaseItemsBeforeChange()],
+        },
+      },
     );
 
     return {
