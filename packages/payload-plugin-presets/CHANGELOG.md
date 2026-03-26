@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-presets [0.4.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.4.2...@focus-reactive/payload-plugin-presets@0.4.3) (2026-03-26)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** specify current title of created preset in toast message ([9d78875](https://github.com/focusreactive/payload-plugins/commit/9d78875c1adad5ea19696d890a13b5f029ff7622))
+
 ## @focus-reactive/payload-plugin-presets [0.4.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.4.1...@focus-reactive/payload-plugin-presets@0.4.2) (2026-03-26)
 
 
