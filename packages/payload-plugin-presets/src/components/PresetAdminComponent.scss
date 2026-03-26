@@ -92,6 +92,7 @@
   align-items: center;
   width: 100%;
   flex-direction: column;
+  overflow: hidden;
 
   &__image {
     border-radius: 8px;
