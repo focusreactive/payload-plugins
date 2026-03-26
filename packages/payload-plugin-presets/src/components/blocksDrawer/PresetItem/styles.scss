@@ -1,3 +1,12 @@
+.preset-item__popover-content {
+  background: var(--theme-elevation-0);
+  border: 1px solid var(--theme-elevation-200);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  padding: 8px;
+  z-index: var(--z-popup, 100);
+}
+
 .remove-preset {
   position: absolute;
   top: 4px;
@@ -24,5 +33,15 @@
   &:hover {
     background-color: var(--theme-error-150);
     color: var(--theme-error-600);
+  }
+}
+
+@media (hover: none) {
+  .remove-preset {
+    opacity: 1;
+  }
+
+  .preset-item__popover-content {
+    display: none;
   }
 }

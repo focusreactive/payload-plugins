@@ -120,3 +120,16 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   z-index: var(--z-popup, 100);
 }
+
+@media (max-width: 500px) {
+  .blocks-drawer__popover-content[data-side="bottom"],
+  .blocks-drawer__popover-content[data-side="top"] {
+    width: calc(100vw - 2 * var(--gutter-h));
+    max-width: none;
+    left: var(--gutter-h) !important;
+  }
+
+  .blocks-drawer__presets-popup {
+    max-width: 100% !important;
+  }
+}
