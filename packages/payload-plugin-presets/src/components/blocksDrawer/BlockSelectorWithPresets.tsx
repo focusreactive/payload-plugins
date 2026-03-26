@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import * as Popover from "@radix-ui/react-popover";
 import {
   useTranslation,
-  Popup,
   ShimmerEffect,
   ChevronIcon,
 } from "@payloadcms/ui";
@@ -224,27 +224,6 @@ const BlockCard: React.FC<BlockCardProps> = ({
   onClose,
   onDelete,
 }) => {
-  const ref = useRef<HTMLButtonElement | null>(null);
-  const popupContentRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!isActive) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const isInsideButton = ref.current?.contains(target);
-      const isInsidePopup = popupContentRef.current?.contains(target);
-
-      if (!isInsideButton && !isInsidePopup) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isActive, onClose]);
-
   if (!hasPresets) {
     return (
       <button
@@ -260,31 +239,14 @@ const BlockCard: React.FC<BlockCardProps> = ({
   }
 
   return (
-    <Popup
-      buttonType="custom"
-      forceOpen={isActive}
-      horizontalAlign="right"
-      render={({ close }) => (
-        <div ref={popupContentRef}>
-          <PresetsList
-            blockSlug={block.slug}
-            label={label}
-            presets={presets}
-            onDeleteButtonClick={onClose}
-            onDelete={onDelete}
-            onSelect={(preset) => {
-              onPresetSelect(block.slug, preset);
-              close();
-            }}
-          />
-        </div>
-      )}
-      showOnHover={false}
-      size="large"
-      verticalAlign="top"
-      button={
+    <Popover.Root
+      open={isActive}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <Popover.Trigger asChild>
         <button
-          ref={ref}
           className={`thumbnail-card thumbnail-card--has-on-click thumbnail-card--align-label-center ${isActive ? "thumbnail-card--active" : ""}`}
           title={label}
           type="button"
@@ -301,8 +263,30 @@ const BlockCard: React.FC<BlockCardProps> = ({
             />
           </div>
         </button>
-      }
-    />
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content
+          className="blocks-drawer__popover-content"
+          side="right"
+          sideOffset={8}
+          avoidCollisions
+          collisionPadding={8}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          <PresetsList
+            blockSlug={block.slug}
+            label={label}
+            presets={presets}
+            onDeleteButtonClick={onClose}
+            onDelete={onDelete}
+            onSelect={(preset) => {
+              onPresetSelect(block.slug, preset);
+              onClose();
+            }}
+          />
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 };
 
