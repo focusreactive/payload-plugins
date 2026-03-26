@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
-  Button,
+  PopupList,
   useFieldPath,
   useForm,
   useTranslation,
@@ -11,6 +13,7 @@ import {
 } from "@payloadcms/ui";
 import { getParentPath, getPresetTypeFromPath } from "../utils.js";
 import { usePresetsConfig } from "../usePresetsConfig.js";
+import { Data } from "payload";
 
 /** Recursively remove excluded keys from object at all nesting levels */
 function cleanPresetData(obj: unknown, excludeKeys: Set<string>): unknown {
@@ -51,35 +54,85 @@ export function SaveAsPresetButton() {
     getDataByPath<{ blockType?: string } | null>(parentPath) ?? null;
   const presetType = presetTypeFromPath ?? blockData?.blockType;
 
-  if (!presetType) {
-    return null;
-  }
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const [popupList, setPopupList] = useState<Element | null>(null);
+
+  useEffect(() => {
+    if (!presetType) return;
+
+    const row = anchorRef.current?.closest(".blocks-field__row");
+    const triggerWrap = row?.querySelector(
+      ".array-actions .popup__trigger-wrap",
+    );
+
+    if (!triggerWrap) return;
+
+    const handleClick = () => {
+      setTimeout(() => {
+        const list = document.body.querySelector(
+          ".popup__content .popup-button-list",
+        );
+
+        if (list) setPopupList(list);
+      }, 0);
+    };
+
+    triggerWrap.addEventListener("click", handleClick);
+
+    return () => triggerWrap.removeEventListener("click", handleClick);
+  }, [presetType]);
 
   const groupData = getDataByPath<Record<string, unknown>>(parentPath);
-  const data = {
-    name: `${presetType.charAt(0).toUpperCase() + presetType.slice(1)} ${new Date().toLocaleDateString()}`,
-    type: presetType,
-    [presetType]: cleanPresetData(groupData ?? {}, excludeSet),
-    tenant: tenantId,
-  };
+  const data = presetType
+    ? ({
+        name: `${presetType.charAt(0).toUpperCase() + presetType.slice(1)} ${new Date().toLocaleDateString()}`,
+        type: presetType,
+        [presetType]: cleanPresetData(groupData ?? {}, excludeSet),
+        tenant: tenantId,
+      } as Data)
+    : undefined;
 
   return (
     <>
-      <Button
-        buttonStyle="secondary"
-        size="medium"
-        onClick={openDrawer}
-        extraButtonProps={{ style: { margin: "0" } }}
-      >
-        {t("presetsPlugin:presetActions:saveButton" as never)}
-      </Button>
+      <div ref={anchorRef} style={{ display: "none" }} />
+
+      {presetType &&
+        popupList &&
+        createPortal(
+          <div data-save-as-preset="true">
+            <PopupList.Button
+              className="popup-button-list__button array-actions__action"
+              onClick={openDrawer}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                className="icon"
+              >
+                <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+                <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" />
+                <path d="M7 3v4a1 1 0 0 0 1 1h7" />
+              </svg>
+
+              {t("presetsPlugin:presetActions:saveButton" as never)}
+            </PopupList.Button>
+          </div>,
+          popupList,
+        )}
 
       <DocumentDrawer
         initialData={data}
         onSave={() => {
           toast.success(
             t("presetsPlugin:presetActions:successSaved" as never, {
-              name: data.name,
+              name: data?.name,
             }),
           );
           closeDrawer();
