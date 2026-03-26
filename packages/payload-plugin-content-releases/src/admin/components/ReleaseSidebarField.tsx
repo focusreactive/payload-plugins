@@ -61,7 +61,7 @@ export function ReleaseSidebarField() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
       <div style={{ fontWeight: 600, fontSize: "13px", textTransform: "uppercase", color: "#888" }}>
         Releases
       </div>
@@ -104,7 +104,7 @@ export function ReleaseSidebarField() {
 
       <Button
         size="small"
-        buttonStyle="secondary"
+        buttonStyle="pill"
         onClick={() => {
           const formData = getData();
           setCurrentSnapshot(formData);
@@ -116,7 +116,7 @@ export function ReleaseSidebarField() {
 
       <Button
         size="small"
-        buttonStyle="secondary"
+        buttonStyle="pill"
         onClick={() => setShowVersionDrawer(true)}
       >
         Add Version to Release

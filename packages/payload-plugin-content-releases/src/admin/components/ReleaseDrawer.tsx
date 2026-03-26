@@ -9,6 +9,7 @@ interface Release {
   name: string;
   status: string;
   createdAt: string;
+  scheduledAt?: string;
 }
 
 interface ReleaseDrawerProps {
@@ -34,6 +35,7 @@ export function ReleaseDrawer({
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
+  const [newScheduledAt, setNewScheduledAt] = useState("");
 
   const fetchDraftReleases = useCallback(async () => {
     setLoading(true);
@@ -116,26 +118,44 @@ export function ReleaseDrawer({
     if (!newName.trim()) return;
     setCreating(true);
     try {
+      const releaseData: Record<string, any> = {
+        name: newName.trim(),
+        description: newDescription.trim() || undefined,
+      };
+
+      // If scheduled date provided, include it (status will be set to "scheduled" after creation)
+      if (newScheduledAt) {
+        releaseData.scheduledAt = new Date(newScheduledAt).toISOString();
+      }
+
       const res = await fetch("/api/releases", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newName.trim(),
-          description: newDescription.trim() || undefined,
-        }),
+        body: JSON.stringify(releaseData),
       });
       if (!res.ok) {
         toast.error("Failed to create release");
         return;
       }
       const data = await res.json();
+
+      // Add item to release first
       await addToRelease(data.doc.id, data.doc.name);
+
+      // If scheduledAt was set, update status to scheduled after items are added
+      if (newScheduledAt) {
+        await fetch(`/api/releases/${data.doc.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "scheduled" }),
+        });
+      }
     } catch {
       toast.error("Failed to create release");
     } finally {
       setCreating(false);
     }
-  }, [newName, newDescription, addToRelease]);
+  }, [newName, newDescription, newScheduledAt, addToRelease]);
 
   return (
     <DrawerOverlay onClose={onClose}>
@@ -206,6 +226,22 @@ export function ReleaseDrawer({
                 resize: "vertical",
               }}
             />
+            <label style={{ fontSize: 12, fontWeight: 500, color: "var(--theme-text)" }}>
+              Schedule publish (optional)
+            </label>
+            <input
+              type="datetime-local"
+              value={newScheduledAt}
+              onChange={(e) => setNewScheduledAt(e.target.value)}
+              style={{
+                padding: "8px 10px",
+                borderRadius: 4,
+                border: "1px solid var(--theme-elevation-300)",
+                background: "var(--theme-elevation-50)",
+                color: "var(--theme-text)",
+                fontSize: 14,
+              }}
+            />
             <div style={{ display: "flex", gap: 8 }}>
               <Button size="small" onClick={createAndAdd} disabled={!newName.trim() || creating}>
                 {creating ? "Creating..." : "Create & Add"}
@@ -247,7 +283,14 @@ export function ReleaseDrawer({
                   width: "100%",
                 }}
               >
-                <span style={{ fontWeight: 500 }}>{r.name}</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span style={{ fontWeight: 500 }}>{r.name}</span>
+                  {r.scheduledAt && (
+                    <span style={{ fontSize: 11, color: "#888" }}>
+                      Scheduled: {new Date(r.scheduledAt).toLocaleString()}
+                    </span>
+                  )}
+                </div>
                 <span style={{ fontSize: 12, color: "#888" }}>
                   {new Date(r.createdAt).toLocaleDateString()}
                 </span>
