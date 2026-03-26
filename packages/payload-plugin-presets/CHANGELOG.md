@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-presets [0.4.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.4.0...@focus-reactive/payload-plugin-presets@0.4.1) (2026-03-26)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** hide source collection on debug false ([b7cbbe2](https://github.com/focusreactive/payload-plugins/commit/b7cbbe23e37d25404f83892982ce5a8a8d986503))
+
 # @focus-reactive/payload-plugin-presets [0.4.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.3.2...@focus-reactive/payload-plugin-presets@0.4.0) (2026-03-26)
 
 
