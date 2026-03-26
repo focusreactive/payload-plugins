@@ -5,6 +5,9 @@ import { CopyBlock } from '../blocks/Copy'
 
 export const Pages: CollectionConfig = {
   slug: 'pages',
+  versions: {
+    drafts: true,
+  },
   admin: {
     useAsTitle: 'title',
     livePreview: {

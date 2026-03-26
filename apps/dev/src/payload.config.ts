@@ -16,6 +16,7 @@ import { abTestingPlugin } from '@focus-reactive/payload-plugin-ab'
 import { presetsPlugin } from '@focus-reactive/payload-plugin-presets'
 import { schedulePublicationPlugin } from '@focus-reactive/payload-plugin-scheduling'
 import { commentsPlugin } from '@focus-reactive/payload-plugin-comments'
+import { contentReleasesPlugin } from '@focus-reactive/payload-plugin-content-releases'
 import { abAdapter } from './lib/ab-testing/dbAdapter'
 
 const filename = fileURLToPath(import.meta.url)
@@ -86,6 +87,9 @@ export default buildConfig({
         },
       ],
       usernameFieldPath: 'name',
+    }),
+    contentReleasesPlugin({
+      enabledCollections: ['pages'],
     }),
   ],
 })
