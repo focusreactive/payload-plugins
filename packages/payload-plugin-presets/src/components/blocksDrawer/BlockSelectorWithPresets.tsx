@@ -255,9 +255,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
           <BlockThumbnail imageURL={block.imageURL} label={label} />
           <div className="thumbnail-card__label">
             {label}{" "}
-            {presets.length > 0
-              ? `(${presets.filter((preset) => preset.type === block.slug).length})`
-              : ""}
+            {presets.length > 0 ? `(${presets.length})` : ""}
             <ChevronIcon
               className={`thumbnail-card__chevron ${isActive ? "thumbnail-card__chevron--open" : ""}`}
             />
