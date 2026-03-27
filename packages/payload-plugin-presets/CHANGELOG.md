@@ -1,3 +1,17 @@
+# @focus-reactive/payload-plugin-presets [0.5.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.4.3...@focus-reactive/payload-plugin-presets@0.5.0) (2026-03-27)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** add blocks config context to extract block label ([d3d444c](https://github.com/focusreactive/payload-plugins/commit/d3d444cf32bb2994a62f9e5c4de3c7d1482785c3))
+* **payload-plugin-presets:** improve keyboard navigation and focus management in blocks drawer ([35209ea](https://github.com/focusreactive/payload-plugins/commit/35209ea2f34b83f5c9db6ece7e8bc9b6911ded47))
+
+
+### Features
+
+* **payload-plugin-presets:** create BlockLabelWithPresets that injects "Save as preset" button to the actions list ([0abdea0](https://github.com/focusreactive/payload-plugins/commit/0abdea0edb98106678354ce7fd9375d92257769f))
+* **payload-plugin-presets:** style preset item ([5c736d3](https://github.com/focusreactive/payload-plugins/commit/5c736d3541ee1f86c4d8d515b9d52b48a7af828f))
+
 ## @focus-reactive/payload-plugin-presets [0.4.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.4.2...@focus-reactive/payload-plugin-presets@0.4.3) (2026-03-26)
 
 
