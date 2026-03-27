@@ -6,6 +6,7 @@ import { useTranslation } from "@payloadcms/ui";
 import { usePresetsConfig } from "../../usePresetsConfig.js";
 import Image from "next/image";
 import { TrashIcon } from "@payloadcms/ui/icons/Trash";
+import { EditIcon } from "@payloadcms/ui/icons/Edit";
 import * as Popover from "@radix-ui/react-popover";
 
 import "./styles.scss";
@@ -17,6 +18,8 @@ interface Props {
   label?: string;
   onSelect: (preset: Preset | null) => void;
   onDeleteRequest?: (preset: Preset) => void;
+  tabIndex?: number;
+  onFocus?: () => void;
 }
 
 export function PresetItem({
@@ -25,10 +28,13 @@ export function PresetItem({
   label,
   onSelect,
   onDeleteRequest,
+  tabIndex,
+  onFocus,
 }: Props) {
   const { preview } = preset ?? {};
 
   const { t } = useTranslation();
+  const { slug } = usePresetsConfig();
 
   const [media, setMedia] = useState<MediaData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,33 +81,50 @@ export function PresetItem({
       <Popover.Trigger asChild>
         <button
           type="button"
-          className="popover__thumbnail-card thumbnail-card thumbnail-card--has-on-click thumbnail-card--align-label-center"
+          className="preset-item"
           onClick={() => onSelect(preset)}
           onMouseEnter={() => setIsOpen(true)}
           onMouseLeave={() => setIsOpen(false)}
+          onFocus={() => { setIsOpen(true); onFocus?.(); }}
+          onBlur={() => setIsOpen(false)}
+          tabIndex={tabIndex}
         >
-          <div className="thumbnail-card__thumbnail">
-            <PresetAdminComponentCell media={media} isLoading={isLoading} />
+          <div className="preset-item__thumbnail">
+            <PresetAdminComponentCell
+              media={media}
+              isLoading={isLoading}
+              size="md"
+            />
           </div>
 
-          <div
-            className="thumbnail-card__label"
-            style={{ ...(!preset ? { fontWeight: "normal" } : null) }}
-          >
-            {preset
-              ? preset.name
-              : `${t("presetsPlugin:blocksDrawer:empty" as never)} ${label}`}
-          </div>
+          <div className="preset-item__content">
+            <div className="preset-item__label">
+              {preset
+                ? preset.name
+                : `${t("presetsPlugin:blocksDrawer:empty" as never)} ${label}`}
+            </div>
 
-          {preset?.name && (
-            <button
-              className="remove-preset"
-              type="button"
-              onClick={handleRemoveButtonClick}
-            >
-              <TrashIcon className="remove-preset__icon" />
-            </button>
-          )}
+            <div className="preset-item__actions">
+              {preset?.id && (
+                <a
+                  className="preset-action edit-preset"
+                  href={`/admin/collections/${slug}/${preset.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <EditIcon className="edit-preset__icon" />
+                </a>
+              )}
+              {preset?.name && (
+                <button
+                  className="preset-action remove-preset"
+                  type="button"
+                  onClick={handleRemoveButtonClick}
+                >
+                  <TrashIcon className="remove-preset__icon" />
+                </button>
+              )}
+            </div>
+          </div>
         </button>
       </Popover.Trigger>
 
@@ -115,18 +138,12 @@ export function PresetItem({
             avoidCollisions
             collisionPadding={8}
             onOpenAutoFocus={(e) => e.preventDefault()}
-            onMouseEnter={() => setIsOpen(true)}
-            onMouseLeave={() => setIsOpen(false)}
           >
-            <Image
-              alt={
-                media.alt || t("presetsPlugin:blocksDrawer:preview" as never)
-              }
-              src={mediaUrl}
-              width={300}
-              height={300}
-              className="preset-preview-cell__popup-image"
-              unoptimized
+            <PresetAdminComponentCell
+              imageClassName="preset-preview-cell__popup-image"
+              media={media}
+              isLoading={false}
+              size="lg"
             />
           </Popover.Content>
         </Popover.Portal>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import * as Popover from "@radix-ui/react-popover";
 import {
@@ -246,12 +246,25 @@ const BlockCard: React.FC<BlockCardProps> = ({
   const { openModal } = useModal();
   const { slug: presetsCollectionSlug } = usePresetsConfig();
   const { t } = useTranslation();
+  const presetListRef = useRef<HTMLDivElement>(null);
 
   const modalSlug = `delete-preset-${block.slug}`;
 
   const handleDeleteRequest = (preset: Preset) => {
     setDeletingPreset(preset);
     openModal(modalSlug);
+  };
+
+  const handleTriggerKeyDown = (e: React.KeyboardEvent) => {
+    if (!isActive) return;
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    e.preventDefault();
+    const items =
+      presetListRef.current?.querySelectorAll<HTMLElement>(
+        "button.preset-item",
+      );
+    if (!items?.length) return;
+    (e.key === "ArrowDown" ? items[0] : items[items.length - 1]).focus();
   };
 
   if (!hasPresets) {
@@ -282,11 +295,11 @@ const BlockCard: React.FC<BlockCardProps> = ({
             title={label}
             type="button"
             onClick={onBlockClick}
+            onKeyDown={handleTriggerKeyDown}
           >
             <BlockThumbnail imageURL={block.imageURL} label={label} />
             <div className="thumbnail-card__label">
-              {label}{" "}
-              {presets.length > 0 ? `(${presets.length})` : ""}
+              {label} {presets.length > 0 ? `(${presets.length})` : ""}
               <ChevronIcon
                 className={`thumbnail-card__chevron ${isActive ? "thumbnail-card__chevron--open" : ""}`}
               />
@@ -307,6 +320,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
               blockSlug={block.slug}
               label={label}
               presets={presets}
+              listRef={presetListRef}
               onDeleteRequest={handleDeleteRequest}
               onSelect={(preset) => {
                 onPresetSelect(block.slug, preset);
@@ -368,6 +382,7 @@ type PresetsListProps = {
   presets: Preset[];
   onSelect: (preset: Preset | null) => void;
   onDeleteRequest: (preset: Preset) => void;
+  listRef: React.RefObject<HTMLDivElement | null>;
 };
 
 const PresetsList: React.FC<PresetsListProps> = ({
@@ -376,39 +391,88 @@ const PresetsList: React.FC<PresetsListProps> = ({
   presets,
   onSelect,
   onDeleteRequest,
+  listRef,
 }) => {
   const filteredPresets = presets.filter((preset) => preset.type === blockSlug);
   const { mediaCollection } = usePresetsConfig();
   const { t } = useTranslation();
+  const [focusedIndex, setFocusedIndex] = useState(0);
+
+  // All selectable items: null preset first, then block-specific presets
+  const totalItems = 1 + filteredPresets.length;
+
+  const moveFocus = (newIndex: number) => {
+    setFocusedIndex(newIndex);
+    const list = listRef.current;
+    if (!list) return;
+    const items = Array.from(
+      list.querySelectorAll<HTMLElement>("button.preset-item"),
+    );
+    items[newIndex]?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        moveFocus(focusedIndex < totalItems - 1 ? focusedIndex + 1 : 0);
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        moveFocus(focusedIndex > 0 ? focusedIndex - 1 : totalItems - 1);
+        break;
+      case "Home":
+        e.preventDefault();
+        moveFocus(0);
+        break;
+      case "End":
+        e.preventDefault();
+        moveFocus(totalItems - 1);
+        break;
+    }
+  };
 
   return (
     <div className="blocks-drawer__presets-popup">
-      {/* Empty option — no delete on the null preset */}
-      <PresetItem
-        preset={null}
-        mediaCollection={mediaCollection}
-        label={label}
-        onSelect={onSelect}
-      />
+      <div
+        className="blocks-drawer__presets-popup-container"
+        ref={listRef}
+        role="listbox"
+        aria-label={label}
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+      >
+        {/* Empty option — no delete on the null preset */}
+        <PresetItem
+          preset={null}
+          mediaCollection={mediaCollection}
+          label={label}
+          onSelect={onSelect}
+          tabIndex={focusedIndex === 0 ? 0 : -1}
+          onFocus={() => setFocusedIndex(0)}
+        />
 
-      {/* Presets list */}
-      {filteredPresets.length > 0 &&
-        filteredPresets.map((preset) => (
-          <PresetItem
-            key={preset.id}
-            preset={preset}
-            mediaCollection={mediaCollection}
-            onSelect={onSelect}
-            onDeleteRequest={onDeleteRequest}
-          />
-        ))}
+        {/* Presets list */}
+        {filteredPresets.length > 0 &&
+          filteredPresets.map((preset, index) => (
+            <PresetItem
+              key={preset.id}
+              preset={preset}
+              mediaCollection={mediaCollection}
+              onSelect={onSelect}
+              onDeleteRequest={onDeleteRequest}
+              tabIndex={focusedIndex === index + 1 ? 0 : -1}
+              onFocus={() => setFocusedIndex(index + 1)}
+            />
+          ))}
 
-      {/* No presets message */}
-      {filteredPresets.length === 0 && (
-        <div className="blocks-drawer__presets-empty">
-          {t("presetsPlugin:blocksDrawer:noPresetsAvailable" as never)}
-        </div>
-      )}
+        {/* No presets message */}
+        {filteredPresets.length === 0 && (
+          <div className="blocks-drawer__presets-empty">
+            {t("presetsPlugin:blocksDrawer:noPresetsAvailable" as never)}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

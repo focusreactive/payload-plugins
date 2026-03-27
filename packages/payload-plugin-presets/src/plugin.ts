@@ -67,11 +67,6 @@ export interface PresetsPluginConfig {
   labels?: CollectionConfig["labels"];
   enabled?: boolean;
   /**
-   * Show the presets collection.
-   * Useful during development or when you want to manage presets programmatically.
-   */
-  debug?: boolean;
-  /**
    * Override package name for component resolution.
    * Defaults to '@focusreactive/payload-plugin-presets'.
    * Set to a local path (e.g. '@/plugins/presetsPlugin') for local dev without npm.
@@ -112,7 +107,6 @@ const createPresetsCollection = (
     },
     packageName,
     mediaCollection = "media",
-    debug = false,
   } = config;
 
   const previewFieldPath = getPluginComponentPath(
@@ -207,7 +201,7 @@ const createPresetsCollection = (
         en: "One preset = one type. After choosing type, fill the matching section below.",
         es: "Un preset = un tipo. Tras elegir tipo, rellena la sección correspondiente.",
       },
-      hidden: !debug,
+      hidden: false,
       ...overrides.admin,
     },
     fields: finalFields,

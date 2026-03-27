@@ -20,7 +20,7 @@
     max-width: 400px;
 
     .thumbnail-card {
-      padding: calc(var(--base) * 0.5);
+      padding: 0;
       flex-direction: row;
       align-items: center;
       gap: calc(var(--base) * 0.5);
@@ -50,6 +50,12 @@
       text-align: left;
       padding: 0;
     }
+  }
+
+  &__presets-popup-container {
+    scrollbar-gutter: stable;
+    max-height: 290px;
+    overflow-y: auto;
   }
 
   &__presets-loading {
@@ -90,7 +96,7 @@
 
 .thumbnail-card--active {
   border-color: var(--theme-elevation-500);
-  background: var(--theme-elevation-100);
+  background: var(--theme-elevation-50);
 }
 
 .popover__thumbnail-card {
