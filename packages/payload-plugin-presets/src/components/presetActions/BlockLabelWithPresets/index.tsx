@@ -3,12 +3,12 @@
 import {
   Pill,
   SectionTitle,
-  useConfig,
   useRowLabel,
   useTranslation,
 } from "@payloadcms/ui";
 import { SaveAsPresetCore } from "./SaveAsPresetCore";
 import { PresetBlockData } from "./types";
+import { useBlocksConfig } from "../../blocksDrawer/BlocksConfigContext.js";
 
 const baseClass = "blocks-field";
 
@@ -28,12 +28,10 @@ function resolveLabel(
 export function BlockLabelWithPresets() {
   const { data: dataProp, path, rowNumber } = useRowLabel<PresetBlockData>();
   const data = dataProp as PresetBlockData;
-  const { config } = useConfig();
+  const blocks = useBlocksConfig();
   const { i18n } = useTranslation();
 
-  const block = (
-    config.blocksMap as Record<string, (typeof config.blocksMap)[string]>
-  )[data.blockType];
+  const block = blocks?.find((b) => b.slug === data.blockType);
   const showBlockName = !block?.admin?.disableBlockName;
 
   return (
