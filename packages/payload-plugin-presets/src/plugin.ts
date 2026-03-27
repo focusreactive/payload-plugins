@@ -1,5 +1,6 @@
 import type {
   Access,
+  Block,
   CollectionConfig,
   CollectionSlug,
   Config,
@@ -243,6 +244,37 @@ export function getBlocksFieldWithPresetsPath(packageName?: string): string {
     "components/blocksDrawer/BlocksFieldWithPresets",
     "BlocksFieldWithPresets",
   );
+}
+
+/**
+ * Returns the `admin.components` config for a block that adds the "Save as preset" action
+ * via the block label slot, without adding a UI field to the block's fields array.
+ *
+ * @example
+ * ```ts
+ * import { getBlockAdminComponents } from '@focus-reactive/payload-plugin-presets'
+ *
+ * export const HeroBlock: Block = {
+ *   slug: 'hero',
+ *   fields: heroFields,
+ *   admin: {
+ *     components: getBlockAdminComponents(),
+ *   },
+ * }
+ * ```
+ *
+ * @param packageName - npm package name or undefined for local dev
+ */
+export function getBlockAdminComponents(
+  packageName?: string,
+): NonNullable<Block["admin"]>["components"] {
+  return {
+    Label: getPluginComponentPath(
+      packageName,
+      "components/presetActions/BlockLabelWithPresets",
+      "BlockLabelWithPresets",
+    ),
+  };
 }
 
 const pluginTranslations = {

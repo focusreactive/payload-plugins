@@ -5,7 +5,8 @@ export { PresetAdminComponentPreview } from "./components/PresetAdminComponentPr
 export { PresetAdminComponentCell } from "./components/PresetAdminComponentCell.js";
 
 // Preset action buttons (presetActions folder)
-export { SaveAsPresetButton } from "./components/presetActions/index.js";
+export { SaveAsPresetCore } from "./components/presetActions/index.js";
+export { BlockLabelWithPresets } from "./components/presetActions/index.js";
 
 // Custom BlocksField with presets integration (blocksDrawer folder)
 export { BlocksFieldWithPresets } from "./components/blocksDrawer/index.js";

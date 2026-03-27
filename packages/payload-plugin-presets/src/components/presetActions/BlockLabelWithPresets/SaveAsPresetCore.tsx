@@ -4,19 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   PopupList,
-  useFieldPath,
   useForm,
   useTranslation,
   toast,
   useAuth,
   useDocumentDrawer,
 } from "@payloadcms/ui";
-import { getParentPath, getPresetTypeFromPath } from "../utils.js";
-import { usePresetsConfig } from "../usePresetsConfig.js";
+import { usePresetsConfig } from "../../usePresetsConfig.js";
 import { Data } from "payload";
+import { PresetBlockData } from "./types.js";
 
-/** Recursively remove excluded keys from object at all nesting levels */
-function cleanPresetData(obj: unknown, excludeKeys: Set<string>): unknown {
+export function cleanPresetData(
+  obj: unknown,
+  excludeKeys: Set<string>,
+): unknown {
   if (obj === null || typeof obj !== "object") return obj;
 
   if (Array.isArray(obj)) {
@@ -32,8 +33,13 @@ function cleanPresetData(obj: unknown, excludeKeys: Set<string>): unknown {
   return cleaned;
 }
 
-export function SaveAsPresetButton() {
-  const { slug, presetTypes, excludeKeys } = usePresetsConfig();
+interface SaveAsPresetCoreProps {
+  presetBlockData: PresetBlockData;
+}
+
+export function SaveAsPresetCore({ presetBlockData }: SaveAsPresetCoreProps) {
+  const { blockType: presetType } = presetBlockData;
+  const { slug, excludeKeys } = usePresetsConfig();
   const excludeSet = new Set(excludeKeys);
 
   const [DocumentDrawer, , { openDrawer, closeDrawer }] = useDocumentDrawer({
@@ -41,18 +47,11 @@ export function SaveAsPresetButton() {
   });
 
   const { user } = useAuth();
-  const path = useFieldPath();
-  const parentPath = getParentPath(path);
-  const { getData, getDataByPath } = useForm();
+  const { getData } = useForm();
   const tenantId =
     getData()?.tenant ?? user?.tenant?.id ?? user?.tenant ?? null;
 
   const { t } = useTranslation();
-
-  const presetTypeFromPath = getPresetTypeFromPath(parentPath, presetTypes);
-  const blockData =
-    getDataByPath<{ blockType?: string } | null>(parentPath) ?? null;
-  const presetType = presetTypeFromPath ?? blockData?.blockType;
 
   const anchorRef = useRef<HTMLDivElement>(null);
   const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(
@@ -63,11 +62,10 @@ export function SaveAsPresetButton() {
     if (!presetType) return;
 
     const row = anchorRef.current?.closest(".blocks-field__row");
-    const triggerWrap = row?.querySelector(
-      ".array-actions .popup__trigger-wrap",
-    );
+    if (!row) return;
 
-    if (!triggerWrap) return;
+    let trigger: Element | null = null;
+    let observer: MutationObserver | null = null;
 
     const handleClick = () => {
       setTimeout(() => {
@@ -91,17 +89,38 @@ export function SaveAsPresetButton() {
       }, 0);
     };
 
-    triggerWrap.addEventListener("click", handleClick);
+    const attach = (el: Element) => {
+      trigger = el;
+      trigger.addEventListener("click", handleClick);
 
-    return () => triggerWrap.removeEventListener("click", handleClick);
+      observer?.disconnect();
+      observer = null;
+    };
+
+    const existingTrigger = row.querySelector(".array-actions__button");
+    if (existingTrigger) {
+      attach(existingTrigger);
+    } else {
+      observer = new MutationObserver(() => {
+        const el = row.querySelector(".array-actions__button");
+
+        if (el) attach(el);
+      });
+
+      observer.observe(row, { childList: true, subtree: true });
+    }
+
+    return () => {
+      observer?.disconnect();
+      existingTrigger?.removeEventListener("click", handleClick);
+    };
   }, [presetType]);
 
-  const groupData = getDataByPath<Record<string, unknown>>(parentPath);
   const data = presetType
     ? ({
         name: `${presetType.charAt(0).toUpperCase() + presetType.slice(1)} ${new Date().toLocaleDateString()}`,
         type: presetType,
-        [presetType]: cleanPresetData(groupData ?? {}, excludeSet),
+        [presetType]: cleanPresetData(presetBlockData ?? {}, excludeSet),
         tenant: tenantId,
       } as Data)
     : undefined;

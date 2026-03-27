@@ -415,18 +415,22 @@ const PresetsList: React.FC<PresetsListProps> = ({
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
+        e.stopPropagation();
         moveFocus(focusedIndex < totalItems - 1 ? focusedIndex + 1 : 0);
         break;
       case "ArrowUp":
         e.preventDefault();
+        e.stopPropagation();
         moveFocus(focusedIndex > 0 ? focusedIndex - 1 : totalItems - 1);
         break;
       case "Home":
         e.preventDefault();
+        e.stopPropagation();
         moveFocus(0);
         break;
       case "End":
         e.preventDefault();
+        e.stopPropagation();
         moveFocus(totalItems - 1);
         break;
     }

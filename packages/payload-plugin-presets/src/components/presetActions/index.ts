@@ -1,2 +1,3 @@
-export { ApplyPresetButton } from './ApplyPresetButton.js'
-export { SaveAsPresetButton } from './SaveAsPresetButton.js'
+export { ApplyPresetButton } from "./ApplyPresetButton.js";
+export { BlockLabelWithPresets } from "./BlockLabelWithPresets/index.js";
+export { SaveAsPresetCore } from "./BlockLabelWithPresets/SaveAsPresetCore.js";
