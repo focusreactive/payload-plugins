@@ -20,6 +20,12 @@ export interface ContentReleasesPluginConfig {
   publishBatchSize?: number;
   useTransactions?: boolean;
   schedulerSecret?: string;
+
+  /** Interval in milliseconds for checking scheduled releases.
+   * Set to 0 or false to disable the built-in scheduler.
+   * @default 60000 (1 minute)
+   */
+  schedulerInterval?: number | false;
   access?: {
     releases?: {
       create?: Access;

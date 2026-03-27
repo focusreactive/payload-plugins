@@ -11,6 +11,7 @@ import { buildReleaseItemsBeforeChange } from "./hooks/releaseItemsBeforeChange"
 import { createPublishReleaseHandler } from "./endpoints/publishRelease";
 import { createCheckConflictsHandler } from "./endpoints/checkConflicts";
 import { createRunScheduledHandler } from "./endpoints/runScheduled";
+import { checkScheduledReleases } from "./scheduler/checkScheduledReleases";
 
 export function contentReleasesPlugin(
   options: ContentReleasesPluginConfig,
@@ -94,6 +95,13 @@ export function contentReleasesPlugin(
       };
     });
 
+    // Built-in scheduler via onInit
+    const schedulerInterval = options.schedulerInterval;
+    const schedulerEnabled = schedulerInterval !== false && schedulerInterval !== 0;
+    const interval = typeof schedulerInterval === "number" ? schedulerInterval : 60000;
+
+    const existingOnInit = config.onInit;
+
     return {
       ...config,
       admin: {
@@ -111,6 +119,32 @@ export function contentReleasesPlugin(
         releaseItemsCollection,
       ],
       endpoints,
+      onInit: async (payload) => {
+        // Call existing onInit first
+        if (existingOnInit) {
+          await existingOnInit(payload);
+        }
+
+        if (schedulerEnabled) {
+          payload.logger.info(
+            `[${PLUGIN_NAME}] Scheduler started — checking scheduled releases every ${interval / 1000}s`,
+          );
+
+          setInterval(async () => {
+            try {
+              await checkScheduledReleases({
+                payload,
+                conflictStrategy: options.conflictStrategy ?? DEFAULT_CONFLICT_STRATEGY,
+                batchSize: options.publishBatchSize ?? DEFAULT_PUBLISH_BATCH_SIZE,
+              });
+            } catch (err) {
+              payload.logger.error(
+                `[${PLUGIN_NAME}] Scheduler error: ${err instanceof Error ? err.message : String(err)}`,
+              );
+            }
+          }, interval);
+        }
+      },
     };
   };
 }
