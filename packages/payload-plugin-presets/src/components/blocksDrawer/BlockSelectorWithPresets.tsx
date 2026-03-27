@@ -247,24 +247,15 @@ const BlockCard: React.FC<BlockCardProps> = ({
   const { slug: presetsCollectionSlug } = usePresetsConfig();
   const { t } = useTranslation();
   const presetListRef = useRef<HTMLDivElement>(null);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
+    null,
+  );
 
   const modalSlug = `delete-preset-${block.slug}`;
 
   const handleDeleteRequest = (preset: Preset) => {
     setDeletingPreset(preset);
     openModal(modalSlug);
-  };
-
-  const handleTriggerKeyDown = (e: React.KeyboardEvent) => {
-    if (!isActive) return;
-    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-    e.preventDefault();
-    const items =
-      presetListRef.current?.querySelectorAll<HTMLElement>(
-        "button.preset-item",
-      );
-    if (!items?.length) return;
-    (e.key === "ArrowDown" ? items[0] : items[items.length - 1]).focus();
   };
 
   if (!hasPresets) {
@@ -282,7 +273,12 @@ const BlockCard: React.FC<BlockCardProps> = ({
   }
 
   return (
-    <>
+    <div
+      ref={(el) => {
+        if (el) setPortalContainer(el);
+      }}
+      style={{ display: "contents" }}
+    >
       <Popover.Root
         open={isActive}
         onOpenChange={(open) => {
@@ -295,7 +291,6 @@ const BlockCard: React.FC<BlockCardProps> = ({
             title={label}
             type="button"
             onClick={onBlockClick}
-            onKeyDown={handleTriggerKeyDown}
           >
             <BlockThumbnail imageURL={block.imageURL} label={label} />
             <div className="thumbnail-card__label">
@@ -306,7 +301,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
             </div>
           </button>
         </Popover.Trigger>
-        <Popover.Portal>
+        <Popover.Portal container={portalContainer}>
           <Popover.Content
             className="blocks-drawer__popover-content"
             side={isMobile ? "bottom" : "right"}
@@ -314,7 +309,15 @@ const BlockCard: React.FC<BlockCardProps> = ({
             sideOffset={8}
             avoidCollisions
             collisionPadding={8}
-            onOpenAutoFocus={(e) => e.preventDefault()}
+            onOpenAutoFocus={(e) => {
+              e.preventDefault();
+
+              presetListRef.current?.focus();
+            }}
+            onEscapeKeyDown={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
           >
             <PresetsList
               blockSlug={block.slug}
@@ -322,6 +325,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
               presets={presets}
               listRef={presetListRef}
               onDeleteRequest={handleDeleteRequest}
+              onClose={onClose}
               onSelect={(preset) => {
                 onPresetSelect(block.slug, preset);
               }}
@@ -354,7 +358,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
           }}
         />
       )}
-    </>
+    </div>
   );
 };
 
@@ -382,6 +386,7 @@ type PresetsListProps = {
   presets: Preset[];
   onSelect: (preset: Preset | null) => void;
   onDeleteRequest: (preset: Preset) => void;
+  onClose: () => void;
   listRef: React.RefObject<HTMLDivElement | null>;
 };
 
@@ -391,24 +396,30 @@ const PresetsList: React.FC<PresetsListProps> = ({
   presets,
   onSelect,
   onDeleteRequest,
+  onClose,
   listRef,
 }) => {
   const filteredPresets = presets.filter((preset) => preset.type === blockSlug);
   const { mediaCollection } = usePresetsConfig();
   const { t } = useTranslation();
-  const [focusedIndex, setFocusedIndex] = useState(0);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const itemsRef = useRef<HTMLElement[]>([]);
 
   // All selectable items: null preset first, then block-specific presets
   const totalItems = 1 + filteredPresets.length;
 
+  useEffect(() => {
+    itemsRef.current = Array.from(
+      listRef.current?.querySelectorAll<HTMLElement>("button.preset-item") ??
+        [],
+    );
+  }, []);
+
   const moveFocus = (newIndex: number) => {
     setFocusedIndex(newIndex);
-    const list = listRef.current;
-    if (!list) return;
-    const items = Array.from(
-      list.querySelectorAll<HTMLElement>("button.preset-item"),
-    );
-    items[newIndex]?.focus();
+
+    if (newIndex < 0) return;
+    itemsRef.current[newIndex]?.focus();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -416,22 +427,36 @@ const PresetsList: React.FC<PresetsListProps> = ({
       case "ArrowDown":
         e.preventDefault();
         e.stopPropagation();
+
         moveFocus(focusedIndex < totalItems - 1 ? focusedIndex + 1 : 0);
+
         break;
       case "ArrowUp":
         e.preventDefault();
         e.stopPropagation();
+
         moveFocus(focusedIndex > 0 ? focusedIndex - 1 : totalItems - 1);
+
         break;
       case "Home":
         e.preventDefault();
         e.stopPropagation();
+
         moveFocus(0);
+
         break;
       case "End":
         e.preventDefault();
         e.stopPropagation();
+
         moveFocus(totalItems - 1);
+
+        break;
+      case "Escape":
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+
         break;
     }
   };

@@ -1,7 +1,7 @@
 "use client";
 
 import { MediaData, Preset } from "../../shared";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@payloadcms/ui";
 import { usePresetsConfig } from "../../usePresetsConfig.js";
 import Image from "next/image";
@@ -49,6 +49,11 @@ export function PresetItem({
     if (preset) onDeleteRequest?.(preset);
   };
 
+  const handleButtonFocus = () => {
+    setIsOpen(true);
+    onFocus?.();
+  };
+
   useEffect(() => {
     if (!mediaId) {
       setIsLoading(false);
@@ -85,7 +90,7 @@ export function PresetItem({
           onClick={() => onSelect(preset)}
           onMouseEnter={() => setIsOpen(true)}
           onMouseLeave={() => setIsOpen(false)}
-          onFocus={() => { setIsOpen(true); onFocus?.(); }}
+          onFocus={handleButtonFocus}
           onBlur={() => setIsOpen(false)}
           tabIndex={tabIndex}
         >

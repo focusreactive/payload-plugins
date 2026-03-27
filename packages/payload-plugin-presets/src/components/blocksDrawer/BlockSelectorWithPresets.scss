@@ -53,9 +53,9 @@
   }
 
   &__presets-popup-container {
-    scrollbar-gutter: stable;
     max-height: 290px;
     overflow-y: auto;
+    outline: none;
   }
 
   &__presets-loading {
@@ -69,7 +69,7 @@
     padding: calc(var(--base) * 0.5);
     text-align: center;
     color: var(--theme-elevation-500);
-    font-size: 0.8125rem;
+    font-size: 1rem;
   }
 }
 

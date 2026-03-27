@@ -22,7 +22,7 @@
 
   &__thumbnail {
     object-fit: cover;
-    border-radius: 4px;
+    border-radius: 6px;
     border-radius: var(--style-radius-s);
     border: 1px solid var(--theme-elevation-150);
     overflow: hidden;
@@ -63,11 +63,11 @@
 
 .preset-shimmer--sm,
 .preset-shimmer--md {
-  border-radius: var(--style-radius-m);
+  border-radius: 6px;
 }
 
 .preset-shimmer--lg {
-  border-radius: var(--style-radius-l);
+  border-radius: 8px;
 }
 
 .preset-admin-preview {

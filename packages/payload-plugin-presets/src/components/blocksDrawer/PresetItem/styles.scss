@@ -4,13 +4,15 @@
   gap: calc(var(--base) * 0.5);
   padding: calc(var(--base) * 0.25);
   border: 0;
-  border-radius: 2px;
+  border-radius: 4px;
   cursor: pointer;
   background-color: transparent;
   transition: background-color cubic-bezier(0.4, 0, 0.2, 1);
 
   &__thumbnail {
     flex-shrink: 0;
+    width: 60px;
+    height: 60px;
 
     img {
       object-fit: cover;
@@ -42,6 +44,10 @@
     gap: calc(var(--base) * 0.25);
     opacity: 0;
     transition: 150ms opacity cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:focus-within {
+      opacity: 1 !important;
+    }
   }
 
   &:hover {
@@ -69,6 +75,7 @@
   padding: 0;
   border-radius: 0.25rem;
   border: none;
+  outline: none;
   cursor: pointer;
   transition-property:
     color, background-color, border-color, fill, stroke, opacity;
@@ -88,11 +95,14 @@
 .edit-preset {
   background-color: var(--theme-elevation-100);
   color: var(--theme-elevation-800);
-  text-decoration: none;
 
   &:hover {
     background-color: var(--theme-elevation-150);
     color: var(--theme-elevation-900);
+  }
+
+  &:focus {
+    outline: 1px solid var(--theme-elevation-400);
   }
 }
 
@@ -103,6 +113,10 @@
   &:hover {
     background-color: var(--theme-error-150);
     color: var(--theme-error-600);
+  }
+
+  &:focus {
+    outline: 1px solid var(--theme-error-600);
   }
 }
 
