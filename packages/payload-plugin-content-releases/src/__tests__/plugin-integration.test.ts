@@ -11,7 +11,7 @@ function makeBaseConfig(overrides?: Partial<Config>): Config {
     ],
     globals: [],
     ...overrides,
-  } as Config;
+  } as unknown as Config;
 }
 
 describe("contentReleasesPlugin", () => {
@@ -22,23 +22,23 @@ describe("contentReleasesPlugin", () => {
 
   it("should inject releases collection", () => {
     const plugin = contentReleasesPlugin({ enabledCollections: ["pages"] });
-    const config = plugin(makeBaseConfig());
-    const releases = config.collections?.find((c) => c.slug === RELEASES_SLUG);
+    const config = plugin(makeBaseConfig()) as Config;
+    const releases = config.collections?.find((c: any) => c.slug === RELEASES_SLUG);
     expect(releases).toBeDefined();
   });
 
   it("should inject release-items collection", () => {
     const plugin = contentReleasesPlugin({ enabledCollections: ["pages"] });
-    const config = plugin(makeBaseConfig());
-    const items = config.collections?.find((c) => c.slug === RELEASE_ITEMS_SLUG);
+    const config = plugin(makeBaseConfig()) as Config;
+    const items = config.collections?.find((c: any) => c.slug === RELEASE_ITEMS_SLUG);
     expect(items).toBeDefined();
   });
 
   it("should preserve existing collections", () => {
     const plugin = contentReleasesPlugin({ enabledCollections: ["pages"] });
-    const config = plugin(makeBaseConfig());
-    const pages = config.collections?.find((c) => c.slug === "pages");
-    const posts = config.collections?.find((c) => c.slug === "posts");
+    const config = plugin(makeBaseConfig()) as Config;
+    const pages = config.collections?.find((c: any) => c.slug === "pages");
+    const posts = config.collections?.find((c: any) => c.slug === "posts");
     expect(pages).toBeDefined();
     expect(posts).toBeDefined();
   });
@@ -57,8 +57,8 @@ describe("contentReleasesPlugin", () => {
       enabledCollections: ["pages"],
       access: { releases: { read: readFn } },
     });
-    const config = plugin(makeBaseConfig());
-    const releases = config.collections?.find((c) => c.slug === RELEASES_SLUG);
+    const config = plugin(makeBaseConfig()) as Config;
+    const releases = config.collections?.find((c: any) => c.slug === RELEASES_SLUG);
     expect((releases as any)?.access?.read).toBe(readFn);
   });
 });

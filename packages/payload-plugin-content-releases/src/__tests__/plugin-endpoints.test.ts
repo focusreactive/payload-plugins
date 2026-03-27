@@ -6,13 +6,13 @@ function makeBaseConfig(): Config {
   return {
     collections: [{ slug: "pages", fields: [] }],
     globals: [],
-  } as Config;
+  } as unknown as Config;
 }
 
 describe("plugin endpoints", () => {
   it("should register publish endpoint", () => {
     const plugin = contentReleasesPlugin({ enabledCollections: ["pages"] });
-    const config = plugin(makeBaseConfig());
+    const config = plugin(makeBaseConfig()) as Config;
     const endpoint = config.endpoints?.find((e: any) => e.path === "/content-releases/:id/publish");
     expect(endpoint).toBeDefined();
     expect(endpoint?.method).toBe("post");
@@ -20,7 +20,7 @@ describe("plugin endpoints", () => {
 
   it("should register conflicts endpoint", () => {
     const plugin = contentReleasesPlugin({ enabledCollections: ["pages"] });
-    const config = plugin(makeBaseConfig());
+    const config = plugin(makeBaseConfig()) as Config;
     const endpoint = config.endpoints?.find((e: any) => e.path === "/content-releases/:id/conflicts");
     expect(endpoint).toBeDefined();
     expect(endpoint?.method).toBe("get");

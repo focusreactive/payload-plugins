@@ -1,4 +1,4 @@
-import type { CollectionConfig, CollectionHooks, Access } from "payload";
+import type { CollectionConfig, Access } from "payload";
 import { RELEASES_SLUG, RELEASE_STATUSES } from "../constants";
 
 interface BuildReleasesCollectionOptions {
@@ -8,7 +8,7 @@ interface BuildReleasesCollectionOptions {
     update?: Access;
     delete?: Access;
   };
-  hooks?: CollectionHooks;
+  hooks?: CollectionConfig["hooks"];
 }
 
 export function buildReleasesCollection(

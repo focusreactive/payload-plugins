@@ -9,14 +9,14 @@ function makeBaseConfig(): Config {
       { slug: "posts", fields: [{ name: "title", type: "text" }] },
     ],
     globals: [],
-  } as Config;
+  } as unknown as Config;
 }
 
 describe("plugin sidebar injection", () => {
   it("should inject _releases UI field into enabled collections", () => {
     const plugin = contentReleasesPlugin({ enabledCollections: ["pages"] });
-    const config = plugin(makeBaseConfig());
-    const pages = config.collections?.find((c) => c.slug === "pages");
+    const config = plugin(makeBaseConfig()) as Config;
+    const pages = config.collections?.find((c: any) => c.slug === "pages");
     const releasesField = pages?.fields.find((f: any) => f.name === "_releases");
     expect(releasesField).toBeDefined();
     expect((releasesField as any).type).toBe("ui");
@@ -25,22 +25,22 @@ describe("plugin sidebar injection", () => {
 
   it("should NOT inject _releases field into non-enabled collections", () => {
     const plugin = contentReleasesPlugin({ enabledCollections: ["pages"] });
-    const config = plugin(makeBaseConfig());
-    const posts = config.collections?.find((c) => c.slug === "posts");
+    const config = plugin(makeBaseConfig()) as Config;
+    const posts = config.collections?.find((c: any) => c.slug === "posts");
     const releasesField = posts?.fields.find((f: any) => f.name === "_releases");
     expect(releasesField).toBeUndefined();
   });
 
   it("should pass enabledCollections via admin.custom", () => {
     const plugin = contentReleasesPlugin({ enabledCollections: ["pages"] });
-    const config = plugin(makeBaseConfig());
+    const config = plugin(makeBaseConfig()) as Config;
     expect((config.admin as any)?.custom?.contentReleases?.enabledCollections).toEqual(["pages"]);
   });
 
   it("should preserve existing fields on enabled collections", () => {
     const plugin = contentReleasesPlugin({ enabledCollections: ["pages"] });
-    const config = plugin(makeBaseConfig());
-    const pages = config.collections?.find((c) => c.slug === "pages");
+    const config = plugin(makeBaseConfig()) as Config;
+    const pages = config.collections?.find((c: any) => c.slug === "pages");
     const titleField = pages?.fields.find((f: any) => f.name === "title");
     expect(titleField).toBeDefined();
   });

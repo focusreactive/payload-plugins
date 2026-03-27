@@ -1,4 +1,4 @@
-import type { CollectionConfig, CollectionHooks, Access } from "payload";
+import type { CollectionConfig, Access } from "payload";
 import {
   RELEASE_ITEMS_SLUG,
   RELEASES_SLUG,
@@ -13,7 +13,7 @@ interface BuildReleaseItemsCollectionOptions {
     update?: Access;
     delete?: Access;
   };
-  hooks?: CollectionHooks;
+  hooks?: CollectionConfig["hooks"];
 }
 
 export function buildReleaseItemsCollection(
