@@ -404,6 +404,8 @@ const PresetsList: React.FC<PresetsListProps> = ({
   const { t } = useTranslation();
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const itemsRef = useRef<HTMLElement[]>([]);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // All selectable items: null preset first, then block-specific presets
   const totalItems = 1 + filteredPresets.length;
@@ -413,6 +415,23 @@ const PresetsList: React.FC<PresetsListProps> = ({
       listRef.current?.querySelectorAll<HTMLElement>("button.preset-item") ??
         [],
     );
+  }, []);
+
+  useEffect(() => {
+    const container = listRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      setIsScrolling(true);
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = setTimeout(() => setIsScrolling(false), 150);
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    };
   }, []);
 
   const moveFocus = (newIndex: number) => {
@@ -479,6 +498,7 @@ const PresetsList: React.FC<PresetsListProps> = ({
           onSelect={onSelect}
           tabIndex={focusedIndex === 0 ? 0 : -1}
           onFocus={() => setFocusedIndex(0)}
+          isScrolling={isScrolling}
         />
 
         {/* Presets list */}
@@ -492,6 +512,7 @@ const PresetsList: React.FC<PresetsListProps> = ({
               onDeleteRequest={onDeleteRequest}
               tabIndex={focusedIndex === index + 1 ? 0 : -1}
               onFocus={() => setFocusedIndex(index + 1)}
+              isScrolling={isScrolling}
             />
           ))}
 

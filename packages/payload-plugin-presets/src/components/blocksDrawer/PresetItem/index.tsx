@@ -19,6 +19,7 @@ interface Props {
   onDeleteRequest?: (preset: Preset) => void;
   tabIndex?: number;
   onFocus?: () => void;
+  isScrolling?: boolean;
 }
 
 export function PresetItem({
@@ -29,6 +30,7 @@ export function PresetItem({
   onDeleteRequest,
   tabIndex,
   onFocus,
+  isScrolling,
 }: Props) {
   const { preview } = preset ?? {};
 
@@ -40,7 +42,7 @@ export function PresetItem({
   const [isHovered, setIsHovered] = useState(false);
   const [isKeyboardFocused, setIsKeyboardFocused] = useState(false);
 
-  const isOpen = isHovered || isKeyboardFocused;
+  const isOpen = (isHovered || isKeyboardFocused) && !isScrolling;
 
   const mediaId = typeof preview === "number" ? preview : preview?.id;
   const mediaUrl = media?.url;
