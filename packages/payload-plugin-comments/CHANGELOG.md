@@ -1,3 +1,14 @@
+# @focus-reactive/payload-plugin-comments [1.5.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.4.0...@focus-reactive/payload-plugin-comments@1.5.0) (2026-03-28)
+
+
+### Features
+
+* **payload-plugin-comments:** add confirmation modal on delete comment ([c6e5296](https://github.com/focusreactive/payload-plugins/commit/c6e52964450d7f831bb1211056ea1c4cf4f4bf9e))
+* **payload-plugin-comments:** add filters ([87155c9](https://github.com/focusreactive/payload-plugins/commit/87155c9eb9bb26de776f6b921c4396766f1bcbd1))
+* **payload-plugin-comments:** add toast message on comment resolved if show resolved filter is false ([b607140](https://github.com/focusreactive/payload-plugins/commit/b60714070d0fc08415d78223db469a996757b077))
+* **payload-plugin-comments:** show comments count in field comment labels according to filters ([19c7c0d](https://github.com/focusreactive/payload-plugins/commit/19c7c0d6d0c0efd3f3e0b4a787a91566c4b0689f))
+* **payload-plugin-comments:** show empty state message in global view based on active filters ([c5f1b82](https://github.com/focusreactive/payload-plugins/commit/c5f1b8210bf0a0ebf121fe504485f533157cf4d4))
+
 # @focus-reactive/payload-plugin-comments [1.4.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.3.0...@focus-reactive/payload-plugin-comments@1.4.0) (2026-03-24)
 
 
