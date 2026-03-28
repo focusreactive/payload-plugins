@@ -9,6 +9,7 @@ import {
   ChevronIcon,
   ConfirmationModal,
   useModal,
+  Button,
 } from "@payloadcms/ui";
 import type { ClientBlock } from "payload";
 import { usePresetsConfig } from "../usePresetsConfig.js";
@@ -286,20 +287,42 @@ const BlockCard: React.FC<BlockCardProps> = ({
         }}
       >
         <Popover.Trigger asChild>
-          <button
-            className={`thumbnail-card thumbnail-card--has-on-click thumbnail-card--align-label-center ${isActive ? "thumbnail-card--active" : ""}`}
+          <div
+            className={`thumbnail-block-card thumbnail-card thumbnail-card--align-label-center`}
             title={label}
-            type="button"
-            onClick={onBlockClick}
           >
             <BlockThumbnail imageURL={block.imageURL} label={label} />
-            <div className="thumbnail-card__label">
-              {label} {presets.length > 0 ? `(${presets.length})` : ""}
-              <ChevronIcon
-                className={`thumbnail-card__chevron ${isActive ? "thumbnail-card__chevron--open" : ""}`}
-              />
+
+            <div className="thumbnail-block-card__button-list">
+              <Button
+                className="thumbnail-block-card__button"
+                buttonStyle="primary"
+                onClick={() => onPresetSelect(block.slug, null)}
+              >
+                {t("presetsPlugin:blocksDrawer:empty" as never)}
+              </Button>
+
+              <Button
+                className="thumbnail-block-card__button"
+                buttonStyle="secondary"
+                icon={
+                  <ChevronIcon
+                    className={`thumbnail-block-card__chevron ${isActive ? "thumbnail-block-card__chevron--open" : ""}`}
+                  />
+                }
+                iconPosition="right"
+                onClick={onBlockClick}
+              >
+                <span>
+                  Presets {presets.length > 0 ? `(${presets.length})` : ""}
+                </span>
+              </Button>
             </div>
-          </button>
+
+            <div className="thumbnail-block-card__label thumbnail-card__label">
+              {label}
+            </div>
+          </div>
         </Popover.Trigger>
         <Popover.Portal container={portalContainer}>
           <Popover.Content
@@ -490,17 +513,6 @@ const PresetsList: React.FC<PresetsListProps> = ({
         tabIndex={-1}
         onKeyDown={handleKeyDown}
       >
-        {/* Empty option — no delete on the null preset */}
-        <PresetItem
-          preset={null}
-          mediaCollection={mediaCollection}
-          label={label}
-          onSelect={onSelect}
-          tabIndex={focusedIndex === 0 ? 0 : -1}
-          onFocus={() => setFocusedIndex(0)}
-          isScrolling={isScrolling}
-        />
-
         {/* Presets list */}
         {filteredPresets.length > 0 &&
           filteredPresets.map((preset, index) => (
