@@ -27,6 +27,7 @@ export interface CommentsTranslations {
   filterComments: string;
   showResolved: string;
   onlyMyThreads: string;
+  commentResolved: string;
   deleteComment: {
     heading: string;
     body: string;
