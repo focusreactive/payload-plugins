@@ -31,6 +31,10 @@ export const en: { comments: CommentsTranslations } = {
     showResolved: "Show resolved comments",
     onlyMyThreads: "Only my threads",
     commentResolved: "Comment resolved",
+    noComments: "No comments yet",
+    noOpenComments: "No open comments",
+    noCommentsInMyThreads: "No comments in your threads",
+    noOpenCommentsInMyThreads: "No open comments in your threads",
     deleteComment: {
       heading: "Confirm deletion",
       body: "Are you sure you want to delete this comment?",

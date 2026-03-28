@@ -28,6 +28,10 @@ export interface CommentsTranslations {
   showResolved: string;
   onlyMyThreads: string;
   commentResolved: string;
+  noComments: string;
+  noOpenComments: string;
+  noCommentsInMyThreads: string;
+  noOpenCommentsInMyThreads: string;
   deleteComment: {
     heading: string;
     body: string;
