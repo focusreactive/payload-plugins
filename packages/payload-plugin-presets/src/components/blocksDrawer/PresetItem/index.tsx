@@ -1,10 +1,9 @@
 "use client";
 
 import { MediaData, Preset } from "../../shared";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "@payloadcms/ui";
 import { usePresetsConfig } from "../../usePresetsConfig.js";
-import Image from "next/image";
 import { TrashIcon } from "@payloadcms/ui/icons/Trash";
 import { EditIcon } from "@payloadcms/ui/icons/Edit";
 import * as Popover from "@radix-ui/react-popover";
@@ -38,21 +37,35 @@ export function PresetItem({
 
   const [media, setMedia] = useState<MediaData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isKeyboardFocused, setIsKeyboardFocused] = useState(false);
+
+  const isOpen = isHovered || isKeyboardFocused;
 
   const mediaId = typeof preview === "number" ? preview : preview?.id;
   const mediaUrl = media?.url;
 
   const handleRemoveButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    setIsOpen(false);
+    setIsHovered(false);
+    setIsKeyboardFocused(false);
     if (preset) onDeleteRequest?.(preset);
   };
 
   const handleButtonFocus = () => {
-    setIsOpen(true);
+    setIsKeyboardFocused(true);
     onFocus?.();
   };
+
+  useEffect(() => {
+    if (!isKeyboardFocused) return;
+
+    const handleMouseMove = () => setIsKeyboardFocused(false);
+
+    document.addEventListener("mousemove", handleMouseMove, { once: true });
+
+    return () => document.removeEventListener("mousemove", handleMouseMove);
+  }, [isKeyboardFocused]);
 
   useEffect(() => {
     if (!mediaId) {
@@ -88,10 +101,10 @@ export function PresetItem({
           type="button"
           className="preset-item"
           onClick={() => onSelect(preset)}
-          onMouseEnter={() => setIsOpen(true)}
-          onMouseLeave={() => setIsOpen(false)}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
           onFocus={handleButtonFocus}
-          onBlur={() => setIsOpen(false)}
+          onBlur={() => setIsKeyboardFocused(false)}
           tabIndex={tabIndex}
         >
           <div className="preset-item__thumbnail">
@@ -143,6 +156,7 @@ export function PresetItem({
             avoidCollisions
             collisionPadding={8}
             onOpenAutoFocus={(e) => e.preventDefault()}
+            onCloseAutoFocus={(e) => e.preventDefault()}
           >
             <PresetAdminComponentCell
               imageClassName="preset-preview-cell__popup-image"
