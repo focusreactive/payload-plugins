@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslation, useLocale } from "@payloadcms/ui";
+import { useTranslation, useLocale, useAuth } from "@payloadcms/ui";
 import { MessageSquareIcon, MessageSquarePlus } from "lucide-react";
 import { useComments } from "../../providers/CommentsProvider";
 import type { FieldLabelClientProps } from "payload";
@@ -15,6 +15,8 @@ import { resolveFieldLabel } from "../CommentsPanel/utils/resolveFieldLabel";
 import { useCommentsQuery } from "../../api/queries/useCommentsQuery";
 import { useFieldLabelsQuery } from "../../api/queries/useFieldLabelsQuery";
 import { filterCommentsByLocale } from "../../utils/comment/filterCommentsByLocale";
+import { applyCommentFilters } from "../../utils/comment/applyCommentFilters";
+import { useCommentsFilter } from "../../providers/CommentsFilterProvider";
 
 interface Props extends FieldLabelClientProps {
   field: FieldLabelClientProps["field"] & {
@@ -28,17 +30,22 @@ export function FieldCommentLabel({ field, htmlFor, path: fieldPath }: Props) {
 
   const { t } = useTranslation();
   const { code: locale } = useLocale();
+  const { user } = useAuth();
 
   const { openForField } = useCommentsDrawer();
   const { mode, queryContext, collectionSlug, documentId, globalSlug } = useComments();
   const { data: allComments = [] } = useCommentsQuery(queryContext);
   const { data: fieldLabelRegistry } = useFieldLabelsQuery(queryContext);
+  const { filters } = useCommentsFilter();
 
   const resolvedLabel = resolveLabel(label, locale);
   const stablePath = useStablePath(fieldPath ?? "");
 
+  const userId = (user?.id as number) ?? null;
+
   const localeFiltered = filterCommentsByLocale(allComments, locale);
-  const fieldComments = excludeComments(localeFiltered, stablePath || undefined, locale);
+  const visibleComments = applyCommentFilters(localeFiltered, filters, userId);
+  const fieldComments = excludeComments(visibleComments, stablePath || undefined, locale);
   const openCommentsCount = fieldComments.length;
 
   const clientBreadcrumb = useFieldBreadcrumb(fieldPath, resolvedLabel, collectionSlug, globalSlug);
