@@ -13,10 +13,32 @@ const variants = cva("flex justify-center items-center p-0 rounded border-none t
       sm: "w-[20px] h-[20px]",
       md: "w-[24px] h-[24px]",
     },
+    isActive: {
+      true: "",
+      false: "",
+    },
   },
+  compoundVariants: [
+    {
+      variant: "neutral",
+      isActive: true,
+      class: "text-(--theme-text)",
+    },
+    {
+      variant: "neutralSecondary",
+      isActive: true,
+      class: "text-(--theme-text)",
+    },
+    {
+      variant: "primary",
+      isActive: true,
+      class: "bg-(--theme-elevation-800)",
+    },
+  ],
   defaultVariants: {
     variant: "neutral",
     size: "md",
+    isActive: false,
   },
 });
 
@@ -26,8 +48,9 @@ interface Props extends React.HTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
   variant?: "neutral" | "neutralSecondary" | "primary";
   size?: "sm" | "md";
-  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  isActive?: boolean;
   tabIndex?: number;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 export function IconButton({
@@ -36,13 +59,14 @@ export function IconButton({
   children,
   variant,
   size,
-  onClick,
+  isActive,
   tabIndex,
+  onClick,
   ...nativeButtonProps
 }: Props) {
   return (
     <button
-      className={cn(variants({ variant, size }), className)}
+      className={cn(variants({ variant, size, isActive }), className)}
       type="button"
       title={title}
       aria-label={title}
