@@ -27,6 +27,13 @@ export interface CommentsTranslations {
   filterComments: string;
   showResolved: string;
   onlyMyThreads: string;
+  deleteComment: {
+    heading: string;
+    body: string;
+    confirm: string;
+    confirming: string;
+    cancel: string;
+  };
 }
 
 export type Translations = Record<string, Partial<CommentsTranslations>>;

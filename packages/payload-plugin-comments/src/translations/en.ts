@@ -30,5 +30,12 @@ export const en: { comments: CommentsTranslations } = {
     filterComments: "Filter comments",
     showResolved: "Show resolved comments",
     onlyMyThreads: "Only my threads",
+    deleteComment: {
+      heading: "Confirm deletion",
+      body: "Are you sure you want to delete this comment?",
+      confirm: "Delete",
+      confirming: "Deleting…",
+      cancel: "Cancel",
+    },
   },
 };

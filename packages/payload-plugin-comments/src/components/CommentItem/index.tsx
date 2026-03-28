@@ -91,6 +91,7 @@ export function CommentItem({ comment, currentUserId }: Props) {
       </div>
 
       <ToolsPanel
+        commentId={comment.id}
         isResolved={isResolved}
         canDelete={canDelete}
         onDelete={handleDelete}
