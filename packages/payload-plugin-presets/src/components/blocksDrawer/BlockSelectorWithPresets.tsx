@@ -280,28 +280,28 @@ const BlockCard: React.FC<BlockCardProps> = ({
       }}
       style={{ display: "contents" }}
     >
-      <Popover.Root
-        open={isActive}
-        onOpenChange={(open) => {
-          if (!open) onClose();
-        }}
+      <div
+        className={`thumbnail-block-card thumbnail-card thumbnail-card--align-label-center`}
+        title={label}
       >
-        <Popover.Trigger asChild>
-          <div
-            className={`thumbnail-block-card thumbnail-card thumbnail-card--align-label-center`}
-            title={label}
+        <BlockThumbnail imageURL={block.imageURL} label={label} />
+
+        <div className="thumbnail-block-card__button-list">
+          <Button
+            className="thumbnail-block-card__button"
+            buttonStyle="primary"
+            onClick={() => onPresetSelect(block.slug, null)}
           >
-            <BlockThumbnail imageURL={block.imageURL} label={label} />
+            {t("presetsPlugin:blocksDrawer:empty" as never)}
+          </Button>
 
-            <div className="thumbnail-block-card__button-list">
-              <Button
-                className="thumbnail-block-card__button"
-                buttonStyle="primary"
-                onClick={() => onPresetSelect(block.slug, null)}
-              >
-                {t("presetsPlugin:blocksDrawer:empty" as never)}
-              </Button>
-
+          <Popover.Root
+            open={isActive}
+            onOpenChange={(open) => {
+              if (!open) onClose();
+            }}
+          >
+            <Popover.Trigger asChild>
               <Button
                 className="thumbnail-block-card__button"
                 buttonStyle="secondary"
@@ -314,48 +314,50 @@ const BlockCard: React.FC<BlockCardProps> = ({
                 onClick={onBlockClick}
               >
                 <span>
-                  Presets {presets.length > 0 ? `(${presets.length})` : ""}
+                  {t("presetsPlugin:blocksDrawer:presets" as never)}
+                  {presets.length > 0 ? ` (${presets.length})` : ""}
                 </span>
               </Button>
-            </div>
+            </Popover.Trigger>
 
-            <div className="thumbnail-block-card__label thumbnail-card__label">
-              {label}
-            </div>
-          </div>
-        </Popover.Trigger>
-        <Popover.Portal container={portalContainer}>
-          <Popover.Content
-            className="blocks-drawer__popover-content"
-            side={isMobile ? "bottom" : "right"}
-            align="start"
-            sideOffset={8}
-            avoidCollisions
-            collisionPadding={8}
-            onOpenAutoFocus={(e) => {
-              e.preventDefault();
+            <Popover.Portal container={portalContainer}>
+              <Popover.Content
+                className="blocks-drawer__popover-content"
+                side={isMobile ? "bottom" : "right"}
+                align="start"
+                sideOffset={8}
+                avoidCollisions
+                collisionPadding={8}
+                onOpenAutoFocus={(e) => {
+                  e.preventDefault();
 
-              presetListRef.current?.focus();
-            }}
-            onEscapeKeyDown={(e) => {
-              e.stopPropagation();
-              onClose();
-            }}
-          >
-            <PresetsList
-              blockSlug={block.slug}
-              label={label}
-              presets={presets}
-              listRef={presetListRef}
-              onDeleteRequest={handleDeleteRequest}
-              onClose={onClose}
-              onSelect={(preset) => {
-                onPresetSelect(block.slug, preset);
-              }}
-            />
-          </Popover.Content>
-        </Popover.Portal>
-      </Popover.Root>
+                  presetListRef.current?.focus();
+                }}
+                onEscapeKeyDown={(e) => {
+                  e.stopPropagation();
+                  onClose();
+                }}
+              >
+                <PresetsList
+                  blockSlug={block.slug}
+                  label={label}
+                  presets={presets}
+                  listRef={presetListRef}
+                  onDeleteRequest={handleDeleteRequest}
+                  onClose={onClose}
+                  onSelect={(preset) => {
+                    onPresetSelect(block.slug, preset);
+                  }}
+                />
+              </Popover.Content>
+            </Popover.Portal>
+          </Popover.Root>
+        </div>
+
+        <div className="thumbnail-block-card__label thumbnail-card__label">
+          {label}
+        </div>
+      </div>
 
       {deletingPreset && (
         <ConfirmationModal
