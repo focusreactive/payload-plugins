@@ -432,8 +432,7 @@ const PresetsList: React.FC<PresetsListProps> = ({
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // All selectable items: null preset first, then block-specific presets
-  const totalItems = 1 + filteredPresets.length;
+  const totalItems = filteredPresets.length;
 
   useEffect(() => {
     itemsRef.current = Array.from(
@@ -524,8 +523,7 @@ const PresetsList: React.FC<PresetsListProps> = ({
               mediaCollection={mediaCollection}
               onSelect={onSelect}
               onDeleteRequest={onDeleteRequest}
-              tabIndex={focusedIndex === index + 1 ? 0 : -1}
-              onFocus={() => setFocusedIndex(index + 1)}
+              tabIndex={focusedIndex === index ? 0 : -1}
               isScrolling={isScrolling}
             />
           ))}

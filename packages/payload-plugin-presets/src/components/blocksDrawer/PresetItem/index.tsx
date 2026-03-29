@@ -29,7 +29,6 @@ export function PresetItem({
   onSelect,
   onDeleteRequest,
   tabIndex,
-  onFocus,
   isScrolling,
 }: Props) {
   const { preview } = preset ?? {};
@@ -56,7 +55,6 @@ export function PresetItem({
 
   const handleButtonFocus = () => {
     setIsKeyboardFocused(true);
-    onFocus?.();
   };
 
   useEffect(() => {
