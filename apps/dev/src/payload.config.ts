@@ -9,8 +9,6 @@ import { Header } from './globals/Header'
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
-import { heroFields } from './blocks/Hero'
-import { copyFields } from './blocks/Copy'
 
 import { abTestingPlugin } from '@focus-reactive/payload-plugin-ab'
 import { presetsPlugin } from '@focus-reactive/payload-plugin-presets'
@@ -60,20 +58,7 @@ export default buildConfig({
         },
       },
     }),
-    presetsPlugin({
-      presetTypes: [
-        {
-          value: 'hero',
-          label: { en: 'Hero' },
-          fields: heroFields,
-        },
-        {
-          value: 'copy',
-          label: { en: 'Copy' },
-          fields: copyFields,
-        },
-      ],
-    }),
+    presetsPlugin(),
     schedulePublicationPlugin({
       secret: 'secret',
       collections: ['pages', 'users'],
