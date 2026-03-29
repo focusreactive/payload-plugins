@@ -21,11 +21,12 @@ type BlockSelectorWithPresetsProps = {
   blocks: (ClientBlock | string)[];
   onSelect: (blockType: string, preset?: Preset | null) => void;
   tenantId?: number | string | null;
+  locale?: string;
 };
 
 export const BlockSelectorWithPresets: React.FC<
   BlockSelectorWithPresetsProps
-> = ({ blocks, onSelect, tenantId }) => {
+> = ({ blocks, onSelect, tenantId, locale }) => {
   const { slug: presetsCollectionSlug, presetTypes } = usePresetsConfig();
   const { i18n, t } = useTranslation();
 
@@ -64,6 +65,11 @@ export const BlockSelectorWithPresets: React.FC<
         params.append("where[tenant][equals]", String(tenantId));
       }
 
+      if (locale) {
+        params.append("locale", locale);
+        params.append("fallback-locale", "none");
+      }
+
       params.append("depth", "0");
       params.append("limit", "50");
 
@@ -71,9 +77,13 @@ export const BlockSelectorWithPresets: React.FC<
         `/api/${presetsCollectionSlug}?${params.toString()}`,
       );
       const data = await response.json();
-      const fetchedPresets = data.docs || [];
+      const fetchedPresets: Preset[] = data.docs || [];
 
-      setPresetsCache(fetchedPresets);
+      const filteredPresets = locale
+        ? fetchedPresets.filter((preset) => Boolean(preset.name))
+        : fetchedPresets;
+
+      setPresetsCache(filteredPresets);
     } catch (error) {
       console.error("Failed to fetch presets:", error);
       setPresetsCache([]);
@@ -113,7 +123,7 @@ export const BlockSelectorWithPresets: React.FC<
 
   useEffect(() => {
     fetchPresets();
-  }, []);
+  }, [locale]);
 
   // Show loading state while fetching presets
   if (isLoadingPresets) {

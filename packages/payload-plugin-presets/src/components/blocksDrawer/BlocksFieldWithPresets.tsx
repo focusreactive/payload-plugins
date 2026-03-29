@@ -10,6 +10,7 @@ import {
   useModal,
   toast,
   useTranslation,
+  useLocale,
 } from "@payloadcms/ui";
 import type {
   BlocksFieldClient,
@@ -45,6 +46,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
   const { excludeKeys } = usePresetsConfig();
   const beforeOpenDrawer = useBeforeOpenDrawer();
   const { user } = useAuth();
+  const locale = useLocale();
   const { getData, getDataByPath, addFieldRow } = useForm();
   const { openModal, closeModal } = useModal();
   const { t } = useTranslation();
@@ -170,6 +172,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
             blocks={blocks}
             onSelect={handleBlockSelect}
             tenantId={tenantId}
+            locale={locale?.code}
           />
         </Drawer>
       </div>
