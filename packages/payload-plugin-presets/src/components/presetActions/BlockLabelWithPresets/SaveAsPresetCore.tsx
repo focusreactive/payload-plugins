@@ -14,6 +14,15 @@ import { usePresetsConfig } from "../../usePresetsConfig.js";
 import { Data } from "payload";
 import { PresetBlockData } from "./types.js";
 
+function isLexicalState(obj: Record<string, unknown>): boolean {
+  const root = obj.root;
+  return (
+    typeof root === "object" &&
+    root !== null &&
+    (root as Record<string, unknown>).type === "root"
+  );
+}
+
 export function cleanPresetData(
   obj: unknown,
   excludeKeys: Set<string>,
@@ -24,8 +33,16 @@ export function cleanPresetData(
     return obj.map((item) => cleanPresetData(item, excludeKeys));
   }
 
+  const record = obj as Record<string, unknown>;
+
+  // Lexical rich text state must not be modified — stripping keys like
+  // blockType from embedded block nodes breaks the editor's internal structure.
+  if (isLexicalState(record)) {
+    return obj;
+  }
+
   const cleaned: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(obj)) {
+  for (const [key, value] of Object.entries(record)) {
     if (!excludeKeys.has(key)) {
       cleaned[key] = cleanPresetData(value, excludeKeys);
     }
