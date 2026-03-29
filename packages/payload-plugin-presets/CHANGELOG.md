@@ -1,3 +1,16 @@
+# @focus-reactive/payload-plugin-presets [0.7.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.6.0...@focus-reactive/payload-plugin-presets@0.7.0) (2026-03-29)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** filter presets by active locale ([20ce8c9](https://github.com/focusreactive/payload-plugins/commit/20ce8c934655c55a52ae613f6ff201e1e907d67f))
+* **payload-plugin-presets:** fix focus on presets list ([de38ac1](https://github.com/focusreactive/payload-plugins/commit/de38ac1c8a55ee46cd1e0b2e097e9fa45090533a))
+
+
+### Features
+
+* **payload-plugin-presets:** support presets with blocks rendered in rich text ([775ee52](https://github.com/focusreactive/payload-plugins/commit/775ee52a2a97d0925c7074861c5126689bb67690))
+
 # @focus-reactive/payload-plugin-presets [0.6.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.5.1...@focus-reactive/payload-plugin-presets@0.6.0) (2026-03-29)
 
 
