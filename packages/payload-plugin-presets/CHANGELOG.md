@@ -1,3 +1,11 @@
+## @focus-reactive/payload-plugin-presets [0.5.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.5.0...@focus-reactive/payload-plugin-presets@0.5.1) (2026-03-29)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** close preset preview on presets list scroll ([23a44d5](https://github.com/focusreactive/payload-plugins/commit/23a44d56dd9fea813d09843139fd8bed3d1cb7f7))
+* **payload-plugin-presets:** display only one preview on hover or on focus simultaneously ([41c2d8e](https://github.com/focusreactive/payload-plugins/commit/41c2d8eb20791531bee08f9f975e341398d062f2))
+
 # @focus-reactive/payload-plugin-presets [0.5.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.4.3...@focus-reactive/payload-plugin-presets@0.5.0) (2026-03-27)
 
 
