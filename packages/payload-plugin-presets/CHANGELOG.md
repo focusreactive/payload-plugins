@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-presets [0.6.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.5.1...@focus-reactive/payload-plugin-presets@0.6.0) (2026-03-29)
+
+
+### Features
+
+* **payload-plugin-presets:** set presets button as a trigger for preset list popup ([3725736](https://github.com/focusreactive/payload-plugins/commit/3725736be1d2cf7a354b64cd383e64e2181ff2bf))
+
 ## @focus-reactive/payload-plugin-presets [0.5.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.5.0...@focus-reactive/payload-plugin-presets@0.5.1) (2026-03-29)
 
 
