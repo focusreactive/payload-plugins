@@ -104,6 +104,18 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
     }
 
     closeModal(customDrawerSlug);
+
+    // The edit-preset DocumentDrawer (a nested drawer) may not complete its exit
+    // transition before the blocks drawer unmounts its subtree. Clean up any
+    // modal containers that got stuck with --enterDone as a result.
+    setTimeout(() => {
+      document
+        .querySelectorAll<HTMLElement>(".payload__modal-container")
+        .forEach((el) => {
+          el.classList.remove("payload__modal-container--enterDone");
+          el.classList.add("payload__modal-container--exitDone");
+        });
+    }, 0);
   };
 
   const handleOpenDrawer = async () => {
@@ -119,6 +131,16 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
       });
       if (!allowed) return;
     }
+
+    setTimeout(() => {
+      document
+        .querySelectorAll<HTMLElement>(".payload__modal-container")
+        .forEach((el) => {
+          el.classList.add("payload__modal-container--enterDone");
+          el.classList.remove("payload__modal-container--exitDone");
+        });
+    }, 0);
+
     openModal(customDrawerSlug);
   };
 
