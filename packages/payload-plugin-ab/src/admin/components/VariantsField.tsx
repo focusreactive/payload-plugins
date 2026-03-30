@@ -1,14 +1,15 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Button, toast, useDocumentInfo, useField } from "@payloadcms/ui";
+import { Button, toast, useDocumentInfo, useField, EditIcon } from "@payloadcms/ui";
+import { TrashIcon } from "@payloadcms/ui/icons/Trash";
 import { AB_PASS_PERCENTAGE_FIELD, AB_VARIANT_OF_FIELD, AB_VARIANT_PERCENTAGES_FIELD } from "../../constants";
 
 interface VariantRow {
   id: string;
   title?: string;
   slug?: string;
-  passPercentage: number;
+  passPercentage: number | null;
 }
 
 interface VariantsFieldProps {
@@ -138,9 +139,16 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
   };
 
   const sumOthers = (excludeId: string) =>
-    variants.filter((v) => v.id !== excludeId).reduce((s, v) => s + v.passPercentage, 0);
+    variants.filter((v) => v.id !== excludeId).reduce((s, v) => s + (v.passPercentage ?? 0), 0);
 
-  const handlePercentageChange = (variantId: string, raw: number) => {
+  const handlePercentageChange = (variantId: string, rawStr: string) => {
+    if (rawStr === "") {
+      setVariants((prev) =>
+        prev.map((v) => (v.id === variantId ? { ...v, passPercentage: null } : v)),
+      );
+      return;
+    }
+    const raw = Number(rawStr);
     if (isNaN(raw)) return;
     const maxAllowed = Math.max(1, 99 - sumOthers(variantId));
     const clamped = Math.min(raw, maxAllowed);
@@ -154,7 +162,8 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
     const variant = variants.find((v) => v.id === variantId);
     if (!variant) return;
     const maxAllowed = Math.max(1, 99 - sumOthers(variantId));
-    const enforced = Math.max(1, Math.min(variant.passPercentage, maxAllowed));
+    const lastValid = pendingPercentages?.[variantId] ?? 1;
+    const enforced = Math.max(1, Math.min(variant.passPercentage ?? lastValid, maxAllowed));
     if (enforced === variant.passPercentage) return;
     setVariants((prev) =>
       prev.map((v) => (v.id === variantId ? { ...v, passPercentage: enforced } : v)),
@@ -164,7 +173,7 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
 
   if (!id) return null;
 
-  const totalVariantPercent = variants.reduce((sum, v) => sum + v.passPercentage, 0);
+  const totalVariantPercent = variants.reduce((sum, v) => sum + (v.passPercentage ?? 0), 0);
   const originalPercent = 100 - totalVariantPercent;
 
   return (
@@ -230,34 +239,36 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
                 background: "var(--theme-elevation-50)",
               }}
             >
-              <span style={{ flex: 1, fontSize: 13, color: "var(--theme-elevation-800)" }}>{variant.title}</span>
-              <input
-                type="number"
-                min={1}
-                max={99 - sumOthers(variant.id)}
-                value={variant.passPercentage}
-                onChange={(e) => handlePercentageChange(variant.id, Number(e.target.value))}
-                onBlur={() => handlePercentageBlur(variant.id)}
-                style={{ width: 60, padding: "2px 6px", fontSize: 13, border: "1px solid var(--theme-elevation-150)", borderRadius: 3, background: "var(--theme-elevation-0)", color: "var(--theme-elevation-800)" }}
-                title="Traffic percentage (1–99)"
-              />
-              <span style={{ fontSize: 11, color: "var(--theme-elevation-500)" }}>%</span>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: "var(--theme-elevation-800)" }}>{variant.title}</span>
+              <div className="ab-percent-input-wrapper">
+                <input
+                  type="number"
+                  min={1}
+                  max={99 - sumOthers(variant.id)}
+                  value={variant.passPercentage ?? ""}
+                  onChange={(e) => handlePercentageChange(variant.id, e.target.value)}
+                  onBlur={() => handlePercentageBlur(variant.id)}
+                  className="ab-percent-input"
+                  title="Traffic percentage (1–99)"
+                />
+                <span className="ab-percent-suffix">%</span>
+              </div>
               <a
                 href={`/admin/collections/${slug}/${variant.id}`}
                 target="_blank"
                 rel="noreferrer"
-                style={{ color: "var(--theme-elevation-500)", display: "flex", alignItems: "center", fontSize: 14 }}
+                className="ab-variant-icon-btn"
                 title="Edit variant"
               >
-                ↗
+                <EditIcon />
               </a>
               <button
                 type="button"
                 onClick={() => handleDeleteVariant(variant.id)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--theme-elevation-500)", fontSize: 16, lineHeight: 1, padding: 0 }}
+                className="ab-variant-icon-btn ab-variant-icon-btn--danger"
                 title="Remove variant"
               >
-                ×
+                <TrashIcon />
               </button>
             </div>
           ))}
@@ -279,7 +290,39 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
 
       </div>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } } .ab-variants-actions button { width: 100%; }`}</style>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .ab-variants-actions button { width: 100%; }
+        .ab-variant-icon-btn {
+          display: flex; align-items: center; justify-content: center;
+          width: 28px; height: 28px; border-radius: 4px;
+          border: 1px solid var(--theme-elevation-150);
+          background: var(--theme-elevation-0); color: var(--theme-elevation-500);
+          cursor: pointer; transition: background 0.15s, color 0.15s;
+          text-decoration: none;
+        }
+        .icon.icon--trash { flex: none; }
+        .ab-variant-icon-btn:hover {
+          background: var(--theme-elevation-100); color: var(--theme-elevation-800);
+        }
+        .ab-variant-icon-btn--danger { color: #dc2626; }
+        .ab-variant-icon-btn--danger:hover { background: #fef2f2; color: #b91c1c; }
+        .ab-percent-input-wrapper {
+          position: relative; display: inline-flex; align-items: center;
+        }
+        .ab-percent-input {
+          width: 64px; padding: 0 24px 0 8px; font-size: 13px; height: 28px;
+          border: 1px solid var(--theme-elevation-150); border-radius: 4px;
+          background: var(--theme-elevation-0); color: var(--theme-elevation-800);
+          -moz-appearance: textfield;
+        }
+        .ab-percent-input::-webkit-outer-spin-button,
+        .ab-percent-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .ab-percent-suffix {
+          position: absolute; right: 8px; font-size: 12px;
+          color: var(--theme-elevation-400); pointer-events: none;
+        }
+      `}</style>
     </div>
   );
 }
