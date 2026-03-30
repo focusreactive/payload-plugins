@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-presets [0.8.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.8.1...@focus-reactive/payload-plugin-presets@0.8.2) (2026-03-30)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** fix repeat open drawer ([9e040c0](https://github.com/focusreactive/payload-plugins/commit/9e040c078e2183dbaf1b41d3bbc19d2565551252))
+
 ## @focus-reactive/payload-plugin-presets [0.8.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.8.0...@focus-reactive/payload-plugin-presets@0.8.1) (2026-03-30)
 
 
