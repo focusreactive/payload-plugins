@@ -48,10 +48,27 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
   const { user } = useAuth();
   const locale = useLocale();
   const { getData, getDataByPath, addFieldRow } = useForm();
-  const { openModal, closeModal } = useModal();
+  const { openModal, closeModal, modalState } = useModal();
   const { t } = useTranslation();
 
   const customDrawerSlug = useDrawerSlug("blocks-with-presets-drawer");
+
+  const isDrawerOpen = (modalState as Record<string, { isOpen?: boolean } | undefined>)[customDrawerSlug]?.isOpen ?? false;
+  const wasOpenRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (wasOpenRef.current && !isDrawerOpen) {
+      document
+        .querySelectorAll<HTMLElement>(".payload__modal-container")
+        .forEach((el) => {
+          el.classList.remove("payload__modal-container--enterDone");
+          el.classList.add("payload__modal-container--exitDone");
+        });
+    }
+    if (isDrawerOpen) {
+      wasOpenRef.current = true;
+    }
+  }, [isDrawerOpen]);
 
   const fullData = getData() as {
     tenant?: number;
@@ -104,18 +121,6 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
     }
 
     closeModal(customDrawerSlug);
-
-    // The edit-preset DocumentDrawer (a nested drawer) may not complete its exit
-    // transition before the blocks drawer unmounts its subtree. Clean up any
-    // modal containers that got stuck with --enterDone as a result.
-    setTimeout(() => {
-      document
-        .querySelectorAll<HTMLElement>(".payload__modal-container")
-        .forEach((el) => {
-          el.classList.remove("payload__modal-container--enterDone");
-          el.classList.add("payload__modal-container--exitDone");
-        });
-    }, 0);
   };
 
   const handleOpenDrawer = async () => {
