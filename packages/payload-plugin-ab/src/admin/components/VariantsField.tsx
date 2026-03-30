@@ -27,6 +27,7 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
     useField<Record<string, number>>({ path: AB_VARIANT_PERCENTAGES_FIELD });
 
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const fetchVariants = useCallback(
     async (initialPending?: Record<string, number> | null) => {
@@ -63,6 +64,7 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
 
   const handleAddVariant = async () => {
     if (!id || !slug) return;
+    setActionLoading(true);
     try {
       const res = await fetch("/api/_ab/duplicate", {
         method: "POST",
@@ -74,17 +76,26 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
         toast.error(`Error: ${body.error ?? "Unknown error"}`);
         return;
       }
-      const newPending = { ...(pendingPercentages ?? {}), [body.id]: 1 };
+      const variantIds = [...variants.map((v) => v.id), body.id];
+      const totalSlots = variantIds.length + 1; // variants + original
+      const perSlot = Math.floor(100 / totalSlots);
+      const newPending: Record<string, number> = {};
+      for (const vid of variantIds) {
+        newPending[vid] = perSlot;
+      }
       setPendingPercentages(newPending);
       await fetchVariants(newPending);
       toast.success("Variant created");
     } catch {
       toast.error("Failed to create variant");
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleDeleteVariant = async (variantId: string) => {
     if (!slug) return;
+    setActionLoading(true);
     try {
       const res = await fetch(`/api/${slug}/${variantId}`, { method: "DELETE" });
       if (!res.ok) { toast.error("Failed to delete variant"); return; }
@@ -96,27 +107,34 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
       }
     } catch {
       toast.error("Failed to delete variant");
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleClearAll = async () => {
     if (!variants.length || !slug) return;
     if (!window.confirm(`Delete all ${variants.length} variant(s)?`)) return;
-    const results = await Promise.all(
-      variants.map(async (v) => {
-        const res = await fetch(`/api/${slug}/${v.id}`, { method: "DELETE" });
-        return res.ok ? v.id : null;
-      }),
-    );
-    const deleted = new Set(results.filter(Boolean));
-    const failed = variants.length - deleted.size;
-    setVariants((prev) => prev.filter((v) => !deleted.has(v.id)));
-    if (deleted.size > 0 && pendingPercentages) {
-      const next = { ...pendingPercentages };
-      deleted.forEach((id) => { if (id) delete next[id as string]; });
-      setPendingPercentages(Object.keys(next).length > 0 ? next : null);
+    setActionLoading(true);
+    try {
+      const results = await Promise.all(
+        variants.map(async (v) => {
+          const res = await fetch(`/api/${slug}/${v.id}`, { method: "DELETE" });
+          return res.ok ? v.id : null;
+        }),
+      );
+      const deleted = new Set(results.filter(Boolean));
+      const failed = variants.length - deleted.size;
+      setVariants((prev) => prev.filter((v) => !deleted.has(v.id)));
+      if (deleted.size > 0 && pendingPercentages) {
+        const next = { ...pendingPercentages };
+        deleted.forEach((id) => { if (id) delete next[id as string]; });
+        setPendingPercentages(Object.keys(next).length > 0 ? next : null);
+      }
+      if (failed > 0) toast.error(`${failed} variant(s) failed to delete`);
+    } finally {
+      setActionLoading(false);
     }
-    if (failed > 0) toast.error(`${failed} variant(s) failed to delete`);
   };
 
   const sumOthers = (excludeId: string) =>
@@ -151,29 +169,21 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
 
   return (
     <div style={{ marginBottom: 16 }}>
+      <div style={{ opacity: actionLoading ? 0.5 : 1, pointerEvents: actionLoading ? "none" : "auto", transition: "opacity 0.15s" }}>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
         <label className="field-label" style={{ paddingBottom: 0, marginRight: 0 }}>Variants</label>
         {variants.length > 0 && (
-          <button
-            type="button"
-            onClick={handleClearAll}
+          <span
             style={{
               marginLeft: "auto",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: 0,
-              font: "inherit",
-              fontSize: "inherit",
-              color: "var(--theme-elevation-800)",
-              textDecoration: "underline",
+              fontSize: 12,
+              color: "var(--theme-elevation-500)",
             }}
           >
-            Clear All
-          </button>
+            Original: {Math.max(0, originalPercent)}% of traffic
+          </span>
         )}
       </div>
-
       {loading ? (
         <div
           style={{
@@ -252,38 +262,24 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
             </div>
           ))}
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-            <button
-              type="button"
-              onClick={handleAddVariant}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                fontSize: 13,
-                color: "var(--theme-elevation-800)",
-                padding: 0,
-              }}
-            >
-              <span style={{ fontSize: 18, lineHeight: 1 }}>+</span> Add new
-            </button>
+          <div className="ab-variants-actions" style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <div style={{ flex: 1 }}>
+              <Button onClick={handleAddVariant} buttonStyle="primary" size="medium">
+                Add Variant
+              </Button>
+            </div>
+            <div style={{ flex: 1 }}>
+              <Button onClick={handleClearAll} buttonStyle="secondary" size="medium">
+                Clear All
+              </Button>
+            </div>
           </div>
-          <p
-            style={{
-              margin: "8px 0 0",
-              fontSize: 12,
-              color: "var(--theme-elevation-500)",
-            }}
-          >
-            Original: {Math.max(0, originalPercent)}% of traffic
-          </p>
         </>
       )}
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } } .ab-variants-actions button { width: 100%; }`}</style>
     </div>
   );
 }
