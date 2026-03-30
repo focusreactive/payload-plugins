@@ -1,3 +1,22 @@
+# @focus-reactive/payload-plugin-presets [0.8.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.7.0...@focus-reactive/payload-plugin-presets@0.8.0) (2026-03-30)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** make preview as a rectangle ([ca1a59d](https://github.com/focusreactive/payload-plugins/commit/ca1a59d5d5edca6dd1fa1a882fbf7fd7ce2b7447))
+* **payload-plugin-presets:** suppress spurious keyboard focus after edit drawer closes ([6ea0f85](https://github.com/focusreactive/payload-plugins/commit/6ea0f851302ff72a824da9efe0ade3c324046d63))
+* **payload-plugin-presets:** update preset item styles ([12b0a33](https://github.com/focusreactive/payload-plugins/commit/12b0a33c14b9f058cdef54cec6014821aa8e14b9))
+
+
+### Features
+
+* **payload-plugin-presets:** open document drawer on edit preset ([26750e8](https://github.com/focusreactive/payload-plugins/commit/26750e8b194861ee39eb604a30d36effc194a5d7))
+
+
+### Reverts
+
+* **payload-plugin-presets:** restore block card as single trigger for preset popup ([0b8a6a2](https://github.com/focusreactive/payload-plugins/commit/0b8a6a2cd8ef5515fdff5bc7381e5343611b085c))
+
 # @focus-reactive/payload-plugin-presets [0.7.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.6.0...@focus-reactive/payload-plugin-presets@0.7.0) (2026-03-29)
 
 
