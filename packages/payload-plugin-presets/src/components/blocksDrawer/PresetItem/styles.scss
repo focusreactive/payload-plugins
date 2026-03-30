@@ -23,14 +23,14 @@
   &__content {
     flex-grow: 1;
     display: flex;
-    align-items: start;
+    align-items: center;
     justify-content: space-between;
     gap: calc(var(--base) * 0.5);
   }
 
   &__label {
     font-size: 1.25rem;
-    font-weight: 600;
+    font-weight: 400;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
