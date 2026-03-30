@@ -84,7 +84,8 @@ export function PresetItem({
   const [isKeyboardFocused, setIsKeyboardFocused] = useState(false);
   const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
 
-  const isOpen = (isHovered || isKeyboardFocused) && !isScrolling && !isEditDrawerOpen;
+  const isOpen =
+    (isHovered || isKeyboardFocused) && !isScrolling && !isEditDrawerOpen;
 
   const mediaId = typeof preview === "number" ? preview : preview?.id;
   const mediaUrl = media?.url;
