@@ -1,7 +1,7 @@
 "use client";
 
 import { MediaData, Preset } from "../../shared";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation, useDocumentDrawer } from "@payloadcms/ui";
 import { usePresetsConfig } from "../../usePresetsConfig.js";
 import { TrashIcon } from "@payloadcms/ui/icons/Trash";
@@ -83,6 +83,7 @@ export function PresetItem({
   const [isHovered, setIsHovered] = useState(false);
   const [isKeyboardFocused, setIsKeyboardFocused] = useState(false);
   const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+  const suppressNextFocus = useRef(false);
 
   const isOpen =
     (isHovered || isKeyboardFocused) && !isScrolling && !isEditDrawerOpen;
@@ -98,6 +99,10 @@ export function PresetItem({
   };
 
   const handleButtonFocus = () => {
+    if (suppressNextFocus.current) {
+      suppressNextFocus.current = false;
+      return;
+    }
     setIsKeyboardFocused(true);
   };
 
@@ -175,7 +180,10 @@ export function PresetItem({
                     setIsHovered(false);
                     setIsKeyboardFocused(false);
                   }}
-                  onDrawerOpenChange={setIsEditDrawerOpen}
+                  onDrawerOpenChange={(isOpen) => {
+                    if (!isOpen) suppressNextFocus.current = true;
+                    setIsEditDrawerOpen(isOpen);
+                  }}
                 />
               )}
               {preset?.name && (
