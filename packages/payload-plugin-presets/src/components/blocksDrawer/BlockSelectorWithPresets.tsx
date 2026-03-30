@@ -203,6 +203,7 @@ export const BlockSelectorWithPresets: React.FC<
                       onPresetSelect={handlePresetSelect}
                       onClose={() => setActiveBlockSlug(null)}
                       onDelete={handleDeletePreset}
+                      onPresetUpdate={fetchPresets}
                     />
                   </li>
                 );
@@ -239,6 +240,7 @@ type BlockCardProps = {
   onPresetSelect: (blockType: string, preset: Preset | null) => void;
   onClose: () => void;
   onDelete: (presetId: string | number) => void;
+  onPresetUpdate: () => void;
 };
 
 const BlockCard: React.FC<BlockCardProps> = ({
@@ -252,6 +254,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
   onPresetSelect,
   onClose,
   onDelete,
+  onPresetUpdate,
 }) => {
   const [deletingPreset, setDeletingPreset] = useState<Preset | null>(null);
   const { openModal } = useModal();
@@ -355,6 +358,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
                   listRef={presetListRef}
                   onDeleteRequest={handleDeleteRequest}
                   onClose={onClose}
+                  onPresetUpdate={onPresetUpdate}
                   onSelect={(preset) => {
                     onPresetSelect(block.slug, preset);
                   }}
@@ -422,6 +426,7 @@ type PresetsListProps = {
   onSelect: (preset: Preset | null) => void;
   onDeleteRequest: (preset: Preset) => void;
   onClose: () => void;
+  onPresetUpdate: () => void;
   listRef: React.RefObject<HTMLDivElement | null>;
 };
 
@@ -432,6 +437,7 @@ const PresetsList: React.FC<PresetsListProps> = ({
   onSelect,
   onDeleteRequest,
   onClose,
+  onPresetUpdate,
   listRef,
 }) => {
   const filteredPresets = presets.filter((preset) => preset.type === blockSlug);
@@ -533,6 +539,7 @@ const PresetsList: React.FC<PresetsListProps> = ({
               mediaCollection={mediaCollection}
               onSelect={onSelect}
               onDeleteRequest={onDeleteRequest}
+              onPresetUpdate={onPresetUpdate}
               tabIndex={focusedIndex === index ? 0 : -1}
               isScrolling={isScrolling}
             />

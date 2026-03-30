@@ -2,7 +2,7 @@
 
 import { MediaData, Preset } from "../../shared";
 import { useEffect, useState } from "react";
-import { useTranslation } from "@payloadcms/ui";
+import { useTranslation, useDocumentDrawer } from "@payloadcms/ui";
 import { usePresetsConfig } from "../../usePresetsConfig.js";
 import { TrashIcon } from "@payloadcms/ui/icons/Trash";
 import { EditIcon } from "@payloadcms/ui/icons/Edit";
@@ -11,12 +11,54 @@ import * as Popover from "@radix-ui/react-popover";
 import "./styles.scss";
 import { PresetAdminComponentCell } from "../../PresetAdminComponentCell";
 
+function EditPresetButton({
+  presetId,
+  onAfterSave,
+  onOpen,
+  onDrawerOpenChange,
+}: {
+  presetId: string | number;
+  onAfterSave?: () => void;
+  onOpen?: () => void;
+  onDrawerOpenChange?: (isOpen: boolean) => void;
+}) {
+  const { slug } = usePresetsConfig();
+  const [DocumentDrawer, , { openDrawer, isDrawerOpen }] = useDocumentDrawer({
+    collectionSlug: slug,
+    id: presetId,
+  });
+
+  useEffect(() => {
+    onDrawerOpenChange?.(isDrawerOpen);
+  }, [isDrawerOpen]);
+
+  return (
+    <>
+      <button
+        className="preset-action edit-preset"
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpen?.();
+          openDrawer();
+        }}
+      >
+        <EditIcon className="edit-preset__icon" />
+      </button>
+      <div onClick={(e) => e.stopPropagation()}>
+        <DocumentDrawer onSave={onAfterSave} />
+      </div>
+    </>
+  );
+}
+
 interface Props {
   preset: Preset | null;
   mediaCollection: string;
   label?: string;
   onSelect: (preset: Preset | null) => void;
   onDeleteRequest?: (preset: Preset) => void;
+  onPresetUpdate?: () => void;
   tabIndex?: number;
   onFocus?: () => void;
   isScrolling?: boolean;
@@ -28,20 +70,21 @@ export function PresetItem({
   label,
   onSelect,
   onDeleteRequest,
+  onPresetUpdate,
   tabIndex,
   isScrolling,
 }: Props) {
   const { preview } = preset ?? {};
 
   const { t } = useTranslation();
-  const { slug } = usePresetsConfig();
 
   const [media, setMedia] = useState<MediaData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const [isKeyboardFocused, setIsKeyboardFocused] = useState(false);
+  const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
 
-  const isOpen = (isHovered || isKeyboardFocused) && !isScrolling;
+  const isOpen = (isHovered || isKeyboardFocused) && !isScrolling && !isEditDrawerOpen;
 
   const mediaId = typeof preview === "number" ? preview : preview?.id;
   const mediaUrl = media?.url;
@@ -124,13 +167,15 @@ export function PresetItem({
 
             <div className="preset-item__actions">
               {preset?.id && (
-                <a
-                  className="preset-action edit-preset"
-                  href={`/admin/collections/${slug}/${preset.id}`}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <EditIcon className="edit-preset__icon" />
-                </a>
+                <EditPresetButton
+                  presetId={preset.id}
+                  onAfterSave={onPresetUpdate}
+                  onOpen={() => {
+                    setIsHovered(false);
+                    setIsKeyboardFocused(false);
+                  }}
+                  onDrawerOpenChange={setIsEditDrawerOpen}
+                />
               )}
               {preset?.name && (
                 <button
