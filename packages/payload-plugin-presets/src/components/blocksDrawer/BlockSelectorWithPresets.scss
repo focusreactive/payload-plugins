@@ -109,6 +109,12 @@
   }
 }
 
+.thumbnail-card {
+  &__chevron--open {
+    transform: rotate(-180deg);
+  }
+}
+
 .popover__thumbnail-card {
   display: flex;
   flex-direction: row;

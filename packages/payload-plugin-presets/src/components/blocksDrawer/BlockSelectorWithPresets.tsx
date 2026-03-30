@@ -9,7 +9,6 @@ import {
   ChevronIcon,
   ConfirmationModal,
   useModal,
-  Button,
 } from "@payloadcms/ui";
 import type { ClientBlock } from "payload";
 import { usePresetsConfig } from "../usePresetsConfig.js";
@@ -293,85 +292,62 @@ const BlockCard: React.FC<BlockCardProps> = ({
       }}
       style={{ display: "contents" }}
     >
-      <div
-        className={`thumbnail-block-card thumbnail-card thumbnail-card--align-label-center`}
-        title={label}
+      <Popover.Root
+        open={isActive}
+        onOpenChange={(open) => {
+          if (!open) onClose();
+        }}
       >
-        <BlockThumbnail imageURL={block.imageURL} label={label} />
-
-        <div className="thumbnail-block-card__button-list">
-          <Button
-            className="thumbnail-block-card__button"
-            buttonStyle="primary"
-            onClick={() => onPresetSelect(block.slug, null)}
+        <Popover.Trigger asChild>
+          <button
+            className={`thumbnail-card thumbnail-card--has-on-click thumbnail-card--align-label-center ${isActive ? "thumbnail-card--active" : ""}`}
+            title={label}
+            type="button"
+            onClick={onBlockClick}
           >
-            {t("presetsPlugin:blocksDrawer:empty" as never)}
-          </Button>
+            <BlockThumbnail imageURL={block.imageURL} label={label} />
+            <div className="thumbnail-card__label">
+              {label} {presets.length > 0 ? `(${presets.length})` : ""}
+              <ChevronIcon
+                className={`thumbnail-card__chevron ${isActive ? "thumbnail-card__chevron--open" : ""}`}
+              />
+            </div>
+          </button>
+        </Popover.Trigger>
 
-          <Popover.Root
-            open={isActive}
-            onOpenChange={(open) => {
-              if (!open) onClose();
+        <Popover.Portal container={portalContainer}>
+          <Popover.Content
+            className="blocks-drawer__popover-content"
+            side={isMobile ? "bottom" : "right"}
+            align="start"
+            sideOffset={8}
+            avoidCollisions
+            collisionPadding={8}
+            onOpenAutoFocus={(e) => {
+              e.preventDefault();
+
+              presetListRef.current?.focus();
+            }}
+            onEscapeKeyDown={(e) => {
+              e.stopPropagation();
+              onClose();
             }}
           >
-            <Popover.Trigger asChild>
-              <Button
-                className="thumbnail-block-card__button"
-                buttonStyle="secondary"
-                icon={
-                  <ChevronIcon
-                    className={`thumbnail-block-card__chevron ${isActive ? "thumbnail-block-card__chevron--open" : ""}`}
-                  />
-                }
-                iconPosition="right"
-                onClick={onBlockClick}
-              >
-                <span>
-                  {t("presetsPlugin:blocksDrawer:presets" as never)}
-                  {presets.length > 0 ? ` (${presets.length})` : ""}
-                </span>
-              </Button>
-            </Popover.Trigger>
-
-            <Popover.Portal container={portalContainer}>
-              <Popover.Content
-                className="blocks-drawer__popover-content"
-                side={isMobile ? "bottom" : "right"}
-                align="start"
-                sideOffset={8}
-                avoidCollisions
-                collisionPadding={8}
-                onOpenAutoFocus={(e) => {
-                  e.preventDefault();
-
-                  presetListRef.current?.focus();
-                }}
-                onEscapeKeyDown={(e) => {
-                  e.stopPropagation();
-                  onClose();
-                }}
-              >
-                <PresetsList
-                  blockSlug={block.slug}
-                  label={label}
-                  presets={presets}
-                  listRef={presetListRef}
-                  onDeleteRequest={handleDeleteRequest}
-                  onClose={onClose}
-                  onPresetUpdate={onPresetUpdate}
-                  onSelect={(preset) => {
-                    onPresetSelect(block.slug, preset);
-                  }}
-                />
-              </Popover.Content>
-            </Popover.Portal>
-          </Popover.Root>
-        </div>
-
-        <div className="thumbnail-block-card__label thumbnail-card__label">
-          {label}
-        </div>
-      </div>
+            <PresetsList
+              blockSlug={block.slug}
+              label={label}
+              presets={presets}
+              listRef={presetListRef}
+              onDeleteRequest={handleDeleteRequest}
+              onClose={onClose}
+              onPresetUpdate={onPresetUpdate}
+              onSelect={(preset) => {
+                onPresetSelect(block.slug, preset);
+              }}
+            />
+          </Popover.Content>
+        </Popover.Portal>
+      </Popover.Root>
 
       {deletingPreset && (
         <ConfirmationModal
@@ -448,7 +424,8 @@ const PresetsList: React.FC<PresetsListProps> = ({
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const totalItems = filteredPresets.length;
+  // All selectable items: null preset first, then block-specific presets
+  const totalItems = 1 + filteredPresets.length;
 
   useEffect(() => {
     itemsRef.current = Array.from(
@@ -530,6 +507,16 @@ const PresetsList: React.FC<PresetsListProps> = ({
         tabIndex={-1}
         onKeyDown={handleKeyDown}
       >
+        {/* Empty option — no delete on the null preset */}
+        <PresetItem
+          preset={null}
+          mediaCollection={mediaCollection}
+          label={label}
+          onSelect={onSelect}
+          tabIndex={focusedIndex === 0 ? 0 : -1}
+          isScrolling={isScrolling}
+        />
+
         {/* Presets list */}
         {filteredPresets.length > 0 &&
           filteredPresets.map((preset, index) => (
@@ -540,7 +527,7 @@ const PresetsList: React.FC<PresetsListProps> = ({
               onSelect={onSelect}
               onDeleteRequest={onDeleteRequest}
               onPresetUpdate={onPresetUpdate}
-              tabIndex={focusedIndex === index ? 0 : -1}
+              tabIndex={focusedIndex === index + 1 ? 0 : -1}
               isScrolling={isScrolling}
             />
           ))}
