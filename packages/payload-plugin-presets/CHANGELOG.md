@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-presets [0.8.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.8.0...@focus-reactive/payload-plugin-presets@0.8.1) (2026-03-30)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** open drawer on add block button in any case ([cd34bf3](https://github.com/focusreactive/payload-plugins/commit/cd34bf3f239512f18fe05cb6a0ccccceaabf4647))
+
 # @focus-reactive/payload-plugin-presets [0.8.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.7.0...@focus-reactive/payload-plugin-presets@0.8.0) (2026-03-30)
 
 
