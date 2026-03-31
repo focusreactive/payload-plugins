@@ -57,18 +57,18 @@
   },
   "devDependencies": {
     "@payloadcms/ui": "3.79.0",
-    "@swc/cli": "^0.4.0",
-    "@swc/core": "^1.7.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.2.3",
-    "copyfiles": "^2.4.1",
+    "@swc/cli": "0.4.0",
+    "@swc/core": "1.7.0",
+    "@types/react": "19.0.0",
+    "@types/react-dom": "19.2.3",
+    "copyfiles": "2.4.1",
     "next": "15.4.11",
     "payload": "3.79.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "typescript": "^5.5.0"
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "typescript": "5.5.2"
   },
   "dependencies": {
-    "@radix-ui/react-popover": "^1.1.15"
+    "@radix-ui/react-popover": "1.1.15"
   }
 }
