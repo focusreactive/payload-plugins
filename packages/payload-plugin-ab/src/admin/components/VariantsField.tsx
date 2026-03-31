@@ -1,14 +1,15 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Button, toast, useDocumentInfo, useField } from "@payloadcms/ui";
+import { Button, toast, useDocumentInfo, useField, EditIcon } from "@payloadcms/ui";
+import { TrashIcon } from "@payloadcms/ui/icons/Trash";
 import { AB_PASS_PERCENTAGE_FIELD, AB_VARIANT_OF_FIELD, AB_VARIANT_PERCENTAGES_FIELD } from "../../constants";
 
 interface VariantRow {
   id: string;
   title?: string;
   slug?: string;
-  passPercentage: number;
+  passPercentage: number | null;
 }
 
 interface VariantsFieldProps {
@@ -27,6 +28,7 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
     useField<Record<string, number>>({ path: AB_VARIANT_PERCENTAGES_FIELD });
 
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const fetchVariants = useCallback(
     async (initialPending?: Record<string, number> | null) => {
@@ -63,6 +65,7 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
 
   const handleAddVariant = async () => {
     if (!id || !slug) return;
+    setActionLoading(true);
     try {
       const res = await fetch("/api/_ab/duplicate", {
         method: "POST",
@@ -74,17 +77,26 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
         toast.error(`Error: ${body.error ?? "Unknown error"}`);
         return;
       }
-      const newPending = { ...(pendingPercentages ?? {}), [body.id]: 1 };
+      const variantIds = [...variants.map((v) => v.id), body.id];
+      const totalSlots = variantIds.length + 1; // variants + original
+      const perSlot = Math.floor(100 / totalSlots);
+      const newPending: Record<string, number> = {};
+      for (const vid of variantIds) {
+        newPending[vid] = perSlot;
+      }
       setPendingPercentages(newPending);
       await fetchVariants(newPending);
       toast.success("Variant created");
     } catch {
       toast.error("Failed to create variant");
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleDeleteVariant = async (variantId: string) => {
     if (!slug) return;
+    setActionLoading(true);
     try {
       const res = await fetch(`/api/${slug}/${variantId}`, { method: "DELETE" });
       if (!res.ok) { toast.error("Failed to delete variant"); return; }
@@ -96,33 +108,47 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
       }
     } catch {
       toast.error("Failed to delete variant");
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleClearAll = async () => {
     if (!variants.length || !slug) return;
     if (!window.confirm(`Delete all ${variants.length} variant(s)?`)) return;
-    const results = await Promise.all(
-      variants.map(async (v) => {
-        const res = await fetch(`/api/${slug}/${v.id}`, { method: "DELETE" });
-        return res.ok ? v.id : null;
-      }),
-    );
-    const deleted = new Set(results.filter(Boolean));
-    const failed = variants.length - deleted.size;
-    setVariants((prev) => prev.filter((v) => !deleted.has(v.id)));
-    if (deleted.size > 0 && pendingPercentages) {
-      const next = { ...pendingPercentages };
-      deleted.forEach((id) => { if (id) delete next[id as string]; });
-      setPendingPercentages(Object.keys(next).length > 0 ? next : null);
+    setActionLoading(true);
+    try {
+      const results = await Promise.all(
+        variants.map(async (v) => {
+          const res = await fetch(`/api/${slug}/${v.id}`, { method: "DELETE" });
+          return res.ok ? v.id : null;
+        }),
+      );
+      const deleted = new Set(results.filter(Boolean));
+      const failed = variants.length - deleted.size;
+      setVariants((prev) => prev.filter((v) => !deleted.has(v.id)));
+      if (deleted.size > 0 && pendingPercentages) {
+        const next = { ...pendingPercentages };
+        deleted.forEach((id) => { if (id) delete next[id as string]; });
+        setPendingPercentages(Object.keys(next).length > 0 ? next : null);
+      }
+      if (failed > 0) toast.error(`${failed} variant(s) failed to delete`);
+    } finally {
+      setActionLoading(false);
     }
-    if (failed > 0) toast.error(`${failed} variant(s) failed to delete`);
   };
 
   const sumOthers = (excludeId: string) =>
-    variants.filter((v) => v.id !== excludeId).reduce((s, v) => s + v.passPercentage, 0);
+    variants.filter((v) => v.id !== excludeId).reduce((s, v) => s + (v.passPercentage ?? 0), 0);
 
-  const handlePercentageChange = (variantId: string, raw: number) => {
+  const handlePercentageChange = (variantId: string, rawStr: string) => {
+    if (rawStr === "") {
+      setVariants((prev) =>
+        prev.map((v) => (v.id === variantId ? { ...v, passPercentage: null } : v)),
+      );
+      return;
+    }
+    const raw = Number(rawStr);
     if (isNaN(raw)) return;
     const maxAllowed = Math.max(1, 99 - sumOthers(variantId));
     const clamped = Math.min(raw, maxAllowed);
@@ -136,7 +162,8 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
     const variant = variants.find((v) => v.id === variantId);
     if (!variant) return;
     const maxAllowed = Math.max(1, 99 - sumOthers(variantId));
-    const enforced = Math.max(1, Math.min(variant.passPercentage, maxAllowed));
+    const lastValid = pendingPercentages?.[variantId] ?? 1;
+    const enforced = Math.max(1, Math.min(variant.passPercentage ?? lastValid, maxAllowed));
     if (enforced === variant.passPercentage) return;
     setVariants((prev) =>
       prev.map((v) => (v.id === variantId ? { ...v, passPercentage: enforced } : v)),
@@ -146,34 +173,26 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
 
   if (!id) return null;
 
-  const totalVariantPercent = variants.reduce((sum, v) => sum + v.passPercentage, 0);
+  const totalVariantPercent = variants.reduce((sum, v) => sum + (v.passPercentage ?? 0), 0);
   const originalPercent = 100 - totalVariantPercent;
 
   return (
     <div style={{ marginBottom: 16 }}>
+      <div style={{ opacity: actionLoading ? 0.5 : 1, pointerEvents: actionLoading ? "none" : "auto", transition: "opacity 0.15s" }}>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
         <label className="field-label" style={{ paddingBottom: 0, marginRight: 0 }}>Variants</label>
         {variants.length > 0 && (
-          <button
-            type="button"
-            onClick={handleClearAll}
+          <span
             style={{
               marginLeft: "auto",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: 0,
-              font: "inherit",
-              fontSize: "inherit",
-              color: "var(--theme-elevation-800)",
-              textDecoration: "underline",
+              fontSize: 12,
+              color: "var(--theme-elevation-500)",
             }}
           >
-            Clear All
-          </button>
+            Original: {Math.max(0, originalPercent)}% of traffic
+          </span>
         )}
       </div>
-
       {loading ? (
         <div
           style={{
@@ -220,70 +239,90 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
                 background: "var(--theme-elevation-50)",
               }}
             >
-              <span style={{ flex: 1, fontSize: 13, color: "var(--theme-elevation-800)" }}>{variant.title}</span>
-              <input
-                type="number"
-                min={1}
-                max={99 - sumOthers(variant.id)}
-                value={variant.passPercentage}
-                onChange={(e) => handlePercentageChange(variant.id, Number(e.target.value))}
-                onBlur={() => handlePercentageBlur(variant.id)}
-                style={{ width: 60, padding: "2px 6px", fontSize: 13, border: "1px solid var(--theme-elevation-150)", borderRadius: 3, background: "var(--theme-elevation-0)", color: "var(--theme-elevation-800)" }}
-                title="Traffic percentage (1–99)"
-              />
-              <span style={{ fontSize: 11, color: "var(--theme-elevation-500)" }}>%</span>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: "var(--theme-elevation-800)" }}>{variant.title}</span>
+              <div className="ab-percent-input-wrapper">
+                <input
+                  type="number"
+                  min={1}
+                  max={99 - sumOthers(variant.id)}
+                  value={variant.passPercentage ?? ""}
+                  onChange={(e) => handlePercentageChange(variant.id, e.target.value)}
+                  onBlur={() => handlePercentageBlur(variant.id)}
+                  className="ab-percent-input"
+                  title="Traffic percentage (1–99)"
+                />
+                <span className="ab-percent-suffix">%</span>
+              </div>
               <a
                 href={`/admin/collections/${slug}/${variant.id}`}
                 target="_blank"
                 rel="noreferrer"
-                style={{ color: "var(--theme-elevation-500)", display: "flex", alignItems: "center", fontSize: 14 }}
+                className="ab-variant-icon-btn"
                 title="Edit variant"
               >
-                ↗
+                <EditIcon />
               </a>
               <button
                 type="button"
                 onClick={() => handleDeleteVariant(variant.id)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--theme-elevation-500)", fontSize: 16, lineHeight: 1, padding: 0 }}
+                className="ab-variant-icon-btn ab-variant-icon-btn--danger"
                 title="Remove variant"
               >
-                ×
+                <TrashIcon />
               </button>
             </div>
           ))}
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-            <button
-              type="button"
-              onClick={handleAddVariant}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                fontSize: 13,
-                color: "var(--theme-elevation-800)",
-                padding: 0,
-              }}
-            >
-              <span style={{ fontSize: 18, lineHeight: 1 }}>+</span> Add new
-            </button>
+          <div className="ab-variants-actions" style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <div style={{ flex: 1 }}>
+              <Button onClick={handleAddVariant} buttonStyle="primary" size="medium">
+                Add Variant
+              </Button>
+            </div>
+            <div style={{ flex: 1 }}>
+              <Button onClick={handleClearAll} buttonStyle="secondary" size="medium">
+                Clear All
+              </Button>
+            </div>
           </div>
-          <p
-            style={{
-              margin: "8px 0 0",
-              fontSize: 12,
-              color: "var(--theme-elevation-500)",
-            }}
-          >
-            Original: {Math.max(0, originalPercent)}% of traffic
-          </p>
         </>
       )}
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .ab-variants-actions button { width: 100%; }
+        .ab-variant-icon-btn {
+          display: flex; align-items: center; justify-content: center;
+          width: 28px; height: 28px; border-radius: 4px;
+          border: 1px solid var(--theme-elevation-150);
+          background: var(--theme-elevation-0); color: var(--theme-elevation-500);
+          cursor: pointer; transition: background 0.15s, color 0.15s;
+          text-decoration: none;
+        }
+        .icon.icon--trash { flex: none; }
+        .ab-variant-icon-btn:hover {
+          background: var(--theme-elevation-100); color: var(--theme-elevation-800);
+        }
+        .ab-variant-icon-btn--danger { color: #dc2626; }
+        .ab-variant-icon-btn--danger:hover { background: #fef2f2; color: #b91c1c; }
+        .ab-percent-input-wrapper {
+          position: relative; display: inline-flex; align-items: center;
+        }
+        .ab-percent-input {
+          width: 64px; padding: 0 24px 0 8px; font-size: 13px; height: 28px;
+          border: 1px solid var(--theme-elevation-150); border-radius: 4px;
+          background: var(--theme-elevation-0); color: var(--theme-elevation-800);
+          -moz-appearance: textfield;
+        }
+        .ab-percent-input::-webkit-outer-spin-button,
+        .ab-percent-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .ab-percent-suffix {
+          position: absolute; right: 8px; font-size: 12px;
+          color: var(--theme-elevation-400); pointer-events: none;
+        }
+      `}</style>
     </div>
   );
 }
