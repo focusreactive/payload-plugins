@@ -59,7 +59,7 @@
     "@payloadcms/ui": "3.79.0",
     "@swc/cli": "0.4.0",
     "@swc/core": "1.7.0",
-    "@types/react": "19.0.0",
+    "@types/react": "19.2.9",
     "@types/react-dom": "19.2.3",
     "copyfiles": "2.4.1",
     "next": "15.4.11",
