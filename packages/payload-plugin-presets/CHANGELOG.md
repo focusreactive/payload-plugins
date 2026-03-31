@@ -1,3 +1,15 @@
+# @focus-reactive/payload-plugin-presets [0.9.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.8.2...@focus-reactive/payload-plugin-presets@0.9.0) (2026-03-31)
+
+
+### Bug Fixes
+
+* remove redundant isolatedModules and align [@types](https://github.com/types) versions ([96ebfc7](https://github.com/focusreactive/payload-plugins/commit/96ebfc770c4668a3c52f85206b72754d42d38817))
+
+
+### Features
+
+* **payload-plugin-presets:** pin dependency versions ([c31ff3f](https://github.com/focusreactive/payload-plugins/commit/c31ff3ff80ecb3f7a855a2aa442ed594bba57d74))
+
 ## @focus-reactive/payload-plugin-presets [0.8.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.8.1...@focus-reactive/payload-plugin-presets@0.8.2) (2026-03-30)
 
 
