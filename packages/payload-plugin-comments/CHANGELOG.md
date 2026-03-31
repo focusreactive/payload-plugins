@@ -1,3 +1,15 @@
+# @focus-reactive/payload-plugin-comments [1.6.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.5.0...@focus-reactive/payload-plugin-comments@1.6.0) (2026-03-31)
+
+
+### Bug Fixes
+
+* remove redundant isolatedModules and align [@types](https://github.com/types) versions ([96ebfc7](https://github.com/focusreactive/payload-plugins/commit/96ebfc770c4668a3c52f85206b72754d42d38817))
+
+
+### Features
+
+* **payload-plugin-comments:** pin dependency versions and remove prepare script ([9699799](https://github.com/focusreactive/payload-plugins/commit/96997998fe0f17572082f60f679affb596ac9e4b))
+
 # @focus-reactive/payload-plugin-comments [1.5.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.4.0...@focus-reactive/payload-plugin-comments@1.5.0) (2026-03-28)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/payload-plugin-comments",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "license": "MIT",
   "author": "FocusReactive <ship@focusreactive.com>",
   "keywords": [
@@ -52,7 +52,6 @@
   "scripts": {
     "build": "node node_modules/tsup/dist/cli-default.js && tsc --emitDeclarationOnly --declarationMap",
     "dev": "node node_modules/tsup/dist/cli-default.js --watch",
-
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write src/",
