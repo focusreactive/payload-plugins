@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Button, useDocumentInfo, useForm } from "@payloadcms/ui";
+import { Button, Pill, ShimmerEffect, useDocumentInfo, useForm, useModal } from "@payloadcms/ui";
 import { ReleaseDrawer } from "./ReleaseDrawer";
 import { VersionPickerDrawer } from "./VersionPickerDrawer";
+
+const RELEASE_DRAWER_SLUG = "content-releases-add";
+const VERSION_DRAWER_SLUG = "content-releases-version";
 
 interface ReleaseInfo {
   id: string;
@@ -15,10 +18,9 @@ interface ReleaseInfo {
 export function ReleaseSidebarField() {
   const { id, collectionSlug } = useDocumentInfo();
   const { getData } = useForm();
+  const { openModal } = useModal();
   const [releases, setReleases] = useState<ReleaseInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showReleaseDrawer, setShowReleaseDrawer] = useState(false);
-  const [showVersionDrawer, setShowVersionDrawer] = useState(false);
   const [currentSnapshot, setCurrentSnapshot] = useState<Record<string, any> | null>(null);
 
   const fetchReleases = useCallback(async () => {
@@ -51,98 +53,85 @@ export function ReleaseSidebarField() {
 
   if (!id) return null;
 
-  const statusBadgeColor = (status: string) => {
+  const getPillStyle = (status: string) => {
     switch (status) {
-      case "published": return "#22c55e";
-      case "scheduled": return "#3b82f6";
-      case "failed": return "#ef4444";
-      default: return "#94a3b8";
+      case "published": return "success";
+      case "scheduled": return "dark";
+      case "failed": return "error";
+      case "publishing": return "warning";
+      default: return "light-gray";
     }
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <div style={{ fontWeight: 600, fontSize: "13px", textTransform: "uppercase", color: "#888" }}>
-        Releases
-      </div>
+    <div className="field-type" style={{ paddingTop: 0 }}>
+      <label className="field-label">Releases</label>
 
       {loading ? (
-        <div style={{ fontSize: "13px", color: "#888" }}>Loading...</div>
+        <ShimmerEffect />
       ) : releases.length === 0 ? (
-        <div style={{ fontSize: "13px", color: "#888" }}>Not in any release</div>
+        <p style={{ fontSize: 13, color: "var(--theme-elevation-500)", margin: "8px 0" }}>
+          Not in any release
+        </p>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        <ul className="list-style-none" style={{ padding: 0, margin: "8px 0", display: "flex", flexDirection: "column", gap: 4 }}>
           {releases.map((r) => (
-            <div
+            <li
               key={r.id}
               style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: "6px 8px",
-                borderRadius: "4px",
-                border: "1px solid var(--theme-elevation-200)",
-                fontSize: "13px",
+                padding: "8px 12px",
+                borderRadius: "var(--style-radius-s)",
+                border: "1px solid var(--theme-elevation-150)",
+                background: "var(--theme-elevation-50)",
               }}
             >
-              <span>{r.releaseName}</span>
-              <span
-                style={{
-                  fontSize: "11px",
-                  padding: "2px 6px",
-                  borderRadius: "10px",
-                  backgroundColor: statusBadgeColor(r.releaseStatus),
-                  color: "#fff",
-                }}
-              >
+              <span style={{ fontSize: 13, fontWeight: 500 }}>{r.releaseName}</span>
+              <Pill pillStyle={getPillStyle(r.releaseStatus) as any}>
                 {r.releaseStatus}
-              </span>
-            </div>
+              </Pill>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
-      <Button
-        size="small"
-        onClick={() => {
-          const formData = getData();
-          setCurrentSnapshot(formData);
-          setShowReleaseDrawer(true);
-        }}
-      >
-        Add Current State to Release
-      </Button>
-
-      <Button
-        size="small"
-        onClick={() => setShowVersionDrawer(true)}
-      >
-        Add Version to Release
-      </Button>
-
-      {showReleaseDrawer && currentSnapshot && (
-        <ReleaseDrawer
-          snapshot={currentSnapshot}
-          collectionSlug={collectionSlug!}
-          docId={String(id)}
-          onClose={() => {
-            setShowReleaseDrawer(false);
-            setCurrentSnapshot(null);
-            fetchReleases();
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+        <Button
+          size="small"
+          buttonStyle="secondary"
+          onClick={() => {
+            setCurrentSnapshot(getData());
+            openModal(RELEASE_DRAWER_SLUG);
           }}
-        />
-      )}
+        >
+          Add Current State to Release
+        </Button>
 
-      {showVersionDrawer && (
-        <VersionPickerDrawer
-          collectionSlug={collectionSlug!}
-          docId={String(id)}
-          onClose={() => {
-            setShowVersionDrawer(false);
-            fetchReleases();
-          }}
-        />
-      )}
+        <Button
+          size="small"
+          buttonStyle="secondary"
+          onClick={() => openModal(VERSION_DRAWER_SLUG)}
+        >
+          Add Version to Release
+        </Button>
+      </div>
+
+      <ReleaseDrawer
+        slug={RELEASE_DRAWER_SLUG}
+        snapshot={currentSnapshot}
+        collectionSlug={collectionSlug!}
+        docId={String(id)}
+        onSuccess={fetchReleases}
+      />
+
+      <VersionPickerDrawer
+        slug={VERSION_DRAWER_SLUG}
+        collectionSlug={collectionSlug!}
+        docId={String(id)}
+        onSuccess={fetchReleases}
+      />
     </div>
   );
 }
