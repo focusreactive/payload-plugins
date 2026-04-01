@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-presets [0.10.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.0...@focus-reactive/payload-plugin-presets@0.10.1) (2026-04-01)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** inject "Save as Preset" button and override "Add Below" logic only to action popup of the block field ([d433076](https://github.com/focusreactive/payload-plugins/commit/d4330766a8ba9afdea26876230bc13d3b39a902a))
+
 # @focus-reactive/payload-plugin-presets [0.10.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.9.1...@focus-reactive/payload-plugin-presets@0.10.0) (2026-04-01)
 
 
