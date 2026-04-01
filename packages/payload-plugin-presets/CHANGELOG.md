@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-presets [0.9.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.9.0...@focus-reactive/payload-plugin-presets@0.9.1) (2026-04-01)
+
+
+### Bug Fixes
+
+* increase hover preview size and prevent image cutoff in presets plugin ([4567318](https://github.com/focusreactive/payload-plugins/commit/4567318eef37cea5e1856c2ff4a80912cd96a32a))
+
 # @focus-reactive/payload-plugin-presets [0.9.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.8.2...@focus-reactive/payload-plugin-presets@0.9.0) (2026-03-31)
 
 
