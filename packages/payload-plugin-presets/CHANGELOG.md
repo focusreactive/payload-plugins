@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-presets [0.10.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.1...@focus-reactive/payload-plugin-presets@0.10.2) (2026-04-01)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** show add block button ([f4743b8](https://github.com/focusreactive/payload-plugins/commit/f4743b838f7ec8dee35ee4354ca54cdeee19496f))
+
 ## @focus-reactive/payload-plugin-presets [0.10.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.0...@focus-reactive/payload-plugin-presets@0.10.1) (2026-04-01)
 
 
