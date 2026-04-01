@@ -92,7 +92,14 @@ export function SaveAsPresetCore({
     if (!row) return;
 
     const handleClick = (e: Event) => {
-      if (!(e.target as Element).closest?.(".array-actions__button")) return;
+      const target = e.target as HTMLElement;
+      const clickedButton = target.closest?.(".array-actions__button");
+      if (!clickedButton) return;
+
+      const nearestRow = clickedButton.closest(
+        ".blocks-field__row, .array-field__row",
+      );
+      if (nearestRow !== row) return;
 
       if (suppressNextActionsButtonClickRef.current) {
         suppressNextActionsButtonClickRef.current = false;
@@ -119,8 +126,9 @@ export function SaveAsPresetCore({
           event.preventDefault();
           event.stopPropagation();
 
-          const actionsButton =
-            row.querySelector<HTMLButtonElement>(".array-actions__button");
+          const actionsButton = row.querySelector<HTMLButtonElement>(
+            ".array-actions__button",
+          );
 
           if (actionsButton) {
             suppressNextActionsButtonClickRef.current = true;
