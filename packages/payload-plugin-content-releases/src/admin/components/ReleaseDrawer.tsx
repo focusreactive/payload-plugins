@@ -41,7 +41,7 @@ export function ReleaseDrawer({
     setLoading(true);
     try {
       const res = await fetch(
-        "/api/releases?where[status][equals]=draft&sort=-createdAt&limit=100"
+        "/api/releases?where[status][in]=draft,scheduled&sort=-createdAt&limit=100"
       );
       if (!res.ok) return;
       const data = await res.json();
@@ -255,13 +255,13 @@ export function ReleaseDrawer({
 
         {/* Release List */}
         <div style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", color: "#888" }}>
-          Draft Releases
+          Available Releases
         </div>
 
         {loading ? (
           <div style={{ fontSize: 13, color: "#888" }}>Loading...</div>
         ) : releases.length === 0 ? (
-          <div style={{ fontSize: 13, color: "#888" }}>No draft releases. Create one above.</div>
+          <div style={{ fontSize: 13, color: "#888" }}>No available releases. Create one above.</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {releases.map((r) => (
@@ -291,9 +291,22 @@ export function ReleaseDrawer({
                     </span>
                   )}
                 </div>
-                <span style={{ fontSize: 12, color: "#888" }}>
-                  {new Date(r.createdAt).toLocaleDateString()}
-                </span>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      padding: "2px 6px",
+                      borderRadius: 10,
+                      backgroundColor: r.status === "scheduled" ? "#3b82f6" : "#94a3b8",
+                      color: "#fff",
+                    }}
+                  >
+                    {r.status}
+                  </span>
+                  <span style={{ fontSize: 11, color: "#888" }}>
+                    {new Date(r.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
               </button>
             ))}
           </div>
