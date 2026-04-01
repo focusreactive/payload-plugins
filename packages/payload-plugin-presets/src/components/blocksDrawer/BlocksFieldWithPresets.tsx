@@ -207,7 +207,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
           {!readOnly && (
             <div className="blocks-field-with-presets__footer-actions">
               <button
-                className="blocks-field__drawer-toggler"
+                className="blocks-field__drawer-toggler blocks-field-with-presets__drawer-toggler"
                 type="button"
                 onClick={handleOpenDrawer}
               >

@@ -8,12 +8,16 @@
     align-items: center;
     margin-top: 16px;
   }
+
+  &__drawer-toggler {
+    display: block !important;
+  }
 }
 
 .popup-button {
   width: 100%;
 }
 
-.field-type .blocks-field__drawer-toggler {
+.blocks-field-with-presets .blocks-field__drawer-toggler {
   display: none;
 }
