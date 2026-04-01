@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Button, Drawer, Pill, toast, useModal } from "@payloadcms/ui";
+import { Button, Drawer, Pill, toast, useModal, DatePicker } from "@payloadcms/ui";
 
 interface Release {
   id: string;
@@ -192,7 +192,7 @@ export function ReleaseDrawer({
         <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Create New Release */}
           {!showCreateForm ? (
-            <Button size="small" onClick={() => setShowCreateForm(true)}>
+            <Button buttonStyle="primary" size="medium" onClick={() => setShowCreateForm(true)}>
               Create New Release
             </Button>
           ) : (
@@ -227,18 +227,18 @@ export function ReleaseDrawer({
               </div>
               <div className="field-type date-time-picker">
                 <label className="field-label">Schedule publish</label>
-                <input
-                  className="field-type__input"
-                  type="datetime-local"
-                  value={newScheduledAt}
-                  onChange={(e) => setNewScheduledAt(e.target.value)}
+                <DatePicker
+                  pickerAppearance="dayAndTime"
+                  value={newScheduledAt ? new Date(newScheduledAt) : undefined}
+                  onChange={(val: Date) => setNewScheduledAt(val ? val.toISOString() : "")}
+                  placeholder="Select date and time"
                 />
               </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <Button size="small" onClick={createAndAdd} disabled={!newName.trim() || creating}>
+              <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                <Button buttonStyle="primary" size="medium" onClick={createAndAdd} disabled={!newName.trim() || creating}>
                   {creating ? "Creating..." : "Create & Add"}
                 </Button>
-                <Button size="small" buttonStyle="secondary" onClick={() => setShowCreateForm(false)}>
+                <Button buttonStyle="secondary" size="medium" onClick={() => setShowCreateForm(false)}>
                   Cancel
                 </Button>
               </div>

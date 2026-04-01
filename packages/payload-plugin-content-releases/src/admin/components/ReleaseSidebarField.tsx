@@ -100,7 +100,7 @@ export function ReleaseSidebarField() {
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
         <Button
           size="small"
-          buttonStyle="secondary"
+          buttonStyle="primary"
           onClick={() => {
             setCurrentSnapshot(getData());
             openModal(RELEASE_DRAWER_SLUG);
@@ -111,7 +111,7 @@ export function ReleaseSidebarField() {
 
         <Button
           size="small"
-          buttonStyle="secondary"
+          buttonStyle="primary"
           onClick={() => openModal(VERSION_DRAWER_SLUG)}
         >
           Add Version to Release
