@@ -1,3 +1,16 @@
+# @focus-reactive/payload-plugin-presets [0.10.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.9.1...@focus-reactive/payload-plugin-presets@0.10.0) (2026-04-01)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** display all block action buttons without overflow ([4d7856e](https://github.com/focusreactive/payload-plugins/commit/4d7856e8b073fb914412154eb08fa04d5e14bdd9))
+
+
+### Features
+
+* **payload-plugin-presets:** override "Add Below" handler on click to show block drawer with presets ([57b827a](https://github.com/focusreactive/payload-plugins/commit/57b827aea196c8886884f99f294564d07dc77e5a))
+* **payload-plugin-presets:** override the whole copy & past logic of blocks field ([f936f1f](https://github.com/focusreactive/payload-plugins/commit/f936f1f676e13e728ba4789da98e2418ac7e2781))
+
 ## @focus-reactive/payload-plugin-presets [0.9.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.9.0...@focus-reactive/payload-plugin-presets@0.9.1) (2026-04-01)
 
 
