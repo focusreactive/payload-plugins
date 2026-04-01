@@ -1,5 +1,5 @@
 import type { CollectionConfig, Access } from "payload";
-import { RELEASES_SLUG, RELEASE_STATUSES } from "../constants";
+import { RELEASES_SLUG, RELEASE_ITEMS_SLUG, RELEASE_STATUSES } from "../constants";
 
 interface BuildReleasesCollectionOptions {
   access?: {
@@ -62,6 +62,15 @@ export function buildReleasesCollection(
         admin: {
           position: "sidebar",
           readOnly: true,
+        },
+      },
+      {
+        name: "items",
+        type: "join",
+        collection: RELEASE_ITEMS_SLUG,
+        on: "release",
+        admin: {
+          defaultColumns: ["targetCollection", "targetDoc", "action", "status"],
         },
       },
       {
