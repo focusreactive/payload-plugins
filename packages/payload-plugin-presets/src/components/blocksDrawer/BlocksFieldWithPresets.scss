@@ -2,6 +2,12 @@
   &__add-button {
     margin-top: calc(var(--base) * 0.5);
   }
+
+  &__footer-actions {
+    display: flex;
+    align-items: center;
+    margin-top: 16px;
+  }
 }
 
 .popup-button {

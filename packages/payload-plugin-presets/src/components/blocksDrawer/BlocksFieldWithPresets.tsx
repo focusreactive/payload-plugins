@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import { ReactNode, useCallback, useEffect, useRef } from "react";
 import {
   BlocksField,
   useForm,
@@ -11,6 +11,7 @@ import {
   toast,
   useTranslation,
   useLocale,
+  useFormFields,
 } from "@payloadcms/ui";
 import type {
   BlocksFieldClient,
@@ -24,6 +25,7 @@ import { useBeforeOpenDrawer } from "./BeforeOpenDrawerContext.js";
 import { BlocksConfigProvider } from "./BlocksConfigContext.js";
 import { OpenDrawerProvider } from "./OpenDrawerContext.js";
 import type { Preset } from "../shared/index.js";
+import { hydrateBlocksFieldCustomComponents } from "./clipboard.js";
 import "./BlocksFieldWithPresets.scss";
 
 type BlocksFieldWithPresetsProps = {
@@ -45,20 +47,56 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
   const blocks = field.blocks;
 
   const { excludeKeys } = usePresetsConfig();
-  const beforeOpenDrawer = useBeforeOpenDrawer();
   const { user } = useAuth();
   const locale = useLocale();
-  const { getData, getDataByPath, addFieldRow } = useForm();
-  const { openModal, closeModal, modalState } = useModal();
   const { t } = useTranslation();
 
+  const { openModal, closeModal, modalState } = useModal();
+  const beforeOpenDrawer = useBeforeOpenDrawer();
   const customDrawerSlug = useDrawerSlug("blocks-with-presets-drawer");
-  const insertIndexRef = React.useRef<number | null>(null);
+  const insertIndexRef = useRef<number>(null);
+  const isDrawerOpen = modalState[customDrawerSlug]?.isOpen ?? false;
+  const wasOpenRef = useRef(false);
 
-  const isDrawerOpen = (modalState as Record<string, { isOpen?: boolean } | undefined>)[customDrawerSlug]?.isOpen ?? false;
-  const wasOpenRef = React.useRef(false);
+  const form = useForm();
+  const { getData, getDataByPath, addFieldRow, replaceState } = form;
+  const currentFieldState = useFormFields(([fields]) => fields?.[path]);
 
-  React.useEffect(() => {
+  const existingFieldComponentRef = useRef<ReactNode>(
+    currentFieldState?.customComponents?.Field,
+  );
+
+  useEffect(() => {
+    if (currentFieldState?.customComponents?.Field) {
+      existingFieldComponentRef.current =
+        currentFieldState.customComponents.Field;
+    }
+  }, [currentFieldState?.customComponents]);
+
+  const wrappedReplaceState = useCallback(
+    (incomingState: FormState) => {
+      if (!existingFieldComponentRef.current) {
+        replaceState(incomingState);
+
+        return;
+      }
+
+      const nextState = hydrateBlocksFieldCustomComponents({
+        blocks,
+        currentFieldState,
+        existingFieldComponent: existingFieldComponentRef.current,
+        path,
+        state: incomingState,
+      });
+
+      replaceState(nextState);
+    },
+    [blocks, currentFieldState, path, replaceState],
+  );
+
+  form.replaceState = wrappedReplaceState;
+
+  useEffect(() => {
     if (wasOpenRef.current && !isDrawerOpen) {
       insertIndexRef.current = null;
       document
@@ -167,11 +205,10 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
           <BlocksField {...props} />
 
           {!readOnly && (
-            <div style={{ marginTop: "16px" }}>
+            <div className="blocks-field-with-presets__footer-actions">
               <button
                 className="blocks-field__drawer-toggler"
                 type="button"
-                style={{ display: "block" }}
                 onClick={handleOpenDrawer}
               >
                 <span
