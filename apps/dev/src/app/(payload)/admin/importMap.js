@@ -2,6 +2,7 @@ import { FieldCommentLabel as FieldCommentLabel_d1361f235be9df6e08bfd730fe68e7c8
 import { SaveAsPresetButton as SaveAsPresetButton_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { BlocksFieldWithPresets as BlocksFieldWithPresets_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { VariantsField as VariantsField_1e5bf2338fb8c7d4f6284f3e67c93951 } from '@focus-reactive/payload-plugin-ab/admin/VariantsField'
+import { ReleaseSidebarField as ReleaseSidebarField_01ef71babab0d155f9b7e71fc3fd8245 } from '@focus-reactive/payload-plugin-content-releases/client'
 import { PresetAdminComponentPreview as PresetAdminComponentPreview_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { PresetAdminComponentCell as PresetAdminComponentCell_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { CommentsHeaderButton as CommentsHeaderButton_30d38dd40c31eff500900a16a2792204 } from '@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton'
@@ -13,6 +14,7 @@ export const importMap = {
   "@focus-reactive/payload-plugin-presets/client#SaveAsPresetButton": SaveAsPresetButton_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-presets/client#BlocksFieldWithPresets": BlocksFieldWithPresets_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-ab/admin/VariantsField#VariantsField": VariantsField_1e5bf2338fb8c7d4f6284f3e67c93951,
+  "@focus-reactive/payload-plugin-content-releases/client#ReleaseSidebarField": ReleaseSidebarField_01ef71babab0d155f9b7e71fc3fd8245,
   "@focus-reactive/payload-plugin-presets/client#PresetAdminComponentPreview": PresetAdminComponentPreview_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-presets/client#PresetAdminComponentCell": PresetAdminComponentCell_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton#CommentsHeaderButton": CommentsHeaderButton_30d38dd40c31eff500900a16a2792204,
