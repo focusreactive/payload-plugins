@@ -26,8 +26,8 @@ const SIZE_MAP: Record<PresetCellSize, PresetVariantValue> = {
     shimmerClass: "preset-shimmer--md",
   },
   lg: {
-    width: 200,
-    height: 200,
+    width: 400,
+    height: 300,
     shimmerClass: "preset-shimmer--lg",
   },
 };

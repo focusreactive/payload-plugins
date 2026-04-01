@@ -14,9 +14,9 @@
   }
 
   &--lg &__thumbnail {
-    width: 200px;
-    height: 150px;
-    object-fit: cover;
+    width: 400px;
+    height: 300px;
+    object-fit: contain;
   }
 
   &__thumbnail {
