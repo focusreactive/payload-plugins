@@ -54,7 +54,7 @@ export function BlockLabelWithPresets() {
         <SectionTitle path={`${path}.blockName`} readOnly={false} />
       )}
 
-      <SaveAsPresetCore presetBlockData={data} />
+      <SaveAsPresetCore presetBlockData={data} rowIndex={rowNumber ?? 0} />
     </>
   );
 }

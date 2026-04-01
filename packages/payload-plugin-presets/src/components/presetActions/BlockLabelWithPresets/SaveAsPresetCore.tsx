@@ -11,6 +11,7 @@ import {
   useDocumentDrawer,
 } from "@payloadcms/ui";
 import { usePresetsConfig } from "../../usePresetsConfig.js";
+import { useOpenDrawer } from "../../blocksDrawer/OpenDrawerContext.js";
 import { Data } from "payload";
 import { PresetBlockData } from "./types.js";
 
@@ -52,11 +53,16 @@ export function cleanPresetData(
 
 interface SaveAsPresetCoreProps {
   presetBlockData: PresetBlockData;
+  rowIndex: number;
 }
 
-export function SaveAsPresetCore({ presetBlockData }: SaveAsPresetCoreProps) {
+export function SaveAsPresetCore({
+  presetBlockData,
+  rowIndex,
+}: SaveAsPresetCoreProps) {
   const { blockType: presetType } = presetBlockData;
   const { slug, excludeKeys } = usePresetsConfig();
+  const openPresetsDrawer = useOpenDrawer();
   const excludeSet = new Set(excludeKeys);
 
   const [DocumentDrawer, , { openDrawer, closeDrawer }] = useDocumentDrawer({
@@ -71,6 +77,10 @@ export function SaveAsPresetCore({ presetBlockData }: SaveAsPresetCoreProps) {
   const { t } = useTranslation();
 
   const anchorRef = useRef<HTMLDivElement>(null);
+  const suppressNextActionsButtonClickRef = useRef(false);
+  const interceptAddBelowRef = useRef<((event: MouseEvent) => void) | null>(
+    null,
+  );
   const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(
     null,
   );
@@ -81,11 +91,48 @@ export function SaveAsPresetCore({ presetBlockData }: SaveAsPresetCoreProps) {
     const row = anchorRef.current?.closest(".blocks-field__row");
     if (!row) return;
 
-    let trigger: Element | null = null;
-    let observer: MutationObserver | null = null;
+    const handleClick = (e: Event) => {
+      if (!(e.target as Element).closest?.(".array-actions__button")) return;
 
-    const handleClick = () => {
+      if (suppressNextActionsButtonClickRef.current) {
+        suppressNextActionsButtonClickRef.current = false;
+        return;
+      }
+
       setTimeout(() => {
+        if (interceptAddBelowRef.current) {
+          document.removeEventListener(
+            "click",
+            interceptAddBelowRef.current,
+            true,
+          );
+        }
+
+        const interceptAddBelow = (event: MouseEvent) => {
+          document.removeEventListener("click", interceptAddBelow, true);
+          interceptAddBelowRef.current = null;
+
+          if (!(event.target as Element).closest?.(".array-actions__add")) {
+            return;
+          }
+
+          event.preventDefault();
+          event.stopPropagation();
+
+          const actionsButton =
+            row.querySelector<HTMLButtonElement>(".array-actions__button");
+
+          if (actionsButton) {
+            suppressNextActionsButtonClickRef.current = true;
+            actionsButton.click();
+          }
+
+          openPresetsDrawer?.(rowIndex + 1);
+        };
+
+        interceptAddBelowRef.current = interceptAddBelow;
+        document.addEventListener("click", interceptAddBelow, true);
+
         const list = document.body.querySelector(
           ".popup__content .popup-button-list",
         );
@@ -106,32 +153,21 @@ export function SaveAsPresetCore({ presetBlockData }: SaveAsPresetCoreProps) {
       }, 0);
     };
 
-    const attach = (el: Element) => {
-      trigger = el;
-      trigger.addEventListener("click", handleClick);
-
-      observer?.disconnect();
-      observer = null;
-    };
-
-    const existingTrigger = row.querySelector(".array-actions__button");
-    if (existingTrigger) {
-      attach(existingTrigger);
-    } else {
-      observer = new MutationObserver(() => {
-        const el = row.querySelector(".array-actions__button");
-
-        if (el) attach(el);
-      });
-
-      observer.observe(row, { childList: true, subtree: true });
-    }
+    row.addEventListener("click", handleClick);
 
     return () => {
-      observer?.disconnect();
-      existingTrigger?.removeEventListener("click", handleClick);
+      row.removeEventListener("click", handleClick);
+
+      if (interceptAddBelowRef.current) {
+        document.removeEventListener(
+          "click",
+          interceptAddBelowRef.current,
+          true,
+        );
+        interceptAddBelowRef.current = null;
+      }
     };
-  }, [presetType]);
+  }, [openPresetsDrawer, presetType, rowIndex]);
 
   const data = presetType
     ? ({
