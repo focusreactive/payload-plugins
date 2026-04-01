@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import {
   Button,
@@ -8,26 +8,29 @@ import {
   useListDrawer,
   toast,
   useAuth,
-} from '@payloadcms/ui'
-import type { Data, FieldState, FormState } from 'payload'
-import { getParentPath, getPresetTypeFromPath } from '../utils.js'
-import { usePresetsConfig } from '../usePresetsConfig.js'
+} from "@payloadcms/ui";
+import type { Data, FieldState, FormState } from "payload";
+import { getParentPath, getPresetTypeFromPath } from "../utils.js";
+import { usePresetsConfig } from "../usePresetsConfig.js";
+
+import "./index.scss";
 
 export function ApplyPresetButton() {
-  const { slug: collectionSlug, presetTypes } = usePresetsConfig()
+  const { slug: collectionSlug, presetTypes } = usePresetsConfig();
 
-  const { user } = useAuth()
-  const path = useFieldPath()
-  const parentPath = getParentPath(path)
-  const { getData, getDataByPath, dispatchFields, replaceFieldRow } = useForm()
-  const { t } = useTranslation()
+  const { user } = useAuth();
+  const path = useFieldPath();
+  const parentPath = getParentPath(path);
+  const { getData, getDataByPath, dispatchFields, replaceFieldRow } = useForm();
+  const { t } = useTranslation();
 
-  const presetTypeFromPath = getPresetTypeFromPath(parentPath, presetTypes)
-  const blockData = getDataByPath<{ blockType?: string } | null>(parentPath) ?? null
-  const presetType = presetTypeFromPath ?? blockData?.blockType
+  const presetTypeFromPath = getPresetTypeFromPath(parentPath, presetTypes);
+  const blockData =
+    getDataByPath<{ blockType?: string } | null>(parentPath) ?? null;
+  const presetType = presetTypeFromPath ?? blockData?.blockType;
 
-  const fullData = getData() as { tenant?: number } | null
-  const tenantId = fullData?.tenant ?? user?.tenant?.id ?? user?.tenant
+  const fullData = getData() as { tenant?: number } | null;
+  const tenantId = fullData?.tenant ?? user?.tenant?.id ?? user?.tenant;
 
   const [ListDrawer, , { openDrawer, closeDrawer }] = useListDrawer({
     collectionSlugs: [collectionSlug],
@@ -37,26 +40,26 @@ export function ApplyPresetButton() {
         ...(tenantId ? { tenant: { equals: tenantId } } : {}),
       },
     },
-  })
+  });
 
   if (!presetType) {
-    return null
+    return null;
   }
 
   const handleSelect = ({ doc }: { collectionSlug: string; doc: Data }) => {
-    const preset = doc as Record<string, unknown>
+    const preset = doc as Record<string, unknown>;
     if (!preset || preset.type !== presetType) {
-      toast.error(t('presetsPlugin:applyPreset:errorInvalidPreset' as never))
-      return
+      toast.error(t("presetsPlugin:applyPreset:errorInvalidPreset" as never));
+      return;
     }
 
-    const presetData = preset[presetType] as Record<string, unknown>
+    const presetData = preset[presetType] as Record<string, unknown>;
 
-    const pathParts = parentPath.split('.')
-    const rowIndex = Number(pathParts.pop())
-    const arrayPath = pathParts.join('.')
+    const pathParts = parentPath.split(".");
+    const rowIndex = Number(pathParts.pop());
+    const arrayPath = pathParts.join(".");
 
-    const subFieldState: Record<string, FieldState> = {}
+    const subFieldState: Record<string, FieldState> = {};
 
     Object.entries(presetData).forEach(([key, value]) => {
       subFieldState[key] = {
@@ -65,46 +68,54 @@ export function ApplyPresetButton() {
         valid: true,
         isModified: true,
         passesCondition: true,
-      }
-    })
+      };
+    });
 
     try {
-      if (typeof replaceFieldRow === 'function') {
+      if (typeof replaceFieldRow === "function") {
         replaceFieldRow({
           path: arrayPath,
           rowIndex,
           blockType: presetType,
           schemaPath: arrayPath,
           subFieldState: subFieldState as FormState,
-        })
+        });
       } else {
         dispatchFields({
-          type: 'REPLACE_ROW',
+          type: "REPLACE_ROW",
           path: arrayPath,
           rowIndex,
           blockType: presetType,
           subFieldState,
-        })
+        });
       }
 
-      toast.success(t('presetsPlugin:applyPreset:successApplied' as never, { name: preset.name }))
-      closeDrawer()
+      toast.success(
+        t("presetsPlugin:applyPreset:successApplied" as never, {
+          name: preset.name,
+        }),
+      );
+      closeDrawer();
     } catch (err) {
-      console.error('Apply preset error:', err)
-      toast.error(t('presetsPlugin:applyPreset:errorApplyFailed' as never))
+      console.error("Apply preset error:", err);
+      toast.error(t("presetsPlugin:applyPreset:errorApplyFailed" as never));
     }
-  }
+  };
 
   const handleOpenDrawer = () => {
-    openDrawer()
-  }
+    openDrawer();
+  };
 
   return (
     <>
       <Button buttonStyle="secondary" size="large" onClick={handleOpenDrawer}>
-        {t('presetsPlugin:applyPreset:applyButton' as never)}
+        {t("presetsPlugin:applyPreset:applyButton" as never)}
       </Button>
-      <ListDrawer onSelect={handleSelect} allowCreate={true} enableRowSelections={false} />
+      <ListDrawer
+        onSelect={handleSelect}
+        allowCreate={true}
+        enableRowSelections={false}
+      />
     </>
-  )
+  );
 }
