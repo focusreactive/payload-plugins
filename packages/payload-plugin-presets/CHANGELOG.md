@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-presets [0.10.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.2...@focus-reactive/payload-plugin-presets@0.10.3) (2026-04-02)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** restore customComponents for nested fields after paste ([c788980](https://github.com/focusreactive/payload-plugins/commit/c788980c2907e97bbbc68f34a3ae5fd0ccde3d6a))
+
 ## @focus-reactive/payload-plugin-presets [0.10.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.1...@focus-reactive/payload-plugin-presets@0.10.2) (2026-04-01)
 
 
