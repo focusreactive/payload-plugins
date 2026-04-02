@@ -59,7 +59,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
   const wasOpenRef = useRef(false);
 
   const form = useForm();
-  const { getData, getDataByPath, addFieldRow, replaceState } = form;
+  const { getData, getDataByPath, addFieldRow, replaceState, getFields } = form;
   const currentFieldState = useFormFields(([fields]) => fields?.[path]);
 
   const existingFieldComponentRef = useRef<ReactNode>(
@@ -77,8 +77,20 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
     (incomingState: FormState) => {
       if (!existingFieldComponentRef.current) {
         replaceState(incomingState);
-
         return;
+      }
+
+      const snapshot = getFields();
+      const rehydrated: FormState = {};
+      for (const key in incomingState) {
+        if (key.startsWith(path) && !incomingState[key].customComponents) {
+          const existing = snapshot[key]?.customComponents;
+          rehydrated[key] = existing
+            ? { ...incomingState[key], customComponents: existing }
+            : incomingState[key];
+        } else {
+          rehydrated[key] = incomingState[key];
+        }
       }
 
       const nextState = hydrateBlocksFieldCustomComponents({
@@ -86,12 +98,12 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
         currentFieldState,
         existingFieldComponent: existingFieldComponentRef.current,
         path,
-        state: incomingState,
+        state: rehydrated,
       });
 
       replaceState(nextState);
     },
-    [blocks, currentFieldState, path, replaceState],
+    [blocks, currentFieldState, path, replaceState, getFields],
   );
 
   form.replaceState = wrappedReplaceState;
