@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useConfig } from "@payloadcms/ui";
 import { CommentsDrawerProvider } from "../CommentsDrawerProvider";
+import { CommentsFilterProvider } from "../CommentsFilterProvider";
 import { CommentsProvider } from "../CommentsProvider";
 import type { CommentsPluginConfigStorage } from "../../types";
 
@@ -32,7 +33,11 @@ export function CommentsProviderWrapper({ children }: Props) {
   return (
     <QueryClientProvider client={queryClient}>
       <CommentsProvider usernameFieldPath={usernameFieldPath}>
-        <CommentsDrawerProvider>{children}</CommentsDrawerProvider>
+        <CommentsDrawerProvider>
+          <CommentsFilterProvider>
+            {children}
+          </CommentsFilterProvider>
+        </CommentsDrawerProvider>
       </CommentsProvider>
     </QueryClientProvider>
   );

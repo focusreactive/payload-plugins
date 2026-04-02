@@ -1,3 +1,17 @@
+# @focus-reactive/payload-plugin-ab [2.4.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.3.2...@focus-reactive/payload-plugin-ab@2.4.0) (2026-03-31)
+
+
+### Bug Fixes
+
+* remove redundant isolatedModules and align [@types](https://github.com/types) versions ([96ebfc7](https://github.com/focusreactive/payload-plugins/commit/96ebfc770c4668a3c52f85206b72754d42d38817))
+
+
+### Features
+
+* **payload-plugin-ab:** improve variant management UX ([b96fe1a](https://github.com/focusreactive/payload-plugins/commit/b96fe1a77cc9a7e48482d8296bf50ac5b7ec67c8))
+* **payload-plugin-ab:** pin dependency versions ([95ea257](https://github.com/focusreactive/payload-plugins/commit/95ea2576e05c836c9c032483dce79242a46ca3d9))
+* **payload-plugin-ab:** redesign variant row UI and improve input behavior ([f6ceb3e](https://github.com/focusreactive/payload-plugins/commit/f6ceb3ef6fc397f0d7c87cb224cdd19bc20f770f))
+
 ## @focus-reactive/payload-plugin-ab [2.3.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.3.1...@focus-reactive/payload-plugin-ab@2.3.2) (2026-03-12)
 
 ## [1.1.2](https://github.com/focusreactive/payload-plugin-ab/compare/v1.1.1...v1.1.2) (2026-03-02)

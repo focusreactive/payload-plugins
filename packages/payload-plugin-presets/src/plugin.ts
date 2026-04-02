@@ -1,5 +1,6 @@
 import type {
   Access,
+  Block,
   CollectionConfig,
   CollectionSlug,
   Config,
@@ -54,11 +55,18 @@ export interface PresetsPluginClientConfig {
 }
 
 export interface PresetType {
-  /** Unique identifier for this preset type */
-  value: string;
-  /** Display label (required) */
-  label: string | StaticLabel;
-  /** Fields for this preset type */
+  /** Block slug to target — must match block.slug exactly */
+  slug: string;
+  /** Optional — falls back to block.labels.singular or slug */
+  label?: StaticLabel;
+  /** Optional — falls back to block.fields */
+  fields?: Field[];
+}
+
+/** Internal resolved shape — all fields required after merging blockMap + overrides */
+interface ResolvedPresetType {
+  slug: string;
+  label: StaticLabel;
   fields: Field[];
 }
 
@@ -67,11 +75,6 @@ export interface PresetsPluginConfig {
   labels?: CollectionConfig["labels"];
   enabled?: boolean;
   /**
-   * Hide the presets collection from the admin sidebar.
-   * Useful during development or when you want to manage presets programmatically.
-   */
-  debug?: boolean;
-  /**
    * Override package name for component resolution.
    * Defaults to '@focusreactive/payload-plugin-presets'.
    * Set to a local path (e.g. '@/plugins/presetsPlugin') for local dev without npm.
@@ -79,8 +82,8 @@ export interface PresetsPluginConfig {
   packageName?: string;
   /** Media collection slug for preview images (default: 'media') */
   mediaCollection?: string;
-  /** Preset types - array of { value, label, fields } */
-  presetTypes: PresetType[];
+  /** Override list — optional, defaults to [] */
+  presetTypes?: PresetType[];
   /** Collection overrides */
   overrides?: {
     /** Access control */
@@ -100,10 +103,10 @@ export interface PresetsPluginConfig {
 }
 
 const createPresetsCollection = (
-  config: PresetsPluginConfig,
+  config: PresetsPluginConfig | undefined,
+  resolvedPresetTypes: ResolvedPresetType[],
 ): CollectionConfig<"presets"> => {
   const {
-    presetTypes,
     overrides = {},
     slug = "presets",
     labels = {
@@ -112,8 +115,7 @@ const createPresetsCollection = (
     },
     packageName,
     mediaCollection = "media",
-    debug = false,
-  } = config;
+  } = config ?? {};
 
   const previewFieldPath = getPluginComponentPath(
     packageName,
@@ -127,16 +129,19 @@ const createPresetsCollection = (
     "PresetAdminComponentCell",
   );
 
-  const typeOptions = presetTypes.map(({ value, label }) => ({ value, label }));
+  const typeOptions = resolvedPresetTypes.map(({ slug: typeSlug, label }) => ({
+    value: typeSlug,
+    label,
+  }));
 
-  const presetTypeGroupFields: Field[] = presetTypes.map(
-    ({ value, label, fields }) => ({
-      name: value,
+  const presetTypeGroupFields: Field[] = resolvedPresetTypes.map(
+    ({ slug: typeSlug, label, fields }) => ({
+      name: typeSlug,
       type: "group" as const,
       label,
       admin: {
         condition: (_: unknown, siblingData: { type?: string }) =>
-          siblingData?.type === value,
+          siblingData?.type === typeSlug,
       },
       fields,
     }),
@@ -207,7 +212,7 @@ const createPresetsCollection = (
         en: "One preset = one type. After choosing type, fill the matching section below.",
         es: "Un preset = un tipo. Tras elegir tipo, rellena la sección correspondiente.",
       },
-      hidden: debug,
+      hidden: false,
       ...overrides.admin,
     },
     fields: finalFields,
@@ -216,39 +221,124 @@ const createPresetsCollection = (
   };
 };
 
-/**
- * Creates the "Save as a preset" button in a dropdown actions menu.
- *
- * @param packageName - npm package name (e.g. '@myorg/presets-plugin') or undefined for local dev
- */
-export function injectSaveAsPresetButton(packageName?: string): Field {
-  const componentPath = getPluginComponentPath(
-    packageName,
-    "components/presetActions/SaveAsPresetButton",
-    "SaveAsPresetButton",
-  );
-
-  return {
-    name: "saveAsPresetButton",
-    type: "ui",
-    admin: {
-      components: { Field: componentPath },
-    },
-  };
-}
-
-/**
- * Returns the component path for BlocksFieldWithPresets.
- * Use in admin.components.Field of a blocks field.
- *
- * @param packageName - npm package name or undefined for local dev
- */
-export function getBlocksFieldWithPresetsPath(packageName?: string): string {
+function getBlocksFieldWithPresetsPath(packageName?: string): string {
   return getPluginComponentPath(
     packageName,
     "components/blocksDrawer/BlocksFieldWithPresets",
     "BlocksFieldWithPresets",
   );
+}
+
+export function getBlockAdminComponents(
+  packageName?: string,
+): NonNullable<Block["admin"]>["components"] {
+  return {
+    Label: getPluginComponentPath(
+      packageName,
+      "components/presetActions/BlockLabelWithPresets",
+      "BlockLabelWithPresets",
+    ),
+  };
+}
+
+function resolveBlockLabel(block: Block): StaticLabel {
+  const singular = block.labels?.singular;
+
+  if (!singular || typeof singular === "function") return block.slug;
+
+  return singular;
+}
+
+function fieldIsBlockType(
+  field: Field,
+): field is Extract<Field, { type: "blocks" }> {
+  return field.type === "blocks";
+}
+
+function fieldHasSubFields(
+  field: Field,
+): field is Extract<Field, { fields: Field[] }> {
+  return (
+    "fields" in field && Array.isArray((field as { fields?: unknown }).fields)
+  );
+}
+
+function transformFields(
+  fields: Field[],
+  blockMap: Map<string, Block>,
+  packageName: string | undefined,
+): Field[] {
+  return fields.map((field) => {
+    if (fieldIsBlockType(field)) {
+      const transformedBlocks = field.blocks.map((block) => {
+        if (!blockMap.has(block.slug)) {
+          blockMap.set(block.slug, block);
+        }
+
+        return {
+          ...block,
+          admin: {
+            ...block.admin,
+            components: {
+              ...block.admin?.components,
+              ...getBlockAdminComponents(),
+            },
+          },
+          fields: transformFields(block.fields, blockMap, packageName),
+        };
+      });
+
+      return {
+        ...field,
+        blocks: transformedBlocks,
+        admin: {
+          ...field.admin,
+          components: {
+            ...field.admin?.components,
+            Field: getBlocksFieldWithPresetsPath(packageName),
+          },
+        },
+      };
+    }
+
+    if (field.type === "tabs") {
+      const tabsField = field as Extract<Field, { type: "tabs" }>;
+
+      return {
+        ...tabsField,
+        tabs: tabsField.tabs.map((tab) => ({
+          ...tab,
+          fields: transformFields(tab.fields, blockMap, packageName),
+        })),
+      };
+    }
+
+    if (fieldHasSubFields(field)) {
+      return {
+        ...field,
+        fields: transformFields(
+          (field as { fields: Field[] }).fields,
+          blockMap,
+          packageName,
+        ),
+      };
+    }
+
+    return field;
+  });
+}
+
+function buildEffectivePresetTypes(
+  blockMap: Map<string, Block>,
+  overrides: PresetType[],
+): ResolvedPresetType[] {
+  const overrideMap = new Map(overrides.map((o) => [o.slug, o]));
+
+  return Array.from(blockMap.values()).map((block) => ({
+    slug: block.slug,
+    label: overrideMap.get(block.slug)?.label ?? resolveBlockLabel(block),
+    fields: overrideMap.get(block.slug)?.fields ?? block.fields,
+  }));
 }
 
 const pluginTranslations = {
@@ -277,6 +367,7 @@ const pluginTranslations = {
         noPresetsAvailable: "No presets available",
         addBlockTitle: "Add block",
         empty: "Empty",
+        presets: "Presets",
         preview: "Preview",
         searchPlaceholder: "Search for a block",
         imagePlaceholder: "Placeholder",
@@ -318,6 +409,7 @@ const pluginTranslations = {
         noPresetsAvailable: "No hay presets disponibles",
         addBlockTitle: "Añadir bloque",
         empty: "Vacío",
+        presets: "Presets",
         preview: "Vista previa",
         searchPlaceholder: "Buscar un bloque",
         imagePlaceholder: "Marcador de posición",
@@ -336,25 +428,47 @@ const pluginTranslations = {
 };
 
 export const presetsPlugin =
-  (config: PresetsPluginConfig): Plugin =>
+  (config?: PresetsPluginConfig): Plugin =>
   (incomingConfig: Config): Config => {
     const {
       enabled = true,
       slug = "presets",
-      presetTypes,
+      presetTypes = [],
       mediaCollection = "media",
-    } = config;
+      packageName,
+    } = config ?? {};
 
     if (!enabled) {
       return incomingConfig;
     }
 
-    const presetsCollection = createPresetsCollection(config);
+    const blockMap = new Map<string, Block>();
 
-    // Client config for usePresetsConfig hook
+    const transformedCollections = (incomingConfig.collections || []).map(
+      (collection) => ({
+        ...collection,
+        fields: transformFields(collection.fields, blockMap, packageName),
+      }),
+    );
+
+    const transformedGlobals = (incomingConfig.globals || []).map((global) => ({
+      ...global,
+      fields: transformFields(global.fields, blockMap, packageName),
+    }));
+
+    const effectivePresetTypes = buildEffectivePresetTypes(
+      blockMap,
+      presetTypes,
+    );
+
+    const presetsCollection = createPresetsCollection(
+      config,
+      effectivePresetTypes,
+    );
+
     const clientConfig: PresetsPluginClientConfig = {
       slug: slug as CollectionSlug,
-      presetTypes: presetTypes.map((pt) => pt.value),
+      presetTypes: effectivePresetTypes.map((pt) => pt.slug),
       excludeKeys: ["id", "blockType", "blockName", "experiment"],
       mediaCollection,
     };
@@ -375,11 +489,9 @@ export const presetsPlugin =
       };
     }
 
-    // Add English translations as fallback for languages not supported by the plugin
     for (const lang of Object.keys(mergedTranslations)) {
       if (!supportedLanguages.includes(lang)) {
         const existing = mergedTranslations[lang] as Record<string, unknown>;
-        // Only add if presetsPlugin translations don't exist for this language
         if (!existing?.presetsPlugin) {
           mergedTranslations[lang] = {
             ...existing,
@@ -402,6 +514,7 @@ export const presetsPlugin =
         ...incomingConfig.i18n,
         translations: mergedTranslations,
       },
-      collections: [...(incomingConfig.collections || []), presetsCollection],
+      collections: [...transformedCollections, presetsCollection],
+      globals: transformedGlobals,
     };
   };

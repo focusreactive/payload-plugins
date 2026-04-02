@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import * as Popover from "@radix-ui/react-popover";
 import {
@@ -20,11 +20,12 @@ type BlockSelectorWithPresetsProps = {
   blocks: (ClientBlock | string)[];
   onSelect: (blockType: string, preset?: Preset | null) => void;
   tenantId?: number | string | null;
+  locale?: string;
 };
 
 export const BlockSelectorWithPresets: React.FC<
   BlockSelectorWithPresetsProps
-> = ({ blocks, onSelect, tenantId }) => {
+> = ({ blocks, onSelect, tenantId, locale }) => {
   const { slug: presetsCollectionSlug, presetTypes } = usePresetsConfig();
   const { i18n, t } = useTranslation();
 
@@ -63,6 +64,11 @@ export const BlockSelectorWithPresets: React.FC<
         params.append("where[tenant][equals]", String(tenantId));
       }
 
+      if (locale) {
+        params.append("locale", locale);
+        params.append("fallback-locale", "none");
+      }
+
       params.append("depth", "0");
       params.append("limit", "50");
 
@@ -70,9 +76,13 @@ export const BlockSelectorWithPresets: React.FC<
         `/api/${presetsCollectionSlug}?${params.toString()}`,
       );
       const data = await response.json();
-      const fetchedPresets = data.docs || [];
+      const fetchedPresets: Preset[] = data.docs || [];
 
-      setPresetsCache(fetchedPresets);
+      const filteredPresets = locale
+        ? fetchedPresets.filter((preset) => Boolean(preset.name))
+        : fetchedPresets;
+
+      setPresetsCache(filteredPresets);
     } catch (error) {
       console.error("Failed to fetch presets:", error);
       setPresetsCache([]);
@@ -112,7 +122,7 @@ export const BlockSelectorWithPresets: React.FC<
 
   useEffect(() => {
     fetchPresets();
-  }, []);
+  }, [locale]);
 
   // Show loading state while fetching presets
   if (isLoadingPresets) {
@@ -192,6 +202,7 @@ export const BlockSelectorWithPresets: React.FC<
                       onPresetSelect={handlePresetSelect}
                       onClose={() => setActiveBlockSlug(null)}
                       onDelete={handleDeletePreset}
+                      onPresetUpdate={fetchPresets}
                     />
                   </li>
                 );
@@ -228,6 +239,7 @@ type BlockCardProps = {
   onPresetSelect: (blockType: string, preset: Preset | null) => void;
   onClose: () => void;
   onDelete: (presetId: string | number) => void;
+  onPresetUpdate: () => void;
 };
 
 const BlockCard: React.FC<BlockCardProps> = ({
@@ -241,11 +253,16 @@ const BlockCard: React.FC<BlockCardProps> = ({
   onPresetSelect,
   onClose,
   onDelete,
+  onPresetUpdate,
 }) => {
   const [deletingPreset, setDeletingPreset] = useState<Preset | null>(null);
   const { openModal } = useModal();
   const { slug: presetsCollectionSlug } = usePresetsConfig();
   const { t } = useTranslation();
+  const presetListRef = useRef<HTMLDivElement>(null);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
+    null,
+  );
 
   const modalSlug = `delete-preset-${block.slug}`;
 
@@ -269,7 +286,12 @@ const BlockCard: React.FC<BlockCardProps> = ({
   }
 
   return (
-    <>
+    <div
+      ref={(el) => {
+        if (el) setPortalContainer(el);
+      }}
+      style={{ display: "contents" }}
+    >
       <Popover.Root
         open={isActive}
         onOpenChange={(open) => {
@@ -285,15 +307,15 @@ const BlockCard: React.FC<BlockCardProps> = ({
           >
             <BlockThumbnail imageURL={block.imageURL} label={label} />
             <div className="thumbnail-card__label">
-              {label}{" "}
-              {presets.length > 0 ? `(${presets.length})` : ""}
+              {label} {presets.length > 0 ? `(${presets.length})` : ""}
               <ChevronIcon
                 className={`thumbnail-card__chevron ${isActive ? "thumbnail-card__chevron--open" : ""}`}
               />
             </div>
           </button>
         </Popover.Trigger>
-        <Popover.Portal>
+
+        <Popover.Portal container={portalContainer}>
           <Popover.Content
             className="blocks-drawer__popover-content"
             side={isMobile ? "bottom" : "right"}
@@ -301,13 +323,24 @@ const BlockCard: React.FC<BlockCardProps> = ({
             sideOffset={8}
             avoidCollisions
             collisionPadding={8}
-            onOpenAutoFocus={(e) => e.preventDefault()}
+            onOpenAutoFocus={(e) => {
+              e.preventDefault();
+
+              presetListRef.current?.focus();
+            }}
+            onEscapeKeyDown={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
           >
             <PresetsList
               blockSlug={block.slug}
               label={label}
               presets={presets}
+              listRef={presetListRef}
               onDeleteRequest={handleDeleteRequest}
+              onClose={onClose}
+              onPresetUpdate={onPresetUpdate}
               onSelect={(preset) => {
                 onPresetSelect(block.slug, preset);
               }}
@@ -340,7 +373,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
           }}
         />
       )}
-    </>
+    </div>
   );
 };
 
@@ -368,6 +401,9 @@ type PresetsListProps = {
   presets: Preset[];
   onSelect: (preset: Preset | null) => void;
   onDeleteRequest: (preset: Preset) => void;
+  onClose: () => void;
+  onPresetUpdate: () => void;
+  listRef: React.RefObject<HTMLDivElement | null>;
 };
 
 const PresetsList: React.FC<PresetsListProps> = ({
@@ -376,39 +412,133 @@ const PresetsList: React.FC<PresetsListProps> = ({
   presets,
   onSelect,
   onDeleteRequest,
+  onClose,
+  onPresetUpdate,
+  listRef,
 }) => {
   const filteredPresets = presets.filter((preset) => preset.type === blockSlug);
   const { mediaCollection } = usePresetsConfig();
   const { t } = useTranslation();
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const itemsRef = useRef<HTMLElement[]>([]);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // All selectable items: null preset first, then block-specific presets
+  const totalItems = 1 + filteredPresets.length;
+
+  useEffect(() => {
+    itemsRef.current = Array.from(
+      listRef.current?.querySelectorAll<HTMLElement>("button.preset-item") ??
+        [],
+    );
+  }, []);
+
+  useEffect(() => {
+    const container = listRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      setIsScrolling(true);
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = setTimeout(() => setIsScrolling(false), 150);
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    };
+  }, []);
+
+  const moveFocus = (newIndex: number) => {
+    setFocusedIndex(newIndex);
+
+    if (newIndex < 0) return;
+    itemsRef.current[newIndex]?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        e.stopPropagation();
+
+        moveFocus(focusedIndex < totalItems - 1 ? focusedIndex + 1 : 0);
+
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        e.stopPropagation();
+
+        moveFocus(focusedIndex > 0 ? focusedIndex - 1 : totalItems - 1);
+
+        break;
+      case "Home":
+        e.preventDefault();
+        e.stopPropagation();
+
+        moveFocus(0);
+
+        break;
+      case "End":
+        e.preventDefault();
+        e.stopPropagation();
+
+        moveFocus(totalItems - 1);
+
+        break;
+      case "Escape":
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+
+        break;
+    }
+  };
 
   return (
     <div className="blocks-drawer__presets-popup">
-      {/* Empty option — no delete on the null preset */}
-      <PresetItem
-        preset={null}
-        mediaCollection={mediaCollection}
-        label={label}
-        onSelect={onSelect}
-      />
+      <div
+        className="blocks-drawer__presets-popup-container"
+        ref={listRef}
+        role="listbox"
+        aria-label={label}
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+      >
+        {/* Empty option — no delete on the null preset */}
+        <PresetItem
+          preset={null}
+          mediaCollection={mediaCollection}
+          label={label}
+          onSelect={onSelect}
+          tabIndex={focusedIndex === 0 ? 0 : -1}
+          isScrolling={isScrolling}
+        />
 
-      {/* Presets list */}
-      {filteredPresets.length > 0 &&
-        filteredPresets.map((preset) => (
-          <PresetItem
-            key={preset.id}
-            preset={preset}
-            mediaCollection={mediaCollection}
-            onSelect={onSelect}
-            onDeleteRequest={onDeleteRequest}
-          />
-        ))}
+        {/* Presets list */}
+        {filteredPresets.length > 0 &&
+          filteredPresets.map((preset, index) => (
+            <PresetItem
+              key={preset.id}
+              preset={preset}
+              mediaCollection={mediaCollection}
+              onSelect={onSelect}
+              onDeleteRequest={onDeleteRequest}
+              onPresetUpdate={onPresetUpdate}
+              tabIndex={focusedIndex === index + 1 ? 0 : -1}
+              isScrolling={isScrolling}
+            />
+          ))}
 
-      {/* No presets message */}
-      {filteredPresets.length === 0 && (
-        <div className="blocks-drawer__presets-empty">
-          {t("presetsPlugin:blocksDrawer:noPresetsAvailable" as never)}
-        </div>
-      )}
+        {/* No presets message */}
+        {filteredPresets.length === 0 && (
+          <div className="blocks-drawer__presets-empty">
+            {t("presetsPlugin:blocksDrawer:noPresetsAvailable" as never)}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -4,27 +4,45 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   PopupList,
-  useFieldPath,
   useForm,
   useTranslation,
   toast,
   useAuth,
   useDocumentDrawer,
 } from "@payloadcms/ui";
-import { getParentPath, getPresetTypeFromPath } from "../utils.js";
-import { usePresetsConfig } from "../usePresetsConfig.js";
+import { usePresetsConfig } from "../../usePresetsConfig.js";
 import { Data } from "payload";
+import { PresetBlockData } from "./types.js";
 
-/** Recursively remove excluded keys from object at all nesting levels */
-function cleanPresetData(obj: unknown, excludeKeys: Set<string>): unknown {
+function isLexicalState(obj: Record<string, unknown>): boolean {
+  const root = obj.root;
+  return (
+    typeof root === "object" &&
+    root !== null &&
+    (root as Record<string, unknown>).type === "root"
+  );
+}
+
+export function cleanPresetData(
+  obj: unknown,
+  excludeKeys: Set<string>,
+): unknown {
   if (obj === null || typeof obj !== "object") return obj;
 
   if (Array.isArray(obj)) {
     return obj.map((item) => cleanPresetData(item, excludeKeys));
   }
 
+  const record = obj as Record<string, unknown>;
+
+  // Lexical rich text state must not be modified — stripping keys like
+  // blockType from embedded block nodes breaks the editor's internal structure.
+  if (isLexicalState(record)) {
+    return obj;
+  }
+
   const cleaned: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(obj)) {
+  for (const [key, value] of Object.entries(record)) {
     if (!excludeKeys.has(key)) {
       cleaned[key] = cleanPresetData(value, excludeKeys);
     }
@@ -32,8 +50,13 @@ function cleanPresetData(obj: unknown, excludeKeys: Set<string>): unknown {
   return cleaned;
 }
 
-export function SaveAsPresetButton() {
-  const { slug, presetTypes, excludeKeys } = usePresetsConfig();
+interface SaveAsPresetCoreProps {
+  presetBlockData: PresetBlockData;
+}
+
+export function SaveAsPresetCore({ presetBlockData }: SaveAsPresetCoreProps) {
+  const { blockType: presetType } = presetBlockData;
+  const { slug, excludeKeys } = usePresetsConfig();
   const excludeSet = new Set(excludeKeys);
 
   const [DocumentDrawer, , { openDrawer, closeDrawer }] = useDocumentDrawer({
@@ -41,31 +64,25 @@ export function SaveAsPresetButton() {
   });
 
   const { user } = useAuth();
-  const path = useFieldPath();
-  const parentPath = getParentPath(path);
-  const { getData, getDataByPath } = useForm();
+  const { getData } = useForm();
   const tenantId =
     getData()?.tenant ?? user?.tenant?.id ?? user?.tenant ?? null;
 
   const { t } = useTranslation();
 
-  const presetTypeFromPath = getPresetTypeFromPath(parentPath, presetTypes);
-  const blockData =
-    getDataByPath<{ blockType?: string } | null>(parentPath) ?? null;
-  const presetType = presetTypeFromPath ?? blockData?.blockType;
-
   const anchorRef = useRef<HTMLDivElement>(null);
-  const [popupList, setPopupList] = useState<Element | null>(null);
+  const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!presetType) return;
 
     const row = anchorRef.current?.closest(".blocks-field__row");
-    const triggerWrap = row?.querySelector(
-      ".array-actions .popup__trigger-wrap",
-    );
+    if (!row) return;
 
-    if (!triggerWrap) return;
+    let trigger: Element | null = null;
+    let observer: MutationObserver | null = null;
 
     const handleClick = () => {
       setTimeout(() => {
@@ -73,21 +90,54 @@ export function SaveAsPresetButton() {
           ".popup__content .popup-button-list",
         );
 
-        if (list) setPopupList(list);
+        if (list) {
+          const existing = list.querySelector(
+            "[data-save-as-preset-container]",
+          ) as HTMLDivElement | null;
+          if (existing) {
+            setPortalContainer(existing);
+          } else {
+            const container = document.createElement("div");
+            container.setAttribute("data-save-as-preset-container", "true");
+            list.insertBefore(container, list.firstChild);
+            setPortalContainer(container);
+          }
+        }
       }, 0);
     };
 
-    triggerWrap.addEventListener("click", handleClick);
+    const attach = (el: Element) => {
+      trigger = el;
+      trigger.addEventListener("click", handleClick);
 
-    return () => triggerWrap.removeEventListener("click", handleClick);
+      observer?.disconnect();
+      observer = null;
+    };
+
+    const existingTrigger = row.querySelector(".array-actions__button");
+    if (existingTrigger) {
+      attach(existingTrigger);
+    } else {
+      observer = new MutationObserver(() => {
+        const el = row.querySelector(".array-actions__button");
+
+        if (el) attach(el);
+      });
+
+      observer.observe(row, { childList: true, subtree: true });
+    }
+
+    return () => {
+      observer?.disconnect();
+      existingTrigger?.removeEventListener("click", handleClick);
+    };
   }, [presetType]);
 
-  const groupData = getDataByPath<Record<string, unknown>>(parentPath);
   const data = presetType
     ? ({
         name: `${presetType.charAt(0).toUpperCase() + presetType.slice(1)} ${new Date().toLocaleDateString()}`,
         type: presetType,
-        [presetType]: cleanPresetData(groupData ?? {}, excludeSet),
+        [presetType]: cleanPresetData(presetBlockData ?? {}, excludeSet),
         tenant: tenantId,
       } as Data)
     : undefined;
@@ -97,17 +147,17 @@ export function SaveAsPresetButton() {
       <div ref={anchorRef} style={{ display: "none" }} />
 
       {presetType &&
-        popupList &&
+        portalContainer &&
         createPortal(
-          <div data-save-as-preset="true">
+          <div>
             <PopupList.Button
               className="popup-button-list__button array-actions__action"
               onClick={openDrawer}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
+                width="17"
+                height="17"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -124,15 +174,17 @@ export function SaveAsPresetButton() {
               {t("presetsPlugin:presetActions:saveButton" as never)}
             </PopupList.Button>
           </div>,
-          popupList,
+          portalContainer,
         )}
 
       <DocumentDrawer
         initialData={data}
-        onSave={() => {
+        onSave={({ doc }) => {
+          const document = doc as Data;
+
           toast.success(
             t("presetsPlugin:presetActions:successSaved" as never, {
-              name: data?.name,
+              name: document.name,
             }),
           );
           closeDrawer();

@@ -1,9 +1,4 @@
-export {
-  presetsPlugin,
-  injectSaveAsPresetButton,
-  getBlocksFieldWithPresetsPath,
-  getPluginComponentPath,
-} from "./plugin.js";
+export { presetsPlugin } from "./plugin.js";
 export type {
   PresetsPluginConfig,
   PresetType,

@@ -37,62 +37,14 @@ npm install @focus-reactive/payload-plugin-presets
 // payload.config.ts
 import { buildConfig } from "payload";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
-import { heroFields } from "@/fields/heroFields";
 
 export default buildConfig({
-  plugins: [
-    presetsPlugin({
-      presetTypes: [
-        {
-          value: "hero", // Must match block slug exactly
-          label: { en: "Hero", es: "Hero" },
-          fields: heroFields,
-        },
-      ],
-    }),
-  ],
+  plugins: [presetsPlugin()],
   // ... rest of your config
 });
 ```
 
-### 3. Add Save/Apply buttons to each block
-
-```ts
-// blocks/Hero/config.ts
-import type { Block } from "payload";
-import { createPresetActionsField } from "@focus-reactive/payload-plugin-presets";
-import { heroFields } from "@/fields/heroFields";
-
-export const HeroBlock: Block = {
-  slug: "hero",
-  fields: [...heroFields, createPresetActionsField()],
-};
-```
-
-### 4. Enable preset selection in a blocks field
-
-```ts
-// collections/Page.ts
-import { getBlocksFieldWithPresetsPath } from "@focus-reactive/payload-plugin-presets";
-
-export const Page: CollectionConfig = {
-  slug: "page",
-  fields: [
-    {
-      name: "blocks",
-      type: "blocks",
-      blocks: [HeroBlock, ContentBlock],
-      admin: {
-        components: {
-          Field: getBlocksFieldWithPresetsPath(),
-        },
-      },
-    },
-  ],
-};
-```
-
-### 5. Regenerate the import map
+### 3. Regenerate the import map
 
 ```bash
 npx payload generate:importmap
@@ -101,7 +53,7 @@ npx payload generate:importmap
 
 If you skip this step, preset action buttons and the custom blocks drawer will not appear in the admin UI.
 
-### 6. SQL adapters only — run a migration
+### 4. SQL adapters only — run a migration
 
 ```bash
 npx payload migrate:create create_presets
@@ -114,23 +66,23 @@ Skip if you use the MongoDB adapter.
 
 ## Configuration Reference
 
-| Option            | Type           | Default                                    | Description                                               |
-| ----------------- | -------------- | ------------------------------------------ | --------------------------------------------------------- |
-| `presetTypes`     | `PresetType[]` | **required**                               | Array of preset type definitions                          |
-| `enabled`         | `boolean`      | `true`                                     | Enable/disable the plugin entirely                        |
-| `slug`            | `string`       | `'presets'`                                | Collection slug for presets storage                       |
-| `labels`          | `object`       | —                                          | Collection labels (singular/plural, supports i18n)        |
-| `mediaCollection` | `string`       | `'media'`                                  | Media collection slug for preview images                  |
-| `packageName`     | `string`       | `'@focus-reactive/payload-plugin-presets'` | Override for component resolution (local dev only)        |
-| `overrides`       | `object`       | —                                          | Custom access, hooks, fields, or admin for the collection |
+| Option            | Type           | Default                                    | Description                                                                  |
+| ----------------- | -------------- | ------------------------------------------ | ---------------------------------------------------------------------------- |
+| `presetTypes`     | `PresetType[]` | `[]`                                       | Optional overrides per block slug — label and fields fall back automatically |
+| `enabled`         | `boolean`      | `true`                                     | Enable/disable the plugin entirely                                           |
+| `slug`            | `string`       | `'presets'`                                | Collection slug for presets storage                                          |
+| `labels`          | `object`       | —                                          | Collection labels (singular/plural, supports i18n)                           |
+| `mediaCollection` | `string`       | `'media'`                                  | Media collection slug for preview images                                     |
+| `packageName`     | `string`       | `'@focus-reactive/payload-plugin-presets'` | Override for component resolution (local dev only)                           |
+| `overrides`       | `object`       | —                                          | Custom access, hooks, fields, or admin for the collection                    |
 
 ### PresetType
 
 ```ts
 interface PresetType {
-  value: string; // Unique identifier — MUST match the block's slug exactly
-  label: string | { en: string; es?: string }; // Display label (supports i18n)
-  fields: Field[]; // Same fields as the block (used for the preset editor form)
+  slug: string; // Block slug to target — MUST match block.slug exactly
+  label?: string | { en: string; es?: string }; // Optional — falls back to block.labels.singular or slug
+  fields?: Field[]; // Optional — falls back to block.fields automatically
 }
 ```
 
@@ -155,36 +107,41 @@ overrides?: {
 ## What the Plugin Adds
 
 1. **`presets` collection** — Stores all saved presets. Visible in admin sidebar. Default fields: `name` (text, localized), `preview` (upload), `type` (select), plus one conditional group per preset type.
-2. **`createPresetActionsField()`** — A UI-only field that renders **Save** and **Apply** buttons inside a block. Add it to each block you want to support presets.
-3. **`getBlocksFieldWithPresetsPath()`** — Replaces the default blocks field component with one that shows a preset picker in the blocks drawer. Apply it to any `type: "blocks"` field.
-4. **Preview images** — Each preset can have an optional preview image (from the `media` collection) shown in the blocks drawer.
-5. **Auto key stripping** — Internal Payload keys (`id`, `blockType`, `blockName`, `experiment`) are automatically excluded when saving a preset.
+2. **Auto block discovery** — All blocks in collections and globals are discovered automatically. Save/Apply buttons (`BlockLabelWithPresets`) and the custom blocks drawer (`BlocksFieldWithPresets`) are injected into every block and `type: "blocks"` field without any manual wiring.
+3. **Preview images** — Each preset can have an optional preview image (from the `media` collection) shown in the blocks drawer.
+4. **Auto key stripping** — Internal Payload keys (`id`, `blockType`, `blockName`, `experiment`) are automatically excluded when saving a preset.
 
 ---
 
 ## Usage Patterns
 
-### Sharing fields between block and preset type
+### Overriding label or fields for a specific block
 
-Extract fields to a shared file so the block and the plugin config stay in sync:
+By default, blocks are auto-discovered and use `block.fields` and `block.labels.singular`. To override:
 
 ```ts
-// fields/heroFields.ts
-export const heroFields: Field[] = [
-  { name: "title", type: "text", required: true },
-  { name: "subtitle", type: "textarea" },
-  { name: "image", type: "upload", relationTo: "media" },
-];
-
-// blocks/Hero/config.ts
-export const HeroBlock: Block = {
-  slug: "hero",
-  fields: [...heroFields, createPresetActionsField()],
-};
-
 // payload.config.ts
 presetsPlugin({
-  presetTypes: [{ value: "hero", label: "Hero", fields: heroFields }],
+  presetTypes: [
+    {
+      slug: "hero",
+      label: { en: "Hero Section", es: "Sección Hero" },
+      // fields omitted → uses block.fields automatically
+    },
+  ],
+});
+```
+
+To use a different fields subset for the preset editor form:
+
+```ts
+presetsPlugin({
+  presetTypes: [
+    {
+      slug: "hero",
+      fields: heroPresetFields, // subset of heroFields
+    },
+  ],
 });
 ```
 
@@ -233,11 +190,9 @@ presetsPlugin({
 
 ## Pitfalls
 
-- **`presetTypes[].value` must match block slug exactly** — This is what the plugin uses to detect which preset type to save, filter in the drawer, and apply. A mismatch means presets won't appear or apply for that block.
-- **`fields` in `presetTypes` must match the block's fields** — These fields define the editor form inside the presets collection. If they diverge from the block's actual fields, saved presets may apply incorrectly.
+- **`presetTypes[].slug` must match block slug exactly (if you provide overrides)** — This is what the plugin uses to match override entries to auto-discovered blocks. A mismatch means the override is silently ignored.
+- **`fields` in `presetTypes` must match the block's fields** — If you provide a `fields` override, it defines the editor form inside the presets collection. If they diverge from the block's actual fields, saved presets may apply incorrectly.
 - **Import map must be regenerated** — Run `payload generate:importmap` after adding the plugin. Without it, Save/Apply buttons and the custom blocks drawer won't appear.
-- **`createPresetActionsField()` must be added to each block** — The plugin doesn't inject Save/Apply buttons automatically. You must add the field to every block that should support presets.
-- **`getBlocksFieldWithPresetsPath()` must be set on each blocks field** — The enhanced drawer is opt-in. Set it on the `admin.components.Field` of each `type: "blocks"` field.
 - **SQL adapters need a migration** — After adding the plugin, run `payload migrate:create` and `payload migrate` to create the `presets` table.
 - **`packageName` is for local development only** — Only set this if you're developing the plugin locally without it published to npm.
 
@@ -246,7 +201,7 @@ presetsPlugin({
 ## FAQ
 
 **Q: Do I need to list every block in `presetTypes`?**
-A: No — only blocks you want preset support for. Blocks without a matching `presetType` simply won't have presets available.
+A: No — blocks are auto-discovered. `presetTypes` is optional. Provide entries only when you need to override the auto-derived label or fields for a specific block.
 
 **Q: Where are presets stored?**
 A: In a `presets` collection (configurable via `slug`) that the plugin creates automatically.
@@ -259,9 +214,6 @@ A: `id`, `blockType`, `blockName`, and `experiment` are stripped automatically.
 
 **Q: Does the plugin support localization?**
 A: Yes. Built-in translations for EN and ES are included under `presetsPlugin.*` i18n keys. The `name` field on the presets collection is also localized.
-
-**Q: Can I use `getBlocksFieldWithPresetsPath()` without `createPresetActionsField()`?**
-A: Yes — they are independent. The drawer shows presets for selection; the block buttons handle saving and applying. You can enable either or both.
 
 ## Further Reading
 

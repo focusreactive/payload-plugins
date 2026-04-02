@@ -3,17 +3,33 @@
   display: inline-block;
   cursor: pointer;
 
-  &__thumbnail {
+  &--sm &__thumbnail {
     width: 40px;
     height: 40px;
-    object-fit: cover;
-    border-radius: 4px;
-    border: 1px solid var(--theme-elevation-150);
-    transition: transform 0.15s ease;
   }
 
-  &:hover &__thumbnail {
-    transform: scale(1.05);
+  &--md &__thumbnail {
+    width: 60px;
+    height: 60px;
+  }
+
+  &--lg &__thumbnail {
+    width: 400px;
+    height: 300px;
+    object-fit: contain;
+  }
+
+  &__thumbnail {
+    object-fit: cover;
+    border-radius: 6px;
+    border-radius: var(--style-radius-s);
+    border: 1px solid var(--theme-elevation-150);
+    overflow: hidden;
+  }
+
+  &--lg &__thumbnail {
+    border-radius: 8;
+    border: none;
   }
 
   &__popup {
@@ -25,15 +41,10 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     padding: 8px;
     pointer-events: none;
-    animation: fadeIn 0.15s ease;
   }
 
   &__popup-image {
     display: block;
-    max-width: 200px;
-    max-height: 200px;
-    width: auto;
-    height: auto;
     border-radius: 4px;
   }
 
@@ -47,40 +58,15 @@
   &__empty {
     color: var(--theme-elevation-400);
   }
-
-  &__skeleton {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(
-      90deg,
-      var(--theme-elevation-100) 25%,
-      var(--theme-elevation-150) 50%,
-      var(--theme-elevation-100) 75%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-  }
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+.preset-shimmer--sm,
+.preset-shimmer--md {
+  border-radius: 6px;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+.preset-shimmer--lg {
+  border-radius: 8px;
 }
 
 .preset-admin-preview {
@@ -103,20 +89,5 @@
     max-height: var(--preset-admin-preview-max-height);
     width: 100%;
     max-width: var(--preset-admin-preview-max-width);
-  }
-
-  &__skeleton {
-    width: var(--preset-admin-preview-max-width);
-    max-width: 100%;
-    height: var(--preset-admin-preview-max-height);
-    background: linear-gradient(
-      90deg,
-      var(--theme-elevation-100) 25%,
-      var(--theme-elevation-150) 50%,
-      var(--theme-elevation-100) 75%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 8px;
   }
 }

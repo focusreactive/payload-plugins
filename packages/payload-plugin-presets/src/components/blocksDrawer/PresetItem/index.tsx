@@ -1,15 +1,56 @@
 "use client";
 
 import { MediaData, Preset } from "../../shared";
-import { useEffect, useState } from "react";
-import { useTranslation } from "@payloadcms/ui";
+import { useEffect, useRef, useState } from "react";
+import { useTranslation, useDocumentDrawer } from "@payloadcms/ui";
 import { usePresetsConfig } from "../../usePresetsConfig.js";
-import Image from "next/image";
 import { TrashIcon } from "@payloadcms/ui/icons/Trash";
+import { EditIcon } from "@payloadcms/ui/icons/Edit";
 import * as Popover from "@radix-ui/react-popover";
 
 import "./styles.scss";
 import { PresetAdminComponentCell } from "../../PresetAdminComponentCell";
+
+function EditPresetButton({
+  presetId,
+  onAfterSave,
+  onOpen,
+  onDrawerOpenChange,
+}: {
+  presetId: string | number;
+  onAfterSave?: () => void;
+  onOpen?: () => void;
+  onDrawerOpenChange?: (isOpen: boolean) => void;
+}) {
+  const { slug } = usePresetsConfig();
+  const [DocumentDrawer, , { openDrawer, isDrawerOpen }] = useDocumentDrawer({
+    collectionSlug: slug,
+    id: presetId,
+  });
+
+  useEffect(() => {
+    onDrawerOpenChange?.(isDrawerOpen);
+  }, [isDrawerOpen]);
+
+  return (
+    <>
+      <button
+        className="preset-action edit-preset"
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpen?.();
+          openDrawer();
+        }}
+      >
+        <EditIcon className="edit-preset__icon" />
+      </button>
+      <div onClick={(e) => e.stopPropagation()}>
+        <DocumentDrawer onSave={onAfterSave} />
+      </div>
+    </>
+  );
+}
 
 interface Props {
   preset: Preset | null;
@@ -17,6 +58,10 @@ interface Props {
   label?: string;
   onSelect: (preset: Preset | null) => void;
   onDeleteRequest?: (preset: Preset) => void;
+  onPresetUpdate?: () => void;
+  tabIndex?: number;
+  onFocus?: () => void;
+  isScrolling?: boolean;
 }
 
 export function PresetItem({
@@ -25,6 +70,9 @@ export function PresetItem({
   label,
   onSelect,
   onDeleteRequest,
+  onPresetUpdate,
+  tabIndex,
+  isScrolling,
 }: Props) {
   const { preview } = preset ?? {};
 
@@ -32,16 +80,41 @@ export function PresetItem({
 
   const [media, setMedia] = useState<MediaData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isKeyboardFocused, setIsKeyboardFocused] = useState(false);
+  const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+  const suppressNextFocus = useRef(false);
+
+  const isOpen =
+    (isHovered || isKeyboardFocused) && !isScrolling && !isEditDrawerOpen;
 
   const mediaId = typeof preview === "number" ? preview : preview?.id;
   const mediaUrl = media?.url;
 
   const handleRemoveButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    setIsOpen(false);
+    setIsHovered(false);
+    setIsKeyboardFocused(false);
     if (preset) onDeleteRequest?.(preset);
   };
+
+  const handleButtonFocus = () => {
+    if (suppressNextFocus.current) {
+      suppressNextFocus.current = false;
+      return;
+    }
+    setIsKeyboardFocused(true);
+  };
+
+  useEffect(() => {
+    if (!isKeyboardFocused) return;
+
+    const handleMouseMove = () => setIsKeyboardFocused(false);
+
+    document.addEventListener("mousemove", handleMouseMove, { once: true });
+
+    return () => document.removeEventListener("mousemove", handleMouseMove);
+  }, [isKeyboardFocused]);
 
   useEffect(() => {
     if (!mediaId) {
@@ -75,33 +148,55 @@ export function PresetItem({
       <Popover.Trigger asChild>
         <button
           type="button"
-          className="popover__thumbnail-card thumbnail-card thumbnail-card--has-on-click thumbnail-card--align-label-center"
+          className="preset-item"
           onClick={() => onSelect(preset)}
-          onMouseEnter={() => setIsOpen(true)}
-          onMouseLeave={() => setIsOpen(false)}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          onFocus={handleButtonFocus}
+          onBlur={() => setIsKeyboardFocused(false)}
+          tabIndex={tabIndex}
         >
-          <div className="thumbnail-card__thumbnail">
-            <PresetAdminComponentCell media={media} isLoading={isLoading} />
+          <div className="preset-item__thumbnail">
+            <PresetAdminComponentCell
+              media={media}
+              isLoading={isLoading}
+              size="md"
+            />
           </div>
 
-          <div
-            className="thumbnail-card__label"
-            style={{ ...(!preset ? { fontWeight: "normal" } : null) }}
-          >
-            {preset
-              ? preset.name
-              : `${t("presetsPlugin:blocksDrawer:empty" as never)} ${label}`}
-          </div>
+          <div className="preset-item__content">
+            <div className="preset-item__label">
+              {preset
+                ? preset.name
+                : `${t("presetsPlugin:blocksDrawer:empty" as never)} ${label}`}
+            </div>
 
-          {preset?.name && (
-            <button
-              className="remove-preset"
-              type="button"
-              onClick={handleRemoveButtonClick}
-            >
-              <TrashIcon className="remove-preset__icon" />
-            </button>
-          )}
+            <div className="preset-item__actions">
+              {preset?.id && (
+                <EditPresetButton
+                  presetId={preset.id}
+                  onAfterSave={onPresetUpdate}
+                  onOpen={() => {
+                    setIsHovered(false);
+                    setIsKeyboardFocused(false);
+                  }}
+                  onDrawerOpenChange={(isOpen) => {
+                    if (!isOpen) suppressNextFocus.current = true;
+                    setIsEditDrawerOpen(isOpen);
+                  }}
+                />
+              )}
+              {preset?.name && (
+                <button
+                  className="preset-action remove-preset"
+                  type="button"
+                  onClick={handleRemoveButtonClick}
+                >
+                  <TrashIcon className="remove-preset__icon" />
+                </button>
+              )}
+            </div>
+          </div>
         </button>
       </Popover.Trigger>
 
@@ -115,18 +210,13 @@ export function PresetItem({
             avoidCollisions
             collisionPadding={8}
             onOpenAutoFocus={(e) => e.preventDefault()}
-            onMouseEnter={() => setIsOpen(true)}
-            onMouseLeave={() => setIsOpen(false)}
+            onCloseAutoFocus={(e) => e.preventDefault()}
           >
-            <Image
-              alt={
-                media.alt || t("presetsPlugin:blocksDrawer:preview" as never)
-              }
-              src={mediaUrl}
-              width={300}
-              height={300}
-              className="preset-preview-cell__popup-image"
-              unoptimized
+            <PresetAdminComponentCell
+              imageClassName="preset-preview-cell__popup-image"
+              media={media}
+              isLoading={false}
+              size="lg"
             />
           </Popover.Content>
         </Popover.Portal>

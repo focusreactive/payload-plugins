@@ -6,7 +6,6 @@
     "allowJs": true,
     "resolveJsonModule": true,
     "moduleDetection": "force",
-    "isolatedModules": true,
     "verbatimModuleSyntax": true,
 
     "strict": true,

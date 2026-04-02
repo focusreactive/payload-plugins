@@ -2,14 +2,12 @@
 
 ## Full Example
 
-Configuration with all main options, including multiple preset types, overrides, and labels.
+All options: custom slug, labels, preset type overrides, access control, and extra fields.
 
 ```ts
 // payload.config.ts
 import { buildConfig } from "payload";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
-import { heroFields } from "@/blocks/Hero/fields";
-import { testimonialsFields } from "@/blocks/Testimonials/fields";
 
 export default buildConfig({
   plugins: [
@@ -21,16 +19,17 @@ export default buildConfig({
         plural: { en: "Presets", es: "Presets" },
       },
       mediaCollection: "media",
+      // Optional: override label or fields for specific blocks
       presetTypes: [
         {
-          value: "hero",
+          slug: "hero",
           label: { en: "Hero", es: "Hero" },
-          fields: heroFields,
+          // fields omitted → auto-derived from block.fields
         },
         {
-          value: "testimonials",
+          slug: "testimonials",
           label: { en: "Testimonials", es: "Testimonios" },
-          fields: testimonialsFields,
+          fields: testimonialsPresetFields, // explicit override
         },
       ],
       overrides: {
@@ -56,76 +55,47 @@ export default buildConfig({
 
 ---
 
-## Shared Fields Pattern
+## Blocks — No Changes Required
 
-Extract fields to a shared file so block and preset type stay in sync.
-
-```ts
-// fields/heroFields.ts
-import type { Field } from "payload";
-
-export const heroFields: Field[] = [
-  { name: "title", type: "text", required: true },
-  { name: "subtitle", type: "textarea" },
-  { name: "image", type: "upload", relationTo: "media" },
-  { name: "ctaLabel", type: "text" },
-  { name: "ctaUrl", type: "text" },
-];
-```
+The plugin injects Save/Apply buttons automatically via the block label component.
 
 ```ts
 // blocks/Hero/config.ts
 import type { Block } from "payload";
-import { createPresetActionsField } from "@focus-reactive/payload-plugin-presets";
-import { heroFields } from "@/fields/heroFields";
 
 export const HeroBlock: Block = {
   slug: "hero",
-  interfaceName: "HeroBlock",
   labels: {
     singular: { en: "Hero", es: "Hero" },
     plural: { en: "Heroes", es: "Heroes" },
   },
-  fields: [...heroFields, createPresetActionsField()],
-};
-```
-
-```ts
-// payload.config.ts
-presetsPlugin({
-  presetTypes: [
-    {
-      value: "hero",         // Must match HeroBlock.slug exactly
-      label: { en: "Hero" },
-      fields: heroFields,    // Same imported array
-    },
+  fields: [
+    { name: "title", type: "text", required: true },
+    { name: "subtitle", type: "textarea" },
+    { name: "image", type: "upload", relationTo: "media" },
   ],
-});
+};
 ```
 
 ---
 
-## Enabling Preset Selection in a Blocks Field
+## Collections — No Changes Required
+
+Blocks fields get the enhanced drawer injected automatically.
 
 ```ts
-// collections/Page.ts
+// collections/Pages.ts
 import type { CollectionConfig } from "payload";
-import { getBlocksFieldWithPresetsPath } from "@focus-reactive/payload-plugin-presets";
 import { HeroBlock } from "@/blocks/Hero/config";
 import { ContentBlock } from "@/blocks/Content/config";
 
-export const Page: CollectionConfig = {
-  slug: "page",
+export const Pages: CollectionConfig = {
+  slug: "pages",
   fields: [
     {
       name: "blocks",
       type: "blocks",
       blocks: [HeroBlock, ContentBlock],
-      admin: {
-        components: {
-          Field: getBlocksFieldWithPresetsPath(),
-        },
-      },
     },
   ],
 };
@@ -133,38 +103,45 @@ export const Page: CollectionConfig = {
 
 ---
 
-## Multiple Blocks with Presets
+## Overriding Fields for a Specific Block
+
+Supply a `fields` override when the preset editor form should use a different (e.g., smaller) set of fields than the block itself.
+
+```ts
+// blocks/Hero/presetFields.ts
+export const heroPresetFields: Field[] = [
+  { name: "title", type: "text", required: true },
+  { name: "subtitle", type: "textarea" },
+  // image excluded from preset
+];
+```
 
 ```ts
 // payload.config.ts
-import { HeroBlock } from "@/blocks/Hero/config";
-import { ContentBlock } from "@/blocks/Content/config";
-import { TestimonialsBlock } from "@/blocks/Testimonials/config";
-import { heroFields } from "@/blocks/Hero/fields";
-import { contentFields } from "@/blocks/Content/fields";
-import { testimonialsFields } from "@/blocks/Testimonials/fields";
-
 presetsPlugin({
   presetTypes: [
-    { value: "hero", label: "Hero", fields: heroFields },
-    { value: "content", label: "Content", fields: contentFields },
-    { value: "testimonials", label: "Testimonials", fields: testimonialsFields },
+    {
+      slug: "hero",
+      fields: heroPresetFields,
+    },
   ],
 });
 ```
 
-Each block must include `createPresetActionsField()`:
+---
+
+## Multiple Blocks
+
+No per-block setup needed. Just register them in your collection normally.
 
 ```ts
-// blocks/Content/config.ts
-export const ContentBlock: Block = {
-  slug: "content",
-  fields: [...contentFields, createPresetActionsField()],
-};
-
-// blocks/Testimonials/config.ts
-export const TestimonialsBlock: Block = {
-  slug: "testimonials",
-  fields: [...testimonialsFields, createPresetActionsField()],
-};
+// payload.config.ts
+presetsPlugin({
+  // Optionally override labels for any blocks
+  presetTypes: [
+    { slug: "hero", label: "Hero" },
+    { slug: "content", label: "Content" },
+    { slug: "testimonials", label: "Testimonials" },
+  ],
+});
 ```

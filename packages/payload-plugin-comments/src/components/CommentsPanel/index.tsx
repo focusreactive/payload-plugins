@@ -9,6 +9,8 @@ import { GlobalView } from "./components/GlobalView";
 import { GlobalDocumentView } from "./components/GlobalDocumentView";
 import { useScrollToTargetFieldGroup } from "./hooks/useScrollToTargetFieldGroup";
 import { filterCommentsByLocale } from "../../utils/comment/filterCommentsByLocale";
+import { applyCommentFilters } from "../../utils/comment/applyCommentFilters";
+import { useCommentsFilter } from "../../providers/CommentsFilterProvider";
 
 interface Props {
   className: string;
@@ -18,12 +20,14 @@ export const CommentsPanel = ({ className }: Props) => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const { code: currentLocale } = useLocale();
+  const { filters } = useCommentsFilter();
 
   const { mode, queryContext } = useComments();
   const { data: allComments = [], isLoading } = useCommentsQuery(queryContext);
 
   const userId = (user?.id as number) ?? null;
-  const visibleComments = filterCommentsByLocale(allComments, currentLocale);
+  const localeFilteredComments = filterCommentsByLocale(allComments, currentLocale);
+  const visibleComments = applyCommentFilters(localeFilteredComments, filters, userId);
 
   useScrollToTargetFieldGroup();
 

@@ -1,5 +1,4 @@
 import type { CollectionConfig } from 'payload'
-import { getBlocksFieldWithPresetsPath } from '@focus-reactive/payload-plugin-presets'
 import { HeroBlock } from '../blocks/Hero'
 import { CopyBlock } from '../blocks/Copy'
 
@@ -30,11 +29,6 @@ export const Pages: CollectionConfig = {
       name: 'sections',
       type: 'blocks',
       blocks: [HeroBlock, CopyBlock],
-      admin: {
-        components: {
-          Field: getBlocksFieldWithPresetsPath(),
-        },
-      },
     },
   ],
 }

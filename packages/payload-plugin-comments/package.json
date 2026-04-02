@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/payload-plugin-comments",
-  "version": "1.4.0",
+  "version": "1.6.0",
   "license": "MIT",
   "author": "FocusReactive <ship@focusreactive.com>",
   "keywords": [
@@ -52,19 +52,19 @@
   "scripts": {
     "build": "node node_modules/tsup/dist/cli-default.js && tsc --emitDeclarationOnly --declarationMap",
     "dev": "node node_modules/tsup/dist/cli-default.js --watch",
-    "prepare": "node node_modules/tsup/dist/cli-default.js && tsc --emitDeclarationOnly --declarationMap",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write src/",
     "format:check": "prettier --check src/"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.0.0",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "lucide-react": "^0.577.0",
-    "resend": "^4.0.0",
-    "tailwind-merge": "^3.5.0"
+    "@radix-ui/react-dropdown-menu": "2.1.16",
+    "@tanstack/react-query": "5.0.0",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "lucide-react": "0.577.0",
+    "resend": "4.0.0",
+    "tailwind-merge": "3.5.0"
   },
   "peerDependencies": {
     "@payloadcms/plugin-multi-tenant": "^3.0.0",
@@ -89,21 +89,21 @@
     }
   },
   "devDependencies": {
-    "@faceless-ui/modal": "^3.0.0",
-    "@tailwindcss/cli": "^4.2.1",
-    "@types/node": "^20.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "eslint": "^9.0.0",
-    "eslint-config-prettier": "^9.0.0",
+    "@faceless-ui/modal": "3.0.0",
+    "@tailwindcss/cli": "4.2.1",
+    "@types/node": "22.19.9",
+    "@types/react": "19.2.9",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.0.0",
+    "eslint-config-prettier": "9.0.0",
     "next": "15.4.10",
     "payload": "3.79.0",
     "@payloadcms/ui": "3.79.0",
     "@payloadcms/plugin-multi-tenant": "3.79.0",
-    "prettier": "^3.0.0",
-    "tailwindcss": "^4.2.1",
-    "tsup": "^8.0.0",
+    "prettier": "3.0.0",
+    "tailwindcss": "4.2.1",
+    "tsup": "8.0.0",
     "typescript": "5.7.3",
-    "typescript-eslint": "^8.0.0"
+    "typescript-eslint": "8.0.0"
   }
 }
