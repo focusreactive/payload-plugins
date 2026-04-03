@@ -1,6 +1,6 @@
 # Monorepo with Payload CMS plugins
 
-## Skill to add new plugin
+## Skill to add new plugin to _this_ repository
 
 [payload-plugins-add-package](https://github.com/focusreactive/payload-plugins/blob/main/.claude/skills/payload-plugins-add-package/SKILL.md)
 
