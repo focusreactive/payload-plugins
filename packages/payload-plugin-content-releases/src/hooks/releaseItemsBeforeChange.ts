@@ -23,9 +23,9 @@ export function buildReleaseItemsBeforeChange(): CollectionBeforeChangeHook {
       }
     }
 
-    if (releaseStatus !== "draft") {
+    if (releaseStatus !== "draft" && releaseStatus !== "scheduled") {
       throw new Error(
-        `Release items can only be modified when the release is in "draft" status. Current status: "${releaseStatus}"`,
+        `Release items can only be modified when the release is in "draft" or "scheduled" status. Current status: "${releaseStatus}"`,
       );
     }
 

@@ -7,6 +7,7 @@ const SIDEBAR_FIELD_PATH =
 import { buildReleasesCollection } from "./collections/releases";
 import { buildReleaseItemsCollection } from "./collections/releaseItems";
 import { releasesBeforeChange } from "./hooks/releasesBeforeChange";
+import { releasesBeforeDelete } from "./hooks/releasesBeforeDelete";
 import { buildReleaseItemsBeforeChange } from "./hooks/releaseItemsBeforeChange";
 import { createPublishReleaseHandler } from "./endpoints/publishRelease";
 import { createCheckConflictsHandler } from "./endpoints/checkConflicts";
@@ -31,6 +32,7 @@ export function contentReleasesPlugin(
       access: access?.releases,
       hooks: {
         beforeChange: [releasesBeforeChange],
+        beforeDelete: [releasesBeforeDelete],
       },
     });
 

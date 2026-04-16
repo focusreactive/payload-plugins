@@ -39,16 +39,16 @@ describe("releaseItemsBeforeChange", () => {
     expect(result).toEqual(data);
   });
 
-  it("should reject adding items to a non-draft release", async () => {
+  it("should allow adding items to a scheduled release", async () => {
     const payload = makePayload("scheduled");
     const data = {
       release: "rel-1",
       targetCollection: "pages",
       targetDoc: "doc-1",
+      snapshot: { title: "Hello" },
     };
-    await expect(
-      hook(makeArgs(data, payload) as any),
-    ).rejects.toThrow(/can only be modified.*draft/i);
+    const result = await hook(makeArgs(data, payload) as any);
+    expect(result).toEqual(data);
   });
 
   it("should reject adding items to a published release", async () => {
@@ -56,7 +56,7 @@ describe("releaseItemsBeforeChange", () => {
     const data = { release: "rel-1", targetCollection: "pages", targetDoc: "doc-1" };
     await expect(
       hook(makeArgs(data, payload) as any),
-    ).rejects.toThrow(/can only be modified.*draft/i);
+    ).rejects.toThrow(/can only be modified/i);
   });
 
   it("should reject duplicate doc in same release on create", async () => {
@@ -94,7 +94,7 @@ describe("releaseItemsBeforeChange", () => {
     };
     await expect(
       hook(makeArgs(data, payload, "update", { id: "item-1" }) as any),
-    ).rejects.toThrow(/can only be modified.*draft/i);
+    ).rejects.toThrow(/can only be modified/i);
   });
 
   it("should allow updates to existing items in draft releases", async () => {
