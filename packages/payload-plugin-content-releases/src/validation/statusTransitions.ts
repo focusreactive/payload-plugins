@@ -6,9 +6,12 @@ export const VALID_TRANSITIONS: Record<ReleaseStatus, ReleaseStatus[]> = {
   publishing: ["published", "failed"],
   published: [],
   failed: ["draft"],
-  cancelled: [],
+  cancelled: ["publishing"],
 };
 
-export function isValidTransition(from: ReleaseStatus, to: ReleaseStatus): boolean {
+export function isValidTransition(
+  from: ReleaseStatus,
+  to: ReleaseStatus,
+): boolean {
   return VALID_TRANSITIONS[from]?.includes(to) ?? false;
 }

@@ -15,7 +15,9 @@
       "types": "./dist/client.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/focusreactive/payload-plugins",
@@ -36,6 +38,7 @@
   "peerDependencies": {
     "payload": "^3.0.0",
     "@payloadcms/ui": "^3.0.0",
+    "next": "^14.0.0 || ^15.0.0",
     "react": "^18.0.0 || ^19.0.0"
   },
   "devDependencies": {
@@ -47,7 +50,8 @@
     "react": "^19.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0",
+    "next": "15.4.10"
   },
   "license": "MIT"
 }

@@ -7,15 +7,27 @@ interface PublishReleaseConfig {
   conflictStrategy: ConflictStrategy;
   publishBatchSize: number;
   hooks?: {
-    afterPublish?: (args: { releaseId: string; req: any }) => void | Promise<void>;
-    onPublishError?: (args: { releaseId: string; errors: any[]; req: any }) => void | Promise<void>;
+    afterPublish?: (args: {
+      releaseId: string;
+      req: any;
+    }) => void | Promise<void>;
+    onPublishError?: (args: {
+      releaseId: string;
+      errors: any[];
+      req: any;
+    }) => void | Promise<void>;
   };
 }
 
-export function createPublishReleaseHandler(config: PublishReleaseConfig): PayloadHandler {
+export function createPublishReleaseHandler(
+  config: PublishReleaseConfig,
+): PayloadHandler {
   return async (req) => {
     if (!req.user) {
-      return Response.json({ error: "Authentication required" }, { status: 401 });
+      return Response.json(
+        { error: "Authentication required" },
+        { status: 401 },
+      );
     }
 
     const releaseId = (req.routeParams as any)?.id as string;
@@ -29,9 +41,14 @@ export function createPublishReleaseHandler(config: PublishReleaseConfig): Paylo
         id: releaseId,
       });
 
-      if ((release as any).status !== "draft") {
+      const currentStatus = (release as any).status as string;
+      if (
+        currentStatus === "publishing" ||
+        currentStatus === "published" ||
+        currentStatus === "failed"
+      ) {
         return Response.json(
-          { error: `Release can only be published from "draft" status. Current: "${(release as any).status}"` },
+          { error: `Cannot publish a release with status "${currentStatus}"` },
           { status: 400 },
         );
       }
@@ -44,7 +61,11 @@ export function createPublishReleaseHandler(config: PublishReleaseConfig): Paylo
       });
 
       if (result.status === "failed" && config.hooks?.onPublishError) {
-        await config.hooks.onPublishError({ releaseId, errors: result.errors ?? [], req });
+        await config.hooks.onPublishError({
+          releaseId,
+          errors: result.errors ?? [],
+          req,
+        });
       } else if (result.status === "published" && config.hooks?.afterPublish) {
         await config.hooks.afterPublish({ releaseId, req });
       }

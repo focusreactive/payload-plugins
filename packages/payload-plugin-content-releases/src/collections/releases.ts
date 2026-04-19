@@ -1,5 +1,9 @@
 import type { CollectionConfig, Access } from "payload";
-import { RELEASES_SLUG, RELEASE_ITEMS_SLUG, RELEASE_STATUSES } from "../constants";
+import {
+  RELEASES_SLUG,
+  RELEASE_ITEMS_SLUG,
+  RELEASE_STATUSES,
+} from "../constants";
 
 interface BuildReleasesCollectionOptions {
   access?: {
@@ -23,6 +27,13 @@ export function buildReleasesCollection(
     admin: {
       useAsTitle: "name",
       defaultColumns: ["name", "status", "scheduledAt", "createdAt"],
+      components: {
+        edit: {
+          beforeDocumentControls: [
+            "@focus-reactive/payload-plugin-content-releases/client#ReleaseActionsField",
+          ],
+        },
+      },
     },
     access: options?.access,
     hooks: options?.hooks,
@@ -41,7 +52,10 @@ export function buildReleasesCollection(
         type: "select",
         required: true,
         defaultValue: "draft",
-        options: RELEASE_STATUSES.map((s) => ({ label: s.charAt(0).toUpperCase() + s.slice(1), value: s })),
+        options: RELEASE_STATUSES.map((s) => ({
+          label: s.charAt(0).toUpperCase() + s.slice(1),
+          value: s,
+        })),
         admin: {
           position: "sidebar",
         },

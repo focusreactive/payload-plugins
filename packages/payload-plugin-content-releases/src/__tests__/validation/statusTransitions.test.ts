@@ -12,13 +12,13 @@ describe("isValidTransition", () => {
     ["publishing", "published"],
     ["publishing", "failed"],
     ["failed", "draft"],
+    ["cancelled", "publishing"],
   ];
 
   const invalidCases: Array<[ReleaseStatus, ReleaseStatus]> = [
     ["published", "draft"],
     ["published", "cancelled"],
     ["cancelled", "draft"],
-    ["cancelled", "publishing"],
     ["publishing", "cancelled"],
     ["draft", "published"],
     ["draft", "failed"],
