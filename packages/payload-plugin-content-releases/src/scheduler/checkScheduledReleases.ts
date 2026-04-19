@@ -24,6 +24,7 @@ export async function checkScheduledReleases(
         { scheduledAt: { less_than_equal: now } },
       ],
     },
+    sort: "updatedAt",
     limit: 100,
   });
 
