@@ -75,7 +75,7 @@ export async function executePublish(options: ExecutePublishOptions): Promise<Pu
           await payload.update({
             collection: item.targetCollection as any,
             id: item.targetDoc,
-            data: item.snapshot as any,
+            data: { ...item.snapshot, _status: "published" } as any,
           });
         }
 
