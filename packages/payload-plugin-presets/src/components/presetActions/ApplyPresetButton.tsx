@@ -16,13 +16,13 @@ import { usePresetsConfig } from "../usePresetsConfig.js";
 import "./index.scss";
 
 export function ApplyPresetButton() {
-  const { slug: collectionSlug, presetTypes } = usePresetsConfig();
+  const { slug: collectionSlug, presetTypes, excludeKeys } = usePresetsConfig()
 
-  const { user } = useAuth();
-  const path = useFieldPath();
-  const parentPath = getParentPath(path);
-  const { getData, getDataByPath, dispatchFields, replaceFieldRow } = useForm();
-  const { t } = useTranslation();
+  const { user } = useAuth()
+  const path = useFieldPath()
+  const parentPath = getParentPath(path)
+  const { getData, getDataByPath, dispatchFields, replaceFieldRow } = useForm()
+  const { t } = useTranslation()
 
   const presetTypeFromPath = getPresetTypeFromPath(parentPath, presetTypes);
   const blockData =
@@ -36,7 +36,7 @@ export function ApplyPresetButton() {
     collectionSlugs: [collectionSlug],
     filterOptions: {
       [collectionSlug]: {
-        type: { equals: presetType },
+        'presetBlock.blockType': { equals: presetType },
         ...(tenantId ? { tenant: { equals: tenantId } } : {}),
       },
     },
@@ -47,21 +47,23 @@ export function ApplyPresetButton() {
   }
 
   const handleSelect = ({ doc }: { collectionSlug: string; doc: Data }) => {
-    const preset = doc as Record<string, unknown>;
-    if (!preset || preset.type !== presetType) {
-      toast.error(t("presetsPlugin:applyPreset:errorInvalidPreset" as never));
-      return;
+    const preset = doc as Record<string, unknown>
+    const presetBlocks = preset.presetBlock as Array<{ blockType: string; [key: string]: unknown }> | undefined
+    const presetBlockItem = presetBlocks?.[0]
+
+    if (!preset || !presetBlockItem || presetBlockItem.blockType !== presetType) {
+      toast.error(t('presetsPlugin:applyPreset:errorInvalidPreset' as never))
+      return
     }
 
-    const presetData = preset[presetType] as Record<string, unknown>;
-
-    const pathParts = parentPath.split(".");
-    const rowIndex = Number(pathParts.pop());
-    const arrayPath = pathParts.join(".");
+    const pathParts = parentPath.split('.')
+    const rowIndex = Number(pathParts.pop())
+    const arrayPath = pathParts.join('.')
 
     const subFieldState: Record<string, FieldState> = {};
 
-    Object.entries(presetData).forEach(([key, value]) => {
+    Object.entries(presetBlockItem).forEach(([key, value]) => {
+      if (excludeKeys.includes(key)) return
       subFieldState[key] = {
         value,
         initialValue: value,

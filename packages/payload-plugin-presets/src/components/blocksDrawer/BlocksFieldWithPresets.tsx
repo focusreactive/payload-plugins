@@ -136,9 +136,8 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
     const targetRowIndex = insertIndexRef.current ?? addRowIndex;
 
     if (preset) {
-      const presetData = preset[blockType] as
-        | Record<string, unknown>
-        | undefined;
+      const presetBlocks = preset.presetBlock;
+      const presetData = presetBlocks?.[0];
 
       if (presetData) {
         const subFieldState: Record<string, FieldState> = {};

@@ -177,11 +177,12 @@ export function SaveAsPresetCore({
     };
   }, [openPresetsDrawer, presetType, rowIndex]);
 
+  const blockContent = cleanPresetData(presetBlockData ?? {}, excludeSet) as Record<string, unknown>
+
   const data = presetType
     ? ({
         name: `${presetType.charAt(0).toUpperCase() + presetType.slice(1)} ${new Date().toLocaleDateString()}`,
-        type: presetType,
-        [presetType]: cleanPresetData(presetBlockData ?? {}, excludeSet),
+        presetBlock: [{ blockType: presetType, ...blockContent }],
         tenant: tenantId,
       } as Data)
     : undefined;

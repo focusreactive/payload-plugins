@@ -9,7 +9,7 @@ export interface MediaData {
 export interface Preset {
   id: string
   name: string
-  type: string
+  presetBlock?: Array<{ blockType: string; [key: string]: unknown }>
   preview?: MediaData
   [key: string]: unknown
 }

@@ -117,7 +117,9 @@ export const BlockSelectorWithPresets: React.FC<
 
   // Get presets for specific block from cache
   const getBlockPresets = (blockSlug: string): Preset[] => {
-    return presetsCache.filter((preset) => preset.type === blockSlug);
+    return presetsCache.filter(
+      (preset) => preset.presetBlock?.[0]?.blockType === blockSlug,
+    );
   };
 
   useEffect(() => {
@@ -416,7 +418,9 @@ const PresetsList: React.FC<PresetsListProps> = ({
   onPresetUpdate,
   listRef,
 }) => {
-  const filteredPresets = presets.filter((preset) => preset.type === blockSlug);
+  const filteredPresets = presets.filter(
+    (preset) => preset.presetBlock?.[0]?.blockType === blockSlug,
+  );
   const { mediaCollection } = usePresetsConfig();
   const { t } = useTranslation();
   const [focusedIndex, setFocusedIndex] = useState(-1);

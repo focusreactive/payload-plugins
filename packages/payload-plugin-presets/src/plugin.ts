@@ -129,24 +129,6 @@ const createPresetsCollection = (
     "PresetAdminComponentCell",
   );
 
-  const typeOptions = resolvedPresetTypes.map(({ slug: typeSlug, label }) => ({
-    value: typeSlug,
-    label,
-  }));
-
-  const presetTypeGroupFields: Field[] = resolvedPresetTypes.map(
-    ({ slug: typeSlug, label, fields }) => ({
-      name: typeSlug,
-      type: "group" as const,
-      label,
-      admin: {
-        condition: (_: unknown, siblingData: { type?: string }) =>
-          siblingData?.type === typeSlug,
-      },
-      fields,
-    }),
-  );
-
   const defaultFields: Field[] = [
     {
       name: "previewDisplay",
@@ -181,19 +163,20 @@ const createPresetsCollection = (
       },
     },
     {
-      name: "type",
-      type: "select",
+      name: "presetBlock",
+      type: "blocks",
       required: true,
-      options: typeOptions,
-      label: { en: "Preset Type", es: "Tipo de Preset" },
-      admin: {
-        description: {
-          en: "Choose type — only the matching section below will be shown.",
-          es: "Elige tipo — solo se mostrará la sección correspondiente.",
+      maxRows: 1,
+      label: { en: "Preset Block", es: "Bloque de Preset" },
+      blocks: resolvedPresetTypes.map(({ slug: typeSlug, label, fields }) => ({
+        slug: typeSlug,
+        labels: {
+          singular: label,
+          plural: label,
         },
-      },
+        fields,
+      })),
     },
-    ...presetTypeGroupFields,
   ];
 
   const finalFields = overrides.fields
@@ -206,11 +189,11 @@ const createPresetsCollection = (
     access: overrides.access || {},
     admin: {
       useAsTitle: "name",
-      defaultColumns: ["name", "preview", "type", "updatedAt"],
+      defaultColumns: ["name", "preview", "updatedAt"],
       group: "Collections",
       description: {
-        en: "One preset = one type. After choosing type, fill the matching section below.",
-        es: "Un preset = un tipo. Tras elegir tipo, rellena la sección correspondiente.",
+        en: "One preset = one block type. Add one block to store its field values.",
+        es: "Un preset = un tipo de bloque. Añade un bloque para guardar sus valores.",
       },
       hidden: false,
       ...overrides.admin,

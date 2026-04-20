@@ -228,7 +228,7 @@ export interface Page {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * One preset = one type. After choosing type, fill the matching section below.
+ * One preset = one block type. Add one block to store its field values.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "presets".
@@ -240,17 +240,21 @@ export interface Preset {
    * The preview image for the preset
    */
   preview?: (number | null) | Media;
-  /**
-   * Choose type — only the matching section below will be shown.
-   */
-  type: 'hero' | 'copy';
-  hero?: {
-    title: string;
-    description?: string | null;
-  };
-  copy?: {
-    text: string;
-  };
+  presetBlock: (
+    | {
+        title: string;
+        description?: string | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'hero';
+      }
+    | {
+        text: string;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'copy';
+      }
+  )[];
   updatedAt: string;
   createdAt: string;
 }
@@ -549,17 +553,24 @@ export interface PagesSelect<T extends boolean = true> {
 export interface PresetsSelect<T extends boolean = true> {
   name?: T;
   preview?: T;
-  type?: T;
-  hero?:
+  presetBlock?:
     | T
     | {
-        title?: T;
-        description?: T;
-      };
-  copy?:
-    | T
-    | {
-        text?: T;
+        hero?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+              id?: T;
+              blockName?: T;
+            };
+        copy?:
+          | T
+          | {
+              text?: T;
+              id?: T;
+              blockName?: T;
+            };
       };
   updatedAt?: T;
   createdAt?: T;

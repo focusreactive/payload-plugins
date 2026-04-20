@@ -18,6 +18,12 @@
   width: 100%;
 }
 
-.blocks-field-with-presets .blocks-field__drawer-toggler {
-  display: none;
+.blocks-field-with-presets {
+  .blocks-field__drawer-toggler {
+    display: none;
+  }
+
+  &__drawer-toggler {
+    display: block !important;
+  }
 }
