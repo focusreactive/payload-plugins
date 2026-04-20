@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-presets [0.10.4](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.3...@focus-reactive/payload-plugin-presets@0.10.4) (2026-04-20)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** replace type+group fields with blocks field for preset data ([65db5c5](https://github.com/focusreactive/payload-plugins/commit/65db5c558684ccccd836dc091cc30445f0060b4f))
+
 ## @focus-reactive/payload-plugin-presets [0.10.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.2...@focus-reactive/payload-plugin-presets@0.10.3) (2026-04-02)
 
 
