@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-presets [0.10.5](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.4...@focus-reactive/payload-plugin-presets@0.10.5) (2026-04-21)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** redesign block selector cards with full-width thumbnail layout ([7c25aa5](https://github.com/focusreactive/payload-plugins/commit/7c25aa5951c08debc9fc028ecfe456e611c093f5))
+
 ## @focus-reactive/payload-plugin-presets [0.10.4](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.3...@focus-reactive/payload-plugin-presets@0.10.4) (2026-04-20)
 
 
