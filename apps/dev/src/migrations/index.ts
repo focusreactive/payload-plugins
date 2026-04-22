@@ -1,5 +1,6 @@
 import * as migration_20260316_220744_init from './20260316_220744_init';
 import * as migration_20260326_120907_content_releases from './20260326_120907_content_releases';
+import * as migration_20260422_214318_add_rollback_skipped_column_to_releases from './20260422_214318_add_rollback_skipped_column_to_releases';
 
 export const migrations = [
   {
@@ -10,6 +11,11 @@ export const migrations = [
   {
     up: migration_20260326_120907_content_releases.up,
     down: migration_20260326_120907_content_releases.down,
-    name: '20260326_120907_content_releases'
+    name: '20260326_120907_content_releases',
+  },
+  {
+    up: migration_20260422_214318_add_rollback_skipped_column_to_releases.up,
+    down: migration_20260422_214318_add_rollback_skipped_column_to_releases.down,
+    name: '20260422_214318_add_rollback_skipped_column_to_releases'
   },
 ];
