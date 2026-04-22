@@ -1,4 +1,5 @@
 export const PLUGIN_NAME = "payload-plugin-content-releases";
+export const PACKAGE_NAME = "@focus-reactive/payload-plugin-content-releases";
 
 export const RELEASES_SLUG = "releases" as const;
 export const RELEASE_ITEMS_SLUG = "release-items" as const;

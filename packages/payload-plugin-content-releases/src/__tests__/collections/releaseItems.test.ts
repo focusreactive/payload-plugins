@@ -36,6 +36,9 @@ describe("release-items collection", () => {
     expect(field).toBeDefined();
     expect(field.type).toBe("text");
     expect(field.required).toBe(true);
+    expect(field.admin?.components?.Cell).toBe(
+      "@focus-reactive/payload-plugin-content-releases/client#TargetDocCell",
+    );
   });
 
   it("should have action select field", () => {

@@ -4,6 +4,7 @@ import {
   RELEASES_SLUG,
   RELEASE_ITEM_ACTIONS,
   RELEASE_ITEM_STATUSES,
+  PACKAGE_NAME,
 } from "../constants";
 
 interface BuildReleaseItemsCollectionOptions {
@@ -53,6 +54,11 @@ export function buildReleaseItemsCollection(
         name: "targetDoc",
         type: "text",
         required: true,
+        admin: {
+          components: {
+            Cell: `${PACKAGE_NAME}/client#TargetDocCell`,
+          },
+        },
       },
       {
         name: "action",
