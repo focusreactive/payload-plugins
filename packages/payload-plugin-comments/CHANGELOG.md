@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-comments [1.6.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.6.0...@focus-reactive/payload-plugin-comments@1.6.1) (2026-04-22)
+
+
+### Bug Fixes
+
+* **payload-plugin-comments:** use payload field label component as a custom field comment label ([e27549f](https://github.com/focusreactive/payload-plugins/commit/e27549f11242c1238ffc434e67e2b0c37562292b))
+
 # @focus-reactive/payload-plugin-comments [1.6.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.5.0...@focus-reactive/payload-plugin-comments@1.6.0) (2026-03-31)
 
 
