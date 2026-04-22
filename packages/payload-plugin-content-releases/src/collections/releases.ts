@@ -95,6 +95,13 @@ export function buildReleasesCollection(
         },
       },
       {
+        name: "rollbackSkipped",
+        type: "json",
+        admin: {
+          hidden: true,
+        },
+      },
+      {
         name: "errorLog",
         type: "json",
         admin: {

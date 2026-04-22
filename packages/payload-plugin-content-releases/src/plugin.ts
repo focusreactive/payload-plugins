@@ -1,6 +1,10 @@
 import type { Config, Plugin } from "payload";
 import type { ContentReleasesPluginConfig } from "./types";
-import { PLUGIN_NAME, DEFAULT_CONFLICT_STRATEGY, DEFAULT_PUBLISH_BATCH_SIZE } from "./constants";
+import {
+  PLUGIN_NAME,
+  DEFAULT_CONFLICT_STRATEGY,
+  DEFAULT_PUBLISH_BATCH_SIZE,
+} from "./constants";
 
 const SIDEBAR_FIELD_PATH =
   "@focus-reactive/payload-plugin-content-releases/client#ReleaseSidebarField";
@@ -12,6 +16,8 @@ import { buildReleaseItemsBeforeChange } from "./hooks/releaseItemsBeforeChange"
 import { createPublishReleaseHandler } from "./endpoints/publishRelease";
 import { createCheckConflictsHandler } from "./endpoints/checkConflicts";
 import { createRunScheduledHandler } from "./endpoints/runScheduled";
+import { createPreviewRollbackHandler } from "./endpoints/previewRollback";
+import { createRollbackReleaseHandler } from "./endpoints/rollbackRelease";
 import { checkScheduledReleases } from "./scheduler/checkScheduledReleases";
 
 export function contentReleasesPlugin(
@@ -52,8 +58,10 @@ export function contentReleasesPlugin(
         path: "/content-releases/:id/publish",
         method: "post",
         handler: createPublishReleaseHandler({
-          conflictStrategy: options.conflictStrategy ?? DEFAULT_CONFLICT_STRATEGY,
-          publishBatchSize: options.publishBatchSize ?? DEFAULT_PUBLISH_BATCH_SIZE,
+          conflictStrategy:
+            options.conflictStrategy ?? DEFAULT_CONFLICT_STRATEGY,
+          publishBatchSize:
+            options.publishBatchSize ?? DEFAULT_PUBLISH_BATCH_SIZE,
           hooks: options.hooks,
         }),
       },
@@ -61,6 +69,16 @@ export function contentReleasesPlugin(
         path: "/content-releases/:id/conflicts",
         method: "get",
         handler: createCheckConflictsHandler(),
+      },
+      {
+        path: "/content-releases/:id/rollback",
+        method: "get",
+        handler: createPreviewRollbackHandler(),
+      },
+      {
+        path: "/content-releases/:id/rollback",
+        method: "post",
+        handler: createRollbackReleaseHandler({ hooks: options.hooks }),
       },
     ];
 
@@ -70,8 +88,10 @@ export function contentReleasesPlugin(
         method: "get",
         handler: createRunScheduledHandler({
           secret: options.schedulerSecret,
-          conflictStrategy: options.conflictStrategy ?? DEFAULT_CONFLICT_STRATEGY,
-          publishBatchSize: options.publishBatchSize ?? DEFAULT_PUBLISH_BATCH_SIZE,
+          conflictStrategy:
+            options.conflictStrategy ?? DEFAULT_CONFLICT_STRATEGY,
+          publishBatchSize:
+            options.publishBatchSize ?? DEFAULT_PUBLISH_BATCH_SIZE,
         }),
       });
     }
@@ -99,8 +119,10 @@ export function contentReleasesPlugin(
 
     // Built-in scheduler via onInit
     const schedulerInterval = options.schedulerInterval;
-    const schedulerEnabled = schedulerInterval !== false && schedulerInterval !== 0;
-    const interval = typeof schedulerInterval === "number" ? schedulerInterval : 60000;
+    const schedulerEnabled =
+      schedulerInterval !== false && schedulerInterval !== 0;
+    const interval =
+      typeof schedulerInterval === "number" ? schedulerInterval : 60000;
 
     const existingOnInit = config.onInit;
 
@@ -136,8 +158,10 @@ export function contentReleasesPlugin(
             try {
               await checkScheduledReleases({
                 payload,
-                conflictStrategy: options.conflictStrategy ?? DEFAULT_CONFLICT_STRATEGY,
-                batchSize: options.publishBatchSize ?? DEFAULT_PUBLISH_BATCH_SIZE,
+                conflictStrategy:
+                  options.conflictStrategy ?? DEFAULT_CONFLICT_STRATEGY,
+                batchSize:
+                  options.publishBatchSize ?? DEFAULT_PUBLISH_BATCH_SIZE,
               });
             } catch (err) {
               payload.logger.error(

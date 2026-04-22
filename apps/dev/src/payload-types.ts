@@ -304,7 +304,7 @@ export interface Release {
   id: number;
   name: string;
   description?: string | null;
-  status: 'draft' | 'scheduled' | 'publishing' | 'published' | 'failed' | 'cancelled';
+  status: 'draft' | 'scheduled' | 'publishing' | 'published' | 'reverting' | 'reverted' | 'failed' | 'cancelled';
   scheduledAt?: string | null;
   publishedAt?: string | null;
   items?: {
@@ -313,6 +313,15 @@ export interface Release {
     totalDocs?: number;
   };
   rollbackSnapshot?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  rollbackSkipped?:
     | {
         [k: string]: unknown;
       }
@@ -677,6 +686,7 @@ export interface ReleasesSelect<T extends boolean = true> {
   publishedAt?: T;
   items?: T;
   rollbackSnapshot?: T;
+  rollbackSkipped?: T;
   errorLog?: T;
   updatedAt?: T;
   createdAt?: T;

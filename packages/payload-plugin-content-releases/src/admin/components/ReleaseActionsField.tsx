@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button, toast, useDocumentInfo } from "@payloadcms/ui";
 import { useRouter } from "next/navigation";
 import { ReleaseStatus } from "../../types";
+import { RollbackButton } from "./RollbackButton";
 
 function getButtonProps(status?: ReleaseStatus): {
   disabled: boolean;
@@ -40,7 +41,6 @@ export function ReleaseActionsField() {
   if (!id) return null;
 
   const status = data?.status as ReleaseStatus;
-  console.log(status, data);
   const { disabled, tooltip } = getButtonProps(status);
 
   const handlePublish = async () => {
@@ -67,7 +67,7 @@ export function ReleaseActionsField() {
   };
 
   return (
-    <div style={{ display: "flex", alignItems: "center" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <Button
         size="medium"
         buttonStyle="primary"
@@ -77,6 +77,7 @@ export function ReleaseActionsField() {
       >
         {loading ? "Publishing…" : "Publish Now"}
       </Button>
+      {status === "published" && <RollbackButton id={String(id)} status={status} />}
     </div>
   );
 }

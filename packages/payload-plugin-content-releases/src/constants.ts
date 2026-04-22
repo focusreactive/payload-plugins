@@ -4,13 +4,23 @@ export const RELEASES_SLUG = "releases" as const;
 export const RELEASE_ITEMS_SLUG = "release-items" as const;
 
 export const RELEASE_STATUSES = [
-  "draft", "scheduled", "publishing", "published", "failed", "cancelled",
+  "draft",
+  "scheduled",
+  "publishing",
+  "published",
+  "reverting",
+  "reverted",
+  "failed",
+  "cancelled",
 ] as const;
 
 export const RELEASE_ITEM_ACTIONS = ["publish", "unpublish"] as const;
 
 export const RELEASE_ITEM_STATUSES = [
-  "pending", "published", "failed", "skipped",
+  "pending",
+  "published",
+  "failed",
+  "skipped",
 ] as const;
 
 export const DEFAULT_CONFLICT_STRATEGY = "fail" as const;

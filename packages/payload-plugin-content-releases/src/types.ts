@@ -5,6 +5,8 @@ export type ReleaseStatus =
   | "scheduled"
   | "publishing"
   | "published"
+  | "reverting"
+  | "reverted"
   | "failed"
   | "cancelled";
 
@@ -41,10 +43,26 @@ export interface ContentReleasesPluginConfig {
     };
   };
   hooks?: {
-    afterPublish?: (args: { releaseId: string; req: PayloadRequest }) => void | Promise<void>;
+    afterPublish?: (args: {
+      releaseId: string;
+      req: PayloadRequest;
+    }) => void | Promise<void>;
     onPublishError?: (args: {
       releaseId: string;
       errors: Array<{ collection: string; docId: string; error: string }>;
+      req: PayloadRequest;
+    }) => void | Promise<void>;
+    afterRollback?: (args: {
+      releaseId: string;
+      req: PayloadRequest;
+    }) => void | Promise<void>;
+    onRollbackError?: (args: {
+      releaseId: string;
+      errors: Array<{
+        collection: string;
+        docId: string;
+        error: string;
+      }>;
       req: PayloadRequest;
     }) => void | Promise<void>;
   };

@@ -4,7 +4,9 @@ export const VALID_TRANSITIONS: Record<ReleaseStatus, ReleaseStatus[]> = {
   draft: ["scheduled", "publishing", "cancelled"],
   scheduled: ["draft", "publishing"],
   publishing: ["published", "failed"],
-  published: [],
+  published: ["reverting"],
+  reverting: ["reverted", "failed"],
+  reverted: [],
   failed: ["draft"],
   cancelled: ["publishing"],
 };
