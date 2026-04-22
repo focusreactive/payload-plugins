@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslation, useLocale, useAuth } from "@payloadcms/ui";
+import { useTranslation, useLocale, useAuth, FieldLabel, useForm, useEditDepth } from "@payloadcms/ui";
 import { MessageSquareIcon, MessageSquarePlus } from "lucide-react";
 import { useComments } from "../../providers/CommentsProvider";
 import type { FieldLabelClientProps } from "payload";
@@ -17,16 +17,28 @@ import { useFieldLabelsQuery } from "../../api/queries/useFieldLabelsQuery";
 import { filterCommentsByLocale } from "../../utils/comment/filterCommentsByLocale";
 import { applyCommentFilters } from "../../utils/comment/applyCommentFilters";
 import { useCommentsFilter } from "../../providers/CommentsFilterProvider";
+import { resolveFieldLabelAs } from "./utils/resolveFieldLabelAs";
 
 interface Props extends FieldLabelClientProps {
   field: FieldLabelClientProps["field"] & {
     label?: Label;
     required?: boolean;
+    localized?: boolean;
   };
 }
 
-export function FieldCommentLabel({ field, htmlFor, path: fieldPath }: Props) {
+export function FieldCommentLabel({ field, path: fieldPath }: Props) {
   const { label, required } = field;
+
+  const { uuid } = useForm();
+  const editDepth = useEditDepth();
+
+  const as = resolveFieldLabelAs(field.type);
+  const localized = field.type === "group" ? false : (field.localized ?? false);
+  const htmlFor =
+    fieldPath ?
+      `field-${fieldPath.replace(/\./g, "__")}${editDepth > 1 ? `-${editDepth}` : ""}${uuid ? `-${uuid}` : ""}`
+    : undefined;
 
   const { t } = useTranslation();
   const { code: locale } = useLocale();
@@ -67,18 +79,23 @@ export function FieldCommentLabel({ field, htmlFor, path: fieldPath }: Props) {
   if (!resolvedLabel) return null;
 
   return (
-    <div className="flex items-center gap-1.5 pb-1.25 group">
-      <label className="field-label p-0" htmlFor={htmlFor}>
-        {resolvedLabel}
-
-        {required && <span className="required">*</span>}
-      </label>
+    <div className="flex items-center gap-1.5 group">
+      <FieldLabel
+        htmlFor={htmlFor}
+        label={label as string | Record<string, string>}
+        required={required}
+        path={fieldPath}
+        as={as}
+        hideLocale={false}
+        localized={localized}
+        unstyled={false}
+      />
 
       {fieldPath && (mode === "document" || mode === "global-document") && (
         <div className="relative flex items-center">
           {!!openCommentsCount && (
             <IconButton
-              className="w-auto px-1 gap-1 text-[12px] font-semibold leading-none"
+              className="w-auto px-1 gap-1 text-[12px] font-semibold leading-none [&_svg]:opacity-100"
               size="sm"
               title={t("comments:openComments" as never, { count: openCommentsCount })}
               onClick={handleOpenDrawer}>
@@ -89,7 +106,9 @@ export function FieldCommentLabel({ field, htmlFor, path: fieldPath }: Props) {
           )}
           {!openCommentsCount && (
             <IconButton
-              className={"opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity"}
+              className={
+                "opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity [&_svg]:opacity-100"
+              }
               size="sm"
               title={t("comments:add" as never)}
               onClick={handleOpenDrawer}>
