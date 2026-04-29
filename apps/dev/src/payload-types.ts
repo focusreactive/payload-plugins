@@ -311,6 +311,9 @@ export interface Release {
   status: 'draft' | 'scheduled' | 'publishing' | 'published' | 'reverting' | 'reverted' | 'failed' | 'cancelled';
   scheduledAt?: string | null;
   publishedAt?: string | null;
+  /**
+   * Resources are added from the sidebar of any document — open a page and use 'Add Current State to Release' or 'Add Version to Release'.
+   */
   items?: {
     docs?: (number | ReleaseItem)[];
     hasNextPage?: boolean;
@@ -347,7 +350,7 @@ export interface ReleaseItem {
   targetCollection: 'pages';
   targetDoc: string;
   action: 'publish' | 'unpublish';
-  status: 'pending' | 'published' | 'failed' | 'skipped';
+  status: 'pending' | 'published' | 'failed' | 'skipped' | 'reverted';
   snapshot:
     | {
         [k: string]: unknown;

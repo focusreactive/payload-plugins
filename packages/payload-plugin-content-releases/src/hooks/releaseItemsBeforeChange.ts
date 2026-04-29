@@ -13,8 +13,11 @@ export function buildReleaseItemsBeforeChange(): CollectionBeforeChangeHook {
 
     const releaseStatus = (release as any).status;
 
-    // Allow status-only updates when release is "publishing" (orchestrator updating item outcomes)
-    if (releaseStatus === "publishing" && operation === "update") {
+    // Allow status-only updates while orchestrator is publishing or reverting
+    if (
+      (releaseStatus === "publishing" || releaseStatus === "reverting") &&
+      operation === "update"
+    ) {
       const isStatusOnlyUpdate =
         Object.keys(data).every((k) => k === "status" || k === "release") ||
         (data.status && originalDoc);

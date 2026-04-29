@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button, Drawer, Pill, toast, useModal, DatePicker } from "@payloadcms/ui";
 
@@ -192,9 +192,11 @@ export function ReleaseDrawer({
         <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Create New Release */}
           {!showCreateForm ? (
-            <Button buttonStyle="primary" size="medium" onClick={() => setShowCreateForm(true)}>
-              Create New Release
-            </Button>
+            <div>
+              <Button buttonStyle="primary" size="medium" onClick={() => setShowCreateForm(true)}>
+                Create New Release
+              </Button>
+            </div>
           ) : (
             <div style={{
               border: "1px solid var(--theme-elevation-150)",

@@ -24,6 +24,7 @@ function makeReq({
     payload: {
       findByID: vi.fn().mockResolvedValue(releaseData),
       findVersions: vi.fn().mockResolvedValue({ docs: [] }),
+      find: vi.fn().mockResolvedValue({ docs: [{ id: "item-1" }] }),
       update: vi.fn().mockResolvedValue({}),
     },
   };

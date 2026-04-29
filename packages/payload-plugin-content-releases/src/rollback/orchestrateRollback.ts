@@ -1,5 +1,5 @@
 import type { Payload } from "payload";
-import { RELEASES_SLUG } from "../constants";
+import { RELEASES_SLUG, RELEASE_ITEMS_SLUG } from "../constants";
 import { previewRollback } from "./previewRollback";
 import { executeRollback } from "./executeRollback";
 
@@ -57,6 +57,28 @@ export async function orchestrateRollback(
     eligible,
     payload,
   });
+
+  for (const r of result.restored) {
+    const items = await payload.find({
+      collection: RELEASE_ITEMS_SLUG as any,
+      where: {
+        and: [
+          { release: { equals: releaseId } },
+          { targetCollection: { equals: r.collection } },
+          { targetDoc: { equals: r.docId } },
+        ],
+      },
+      limit: 1,
+    });
+    const itemId = items.docs[0]?.id;
+    if (itemId) {
+      await payload.update({
+        collection: RELEASE_ITEMS_SLUG as any,
+        id: itemId,
+        data: { status: "reverted" } as any,
+      });
+    }
+  }
 
   const finalStatus =
     eligible.length === 0 || result.restored.length > 0 ? "reverted" : "failed";

@@ -8,6 +8,7 @@ const PILL_STYLE_BY_STATUS: Record<ReleaseItemStatus, string> = {
   published: "success",
   failed: "error",
   skipped: "light",
+  reverted: "dark",
 };
 
 function formatLabel(status: string) {

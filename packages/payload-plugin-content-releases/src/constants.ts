@@ -22,6 +22,7 @@ export const RELEASE_ITEM_STATUSES = [
   "published",
   "failed",
   "skipped",
+  "reverted",
 ] as const;
 
 export const DEFAULT_CONFLICT_STRATEGY = "fail" as const;

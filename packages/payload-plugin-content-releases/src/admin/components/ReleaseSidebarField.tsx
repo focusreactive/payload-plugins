@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button, Pill, ShimmerEffect, useDocumentInfo, useForm, useModal } from "@payloadcms/ui";
 import { ReleaseDrawer } from "./ReleaseDrawer";
 import { VersionPickerDrawer } from "./VersionPickerDrawer";
@@ -97,10 +97,12 @@ export function ReleaseSidebarField() {
         </ul>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
         <Button
+          className="release-sidebar-button"
           size="medium"
           buttonStyle="primary"
+          margin={false}
           onClick={() => {
             setCurrentSnapshot(getData());
             openModal(RELEASE_DRAWER_SLUG);
@@ -110,8 +112,10 @@ export function ReleaseSidebarField() {
         </Button>
 
         <Button
+          className="release-sidebar-button"
           size="medium"
           buttonStyle="primary"
+          margin={false}
           onClick={() => openModal(VERSION_DRAWER_SLUG)}
         >
           Add Version to Release

@@ -67,6 +67,19 @@ export function buildReleasesCollection(
       {
         name: "scheduledAt",
         type: "date",
+        validate: (value: any, options: any) => {
+          if (value === null || value === undefined || value === "") return true;
+          const next = new Date(value as string);
+          if (Number.isNaN(next.getTime())) return "Invalid date";
+          const previous = options?.previousValue
+            ? new Date(options.previousValue as string).getTime()
+            : null;
+          if (previous !== null && previous === next.getTime()) return true;
+          if (next.getTime() < Date.now()) {
+            return "Scheduled date cannot be in the past";
+          }
+          return true;
+        },
         admin: {
           position: "sidebar",
           date: {
@@ -89,7 +102,10 @@ export function buildReleasesCollection(
         collection: RELEASE_ITEMS_SLUG,
         on: "release",
         admin: {
+          allowCreate: false,
           defaultColumns: ["targetCollection", "targetDoc", "action"],
+          description:
+            "Resources are added from the sidebar of any document — open a page and use 'Add Current State to Release' or 'Add Version to Release'.",
         },
       },
       {

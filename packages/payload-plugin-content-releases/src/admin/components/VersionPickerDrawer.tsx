@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Drawer, Pill, useModal } from "@payloadcms/ui";
 import { ReleaseDrawer } from "./ReleaseDrawer";

@@ -12,7 +12,7 @@ export type ReleaseStatus =
 
 export type ReleaseItemAction = "publish" | "unpublish";
 
-export type ReleaseItemStatus = "pending" | "published" | "failed" | "skipped";
+export type ReleaseItemStatus = "pending" | "published" | "failed" | "skipped" | "reverted";
 
 export type ConflictStrategy = "fail" | "force";
 
