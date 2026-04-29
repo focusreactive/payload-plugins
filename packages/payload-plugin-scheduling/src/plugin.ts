@@ -14,6 +14,7 @@ export function schedulePublicationPlugin(
     globals = [],
     queue = DEFAULT_QUEUE,
     secret,
+    schedulePublish,
   } = options;
 
   return (config: Config): Config => {
@@ -23,8 +24,13 @@ export function schedulePublicationPlugin(
     const updatedCollections = applySchedulePublish(
       config.collections,
       collections,
+      schedulePublish,
     );
-    const updatedGlobals = applySchedulePublish(config.globals, globals);
+    const updatedGlobals = applySchedulePublish(
+      config.globals,
+      globals,
+      schedulePublish,
+    );
 
     return {
       ...config,
