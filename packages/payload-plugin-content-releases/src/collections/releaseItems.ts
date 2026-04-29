@@ -70,6 +70,11 @@ export function buildReleaseItemsCollection(
           label: a.charAt(0).toUpperCase() + a.slice(1),
           value: a,
         })),
+        admin: {
+          components: {
+            Cell: `${PACKAGE_NAME}/client#ReleaseActionCell`,
+          },
+        },
       },
       {
         name: "status",

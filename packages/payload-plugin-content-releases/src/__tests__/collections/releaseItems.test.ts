@@ -108,3 +108,13 @@ describe("buildReleaseItemsCollection — action field label", () => {
     expect(actionField.label).toBe("Release action");
   });
 });
+
+describe("buildReleaseItemsCollection — action field Cell", () => {
+  it("registers a custom Cell for the action field", () => {
+    const config = buildReleaseItemsCollection(["pages"]);
+    const actionField = config.fields.find(
+      (f) => "name" in f && f.name === "action",
+    ) as any;
+    expect(actionField.admin?.components?.Cell).toContain("ReleaseActionCell");
+  });
+});
