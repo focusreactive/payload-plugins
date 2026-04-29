@@ -63,6 +63,7 @@ export function buildReleaseItemsCollection(
       {
         name: "action",
         type: "select",
+        label: "Release action",
         required: true,
         defaultValue: "publish",
         options: RELEASE_ITEM_ACTIONS.map((a) => ({

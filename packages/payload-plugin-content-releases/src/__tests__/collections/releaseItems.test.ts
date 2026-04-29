@@ -98,3 +98,13 @@ describe("buildReleaseItemsCollection — status field display", () => {
     expect(statusField.type).toBe("select");
   });
 });
+
+describe("buildReleaseItemsCollection — action field label", () => {
+  it("uses 'Release action' as the action field label", () => {
+    const config = buildReleaseItemsCollection(["pages"]);
+    const actionField = config.fields.find(
+      (f) => "name" in f && f.name === "action",
+    ) as any;
+    expect(actionField.label).toBe("Release action");
+  });
+});
