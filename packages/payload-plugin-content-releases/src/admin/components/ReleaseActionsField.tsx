@@ -4,34 +4,8 @@ import { useState } from "react";
 import { Button, toast, useDocumentInfo } from "@payloadcms/ui";
 import { useRouter } from "next/navigation";
 import { ReleaseStatus } from "../../types";
+import { getPublishButtonProps } from "./getPublishButtonProps";
 import { RollbackButton } from "./RollbackButton";
-
-function getButtonProps(status?: ReleaseStatus): {
-  disabled: boolean;
-  tooltip?: string;
-} {
-  switch (status) {
-    case "publishing":
-      return {
-        disabled: true,
-        tooltip: "Release is currently being published",
-      };
-    case "published":
-      return {
-        disabled: true,
-        tooltip: "This release has already been published",
-      };
-    case "failed":
-      return {
-        disabled: true,
-        tooltip: "Release failed to publish",
-      };
-    default:
-      return {
-        disabled: false,
-      };
-  }
-}
 
 export function ReleaseActionsField() {
   const { id, data } = useDocumentInfo();
@@ -41,7 +15,7 @@ export function ReleaseActionsField() {
   if (!id) return null;
 
   const status = data?.status as ReleaseStatus;
-  const { disabled, tooltip } = getButtonProps(status);
+  const { disabled, tooltip } = getPublishButtonProps(status);
 
   const handlePublish = async () => {
     setLoading(true);

@@ -31,13 +31,16 @@ describe("publishRelease handler", () => {
     expect(response.status).toBe(401);
   });
 
-  it.each(["publishing", "published", "failed"])("should reject publishing a release with status %s", async (status) => {
-    const req = makeReq({ releaseData: { status, name: "Test" } });
-    const response = await handler(req as any);
-    expect(response.status).toBe(400);
-    const body = await response.json();
-    expect(body.error).toContain(status);
-  });
+  it.each(["publishing", "published", "failed", "reverting", "reverted"])(
+    "should reject publishing a release with status %s",
+    async (status) => {
+      const req = makeReq({ releaseData: { status, name: "Test" } });
+      const response = await handler(req as any);
+      expect(response.status).toBe(400);
+      const body = await response.json();
+      expect(body.error).toContain(status);
+    },
+  );
 
   it.each(["scheduled", "cancelled"])("should allow publishing a release with status %s", async (status) => {
     const req = makeReq({ releaseData: { status, name: "Test" } });

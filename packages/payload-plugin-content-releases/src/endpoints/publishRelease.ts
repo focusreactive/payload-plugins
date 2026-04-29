@@ -1,7 +1,8 @@
 import type { PayloadHandler } from "payload";
-import type { ConflictStrategy } from "../types";
+import type { ConflictStrategy, ReleaseStatus } from "../types";
 import { RELEASES_SLUG } from "../constants";
 import { orchestratePublish } from "../publish/orchestratePublish";
+import { isValidTransition } from "../validation/statusTransitions";
 
 interface PublishReleaseConfig {
   conflictStrategy: ConflictStrategy;
@@ -41,12 +42,8 @@ export function createPublishReleaseHandler(
         id: releaseId,
       });
 
-      const currentStatus = (release as any).status as string;
-      if (
-        currentStatus === "publishing" ||
-        currentStatus === "published" ||
-        currentStatus === "failed"
-      ) {
+      const currentStatus = (release as any).status as ReleaseStatus;
+      if (!isValidTransition(currentStatus, "publishing")) {
         return Response.json(
           { error: `Cannot publish a release with status "${currentStatus}"` },
           { status: 400 },
