@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Pill, useField } from "@payloadcms/ui";
 import type { ReleaseStatus } from "../../types";
 
