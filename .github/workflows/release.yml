@@ -44,4 +44,4 @@ jobs:
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bun run release --ignore-packages packages/plugin-content-releases
+        run: bun run release --ignore-packages @focus-reactive/payload-plugin-content-releases
