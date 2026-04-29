@@ -16,10 +16,11 @@
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start"
   },
   "dependencies": {
+    "@eslint/eslintrc": "^3.3.5",
     "@focus-reactive/payload-plugin-ab": "workspace:*",
-    "@focus-reactive/payload-plugin-presets": "workspace:*",
     "@focus-reactive/payload-plugin-comments": "workspace:*",
     "@focus-reactive/payload-plugin-content-releases": "workspace:*",
+    "@focus-reactive/payload-plugin-presets": "workspace:*",
     "@focus-reactive/payload-plugin-scheduling": "workspace:*",
     "@payloadcms/db-sqlite": "3.79.0",
     "@payloadcms/live-preview-react": "3.79.0",
@@ -29,6 +30,7 @@
     "cross-env": "7.0.3",
     "dotenv": "16.4.7",
     "graphql": "16.8.1",
+    "libsql": "^0.5.29",
     "next": "15.4.11",
     "payload": "3.79.0",
     "react": "19.2.1",

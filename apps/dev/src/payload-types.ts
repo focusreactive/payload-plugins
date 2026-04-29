@@ -334,15 +334,6 @@ export interface Release {
     | number
     | boolean
     | null;
-  errorLog?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -698,7 +689,6 @@ export interface ReleasesSelect<T extends boolean = true> {
   items?: T;
   rollbackSnapshot?: T;
   rollbackSkipped?: T;
-  errorLog?: T;
   updatedAt?: T;
   createdAt?: T;
 }
