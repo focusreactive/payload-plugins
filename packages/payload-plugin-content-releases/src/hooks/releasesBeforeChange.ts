@@ -8,13 +8,28 @@ export const releasesBeforeChange: CollectionBeforeChangeHook = ({
   operation,
 }) => {
   if (operation === "create") {
-    return { ...data, status: "draft" };
+    const initialStatus: ReleaseStatus = data.scheduledAt ? "scheduled" : "draft";
+    return { ...data, status: initialStatus };
   }
 
   const currentStatus = (originalDoc as any)?.status as ReleaseStatus | undefined;
   const newStatus = data.status as ReleaseStatus | undefined;
 
-  if (!newStatus || !currentStatus || newStatus === currentStatus) {
+  if (!newStatus || newStatus === currentStatus) {
+    if (currentStatus === "draft" || currentStatus === "scheduled") {
+      const willHaveScheduledAt =
+        "scheduledAt" in data
+          ? data.scheduledAt
+          : (originalDoc as any)?.scheduledAt;
+      const desiredStatus: ReleaseStatus = willHaveScheduledAt ? "scheduled" : "draft";
+      if (currentStatus !== desiredStatus) {
+        return { ...data, status: desiredStatus };
+      }
+    }
+    return data;
+  }
+
+  if (!currentStatus) {
     return data;
   }
 
