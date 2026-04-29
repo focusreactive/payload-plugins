@@ -62,3 +62,13 @@ describe("releases collection", () => {
     expect(col.access?.read).toBe(customAccess.read);
   });
 });
+
+describe("buildReleasesCollection — items join defaultColumns", () => {
+  it("does not include 'status' in items join defaultColumns", () => {
+    const config = buildReleasesCollection();
+    const itemsField = config.fields.find(
+      (f) => "name" in f && f.name === "items",
+    ) as any;
+    expect(itemsField.admin.defaultColumns).not.toContain("status");
+  });
+});

@@ -84,7 +84,7 @@ export function buildReleasesCollection(
         collection: RELEASE_ITEMS_SLUG,
         on: "release",
         admin: {
-          defaultColumns: ["targetCollection", "targetDoc", "action", "status"],
+          defaultColumns: ["targetCollection", "targetDoc", "action"],
         },
       },
       {

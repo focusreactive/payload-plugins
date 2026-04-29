@@ -73,3 +73,10 @@ describe("release-items collection", () => {
     expect(field.type).toBe("text");
   });
 });
+
+describe("buildReleaseItemsCollection — admin.defaultColumns", () => {
+  it("does not include 'status' in defaultColumns", () => {
+    const config = buildReleaseItemsCollection(["pages"]);
+    expect(config.admin?.defaultColumns).not.toContain("status");
+  });
+});

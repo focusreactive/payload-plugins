@@ -28,7 +28,7 @@ export function buildReleaseItemsCollection(
       plural: "Release Items",
     },
     admin: {
-      defaultColumns: ["targetCollection", "targetDoc", "action", "status"],
+      defaultColumns: ["targetCollection", "targetDoc", "action"],
       hidden: true,
     },
     access: options?.access,
