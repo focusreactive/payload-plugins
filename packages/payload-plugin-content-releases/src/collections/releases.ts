@@ -85,6 +85,7 @@ export function buildReleasesCollection(
       {
         name: "items",
         type: "join",
+        label: "Resources",
         collection: RELEASE_ITEMS_SLUG,
         on: "release",
         admin: {

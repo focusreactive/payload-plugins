@@ -91,3 +91,13 @@ describe("buildReleasesCollection — status field display", () => {
     expect(statusField.required).toBe(true);
   });
 });
+
+describe("buildReleasesCollection — items join field", () => {
+  it("uses 'Resources' as the items field label", () => {
+    const config = buildReleasesCollection();
+    const itemsField = config.fields.find(
+      (f) => "name" in f && f.name === "items",
+    ) as any;
+    expect(itemsField.label).toBe("Resources");
+  });
+});
