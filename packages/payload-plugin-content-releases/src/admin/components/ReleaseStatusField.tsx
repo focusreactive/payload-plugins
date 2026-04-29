@@ -1,0 +1,40 @@
+"use client";
+
+import React from "react";
+import { Pill, useField } from "@payloadcms/ui";
+import type { ReleaseStatus } from "../../types";
+
+const PILL_STYLE_BY_STATUS: Record<ReleaseStatus, string> = {
+  draft: "light-gray",
+  scheduled: "dark",
+  publishing: "warning",
+  published: "success",
+  reverting: "warning",
+  reverted: "light",
+  failed: "error",
+  cancelled: "light-gray",
+};
+
+function formatLabel(status: string) {
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+interface ReleaseStatusFieldProps {
+  path: string;
+  label?: string;
+}
+
+export function ReleaseStatusField({ path, label }: ReleaseStatusFieldProps) {
+  const { value } = useField<string>({ path });
+  const status = (value ?? "draft") as ReleaseStatus;
+  const pillStyle = PILL_STYLE_BY_STATUS[status] ?? "light-gray";
+
+  return (
+    <div className="field-type">
+      <label className="field-label">{label ?? "Status"}</label>
+      <div style={{ marginTop: 4 }}>
+        <Pill pillStyle={pillStyle as any}>{formatLabel(status)}</Pill>
+      </div>
+    </div>
+  );
+}

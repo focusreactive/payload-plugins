@@ -72,3 +72,22 @@ describe("buildReleasesCollection — items join defaultColumns", () => {
     expect(itemsField.admin.defaultColumns).not.toContain("status");
   });
 });
+
+describe("buildReleasesCollection — status field display", () => {
+  it("registers a custom Field component for status", () => {
+    const config = buildReleasesCollection();
+    const statusField = config.fields.find(
+      (f) => "name" in f && f.name === "status",
+    ) as any;
+    expect(statusField.admin?.components?.Field).toContain("ReleaseStatusField");
+  });
+
+  it("keeps status field type as select for validation", () => {
+    const config = buildReleasesCollection();
+    const statusField = config.fields.find(
+      (f) => "name" in f && f.name === "status",
+    ) as any;
+    expect(statusField.type).toBe("select");
+    expect(statusField.required).toBe(true);
+  });
+});

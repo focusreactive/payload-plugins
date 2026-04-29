@@ -3,6 +3,7 @@ import {
   RELEASES_SLUG,
   RELEASE_ITEMS_SLUG,
   RELEASE_STATUSES,
+  PACKAGE_NAME,
 } from "../constants";
 
 interface BuildReleasesCollectionOptions {
@@ -58,6 +59,9 @@ export function buildReleasesCollection(
         })),
         admin: {
           position: "sidebar",
+          components: {
+            Field: `${PACKAGE_NAME}/client#ReleaseStatusField`,
+          },
         },
       },
       {
