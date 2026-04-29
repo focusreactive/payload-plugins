@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { executeRollback } from "../../rollback/executeRollback";
 import type { RollbackEntry } from "../../rollback/previewRollback";
 
-function makePayload({ updateResult = {} as any } = {}) {
+function makePayload({ updateResult = { updatedAt: "2026-02-01T00:00:00.000Z" } as any } = {}) {
   return { update: vi.fn().mockResolvedValue(updateResult) };
 }
 
@@ -30,7 +30,11 @@ describe("executeRollback", () => {
     const result = await executeRollback({ eligible: [entry], payload: payload as any });
 
     expect(result.restored).toHaveLength(1);
-    expect(result.restored[0]).toEqual({ collection: "pages", docId: "doc-1" });
+    expect(result.restored[0]).toEqual({
+      collection: "pages",
+      docId: "doc-1",
+      newUpdatedAt: "2026-02-01T00:00:00.000Z",
+    });
     expect(result.failed).toHaveLength(0);
   });
 

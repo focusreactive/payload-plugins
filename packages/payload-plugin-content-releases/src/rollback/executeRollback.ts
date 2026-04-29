@@ -10,6 +10,7 @@ interface RollbackResult {
   restored: Array<{
     collection: string;
     docId: string;
+    newUpdatedAt: string | null;
   }>;
   failed: Array<{
     collection: string;
@@ -22,7 +23,7 @@ export async function executeRollback(
   options: ExecuteRollbackOptions,
 ): Promise<RollbackResult> {
   const { eligible, payload } = options;
-  const restored: Array<{ collection: string; docId: string }> = [];
+  const restored: RollbackResult["restored"] = [];
   const failed: Array<{ collection: string; docId: string; error: string }> =
     [];
 
@@ -39,15 +40,16 @@ export async function executeRollback(
     const { id, createdAt, updatedAt, ...strippedState } = entry.previousState;
 
     try {
-      await payload.update({
+      const updatedDoc = (await payload.update({
         collection: entry.collection,
         id: entry.docId,
         data: strippedState,
-      });
+      })) as { updatedAt?: string };
 
       restored.push({
         collection: entry.collection,
         docId: entry.docId,
+        newUpdatedAt: updatedDoc?.updatedAt ?? null,
       });
     } catch (error) {
       const errorMessage =

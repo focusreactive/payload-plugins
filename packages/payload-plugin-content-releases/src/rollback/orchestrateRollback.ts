@@ -72,10 +72,12 @@ export async function orchestrateRollback(
     });
     const itemId = items.docs[0]?.id;
     if (itemId) {
+      const itemUpdate: Record<string, unknown> = { status: "reverted" };
+      if (r.newUpdatedAt) itemUpdate.baseVersion = r.newUpdatedAt;
       await payload.update({
         collection: RELEASE_ITEMS_SLUG as any,
         id: itemId,
-        data: { status: "reverted" } as any,
+        data: itemUpdate as any,
       });
     }
   }
