@@ -106,13 +106,6 @@ export function buildReleasesCollection(
           hidden: true,
         },
       },
-      {
-        name: "errorLog",
-        type: "json",
-        admin: {
-          readOnly: true,
-        },
-      },
     ],
   };
 }

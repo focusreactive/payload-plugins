@@ -37,7 +37,7 @@ export async function orchestratePublish(
     await payload.update({
       collection: RELEASES_SLUG as any,
       id: releaseId,
-      data: { status: "failed", errorLog: [{ error: "No items in release" }] } as any,
+      data: { status: "failed" } as any,
     });
     return { status: "failed", published: 0, failed: 0, errors: [] };
   }
@@ -80,9 +80,7 @@ export async function orchestratePublish(
     id: releaseId,
     data: {
       status: finalStatus,
-      ...(hasFailures
-        ? { errorLog: result.failed }
-        : { publishedAt: new Date().toISOString() }),
+      ...(hasFailures ? {} : { publishedAt: new Date().toISOString() }),
       rollbackSnapshot: result.rollbackSnapshot,
     } as any,
   });

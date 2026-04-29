@@ -50,10 +50,9 @@ describe("releases collection", () => {
     expect(field.type).toBe("json");
   });
 
-  it("should have errorLog json field", () => {
-    const field = collection.fields.find((f: any) => f.name === "errorLog") as any;
-    expect(field).toBeDefined();
-    expect(field.type).toBe("json");
+  it("should not have errorLog field (removed per single-release decision)", () => {
+    const field = collection.fields.find((f: any) => f.name === "errorLog");
+    expect(field).toBeUndefined();
   });
 
   it("should apply custom access if provided", () => {
