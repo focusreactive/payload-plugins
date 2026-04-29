@@ -80,3 +80,21 @@ describe("buildReleaseItemsCollection — admin.defaultColumns", () => {
     expect(config.admin?.defaultColumns).not.toContain("status");
   });
 });
+
+describe("buildReleaseItemsCollection — status field display", () => {
+  it("registers a custom Field component for status", () => {
+    const config = buildReleaseItemsCollection(["pages"]);
+    const statusField = config.fields.find(
+      (f) => "name" in f && f.name === "status",
+    ) as any;
+    expect(statusField.admin?.components?.Field).toContain("ReleaseItemStatusField");
+  });
+
+  it("keeps status field type as select for validation", () => {
+    const config = buildReleaseItemsCollection(["pages"]);
+    const statusField = config.fields.find(
+      (f) => "name" in f && f.name === "status",
+    ) as any;
+    expect(statusField.type).toBe("select");
+  });
+});

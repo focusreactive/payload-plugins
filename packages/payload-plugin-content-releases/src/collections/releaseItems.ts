@@ -81,6 +81,9 @@ export function buildReleaseItemsCollection(
         })),
         admin: {
           position: "sidebar",
+          components: {
+            Field: `${PACKAGE_NAME}/client#ReleaseItemStatusField`,
+          },
         },
       },
       {
