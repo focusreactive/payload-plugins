@@ -2,7 +2,9 @@ import type { CollectionBeforeChangeHook } from "payload";
 import { RELEASES_SLUG, RELEASE_ITEMS_SLUG } from "../constants";
 
 export function buildReleaseItemsBeforeChange(): CollectionBeforeChangeHook {
-  return async ({ data, originalDoc, operation, req }) => {
+  return async ({ context, data, originalDoc, operation, req }) => {
+    if ((context as any)?.contentReleasesBypass === true) return data;
+
     const releaseId = data.release as string;
     if (!releaseId) return data;
 

@@ -18,6 +18,7 @@ import { createCheckConflictsHandler } from "./endpoints/checkConflicts";
 import { createRunScheduledHandler } from "./endpoints/runScheduled";
 import { createPreviewRollbackHandler } from "./endpoints/previewRollback";
 import { createRollbackReleaseHandler } from "./endpoints/rollbackRelease";
+import { createRefreshItemSnapshotHandler } from "./endpoints/refreshItemSnapshot";
 import { checkScheduledReleases } from "./scheduler/checkScheduledReleases";
 
 export function contentReleasesPlugin(
@@ -79,6 +80,11 @@ export function contentReleasesPlugin(
         path: "/content-releases/:id/rollback",
         method: "post",
         handler: createRollbackReleaseHandler({ hooks: options.hooks }),
+      },
+      {
+        path: "/content-releases/items/:itemId/refresh-snapshot",
+        method: "post",
+        handler: createRefreshItemSnapshotHandler(),
       },
     ];
 
