@@ -72,19 +72,27 @@ export interface Config {
     pages: Page;
     presets: Preset;
     comments: Comment;
+    releases: Release;
+    'release-items': ReleaseItem;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    releases: {
+      items: 'release-items';
+    };
+  };
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     presets: PresetsSelect<false> | PresetsSelect<true>;
     comments: CommentsSelect<false> | CommentsSelect<true>;
+    releases: ReleasesSelect<false> | ReleasesSelect<true>;
+    'release-items': ReleaseItemsSelect<false> | ReleaseItemsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -294,6 +302,70 @@ export interface Comment {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "releases".
+ */
+export interface Release {
+  id: number;
+  name: string;
+  description?: string | null;
+  status: 'draft' | 'scheduled' | 'publishing' | 'published' | 'reverting' | 'reverted' | 'failed' | 'cancelled';
+  scheduledAt?: string | null;
+  publishedAt?: string | null;
+  /**
+   * Resources are added from the sidebar of any document — open a page and use 'Add Current State to Release' or 'Add Version to Release'.
+   */
+  items?: {
+    docs?: (number | ReleaseItem)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  rollbackSnapshot?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  rollbackSkipped?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "release-items".
+ */
+export interface ReleaseItem {
+  id: number;
+  release: number | Release;
+  targetCollection: 'pages';
+  targetDoc: string;
+  action: 'publish' | 'unpublish';
+  status: 'pending' | 'published' | 'failed' | 'skipped' | 'reverted';
+  snapshot:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  baseVersion?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -427,6 +499,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'comments';
         value: number | Comment;
+      } | null)
+    | ({
+        relationTo: 'releases';
+        value: number | Release;
+      } | null)
+    | ({
+        relationTo: 'release-items';
+        value: number | ReleaseItem;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -596,6 +676,37 @@ export interface CommentsSelect<T extends boolean = true> {
   isResolved?: T;
   resolvedBy?: T;
   resolvedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "releases_select".
+ */
+export interface ReleasesSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  status?: T;
+  scheduledAt?: T;
+  publishedAt?: T;
+  items?: T;
+  rollbackSnapshot?: T;
+  rollbackSkipped?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "release-items_select".
+ */
+export interface ReleaseItemsSelect<T extends boolean = true> {
+  release?: T;
+  targetCollection?: T;
+  targetDoc?: T;
+  action?: T;
+  status?: T;
+  snapshot?: T;
+  baseVersion?: T;
   updatedAt?: T;
   createdAt?: T;
 }
