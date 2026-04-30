@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-comments [1.6.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.6.1...@focus-reactive/payload-plugin-comments@1.6.2) (2026-04-30)
+
+
+### Bug Fixes
+
+* tests ([85a3be1](https://github.com/focusreactive/payload-plugins/commit/85a3be192a2877c22cdeb4776f2456d9dd2f5eee))
+
 ## @focus-reactive/payload-plugin-comments [1.6.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.6.0...@focus-reactive/payload-plugin-comments@1.6.1) (2026-04-22)
 
 
