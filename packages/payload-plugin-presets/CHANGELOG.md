@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-presets [0.10.6](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.5...@focus-reactive/payload-plugin-presets@0.10.6) (2026-04-30)
+
+
+### Bug Fixes
+
+* **payload-plugin-presets:** strip excluded keys recursively from the preset data ([2704f63](https://github.com/focusreactive/payload-plugins/commit/2704f637a61cf0fe5b7d28ceb27fa1c8921d7a3f))
+
 ## @focus-reactive/payload-plugin-presets [0.10.5](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.4...@focus-reactive/payload-plugin-presets@0.10.5) (2026-04-21)
 
 
