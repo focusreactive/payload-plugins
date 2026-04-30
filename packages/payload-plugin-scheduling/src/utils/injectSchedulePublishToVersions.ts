@@ -1,13 +1,16 @@
-import type { CollectionConfig, GlobalConfig } from "payload";
+import type { CollectionConfig, GlobalConfig, SchedulePublish } from "payload";
 
 type Versions = CollectionConfig["versions"] | GlobalConfig["versions"];
 
-const defaultDrafts = { schedulePublish: true };
+export function injectSchedulePublishToVersions(
+  versions: Versions,
+  schedulePublish?: SchedulePublish,
+): Versions {
+  const schedulePublishValue = schedulePublish ?? true;
 
-export function injectSchedulePublishToVersions(versions: Versions) {
   if (!versions || versions === true) {
     return {
-      drafts: defaultDrafts,
+      drafts: { schedulePublish: schedulePublishValue },
     };
   }
 
@@ -16,7 +19,7 @@ export function injectSchedulePublishToVersions(versions: Versions) {
   if (!drafts || drafts === true) {
     return {
       ...versions,
-      drafts: defaultDrafts,
+      drafts: { schedulePublish: schedulePublishValue },
     };
   }
 
@@ -24,7 +27,7 @@ export function injectSchedulePublishToVersions(versions: Versions) {
     ...versions,
     drafts: {
       ...drafts,
-      ...defaultDrafts,
+      schedulePublish: schedulePublishValue,
     },
   };
 }

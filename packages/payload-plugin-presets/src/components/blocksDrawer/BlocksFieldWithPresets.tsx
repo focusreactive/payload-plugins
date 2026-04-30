@@ -16,10 +16,10 @@ import {
 import type {
   BlocksFieldClient,
   FormState,
-  FieldState,
   SanitizedFieldPermissions,
 } from "payload";
 import { usePresetsConfig } from "../usePresetsConfig.js";
+import { buildSubFieldStateFromPreset } from "../utils.js";
 import { BlockSelectorWithPresets } from "./BlockSelectorWithPresets.js";
 import { useBeforeOpenDrawer } from "./BeforeOpenDrawerContext.js";
 import { BlocksConfigProvider } from "./BlocksConfigContext.js";
@@ -140,18 +140,10 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
       const presetData = presetBlocks?.[0];
 
       if (presetData) {
-        const subFieldState: Record<string, FieldState> = {};
-
-        Object.entries(presetData).forEach(([key, value]) => {
-          if (excludeKeys.includes(key)) return;
-
-          subFieldState[key] = {
-            value,
-            initialValue: value,
-            valid: true,
-            passesCondition: true,
-          };
-        });
+        const subFieldState = buildSubFieldStateFromPreset(
+          presetData,
+          excludeKeys,
+        );
 
         addFieldRow({
           path,

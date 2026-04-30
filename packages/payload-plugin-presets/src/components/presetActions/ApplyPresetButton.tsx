@@ -9,20 +9,24 @@ import {
   toast,
   useAuth,
 } from "@payloadcms/ui";
-import type { Data, FieldState, FormState } from "payload";
-import { getParentPath, getPresetTypeFromPath } from "../utils.js";
+import type { Data, FormState } from "payload";
+import {
+  getParentPath,
+  getPresetTypeFromPath,
+  buildSubFieldStateFromPreset,
+} from "../utils.js";
 import { usePresetsConfig } from "../usePresetsConfig.js";
 
 import "./index.scss";
 
 export function ApplyPresetButton() {
-  const { slug: collectionSlug, presetTypes, excludeKeys } = usePresetsConfig()
+  const { slug: collectionSlug, presetTypes, excludeKeys } = usePresetsConfig();
 
-  const { user } = useAuth()
-  const path = useFieldPath()
-  const parentPath = getParentPath(path)
-  const { getData, getDataByPath, dispatchFields, replaceFieldRow } = useForm()
-  const { t } = useTranslation()
+  const { user } = useAuth();
+  const path = useFieldPath();
+  const parentPath = getParentPath(path);
+  const { getData, getDataByPath, dispatchFields, replaceFieldRow } = useForm();
+  const { t } = useTranslation();
 
   const presetTypeFromPath = getPresetTypeFromPath(parentPath, presetTypes);
   const blockData =
@@ -36,7 +40,7 @@ export function ApplyPresetButton() {
     collectionSlugs: [collectionSlug],
     filterOptions: {
       [collectionSlug]: {
-        'presetBlock.blockType': { equals: presetType },
+        "presetBlock.blockType": { equals: presetType },
         ...(tenantId ? { tenant: { equals: tenantId } } : {}),
       },
     },
@@ -47,31 +51,35 @@ export function ApplyPresetButton() {
   }
 
   const handleSelect = ({ doc }: { collectionSlug: string; doc: Data }) => {
-    const preset = doc as Record<string, unknown>
-    const presetBlocks = preset.presetBlock as Array<{ blockType: string; [key: string]: unknown }> | undefined
-    const presetBlockItem = presetBlocks?.[0]
+    const preset = doc as Record<string, unknown>;
+    const presetBlocks = preset.presetBlock as
+      | Array<{ blockType: string; [key: string]: unknown }>
+      | undefined;
+    const presetBlockItem = presetBlocks?.[0];
 
-    if (!preset || !presetBlockItem || presetBlockItem.blockType !== presetType) {
-      toast.error(t('presetsPlugin:applyPreset:errorInvalidPreset' as never))
-      return
+    if (
+      !preset ||
+      !presetBlockItem ||
+      presetBlockItem.blockType !== presetType
+    ) {
+      toast.error(t("presetsPlugin:applyPreset:errorInvalidPreset" as never));
+      return;
     }
 
-    const pathParts = parentPath.split('.')
-    const rowIndex = Number(pathParts.pop())
-    const arrayPath = pathParts.join('.')
+    const pathParts = parentPath.split(".");
+    const rowIndex = Number(pathParts.pop());
+    const arrayPath = pathParts.join(".");
 
-    const subFieldState: Record<string, FieldState> = {};
-
-    Object.entries(presetBlockItem).forEach(([key, value]) => {
-      if (excludeKeys.includes(key)) return
-      subFieldState[key] = {
-        value,
-        initialValue: value,
-        valid: true,
-        isModified: true,
-        passesCondition: true,
-      };
-    });
+    const baseState = buildSubFieldStateFromPreset(
+      presetBlockItem,
+      excludeKeys,
+    );
+    const subFieldState = Object.fromEntries(
+      Object.entries(baseState).map(([key, entry]) => [
+        key,
+        { ...entry, isModified: true },
+      ]),
+    );
 
     try {
       if (typeof replaceFieldRow === "function") {
