@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-ab [2.4.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.4.0...@focus-reactive/payload-plugin-ab@2.4.1) (2026-05-04)
+
+
+### Bug Fixes
+
+* **payload-plugin-ab:** populate parent doc relationships in manifest recompute ([fdb0b28](https://github.com/focusreactive/payload-plugins/commit/fdb0b28bac336b87d33b63a50f865459a25c9b50))
+
 # @focus-reactive/payload-plugin-ab [2.4.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.3.2...@focus-reactive/payload-plugin-ab@2.4.0) (2026-03-31)
 
 
