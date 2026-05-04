@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-ab [2.4.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.4.1...@focus-reactive/payload-plugin-ab@2.4.2) (2026-05-04)
+
+
+### Bug Fixes
+
+* **payload-plugin-ab:** redistribute variant percentages atomically on duplicate ([0b85744](https://github.com/focusreactive/payload-plugins/commit/0b85744af9950bd1d72b3706de4ad4551d410ee7))
+
 ## @focus-reactive/payload-plugin-ab [2.4.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.4.0...@focus-reactive/payload-plugin-ab@2.4.1) (2026-05-04)
 
 
