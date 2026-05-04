@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-ab [2.4.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.4.2...@focus-reactive/payload-plugin-ab@2.4.3) (2026-05-04)
+
+
+### Bug Fixes
+
+* **payload-plugin-ab:** keep variant duplication as draft to avoid localized validation failures ([b44237b](https://github.com/focusreactive/payload-plugins/commit/b44237b8aab83a3ecd6e34f3e257904b1e8b586d))
+
 ## @focus-reactive/payload-plugin-ab [2.4.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.4.1...@focus-reactive/payload-plugin-ab@2.4.2) (2026-05-04)
 
 
