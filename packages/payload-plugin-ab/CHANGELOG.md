@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-ab [2.4.5](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.4.4...@focus-reactive/payload-plugin-ab@2.4.5) (2026-05-04)
+
+
+### Bug Fixes
+
+* **payload-plugin-ab:** set new variant to 1% without redistributing existing percentages ([add7e4b](https://github.com/focusreactive/payload-plugins/commit/add7e4bbe66a2c16c53b6a921ef84298e0fd3519))
+
 ## @focus-reactive/payload-plugin-ab [2.4.4](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.4.3...@focus-reactive/payload-plugin-ab@2.4.4) (2026-05-04)
 
 
