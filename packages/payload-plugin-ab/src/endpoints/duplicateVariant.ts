@@ -76,6 +76,7 @@ export const duplicateVariantHandler: PayloadHandler = async (req) => {
         collection: collectionSlug as CollectionSlug,
         id: variant.id as string,
         data: { [AB_PASS_PERCENTAGE_FIELD]: perSlot },
+        draft: true,
         overrideAccess: true,
         req,
       });
@@ -89,6 +90,7 @@ export const duplicateVariantHandler: PayloadHandler = async (req) => {
         [AB_VARIANT_OF_FIELD]: docId,
         [AB_PASS_PERCENTAGE_FIELD]: perSlot,
       },
+      draft: true,
       overrideAccess: true,
       req,
     })) as Record<string, unknown>;
