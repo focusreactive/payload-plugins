@@ -4,7 +4,7 @@ import { injectAdminFields } from "./utils/injectAdminFields";
 import { buildParentAfterChangeHook } from "./hooks/buildParentAfterChangeHook";
 import { buildParentAfterDeleteHook } from "./hooks/buildParentAfterDeleteHook";
 import { buildParentBeforeChangeHook } from "./hooks/buildParentBeforeChangeHook";
-import { duplicateVariantHandler } from "./endpoints/duplicateVariant";
+import { buildDuplicateVariantHandler } from "./endpoints/duplicateVariant";
 
 export const abTestingPlugin =
   <TVariantData extends object>(pluginConfig: AbTestingPluginConfig<TVariantData>): Plugin =>
@@ -52,7 +52,7 @@ export const abTestingPlugin =
         {
           path: "/_ab/duplicate",
           method: "post",
-          handler: duplicateVariantHandler,
+          handler: buildDuplicateVariantHandler(pluginConfig),
         },
       ],
     };
