@@ -20,7 +20,7 @@ export async function recomputeManifestForParent<TVariantData extends object>(
     const parentDoc = await payload.findByID({
       collection: parentCollectionSlug as CollectionSlug,
       id: parentId,
-      depth: 0,
+      depth: 1,
       locale: locale as TypedLocale,
       overrideAccess: true,
       req,
@@ -31,14 +31,11 @@ export async function recomputeManifestForParent<TVariantData extends object>(
     if (!manifestKey) continue;
 
     const whereClause =
-      options?.excludeId !== undefined
-        ? {
-            and: [
-              { [AB_VARIANT_OF_FIELD]: { equals: parentId } },
-              { id: { not_equals: options.excludeId } },
-            ],
-          }
-        : { [AB_VARIANT_OF_FIELD]: { equals: parentId } };
+      options?.excludeId !== undefined ?
+        {
+          and: [{ [AB_VARIANT_OF_FIELD]: { equals: parentId } }, { id: { not_equals: options.excludeId } }],
+        }
+      : { [AB_VARIANT_OF_FIELD]: { equals: parentId } };
 
     const { docs: variantDocs } = await payload.find({
       collection: parentCollectionSlug as CollectionSlug,
