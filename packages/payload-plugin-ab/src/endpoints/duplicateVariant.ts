@@ -1,4 +1,4 @@
-import type { PayloadHandler } from "payload";
+import type { CollectionSlug, PayloadHandler } from "payload";
 import { AB_PASS_PERCENTAGE_FIELD, AB_VARIANT_OF_FIELD, DEFAULT_SLUG_FIELD } from "../constants";
 
 // 6-char alphanumeric hash — no external dep needed
@@ -27,47 +27,82 @@ export const duplicateVariantHandler: PayloadHandler = async (req) => {
     return Response.json({ error: "collectionSlug and docId are required" }, { status: 400 });
   }
 
-  let originalSlug: string;
+  let parentDoc: Record<string, unknown>;
   try {
-    const parentDoc = await req.payload.findByID({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      collection: collectionSlug as any,
+    parentDoc = (await req.payload.findByID({
+      collection: collectionSlug as CollectionSlug,
       id: docId,
       depth: 0,
       overrideAccess: false,
       req,
-    }) as Record<string, unknown>;
+    })) as Record<string, unknown>;
 
     if (!parentDoc) {
       return Response.json({ error: "Parent document not found" }, { status: 404 });
     }
-
-    originalSlug = (parentDoc[slugField] as string) ?? docId;
   } catch {
     return Response.json({ error: "Parent document not found" }, { status: 404 });
   }
 
-  let newDoc: Record<string, unknown>;
+  const originalSlug = (parentDoc[slugField] as string) ?? docId;
+
+  let existingVariants: Array<Record<string, unknown>>;
   try {
-    newDoc = (await req.payload.duplicate({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      collection: collectionSlug as any,
+    const result = await req.payload.find({
+      collection: collectionSlug as CollectionSlug,
+      where: { [AB_VARIANT_OF_FIELD]: { equals: docId } },
+      depth: 0,
+      limit: 100,
+      overrideAccess: true,
+      req,
+    });
+    existingVariants = result.docs as Array<Record<string, unknown>>;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to read existing variants";
+    return Response.json({ error: message }, { status: 500 });
+  }
+
+  const totalSlots = existingVariants.length + 2;
+  const perSlot = Math.max(1, Math.floor(100 / totalSlots));
+
+  const transactionID = (await req.payload.db.beginTransaction?.()) ?? undefined;
+  if (transactionID) {
+    req.transactionID = transactionID;
+  }
+
+  try {
+    for (const variant of existingVariants) {
+      await req.payload.update({
+        collection: collectionSlug as CollectionSlug,
+        id: variant.id as string,
+        data: { [AB_PASS_PERCENTAGE_FIELD]: perSlot },
+        overrideAccess: true,
+        req,
+      });
+    }
+
+    const newDoc = (await req.payload.duplicate({
+      collection: collectionSlug as CollectionSlug,
       id: docId,
       data: {
         [slugField]: `${originalSlug}--${nanoid()}`,
         [AB_VARIANT_OF_FIELD]: docId,
-        [AB_PASS_PERCENTAGE_FIELD]: 1,
+        [AB_PASS_PERCENTAGE_FIELD]: perSlot,
       },
       overrideAccess: true,
       req,
     })) as Record<string, unknown>;
+
+    if (transactionID) {
+      await req.payload.db.commitTransaction?.(transactionID);
+    }
+
+    return Response.json({ id: newDoc.id, slug: newDoc[slugField], passPercentage: perSlot }, { status: 201 });
   } catch (err) {
+    if (transactionID) {
+      await req.payload.db.rollbackTransaction?.(transactionID);
+    }
     const message = err instanceof Error ? err.message : "Failed to create variant";
     return Response.json({ error: message }, { status: 500 });
   }
-
-  return Response.json(
-    { id: newDoc.id, slug: newDoc[slugField] },
-    { status: 201 },
-  );
 };
