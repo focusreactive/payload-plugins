@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-ab [2.4.4](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.4.3...@focus-reactive/payload-plugin-ab@2.4.4) (2026-05-04)
+
+
+### Bug Fixes
+
+* **payload-plugin-ab:** publish variants and recompute manifest on duplicate ([9e25328](https://github.com/focusreactive/payload-plugins/commit/9e253285dae96866a05251ec09277802613c8df5))
+
 ## @focus-reactive/payload-plugin-ab [2.4.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.4.2...@focus-reactive/payload-plugin-ab@2.4.3) (2026-05-04)
 
 
