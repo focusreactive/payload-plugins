@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-ab [2.4.6](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.4.5...@focus-reactive/payload-plugin-ab@2.4.6) (2026-05-06)
+
+
+### Bug Fixes
+
+* **payload-plugin-ab:** fetch variants with draft true in variants field ([0c771e3](https://github.com/focusreactive/payload-plugins/commit/0c771e3163de3c57f0ad928f8aa18e78f9984790))
+
 ## @focus-reactive/payload-plugin-ab [2.4.5](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.4.4...@focus-reactive/payload-plugin-ab@2.4.5) (2026-05-04)
 
 
