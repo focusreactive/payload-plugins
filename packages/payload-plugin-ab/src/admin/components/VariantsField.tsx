@@ -39,7 +39,7 @@ export function VariantsField({
     if (!id || !slug) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/${slug}?where[${AB_VARIANT_OF_FIELD}][equals]=${id}&limit=100&depth=0`);
+      const res = await fetch(`/api/${slug}?where[${AB_VARIANT_OF_FIELD}][equals]=${id}&limit=100&depth=0&draft=true`);
       if (!res.ok) throw new Error("Failed to fetch variants");
       const data = await res.json();
       setVariants(
