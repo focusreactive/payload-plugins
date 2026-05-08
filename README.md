@@ -73,11 +73,13 @@ The `apps/dev` folder is a minimal dev project with plugins pre-installed, to ru
 
 3. **Configure environment variables**
 
-   Create `apps/dev/.env` with the following content:
+   Create `apps/dev/.env` with the required values:
 
-   ```env
+   ```bash
+   cat > apps/dev/.env <<EOF
    DATABASE_URL=file:./dev.db
    PAYLOAD_SECRET=replace-me-with-any-random-string
+   EOF
    ```
 
 4. **Start the dev server**
