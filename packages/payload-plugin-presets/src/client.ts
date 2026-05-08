@@ -3,6 +3,7 @@
 // Admin components
 export { PresetAdminComponentPreview } from "./components/PresetAdminComponentPreview.js";
 export { PresetAdminComponentCell } from "./components/PresetAdminComponentCell.js";
+export { PresetAdminComponentCellWrapper } from "./components/PresetAdminComponentCellWrapper.js";
 
 // Preset action buttons (presetActions folder)
 export { SaveAsPresetCore } from "./components/presetActions/index.js";

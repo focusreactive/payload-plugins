@@ -125,8 +125,8 @@ const createPresetsCollection = (
 
   const previewCellPath = getPluginComponentPath(
     packageName,
-    "components/PresetAdminComponentCell",
-    "PresetAdminComponentCell",
+    "components/PresetAdminComponentCellWrapper",
+    "PresetAdminComponentCellWrapper",
   );
 
   const defaultFields: Field[] = [
