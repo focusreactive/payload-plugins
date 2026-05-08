@@ -2,6 +2,14 @@
 
 Open-source Payload CMS plugins for A/B testing, content presets, inline comments, and scheduled publishing on serverless. Use them individually in any Payload project, or together as part of the Ideal CMS toolkit.
 
+## About the Ideal CMS Project
+
+At FocusReactive we build projects on different CMSs — Sanity, Storyblok, Strapi, and Payload. Each platform has its own unique features and limitations, and sometimes a project needs a feature one CMS has but another doesn't.
+
+So we decided to build all of that into one open-source project — we call it **Ideal CMS**. Best features from every CMS we've worked with, available as Payload plugins. You can use the project with everything integrated, or install individual plugins to get the features you need. This often helps our clients free up budget for things we believe should be included from day one.
+
+Every plugin in this repository works independently in any Payload project. For new projects, we recommend starting from the repository that combines all of these plugins together with the basic setup you'll need.
+
 ## A/B Testing Plugin for Payload CMS
 
 Native experiments with a dynamic percentage of traffic going to each content variant. Control everything from the same page you're working on — page variants, middleware, and analytics adapters included.
@@ -39,32 +47,37 @@ Payload CMS natively supports scheduled publishing, but not for serverless platf
 | [`@focus-reactive/payload-plugin-comments`](./packages/payload-plugin-comments) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-comments)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-comments) | Comments plugin — inline field comments, mentions, annotations, and collaboration |
 | [`@focus-reactive/payload-plugin-scheduling`](./packages/payload-plugin-scheduling) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-scheduling)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-scheduling) | Schedule publication plugin — schedule documents to publish at a future date |
 
-## About the Ideal CMS Project
+## Run the Demo Locally
 
-At FocusReactive we build projects on different CMSs — Sanity, Storyblok, Strapi, and Payload. Each platform has its own unique features and limitations, and sometimes a project needs a feature one CMS has but another doesn't.
+The `apps/dev` folder is a ready-to-go Payload project with all plugins pre-installed, backed by SQLite — no external database required.
 
-So we decided to build all of that into one open-source project — we call it **Ideal CMS**. Best features from every CMS we've worked with, available as Payload plugins. You can use the project with everything integrated, or install individual plugins to get the features you need. This often helps our clients free up budget for things we believe should be included from day one.
+### Prerequisites
 
-Every plugin in this repository works independently in any Payload project. For new projects, we recommend starting from the repository that combines all of these plugins together with the basic setup you'll need.
+- [Bun](https://bun.sh/) installed
+- Node.js `^18.20.2` or `>=20.9.0`
 
-## Development
+### Steps
 
 ```bash
+git clone https://github.com/focusreactive/payload-plugins.git
+cd payload-plugins
 bun install
-bun run dev        # start local Payload dev app (apps/dev)
-bun run build      # build all packages
-bun run lint
 ```
 
-### Adding a New Plugin to This Repository
+Create `apps/dev/.env` with:
 
-See the [`payload-plugins-add-package`](https://github.com/focusreactive/payload-plugins/blob/main/.claude/skills/payload-plugins-add-package/SKILL.md) skill for the full workflow.
+```env
+DATABASE_URL=file:./dev.db
+PAYLOAD_SECRET=replace-me-with-any-random-string
+```
 
-## Publishing
+Start the dev server:
 
-Releases are automated via [multi-semantic-release](https://github.com/dhoulb/multi-semantic-release). Merging to `main` triggers CI, which publishes any packages with new commits using [Conventional Commits](https://www.conventionalcommits.org/).
+```bash
+bun run dev
+```
 
-See [CLAUDE.md](./CLAUDE.md) for full details on the publishing flow and conventions.
+Open [http://localhost:4040/admin](http://localhost:4040/admin) and create your first admin user — every plugin in this repo will be loaded and ready to try.
 
 ## Contributing
 
