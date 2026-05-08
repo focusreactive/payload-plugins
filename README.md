@@ -58,18 +58,37 @@ The `apps/dev` folder is a minimal dev project with plugins pre-installed, to ru
 
 ### Steps
 
-```bash
-git clone https://github.com/focusreactive/payload-plugins.git
-cd payload-plugins
-bun install
-cat > apps/dev/.env <<EOF
-DATABASE_URL=file:./dev.db
-PAYLOAD_SECRET=replace-me-with-any-random-string
-EOF
-bun run dev
-```
+1. **Clone the repository**
 
-Open [http://localhost:4040/admin](http://localhost:4040/admin) and create your first admin user — every plugin in this repo will be loaded and ready to try.
+   ```bash
+   git clone https://github.com/focusreactive/payload-plugins.git
+   cd payload-plugins
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   bun install
+   ```
+
+3. **Configure environment variables**
+
+   Create `apps/dev/.env` with the following content:
+
+   ```env
+   DATABASE_URL=file:./dev.db
+   PAYLOAD_SECRET=replace-me-with-any-random-string
+   ```
+
+4. **Start the dev server**
+
+   ```bash
+   bun run dev
+   ```
+
+5. **Open the admin panel**
+
+   Visit [http://localhost:4040/admin](http://localhost:4040/admin) and create your first admin user. Every plugin in this repo will be loaded and ready to try.
 
 ## Contributing
 
