@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-presets [0.10.7](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.6...@focus-reactive/payload-plugin-presets@0.10.7) (2026-05-08)
+
+
+### Bug Fixes
+
+* **presets:** render preview thumbnail in list cell ([f3bc39b](https://github.com/focusreactive/payload-plugins/commit/f3bc39bc93854f7e725de4207abc4e8219dc333a))
+
 ## @focus-reactive/payload-plugin-presets [0.10.6](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.5...@focus-reactive/payload-plugin-presets@0.10.6) (2026-04-30)
 
 
