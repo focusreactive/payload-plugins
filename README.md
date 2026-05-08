@@ -62,18 +62,10 @@ The `apps/dev` folder is a ready-to-go Payload project with all plugins pre-inst
 git clone https://github.com/focusreactive/payload-plugins.git
 cd payload-plugins
 bun install
-```
-
-Create `apps/dev/.env` with:
-
-```env
+cat > apps/dev/.env <<EOF
 DATABASE_URL=file:./dev.db
 PAYLOAD_SECRET=replace-me-with-any-random-string
-```
-
-Start the dev server:
-
-```bash
+EOF
 bun run dev
 ```
 
