@@ -1,4 +1,4 @@
-# Payload CMS Plugins by FocusReactive
+# Payload CMS Plugins
 
 Open-source Payload CMS plugins for A/B testing, content presets, inline comments, and scheduled publishing on serverless. Use them individually in any Payload project, or together as part of the Ideal CMS toolkit.
 
@@ -15,28 +15,28 @@ Every plugin in this repository works independently in any Payload project. For 
 Native experiments with a dynamic percentage of traffic going to each content variant. Control everything from the same page you're working on — page variants, middleware, and analytics adapters included.
 
 - Package: [`@focus-reactive/payload-plugin-ab`](./packages/payload-plugin-ab)
-- npm: [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-ab)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-ab)
+- [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-ab)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-ab)
 
 ## Presets Plugin for Payload CMS
 
 Multiple pre-configured block configurations you can use to build up your pages. It's like having multiple versions of default values — because content teams prefer editing over creating from scratch.
 
 - Package: [`@focus-reactive/payload-plugin-presets`](./packages/payload-plugin-presets)
-- npm: [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-presets)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-presets)
+- [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-presets)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-presets)
 
 ## Comments Plugin for Payload CMS
 
 A way to collaborate inside the CMS. Inline field comments, mentions, annotations — helpful for both the content team and developers, letting everyone leave feedback directly inside the admin.
 
 - Package: [`@focus-reactive/payload-plugin-comments`](./packages/payload-plugin-comments)
-- npm: [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-comments)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-comments)
+- [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-comments)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-comments)
 
 ## Scheduled Publishing Plugin for Payload CMS
 
 Payload CMS natively supports scheduled publishing, but not for serverless platforms like Vercel. Since that's where we deploy most of our projects, we built a plugin that makes it work.
 
 - Package: [`@focus-reactive/payload-plugin-scheduling`](./packages/payload-plugin-scheduling)
-- npm: [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-scheduling)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-scheduling)
+- [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-scheduling)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-scheduling)
 
 ## Packages Overview
 
@@ -47,9 +47,9 @@ Payload CMS natively supports scheduled publishing, but not for serverless platf
 | [`@focus-reactive/payload-plugin-comments`](./packages/payload-plugin-comments) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-comments)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-comments) | Comments plugin — inline field comments, mentions, annotations, and collaboration |
 | [`@focus-reactive/payload-plugin-scheduling`](./packages/payload-plugin-scheduling) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-scheduling)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-scheduling) | Schedule publication plugin — schedule documents to publish at a future date |
 
-## Run the Demo Locally
+## Run Demo Locally
 
-The `apps/dev` folder is a ready-to-go Payload project with all plugins pre-installed, backed by SQLite — no external database required.
+The `apps/dev` folder is a minimal dev project with plugins pre-installed, to run and test locally. Backed by SQLite — no external database required.
 
 ### Prerequisites
 
