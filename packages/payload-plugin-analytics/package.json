@@ -26,6 +26,7 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "sideEffects": false,
   "files": [
     "dist"
   ],
@@ -33,15 +34,21 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./client": {
+      "import": "./dist/client/index.js",
+      "types": "./dist/client/index.d.ts"
     }
   },
   "scripts": {
     "build": "node node_modules/tsup/dist/cli-default.js && tsc --emitDeclarationOnly --declarationMap",
     "dev": "node node_modules/tsup/dist/cli-default.js --watch",
-    "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix",
-    "format": "prettier --write src/",
-    "format:check": "prettier --check src/"
+    "lint": "eslint src/ tests/",
+    "lint:fix": "eslint src/ tests/ --fix",
+    "format": "prettier --write src/ tests/",
+    "format:check": "prettier --check src/ tests/",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "peerDependencies": {
     "@payloadcms/ui": "^3.0.0",
@@ -62,17 +69,24 @@
     }
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
     "@types/node": "22.19.9",
     "@types/react": "19.2.9",
     "@types/react-dom": "19.2.3",
     "eslint": "9.0.0",
     "eslint-config-prettier": "9.0.0",
+    "jsdom": "^25.0.1",
     "next": "15.4.10",
     "payload": "3.79.0",
     "@payloadcms/ui": "3.79.0",
     "prettier": "3.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "tsup": "8.0.0",
     "typescript": "5.7.3",
-    "typescript-eslint": "8.0.0"
+    "typescript-eslint": "8.0.0",
+    "vitest": "^2.1.8"
   }
 }
