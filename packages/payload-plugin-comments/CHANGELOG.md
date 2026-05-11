@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-comments [1.6.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.6.2...@focus-reactive/payload-plugin-comments@1.6.3) (2026-05-11)
+
+
+### Bug Fixes
+
+* **comments:** allow deleting mentioned users by snapshotting display name ([8a5219d](https://github.com/focusreactive/payload-plugins/commit/8a5219d0d4982f044256b0423e2120428d4657a3))
+
 ## @focus-reactive/payload-plugin-comments [1.6.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.6.1...@focus-reactive/payload-plugin-comments@1.6.2) (2026-04-30)
 
 
