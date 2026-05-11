@@ -2,7 +2,9 @@ import type { User } from "./user";
 
 export interface CommentMention {
   id: string | number | null;
-  user: number | User;
+  user: number | User | null;
+  userIdSnapshot?: number | null;
+  displayNameSnapshot?: string | null;
 }
 
 export interface Comment {

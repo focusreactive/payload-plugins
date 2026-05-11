@@ -281,7 +281,15 @@ export interface Comment {
   text: string;
   mentions?:
     | {
-        user: number | User;
+        user?: (number | null) | User;
+        /**
+         * Original user id captured at mention time.
+         */
+        userIdSnapshot?: number | null;
+        /**
+         * Display name captured at mention time; used after the user is deleted.
+         */
+        displayNameSnapshot?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -590,6 +598,8 @@ export interface CommentsSelect<T extends boolean = true> {
     | T
     | {
         user?: T;
+        userIdSnapshot?: T;
+        displayNameSnapshot?: T;
         id?: T;
       };
   author?: T;

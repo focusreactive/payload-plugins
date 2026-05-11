@@ -8,12 +8,18 @@ import { FALLBACK_DELETED_USERNAME } from "../../constants";
 const MENTION_SPLIT = /(@\(\d+\))/;
 const MENTION_EXTRACT = /^@\((\d+)\)$/;
 
+interface MentionRecord {
+  user: User | null;
+  displayNameSnapshot: string | null;
+}
+
 interface Props {
   text: string;
   mentions: Comment["mentions"];
   currentUserId?: number | null;
   usernameFieldPath?: string;
   fallbackDeletedUsername?: string;
+  mentionDeletedSuffix?: string;
 }
 
 export function renderCommentText({
@@ -22,17 +28,23 @@ export function renderCommentText({
   currentUserId,
   usernameFieldPath,
   fallbackDeletedUsername,
+  mentionDeletedSuffix,
 }: Props): ReactNode {
-  const userMap: Record<number, User> = {};
+  const mentionMap: Record<number, MentionRecord> = {};
 
   if (Array.isArray(mentions)) {
     for (const mention of mentions) {
-      const user = mention.user as User;
-
-      userMap[user.id] = user;
+      const userObj = mention.user && typeof mention.user === "object" ? (mention.user as User) : null;
+      const id = userObj?.id ?? mention.userIdSnapshot ?? null;
+      if (id == null) continue;
+      mentionMap[id] = {
+        user: userObj,
+        displayNameSnapshot: mention.displayNameSnapshot ?? null,
+      };
     }
   }
 
+  const fallbackDeleted = fallbackDeletedUsername ?? FALLBACK_DELETED_USERNAME;
   const parts = text.split(MENTION_SPLIT);
 
   return (
@@ -42,11 +54,24 @@ export function renderCommentText({
 
         if (match) {
           const userId = Number(match[1]);
-          const user = userMap[userId];
+          const record = mentionMap[userId];
+          const user = record?.user ?? null;
           const isSelf = isSelfMention(currentUserId, userId);
-          const name = resolveUsername(user, usernameFieldPath, fallbackDeletedUsername ?? FALLBACK_DELETED_USERNAME);
+          const isDeleted = !user;
+          const name =
+            user ?
+              resolveUsername(user, usernameFieldPath, fallbackDeleted)
+            : (record?.displayNameSnapshot ?? fallbackDeleted);
 
-          return <MentionLabel key={i} name={name} isSelf={isSelf} />;
+          return (
+            <MentionLabel
+              key={i}
+              name={name}
+              isSelf={isSelf}
+              isDeleted={isDeleted}
+              deletedSuffix={mentionDeletedSuffix}
+            />
+          );
         }
 
         return <span key={i}>{part}</span>;
