@@ -1,53 +1,81 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { getSessionDetail } from "../../../src/services/queries/getSessionDetail";
 import { __setGa4ClientForTests } from "../../../src/services/ga4DataClient";
-import { encodeSessionId } from "../../../src/utils/ga4";
-import sessionDetail from "../../../__fixtures__/ga4/sessionDetail.json";
+import sessionDetail from "../../../__fixtures__/ga4/sessionDetail.frSessionId.json";
 
-const SIGNATURE = { dhm: "202605101430", src: "google", dev: "desktop", ctr: "United States", lp: "/" };
-const SESSION_ID = encodeSessionId(SIGNATURE);
+afterEach(() => vi.restoreAllMocks());
+
+const SESSION_ID = "11111111-2222-4333-8444-555555555555";
 
 describe("getSessionDetail", () => {
-  it("decodes synthetic sessionId and filters with andGroup on the 5 signature dims", async () => {
+  it("queries with exact stringFilter on customEvent:fr_session_id", async () => {
     const fake = { runReport: vi.fn().mockResolvedValue([sessionDetail]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
     await getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } });
     const arg = fake.runReport.mock.calls[0][0];
     expect(arg.dimensionFilter).toEqual({
-      andGroup: {
-        expressions: [
-          { filter: { fieldName: "dateHourMinute", stringFilter: { value: "202605101430" } } },
-          { filter: { fieldName: "sessionSource", stringFilter: { value: "google" } } },
-          { filter: { fieldName: "deviceCategory", stringFilter: { value: "desktop" } } },
-          { filter: { fieldName: "country", stringFilter: { value: "United States" } } },
-          { filter: { fieldName: "landingPagePlusQueryString", stringFilter: { value: "/" } } },
-        ],
-      },
+      filter: { fieldName: "customEvent:fr_session_id", stringFilter: { value: SESSION_ID } },
     });
-    expect(arg.orderBys).toEqual([{ dimension: { dimensionName: "dateHourMinute" } }]);
-    expect(arg.dimensions).toEqual([{ name: "eventName" }, { name: "pagePath" }, { name: "dateHourMinute" }]);
   });
 
-  it("throws INVALID_SESSION_ID for a malformed sessionId", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn() };
+  it("requests eventName, pagePath, dateHourMinute, customEvent:fr_event_seq dims", async () => {
+    const fake = { runReport: vi.fn().mockResolvedValue([sessionDetail]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    await expect(
-      getSessionDetail("12345", "not-a-valid-id", { dateRange: { preset: "last-7d" } }),
-    ).rejects.toMatchObject({ code: "INVALID_SESSION_ID" });
-    expect(fake.runReport).not.toHaveBeenCalled();
+    await getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } });
+    const arg = fake.runReport.mock.calls[0][0];
+    expect(arg.dimensions).toEqual([
+      { name: "eventName" },
+      { name: "pagePath" },
+      { name: "dateHourMinute" },
+      { name: "customEvent:fr_event_seq" },
+    ]);
   });
 
-  it("converts dateHourMinute → ISO minute precision", async () => {
+  it("orders by dateHourMinute, then customEvent:fr_event_seq (tiebreaker)", async () => {
+    const fake = { runReport: vi.fn().mockResolvedValue([sessionDetail]), batchRunReports: vi.fn() };
+    __setGa4ClientForTests(fake as never);
+    await getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } });
+    const arg = fake.runReport.mock.calls[0][0];
+    expect(arg.orderBys).toEqual([
+      { dimension: { dimensionName: "dateHourMinute" } },
+      { dimension: { dimensionName: "customEvent:fr_event_seq" } },
+    ]);
+  });
+
+  it("maps rows to SessionDetailEvent[] with eventName + pagePath + timestamp", async () => {
     const fake = { runReport: vi.fn().mockResolvedValue([sessionDetail]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
     const res = await getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } });
-    expect(res.events.every((e) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00\.000Z$/.test(e.timestamp))).toBe(true);
+    expect(res.sessionId).toBe(SESSION_ID);
+    expect(res.events).toHaveLength(3);
+    expect(res.events[0].eventName).toBe("page_view");
+    expect(res.events[2].eventName).toBe("phone_click");
+    // fr_event_seq is not surfaced in the public shape:
+    expect(res.events[0]).not.toHaveProperty("eventSeq");
   });
 
-  it("params is empty in MVP", async () => {
-    const fake = { runReport: vi.fn().mockResolvedValue([sessionDetail]), batchRunReports: vi.fn() };
+  it("returns setupRequired + missing on customEvent:fr_session_id INVALID_ARGUMENT", async () => {
+    const err = new Error("3 INVALID_ARGUMENT: Field customEvent:fr_session_id is unrecognized.");
+    const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
     const res = await getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } });
-    expect(res.events[0].params).toEqual({});
+    expect(res.setupRequired).toBe(true);
+    expect(res.missing).toEqual(["fr_session_id"]);
+    expect(res.events).toEqual([]);
+  });
+
+  it("returns setupRequired + missing on customEvent:fr_event_seq INVALID_ARGUMENT", async () => {
+    const err = new Error("3 INVALID_ARGUMENT: Field customEvent:fr_event_seq is unrecognized.");
+    const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
+    __setGa4ClientForTests(fake as never);
+    const res = await getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } });
+    expect(res.missing).toEqual(["fr_event_seq"]);
+  });
+
+  it("rethrows non-setupRequired errors", async () => {
+    const err = new Error("3 INVALID_ARGUMENT: bad date format");
+    const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
+    __setGa4ClientForTests(fake as never);
+    await expect(getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } })).rejects.toBe(err);
   });
 });

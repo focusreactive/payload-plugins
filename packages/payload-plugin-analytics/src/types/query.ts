@@ -1,5 +1,12 @@
 import type { LeadActionKind } from "./events";
 
+export type CustomRegistrationKey = "fr_session_id" | "fr_event_seq" | "fr_elapsed_ms";
+
+export interface SetupGate {
+  setupRequired: true;
+  missing: CustomRegistrationKey[];
+}
+
 // Inputs
 export type DateRangePreset = "today" | "yesterday" | "last-7d" | "last-30d" | "last-90d";
 
@@ -106,11 +113,12 @@ export interface LeadActionsCurrent {
   totals: Record<LeadActionKind, number>;
   conversionRate: Record<LeadActionKind, number>;
   perPage: Array<{ pagePath: string; counts: Partial<Record<LeadActionKind, number>> }>;
-  avgTimeToAction: number;
+  avgTimeToAction: number | null;
 }
 export interface LeadActionsResponse {
   current: LeadActionsCurrent;
   comparison?: LeadActionsCurrent;
+  missing?: CustomRegistrationKey[];
 }
 
 export interface SessionsRow {
@@ -126,6 +134,8 @@ export interface SessionsRow {
 export interface SessionsResponse {
   rows: SessionsRow[];
   pagination: { cursor: string | null; hasMore: boolean };
+  setupRequired?: true;
+  missing?: CustomRegistrationKey[];
 }
 
 export interface SessionDetailEvent {
@@ -137,9 +147,36 @@ export interface SessionDetailEvent {
 export interface SessionDetailResponse {
   sessionId: string;
   events: SessionDetailEvent[];
+  setupRequired?: true;
+  missing?: CustomRegistrationKey[];
 }
 
 export interface Row {
   dimensionValues?: Array<{ value?: string | null }>;
   metricValues?: Array<{ value?: string | null }>;
+}
+
+export interface JourneysQuery extends AnalyticsQuery {
+  limit?: number;
+  maxSteps?: number;
+  sampleLimit?: number;
+}
+
+export interface JourneyStep {
+  kind: "page" | "leadAction";
+  value: string;
+}
+
+export interface JourneyRow {
+  path: JourneyStep[];
+  count: number;
+  conversionRate: number;
+}
+
+export interface JourneyResponse {
+  setupRequired?: true;
+  missing?: CustomRegistrationKey[];
+  rows: JourneyRow[];
+  sessionsConsidered: number;
+  truncated: boolean;
 }

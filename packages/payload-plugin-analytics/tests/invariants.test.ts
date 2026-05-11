@@ -31,4 +31,8 @@ describe("invariants", () => {
       expect(v).toMatch(/^\/analytics\//);
     }
   });
+
+  it("registers POST /analytics/journeys", () => {
+    expect(ANALYTICS_ENDPOINT_PATHS.journeys).toBe("/analytics/journeys");
+  });
 });

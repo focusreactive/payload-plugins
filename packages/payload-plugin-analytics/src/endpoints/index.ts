@@ -9,6 +9,7 @@ import { buildTopCountriesEndpoint } from "./topCountries";
 import { buildLeadActionsEndpoint } from "./leadActions";
 import { buildSessionsEndpoint } from "./sessions";
 import { buildSessionDetailEndpoint } from "./sessionDetail";
+import { buildJourneysEndpoint } from "./journeys";
 
 export function buildEndpoints(config: AnalyticsPluginConfig): Endpoint[] {
   return [
@@ -21,5 +22,6 @@ export function buildEndpoints(config: AnalyticsPluginConfig): Endpoint[] {
     buildLeadActionsEndpoint(config),
     buildSessionsEndpoint(config),
     buildSessionDetailEndpoint(config),
+    buildJourneysEndpoint(config),
   ];
 }

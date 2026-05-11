@@ -34,3 +34,29 @@ describe("mapGa4Error", () => {
     expect(mapGa4Error("network down")).toEqual({ status: 500, message: "network down" });
   });
 });
+
+describe("mapGa4Error setupRequired derivation", () => {
+  it("flags setupRequired + missingKey when message names customEvent:fr_session_id", () => {
+    const m = mapGa4Error(new Error("3 INVALID_ARGUMENT: Field customEvent:fr_session_id is unrecognized."));
+    expect(m.status).toBe(400);
+    expect(m.setupRequired).toBe(true);
+    expect(m.missingKey).toBe("fr_session_id");
+  });
+
+  it("flags setupRequired + fr_elapsed_ms for averageCustomEvent:fr_elapsed_ms", () => {
+    const m = mapGa4Error(new Error("3 INVALID_ARGUMENT: Field averageCustomEvent:fr_elapsed_ms is unrecognized."));
+    expect(m.setupRequired).toBe(true);
+    expect(m.missingKey).toBe("fr_elapsed_ms");
+  });
+
+  it("plain INVALID_ARGUMENT without a known custom field → no setupRequired", () => {
+    const m = mapGa4Error(new Error("3 INVALID_ARGUMENT: bad date format"));
+    expect(m.setupRequired).toBeUndefined();
+    expect(m.missingKey).toBeUndefined();
+  });
+
+  it("non-INVALID_ARGUMENT errors never set setupRequired", () => {
+    const m = mapGa4Error(new Error("8 RESOURCE_EXHAUSTED"));
+    expect(m.setupRequired).toBeUndefined();
+  });
+});

@@ -36,6 +36,12 @@ export const SessionsListQuerySchema = AnalyticsQuerySchema.extend({
   hadLeadAction: z.boolean().optional(),
 });
 
+export const JourneysQuerySchema = AnalyticsQuerySchema.extend({
+  limit: z.number().int().min(1).max(100).default(20),
+  maxSteps: z.number().int().min(2).max(16).default(8),
+  sampleLimit: z.number().int().min(100).max(250_000).default(50_000),
+});
+
 export function formatZodIssues(issues: z.core.$ZodIssue[]) {
   return issues
     .map((i) => {

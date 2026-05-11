@@ -1,6 +1,7 @@
 import type { DeviceCategory, Row, SessionsListQuery, SessionsResponse, SessionsRow } from "../../types/query";
 import { resolveDateRange } from "../../utils/date/resolveDateRange";
-import { convertMetricToNumber, dateRangesFor, encodeSessionId, leadActionFilter, withRowLimit } from "../../utils/ga4";
+import { convertMetricToNumber, dateRangesFor, deriveMissing, leadActionFilter, withRowLimit } from "../../utils/ga4";
+import { mapGa4Error } from "../../endpoints/errorMapping";
 import { runQuery } from "../analyticsService/runQuery";
 
 const DEFAULT_PAGE_SIZE = 50;
@@ -39,14 +40,15 @@ function convertRowToSessionsRow(row: Row, hadLeadAction: boolean): SessionsRow 
   const dimensionValues = row.dimensionValues ?? [];
   const metricValues = row.metricValues ?? [];
 
-  const landingPage = dimensionValues[0]?.value ?? "";
-  const source = dimensionValues[1]?.value ?? "";
-  const deviceCategory = normaliseDeviceCategory(dimensionValues[2]?.value);
-  const country = dimensionValues[3]?.value ?? "";
-  const dhm = dimensionValues[4]?.value ?? "";
+  const sessionId = dimensionValues[0]?.value ?? "";
+  const landingPage = dimensionValues[1]?.value ?? "";
+  const source = dimensionValues[2]?.value ?? "";
+  const deviceCategory = normaliseDeviceCategory(dimensionValues[3]?.value);
+  const country = dimensionValues[4]?.value ?? "";
+  const dhm = dimensionValues[5]?.value ?? "";
 
   return {
-    sessionId: encodeSessionId({ dhm, src: source, dev: deviceCategory, ctr: country, lp: landingPage }),
+    sessionId,
     landingPage,
     source,
     deviceCategory,
@@ -63,6 +65,7 @@ export async function listSessions(propertyId: string, query: SessionsListQuery)
   const limit = query.limit ?? DEFAULT_PAGE_SIZE;
 
   const dimensions = [
+    { name: "customEvent:fr_session_id" },
     { name: "landingPagePlusQueryString" },
     { name: "sessionSource" },
     { name: "deviceCategory" },
@@ -81,24 +84,40 @@ export async function listSessions(propertyId: string, query: SessionsListQuery)
     limit,
   );
 
-  if (query.hadLeadAction)
-    request = {
-      ...request,
-      dimensionFilter: leadActionFilter(),
+  if (query.hadLeadAction) {
+    request = { ...request, dimensionFilter: leadActionFilter() };
+  }
+
+  try {
+    const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1]);
+    const rows = (raw.rows ?? []) as Row[];
+
+    const hadLeadAction = Boolean(query.hadLeadAction);
+    const sessionsRows: SessionsRow[] = rows.slice(0, limit).map((row) => convertRowToSessionsRow(row, hadLeadAction));
+
+    const totalRows = raw.rowCount ?? rows.length;
+    const nextOffset = offset + sessionsRows.length;
+    const hasMore = nextOffset < totalRows;
+
+    return {
+      rows: sessionsRows,
+      pagination: {
+        cursor: hasMore ? encodeCursor(nextOffset) : null,
+        hasMore,
+      },
     };
+  } catch (err) {
+    const mapped = mapGa4Error(err);
 
-  const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1]);
-  const rows = (raw.rows ?? []) as Row[];
+    if (mapped.setupRequired) {
+      return {
+        setupRequired: true,
+        missing: deriveMissing({ message: mapped.message }, ["fr_session_id"]),
+        rows: [],
+        pagination: { cursor: null, hasMore: false },
+      };
+    }
 
-  const hadLeadAction = Boolean(query.hadLeadAction);
-  const sessionsRows: SessionsRow[] = rows.slice(0, limit).map((row) => convertRowToSessionsRow(row, hadLeadAction));
-
-  const totalRows = raw.rowCount ?? rows.length;
-  const nextOffset = offset + sessionsRows.length;
-  const hasMore = nextOffset < totalRows;
-
-  return {
-    rows: sessionsRows,
-    pagination: { cursor: hasMore ? encodeCursor(nextOffset) : null, hasMore },
-  };
+    throw err;
+  }
 }

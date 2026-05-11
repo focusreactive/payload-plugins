@@ -1,0 +1,39 @@
+{
+  "dimensionHeaders": [
+    { "name": "eventName" },
+    { "name": "pagePath" },
+    { "name": "dateHourMinute" },
+    { "name": "customEvent:fr_event_seq" }
+  ],
+  "metricHeaders": [{ "name": "eventCount", "type": "TYPE_INTEGER" }],
+  "rows": [
+    {
+      "dimensionValues": [
+        { "value": "page_view" },
+        { "value": "/" },
+        { "value": "202605101430" },
+        { "value": "1" }
+      ],
+      "metricValues": [{ "value": "1" }]
+    },
+    {
+      "dimensionValues": [
+        { "value": "scroll" },
+        { "value": "/" },
+        { "value": "202605101430" },
+        { "value": "2" }
+      ],
+      "metricValues": [{ "value": "1" }]
+    },
+    {
+      "dimensionValues": [
+        { "value": "phone_click" },
+        { "value": "/" },
+        { "value": "202605101430" },
+        { "value": "3" }
+      ],
+      "metricValues": [{ "value": "1" }]
+    }
+  ],
+  "rowCount": 3
+}

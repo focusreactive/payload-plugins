@@ -45,10 +45,6 @@ export function buildSessionDetailEndpoint(config: AnalyticsPluginConfig): Endpo
 
         return Response.json(result);
       } catch (err) {
-        if (err instanceof Error && (err as { code?: string }).code === "INVALID_SESSION_ID") {
-          return Response.json({ error: "Invalid sessionId" }, { status: 400 });
-        }
-
         const mapped = mapGa4Error(err);
 
         return Response.json({ error: mapped.message }, { status: mapped.status });

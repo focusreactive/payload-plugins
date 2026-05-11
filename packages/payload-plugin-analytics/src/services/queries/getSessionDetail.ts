@@ -1,6 +1,7 @@
 import type { AnalyticsQuery, Row, SessionDetailEvent, SessionDetailResponse } from "../../types/query";
 import { resolveDateRange } from "../../utils/date/resolveDateRange";
-import { dateRangesFor, decodeSessionId } from "../../utils/ga4";
+import { dateRangesFor, deriveMissing } from "../../utils/ga4";
+import { mapGa4Error } from "../../endpoints/errorMapping";
 import { runQuery } from "../analyticsService/runQuery";
 
 function convertDateHourMinuteToIso(value: string | null | undefined): string {
@@ -25,36 +26,43 @@ export async function getSessionDetail(
   sessionId: string,
   query: AnalyticsQuery,
 ): Promise<SessionDetailResponse> {
-  const signature = decodeSessionId(sessionId);
-
-  if (!signature) {
-    throw Object.assign(new Error("Invalid sessionId"), { code: "INVALID_SESSION_ID" });
-  }
-
   const dateRange = resolveDateRange(query.dateRange);
 
   const request = {
     dateRanges: dateRangesFor(dateRange),
     metrics: [{ name: "eventCount" }],
-    dimensions: [{ name: "eventName" }, { name: "pagePath" }, { name: "dateHourMinute" }],
+    dimensions: [
+      { name: "eventName" },
+      { name: "pagePath" },
+      { name: "dateHourMinute" },
+      { name: "customEvent:fr_event_seq" },
+    ],
     dimensionFilter: {
-      andGroup: {
-        expressions: [
-          { filter: { fieldName: "dateHourMinute", stringFilter: { value: signature.dhm } } },
-          { filter: { fieldName: "sessionSource", stringFilter: { value: signature.src } } },
-          { filter: { fieldName: "deviceCategory", stringFilter: { value: signature.dev } } },
-          { filter: { fieldName: "country", stringFilter: { value: signature.ctr } } },
-          { filter: { fieldName: "landingPagePlusQueryString", stringFilter: { value: signature.lp } } },
-        ],
-      },
+      filter: { fieldName: "customEvent:fr_session_id", stringFilter: { value: sessionId } },
     },
-    orderBys: [{ dimension: { dimensionName: "dateHourMinute" } }],
+    orderBys: [
+      { dimension: { dimensionName: "dateHourMinute" } },
+      { dimension: { dimensionName: "customEvent:fr_event_seq" } },
+    ],
   };
 
-  const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1]);
-  const rows = (raw.rows ?? []) as Row[];
+  try {
+    const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1]);
+    const rows = (raw.rows ?? []) as Row[];
 
-  const events: SessionDetailEvent[] = rows.map(convertRowToSessionDetailEvent);
+    return { sessionId, events: rows.map(convertRowToSessionDetailEvent) };
+  } catch (err) {
+    const mapped = mapGa4Error(err);
 
-  return { sessionId, events };
+    if (mapped.setupRequired) {
+      return {
+        sessionId,
+        setupRequired: true,
+        missing: deriveMissing({ message: mapped.message }, ["fr_session_id", "fr_event_seq"]),
+        events: [],
+      };
+    }
+
+    throw err;
+  }
 }

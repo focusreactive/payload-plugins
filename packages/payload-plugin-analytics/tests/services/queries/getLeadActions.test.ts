@@ -1,46 +1,80 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { getLeadActions } from "../../../src/services/queries/getLeadActions";
 import { __setGa4ClientForTests } from "../../../src/services/ga4DataClient";
-import leadActions from "../../../__fixtures__/ga4/leadActions.batch.json";
+import withMetric from "../../../__fixtures__/ga4/leadActions.batch.elapsedMs.json";
+import withoutMetric from "../../../__fixtures__/ga4/leadActions.batch.noElapsedMs.json";
+
+// DEVIATION FROM PLAN §Phase 5 VERBATIM TEST:
+// The plan asserted `mock.calls[0][0]` as the requests array, but `runQuery.batchRunReports`
+// invokes the GA4 client as `client.batchRunReports({ property, requests })` — a single object arg —
+// so the requests array lives on `.requests`. Same workaround as the prior version of this file.
+
+afterEach(() => vi.restoreAllMocks());
 
 describe("getLeadActions", () => {
-  it("calls batchRunReports with 2 reports (events + sessions)", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue([leadActions]) };
+  it("requests averageCustomEvent:fr_elapsed_ms as the second metric", async () => {
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue([withMetric]),
+    };
     __setGa4ClientForTests(fake as never);
     await getLeadActions("12345", { dateRange: { preset: "last-7d" } });
-    expect(fake.batchRunReports).toHaveBeenCalledTimes(1);
-    // DEVIATION FROM PLAN §7.7 VERBATIM TEST:
-    // The plan asserted `mock.calls[0][1]` but `runQuery.batchRunReports` invokes the
-    // GA4 client as `client.batchRunReports({ property, requests })` — a single object arg —
-    // so the second positional arg is undefined. The requests array lives on `.requests`.
-    const arg = fake.batchRunReports.mock.calls[0][0].requests;
-    expect(arg).toHaveLength(2);
-    // events report has dimensionFilter on eventName
-    expect(arg[0].dimensionFilter).toBeDefined();
+    const requests = fake.batchRunReports.mock.calls[0][0].requests;
+    expect(requests[0].metrics).toEqual([
+      { name: "eventCount" },
+      { name: "averageCustomEvent:fr_elapsed_ms" },
+    ]);
   });
 
-  it("computes conversionRate = totals[kind] / sessionsResp.rows[0].sessions", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue([leadActions]) };
-    __setGa4ClientForTests(fake as never);
-    const res = await getLeadActions("12345", { dateRange: { preset: "last-7d" } });
-    expect(typeof res.current.conversionRate.phone_click).toBe("number");
-  });
-
-  it("returns 0 conversionRate when sessions denominator is 0", async () => {
-    const zero = {
-      reports: [leadActions.reports[0], { rows: [{ dimensionValues: [], metricValues: [{ value: "0" }] }] }],
+  it("computes count-weighted mean in seconds", async () => {
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue([withMetric]),
     };
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue([zero]) };
     __setGa4ClientForTests(fake as never);
     const res = await getLeadActions("12345", { dateRange: { preset: "last-7d" } });
-    for (const v of Object.values(res.current.conversionRate)) expect(v).toBe(0);
+    // (10 * 8000 + 5 * 12000) / 15 / 1000 = 9.3333…
+    expect(res.current.avgTimeToAction).toBeCloseTo(9.333, 2);
   });
 
-  it("avgTimeToAction = Σ userEngagementDuration / Σ eventCount (seconds)", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue([leadActions]) };
+  it("totals and conversionRate are correct alongside avgTimeToAction", async () => {
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue([withMetric]),
+    };
     __setGa4ClientForTests(fake as never);
     const res = await getLeadActions("12345", { dateRange: { preset: "last-7d" } });
-    expect(typeof res.current.avgTimeToAction).toBe("number");
-    expect(res.current.avgTimeToAction).toBeGreaterThanOrEqual(0);
+    expect(res.current.totals.phone_click).toBe(10);
+    expect(res.current.totals.form_submit).toBe(5);
+    expect(res.current.conversionRate.phone_click).toBeCloseTo(0.1, 5);
+  });
+
+  it("retries without the metric on INVALID_ARGUMENT for averageCustomEvent:fr_elapsed_ms", async () => {
+    const err = new Error("3 INVALID_ARGUMENT: Field averageCustomEvent:fr_elapsed_ms is unrecognized.");
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn()
+        .mockRejectedValueOnce(err)
+        .mockResolvedValueOnce([withoutMetric]),
+    };
+    __setGa4ClientForTests(fake as never);
+    const res = await getLeadActions("12345", { dateRange: { preset: "last-7d" } });
+    expect(fake.batchRunReports).toHaveBeenCalledTimes(2);
+    const retryRequests = fake.batchRunReports.mock.calls[1][0].requests;
+    expect(retryRequests[0].metrics).toEqual([{ name: "eventCount" }]);
+    expect(res.current.avgTimeToAction).toBeNull();
+    expect(res.missing).toEqual(["fr_elapsed_ms"]);
+    expect(res.current.totals.phone_click).toBe(10);
+  });
+
+  it("does NOT retry on unrelated INVALID_ARGUMENT", async () => {
+    const err = new Error("3 INVALID_ARGUMENT: bad date format");
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockRejectedValue(err),
+    };
+    __setGa4ClientForTests(fake as never);
+    await expect(getLeadActions("12345", { dateRange: { preset: "last-7d" } })).rejects.toBe(err);
+    expect(fake.batchRunReports).toHaveBeenCalledTimes(1);
   });
 });

@@ -8,6 +8,7 @@ export const ANALYTICS_ENDPOINT_PATHS = {
   leadActions: "/analytics/lead-actions",
   sessions: "/analytics/sessions",
   sessionDetail: "/analytics/sessions/:id",
+  journeys: "/analytics/journeys",
 } as const;
 
 export type AnalyticsEndpointKey = keyof typeof ANALYTICS_ENDPOINT_PATHS;

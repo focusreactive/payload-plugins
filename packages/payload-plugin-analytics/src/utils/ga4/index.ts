@@ -5,9 +5,9 @@ import { withRowLimit } from "./withRowLimit";
 import { withInListFilter } from "./withInListFilter";
 import { dateRangesFor } from "./dateRangesFor";
 import { leadActionFilter } from "./leadActionFilter";
-import { encodeSessionId, decodeSessionId } from "./sessionSignature";
+import { deriveMissing } from "./deriveMissing";
 
-export type { SessionSignature } from "./sessionSignature";
+export type { DerivableError } from "./deriveMissing";
 export {
   convertMetricToNumber,
   computeWeightedValuesAverage,
@@ -16,6 +16,5 @@ export {
   withInListFilter,
   dateRangesFor,
   leadActionFilter,
-  encodeSessionId,
-  decodeSessionId,
+  deriveMissing,
 };

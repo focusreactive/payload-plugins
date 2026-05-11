@@ -1,9 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { buildSessionDetailEndpoint } from "../../src/endpoints/sessionDetail";
 import { __setGa4ClientForTests } from "../../src/services/ga4DataClient";
-import { encodeSessionId } from "../../src/utils/ga4";
 import { makePayloadRequest } from "../../__fixtures__/http/payloadRequest";
-import sessionDetail from "../../__fixtures__/ga4/sessionDetail.json";
+import sessionDetail from "../../__fixtures__/ga4/sessionDetail.frSessionId.json";
 import type { AnalyticsPluginConfig } from "../../src/types/config";
 
 const cfg = { ga4: { propertyId: "12345", measurementId: "G-X", serviceAccount: { clientEmail: "x", privateKey: "y" } } } as AnalyticsPluginConfig;
@@ -12,13 +11,7 @@ function callHandler(ep: { handler: unknown }, req: unknown): Promise<Response> 
   return (ep.handler as (r: unknown) => Promise<Response>)(req);
 }
 
-const SESSION_ID = encodeSessionId({
-  dhm: "202605101430",
-  src: "google",
-  dev: "desktop",
-  ctr: "United States",
-  lp: "/",
-});
+const SESSION_ID = "11111111-2222-4333-8444-555555555555";
 
 describe("POST /api/analytics/sessions/:id", () => {
   it("returns 403 when unauthenticated", async () => {
@@ -50,17 +43,21 @@ describe("POST /api/analytics/sessions/:id", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns 400 when sessionId is malformed/un-decodable", async () => {
+  it("returns 200 with setupRequired+missing when fr_session_id is unregistered", async () => {
+    const err = new Error("3 INVALID_ARGUMENT: Field customEvent:fr_session_id is unrecognized.");
+    const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
+    __setGa4ClientForTests(fake as never);
     const ep = buildSessionDetailEndpoint(cfg);
-    const res = await callHandler(
-      ep,
-      makePayloadRequest({
-        user: { id: "u" },
-        body: { dateRange: { preset: "last-7d" } },
-        routeParams: { id: "not-a-valid-id" },
-      }),
-    );
-    expect(res.status).toBe(400);
+    const req = makePayloadRequest({
+      user: { id: "u" },
+      body: { dateRange: { preset: "last-7d" } },
+      routeParams: { id: "11111111-2222-4333-8444-555555555555" },
+    });
+    const res = await callHandler(ep, req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.setupRequired).toBe(true);
+    expect(Array.isArray(json.missing)).toBe(true);
   });
 
   it("returns 200 with sessionId + events when valid", async () => {

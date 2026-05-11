@@ -18,10 +18,10 @@ afterEach(() => {
 });
 
 describe("analyticsPlugin", () => {
-  it("happy path — adds 9 endpoints to incoming config", () => {
+  it("happy path — adds 10 endpoints to incoming config", () => {
     const out = analyticsPlugin(validConfig)(incoming);
     expect(out).not.toBe(incoming);
-    expect(out.endpoints?.length).toBe(9);
+    expect(out.endpoints?.length).toBe(10);
   });
 
   it("disabled — short-circuits with no validation", () => {
@@ -62,10 +62,11 @@ describe("analyticsPlugin", () => {
 });
 
 describe("analyticsPlugin endpoint registration", () => {
-  it("registers all 9 endpoints with correct paths and POST method", () => {
+  it("registers all 10 endpoints with correct paths and POST method", () => {
     const out = analyticsPlugin(validConfig)({ admin: {}, collections: [], endpoints: [] } as Config);
-    expect(out.endpoints).toHaveLength(9);
+    expect(out.endpoints).toHaveLength(10);
     expect(out.endpoints?.map((e) => e.path).sort()).toEqual([
+      "/analytics/journeys",
       "/analytics/kpis",
       "/analytics/lead-actions",
       "/analytics/sessions",
@@ -85,7 +86,7 @@ describe("analyticsPlugin endpoint registration", () => {
     } as unknown as Config;
     const out = analyticsPlugin(validConfig)(incomingWithEndpoint);
     expect(out.endpoints?.[0]?.path).toBe("/keep");
-    expect(out.endpoints?.length).toBe(10);
+    expect(out.endpoints?.length).toBe(11);
   });
 
   it("returns incoming config unchanged when disabled", () => {

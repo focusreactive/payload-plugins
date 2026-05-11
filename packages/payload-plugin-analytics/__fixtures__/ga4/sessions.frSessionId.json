@@ -1,5 +1,6 @@
 {
   "dimensionHeaders": [
+    { "name": "customEvent:fr_session_id" },
     { "name": "landingPagePlusQueryString" },
     { "name": "sessionSource" },
     { "name": "deviceCategory" },
@@ -10,6 +11,7 @@
   "rows": [
     {
       "dimensionValues": [
+        { "value": "11111111-2222-4333-8444-555555555555" },
         { "value": "/" },
         { "value": "google" },
         { "value": "desktop" },
@@ -20,6 +22,7 @@
     },
     {
       "dimensionValues": [
+        { "value": "66666666-7777-4888-8999-aaaaaaaaaaaa" },
         { "value": "/about" },
         { "value": "(direct)" },
         { "value": "mobile" },

@@ -36,6 +36,12 @@ export type {
   SessionDetailResponse,
   SessionDetailEvent,
   DeviceCategory,
+  CustomRegistrationKey,
+  SetupGate,
+  JourneysQuery,
+  JourneyStep,
+  JourneyRow,
+  JourneyResponse,
 } from "./types/query";
 
 export { ANALYTICS_ENDPOINT_PATHS } from "./constants/endpoints";
