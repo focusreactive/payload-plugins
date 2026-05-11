@@ -34,7 +34,6 @@ export function AnalyticsProvider({
 
   useEffect(() => {
     return installLeadActionListeners(provider, autoTrackLeadActions);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider, optsKey]);
 
   const ctxValue = useMemo(() => ({ provider }), [provider]);

@@ -1,0 +1,13 @@
+{
+  "dimensionHeaders": [{ "name": "deviceCategory" }, { "name": "browser" }, { "name": "operatingSystem" }],
+  "metricHeaders": [
+    { "name": "sessions",   "type": "TYPE_INTEGER" },
+    { "name": "totalUsers", "type": "TYPE_INTEGER" }
+  ],
+  "rows": [
+    { "dimensionValues": [{ "value": "desktop" }, { "value": "Chrome" }, { "value": "macOS"   }], "metricValues": [{ "value": "600" }, { "value": "480" }] },
+    { "dimensionValues": [{ "value": "mobile"  }, { "value": "Safari" }, { "value": "iOS"     }], "metricValues": [{ "value": "500" }, { "value": "420" }] },
+    { "dimensionValues": [{ "value": "tablet"  }, { "value": "Safari" }, { "value": "iPadOS"  }], "metricValues": [{ "value": "80"  }, { "value": "65"  }] }
+  ],
+  "rowCount": 3
+}

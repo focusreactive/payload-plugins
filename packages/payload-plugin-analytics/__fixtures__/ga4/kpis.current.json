@@ -1,0 +1,16 @@
+{
+  "dimensionHeaders": [{ "name": "date" }],
+  "metricHeaders": [
+    { "name": "sessions",                "type": "TYPE_INTEGER" },
+    { "name": "totalUsers",              "type": "TYPE_INTEGER" },
+    { "name": "screenPageViews",         "type": "TYPE_INTEGER" },
+    { "name": "bounceRate",              "type": "TYPE_FLOAT"   },
+    { "name": "averageSessionDuration",  "type": "TYPE_SECONDS" }
+  ],
+  "rows": [
+    { "dimensionValues": [{ "value": "20260504" }], "metricValues": [{ "value": "120" }, { "value": "95" }, { "value": "240" }, { "value": "0.45" }, { "value": "82.5" }] },
+    { "dimensionValues": [{ "value": "20260505" }], "metricValues": [{ "value": "140" }, { "value": "110" }, { "value": "300" }, { "value": "0.40" }, { "value": "90.1" }] },
+    { "dimensionValues": [{ "value": "20260506" }], "metricValues": [{ "value": "130" }, { "value": "100" }, { "value": "270" }, { "value": "0.42" }, { "value": "85.2" }] }
+  ],
+  "rowCount": 3
+}

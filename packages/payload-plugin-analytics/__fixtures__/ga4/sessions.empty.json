@@ -1,0 +1,12 @@
+{
+  "dimensionHeaders": [
+    { "name": "landingPagePlusQueryString" },
+    { "name": "sessionSource" },
+    { "name": "deviceCategory" },
+    { "name": "country" },
+    { "name": "dateHourMinute" }
+  ],
+  "metricHeaders": [{ "name": "eventCount", "type": "TYPE_INTEGER" }],
+  "rows": [],
+  "rowCount": 0
+}

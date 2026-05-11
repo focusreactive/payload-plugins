@@ -2,7 +2,6 @@ import { PLUGIN_NAME } from "./constants";
 import type { AnalyticsPluginConfig } from "./types/config";
 
 declare global {
-  // eslint-disable-next-line no-var
   var __payloadPluginAnalyticsConfig: AnalyticsPluginConfig | undefined;
 }
 

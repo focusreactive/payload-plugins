@@ -2,6 +2,7 @@ import type { Config, Plugin } from "payload";
 import { setPluginConfig } from "./config";
 import type { AnalyticsPluginConfig } from "./types/config";
 import { PLUGIN_NAME } from "./constants";
+import { buildEndpoints } from "./endpoints";
 
 const MEASUREMENT_ID_RE = /^G-[A-Z0-9]+$/;
 
@@ -31,5 +32,8 @@ export const analyticsPlugin =
 
     setPluginConfig(config);
 
-    return incomingConfig;
+    return {
+      ...incomingConfig,
+      endpoints: [...(incomingConfig.endpoints ?? []), ...buildEndpoints(config)],
+    };
   };

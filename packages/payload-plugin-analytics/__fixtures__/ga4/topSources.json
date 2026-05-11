@@ -1,0 +1,13 @@
+{
+  "dimensionHeaders": [{ "name": "sessionSource" }, { "name": "sessionMedium" }, { "name": "sessionDefaultChannelGroup" }],
+  "metricHeaders": [
+    { "name": "sessions",   "type": "TYPE_INTEGER" },
+    { "name": "totalUsers", "type": "TYPE_INTEGER" }
+  ],
+  "rows": [
+    { "dimensionValues": [{ "value": "google" },        { "value": "organic" }, { "value": "Organic Search" }], "metricValues": [{ "value": "800" }, { "value": "650" }] },
+    { "dimensionValues": [{ "value": "(direct)" },      { "value": "(none)" },  { "value": "Direct" }],         "metricValues": [{ "value": "400" }, { "value": "320" }] },
+    { "dimensionValues": [{ "value": "facebook.com" }, { "value": "referral" }, { "value": "Referral" }],       "metricValues": [{ "value": "120" }, { "value": "95" }] }
+  ],
+  "rowCount": 3
+}

@@ -18,9 +18,10 @@ afterEach(() => {
 });
 
 describe("analyticsPlugin", () => {
-  it("happy path — returns incoming config unchanged", () => {
+  it("happy path — adds 9 endpoints to incoming config", () => {
     const out = analyticsPlugin(validConfig)(incoming);
-    expect(out).toBe(incoming);
+    expect(out).not.toBe(incoming);
+    expect(out.endpoints?.length).toBe(9);
   });
 
   it("disabled — short-circuits with no validation", () => {
@@ -57,5 +58,38 @@ describe("analyticsPlugin", () => {
 
   it("throws when ga4 is missing entirely (and disabled is not set)", () => {
     expect(() => analyticsPlugin({} as AnalyticsPluginConfig)(incoming)).toThrow(/ga4 is required/);
+  });
+});
+
+describe("analyticsPlugin endpoint registration", () => {
+  it("registers all 9 endpoints with correct paths and POST method", () => {
+    const out = analyticsPlugin(validConfig)({ admin: {}, collections: [], endpoints: [] } as Config);
+    expect(out.endpoints).toHaveLength(9);
+    expect(out.endpoints?.map((e) => e.path).sort()).toEqual([
+      "/analytics/kpis",
+      "/analytics/lead-actions",
+      "/analytics/sessions",
+      "/analytics/sessions/:id",
+      "/analytics/top-countries",
+      "/analytics/top-devices",
+      "/analytics/top-events",
+      "/analytics/top-pages",
+      "/analytics/top-sources",
+    ]);
+    for (const e of out.endpoints ?? []) expect(e.method).toBe("post");
+  });
+
+  it("preserves existing endpoints in incomingConfig", () => {
+    const incomingWithEndpoint = {
+      endpoints: [{ path: "/keep", method: "get", handler: async () => Response.json({}) }],
+    } as unknown as Config;
+    const out = analyticsPlugin(validConfig)(incomingWithEndpoint);
+    expect(out.endpoints?.[0]?.path).toBe("/keep");
+    expect(out.endpoints?.length).toBe(10);
+  });
+
+  it("returns incoming config unchanged when disabled", () => {
+    const incomingEmpty = { endpoints: [] } as Config;
+    expect(analyticsPlugin({ disabled: true, ga4: validConfig.ga4 })(incomingEmpty)).toBe(incomingEmpty);
   });
 });

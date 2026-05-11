@@ -1,0 +1,32 @@
+{
+  "reports": [
+    {
+      "dimensionHeaders": [{ "name": "eventName" }, { "name": "pagePath" }],
+      "metricHeaders": [
+        { "name": "eventCount", "type": "TYPE_INTEGER" },
+        { "name": "userEngagementDuration", "type": "TYPE_SECONDS" }
+      ],
+      "rows": [
+        {
+          "dimensionValues": [{ "value": "phone_click" }, { "value": "/contact" }],
+          "metricValues": [{ "value": "12" }, { "value": "60" }]
+        },
+        {
+          "dimensionValues": [{ "value": "email_click" }, { "value": "/contact" }],
+          "metricValues": [{ "value": "8" }, { "value": "32" }]
+        },
+        {
+          "dimensionValues": [{ "value": "form_submit" }, { "value": "/get-quote" }],
+          "metricValues": [{ "value": "5" }, { "value": "120" }]
+        }
+      ],
+      "rowCount": 3
+    },
+    {
+      "dimensionHeaders": [],
+      "metricHeaders": [{ "name": "sessions", "type": "TYPE_INTEGER" }],
+      "rows": [{ "dimensionValues": [], "metricValues": [{ "value": "400" }] }],
+      "rowCount": 1
+    }
+  ]
+}

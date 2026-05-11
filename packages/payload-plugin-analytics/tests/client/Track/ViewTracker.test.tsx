@@ -10,16 +10,13 @@ interface FakeObserverInstance {
 }
 
 let lastObserver: FakeObserverInstance | null = null;
-let observerCallback: ((entries: { intersectionRatio: number }[]) => void) | null = null;
 
 beforeEach(() => {
   lastObserver = null;
-  observerCallback = null;
   class FakeIO {
     observe = vi.fn();
     disconnect = vi.fn();
     constructor(cb: (entries: { intersectionRatio: number }[]) => void) {
-      observerCallback = cb;
       const inst = this as unknown as FakeObserverInstance;
       inst.fire = (ratio: number) => cb([{ intersectionRatio: ratio }]);
       lastObserver = inst;

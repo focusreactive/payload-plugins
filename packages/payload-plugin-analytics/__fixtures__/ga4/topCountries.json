@@ -1,0 +1,13 @@
+{
+  "dimensionHeaders": [{ "name": "country" }, { "name": "city" }],
+  "metricHeaders": [
+    { "name": "sessions",   "type": "TYPE_INTEGER" },
+    { "name": "totalUsers", "type": "TYPE_INTEGER" }
+  ],
+  "rows": [
+    { "dimensionValues": [{ "value": "United States" }, { "value": "New York" }],     "metricValues": [{ "value": "450" }, { "value": "380" }] },
+    { "dimensionValues": [{ "value": "United Kingdom" },{ "value": "London" }],       "metricValues": [{ "value": "210" }, { "value": "175" }] },
+    { "dimensionValues": [{ "value": "Germany" },       { "value": "Berlin" }],       "metricValues": [{ "value": "120" }, { "value": "95"  }] }
+  ],
+  "rowCount": 3
+}
