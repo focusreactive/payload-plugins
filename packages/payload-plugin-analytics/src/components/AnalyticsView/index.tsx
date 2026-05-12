@@ -4,6 +4,7 @@ import type { AdminViewServerProps } from "payload";
 import { DefaultTemplate } from "@payloadcms/next/templates";
 import { Gutter } from "@payloadcms/ui";
 import SetAnalyticsStepNav from "./SetAnalyticsStepNav";
+import { AnalyticsShell } from "./AnalyticsShell";
 
 export default function AnalyticsView({ initPageResult, params, searchParams }: AdminViewServerProps) {
   const { req, permissions, locale, visibleEntities } = initPageResult;
@@ -27,10 +28,7 @@ export default function AnalyticsView({ initPageResult, params, searchParams }: 
       <SetAnalyticsStepNav label={title} />
 
       <Gutter>
-        <div className="font-body text-elev-800">
-          <h1 className="text-2xl font-semibold text-elev-1000">{title}</h1>
-          <p className="text-sm text-elev-500 mt-1">Coming up next…</p>
-        </div>
+        <AnalyticsShell title={title} />
       </Gutter>
     </DefaultTemplate>
   );
