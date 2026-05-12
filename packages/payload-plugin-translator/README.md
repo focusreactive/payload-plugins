@@ -32,14 +32,14 @@ yarn add @focus-reactive/payload-plugin-translator
 ## Quick Start
 
 ```typescript
-import { buildConfig } from 'payload'
+import { buildConfig } from "payload";
 import {
   translatorPlugin,
   createOpenAIProvider,
   createPayloadJobsRunner,
-} from '@focus-reactive/payload-plugin-translator'
-import { Posts } from './collections/Posts'
-import { Pages } from './collections/Pages'
+} from "@focus-reactive/payload-plugin-translator";
+import { Posts } from "./collections/Posts";
+import { Pages } from "./collections/Pages";
 
 export default buildConfig({
   collections: [Posts, Pages],
@@ -53,10 +53,10 @@ export default buildConfig({
     }),
   ],
   localization: {
-    locales: ['en', 'de', 'fr'],
-    defaultLocale: 'en',
+    locales: ["en", "de", "fr"],
+    defaultLocale: "en",
   },
-})
+});
 ```
 
 ## Configuration
@@ -64,7 +64,6 @@ export default buildConfig({
 ### TranslatorPluginConfig
 
 Configuration for `translatorPlugin()`.
-
 
 | Property              | Type                  | Required | Default        | Description                                                                                                         |
 | --------------------- | --------------------- | -------- | -------------- | ------------------------------------------------------------------------------------------------------------------- |
@@ -74,38 +73,37 @@ Configuration for `translatorPlugin()`.
 | `access`              | `AccessGuard`         | No       | `undefined`    | Access control function for translation endpoints                                                                   |
 | `basePath`            | `string`              | No       | `'/translate'` | Base path for all API endpoints                                                                                     |
 
-
 ```typescript
 translatorPlugin({
   collections: [Posts, Pages],
-  translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
+  translationProvider: createOpenAIProvider({
+    apiKey: process.env.OPENAI_API_KEY,
+  }),
   runner: createPayloadJobsRunner(),
-  access: async ({ req }) => req.user?.role === 'admin',
-  basePath: '/translate',
-})
+  access: async ({ req }) => req.user?.role === "admin",
+  basePath: "/translate",
+});
 ```
 
 ### OpenAIProviderConfig
 
 Configuration for `createOpenAIProvider()`.
 
-
-| Property       | Type                     | Required | Default         | Description                                |
-| -------------- | ------------------------ | -------- | --------------- | ------------------------------------------ |
-| `apiKey`       | `string`                 | Yes      | —               | OpenAI API key                             |
-| `model`        | `string | ChatModel`     | No       | `'gpt-4o'`      | OpenAI model to use for translation        |
-| `systemPrompt` | `SystemPromptBuilder`    | No       | Built-in prompt | Custom function to build the system prompt |
-| `dryRun`       | `boolean | DryRunConfig` | No       | `false`         | Simulate translations without API calls    |
-
+| Property       | Type                      | Required | Default         | Description                                |
+| -------------- | ------------------------- | -------- | --------------- | ------------------------------------------ |
+| `apiKey`       | `string`                  | Yes      | —               | OpenAI API key                             |
+| `model`        | `string \| ChatModel`     | No       | `'gpt-4o'`      | OpenAI model to use for translation        |
+| `systemPrompt` | `SystemPromptBuilder`     | No       | Built-in prompt | Custom function to build the system prompt |
+| `dryRun`       | `boolean \| DryRunConfig` | No       | `false`         | Simulate translations without API calls    |
 
 ```typescript
 createOpenAIProvider({
   apiKey: process.env.OPENAI_API_KEY,
-  model: 'gpt-4o-mini',
+  model: "gpt-4o-mini",
   systemPrompt: ({ sourceLang, targetLang, defaultPrompt }) =>
     `${defaultPrompt}\nUse formal language. Keep brand names unchanged.`,
   dryRun: false,
-})
+});
 ```
 
 #### SystemPromptBuilder
@@ -113,13 +111,13 @@ createOpenAIProvider({
 Function signature for custom system prompt:
 
 ```typescript
-type SystemPromptBuilder = (context: SystemPromptContext) => string
+type SystemPromptBuilder = (context: SystemPromptContext) => string;
 
 type SystemPromptContext = {
-  sourceLang: string
-  targetLang: string
-  defaultPrompt: string
-}
+  sourceLang: string;
+  targetLang: string;
+  defaultPrompt: string;
+};
 ```
 
 #### DryRunConfig
@@ -127,63 +125,60 @@ type SystemPromptContext = {
 When `dryRun` is an object, it allows custom transformation with optional delay:
 
 ```typescript
-type DryRunTransformer = (text: string) => string | Promise<string>
+type DryRunTransformer = (text: string) => string | Promise<string>;
 
 type DryRunConfig = {
-  transform: DryRunTransformer // Custom transformer function
-  timeout?: number // Delay in ms (simulates API latency)
-}
+  transform: DryRunTransformer; // Custom transformer function
+  timeout?: number; // Delay in ms (simulates API latency)
+};
 ```
 
 ### PayloadJobsRunnerOptions
 
 Configuration for `createPayloadJobsRunner()`.
 
-
-| Property    | Type                      | Required | Default                            | Description                                             |
-| ----------- | ------------------------- | -------- | ---------------------------------- | ------------------------------------------------------- |
-| `taskName`  | `string`                  | No       | `'translate_document'`             | Task name in Payload jobs collection                    |
-| `queueName` | `string`                  | No       | `'translations'`                   | Queue name for grouping jobs                            |
-| `autoRun`   | `false | { cron, limit }` | No       | `{ cron: '* * * * *', limit: 50 }` | Auto-run config, or `false` to disable (for serverless) |
-
+| Property    | Type                       | Required | Default                            | Description                                             |
+| ----------- | -------------------------- | -------- | ---------------------------------- | ------------------------------------------------------- |
+| `taskName`  | `string`                   | No       | `'translate_document'`             | Task name in Payload jobs collection                    |
+| `queueName` | `string`                   | No       | `'translations'`                   | Queue name for grouping jobs                            |
+| `autoRun`   | `false \| { cron, limit }` | No       | `{ cron: '* * * * *', limit: 50 }` | Auto-run config, or `false` to disable (for serverless) |
 
 ```typescript
 createPayloadJobsRunner({
-  taskName: 'translate_document',
-  queueName: 'translations',
+  taskName: "translate_document",
+  queueName: "translations",
   autoRun: {
-    cron: '* * * * *',
+    cron: "* * * * *",
     limit: 50,
   },
-})
+});
 ```
 
 ### FieldTranslationConfig
 
 Configuration for `withFieldTranslation()` helper or `field.custom.translateKit`.
 
-
 | Property  | Type      | Required | Default | Description                         |
 | --------- | --------- | -------- | ------- | ----------------------------------- |
 | `exclude` | `boolean` | No       | `false` | Exclude this field from translation |
 
-
 ```typescript
-import { withFieldTranslation } from '@focus-reactive/payload-plugin-translator'
+import { withFieldTranslation } from "@focus-reactive/payload-plugin-translator";
 
-withFieldTranslation({ name: 'sku', type: 'text', localized: true }, { exclude: true })
+withFieldTranslation(
+  { name: "sku", type: "text", localized: true },
+  { exclude: true },
+);
 ```
 
 ## Translation Strategies
 
 When translating, you can choose how to handle existing translations:
 
-
 | Strategy          | Description                                                              |
 | ----------------- | ------------------------------------------------------------------------ |
 | `'overwrite'`     | (Default) Replaces all existing translated content with new translations |
 | `'skip_existing'` | Only translates fields that are empty in the target locale               |
-
 
 ## Important Notes
 
@@ -239,7 +234,7 @@ export default buildConfig({
   jobs: {
     deleteJobOnComplete: false,
   },
-})
+});
 ```
 
 ## Task Runners
@@ -249,16 +244,16 @@ export default buildConfig({
 Uses Payload's built-in job queue for background processing:
 
 ```typescript
-import { createPayloadJobsRunner } from '@focus-reactive/payload-plugin-translator'
+import { createPayloadJobsRunner } from "@focus-reactive/payload-plugin-translator";
 
 const runner = createPayloadJobsRunner({
-  taskName: 'translate_document',
-  queueName: 'translations',
+  taskName: "translate_document",
+  queueName: "translations",
   autoRun: {
-    cron: '* * * * *',
+    cron: "* * * * *",
     limit: 50,
   },
-})
+});
 ```
 
 ### SyncRunner
@@ -266,9 +261,9 @@ const runner = createPayloadJobsRunner({
 Executes translations synchronously (useful for development or small datasets):
 
 ```typescript
-import { createSyncRunner } from '@focus-reactive/payload-plugin-translator'
+import { createSyncRunner } from "@focus-reactive/payload-plugin-translator";
 
-const runner = createSyncRunner()
+const runner = createSyncRunner();
 ```
 
 ## Translation Providers
@@ -278,13 +273,13 @@ const runner = createSyncRunner()
 Built-in provider using OpenAI's API:
 
 ```typescript
-import { createOpenAIProvider } from '@focus-reactive/payload-plugin-translator'
+import { createOpenAIProvider } from "@focus-reactive/payload-plugin-translator";
 
 const provider = createOpenAIProvider({
   apiKey: process.env.OPENAI_API_KEY,
-  model: 'gpt-4o-mini',
+  model: "gpt-4o-mini",
   systemPrompt: ({ defaultPrompt }) => `${defaultPrompt}\nUse formal language.`,
-})
+});
 ```
 
 ### Custom Provider
@@ -293,11 +288,9 @@ Create your own translation provider by implementing the `TranslationProvider` i
 
 #### TranslationProvider Interface
 
-
-| Method      | Signature                                                                                                | Description                                       |
-| ----------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `translate` | `(content: TranslationInput, sourceLng: string, targetLng: string) => Promise<TranslationOutput | null>` | Translates content from source to target language |
-
+| Method      | Signature                                                                                                 | Description                                       |
+| ----------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `translate` | `(content: TranslationInput, sourceLng: string, targetLng: string) => Promise<TranslationOutput \| null>` | Translates content from source to target language |
 
 **Important:** The numeric indices in `TranslationInput` must be preserved exactly in `TranslationOutput`. Each index maps to a specific field in the document structure, so the provider must return the same keys with translated values.
 
@@ -305,13 +298,13 @@ Create your own translation provider by implementing the `TranslationProvider` i
 
 ```typescript
 // Numeric index representing position in document structure
-type TranslationIndex = number
+type TranslationIndex = number;
 
 // Input: Map of numeric indices to text strings
-type TranslationInput = Record<TranslationIndex, string>
+type TranslationInput = Record<TranslationIndex, string>;
 
 // Output: Same indices with translated values
-type TranslationOutput = Record<TranslationIndex, string>
+type TranslationOutput = Record<TranslationIndex, string>;
 ```
 
 #### Example Implementation
@@ -321,40 +314,44 @@ import type {
   TranslationProvider,
   TranslationInput,
   TranslationOutput,
-} from '@focus-reactive/payload-plugin-translator'
+} from "@focus-reactive/payload-plugin-translator";
 
 class DeepLProvider implements TranslationProvider {
   constructor(private apiKey: string) {}
 
-  async translate(content: TranslationInput, sourceLng: string, targetLng: string): Promise<TranslationOutput | null> {
+  async translate(
+    content: TranslationInput,
+    sourceLng: string,
+    targetLng: string,
+  ): Promise<TranslationOutput | null> {
     try {
       // content example: { "0": "Hello", "1": "World" }
-      const texts = Object.values(content)
+      const texts = Object.values(content);
 
-      const response = await fetch('https://api.deepl.com/v2/translate', {
-        method: 'POST',
+      const response = await fetch("https://api.deepl.com/v2/translate", {
+        method: "POST",
         headers: {
           Authorization: `DeepL-Auth-Key ${this.apiKey}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           text: texts,
           source_lang: sourceLng.toUpperCase(),
           target_lang: targetLng.toUpperCase(),
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       // Reconstruct the result with same keys
-      const result: TranslationOutput = {}
+      const result: TranslationOutput = {};
       Object.keys(content).forEach((key, index) => {
-        result[key] = data.translations[index].text
-      })
+        result[key] = data.translations[index].text;
+      });
 
-      return result
+      return result;
     } catch {
-      return null
+      return null;
     }
   }
 }
@@ -364,7 +361,7 @@ translatorPlugin({
   collections: [Posts],
   translationProvider: new DeepLProvider(process.env.DEEPL_API_KEY),
   runner: createPayloadJobsRunner(),
-})
+});
 ```
 
 ## UI Components
@@ -404,16 +401,8 @@ import type {
 
   // Field config
   FieldTranslationConfig,
-} from '@focus-reactive/payload-plugin-translator'
+} from "@focus-reactive/payload-plugin-translator";
 ```
-
-## Known Issues
-
-### SQLite: Nested JSON queries not supported
-
-SQLite adapter doesn't support nested JSON field queries like `{ 'input.collection.value': { equals: '5' } }`.
-
-**Affected databases:** SQLite only
 
 ## Roadmap
 
@@ -423,4 +412,3 @@ Planned features for future releases:
 - **Global translation dashboard** — Translate all collections at once from a single interface, with progress tracking across the entire CMS
 - **Vercel Cron Jobs runner** — Built-in runner for seamless Vercel/serverless deployments without manual API route configuration
 - Auto-translate on source change — Automatically trigger translation when the default locale content is updated
-
