@@ -41,6 +41,8 @@ export default defineConfig({
     "react-dom",
     "next",
     "@payloadcms/ui",
+    "@payloadcms/next",
+    "@payloadcms/next/templates",
     "lucide-react",
     "recharts",
     "react-day-picker",

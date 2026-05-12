@@ -60,6 +60,7 @@
     "test:watch": "vitest"
   },
   "peerDependencies": {
+    "@payloadcms/next": "^3.0.0",
     "@payloadcms/ui": "^3.0.0",
     "lucide-react": "^0.469.0",
     "next": "^14.0.0 || ^15.0.0",
@@ -87,6 +88,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@payloadcms/next": "3.79.0",
     "@payloadcms/ui": "3.79.0",
     "@tailwindcss/postcss": "^4.0.0",
     "@testing-library/dom": "^10.4.0",
