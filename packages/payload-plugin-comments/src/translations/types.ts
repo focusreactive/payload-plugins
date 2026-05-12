@@ -21,6 +21,7 @@ export interface CommentsTranslations {
   failedToAdd: string;
   unknownAuthor: string;
   deletedUser: string;
+  mentionDeletedSuffix: string;
   noMentionMatches: string;
   loadingComments: string;
   filters: string;

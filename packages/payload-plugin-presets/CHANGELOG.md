@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-presets [0.10.8](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.7...@focus-reactive/payload-plugin-presets@0.10.8) (2026-05-08)
+
+
+### Bug Fixes
+
+* **presets:** preserve custom admin.components.Label on blocks ([6463577](https://github.com/focusreactive/payload-plugins/commit/64635772fac4316b91d20ce8a920bb39ddf991a1))
+
 ## @focus-reactive/payload-plugin-presets [0.10.7](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.6...@focus-reactive/payload-plugin-presets@0.10.7) (2026-05-08)
 
 

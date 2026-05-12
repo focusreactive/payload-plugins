@@ -28,6 +28,7 @@ export function getPluginComponentPath(
   packageName: string | undefined,
   componentPath: string,
   componentName: string,
+  entry: "client" | "rsc" = "client",
 ): string {
   const resolvedName = packageName ?? DEFAULT_PACKAGE_NAME;
 
@@ -40,8 +41,8 @@ export function getPluginComponentPath(
     return `${resolvedName}/${componentPath}#${componentName}`;
   }
 
-  // For npm package: 'package-name/client#Component'
-  return `${resolvedName}/client#${componentName}`;
+  // For npm package: 'package-name/client#Component' or 'package-name/rsc#Component'
+  return `${resolvedName}/${entry}#${componentName}`;
 }
 
 /** Client-side config stored in admin.custom.presetsPlugin */
@@ -213,8 +214,30 @@ function getBlocksFieldWithPresetsPath(packageName?: string): string {
 }
 
 export function getBlockAdminComponents(
+  block: Block,
   packageName?: string,
+  userLabels?: unknown[],
 ): NonNullable<Block["admin"]>["components"] {
+  const userLabel = block.admin?.components?.Label;
+
+  if (userLabel) {
+    userLabels?.push(userLabel);
+    const wrapperPath = getPluginComponentPath(
+      packageName,
+      "components/presetActions/BlockLabelServerWrapper",
+      "BlockLabelServerWrapper",
+      "rsc",
+    );
+    const [path, exportName] = wrapperPath.split("#");
+    return {
+      Label: {
+        path,
+        exportName,
+        clientProps: { userLabel },
+      },
+    };
+  }
+
   return {
     Label: getPluginComponentPath(
       packageName,
@@ -250,6 +273,7 @@ function transformFields(
   fields: Field[],
   blockMap: Map<string, Block>,
   packageName: string | undefined,
+  userLabels: unknown[],
 ): Field[] {
   return fields.map((field) => {
     if (fieldIsBlockType(field)) {
@@ -264,10 +288,15 @@ function transformFields(
             ...block.admin,
             components: {
               ...block.admin?.components,
-              ...getBlockAdminComponents(),
+              ...getBlockAdminComponents(block, packageName, userLabels),
             },
           },
-          fields: transformFields(block.fields, blockMap, packageName),
+          fields: transformFields(
+            block.fields,
+            blockMap,
+            packageName,
+            userLabels,
+          ),
         };
       });
 
@@ -291,7 +320,12 @@ function transformFields(
         ...tabsField,
         tabs: tabsField.tabs.map((tab) => ({
           ...tab,
-          fields: transformFields(tab.fields, blockMap, packageName),
+          fields: transformFields(
+            tab.fields,
+            blockMap,
+            packageName,
+            userLabels,
+          ),
         })),
       };
     }
@@ -303,6 +337,7 @@ function transformFields(
           (field as { fields: Field[] }).fields,
           blockMap,
           packageName,
+          userLabels,
         ),
       };
     }
@@ -426,18 +461,46 @@ export const presetsPlugin =
     }
 
     const blockMap = new Map<string, Block>();
+    const userLabels: unknown[] = [];
 
     const transformedCollections = (incomingConfig.collections || []).map(
       (collection) => ({
         ...collection,
-        fields: transformFields(collection.fields, blockMap, packageName),
+        fields: transformFields(
+          collection.fields,
+          blockMap,
+          packageName,
+          userLabels,
+        ),
       }),
     );
 
     const transformedGlobals = (incomingConfig.globals || []).map((global) => ({
       ...global,
-      fields: transformFields(global.fields, blockMap, packageName),
+      fields: transformFields(global.fields, blockMap, packageName, userLabels),
     }));
+
+    const userLabelDeps: Record<string, { path: string; type: "component" }> =
+      {};
+    for (const label of userLabels) {
+      if (typeof label === "string") {
+        userLabelDeps[`presetsUserLabel:${label}`] = {
+          path: label,
+          type: "component",
+        };
+      } else if (label && typeof label === "object") {
+        const obj = label as { path?: string; exportName?: string };
+        if (obj.path) {
+          const key = obj.exportName
+            ? `${obj.path}#${obj.exportName}`
+            : obj.path;
+          userLabelDeps[`presetsUserLabel:${key}`] = {
+            path: key,
+            type: "component",
+          };
+        }
+      }
+    }
 
     const effectivePresetTypes = buildEffectivePresetTypes(
       blockMap,
@@ -491,6 +554,10 @@ export const presetsPlugin =
         custom: {
           ...incomingConfig.admin?.custom,
           presetsPlugin: clientConfig,
+        },
+        dependencies: {
+          ...incomingConfig.admin?.dependencies,
+          ...userLabelDeps,
         },
       },
       i18n: {

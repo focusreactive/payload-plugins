@@ -27,6 +27,7 @@ export function CommentItem({ comment, currentUserId }: Props) {
   const contentRef = useRef<HTMLParagraphElement>(null);
 
   const deletedUserLabel = t("comments:deletedUser" as never) ?? FALLBACK_DELETED_USERNAME;
+  const mentionDeletedSuffix = t("comments:mentionDeletedSuffix" as never) ?? "(deleted)";
   const unknownLabel = t("comments:unknownAuthor" as never) ?? FALLBACK_USERNAME;
   const narrowedAuthor = typeof comment.author === "object" ? comment.author : null;
   const authorName = resolveUsername(narrowedAuthor, usernameFieldPath, unknownLabel);
@@ -42,6 +43,7 @@ export function CommentItem({ comment, currentUserId }: Props) {
     currentUserId,
     usernameFieldPath,
     fallbackDeletedUsername: deletedUserLabel,
+    mentionDeletedSuffix,
   });
 
   const handleToggleResolve = () => {
