@@ -11,6 +11,7 @@ import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 
 import { abTestingPlugin } from '@focus-reactive/payload-plugin-ab'
+import { analyticsPlugin } from '@focus-reactive/payload-plugin-analytics'
 import { presetsPlugin } from '@focus-reactive/payload-plugin-presets'
 import { schedulePublicationPlugin } from '@focus-reactive/payload-plugin-scheduling'
 import { commentsPlugin } from '@focus-reactive/payload-plugin-comments'
@@ -71,6 +72,16 @@ export default buildConfig({
         },
       ],
       usernameFieldPath: 'name',
+    }),
+    analyticsPlugin({
+      ga4: {
+        measurementId: process.env.GA4_MEASUREMENT_ID!,
+        propertyId: process.env.GA4_PROPERTY_ID!,
+        serviceAccount: {
+          clientEmail: process.env.GA4_CLIENT_EMAIL!,
+          privateKey: (process.env.GA4_PRIVATE_KEY ?? '').replace(/\\n/g, '\n'),
+        },
+      },
     }),
   ],
 })

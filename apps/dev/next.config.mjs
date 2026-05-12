@@ -19,13 +19,30 @@ const pkgDir = (pkg) => {
   }
 }
 
+const GA4_SERVER_EXTERNALS = [
+  '@google-analytics/data',
+  '@grpc/grpc-js',
+  '@grpc/proto-loader',
+  'google-gax',
+  'google-auth-library',
+  'gcp-metadata',
+  'gtoken',
+]
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack: (webpackConfig, { dev }) => {
+  webpack: (webpackConfig, { dev, isServer }) => {
     webpackConfig.resolve.extensionAlias = {
       '.cjs': ['.cts', '.cjs'],
       '.js': ['.ts', '.tsx', '.js', '.jsx'],
       '.mjs': ['.mts', '.mjs'],
+    }
+
+    if (isServer) {
+      webpackConfig.externals = [
+        ...(webpackConfig.externals || []),
+        ...GA4_SERVER_EXTERNALS,
+      ]
     }
 
     // Force single instances of packages that use React context.
