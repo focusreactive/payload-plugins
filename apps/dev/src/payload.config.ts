@@ -14,6 +14,11 @@ import { abTestingPlugin } from '@focus-reactive/payload-plugin-ab'
 import { presetsPlugin } from '@focus-reactive/payload-plugin-presets'
 import { schedulePublicationPlugin } from '@focus-reactive/payload-plugin-scheduling'
 import { commentsPlugin } from '@focus-reactive/payload-plugin-comments'
+import {
+  translatorPlugin,
+  createOpenAIProvider,
+  createPayloadJobsRunner,
+} from '@focus-reactive/payload-plugin-translator'
 import { abAdapter } from './lib/ab-testing/dbAdapter'
 
 const filename = fileURLToPath(import.meta.url)
@@ -35,6 +40,16 @@ export default buildConfig({
   collections: [Users, Media, Pages],
   globals: [Header],
   editor: lexicalEditor(),
+  localization: {
+    locales: [
+      { code: 'en', label: 'English' },
+      { code: 'de', label: 'Deutsch' },
+      { code: 'fr', label: 'Français' },
+      { code: 'es', label: 'Español' },
+    ],
+    defaultLocale: 'en',
+    fallback: true,
+  },
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
@@ -71,6 +86,14 @@ export default buildConfig({
         },
       ],
       usernameFieldPath: 'name',
+    }),
+    translatorPlugin({
+      collections: [Pages],
+      translationProvider: createOpenAIProvider({
+        apiKey: process.env.OPENAI_API_KEY ?? '',
+        dryRun: !process.env.OPENAI_API_KEY,
+      }),
+      runner: createPayloadJobsRunner(),
     }),
   ],
 })

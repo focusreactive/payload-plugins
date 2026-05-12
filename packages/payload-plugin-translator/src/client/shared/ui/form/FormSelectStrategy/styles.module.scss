@@ -1,0 +1,16 @@
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.label__icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--theme-elevation-500);
+  cursor: help;
+
+  &:hover {
+    color: var(--theme-elevation-800);
+  }
+}

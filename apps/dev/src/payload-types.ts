@@ -94,7 +94,12 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  fallbackLocale: null;
+  fallbackLocale:
+    | ('false' | 'none' | 'null')
+    | false
+    | null
+    | ('en' | 'de' | 'fr' | 'es')
+    | ('en' | 'de' | 'fr' | 'es')[];
   globals: {
     header: Header;
     _abManifest: _AbManifest;
@@ -103,13 +108,14 @@ export interface Config {
     header: HeaderSelect<false> | HeaderSelect<true>;
     _abManifest: _AbManifestSelect<false> | _AbManifestSelect<true>;
   };
-  locale: null;
+  locale: 'en' | 'de' | 'fr' | 'es';
   widgets: {
     collections: CollectionsWidget;
   };
   user: User;
   jobs: {
     tasks: {
+      translate_document: TaskTranslateDocument;
       schedulePublish: TaskSchedulePublish;
       inline: {
         input: unknown;
@@ -369,7 +375,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'schedulePublish';
+        taskSlug: 'inline' | 'translate_document' | 'schedulePublish';
         taskID: string;
         input?:
           | {
@@ -402,7 +408,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'schedulePublish') | null;
+  taskSlug?: ('inline' | 'translate_document' | 'schedulePublish') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -740,6 +746,23 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskTranslate_document".
+ */
+export interface TaskTranslateDocument {
+  input: {
+    collection: {
+      relationTo: 'pages';
+      value: number | Page;
+    };
+    source_lng: string;
+    target_lng: string;
+    strategy: string;
+    publish_on_translation?: boolean | null;
+  };
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

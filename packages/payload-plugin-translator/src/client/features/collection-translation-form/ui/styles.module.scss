@@ -1,0 +1,31 @@
+.fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.locale-group {
+  display: flex;
+  gap: 1rem;
+}
+
+.select-locale-field {
+  min-width: 70px;
+}
+
+.strategy-field {
+  min-width: 150px;
+}
+
+.submit-button {
+  width: 100%;
+}

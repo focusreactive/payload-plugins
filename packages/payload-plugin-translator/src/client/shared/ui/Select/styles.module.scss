@@ -1,0 +1,55 @@
+.select {
+  width: 100%;
+  height: var(--height, 40px);
+  padding-top: calc((var(--height, 40px) - var(--font-size, 1rem) * 1.2) / 2);
+  padding-bottom: calc((var(--height, 40px) - var(--font-size, 1rem) * 1.2) / 2);
+  padding-left: var(--padding-inline, 0.75rem);
+  padding-right: calc(var(--padding-inline, 0.75rem) + 24px);
+  /* extra space for arrow */
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: var(--style-radius-s);
+  background: var(--theme-input-bg);
+  color: var(--theme-elevation-800);
+  font-size: var(--font-size, 1rem);
+  flex-shrink: 0;
+
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='currentColor' viewBox='0 0 20 20' %3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right var(--padding-inline, 0.75rem) center;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+
+  &:focus {
+    outline: 2px solid var(--theme-success-200);
+    outline-offset: -1px;
+    border-color: var(--theme-success-500);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* Size-specific styles if needed */
+.size-sm {
+  background-size: 12px 12px;
+}
+
+.size-md {
+  background-size: 14px 14px;
+}
+
+.size-lg {
+  background-size: 16px 16px;
+}
+
+.selectError {
+  border-color: var(--theme-error-600);
+  background: var(--theme-error-100);
+
+  &:focus {
+    outline: 2px solid var(--theme-error-200);
+    outline-offset: -1px;
+  }
+}

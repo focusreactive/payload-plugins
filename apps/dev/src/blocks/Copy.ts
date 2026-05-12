@@ -5,6 +5,7 @@ const copyFields: Field[] = [
     name: 'text',
     type: 'textarea',
     required: true,
+    localized: true,
   },
 ]
 

@@ -1,0 +1,14 @@
+.description {
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+
+.default {
+  color: var(--theme-elevation-600);
+}
+
+.error {
+  color: var(--theme-error-600);
+  font-weight: 500;
+}

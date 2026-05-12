@@ -5,10 +5,12 @@ const heroFields: Field[] = [
     name: 'title',
     type: 'text',
     required: true,
+    localized: true,
   },
   {
     name: 'description',
     type: 'textarea',
+    localized: true,
   },
 ]
 

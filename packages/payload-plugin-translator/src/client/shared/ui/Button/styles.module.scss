@@ -1,0 +1,103 @@
+.button {
+  border-radius: var(--style-radius-m);
+  appearance: none;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+  transition: background 0.1sease-in-out, opacity 0.2sease-in-out, border-color 0.2sease-in-out;
+  background: none;
+  padding-block: 0.25rem;
+  padding-inline: var(--padding-inline);
+  height: var(--height);
+  border: none;
+  width: var(--button-width);
+}
+
+.icon-button {
+  width: var(--width);
+  padding-inline: 0;
+}
+
+.start-content {
+  display: flex;
+  margin-right: calc(var(--base) / 2);
+}
+
+.outlined {
+  border: 1px solid var(--theme-elevation-200);
+
+  &:hover:not(:disabled),
+  &:focus {
+    border-color: var(--theme-elevation-100);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    background-color: var(--theme-elevation-200);
+    color: var(--theme-elevation-800);
+  }
+}
+
+.filled {
+  color: var(--theme-elevation-0);
+  background-color: var(--theme-elevation-800);
+
+  &:focus,
+  &:hover:not(:disabled) {
+    background-color: var(--theme-elevation-600);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    background-color: var(--theme-elevation-200);
+    color: var(--theme-elevation-800);
+  }
+}
+
+.unstyled {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  appearance: none;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+
+  &:hover:not(:disabled),
+  &:focus {
+    background-color: transparent
+  }
+}
+
+.transparent {
+  background-color: transparent;
+
+  &:hover:not(:disabled),
+  &:focus {
+    background-color: var(--theme-elevation-50);
+  }
+}
+
+.light {
+  background-color: var(--theme-elevation-100);
+
+  &:hover:not(:disabled),
+  &:focus {
+    background-color: var(--theme-elevation-150);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    background-color: var(--theme-elevation-50);
+    color: var(--theme-elevation-400);
+  }
+}
