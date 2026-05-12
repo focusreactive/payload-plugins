@@ -1,0 +1,16 @@
+{
+  "rows": [
+    { "deviceCategory": "desktop", "browser": "", "os": "", "sessions": 9846, "users": 7220 },
+    { "deviceCategory": "mobile", "browser": "", "os": "", "sessions": 7421, "users": 5510 },
+    { "deviceCategory": "tablet", "browser": "", "os": "", "sessions": 723, "users": 612 },
+    { "deviceCategory": "other", "browser": "", "os": "", "sessions": 244, "users": 218 }
+  ],
+  "comparison": {
+    "rows": [
+      { "deviceCategory": "desktop", "browser": "", "os": "", "sessions": 8901, "users": 6820 },
+      { "deviceCategory": "mobile", "browser": "", "os": "", "sessions": 6602, "users": 5012 },
+      { "deviceCategory": "tablet", "browser": "", "os": "", "sessions": 540, "users": 471 },
+      { "deviceCategory": "other", "browser": "", "os": "", "sessions": 176, "users": 158 }
+    ]
+  }
+}

@@ -9,12 +9,14 @@ export function resolveDateRange(range: DateRange): ResolvedDateRange {
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
 
+  const todayPresetDateRange: ResolvedDateRange = {
+    startDate: convertDateToISO(today),
+    endDate: convertDateToISO(today),
+  };
+
   switch (range.preset) {
     case "today":
-      return {
-        startDate: convertDateToISO(today),
-        endDate: convertDateToISO(today),
-      };
+      return todayPresetDateRange;
     case "yesterday":
       return {
         startDate: convertDateToISO(shiftDateByDays(today, -1)),
@@ -35,5 +37,8 @@ export function resolveDateRange(range: DateRange): ResolvedDateRange {
         startDate: convertDateToISO(shiftDateByDays(today, -89)),
         endDate: convertDateToISO(today),
       };
+    default: {
+      return todayPresetDateRange;
+    }
   }
 }

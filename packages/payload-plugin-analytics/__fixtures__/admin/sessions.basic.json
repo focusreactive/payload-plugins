@@ -1,0 +1,55 @@
+{
+  "rows": [
+    {
+      "sessionId": "s_2026_05_12_001",
+      "landingPage": "/pricing",
+      "source": "google / organic",
+      "deviceCategory": "desktop",
+      "country": "United States",
+      "startedAt": "2026-05-12T14:32:00Z",
+      "eventCount": 12,
+      "hadLeadAction": true
+    },
+    {
+      "sessionId": "s_2026_05_12_002",
+      "landingPage": "/",
+      "source": "(direct) / (none)",
+      "deviceCategory": "mobile",
+      "country": "United Kingdom",
+      "startedAt": "2026-05-12T14:18:00Z",
+      "eventCount": 6,
+      "hadLeadAction": false
+    },
+    {
+      "sessionId": "s_2026_05_12_003",
+      "landingPage": "/features",
+      "source": "linkedin.com / referral",
+      "deviceCategory": "desktop",
+      "country": "Germany",
+      "startedAt": "2026-05-12T13:54:00Z",
+      "eventCount": 9,
+      "hadLeadAction": true
+    },
+    {
+      "sessionId": "s_2026_05_12_004",
+      "landingPage": "/blog",
+      "source": "newsletter / email",
+      "deviceCategory": "tablet",
+      "country": "Canada",
+      "startedAt": "2026-05-12T13:21:00Z",
+      "eventCount": 4,
+      "hadLeadAction": false
+    },
+    {
+      "sessionId": "s_2026_05_12_005",
+      "landingPage": "/contact",
+      "source": "google / organic",
+      "deviceCategory": "mobile",
+      "country": "Netherlands",
+      "startedAt": "2026-05-12T12:42:00Z",
+      "eventCount": 14,
+      "hadLeadAction": true
+    }
+  ],
+  "pagination": { "cursor": null, "hasMore": false }
+}

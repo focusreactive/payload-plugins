@@ -2,6 +2,16 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, beforeEach } from "vitest";
 
+if (typeof globalThis.ResizeObserver === "undefined") {
+  class ResizeObserverStub {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+
+  globalThis.ResizeObserver = ResizeObserverStub;
+}
+
 afterEach(() => {
   cleanup();
 });

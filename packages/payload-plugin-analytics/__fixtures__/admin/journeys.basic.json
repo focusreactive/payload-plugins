@@ -1,0 +1,43 @@
+{
+  "rows": [
+    {
+      "path": [
+        { "kind": "page", "value": "/" },
+        { "kind": "page", "value": "/pricing" },
+        { "kind": "leadAction", "value": "phone_click" }
+      ],
+      "count": 142,
+      "conversionRate": 12.4
+    },
+    {
+      "path": [
+        { "kind": "page", "value": "/" },
+        { "kind": "page", "value": "/features" },
+        { "kind": "page", "value": "/pricing" },
+        { "kind": "leadAction", "value": "form_submit" }
+      ],
+      "count": 88,
+      "conversionRate": 8.1
+    },
+    {
+      "path": [
+        { "kind": "page", "value": "/blog" },
+        { "kind": "page", "value": "/" },
+        { "kind": "page", "value": "/contact" },
+        { "kind": "leadAction", "value": "email_click" }
+      ],
+      "count": 64,
+      "conversionRate": 6.4
+    },
+    {
+      "path": [
+        { "kind": "page", "value": "/" },
+        { "kind": "leadAction", "value": "phone_click" }
+      ],
+      "count": 52,
+      "conversionRate": 4.8
+    }
+  ],
+  "sessionsConsidered": 14820,
+  "truncated": false
+}

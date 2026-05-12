@@ -1,0 +1,18 @@
+{
+  "rows": [
+    { "country": "United States", "city": "San Francisco", "sessions": 4820, "users": 3702 },
+    { "country": "United Kingdom", "city": "London", "sessions": 2410, "users": 1990 },
+    { "country": "Germany", "city": "Berlin", "sessions": 1980, "users": 1612 },
+    { "country": "Canada", "city": "Toronto", "sessions": 1620, "users": 1404 },
+    { "country": "Netherlands", "city": "Amsterdam", "sessions": 1180, "users": 1018 },
+    { "country": "Australia", "city": "Sydney", "sessions": 940, "users": 812 },
+    { "country": "France", "city": "Paris", "sessions": 820, "users": 704 }
+  ],
+  "comparison": {
+    "rows": [
+      { "country": "United States", "city": "San Francisco", "sessions": 4310, "users": 3401 },
+      { "country": "United Kingdom", "city": "London", "sessions": 2110, "users": 1822 },
+      { "country": "Germany", "city": "Berlin", "sessions": 1801, "users": 1502 }
+    ]
+  }
+}
