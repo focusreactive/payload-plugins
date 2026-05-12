@@ -1,0 +1,16 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.locale {
+  color: var(--theme-text, #333);
+}
+
+.arrow {
+  display: flex;
+  align-items: center;
+}

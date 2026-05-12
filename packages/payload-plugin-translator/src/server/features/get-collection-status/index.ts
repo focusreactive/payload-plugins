@@ -1,0 +1,1 @@
+export { createGetCollectionStatusRoute } from './route'

@@ -1,0 +1,1 @@
+export { CollectionTranslationForm } from './CollectionTranslationForm'

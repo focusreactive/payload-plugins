@@ -1,0 +1,37 @@
+.indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.blue-indicator {
+  background-color: #3b82f6;
+}
+
+.green-indicator {
+  background-color: #10b981;
+}
+
+.red-indicator {
+  background-color: var(--theme-error-600);
+}
+
+.gray-indicator {
+  background-color: var(--color-base-250);
+}
+
+.animated {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}

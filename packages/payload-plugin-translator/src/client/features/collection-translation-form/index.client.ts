@@ -1,0 +1,1 @@
+export { CollectionTranslationFormModel } from './model'

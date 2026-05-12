@@ -1,0 +1,12 @@
+.label {
+  display: flex;
+  flex-direction: column;
+  color: var(--theme-elevation-800);
+  font-family: var(--font-body);
+  font-size: var(--base-body-size);
+  width: 100%;
+
+  &__text {
+    padding-bottom: 5px;
+  }
+}

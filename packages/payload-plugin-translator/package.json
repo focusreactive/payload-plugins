@@ -1,0 +1,97 @@
+{
+  "name": "@focus-reactive/payload-plugin-translator",
+  "version": "0.1.4",
+  "description": "Translation plugin for Payload CMS 3.x. Automatically translate your localized content using any translation provider.",
+  "type": "module",
+  "license": "MIT",
+  "author": "FocusReactive <ship@focusreactive.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/focusreactive/payload-plugins",
+    "directory": "packages/payload-plugin-translator"
+  },
+  "bugs": {
+    "url": "https://github.com/focusreactive/payload-plugins/issues"
+  },
+  "homepage": "https://github.com/focusreactive/payload-plugins/tree/main/packages/payload-plugin-translator",
+  "keywords": [
+    "payload",
+    "payloadcms",
+    "payload-plugin",
+    "translation",
+    "i18n",
+    "localization",
+    "openai",
+    "ai-translation"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./client/*": {
+      "import": "./dist/client/*.js",
+      "types": "./dist/client/*.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.test.*",
+    "!dist/**/*.map"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun run clean && bun run build:swc && bun run build:types && bun run copyfiles",
+    "build:swc": "swc ./src -d ./dist --config-file .swcrc --strip-leading-paths --ignore '**/*.test.ts' --ignore '**/*.d.ts' --ignore '**/__tests__/**' --ignore '**/__mocks__/**'",
+    "build:types": "tsc --emitDeclarationOnly --outDir dist",
+    "copyfiles": "copyfiles -u 1 \"src/**/*.scss\" dist",
+    "clean": "rm -rf dist",
+    "dev": "bun run build:swc -- --watch",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check-types": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@payloadcms/richtext-lexical": "^3.76.0",
+    "@payloadcms/ui": "^3.76.0",
+    "payload": "^3.76.0",
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.9.0",
+    "@radix-ui/react-popover": "^1.1.0",
+    "@radix-ui/react-tooltip": "^1.2.8",
+    "@tanstack/react-query": "^5.0.0",
+    "classnames": "^2.5.0",
+    "ofetch": "^1.4.0",
+    "react-hook-form": "^7.54.0",
+    "zod": "^3.23.0"
+  },
+  "optionalDependencies": {
+    "openai": "^4.50.0"
+  },
+  "devDependencies": {
+    "@payloadcms/richtext-lexical": "3.79.0",
+    "@payloadcms/ui": "3.79.0",
+    "@swc/cli": "0.4.0",
+    "@swc/core": "1.7.0",
+    "@types/react": "19.2.9",
+    "@vitest/coverage-v8": "3.2.4",
+    "copyfiles": "2.4.1",
+    "eslint": "9.0.0",
+    "eslint-config-prettier": "9.0.0",
+    "next": "15.4.11",
+    "payload": "3.79.0",
+    "react": "19.0.0",
+    "typescript": "5.5.2",
+    "eslint-plugin-react-hooks": "6.0.0-rc.2",
+    "typescript-eslint": "8.0.0",
+    "vitest": "3.2.4"
+  }
+}

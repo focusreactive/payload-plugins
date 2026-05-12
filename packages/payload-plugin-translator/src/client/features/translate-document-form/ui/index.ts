@@ -1,0 +1,1 @@
+export { DocumentTranslationForm } from './DocumentTranslationForm'

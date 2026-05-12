@@ -1,0 +1,56 @@
+.divider {
+  flex-shrink: 0;
+  border: none;
+  margin: 0;
+
+  &.horizontal {
+    width: 100%;
+  }
+
+  &.vertical {
+    height: 100%;
+    align-self: stretch;
+  }
+
+  &.sm {
+    &.horizontal {
+      height: 1px;
+    }
+
+    &.vertical {
+      width: 1px;
+    }
+  }
+
+  &.md {
+    &.horizontal {
+      height: 2px;
+    }
+
+    &.vertical {
+      width: 2px;
+    }
+  }
+
+  &.lg {
+    &.horizontal {
+      height: 3px;
+    }
+
+    &.vertical {
+      width: 3px;
+    }
+  }
+
+  &.light {
+    background-color: var(--theme-elevation-150);
+  }
+
+  &.medium {
+    background-color: var(--theme-elevation-200);
+  }
+
+  &.dark {
+    background-color: var(--theme-elevation-300);
+  }
+}

@@ -1,0 +1,1 @@
+export { DocumentTranslationFormModel } from './model'
