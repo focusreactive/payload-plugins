@@ -34,7 +34,9 @@ export function AnalyticsShell({ title }: AnalyticsShellProps) {
       <TabsNav active={tab} onChange={setTab} />
 
       {tab === "overview" && <OverviewTab comparison={comparison} />}
-      {tab === "lead-actions" && <LeadActionsTab comparison={comparison} />}
+
+      {tab === "lead-actions" && <LeadActionsTab comparison={comparison} totalSessions={0} />}
+
       {tab === "sessions" && <SessionsTab filters={sessions} onFiltersChange={setSessions} />}
     </div>
   );

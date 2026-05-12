@@ -36,3 +36,66 @@ describe("invariants", () => {
     expect(ANALYTICS_ENDPOINT_PATHS.journeys).toBe("/analytics/journeys");
   });
 });
+
+describe("admin view invariants", () => {
+  const COMPONENTS_DIR = "src/components/AnalyticsView";
+
+  it("no recharts imports outside TrendChartInner.tsx and DonutChartInner.tsx", async () => {
+    const files = await glob(`${COMPONENTS_DIR}/**/*.{ts,tsx}`, {
+      cwd: PKG,
+      ignore: [`${COMPONENTS_DIR}/ui/TrendChartInner.tsx`, `${COMPONENTS_DIR}/ui/DonutChartInner.tsx`],
+    });
+    const offenders = files.filter((f) => /from\s+["']recharts["']/.test(readFileSync(resolve(PKG, f), "utf8")));
+    expect(offenders).toEqual([]);
+  });
+
+  it("no @heroicons or react-icons imports anywhere in AnalyticsView", async () => {
+    const files = await glob(`${COMPONENTS_DIR}/**/*.{ts,tsx}`, { cwd: PKG });
+    const offenders = files.filter((f) => {
+      const src = readFileSync(resolve(PKG, f), "utf8");
+      return /@heroicons|react-icons/.test(src);
+    });
+    expect(offenders).toEqual([]);
+  });
+
+  it("no process.env reads inside AnalyticsView components", async () => {
+    const files = await glob(`${COMPONENTS_DIR}/**/*.{ts,tsx}`, { cwd: PKG });
+    const offenders = files.filter((f) => /process\.env/.test(readFileSync(resolve(PKG, f), "utf8")));
+    expect(offenders).toEqual([]);
+  });
+
+  it("no router.replace or router.push outside useAnalyticsParams.ts", async () => {
+    const files = await glob(`${COMPONENTS_DIR}/**/*.{ts,tsx}`, {
+      cwd: PKG,
+      ignore: [`${COMPONENTS_DIR}/hooks/useAnalyticsParams.ts`],
+    });
+    const offenders = files.filter((f) => {
+      const src = readFileSync(resolve(PKG, f), "utf8");
+      return /router\.(replace|push)\b/.test(src);
+    });
+    expect(offenders).toEqual([]);
+  });
+
+  it("no services/ or endpoints/ imports from AnalyticsView", async () => {
+    const files = await glob(`${COMPONENTS_DIR}/**/*.{ts,tsx}`, { cwd: PKG });
+    const offenders = files.filter((f) => {
+      const src = readFileSync(resolve(PKG, f), "utf8");
+      return /from\s+["']\.\.\/\.\.\/services|from\s+["']\.\.\/\.\.\/\.\.\/services|from\s+["']\.\.\/\.\.\/endpoints/.test(
+        src,
+      );
+    });
+    expect(offenders).toEqual([]);
+  });
+
+  it("getLeadActionIcon is the only file mapping LeadActionKind -> LucideIcon", async () => {
+    const files = await glob(`${COMPONENTS_DIR}/**/*.{ts,tsx}`, {
+      cwd: PKG,
+      ignore: [`${COMPONENTS_DIR}/icons/getLeadActionIcon.ts`],
+    });
+    const offenders = files.filter((f) => {
+      const src = readFileSync(resolve(PKG, f), "utf8");
+      return /"phone_click":|'phone_click':/.test(src) && /Lucide/.test(src);
+    });
+    expect(offenders).toEqual([]);
+  });
+});

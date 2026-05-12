@@ -22,7 +22,7 @@ export interface TopNTableProps<Row> extends BlockStateProps {
   emptyMessage?: string;
 }
 
-export function TopNTable<Row extends Record<string, unknown>>({
+export function TopNTable<Row extends object>({
   rows,
   columns,
   initialVisible = 5,
@@ -68,7 +68,7 @@ export function TopNTable<Row extends Record<string, unknown>>({
                     font === "mono" && "font-[family-name:var(--font-mono)] text-xs",
                     muted && "text-[var(--theme-elevation-500)]",
                   )}>
-                  {render ? render(row) : (row[key] as ReactNode)}
+                  {render ? render(row) : ((row as Record<string, unknown>)[key] as ReactNode)}
                 </td>
               ))}
             </tr>
