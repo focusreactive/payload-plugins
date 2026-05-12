@@ -18,6 +18,7 @@ export const Pages: CollectionConfig = {
       name: 'title',
       type: 'text',
       required: true,
+      localized: true,
     },
     {
       name: 'slug',
@@ -29,6 +30,7 @@ export const Pages: CollectionConfig = {
       name: 'sections',
       type: 'blocks',
       blocks: [HeroBlock, CopyBlock],
+      localized: true,
     },
   ],
 }

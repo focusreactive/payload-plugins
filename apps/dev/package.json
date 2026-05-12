@@ -20,6 +20,7 @@
     "@focus-reactive/payload-plugin-presets": "workspace:*",
     "@focus-reactive/payload-plugin-comments": "workspace:*",
     "@focus-reactive/payload-plugin-scheduling": "workspace:*",
+    "@focus-reactive/payload-plugin-translator": "workspace:*",
     "@payloadcms/db-sqlite": "3.79.0",
     "@payloadcms/live-preview-react": "3.79.0",
     "@payloadcms/next": "3.79.0",
