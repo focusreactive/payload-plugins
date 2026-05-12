@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/payload-plugin-translator",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Translation plugin for Payload CMS 3.x. Automatically translate your localized content using any translation provider.",
   "type": "module",
   "license": "MIT",
