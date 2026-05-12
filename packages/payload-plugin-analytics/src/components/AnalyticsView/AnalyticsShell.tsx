@@ -23,7 +23,7 @@ export function AnalyticsShell({ title }: AnalyticsShellProps) {
         </div>
 
         <FilterBar
-          className="mr-auto"
+          className="ml-auto"
           dateRange={dateRange}
           onDateRangeChange={setDateRange}
           comparison={comparison}
