@@ -1,4 +1,5 @@
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface AnalyticsTranslations {}
+export interface AnalyticsTranslations {
+  title: string;
+}
 
 export type Translations = Record<string, Partial<AnalyticsTranslations>>;

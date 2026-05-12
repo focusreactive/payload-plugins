@@ -3,6 +3,8 @@ import { setPluginConfig } from "./config";
 import type { AnalyticsPluginConfig } from "./types/config";
 import { PLUGIN_NAME } from "./constants";
 import { buildEndpoints } from "./endpoints";
+import { overrideAdmin } from "./utils/config/overrideAdmin";
+import { mergeTranslations } from "./utils/config/mergeTranslations";
 
 const MEASUREMENT_ID_RE = /^G-[A-Z0-9]+$/;
 
@@ -32,8 +34,15 @@ export const analyticsPlugin =
 
     setPluginConfig(config);
 
-    return {
+    const incomingConfigTranslations = incomingConfig.i18n?.translations ?? {};
+    const mergedTranslations = mergeTranslations(incomingConfigTranslations, config.translations ?? {});
+
+    return overrideAdmin({
       ...incomingConfig,
+      i18n: {
+        ...incomingConfig.i18n,
+        translations: mergedTranslations,
+      },
       endpoints: [...(incomingConfig.endpoints ?? []), ...buildEndpoints(config)],
-    };
+    });
   };

@@ -93,4 +93,9 @@ describe("analyticsPlugin endpoint registration", () => {
     const incomingEmpty = { endpoints: [] } as Config;
     expect(analyticsPlugin({ disabled: true, ga4: validConfig.ga4 })(incomingEmpty)).toBe(incomingEmpty);
   });
+
+  it("registers /admin/analytics view", () => {
+    const result = analyticsPlugin(validConfig)({} as Config);
+    expect((result as any).admin.components.views.analytics.path).toBe("/analytics");
+  });
 });

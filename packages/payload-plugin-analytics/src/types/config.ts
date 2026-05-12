@@ -1,5 +1,5 @@
 import type { PayloadRequest } from "payload";
-import type { AnalyticsTranslations } from "../translations/types";
+import type { Translations } from "../translations/types";
 
 export interface Ga4Config {
   /** GA4 numeric Property ID — Data API. */
@@ -28,5 +28,5 @@ export interface AnalyticsPluginConfig {
   ga4: Ga4Config;
   autoTrackLeadActions?: AutoTrackLeadActionsConfig;
   access?: AccessFn;
-  translations?: Partial<Record<string, Partial<AnalyticsTranslations>>>;
+  translations?: Translations;
 }
