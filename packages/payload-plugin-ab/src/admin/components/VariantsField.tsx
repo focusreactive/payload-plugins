@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
-import { Button, toast, useDocumentInfo, useField, EditIcon } from "@payloadcms/ui";
-import { TrashIcon } from "@payloadcms/ui/icons/Trash";
+import { useCallback, useEffect, useState } from "react";
+import { Button, toast, useDocumentInfo, useField } from "@payloadcms/ui";
 import { AB_PASS_PERCENTAGE_FIELD, AB_VARIANT_OF_FIELD, AB_VARIANT_PERCENTAGES_FIELD } from "../../constants";
+import { VariantRow } from "./VariantRow";
 
-interface VariantRow {
+export interface VariantData {
   id: string;
   title?: string;
   slug?: string;
@@ -26,7 +26,7 @@ export function VariantsField({
   const { id, collectionSlug: docCollectionSlug } = useDocumentInfo();
   const slug = collectionSlugProp ?? docCollectionSlug;
 
-  const [variants, setVariants] = useState<VariantRow[]>([]);
+  const [variants, setVariants] = useState<VariantData[]>([]);
 
   const { value: pendingPercentages, setValue: setPendingPercentages } = useField<Record<string, number>>({
     path: AB_VARIANT_PERCENTAGES_FIELD,
@@ -246,50 +246,16 @@ export function VariantsField({
           </div>
         : <>
             {variants.map((variant) => (
-              <div
+              <VariantRow
                 key={variant.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "8px 12px",
-                  border: "1px solid var(--theme-elevation-150)",
-                  borderRadius: 4,
-                  marginBottom: 6,
-                  background: "var(--theme-elevation-50)",
-                }}>
-                <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: "var(--theme-elevation-800)" }}>
-                  {variant.title}
-                </span>
-                <div className="ab-percent-input-wrapper">
-                  <input
-                    type="number"
-                    min={1}
-                    max={99 - sumOthers(variant.id)}
-                    value={variant.passPercentage ?? ""}
-                    onChange={(e) => handlePercentageChange(variant.id, e.target.value)}
-                    onBlur={() => handlePercentageBlur(variant.id)}
-                    className="ab-percent-input"
-                    title="Traffic percentage (1–99)"
-                  />
-                  <span className="ab-percent-suffix">%</span>
-                </div>
-                <a
-                  href={`/admin/collections/${slug}/${variant.id}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="ab-variant-icon-btn"
-                  title="Edit variant">
-                  <EditIcon />
-                </a>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteVariant(variant.id)}
-                  className="ab-variant-icon-btn ab-variant-icon-btn--danger"
-                  title="Remove variant">
-                  <TrashIcon />
-                </button>
-              </div>
+                variant={variant}
+                collectionSlug={slug!}
+                maxPercentage={99 - sumOthers(variant.id)}
+                onPercentageChange={(value) => handlePercentageChange(variant.id, value)}
+                onPercentageBlur={() => handlePercentageBlur(variant.id)}
+                onDelete={() => handleDeleteVariant(variant.id)}
+                onSaved={fetchVariants}
+              />
             ))}
 
             <div className="ab-variants-actions" style={{ display: "flex", gap: 8, marginTop: 8 }}>
