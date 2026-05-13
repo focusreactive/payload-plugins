@@ -6,7 +6,7 @@ import type { DateRange, Comparison } from "../../../types/query";
 import { cn } from "../../../utils/style";
 
 export interface FilterBarProps {
-  className: string;
+  className?: string;
   dateRange: DateRange;
   onDateRangeChange: (next: DateRange) => void;
   comparison: Comparison;

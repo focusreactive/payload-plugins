@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import { OverviewTab } from "../../../../src/components/AnalyticsView/tabs/OverviewTab";
+import { OverviewTabView } from "../../../../src/components/AnalyticsView/tabs/OverviewTabView";
 import kpis from "../../../../__fixtures__/admin/kpis.basic.json";
 import topPages from "../../../../__fixtures__/admin/topPages.basic.json";
 import topSources from "../../../../__fixtures__/admin/topSources.basic.json";
@@ -12,17 +12,17 @@ vi.mock("next/dynamic", () => ({
   default: () => () => null,
 }));
 
-type AnyKpi = Parameters<typeof OverviewTab>[0]["kpis"];
-type AnyPages = Parameters<typeof OverviewTab>[0]["topPages"];
-type AnySources = Parameters<typeof OverviewTab>[0]["topSources"];
-type AnyEvents = Parameters<typeof OverviewTab>[0]["topEvents"];
-type AnyDevices = Parameters<typeof OverviewTab>[0]["topDevices"];
-type AnyCountries = Parameters<typeof OverviewTab>[0]["topCountries"];
+type AnyKpi = Parameters<typeof OverviewTabView>[0]["kpis"];
+type AnyPages = Parameters<typeof OverviewTabView>[0]["topPages"];
+type AnySources = Parameters<typeof OverviewTabView>[0]["topSources"];
+type AnyEvents = Parameters<typeof OverviewTabView>[0]["topEvents"];
+type AnyDevices = Parameters<typeof OverviewTabView>[0]["topDevices"];
+type AnyCountries = Parameters<typeof OverviewTabView>[0]["topCountries"];
 
-describe("OverviewTab", () => {
+describe("OverviewTabView", () => {
   it("renders all five KPI cards and the trend chart card", () => {
     render(
-      <OverviewTab
+      <OverviewTabView
         comparison={{ kind: "previous-period" }}
         kpis={kpis as AnyKpi}
         topPages={topPages as AnyPages}
@@ -46,7 +46,7 @@ describe("OverviewTab", () => {
   });
 
   it("shows percent deltas for KPIs when comparison is on", () => {
-    render(<OverviewTab comparison={{ kind: "previous-period" }} kpis={kpis as AnyKpi} />);
+    render(<OverviewTabView comparison={{ kind: "previous-period" }} kpis={kpis as AnyKpi} />);
     expect(screen.getAllByText(/\d+\.\d+%/).length).toBeGreaterThan(0);
   });
 });

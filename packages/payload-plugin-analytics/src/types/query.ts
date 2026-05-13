@@ -27,6 +27,9 @@ export interface SessionsListQuery extends AnalyticsQuery {
   limit?: number;
   cursor?: string;
   hadLeadAction?: boolean;
+  source?: string;
+  device?: DeviceCategory;
+  country?: string;
 }
 
 // Responses

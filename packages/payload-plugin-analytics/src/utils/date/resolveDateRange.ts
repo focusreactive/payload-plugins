@@ -27,6 +27,11 @@ export function resolveDateRange(range: DateRange): ResolvedDateRange {
         startDate: convertDateToISO(shiftDateByDays(today, -6)),
         endDate: convertDateToISO(today),
       };
+    case "last-14d":
+      return {
+        startDate: convertDateToISO(shiftDateByDays(today, -13)),
+        endDate: convertDateToISO(today),
+      };
     case "last-30d":
       return {
         startDate: convertDateToISO(shiftDateByDays(today, -29)),

@@ -1,7 +1,9 @@
 "use client";
 
 import { useAnalyticsParams } from "./hooks/useAnalyticsParams";
+import { AnalyticsProviders } from "./AnalyticsProviders";
 import { FilterBar } from "./FilterBar";
+import { RefreshButton } from "./RefreshButton";
 import { TabsNav } from "./TabsNav";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { LeadActionsTab } from "./tabs/LeadActionsTab";
@@ -16,28 +18,32 @@ export function AnalyticsShell({ title }: AnalyticsShellProps) {
     useAnalyticsParams();
 
   return (
-    <div className="font-[family-name:var(--font-body)] text-[var(--theme-text)]">
-      <header className="flex items-start gap-6 mb-5 flex-wrap">
-        <div>
-          <h1 className="text-[26px] font-semibold tracking-tight text-[var(--theme-elevation-1000)] m-0">{title}</h1>
-        </div>
+    <AnalyticsProviders>
+      <div className="font-[family-name:var(--font-body)] text-[var(--theme-text)]">
+        <header className="flex items-start gap-6 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-[26px] font-semibold tracking-tight text-[var(--theme-elevation-1000)] m-0">{title}</h1>
+          </div>
 
-        <FilterBar
-          className="ml-auto"
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-          comparison={comparison}
-          onComparisonChange={setComparison}
-        />
-      </header>
+          <div className="ml-auto flex items-center gap-3">
+            <RefreshButton />
+            <FilterBar
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              comparison={comparison}
+              onComparisonChange={setComparison}
+            />
+          </div>
+        </header>
 
-      <TabsNav active={tab} onChange={setTab} />
+        <TabsNav active={tab} onChange={setTab} />
 
-      {tab === "overview" && <OverviewTab comparison={comparison} />}
+        {tab === "overview" && <OverviewTab dateRange={dateRange} comparison={comparison} />}
 
-      {tab === "lead-actions" && <LeadActionsTab comparison={comparison} totalSessions={0} />}
+        {tab === "lead-actions" && <LeadActionsTab dateRange={dateRange} comparison={comparison} />}
 
-      {tab === "sessions" && <SessionsTab filters={sessions} onFiltersChange={setSessions} />}
-    </div>
+        {tab === "sessions" && <SessionsTab dateRange={dateRange} filters={sessions} onFiltersChange={setSessions} />}
+      </div>
+    </AnalyticsProviders>
   );
 }

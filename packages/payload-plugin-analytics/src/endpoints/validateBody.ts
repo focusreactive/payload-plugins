@@ -3,7 +3,7 @@ import { z } from "zod";
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 const PresetSchema = z.object({
-  preset: z.enum(["today", "yesterday", "last-7d", "last-30d", "last-90d"]),
+  preset: z.enum(["today", "yesterday", "last-7d", "last-14d", "last-30d", "last-90d"]),
 });
 const CustomDateRangeSchema = z
   .object({
@@ -30,10 +30,15 @@ export const TopNQuerySchema = AnalyticsQuerySchema.extend({
   limit: z.number().int().min(1).max(100).default(10),
 });
 
+const DeviceCategorySchema = z.enum(["desktop", "mobile", "tablet", "other"]);
+
 export const SessionsListQuerySchema = AnalyticsQuerySchema.extend({
   limit: z.number().int().min(1).max(250).default(50),
   cursor: z.string().optional(),
   hadLeadAction: z.boolean().optional(),
+  source: z.string().min(1).max(200).optional(),
+  device: DeviceCategorySchema.optional(),
+  country: z.string().min(1).max(200).optional(),
 });
 
 export const JourneysQuerySchema = AnalyticsQuerySchema.extend({

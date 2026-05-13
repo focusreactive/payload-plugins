@@ -36,6 +36,28 @@ function convertDateHourMinuteToIso(value: string | null | undefined): string {
   return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}T${value.slice(8, 10)}:${value.slice(10, 12)}:00.000Z`;
 }
 
+interface DimensionFilter {
+  filter?: {
+    fieldName: string;
+    stringFilter?: { value: string };
+    inListFilter?: { values: string[] };
+  };
+  andGroup?: {
+    expressions: DimensionFilter[];
+  };
+}
+
+function stringFilter(fieldName: string, value: string): DimensionFilter {
+  return { filter: { fieldName, stringFilter: { value } } };
+}
+
+function combineFilters(filters: DimensionFilter[]): DimensionFilter | undefined {
+  if (filters.length === 0) return undefined;
+  if (filters.length === 1) return filters[0];
+
+  return { andGroup: { expressions: filters } };
+}
+
 function convertRowToSessionsRow(row: Row, hadLeadAction: boolean): SessionsRow {
   const dimensionValues = row.dimensionValues ?? [];
   const metricValues = row.metricValues ?? [];
@@ -84,8 +106,17 @@ export async function listSessions(propertyId: string, query: SessionsListQuery)
     limit,
   );
 
-  if (query.hadLeadAction) {
-    request = { ...request, dimensionFilter: leadActionFilter() };
+  const filters: DimensionFilter[] = [];
+
+  if (query.hadLeadAction) filters.push(leadActionFilter() as DimensionFilter);
+  if (query.source) filters.push(stringFilter("sessionSource", query.source));
+  if (query.device) filters.push(stringFilter("deviceCategory", query.device));
+  if (query.country) filters.push(stringFilter("country", query.country));
+
+  const combined = combineFilters(filters);
+
+  if (combined) {
+    request = { ...request, dimensionFilter: combined };
   }
 
   try {

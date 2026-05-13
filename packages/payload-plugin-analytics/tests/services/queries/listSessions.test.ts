@@ -71,4 +71,53 @@ describe("listSessions", () => {
     const arg = fake.runReport.mock.calls[0][0];
     expect(arg.dimensionFilter).toBeDefined();
   });
+
+  it("source filter is applied as a stringFilter on sessionSource", async () => {
+    const fake = { runReport: vi.fn().mockResolvedValue([sessions]), batchRunReports: vi.fn() };
+    __setGa4ClientForTests(fake as never);
+    await listSessions("12345", { dateRange: { preset: "last-7d" }, source: "google" });
+    const arg = fake.runReport.mock.calls[0][0];
+    expect(arg.dimensionFilter).toBeDefined();
+    const stringify = JSON.stringify(arg.dimensionFilter);
+    expect(stringify).toContain("sessionSource");
+    expect(stringify).toContain("google");
+  });
+
+  it("device filter is applied as a stringFilter on deviceCategory", async () => {
+    const fake = { runReport: vi.fn().mockResolvedValue([sessions]), batchRunReports: vi.fn() };
+    __setGa4ClientForTests(fake as never);
+    await listSessions("12345", { dateRange: { preset: "last-7d" }, device: "mobile" });
+    const arg = fake.runReport.mock.calls[0][0];
+    const stringify = JSON.stringify(arg.dimensionFilter);
+    expect(stringify).toContain("deviceCategory");
+    expect(stringify).toContain("mobile");
+  });
+
+  it("country filter is applied as a stringFilter on country", async () => {
+    const fake = { runReport: vi.fn().mockResolvedValue([sessions]), batchRunReports: vi.fn() };
+    __setGa4ClientForTests(fake as never);
+    await listSessions("12345", { dateRange: { preset: "last-7d" }, country: "US" });
+    const arg = fake.runReport.mock.calls[0][0];
+    const stringify = JSON.stringify(arg.dimensionFilter);
+    expect(stringify).toContain("\"country\"");
+    expect(stringify).toContain("\"US\"");
+  });
+
+  it("combines hadLeadAction with source under andGroup", async () => {
+    const fake = { runReport: vi.fn().mockResolvedValue([sessions]), batchRunReports: vi.fn() };
+    __setGa4ClientForTests(fake as never);
+    await listSessions("12345", { dateRange: { preset: "last-7d" }, hadLeadAction: true, source: "google" });
+    const arg = fake.runReport.mock.calls[0][0];
+    expect(arg.dimensionFilter.andGroup).toBeDefined();
+    expect(Array.isArray(arg.dimensionFilter.andGroup.expressions)).toBe(true);
+    expect(arg.dimensionFilter.andGroup.expressions.length).toBe(2);
+  });
+
+  it("omits dimensionFilter entirely when no filters are set", async () => {
+    const fake = { runReport: vi.fn().mockResolvedValue([sessions]), batchRunReports: vi.fn() };
+    __setGa4ClientForTests(fake as never);
+    await listSessions("12345", { dateRange: { preset: "last-7d" } });
+    const arg = fake.runReport.mock.calls[0][0];
+    expect(arg.dimensionFilter).toBeUndefined();
+  });
 });
