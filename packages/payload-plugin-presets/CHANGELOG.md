@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-presets [0.10.9](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.8...@focus-reactive/payload-plugin-presets@0.10.9) (2026-05-13)
+
+
+### Bug Fixes
+
+* **presets:** stop presets drawer from closing parent drawers and leaking modal state ([17b7ec0](https://github.com/focusreactive/payload-plugins/commit/17b7ec062c3d5a9d74aae7d3be8dfa2801d76754))
+
 ## @focus-reactive/payload-plugin-presets [0.10.8](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.7...@focus-reactive/payload-plugin-presets@0.10.8) (2026-05-08)
 
 
