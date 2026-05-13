@@ -7,6 +7,7 @@ import { ErrorTile } from "./ErrorTile";
 import { EmptyTile } from "./EmptyTile";
 import type { BlockStateProps } from "../types/blockState";
 import type { LeadActionKind } from "../../../types/events";
+import { formatPercentage } from "../numberFormatters";
 
 export interface ChainListProps extends BlockStateProps {
   rows: JourneyRow[];
@@ -54,7 +55,7 @@ export function ChainList({ rows, loading, error, onRetry }: ChainListProps) {
 
           <span className="text-right tabular-nums font-semibold text-[13px]">{row.count}</span>
           <span className="text-right text-[var(--theme-elevation-500)] tabular-nums text-[11.5px]">
-            {row.conversionRate.toFixed(1)}%
+            {formatPercentage(row.conversionRate)}
           </span>
         </div>
       ))}
