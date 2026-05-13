@@ -51,12 +51,10 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
   const locale = useLocale();
   const { t } = useTranslation();
 
-  const { openModal, closeModal, modalState } = useModal();
+  const { openModal, closeModal } = useModal();
   const beforeOpenDrawer = useBeforeOpenDrawer();
   const customDrawerSlug = useDrawerSlug("blocks-with-presets-drawer");
-  const insertIndexRef = useRef<number>(null);
-  const isDrawerOpen = modalState[customDrawerSlug]?.isOpen ?? false;
-  const wasOpenRef = useRef(false);
+  const insertIndexRef = useRef<number | null>(null);
 
   const form = useForm();
   const { getData, getDataByPath, addFieldRow, replaceState, getFields } = form;
@@ -108,21 +106,6 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
 
   form.replaceState = wrappedReplaceState;
 
-  useEffect(() => {
-    if (wasOpenRef.current && !isDrawerOpen) {
-      insertIndexRef.current = null;
-      document
-        .querySelectorAll<HTMLElement>(".payload__modal-container")
-        .forEach((el) => {
-          el.classList.remove("payload__modal-container--enterDone");
-          el.classList.add("payload__modal-container--exitDone");
-        });
-    }
-    if (isDrawerOpen) {
-      wasOpenRef.current = true;
-    }
-  }, [isDrawerOpen]);
-
   const fullData = getData() as {
     tenant?: number;
     [key: string]: unknown;
@@ -170,7 +153,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
     closeModal(customDrawerSlug);
   };
 
-  const handleOpenDrawer = async () => {
+  const handleOpenDrawer = async (insertIndex: number | null = null) => {
     if (beforeOpenDrawer) {
       const allowed = await beforeOpenDrawer({
         field,
@@ -184,15 +167,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
       if (!allowed) return;
     }
 
-    setTimeout(() => {
-      document
-        .querySelectorAll<HTMLElement>(".payload__modal-container")
-        .forEach((el) => {
-          el.classList.add("payload__modal-container--enterDone");
-          el.classList.remove("payload__modal-container--exitDone");
-        });
-    }, 0);
-
+    insertIndexRef.current = insertIndex;
     openModal(customDrawerSlug);
   };
 
@@ -200,8 +175,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
     <BlocksConfigProvider value={blocks}>
       <OpenDrawerProvider
         openDrawer={(insertIndex) => {
-          insertIndexRef.current = insertIndex;
-          void handleOpenDrawer();
+          void handleOpenDrawer(insertIndex);
         }}
       >
         <div className="blocks-field-with-presets">
@@ -212,7 +186,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
               <button
                 className="blocks-field__drawer-toggler blocks-field-with-presets__drawer-toggler"
                 type="button"
-                onClick={handleOpenDrawer}
+                onClick={() => handleOpenDrawer()}
               >
                 <span
                   aria-disabled="false"

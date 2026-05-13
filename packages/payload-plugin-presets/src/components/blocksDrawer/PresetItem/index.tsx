@@ -23,10 +23,11 @@ function EditPresetButton({
   onDrawerOpenChange?: (isOpen: boolean) => void;
 }) {
   const { slug } = usePresetsConfig();
-  const [DocumentDrawer, , { openDrawer, isDrawerOpen }] = useDocumentDrawer({
-    collectionSlug: slug,
-    id: presetId,
-  });
+  const [DocumentDrawer, , { openDrawer, closeDrawer, isDrawerOpen }] =
+    useDocumentDrawer({
+      collectionSlug: slug,
+      id: presetId,
+    });
 
   useEffect(() => {
     onDrawerOpenChange?.(isDrawerOpen);
@@ -46,7 +47,12 @@ function EditPresetButton({
         <EditIcon className="edit-preset__icon" />
       </button>
       <div onClick={(e) => e.stopPropagation()}>
-        <DocumentDrawer onSave={onAfterSave} />
+        <DocumentDrawer
+          onSave={() => {
+            closeDrawer();
+            onAfterSave?.();
+          }}
+        />
       </div>
     </>
   );
