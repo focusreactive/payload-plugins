@@ -29,7 +29,7 @@ function parseRow(row: Row): OrderedRow {
   };
 }
 
-function toJourneyStep(row: OrderedRow): JourneyStep {
+function sessionRowToJourneyStep(row: OrderedRow): JourneyStep {
   if (LEAD_ACTION_EVENT_NAMES.has(row.eventName)) {
     return { kind: "leadAction", value: row.eventName };
   }
@@ -37,36 +37,42 @@ function toJourneyStep(row: OrderedRow): JourneyStep {
   return { kind: "page", value: row.pagePath };
 }
 
-function collapseConsecutiveDuplicates(steps: JourneyStep[]): JourneyStep[] {
-  const out: JourneyStep[] = [];
+function collapseJourneyStepDuplicates(steps: JourneyStep[]): JourneyStep[] {
+  const journeySteps: JourneyStep[] = [];
+
   for (const step of steps) {
-    const prev = out[out.length - 1];
-    if (prev && prev.kind === step.kind && prev.value === step.value) continue;
-    out.push(step);
+    const prevJourneyStep = journeySteps[journeySteps.length - 1];
+
+    if (prevJourneyStep && prevJourneyStep.kind === step.kind && prevJourneyStep.value === step.value) continue;
+    journeySteps.push(step);
   }
 
-  return out;
+  return journeySteps;
 }
 
 function groupBySession(rows: OrderedRow[]): Map<string, OrderedRow[]> {
-  const out = new Map<string, OrderedRow[]>();
+  const rowsMap = new Map<string, OrderedRow[]>();
+
   for (const row of rows) {
     if (!row.sessionId) continue;
-    const arr = out.get(row.sessionId) ?? [];
-    arr.push(row);
-    out.set(row.sessionId, arr);
-  }
-  for (const arr of out.values()) {
-    arr.sort((a, b) => (a.dhm === b.dhm ? a.eventSeq - b.eventSeq : a.dhm.localeCompare(b.dhm)));
+
+    const sessionRows = rowsMap.get(row.sessionId) ?? [];
+
+    sessionRows.push(row);
+    rowsMap.set(row.sessionId, sessionRows);
   }
 
-  return out;
+  for (const sessionRows of rowsMap.values()) {
+    sessionRows.sort((a, b) => (a.dhm === b.dhm ? a.eventSeq - b.eventSeq : a.dhm.localeCompare(b.dhm)));
+  }
+
+  return rowsMap;
 }
 
 export async function getJourneys(propertyId: string, query: JourneysQuery): Promise<JourneyResponse> {
   const dateRange = resolveDateRange(query.dateRange);
   const limit = query.limit ?? 20;
-  const maxSteps = query.maxSteps ?? 8;
+  const maxSteps = query.maxSteps;
   const sampleLimit = query.sampleLimit ?? 50_000;
 
   const request = withRowLimit(
@@ -109,24 +115,26 @@ export async function getJourneys(propertyId: string, query: JourneysQuery): Pro
   }
 
   const rows = ((raw.rows ?? []) as Row[]).map(parseRow);
-  const grouped = groupBySession(rows);
+  const rowsMapBySession = groupBySession(rows);
 
-  const fingerprintCounts = new Map<string, { path: JourneyStep[]; count: number }>();
+  const journeysMapByPath = new Map<string, { path: JourneyStep[]; count: number }>();
   let sessionsConsidered = 0;
 
-  for (const sessionRows of grouped.values()) {
-    if (!sessionRows.some((r) => LEAD_ACTION_EVENT_NAMES.has(r.eventName))) continue;
+  for (const sessionRows of rowsMapBySession.values()) {
+    if (!sessionRows.some((row) => LEAD_ACTION_EVENT_NAMES.has(row.eventName))) continue;
 
     sessionsConsidered += 1;
 
-    const path = collapseConsecutiveDuplicates(sessionRows.map(toJourneyStep)).slice(0, maxSteps);
-    const fp = JSON.stringify(path);
-    const existing = fingerprintCounts.get(fp);
-    if (existing) existing.count += 1;
-    else fingerprintCounts.set(fp, { path, count: 1 });
+    const journeySteps = collapseJourneyStepDuplicates(sessionRows.map(sessionRowToJourneyStep));
+    const path = maxSteps === undefined ? journeySteps : journeySteps.slice(0, maxSteps);
+    const pathKey = JSON.stringify(path);
+    const existingPathKey = journeysMapByPath.get(pathKey);
+
+    if (existingPathKey) existingPathKey.count += 1;
+    else journeysMapByPath.set(pathKey, { path, count: 1 });
   }
 
-  const sorted: JourneyRow[] = Array.from(fingerprintCounts.values())
+  const sorted: JourneyRow[] = Array.from(journeysMapByPath.values())
     .sort((a, b) => b.count - a.count)
     .slice(0, limit)
     .map(({ path, count }) => ({
