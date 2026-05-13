@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-ab [2.5.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.4.6...@focus-reactive/payload-plugin-ab@2.5.0) (2026-05-13)
+
+
+### Features
+
+* **ab-testing:** open variation to edit in a drawer instead of a new page ([92a8266](https://github.com/focusreactive/payload-plugins/commit/92a82669869bd4807360e95e6fd1e8575532844c))
+
 ## @focus-reactive/payload-plugin-ab [2.4.6](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.4.5...@focus-reactive/payload-plugin-ab@2.4.6) (2026-05-06)
 
 
