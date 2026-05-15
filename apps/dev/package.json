@@ -39,9 +39,6 @@
     "@types/node": "22.19.9",
     "@types/react": "19.2.9",
     "@types/react-dom": "19.2.3",
-    "eslint": "9.16.0",
-    "eslint-config-next": "16.2.6",
-    "prettier": "3.4.2",
     "typescript": "5.9.2"
   },
   "engines": {

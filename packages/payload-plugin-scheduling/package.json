@@ -37,7 +37,7 @@
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
     "format": "ultracite fix",
-    "format:check": "prettier --check src/"
+    "format:check": "ultracite fix"
   },
   "devDependencies": {
     "@types/node": "22.19.9",

@@ -5,6 +5,9 @@
 - **Package manager**: bun
 - **Build system**: Turborepo (`turbo.json`)
 - **Language**: TypeScript (ESM, `"type": "module"`)
+- **Type-checker**: tsgo (`@typescript/native-preview`) — replaces `tsc` for `check-types`
+- **Lint + format**: Ultracite 7 (oxlint + oxfmt) — replaces ESLint + Prettier
+- **Git hooks**: Lefthook — auto-installs via `prepare` script on `bun install`
 - **Monorepo**: bun workspaces
 
 ## Structure
@@ -22,7 +25,6 @@ packages/
   database/                           → @repo/database — postgres adapter + migrations (private)
   ui/                                 → @repo/ui — shared React UI components (private)
   tailwind-config/                    → @repo/tailwind-config — shared Tailwind v4 config (private)
-  eslint-config/                      → @repo/eslint-config (private)
   typescript-config/                  → @repo/typescript-config (private)
 ```
 

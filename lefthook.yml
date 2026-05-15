@@ -2,8 +2,8 @@ pre-commit:
   parallel: true
   jobs:
     - name: format-and-lint
-      glob: "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts,json,jsonc}"
-      run: bunx ultracite fix --files {staged_files} --skip=correctness/noUnusedImports
+      glob: "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}"
+      run: bunx ultracite fix {staged_files}
       stage_fixed: true
 
 pre-push:

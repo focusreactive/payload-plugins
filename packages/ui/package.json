@@ -31,12 +31,10 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
     "@repo/tailwind-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "tailwindcss": "^4.1.18",

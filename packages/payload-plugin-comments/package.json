@@ -55,7 +55,7 @@
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
     "format": "ultracite fix",
-    "format:check": "prettier --check src/"
+    "format:check": "ultracite fix"
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.16",
@@ -74,14 +74,10 @@
     "@types/node": "22.19.9",
     "@types/react": "19.2.9",
     "@types/react-dom": "19.2.3",
-    "eslint": "9.0.0",
-    "eslint-config-prettier": "9.0.0",
     "payload": "3.79.0",
-    "prettier": "3.0.0",
     "tailwindcss": "4.2.1",
     "tsup": "8.0.0",
-    "typescript": "5.7.3",
-    "typescript-eslint": "8.0.0"
+    "typescript": "5.7.3"
   },
   "peerDependencies": {
     "@payloadcms/plugin-multi-tenant": "^3.0.0",
