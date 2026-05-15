@@ -29,7 +29,7 @@
     "cross-env": "7.0.3",
     "dotenv": "16.4.7",
     "graphql": "16.8.1",
-    "next": "15.4.11",
+    "next": "16.2.6",
     "payload": "3.79.0",
     "react": "19.2.1",
     "react-dom": "19.2.1",
@@ -40,7 +40,7 @@
     "@types/react": "19.2.9",
     "@types/react-dom": "19.2.3",
     "eslint": "9.16.0",
-    "eslint-config-next": "15.4.11",
+    "eslint-config-next": "16.2.6",
     "prettier": "3.4.2",
     "typescript": "5.9.2"
   },

@@ -1,0 +1,24 @@
+{
+  "name": "@repo/database",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./migrations": "./migrations/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@payloadcms/db-postgres": "3.84.1",
+    "payload": "3.84.1"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^22.5.4",
+    "typescript": "5.9.2"
+  }
+}

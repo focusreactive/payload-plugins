@@ -1,0 +1,7 @@
+[install]
+# Use a hoisted node_modules layout so workspace consumers and their
+# dependencies resolve a single copy of peer-dep packages (notably `next`
+# and `payload`). Without this, peer deps installed inside workspace
+# packages produce duplicate type instances that TypeScript treats as
+# unrelated, breaking type-checking across plugin boundaries.
+linker = "hoisted"

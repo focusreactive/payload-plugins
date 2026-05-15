@@ -1,0 +1,19 @@
+@reference "tailwindcss";
+
+@layer utilities {
+  .no-children-margins {
+    & > * {
+      @apply my-0!;
+    }
+  }
+}
+
+@layer components {
+  .swiper-wrapper {
+    display: flex;
+  }
+
+  .swiper-slide {
+    flex-shrink: 0;
+  }
+}
