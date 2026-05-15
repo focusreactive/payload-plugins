@@ -1,0 +1,5 @@
+{
+  "extends": "@shared/ts-config/base.json",
+  "include": ["postcss.js"],
+  "exclude": ["node_modules"]
+}

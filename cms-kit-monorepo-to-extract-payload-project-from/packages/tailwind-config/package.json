@@ -1,0 +1,20 @@
+{
+  "name": "@shared/tailwind-config",
+  "version": "0.2.0",
+  "license": "MIT",
+  "exports": {
+    "./base.css": "./base.css",
+    "./postcss": "./postcss.js"
+  },
+  "files": ["base.css", "postcss.js"],
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "@tailwindcss/typography": "^0.5.15",
+    "tailwindcss": "^4.1.18",
+    "tw-animate-css": "^1.2.9"
+  },
+  "devDependencies": {
+    "@shared/ts-config": "workspace:*",
+    "typescript": "5.7.3"
+  }
+}

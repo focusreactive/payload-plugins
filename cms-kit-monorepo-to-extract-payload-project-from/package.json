@@ -1,0 +1,70 @@
+{
+  "name": "cms-kit",
+  "version": "1.0.28",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "dev:sb": "turbo run dev --filter=storyblok",
+    "build:sb": "turbo run build --filter=storyblok",
+    "start:sb": "turbo run start --filter=storyblok",
+    "proxy:sb": "turbo run proxy --filter=storyblok",
+    "dev:sa": "turbo run dev --filter=sanity",
+    "build:sa": "turbo run build --filter=sanity",
+    "start:sa": "turbo run start --filter=sanity",
+    "proxy:sa": "turbo run proxy --filter=sanity",
+    "dev:pl": "turbo run dev --filter=payload",
+    "build:pl": "turbo run build --filter=payload",
+    "start:pl": "turbo run start --filter=payload",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo lint -- --fix && manypkg fix",
+    "manypkg:fix": "manypkg fix",
+    "typecheck": "turbo typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+  },
+  "engines": {
+    "node": ">=20.*"
+  },
+  "packageManager": "pnpm@9.2.0",
+  "dependencies": {
+    "@commitlint/cli": "^19.3.0",
+    "@commitlint/config-conventional": "^19.2.2",
+    "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
+    "@manypkg/cli": "^0.21.4",
+    "@shared/eslint-config": "workspace:*",
+    "@turbo/gen": "^2.0.6",
+    "dotenv": "^16.4.5",
+    "inquirer": "^12.0.0",
+    "open": "^10.1.0",
+    "ora": "^8.1.0",
+    "prettier": "^3.2.5",
+    "prettier-plugin-tailwindcss": "^0.5.14",
+    "turbo": "^2.2.3"
+  },
+  "manypkg": {
+    "ignoredRules": [
+      "INTERNAL_MISMATCH"
+    ]
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^19",
+      "@types/react-dom": "^19",
+      "react": "19.2.1",
+      "react-dom": "19.2.1"
+    }
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/npm": "^12.0.1",
+    "@semantic-release/release-notes-generator": "^14.0.3",
+    "@vercel/blob": "^0.22.3",
+    "semantic-release": "^24.2.1",
+    "vercel": "^42.3.0"
+  }
+}

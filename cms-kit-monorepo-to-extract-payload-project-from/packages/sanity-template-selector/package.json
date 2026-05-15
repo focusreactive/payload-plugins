@@ -1,0 +1,24 @@
+{
+  "name": "@focus-reactive/sanity-template-selector",
+  "version": "0.0.1",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "scripts": {
+    "lint": "eslint \"**/*.ts*\""
+  },
+  "dependencies": {
+    "@sanity/icons": "3.5.7",
+    "@sanity/ui": "2.15.18"
+  },
+  "devDependencies": {
+    "@shared/eslint-config": "workspace:*",
+    "@shared/ts-config": "workspace:*",
+    "@types/react": "^19",
+    "eslint": "8",
+    "typescript": "5.2.2"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "sanity": "*"
+  }
+}

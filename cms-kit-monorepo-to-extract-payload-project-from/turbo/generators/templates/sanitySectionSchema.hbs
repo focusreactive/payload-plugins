@@ -1,0 +1,21 @@
+import {
+  CommonGroup,
+  commonGroups,
+  sectionMarginFields,
+} from "@/contentSections/commonFields";
+import { defineField } from "sanity";
+
+export default {
+  name: "section.{{ sectionName }}",
+  title: "{{ capitialize sectionName }}",
+  type: "object",
+  groups: commonGroups,
+  fields: [
+    defineField({
+      name: "title",
+      type: "string",
+      group: CommonGroup.Content,
+    }),
+    ...sectionMarginFields,
+  ],
+};

@@ -1,0 +1,19 @@
+{
+  "name": "@shared/eslint-config",
+  "version": "0.2.0",
+  "license": "MIT",
+  "type": "module",
+  "main": "index.js",
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-config-turbo": "^2.3.3"
+  },
+  "devDependencies": {
+    "typescript": "5.7.3"
+  },
+  "peerDependencies": {
+    "eslint": "^9"
+  }
+}
