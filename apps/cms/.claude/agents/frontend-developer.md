@@ -48,16 +48,19 @@ src/
 ## Key Patterns You Must Apply
 
 ### Building Page Builder Blocks
+
 1. Create `src/blocks/BlockName/config.ts` for the Payload field config
 2. Create `src/blocks/BlockName/Component.tsx` for the React component
 3. Add localized labels (en/es)
 
 ### Multi-Tenancy
+
 - All tenant-aware collections include `tenantFields()`, the `beforeChangeTenant` hook, and `createValidateSlugTenantUnique('slug')`
 - All data queries use `getTenantFilter(tenantId)`
 - Tenant is resolved from subdomain via middleware
 
 ### Localization (i18n)
+
 - Locales: `en`, `es` (defined in `src/shared/config/i18n.ts`)
 - URL always includes locale: `/en/path`, `/es/path`
 - Use `localized: true` on Payload fields that need translation
@@ -66,6 +69,7 @@ src/
 - Add translation keys to both `messages/en.json` and `messages/es.json`
 
 ### Access Control
+
 - Use helpers from `src/shared/lib/access/`: `superAdmin`, `tenantAdmin`, `author`, `user`, `authenticated`, `anyone`
 - Combine with `or()`, `and()`
 - Roles: `super-admin`, `tenant-admin`, `author`, `user`
@@ -73,24 +77,28 @@ src/
 ## Workflow & Quality Standards
 
 ### Before Writing Code
+
 1. Identify the correct location in the architecture for the new code
 2. Check for existing patterns, components, or utilities to reuse
 3. Confirm whether a Server or Client Component is appropriate
 4. Identify i18n and multi-tenancy requirements
 
 ### While Writing Code
+
 1. Use `@/` path alias consistently
 2. Always scope queries to tenant
 3. Always set `overrideAccess: false` in Local API calls with a user
 
 ### After Writing Code
+
 - If schema changed: `pnpm generate:types`
 - If admin components changed: `pnpm generate:importmap`
 - Validate: `tsc --noEmit && pnpm lint`
 
 ## Communication Style
+
 - Be precise and direct
 - When uncertain about project-specific conventions, check existing code patterns before assuming
 - If a requirement is ambiguous, ask one clarifying question before proceeding
-- Always explain *why* a pattern is used, not just *what* to do
+- Always explain _why_ a pattern is used, not just _what_ to do
 - Flag any deviation from established patterns explicitly

@@ -1,179 +1,184 @@
-import { describe, it, expect } from 'vitest'
-import type { SerializedLexicalNode } from './types'
-import { isSerializedLexicalRoot, isSerializedLexicalTextNode, hasChildren } from './guards'
+import { describe, it, expect } from "vitest";
 
-describe('lexical guards', () => {
-  describe('isSerializedLexicalRoot', () => {
-    it('returns true for valid Lexical root structure', () => {
+import {
+  isSerializedLexicalRoot,
+  isSerializedLexicalTextNode,
+  hasChildren,
+} from "./guards";
+import type { SerializedLexicalNode } from "./types";
+
+describe("lexical guards", () => {
+  describe("isSerializedLexicalRoot", () => {
+    it("returns true for valid Lexical root structure", () => {
       const validRoot = {
         root: {
-          type: 'root',
           children: [],
+          type: "root",
         },
-      }
-      expect(isSerializedLexicalRoot(validRoot)).toBe(true)
-    })
+      };
+      expect(isSerializedLexicalRoot(validRoot)).toBe(true);
+    });
 
-    it('returns true for root with nested content', () => {
+    it("returns true for root with nested content", () => {
       const rootWithContent = {
         root: {
-          type: 'root',
           children: [
             {
-              type: 'paragraph',
-              children: [{ type: 'text', text: 'Hello' }],
+              type: "paragraph",
+              children: [{ type: "text", text: "Hello" }],
             },
           ],
+          type: "root",
         },
-      }
-      expect(isSerializedLexicalRoot(rootWithContent)).toBe(true)
-    })
+      };
+      expect(isSerializedLexicalRoot(rootWithContent)).toBe(true);
+    });
 
-    it('returns false for object without root property', () => {
-      expect(isSerializedLexicalRoot({ children: [] })).toBe(false)
-      expect(isSerializedLexicalRoot({ type: 'root' })).toBe(false)
-    })
+    it("returns false for object without root property", () => {
+      expect(isSerializedLexicalRoot({ children: [] })).toBe(false);
+      expect(isSerializedLexicalRoot({ type: "root" })).toBe(false);
+    });
 
-    it('returns false for object with non-object root', () => {
-      expect(isSerializedLexicalRoot({ root: null })).toBe(false)
-      expect(isSerializedLexicalRoot({ root: 'string' })).toBe(false)
-      expect(isSerializedLexicalRoot({ root: 123 })).toBe(false)
+    it("returns false for object with non-object root", () => {
+      expect(isSerializedLexicalRoot({ root: null })).toBe(false);
+      expect(isSerializedLexicalRoot({ root: "string" })).toBe(false);
+      expect(isSerializedLexicalRoot({ root: 123 })).toBe(false);
       // Note: arrays are objects in JS, so isObject([]) returns true
       // This is acceptable behavior - arrays would fail other validations
-    })
+    });
 
-    it('returns false for non-objects', () => {
-      expect(isSerializedLexicalRoot(null)).toBe(false)
-      expect(isSerializedLexicalRoot(undefined)).toBe(false)
-      expect(isSerializedLexicalRoot('string')).toBe(false)
-      expect(isSerializedLexicalRoot(123)).toBe(false)
-      expect(isSerializedLexicalRoot([])).toBe(false)
-    })
-  })
+    it("returns false for non-objects", () => {
+      expect(isSerializedLexicalRoot(null)).toBe(false);
+      expect(isSerializedLexicalRoot()).toBe(false);
+      expect(isSerializedLexicalRoot("string")).toBe(false);
+      expect(isSerializedLexicalRoot(123)).toBe(false);
+      expect(isSerializedLexicalRoot([])).toBe(false);
+    });
+  });
 
-  describe('isSerializedLexicalTextNode', () => {
-    it('returns true for valid text node', () => {
+  describe("isSerializedLexicalTextNode", () => {
+    it("returns true for valid text node", () => {
       // Text nodes have 'text' property which is not on base SerializedLexicalNode type
       const textNode = {
-        type: 'text',
-        text: 'Hello World',
+        text: "Hello World",
+        type: "text",
         version: 1,
-      } as unknown as SerializedLexicalNode
-      expect(isSerializedLexicalTextNode(textNode)).toBe(true)
-    })
+      } as unknown as SerializedLexicalNode;
+      expect(isSerializedLexicalTextNode(textNode)).toBe(true);
+    });
 
-    it('returns true for text node with empty string', () => {
+    it("returns true for text node with empty string", () => {
       const textNode = {
-        type: 'text',
-        text: '',
+        text: "",
+        type: "text",
         version: 1,
-      } as unknown as SerializedLexicalNode
-      expect(isSerializedLexicalTextNode(textNode)).toBe(true)
-    })
+      } as unknown as SerializedLexicalNode;
+      expect(isSerializedLexicalTextNode(textNode)).toBe(true);
+    });
 
-    it('returns true for text node with formatting', () => {
+    it("returns true for text node with formatting", () => {
       const textNode = {
-        type: 'text',
-        text: 'Bold text',
         format: 1,
+        text: "Bold text",
+        type: "text",
         version: 1,
-      } as unknown as SerializedLexicalNode
-      expect(isSerializedLexicalTextNode(textNode)).toBe(true)
-    })
+      } as unknown as SerializedLexicalNode;
+      expect(isSerializedLexicalTextNode(textNode)).toBe(true);
+    });
 
-    it('returns false for paragraph node', () => {
+    it("returns false for paragraph node", () => {
       const paragraphNode = {
-        type: 'paragraph',
         children: [],
+        type: "paragraph",
         version: 1,
-      } as unknown as SerializedLexicalNode
-      expect(isSerializedLexicalTextNode(paragraphNode)).toBe(false)
-    })
+      } as unknown as SerializedLexicalNode;
+      expect(isSerializedLexicalTextNode(paragraphNode)).toBe(false);
+    });
 
-    it('returns false for heading node', () => {
+    it("returns false for heading node", () => {
       const headingNode = {
-        type: 'heading',
-        tag: 'h1',
         children: [],
+        tag: "h1",
+        type: "heading",
         version: 1,
-      } as unknown as SerializedLexicalNode
-      expect(isSerializedLexicalTextNode(headingNode)).toBe(false)
-    })
+      } as unknown as SerializedLexicalNode;
+      expect(isSerializedLexicalTextNode(headingNode)).toBe(false);
+    });
 
-    it('returns false for node with type text but no text property', () => {
+    it("returns false for node with type text but no text property", () => {
       const invalidNode = {
-        type: 'text',
+        type: "text",
         version: 1,
-      } as unknown as SerializedLexicalNode
-      expect(isSerializedLexicalTextNode(invalidNode)).toBe(false)
-    })
+      } as unknown as SerializedLexicalNode;
+      expect(isSerializedLexicalTextNode(invalidNode)).toBe(false);
+    });
 
-    it('returns false for node with non-string text property', () => {
+    it("returns false for node with non-string text property", () => {
       const invalidNode = {
-        type: 'text',
         text: 123,
+        type: "text",
         version: 1,
-      } as unknown as SerializedLexicalNode
-      expect(isSerializedLexicalTextNode(invalidNode)).toBe(false)
-    })
-  })
+      } as unknown as SerializedLexicalNode;
+      expect(isSerializedLexicalTextNode(invalidNode)).toBe(false);
+    });
+  });
 
-  describe('hasChildren', () => {
-    it('returns true for node with children array', () => {
+  describe("hasChildren", () => {
+    it("returns true for node with children array", () => {
       const node = {
-        type: 'paragraph',
         children: [],
+        type: "paragraph",
         version: 1,
-      } as unknown as SerializedLexicalNode
-      expect(hasChildren(node)).toBe(true)
-    })
+      } as unknown as SerializedLexicalNode;
+      expect(hasChildren(node)).toBe(true);
+    });
 
-    it('returns true for node with populated children', () => {
+    it("returns true for node with populated children", () => {
       const node = {
-        type: 'paragraph',
         children: [
-          { type: 'text', text: 'Hello', version: 1 },
-          { type: 'text', text: 'World', version: 1 },
+          { type: "text", text: "Hello", version: 1 },
+          { type: "text", text: "World", version: 1 },
         ],
+        type: "paragraph",
         version: 1,
-      } as unknown as SerializedLexicalNode
-      expect(hasChildren(node)).toBe(true)
-    })
+      } as unknown as SerializedLexicalNode;
+      expect(hasChildren(node)).toBe(true);
+    });
 
-    it('returns true for root node with children', () => {
+    it("returns true for root node with children", () => {
       const rootNode = {
-        type: 'root',
-        children: [{ type: 'paragraph', children: [], version: 1 }],
+        children: [{ type: "paragraph", children: [], version: 1 }],
+        type: "root",
         version: 1,
-      } as unknown as SerializedLexicalNode
-      expect(hasChildren(rootNode)).toBe(true)
-    })
+      } as unknown as SerializedLexicalNode;
+      expect(hasChildren(rootNode)).toBe(true);
+    });
 
-    it('returns false for text node (no children)', () => {
+    it("returns false for text node (no children)", () => {
       const textNode = {
-        type: 'text',
-        text: 'Hello',
+        text: "Hello",
+        type: "text",
         version: 1,
-      } as unknown as SerializedLexicalNode
-      expect(hasChildren(textNode)).toBe(false)
-    })
+      } as unknown as SerializedLexicalNode;
+      expect(hasChildren(textNode)).toBe(false);
+    });
 
-    it('returns false for node with non-array children', () => {
+    it("returns false for node with non-array children", () => {
       const invalidNode = {
-        type: 'paragraph',
-        children: 'not-array',
+        children: "not-array",
+        type: "paragraph",
         version: 1,
-      } as unknown as SerializedLexicalNode
-      expect(hasChildren(invalidNode)).toBe(false)
-    })
+      } as unknown as SerializedLexicalNode;
+      expect(hasChildren(invalidNode)).toBe(false);
+    });
 
-    it('returns false for node with null children', () => {
+    it("returns false for node with null children", () => {
       const invalidNode = {
-        type: 'paragraph',
         children: null,
+        type: "paragraph",
         version: 1,
-      } as unknown as SerializedLexicalNode
-      expect(hasChildren(invalidNode)).toBe(false)
-    })
-  })
-})
+      } as unknown as SerializedLexicalNode;
+      expect(hasChildren(invalidNode)).toBe(false);
+    });
+  });
+});

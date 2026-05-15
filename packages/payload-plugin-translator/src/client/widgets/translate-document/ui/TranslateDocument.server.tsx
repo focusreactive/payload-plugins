@@ -1,28 +1,30 @@
-import { headers as getHeaders } from 'next/headers'
-import type { BeforeDocumentControlsServerProps, CollectionConfig } from 'payload'
+import { headers as getHeaders } from "next/headers";
+import type {
+  BeforeDocumentControlsServerProps,
+  CollectionConfig,
+} from "payload";
 
-import type { AccessGuard } from '../../../../types/AccessGuard'
-import { collectionHasDrafts } from '../../../../server/shared/guards'
-
-import TranslateDocument from './TranslateDocument'
+import { collectionHasDrafts } from "../../../../server/shared/guards";
+import type { AccessGuard } from "../../../../types/AccessGuard";
+import TranslateDocument from "./TranslateDocument";
 
 type TranslateDocumentServerProps = BeforeDocumentControlsServerProps & {
-  collection: CollectionConfig
-  access: AccessGuard
-}
+  collection: CollectionConfig;
+  access: AccessGuard;
+};
 
 async function TranslateDocumentServer(props: TranslateDocumentServerProps) {
-  const headers = await getHeaders()
+  const headers = await getHeaders();
   const hasAccess = await props.access.check({
-    req: { user: props.user, headers, payload: props.payload },
-  })
+    req: { headers, payload: props.payload, user: props.user },
+  });
 
-  if (!hasAccess) return null
-  if (!props.id) return null
+  if (!hasAccess) {return null;}
+  if (!props.id) {return null;}
 
-  const hasDrafts = collectionHasDrafts(props.collection)
+  const hasDrafts = collectionHasDrafts(props.collection);
 
-  return <TranslateDocument hasDrafts={hasDrafts} />
+  return <TranslateDocument hasDrafts={hasDrafts} />;
 }
 
-export default TranslateDocumentServer
+export default TranslateDocumentServer;

@@ -1,1 +1,1 @@
-export { default } from './FormSelectLocale'
+export { default } from "./FormSelectLocale";

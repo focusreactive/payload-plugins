@@ -1,28 +1,30 @@
-'use client'
+"use client";
 
-import React, { useEffect, useRef } from 'react'
-import { cn } from '@/core/lib/utils'
-import { getMediaUrl } from '@/core/lib/getMediaUrl'
-import { MediaProps } from '..'
+import React, { useEffect, useRef } from "react";
+
+import { getMediaUrl } from "@/core/lib/getMediaUrl";
+import { cn } from "@/core/lib/utils";
+
+import type { MediaProps } from "..";
 
 export const VideoMedia: React.FC<MediaProps> = (props) => {
-  const { onClick, resource, videoClassName } = props
+  const { onClick, resource, videoClassName } = props;
 
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null);
   // const [showFallback] = useState<boolean>()
 
   useEffect(() => {
-    const { current: video } = videoRef
+    const { current: video } = videoRef;
     if (video) {
-      video.addEventListener('suspend', () => {
+      video.addEventListener("suspend", () => {
         // setShowFallback(true);
         // console.warn('Video was suspended, rendering fallback image.')
-      })
+      });
     }
-  }, [])
+  }, []);
 
-  if (resource && typeof resource === 'object') {
-    const { filename } = resource
+  if (resource && typeof resource === "object") {
+    const { filename } = resource;
 
     return (
       <video
@@ -37,8 +39,8 @@ export const VideoMedia: React.FC<MediaProps> = (props) => {
       >
         <source src={getMediaUrl(`/media/${filename}`)} />
       </video>
-    )
+    );
   }
 
-  return null
-}
+  return null;
+};

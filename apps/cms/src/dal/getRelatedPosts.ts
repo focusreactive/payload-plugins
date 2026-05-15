@@ -1,10 +1,11 @@
-import { getPayloadClient } from '@/dal/payload-client'
-import { draftMode } from 'next/headers'
-import type { Post } from '@/payload-types'
-import { BLOG_CONFIG } from '@/core/config/blog'
-import type { Locale } from '@/core/types'
+import { draftMode } from "next/headers";
 
-const RELATED_POSTS_COUNT = 3
+import { BLOG_CONFIG } from "@/core/config/blog";
+import type { Locale } from "@/core/types";
+import { getPayloadClient } from "@/dal/payload-client";
+import type { Post } from "@/payload-types";
+
+const RELATED_POSTS_COUNT = 3;
 
 /**
  * Returns up to 3 related posts for a given post.
@@ -17,48 +18,48 @@ export async function getRelatedPosts({
   post,
   locale,
 }: {
-  post: Post
-  locale: Locale
+  post: Post;
+  locale: Locale;
 }): Promise<Post[]> {
-  const { isEnabled: draft } = await draftMode()
+  const { isEnabled: draft } = await draftMode();
 
   const manualPosts = (post.relatedPosts ?? []).filter(
-    (p): p is Post => typeof p === 'object' && p !== null,
-  )
+    (p): p is Post => typeof p === "object" && p !== null
+  );
 
   if (manualPosts.length >= RELATED_POSTS_COUNT) {
-    return manualPosts.slice(0, RELATED_POSTS_COUNT)
+    return manualPosts.slice(0, RELATED_POSTS_COUNT);
   }
 
-  const remaining = RELATED_POSTS_COUNT - manualPosts.length
-  const excludeIds = [post.id, ...manualPosts.map((p) => p.id)]
+  const remaining = RELATED_POSTS_COUNT - manualPosts.length;
+  const excludeIds = [post.id, ...manualPosts.map((p) => p.id)];
 
-  const categoryIds = (post.categories ?? []).map((cat) =>
-    typeof cat === 'object' ? cat.id : cat,
-  ).filter(Boolean)
+  const categoryIds = (post.categories ?? [])
+    .map((cat) => (typeof cat === "object" ? cat.id : cat))
+    .filter(Boolean);
 
   if (categoryIds.length === 0) {
-    return manualPosts
+    return manualPosts;
   }
 
-  const payload = await getPayloadClient()
+  const payload = await getPayloadClient();
 
   const { docs: backfillPosts } = await payload.find({
     collection: BLOG_CONFIG.collection,
+    depth: 1,
     draft,
+    limit: remaining,
+    locale,
+    overrideAccess: true,
+    sort: "-publishedAt",
     where: {
       and: [
         { id: { not_in: excludeIds } },
         { categories: { in: categoryIds } },
-        ...(!draft ? [{ _status: { equals: 'published' } }] : []),
+        ...(!draft ? [{ _status: { equals: "published" } }] : []),
       ],
     },
-    sort: '-publishedAt',
-    limit: remaining,
-    depth: 1,
-    locale,
-    overrideAccess: true,
-  })
+  });
 
-  return [...manualPosts, ...backfillPosts]
+  return [...manualPosts, ...backfillPosts];
 }

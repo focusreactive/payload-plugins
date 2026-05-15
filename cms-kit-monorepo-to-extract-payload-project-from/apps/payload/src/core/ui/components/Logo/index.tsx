@@ -1,48 +1,49 @@
-import { cn } from '@/core/lib/utils'
-import React from 'react'
-import type { Media as MediaType } from '@/payload-types'
-import { Media } from '@/core/ui'
-import Image from 'next/image'
+import Image from "next/image";
+import React from "react";
 
-type Props = {
-  resource?: MediaType | null
-  className?: string
-  imgClassName?: string
-  alt?: string
-  priority?: boolean
-  loading?: 'eager' | 'lazy'
+import { cn } from "@/core/lib/utils";
+import { Media } from "@/core/ui";
+import type { Media as MediaType } from "@/payload-types";
+
+interface Props {
+  resource?: MediaType | null;
+  className?: string;
+  imgClassName?: string;
+  alt?: string;
+  priority?: boolean;
+  loading?: "eager" | "lazy";
 }
 
 export const Logo = ({
   resource,
   className,
   imgClassName,
-  alt = 'Logo',
+  alt = "Logo",
   priority = true,
-  loading = 'eager',
+  loading = "eager",
 }: Props) => {
   if (resource) {
     return (
       <Media
         resource={resource}
-        imgClassName={cn('size-9 object-contain', imgClassName)}
+        imgClassName={cn("size-9 object-contain", imgClassName)}
         className={className}
         priority={true}
         loading={loading}
         size="(max-width: 768px) 150px, 200px"
       />
-    )
+    );
   }
 
   return (
     <Image
       src="/logo-placeholder.webp"
       alt={alt}
-      fetchPriority={priority ? 'high' : 'auto'}
+      fetchPriority={priority ? "high" : "auto"}
       loading={loading}
       width={200}
       height={36}
-      className={cn('size-9 object-contain', imgClassName, className)}
+      className={cn("size-9 object-contain", imgClassName, className)}
     />
-  )
-}
+  );
+};

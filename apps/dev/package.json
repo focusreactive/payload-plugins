@@ -11,14 +11,14 @@
     "devsafe": "rm -rf .next && cross-env NODE_OPTIONS=--no-deprecation next dev",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
-    "lint": "cross-env NODE_OPTIONS=--no-deprecation next lint",
+    "lint": "ultracite check",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start"
   },
   "dependencies": {
     "@focus-reactive/payload-plugin-ab": "workspace:*",
-    "@focus-reactive/payload-plugin-presets": "workspace:*",
     "@focus-reactive/payload-plugin-comments": "workspace:*",
+    "@focus-reactive/payload-plugin-presets": "workspace:*",
     "@focus-reactive/payload-plugin-scheduling": "workspace:*",
     "@focus-reactive/payload-plugin-translator": "workspace:*",
     "@payloadcms/db-sqlite": "3.79.0",

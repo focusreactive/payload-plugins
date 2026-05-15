@@ -9,6 +9,7 @@
 **Tech Stack:** Turborepo, pnpm workspaces, Next.js 15, React 19, Tailwind CSS 4, TypeScript 5.7, Payload CMS 3, PostgreSQL.
 
 **Source repos (local):**
+
 - cms-kit: `/Users/maksim/Documents/code/cms-kit/`
 - payload project: `/Users/maksim/Documents/code/payload-cms-ideal-cms/`
 
@@ -35,6 +36,7 @@ T2a + T2b + T2c done →
 ## Task T0: Move apps/payload into the monorepo
 
 **Files:**
+
 - Create: `apps/payload/` (copy from `payload-cms-ideal-cms/`)
 - Modify: `turbo.json`
 
@@ -69,6 +71,7 @@ Change the `"name"` field from `"payload-cms-ideal-cms"` to `"payload"`. No othe
 Modify `/Users/maksim/Documents/code/cms-kit/turbo.json`:
 
 **globalEnv** — add these to the existing array:
+
 ```
 "DATABASE_URI",
 "PAYLOAD_SECRET",
@@ -82,6 +85,7 @@ Modify `/Users/maksim/Documents/code/cms-kit/turbo.json`:
 ```
 
 **tasks** — add these new task definitions alongside existing ones:
+
 ```json
 "generate:types": {
   "cache": false
@@ -131,6 +135,7 @@ git commit -m "feat: add apps/payload to monorepo (standalone, pre-integration)"
 **Context:** Tailwind v4 is CSS-first — no `tailwind.config.ts`, config lives in CSS `@theme {}` blocks. The shared package changes from exporting a JS config to exporting a CSS file.
 
 **Files:**
+
 - Modify: `packages/tailwind-config/package.json`
 - Delete: `packages/tailwind-config/index.ts`
 - Delete: `packages/tailwind-config/lib/preset.ts`
@@ -193,17 +198,25 @@ This file replaces both `index.ts` (the shared config) and `lib/preset.ts` (the 
 
 /* Custom utility from the old customPlugin */
 @utility mask-shadow-y {
-  mask-image: linear-gradient(90deg, transparent, #fff 10%, #fff 90%, transparent);
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #fff 10%,
+    #fff 90%,
+    transparent
+  );
 }
 
 /* Shared design tokens */
 @theme {
   /* Font families (from old customPlugin) */
-  --font-family-body: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-    Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+  --font-family-body:
+    Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-family-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-    Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+  --font-family-sans:
+    Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 
   /* Primary color scale (from old customPlugin) */
@@ -267,6 +280,7 @@ git commit -m "feat(tailwind-config): upgrade to Tailwind CSS v4 CSS-first confi
 ## Task T1b: Upgrade packages/ts-config and packages/eslint-config
 
 **Files:**
+
 - Modify: `packages/ts-config/package.json`
 - Modify: `packages/ts-config/base.json`
 - Modify: `packages/ts-config/nextjs.json`
@@ -345,6 +359,7 @@ Replace with:
 ### Step 5: Update packages/eslint-config/package.json
 
 Read the current file first:
+
 ```bash
 cat /Users/maksim/Documents/code/cms-kit/packages/eslint-config/package.json
 ```
@@ -435,6 +450,7 @@ git commit -m "feat(ts-config,eslint-config): upgrade to TS 5.7, React 19 types,
 **Context:** packages/ui is a shared component library. In Tailwind v4, it no longer needs its own tailwind.config.ts — consuming apps scan it for class names. We remove the standalone Tailwind build from the package and keep it as a pure class-name component library.
 
 **Files:**
+
 - Modify: `packages/ui/package.json`
 - Delete: `packages/ui/tailwind.config.ts`
 - Delete: `packages/ui/postcss.config.js`
@@ -454,6 +470,7 @@ cat /Users/maksim/Documents/code/cms-kit/packages/ui/index.tsx
 ### Step 2: Update packages/ui/package.json
 
 Replace:
+
 - `"react": "^18"` → `"^19"`, `"react-dom": "^18"` → `"^19"` in devDependencies
 - `"@types/react": "^18"` → `"^19"`, `"@types/react-dom": "^18"` → `"^19"` in devDependencies
 - `"tailwindcss": "^3.4.3"` → `"^4.1.18"` in devDependencies
@@ -540,6 +557,7 @@ git commit -m "feat(ui): upgrade to React 19, Tailwind v4, TypeScript 5.7"
 **Prerequisite:** T1a and T1b must be complete.
 
 **Files:**
+
 - Delete: `apps/sanity/tailwind.config.ts`
 - Modify: `apps/sanity/postcss.config.js`
 - Modify: `apps/sanity/src/app/globals.css` (or equivalent global CSS file)
@@ -556,6 +574,7 @@ Note the path — it will be modified in Step 4.
 ### Step 2: Update apps/sanity/package.json dependencies
 
 Changes:
+
 - `"tailwindcss": "3.4.3"` → `"^4.1.18"` in devDependencies
 - `"autoprefixer": "10.0.1"` → remove (Tailwind v4 doesn't need autoprefixer)
 - `"postcss": "8"` → keep (still needed for `@tailwindcss/postcss` plugin)
@@ -565,11 +584,13 @@ Changes:
 ### Step 3: Update postcss.config.js
 
 Read the current postcss config:
+
 ```bash
 cat /Users/maksim/Documents/code/cms-kit/apps/sanity/postcss.config.js
 ```
 
 Replace with (now delegates to shared config):
+
 ```js
 module.exports = require("@shared/tailwind-config/postcss");
 ```
@@ -583,6 +604,7 @@ rm /Users/maksim/Documents/code/cms-kit/apps/sanity/tailwind.config.ts
 ### Step 5: Update global CSS
 
 Read the current globals.css (found in Step 1). Replace the top section from:
+
 ```css
 @tailwind base;
 @tailwind components;
@@ -590,6 +612,7 @@ Read the current globals.css (found in Step 1). Replace the top section from:
 ```
 
 To:
+
 ```css
 @import "@shared/tailwind-config/base.css";
 ```
@@ -660,6 +683,7 @@ git commit -m "feat(sanity): upgrade to Tailwind CSS v4"
 Identical process to T2b — storyblok has the same Tailwind setup as sanity.
 
 **Files:**
+
 - Delete: `apps/storyblok/tailwind.config.ts`
 - Modify: `apps/storyblok/postcss.config.js`
 - Modify: global CSS file (find with `find apps/storyblok/src -name "globals.css"`)
@@ -678,6 +702,7 @@ Same changes as T2b Step 2: remove `autoprefixer`, update `tailwindcss` to `^4.1
 ### Step 3: Update postcss.config.js
 
 Same as T2b Step 3:
+
 ```js
 module.exports = require("@shared/tailwind-config/postcss");
 ```
@@ -736,6 +761,7 @@ git commit -m "feat(storyblok): upgrade to Tailwind CSS v4"
 **Goal:** Wire `apps/payload` into the shared monorepo packages (eslint, ts-config, tailwind tokens), update `turbo.json` for Payload-specific tasks, update `README.md`, and update the `pnpm gen` generators.
 
 **Files:**
+
 - Modify: `apps/payload/package.json`
 - Modify: `apps/payload/eslint.config.mjs`
 - Modify: `apps/payload/tsconfig.json`
@@ -755,6 +781,7 @@ Note the path to the main global CSS entry point.
 ### Step 2: Update apps/payload/package.json — add shared package deps
 
 Add to `devDependencies`:
+
 ```json
 "@shared/eslint-config": "workspace:*",
 "@shared/ts-config": "workspace:*"
@@ -765,6 +792,7 @@ No changes to Tailwind deps — apps/payload already has Tailwind v4. We only ne
 ### Step 3: Update apps/payload/eslint.config.mjs
 
 Read the current file:
+
 ```bash
 cat /Users/maksim/Documents/code/cms-kit/apps/payload/eslint.config.mjs
 ```
@@ -788,11 +816,13 @@ Preserve all existing Payload-specific rules (Next.js, TypeScript strict setting
 ### Step 4: Update apps/payload/tsconfig.json
 
 Read the current file:
+
 ```bash
 cat /Users/maksim/Documents/code/cms-kit/apps/payload/tsconfig.json
 ```
 
 Change `"extends"` to use the shared config:
+
 ```json
 {
   "extends": "@shared/ts-config/nextjs.json",
@@ -852,6 +882,7 @@ Expected: build succeeds.
 ### Step 9: Run Payload tests (requires Postgres running)
 
 If PostgreSQL is running locally (via docker-compose):
+
 ```bash
 cd /Users/maksim/Documents/code/cms-kit/apps/payload
 docker-compose up -d  # start postgres
@@ -863,11 +894,13 @@ Expected: integration tests pass. E2E tests can be skipped at this stage unless 
 ### Step 10: Update turbo.json — verify all Payload tasks are present
 
 Read `turbo.json` and verify these are present (added in T0):
+
 - `generate:types` task
 - `generate:importmap` task
 - All Payload env vars in `globalEnv`
 
 Add `"generate:experiments"` task if not present:
+
 ```json
 "generate:experiments": {
   "cache": false
@@ -877,11 +910,13 @@ Add `"generate:experiments"` task if not present:
 ### Step 11: Update README.md
 
 Read the current `README.md`:
+
 ```bash
 cat /Users/maksim/Documents/code/cms-kit/README.md
 ```
 
 Add a Payload section following the pattern of the Sanity and Storyblok sections. Key things to include:
+
 - Prerequisites: Docker, PostgreSQL, Payload env vars (`DATABASE_URI`, `PAYLOAD_SECRET`, `AUTH0_*` if applicable)
 - Setup: `docker-compose up -d` in `apps/payload/`, copy `.env.local.example` to `.env.local`, fill in vars
 - Run: `pnpm --filter payload dev` or `turbo dev --filter=payload`
@@ -892,6 +927,7 @@ Add a Payload section following the pattern of the Sanity and Storyblok sections
 ### Step 12: Update turbo generators (optional but recommended)
 
 Read the generator config:
+
 ```bash
 ls /Users/maksim/Documents/code/cms-kit/turbo/generators/
 ```

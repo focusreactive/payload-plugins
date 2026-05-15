@@ -3,11 +3,11 @@ export type {
   TranslationInput,
   TranslationOutput,
   TranslationIndex,
-} from './TranslationProvider.interface'
+} from "./TranslationProvider.interface";
 export {
   OpenAITranslationProvider,
   createOpenAIProvider,
   type OpenAIProviderConfig,
   type DryRunConfig,
   type SystemPromptContext,
-} from './OpenAITranslation.provider'
+} from "./OpenAITranslation.provider";

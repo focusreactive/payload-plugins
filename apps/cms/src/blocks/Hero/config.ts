@@ -1,15 +1,16 @@
-import type { Block } from 'payload'
-import { getBlockPreviewImage } from '@/core/lib/blockPreviewImage'
-import { embedSectionTab } from '@/fields/section/embedSectionTab'
-import { heroFields } from '@/fields/heroFields'
+import type { Block } from "payload";
+
+import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
+import { heroFields } from "@/fields/heroFields";
+import { embedSectionTab } from "@/fields/section/embedSectionTab";
 
 export const HeroBlock: Block = {
-  slug: 'hero',
-  interfaceName: 'HeroBlock',
-  ...getBlockPreviewImage('Hero'),
+  slug: "hero",
+  interfaceName: "HeroBlock",
+  ...getBlockPreviewImage("Hero"),
   labels: {
-    singular: { en: 'Hero', es: 'Hero' },
-    plural: { en: 'Heroes', es: 'Héroes' },
+    plural: { en: "Heroes", es: "Héroes" },
+    singular: { en: "Hero", es: "Hero" },
   },
   fields: embedSectionTab([...heroFields]),
-}
+};

@@ -1,11 +1,12 @@
 "use server";
 
 import { headers } from "next/headers";
-import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
-import type { Response, Comment, BaseServiceOptions } from "../types";
+
 import { DEFAULT_COLLECTION_SLUG, FALLBACK_USERNAME } from "../constants";
-import { sendMentionEmails } from "./sendMentionEmails";
+import type { Response, Comment, BaseServiceOptions } from "../types";
+import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
 import { extractPayload } from "../utils/payload/extractPayload";
+import { sendMentionEmails } from "./sendMentionEmails";
 
 interface Props extends BaseServiceOptions {
   documentId?: number | null;
@@ -32,42 +33,41 @@ export async function createComment({
 
     if (!user) {
       return {
-        success: false,
         error: "Unauthorized",
+        success: false,
       };
     }
 
     if (!globalSlug && (!documentId || !collectionSlug)) {
       return {
-        success: false,
         error: "No document registered",
+        success: false,
       };
     }
 
     const mentions = mentionIds.map((id) => ({ user: id }));
 
-    const data =
-      globalSlug ?
-        {
-          globalSlug,
-          documentId: null,
-          collectionSlug: null,
-          fieldPath,
-          locale,
-          text,
+    const data = globalSlug
+      ? {
           author: user.id,
+          collectionSlug: null,
+          documentId: null,
+          fieldPath,
+          globalSlug,
           isResolved: false,
+          locale,
           mentions,
+          text,
         }
       : {
-          documentId,
-          collectionSlug,
-          fieldPath,
-          locale,
-          text,
           author: user.id,
+          collectionSlug,
+          documentId,
+          fieldPath,
           isResolved: false,
+          locale,
           mentions,
+          text,
         };
 
     const comment = (await payload.create({
@@ -79,23 +79,23 @@ export async function createComment({
 
     if (mentionIds.length > 0) {
       sendMentionEmails({
-        mentionIds,
         authorName: user.name ?? user.email ?? FALLBACK_USERNAME,
-        commentText: text,
         collectionSlug: collectionSlug ?? globalSlug ?? "",
+        commentText: text,
         documentId: documentId,
+        mentionIds,
         payload,
       });
     }
 
     return {
-      success: true,
       data: comment,
+      success: true,
     };
-  } catch (err) {
+  } catch (error) {
     return {
       success: false,
-      error: getDefaultErrorMessage(err),
+      error: getDefaultErrorMessage(error),
     };
   }
 }

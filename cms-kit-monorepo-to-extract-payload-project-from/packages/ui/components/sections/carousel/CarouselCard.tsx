@@ -25,7 +25,7 @@ export default function CarouselCard({
           "bg-gray-100": !isActive && effect !== "fade" && effect !== "slide",
           "border-none": effect === "fade",
           "rounded-xl": effect !== "cube",
-        },
+        }
       )}
     >
       <div {...imageWrapperProps}>

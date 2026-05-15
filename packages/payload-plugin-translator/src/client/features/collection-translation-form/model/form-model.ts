@@ -1,43 +1,45 @@
-'use client'
+"use client";
 
-import type { UseFormReturn } from 'react-hook-form'
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useMemo } from "react";
+import type { UseFormReturn } from "react-hook-form";
+import { useForm } from "react-hook-form";
 
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useMemo } from 'react'
-import { useForm } from 'react-hook-form'
+import { defaultValues } from "./constants";
+import type { FormInput, FormValues } from "./schema";
+import { validationSchema } from "./schema";
 
-import { defaultValues } from './constants'
-import type { FormInput, FormValues } from './schema'
-import { validationSchema } from './schema'
-
-type UseFormReturn_ = {
-  form: UseFormReturn<FormValues>
+interface UseFormReturn_ {
+  form: UseFormReturn<FormValues>;
 }
 
-type UseFormProps = {
-  initialValues?: FormInput
-  disabled?: boolean
+interface UseFormProps {
+  initialValues?: FormInput;
+  disabled?: boolean;
 }
 
-export const useCollectionTranslationForm = ({ initialValues, disabled }: UseFormProps = {}): UseFormReturn_ => {
+export const useCollectionTranslationForm = ({
+  initialValues,
+  disabled,
+}: UseFormProps = {}): UseFormReturn_ => {
   const defaultFormValues = useMemo(
     () => ({
       ...defaultValues,
       ...initialValues,
     }),
-    [initialValues],
-  )
+    [initialValues]
+  );
 
   const form = useForm<FormValues>({
     defaultValues: defaultFormValues,
-    resolver: zodResolver(validationSchema),
-    mode: 'onTouched',
     disabled,
-  })
+    mode: "onTouched",
+    resolver: zodResolver(validationSchema),
+  });
 
   useEffect(() => {
-    form.reset(defaultFormValues)
-  }, [defaultFormValues, form, form.reset])
+    form.reset(defaultFormValues);
+  }, [defaultFormValues, form, form.reset]);
 
-  return { form }
-}
+  return { form };
+};

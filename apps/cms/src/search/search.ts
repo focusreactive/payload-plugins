@@ -1,46 +1,48 @@
-'use server'
+"use server";
 
-import { getPayloadClient } from '@/dal'
-import { generateEmbedding } from './generateEmbedding'
-import { SearchResultGroup } from './types'
-import { runSemanticSearch } from './runSemanticSearch'
-import { groupResultsByCollection } from './groupResultsByCollection'
-import { getDocumentSearchData } from './getDocumentSearchData'
-import { Pool } from 'pg'
+import type { Pool } from "pg";
+
+import { getPayloadClient } from "@/dal";
+
+import { generateEmbedding } from "./generateEmbedding";
+import { getDocumentSearchData } from "./getDocumentSearchData";
+import { groupResultsByCollection } from "./groupResultsByCollection";
+import { runSemanticSearch } from "./runSemanticSearch";
+import type { SearchResultGroup } from "./types";
 
 type Response =
   | {
-      success: true
-      data: SearchResultGroup[]
+      success: true;
+      data: SearchResultGroup[];
     }
   | {
-      success: false
-      error: string
-    }
+      success: false;
+      error: string;
+    };
 
 interface Params {
-  query: string
-  locale: string
+  query: string;
+  locale: string;
 }
 
-const VALID_LOCALES = new Set(['en', 'es'])
+const VALID_LOCALES = new Set(["en", "es"]);
 
 export async function search({ query, locale }: Params): Promise<Response> {
   if (!VALID_LOCALES.has(locale)) {
     return {
-      success: true,
       data: [],
-    }
+      success: true,
+    };
   }
 
   try {
     const [embedding, payload] = await Promise.all([
       generateEmbedding(query),
       getPayloadClient(),
-    ])
+    ]);
 
-    const pool = payload.db.pool as unknown as Pool
-    const rawItems = await runSemanticSearch({ pool, embedding, locale })
+    const pool = payload.db.pool as unknown as Pool;
+    const rawItems = await runSemanticSearch({ embedding, locale, pool });
 
     const enrichedItems = await Promise.all(
       rawItems.map(async (item) => {
@@ -48,28 +50,28 @@ export async function search({ query, locale }: Params): Promise<Response> {
           payload,
           item.documentId,
           item.collection,
-          item.locale,
-        )
+          item.locale
+        );
 
-        if (!displayData) return null
+        if (!displayData) {return null;}
 
-        return { ...item, ...displayData }
-      }),
-    )
+        return { ...item, ...displayData };
+      })
+    );
 
-    const items = enrichedItems.filter((item) => item !== null)
-    const groups = groupResultsByCollection(items)
+    const items = enrichedItems.filter((item) => item !== null);
+    const groups = groupResultsByCollection(items);
 
     return {
-      success: true,
       data: groups,
-    }
+      success: true,
+    };
   } catch (error) {
-    console.error('[search] error:', error)
+    console.error("[search] error:", error);
 
     return {
-      success: false,
       error: error as string,
-    }
+      success: false,
+    };
   }
 }

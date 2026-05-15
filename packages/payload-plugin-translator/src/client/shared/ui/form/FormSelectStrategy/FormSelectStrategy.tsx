@@ -1,25 +1,26 @@
-import type { ReactElement } from 'react'
+import type { ReactElement } from "react";
 
-import FormSelect from '../FormSelect'
-import Tooltip from '../../Tooltip'
-import { QuestionCircleIcon } from '../../../lib/assets/icons/QuestionCircleIcon'
+import { QuestionCircleIcon } from "../../../lib/assets/icons/QuestionCircleIcon";
+import Tooltip from "../../Tooltip";
+import FormSelect from "../FormSelect";
 
-import styles from './styles.module.scss'
+import styles from "./styles.module.scss";
 
 const STRATEGY_OPTIONS = [
-  { value: 'overwrite', label: 'Overwrite' },
-  { value: 'skip_existing', label: 'Skip existing' },
-] as const
+  { label: "Overwrite", value: "overwrite" },
+  { label: "Skip existing", value: "skip_existing" },
+] as const;
 
-const STRATEGY_LABEL = 'Update mode'
+const STRATEGY_LABEL = "Update mode";
 
 const STRATEGY_TOOLTIP = (
   <>
     <strong>Overwrite</strong> — translate all fields, replacing existing values
     <br />
-    <strong>Skip existing</strong> — only translate empty fields, keep existing values
+    <strong>Skip existing</strong> — only translate empty fields, keep existing
+    values
   </>
-)
+);
 
 const StrategyLabel: ReactElement = (
   <span className={styles.label}>
@@ -30,15 +31,15 @@ const StrategyLabel: ReactElement = (
       </span>
     </Tooltip>
   </span>
-)
+);
 
-type FormSelectStrategyProps = {
-  name: string
-  required?: boolean
-  description?: string
-  disabled?: boolean
-  size?: 'sm' | 'md' | 'lg'
-  className?: string
+interface FormSelectStrategyProps {
+  name: string;
+  required?: boolean;
+  description?: string;
+  disabled?: boolean;
+  size?: "sm" | "md" | "lg";
+  className?: string;
 }
 
 export function FormSelectStrategy({
@@ -60,7 +61,7 @@ export function FormSelectStrategy({
       options={[...STRATEGY_OPTIONS]}
       disabled={disabled}
     />
-  )
+  );
 }
 
-export type TranslationStrategy = (typeof STRATEGY_OPTIONS)[number]['value']
+export type TranslationStrategy = (typeof STRATEGY_OPTIONS)[number]["value"];

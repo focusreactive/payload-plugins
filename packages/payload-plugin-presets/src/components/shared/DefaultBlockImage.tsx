@@ -1,10 +1,12 @@
-import React from 'react'
+import React from "react";
 
 interface DefaultBlockImageProps {
-  id?: string
+  id?: string;
 }
 
-export const DefaultBlockImage: React.FC<DefaultBlockImageProps> = ({ id = 'default-block-pattern' }) => (
+export const DefaultBlockImage: React.FC<DefaultBlockImageProps> = ({
+  id = "default-block-pattern",
+}) => (
   <svg
     fill="none"
     height="151"
@@ -41,4 +43,4 @@ export const DefaultBlockImage: React.FC<DefaultBlockImageProps> = ({ id = 'defa
       </clipPath>
     </defs>
   </svg>
-)
+);

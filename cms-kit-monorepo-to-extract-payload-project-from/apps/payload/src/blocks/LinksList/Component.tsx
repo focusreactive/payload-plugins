@@ -1,13 +1,19 @@
-import React from 'react'
-import type { LinksListBlock } from '@/payload-types'
-import { LinksList } from '@shared/ui'
-import { SectionContainer } from '@/core/ui'
-import { AlignVariant } from '@shared/ui/components/sections/linksList/types'
-import { prepareLinkProps } from '@/lib/adapters/prepareLinkProps'
-import { resolveLocale } from '@/core/lib/resolveLocale'
+import { LinksList } from "@shared/ui";
+import { AlignVariant } from "@shared/ui/components/sections/linksList/types";
+import React from "react";
 
-export async function LinksListBlockComponent({ links, alignVariant, section, id }: LinksListBlock) {
-  const locale = await resolveLocale()
+import { resolveLocale } from "@/core/lib/resolveLocale";
+import { SectionContainer } from "@/core/ui";
+import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
+import type { LinksListBlock } from "@/payload-types";
+
+export async function LinksListBlockComponent({
+  links,
+  alignVariant,
+  section,
+  id,
+}: LinksListBlock) {
+  const locale = await resolveLocale();
 
   return (
     <SectionContainer sectionData={{ ...section, id }}>
@@ -16,5 +22,5 @@ export async function LinksListBlockComponent({ links, alignVariant, section, id
         alignVariant={(alignVariant as AlignVariant) ?? AlignVariant.Left}
       />
     </SectionContainer>
-  )
+  );
 }

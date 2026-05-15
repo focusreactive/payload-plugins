@@ -1,37 +1,40 @@
-'use client'
-import React, { useState, useRef, useEffect } from 'react'
-import { useLocale } from 'next-intl'
-import { usePathname } from '@/i18n/navigation'
-import { Button } from '@repo/ui'
-import { Link as LocaleLink } from '@/i18n/navigation'
-import { I18N_CONFIG } from '@/core/config/i18n'
+"use client";
+import { Button } from "@repo/ui";
+import { useLocale } from "next-intl";
+import React, { useState, useRef, useEffect } from "react";
 
-type LocaleSelectorProps = {
-  render: (locale: string) => React.ReactNode
+import { I18N_CONFIG } from "@/core/config/i18n";
+import { usePathname } from "@/i18n/navigation";
+import { Link as LocaleLink } from "@/i18n/navigation";
+
+interface LocaleSelectorProps {
+  render: (locale: string) => React.ReactNode;
 }
 
 export const LocaleSelector = ({ render }: LocaleSelectorProps) => {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  const pathname = usePathname()
-  const locale = useLocale()
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const locale = useLocale();
 
   // useEffect must come before any conditional return (Rules of Hooks)
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false)
+        setOpen(false);
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  const currentLocaleConfig = I18N_CONFIG.locales.find((l) => l.code === locale)
-  const currentLocaleLabel = currentLocaleConfig?.label ?? locale
+  const currentLocaleConfig = I18N_CONFIG.locales.find(
+    (l) => l.code === locale
+  );
+  const currentLocaleLabel = currentLocaleConfig?.label ?? locale;
 
   // Don't render the selector when there is only one locale
-  if (I18N_CONFIG.locales.length === 1) return null
+  if (I18N_CONFIG.locales.length === 1) {return null;}
 
   return (
     <div ref={ref} className="relative">
@@ -40,9 +43,9 @@ export const LocaleSelector = ({ render }: LocaleSelectorProps) => {
         tabIndex={0}
         onClick={() => setOpen((v) => !v)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            setOpen((v) => !v)
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen((v) => !v);
           }
         }}
       >
@@ -66,5 +69,5 @@ export const LocaleSelector = ({ render }: LocaleSelectorProps) => {
         </ul>
       )}
     </div>
-  )
-}
+  );
+};

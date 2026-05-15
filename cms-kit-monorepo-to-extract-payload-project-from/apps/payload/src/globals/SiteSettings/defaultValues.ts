@@ -72,4 +72,4 @@ export const SITE_SETTINGS_DEFAULT_VALUES = {
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 `,
-}
+};

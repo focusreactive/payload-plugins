@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+
+import { DEFAULT_VISITOR_ID_COOKIE_NAME } from "../../cookie/constants";
+import { defaultGetExpCookieName } from "../../cookie/utils/defaultGetExpCookieName";
 import { getCookie } from "../utils/getCookie";
 import { useABAnalytics } from "./ABAnalyticsProvider";
-import { defaultGetExpCookieName } from "../../cookie/utils/defaultGetExpCookieName";
-import { DEFAULT_VISITOR_ID_COOKIE_NAME } from "../../cookie/constants";
 
 export interface ExperimentTrackerProps {
   experimentId: string;
@@ -30,18 +31,22 @@ export function ExperimentTracker({
   const adapter = useABAnalytics();
 
   useEffect(() => {
-    if (!adapter) return;
+    if (!adapter) {return;}
 
     const sessionKey = `ab_tracked_${experimentId}`;
-    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(sessionKey)) {
+    if (
+      typeof sessionStorage !== "undefined" &&
+      sessionStorage.getItem(sessionKey)
+    ) {
       return;
     }
 
-    const resolvedVariantCookie = variantCookieName ?? defaultGetExpCookieName(experimentId);
+    const resolvedVariantCookie =
+      variantCookieName ?? defaultGetExpCookieName(experimentId);
     const variantBucket = getCookie(resolvedVariantCookie);
     const visitorId = getCookie(visitorCookieName);
 
-    if (!variantBucket || !visitorId) return;
+    if (!variantBucket || !visitorId) {return;}
 
     adapter.trackImpression({ experimentId, variantBucket, visitorId });
 

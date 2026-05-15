@@ -1,18 +1,8 @@
-import type { CollectionConfig } from 'payload'
-import { anyone, or, user, superAdmin } from '@/core/lib/access'
+import type { CollectionConfig } from "payload";
 
-export const Testimonials: CollectionConfig<'testimonials'> = {
-  slug: 'testimonials',
-  labels: {
-    singular: {
-      en: 'Testimonial',
-      es: 'Testimonio',
-    },
-    plural: {
-      en: 'Testimonials',
-      es: 'Testimonios',
-    },
-  },
+import { anyone, or, user, superAdmin } from "@/core/lib/access";
+
+export const Testimonials: CollectionConfig<"testimonials"> = {
   access: {
     create: or(superAdmin, user),
     delete: or(superAdmin, user),
@@ -20,67 +10,78 @@ export const Testimonials: CollectionConfig<'testimonials'> = {
     update: or(superAdmin, user),
   },
   admin: {
-    useAsTitle: 'author',
-    defaultColumns: ['author', 'company', 'rating', 'createdAt'],
-    group: 'Content',
+    defaultColumns: ["author", "company", "rating", "createdAt"],
+    group: "Content",
+    useAsTitle: "author",
   },
   fields: [
     {
-      name: 'author',
-      type: 'text',
+      name: "author",
+      type: "text",
       required: true,
       label: {
-        en: 'Author',
-        es: 'Autor',
+        en: "Author",
+        es: "Autor",
       },
     },
     {
-      name: 'company',
-      type: 'text',
+      name: "company",
+      type: "text",
       label: {
-        en: 'Company',
-        es: 'Empresa',
+        en: "Company",
+        es: "Empresa",
       },
     },
     {
-      name: 'position',
-      type: 'text',
+      name: "position",
+      type: "text",
       label: {
-        en: 'Position',
-        es: 'Posición',
+        en: "Position",
+        es: "Posición",
       },
       localized: true,
     },
     {
-      name: 'avatar',
-      type: 'upload',
-      relationTo: 'media',
+      name: "avatar",
+      type: "upload",
+      relationTo: "media",
       label: {
-        en: 'Avatar',
-        es: 'Avatar',
+        en: "Avatar",
+        es: "Avatar",
       },
     },
     {
-      name: 'content',
-      type: 'textarea',
+      name: "content",
+      type: "textarea",
       required: true,
       label: {
-        en: 'Review',
-        es: 'Reseña',
+        en: "Review",
+        es: "Reseña",
       },
       localized: true,
     },
     {
-      name: 'rating',
-      type: 'number',
+      name: "rating",
+      type: "number",
       min: 1,
       max: 5,
       defaultValue: 5,
       label: {
-        en: 'Rating (1-5)',
-        es: 'Calificación (1-5)',
+        en: "Rating (1-5)",
+        es: "Calificación (1-5)",
       },
     },
   ],
+  labels: {
+    plural: {
+      en: "Testimonials",
+      es: "Testimonios",
+    },
+    singular: {
+      en: "Testimonial",
+      es: "Testimonio",
+    },
+  },
+  slug: "testimonials",
   timestamps: true,
-}
+};

@@ -4,20 +4,20 @@ export function toQueryContext(
   mode: "document" | "global-document" | "global",
   collectionSlug: string | null | undefined,
   documentId: number | null | undefined,
-  globalSlug: string | null,
+  globalSlug: string | null
 ): QueryContext {
   if (mode === "document" && collectionSlug && documentId) {
     return {
-      mode: "doc",
       collectionSlug,
       docId: String(documentId),
+      mode: "doc",
     };
   }
 
   if (mode === "global-document" && globalSlug) {
     return {
-      mode: "global-doc",
       globalSlug,
+      mode: "global-doc",
     };
   }
 

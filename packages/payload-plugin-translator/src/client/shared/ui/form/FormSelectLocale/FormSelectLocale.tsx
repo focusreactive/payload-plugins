@@ -1,14 +1,14 @@
-import { useLocaleOptions } from '../../../lib/payload/hooks/useLocaleOptions'
-import FormSelect from '../FormSelect'
+import { useLocaleOptions } from "../../../lib/payload/hooks/useLocaleOptions";
+import FormSelect from "../FormSelect";
 
-type FormSelectProps = {
-  name: string
-  required?: boolean
-  label?: string
-  description?: string
-  disabled?: boolean
-  size?: 'sm' | 'md' | 'lg'
-  className?: string
+interface FormSelectProps {
+  name: string;
+  required?: boolean;
+  label?: string;
+  description?: string;
+  disabled?: boolean;
+  size?: "sm" | "md" | "lg";
+  className?: string;
 }
 
 export default function FormSelectLocale({
@@ -20,7 +20,7 @@ export default function FormSelectLocale({
   size,
   className,
 }: FormSelectProps) {
-  const localeOptions = useLocaleOptions()
+  const localeOptions = useLocaleOptions();
 
   return (
     <FormSelect
@@ -34,5 +34,5 @@ export default function FormSelectLocale({
       options={localeOptions}
       disabled={disabled}
     />
-  )
+  );
 }

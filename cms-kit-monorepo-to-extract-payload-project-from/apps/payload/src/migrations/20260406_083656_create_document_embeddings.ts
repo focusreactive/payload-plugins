@@ -1,7 +1,8 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import type { MigrateUpArgs, MigrateDownArgs} from "@payloadcms/db-postgres";
+import { sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
-  await db.execute(sql`CREATE EXTENSION IF NOT EXISTS vector;`)
+  await db.execute(sql`CREATE EXTENSION IF NOT EXISTS vector;`);
 
   await db.execute(sql`
    CREATE TYPE "public"."enum_document_embeddings_collection" AS ENUM('page', 'post');
@@ -28,10 +29,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "document_embeddings_updated_at_idx" ON "document_embeddings" USING btree ("updated_at");
   CREATE INDEX "document_embeddings_created_at_idx" ON "document_embeddings" USING btree ("created_at");
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_document_embeddings_fk" FOREIGN KEY ("document_embeddings_id") REFERENCES "public"."document_embeddings"("id") ON DELETE cascade ON UPDATE no action;
-  CREATE INDEX "payload_locked_documents_rels_document_embeddings_id_idx" ON "payload_locked_documents_rels" USING btree ("document_embeddings_id");`)
+  CREATE INDEX "payload_locked_documents_rels_document_embeddings_id_idx" ON "payload_locked_documents_rels" USING btree ("document_embeddings_id");`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
   ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_document_embeddings_fk";
   DROP INDEX IF EXISTS "payload_locked_documents_rels_document_embeddings_id_idx";
@@ -39,5 +44,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP INDEX IF EXISTS "document_embeddings_embedding_idx";
   DROP INDEX IF EXISTS "document_embeddings_fts_idx";
   DROP TABLE IF EXISTS "document_embeddings" CASCADE;
-  DROP TYPE IF EXISTS "public"."enum_document_embeddings_collection";`)
+  DROP TYPE IF EXISTS "public"."enum_document_embeddings_collection";`);
 }

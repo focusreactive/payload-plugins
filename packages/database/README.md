@@ -13,15 +13,15 @@ configuration** and the **migrations directory**.
 
 ```ts
 // apps/<your-app>/src/payload.config.ts
-import { buildConfig } from 'payload'
-import { createDatabaseAdapter } from '@repo/database'
+import { buildConfig } from "payload";
+import { createDatabaseAdapter } from "@repo/database";
 
 export default buildConfig({
   db: createDatabaseAdapter({
     connectionString: process.env.DATABASE_URL,
   }),
   // ...rest of config
-})
+});
 ```
 
 `createDatabaseAdapter` reads `process.env.DATABASE_URL` by default, sets

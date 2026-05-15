@@ -1,13 +1,14 @@
-import React from 'react'
-import type { HeroBlock } from '@/payload-types'
-import { Hero } from '@repo/ui'
-import { SectionContainer } from '@/core/ui'
-import { prepareImageProps } from '@/lib/adapters/prepareImageProps'
-import { prepareLinkProps } from '@/lib/adapters/prepareLinkProps'
-import { prepareRichTextProps } from '@/lib/adapters/prepareRichTextProps'
-import { resolveLocale } from '@/core/lib/resolveLocale'
+import { Hero } from "@repo/ui";
+import React from "react";
 
-type Props = HeroBlock
+import { resolveLocale } from "@/core/lib/resolveLocale";
+import { SectionContainer } from "@/core/ui";
+import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
+import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
+import { prepareRichTextProps } from "@/lib/adapters/prepareRichTextProps";
+import type { HeroBlock } from "@/payload-types";
+
+type Props = HeroBlock;
 
 export async function HeroBlockComponent({
   title,
@@ -17,16 +18,18 @@ export async function HeroBlockComponent({
   section,
   id,
 }: Props) {
-  const locale = await resolveLocale()
+  const locale = await resolveLocale();
 
   return (
     <SectionContainer sectionData={{ ...section, id }}>
       <Hero
-        title={title ?? ''}
+        title={title ?? ""}
         text={prepareRichTextProps(richText)}
         image={prepareImageProps(image)}
-        links={(actions ?? []).map((action) => prepareLinkProps(action, locale))}
+        links={(actions ?? []).map((action) =>
+          prepareLinkProps(action, locale)
+        )}
       />
     </SectionContainer>
-  )
+  );
 }

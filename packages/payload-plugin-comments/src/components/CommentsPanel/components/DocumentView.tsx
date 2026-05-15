@@ -1,7 +1,7 @@
 "use client";
 
-import type { Comment } from "../../../types";
 import { useComments } from "../../../providers/CommentsProvider";
+import type { Comment } from "../../../types";
 import { groupCommentsByFieldPath } from "../utils/groupCommentsByFieldPath";
 import { FieldGroupSection } from "./FieldGroupSection";
 

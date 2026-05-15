@@ -1,83 +1,89 @@
-import type { CollectionSlug, DataFromCollectionSlug, Payload, Where } from 'payload'
-import { Locale } from '../types'
+import type {
+  CollectionSlug,
+  DataFromCollectionSlug,
+  Payload,
+  Where,
+} from "payload";
+
+import type { Locale } from "../types";
 
 interface GetAllDocumentsOptions {
-  where?: Where
-  select?: Record<string, boolean>
-  sort?: string
-  limit?: number
-  depth?: number
-  overrideAccess?: boolean
-  locale?: Locale
-  draft?: boolean
+  where?: Where;
+  select?: Record<string, boolean>;
+  sort?: string;
+  limit?: number;
+  depth?: number;
+  overrideAccess?: boolean;
+  locale?: Locale;
+  draft?: boolean;
 }
 
 interface FindOptions {
-  collection: CollectionSlug
-  where?: Where
-  select?: Record<string, boolean>
-  sort?: string
-  page?: number
-  limit?: number
-  depth?: number
-  overrideAccess?: boolean
-  locale?: Locale
-  draft?: boolean
+  collection: CollectionSlug;
+  where?: Where;
+  select?: Record<string, boolean>;
+  sort?: string;
+  page?: number;
+  limit?: number;
+  depth?: number;
+  overrideAccess?: boolean;
+  locale?: Locale;
+  draft?: boolean;
 }
 
 export async function getAllDocuments<TSlug extends CollectionSlug>(
   payload: Payload,
   collection: TSlug,
-  options: GetAllDocumentsOptions = { locale: 'en' as Locale },
+  options: GetAllDocumentsOptions = { locale: "en" as Locale }
 ): Promise<DataFromCollectionSlug<TSlug>[]> {
   const {
     where,
     select,
-    sort = '-createdAt',
+    sort = "-createdAt",
     limit = 1000,
     depth = 0,
     overrideAccess = false,
     locale,
     draft,
-  } = options
+  } = options;
 
   const find = payload.find as unknown as (
-    args: FindOptions,
-  ) => Promise<{ docs: DataFromCollectionSlug<TSlug>[]; totalPages: number }>
+    args: FindOptions
+  ) => Promise<{ docs: DataFromCollectionSlug<TSlug>[]; totalPages: number }>;
 
   const firstPage = await find({
     collection,
-    where,
+    depth,
+    draft,
+    locale,
+    overrideAccess,
+    page: 1,
     select,
     sort,
-    page: 1,
-    depth,
-    overrideAccess,
-    locale,
-    draft,
-  })
+    where,
+  });
 
-  const allDocs: DataFromCollectionSlug<TSlug>[] = [...firstPage.docs]
-  const totalPages = firstPage.totalPages
+  const allDocs: DataFromCollectionSlug<TSlug>[] = [...firstPage.docs];
+  const {totalPages} = firstPage;
 
   if (totalPages <= 1) {
-    return allDocs
+    return allDocs;
   }
 
   for (let page = 2; page <= totalPages; page++) {
     const result = await find({
       collection,
-      where,
+      depth,
+      limit,
+      locale,
+      overrideAccess,
+      page,
       select,
       sort,
-      limit,
-      page,
-      depth,
-      overrideAccess,
-      locale,
-    })
-    allDocs.push(...result.docs)
+      where,
+    });
+    allDocs.push(...result.docs);
   }
 
-  return allDocs
+  return allDocs;
 }

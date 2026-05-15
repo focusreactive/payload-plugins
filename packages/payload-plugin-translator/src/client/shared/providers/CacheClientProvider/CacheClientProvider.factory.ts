@@ -1,31 +1,31 @@
-import { QueryClient } from '@tanstack/react-query'
+import { QueryClient } from "@tanstack/react-query";
 
 export interface QueryClientConfig {
-  staleTime?: number
-  gcTime?: number
-  retry?: number | boolean
-  refetchOnWindowFocus?: boolean
-  refetchOnReconnect?: boolean
-  refetchOnMount?: boolean
-  retryDelay?: number | ((attemptIndex: number) => number)
+  staleTime?: number;
+  gcTime?: number;
+  retry?: number | boolean;
+  refetchOnWindowFocus?: boolean;
+  refetchOnReconnect?: boolean;
+  refetchOnMount?: boolean;
+  retryDelay?: number | ((attemptIndex: number) => number);
 }
 
-export type QueryClientType = 'server' | 'client'
+export type QueryClientType = "server" | "client";
 
 export class CacheClientProviderFactory {
-  private clientQueryClient: QueryClient | null = null
-  private readonly config: QueryClientConfig
+  private clientQueryClient: QueryClient | null = null;
+  private readonly config: QueryClientConfig;
 
   private static readonly DEFAULT_CONFIG: QueryClientConfig = {
-    staleTime: 30 * 1000,
     gcTime: 10 * 60 * 1000,
-    retry: 0,
     refetchOnWindowFocus: false,
+    retry: 0,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-  }
+    staleTime: 30 * 1000,
+  };
 
   constructor(config?: Partial<QueryClientConfig>) {
-    this.config = { ...CacheClientProviderFactory.DEFAULT_CONFIG, ...config }
+    this.config = { ...CacheClientProviderFactory.DEFAULT_CONFIG, ...config };
   }
 
   /**
@@ -33,17 +33,20 @@ export class CacheClientProviderFactory {
    */
   create(type: QueryClientType): QueryClient {
     switch (type) {
-      case 'server':
-        return this.createServerQueryClient()
+      case "server": {
+        return this.createServerQueryClient();
+      }
 
-      case 'client':
+      case "client": {
         if (!this.clientQueryClient) {
-          this.clientQueryClient = this.createClientQueryClient()
+          this.clientQueryClient = this.createClientQueryClient();
         }
-        return this.clientQueryClient
+        return this.clientQueryClient;
+      }
 
-      default:
-        throw new Error(`Unknown QueryClient type: ${type}`)
+      default: {
+        throw new Error(`Unknown QueryClient type: ${type}`);
+      }
     }
   }
 
@@ -54,12 +57,12 @@ export class CacheClientProviderFactory {
   private createClientQueryClient(): QueryClient {
     return new QueryClient({
       defaultOptions: {
-        queries: this.config,
         mutations: {
           retry: this.config.retry,
         },
+        queries: this.config,
       },
-    })
+    });
   }
 
   /**
@@ -69,16 +72,16 @@ export class CacheClientProviderFactory {
   private createServerQueryClient(): QueryClient {
     return new QueryClient({
       defaultOptions: {
-        queries: {
-          ...this.config,
-          staleTime: Infinity,
-          refetchOnWindowFocus: false,
-          refetchOnMount: false,
-        },
         mutations: {
           retry: false,
         },
+        queries: {
+          ...this.config,
+          refetchOnMount: false,
+          refetchOnWindowFocus: false,
+          staleTime: Infinity,
+        },
       },
-    })
+    });
   }
 }

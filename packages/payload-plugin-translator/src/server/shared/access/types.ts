@@ -1,1 +1,4 @@
-export type { AccessGuard, AccessGuardRequest } from '../../../types/AccessGuard'
+export type {
+  AccessGuard,
+  AccessGuardRequest,
+} from "../../../types/AccessGuard";

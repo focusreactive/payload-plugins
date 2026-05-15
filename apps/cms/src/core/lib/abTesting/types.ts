@@ -1,5 +1,5 @@
 export interface ABVariantData {
-  bucket: string
-  rewritePath: string
-  passPercentage: number
+  bucket: string;
+  rewritePath: string;
+  passPercentage: number;
 }

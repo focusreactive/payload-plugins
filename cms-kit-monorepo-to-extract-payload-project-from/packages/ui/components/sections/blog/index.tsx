@@ -1,6 +1,7 @@
 import { RichText } from "../../ui/richText";
 import BlogPostCard from "./BlogPostCard";
-import { BlogStyle, type IBlogSectionProps } from "./types";
+import { BlogStyle } from './types';
+import type { IBlogSectionProps } from './types';
 
 // todo: rework section
 

@@ -8,5 +8,5 @@ export function parseMentionIds(text: string): number[] {
     ids.add(Number(match[1]));
   }
 
-  return Array.from(ids);
+  return [...ids];
 }

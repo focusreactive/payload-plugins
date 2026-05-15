@@ -1,3 +1,3 @@
-import { Config } from "@/payload-types";
+import type { Config } from "@/payload-types";
 
-export type Locale = Config['locale']
+export type Locale = Config["locale"];

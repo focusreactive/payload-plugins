@@ -1,61 +1,61 @@
-import type { Field } from 'payload'
 import {
   MetaDescriptionField,
   MetaImageField,
   MetaTitleField,
   OverviewField,
   PreviewField,
-} from '@payloadcms/plugin-seo/fields'
+} from "@payloadcms/plugin-seo/fields";
+import type { Field } from "payload";
 
-export const generateSeoFields = (): Field[] => {
-  return [
+export const generateSeoFields = (): Field[] => [
     OverviewField({
-      titlePath: 'meta.title',
-      descriptionPath: 'meta.description',
-      imagePath: 'meta.image',
+      titlePath: "meta.title",
+      descriptionPath: "meta.description",
+      imagePath: "meta.image",
     }),
     MetaTitleField({
       hasGenerateFn: true,
     }),
     MetaImageField({
-      relationTo: 'media',
+      relationTo: "media",
     }),
     MetaDescriptionField({
       hasGenerateFn: true,
     }),
     PreviewField({
       hasGenerateFn: true,
-      titlePath: 'meta.title',
-      descriptionPath: 'meta.description',
+      titlePath: "meta.title",
+      descriptionPath: "meta.description",
     }),
     {
-      name: 'robots',
-      type: 'select',
+      name: "robots",
+      type: "select",
       label: {
-        en: 'Robots',
-        es: 'Robots',
+        en: "Robots",
+        es: "Robots",
       },
-      defaultValue: 'index',
+      defaultValue: "index",
       options: [
         {
           label: {
-            en: 'Index',
-            es: 'Index',
-          }, value: 'index'
+            en: "Index",
+            es: "Index",
+          },
+          value: "index",
         },
         {
           label: {
-            en: 'No Index',
-            es: 'No Index',
-          }, value: 'noindex'
+            en: "No Index",
+            es: "No Index",
+          },
+          value: "noindex",
         },
       ],
       admin: {
         description: {
-          en: 'Allow search engines to index this page',
-          es: 'Permite a los motores de búsqueda indexar esta página',
+          en: "Allow search engines to index this page",
+          es: "Permite a los motores de búsqueda indexar esta página",
         },
       },
     },
-  ]
-}
+  ];

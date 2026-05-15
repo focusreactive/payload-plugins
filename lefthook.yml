@@ -1,0 +1,16 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: format-and-lint
+      glob: "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts,json,jsonc}"
+      run: bunx ultracite fix --files {staged_files} --skip=correctness/noUnusedImports
+      stage_fixed: true
+
+pre-push:
+  jobs:
+    - name: check-types
+      run: bunx turbo run check-types
+  # NOTE: full `ultracite check` is intentionally not in pre-push yet.
+  # The legacy codebase has ~3437 opinion-level warnings from the curated
+  # ruleset; we adopt incrementally — pre-commit auto-fixes anything staged.
+  # Run `bun run lint` manually for a full sweep.

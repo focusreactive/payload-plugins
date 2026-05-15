@@ -1,11 +1,11 @@
-import type { StaticImageData } from 'next/image'
+import type { StaticImageData } from "next/image";
+import NextImage from "next/image";
+import React from "react";
 
-import NextImage from 'next/image'
-import React from 'react'
+import { getMediaUrl } from "@/core/lib/getMediaUrl";
+import { cn } from "@/core/lib/utils";
 
-import { cn } from '@/core/lib/utils'
-import { getMediaUrl } from '@/core/lib/getMediaUrl'
-import { MediaProps } from '../index'
+import type { MediaProps } from "../index";
 
 /**
  * ImageMedia
@@ -47,42 +47,48 @@ export const ImageMedia: React.FC<MediaProps> = (props) => {
     size: sizeFromProps,
     src: srcFromProps,
     loading: loadingFromProps,
-  } = props
+  } = props;
 
-  let width: number | undefined
-  let height: number | undefined
-  let alt = altFromProps
-  let src: StaticImageData | string = srcFromProps || ''
+  let width: number | undefined;
+  let height: number | undefined;
+  let alt = altFromProps;
+  let src: StaticImageData | string = srcFromProps || "";
 
-  let preferredSize: string | undefined = preferredSizeFromProps
+  let preferredSize: string | undefined = preferredSizeFromProps;
 
-  if (!src && resource && typeof resource === 'object') {
-    const { alt: altFromResource, height: fullHeight, url, width: fullWidth } = resource
+  if (!src && resource && typeof resource === "object") {
+    const {
+      alt: altFromResource,
+      height: fullHeight,
+      url,
+      width: fullWidth,
+    } = resource;
 
-    width = fullWidth!
-    height = fullHeight!
-    alt = altFromResource || ''
+    width = fullWidth!;
+    height = fullHeight!;
+    alt = altFromResource || "";
 
-    const cacheTag = resource.updatedAt
+    const cacheTag = resource.updatedAt;
 
-    src = getMediaUrl(url, cacheTag)
+    src = getMediaUrl(url, cacheTag);
 
-    preferredSize = resource.sizes?.[preferredSizeFromProps || 'small']?.url || undefined
+    preferredSize =
+      resource.sizes?.[preferredSizeFromProps || "small"]?.url || undefined;
 
     if (preferredSize) {
-      src = getMediaUrl(preferredSize, cacheTag)
+      src = getMediaUrl(preferredSize, cacheTag);
     }
   }
 
-  const loading = loadingFromProps || (!priority ? 'lazy' : undefined)
+  const loading = loadingFromProps || (!priority ? "lazy" : undefined);
 
   // NOTE: this is used by the browser to determine which image to download at different screen sizes
-  const sizes = sizeFromProps
+  const sizes = sizeFromProps;
 
   return (
     <picture className={cn(pictureClassName)}>
       <NextImage
-        alt={alt || ''}
+        alt={alt || ""}
         className={cn(imgClassName)}
         fill={fill}
         height={!fill ? height : undefined}
@@ -94,5 +100,5 @@ export const ImageMedia: React.FC<MediaProps> = (props) => {
         width={!fill ? width : undefined}
       />
     </picture>
-  )
-}
+  );
+};

@@ -1,3 +1,3 @@
-export const themeLocalStorageKey = 'payload-theme'
+export const themeLocalStorageKey = "payload-theme";
 
-export const defaultTheme = 'light'
+export const defaultTheme = "light";

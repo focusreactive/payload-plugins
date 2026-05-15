@@ -1,1 +1,1 @@
-export { DocumentTranslationFormModel } from './model'
+export { DocumentTranslationFormModel } from "./model";

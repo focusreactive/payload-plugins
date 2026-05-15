@@ -1,27 +1,29 @@
-import React from 'react'
+import { Footer as SharedFooter } from "@repo/ui";
+import { ImageAspectRatio } from "@repo/ui/components/ui/image/types";
+import React from "react";
 
-import type { Footer as FooterType, Media } from '@/payload-types'
-import { Footer as SharedFooter } from '@repo/ui'
-import { prepareLinkProps } from '@/lib/adapters/prepareLinkProps'
-import { resolveLocale } from '@/core/lib/resolveLocale'
-import { prepareImageProps } from '@/lib/adapters/prepareImageProps'
-import { prepareRichTextProps } from '@/lib/adapters/prepareRichTextProps'
-import { ImageAspectRatio } from '@repo/ui/components/ui/image/types'
+import { resolveLocale } from "@/core/lib/resolveLocale";
+import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
+import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
+import { prepareRichTextProps } from "@/lib/adapters/prepareRichTextProps";
+import type { Footer as FooterType, Media } from "@/payload-types";
 
-type Props = {
-  data: FooterType
+interface Props {
+  data: FooterType;
 }
 
 export async function Footer({ data }: Props) {
-  if (!data) return null
+  if (!data) {return null;}
 
-  const locale = await resolveLocale()
-  const links = (data.links ?? []).map((item) => prepareLinkProps(item.link, locale))
+  const locale = await resolveLocale();
+  const links = (data.links ?? []).map((item) =>
+    prepareLinkProps(item.link, locale)
+  );
   const image = prepareImageProps({
+    aspectRatio: ImageAspectRatio["1/1"],
     image: data.logo as Media,
-    aspectRatio: ImageAspectRatio['1/1'],
-  })
-  const text = prepareRichTextProps(data.text ?? null)
+  });
+  const text = prepareRichTextProps(data.text ?? null);
 
   return (
     <SharedFooter
@@ -30,5 +32,5 @@ export async function Footer({ data }: Props) {
       text={text}
       copywriteText={data.copywriteText ?? undefined}
     />
-  )
+  );
 }

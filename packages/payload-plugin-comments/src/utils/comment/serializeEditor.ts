@@ -1,4 +1,4 @@
-const ZERO_WIDTH_SPACE = /\u200b/g;
+const ZERO_WIDTH_SPACE = /\u200B/g;
 
 function serializeNode(node: ChildNode, output: string[]): void {
   if (node.nodeType === Node.TEXT_NODE) {
@@ -11,7 +11,7 @@ function serializeNode(node: ChildNode, output: string[]): void {
 
   if (node.nodeType === Node.ELEMENT_NODE) {
     const element = node as HTMLElement;
-    const mentionId = element.dataset.mentionId;
+    const {mentionId} = element.dataset;
 
     if (mentionId !== undefined) {
       output.push(`@(${mentionId})`);
@@ -19,7 +19,7 @@ function serializeNode(node: ChildNode, output: string[]): void {
       return;
     }
 
-    for (const child of Array.from(element.childNodes)) {
+    for (const child of [...element.childNodes]) {
       serializeNode(child, output);
     }
   }
@@ -28,7 +28,7 @@ function serializeNode(node: ChildNode, output: string[]): void {
 export function serializeEditor(root: HTMLElement): string {
   const parts: string[] = [];
 
-  for (const child of Array.from(root.childNodes)) {
+  for (const child of [...root.childNodes]) {
     serializeNode(child, parts);
   }
 

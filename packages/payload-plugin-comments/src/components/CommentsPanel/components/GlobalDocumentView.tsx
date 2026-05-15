@@ -1,7 +1,7 @@
 "use client";
 
-import type { Comment } from "../../../types";
 import { useComments } from "../../../providers/CommentsProvider";
+import type { Comment } from "../../../types";
 import { groupCommentsByFieldPath } from "../utils/groupCommentsByFieldPath";
 import { FieldGroupSection } from "./FieldGroupSection";
 
@@ -18,7 +18,11 @@ export function GlobalDocumentView({ comments, userId, className }: Props) {
 
   return (
     <div className={className}>
-      <FieldGroupSection fields={fields} userId={userId} globalSlug={globalSlug ?? undefined} />
+      <FieldGroupSection
+        fields={fields}
+        userId={userId}
+        globalSlug={globalSlug ?? undefined}
+      />
     </div>
   );
 }

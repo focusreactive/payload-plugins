@@ -1,243 +1,209 @@
 ## @focus-reactive/payload-plugin-presets [0.10.9](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.8...@focus-reactive/payload-plugin-presets@0.10.9) (2026-05-13)
 
-
 ### Bug Fixes
 
-* **presets:** stop presets drawer from closing parent drawers and leaking modal state ([17b7ec0](https://github.com/focusreactive/payload-plugins/commit/17b7ec062c3d5a9d74aae7d3be8dfa2801d76754))
+- **presets:** stop presets drawer from closing parent drawers and leaking modal state ([17b7ec0](https://github.com/focusreactive/payload-plugins/commit/17b7ec062c3d5a9d74aae7d3be8dfa2801d76754))
 
 ## @focus-reactive/payload-plugin-presets [0.10.8](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.7...@focus-reactive/payload-plugin-presets@0.10.8) (2026-05-08)
 
-
 ### Bug Fixes
 
-* **presets:** preserve custom admin.components.Label on blocks ([6463577](https://github.com/focusreactive/payload-plugins/commit/64635772fac4316b91d20ce8a920bb39ddf991a1))
+- **presets:** preserve custom admin.components.Label on blocks ([6463577](https://github.com/focusreactive/payload-plugins/commit/64635772fac4316b91d20ce8a920bb39ddf991a1))
 
 ## @focus-reactive/payload-plugin-presets [0.10.7](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.6...@focus-reactive/payload-plugin-presets@0.10.7) (2026-05-08)
 
-
 ### Bug Fixes
 
-* **presets:** render preview thumbnail in list cell ([f3bc39b](https://github.com/focusreactive/payload-plugins/commit/f3bc39bc93854f7e725de4207abc4e8219dc333a))
+- **presets:** render preview thumbnail in list cell ([f3bc39b](https://github.com/focusreactive/payload-plugins/commit/f3bc39bc93854f7e725de4207abc4e8219dc333a))
 
 ## @focus-reactive/payload-plugin-presets [0.10.6](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.5...@focus-reactive/payload-plugin-presets@0.10.6) (2026-04-30)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** strip excluded keys recursively from the preset data ([2704f63](https://github.com/focusreactive/payload-plugins/commit/2704f637a61cf0fe5b7d28ceb27fa1c8921d7a3f))
+- **payload-plugin-presets:** strip excluded keys recursively from the preset data ([2704f63](https://github.com/focusreactive/payload-plugins/commit/2704f637a61cf0fe5b7d28ceb27fa1c8921d7a3f))
 
 ## @focus-reactive/payload-plugin-presets [0.10.5](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.4...@focus-reactive/payload-plugin-presets@0.10.5) (2026-04-21)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** redesign block selector cards with full-width thumbnail layout ([7c25aa5](https://github.com/focusreactive/payload-plugins/commit/7c25aa5951c08debc9fc028ecfe456e611c093f5))
+- **payload-plugin-presets:** redesign block selector cards with full-width thumbnail layout ([7c25aa5](https://github.com/focusreactive/payload-plugins/commit/7c25aa5951c08debc9fc028ecfe456e611c093f5))
 
 ## @focus-reactive/payload-plugin-presets [0.10.4](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.3...@focus-reactive/payload-plugin-presets@0.10.4) (2026-04-20)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** replace type+group fields with blocks field for preset data ([65db5c5](https://github.com/focusreactive/payload-plugins/commit/65db5c558684ccccd836dc091cc30445f0060b4f))
+- **payload-plugin-presets:** replace type+group fields with blocks field for preset data ([65db5c5](https://github.com/focusreactive/payload-plugins/commit/65db5c558684ccccd836dc091cc30445f0060b4f))
 
 ## @focus-reactive/payload-plugin-presets [0.10.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.2...@focus-reactive/payload-plugin-presets@0.10.3) (2026-04-02)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** restore customComponents for nested fields after paste ([c788980](https://github.com/focusreactive/payload-plugins/commit/c788980c2907e97bbbc68f34a3ae5fd0ccde3d6a))
+- **payload-plugin-presets:** restore customComponents for nested fields after paste ([c788980](https://github.com/focusreactive/payload-plugins/commit/c788980c2907e97bbbc68f34a3ae5fd0ccde3d6a))
 
 ## @focus-reactive/payload-plugin-presets [0.10.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.1...@focus-reactive/payload-plugin-presets@0.10.2) (2026-04-01)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** show add block button ([f4743b8](https://github.com/focusreactive/payload-plugins/commit/f4743b838f7ec8dee35ee4354ca54cdeee19496f))
+- **payload-plugin-presets:** show add block button ([f4743b8](https://github.com/focusreactive/payload-plugins/commit/f4743b838f7ec8dee35ee4354ca54cdeee19496f))
 
 ## @focus-reactive/payload-plugin-presets [0.10.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.0...@focus-reactive/payload-plugin-presets@0.10.1) (2026-04-01)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** inject "Save as Preset" button and override "Add Below" logic only to action popup of the block field ([d433076](https://github.com/focusreactive/payload-plugins/commit/d4330766a8ba9afdea26876230bc13d3b39a902a))
+- **payload-plugin-presets:** inject "Save as Preset" button and override "Add Below" logic only to action popup of the block field ([d433076](https://github.com/focusreactive/payload-plugins/commit/d4330766a8ba9afdea26876230bc13d3b39a902a))
 
 # @focus-reactive/payload-plugin-presets [0.10.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.9.1...@focus-reactive/payload-plugin-presets@0.10.0) (2026-04-01)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** display all block action buttons without overflow ([4d7856e](https://github.com/focusreactive/payload-plugins/commit/4d7856e8b073fb914412154eb08fa04d5e14bdd9))
-
+- **payload-plugin-presets:** display all block action buttons without overflow ([4d7856e](https://github.com/focusreactive/payload-plugins/commit/4d7856e8b073fb914412154eb08fa04d5e14bdd9))
 
 ### Features
 
-* **payload-plugin-presets:** override "Add Below" handler on click to show block drawer with presets ([57b827a](https://github.com/focusreactive/payload-plugins/commit/57b827aea196c8886884f99f294564d07dc77e5a))
-* **payload-plugin-presets:** override the whole copy & past logic of blocks field ([f936f1f](https://github.com/focusreactive/payload-plugins/commit/f936f1f676e13e728ba4789da98e2418ac7e2781))
+- **payload-plugin-presets:** override "Add Below" handler on click to show block drawer with presets ([57b827a](https://github.com/focusreactive/payload-plugins/commit/57b827aea196c8886884f99f294564d07dc77e5a))
+- **payload-plugin-presets:** override the whole copy & past logic of blocks field ([f936f1f](https://github.com/focusreactive/payload-plugins/commit/f936f1f676e13e728ba4789da98e2418ac7e2781))
 
 ## @focus-reactive/payload-plugin-presets [0.9.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.9.0...@focus-reactive/payload-plugin-presets@0.9.1) (2026-04-01)
 
-
 ### Bug Fixes
 
-* increase hover preview size and prevent image cutoff in presets plugin ([4567318](https://github.com/focusreactive/payload-plugins/commit/4567318eef37cea5e1856c2ff4a80912cd96a32a))
+- increase hover preview size and prevent image cutoff in presets plugin ([4567318](https://github.com/focusreactive/payload-plugins/commit/4567318eef37cea5e1856c2ff4a80912cd96a32a))
 
 # @focus-reactive/payload-plugin-presets [0.9.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.8.2...@focus-reactive/payload-plugin-presets@0.9.0) (2026-03-31)
 
-
 ### Bug Fixes
 
-* remove redundant isolatedModules and align [@types](https://github.com/types) versions ([96ebfc7](https://github.com/focusreactive/payload-plugins/commit/96ebfc770c4668a3c52f85206b72754d42d38817))
-
+- remove redundant isolatedModules and align [@types](https://github.com/types) versions ([96ebfc7](https://github.com/focusreactive/payload-plugins/commit/96ebfc770c4668a3c52f85206b72754d42d38817))
 
 ### Features
 
-* **payload-plugin-presets:** pin dependency versions ([c31ff3f](https://github.com/focusreactive/payload-plugins/commit/c31ff3ff80ecb3f7a855a2aa442ed594bba57d74))
+- **payload-plugin-presets:** pin dependency versions ([c31ff3f](https://github.com/focusreactive/payload-plugins/commit/c31ff3ff80ecb3f7a855a2aa442ed594bba57d74))
 
 ## @focus-reactive/payload-plugin-presets [0.8.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.8.1...@focus-reactive/payload-plugin-presets@0.8.2) (2026-03-30)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** fix repeat open drawer ([9e040c0](https://github.com/focusreactive/payload-plugins/commit/9e040c078e2183dbaf1b41d3bbc19d2565551252))
+- **payload-plugin-presets:** fix repeat open drawer ([9e040c0](https://github.com/focusreactive/payload-plugins/commit/9e040c078e2183dbaf1b41d3bbc19d2565551252))
 
 ## @focus-reactive/payload-plugin-presets [0.8.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.8.0...@focus-reactive/payload-plugin-presets@0.8.1) (2026-03-30)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** open drawer on add block button in any case ([cd34bf3](https://github.com/focusreactive/payload-plugins/commit/cd34bf3f239512f18fe05cb6a0ccccceaabf4647))
+- **payload-plugin-presets:** open drawer on add block button in any case ([cd34bf3](https://github.com/focusreactive/payload-plugins/commit/cd34bf3f239512f18fe05cb6a0ccccceaabf4647))
 
 # @focus-reactive/payload-plugin-presets [0.8.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.7.0...@focus-reactive/payload-plugin-presets@0.8.0) (2026-03-30)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** make preview as a rectangle ([ca1a59d](https://github.com/focusreactive/payload-plugins/commit/ca1a59d5d5edca6dd1fa1a882fbf7fd7ce2b7447))
-* **payload-plugin-presets:** suppress spurious keyboard focus after edit drawer closes ([6ea0f85](https://github.com/focusreactive/payload-plugins/commit/6ea0f851302ff72a824da9efe0ade3c324046d63))
-* **payload-plugin-presets:** update preset item styles ([12b0a33](https://github.com/focusreactive/payload-plugins/commit/12b0a33c14b9f058cdef54cec6014821aa8e14b9))
-
+- **payload-plugin-presets:** make preview as a rectangle ([ca1a59d](https://github.com/focusreactive/payload-plugins/commit/ca1a59d5d5edca6dd1fa1a882fbf7fd7ce2b7447))
+- **payload-plugin-presets:** suppress spurious keyboard focus after edit drawer closes ([6ea0f85](https://github.com/focusreactive/payload-plugins/commit/6ea0f851302ff72a824da9efe0ade3c324046d63))
+- **payload-plugin-presets:** update preset item styles ([12b0a33](https://github.com/focusreactive/payload-plugins/commit/12b0a33c14b9f058cdef54cec6014821aa8e14b9))
 
 ### Features
 
-* **payload-plugin-presets:** open document drawer on edit preset ([26750e8](https://github.com/focusreactive/payload-plugins/commit/26750e8b194861ee39eb604a30d36effc194a5d7))
-
+- **payload-plugin-presets:** open document drawer on edit preset ([26750e8](https://github.com/focusreactive/payload-plugins/commit/26750e8b194861ee39eb604a30d36effc194a5d7))
 
 ### Reverts
 
-* **payload-plugin-presets:** restore block card as single trigger for preset popup ([0b8a6a2](https://github.com/focusreactive/payload-plugins/commit/0b8a6a2cd8ef5515fdff5bc7381e5343611b085c))
+- **payload-plugin-presets:** restore block card as single trigger for preset popup ([0b8a6a2](https://github.com/focusreactive/payload-plugins/commit/0b8a6a2cd8ef5515fdff5bc7381e5343611b085c))
 
 # @focus-reactive/payload-plugin-presets [0.7.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.6.0...@focus-reactive/payload-plugin-presets@0.7.0) (2026-03-29)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** filter presets by active locale ([20ce8c9](https://github.com/focusreactive/payload-plugins/commit/20ce8c934655c55a52ae613f6ff201e1e907d67f))
-* **payload-plugin-presets:** fix focus on presets list ([de38ac1](https://github.com/focusreactive/payload-plugins/commit/de38ac1c8a55ee46cd1e0b2e097e9fa45090533a))
-
+- **payload-plugin-presets:** filter presets by active locale ([20ce8c9](https://github.com/focusreactive/payload-plugins/commit/20ce8c934655c55a52ae613f6ff201e1e907d67f))
+- **payload-plugin-presets:** fix focus on presets list ([de38ac1](https://github.com/focusreactive/payload-plugins/commit/de38ac1c8a55ee46cd1e0b2e097e9fa45090533a))
 
 ### Features
 
-* **payload-plugin-presets:** support presets with blocks rendered in rich text ([775ee52](https://github.com/focusreactive/payload-plugins/commit/775ee52a2a97d0925c7074861c5126689bb67690))
+- **payload-plugin-presets:** support presets with blocks rendered in rich text ([775ee52](https://github.com/focusreactive/payload-plugins/commit/775ee52a2a97d0925c7074861c5126689bb67690))
 
 # @focus-reactive/payload-plugin-presets [0.6.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.5.1...@focus-reactive/payload-plugin-presets@0.6.0) (2026-03-29)
 
-
 ### Features
 
-* **payload-plugin-presets:** set presets button as a trigger for preset list popup ([3725736](https://github.com/focusreactive/payload-plugins/commit/3725736be1d2cf7a354b64cd383e64e2181ff2bf))
+- **payload-plugin-presets:** set presets button as a trigger for preset list popup ([3725736](https://github.com/focusreactive/payload-plugins/commit/3725736be1d2cf7a354b64cd383e64e2181ff2bf))
 
 ## @focus-reactive/payload-plugin-presets [0.5.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.5.0...@focus-reactive/payload-plugin-presets@0.5.1) (2026-03-29)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** close preset preview on presets list scroll ([23a44d5](https://github.com/focusreactive/payload-plugins/commit/23a44d56dd9fea813d09843139fd8bed3d1cb7f7))
-* **payload-plugin-presets:** display only one preview on hover or on focus simultaneously ([41c2d8e](https://github.com/focusreactive/payload-plugins/commit/41c2d8eb20791531bee08f9f975e341398d062f2))
+- **payload-plugin-presets:** close preset preview on presets list scroll ([23a44d5](https://github.com/focusreactive/payload-plugins/commit/23a44d56dd9fea813d09843139fd8bed3d1cb7f7))
+- **payload-plugin-presets:** display only one preview on hover or on focus simultaneously ([41c2d8e](https://github.com/focusreactive/payload-plugins/commit/41c2d8eb20791531bee08f9f975e341398d062f2))
 
 # @focus-reactive/payload-plugin-presets [0.5.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.4.3...@focus-reactive/payload-plugin-presets@0.5.0) (2026-03-27)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** add blocks config context to extract block label ([d3d444c](https://github.com/focusreactive/payload-plugins/commit/d3d444cf32bb2994a62f9e5c4de3c7d1482785c3))
-* **payload-plugin-presets:** improve keyboard navigation and focus management in blocks drawer ([35209ea](https://github.com/focusreactive/payload-plugins/commit/35209ea2f34b83f5c9db6ece7e8bc9b6911ded47))
-
+- **payload-plugin-presets:** add blocks config context to extract block label ([d3d444c](https://github.com/focusreactive/payload-plugins/commit/d3d444cf32bb2994a62f9e5c4de3c7d1482785c3))
+- **payload-plugin-presets:** improve keyboard navigation and focus management in blocks drawer ([35209ea](https://github.com/focusreactive/payload-plugins/commit/35209ea2f34b83f5c9db6ece7e8bc9b6911ded47))
 
 ### Features
 
-* **payload-plugin-presets:** create BlockLabelWithPresets that injects "Save as preset" button to the actions list ([0abdea0](https://github.com/focusreactive/payload-plugins/commit/0abdea0edb98106678354ce7fd9375d92257769f))
-* **payload-plugin-presets:** style preset item ([5c736d3](https://github.com/focusreactive/payload-plugins/commit/5c736d3541ee1f86c4d8d515b9d52b48a7af828f))
+- **payload-plugin-presets:** create BlockLabelWithPresets that injects "Save as preset" button to the actions list ([0abdea0](https://github.com/focusreactive/payload-plugins/commit/0abdea0edb98106678354ce7fd9375d92257769f))
+- **payload-plugin-presets:** style preset item ([5c736d3](https://github.com/focusreactive/payload-plugins/commit/5c736d3541ee1f86c4d8d515b9d52b48a7af828f))
 
 ## @focus-reactive/payload-plugin-presets [0.4.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.4.2...@focus-reactive/payload-plugin-presets@0.4.3) (2026-03-26)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** specify current title of created preset in toast message ([9d78875](https://github.com/focusreactive/payload-plugins/commit/9d78875c1adad5ea19696d890a13b5f029ff7622))
+- **payload-plugin-presets:** specify current title of created preset in toast message ([9d78875](https://github.com/focusreactive/payload-plugins/commit/9d78875c1adad5ea19696d890a13b5f029ff7622))
 
 ## @focus-reactive/payload-plugin-presets [0.4.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.4.1...@focus-reactive/payload-plugin-presets@0.4.2) (2026-03-26)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** move save as preset button to the top of the menu lis ([8e23f47](https://github.com/focusreactive/payload-plugins/commit/8e23f47f9c166937e2814ec70ae814104e3ce363))
-* **payload-plugin-resets:** replace custom skeleton animation components with ShimmerEffect ([ca1a54e](https://github.com/focusreactive/payload-plugins/commit/ca1a54e757be7669de8648af6b84e2679df63758))
+- **payload-plugin-presets:** move save as preset button to the top of the menu lis ([8e23f47](https://github.com/focusreactive/payload-plugins/commit/8e23f47f9c166937e2814ec70ae814104e3ce363))
+- **payload-plugin-resets:** replace custom skeleton animation components with ShimmerEffect ([ca1a54e](https://github.com/focusreactive/payload-plugins/commit/ca1a54e757be7669de8648af6b84e2679df63758))
 
 ## @focus-reactive/payload-plugin-presets [0.4.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.4.0...@focus-reactive/payload-plugin-presets@0.4.1) (2026-03-26)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** hide source collection on debug false ([b7cbbe2](https://github.com/focusreactive/payload-plugins/commit/b7cbbe23e37d25404f83892982ce5a8a8d986503))
+- **payload-plugin-presets:** hide source collection on debug false ([b7cbbe2](https://github.com/focusreactive/payload-plugins/commit/b7cbbe23e37d25404f83892982ce5a8a8d986503))
 
 # @focus-reactive/payload-plugin-presets [0.4.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.3.2...@focus-reactive/payload-plugin-presets@0.4.0) (2026-03-26)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** adapt popups ([9f5140d](https://github.com/focusreactive/payload-plugins/commit/9f5140d4e80eda469751a14bd51b86fc747d1399))
-* **payload-plugin-presets:** check for right media while fetching preview ([f5a33a6](https://github.com/focusreactive/payload-plugins/commit/f5a33a6e2d988de9a2b6473f9a17895cc28b9b08))
-* **payload-plugin-presets:** correct z-index to --z-popup and remove redundant thumbnail-card styles in popover content ([9e4b4f6](https://github.com/focusreactive/payload-plugins/commit/9e4b4f602c17a76e9222d6cd1dd55e3b8a6bcc3a))
-* **payload-plugin-presets:** move save as preset button to the top of the menu list ([cb7bc0e](https://github.com/focusreactive/payload-plugins/commit/cb7bc0e9ebf9cf72b273abc21b58add67cad40e6))
-* **payload-plugin-presets:** remove redundant onClose call and revert unrelated SaveAsPreset changes ([fefa187](https://github.com/focusreactive/payload-plugins/commit/fefa187f6427138f121f2fe35cb7106f171212d6))
-* **payload-plugin-presets:** replace add block title ([21ec362](https://github.com/focusreactive/payload-plugins/commit/21ec362a21b8c87bf5624288ba57ea4ad291d62e))
-* **payload-plugin-presets:** simplify redundant preset count filter in BlockCard ([1fe0bbb](https://github.com/focusreactive/payload-plugins/commit/1fe0bbbdc54367e6f32a48dafa607c3d833cc7e4))
-
+- **payload-plugin-presets:** adapt popups ([9f5140d](https://github.com/focusreactive/payload-plugins/commit/9f5140d4e80eda469751a14bd51b86fc747d1399))
+- **payload-plugin-presets:** check for right media while fetching preview ([f5a33a6](https://github.com/focusreactive/payload-plugins/commit/f5a33a6e2d988de9a2b6473f9a17895cc28b9b08))
+- **payload-plugin-presets:** correct z-index to --z-popup and remove redundant thumbnail-card styles in popover content ([9e4b4f6](https://github.com/focusreactive/payload-plugins/commit/9e4b4f602c17a76e9222d6cd1dd55e3b8a6bcc3a))
+- **payload-plugin-presets:** move save as preset button to the top of the menu list ([cb7bc0e](https://github.com/focusreactive/payload-plugins/commit/cb7bc0e9ebf9cf72b273abc21b58add67cad40e6))
+- **payload-plugin-presets:** remove redundant onClose call and revert unrelated SaveAsPreset changes ([fefa187](https://github.com/focusreactive/payload-plugins/commit/fefa187f6427138f121f2fe35cb7106f171212d6))
+- **payload-plugin-presets:** replace add block title ([21ec362](https://github.com/focusreactive/payload-plugins/commit/21ec362a21b8c87bf5624288ba57ea4ad291d62e))
+- **payload-plugin-presets:** simplify redundant preset count filter in BlockCard ([1fe0bbb](https://github.com/focusreactive/payload-plugins/commit/1fe0bbbdc54367e6f32a48dafa607c3d833cc7e4))
 
 ### Features
 
-* **payload-plugin-presets:** replace Payload Popup with Radix Popover in BlockCard ([3a6c5fe](https://github.com/focusreactive/payload-plugins/commit/3a6c5fe7714431eab98a023ccb4b817509518ccf))
+- **payload-plugin-presets:** replace Payload Popup with Radix Popover in BlockCard ([3a6c5fe](https://github.com/focusreactive/payload-plugins/commit/3a6c5fe7714431eab98a023ccb4b817509518ccf))
 
 ## @focus-reactive/payload-plugin-presets [0.3.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.3.1...@focus-reactive/payload-plugin-presets@0.3.2) (2026-03-26)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** replace the fragile class-based query with a proper ref attached inside the render prop ([5d83f71](https://github.com/focusreactive/payload-plugins/commit/5d83f710cef0f8f4def10296a27f865bfc94c6cc))
+- **payload-plugin-presets:** replace the fragile class-based query with a proper ref attached inside the render prop ([5d83f71](https://github.com/focusreactive/payload-plugins/commit/5d83f710cef0f8f4def10296a27f865bfc94c6cc))
 
 ## @focus-reactive/payload-plugin-presets [0.3.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.3.0...@focus-reactive/payload-plugin-presets@0.3.1) (2026-03-26)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** show add block with preset button in any case ([b67aa71](https://github.com/focusreactive/payload-plugins/commit/b67aa713ce6500068017098014b21279458346eb))
+- **payload-plugin-presets:** show add block with preset button in any case ([b67aa71](https://github.com/focusreactive/payload-plugins/commit/b67aa713ce6500068017098014b21279458346eb))
 
 # @focus-reactive/payload-plugin-presets [0.3.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.2.0...@focus-reactive/payload-plugin-presets@0.3.0) (2026-03-26)
 
-
 ### Bug Fixes
 
-* **payload-plugin-presets:** fix image loading animation ([f52ddf8](https://github.com/focusreactive/payload-plugins/commit/f52ddf8510c1ae27391be1e437acca2c40f9edad))
-* **payload-plugin-presets:** replace default "Add Block" button with "Add block with preset" button ([f6beb8c](https://github.com/focusreactive/payload-plugins/commit/f6beb8cf5ee76b642b459e6d180546c2264e418d))
-
+- **payload-plugin-presets:** fix image loading animation ([f52ddf8](https://github.com/focusreactive/payload-plugins/commit/f52ddf8510c1ae27391be1e437acca2c40f9edad))
+- **payload-plugin-presets:** replace default "Add Block" button with "Add block with preset" button ([f6beb8c](https://github.com/focusreactive/payload-plugins/commit/f6beb8cf5ee76b642b459e6d180546c2264e418d))
 
 ### Features
 
-* **payload-plugin-presets:** add chevron icon to block card that supports presets ([b931b8c](https://github.com/focusreactive/payload-plugins/commit/b931b8cde9f39b6c00d3cf39ed6268ee48f00f99))
-* **payload-plugin-presets:** add debug property to hide/show preset collection ([27e0544](https://github.com/focusreactive/payload-plugins/commit/27e05442ed27a04f9d6ea952c5a0abf5c82310ed))
-* **payload-plugin-presets:** add delete preset functionality from blocks drawer ([66f28af](https://github.com/focusreactive/payload-plugins/commit/66f28afcd2f42d6e2abe45d5ca3bf6332f6d4dcf))
-* **payload-plugin-presets:** display image preview on hover ([15d1cd6](https://github.com/focusreactive/payload-plugins/commit/15d1cd60bdbc6fefca104841476adf52c402126f))
-* **payload-plugin-presets:** inject "Save as Preset" into block actions dropdown ([e018820](https://github.com/focusreactive/payload-plugins/commit/e018820697c4ac6c1f81683b5f7bd5c57b85825b))
+- **payload-plugin-presets:** add chevron icon to block card that supports presets ([b931b8c](https://github.com/focusreactive/payload-plugins/commit/b931b8cde9f39b6c00d3cf39ed6268ee48f00f99))
+- **payload-plugin-presets:** add debug property to hide/show preset collection ([27e0544](https://github.com/focusreactive/payload-plugins/commit/27e05442ed27a04f9d6ea952c5a0abf5c82310ed))
+- **payload-plugin-presets:** add delete preset functionality from blocks drawer ([66f28af](https://github.com/focusreactive/payload-plugins/commit/66f28afcd2f42d6e2abe45d5ca3bf6332f6d4dcf))
+- **payload-plugin-presets:** display image preview on hover ([15d1cd6](https://github.com/focusreactive/payload-plugins/commit/15d1cd60bdbc6fefca104841476adf52c402126f))
+- **payload-plugin-presets:** inject "Save as Preset" into block actions dropdown ([e018820](https://github.com/focusreactive/payload-plugins/commit/e018820697c4ac6c1f81683b5f7bd5c57b85825b))
 
 # Changelog
 

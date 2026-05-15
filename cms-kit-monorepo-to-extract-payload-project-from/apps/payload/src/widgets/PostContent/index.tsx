@@ -1,14 +1,14 @@
-import { RichText, PostHero } from '@/core/ui'
-import type { Post } from '@/payload-types'
-import { RelatedPosts } from '@/entities'
-import { getRelatedPosts } from '@/core/lib/getRelatedPosts'
-import type { Locale } from '@/core/types'
+import { getRelatedPosts } from "@/core/lib/getRelatedPosts";
+import type { Locale } from "@/core/types";
+import { RichText, PostHero } from "@/core/ui";
+import { RelatedPosts } from "@/entities";
+import type { Post } from "@/payload-types";
 
-type PostContentProps = {
-  post: Post
-  locale: Locale
-  relatedPostsLabel?: string | null
-  readMoreLabel?: string | null
+interface PostContentProps {
+  post: Post;
+  locale: Locale;
+  relatedPostsLabel?: string | null;
+  readMoreLabel?: string | null;
 }
 
 export const PostContent: React.FC<PostContentProps> = async ({
@@ -17,7 +17,7 @@ export const PostContent: React.FC<PostContentProps> = async ({
   relatedPostsLabel,
   readMoreLabel,
 }) => {
-  const relatedPosts = await getRelatedPosts({ post, locale })
+  const relatedPosts = await getRelatedPosts({ locale, post });
 
   return (
     <article>
@@ -41,5 +41,5 @@ export const PostContent: React.FC<PostContentProps> = async ({
         </div>
       )}
     </article>
-  )
-}
+  );
+};

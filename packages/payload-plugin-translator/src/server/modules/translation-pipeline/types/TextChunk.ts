@@ -1,51 +1,51 @@
-import type { SerializedTextNode } from '../../../shared/lexical'
+import type { SerializedTextNode } from "../../../shared/lexical";
 
 /**
  * Text chunk for plain text/textarea fields.
  * Mutates dataRef[key] directly.
  */
-export type PlainTextChunk = {
-  type: 'plain'
+export interface PlainTextChunk {
+  type: "plain";
   /** Unique index for translation mapping */
-  index: number
+  index: number;
   /** Original text value */
-  text: string
+  text: string;
   /** Reference to parent data object */
-  dataRef: Record<string, unknown>
+  dataRef: Record<string, unknown>;
   /** Key in dataRef to mutate */
-  key: string
+  key: string;
 }
 
 /**
  * Text chunk for richText Lexical text nodes.
  * Mutates nodeRef.text directly.
  */
-export type RichTextChunk = {
-  type: 'richText'
+export interface RichTextChunk {
+  type: "richText";
   /** Unique index for translation mapping */
-  index: number
+  index: number;
   /** Original text value */
-  text: string
+  text: string;
   /** Direct reference to SerializedTextNode for mutation */
-  nodeRef: SerializedTextNode
+  nodeRef: SerializedTextNode;
 }
 
 /**
  * Union type for all text chunks.
  * Schema-independent - contains only data references for mutation.
  */
-export type TextChunk = PlainTextChunk | RichTextChunk
+export type TextChunk = PlainTextChunk | RichTextChunk;
 
 /**
  * Type guard for PlainTextChunk.
  */
 export function isPlainTextChunk(chunk: TextChunk): chunk is PlainTextChunk {
-  return chunk.type === 'plain'
+  return chunk.type === "plain";
 }
 
 /**
  * Type guard for RichTextChunk.
  */
 export function isRichTextChunk(chunk: TextChunk): chunk is RichTextChunk {
-  return chunk.type === 'richText'
+  return chunk.type === "richText";
 }

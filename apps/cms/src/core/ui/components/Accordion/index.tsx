@@ -1,26 +1,30 @@
-'use client'
-import React, { useState } from 'react'
-import { cn } from '@/core/lib/utils'
-import { ChevronDownIcon } from 'lucide-react'
+"use client";
+import { ChevronDownIcon } from "lucide-react";
+import React, { useState } from "react";
+
+import { cn } from "@/core/lib/utils";
 
 export interface AccordionItemData {
-  id: string
-  trigger: React.ReactNode
-  content: React.ReactNode
+  id: string;
+  trigger: React.ReactNode;
+  content: React.ReactNode;
 }
 
 interface AccordionProps {
-  items: AccordionItemData[]
-  className?: string
+  items: AccordionItemData[];
+  className?: string;
 }
 
 export function Accordion({ items, className }: AccordionProps) {
-  const [openId, setOpenId] = useState<string | null>(null)
+  const [openId, setOpenId] = useState<string | null>(null);
 
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn("space-y-3", className)}>
       {items.map((item) => (
-        <div key={item.id} className="rounded-2xl border border-textSecondaryColor overflow-hidden">
+        <div
+          key={item.id}
+          className="rounded-2xl border border-textSecondaryColor overflow-hidden"
+        >
           <button
             type="button"
             id={`accordion-trigger-${item.id}`}
@@ -32,8 +36,8 @@ export function Accordion({ items, className }: AccordionProps) {
             <span>{item.trigger}</span>
             <ChevronDownIcon
               className={cn(
-                'ml-4 size-4 shrink-0 text-textSecondaryColor transition-transform duration-200',
-                openId === item.id && 'rotate-180',
+                "ml-4 size-4 shrink-0 text-textSecondaryColor transition-transform duration-200",
+                openId === item.id && "rotate-180"
               )}
               aria-hidden
             />
@@ -51,5 +55,5 @@ export function Accordion({ items, className }: AccordionProps) {
         </div>
       ))}
     </div>
-  )
+  );
 }

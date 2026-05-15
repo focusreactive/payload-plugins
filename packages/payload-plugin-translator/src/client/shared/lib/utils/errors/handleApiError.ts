@@ -1,31 +1,31 @@
-import { FetchError } from 'ofetch'
-import type { ZodIssue } from 'zod'
+import { FetchError } from "ofetch";
+import type { ZodIssue } from "zod";
 
 export class TranslationApiError extends Error {
   constructor(
     readonly message: string,
-    readonly details?: ZodIssue[],
+    readonly details?: ZodIssue[]
   ) {
-    super(message)
+    super(message);
   }
 }
 
-type ApiErrorResponse = {
-  message: string
-  details?: ZodIssue[]
+interface ApiErrorResponse {
+  message: string;
+  details?: ZodIssue[];
 }
 
 export async function handleApiError<R>(callback: () => Promise<R>) {
   try {
-    return await callback()
-  } catch (e) {
-    if (e instanceof FetchError && e.data) {
-      const payload = e.data as ApiErrorResponse
-      throw new TranslationApiError(payload.message, payload.details)
+    return await callback();
+  } catch (error) {
+    if (error instanceof FetchError && error.data) {
+      const payload = error.data as ApiErrorResponse;
+      throw new TranslationApiError(payload.message, payload.details);
     }
-    if (e instanceof Error) {
-      throw new TranslationApiError(e.message)
+    if (error instanceof Error) {
+      throw new TranslationApiError(error.message);
     }
-    throw new TranslationApiError('Unknown error')
+    throw new TranslationApiError("Unknown error");
   }
 }

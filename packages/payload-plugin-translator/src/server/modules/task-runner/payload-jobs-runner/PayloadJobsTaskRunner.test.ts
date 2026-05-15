@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+import type { TaskInput } from "../types";
 import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner";
 import type { PayloadJobsRunnerConfig, PayloadJob } from "./types";
-import type { TaskInput } from "../types";
 
 describe("PayloadJobsTaskRunner", () => {
   let mockPayload: {
@@ -19,49 +20,49 @@ describe("PayloadJobsTaskRunner", () => {
 
   beforeEach(() => {
     mockPayload = {
-      find: vi.fn().mockResolvedValue({ docs: [] }),
       delete: vi.fn().mockResolvedValue(undefined),
+      find: vi.fn().mockResolvedValue({ docs: [] }),
       jobs: {
-        queue: vi.fn().mockResolvedValue(undefined),
         cancel: vi.fn().mockResolvedValue(undefined),
+        queue: vi.fn().mockResolvedValue(undefined),
         runByID: vi.fn().mockResolvedValue(undefined),
       },
     };
     config = {
-      taskName: "translate_document",
-      queueName: "translations",
-      jobsCollection: "payload-jobs",
       autoRun: {
         cron: "* * * * *",
         limit: 50,
       },
+      jobsCollection: "payload-jobs",
+      queueName: "translations",
+      taskName: "translate_document",
     };
     runner = new PayloadJobsTaskRunner(
       mockPayload as unknown as Payload,
-      config,
+      config
     );
   });
 
   const createInput = (overrides: Partial<TaskInput> = {}): TaskInput => ({
-    collectionSlug: "posts" as CollectionSlug,
     collectionId: "doc-123",
-    sourceLng: "en",
-    targetLng: "de",
-    strategy: "overwrite",
+    collectionSlug: "posts" as CollectionSlug,
     publishOnTranslation: false,
+    sourceLng: "en",
+    strategy: "overwrite",
+    targetLng: "de",
     ...overrides,
   });
 
   const createJob = (overrides: Partial<PayloadJob> = {}): PayloadJob => ({
-    id: "job-123",
     createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
+    id: "job-123",
     input: {
       collection: { relationTo: "posts" as CollectionSlug, value: "doc-123" },
       source_lng: "en",
-      target_lng: "de",
       strategy: "overwrite",
+      target_lng: "de",
     },
+    updatedAt: "2024-01-01T00:00:00Z",
     ...overrides,
   });
 
@@ -71,15 +72,15 @@ describe("PayloadJobsTaskRunner", () => {
       await runner.enqueue([input]);
 
       expect(mockPayload.jobs.queue).toHaveBeenCalledWith({
-        task: "translate_document",
-        queue: "translations",
         input: {
           collection: { relationTo: "posts", value: "doc-123" },
-          source_lng: "en",
-          target_lng: "de",
-          strategy: "overwrite",
           publish_on_translation: false,
+          source_lng: "en",
+          strategy: "overwrite",
+          target_lng: "de",
         },
+        queue: "translations",
+        task: "translate_document",
       });
     });
 
@@ -101,8 +102,8 @@ describe("PayloadJobsTaskRunner", () => {
       await runner.enqueue([input]);
 
       expect(mockPayload.jobs.cancel).toHaveBeenCalledWith({
-        where: { id: { in: ["existing-job"] } },
         queue: "translations",
+        where: { id: { in: ["existing-job"] } },
       });
       expect(mockPayload.delete).toHaveBeenCalledWith({
         collection: "payload-jobs",
@@ -123,16 +124,16 @@ describe("PayloadJobsTaskRunner", () => {
     it("groups tasks by collection", async () => {
       const inputs = [
         createInput({
-          collectionSlug: "posts" as CollectionSlug,
           collectionId: "post-1",
-        }),
-        createInput({
           collectionSlug: "posts" as CollectionSlug,
-          collectionId: "post-2",
         }),
         createInput({
-          collectionSlug: "pages" as CollectionSlug,
+          collectionId: "post-2",
+          collectionSlug: "posts" as CollectionSlug,
+        }),
+        createInput({
           collectionId: "page-1",
+          collectionSlug: "pages" as CollectionSlug,
         }),
       ];
 
@@ -155,7 +156,7 @@ describe("PayloadJobsTaskRunner", () => {
           input: expect.objectContaining({
             collection: { relationTo: "posts", value: 5 },
           }),
-        }),
+        })
       );
       mockPayload.jobs.queue.mockClear();
 
@@ -165,7 +166,7 @@ describe("PayloadJobsTaskRunner", () => {
           input: expect.objectContaining({
             collection: { relationTo: "posts", value: "uuid-abc" },
           }),
-        }),
+        })
       );
     });
   });
@@ -175,8 +176,8 @@ describe("PayloadJobsTaskRunner", () => {
       await runner.cancel(["job-1", "job-2"]);
 
       expect(mockPayload.jobs.cancel).toHaveBeenCalledWith({
-        where: { id: { in: ["job-1", "job-2"] } },
         queue: "translations",
+        where: { id: { in: ["job-1", "job-2"] } },
       });
       expect(mockPayload.delete).toHaveBeenCalledWith({
         collection: "payload-jobs",
@@ -198,7 +199,7 @@ describe("PayloadJobsTaskRunner", () => {
 
       const result = await runner.run("nonexistent");
 
-      expect(result).toEqual({ success: false, error: "not_found" });
+      expect(result).toEqual({ error: "not_found", success: false });
     });
 
     it("returns already_completed when task is completed", async () => {
@@ -207,7 +208,7 @@ describe("PayloadJobsTaskRunner", () => {
 
       const result = await runner.run("job-123");
 
-      expect(result).toEqual({ success: false, error: "already_completed" });
+      expect(result).toEqual({ error: "already_completed", success: false });
     });
 
     it("returns already_running when task is running", async () => {
@@ -216,7 +217,7 @@ describe("PayloadJobsTaskRunner", () => {
 
       const result = await runner.run("job-123");
 
-      expect(result).toEqual({ success: false, error: "already_running" });
+      expect(result).toEqual({ error: "already_running", success: false });
     });
 
     it("runs task and returns success", async () => {
@@ -278,8 +279,8 @@ describe("PayloadJobsTaskRunner", () => {
 
     it("returns normalized tasks", async () => {
       const job = createJob({
-        id: "job-123",
         completedAt: "2024-01-01T01:00:00Z",
+        id: "job-123",
       });
       mockPayload.find.mockResolvedValue({ docs: [job] });
 
@@ -287,11 +288,11 @@ describe("PayloadJobsTaskRunner", () => {
 
       expect(tasks[0]).toMatchObject({
         id: "job-123",
-        status: "completed",
         input: {
-          collectionSlug: "posts",
           collectionId: "doc-123",
+          collectionSlug: "posts",
         },
+        status: "completed",
       });
     });
 
@@ -343,7 +344,7 @@ describe("PayloadJobsTaskRunner", () => {
         "7",
       ]);
 
-      expect(tasks.map((t) => t.id).sort()).toEqual(["legacy-job", "new-job"]);
+      expect(tasks.map((t) => t.id).toSorted()).toEqual(["legacy-job", "new-job"]);
     });
 
     it("returns every task in the collection when documentIds is omitted", async () => {

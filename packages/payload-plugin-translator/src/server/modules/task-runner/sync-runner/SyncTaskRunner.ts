@@ -1,9 +1,9 @@
-import type { Payload, CollectionSlug } from 'payload'
+import type { Payload, CollectionSlug } from "payload";
 
-import type { TaskRunner } from '../TaskRunner.interface'
-import type { TaskHandler } from '../TaskRunnerProvider.interface'
-import type { Task, TaskInput, RunResult } from '../types'
-import type { LazyMap } from '../../../shared/utils'
+import type { LazyMap } from "../../../shared/utils";
+import type { TaskRunner } from "../TaskRunner.interface";
+import type { TaskHandler } from "../TaskRunnerProvider.interface";
+import type { Task, TaskInput, RunResult } from "../types";
 
 /**
  * Synchronous TaskRunner implementation.
@@ -15,45 +15,45 @@ export class SyncTaskRunner implements TaskRunner {
   constructor(
     private readonly payload: Payload,
     private readonly handler: TaskHandler,
-    private readonly tasks: LazyMap<string, Task>,
+    private readonly tasks: LazyMap<string, Task>
   ) {}
 
   async enqueue(inputs: TaskInput[]): Promise<void> {
     for (const input of inputs) {
-      const key = this.getKey(input.collectionSlug, input.collectionId)
-      const now = new Date().toISOString()
+      const key = this.getKey(input.collectionSlug, input.collectionId);
+      const now = new Date().toISOString();
 
       const task: Task = {
-        id: crypto.randomUUID(),
-        status: 'running',
-        input,
-        createdAt: now,
-        updatedAt: now,
         cancelled: false,
-      }
+        createdAt: now,
+        id: crypto.randomUUID(),
+        input,
+        status: "running",
+        updatedAt: now,
+      };
 
-      this.tasks.set(key, task)
+      this.tasks.set(key, task);
 
       try {
         await this.handler(this.payload, {
           collection: input.collectionSlug,
           collectionId: input.collectionId,
-          sourceLng: input.sourceLng,
-          targetLng: input.targetLng,
-          strategy: input.strategy,
           publishOnTranslation: input.publishOnTranslation,
-        })
+          sourceLng: input.sourceLng,
+          strategy: input.strategy,
+          targetLng: input.targetLng,
+        });
 
-        task.status = 'completed'
-        task.completedAt = new Date().toISOString()
+        task.status = "completed";
+        task.completedAt = new Date().toISOString();
       } catch (error) {
-        task.status = 'failed'
+        task.status = "failed";
         task.error = {
-          message: error instanceof Error ? error.message : 'Unknown error',
-        }
+          message: error instanceof Error ? error.message : "Unknown error",
+        };
       }
 
-      task.updatedAt = new Date().toISOString()
+      task.updatedAt = new Date().toISOString();
     }
   }
 
@@ -63,22 +63,29 @@ export class SyncTaskRunner implements TaskRunner {
 
   async run(_taskId: string): Promise<RunResult> {
     // Sync runner executes tasks immediately, no pending tasks to run
-    return { success: false, error: 'not_found' }
+    return { error: "not_found", success: false };
   }
 
-  async findByCollection(collectionSlug: CollectionSlug, documentIds?: Array<string | number>): Promise<Task[]> {
-    const results: Task[] = []
+  async findByCollection(
+    collectionSlug: CollectionSlug,
+    documentIds?: (string | number)[]
+  ): Promise<Task[]> {
+    const results: Task[] = [];
 
     for (const [, task] of this.tasks) {
-      if (task.input.collectionSlug !== collectionSlug) continue
-      if (documentIds && !documentIds.includes(task.input.collectionId)) continue
-      results.push(task)
+      if (task.input.collectionSlug !== collectionSlug) {continue;}
+      if (documentIds && !documentIds.includes(task.input.collectionId))
+        {continue;}
+      results.push(task);
     }
 
-    return results
+    return results;
   }
 
-  private getKey(collectionSlug: CollectionSlug, collectionId: string | number): string {
-    return `${collectionSlug}:${collectionId}`
+  private getKey(
+    collectionSlug: CollectionSlug,
+    collectionId: string | number
+  ): string {
+    return `${collectionSlug}:${collectionId}`;
   }
 }

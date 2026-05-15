@@ -1,30 +1,34 @@
-import type { CollectionSlug, Config, Payload } from 'payload'
-import type { TaskRunner } from './TaskRunner.interface'
-import type { TranslationStrategyName } from '../translation-pipeline/strategies'
+import type { CollectionSlug, Config, Payload } from "payload";
+
+import type { TranslationStrategyName } from "../translation-pipeline/strategies";
+import type { TaskRunner } from "./TaskRunner.interface";
 
 /**
  * Input for task handler callback
  */
-export type TaskHandlerInput = {
-  collection: CollectionSlug
-  collectionId: string | number
-  sourceLng: string
-  targetLng: string
-  strategy: TranslationStrategyName
-  publishOnTranslation: boolean
+export interface TaskHandlerInput {
+  collection: CollectionSlug;
+  collectionId: string | number;
+  sourceLng: string;
+  targetLng: string;
+  strategy: TranslationStrategyName;
+  publishOnTranslation: boolean;
 }
 
 /**
  * Task handler callback — plugin passes its internal logic
  */
-export type TaskHandler = (payload: Payload, input: TaskHandlerInput) => Promise<void>
+export type TaskHandler = (
+  payload: Payload,
+  input: TaskHandlerInput
+) => Promise<void>;
 
 /**
  * Context for runner configuration
  */
-export type TaskRunnerContext = {
-  handler: TaskHandler
-  collections: CollectionSlug[]
+export interface TaskRunnerContext {
+  handler: TaskHandler;
+  collections: CollectionSlug[];
 }
 
 /**
@@ -40,11 +44,11 @@ export interface TaskRunnerProvider {
   /**
    * Creates a TaskRunner instance for runtime operations (enqueue, cancel, find).
    */
-  create(payload: Payload): TaskRunner
+  create(payload: Payload): TaskRunner;
 
   /**
    * Configures the runner and returns a Payload config modifier.
    * The modifier adds necessary tasks, jobs, queues to Payload config.
    */
-  configure(context: TaskRunnerContext): (config: Config) => Config
+  configure(context: TaskRunnerContext): (config: Config) => Config;
 }

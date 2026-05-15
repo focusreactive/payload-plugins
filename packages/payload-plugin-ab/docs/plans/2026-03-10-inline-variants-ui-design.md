@@ -29,14 +29,15 @@ Parent collection (e.g. "pages")
 
 The plugin patches every configured parent collection with:
 
-| Field | Type | Purpose |
-|---|---|---|
-| `_abVariantOf` | `relationship` (self) | Marks a doc as a variant. Hidden everywhere. |
-| `_abPassPercentage` | `number` | Traffic weight 0–100. Hidden in list, shown in Variants panel only. |
-| `_abVariants` | `ui` | Variants panel — shown on original pages (`_abVariantOf` is empty) |
-| `_abVariantOfBadge` | `ui` | "Variant Of" badge — shown on variant pages (`_abVariantOf` is set) |
+| Field               | Type                  | Purpose                                                             |
+| ------------------- | --------------------- | ------------------------------------------------------------------- |
+| `_abVariantOf`      | `relationship` (self) | Marks a doc as a variant. Hidden everywhere.                        |
+| `_abPassPercentage` | `number`              | Traffic weight 0–100. Hidden in list, shown in Variants panel only. |
+| `_abVariants`       | `ui`                  | Variants panel — shown on original pages (`_abVariantOf` is empty)  |
+| `_abVariantOfBadge` | `ui`                  | "Variant Of" badge — shown on variant pages (`_abVariantOf` is set) |
 
 Variants are hidden from the collection list view via:
+
 ```ts
 admin.baseListFilter: () => ({ _abVariantOf: { exists: false } })
 ```
@@ -61,14 +62,17 @@ admin.baseListFilter: () => ({ _abVariantOf: { exists: false } })
 
 ```ts
 interface CollectionABConfig<TVariantData> {
-  slugField?: string        // default: 'slug' — used to generate cloned slug
-  tenantField?: string      // if set, also locked read-only on variant pages
-  generatePath: (args: { doc: Record<string, unknown>; locale: string | undefined }) => string | null
+  slugField?: string; // default: 'slug' — used to generate cloned slug
+  tenantField?: string; // if set, also locked read-only on variant pages
+  generatePath: (args: {
+    doc: Record<string, unknown>;
+    locale: string | undefined;
+  }) => string | null;
   generateVariantData?: (args: {
-    doc: Record<string, unknown>
-    variantDoc: Record<string, unknown>
-    locale: string | undefined
-  }) => TVariantData
+    doc: Record<string, unknown>;
+    variantDoc: Record<string, unknown>;
+    locale: string | undefined;
+  }) => TVariantData;
   // if generateVariantData is omitted, auto-generates:
   // { bucket: variantSlug, rewritePath: generatePath(variantDoc, locale), passPercentage: _abPassPercentage }
 }
@@ -88,16 +92,19 @@ Hooks move from the variant collection to the parent collection. `afterChange` a
 Registered by the plugin on the Payload Express router.
 
 **Request body:**
+
 ```json
 { "collectionSlug": "pages", "docId": "abc123" }
 ```
 
 **Response:**
+
 ```json
 { "id": "xyz789", "slug": "about--4ji9" }
 ```
 
 **Error responses:**
+
 - `400` — missing/invalid body
 - `404` — parent doc not found
 - `500` — creation failed
@@ -127,14 +134,20 @@ The `_abVariantOfBadge` React component:
 ## Manifest Behaviour
 
 No change to the manifest shape or storage adapters. The manifest is still:
+
 ```ts
-Record<string, TVariantData[]>
+Record<string, TVariantData[]>;
 // e.g. { "/en/about": [{ bucket: "about--4ji9", rewritePath: "/en/about--4ji9", passPercentage: 30 }] }
 ```
 
 Default `TVariantData` (when `generateVariantData` is omitted):
+
 ```ts
-{ bucket: string; rewritePath: string; passPercentage: number }
+{
+  bucket: string;
+  rewritePath: string;
+  passPercentage: number;
+}
 ```
 
 ## Breaking Changes

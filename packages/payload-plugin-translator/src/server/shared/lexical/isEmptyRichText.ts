@@ -1,6 +1,6 @@
-import type { SerializedLexicalRoot } from './types'
-import { traverseLexicalTree } from './traverseLexicalTree'
-import { isSerializedLexicalTextNode } from './guards'
+import { isSerializedLexicalTextNode } from "./guards";
+import { traverseLexicalTree } from "./traverseLexicalTree";
+import type { SerializedLexicalRoot } from "./types";
 
 /**
  * Checks if a serialized Lexical richText structure is empty.
@@ -14,21 +14,21 @@ import { isSerializedLexicalTextNode } from './guards'
  * - Contains text node with actual content
  */
 export function isEmptyRichText(value: SerializedLexicalRoot): boolean {
-  let hasContent = false
+  let hasContent = false;
   traverseLexicalTree(value.root, (node) => {
-    const { type } = node
+    const { type } = node;
 
-    if (type !== 'paragraph' && type !== 'text' && type !== 'root') {
-      hasContent = true
-      return false
+    if (type !== "paragraph" && type !== "text" && type !== "root") {
+      hasContent = true;
+      return false;
     }
 
     if (isSerializedLexicalTextNode(node)) {
       if (node.text.trim()) {
-        hasContent = true
-        return false
+        hasContent = true;
+        return false;
       }
     }
-  })
-  return !hasContent
+  });
+  return !hasContent;
 }

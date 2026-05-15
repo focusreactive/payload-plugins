@@ -1,24 +1,25 @@
-import React from 'react'
-import { Card, EmptyState } from '@/core/ui'
-import { BLOG_CONFIG } from '@/core/config/blog'
-import type { CardPostData } from '@/core/types'
+import React from "react";
 
-export type Props = {
-  posts: CardPostData[]
-  readMoreLabel?: string | null
+import { BLOG_CONFIG } from "@/core/config/blog";
+import type { CardPostData } from "@/core/types";
+import { Card, EmptyState } from "@/core/ui";
+
+export interface Props {
+  posts: CardPostData[];
+  readMoreLabel?: string | null;
 }
 
 export const BlogPostsGrid: React.FC<Props> = (props) => {
-  const { posts, readMoreLabel } = props
+  const { posts, readMoreLabel } = props;
 
   if (!posts || posts.length === 0) {
-    return <EmptyState title="No posts" description="" />
+    return <EmptyState title="No posts" description="" />;
   }
 
   return (
     <div className="grid grid-cols-4 sm:grid-cols-8 lg:grid-cols-12 gap-y-4 gap-x-4 lg:gap-y-8 lg:gap-x-8 xl:gap-x-8">
       {posts.map((result, index) => {
-        if (typeof result === 'object' && result !== null) {
+        if (typeof result === "object" && result !== null) {
           return (
             <div className="col-span-4" key={index}>
               <Card
@@ -29,11 +30,11 @@ export const BlogPostsGrid: React.FC<Props> = (props) => {
                 readMoreLabel={readMoreLabel ?? undefined}
               />
             </div>
-          )
+          );
         }
 
-        return null
+        return null;
       })}
     </div>
-  )
-}
+  );
+};

@@ -1,28 +1,28 @@
-import { PayloadRequest } from 'payload'
+import type { PayloadRequest } from "payload";
 
-export type BaseDocument = {
-  id: string | number
-  createdAt?: string
-  updatedAt?: string
-  [key: string]: unknown
+export interface BaseDocument {
+  id: string | number;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: unknown;
 }
 
 export interface McpTool {
-  name: string
-  description: string
-  parameters: Record<string, unknown>
+  name: string;
+  description: string;
+  parameters: Record<string, unknown>;
   handler: (
     args: Record<string, unknown>,
-    req: PayloadRequest,
+    req: PayloadRequest
   ) => Promise<{
     content: {
-      type: 'text'
-      text: string
-    }[]
-  }>
+      type: "text";
+      text: string;
+    }[];
+  }>;
 }
 
 export interface ContentBlock {
-  type: 'text'
-  text: string
+  type: "text";
+  text: string;
 }

@@ -1,14 +1,16 @@
-import { Page } from '@/payload-types'
+import type { Page } from "@/payload-types";
 
-export function getPathFromBreadcrumbs(breadcrumbs?: Page['breadcrumbs']): string | undefined {
+export function getPathFromBreadcrumbs(
+  breadcrumbs?: Page["breadcrumbs"]
+): string | undefined {
   if (!Array.isArray(breadcrumbs) || breadcrumbs.length === 0) {
-    return undefined
+    return undefined;
   }
 
-  const lastBreadcrumb = breadcrumbs[breadcrumbs.length - 1]
+  const lastBreadcrumb = breadcrumbs.at(-1);
   if (!lastBreadcrumb?.url) {
-    return undefined
+    return undefined;
   }
 
-  return lastBreadcrumb.url.replace(/^\//, '')
+  return lastBreadcrumb.url.replace(/^\//, "");
 }

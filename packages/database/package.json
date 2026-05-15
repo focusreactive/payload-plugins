@@ -9,8 +9,8 @@
     "./migrations": "./migrations/index.ts"
   },
   "scripts": {
-    "lint": "eslint . --max-warnings 0",
-    "check-types": "tsc --noEmit"
+    "lint": "ultracite check",
+    "check-types": "tsgo --noEmit"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.84.1",

@@ -5,9 +5,12 @@ type NormalizedCollectionConfig = Map<string, { titleField: string }>;
 const DEFAULT_TITLE_FIELD = "id";
 
 export function normalizeCollections(entries?: CollectionEntry[]) {
-  if (!entries) return null;
+  if (!entries) {return null;}
 
-  const map = new Map<string, { titleField: string }>() as NormalizedCollectionConfig;
+  const map = new Map<
+    string,
+    { titleField: string }
+  >() as NormalizedCollectionConfig;
 
   for (const entry of entries) {
     map.set(entry.slug, {

@@ -1,5 +1,5 @@
-import type { PipelineContext, PipelineStage } from '../../types'
-import { DataReconciler } from './DataReconciler'
+import type { PipelineContext, PipelineStage } from "../../types";
+import { DataReconciler } from "./DataReconciler";
 
 /**
  * Deep merges source and target data with target priority.
@@ -7,10 +7,10 @@ import { DataReconciler } from './DataReconciler'
  */
 export class DataReconcilerStage implements PipelineStage {
   execute(ctx: PipelineContext): PipelineContext {
-    const reconciler = new DataReconciler(ctx.schema)
+    const reconciler = new DataReconciler(ctx.schema);
     return {
       ...ctx,
       filteredData: reconciler.reconcile(ctx.sourceData, ctx.targetData),
-    }
+    };
   }
 }

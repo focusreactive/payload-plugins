@@ -1,269 +1,270 @@
-import { describe, it, expect } from 'vitest'
-import { isEmptyRichText } from './isEmptyRichText'
+import { describe, it, expect } from "vitest";
 
-const createRichText = (root: any) => ({ root }) as any
+import { isEmptyRichText } from "./isEmptyRichText";
 
-describe('isEmptyRichText', () => {
-  describe('empty cases', () => {
-    it('returns true for empty root with no children', () => {
+const createRichText = (root: any) => ({ root }) as any;
+
+describe("isEmptyRichText", () => {
+  describe("empty cases", () => {
+    it("returns true for empty root with no children", () => {
       const value = createRichText({
-        type: 'root',
         children: [],
-      })
-      expect(isEmptyRichText(value)).toBe(true)
-    })
+        type: "root",
+      });
+      expect(isEmptyRichText(value)).toBe(true);
+    });
 
-    it('returns true for root with empty paragraph', () => {
+    it("returns true for root with empty paragraph", () => {
       const value = createRichText({
-        type: 'root',
         children: [
           {
-            type: 'paragraph',
+            type: "paragraph",
             children: [],
           },
         ],
-      })
-      expect(isEmptyRichText(value)).toBe(true)
-    })
+        type: "root",
+      });
+      expect(isEmptyRichText(value)).toBe(true);
+    });
 
-    it('returns true for paragraph with empty text node', () => {
+    it("returns true for paragraph with empty text node", () => {
       const value = createRichText({
-        type: 'root',
         children: [
           {
-            type: 'paragraph',
+            type: "paragraph",
             children: [
               {
-                type: 'text',
-                text: '',
+                type: "text",
+                text: "",
               },
             ],
           },
         ],
-      })
-      expect(isEmptyRichText(value)).toBe(true)
-    })
+        type: "root",
+      });
+      expect(isEmptyRichText(value)).toBe(true);
+    });
 
-    it('returns true for paragraph with whitespace-only text', () => {
+    it("returns true for paragraph with whitespace-only text", () => {
       const value = createRichText({
-        type: 'root',
         children: [
           {
-            type: 'paragraph',
+            type: "paragraph",
             children: [
               {
-                type: 'text',
-                text: '   \n\t  ',
+                type: "text",
+                text: "   \n\t  ",
               },
             ],
           },
         ],
-      })
-      expect(isEmptyRichText(value)).toBe(true)
-    })
+        type: "root",
+      });
+      expect(isEmptyRichText(value)).toBe(true);
+    });
 
-    it('returns true for multiple empty paragraphs', () => {
+    it("returns true for multiple empty paragraphs", () => {
       const value = createRichText({
-        type: 'root',
         children: [
-          { type: 'paragraph', children: [] },
-          { type: 'paragraph', children: [{ type: 'text', text: '' }] },
-          { type: 'paragraph', children: [{ type: 'text', text: '  ' }] },
+          { type: "paragraph", children: [] },
+          { type: "paragraph", children: [{ type: "text", text: "" }] },
+          { type: "paragraph", children: [{ type: "text", text: "  " }] },
         ],
-      })
-      expect(isEmptyRichText(value)).toBe(true)
-    })
-  })
+        type: "root",
+      });
+      expect(isEmptyRichText(value)).toBe(true);
+    });
+  });
 
-  describe('non-empty cases - text content', () => {
-    it('returns false for paragraph with text content', () => {
+  describe("non-empty cases - text content", () => {
+    it("returns false for paragraph with text content", () => {
       const value = createRichText({
-        type: 'root',
         children: [
           {
-            type: 'paragraph',
+            type: "paragraph",
             children: [
               {
-                type: 'text',
-                text: 'Hello world',
+                type: "text",
+                text: "Hello world",
               },
             ],
           },
         ],
-      })
-      expect(isEmptyRichText(value)).toBe(false)
-    })
+        type: "root",
+      });
+      expect(isEmptyRichText(value)).toBe(false);
+    });
 
-    it('returns false for text with leading/trailing whitespace', () => {
+    it("returns false for text with leading/trailing whitespace", () => {
       const value = createRichText({
-        type: 'root',
         children: [
           {
-            type: 'paragraph',
+            type: "paragraph",
             children: [
               {
-                type: 'text',
-                text: '  content  ',
+                type: "text",
+                text: "  content  ",
               },
             ],
           },
         ],
-      })
-      expect(isEmptyRichText(value)).toBe(false)
-    })
+        type: "root",
+      });
+      expect(isEmptyRichText(value)).toBe(false);
+    });
 
-    it('returns false for multiple text nodes with one having content', () => {
+    it("returns false for multiple text nodes with one having content", () => {
       const value = createRichText({
-        type: 'root',
         children: [
           {
-            type: 'paragraph',
+            type: "paragraph",
             children: [
-              { type: 'text', text: '' },
-              { type: 'text', text: 'content' },
-              { type: 'text', text: '' },
+              { type: "text", text: "" },
+              { type: "text", text: "content" },
+              { type: "text", text: "" },
             ],
           },
         ],
-      })
-      expect(isEmptyRichText(value)).toBe(false)
-    })
-  })
+        type: "root",
+      });
+      expect(isEmptyRichText(value)).toBe(false);
+    });
+  });
 
-  describe('non-empty cases - structural nodes', () => {
-    it('returns false for heading node', () => {
+  describe("non-empty cases - structural nodes", () => {
+    it("returns false for heading node", () => {
       const value = createRichText({
-        type: 'root',
         children: [
           {
-            type: 'heading',
-            tag: 'h1',
+            type: "heading",
+            tag: "h1",
             children: [],
           },
         ],
-      })
-      expect(isEmptyRichText(value)).toBe(false)
-    })
+        type: "root",
+      });
+      expect(isEmptyRichText(value)).toBe(false);
+    });
 
-    it('returns false for upload node', () => {
+    it("returns false for upload node", () => {
       const value = createRichText({
-        type: 'root',
         children: [
           {
-            type: 'upload',
-            relationTo: 'media',
-            value: { id: '123' },
+            type: "upload",
+            relationTo: "media",
+            value: { id: "123" },
           },
         ],
-      })
-      expect(isEmptyRichText(value)).toBe(false)
-    })
+        type: "root",
+      });
+      expect(isEmptyRichText(value)).toBe(false);
+    });
 
-    it('returns false for block node', () => {
+    it("returns false for block node", () => {
       const value = createRichText({
-        type: 'root',
         children: [
           {
-            type: 'block',
-            blockType: 'cta',
+            type: "block",
+            blockType: "cta",
             fields: {},
           },
         ],
-      })
-      expect(isEmptyRichText(value)).toBe(false)
-    })
+        type: "root",
+      });
+      expect(isEmptyRichText(value)).toBe(false);
+    });
 
-    it('returns false for relationship node', () => {
+    it("returns false for relationship node", () => {
       const value = createRichText({
-        type: 'root',
         children: [
           {
-            type: 'relationship',
-            relationTo: 'posts',
-            value: { id: '456' },
+            type: "relationship",
+            relationTo: "posts",
+            value: { id: "456" },
           },
         ],
-      })
-      expect(isEmptyRichText(value)).toBe(false)
-    })
+        type: "root",
+      });
+      expect(isEmptyRichText(value)).toBe(false);
+    });
 
-    it('returns false for list node', () => {
+    it("returns false for list node", () => {
       const value = createRichText({
-        type: 'root',
         children: [
           {
-            type: 'list',
-            listType: 'bullet',
+            type: "list",
+            listType: "bullet",
             children: [],
           },
         ],
-      })
-      expect(isEmptyRichText(value)).toBe(false)
-    })
+        type: "root",
+      });
+      expect(isEmptyRichText(value)).toBe(false);
+    });
 
-    it('returns false for quote node', () => {
+    it("returns false for quote node", () => {
       const value = createRichText({
-        type: 'root',
         children: [
           {
-            type: 'quote',
+            type: "quote",
             children: [],
           },
         ],
-      })
-      expect(isEmptyRichText(value)).toBe(false)
-    })
+        type: "root",
+      });
+      expect(isEmptyRichText(value)).toBe(false);
+    });
 
-    it('returns false for link node nested in paragraph', () => {
+    it("returns false for link node nested in paragraph", () => {
       const value = createRichText({
-        type: 'root',
         children: [
           {
-            type: 'paragraph',
+            type: "paragraph",
             children: [
               {
-                type: 'link',
-                url: 'https://example.com',
+                type: "link",
+                url: "https://example.com",
                 children: [],
               },
             ],
           },
         ],
-      })
-      expect(isEmptyRichText(value)).toBe(false)
-    })
-  })
+        type: "root",
+      });
+      expect(isEmptyRichText(value)).toBe(false);
+    });
+  });
 
-  describe('early exit optimization', () => {
-    it('stops traversal on first content found', () => {
+  describe("early exit optimization", () => {
+    it("stops traversal on first content found", () => {
       const value = createRichText({
-        type: 'root',
         children: [
           {
-            type: 'paragraph',
+            type: "paragraph",
             children: [
-              { type: 'text', text: 'content' },
-              { type: 'text', text: 'more content' },
+              { type: "text", text: "content" },
+              { type: "text", text: "more content" },
             ],
           },
           {
-            type: 'paragraph',
-            children: [{ type: 'text', text: 'even more' }],
+            type: "paragraph",
+            children: [{ type: "text", text: "even more" }],
           },
         ],
-      })
-      expect(isEmptyRichText(value)).toBe(false)
-    })
+        type: "root",
+      });
+      expect(isEmptyRichText(value)).toBe(false);
+    });
 
-    it('stops traversal on first structural node', () => {
+    it("stops traversal on first structural node", () => {
       const value = createRichText({
-        type: 'root',
         children: [
-          { type: 'heading', tag: 'h1', children: [] },
-          { type: 'paragraph', children: [{ type: 'text', text: '' }] },
+          { type: "heading", tag: "h1", children: [] },
+          { type: "paragraph", children: [{ type: "text", text: "" }] },
         ],
-      })
-      expect(isEmptyRichText(value)).toBe(false)
-    })
-  })
-})
+        type: "root",
+      });
+      expect(isEmptyRichText(value)).toBe(false);
+    });
+  });
+});

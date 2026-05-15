@@ -1,73 +1,63 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig } from "payload";
 
-import { anyone, or, user, superAdmin } from '@/core/lib/access'
-import { link } from '@/fields/link'
-import { createLocalizedDefault } from '@/core/lib/createLocalizedDefault'
-import { getDefaultMediaId } from '@/dal/getDefaultMediaId'
-import { PLATFORM_DEFAULT_MEDIA_SLOT } from '@/core/constants/mediaDefaults'
-import { revalidateResourcesUsingHeader } from './hooks/revalidateResourcesUsingHeader'
+import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/core/constants/mediaDefaults";
+import { anyone, or, user, superAdmin } from "@/core/lib/access";
+import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
+import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
+import { link } from "@/fields/link";
 
-export const Header: CollectionConfig<'header'> = {
-  slug: 'header',
+import { revalidateResourcesUsingHeader } from "./hooks/revalidateResourcesUsingHeader";
+
+export const Header: CollectionConfig<"header"> = {
   access: {
-    read: anyone,
     create: or(superAdmin, user),
     delete: or(superAdmin, user),
+    read: anyone,
     update: or(superAdmin, user),
   },
-  labels: {
-    singular: {
-      en: 'Header',
-      es: 'Header',
-    },
-    plural: {
-      en: 'Headers',
-      es: 'Headers',
-    },
-  },
   admin: {
-    useAsTitle: 'name',
-    group: 'Global Components',
-    defaultColumns: ['name', 'logo'],
+    defaultColumns: ["name", "logo"],
+    group: "Global Components",
+    useAsTitle: "name",
   },
   fields: [
     {
-      name: 'name',
-      type: 'text',
+      name: "name",
+      type: "text",
       localized: true,
       admin: {
         description: {
-          en: 'The name of the header',
-          es: 'El nombre del header',
+          en: "The name of the header",
+          es: "El nombre del header",
         },
       },
-      defaultValue: createLocalizedDefault({ en: 'Header', es: 'Header' }),
+      defaultValue: createLocalizedDefault({ en: "Header", es: "Header" }),
     },
     {
-      name: 'logo',
-      type: 'upload',
-      relationTo: 'media',
+      name: "logo",
+      type: "upload",
+      relationTo: "media",
       required: true,
       admin: {
         description: {
-          en: 'The logo to display in the header',
-          es: 'El logo a mostrar en el header',
+          en: "The logo to display in the header",
+          es: "El logo a mostrar en el header",
         },
       },
       defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
     },
     {
-      name: 'navItems',
+      name: "navItems",
       localized: true,
-      type: 'array',
+      type: "array",
       fields: [
         link({
           appearances: false,
           overrides: {
             admin: {
               description: {
-                en: 'Link settings',
-                es: 'Configuración del enlace',
+                en: "Link settings",
+                es: "Configuración del enlace",
               },
             },
           },
@@ -76,22 +66,40 @@ export const Header: CollectionConfig<'header'> = {
       maxRows: 6,
       admin: {
         description: {
-          en: 'Navigation items in the header (up to 6 items)',
-          es: 'Items de navegación en el header (hasta 6 items)',
+          en: "Navigation items in the header (up to 6 items)",
+          es: "Items de navegación en el header (hasta 6 items)",
         },
         initCollapsed: true,
         components: {
-          RowLabel: '@/core/ui/components/RowLabel#RowLabelGroupName',
+          RowLabel: "@/core/ui/components/RowLabel#RowLabelGroupName",
         },
       },
       defaultValue: createLocalizedDefault({
         en: [
-          { link: { type: 'custom', url: '#', label: 'Link 1', newTab: false } },
-          { link: { type: 'custom', url: '#', label: 'Link 2', newTab: false } },
+          {
+            link: { type: "custom", url: "#", label: "Link 1", newTab: false },
+          },
+          {
+            link: { type: "custom", url: "#", label: "Link 2", newTab: false },
+          },
         ],
         es: [
-          { link: { type: 'custom', url: '#', label: 'Enlace 1', newTab: false } },
-          { link: { type: 'custom', url: '#', label: 'Enlace 2', newTab: false } },
+          {
+            link: {
+              type: "custom",
+              url: "#",
+              label: "Enlace 1",
+              newTab: false,
+            },
+          },
+          {
+            link: {
+              type: "custom",
+              url: "#",
+              label: "Enlace 2",
+              newTab: false,
+            },
+          },
         ],
       }),
     },
@@ -99,8 +107,19 @@ export const Header: CollectionConfig<'header'> = {
   hooks: {
     afterChange: [revalidateResourcesUsingHeader],
   },
+  labels: {
+    plural: {
+      en: "Headers",
+      es: "Headers",
+    },
+    singular: {
+      en: "Header",
+      es: "Header",
+    },
+  },
+  slug: "header",
   versions: {
     drafts: true,
     maxPerDoc: 50,
   },
-}
+};

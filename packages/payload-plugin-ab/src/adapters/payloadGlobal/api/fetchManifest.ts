@@ -2,14 +2,14 @@ export async function fetchManifest<TVariantData extends object>(
   serverURL: string,
   apiRoute: string,
   slug: string,
-  path: string,
+  path: string
 ): Promise<TVariantData[] | null> {
   try {
     const res = await fetch(`${serverURL}${apiRoute}/globals/${slug}`, {
       cache: "no-store",
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) {return null;}
 
     const data = await res.json();
 

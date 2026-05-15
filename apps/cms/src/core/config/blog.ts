@@ -1,6 +1,6 @@
 export const BLOG_CONFIG = {
-  basePath: '/blog',
-  slug: 'blog',
+  basePath: "/blog",
+  collection: "posts",
   postsPerPage: 10,
-  collection: 'posts',
-} as const
+  slug: "blog",
+} as const;

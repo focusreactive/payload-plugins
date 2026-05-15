@@ -1,21 +1,22 @@
-'use client'
+"use client";
 
-import { useTransition } from 'react'
-import { PageRange, Pagination } from '@/core/ui'
-import type { CardPostData } from '@/core/types'
-import { BlogPostsGrid } from '@/entities'
-import { BLOG_CONFIG } from '@/core/config/blog'
-import { CategoryFilters } from '@/app/(frontend)/[locale]/blog/_components/CategoryFilters'
-import { cn } from '@/core/lib/utils'
+import { useTransition } from "react";
 
-type BlogPageContentProps = {
-  posts: CardPostData[]
-  currentPage?: number
-  totalPages?: number
-  totalDocs?: number
-  readMoreLabel?: string | null
-  categories: { title: string; slug: string }[]
-  activeCategories: string[]
+import { CategoryFilters } from "@/app/(frontend)/[locale]/blog/_components/CategoryFilters";
+import { BLOG_CONFIG } from "@/core/config/blog";
+import { cn } from "@/core/lib/utils";
+import type { CardPostData } from "@/core/types";
+import { PageRange, Pagination } from "@/core/ui";
+import { BlogPostsGrid } from "@/entities";
+
+interface BlogPageContentProps {
+  posts: CardPostData[];
+  currentPage?: number;
+  totalPages?: number;
+  totalDocs?: number;
+  readMoreLabel?: string | null;
+  categories: { title: string; slug: string }[];
+  activeCategories: string[];
 }
 
 export const BlogPageContent: React.FC<BlogPageContentProps> = ({
@@ -27,7 +28,7 @@ export const BlogPageContent: React.FC<BlogPageContentProps> = ({
   categories,
   activeCategories,
 }) => {
-  const [isPending, startTransition] = useTransition()
+  const [isPending, startTransition] = useTransition();
 
   return (
     <section className="py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8 lg:py-24">
@@ -39,7 +40,12 @@ export const BlogPageContent: React.FC<BlogPageContentProps> = ({
           startTransition={startTransition}
         />
 
-        <div className={cn('transition-opacity', isPending && 'opacity-50 pointer-events-none')}>
+        <div
+          className={cn(
+            "transition-opacity",
+            isPending && "opacity-50 pointer-events-none"
+          )}
+        >
           {currentPage && totalDocs !== undefined && (
             <div className="mb-8">
               <PageRange
@@ -63,5 +69,5 @@ export const BlogPageContent: React.FC<BlogPageContentProps> = ({
         </div>
       </div>
     </section>
-  )
-}
+  );
+};

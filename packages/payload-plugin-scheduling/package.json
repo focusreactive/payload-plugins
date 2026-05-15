@@ -1,12 +1,13 @@
 {
   "name": "@focus-reactive/payload-plugin-scheduling",
   "version": "1.2.0",
+  "private": false,
   "description": "Schedule publication plugin for Payload CMS",
   "keywords": [
+    "cms",
     "payload-cms",
     "payload-plugin",
-    "scheduling",
-    "cms"
+    "scheduling"
   ],
   "license": "MIT",
   "author": "FocusReactive <ship@focusreactive.com>",
@@ -15,37 +16,36 @@
     "url": "https://github.com/focusreactive/payload-plugins",
     "directory": "packages/payload-plugin-scheduling"
   },
-  "private": false,
-  "publishConfig": {
-    "access": "public"
-  },
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix",
-    "format": "prettier --write src/",
+    "lint": "ultracite check",
+    "lint:fix": "ultracite fix",
+    "format": "ultracite fix",
     "format:check": "prettier --check src/"
-  },
-  "peerDependencies": {
-    "payload": "^3.0.0"
   },
   "devDependencies": {
     "@types/node": "22.19.9",
     "payload": "3.79.0",
     "tsup": "8.0.0",
     "typescript": "5.0.2"
+  },
+  "peerDependencies": {
+    "payload": "^3.0.0"
   }
 }

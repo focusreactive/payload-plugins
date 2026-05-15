@@ -1,6 +1,5 @@
 # @focus-reactive/payload-plugin-comments
 
-
 [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-comments)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-comments)
 
 A collaborative commenting plugin for [Payload CMS](https://payloadcms.com/) v3. Adds a full-featured comments system to the Payload admin panel — supporting document-level and field-level comments on both collections and globals, @mentions with email notifications, comment resolution, multi-tenancy, and locale-aware filtering.
@@ -167,7 +166,7 @@ The comment button embedded in the field label has two visual states: no comment
 | Inactive (no comments)                                                                                            | Active (has comments)                                                                                           |
 | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | ![Field label button — inactive](https://github.com/user-attachments/assets/f540d6a4-c4e9-473f-883c-c34803da4d2f) | ![Field label button — active](https://github.com/user-attachments/assets/dcfbe20e-7b6e-4fa4-9d30-a0e8bd44b7c0) |
-|  |
+|                                                                                                                   |
 
 ---
 

@@ -1,5 +1,5 @@
-import type { StorageAdapter } from "../types/config";
 import type { AbCookieConfig } from "../cookie/types";
+import type { StorageAdapter } from "../types/config";
 
 export interface ResolveAbRewriteCookieConfig extends AbCookieConfig {
   /**

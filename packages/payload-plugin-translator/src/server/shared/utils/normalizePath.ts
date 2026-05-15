@@ -13,10 +13,10 @@
  * normalizePath('  ')             // ''
  */
 export function normalizePath(path: string): string {
-  const trimmed = path.trim()
-  if (!trimmed) return ''
+  const trimmed = path.trim();
+  if (!trimmed) {return "";}
 
   // Remove leading/trailing slashes, then add single leading slash
-  const normalized = trimmed.replace(/^\/+|\/+$/g, '')
-  return normalized ? `/${normalized}` : ''
+  const normalized = trimmed.replaceAll(/^\/+|\/+$/g, "");
+  return normalized ? `/${normalized}` : "";
 }

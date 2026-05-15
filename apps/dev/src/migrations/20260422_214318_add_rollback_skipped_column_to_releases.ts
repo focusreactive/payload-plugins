@@ -1,9 +1,14 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-sqlite'
+import type { MigrateUpArgs, MigrateDownArgs} from "@payloadcms/db-sqlite";
+import { sql } from "@payloadcms/db-sqlite";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
-  await db.run(sql`ALTER TABLE \`releases\` ADD \`rollback_skipped\` text;`)
+  await db.run(sql`ALTER TABLE \`releases\` ADD \`rollback_skipped\` text;`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
-  await db.run(sql`ALTER TABLE \`releases\` DROP COLUMN \`rollback_skipped\`;`)
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
+  await db.run(sql`ALTER TABLE \`releases\` DROP COLUMN \`rollback_skipped\`;`);
 }

@@ -1,22 +1,28 @@
-import type { CardsGridInlineBlock } from '@/payload-types'
-import { CardsGrid } from '@shared/ui'
-import type { IDefaultCardProps } from '@shared/ui/components/sections/cardsGrid/types'
-import { prepareImageProps } from '@/lib/adapters/prepareImageProps'
-import { prepareLinkProps } from '@/lib/adapters/prepareLinkProps'
-import { resolveLocale } from '@/core/lib/resolveLocale'
+import { CardsGrid } from "@shared/ui";
+import type { IDefaultCardProps } from "@shared/ui/components/sections/cardsGrid/types";
 
-export async function CardsGridInlineComponent({ items, columns }: CardsGridInlineBlock) {
-  const locale = await resolveLocale()
+import { resolveLocale } from "@/core/lib/resolveLocale";
+import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
+import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
+import type { CardsGridInlineBlock } from "@/payload-types";
+
+export async function CardsGridInlineComponent({
+  items,
+  columns,
+}: CardsGridInlineBlock) {
+  const locale = await resolveLocale();
 
   const cards: IDefaultCardProps[] = (items ?? []).map((item) => ({
-    title: item.title,
+    alignVariant:
+      (item.alignVariant as IDefaultCardProps["alignVariant"]) ?? "center",
+    backgroundColor:
+      (item.backgroundColor as IDefaultCardProps["backgroundColor"]) ?? "none",
     description: item.description ?? undefined,
     image: prepareImageProps(item.image ?? null),
     link: prepareLinkProps(item.link, locale),
-    alignVariant: (item.alignVariant as IDefaultCardProps['alignVariant']) ?? 'center',
-    rounded: (item.rounded as IDefaultCardProps['rounded']) ?? 'none',
-    backgroundColor: (item.backgroundColor as IDefaultCardProps['backgroundColor']) ?? 'none',
-  }))
+    rounded: (item.rounded as IDefaultCardProps["rounded"]) ?? "none",
+    title: item.title,
+  }));
 
-  return <CardsGrid items={cards} columns={columns ?? 3} />
+  return <CardsGrid items={cards} columns={columns ?? 3} />;
 }

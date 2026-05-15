@@ -1,6 +1,6 @@
-import React from "react";
 import { CloseCircleIcon } from "@sanity/icons";
 import { Button, Flex, Grid } from "@sanity/ui";
+import React from "react";
 
 import type { OnItemAppendType, Preset } from "../types";
 import { Template } from "./template";
@@ -29,8 +29,8 @@ export function TemplatesBrowser({ onClose, onItemAppend, presets }: Props) {
   );
 }
 
-type Props = {
+interface Props {
   onClose: () => void;
   onItemAppend: OnItemAppendType;
   presets: Preset[];
-};
+}

@@ -3,23 +3,17 @@ import type { PlopTypes } from "@turbo/gen";
 import { componentNamePrompt, createUISectionActions } from "./constants";
 
 export default function generator(plop: PlopTypes.NodePlopAPI): void {
-  plop.setHelper("capitialize", (str: string) => {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  });
+  plop.setHelper("capitialize", (str: string) => str.charAt(0).toUpperCase() + str.slice(1));
 
-  plop.setHelper("loweraseFirstLetter", (str: string) => {
-    return str.charAt(0).toLowerCase() + str.slice(1);
-  });
+  plop.setHelper("loweraseFirstLetter", (str: string) => str.charAt(0).toLowerCase() + str.slice(1));
 
   plop.setGenerator("UI", {
+    actions: createUISectionActions,
     description: "Create a new UI section component",
     prompts: [componentNamePrompt],
-    actions: createUISectionActions,
   });
 
   plop.setGenerator("Storyblok", {
-    description: "Create a new content section",
-    prompts: [componentNamePrompt],
     actions: [
       ...createUISectionActions,
       {
@@ -45,11 +39,11 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
         template: `{{ loweraseFirstLetter sectionName }}: {{ capitialize sectionName }},\n$1`,
       },
     ],
+    description: "Create a new content section",
+    prompts: [componentNamePrompt],
   });
 
   plop.setGenerator("Sanity", {
-    description: "Create a new content section",
-    prompts: [componentNamePrompt],
     actions: [
       ...createUISectionActions,
       {
@@ -94,5 +88,7 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
         template: `{{ loweraseFirstLetter sectionName }},\n$1`,
       },
     ],
+    description: "Create a new content section",
+    prompts: [componentNamePrompt],
   });
 }

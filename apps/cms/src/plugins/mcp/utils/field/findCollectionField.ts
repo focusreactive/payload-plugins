@@ -1,11 +1,11 @@
-import { CollectionSlug, Field, Payload } from 'payload'
+import type { CollectionSlug, Field, Payload } from "payload";
 
 export function findCollectionField(
   payload: Payload,
   collection: CollectionSlug,
-  fieldName: string,
+  fieldName: string
 ) {
-  const fields: Field[] = payload.collections[collection]?.config.fields ?? []
+  const fields: Field[] = payload.collections[collection]?.config.fields ?? [];
 
-  return fields.find((field) => 'name' in field && field.name === fieldName)
+  return fields.find((field) => "name" in field && field.name === fieldName);
 }

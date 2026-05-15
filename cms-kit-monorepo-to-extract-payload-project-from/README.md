@@ -27,6 +27,7 @@ This production ready boilerplate accumulating the experience and best practices
 - [Payload](https://turbo-cms-kit-payload.vercel.app/)
 
 **Editing experience**
+
 - Sanity
 
 ![sanity-demo](https://github.com/user-attachments/assets/5e3e9be3-f78d-4f1e-8b0c-5226e4cf3371)
@@ -40,23 +41,26 @@ This production ready boilerplate accumulating the experience and best practices
 
 ### Sanity
 
-1. *Create Github repository, create Sanity project, deploy to Vercel*
+1. _Create Github repository, create Sanity project, deploy to Vercel_
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Ffocusreactive%2Fcms-kit&project-name=sanity-cms-kit&repository-name=sanity-cms-kit&integration-ids=oac_hb2LITYajhRQ0i4QznmKH7gx&build-command=cd%20../../%20%26%26%20turbo%20run%20build%20--filter%3Dsanity&install-command=pnpm%20i&root-directory=apps/sanity&production-deploy-hook=trigger%20rebuild&demo-title=CMS-Kit%3A%20Sanity%20%2B%20Next.js%2015%20visual%20site%20builder&demo-description=Production%20ready%20boilerplate%20serves%20the%20idea%20of%20making%20Headless%20CMS-based%20development%20accessible%2C%20comfortable%2C%20and%20fast.&demo-url=https%3A%2F%2Fturbo-cms-kit-sanity.vercel.app%2F&demo-image=https%3A%2F%2Fcdn.sanity.io%2Fimages%2Fvftxng62%2Fproduction%2Fa6364de57a7566685ad87e201eb1fe99c89f1677-1200x630.png)
 
-2. *Clone project locally*
+2. _Clone project locally_
 
 - Navigate to your Github account and clone project repository locally.
 - Navigate to project folder.
+
 ```shell
 cd <project folder>
 ```
+
 - Install dependencies
+
 ```shell
 pnpm install
 ```
 
-3. *Pull required ENV variables*
+3. _Pull required ENV variables_
 
 Execute following command to pull ENV variables from Vercel and replace some of the with local development values
 
@@ -66,13 +70,13 @@ pnpm vercel env pull &&
 mv .env.local apps/sanity/
 ```
 
-4. *Import templates and example pages data*
+4. _Import templates and example pages data_
 
 ```shell
 cd apps/sanity && pnpm import-dataset
 ```
 
-5. *Run project locally*
+5. _Run project locally_
 
 ```shell
 pnpm dev
@@ -123,7 +127,6 @@ pnpm dev
 ```
 
 8. Follow the interactive prompts in the CLI tool to:
-
    - Enter your Storyblok Personal Access Token
    - Enter your Vercel Personal Auth Token
    - Select your Vercel team
@@ -146,23 +149,27 @@ This process ensures that global component updates are displayed on all pages.
 Payload CMS with PostgreSQL, multi-tenancy, i18n, and A/B testing.
 
 **Prerequisites:**
+
 - Docker (for PostgreSQL)
 - Node.js ≥20, pnpm ≥9
 
 **Setup:**
 
 1. Start PostgreSQL:
+
 ```bash
 cd apps/payload
 docker-compose up -d
 ```
 
 2. Copy and fill environment variables:
+
 ```bash
 cp apps/payload/.env.local.example apps/payload/.env.local
 ```
 
 Required env vars:
+
 ```bash
 DATABASE_URI="postgresql://postgres:password@localhost:5432/payload"
 PAYLOAD_SECRET="your-secret-key"
@@ -176,6 +183,7 @@ AUTH0_CLIENT_SECRET="..."
 ```
 
 3. Run migrations and generate types:
+
 ```bash
 pnpm --filter payload payload migrate
 pnpm --filter payload generate:types
@@ -183,6 +191,7 @@ pnpm --filter payload generate:importmap
 ```
 
 4. Start dev server:
+
 ```bash
 pnpm --filter payload dev
 # or from monorepo root:
@@ -192,6 +201,7 @@ turbo dev --filter=payload
 Admin panel: `http://localhost:3000/admin`
 
 **Migrations:**
+
 ```bash
 pnpm --filter payload payload migrate:create  # create new migration
 pnpm --filter payload payload migrate          # run pending migrations
@@ -220,18 +230,15 @@ pnpm --filter payload payload migrate          # run pending migrations
 The website structure follows a clear hierarchical composition:
 
 1. Pages
-
    - Top-level components that represent entire web pages
    - Each page contains multiple sections, SEO properties and theme
 
 2. Sections
-
    - Container components that organize content into distinct areas
    - Can be configured with settings like margin, background, width, alignment etc.
    - Hold and arrange other components
 
 3. Base Components
-
    - Components like **link**, **image**, and **rich text**
    - Combination of multiple functional components like **card**
    - Can be combined and reused across different sections

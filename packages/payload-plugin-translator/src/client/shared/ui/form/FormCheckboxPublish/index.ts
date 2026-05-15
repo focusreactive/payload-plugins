@@ -1,1 +1,1 @@
-export { FormCheckboxPublish } from './FormCheckboxPublish'
+export { FormCheckboxPublish } from "./FormCheckboxPublish";

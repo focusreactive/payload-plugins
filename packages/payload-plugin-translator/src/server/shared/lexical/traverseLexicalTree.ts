@@ -1,5 +1,5 @@
-import type { SerializedLexicalNode } from './types'
-import { hasChildren } from './guards'
+import { hasChildren } from "./guards";
+import type { SerializedLexicalNode } from "./types";
 
 /**
  * Traverses serialized Lexical tree depth-first and calls visitor for each node.
@@ -11,14 +11,14 @@ import { hasChildren } from './guards'
  */
 export function traverseLexicalTree(
   node: SerializedLexicalNode,
-  visitor: (node: SerializedLexicalNode) => boolean | void,
+  visitor: (node: SerializedLexicalNode) => boolean | void
 ): boolean {
-  if (visitor(node) === false) return false
+  if (visitor(node) === false) {return false;}
 
   if (hasChildren(node)) {
     for (const child of node.children) {
-      if (traverseLexicalTree(child, visitor) === false) return false
+      if (traverseLexicalTree(child, visitor) === false) {return false;}
     }
   }
-  return true
+  return true;
 }

@@ -1,22 +1,22 @@
-'use client'
+"use client";
 
-import type { ReactNode } from 'react'
-import * as RadixTooltip from '@radix-ui/react-tooltip'
+import * as RadixTooltip from "@radix-ui/react-tooltip";
+import type { ReactNode } from "react";
 
-import styles from './styles.module.scss'
+import styles from "./styles.module.scss";
 
-type TooltipProps = {
-  children: ReactNode
-  content: ReactNode
-  side?: 'top' | 'bottom' | 'left' | 'right'
-  sideOffset?: number
-  delayDuration?: number
+interface TooltipProps {
+  children: ReactNode;
+  content: ReactNode;
+  side?: "top" | "bottom" | "left" | "right";
+  sideOffset?: number;
+  delayDuration?: number;
 }
 
 export default function Tooltip({
   children,
   content,
-  side = 'top',
+  side = "top",
   sideOffset = 6,
   delayDuration = 200,
 }: TooltipProps) {
@@ -25,12 +25,16 @@ export default function Tooltip({
       <RadixTooltip.Root>
         <RadixTooltip.Trigger asChild>{children}</RadixTooltip.Trigger>
         <RadixTooltip.Portal>
-          <RadixTooltip.Content className={styles.content} side={side} sideOffset={sideOffset}>
+          <RadixTooltip.Content
+            className={styles.content}
+            side={side}
+            sideOffset={sideOffset}
+          >
             {content}
             <RadixTooltip.Arrow className={styles.arrow} />
           </RadixTooltip.Content>
         </RadixTooltip.Portal>
       </RadixTooltip.Root>
     </RadixTooltip.Provider>
-  )
+  );
 }

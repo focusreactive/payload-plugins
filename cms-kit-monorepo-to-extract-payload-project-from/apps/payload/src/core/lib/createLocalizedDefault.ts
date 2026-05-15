@@ -1,74 +1,77 @@
-import { I18N_CONFIG } from '@/core/config/i18n'
-import type { Locale } from '@/core/types'
+import { I18N_CONFIG } from "@/core/config/i18n";
+import type { Locale } from "@/core/types";
 
-type DefaultValueArgs = { locale?: Locale; req: unknown; user: unknown }
+interface DefaultValueArgs { locale?: Locale; req: unknown; user: unknown }
 
-type RichTextState = {
+interface RichTextState {
   root: {
-    type: string
-    direction: 'ltr'
-    format: ''
-    indent: number
-    version: number
-    children: unknown[]
-  }
+    type: string;
+    direction: "ltr";
+    format: "";
+    indent: number;
+    version: number;
+    children: unknown[];
+  };
 }
 
-const DEFAULT_LOCALE = I18N_CONFIG.defaultLocale as Locale
+const DEFAULT_LOCALE = I18N_CONFIG.defaultLocale as Locale;
 
 /**
  * Creates Lexical richText state from heading and paragraph text
  */
-export function createRichTextState(heading: string, paragraph: string): RichTextState {
+export function createRichTextState(
+  heading: string,
+  paragraph: string
+): RichTextState {
   return {
     root: {
-      type: 'root',
-      direction: 'ltr',
-      format: '',
-      indent: 0,
-      version: 1,
       children: [
         {
-          type: 'heading',
-          tag: 'h2',
-          direction: 'ltr',
-          format: '',
+          type: "heading",
+          tag: "h2",
+          direction: "ltr",
+          format: "",
           indent: 0,
           version: 1,
           children: [
             {
-              type: 'text',
+              type: "text",
               text: heading,
               detail: 0,
               format: 0,
-              mode: 'normal',
-              style: '',
+              mode: "normal",
+              style: "",
               version: 1,
             },
           ],
         },
         {
-          type: 'paragraph',
-          direction: 'ltr',
-          format: '',
+          type: "paragraph",
+          direction: "ltr",
+          format: "",
           indent: 0,
           textFormat: 0,
           version: 1,
           children: [
             {
-              type: 'text',
+              type: "text",
               text: paragraph,
               detail: 0,
               format: 0,
-              mode: 'normal',
-              style: '',
+              mode: "normal",
+              style: "",
               version: 1,
             },
           ],
         },
       ],
+      direction: "ltr",
+      format: "",
+      indent: 0,
+      type: "root",
+      version: 1,
     },
-  }
+  };
 }
 
 /**
@@ -78,14 +81,15 @@ export function createRichTextState(heading: string, paragraph: string): RichTex
  * defaultValue: createLocalizedDefault({ en: 'Hello', es: 'Hola' })
  */
 export function createLocalizedDefault<T>(
-  translations: Record<Locale, T>,
+  translations: Record<Locale, T>
 ): (args: DefaultValueArgs) => T {
-  const fallback = translations[DEFAULT_LOCALE] ?? (Object.values(translations)[0] as T)
+  const fallback =
+    translations[DEFAULT_LOCALE] ?? (Object.values(translations)[0] as T);
 
   return (args) => {
-    const locale = args.locale ?? DEFAULT_LOCALE
-    return structuredClone(translations[locale] ?? fallback)
-  }
+    const locale = args.locale ?? DEFAULT_LOCALE;
+    return structuredClone(translations[locale] ?? fallback);
+  };
 }
 
 /**
@@ -98,18 +102,16 @@ export function createLocalizedDefault<T>(
  *   es: { heading: 'Título', paragraph: 'Contenido' }
  * })
  */
-export function createLocalizedRichText(translations: {
-  [K in Locale]: { heading: string; paragraph: string }
-}): (args: DefaultValueArgs) => RichTextState {
-  const richTextRecord = {} as Record<Locale, RichTextState>
+export function createLocalizedRichText(translations: Record<Locale, { heading: string; paragraph: string }>): (args: DefaultValueArgs) => RichTextState {
+  const richTextRecord = {} as Record<Locale, RichTextState>;
 
   for (const { code } of I18N_CONFIG.locales) {
-    const locale = code as Locale
-    const t = translations[locale]
+    const locale = code as Locale;
+    const t = translations[locale];
     if (t) {
-      richTextRecord[locale] = createRichTextState(t.heading, t.paragraph)
+      richTextRecord[locale] = createRichTextState(t.heading, t.paragraph);
     }
   }
 
-  return createLocalizedDefault(richTextRecord)
+  return createLocalizedDefault(richTextRecord);
 }

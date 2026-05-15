@@ -4,9 +4,6 @@ import tsParser from "@typescript-eslint/parser";
 /** @type {import("eslint").Linter.Config[]} */
 export default [
   {
-    plugins: {
-      "@typescript-eslint": tseslint,
-    },
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -16,15 +13,18 @@ export default [
     linterOptions: {
       reportUnusedDisableDirectives: true,
     },
+    plugins: {
+      "@typescript-eslint": tseslint,
+    },
     rules: {
-      "@typescript-eslint/restrict-template-expressions": "off",
-      "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/ban-ts-comment": "off",
-      "@typescript-eslint/no-unused-vars": "error",
       "@typescript-eslint/consistent-type-imports": [
         "error",
         { prefer: "type-imports", fixStyle: "inline-type-imports" },
       ],
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "error",
+      "@typescript-eslint/restrict-template-expressions": "off",
       "react/jsx-key": "off",
     },
   },

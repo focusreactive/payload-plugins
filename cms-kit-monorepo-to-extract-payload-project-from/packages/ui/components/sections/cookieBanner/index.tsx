@@ -20,7 +20,7 @@ export function CookieBanner() {
     setIsVisible(false);
   };
 
-  if (!isVisible) return null;
+  if (!isVisible) {return null;}
 
   return (
     <>

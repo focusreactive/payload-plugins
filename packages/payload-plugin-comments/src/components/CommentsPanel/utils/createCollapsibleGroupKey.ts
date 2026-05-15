@@ -7,7 +7,12 @@ interface Props {
   fieldPath?: FieldPath;
 }
 
-export function createCollapsibleGroupKey({ collectionSlug, documentId, globalSlug, fieldPath: fieldPathProp }: Props) {
+export function createCollapsibleGroupKey({
+  collectionSlug,
+  documentId,
+  globalSlug,
+  fieldPath: fieldPathProp,
+}: Props) {
   const fieldPath = fieldPathProp === null ? "__general__" : fieldPathProp;
 
   const fieldPathSegment = fieldPath === undefined ? "" : `-${fieldPath}`;

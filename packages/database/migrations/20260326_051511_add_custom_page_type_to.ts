@@ -1,4 +1,4 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import { MigrateUpArgs, MigrateDownArgs, sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -40,10 +40,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "_header_v_version_nav_items" ADD COLUMN "link_custom_page" "enum__header_v_version_nav_items_link_custom_page";
   ALTER TABLE "footer_links" ADD COLUMN "link_custom_page" "enum_footer_links_link_custom_page";
   ALTER TABLE "_footer_v_version_links" ADD COLUMN "link_custom_page" "enum__footer_v_version_links_link_custom_page";
-  ALTER TABLE "presets_hero_actions" ADD COLUMN "custom_page" "enum_presets_hero_actions_custom_page";`)
+  ALTER TABLE "presets_hero_actions" ADD COLUMN "custom_page" "enum_presets_hero_actions_custom_page";`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "page_blocks_hero_actions" ALTER COLUMN "type" SET DATA TYPE text;
   ALTER TABLE "page_blocks_hero_actions" ALTER COLUMN "type" SET DEFAULT 'reference'::text;
@@ -148,5 +152,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "public"."enum__header_v_version_nav_items_link_custom_page";
   DROP TYPE "public"."enum_footer_links_link_custom_page";
   DROP TYPE "public"."enum__footer_v_version_links_link_custom_page";
-  DROP TYPE "public"."enum_presets_hero_actions_custom_page";`)
+  DROP TYPE "public"."enum_presets_hero_actions_custom_page";`);
 }

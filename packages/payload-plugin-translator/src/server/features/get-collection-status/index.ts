@@ -1,1 +1,1 @@
-export { createGetCollectionStatusRoute } from './route'
+export { createGetCollectionStatusRoute } from "./route";

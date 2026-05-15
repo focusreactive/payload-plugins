@@ -1,52 +1,79 @@
 import type { CollectionConfig, Config, Plugin } from "payload";
-import type { AbTestingPluginConfig } from "./types/config";
-import { injectAdminFields } from "./utils/injectAdminFields";
+
+import { duplicateVariantHandler } from "./endpoints/duplicateVariant";
 import { buildParentAfterChangeHook } from "./hooks/buildParentAfterChangeHook";
 import { buildParentAfterDeleteHook } from "./hooks/buildParentAfterDeleteHook";
 import { buildParentBeforeChangeHook } from "./hooks/buildParentBeforeChangeHook";
-import { duplicateVariantHandler } from "./endpoints/duplicateVariant";
+import type { AbTestingPluginConfig } from "./types/config";
+import { injectAdminFields } from "./utils/injectAdminFields";
 
 export const abTestingPlugin =
-  <TVariantData extends object>(pluginConfig: AbTestingPluginConfig<TVariantData>): Plugin =>
+  <TVariantData extends object>(
+    pluginConfig: AbTestingPluginConfig<TVariantData>
+  ): Plugin =>
   (incomingConfig: Config): Config => {
-    const { enabled = true, debug = false, collections, storage } = pluginConfig;
+    const {
+      enabled = true,
+      debug = false,
+      collections,
+      storage,
+    } = pluginConfig;
 
-    if (!enabled) return incomingConfig;
+    if (!enabled) {return incomingConfig;}
 
-    const extraGlobals = storage.createGlobal ? [storage.createGlobal(debug)] : [];
+    const extraGlobals = storage.createGlobal
+      ? [storage.createGlobal(debug)]
+      : [];
 
-    const patchedCollections = (incomingConfig.collections ?? []).map((collection): CollectionConfig => {
-      const abConfig = collections[collection.slug];
-      if (!abConfig) return collection;
+    const patchedCollections = (incomingConfig.collections ?? []).map(
+      (collection): CollectionConfig => {
+        const abConfig = collections[collection.slug];
+        if (!abConfig) {return collection;}
 
-      // Inject admin fields (UI panel, hidden data fields, list filter)
-      const withAdminFields = injectAdminFields(collection, collection.slug, abConfig);
+        // Inject admin fields (UI panel, hidden data fields, list filter)
+        const withAdminFields = injectAdminFields(
+          collection,
+          collection.slug,
+          abConfig
+        );
 
-      // Inject hooks
-      return {
-        ...withAdminFields,
-        hooks: {
-          ...withAdminFields.hooks,
-          beforeChange: [
-            ...(withAdminFields.hooks?.beforeChange ?? []),
-            buildParentBeforeChangeHook(collection.slug, abConfig, pluginConfig),
-          ],
-          afterChange: [
-            ...(withAdminFields.hooks?.afterChange ?? []),
-            buildParentAfterChangeHook(collection.slug, abConfig, pluginConfig),
-          ],
-          afterDelete: [
-            ...(withAdminFields.hooks?.afterDelete ?? []),
-            buildParentAfterDeleteHook(collection.slug, abConfig, pluginConfig),
-          ],
-        },
-      };
-    });
+        // Inject hooks
+        return {
+          ...withAdminFields,
+          hooks: {
+            ...withAdminFields.hooks,
+            afterChange: [
+              ...(withAdminFields.hooks?.afterChange ?? []),
+              buildParentAfterChangeHook(
+                collection.slug,
+                abConfig,
+                pluginConfig
+              ),
+            ],
+            afterDelete: [
+              ...(withAdminFields.hooks?.afterDelete ?? []),
+              buildParentAfterDeleteHook(
+                collection.slug,
+                abConfig,
+                pluginConfig
+              ),
+            ],
+            beforeChange: [
+              ...(withAdminFields.hooks?.beforeChange ?? []),
+              buildParentBeforeChangeHook(
+                collection.slug,
+                abConfig,
+                pluginConfig
+              ),
+            ],
+          },
+        };
+      }
+    );
 
     return {
       ...incomingConfig,
       collections: patchedCollections,
-      globals: [...(incomingConfig.globals ?? []), ...extraGlobals],
       endpoints: [
         ...(incomingConfig.endpoints ?? []),
         {
@@ -55,5 +82,6 @@ export const abTestingPlugin =
           handler: duplicateVariantHandler,
         },
       ],
+      globals: [...(incomingConfig.globals ?? []), ...extraGlobals],
     };
   };

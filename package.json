@@ -1,47 +1,54 @@
 {
   "name": "payload-plugins",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "lint": "ultracite check",
+    "lint:fix": "ultracite fix",
+    "format": "ultracite fix",
     "check-types": "turbo run check-types",
-    "release": "multi-semantic-release --ignore-private-packages"
+    "release": "multi-semantic-release --ignore-private-packages",
+    "prepare": "lefthook install"
   },
   "devDependencies": {
     "@semantic-release/changelog": "6.0.3",
     "@semantic-release/git": "10.0.1",
     "@semantic-release/github": "12.0.6",
     "@semantic-release/npm": "13.1.5",
+    "@typescript/native-preview": "^7.0.0-dev.20260515.1",
+    "lefthook": "^2.1.6",
     "multi-semantic-release": "3.1.0",
+    "oxfmt": "^0.49.0",
+    "oxlint": "^1.64.0",
     "prettier": "3.7.4",
     "turbo": "2.8.15",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "ultracite": "^7.7.0"
   },
-  "engines": {
-    "node": ">=18"
-  },
-  "packageManager": "bun@1.3.9",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "overrides": {
-    "payload": "3.84.1",
-    "@payloadcms/ui": "3.84.1",
-    "@payloadcms/next": "3.84.1",
-    "@payloadcms/translations": "3.84.1",
-    "@payloadcms/richtext-lexical": "3.84.1",
     "@payloadcms/db-postgres": "3.84.1",
+    "@payloadcms/live-preview-react": "3.84.1",
+    "@payloadcms/next": "3.84.1",
     "@payloadcms/plugin-multi-tenant": "3.84.1",
     "@payloadcms/plugin-nested-docs": "3.84.1",
     "@payloadcms/plugin-redirects": "3.84.1",
     "@payloadcms/plugin-seo": "3.84.1",
+    "@payloadcms/richtext-lexical": "3.84.1",
     "@payloadcms/storage-vercel-blob": "3.84.1",
-    "@payloadcms/live-preview-react": "3.84.1",
-    "next": "16.2.6",
+    "@payloadcms/translations": "3.84.1",
+    "@payloadcms/ui": "3.84.1",
     "@types/react": "19.2.9",
-    "@types/react-dom": "19.2.3"
-  }
+    "@types/react-dom": "19.2.3",
+    "next": "16.2.6",
+    "payload": "3.84.1"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "bun@1.3.9"
 }

@@ -1,19 +1,19 @@
-import { LanguageTranslateIcon } from '../../../../shared/lib/assets/icons/LanguageTranslateIcon'
-import { ReloadIcon } from '../../../../shared/lib/assets/icons/ReloadIcon'
-import Button from '../../../../shared/ui/Button'
-import Divider from '../../../../shared/ui/Divider'
-import StatusIndicator from '../../../../shared/ui/StatusIndicator'
-import Tooltip from '../../../../shared/ui/Tooltip'
-import { TranslationDirection } from '../TranslationDirection'
+import { LanguageTranslateIcon } from "../../../../shared/lib/assets/icons/LanguageTranslateIcon";
+import { ReloadIcon } from "../../../../shared/lib/assets/icons/ReloadIcon";
+import Button from "../../../../shared/ui/Button";
+import Divider from "../../../../shared/ui/Divider";
+import StatusIndicator from "../../../../shared/ui/StatusIndicator";
+import Tooltip from "../../../../shared/ui/Tooltip";
+import { TranslationDirection } from "../TranslationDirection";
 
-import styles from './styles.module.scss'
+import styles from "./styles.module.scss";
 
-type FailedTranslationStatusProps = {
-  message: string
-  sourceLocale: string
-  targetLocale: string
-  isLoading?: boolean
-  onRetry: () => void
+interface FailedTranslationStatusProps {
+  message: string;
+  sourceLocale: string;
+  targetLocale: string;
+  isLoading?: boolean;
+  onRetry: () => void;
 }
 
 export function FailedTranslationStatus({
@@ -30,7 +30,10 @@ export function FailedTranslationStatus({
           <LanguageTranslateIcon />
         </Button>
       </Tooltip>
-      <TranslationDirection sourceLocale={sourceLocale} targetLocale={targetLocale} />
+      <TranslationDirection
+        sourceLocale={sourceLocale}
+        targetLocale={targetLocale}
+      />
       <Divider className={styles.divider} $orientation="vertical" $size="sm" />
       <Tooltip side="bottom" sideOffset={12} content="Retry">
         <Button
@@ -47,5 +50,5 @@ export function FailedTranslationStatus({
         </Button>
       </Tooltip>
     </StatusIndicator>
-  )
+  );
 }

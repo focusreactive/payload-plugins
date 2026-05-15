@@ -1,4 +1,4 @@
-import { MigrateDownArgs, MigrateUpArgs, sql } from '@payloadcms/db-postgres'
+import { MigrateDownArgs, MigrateUpArgs, sql } from "@payloadcms/db-postgres";
 
 export async function up({ db }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -21,12 +21,12 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
         UNIQUE ("document_id", "collection", "locale");
       END IF;
     END $$;
-  `)
+  `);
 }
 
 export async function down({ db }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
     ALTER TABLE "document_embeddings"
     DROP CONSTRAINT IF EXISTS "document_embeddings_document_locale_unique";
-  `)
+  `);
 }

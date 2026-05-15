@@ -1,20 +1,21 @@
-'use client'
+"use client";
 
-import { useEffect } from 'react'
-import { Button, ButtonVariant } from '@/core/ui'
-import { Link } from '@/core/ui'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from "next-intl";
+import { useEffect } from "react";
 
-type ErrorBoundaryProps = {
-  error: Error & { digest?: string }
-  reset: () => void
-  title?: string
-  message?: string
+import { Button, ButtonVariant } from "@/core/ui";
+import { Link } from "@/core/ui";
+
+interface ErrorBoundaryProps {
+  error: Error & { digest?: string };
+  reset: () => void;
+  title?: string;
+  message?: string;
   backLink?: {
-    href: string
-    label: string
-  }
-  wrapperClassName?: string
+    href: string;
+    label: string;
+  };
+  wrapperClassName?: string;
 }
 
 export const ErrorBoundary: React.FC<ErrorBoundaryProps> = ({
@@ -25,12 +26,12 @@ export const ErrorBoundary: React.FC<ErrorBoundaryProps> = ({
   backLink,
   wrapperClassName,
 }) => {
-  const t = useTranslations('common')
+  const t = useTranslations("common");
   useEffect(() => {
-    console.error('Error:', error)
-  }, [error])
+    console.error("Error:", error);
+  }, [error]);
 
-  const errorMessage = message || t('common.somethingWentWrong')
+  const errorMessage = message || t("common.somethingWentWrong");
 
   return (
     <div className={wrapperClassName}>
@@ -40,12 +41,16 @@ export const ErrorBoundary: React.FC<ErrorBoundaryProps> = ({
             <div className="space-y-6">
               <div className="space-y-2">
                 <h1 className="text-4xl font-bold tracking-tight">{title}</h1>
-                <p className="text-textSecondaryColor text-lg">{errorMessage}</p>
+                <p className="text-textSecondaryColor text-lg">
+                  {errorMessage}
+                </p>
               </div>
 
-              {error.message && process.env.NODE_ENV === 'development' && (
+              {error.message && process.env.NODE_ENV === "development" && (
                 <div className="mx-auto p-4 bg-error/10 border border-error/20 rounded-lg max-w-2xl">
-                  <p className="text-sm font-mono text-left break-words">{error.message}</p>
+                  <p className="text-sm font-mono text-left break-words">
+                    {error.message}
+                  </p>
                 </div>
               )}
 
@@ -64,5 +69,5 @@ export const ErrorBoundary: React.FC<ErrorBoundaryProps> = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

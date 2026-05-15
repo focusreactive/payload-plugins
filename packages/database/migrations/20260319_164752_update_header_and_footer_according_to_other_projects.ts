@@ -1,4 +1,4 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import { MigrateUpArgs, MigrateDownArgs, sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -70,10 +70,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   DROP TYPE "public"."enum__header_v_version_nav_items_links_link_type";
   DROP TYPE "public"."enum__header_v_version_nav_items_type";
   DROP TYPE "public"."enum_footer_nav_items_links_link_type";
-  DROP TYPE "public"."enum__footer_v_version_nav_items_links_link_type";`)
+  DROP TYPE "public"."enum__footer_v_version_nav_items_links_link_type";`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    CREATE TYPE "public"."enum_header_nav_items_links_link_type" AS ENUM('reference', 'custom');
   CREATE TYPE "public"."enum_header_nav_items_type" AS ENUM('link', 'links_group');
@@ -177,5 +181,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   CREATE INDEX "_footer_v_version_nav_items_parent_id_idx" ON "_footer_v_version_nav_items" USING btree ("_parent_id");
   CREATE INDEX "_footer_v_version_nav_items_locale_idx" ON "_footer_v_version_nav_items" USING btree ("_locale");
   DROP TYPE "public"."enum_footer_links_link_type";
-  DROP TYPE "public"."enum__footer_v_version_links_link_type";`)
+  DROP TYPE "public"."enum__footer_v_version_links_link_type";`);
 }

@@ -1,28 +1,28 @@
 export function getBlocksFromPath<T = Record<string, unknown>>(
   doc: Record<string, unknown>,
-  path: string,
+  path: string
 ): T[] {
-  const segments = path.split('.')
+  const segments = path.split(".");
 
-  let current: unknown[] = [doc]
+  let current: unknown[] = [doc];
 
   for (const segment of segments) {
-    const next: unknown[] = []
+    const next: unknown[] = [];
 
     for (const item of current) {
-      if (item == null || typeof item !== 'object') continue
+      if (item == null || typeof item !== "object") {continue;}
 
-      const value = (item as Record<string, unknown>)[segment]
+      const value = (item as Record<string, unknown>)[segment];
 
       if (Array.isArray(value)) {
-        next.push(...value)
+        next.push(...value);
       } else if (value != null) {
-        next.push(value)
+        next.push(value);
       }
     }
 
-    current = next
+    current = next;
   }
 
-  return current as T[]
+  return current as T[];
 }

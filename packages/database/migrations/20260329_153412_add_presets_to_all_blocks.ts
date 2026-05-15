@@ -1,4 +1,4 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import { MigrateUpArgs, MigrateDownArgs, sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -270,10 +270,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "presets_links_list_section_links_list_section_background_idx" ON "presets" USING btree ("links_list_section_background_image_id");
   CREATE INDEX "presets_rels_locale_idx" ON "presets_rels" USING btree ("locale");
   CREATE INDEX "presets_rels_page_id_idx" ON "presets_rels" USING btree ("page_id","locale");
-  CREATE INDEX "presets_rels_posts_id_idx" ON "presets_rels" USING btree ("posts_id","locale");`)
+  CREATE INDEX "presets_rels_posts_id_idx" ON "presets_rels" USING btree ("posts_id","locale");`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "presets_faq_items" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "presets_cards_grid_items" DISABLE ROW LEVEL SECURITY;
@@ -470,5 +474,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "public"."enum_presets_links_list_section_margin_bottom";
   DROP TYPE "public"."enum_presets_links_list_section_padding_x";
   DROP TYPE "public"."enum_presets_links_list_section_padding_y";
-  DROP TYPE "public"."enum_presets_links_list_section_max_width";`)
+  DROP TYPE "public"."enum_presets_links_list_section_max_width";`);
 }

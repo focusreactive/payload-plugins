@@ -1,18 +1,22 @@
-import { cva } from 'class-variance-authority'
-import { RichText, SectionContainer, Media, SectionHeader } from '@/core/ui'
-import type { ContentBlock as ContentBlockProps } from '@/payload-types'
+import { cva } from "class-variance-authority";
 
-const variants = cva('flex flex-col lg:flex-row gap-6 sm:gap-8 md:gap-10 lg:gap-12 items-center', {
-  variants: {
-    layout: {
-      'image-text': '',
-      'text-image': 'lg:flex-row-reverse flex-col-reverse',
+import { RichText, SectionContainer, Media, SectionHeader } from "@/core/ui";
+import type { ContentBlock as ContentBlockProps } from "@/payload-types";
+
+const variants = cva(
+  "flex flex-col lg:flex-row gap-6 sm:gap-8 md:gap-10 lg:gap-12 items-center",
+  {
+    defaultVariants: {
+      layout: "image-text",
     },
-  },
-  defaultVariants: {
-    layout: 'image-text',
-  },
-})
+    variants: {
+      layout: {
+        "image-text": "",
+        "text-image": "lg:flex-row-reverse flex-col-reverse",
+      },
+    },
+  }
+);
 
 export const ContentBlockComponent: React.FC<ContentBlockProps> = ({
   heading,
@@ -21,8 +25,7 @@ export const ContentBlockComponent: React.FC<ContentBlockProps> = ({
   image,
   section,
   id,
-}) => {
-  return (
+}) => (
     <SectionContainer sectionData={{ ...section, id }}>
       {heading && <SectionHeader heading={heading} />}
       <div className={variants({ layout })}>
@@ -39,5 +42,4 @@ export const ContentBlockComponent: React.FC<ContentBlockProps> = ({
         )}
       </div>
     </SectionContainer>
-  )
-}
+  );

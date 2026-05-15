@@ -1,7 +1,11 @@
 import type { GlobalConfig, Payload } from "payload";
 
 export interface StorageAdapter<TVariantData extends object = object> {
-  write(path: string, variants: TVariantData[], payload: Payload): Promise<void>;
+  write(
+    path: string,
+    variants: TVariantData[],
+    payload: Payload
+  ): Promise<void>;
   read(path: string): Promise<TVariantData[] | null>;
   clear(path: string, payload: Payload): Promise<void>;
   createGlobal?(debug: boolean): GlobalConfig;
@@ -24,7 +28,10 @@ export interface CollectionABConfig<TVariantData extends object = object> {
    * Return null to skip writing the manifest for that document.
    * Called once per locale when localization is enabled.
    */
-  generatePath: (args: { doc: Record<string, unknown>; locale: string | undefined }) => string | null;
+  generatePath: (args: {
+    doc: Record<string, unknown>;
+    locale: string | undefined;
+  }) => string | null;
   /**
    * Builds the data stored per variant in the manifest.
    * When omitted, auto-generates: { bucket: variantSlug, rewritePath: generatePath(variantDoc), passPercentage: _abPassPercentage }

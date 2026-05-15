@@ -1,18 +1,18 @@
-'use client'
+"use client";
 
-import React from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from "next-intl";
+import React from "react";
 
 export const PageRange: React.FC<{
-  className?: string
-  collection?: 'posts' | 'docs'
+  className?: string;
+  collection?: "posts" | "docs";
   collectionLabels?: {
-    plural?: string
-    singular?: string
-  }
-  currentPage?: number
-  limit?: number
-  totalDocs?: number
+    plural?: string;
+    singular?: string;
+  };
+  currentPage?: number;
+  limit?: number;
+  totalDocs?: number;
 }> = (props) => {
   const {
     className,
@@ -21,50 +21,50 @@ export const PageRange: React.FC<{
     currentPage,
     limit,
     totalDocs,
-  } = props
+  } = props;
 
-  const t = useTranslations('pageRange')
+  const t = useTranslations("pageRange");
 
-  if (!totalDocs) return null
+  if (!totalDocs) {return null;}
 
-  let indexStart = (currentPage ? currentPage - 1 : 1) * (limit || 1) + 1
-  if (totalDocs && indexStart > totalDocs) indexStart = 0
+  let indexStart = (currentPage ? currentPage - 1 : 1) * (limit || 1) + 1;
+  if (totalDocs && indexStart > totalDocs) {indexStart = 0;}
 
-  let indexEnd: number = (currentPage || 1) * (limit || 1)
-  if (totalDocs && indexEnd > totalDocs) indexEnd = totalDocs
+  let indexEnd: number = (currentPage || 1) * (limit || 1);
+  if (totalDocs && indexEnd > totalDocs) {indexEnd = totalDocs;}
 
   const getLabels = () => {
     if (collectionLabelsFromProps) {
       return {
-        plural: collectionLabelsFromProps.plural || 'Docs',
-        singular: collectionLabelsFromProps.singular || 'Doc',
-      }
+        plural: collectionLabelsFromProps.plural || "Docs",
+        singular: collectionLabelsFromProps.singular || "Doc",
+      };
     }
     if (collection) {
       return {
-        plural: t(`${collection}.plural`) || 'Docs',
-        singular: t(`${collection}.singular`) || 'Doc',
-      }
+        plural: t(`${collection}.plural`) || "Docs",
+        singular: t(`${collection}.singular`) || "Doc",
+      };
     }
     return {
-      plural: t('docs.plural') || 'Docs',
-      singular: t('docs.singular') || 'Doc',
-    }
-  }
+      plural: t("docs.plural") || "Docs",
+      singular: t("docs.singular") || "Doc",
+    };
+  };
 
-  const { plural, singular } = getLabels()
+  const { plural, singular } = getLabels();
 
   return (
-    <div className={[className, 'font-semibold'].filter(Boolean).join(' ')}>
-      {(typeof totalDocs === 'undefined' || totalDocs === 0) && t('noResults')}
-      {typeof totalDocs !== 'undefined' &&
+    <div className={[className, "font-semibold"].filter(Boolean).join(" ")}>
+      {(totalDocs === undefined || totalDocs === 0) && t("noResults")}
+      {totalDocs !== undefined &&
         totalDocs > 0 &&
-        t('showing', {
-          start: indexStart || 0,
-          end: indexStart > 0 ? t('showingEnd', { end: indexEnd || 0 }) : '',
-          total: totalDocs,
+        t("showing", {
+          end: indexStart > 0 ? t("showingEnd", { end: indexEnd || 0 }) : "",
           label: totalDocs > 1 ? plural : singular,
+          start: indexStart || 0,
+          total: totalDocs,
         })}
     </div>
-  )
-}
+  );
+};

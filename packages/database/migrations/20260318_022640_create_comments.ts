@@ -1,4 +1,4 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import { MigrateUpArgs, MigrateDownArgs, sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -49,10 +49,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "payload_locked_documents_rels_comments_id_idx" ON "payload_locked_documents_rels" USING btree ("comments_id");
   ALTER TABLE "presets" DROP COLUMN "hero_title";
   ALTER TABLE "presets" DROP COLUMN "testimonials_list_heading";
-  ALTER TABLE "presets" DROP COLUMN "testimonials_list_subheading";`)
+  ALTER TABLE "presets" DROP COLUMN "testimonials_list_subheading";`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "comments_mentions" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "comments" DISABLE ROW LEVEL SECURITY;
@@ -67,5 +71,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   ALTER TABLE "presets_locales" DROP COLUMN "hero_title";
   ALTER TABLE "presets_locales" DROP COLUMN "testimonials_list_heading";
   ALTER TABLE "presets_locales" DROP COLUMN "testimonials_list_subheading";
-  ALTER TABLE "payload_locked_documents_rels" DROP COLUMN "comments_id";`)
+  ALTER TABLE "payload_locked_documents_rels" DROP COLUMN "comments_id";`);
 }

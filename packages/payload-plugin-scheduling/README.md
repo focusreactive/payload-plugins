@@ -1,6 +1,5 @@
 # @focus-reactive/payload-plugin-schedule-publication
 
-
 Scheduled publication plugin for [Payload CMS](https://payloadcms.com/) v3. Set a future publish date on any draft document and it goes live automatically — no manual publishing required.
 
 The plugin enables Payload's built-in `schedulePublish` drafts feature on selected collections and globals, routes the resulting jobs through an isolated queue, and exposes a Bearer-token-protected endpoint that your cron job pings to drain the queue.
@@ -249,10 +248,10 @@ The plugin's `secret` option accepts any environment variable — use whatever n
 
 ```ts
 // On Vercel
-secret: process.env.CRON_SECRET!
+secret: process.env.CRON_SECRET!;
 
 // On any other platform
-secret: process.env.MY_CRON_SECRET!
+secret: process.env.MY_CRON_SECRET!;
 ```
 
 ---

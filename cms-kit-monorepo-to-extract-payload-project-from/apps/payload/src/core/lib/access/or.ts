@@ -1,19 +1,21 @@
-import { AccessArgs, Where } from 'payload'
-import { isAccessible } from './types'
-import { User } from '@/payload-types'
+import type { AccessArgs, Where } from "payload";
 
-export const or = (...accesses: isAccessible[]) => {
-  return (args: AccessArgs<User>): boolean | Where => {
-    const results = accesses.map(access => access(args))
+import type { User } from "@/payload-types";
 
-    if (results.some(r => r === true)) return true
+import type { isAccessible } from "./types";
 
-    if (results.every(r => r === false)) return false
+export const or = (...accesses: isAccessible[]) => (args: AccessArgs<User>): boolean | Where => {
+    const results = accesses.map((access) => access(args));
 
-    const whereConstraints = results.filter((r): r is Where => typeof r !== 'boolean') as Where[]
+    if (results.some((r) => r === true)) return true;
 
-    if (whereConstraints.length === 0) return false
+    if (results.every((r) => r === false)) return false;
 
-    return { or: whereConstraints }
-  }
-}
+    const whereConstraints = results.filter(
+      (r): r is Where => typeof r !== "boolean"
+    ) as Where[];
+
+    if (whereConstraints.length === 0) return false;
+
+    return { or: whereConstraints };
+  };

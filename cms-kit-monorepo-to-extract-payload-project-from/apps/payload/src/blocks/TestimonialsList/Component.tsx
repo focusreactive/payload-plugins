@@ -1,9 +1,10 @@
-import React from 'react'
-import { SectionContainer } from '@/core/ui'
-import { AnimatedCarousel, TestimonialsHeading } from '@/entities'
-import type { Testimonial, TestimonialsListBlock } from '@/payload-types'
+import React from "react";
 
-type Props = TestimonialsListBlock
+import { SectionContainer } from "@/core/ui";
+import { AnimatedCarousel, TestimonialsHeading } from "@/entities";
+import type { Testimonial, TestimonialsListBlock } from "@/payload-types";
+
+type Props = TestimonialsListBlock;
 
 export const TestimonialsListBlockComponent: React.FC<Props> = ({
   heading,
@@ -17,7 +18,10 @@ export const TestimonialsListBlockComponent: React.FC<Props> = ({
 }) => {
   const testimonials = (testimonialItems ?? [])
     .map((item) => item.testimonial)
-    .filter((t): t is Testimonial => typeof t !== 'number' && t !== null && t !== undefined)
+    .filter(
+      (t): t is Testimonial =>
+        typeof t !== "number" && t !== null && t !== undefined
+    );
 
   return (
     <SectionContainer sectionData={{ ...section, id }}>
@@ -29,5 +33,5 @@ export const TestimonialsListBlockComponent: React.FC<Props> = ({
         duration={duration ?? 60}
       />
     </SectionContainer>
-  )
-}
+  );
+};

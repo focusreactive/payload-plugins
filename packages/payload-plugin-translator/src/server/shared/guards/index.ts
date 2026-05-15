@@ -1,4 +1,4 @@
-export type { TranslatableField } from './field-guards'
+export type { TranslatableField } from "./field-guards";
 export {
   isTranslatableField,
   isLocalizedField,
@@ -6,5 +6,5 @@ export {
   isTabsField,
   isBlockItem,
   hasFields,
-} from './field-guards'
-export { collectionHasDrafts } from './collection-guards'
+} from "./field-guards";
+export { collectionHasDrafts } from "./collection-guards";

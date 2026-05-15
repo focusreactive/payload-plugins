@@ -3,33 +3,33 @@
   "version": "2.5.0",
   "description": "A/B testing plugin for Payload CMS",
   "keywords": [
-    "payload-cms",
-    "payload-plugin",
-    "ab-testing",
-    "split-testing",
     "a-b-testing",
-    "page-variants",
-    "next.js",
-    "vercel-edge",
+    "ab-testing",
+    "cms",
+    "conversion-optimization",
     "edge-config",
     "middleware",
+    "next.js",
+    "page-variants",
+    "payload-cms",
+    "payload-plugin",
+    "split-testing",
     "typescript",
-    "cms",
-    "conversion-optimization"
+    "vercel-edge"
   ],
   "license": "MIT",
+  "author": "FocusReactive <ship@focusreactive.com>",
   "repository": {
     "type": "git",
     "url": "https://github.com/focusreactive/payload-plugins",
     "directory": "packages/payload-plugin-ab"
   },
-  "author": "FocusReactive <ship@focusreactive.com>",
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "typesVersions": {
     "*": {
       "adapters/payload-global": [
@@ -89,13 +89,28 @@
       "types": "./dist/admin/VariantsField.d.ts"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix",
-    "format": "prettier --write src/",
+    "lint": "ultracite check",
+    "lint:fix": "ultracite fix",
+    "format": "ultracite fix",
     "format:check": "prettier --check src/"
+  },
+  "devDependencies": {
+    "@payloadcms/ui": "3.79.0",
+    "@types/node": "22.19.9",
+    "@types/react": "19.2.9",
+    "eslint": "9.0.0",
+    "eslint-config-prettier": "9.0.0",
+    "payload": "3.79.0",
+    "prettier": "3.0.0",
+    "tsup": "8.0.0",
+    "typescript": "5.0.2",
+    "typescript-eslint": "8.0.0"
   },
   "peerDependencies": {
     "@payloadcms/ui": "^3.0.0",
@@ -113,20 +128,5 @@
   },
   "optionalDependencies": {
     "@vercel/edge-config": "1.0.0"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "devDependencies": {
-    "@payloadcms/ui": "3.79.0",
-    "@types/node": "22.19.9",
-    "@types/react": "19.2.9",
-    "eslint": "9.0.0",
-    "eslint-config-prettier": "9.0.0",
-    "payload": "3.79.0",
-    "prettier": "3.0.0",
-    "tsup": "8.0.0",
-    "typescript": "5.0.2",
-    "typescript-eslint": "8.0.0"
   }
 }

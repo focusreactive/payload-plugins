@@ -1,36 +1,33 @@
 {
   "name": "@focus-reactive/payload-plugin-comments",
   "version": "1.6.3",
-  "license": "MIT",
-  "author": "FocusReactive <ship@focusreactive.com>",
+  "private": false,
   "keywords": [
-    "payload",
-    "payloadcms",
-    "payload-plugin",
-    "comments",
-    "cms",
-    "plugin",
-    "collaboration",
     "annotations",
-    "react",
+    "cms",
+    "collaboration",
+    "comments",
     "nextjs",
+    "payload",
+    "payload-plugin",
+    "payloadcms",
+    "plugin",
+    "react",
     "typescript"
   ],
+  "license": "MIT",
+  "author": "FocusReactive <ship@focusreactive.com>",
   "repository": {
     "type": "git",
     "url": "https://github.com/focusreactive/payload-plugins",
     "directory": "packages/payload-plugin-comments"
   },
-  "private": false,
-  "publishConfig": {
-    "access": "public"
-  },
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -49,12 +46,15 @@
       "types": "./dist/providers/CommentsProviderWrapper/index.d.ts"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup && tsc --emitDeclarationOnly --declarationMap",
     "dev": "tsup --watch",
-    "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix",
-    "format": "prettier --write src/",
+    "lint": "ultracite check",
+    "lint:fix": "ultracite fix",
+    "format": "ultracite fix",
     "format:check": "prettier --check src/"
   },
   "dependencies": {
@@ -65,6 +65,23 @@
     "lucide-react": "0.577.0",
     "resend": "4.0.0",
     "tailwind-merge": "3.5.0"
+  },
+  "devDependencies": {
+    "@faceless-ui/modal": "3.0.0",
+    "@payloadcms/plugin-multi-tenant": "3.79.0",
+    "@payloadcms/ui": "3.79.0",
+    "@tailwindcss/cli": "4.2.1",
+    "@types/node": "22.19.9",
+    "@types/react": "19.2.9",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.0.0",
+    "eslint-config-prettier": "9.0.0",
+    "payload": "3.79.0",
+    "prettier": "3.0.0",
+    "tailwindcss": "4.2.1",
+    "tsup": "8.0.0",
+    "typescript": "5.7.3",
+    "typescript-eslint": "8.0.0"
   },
   "peerDependencies": {
     "@payloadcms/plugin-multi-tenant": "^3.0.0",
@@ -87,22 +104,5 @@
     "@payloadcms/plugin-multi-tenant": {
       "optional": true
     }
-  },
-  "devDependencies": {
-    "@faceless-ui/modal": "3.0.0",
-    "@tailwindcss/cli": "4.2.1",
-    "@types/node": "22.19.9",
-    "@types/react": "19.2.9",
-    "@types/react-dom": "19.2.3",
-    "eslint": "9.0.0",
-    "eslint-config-prettier": "9.0.0",
-    "payload": "3.79.0",
-    "@payloadcms/ui": "3.79.0",
-    "@payloadcms/plugin-multi-tenant": "3.79.0",
-    "prettier": "3.0.0",
-    "tailwindcss": "4.2.1",
-    "tsup": "8.0.0",
-    "typescript": "5.7.3",
-    "typescript-eslint": "8.0.0"
   }
 }

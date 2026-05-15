@@ -26,16 +26,19 @@ Injected as a UI field with `admin.position: "sidebar"` into every collection fr
 ### Content
 
 **Status section (top):**
+
 - List of releases this document is already in (fetched via `GET /api/release-items?where[targetDoc][equals]={docId}&where[targetCollection][equals]={collectionSlug}`)
 - Each shows: release name, status badge (draft/scheduled/published)
 - If none: "Not in any release"
 
 **"Add Current State to Release" button:**
+
 - Captures form data via `useForm().getData()` as snapshot
 - Sets `baseVersion` to document's current `updatedAt`
 - Opens Release Picker Drawer (see below)
 
 **"Add Version to Release" button:**
+
 - Opens Version Picker Drawer (see below)
 
 ### Technical
@@ -67,6 +70,7 @@ Opened from both entry points. Receives a snapshot (from form or version) as pro
 **Header:** "Add to Release"
 
 **"Create New Release" button (top):**
+
 - Expands inline form:
   - Name (text, required)
   - Description (textarea, optional)
@@ -75,11 +79,13 @@ Opened from both entry points. Receives a snapshot (from form or version) as pro
 - On success: toast notification, Drawer closes
 
 **Draft releases list:**
+
 - Fetched via `GET /api/releases?where[status][equals]=draft&sort=-createdAt&limit=100`
 - Each row: release name, item count badge, created date
 - Click → `POST /api/release-items` with snapshot → toast "Added to {release name}" → Drawer closes
 
 **Conflict handling:**
+
 - If document already exists in selected release (API returns 400/500 with "already exists" error)
 - Show confirm: "This document is already in this release. Replace snapshot?"
 - Yes → `PATCH /api/release-items/{existingItemId}` with new snapshot
@@ -96,6 +102,7 @@ Two-step Drawer. Only opened from "Add Version to Release" button.
 **Header:** "Select Version"
 
 **Version list:**
+
 - Fetched via `GET /api/{collection}/versions?where[parent][equals]={docId}&sort=-updatedAt&limit=20`
 - Each row:
   - Date/time (formatted `updatedAt`)
@@ -141,6 +148,7 @@ export { ReleaseSidebarField } from "./admin/components/ReleaseSidebarField";
 ### tsup entry
 
 Add second entry point:
+
 ```typescript
 // tsup.config.ts
 entry: {
@@ -193,7 +201,8 @@ const patchedCollections = (config.collections ?? []).map((collection) => {
         admin: {
           position: "sidebar",
           components: {
-            Field: "@focus-reactive/payload-plugin-content-releases/client#ReleaseSidebarField",
+            Field:
+              "@focus-reactive/payload-plugin-content-releases/client#ReleaseSidebarField",
           },
         },
       },
@@ -224,14 +233,14 @@ return {
 
 ## API Calls Summary
 
-| Action | Method | Endpoint |
-|--------|--------|----------|
-| Fetch releases for document | GET | `/api/release-items?where[targetDoc][equals]={id}&where[targetCollection][equals]={slug}` |
-| Fetch draft releases | GET | `/api/releases?where[status][equals]=draft&sort=-createdAt` |
-| Fetch document versions | GET | `/api/{collection}/versions?where[parent][equals]={id}&sort=-updatedAt&limit=20` |
-| Create release | POST | `/api/releases` |
-| Add item to release | POST | `/api/release-items` |
-| Update existing item | PATCH | `/api/release-items/{id}` |
+| Action                      | Method | Endpoint                                                                                  |
+| --------------------------- | ------ | ----------------------------------------------------------------------------------------- |
+| Fetch releases for document | GET    | `/api/release-items?where[targetDoc][equals]={id}&where[targetCollection][equals]={slug}` |
+| Fetch draft releases        | GET    | `/api/releases?where[status][equals]=draft&sort=-createdAt`                               |
+| Fetch document versions     | GET    | `/api/{collection}/versions?where[parent][equals]={id}&sort=-updatedAt&limit=20`          |
+| Create release              | POST   | `/api/releases`                                                                           |
+| Add item to release         | POST   | `/api/release-items`                                                                      |
+| Update existing item        | PATCH  | `/api/release-items/{id}`                                                                 |
 
 ---
 
@@ -246,10 +255,10 @@ return {
 
 ## Potential Problems & Mitigations
 
-| Problem | Mitigation |
-|---------|-----------|
-| Relationship fields in snapshots | Stored as IDs (not populated). `payload.update()` accepts IDs — no issue. |
-| Large snapshots (rich text, blocks) | JSON field supports megabytes. Media stored as ID refs, not duplicated. |
-| Stale sidebar after adding | Refetch release-items list after successful POST via state invalidation. |
-| Duplicate item in release | API returns error → show confirm → PATCH to replace existing snapshot. |
-| Version with changed schema | Publish catches validation error → item marked `failed` with message. |
+| Problem                             | Mitigation                                                                |
+| ----------------------------------- | ------------------------------------------------------------------------- |
+| Relationship fields in snapshots    | Stored as IDs (not populated). `payload.update()` accepts IDs — no issue. |
+| Large snapshots (rich text, blocks) | JSON field supports megabytes. Media stored as ID refs, not duplicated.   |
+| Stale sidebar after adding          | Refetch release-items list after successful POST via state invalidation.  |
+| Duplicate item in release           | API returns error → show confirm → PATCH to replace existing snapshot.    |
+| Version with changed schema         | Publish catches validation error → item marked `failed` with message.     |

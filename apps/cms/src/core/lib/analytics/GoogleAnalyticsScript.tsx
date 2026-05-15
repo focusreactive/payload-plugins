@@ -1,14 +1,14 @@
-'use client'
+"use client";
 
-import Script from 'next/script'
+import Script from "next/script";
 
 interface Props {
-  measurementId?: string
+  measurementId?: string;
 }
 
 export function GoogleAnalyticsScript({ measurementId }: Props) {
   if (!measurementId) {
-    return null
+    return null;
   }
 
   return (
@@ -34,5 +34,5 @@ export function GoogleAnalyticsScript({ measurementId }: Props) {
         }}
       />
     </>
-  )
+  );
 }

@@ -1,59 +1,62 @@
-import { withPayload } from '@payloadcms/next/withPayload'
-import createNextIntlPlugin from 'next-intl/plugin'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+import { withPayload } from "@payloadcms/next/withPayload";
+import createNextIntlPlugin from "next-intl/plugin";
+
+const __dirname = import.meta.dirname;
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   turbopack: {
-    root: path.resolve(__dirname, '../..'),
+    root: path.resolve(__dirname, "../.."),
   },
   // Your Next.js config here
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {
-      '.cjs': ['.cts', '.cjs'],
-      '.js': ['.ts', '.tsx', '.js', '.jsx'],
-      '.mjs': ['.mts', '.mjs'],
-    }
+      ".cjs": [".cts", ".cjs"],
+      ".js": [".ts", ".tsx", ".js", ".jsx"],
+      ".mjs": [".mts", ".mjs"],
+    };
 
-    return webpackConfig
+    return webpackConfig;
   },
   experimental: {
-    reactCompiler: true,
     inlineCss: true,
+    reactCompiler: true,
   },
   images: {
     remotePatterns: [
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '3000',
-        pathname: '/api/media/**',
+        hostname: "localhost",
+        pathname: "/api/media/**",
+        port: "3000",
+        protocol: "http",
       },
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '3333',
-        pathname: '/api/media/**',
+        hostname: "localhost",
+        pathname: "/api/media/**",
+        port: "3333",
+        protocol: "http",
       },
       {
-        protocol: 'https',
-        hostname: '**.public.blob.vercel-storage.com',
+        hostname: "**.public.blob.vercel-storage.com",
+        protocol: "https",
       },
       {
-        protocol: 'https',
-        hostname: 'payload-cms-ideal-cms.com',
+        hostname: "payload-cms-ideal-cms.com",
+        protocol: "https",
       },
       {
-        protocol: 'https',
-        hostname: 'payload-cms-ideal-cms.vercel.app',
+        hostname: "payload-cms-ideal-cms.vercel.app",
+        protocol: "https",
       },
     ],
   },
-}
+};
 
-const withNextIntl = createNextIntlPlugin()
+const withNextIntl = createNextIntlPlugin();
 
-export default withNextIntl(withPayload(nextConfig, { devBundleServerPackages: false }))
+export default withNextIntl(
+  withPayload(nextConfig, { devBundleServerPackages: false })
+);

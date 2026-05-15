@@ -7,7 +7,7 @@ interface Item {
 export function warnUnknownSlugs(
   slugs: string[],
   items: Item[] | undefined,
-  type: "collection" | "global",
+  type: "collection" | "global"
 ) {
   for (const slug of slugs) {
     if (!items?.find((item) => item.slug === slug)) {

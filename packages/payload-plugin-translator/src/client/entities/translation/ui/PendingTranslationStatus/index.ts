@@ -1,1 +1,1 @@
-export { PendingTranslationStatus } from './PendingTranslationStatus'
+export { PendingTranslationStatus } from "./PendingTranslationStatus";

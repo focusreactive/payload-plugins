@@ -1,4 +1,4 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import { MigrateUpArgs, MigrateDownArgs, sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -17,10 +17,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TYPE "public"."enum_presets_hero_actions_custom_page" ADD VALUE 'search';
   ALTER TYPE "public"."enum_presets_cards_grid_items_link_custom_page" ADD VALUE 'search';
   ALTER TYPE "public"."enum_presets_logos_items_link_custom_page" ADD VALUE 'search';
-  ALTER TYPE "public"."enum_presets_links_list_links_link_custom_page" ADD VALUE 'search';`)
+  ALTER TYPE "public"."enum_presets_links_list_links_link_custom_page" ADD VALUE 'search';`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
   UPDATE "page_blocks_hero_actions" SET "custom_page" = NULL WHERE "custom_page"::text = 'search';
   UPDATE "page_blocks_cards_grid_items" SET "link_custom_page" = NULL WHERE "link_custom_page"::text = 'search';
@@ -37,7 +41,7 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   UPDATE "presets_hero_actions" SET "custom_page" = NULL WHERE "custom_page"::text = 'search';
   UPDATE "presets_cards_grid_items" SET "link_custom_page" = NULL WHERE "link_custom_page"::text = 'search';
   UPDATE "presets_logos_items" SET "link_custom_page" = NULL WHERE "link_custom_page"::text = 'search';
-  UPDATE "presets_links_list_links" SET "link_custom_page" = NULL WHERE "link_custom_page"::text = 'search';`)
+  UPDATE "presets_links_list_links" SET "link_custom_page" = NULL WHERE "link_custom_page"::text = 'search';`);
 
   await db.execute(sql`
    ALTER TABLE "page_blocks_hero_actions" ALTER COLUMN "custom_page" SET DATA TYPE text;
@@ -103,5 +107,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   ALTER TABLE "presets_links_list_links" ALTER COLUMN "link_custom_page" SET DATA TYPE text;
   DROP TYPE "public"."enum_presets_links_list_links_link_custom_page";
   CREATE TYPE "public"."enum_presets_links_list_links_link_custom_page" AS ENUM('blog');
-  ALTER TABLE "presets_links_list_links" ALTER COLUMN "link_custom_page" SET DATA TYPE "public"."enum_presets_links_list_links_link_custom_page" USING "link_custom_page"::"public"."enum_presets_links_list_links_link_custom_page";`)
+  ALTER TABLE "presets_links_list_links" ALTER COLUMN "link_custom_page" SET DATA TYPE "public"."enum_presets_links_list_links_link_custom_page" USING "link_custom_page"::"public"."enum_presets_links_list_links_link_custom_page";`);
 }

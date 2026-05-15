@@ -1,7 +1,13 @@
+import {
+  ConfirmationModal,
+  toast,
+  useModal,
+  useTranslation,
+} from "@payloadcms/ui";
 import { CircleCheck, Trash2, Undo2 } from "lucide-react";
-import { ConfirmationModal, toast, useModal, useTranslation } from "@payloadcms/ui";
-import { IconButton } from "../IconButton";
+
 import { useCommentsFilter } from "../../providers/CommentsFilterProvider";
+import { IconButton } from "../IconButton";
 
 interface Props {
   commentId: string | number;
@@ -11,7 +17,13 @@ interface Props {
   onDelete: () => void;
 }
 
-export function ToolsPanel({ commentId, isResolved, canDelete, onDelete, onResolve }: Props) {
+export function ToolsPanel({
+  commentId,
+  isResolved,
+  canDelete,
+  onDelete,
+  onResolve,
+}: Props) {
   const DELETE_MODAL_SLUG = `comments-delete-${commentId}`;
 
   const { t } = useTranslation();
@@ -26,19 +38,25 @@ export function ToolsPanel({ commentId, isResolved, canDelete, onDelete, onResol
             onResolve();
 
             if (!isResolved && !filters.showResolved) {
-              toast.success(t("comments:commentResolved" as never) ?? "Comment resolved");
+              toast.success(
+                t("comments:commentResolved" as never) ?? "Comment resolved"
+              );
             }
           }}
           title={
-            isResolved ? (t("comments:reopen" as never) ?? "Reopen") : (t("comments:resolve" as never) ?? "Resolve")
-          }>
-          {isResolved ?
-            <Undo2 size={16} />
-          : <CircleCheck size={16} />}
+            isResolved
+              ? (t("comments:reopen" as never) ?? "Reopen")
+              : (t("comments:resolve" as never) ?? "Resolve")
+          }
+        >
+          {isResolved ? <Undo2 size={16} /> : <CircleCheck size={16} />}
         </IconButton>
 
         {canDelete && (
-          <IconButton onClick={() => openModal(DELETE_MODAL_SLUG)} title={t("comments:delete" as never) ?? "Delete"}>
+          <IconButton
+            onClick={() => openModal(DELETE_MODAL_SLUG)}
+            title={t("comments:delete" as never) ?? "Delete"}
+          >
             <Trash2 size={16} />
           </IconButton>
         )}

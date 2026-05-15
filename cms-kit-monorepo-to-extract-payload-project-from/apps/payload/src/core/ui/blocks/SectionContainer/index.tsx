@@ -1,21 +1,23 @@
-import { cva } from 'class-variance-authority'
-import { cn } from '@/core/lib/utils'
-import { Media } from '../Media'
-import { ISectionContainerProps } from './types'
-import { Container } from '../Container'
+import { cva } from "class-variance-authority";
 
-const sectionVariants = cva('overflow-clip relative z-1', {
+import { cn } from "@/core/lib/utils";
+
+import { Container } from "../Container";
+import { Media } from "../Media";
+import type { ISectionContainerProps } from "./types";
+
+const sectionVariants = cva("overflow-clip relative z-1", {
+  defaultVariants: {
+    paddingY: "base",
+  },
   variants: {
     paddingY: {
-      none: 'py-0',
-      base: 'py-sectionBase',
-      large: 'py-sectionLarge',
+      base: "py-sectionBase",
+      large: "py-sectionLarge",
+      none: "py-0",
     },
   },
-  defaultVariants: {
-    paddingY: 'base',
-  },
-})
+});
 
 export function SectionContainer({
   children,
@@ -23,17 +25,17 @@ export function SectionContainer({
   containerClassName,
   sectionData,
 }: ISectionContainerProps) {
-  const { id, theme, paddingY, background } = sectionData
-  const { media, overlay, opacity } = background ?? {}
+  const { id, theme, paddingY, background } = sectionData;
+  const { media, overlay, opacity } = background ?? {};
 
-  const overlayOpacity = opacity != null ? opacity / 100 : undefined
-  const hasMedia = !!media
+  const overlayOpacity = opacity != null ? opacity / 100 : undefined;
+  const hasMedia = !!media;
 
   return (
     <section
       id={id ?? undefined}
       className={cn(sectionVariants({ paddingY }), className)}
-      {...(theme ? { 'data-theme': theme } : {})}
+      {...(theme ? { "data-theme": theme } : {})}
     >
       <Container containerData={sectionData} className={containerClassName}>
         {children}
@@ -55,12 +57,12 @@ export function SectionContainer({
               aria-hidden
               className="absolute inset-0 -z-1 pointer-events-none"
               style={{
-                backgroundColor: `rgba(${overlay === 'black' ? '0,0,0' : '255,255,255'},${overlayOpacity})`,
+                backgroundColor: `rgba(${overlay === "black" ? "0,0,0" : "255,255,255"},${overlayOpacity})`,
               }}
             />
           )}
         </>
       )}
     </section>
-  )
+  );
 }

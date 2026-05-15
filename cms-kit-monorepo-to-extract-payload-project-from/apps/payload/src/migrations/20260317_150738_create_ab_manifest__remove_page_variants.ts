@@ -1,4 +1,5 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import type { MigrateUpArgs, MigrateDownArgs} from "@payloadcms/db-postgres";
+import { sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -80,10 +81,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   DROP TYPE IF EXISTS "public"."enum_page_variants_blocks_links_list_align_variant";
   DROP TYPE IF EXISTS "public"."enum_page_variants_blocks_blog_section_style";
   DROP TYPE IF EXISTS "public"."enum_page_variants_bucket_i_d";
-  DROP TYPE IF EXISTS "public"."enum_page_variants_meta_robots";`)
+  DROP TYPE IF EXISTS "public"."enum_page_variants_meta_robots";`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    CREATE TYPE "public"."enum_page_variants_blocks_hero_actions_type" AS ENUM('reference', 'custom');
   CREATE TYPE "public"."enum_page_variants_blocks_hero_actions_appearance" AS ENUM('default', 'outline');
@@ -458,5 +463,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   ALTER TABLE "page" DROP COLUMN "_abvariantpercentages";
   ALTER TABLE "_page_v" DROP COLUMN "version__abpasspercentage";
   ALTER TABLE "_page_v" DROP COLUMN "version__abvariantof_id";
-  ALTER TABLE "_page_v" DROP COLUMN "version__abvariantpercentages";`)
+  ALTER TABLE "_page_v" DROP COLUMN "version__abvariantpercentages";`);
 }

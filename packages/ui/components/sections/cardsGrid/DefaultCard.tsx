@@ -23,7 +23,7 @@ export default function DefaultCard({
           // "items-start": alignVariant === "left",
           // "items-end": alignVariant === "right",
           "rounded-2xl": rounded === "large",
-        },
+        }
       )}
     >
       <div className="flex flex-col gap-y-12 text-left">
@@ -41,21 +41,21 @@ export default function DefaultCard({
 }
 
 const variants = cva("bg-bgColor flex flex-none gap-x-12 gap-y-3 p-12", {
+  defaultVariants: {
+    backgroundColor: "none",
+    rounded: "large",
+  },
   variants: {
     backgroundColor: {
-      light: "bg-bgColor",
       dark: "bg-bgColor",
-      "light-gray": "bg-bgColor",
       "dark-gray": "bg-bgColor",
       "gradient-2": "bg-gradient-to-tr from-primary2LightColor to-white",
+      light: "bg-bgColor",
+      "light-gray": "bg-bgColor",
       none: "bg-transparent",
     },
     rounded: {
       large: "rounded-2xl",
     },
-  },
-  defaultVariants: {
-    backgroundColor: "none",
-    rounded: "large",
   },
 });

@@ -1,38 +1,38 @@
-import React from 'react'
+import type { Metadata } from "next";
+import React from "react";
 
-import { RenderBlocks } from '@/blocks/RenderBlocks'
-import { PayloadRedirects } from '@/features'
-import { Metadata } from 'next'
-import { generateMeta } from '@/core/lib/generateMeta'
-import { generateNotFoundMeta } from '@/core/lib/generateNotFoundMeta'
-import { getPageBySlug } from '@/dal/getPageBySlug'
-import { BreadcrumbsJsonLd } from '@/core/seo/components'
-import { parseSlugToPath } from '@/core/lib/parseSlugToPath'
-import { Locale } from '@/core/types'
-import { redirect } from '@/i18n/navigation'
-import { getMainSitePageStaticParams } from '@/dal/staticParams/pages'
-import { Footer, Header } from '@/widgets'
-import { Footer as FooterType, Header as HeaderType } from '@/payload-types'
+import { RenderBlocks } from "@/blocks/RenderBlocks";
+import { generateMeta } from "@/core/lib/generateMeta";
+import { generateNotFoundMeta } from "@/core/lib/generateNotFoundMeta";
+import { parseSlugToPath } from "@/core/lib/parseSlugToPath";
+import { BreadcrumbsJsonLd } from "@/core/seo/components";
+import type { Locale } from "@/core/types";
+import { getPageBySlug } from "@/dal/getPageBySlug";
+import { getMainSitePageStaticParams } from "@/dal/staticParams/pages";
+import { PayloadRedirects } from "@/features";
+import { redirect } from "@/i18n/navigation";
+import type { Footer as FooterType, Header as HeaderType } from "@/payload-types";
+import { Footer, Header } from "@/widgets";
 
-type Args = {
+interface Args {
   params: Promise<{
-    slug?: string[]
-    locale: Locale
-  }>
+    slug?: string[];
+    locale: Locale;
+  }>;
 }
 
 export default async function Page({ params }: Args) {
-  const { slug = [], locale } = await params
-  const { decodedSegments, url } = parseSlugToPath(slug)
+  const { slug = [], locale } = await params;
+  const { decodedSegments, url } = parseSlugToPath(slug);
 
-  if (decodedSegments[0] === 'home') {
-    return redirect({ href: '/' + decodedSegments.slice(1).join('/'), locale })
+  if (decodedSegments[0] === "home") {
+    return redirect({ href: `/${  decodedSegments.slice(1).join("/")}`, locale });
   }
 
-  const page = await getPageBySlug(decodedSegments, locale)
+  const page = await getPageBySlug(decodedSegments, locale);
 
   if (!page) {
-    return <PayloadRedirects url={url} locale={locale} />
+    return <PayloadRedirects url={url} locale={locale} />;
   }
 
   return (
@@ -49,26 +49,26 @@ export default async function Page({ params }: Args) {
       </main>
       <Footer data={page.footer as FooterType} />
     </>
-  )
+  );
 }
 
 export async function generateMetadata({ params }: Args): Promise<Metadata> {
-  const { slug = [], locale } = await params
-  const { decodedSegments } = parseSlugToPath(slug)
+  const { slug = [], locale } = await params;
+  const { decodedSegments } = parseSlugToPath(slug);
 
-  const page = await getPageBySlug(decodedSegments, locale)
+  const page = await getPageBySlug(decodedSegments, locale);
 
   if (!page) {
-    return generateNotFoundMeta({ locale })
+    return generateNotFoundMeta({ locale });
   }
 
   return generateMeta({
+    collection: "page",
     doc: page,
-    collection: 'page',
     locale,
-  })
+  });
 }
 
 export async function generateStaticParams() {
-  return await getMainSitePageStaticParams()
+  return await getMainSitePageStaticParams();
 }

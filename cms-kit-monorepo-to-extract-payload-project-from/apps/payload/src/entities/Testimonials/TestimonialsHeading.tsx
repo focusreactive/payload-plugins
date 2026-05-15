@@ -1,12 +1,15 @@
-import { SectionHeader } from '@/core/ui'
+import { SectionHeader } from "@/core/ui";
 
-type Props = {
-  heading?: string | null
-  subheading?: string | null
+interface Props {
+  heading?: string | null;
+  subheading?: string | null;
 }
 
-export const TestimonialsHeading: React.FC<Props> = ({ heading, subheading }) => {
-  if (!heading && !subheading) return null
+export const TestimonialsHeading: React.FC<Props> = ({
+  heading,
+  subheading,
+}) => {
+  if (!heading && !subheading) {return null;}
 
   return (
     <div className="mb-8 text-center">
@@ -17,5 +20,5 @@ export const TestimonialsHeading: React.FC<Props> = ({ heading, subheading }) =>
         </p>
       )}
     </div>
-  )
-}
+  );
+};

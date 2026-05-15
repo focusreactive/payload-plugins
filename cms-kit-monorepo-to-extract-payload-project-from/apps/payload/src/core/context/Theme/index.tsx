@@ -1,56 +1,59 @@
-'use client'
+"use client";
 
-import React, { createContext, use, useEffect, useState } from 'react'
+import React, { createContext, use, useEffect, useState } from "react";
 
-import type { Theme, ThemeContextType } from './types'
-import { defaultTheme, themeLocalStorageKey } from './consts'
-import { getImplicitPreference, themeIsValid } from './utils'
-import canUseDOM from '@/core/lib/canUseDOM'
+import canUseDOM from "@/core/lib/canUseDOM";
+
+import { defaultTheme, themeLocalStorageKey } from "./consts";
+import type { Theme, ThemeContextType } from "./types";
+import { getImplicitPreference, themeIsValid } from "./utils";
 
 const initialContext: ThemeContextType = {
   setTheme: () => null,
   theme: undefined,
-}
+};
 
-const ThemeContext = createContext(initialContext)
+const ThemeContext = createContext(initialContext);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [theme, setThemeState] = useState<Theme | undefined>(
-    canUseDOM ? (document.documentElement.getAttribute('data-theme') as Theme) : undefined,
-  )
+    canUseDOM
+      ? (document.documentElement.dataset.theme as Theme)
+      : undefined
+  );
 
   const setTheme = (themeToSet: Theme | null) => {
     if (themeToSet === null) {
-      window.localStorage.removeItem(themeLocalStorageKey)
-      const implicitPreference = getImplicitPreference()
-      document.documentElement.setAttribute('data-theme', implicitPreference || '')
-      if (implicitPreference) setThemeState(implicitPreference)
+      window.localStorage.removeItem(themeLocalStorageKey);
+      const implicitPreference = getImplicitPreference();
+      document.documentElement.dataset.theme = implicitPreference || "";
+      if (implicitPreference) {setThemeState(implicitPreference);}
     } else {
-      setThemeState(themeToSet)
-      window.localStorage.setItem(themeLocalStorageKey, themeToSet)
-      document.documentElement.setAttribute('data-theme', themeToSet)
+      setThemeState(themeToSet);
+      window.localStorage.setItem(themeLocalStorageKey, themeToSet);
+      document.documentElement.dataset.theme = themeToSet;
     }
-  }
+  };
 
   useEffect(() => {
-    let themeToSet: Theme = defaultTheme
-    const preference = window.localStorage.getItem(themeLocalStorageKey)
+    let themeToSet: Theme = defaultTheme;
+    const preference = window.localStorage.getItem(themeLocalStorageKey);
 
     if (themeIsValid(preference)) {
-      themeToSet = preference
+      themeToSet = preference;
     } else {
-      const implicitPreference = getImplicitPreference()
+      const implicitPreference = getImplicitPreference();
 
       if (implicitPreference) {
-        themeToSet = implicitPreference
+        themeToSet = implicitPreference;
       }
     }
 
-    document.documentElement.setAttribute('data-theme', themeToSet)
-    setThemeState(themeToSet)
-  }, [])
+    document.documentElement.dataset.theme = themeToSet;
+    setThemeState(themeToSet);
+  }, []);
 
-  return <ThemeContext value={{ setTheme, theme }}>{children}</ThemeContext>
-}
+  return <ThemeContext value={{ setTheme, theme }}>{children}</ThemeContext>;
+};
 
-export const useTheme = (): ThemeContextType => use(ThemeContext)
+export const useTheme = (): ThemeContextType => use(ThemeContext);

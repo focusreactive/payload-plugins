@@ -1,21 +1,21 @@
-import { BLOG_CONFIG } from '@/core/config/blog'
-import { shouldIncludeLocalePrefix } from '@/core/lib/localePrefix'
+import { BLOG_CONFIG } from "@/core/config/blog";
+import { shouldIncludeLocalePrefix } from "@/core/lib/localePrefix";
 
-export type CustomPageKey = 'blog' | 'search'
+export type CustomPageKey = "blog" | "search";
 
 export interface CustomPageEntry {
   label: {
-    en: string
-    es: string
-  }
-  resolver: (locale: string) => string
+    en: string;
+    es: string;
+  };
+  resolver: (locale: string) => string;
 }
 
 export const CUSTOM_PAGES_CONFIG: Record<CustomPageKey, CustomPageEntry> = {
   blog: {
     label: {
-      en: 'Blog',
-      es: 'Blog',
+      en: "Blog",
+      es: "Blog",
     },
     resolver: (locale) =>
       shouldIncludeLocalePrefix(locale)
@@ -24,10 +24,10 @@ export const CUSTOM_PAGES_CONFIG: Record<CustomPageKey, CustomPageEntry> = {
   },
   search: {
     label: {
-      en: 'Search',
-      es: 'Buscar',
+      en: "Search",
+      es: "Buscar",
     },
     resolver: (locale) =>
-      shouldIncludeLocalePrefix(locale) ? `/${locale}/search` : '/search',
+      shouldIncludeLocalePrefix(locale) ? `/${locale}/search` : "/search",
   },
-}
+};

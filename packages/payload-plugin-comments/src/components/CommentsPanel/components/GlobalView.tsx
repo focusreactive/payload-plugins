@@ -1,16 +1,17 @@
 "use client";
 
 import { useLocale, useTranslation } from "@payloadcms/ui";
-import type { Comment } from "../../../types/comment";
-import { useComments } from "../../../providers/CommentsProvider";
-import { useCommentsFilter } from "../../../providers/CommentsFilterProvider";
+
 import { useDocumentTitlesQuery } from "../../../api/queries/useDocumentTitlesQuery";
+import { useCommentsFilter } from "../../../providers/CommentsFilterProvider";
+import { useComments } from "../../../providers/CommentsProvider";
+import type { Comment } from "../../../types/comment";
+import { createCollapsibleGroupKey } from "../utils/createCollapsibleGroupKey";
 import { groupCommentsGlobally } from "../utils/groupCommentsGlobally";
-import { resolveEntityLabel } from "../utils/resolveEntityLabel";
 import { resolveEmptyCommentsMessageKey } from "../utils/resolveEmptyCommentsMessageKey";
+import { resolveEntityLabel } from "../utils/resolveEntityLabel";
 import { CollapsibleGroup } from "./CollapsibleGroup";
 import { FieldGroupSection } from "./FieldGroupSection";
-import { createCollapsibleGroupKey } from "../utils/createCollapsibleGroupKey";
 
 interface Props {
   comments: Comment[];
@@ -43,18 +44,29 @@ export function GlobalView({ comments, userId, className }: Props) {
               key={slug}
               groupKey={slug}
               label={resolveEntityLabel(collectionLabels[slug], locale, slug)}
-              level="collection">
+              level="collection"
+            >
               {[...docs.entries()].map(([docId, fields]) => {
-                const title = documentTitles[slug]?.[String(docId)] ?? String(docId);
+                const title =
+                  documentTitles[slug]?.[String(docId)] ?? String(docId);
                 const documentId = Number(docId);
 
                 return (
                   <CollapsibleGroup
                     key={docId}
-                    groupKey={createCollapsibleGroupKey({ collectionSlug: slug, documentId })}
+                    groupKey={createCollapsibleGroupKey({
+                      collectionSlug: slug,
+                      documentId,
+                    })}
                     label={title}
-                    level="document">
-                    <FieldGroupSection fields={fields} userId={userId} collectionSlug={slug} documentId={documentId} />
+                    level="document"
+                  >
+                    <FieldGroupSection
+                      fields={fields}
+                      userId={userId}
+                      collectionSlug={slug}
+                      documentId={documentId}
+                    />
                   </CollapsibleGroup>
                 );
               })}
@@ -69,8 +81,13 @@ export function GlobalView({ comments, userId, className }: Props) {
             key={slug}
             groupKey={slug}
             label={resolveEntityLabel(globalLabels[slug], locale, slug)}
-            level="collection">
-            <FieldGroupSection fields={fields} userId={userId} globalSlug={slug} />
+            level="collection"
+          >
+            <FieldGroupSection
+              fields={fields}
+              userId={userId}
+              globalSlug={slug}
+            />
           </CollapsibleGroup>
         );
       })}

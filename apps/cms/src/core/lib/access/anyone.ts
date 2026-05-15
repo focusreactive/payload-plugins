@@ -1,5 +1,3 @@
-import { isAccessible } from './types'
+import type { isAccessible } from "./types";
 
-export const anyone: isAccessible = () => {
-  return true
-}
+export const anyone: isAccessible = () => true;

@@ -10,25 +10,25 @@ tags: [payload, hooks, lifecycle, context]
 
 ```typescript
 export const Posts: CollectionConfig = {
-  slug: 'posts',
+  slug: "posts",
   hooks: {
     // Before validation - format data
     beforeValidate: [
       async ({ data, operation }) => {
-        if (operation === 'create') {
-          data.slug = slugify(data.title)
+        if (operation === "create") {
+          data.slug = slugify(data.title);
         }
-        return data
+        return data;
       },
     ],
 
     // Before save - business logic
     beforeChange: [
       async ({ data, req, operation, originalDoc }) => {
-        if (operation === 'update' && data.status === 'published') {
-          data.publishedAt = new Date()
+        if (operation === "update" && data.status === "published") {
+          data.publishedAt = new Date();
         }
-        return data
+        return data;
       },
     ],
 
@@ -36,20 +36,20 @@ export const Posts: CollectionConfig = {
     afterChange: [
       async ({ doc, req, operation, previousDoc, context }) => {
         // Check context to prevent loops
-        if (context.skipNotification) return
+        if (context.skipNotification) return;
 
-        if (operation === 'create') {
-          await sendNotification(doc)
+        if (operation === "create") {
+          await sendNotification(doc);
         }
-        return doc
+        return doc;
       },
     ],
 
     // After read - computed fields
     afterRead: [
       async ({ doc, req }) => {
-        doc.viewCount = await getViewCount(doc.id)
-        return doc
+        doc.viewCount = await getViewCount(doc.id);
+        return doc;
       },
     ],
 
@@ -57,14 +57,14 @@ export const Posts: CollectionConfig = {
     beforeDelete: [
       async ({ req, id }) => {
         await req.payload.delete({
-          collection: 'comments',
+          collection: "comments",
           where: { post: { equals: id } },
           req, // Important for transaction
-        })
+        });
       },
     ],
   },
-}
+};
 ```
 
 ## Field Hooks
@@ -100,28 +100,28 @@ Share data between hooks or control hook behavior using request context:
 
 ```typescript
 export const Posts: CollectionConfig = {
-  slug: 'posts',
+  slug: "posts",
   hooks: {
     beforeChange: [
       async ({ context }) => {
-        context.expensiveData = await fetchExpensiveData()
+        context.expensiveData = await fetchExpensiveData();
       },
     ],
     afterChange: [
       async ({ context, doc }) => {
         // Reuse from previous hook
-        await processData(doc, context.expensiveData)
+        await processData(doc, context.expensiveData);
       },
     ],
   },
-}
+};
 ```
 
 ## Next.js Revalidation Pattern
 
 ```typescript
-import type { CollectionAfterChangeHook } from 'payload'
-import { revalidatePath } from 'next/cache'
+import type { CollectionAfterChangeHook } from "payload";
+import { revalidatePath } from "next/cache";
 
 export const revalidatePage: CollectionAfterChangeHook = ({
   doc,
@@ -129,20 +129,21 @@ export const revalidatePage: CollectionAfterChangeHook = ({
   req: { payload, context },
 }) => {
   if (!context.disableRevalidate) {
-    if (doc._status === 'published') {
-      const path = doc.slug === 'home' ? '/' : `/${doc.slug}`
-      payload.logger.info(`Revalidating page at path: ${path}`)
-      revalidatePath(path)
+    if (doc._status === "published") {
+      const path = doc.slug === "home" ? "/" : `/${doc.slug}`;
+      payload.logger.info(`Revalidating page at path: ${path}`);
+      revalidatePath(path);
     }
 
     // Revalidate old path if unpublished
-    if (previousDoc?._status === 'published' && doc._status !== 'published') {
-      const oldPath = previousDoc.slug === 'home' ? '/' : `/${previousDoc.slug}`
-      revalidatePath(oldPath)
+    if (previousDoc?._status === "published" && doc._status !== "published") {
+      const oldPath =
+        previousDoc.slug === "home" ? "/" : `/${previousDoc.slug}`;
+      revalidatePath(oldPath);
     }
   }
-  return doc
-}
+  return doc;
+};
 ```
 
 ## Date Field Auto-Set

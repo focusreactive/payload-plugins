@@ -41,9 +41,11 @@ In `packages/your-plugin-name/`, create `package.json` with these required field
 ```
 
 **Critical — `repository.url` must be exactly:**
+
 ```
 https://github.com/focusreactive/payload-plugins
 ```
+
 No `.git` suffix. Wrong URL → semantic-release fails with git error 128.
 
 ---
@@ -126,11 +128,11 @@ git push
 
 ## Common Mistakes
 
-| Mistake | Error | Fix |
-|--------|-------|-----|
-| Missing git tag before CI | "cannot publish over previously published versions: 1.0.0" | Run step 5 (`gh release create`) |
-| Short SHA in `gh release create` | HTTP 422: target_commitish invalid | Use full SHA: `git rev-parse <short-sha>` |
-| Re-running failed workflow job | "Local branch is behind remote — 0 packages released" | Push a new commit instead (step 6) |
-| Wrong `repository.url` | semantic-release git error 128 | Must match exactly, no `.git` suffix |
-| `chore:` commit to test release | No release triggered | Use `docs:`, `fix:`, or `feat:` |
-| Trusted publisher not set up | CI publish fails with 401/403 | Complete step 4 on npmjs.com |
+| Mistake                          | Error                                                      | Fix                                       |
+| -------------------------------- | ---------------------------------------------------------- | ----------------------------------------- |
+| Missing git tag before CI        | "cannot publish over previously published versions: 1.0.0" | Run step 5 (`gh release create`)          |
+| Short SHA in `gh release create` | HTTP 422: target_commitish invalid                         | Use full SHA: `git rev-parse <short-sha>` |
+| Re-running failed workflow job   | "Local branch is behind remote — 0 packages released"      | Push a new commit instead (step 6)        |
+| Wrong `repository.url`           | semantic-release git error 128                             | Must match exactly, no `.git` suffix      |
+| `chore:` commit to test release  | No release triggered                                       | Use `docs:`, `fix:`, or `feat:`           |
+| Trusted publisher not set up     | CI publish fails with 401/403                              | Complete step 4 on npmjs.com              |

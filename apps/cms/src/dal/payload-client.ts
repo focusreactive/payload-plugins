@@ -1,6 +1,7 @@
-import { cache } from 'react'
-import { getPayload, type Payload } from 'payload'
-import configPromise from '@payload-config'
+import configPromise from "@payload-config";
+import { getPayload } from 'payload';
+import type { Payload } from 'payload';
+import { cache } from "react";
 
 /**
  * The single entry point for obtaining a Payload Local API client in
@@ -10,6 +11,4 @@ import configPromise from '@payload-config'
  * request share the same Payload instance. Never call `getPayload` directly
  * outside this module — go through the DAL.
  */
-export const getPayloadClient = cache(async (): Promise<Payload> => {
-  return getPayload({ config: configPromise })
-})
+export const getPayloadClient = cache(async (): Promise<Payload> => getPayload({ config: configPromise }));

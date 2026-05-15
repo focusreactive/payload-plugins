@@ -1,7 +1,8 @@
-import { RichText, SectionContainer, SectionHeader } from '@/core/ui'
-import { Accordion, AccordionItemData } from '@/core/ui/components/Accordion'
-import { FaqJsonLd } from '@/core/seo/components'
-import type { FaqBlock as FaqBlockProps } from '@/payload-types'
+import { FaqJsonLd } from "@/core/seo/components";
+import { RichText, SectionContainer, SectionHeader } from "@/core/ui";
+import type { AccordionItemData } from "@/core/ui/components/Accordion";
+import { Accordion } from "@/core/ui/components/Accordion";
+import type { FaqBlock as FaqBlockProps } from "@/payload-types";
 
 export const FaqBlockComponent: React.FC<FaqBlockProps> = ({
   heading,
@@ -10,11 +11,13 @@ export const FaqBlockComponent: React.FC<FaqBlockProps> = ({
   id,
   ...rest
 }) => {
-  const accordionItems: AccordionItemData[] = (items ?? []).map((item, index) => ({
-    id: String(index),
-    trigger: item.question,
-    content: <RichText content={item.answer} />,
-  }))
+  const accordionItems: AccordionItemData[] = (items ?? []).map(
+    (item, index) => ({
+      content: <RichText content={item.answer} />,
+      id: String(index),
+      trigger: item.question,
+    })
+  );
 
   return (
     <SectionContainer sectionData={{ ...section, id }}>
@@ -24,5 +27,5 @@ export const FaqBlockComponent: React.FC<FaqBlockProps> = ({
         <Accordion items={accordionItems} />
       </div>
     </SectionContainer>
-  )
-}
+  );
+};

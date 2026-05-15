@@ -11,21 +11,21 @@ Fully automated release pipeline triggered on every merge to `main`. Bumps versi
 
 ### Plugins
 
-| Plugin | Purpose |
-|---|---|
-| `@semantic-release/commit-analyzer` | Determines version bump from conventional commits |
-| `@semantic-release/release-notes-generator` | Formats release notes |
-| `@semantic-release/changelog` | Writes/updates `CHANGELOG.md` |
-| `@semantic-release/npm` | Bumps `package.json` + publishes to npm |
-| `@semantic-release/git` | Commits version bump + CHANGELOG back to main |
-| `@semantic-release/github` | Creates GitHub Release |
+| Plugin                                      | Purpose                                           |
+| ------------------------------------------- | ------------------------------------------------- |
+| `@semantic-release/commit-analyzer`         | Determines version bump from conventional commits |
+| `@semantic-release/release-notes-generator` | Formats release notes                             |
+| `@semantic-release/changelog`               | Writes/updates `CHANGELOG.md`                     |
+| `@semantic-release/npm`                     | Bumps `package.json` + publishes to npm           |
+| `@semantic-release/git`                     | Commits version bump + CHANGELOG back to main     |
+| `@semantic-release/github`                  | Creates GitHub Release                            |
 
 ### Version Bump Rules
 
-| Commit prefix | Bump |
-|---|---|
-| `fix:` | patch |
-| `feat:` | minor |
+| Commit prefix                | Bump  |
+| ---------------------------- | ----- |
+| `fix:`                       | patch |
+| `feat:`                      | minor |
 | `BREAKING CHANGE:` in footer | major |
 
 ## Files

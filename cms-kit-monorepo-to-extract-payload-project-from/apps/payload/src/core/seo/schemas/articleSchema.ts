@@ -1,45 +1,51 @@
-import type { Media, Post } from '@/payload-types'
-import { buildUrl } from '@/core/utils/path/buildUrl'
-import { getServerSideURL } from '@/core/lib/getURL'
-import { formatAuthorsToSchema } from '../lib/formatAuthorsToSchema'
-import { Locale } from '@/core/types'
+import { getServerSideURL } from "@/core/lib/getURL";
+import type { Locale } from "@/core/types";
+import { buildUrl } from "@/core/utils/path/buildUrl";
+import type { Media, Post } from "@/payload-types";
+
+import { formatAuthorsToSchema } from "../lib/formatAuthorsToSchema";
 
 interface ArticleSchemaParams {
-  post: Post
-  siteName?: string
-  locale: Locale
+  post: Post;
+  siteName?: string;
+  locale: Locale;
 }
 
-export function createArticleSchema({ post, siteName, locale }: ArticleSchemaParams) {
+export function createArticleSchema({
+  post,
+  siteName,
+  locale,
+}: ArticleSchemaParams) {
   const postUrl = buildUrl({
-    collection: 'posts',
-    slug: post.slug,
+    collection: "posts",
     locale,
-  })
-  const baseUrl = getServerSideURL()
-  const image = post.meta?.image as Media | undefined
-  const imageUrl = image && typeof image === 'object' ? `${baseUrl}${image.url}` : undefined
-  const authors = formatAuthorsToSchema(post.authors)
+    slug: post.slug,
+  });
+  const baseUrl = getServerSideURL();
+  const image = post.meta?.image as Media | undefined;
+  const imageUrl =
+    image && typeof image === "object" ? `${baseUrl}${image.url}` : undefined;
+  const authors = formatAuthorsToSchema(post.authors);
 
   const publisher = siteName
     ? {
-        '@type': 'Organization',
+        "@type": "Organization",
         name: siteName,
-        url: buildUrl({ collection: 'page', locale }),
+        url: buildUrl({ collection: "page", locale }),
       }
-    : undefined
+    : undefined;
 
   return {
-    '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
     headline: post.title,
-    url: postUrl,
     inLanguage: locale,
     mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': postUrl,
+      "@id": postUrl,
+      "@type": "WebPage",
       inLanguage: locale,
     },
+    url: postUrl,
     ...(post.meta?.description && { description: post.meta.description }),
     ...(imageUrl && { image: imageUrl }),
     ...(post.publishedAt && {
@@ -48,7 +54,10 @@ export function createArticleSchema({ post, siteName, locale }: ArticleSchemaPar
     ...(post.updatedAt && {
       dateModified: new Date(post.updatedAt).toISOString(),
     }),
-    ...(authors && authors.length > 0 && { author: authors.length === 1 ? authors[0] : authors }),
-    ...(publisher && { publisher: publisher }),
-  }
+    ...(authors &&
+      authors.length > 0 && {
+        author: authors.length === 1 ? authors[0] : authors,
+      }),
+    ...(publisher && { publisher }),
+  };
 }

@@ -2,7 +2,7 @@ import NextLink from "next/link";
 
 import { cn, getLinkClickParams } from "../../../utils";
 import { Button } from "../button";
-import { type LinkProps } from "./types";
+import type { LinkProps } from "./types";
 
 export function Link({
   children,

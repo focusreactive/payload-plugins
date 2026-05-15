@@ -124,6 +124,7 @@ pnpm add @focus-reactive/payload-plugin-ab
 ```
 
 For the Vercel Edge adapter, also install:
+
 ```bash
 pnpm add @vercel/edge-config
 ```
@@ -138,13 +139,13 @@ pnpm add @vercel/edge-config
 
 ```ts
 // payload.config.ts
-import { buildConfig } from 'payload'
-import { abTestingPlugin } from '@focus-reactive/payload-plugin-ab'
-import { payloadGlobalAdapter } from '@focus-reactive/payload-plugin-ab/adapters/payload-global'
+import { buildConfig } from "payload";
+import { abTestingPlugin } from "@focus-reactive/payload-plugin-ab";
+import { payloadGlobalAdapter } from "@focus-reactive/payload-plugin-ab/adapters/payload-global";
 
 const abAdapter = payloadGlobalAdapter({
-  serverURL: process.env.NEXT_PUBLIC_SERVER_URL ?? '',
-})
+  serverURL: process.env.NEXT_PUBLIC_SERVER_URL ?? "",
+});
 
 export default buildConfig({
   plugins: [
@@ -153,18 +154,19 @@ export default buildConfig({
       collections: {
         pages: {
           generatePath: ({ doc, locale }) => {
-            const slug = doc.slug as string | undefined
-            if (!slug) return null
-            return locale ? `/${locale}/${slug}` : `/${slug}`
+            const slug = doc.slug as string | undefined;
+            if (!slug) return null;
+            return locale ? `/${locale}/${slug}` : `/${slug}`;
           },
         },
       },
     }),
   ],
-})
+});
 ```
 
 The plugin injects into every configured collection:
+
 - **Variants panel** (sidebar on original pages) — lists variants with % inputs, add, delete
 - **"Variant of"** read-only relationship (sidebar on variant pages)
 - `_abVariantOf` and `_abPassPercentage` fields (hidden from editors)
@@ -175,31 +177,31 @@ The plugin injects into every configured collection:
 
 ```ts
 // middleware.ts
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { createResolveAbRewrite } from '@focus-reactive/payload-plugin-ab/middleware'
-import { payloadGlobalAdapter } from '@focus-reactive/payload-plugin-ab/adapters/payload-global'
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { createResolveAbRewrite } from "@focus-reactive/payload-plugin-ab/middleware";
+import { payloadGlobalAdapter } from "@focus-reactive/payload-plugin-ab/adapters/payload-global";
 
 const storage = payloadGlobalAdapter({
-  serverURL: process.env.NEXT_PUBLIC_SERVER_URL ?? '',
-})
+  serverURL: process.env.NEXT_PUBLIC_SERVER_URL ?? "",
+});
 
 const resolveAbRewrite = createResolveAbRewrite({
   storage,
   getBucket: (v) => v.bucket,
   getRewritePath: (v) => v.rewritePath,
   getPassPercentage: (v) => v.passPercentage,
-})
+});
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  const result = await resolveAbRewrite(request, pathname, pathname, pathname)
-  return result ?? NextResponse.next()
+  const { pathname } = request.nextUrl;
+  const result = await resolveAbRewrite(request, pathname, pathname, pathname);
+  return result ?? NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/((?!_next|api|favicon.ico).*)'],
-}
+  matcher: ["/((?!_next|api|favicon.ico).*)"],
+};
 ```
 
 ---
@@ -210,10 +212,10 @@ export const config = {
 
 ```ts
 interface AbTestingPluginConfig<TVariantData extends object> {
-  storage: StorageAdapter<TVariantData>
-  collections: Record<string, CollectionABConfig<TVariantData>>
-  enabled?: boolean  // default: true
-  debug?: boolean    // show manifest Global in Payload admin. default: false
+  storage: StorageAdapter<TVariantData>;
+  collections: Record<string, CollectionABConfig<TVariantData>>;
+  enabled?: boolean; // default: true
+  debug?: boolean; // show manifest Global in Payload admin. default: false
 }
 ```
 
@@ -225,13 +227,13 @@ interface CollectionABConfig<TVariantData = DefaultVariantData> {
    * Slug field name used to generate variant slugs: `{original}--{hash}`.
    * Default: 'slug'
    */
-  slugField?: string
+  slugField?: string;
 
   /**
    * Dot-notation path to the tenant field.
    * Scopes percentage validation per tenant; locks the field read-only on variants.
    */
-  tenantField?: string
+  tenantField?: string;
 
   /**
    * Returns the URL path used as the manifest key.
@@ -242,37 +244,41 @@ interface CollectionABConfig<TVariantData = DefaultVariantData> {
    * since it is used to compute rewritePath when generateVariantData is omitted.
    */
   generatePath: (args: {
-    doc: Record<string, unknown>
-    locale: string | undefined
-  }) => string | null
+    doc: Record<string, unknown>;
+    locale: string | undefined;
+  }) => string | null;
 
   /**
    * Builds the data stored per variant in the manifest.
    * When omitted, auto-generates: { bucket: variantSlug, rewritePath, passPercentage }
    */
   generateVariantData?: (args: {
-    doc: Record<string, unknown>        // parent document
-    variantDoc: Record<string, unknown> // variant document
-    locale: string | undefined
-  }) => TVariantData
+    doc: Record<string, unknown>; // parent document
+    variantDoc: Record<string, unknown>; // variant document
+    locale: string | undefined;
+  }) => TVariantData;
 }
 
 // Default shape when generateVariantData is omitted:
 type DefaultVariantData = {
-  bucket: string         // variant's slug, e.g. 'about--4ji9'
-  rewritePath: string    // result of generatePath(variantDoc, locale)
-  passPercentage: number // _abPassPercentage field value
-}
+  bucket: string; // variant's slug, e.g. 'about--4ji9'
+  rewritePath: string; // result of generatePath(variantDoc, locale)
+  passPercentage: number; // _abPassPercentage field value
+};
 ```
 
 ### StorageAdapter
 
 ```ts
 interface StorageAdapter<TVariantData extends object> {
-  write(path: string, variants: TVariantData[], payload: Payload): Promise<void>
-  read(path: string): Promise<TVariantData[] | null>  // must be edge-compatible
-  clear(path: string, payload: Payload): Promise<void>
-  createGlobal?(debug: boolean): GlobalConfig  // optional, used by payloadGlobalAdapter
+  write(
+    path: string,
+    variants: TVariantData[],
+    payload: Payload
+  ): Promise<void>;
+  read(path: string): Promise<TVariantData[] | null>; // must be edge-compatible
+  clear(path: string, payload: Payload): Promise<void>;
+  createGlobal?(debug: boolean): GlobalConfig; // optional, used by payloadGlobalAdapter
 }
 ```
 
@@ -287,13 +293,13 @@ Implement this interface to use any backend (Redis, Upstash, Vercel KV, etc.).
 Stores the manifest in a Payload Global as a JSON field. Middleware fetches it via the Payload REST API.
 
 ```ts
-import { payloadGlobalAdapter } from '@focus-reactive/payload-plugin-ab/adapters/payload-global'
+import { payloadGlobalAdapter } from "@focus-reactive/payload-plugin-ab/adapters/payload-global";
 
 const storage = payloadGlobalAdapter({
-  serverURL: 'https://cms.example.com', // required for middleware reads
-  globalSlug: '_abManifest',            // default
-  apiRoute: '/api',                     // default
-})
+  serverURL: "https://cms.example.com", // required for middleware reads
+  globalSlug: "_abManifest", // default
+  apiRoute: "/api", // default
+});
 ```
 
 The Global is hidden from the admin by default. Set `debug: true` in plugin options to expose it under the **System** group.
@@ -303,15 +309,15 @@ The Global is hidden from the admin by default. Set `debug: true` in plugin opti
 Stores the manifest in Vercel Edge Config for sub-millisecond reads at the edge.
 
 ```ts
-import { vercelEdgeAdapter } from '@focus-reactive/payload-plugin-ab/adapters/vercel-edge'
+import { vercelEdgeAdapter } from "@focus-reactive/payload-plugin-ab/adapters/vercel-edge";
 
 const storage = vercelEdgeAdapter({
   configID: process.env.EDGE_CONFIG_ID!,
   configURL: process.env.EDGE_CONFIG!,
   vercelRestAPIAccessToken: process.env.VERCEL_REST_API_ACCESS_TOKEN!,
-  teamID: process.env.VERCEL_TEAM_ID,  // optional
-  manifestKey: 'ab-testing',           // default
-})
+  teamID: process.env.VERCEL_TEAM_ID, // optional
+  manifestKey: "ab-testing", // default
+});
 ```
 
 **Required env vars:** `EDGE_CONFIG`, `EDGE_CONFIG_ID`, `VERCEL_REST_API_ACCESS_TOKEN`.
@@ -324,30 +330,30 @@ Create an Edge Config store in the Vercel dashboard and install `@vercel/edge-co
 ### createResolveAbRewrite
 
 ```ts
-import { createResolveAbRewrite } from '@focus-reactive/payload-plugin-ab/middleware'
+import { createResolveAbRewrite } from "@focus-reactive/payload-plugin-ab/middleware";
 
 const resolveAbRewrite = createResolveAbRewrite({
-  storage,                                       // same adapter as the plugin
-  getBucket: (v) => v.bucket,                   // extract bucket key
-  getRewritePath: (v) => v.rewritePath,         // extract internal rewrite URL
-  getPassPercentage: (v) => v.passPercentage,   // enables weighted routing
-})
+  storage, // same adapter as the plugin
+  getBucket: (v) => v.bucket, // extract bucket key
+  getRewritePath: (v) => v.rewritePath, // extract internal rewrite URL
+  getPassPercentage: (v) => v.passPercentage, // enables weighted routing
+});
 
 // In middleware:
 const result = await resolveAbRewrite(
   request,
-  pathname,  // visiblePathname — used as the per-path cookie key
-  pathname,  // manifestKey — key to look up in the manifest
-  pathname,  // originalRewritePath — where to send 'original' bucket users
-)
+  pathname, // visiblePathname — used as the per-path cookie key
+  pathname, // manifestKey — key to look up in the manifest
+  pathname // originalRewritePath — where to send 'original' bucket users
+);
 ```
 
 The three path arguments let you decouple what the user sees, the manifest key, and the internal rewrite target — useful with locale prefixes:
 
 ```ts
-const internalPath = `/${locale}${pathname}`
+const internalPath = `/${locale}${pathname}`;
 
-await resolveAbRewrite(request, pathname, internalPath, internalPath)
+await resolveAbRewrite(request, pathname, internalPath, internalPath);
 ```
 
 **Routing:** When `getPassPercentage` is provided, each variant receives its percentage of traffic; the remainder goes to the original. The plugin validates on save that the sum never exceeds 100%. When `getPassPercentage` is omitted, all variants and the original share equal probability.
@@ -356,30 +362,33 @@ await resolveAbRewrite(request, pathname, internalPath, internalPath)
 
 ### Cookie System
 
-| Cookie | Default name | Lifetime | Purpose |
-|---|---|---|---|
-| Bucket | `payload_ab_bucket_{path}` | Session | Which bucket this user is in |
-| Visitor ID | `ab_visitor_id` | 365 days | Persistent visitor identifier for analytics |
-| Experiment | `exp_{path}` | 90 days | Bucket name readable client-side by analytics hooks |
+| Cookie     | Default name               | Lifetime | Purpose                                             |
+| ---------- | -------------------------- | -------- | --------------------------------------------------- |
+| Bucket     | `payload_ab_bucket_{path}` | Session  | Which bucket this user is in                        |
+| Visitor ID | `ab_visitor_id`            | 365 days | Persistent visitor identifier for analytics         |
+| Experiment | `exp_{path}`               | 90 days  | Bucket name readable client-side by analytics hooks |
 
 Override names by passing a `cookies` config to `createResolveAbRewrite`:
 
 ```ts
-import type { AbCookieConfig } from '@focus-reactive/payload-plugin-ab/middleware'
+import type { AbCookieConfig } from "@focus-reactive/payload-plugin-ab/middleware";
 
 // Define once, share between middleware and analytics
 export const abCookies: AbCookieConfig = {
-  visitorIdCookieName: 'my_visitor_id',
+  visitorIdCookieName: "my_visitor_id",
   getExpCookieName: (key) => `ab_exp_${key}`,
-}
+};
 ```
 
 Use `resolveAbCookieNames(config, experimentId)` in Server Components to derive cookie names as plain strings for passing to Client Components:
 
 ```ts
-import { resolveAbCookieNames } from '@focus-reactive/payload-plugin-ab/middleware'
+import { resolveAbCookieNames } from "@focus-reactive/payload-plugin-ab/middleware";
 
-const { variantCookieName, visitorCookieName } = resolveAbCookieNames(abCookies, '/en/about')
+const { variantCookieName, visitorCookieName } = resolveAbCookieNames(
+  abCookies,
+  "/en/about"
+);
 ```
 
 ---
@@ -392,15 +401,17 @@ Pluggable adapter-based system. Install at app root, then use React components a
 
 ```tsx
 // app/layout.tsx
-import { ABAnalyticsProvider } from '@focus-reactive/payload-plugin-ab/analytics/client'
-import { googleAnalyticsAdapter } from '@focus-reactive/payload-plugin-ab/analytics/adapters/google-analytics'
+import { ABAnalyticsProvider } from "@focus-reactive/payload-plugin-ab/analytics/client";
+import { googleAnalyticsAdapter } from "@focus-reactive/payload-plugin-ab/analytics/adapters/google-analytics";
 
 const analytics = googleAnalyticsAdapter({
   measurementId: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID!,
-})
+});
 
 export default function RootLayout({ children }) {
-  return <ABAnalyticsProvider adapter={analytics}>{children}</ABAnalyticsProvider>
+  return (
+    <ABAnalyticsProvider adapter={analytics}>{children}</ABAnalyticsProvider>
+  );
 }
 ```
 
@@ -410,12 +421,15 @@ Drop `ExperimentTracker` anywhere inside a page — fires one impression per bro
 
 ```tsx
 // app/[locale]/[slug]/page.tsx  (Server Component)
-import { ExperimentTracker } from '@focus-reactive/payload-plugin-ab/analytics/client'
-import { resolveAbCookieNames } from '@focus-reactive/payload-plugin-ab/middleware'
+import { ExperimentTracker } from "@focus-reactive/payload-plugin-ab/analytics/client";
+import { resolveAbCookieNames } from "@focus-reactive/payload-plugin-ab/middleware";
 
 export default async function Page({ params }) {
-  const experimentId = `/${params.locale}/${params.slug}`
-  const { variantCookieName, visitorCookieName } = resolveAbCookieNames(undefined, experimentId)
+  const experimentId = `/${params.locale}/${params.slug}`;
+  const { variantCookieName, visitorCookieName } = resolveAbCookieNames(
+    undefined,
+    experimentId
+  );
 
   return (
     <>
@@ -426,33 +440,45 @@ export default async function Page({ params }) {
         visitorCookieName={visitorCookieName}
       />
     </>
-  )
+  );
 }
 ```
 
 ### Tracking conversions
 
 ```tsx
-'use client'
-import { useABConversion } from '@focus-reactive/payload-plugin-ab/analytics/client'
+"use client";
+import { useABConversion } from "@focus-reactive/payload-plugin-ab/analytics/client";
 
-export function CTAButton({ experimentId, variantCookieName, visitorCookieName }) {
-  const trackConversion = useABConversion({ experimentId, variantCookieName, visitorCookieName })
-  return <button onClick={() => trackConversion({ goalId: 'cta_click' })}>Get Started</button>
+export function CTAButton({
+  experimentId,
+  variantCookieName,
+  visitorCookieName,
+}) {
+  const trackConversion = useABConversion({
+    experimentId,
+    variantCookieName,
+    visitorCookieName,
+  });
+  return (
+    <button onClick={() => trackConversion({ goalId: "cta_click" })}>
+      Get Started
+    </button>
+  );
 }
 ```
 
 ### Google Analytics Adapter
 
 ```ts
-import { googleAnalyticsAdapter } from '@focus-reactive/payload-plugin-ab/analytics/adapters/google-analytics'
+import { googleAnalyticsAdapter } from "@focus-reactive/payload-plugin-ab/analytics/adapters/google-analytics";
 
 const analytics = googleAnalyticsAdapter({
-  measurementId: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID!,  // required
-  apiSecret: process.env.GA4_API_SECRET,       // enables server-side tracking
-  propertyId: process.env.GA4_PROPERTY_ID,     // enables getStats()
+  measurementId: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID!, // required
+  apiSecret: process.env.GA4_API_SECRET, // enables server-side tracking
+  propertyId: process.env.GA4_PROPERTY_ID, // enables getStats()
   getAccessToken: () => auth.getAccessToken(), // enables getStats()
-})
+});
 ```
 
 Events sent: `ab_impression` and `ab_conversion` (names configurable) with `experiment_id`, `variant_bucket`, `visitor_id`, and any extra `metadata`.
@@ -485,22 +511,22 @@ No extra config needed. When `payload.config.localization` is set, the plugin it
 
 ```ts
 generatePath: ({ doc, locale }) => {
-  const slug = doc.slug as string | undefined
-  if (!slug) return null
-  return locale ? `/${locale}/${slug}` : `/${slug}` // '/en/about', '/fr/about'
-}
+  const slug = doc.slug as string | undefined;
+  if (!slug) return null;
+  return locale ? `/${locale}/${slug}` : `/${slug}`; // '/en/about', '/fr/about'
+};
 ```
 
 ---
 
 ## Exports Reference
 
-| Import path | Exports |
-|---|---|
-| `@focus-reactive/payload-plugin-ab` | `abTestingPlugin`, `AbTestingPluginConfig`, `CollectionABConfig`, `StorageAdapter` |
-| `@focus-reactive/payload-plugin-ab/adapters/payload-global` | `payloadGlobalAdapter` |
-| `@focus-reactive/payload-plugin-ab/adapters/vercel-edge` | `vercelEdgeAdapter` |
-| `@focus-reactive/payload-plugin-ab/middleware` | `createResolveAbRewrite`, `resolveAbCookieNames`, `AbCookieConfig`, `ResolveAbRewriteConfig` |
-| `@focus-reactive/payload-plugin-ab/analytics` | Types: `AnalyticsAdapter`, `TrackImpressionArgs`, `TrackConversionArgs`, `ExperimentStats` |
-| `@focus-reactive/payload-plugin-ab/analytics/client` | `ABAnalyticsProvider`, `ExperimentTracker`, `useABConversion` |
-| `@focus-reactive/payload-plugin-ab/analytics/adapters/google-analytics` | `googleAnalyticsAdapter`, `GoogleAnalyticsAdapterConfig` |
+| Import path                                                             | Exports                                                                                      |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `@focus-reactive/payload-plugin-ab`                                     | `abTestingPlugin`, `AbTestingPluginConfig`, `CollectionABConfig`, `StorageAdapter`           |
+| `@focus-reactive/payload-plugin-ab/adapters/payload-global`             | `payloadGlobalAdapter`                                                                       |
+| `@focus-reactive/payload-plugin-ab/adapters/vercel-edge`                | `vercelEdgeAdapter`                                                                          |
+| `@focus-reactive/payload-plugin-ab/middleware`                          | `createResolveAbRewrite`, `resolveAbCookieNames`, `AbCookieConfig`, `ResolveAbRewriteConfig` |
+| `@focus-reactive/payload-plugin-ab/analytics`                           | Types: `AnalyticsAdapter`, `TrackImpressionArgs`, `TrackConversionArgs`, `ExperimentStats`   |
+| `@focus-reactive/payload-plugin-ab/analytics/client`                    | `ABAnalyticsProvider`, `ExperimentTracker`, `useABConversion`                                |
+| `@focus-reactive/payload-plugin-ab/analytics/adapters/google-analytics` | `googleAnalyticsAdapter`, `GoogleAnalyticsAdapterConfig`                                     |

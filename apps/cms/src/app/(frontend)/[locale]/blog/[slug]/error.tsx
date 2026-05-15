@@ -1,13 +1,13 @@
-'use client'
-import { ErrorBoundary } from '@/core/ui'
-import { BLOG_CONFIG } from '@/core/config/blog'
+"use client";
+import { BLOG_CONFIG } from "@/core/config/blog";
+import { ErrorBoundary } from "@/core/ui";
 
 export default function PostError({
   error,
   reset,
 }: {
-  error: Error & { digest?: string }
-  reset: () => void
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
   return (
     <ErrorBoundary
@@ -17,9 +17,9 @@ export default function PostError({
       message={`Failed to load post content: ${error.message}`}
       backLink={{
         href: BLOG_CONFIG.basePath,
-        label: 'Return to blog',
+        label: "Return to blog",
       }}
       wrapperClassName="pt-16 pb-16"
     />
-  )
+  );
 }

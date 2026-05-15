@@ -1,4 +1,5 @@
-import { canUseGtag, type WindowWithGtag } from "./canUseGtag";
+import { canUseGtag } from './canUseGtag';
+import type { WindowWithGtag } from './canUseGtag';
 
 type GtagFn = WindowWithGtag["gtag"];
 
@@ -7,7 +8,10 @@ interface WaitForGtagOptions {
   timeout?: number;
 }
 
-export function waitForGtag(callback: (gtag: GtagFn) => void, options: WaitForGtagOptions = {}) {
+export function waitForGtag(
+  callback: (gtag: GtagFn) => void,
+  options: WaitForGtagOptions = {}
+) {
   const { interval = 50, timeout = 5000 } = options;
 
   if (canUseGtag(window)) {

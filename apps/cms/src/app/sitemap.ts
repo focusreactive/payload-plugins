@@ -1,137 +1,141 @@
-import type { MetadataRoute } from 'next'
-import { unstable_cache } from 'next/cache'
-import { getServerSideURL } from '@/core/lib/getURL'
-import { buildUrl } from '@/core/utils/path/buildUrl'
-import { BLOG_CONFIG } from '@/core/config/blog'
-import { getAllDocuments, getBlogPageSettings, getPayloadClient } from '@/dal'
-import { getLastModifiedDate } from '@/core/lib/getLastModifiedDate'
-import { cacheTag } from '@/core/lib/cacheTags'
-import { I18N_CONFIG } from '@/core/config/i18n'
-import type { Locale } from '@/core/types'
+import type { MetadataRoute } from "next";
+import { unstable_cache } from "next/cache";
 
-type Sitemap = MetadataRoute.Sitemap
+import { BLOG_CONFIG } from "@/core/config/blog";
+import { I18N_CONFIG } from "@/core/config/i18n";
+import { cacheTag } from "@/core/lib/cacheTags";
+import { getLastModifiedDate } from "@/core/lib/getLastModifiedDate";
+import { getServerSideURL } from "@/core/lib/getURL";
+import type { Locale } from "@/core/types";
+import { buildUrl } from "@/core/utils/path/buildUrl";
+import { getAllDocuments, getBlogPageSettings, getPayloadClient } from "@/dal";
+
+type Sitemap = MetadataRoute.Sitemap;
 
 async function generateSitemap(): Promise<Sitemap> {
-  const payload = await getPayloadClient()
-  const baseUrl = getServerSideURL()
-  const changeFrequency: Sitemap[number]['changeFrequency'] = 'weekly'
-  const locales = I18N_CONFIG.locales.map((locale) => locale.code) as Locale[]
+  const payload = await getPayloadClient();
+  const baseUrl = getServerSideURL();
+  const changeFrequency: Sitemap[number]["changeFrequency"] = "weekly";
+  const locales = I18N_CONFIG.locales.map((locale) => locale.code) as Locale[];
   try {
-    const sitemap: Sitemap = []
+    const sitemap: Sitemap = [];
 
     await Promise.all(
       locales.map(async (locale) => {
         const [allPages, allPosts, blogSettings] = await Promise.all([
-          getAllDocuments(payload, 'page', {
-            where: {
-              _status: { equals: 'published' },
-            },
+          getAllDocuments(payload, "page", {
+            depth: 1,
+            locale,
+            overrideAccess: false,
             select: {
+              breadcrumbs: true,
+              meta: true,
               slug: true,
               updatedAt: true,
-              meta: true,
-              breadcrumbs: true,
             },
-            depth: 1,
-            sort: '-updatedAt',
-            overrideAccess: false,
-            locale,
+            sort: "-updatedAt",
+            where: {
+              _status: { equals: "published" },
+            },
           }),
           getAllDocuments(payload, BLOG_CONFIG.collection, {
-            where: {
-              _status: { equals: 'published' },
-            },
-            select: {
-              slug: true,
-              publishedAt: true,
-              updatedAt: true,
-              meta: true,
-            },
-            sort: '-publishedAt',
-            overrideAccess: false,
             locale,
+            overrideAccess: false,
+            select: {
+              meta: true,
+              publishedAt: true,
+              slug: true,
+              updatedAt: true,
+            },
+            sort: "-publishedAt",
+            where: {
+              _status: { equals: "published" },
+            },
           }),
           getBlogPageSettings({ locale }),
-        ])
+        ]);
 
         const pages = allPages.filter((page) => {
-          const robots = page.meta?.robots
-          return robots === 'index' || robots === undefined
-        })
+          const robots = page.meta?.robots;
+          return robots === "index" || robots === undefined;
+        });
 
         const posts = allPosts.filter((post) => {
-          const robots = post.meta?.robots
-          return robots === 'index' || robots === undefined
-        })
+          const robots = post.meta?.robots;
+          return robots === "index" || robots === undefined;
+        });
 
-        const homeUrl = buildUrl({ collection: 'page', locale })
+        const homeUrl = buildUrl({ collection: "page", locale });
 
         pages.forEach((page) => {
           const url = buildUrl({
-            collection: 'page',
             breadcrumbs: page.breadcrumbs,
+            collection: "page",
             locale,
-          })
-          const isHome = url === homeUrl
+          });
+          const isHome = url === homeUrl;
           sitemap.push({
-            url,
-            lastModified: page.updatedAt ? new Date(page.updatedAt) : new Date(),
             changeFrequency,
+            lastModified: page.updatedAt
+              ? new Date(page.updatedAt)
+              : new Date(),
             priority: isHome ? 1.0 : 0.8,
-          })
-        })
+            url,
+          });
+        });
 
-        const blogLastModified = getLastModifiedDate(posts[0]?.publishedAt) || new Date()
+        const blogLastModified =
+          getLastModifiedDate(posts[0]?.publishedAt) || new Date();
 
         sitemap.push({
-          url: buildUrl({ collection: 'posts', locale }),
-          lastModified: blogLastModified,
           changeFrequency,
+          lastModified: blogLastModified,
           priority: 0.9,
-        })
+          url: buildUrl({ collection: "posts", locale }),
+        });
 
         posts.forEach((post) => {
           sitemap.push({
-            url: buildUrl({
-              collection: 'posts',
-              slug: post.slug,
-              locale,
-            }),
+            changeFrequency: "monthly",
             lastModified: post.publishedAt
               ? new Date(post.publishedAt)
               : post.updatedAt
                 ? new Date(post.updatedAt)
                 : new Date(),
-            changeFrequency: 'monthly',
             priority: 0.7,
-          })
-        })
-      }),
-    )
+            url: buildUrl({
+              collection: "posts",
+              slug: post.slug,
+              locale,
+            }),
+          });
+        });
+      })
+    );
 
-    return sitemap
+    return sitemap;
   } catch (error) {
-    console.error('Error generating sitemap:', error)
+    console.error("Error generating sitemap:", error);
     return [
       {
-        url: baseUrl,
-        lastModified: new Date(),
         changeFrequency,
+        lastModified: new Date(),
         priority: 1.0,
+        url: baseUrl,
       },
-    ]
+    ];
   }
 }
 
 const getCachedSitemap = unstable_cache(
   async () => generateSitemap(),
-  [cacheTag({ type: 'sitemap' })],
+  [cacheTag({ type: "sitemap" })],
   {
-    tags: [cacheTag({ type: 'sitemap' })],
     revalidate: false,
-  },
-)
+    tags: [cacheTag({ type: "sitemap" })],
+  }
+);
 
 export default async function sitemap(): Promise<Sitemap> {
-  return getCachedSitemap()
+  return getCachedSitemap();
 }

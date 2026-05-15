@@ -1,4 +1,5 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import type { MigrateUpArgs, MigrateDownArgs} from "@payloadcms/db-postgres";
+import { sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -675,10 +676,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   DROP TYPE "public"."enum_presets_links_list_section_margin_bottom";
   DROP TYPE "public"."enum_presets_links_list_section_padding_x";
   DROP TYPE "public"."enum_presets_links_list_section_padding_y";
-  DROP TYPE "public"."enum_presets_links_list_section_max_width";`)
+  DROP TYPE "public"."enum_presets_links_list_section_max_width";`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    CREATE TYPE "public"."enum_presets_hero_actions_type" AS ENUM('reference', 'custom', 'customPage');
   CREATE TYPE "public"."enum_presets_hero_actions_custom_page" AS ENUM('blog', 'search');
@@ -1109,5 +1114,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "public"."enum_presets_blocks_links_list_section_margin_bottom";
   DROP TYPE "public"."enum_presets_blocks_links_list_section_padding_x";
   DROP TYPE "public"."enum_presets_blocks_links_list_section_padding_y";
-  DROP TYPE "public"."enum_presets_blocks_links_list_section_max_width";`)
+  DROP TYPE "public"."enum_presets_blocks_links_list_section_max_width";`);
 }

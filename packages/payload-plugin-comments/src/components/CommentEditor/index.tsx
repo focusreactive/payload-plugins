@@ -1,19 +1,21 @@
 "use client";
 
-import { useState, useRef, useImperativeHandle, type RefObject, startTransition } from "react";
 import { useAuth, useLocale, useTranslation } from "@payloadcms/ui";
-import { useComments } from "../../providers/CommentsProvider";
+import { useState, useRef, useImperativeHandle, startTransition } from 'react';
+import type { RefObject } from 'react';
+import { createRoot } from "react-dom/client";
+
 import { useMentionableUsersQuery } from "../../api/queries/useMentionableUsersQuery";
-import { MentionDropdown } from "../MentionDropdown";
-import { MentionLabel } from "../MentionLabel";
+import { FALLBACK_USERNAME } from "../../constants";
+import { useComments } from "../../providers/CommentsProvider";
+import type { User } from "../../types";
 import { serializeEditor } from "../../utils/comment/serializeEditor";
 import { isSelfMention } from "../../utils/mention/isSelfMention";
-import { createRoot } from "react-dom/client";
-import type { User } from "../../types";
-import { FALLBACK_USERNAME } from "../../constants";
 import { resolveUsername } from "../../utils/user/resolveUsername";
-import { ActionPanel } from "./ActionPanel";
 import { Avatar } from "../Avatar";
+import { MentionDropdown } from "../MentionDropdown";
+import { MentionLabel } from "../MentionLabel";
+import { ActionPanel } from "./ActionPanel";
 
 export interface CommentEditorHandle {
   getValue: () => string;
@@ -65,9 +67,11 @@ export function CommentEditor({
   const editorRef = useRef<HTMLDivElement>(null);
   const editorWrapperRef = useRef<HTMLDivElement>(null);
 
-  const unknownLabel = t("comments:unknownAuthor" as never) ?? FALLBACK_USERNAME;
+  const unknownLabel =
+    t("comments:unknownAuthor" as never) ?? FALLBACK_USERNAME;
   const currentUserId = user?.id;
-  const placeholder = placeholderProp ?? t("comments:writeComment" as never) ?? "Add a comment";
+  const placeholder =
+    placeholderProp ?? t("comments:writeComment" as never) ?? "Add a comment";
 
   // Methods
   const detectMention = () => {
@@ -107,8 +111,10 @@ export function CommentEditor({
         setMentionQuery(query);
         setFilteredUsers(
           users.filter((u) =>
-            resolveUsername(u, usernameFieldPath, unknownLabel).toLowerCase().includes(query.toLowerCase()),
-          ),
+            resolveUsername(u, usernameFieldPath, unknownLabel)
+              .toLowerCase()
+              .includes(query.toLowerCase())
+          )
         );
         setSelectedIndex(0);
 
@@ -122,10 +128,10 @@ export function CommentEditor({
   };
 
   const insertMention = (user: User) => {
-    if (!triggerRange || !editorRef.current) return;
+    if (!triggerRange || !editorRef.current) {return;}
 
     const sel = window.getSelection();
-    if (!sel) return;
+    if (!sel) {return;}
 
     sel.removeAllRanges();
     sel.addRange(triggerRange);
@@ -140,7 +146,7 @@ export function CommentEditor({
       <MentionLabel
         name={resolveUsername(user, usernameFieldPath, unknownLabel)}
         isSelf={isSelfMention(currentUserId, userId)}
-      />,
+      />
     );
 
     mentionLabelContainer.contentEditable = "false";
@@ -149,7 +155,7 @@ export function CommentEditor({
     const range2 = sel.getRangeAt(0);
     range2.insertNode(mentionLabelContainer);
 
-    const zws = document.createTextNode("\u200b");
+    const zws = document.createTextNode("\u200B");
     mentionLabelContainer.after(zws);
 
     const newRange = document.createRange();
@@ -165,7 +171,7 @@ export function CommentEditor({
 
   const insertAt = () => {
     const editor = editorRef.current;
-    if (!editor) return;
+    if (!editor) {return;}
 
     editor.focus();
 
@@ -184,7 +190,7 @@ export function CommentEditor({
 
   const updateEmptyClass = () => {
     const editor = editorRef.current;
-    if (!editor) return;
+    if (!editor) {return;}
 
     const isEmpty = editor.innerHTML === "" || editor.innerHTML === "<br>";
 
@@ -193,7 +199,7 @@ export function CommentEditor({
 
   // Editor API
   const getEditorValue = () => {
-    if (!editorRef.current) return "";
+    if (!editorRef.current) {return "";}
 
     return serializeEditor(editorRef.current).trim();
   };
@@ -213,21 +219,28 @@ export function CommentEditor({
   };
 
   useImperativeHandle(ref, () => ({
-    getValue: getEditorValue,
     clear: clearEditor,
     focus: focusEditor,
+    getValue: getEditorValue,
     insertAt,
   }));
 
   // Handlers
   const handleAddComment = () => {
     const serialized = getEditorValue();
-    if (!serialized) return;
+    if (!serialized) {return;}
 
     clearEditor();
 
     startTransition(async () => {
-      const res = await addComment(serialized, fieldPath, documentId, collectionSlug, locale, globalSlug);
+      const res = await addComment(
+        serialized,
+        fieldPath,
+        documentId,
+        collectionSlug,
+        locale,
+        globalSlug
+      );
 
       if (res.success) {
         onSuccessAddComment?.();
@@ -246,13 +259,15 @@ export function CommentEditor({
       if (e.key === "ArrowUp") {
         e.preventDefault();
         e.stopPropagation();
-        setSelectedIndex((prev) => (prev - 1 + filteredUsers.length) % filteredUsers.length);
+        setSelectedIndex(
+          (prev) => (prev - 1 + filteredUsers.length) % filteredUsers.length
+        );
         return;
       }
       if (e.key === "Enter" && filteredUsers.length > 0) {
         e.preventDefault();
         const selectedUser = filteredUsers[selectedIndex];
-        if (selectedUser) insertMention(selectedUser);
+        if (selectedUser) {insertMention(selectedUser);}
         return;
       }
       if (e.key === "Escape") {
@@ -281,11 +296,17 @@ export function CommentEditor({
   return (
     <div className="relative">
       <div className="flex gap-2.5 items-start">
-        <Avatar className="shrink-0" user={user} usernameFieldPath={usernameFieldPath} fallbackName={unknownLabel} />
+        <Avatar
+          className="shrink-0"
+          user={user}
+          usernameFieldPath={usernameFieldPath}
+          fallbackName={unknownLabel}
+        />
 
         <div
           ref={editorWrapperRef}
-          className="relative flex-1 min-w-0 group px-2.5 py-2 rounded-md border border-transparent focus-within:border-(--theme-elevation-150) bg-transparent">
+          className="relative flex-1 min-w-0 group px-2.5 py-2 rounded-md border border-transparent focus-within:border-(--theme-elevation-150) bg-transparent"
+        >
           <div className="relative">
             <div
               className={`

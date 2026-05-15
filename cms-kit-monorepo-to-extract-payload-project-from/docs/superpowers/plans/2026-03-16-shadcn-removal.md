@@ -14,17 +14,17 @@
 
 Tasks T1–T8 are fully independent and can run in parallel. T9 must run after all others complete.
 
-| Task | Touches | Deps |
-|------|---------|------|
-| T1 | styles.css, layouts, SiteSettings | — |
-| T2 | Accordion component, FAQ block | — |
-| T3 | DesktopNav | — |
-| T4 | MobileNav | — |
-| T5 | LocaleSelector | — |
-| T6 | Pagination component | — |
-| T7 | BlogPageSkeleton, SkeletonFallback | — |
-| T8 | packages/ui exports, CMSLink, not-found, ThemeSelector, ErrorBoundary | — |
-| T9 | shadcn dir deletion, shared/ui index, verification | T1–T8 |
+| Task | Touches                                                               | Deps  |
+| ---- | --------------------------------------------------------------------- | ----- |
+| T1   | styles.css, layouts, SiteSettings                                     | —     |
+| T2   | Accordion component, FAQ block                                        | —     |
+| T3   | DesktopNav                                                            | —     |
+| T4   | MobileNav                                                             | —     |
+| T5   | LocaleSelector                                                        | —     |
+| T6   | Pagination component                                                  | —     |
+| T7   | BlogPageSkeleton, SkeletonFallback                                    | —     |
+| T8   | packages/ui exports, CMSLink, not-found, ThemeSelector, ErrorBoundary | —     |
+| T9   | shadcn dir deletion, shared/ui index, verification                    | T1–T8 |
 
 ---
 
@@ -33,6 +33,7 @@ Tasks T1–T8 are fully independent and can run in parallel. T9 must run after a
 ### Task 1: CSS, Layout, and SiteSettings
 
 **Files:**
+
 - Modify: `apps/payload/src/app/(frontend)/styles.css`
 - Modify: `apps/payload/src/app/(frontend)/layout.tsx`
 - Modify: `apps/payload/src/app/(frontend)/[locale]/[domain]/layout.tsx`
@@ -42,12 +43,13 @@ Tasks T1–T8 are fully independent and can run in parallel. T9 must run after a
 - [ ] **Step 1: Replace styles.css**
 
 Replace the entire file with the following. Notes on intentional removals:
+
 - The `@layer base` typography overrides (h1–h6, p, a, table, etc.) are intentionally dropped — Tailwind's preflight and the shared `base.css` handle base resets consistently across all three CMS apps, and Sanity/Storyblok do not have app-level typography overrides.
 - The `html { opacity: 0 } / html[data-theme=...] { opacity: initial }` FOUC-prevention trick is intentionally removed — it existed only to prevent flash-of-unstyled-content during dynamic theme switching, which is no longer needed with a single static `.light` class.
 - The `@source` path is `"../.."` (not `".."`): this file lives at `src/app/(frontend)/styles.css`, so `../..` resolves to `src/` — the correct level for scanning all blocks, collections, and features.
 
 ```css
-@import '@shared/tailwind-config/base.css';
+@import "@shared/tailwind-config/base.css";
 
 @source "../..";
 
@@ -91,12 +93,17 @@ Replace the entire file with the following. Notes on intentional removals:
 }
 
 .testimonials-carousel-group {
-  animation: testimonials-carousel-scrolling var(--testimonials-carousel-duration, 60s) linear infinite;
+  animation: testimonials-carousel-scrolling
+    var(--testimonials-carousel-duration, 60s) linear infinite;
 }
 
 @keyframes testimonials-carousel-scrolling {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-100%); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
 }
 ```
 
@@ -105,12 +112,16 @@ Replace the entire file with the following. Notes on intentional removals:
 Replace `apps/payload/src/app/(frontend)/layout.tsx` with:
 
 ```tsx
-import React from 'react'
-import './styles.css'
-import '@shared/ui/styles/global.css'
+import React from "react";
+import "./styles.css";
+import "@shared/ui/styles/global.css";
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  return children
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return children;
 }
 ```
 
@@ -119,33 +130,33 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 Replace `apps/payload/src/app/(frontend)/[locale]/[domain]/layout.tsx` with the following. The `getSiteSettings` call is removed entirely — in the current file it is only used for `siteSettings?.theme?.config` (the inline style injection), which is being removed. The `ThemeProvider` context (via `Providers`) is kept as-is for now; it will no longer conflict because the hardcoded `className="light"` on `<html>` prevents `data-theme` attribute fighting. The `InitTheme` script is removed as it only existed to set `data-theme` before hydration.
 
 ```tsx
-import React from 'react'
-import { Providers } from '@/shared/context'
-import { Viewport } from 'next'
-import { Locale } from '@/shared/types'
-import { getMessages } from 'next-intl/server'
-import { draftMode } from 'next/headers'
-import { LivePreviewListener } from '@/features'
-import { GoogleAnalyticsScript } from '@/shared/lib/analytics/GoogleAnalyticsScript'
+import React from "react";
+import { Providers } from "@/shared/context";
+import { Viewport } from "next";
+import { Locale } from "@/shared/types";
+import { getMessages } from "next-intl/server";
+import { draftMode } from "next/headers";
+import { LivePreviewListener } from "@/features";
+import { GoogleAnalyticsScript } from "@/shared/lib/analytics/GoogleAnalyticsScript";
 
 export const viewport: Viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
   ],
-}
+};
 
 type Props = {
-  children: React.ReactNode
-  params: Promise<{ locale: Locale; domain: string }>
-}
+  children: React.ReactNode;
+  params: Promise<{ locale: Locale; domain: string }>;
+};
 
 export default async function RootLayout({ children, params }: Props) {
-  const { locale } = await params
-  const { isEnabled: draft } = await draftMode()
-  const messages = await getMessages()
+  const { locale } = await params;
+  const { isEnabled: draft } = await draftMode();
+  const messages = await getMessages();
 
   return (
     <html lang={locale} className="light">
@@ -155,10 +166,12 @@ export default async function RootLayout({ children, params }: Props) {
           {children}
           {draft && <LivePreviewListener />}
         </Providers>
-        <GoogleAnalyticsScript measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+        <GoogleAnalyticsScript
+          measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}
+        />
       </body>
     </html>
-  )
+  );
 }
 ```
 
@@ -194,12 +207,14 @@ git commit -m "feat(payload): align CSS with sanity/storyblok, remove shadcn var
 ### Task 2: Custom Accordion + FAQ Block
 
 **Files:**
+
 - Create: `apps/payload/src/shared/ui/components/Accordion/index.tsx`
 - Modify: `apps/payload/src/blocks/Faq/Component.tsx`
 
 - [ ] **Step 1: Read existing FAQ block**
 
 Read `apps/payload/src/blocks/Faq/Component.tsx` to confirm:
+
 - The exact shape of each FAQ item (`item.question` is expected to be a plain string; `item.answer` is expected to be a Lexical RichText node rendered via `<RichText>`)
 - The name of the `RichText` import used in the file
 
@@ -207,27 +222,27 @@ Read `apps/payload/src/blocks/Faq/Component.tsx` to confirm:
 
 ```tsx
 // apps/payload/src/shared/ui/components/Accordion/index.tsx
-'use client'
-import React, { useState } from 'react'
-import { cn } from '@/shared/lib/utils'
-import { ChevronDownIcon } from 'lucide-react'
+"use client";
+import React, { useState } from "react";
+import { cn } from "@/shared/lib/utils";
+import { ChevronDownIcon } from "lucide-react";
 
 export interface AccordionItemData {
-  id: string
-  trigger: React.ReactNode
-  content: React.ReactNode
+  id: string;
+  trigger: React.ReactNode;
+  content: React.ReactNode;
 }
 
 interface AccordionProps {
-  items: AccordionItemData[]
-  className?: string
+  items: AccordionItemData[];
+  className?: string;
 }
 
 export function Accordion({ items, className }: AccordionProps) {
-  const [openId, setOpenId] = useState<string | null>(null)
+  const [openId, setOpenId] = useState<string | null>(null);
 
   return (
-    <div className={cn('divide-y divide-primaryLightColor', className)}>
+    <div className={cn("divide-y divide-primaryLightColor", className)}>
       {items.map((item) => (
         <div key={item.id}>
           <button
@@ -239,21 +254,19 @@ export function Accordion({ items, className }: AccordionProps) {
             <span>{item.trigger}</span>
             <ChevronDownIcon
               className={cn(
-                'ml-4 size-4 shrink-0 text-textSecondaryColor transition-transform duration-200',
-                openId === item.id && 'rotate-180',
+                "ml-4 size-4 shrink-0 text-textSecondaryColor transition-transform duration-200",
+                openId === item.id && "rotate-180"
               )}
               aria-hidden
             />
           </button>
           {openId === item.id && (
-            <div className="pb-4 text-textSecondaryColor">
-              {item.content}
-            </div>
+            <div className="pb-4 text-textSecondaryColor">{item.content}</div>
           )}
         </div>
       ))}
     </div>
-  )
+  );
 }
 ```
 
@@ -262,19 +275,21 @@ export function Accordion({ items, className }: AccordionProps) {
 The current file uses the shadcn namespace API (`<Accordion.Root>`, `<Accordion.Item>`, `<Accordion.Trigger>`, `<Accordion.Content>`). Delete the entire Accordion JSX block (the `<div className="space-y-4"><Accordion.Root ...>...</Accordion.Root></div>` wrapper and everything inside it) and replace it in its entirety.
 
 At the top, replace the shadcn Accordion import with the direct-path import:
+
 ```tsx
-import { Accordion, AccordionItemData } from '@/shared/ui/components/Accordion'
+import { Accordion, AccordionItemData } from "@/shared/ui/components/Accordion";
 ```
 
 Inside the component, build the items array and render the new component:
+
 ```tsx
 const accordionItems: AccordionItemData[] = items.map((item, index) => ({
   id: String(index),
   trigger: item.question,
-  content: <RichText content={item.answer} />,  // use whatever RichText import the file already uses
-}))
+  content: <RichText content={item.answer} />, // use whatever RichText import the file already uses
+}));
 
-return <Accordion items={accordionItems} />
+return <Accordion items={accordionItems} />;
 ```
 
 Confirm `item.question` and `item.answer` match the actual field names from step 1.
@@ -302,11 +317,13 @@ git commit -m "feat(payload): replace shadcn Accordion with custom component in 
 ### Task 3: Custom DesktopNav
 
 **Files:**
+
 - Modify: `apps/payload/src/collections/Header/Nav/DesktopNav.tsx`
 
 - [ ] **Step 1: Read current DesktopNav**
 
 Read `apps/payload/src/collections/Header/Nav/DesktopNav.tsx` to confirm:
+
 - The exact type of `item.id` (likely `string | null | undefined` — use `item.id ?? null` when setting state)
 - The exact type of `item.type` discriminant values (`'link'` and `'links_group'`)
 
@@ -317,36 +334,40 @@ Note: This component must be `'use client'` because it uses `useState` and `useE
 Replace the entire file:
 
 ```tsx
-'use client'
-import React, { useState, useRef, useEffect } from 'react'
-import type { Header as HeaderType } from '@/payload-types'
-import { CMSLink } from '@/shared/ui'
-import { cn } from '@/shared/lib/utils'
-import { LocaleSelector } from '@/features/LocaleSelector'
-import { ChevronDownIcon } from 'lucide-react'
+"use client";
+import React, { useState, useRef, useEffect } from "react";
+import type { Header as HeaderType } from "@/payload-types";
+import { CMSLink } from "@/shared/ui";
+import { cn } from "@/shared/lib/utils";
+import { LocaleSelector } from "@/features/LocaleSelector";
+import { ChevronDownIcon } from "lucide-react";
 
 const navLinkClass =
-  'px-3 py-2 text-sm font-medium text-textColor hover:text-primaryColor hover:bg-primaryLightColor rounded-md transition-colors no-underline'
+  "px-3 py-2 text-sm font-medium text-textColor hover:text-primaryColor hover:bg-primaryLightColor rounded-md transition-colors no-underline";
 
 export const DesktopNav: React.FC<{ data: HeaderType }> = ({ data }) => {
-  const navItems = data?.navItems || []
-  const [openGroup, setOpenGroup] = useState<string | null>(null)
-  const navRef = useRef<HTMLElement>(null)
+  const navItems = data?.navItems || [];
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (navRef.current && !navRef.current.contains(e.target as Node)) {
-        setOpenGroup(null)
+        setOpenGroup(null);
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
-    <nav ref={navRef} aria-label="Main navigation" className="hidden md:flex gap-1 items-center">
+    <nav
+      ref={navRef}
+      aria-label="Main navigation"
+      className="hidden md:flex gap-1 items-center"
+    >
       {navItems.map((item, index) => {
-        if (item.type === 'link') {
+        if (item.type === "link") {
           return (
             <CMSLink
               key={item.id ?? index}
@@ -354,23 +375,29 @@ export const DesktopNav: React.FC<{ data: HeaderType }> = ({ data }) => {
               appearance="inline"
               className={navLinkClass}
             />
-          )
+          );
         }
 
-        if (item.type === 'links_group') {
-          const isOpen = openGroup === item.id
+        if (item.type === "links_group") {
+          const isOpen = openGroup === item.id;
           return (
             <div key={item.id ?? index} className="relative">
               <button
                 type="button"
-                className={cn(navLinkClass, 'flex items-center gap-1 cursor-pointer')}
+                className={cn(
+                  navLinkClass,
+                  "flex items-center gap-1 cursor-pointer"
+                )}
                 onClick={() => setOpenGroup(isOpen ? null : (item.id ?? null))}
                 aria-expanded={isOpen}
                 aria-haspopup="true"
               >
                 {item.groupName}
                 <ChevronDownIcon
-                  className={cn('size-3 transition-transform duration-200', isOpen && 'rotate-180')}
+                  className={cn(
+                    "size-3 transition-transform duration-200",
+                    isOpen && "rotate-180"
+                  )}
                   aria-hidden
                 />
               </button>
@@ -393,22 +420,27 @@ export const DesktopNav: React.FC<{ data: HeaderType }> = ({ data }) => {
                 </ul>
               )}
             </div>
-          )
+          );
         }
 
-        return null
+        return null;
       })}
       <LocaleSelector
         render={(locale) => (
-          <span className={cn(navLinkClass, 'flex items-center gap-1 cursor-pointer')}>
+          <span
+            className={cn(
+              navLinkClass,
+              "flex items-center gap-1 cursor-pointer"
+            )}
+          >
             {locale}
             <ChevronDownIcon className="size-3" aria-hidden />
           </span>
         )}
       />
     </nav>
-  )
-}
+  );
+};
 ```
 
 - [ ] **Step 3: Verify TypeScript**
@@ -431,11 +463,13 @@ git commit -m "feat(payload): replace shadcn NavigationMenu with custom Tailwind
 ### Task 4: Custom MobileNav
 
 **Files:**
+
 - Modify: `apps/payload/src/collections/Header/Nav/MobileNav.tsx`
 
 - [ ] **Step 1: Read current MobileNav**
 
 Read `apps/payload/src/collections/Header/Nav/MobileNav.tsx` to confirm:
+
 - The `render` prop shape passed to `LocaleSelector`
 - Whether `CMSLink` accepts an `onClick` prop (check `apps/payload/src/shared/ui/blocks/CMSLink/index.tsx` — it does declare `onClick?: React.MouseEventHandler<HTMLElement>` in its Props type, and passes it through to the underlying `Link`)
 - The exact `item.id` null-safety pattern needed for `groupId`
@@ -447,24 +481,24 @@ The drawer uses CSS `translate-x` transitions so it slides in/out rather than ap
 Replace the entire file:
 
 ```tsx
-'use client'
-import React, { useState, useEffect } from 'react'
-import { Menu, X, ChevronRight } from 'lucide-react'
-import { CMSLink, Link } from '@/shared/ui'
-import { cn } from '@/shared/lib/utils'
-import type { Header as HeaderType } from '@/payload-types'
-import { LocaleSelector } from '@/features/LocaleSelector'
+"use client";
+import React, { useState, useEffect } from "react";
+import { Menu, X, ChevronRight } from "lucide-react";
+import { CMSLink, Link } from "@/shared/ui";
+import { cn } from "@/shared/lib/utils";
+import type { Header as HeaderType } from "@/payload-types";
+import { LocaleSelector } from "@/features/LocaleSelector";
 
 export const MobileNav: React.FC<{ data: HeaderType }> = ({ data }) => {
-  const [open, setOpen] = useState(false)
-  const navItems = data?.navItems || []
+  const [open, setOpen] = useState(false);
+  const navItems = data?.navItems || [];
 
   useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : ''
+    document.body.style.overflow = open ? "hidden" : "";
     return () => {
-      document.body.style.overflow = ''
-    }
-  }, [open])
+      document.body.style.overflow = "";
+    };
+  }, [open]);
 
   return (
     <div className="flex md:hidden">
@@ -480,8 +514,10 @@ export const MobileNav: React.FC<{ data: HeaderType }> = ({ data }) => {
       {/* Overlay */}
       <div
         className={cn(
-          'fixed inset-0 z-40 bg-black/50 transition-opacity duration-300',
-          open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+          "fixed inset-0 z-40 bg-black/50 transition-opacity duration-300",
+          open
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
         )}
         onClick={() => setOpen(false)}
         aria-hidden="true"
@@ -490,13 +526,15 @@ export const MobileNav: React.FC<{ data: HeaderType }> = ({ data }) => {
       {/* Drawer — always rendered, slides in/out via transform */}
       <aside
         className={cn(
-          'fixed right-0 top-0 z-50 flex h-full w-72 flex-col bg-bgColor shadow-xl transition-transform duration-300',
-          open ? 'translate-x-0' : 'translate-x-full',
+          "fixed right-0 top-0 z-50 flex h-full w-72 flex-col bg-bgColor shadow-xl transition-transform duration-300",
+          open ? "translate-x-0" : "translate-x-full"
         )}
         aria-hidden={!open}
       >
         <div className="flex items-center justify-between border-b border-primaryLightColor px-6 py-4">
-          <span className="text-xl font-semibold text-textColor">Navigation</span>
+          <span className="text-xl font-semibold text-textColor">
+            Navigation
+          </span>
           <button
             type="button"
             onClick={() => setOpen(false)}
@@ -507,10 +545,13 @@ export const MobileNav: React.FC<{ data: HeaderType }> = ({ data }) => {
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-4 py-4" aria-label="Main navigation">
+        <nav
+          className="flex-1 overflow-y-auto px-4 py-4"
+          aria-label="Main navigation"
+        >
           <ul className="flex flex-col gap-1" role="list">
             {navItems.map((item, index) => {
-              if (item.type === 'link') {
+              if (item.type === "link") {
                 return (
                   <li key={item.id ?? index}>
                     <CMSLink
@@ -519,14 +560,17 @@ export const MobileNav: React.FC<{ data: HeaderType }> = ({ data }) => {
                       className="flex items-center justify-between rounded-lg px-3 py-3 text-base font-medium no-underline text-textColor hover:bg-primaryLightColor hover:text-primaryColor transition-colors"
                       onClick={() => setOpen(false)}
                     >
-                      <ChevronRight className="size-4 text-textSecondaryColor" aria-hidden />
+                      <ChevronRight
+                        className="size-4 text-textSecondaryColor"
+                        aria-hidden
+                      />
                     </CMSLink>
                   </li>
-                )
+                );
               }
 
-              if (item.type === 'links_group') {
-                const groupId = `nav-group-${item.id ?? index}`
+              if (item.type === "links_group") {
+                const groupId = `nav-group-${item.id ?? index}`;
                 return (
                   <li key={item.id ?? index}>
                     <span
@@ -548,16 +592,19 @@ export const MobileNav: React.FC<{ data: HeaderType }> = ({ data }) => {
                             className="flex items-center justify-between ml-2 rounded-lg px-3 py-2.5 text-sm no-underline text-textSecondaryColor hover:bg-primaryLightColor hover:text-textColor transition-colors"
                             onClick={() => setOpen(false)}
                           >
-                            <ChevronRight className="size-3.5 text-textSecondaryColor" aria-hidden />
+                            <ChevronRight
+                              className="size-3.5 text-textSecondaryColor"
+                              aria-hidden
+                            />
                           </CMSLink>
                         </li>
                       ))}
                     </ul>
                   </li>
-                )
+                );
               }
 
-              return null
+              return null;
             })}
           </ul>
         </nav>
@@ -572,15 +619,18 @@ export const MobileNav: React.FC<{ data: HeaderType }> = ({ data }) => {
                 onClick={() => setOpen(false)}
               >
                 {locale}
-                <ChevronRight className="size-3.5 text-textSecondaryColor" aria-hidden />
+                <ChevronRight
+                  className="size-3.5 text-textSecondaryColor"
+                  aria-hidden
+                />
               </Link>
             )}
           />
         </div>
       </aside>
     </div>
-  )
-}
+  );
+};
 ```
 
 - [ ] **Step 3: Verify TypeScript**
@@ -603,11 +653,13 @@ git commit -m "feat(payload): replace shadcn Sheet with custom slide-in drawer i
 ### Task 5: Custom LocaleSelector
 
 **Files:**
+
 - Modify: `apps/payload/src/features/LocaleSelector/index.tsx`
 
 - [ ] **Step 1: Read current LocaleSelector**
 
 Read `apps/payload/src/features/LocaleSelector/index.tsx` in full. Confirm:
+
 - How current locale is obtained (expected: `useLocale()` from `next-intl`, not `useParams()`)
 - Import path for `usePathname` (expected: `@/i18n/navigation`)
 - Import path for `I18N_CONFIG` (expected: `@/shared/config/i18n`)
@@ -620,40 +672,42 @@ Read `apps/payload/src/features/LocaleSelector/index.tsx` in full. Confirm:
 The component below uses `useLocale` from `next-intl` (matching the current implementation). If step 1 reveals different imports, adjust accordingly. Note: `'use client'` is required because `useState`, `useRef`, `useEffect`, and `useLocale` are all client-only hooks.
 
 ```tsx
-'use client'
-import React, { useState, useRef, useEffect } from 'react'
-import { useLocale } from 'next-intl'
-import { usePathname } from '@/i18n/navigation'
-import { cn } from '@/shared/lib/utils'
-import { Link } from '@/shared/ui'
-import { I18N_CONFIG } from '@/shared/config/i18n'
+"use client";
+import React, { useState, useRef, useEffect } from "react";
+import { useLocale } from "next-intl";
+import { usePathname } from "@/i18n/navigation";
+import { cn } from "@/shared/lib/utils";
+import { Link } from "@/shared/ui";
+import { I18N_CONFIG } from "@/shared/config/i18n";
 
 type LocaleSelectorProps = {
-  render: (locale: string) => React.ReactNode
-}
+  render: (locale: string) => React.ReactNode;
+};
 
 export const LocaleSelector = ({ render }: LocaleSelectorProps) => {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  const pathname = usePathname()
-  const locale = useLocale()
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const locale = useLocale();
 
   // useEffect must come before any conditional return (Rules of Hooks)
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false)
+        setOpen(false);
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  const currentLocaleConfig = I18N_CONFIG.locales.find((l) => l.code === locale)
-  const currentLocaleLabel = currentLocaleConfig?.label ?? locale
+  const currentLocaleConfig = I18N_CONFIG.locales.find(
+    (l) => l.code === locale
+  );
+  const currentLocaleLabel = currentLocaleConfig?.label ?? locale;
 
   // Don't render the selector when there is only one locale
-  if (I18N_CONFIG.locales.length === 1) return null
+  if (I18N_CONFIG.locales.length === 1) return null;
 
   return (
     <div ref={ref} className="relative">
@@ -661,7 +715,7 @@ export const LocaleSelector = ({ render }: LocaleSelectorProps) => {
         role="button"
         tabIndex={0}
         onClick={() => setOpen((v) => !v)}
-        onKeyDown={(e) => e.key === 'Enter' && setOpen((v) => !v)}
+        onKeyDown={(e) => e.key === "Enter" && setOpen((v) => !v)}
       >
         {render(currentLocaleLabel)}
       </div>
@@ -673,8 +727,9 @@ export const LocaleSelector = ({ render }: LocaleSelectorProps) => {
                 href={pathname}
                 locale={loc.code}
                 className={cn(
-                  'block px-4 py-2 text-sm text-textColor hover:bg-primaryLightColor hover:text-primaryColor transition-colors no-underline',
-                  loc.code === locale && 'text-textSecondaryColor pointer-events-none cursor-default',
+                  "block px-4 py-2 text-sm text-textColor hover:bg-primaryLightColor hover:text-primaryColor transition-colors no-underline",
+                  loc.code === locale &&
+                    "text-textSecondaryColor pointer-events-none cursor-default"
                 )}
                 onClick={() => setOpen(false)}
               >
@@ -685,8 +740,8 @@ export const LocaleSelector = ({ render }: LocaleSelectorProps) => {
         </ul>
       )}
     </div>
-  )
-}
+  );
+};
 ```
 
 - [ ] **Step 3: Verify TypeScript**
@@ -711,6 +766,7 @@ git commit -m "feat(payload): replace shadcn DropdownMenu with custom dropdown i
 ### Task 6: Custom Pagination
 
 **Files:**
+
 - Modify: `apps/payload/src/shared/ui/components/Pagination/index.tsx`
 
 - [ ] **Step 1: Replace with custom Tailwind implementation**
@@ -718,77 +774,110 @@ git commit -m "feat(payload): replace shadcn DropdownMenu with custom dropdown i
 Keep the same `PaginationProps` interface — callers need no changes. Note: the outer element changes from `<div>` to `<nav>` for semantic correctness; any caller passing a `className` should be unaffected since the new component also applies it to the outer element.
 
 ```tsx
-import React from 'react'
-import { cn } from '@/shared/lib/utils'
-import { Link } from '@/shared/ui'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import React from "react";
+import { cn } from "@/shared/lib/utils";
+import { Link } from "@/shared/ui";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface PaginationProps {
-  className?: string
-  page: number
-  totalPages: number
-  basePath: string
+  className?: string;
+  page: number;
+  totalPages: number;
+  basePath: string;
 }
 
 const itemClass =
-  'flex items-center justify-center h-9 min-w-[2.25rem] rounded-md px-2 text-sm font-medium text-textColor hover:bg-primaryLightColor hover:text-primaryColor transition-colors'
+  "flex items-center justify-center h-9 min-w-[2.25rem] rounded-md px-2 text-sm font-medium text-textColor hover:bg-primaryLightColor hover:text-primaryColor transition-colors";
 
-export const Pagination: React.FC<PaginationProps> = ({ className, page, totalPages, basePath }) => {
-  const hasNextPage = page < totalPages
-  const hasPrevPage = page > 1
-  const hasExtraPrevPages = page - 1 > 1
-  const hasExtraNextPages = page + 1 < totalPages
+export const Pagination: React.FC<PaginationProps> = ({
+  className,
+  page,
+  totalPages,
+  basePath,
+}) => {
+  const hasNextPage = page < totalPages;
+  const hasPrevPage = page > 1;
+  const hasExtraPrevPages = page - 1 > 1;
+  const hasExtraNextPages = page + 1 < totalPages;
 
   const getPagePath = (pageNumber: number) =>
-    pageNumber === 1 ? basePath : `${basePath}?page=${pageNumber}`
+    pageNumber === 1 ? basePath : `${basePath}?page=${pageNumber}`;
 
   return (
     <nav
-      className={cn('my-12 flex items-center justify-center gap-1', className)}
+      className={cn("my-12 flex items-center justify-center gap-1", className)}
       aria-label="Pagination navigation"
     >
       {hasPrevPage ? (
-        <Link href={getPagePath(page - 1)} className={itemClass} aria-label="Go to previous page">
+        <Link
+          href={getPagePath(page - 1)}
+          className={itemClass}
+          aria-label="Go to previous page"
+        >
           <ChevronLeft className="size-4" />
         </Link>
       ) : (
-        <span className={cn(itemClass, 'pointer-events-none opacity-40')} aria-disabled="true">
+        <span
+          className={cn(itemClass, "pointer-events-none opacity-40")}
+          aria-disabled="true"
+        >
           <ChevronLeft className="size-4" />
         </span>
       )}
 
       {hasExtraPrevPages && (
-        <span className={cn(itemClass, 'pointer-events-none opacity-40')}>…</span>
+        <span className={cn(itemClass, "pointer-events-none opacity-40")}>
+          …
+        </span>
       )}
 
       {hasPrevPage && (
-        <Link href={getPagePath(page - 1)} className={itemClass}>{page - 1}</Link>
+        <Link href={getPagePath(page - 1)} className={itemClass}>
+          {page - 1}
+        </Link>
       )}
 
-      <span className={cn(itemClass, 'bg-primaryColor text-bgColor pointer-events-none')} aria-current="page">
+      <span
+        className={cn(
+          itemClass,
+          "bg-primaryColor text-bgColor pointer-events-none"
+        )}
+        aria-current="page"
+      >
         {page}
       </span>
 
       {hasNextPage && (
-        <Link href={getPagePath(page + 1)} className={itemClass}>{page + 1}</Link>
+        <Link href={getPagePath(page + 1)} className={itemClass}>
+          {page + 1}
+        </Link>
       )}
 
       {hasExtraNextPages && (
-        <span className={cn(itemClass, 'pointer-events-none opacity-40')}>…</span>
+        <span className={cn(itemClass, "pointer-events-none opacity-40")}>
+          …
+        </span>
       )}
 
       {hasNextPage ? (
-        <Link href={getPagePath(page + 1)} className={itemClass} aria-label="Go to next page">
+        <Link
+          href={getPagePath(page + 1)}
+          className={itemClass}
+          aria-label="Go to next page"
+        >
           <ChevronRight className="size-4" />
         </Link>
       ) : (
-        <span className={cn(itemClass, 'pointer-events-none opacity-40')} aria-disabled="true">
+        <span
+          className={cn(itemClass, "pointer-events-none opacity-40")}
+          aria-disabled="true"
+        >
           <ChevronRight className="size-4" />
         </span>
       )}
     </nav>
-  )
-}
+  );
+};
 ```
 
 - [ ] **Step 2: Verify TypeScript**
@@ -811,6 +900,7 @@ git commit -m "feat(payload): replace shadcn Pagination with custom Tailwind com
 ### Task 7: Skeleton Replacement
 
 **Files:**
+
 - Modify: `apps/payload/src/app/(frontend)/[locale]/[domain]/blog/_components/BlogPageSkeleton.tsx`
 - Modify: `apps/payload/src/shared/ui/components/SkeletonFallback/index.tsx`
 
@@ -857,6 +947,7 @@ git commit -m "feat(payload): replace shadcn Skeleton with Tailwind animate-puls
 ### Task 8: Button Migrations
 
 **Files:**
+
 - Modify: `packages/ui/index.tsx`
 - Modify: `apps/payload/src/shared/ui/blocks/CMSLink/index.tsx`
 - Modify: `apps/payload/src/app/(frontend)/[locale]/[domain]/not-found.tsx`
@@ -866,6 +957,7 @@ git commit -m "feat(payload): replace shadcn Skeleton with Tailwind animate-puls
 - [ ] **Step 1: Read @shared/ui Button**
 
 Read `packages/ui/components/ui/button/index.tsx` to confirm:
+
 - Available variants (expected: `default`, `primary`, `secondary`, `badge`, `ghost`, `ghost-dark` — note: there is no `link` variant)
 - Available sizes (expected: `base`, `sm`, `lg` — note: small is `"sm"`, large is `"lg"`, not `"small"`/`"large"`)
 - Whether `asChild` is supported via `@radix-ui/react-slot` (expected: yes)
@@ -877,7 +969,7 @@ Read `packages/ui/index.tsx`. If `Button` is not already exported from the root,
 
 ```tsx
 // Add to packages/ui/index.tsx exports:
-export { Button, buttonVariants } from './components/ui/button'
+export { Button, buttonVariants } from "./components/ui/button";
 ```
 
 Run TypeScript check to confirm the export works:
@@ -891,7 +983,7 @@ cd packages/ui && pnpm tsc --noEmit 2>/dev/null || true
 Read `apps/payload/src/shared/ui/index.ts`. Add these two exports so all existing `import { Button } from '@/shared/ui'` and `import { buttonVariants } from '@/shared/ui'` calls across CMSLink, ThemeSelector, ErrorBoundary, and any other consumers continue to resolve correctly after shadcn is deleted in Task 9:
 
 ```ts
-export { Button, buttonVariants } from '@shared/ui'
+export { Button, buttonVariants } from "@shared/ui";
 ```
 
 This means individual consumer files (CMSLink, ThemeSelector, ErrorBoundary) do **not** need their import paths changed — they all use `@/shared/ui` which now proxies to `@shared/ui`.
@@ -899,6 +991,7 @@ This means individual consumer files (CMSLink, ThemeSelector, ErrorBoundary) do 
 - [ ] **Step 3: Read all four Payload files**
 
 Read:
+
 - `apps/payload/src/shared/ui/blocks/CMSLink/index.tsx`
 - `apps/payload/src/app/(frontend)/[locale]/[domain]/not-found.tsx`
 - `apps/payload/src/features/ThemeSelector/index.tsx`
@@ -911,12 +1004,14 @@ Note current variant and size values used in each.
 `CMSLink` imports `Button` from `@/shared/ui`. After step 2a, that resolves to the `@shared/ui` Button. The existing `<Button asChild ...><Link ...>` pattern is preserved since `@shared/ui` Button supports `asChild`. No file changes needed — just confirm TypeScript is happy.
 
 Variant mapping for reference if any appearance values need updating:
+
 - `'primary'` → `'primary'`, `'secondary'` → `'secondary'`, `'ghost'` → `'ghost'`
 - Any appearance previously mapped to shadcn's `'default'` → use `'primary'`
 
 - [ ] **Step 5: Update ThemeSelector**
 
 In `apps/payload/src/features/ThemeSelector/index.tsx`:
+
 - No import change needed (Button now proxied through `@/shared/ui`)
 - `size="icon"` does not exist in `@shared/ui` Button — replace with `size="sm"` and add `className="w-9 h-9 !p-0"`. The `!p-0` uses Tailwind's important modifier to override the `p-1` that `size="sm"` applies.
 
@@ -925,12 +1020,16 @@ In `apps/payload/src/features/ThemeSelector/index.tsx`:
 Read the current file. The existing pattern is `<Link><Button>` nesting (Button inside Link), which is an anti-pattern. Replace with `buttonVariants` applied directly to the Link — this is simpler and works in a Server Component. The file resolves `locale` from the URL params and passes it to `<Link locale={locale}>` for locale-prefixed routing — preserve this prop:
 
 ```tsx
-import { Link, buttonVariants } from '@/shared/ui'
+import { Link, buttonVariants } from "@/shared/ui";
 
 // Replace <Link href="/" locale={locale}><Button>{t('goToHomepage')}</Button></Link> with:
-<Link href="/" locale={locale} className={buttonVariants({ variant: 'primary' })}>
-  {t('goToHomepage')}
-</Link>
+<Link
+  href="/"
+  locale={locale}
+  className={buttonVariants({ variant: "primary" })}
+>
+  {t("goToHomepage")}
+</Link>;
 ```
 
 No import path change needed (`buttonVariants` is now available via `@/shared/ui` after step 2a).
@@ -938,6 +1037,7 @@ No import path change needed (`buttonVariants` is now available via `@/shared/ui
 - [ ] **Step 7: Update ErrorBoundary**
 
 In `apps/payload/src/shared/ui/components/ErrorBoundary/index.tsx`:
+
 - No import change needed
 - Map variants:
   - `variant="default"` → `variant="primary"` (shadcn `default` = filled primary; `@shared/ui`'s own `"default"` is a bare text style — do not use it)
@@ -972,6 +1072,7 @@ git commit -m "feat(payload): migrate Button usages from shadcn to @shared/ui, e
 **⚠️ Run only after Tasks 1–8 are all complete.**
 
 **Files:**
+
 - Delete: `apps/payload/src/shared/ui/shadcn/` (entire directory)
 - Modify: `apps/payload/src/shared/ui/index.ts`
 
@@ -997,6 +1098,7 @@ All results should import from `@/shared/ui` (which now re-exports from `@shared
 - [ ] **Step 3: Read and update src/shared/ui/index.ts**
 
 Read `apps/payload/src/shared/ui/index.ts`. Remove all exports that re-export from `./shadcn` (e.g. `export * from './shadcn'`, or individual named exports like `Accordion`, `Sheet`, `NavigationMenu`, etc. that originate from the shadcn directory). The `Button` and `buttonVariants` exports added in T8 Step 2a should remain. Ensure the following are still exported:
+
 - `CMSLink` from `./blocks/CMSLink`
 - `Pagination` from `./components/Pagination`
 - `ErrorBoundary` from `./components/ErrorBoundary`

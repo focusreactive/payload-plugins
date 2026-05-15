@@ -1,12 +1,12 @@
-import type { Metadata } from 'next'
+import type { Metadata } from "next";
 
-const defaultOpenGraph: Metadata['openGraph'] = {
-  type: 'website',
-}
+const defaultOpenGraph: Metadata["openGraph"] = {
+  type: "website",
+};
 
-export const mergeOpenGraph = (og?: Metadata['openGraph']): Metadata['openGraph'] => {
-  return {
+export const mergeOpenGraph = (
+  og?: Metadata["openGraph"]
+): Metadata["openGraph"] => ({
     ...defaultOpenGraph,
     ...og,
-  }
-}
+  });

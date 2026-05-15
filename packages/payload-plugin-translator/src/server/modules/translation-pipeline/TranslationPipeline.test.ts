@@ -1,817 +1,862 @@
-import { describe, it, expect, vi } from 'vitest'
-import type { Field } from 'payload'
-import { TranslationPipeline } from './TranslationPipeline'
-import { OverwriteStrategy } from './strategies/Overwrite.strategy'
-import { SkipExistingStrategy } from './strategies/SkipExisting.strategy'
-import type { TranslationProvider } from '../translation-providers'
+import type { Field } from "payload";
+import { describe, it, expect, vi } from "vitest";
+
+import type { TranslationProvider } from "../translation-providers";
+import { OverwriteStrategy } from "./strategies/Overwrite.strategy";
+import { SkipExistingStrategy } from "./strategies/SkipExisting.strategy";
+import { TranslationPipeline } from "./TranslationPipeline";
 
 const createMockProvider = (
-  translationFn?: (textMap: Record<number, string>) => Record<number, string>,
+  translationFn?: (textMap: Record<number, string>) => Record<number, string>
 ): TranslationProvider => ({
-  translate: vi.fn().mockImplementation(async (textMap: Record<number, string>) => {
-    if (translationFn) return translationFn(textMap)
-    // Default: prefix each value with "TR_"
-    const result: Record<number, string> = {}
-    for (const [key, value] of Object.entries(textMap)) {
-      result[Number(key)] = `TR_${value}`
-    }
-    return result
-  }),
-})
+  translate: vi
+    .fn()
+    .mockImplementation(async (textMap: Record<number, string>) => {
+      if (translationFn) {return translationFn(textMap);}
+      // Default: prefix each value with "TR_"
+      const result: Record<number, string> = {};
+      for (const [key, value] of Object.entries(textMap)) {
+        result[Number(key)] = `TR_${value}`;
+      }
+      return result;
+    }),
+});
 
-describe('TranslationPipeline', () => {
-  describe('basic translation', () => {
-    it('translates simple text fields', async () => {
-      const schema: Field[] = [{ name: 'title', type: 'text', localized: true }]
-      const sourceData = { title: 'Hello' }
-      const targetData = {}
-
-      const provider = createMockProvider()
-      const pipeline = new TranslationPipeline({
-        translationProvider: provider,
-        translationStrategy: new OverwriteStrategy(),
-      })
-
-      const result = await pipeline.execute({
-        schema,
-        sourceData,
-        targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
-
-      expect(result).not.toBeNull()
-      expect(result!.translatedData).toEqual({ title: 'TR_Hello' })
-      expect(provider.translate).toHaveBeenCalledWith({ 0: 'Hello' }, 'en', 'ru')
-    })
-
-    it('translates multiple fields', async () => {
+describe("TranslationPipeline", () => {
+  describe("basic translation", () => {
+    it("translates simple text fields", async () => {
       const schema: Field[] = [
-        { name: 'title', type: 'text', localized: true },
-        { name: 'description', type: 'textarea', localized: true },
-      ]
-      const sourceData = { title: 'Hello', description: 'World' }
-      const targetData = {}
+        { localized: true, name: "title", type: "text" },
+      ];
+      const sourceData = { title: "Hello" };
+      const targetData = {};
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new OverwriteStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
-      expect(result).not.toBeNull()
-      expect(result!.translatedData).toEqual({ title: 'TR_Hello', description: 'TR_World' })
-    })
+      expect(result).not.toBeNull();
+      expect(result!.translatedData).toEqual({ title: "TR_Hello" });
+      expect(provider.translate).toHaveBeenCalledWith(
+        { 0: "Hello" },
+        "en",
+        "ru"
+      );
+    });
 
-    it('translates nested fields in groups', async () => {
+    it("translates multiple fields", async () => {
       const schema: Field[] = [
-        {
-          name: 'meta',
-          type: 'group',
-          fields: [{ name: 'title', type: 'text', localized: true }],
-        },
-      ]
-      const sourceData = { meta: { title: 'Hello' } }
-      const targetData = {}
+        { localized: true, name: "title", type: "text" },
+        { localized: true, name: "description", type: "textarea" },
+      ];
+      const sourceData = { description: "World", title: "Hello" };
+      const targetData = {};
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new OverwriteStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
-      expect(result).not.toBeNull()
-      expect(result!.translatedData).toEqual({ meta: { title: 'TR_Hello' } })
-    })
+      expect(result).not.toBeNull();
+      expect(result!.translatedData).toEqual({
+        description: "TR_World",
+        title: "TR_Hello",
+      });
+    });
 
-    it('translates array items', async () => {
+    it("translates nested fields in groups", async () => {
       const schema: Field[] = [
         {
-          name: 'items',
-          type: 'array',
-          fields: [{ name: 'label', type: 'text', localized: true }],
+          fields: [{ name: "title", type: "text", localized: true }],
+          name: "meta",
+          type: "group",
         },
-      ]
+      ];
+      const sourceData = { meta: { title: "Hello" } };
+      const targetData = {};
+
+      const provider = createMockProvider();
+      const pipeline = new TranslationPipeline({
+        translationProvider: provider,
+        translationStrategy: new OverwriteStrategy(),
+      });
+
+      const result = await pipeline.execute({
+        schema,
+        sourceData,
+        sourceLng: "en",
+        targetData,
+        targetLng: "ru",
+      });
+
+      expect(result).not.toBeNull();
+      expect(result!.translatedData).toEqual({ meta: { title: "TR_Hello" } });
+    });
+
+    it("translates array items", async () => {
+      const schema: Field[] = [
+        {
+          fields: [{ name: "label", type: "text", localized: true }],
+          name: "items",
+          type: "array",
+        },
+      ];
       const sourceData = {
         items: [
-          { id: '1', label: 'First' },
-          { id: '2', label: 'Second' },
+          { id: "1", label: "First" },
+          { id: "2", label: "Second" },
         ],
-      }
-      const targetData = {}
+      };
+      const targetData = {};
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new OverwriteStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
-      expect(result).not.toBeNull()
+      expect(result).not.toBeNull();
       // Note: id is not included in result - Postgres rejects it on update
       expect(result!.translatedData).toEqual({
-        items: [{ label: 'TR_First' }, { label: 'TR_Second' }],
-      })
-    })
-  })
+        items: [{ label: "TR_First" }, { label: "TR_Second" }],
+      });
+    });
+  });
 
-  describe('richText translation', () => {
-    it('translates richText text nodes', async () => {
-      const schema: Field[] = [{ name: 'content', type: 'richText', localized: true }]
+  describe("richText translation", () => {
+    it("translates richText text nodes", async () => {
+      const schema: Field[] = [
+        { localized: true, name: "content", type: "richText" },
+      ];
       const sourceData = {
         content: {
           root: {
-            type: 'root',
             children: [
               {
-                type: 'paragraph',
-                children: [{ type: 'text', text: 'Hello', version: 1 }],
+                type: "paragraph",
+                children: [{ type: "text", text: "Hello", version: 1 }],
                 version: 1,
               },
             ],
+            type: "root",
             version: 1,
           },
         },
-      }
-      const targetData = {}
+      };
+      const targetData = {};
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new OverwriteStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
-      expect(result).not.toBeNull()
+      expect(result).not.toBeNull();
       // The richText structure should have translated text nodes
-      const content = result!.translatedData.content as { root: { children: { children: { text: string }[] }[] } }
-      expect(content.root.children[0].children[0].text).toBe('TR_Hello')
-    })
-  })
+      const content = result!.translatedData.content as {
+        root: { children: { children: { text: string }[] }[] };
+      };
+      expect(content.root.children[0].children[0].text).toBe("TR_Hello");
+    });
+  });
 
-  describe('richText with nested Lexical blocks', () => {
-    it('translates text nodes and preserves block node fields (upload, arrays) unchanged', async () => {
-      const schema: Field[] = [{ name: 'content', type: 'richText', localized: true }]
+  describe("richText with nested Lexical blocks", () => {
+    it("translates text nodes and preserves block node fields (upload, arrays) unchanged", async () => {
+      const schema: Field[] = [
+        { localized: true, name: "content", type: "richText" },
+      ];
       const sourceData = {
         content: {
           root: {
-            type: 'root',
             children: [
               {
-                type: 'paragraph',
-                children: [{ type: 'text', text: 'Intro text', version: 1 }],
+                type: "paragraph",
+                children: [{ type: "text", text: "Intro text", version: 1 }],
                 version: 1,
               },
               {
-                type: 'block',
+                type: "block",
                 fields: {
-                  blockType: 'logoItems',
+                  blockType: "logoItems",
                   items: [
-                    { id: 'item-1', image: 5, caption: 'First logo' },
-                    { id: 'item-2', image: 10, caption: 'Second logo' },
+                    { id: "item-1", image: 5, caption: "First logo" },
+                    { id: "item-2", image: 10, caption: "Second logo" },
                   ],
                 },
                 version: 1,
               },
               {
-                type: 'paragraph',
-                children: [{ type: 'text', text: 'Outro text', version: 1 }],
+                type: "paragraph",
+                children: [{ type: "text", text: "Outro text", version: 1 }],
                 version: 1,
               },
             ],
+            type: "root",
             version: 1,
           },
         },
-      }
-      const targetData = {}
+      };
+      const targetData = {};
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new OverwriteStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'es',
-      })
+        targetLng: "es",
+      });
 
-      expect(result).not.toBeNull()
-      const root = (result!.translatedData.content as any).root
+      expect(result).not.toBeNull();
+      const {root} = (result!.translatedData.content as any);
 
       // Text nodes are translated
-      expect(root.children[0].children[0].text).toBe('TR_Intro text')
-      expect(root.children[2].children[0].text).toBe('TR_Outro text')
+      expect(root.children[0].children[0].text).toBe("TR_Intro text");
+      expect(root.children[2].children[0].text).toBe("TR_Outro text");
 
       // Block node fields are preserved as-is (upload IDs stay as numbers, not populated objects)
-      const blockFields = root.children[1].fields
-      expect(blockFields.blockType).toBe('logoItems')
-      expect(blockFields.items).toHaveLength(2)
-      expect(blockFields.items[0].image).toBe(5)
-      expect(blockFields.items[1].image).toBe(10)
-      expect(blockFields.items[0].caption).toBe('First logo')
-    })
+      const blockFields = root.children[1].fields;
+      expect(blockFields.blockType).toBe("logoItems");
+      expect(blockFields.items).toHaveLength(2);
+      expect(blockFields.items[0].image).toBe(5);
+      expect(blockFields.items[1].image).toBe(10);
+      expect(blockFields.items[0].caption).toBe("First logo");
+    });
 
-    it('preserves block nodes with upload fields when target has existing richText', async () => {
-      const schema: Field[] = [{ name: 'content', type: 'richText', localized: true }]
+    it("preserves block nodes with upload fields when target has existing richText", async () => {
+      const schema: Field[] = [
+        { localized: true, name: "content", type: "richText" },
+      ];
       const blockNode = {
-        type: 'block',
         fields: {
-          blockType: 'imageGallery',
+          blockType: "imageGallery",
           images: [
-            { id: 'img-1', file: 42 },
-            { id: 'img-2', file: 43 },
+            { id: "img-1", file: 42 },
+            { id: "img-2", file: 43 },
           ],
         },
+        type: "block",
         version: 1,
-      }
+      };
       const sourceData = {
         content: {
           root: {
-            type: 'root',
             children: [
               {
-                type: 'paragraph',
-                children: [{ type: 'text', text: 'Hello', version: 1 }],
+                type: "paragraph",
+                children: [{ type: "text", text: "Hello", version: 1 }],
                 version: 1,
               },
               blockNode,
             ],
+            type: "root",
             version: 1,
           },
         },
-      }
+      };
       const targetData = {
         content: {
           root: {
-            type: 'root',
             children: [
               {
-                type: 'paragraph',
-                children: [{ type: 'text', text: 'Hola', version: 1 }],
+                type: "paragraph",
+                children: [{ type: "text", text: "Hola", version: 1 }],
                 version: 1,
               },
               blockNode,
             ],
+            type: "root",
             version: 1,
           },
         },
-      }
+      };
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new OverwriteStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'es',
-      })
+        targetLng: "es",
+      });
 
-      expect(result).not.toBeNull()
-      const root = (result!.translatedData.content as any).root
+      expect(result).not.toBeNull();
+      const {root} = (result!.translatedData.content as any);
 
       // Text translated
-      expect(root.children[0].children[0].text).toBe('TR_Hello')
+      expect(root.children[0].children[0].text).toBe("TR_Hello");
 
       // Block fields preserved with original upload IDs
-      expect(root.children[1].fields.images[0].file).toBe(42)
-      expect(root.children[1].fields.images[1].file).toBe(43)
-    })
+      expect(root.children[1].fields.images[0].file).toBe(42);
+      expect(root.children[1].fields.images[1].file).toBe(43);
+    });
 
-    it('handles richText with only block nodes (no text to translate)', async () => {
-      const schema: Field[] = [{ name: 'content', type: 'richText', localized: true }]
+    it("handles richText with only block nodes (no text to translate)", async () => {
+      const schema: Field[] = [
+        { localized: true, name: "content", type: "richText" },
+      ];
       const sourceData = {
         content: {
           root: {
-            type: 'root',
             children: [
               {
-                type: 'block',
+                type: "block",
                 fields: {
-                  blockType: 'banner',
+                  blockType: "banner",
                   image: 99,
-                  altText: 'Banner image',
+                  altText: "Banner image",
                 },
                 version: 1,
               },
             ],
+            type: "root",
             version: 1,
           },
         },
-      }
-      const targetData = {}
+      };
+      const targetData = {};
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new OverwriteStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'es',
-      })
+        targetLng: "es",
+      });
 
       // No text nodes to translate — pipeline returns null
-      expect(result).toBeNull()
-      expect(provider.translate).not.toHaveBeenCalled()
-    })
-  })
+      expect(result).toBeNull();
+      expect(provider.translate).not.toHaveBeenCalled();
+    });
+  });
 
-  describe('strategy filtering', () => {
-    it('OverwriteStrategy translates all fields', async () => {
-      const schema: Field[] = [{ name: 'title', type: 'text', localized: true }]
-      const sourceData = { title: 'Hello' }
-      const targetData = { title: 'Existing translation' }
+  describe("strategy filtering", () => {
+    it("OverwriteStrategy translates all fields", async () => {
+      const schema: Field[] = [
+        { localized: true, name: "title", type: "text" },
+      ];
+      const sourceData = { title: "Hello" };
+      const targetData = { title: "Existing translation" };
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new OverwriteStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
-      expect(result).not.toBeNull()
-      expect(result!.translatedData.title).toBe('TR_Hello')
-    })
+      expect(result).not.toBeNull();
+      expect(result!.translatedData.title).toBe("TR_Hello");
+    });
 
-    it('SkipExistingStrategy skips fields with existing translations', async () => {
+    it("SkipExistingStrategy skips fields with existing translations", async () => {
       const schema: Field[] = [
-        { name: 'title', type: 'text', localized: true },
-        { name: 'description', type: 'text', localized: true },
-      ]
-      const sourceData = { title: 'Hello', description: 'World' }
-      const targetData = { title: 'Existing', description: '' }
+        { localized: true, name: "title", type: "text" },
+        { localized: true, name: "description", type: "text" },
+      ];
+      const sourceData = { description: "World", title: "Hello" };
+      const targetData = { description: "", title: "Existing" };
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new SkipExistingStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
-      expect(result).not.toBeNull()
+      expect(result).not.toBeNull();
       // Result contains full document shape
       // title: kept from target (already translated)
       // description: translated from source
       expect(result!.translatedData).toEqual({
-        title: 'Existing',
-        description: 'TR_World',
-      })
-    })
-  })
+        description: "TR_World",
+        title: "Existing",
+      });
+    });
+  });
 
-  describe('early exit conditions', () => {
-    it('returns null when no localized fields', async () => {
-      const schema: Field[] = [{ name: 'slug', type: 'text', localized: false }]
-      const sourceData = { slug: 'hello' }
-      const targetData = {}
+  describe("early exit conditions", () => {
+    it("returns null when no localized fields", async () => {
+      const schema: Field[] = [
+        { localized: false, name: "slug", type: "text" },
+      ];
+      const sourceData = { slug: "hello" };
+      const targetData = {};
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new OverwriteStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
-      expect(result).toBeNull()
-      expect(provider.translate).not.toHaveBeenCalled()
-    })
+      expect(result).toBeNull();
+      expect(provider.translate).not.toHaveBeenCalled();
+    });
 
-    it('returns null when all fields already translated (SkipExisting)', async () => {
-      const schema: Field[] = [{ name: 'title', type: 'text', localized: true }]
-      const sourceData = { title: 'Hello' }
-      const targetData = { title: 'Already translated' }
+    it("returns null when all fields already translated (SkipExisting)", async () => {
+      const schema: Field[] = [
+        { localized: true, name: "title", type: "text" },
+      ];
+      const sourceData = { title: "Hello" };
+      const targetData = { title: "Already translated" };
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new SkipExistingStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
-      expect(result).toBeNull()
-      expect(provider.translate).not.toHaveBeenCalled()
-    })
+      expect(result).toBeNull();
+      expect(provider.translate).not.toHaveBeenCalled();
+    });
 
-    it('returns null when source fields are empty', async () => {
-      const schema: Field[] = [{ name: 'title', type: 'text', localized: true }]
-      const sourceData = { title: '' }
-      const targetData = {}
+    it("returns null when source fields are empty", async () => {
+      const schema: Field[] = [
+        { localized: true, name: "title", type: "text" },
+      ];
+      const sourceData = { title: "" };
+      const targetData = {};
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new OverwriteStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
-      expect(result).toBeNull()
-    })
-  })
+      expect(result).toBeNull();
+    });
+  });
 
-  describe('error handling', () => {
-    it('throws when translation provider returns null', async () => {
-      const schema: Field[] = [{ name: 'title', type: 'text', localized: true }]
-      const sourceData = { title: 'Hello' }
-      const targetData = {}
+  describe("error handling", () => {
+    it("throws when translation provider returns null", async () => {
+      const schema: Field[] = [
+        { localized: true, name: "title", type: "text" },
+      ];
+      const sourceData = { title: "Hello" };
+      const targetData = {};
 
       const provider: TranslationProvider = {
         translate: vi.fn().mockResolvedValue(null),
-      }
+      };
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new OverwriteStrategy(),
-      })
+      });
 
       await expect(
         pipeline.execute({
           schema,
           sourceData,
+          sourceLng: "en",
           targetData,
-          sourceLng: 'en',
-          targetLng: 'ru',
-        }),
-      ).rejects.toThrow('Translation provider returned null')
-    })
-  })
+          targetLng: "ru",
+        })
+      ).rejects.toThrow("Translation provider returned null");
+    });
+  });
 
-  describe('data mutation', () => {
-    it('returns translated data without mutating original sourceData', async () => {
-      const schema: Field[] = [{ name: 'title', type: 'text', localized: true }]
-      const sourceData = { title: 'Hello' }
-      const targetData = {}
+  describe("data mutation", () => {
+    it("returns translated data without mutating original sourceData", async () => {
+      const schema: Field[] = [
+        { localized: true, name: "title", type: "text" },
+      ];
+      const sourceData = { title: "Hello" };
+      const targetData = {};
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new OverwriteStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
       // Result contains translated data
-      expect(result!.translatedData.title).toBe('TR_Hello')
+      expect(result!.translatedData.title).toBe("TR_Hello");
       // Original sourceData is NOT mutated (pipeline works on filtered copy)
-      expect(sourceData.title).toBe('Hello')
-    })
-  })
+      expect(sourceData.title).toBe("Hello");
+    });
+  });
 
-  describe('full document shape preservation', () => {
-    it('preserves non-localized fields in result', async () => {
+  describe("full document shape preservation", () => {
+    it("preserves non-localized fields in result", async () => {
       const schema: Field[] = [
-        { name: 'title', type: 'text', localized: true },
-        { name: 'slug', type: 'text', localized: false },
-        { name: 'order', type: 'number', localized: false },
-      ]
-      const sourceData = { title: 'Hello', slug: 'hello', order: 1 }
-      const targetData = {}
+        { localized: true, name: "title", type: "text" },
+        { localized: false, name: "slug", type: "text" },
+        { localized: false, name: "order", type: "number" },
+      ];
+      const sourceData = { order: 1, slug: "hello", title: "Hello" };
+      const targetData = {};
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new OverwriteStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
       expect(result!.translatedData).toEqual({
-        title: 'TR_Hello',
-        slug: 'hello',
         order: 1,
-      })
-    })
+        slug: "hello",
+        title: "TR_Hello",
+      });
+    });
 
-    it('preserves existing target non-localized values', async () => {
+    it("preserves existing target non-localized values", async () => {
       const schema: Field[] = [
-        { name: 'title', type: 'text', localized: true },
-        { name: 'slug', type: 'text', localized: false },
-      ]
-      const sourceData = { title: 'Hello', slug: 'hello' }
-      const targetData = { title: '', slug: 'other-slug' }
+        { localized: true, name: "title", type: "text" },
+        { localized: false, name: "slug", type: "text" },
+      ];
+      const sourceData = { slug: "hello", title: "Hello" };
+      const targetData = { slug: "other-slug", title: "" };
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new OverwriteStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
       expect(result!.translatedData).toEqual({
-        title: 'TR_Hello',
-        slug: 'other-slug',
-      })
-    })
+        slug: "other-slug",
+        title: "TR_Hello",
+      });
+    });
 
-    it('preserves existing target values with SkipExisting', async () => {
+    it("preserves existing target values with SkipExisting", async () => {
       const schema: Field[] = [
-        { name: 'title', type: 'text', localized: true },
-        { name: 'description', type: 'text', localized: true },
-        { name: 'slug', type: 'text', localized: false },
-      ]
-      const sourceData = { title: 'Hello', description: 'World', slug: 'hello' }
-      const targetData = { title: 'Translated', description: '', slug: 'other' }
+        { localized: true, name: "title", type: "text" },
+        { localized: true, name: "description", type: "text" },
+        { localized: false, name: "slug", type: "text" },
+      ];
+      const sourceData = {
+        description: "World",
+        slug: "hello",
+        title: "Hello",
+      };
+      const targetData = {
+        description: "",
+        slug: "other",
+        title: "Translated",
+      };
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new SkipExistingStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
       expect(result!.translatedData).toEqual({
-        title: 'Translated',
-        description: 'TR_World',
-        slug: 'other',
-      })
-    })
-  })
+        description: "TR_World",
+        slug: "other",
+        title: "Translated",
+      });
+    });
+  });
 
-  describe('nested structures with strategy', () => {
-    it('applies SkipExisting to nested array fields', async () => {
+  describe("nested structures with strategy", () => {
+    it("applies SkipExisting to nested array fields", async () => {
       const schema: Field[] = [
         {
-          name: 'items',
-          type: 'array',
-          fields: [{ name: 'label', type: 'text', localized: true }],
+          fields: [{ name: "label", type: "text", localized: true }],
+          name: "items",
+          type: "array",
         },
-      ]
+      ];
       const sourceData = {
         items: [
-          { id: '1', label: 'First' },
-          { id: '2', label: 'Second' },
+          { id: "1", label: "First" },
+          { id: "2", label: "Second" },
         ],
-      }
+      };
       const targetData = {
         items: [
-          { id: '1', label: 'Translated' },
-          { id: '2', label: '' },
+          { id: "1", label: "Translated" },
+          { id: "2", label: "" },
         ],
-      }
+      };
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new SkipExistingStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
       // Note: id is not included in result - Postgres rejects it on update
-      expect(result!.translatedData.items).toEqual([{ label: 'Translated' }, { label: 'TR_Second' }])
-    })
+      expect(result!.translatedData.items).toEqual([
+        { label: "Translated" },
+        { label: "TR_Second" },
+      ]);
+    });
 
-    it('applies SkipExisting to nested group fields', async () => {
+    it("applies SkipExisting to nested group fields", async () => {
       const schema: Field[] = [
         {
-          name: 'meta',
-          type: 'group',
           fields: [
-            { name: 'title', type: 'text', localized: true },
-            { name: 'description', type: 'text', localized: true },
+            { name: "title", type: "text", localized: true },
+            { name: "description", type: "text", localized: true },
           ],
+          name: "meta",
+          type: "group",
         },
-      ]
-      const sourceData = { meta: { title: 'Hello', description: 'World' } }
-      const targetData = { meta: { title: 'Translated', description: '' } }
+      ];
+      const sourceData = { meta: { description: "World", title: "Hello" } };
+      const targetData = { meta: { description: "", title: "Translated" } };
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new SkipExistingStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
       expect(result!.translatedData.meta).toEqual({
-        title: 'Translated',
-        description: 'TR_World',
-      })
-    })
+        description: "TR_World",
+        title: "Translated",
+      });
+    });
 
-    it('applies SkipExisting to blocks fields', async () => {
+    it("applies SkipExisting to blocks fields", async () => {
       const schema: Field[] = [
         {
-          name: 'layout',
-          type: 'blocks',
           blocks: [
             {
-              slug: 'text',
-              fields: [{ name: 'content', type: 'text', localized: true }],
+              slug: "text",
+              fields: [{ name: "content", type: "text", localized: true }],
             },
           ],
+          name: "layout",
+          type: "blocks",
         },
-      ]
+      ];
       const sourceData = {
         layout: [
-          { id: '1', blockType: 'text', content: 'Hello' },
-          { id: '2', blockType: 'text', content: 'World' },
+          { blockType: "text", content: "Hello", id: "1" },
+          { blockType: "text", content: "World", id: "2" },
         ],
-      }
+      };
       const targetData = {
         layout: [
-          { id: '1', blockType: 'text', content: 'Translated' },
-          { id: '2', blockType: 'text', content: '' },
+          { blockType: "text", content: "Translated", id: "1" },
+          { blockType: "text", content: "", id: "2" },
         ],
-      }
+      };
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new SkipExistingStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
       // Note: id is not included in result - Postgres rejects it on update
       expect(result!.translatedData.layout).toEqual([
-        { blockType: 'text', content: 'Translated' },
-        { blockType: 'text', content: 'TR_World' },
-      ])
-    })
-  })
+        { blockType: "text", content: "Translated" },
+        { blockType: "text", content: "TR_World" },
+      ]);
+    });
+  });
 
-  describe('translateKit.exclude handling', () => {
-    it('skips excluded fields from translation', async () => {
+  describe("translateKit.exclude handling", () => {
+    it("skips excluded fields from translation", async () => {
       const schema: Field[] = [
-        { name: 'title', type: 'text', localized: true },
+        { localized: true, name: "title", type: "text" },
         {
-          name: 'sku',
-          type: 'text',
-          localized: true,
           custom: { translateKit: { exclude: true } },
+          localized: true,
+          name: "sku",
+          type: "text",
         },
-      ]
-      const sourceData = { title: 'Hello', sku: 'SKU-123' }
-      const targetData = { sku: 'SKU-456' }
+      ];
+      const sourceData = { sku: "SKU-123", title: "Hello" };
+      const targetData = { sku: "SKU-456" };
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new OverwriteStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
-      expect(result!.translatedData.title).toBe('TR_Hello')
-      expect(result!.translatedData.sku).toBe('SKU-456')
-    })
+      expect(result!.translatedData.title).toBe("TR_Hello");
+      expect(result!.translatedData.sku).toBe("SKU-456");
+    });
 
-    it('uses source value for excluded fields when target is empty', async () => {
+    it("uses source value for excluded fields when target is empty", async () => {
       const schema: Field[] = [
-        { name: 'title', type: 'text', localized: true },
+        { localized: true, name: "title", type: "text" },
         {
-          name: 'sku',
-          type: 'text',
-          localized: true,
           custom: { translateKit: { exclude: true } },
+          localized: true,
+          name: "sku",
+          type: "text",
         },
-      ]
-      const sourceData = { title: 'Hello', sku: 'SKU-123' }
-      const targetData = {}
+      ];
+      const sourceData = { sku: "SKU-123", title: "Hello" };
+      const targetData = {};
 
-      const provider = createMockProvider()
+      const provider = createMockProvider();
       const pipeline = new TranslationPipeline({
         translationProvider: provider,
         translationStrategy: new OverwriteStrategy(),
-      })
+      });
 
       const result = await pipeline.execute({
         schema,
         sourceData,
+        sourceLng: "en",
         targetData,
-        sourceLng: 'en',
-        targetLng: 'ru',
-      })
+        targetLng: "ru",
+      });
 
-      expect(result!.translatedData.title).toBe('TR_Hello')
-      expect(result!.translatedData.sku).toBe('SKU-123')
-    })
-  })
-})
+      expect(result!.translatedData.title).toBe("TR_Hello");
+      expect(result!.translatedData.sku).toBe("SKU-123");
+    });
+  });
+});

@@ -167,7 +167,7 @@ import { withFieldTranslation } from "@focus-reactive/payload-plugin-translator"
 
 withFieldTranslation(
   { name: "sku", type: "text", localized: true },
-  { exclude: true },
+  { exclude: true }
 );
 ```
 
@@ -322,7 +322,7 @@ class DeepLProvider implements TranslationProvider {
   async translate(
     content: TranslationInput,
     sourceLng: string,
-    targetLng: string,
+    targetLng: string
   ): Promise<TranslationOutput | null> {
     try {
       // content example: { "0": "Hello", "1": "World" }

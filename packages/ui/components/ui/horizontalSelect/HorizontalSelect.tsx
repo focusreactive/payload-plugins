@@ -1,6 +1,6 @@
 import { cn } from "../../../utils";
 
-export type SwitchProps = {
+export interface SwitchProps {
   className?: string;
   options?: {
     label: string;
@@ -9,13 +9,13 @@ export type SwitchProps = {
   }[];
   selectedOption?: string;
   onChange?: (value: string) => void;
-};
+}
 
 export const HorizontalSelect = ({ className, ...props }: SwitchProps) => (
   <div
     className={cn(
       "relative flex self-center rounded-lg bg-gray-100 p-0.5 sm:mt-8",
-      className,
+      className
     )}
   >
     {props.options?.map((option) => (

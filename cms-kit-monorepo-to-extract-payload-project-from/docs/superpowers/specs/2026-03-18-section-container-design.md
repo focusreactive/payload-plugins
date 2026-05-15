@@ -40,24 +40,25 @@ section (group, initCollapsed: true)
 
 ```tsx
 type SectionData = {
-  id?: string
-  theme?: 'light' | 'dark' | 'light-gray' | 'dark-gray' | null
-  marginTop?: 'none' | 'base' | 'large' | null
-  marginBottom?: 'none' | 'base' | 'large' | null
-  paddingX?: 'none' | 'base' | 'large' | null
-  paddingY?: 'none' | 'base' | 'large' | null
-  maxWidth?: 'none' | 'base' | 'small' | null
-  backgroundImage?: { url: string } | null
-}
+  id?: string;
+  theme?: "light" | "dark" | "light-gray" | "dark-gray" | null;
+  marginTop?: "none" | "base" | "large" | null;
+  marginBottom?: "none" | "base" | "large" | null;
+  paddingX?: "none" | "base" | "large" | null;
+  paddingY?: "none" | "base" | "large" | null;
+  maxWidth?: "none" | "base" | "small" | null;
+  backgroundImage?: { url: string } | null;
+};
 
 type Props = {
-  children: React.ReactNode
-  className?: string
-  sectionData: SectionData
-}
+  children: React.ReactNode;
+  className?: string;
+  sectionData: SectionData;
+};
 ```
 
 Two `cva` variant groups:
+
 - `outerVariants`: `marginTop`, `marginBottom`, theme class, `bg-bgColor` when theme is set
 - `innerVariants`: `paddingX`, `paddingY`, `maxWidth`
 
@@ -68,6 +69,7 @@ Background image applied as inline `style` when present.
 Add `sectionFields` to `fields` array. For preset-based blocks (`Hero`, `TestimonialsList`), add it to the field definitions in `heroFields.ts` / `testimonialsListFields.ts`.
 
 Affected configs:
+
 - `Hero/config.ts`
 - `TextSection/config.ts`
 - `Content/config.ts`
@@ -85,16 +87,16 @@ Destructure `section` from props, pass as `sectionData={section ?? {}}`.
 
 ### Non-block migration — inline CSS
 
-| File | Before | After |
-|------|--------|-------|
-| `Header/Component.client.tsx` | `<Section as="div" block="header"><Container>` | `<div className="py-4 px-4 sm:px-6 md:px-8 lg:px-8"><div className="mx-auto max-w-7xl">` |
-| `Footer/Component.tsx` | `<Section as="div"><Container>` | `<div className="py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8"><div className="mx-auto max-w-7xl">` |
-| `PostHero/index.tsx` | `<Section className="py-6 ..."><Container maxWidth="4xl">` | `<div className="py-6 px-4 sm:px-6 md:px-8 lg:px-8 w-full"><div className="mx-auto max-w-4xl z-10 relative">` |
-| `PostContent/index.tsx` | `<Section className="py-4 ..."><Container maxWidth="4xl">` | `<div className="py-4 px-4 sm:px-6 md:px-8 lg:px-8"><div className="mx-auto max-w-4xl">` |
-| `ErrorBoundary/index.tsx` | `<Section><Container maxWidth="4xl">` | `<div className="py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8"><div className="mx-auto max-w-4xl">` |
-| `not-found.tsx` | `<Section className="..."><Container className="...">` | `<section className="flex items-center justify-center min-h-[60vh] py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8"><div className="mx-auto max-w-7xl text-center">` |
-| `BlogPageContent/index.tsx` | `<Section><Container maxWidth="7xl">` | `<section className="py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8"><div className="mx-auto max-w-7xl">` |
-| `BlogPageSkeleton.tsx` | `<Section><Container maxWidth="7xl">` | `<section className="py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8"><div className="mx-auto max-w-7xl">` |
+| File                          | Before                                                     | After                                                                                                                                                             |
+| ----------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Header/Component.client.tsx` | `<Section as="div" block="header"><Container>`             | `<div className="py-4 px-4 sm:px-6 md:px-8 lg:px-8"><div className="mx-auto max-w-7xl">`                                                                          |
+| `Footer/Component.tsx`        | `<Section as="div"><Container>`                            | `<div className="py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8"><div className="mx-auto max-w-7xl">`                                                               |
+| `PostHero/index.tsx`          | `<Section className="py-6 ..."><Container maxWidth="4xl">` | `<div className="py-6 px-4 sm:px-6 md:px-8 lg:px-8 w-full"><div className="mx-auto max-w-4xl z-10 relative">`                                                     |
+| `PostContent/index.tsx`       | `<Section className="py-4 ..."><Container maxWidth="4xl">` | `<div className="py-4 px-4 sm:px-6 md:px-8 lg:px-8"><div className="mx-auto max-w-4xl">`                                                                          |
+| `ErrorBoundary/index.tsx`     | `<Section><Container maxWidth="4xl">`                      | `<div className="py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8"><div className="mx-auto max-w-4xl">`                                                               |
+| `not-found.tsx`               | `<Section className="..."><Container className="...">`     | `<section className="flex items-center justify-center min-h-[60vh] py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8"><div className="mx-auto max-w-7xl text-center">` |
+| `BlogPageContent/index.tsx`   | `<Section><Container maxWidth="7xl">`                      | `<section className="py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8"><div className="mx-auto max-w-7xl">`                                                           |
+| `BlogPageSkeleton.tsx`        | `<Section><Container maxWidth="7xl">`                      | `<section className="py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8"><div className="mx-auto max-w-7xl">`                                                           |
 
 ### Deleted files
 
@@ -118,16 +120,16 @@ pnpm payload migrate
 
 ## CSS Class Mapping
 
-| Token | Tailwind class |
-|-------|---------------|
-| `marginTop: "base"` | `mt-sectionBase` |
-| `marginTop: "large"` | `mt-sectionLarge` |
-| `marginBottom: "base"` | `mb-sectionBase` |
+| Token                   | Tailwind class    |
+| ----------------------- | ----------------- |
+| `marginTop: "base"`     | `mt-sectionBase`  |
+| `marginTop: "large"`    | `mt-sectionLarge` |
+| `marginBottom: "base"`  | `mb-sectionBase`  |
 | `marginBottom: "large"` | `mb-sectionLarge` |
-| `paddingX: "base"` | `px-sectionBase` |
-| `paddingX: "large"` | `px-sectionLarge` |
-| `paddingY: "base"` | `py-sectionBase` |
-| `paddingY: "large"` | `py-sectionLarge` |
-| `maxWidth: "base"` | `max-w-screen-xl` |
-| `maxWidth: "small"` | `max-w-screen-sm` |
-| `maxWidth: "none"` | `max-w-none` |
+| `paddingX: "base"`      | `px-sectionBase`  |
+| `paddingX: "large"`     | `px-sectionLarge` |
+| `paddingY: "base"`      | `py-sectionBase`  |
+| `paddingY: "large"`     | `py-sectionLarge` |
+| `maxWidth: "base"`      | `max-w-screen-xl` |
+| `maxWidth: "small"`     | `max-w-screen-sm` |
+| `maxWidth: "none"`      | `max-w-none`      |

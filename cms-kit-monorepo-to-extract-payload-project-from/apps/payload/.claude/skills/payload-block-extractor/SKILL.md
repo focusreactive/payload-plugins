@@ -25,12 +25,12 @@ Read `apps/payload/src/blocks/<BlockName>/config.ts`. Identify all fields and th
 
 ## Step 2 — Map fields to extractor expressions
 
-| Field type | Expression |
-|------------|------------|
-| `text` / `textarea` | `block.fieldName` |
-| `richText` | `extractLexicalText(block.fieldName)` |
-| `array` with sub-fields | `(block.items ?? []).flatMap(item => [<recurse sub-fields>])` |
-| `relationship` / `upload` / other | `// TODO: manual extraction needed for block.fieldName` |
+| Field type                        | Expression                                                    |
+| --------------------------------- | ------------------------------------------------------------- |
+| `text` / `textarea`               | `block.fieldName`                                             |
+| `richText`                        | `extractLexicalText(block.fieldName)`                         |
+| `array` with sub-fields           | `(block.items ?? []).flatMap(item => [<recurse sub-fields>])` |
+| `relationship` / `upload` / other | `// TODO: manual extraction needed for block.fieldName`       |
 
 For nested `array` fields, recurse into sub-fields using the same mapping rules.
 
@@ -55,15 +55,15 @@ Example — for a block named `Promo` with a `text` field, a `richText` body, an
 
 ```ts
 // apps/payload/src/blocks/Promo/extractText.ts
-import type { PromoBlock } from '@/payload-types'
-import { extractLexicalText, joinText } from '@/core/utils/text'
+import type { PromoBlock } from "@/payload-types";
+import { extractLexicalText, joinText } from "@/core/utils/text";
 
 export function extractPromoText(block: PromoBlock): string {
   return joinText([
     block.text,
     extractLexicalText(block.body),
     ...(block.items ?? []).flatMap((item) => [item.label]),
-  ])
+  ]);
 }
 ```
 

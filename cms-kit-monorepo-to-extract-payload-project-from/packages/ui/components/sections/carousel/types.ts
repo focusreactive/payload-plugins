@@ -1,6 +1,6 @@
 import type { IGenericCarouselBaseProps } from "../../ui/GenericCarousel/types";
 import type { IImageProps } from "../../ui/image/types";
-import { type IRichTextProps } from "../../ui/richText/types";
+import type { IRichTextProps } from "../../ui/richText/types";
 
 export interface ICarouselProps extends IGenericCarouselBaseProps {
   text?: IRichTextProps;

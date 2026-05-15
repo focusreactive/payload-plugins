@@ -1,47 +1,48 @@
-import type { CollectionConfig } from 'payload'
-import { or, user, author, superAdmin } from '@/core/lib/access'
+import type { CollectionConfig } from "payload";
 
-export const Authors: CollectionConfig<'authors'> = {
-  slug: 'authors',
-  labels: {
-    singular: {
-      en: 'Author',
-      es: 'Autor',
-    },
-    plural: {
-      en: 'Authors',
-      es: 'Autores',
-    },
-  },
+import { or, user, author, superAdmin } from "@/core/lib/access";
+
+export const Authors: CollectionConfig<"authors"> = {
   access: {
-    read: or(superAdmin, user, author, user),
     create: or(superAdmin, user, author, user),
-    update: or(superAdmin, user, author, user),
     delete: or(superAdmin, user, author, user),
+    read: or(superAdmin, user, author, user),
+    update: or(superAdmin, user, author, user),
   },
   admin: {
-    useAsTitle: 'name',
-    defaultColumns: ['name', 'updatedAt'],
+    defaultColumns: ["name", "updatedAt"],
+    group: "Blog",
     pagination: {
       limits: [20, 50, 100],
     },
-    group: 'Blog',
+    useAsTitle: "name",
   },
   fields: [
     {
-      name: 'name',
-      type: 'text',
+      name: "name",
+      type: "text",
       label: {
-        en: 'Name',
-        es: 'Nombre',
+        en: "Name",
+        es: "Nombre",
       },
       required: true,
       admin: {
         description: {
-          en: 'The name of the author',
-          es: 'El nombre del autor',
+          en: "The name of the author",
+          es: "El nombre del autor",
         },
       },
     },
   ],
-}
+  labels: {
+    plural: {
+      en: "Authors",
+      es: "Autores",
+    },
+    singular: {
+      en: "Author",
+      es: "Autor",
+    },
+  },
+  slug: "authors",
+};

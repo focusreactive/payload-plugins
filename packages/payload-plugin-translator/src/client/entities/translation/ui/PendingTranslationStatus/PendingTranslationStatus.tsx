@@ -1,21 +1,21 @@
-import { TrashIcon } from '@payloadcms/ui/icons/Trash'
+import { TrashIcon } from "@payloadcms/ui/icons/Trash";
 
-import { LanguageTranslateIcon } from '../../../../shared/lib/assets/icons/LanguageTranslateIcon'
-import { ReloadIcon } from '../../../../shared/lib/assets/icons/ReloadIcon'
-import Button from '../../../../shared/ui/Button'
-import Divider from '../../../../shared/ui/Divider'
-import StatusIndicator from '../../../../shared/ui/StatusIndicator'
-import Tooltip from '../../../../shared/ui/Tooltip'
-import { TranslationDirection } from '../TranslationDirection'
+import { LanguageTranslateIcon } from "../../../../shared/lib/assets/icons/LanguageTranslateIcon";
+import { ReloadIcon } from "../../../../shared/lib/assets/icons/ReloadIcon";
+import Button from "../../../../shared/ui/Button";
+import Divider from "../../../../shared/ui/Divider";
+import StatusIndicator from "../../../../shared/ui/StatusIndicator";
+import Tooltip from "../../../../shared/ui/Tooltip";
+import { TranslationDirection } from "../TranslationDirection";
 
-type TranslationStatusProps = {
-  onCancel: () => void
-  onRun: () => void
-  isLoading?: boolean
-  disabled?: boolean
-  sourceLocale: string
-  targetLocale: string
-  createdAt: string
+interface TranslationStatusProps {
+  onCancel: () => void;
+  onRun: () => void;
+  isLoading?: boolean;
+  disabled?: boolean;
+  sourceLocale: string;
+  targetLocale: string;
+  createdAt: string;
 }
 
 export function PendingTranslationStatus({
@@ -34,13 +34,13 @@ export function PendingTranslationStatus({
         sideOffset={12}
         content={
           <time dateTime={createdAt}>
-            Created at:{' '}
+            Created at:{" "}
             {new Date(createdAt).toLocaleString(undefined, {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              month: "short",
+              year: "numeric",
             })}
           </time>
         }
@@ -49,7 +49,10 @@ export function PendingTranslationStatus({
           <LanguageTranslateIcon />
         </Button>
       </Tooltip>
-      <TranslationDirection sourceLocale={sourceLocale} targetLocale={targetLocale} />
+      <TranslationDirection
+        sourceLocale={sourceLocale}
+        targetLocale={targetLocale}
+      />
       <Divider $size="sm" $orientation="vertical" />
       <Tooltip sideOffset={12} side="bottom" content="Cancel">
         <Button
@@ -80,5 +83,5 @@ export function PendingTranslationStatus({
         </Button>
       </Tooltip>
     </StatusIndicator>
-  )
+  );
 }

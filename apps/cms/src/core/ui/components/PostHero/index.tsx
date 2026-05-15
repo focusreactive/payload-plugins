@@ -1,17 +1,18 @@
-import React from 'react'
+import { Image } from "@repo/ui";
+import React from "react";
 
-import type { Post } from '@/payload-types'
-import { formatAuthors } from '@/core/lib/formatAuthors'
-import { formatDateTime } from '@/core/lib/formatDateTime'
-import { Image } from '@repo/ui'
-import { prepareImageProps } from '@/lib/adapters/prepareImageProps'
+import { formatAuthors } from "@/core/lib/formatAuthors";
+import { formatDateTime } from "@/core/lib/formatDateTime";
+import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
+import type { Post } from "@/payload-types";
 
 export const PostHero: React.FC<{
-  post: Post
+  post: Post;
 }> = ({ post }) => {
-  const { categories, heroImage, authors, publishedAt, title, excerpt } = post
+  const { categories, heroImage, authors, publishedAt, title, excerpt } = post;
 
-  const hasAuthors = authors && authors.length > 0 && formatAuthors(authors) !== ''
+  const hasAuthors =
+    authors && authors.length > 0 && formatAuthors(authors) !== "";
 
   return (
     <div className="py-6 px-4 sm:py-8 sm:px-6 md:py-10 md:px-8">
@@ -20,20 +21,22 @@ export const PostHero: React.FC<{
         {categories && categories.length > 0 && (
           <div className="flex gap-2 flex-wrap mb-4">
             {categories.map((category, index) => {
-              if (typeof category === 'object' && category !== null) {
+              if (typeof category === "object" && category !== null) {
                 return (
                   <span
                     key={index}
                     className="text-sm font-medium text-primary uppercase tracking-wide"
                   >
-                    {category.title || 'Untitled category'}
+                    {category.title || "Untitled category"}
                     {index < categories.length - 1 && (
-                      <span className="text-muted-foreground ml-2 mr-1">&middot;</span>
+                      <span className="text-muted-foreground ml-2 mr-1">
+                        &middot;
+                      </span>
                     )}
                   </span>
-                )
+                );
               }
-              return null
+              return null;
             })}
           </div>
         )}
@@ -46,7 +49,9 @@ export const PostHero: React.FC<{
         {/* Author & Date */}
         <div className="flex items-center gap-4 text-sm text-muted-foreground mb-8">
           {hasAuthors && (
-            <span className="font-medium text-foreground">{formatAuthors(authors)}</span>
+            <span className="font-medium text-foreground">
+              {formatAuthors(authors)}
+            </span>
           )}
           {hasAuthors && publishedAt && <span>&middot;</span>}
           {publishedAt && (
@@ -57,7 +62,7 @@ export const PostHero: React.FC<{
 
       {/* Hero Image */}
       <div className="mx-auto max-w-4xl mb-8">
-        {heroImage && typeof heroImage !== 'number' && (
+        {heroImage && typeof heroImage !== "number" && (
           <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
             {/* eslint-disable-next-line jsx-a11y/alt-text */}
             <Image
@@ -79,5 +84,5 @@ export const PostHero: React.FC<{
         </div>
       )}
     </div>
-  )
-}
+  );
+};

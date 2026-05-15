@@ -1,6 +1,5 @@
 "use client";
 
-import { ReactNode, useCallback, useEffect, useRef } from "react";
 import {
   BlocksField,
   useForm,
@@ -18,17 +17,21 @@ import type {
   FormState,
   SanitizedFieldPermissions,
 } from "payload";
+import type { ReactNode} from "react";
+import { useCallback, useEffect, useRef } from "react";
+
+import type { Preset } from "../shared/index.js";
 import { usePresetsConfig } from "../usePresetsConfig.js";
 import { buildSubFieldStateFromPreset } from "../utils.js";
-import { BlockSelectorWithPresets } from "./BlockSelectorWithPresets.js";
 import { useBeforeOpenDrawer } from "./BeforeOpenDrawerContext.js";
 import { BlocksConfigProvider } from "./BlocksConfigContext.js";
-import { OpenDrawerProvider } from "./OpenDrawerContext.js";
-import type { Preset } from "../shared/index.js";
+import { BlockSelectorWithPresets } from "./BlockSelectorWithPresets.js";
 import { hydrateBlocksFieldCustomComponents } from "./clipboard.js";
+import { OpenDrawerProvider } from "./OpenDrawerContext.js";
+
 import "./BlocksFieldWithPresets.scss";
 
-type BlocksFieldWithPresetsProps = {
+interface BlocksFieldWithPresetsProps {
   field: Omit<BlocksFieldClient, "type"> &
     Partial<Pick<BlocksFieldClient, "type">>;
   path: string;
@@ -38,13 +41,13 @@ type BlocksFieldWithPresetsProps = {
   parentSchemaPath: string;
   permissions?: SanitizedFieldPermissions;
   readOnly: boolean;
-};
+}
 
 export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
-  props,
+  props
 ) => {
   const { field, path, schemaPath, readOnly } = props;
-  const blocks = field.blocks;
+  const {blocks} = field;
 
   const { excludeKeys } = usePresetsConfig();
   const { user } = useAuth();
@@ -61,7 +64,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
   const currentFieldState = useFormFields(([fields]) => fields?.[path]);
 
   const existingFieldComponentRef = useRef<ReactNode>(
-    currentFieldState?.customComponents?.Field,
+    currentFieldState?.customComponents?.Field
   );
 
   useEffect(() => {
@@ -101,7 +104,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
 
       replaceState(nextState);
     },
-    [blocks, currentFieldState, path, replaceState, getFields],
+    [blocks, currentFieldState, path, replaceState, getFields]
   );
 
   form.replaceState = wrappedReplaceState;
@@ -125,14 +128,14 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
       if (presetData) {
         const subFieldState = buildSubFieldStateFromPreset(
           presetData,
-          excludeKeys,
+          excludeKeys
         );
 
         addFieldRow({
+          blockType,
           path,
           rowIndex: targetRowIndex,
           schemaPath,
-          blockType,
           subFieldState: subFieldState as FormState,
         });
 
@@ -140,13 +143,13 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
           t("presetsPlugin:blocksDrawer:successAddedWithPreset" as never, {
             blockType,
             name: preset.name,
-          }),
+          })
         );
       } else {
-        addFieldRow({ path, rowIndex: targetRowIndex, schemaPath, blockType });
+        addFieldRow({ blockType, path, rowIndex: targetRowIndex, schemaPath });
       }
     } else {
-      addFieldRow({ path, rowIndex: targetRowIndex, schemaPath, blockType });
+      addFieldRow({ blockType, path, rowIndex: targetRowIndex, schemaPath });
     }
 
     insertIndexRef.current = null;
@@ -156,15 +159,15 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
   const handleOpenDrawer = async (insertIndex: number | null = null) => {
     if (beforeOpenDrawer) {
       const allowed = await beforeOpenDrawer({
-        field,
-        path,
-        schemaPath,
-        readOnly,
-        permissions: props.permissions,
         blocksData,
+        field,
         formData: fullData ?? {},
+        path,
+        permissions: props.permissions,
+        readOnly,
+        schemaPath,
       });
-      if (!allowed) return;
+      if (!allowed) {return;}
     }
 
     insertIndexRef.current = insertIndex;

@@ -26,8 +26,8 @@ export function Footer({ links, text, copywriteText, image }: IFooterProps) {
 
         {copywriteText && (
           <p className="text-textColor text-center">{copywriteText}</p>
-          )}
-        </div>
+        )}
+      </div>
     </footer>
   );
 }

@@ -1,1 +1,1 @@
-export { default } from './StatusIndicator'
+export { default } from "./StatusIndicator";

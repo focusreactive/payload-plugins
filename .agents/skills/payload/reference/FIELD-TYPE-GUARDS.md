@@ -9,16 +9,16 @@ Complete reference with detailed examples and patterns. See [FIELDS.md](FIELDS.m
 Checks if field contains nested fields (group, array, row, or collapsible).
 
 ```ts
-import type { Field } from 'payload'
-import { fieldHasSubFields } from 'payload'
+import type { Field } from "payload";
+import { fieldHasSubFields } from "payload";
 
 function traverseFields(fields: Field[]): void {
   fields.forEach((field) => {
     if (fieldHasSubFields(field)) {
       // Safe to access field.fields
-      traverseFields(field.fields)
+      traverseFields(field.fields);
     }
-  })
+  });
 }
 ```
 
@@ -43,12 +43,12 @@ if (fieldHasSubFields(field) && !fieldIsArrayType(field)) {
 Checks if field type is `'array'`.
 
 ```ts
-import { fieldIsArrayType } from 'payload'
+import { fieldIsArrayType } from "payload";
 
 if (fieldIsArrayType(field)) {
   // field.type === 'array'
-  console.log(`Min rows: ${field.minRows}`)
-  console.log(`Max rows: ${field.maxRows}`)
+  console.log(`Min rows: ${field.minRows}`);
+  console.log(`Max rows: ${field.maxRows}`);
 }
 ```
 
@@ -65,13 +65,13 @@ fieldIsArrayType<TField extends ClientField | Field>(
 Checks if field type is `'blocks'`.
 
 ```ts
-import { fieldIsBlockType } from 'payload'
+import { fieldIsBlockType } from "payload";
 
 if (fieldIsBlockType(field)) {
   // field.type === 'blocks'
   field.blocks.forEach((block) => {
-    console.log(`Block: ${block.slug}`)
-  })
+    console.log(`Block: ${block.slug}`);
+  });
 }
 ```
 
@@ -98,11 +98,11 @@ if (fieldIsArrayType(field)) {
 Checks if field type is `'group'`.
 
 ```ts
-import { fieldIsGroupType } from 'payload'
+import { fieldIsGroupType } from "payload";
 
 if (fieldIsGroupType(field)) {
   // field.type === 'group'
-  console.log(`Interface: ${field.interfaceName}`)
+  console.log(`Interface: ${field.interfaceName}`);
 }
 ```
 
@@ -121,13 +121,13 @@ fieldIsGroupType<TField extends ClientField | Field>(
 Checks if field can have multiple values (select, relationship, or upload with `hasMany`).
 
 ```ts
-import { fieldSupportsMany } from 'payload'
+import { fieldSupportsMany } from "payload";
 
 if (fieldSupportsMany(field)) {
   // field.type is 'select' | 'relationship' | 'upload'
   // Safe to check field.hasMany
   if (field.hasMany) {
-    console.log('Field accepts multiple values')
+    console.log("Field accepts multiple values");
   }
 }
 ```
@@ -145,12 +145,12 @@ fieldSupportsMany<TField extends ClientField | Field>(
 Checks if field is relationship/upload/join with numeric `maxDepth` property.
 
 ```ts
-import { fieldHasMaxDepth } from 'payload'
+import { fieldHasMaxDepth } from "payload";
 
 if (fieldHasMaxDepth(field)) {
   // field.type is 'upload' | 'relationship' | 'join'
   // AND field.maxDepth is number
-  const remainingDepth = field.maxDepth - currentDepth
+  const remainingDepth = field.maxDepth - currentDepth;
 }
 ```
 
@@ -167,7 +167,7 @@ fieldHasMaxDepth<TField extends ClientField | Field>(
 Checks if field needs localization handling (accounts for parent localization).
 
 ```ts
-import { fieldShouldBeLocalized } from 'payload'
+import { fieldShouldBeLocalized } from "payload";
 
 function processField(field: Field, parentIsLocalized: boolean) {
   if (fieldShouldBeLocalized({ field, parentIsLocalized })) {
@@ -200,13 +200,13 @@ if (fieldShouldBeLocalized({ field, parentIsLocalized: false })) {
 Checks if field is virtual (computed or virtual relationship).
 
 ```ts
-import { fieldIsVirtual } from 'payload'
+import { fieldIsVirtual } from "payload";
 
 if (fieldIsVirtual(field)) {
   // field.virtual is truthy
-  if (typeof field.virtual === 'string') {
+  if (typeof field.virtual === "string") {
     // Virtual relationship path
-    console.log(`Virtual path: ${field.virtual}`)
+    console.log(`Virtual path: ${field.virtual}`);
   } else {
     // Computed virtual field (uses hooks)
   }
@@ -226,15 +226,15 @@ fieldIsVirtual(field: Field | Tab): boolean
 **Most commonly used guard.** Checks if field stores data (has name and is not UI-only).
 
 ```ts
-import { fieldAffectsData } from 'payload'
+import { fieldAffectsData } from "payload";
 
 function generateSchema(fields: Field[]) {
   fields.forEach((field) => {
     if (fieldAffectsData(field)) {
       // Safe to access field.name
-      schema[field.name] = getFieldType(field)
+      schema[field.name] = getFieldType(field);
     }
-  })
+  });
 }
 ```
 
@@ -249,7 +249,7 @@ fieldAffectsData<TField extends ClientField | Field | TabAsField | TabAsFieldCli
 **Pattern - Data Fields Only:**
 
 ```ts
-const dataFields = fields.filter(fieldAffectsData)
+const dataFields = fields.filter(fieldAffectsData);
 ```
 
 ### fieldIsPresentationalOnly
@@ -257,12 +257,12 @@ const dataFields = fields.filter(fieldAffectsData)
 Checks if field is UI-only (type `'ui'`).
 
 ```ts
-import { fieldIsPresentationalOnly } from 'payload'
+import { fieldIsPresentationalOnly } from "payload";
 
 if (fieldIsPresentationalOnly(field)) {
   // field.type === 'ui'
   // Skip in data operations, GraphQL schema, etc.
-  return
+  return;
 }
 ```
 
@@ -279,7 +279,7 @@ fieldIsPresentationalOnly<TField extends ClientField | Field | TabAsField | TabA
 Checks if field name is exactly `'id'`.
 
 ```ts
-import { fieldIsID } from 'payload'
+import { fieldIsID } from "payload";
 
 if (fieldIsID(field)) {
   // field.name === 'id'
@@ -300,9 +300,9 @@ fieldIsID<TField extends ClientField | Field>(
 Checks if field is hidden or admin-disabled.
 
 ```ts
-import { fieldIsHiddenOrDisabled } from 'payload'
+import { fieldIsHiddenOrDisabled } from "payload";
 
-const visibleFields = fields.filter((field) => !fieldIsHiddenOrDisabled(field))
+const visibleFields = fields.filter((field) => !fieldIsHiddenOrDisabled(field));
 ```
 
 **Signature:**
@@ -320,17 +320,17 @@ fieldIsHiddenOrDisabled<TField extends ClientField | Field | TabAsField | TabAsF
 Checks if field is positioned in sidebar.
 
 ```ts
-import { fieldIsSidebar } from 'payload'
+import { fieldIsSidebar } from "payload";
 
 const [mainFields, sidebarFields] = fields.reduce(
   ([main, sidebar], field) => {
     if (fieldIsSidebar(field)) {
-      return [main, [...sidebar, field]]
+      return [main, [...sidebar, field]];
     }
-    return [[...main, field], sidebar]
+    return [[...main, field], sidebar];
   },
-  [[], []],
-)
+  [[], []]
+);
 ```
 
 **Signature:**
@@ -348,15 +348,15 @@ fieldIsSidebar<TField extends ClientField | Field | TabAsField | TabAsFieldClien
 Checks if tab is named (stores data under tab name).
 
 ```ts
-import { tabHasName } from 'payload'
+import { tabHasName } from "payload";
 
 tabs.forEach((tab) => {
   if (tabHasName(tab)) {
     // tab.name exists
-    dataPath.push(tab.name)
+    dataPath.push(tab.name);
   }
   // Process tab.fields
-})
+});
 ```
 
 **Signature:**
@@ -372,11 +372,11 @@ tabHasName<TField extends ClientTab | Tab>(
 Checks if group is named (stores data under group name).
 
 ```ts
-import { groupHasName } from 'payload'
+import { groupHasName } from "payload";
 
 if (groupHasName(group)) {
   // group.name exists
-  return data[group.name]
+  return data[group.name];
 }
 ```
 
@@ -393,15 +393,15 @@ groupHasName(group: Partial<NamedGroupFieldClient>): group is NamedGroupFieldCli
 Checks if option is object format `{label, value}` vs string.
 
 ```ts
-import { optionIsObject } from 'payload'
+import { optionIsObject } from "payload";
 
 field.options.forEach((option) => {
   if (optionIsObject(option)) {
-    console.log(`${option.label}: ${option.value}`)
+    console.log(`${option.label}: ${option.value}`);
   } else {
-    console.log(option) // string value
+    console.log(option); // string value
   }
-})
+});
 ```
 
 **Signature:**
@@ -415,11 +415,11 @@ optionIsObject(option: Option): option is OptionObject
 Checks if entire options array contains objects.
 
 ```ts
-import { optionsAreObjects } from 'payload'
+import { optionsAreObjects } from "payload";
 
 if (optionsAreObjects(field.options)) {
   // All options are OptionObject[]
-  const labels = field.options.map((opt) => opt.label)
+  const labels = field.options.map((opt) => opt.label);
 }
 ```
 
@@ -434,11 +434,11 @@ optionsAreObjects(options: Option[]): options is OptionObject[]
 Checks if option is string value (not object).
 
 ```ts
-import { optionIsValue } from 'payload'
+import { optionIsValue } from "payload";
 
 if (optionIsValue(option)) {
   // option is string
-  const value = option
+  const value = option;
 }
 ```
 
@@ -453,12 +453,12 @@ optionIsValue(option: Option): option is string
 Checks if relationship value is polymorphic format `{relationTo, value}`.
 
 ```ts
-import { valueIsValueWithRelation } from 'payload'
+import { valueIsValueWithRelation } from "payload";
 
 if (valueIsValueWithRelation(fieldValue)) {
   // fieldValue.relationTo exists
   // fieldValue.value exists
-  console.log(`Related to ${fieldValue.relationTo}: ${fieldValue.value}`)
+  console.log(`Related to ${fieldValue.relationTo}: ${fieldValue.value}`);
 }
 ```
 
@@ -473,36 +473,42 @@ valueIsValueWithRelation(value: unknown): value is ValueWithRelation
 ### Recursive Field Traversal
 
 ```ts
-import { fieldAffectsData, fieldHasSubFields } from 'payload'
+import { fieldAffectsData, fieldHasSubFields } from "payload";
 
 function traverseFields(fields: Field[], callback: (field: Field) => void) {
   fields.forEach((field) => {
     if (fieldAffectsData(field)) {
-      callback(field)
+      callback(field);
     }
 
     if (fieldHasSubFields(field)) {
-      traverseFields(field.fields, callback)
+      traverseFields(field.fields, callback);
     }
-  })
+  });
 }
 ```
 
 ### Filter Data-Bearing Fields
 
 ```ts
-import { fieldAffectsData, fieldIsPresentationalOnly, fieldIsHiddenOrDisabled } from 'payload'
+import {
+  fieldAffectsData,
+  fieldIsPresentationalOnly,
+  fieldIsHiddenOrDisabled,
+} from "payload";
 
 const dataFields = fields.filter(
   (field) =>
-    fieldAffectsData(field) && !fieldIsPresentationalOnly(field) && !fieldIsHiddenOrDisabled(field),
-)
+    fieldAffectsData(field) &&
+    !fieldIsPresentationalOnly(field) &&
+    !fieldIsHiddenOrDisabled(field)
+);
 ```
 
 ### Container Type Switching
 
 ```ts
-import { fieldIsArrayType, fieldIsBlockType, fieldHasSubFields } from 'payload'
+import { fieldIsArrayType, fieldIsBlockType, fieldHasSubFields } from "payload";
 
 if (fieldIsArrayType(field)) {
   // Handle array-specific logic
@@ -516,18 +522,18 @@ if (fieldIsArrayType(field)) {
 ### Safe Property Access
 
 ```ts
-import { fieldSupportsMany, fieldHasMaxDepth } from 'payload'
+import { fieldSupportsMany, fieldHasMaxDepth } from "payload";
 
 // Without guard - TypeScript error
 // if (field.hasMany) { /* ... */ }
 
 // With guard - safe access
 if (fieldSupportsMany(field) && field.hasMany) {
-  console.log('Multiple values supported')
+  console.log("Multiple values supported");
 }
 
 if (fieldHasMaxDepth(field)) {
-  const depth = field.maxDepth // TypeScript knows this is number
+  const depth = field.maxDepth; // TypeScript knows this is number
 }
 ```
 
@@ -536,8 +542,8 @@ if (fieldHasMaxDepth(field)) {
 All guards preserve the original type constraint:
 
 ```ts
-import type { ClientField, Field } from 'payload'
-import { fieldHasSubFields } from 'payload'
+import type { ClientField, Field } from "payload";
+import { fieldHasSubFields } from "payload";
 
 function processServerField(field: Field) {
   if (fieldHasSubFields(field)) {

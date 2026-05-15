@@ -1,44 +1,50 @@
-import { cva } from 'class-variance-authority'
-import { ISectionData } from '../SectionContainer/types'
-import { cn } from '@/core/lib/utils'
+import { cva } from "class-variance-authority";
 
-const containerVariants = cva('mx-auto w-full', {
-  variants: {
-    paddingX: {
-      none: 'px-0',
-      base: 'px-containerBase',
-    },
+import { cn } from "@/core/lib/utils";
 
-    maxWidth: {
-      none: 'max-w-none',
-      base: 'max-w-containerMaxW',
-    },
-  },
+import type { ISectionData } from "../SectionContainer/types";
+
+const containerVariants = cva("mx-auto w-full", {
   defaultVariants: {
-    paddingX: 'base',
-    maxWidth: 'base',
+    maxWidth: "base",
+    paddingX: "base",
   },
-})
+  variants: {
+    maxWidth: {
+      base: "max-w-containerMaxW",
+      none: "max-w-none",
+    },
 
-type ContainerProps = {
-  children: React.ReactNode
-  containerData: Pick<ISectionData, 'paddingX' | 'maxWidth'>
-  className?: string
+    paddingX: {
+      base: "px-containerBase",
+      none: "px-0",
+    },
+  },
+});
+
+interface ContainerProps {
+  children: React.ReactNode;
+  containerData: Pick<ISectionData, "paddingX" | "maxWidth">;
+  className?: string;
 }
 
-export function Container({ children, containerData, className }: ContainerProps) {
-  const { paddingX, maxWidth } = containerData
+export function Container({
+  children,
+  containerData,
+  className,
+}: ContainerProps) {
+  const { paddingX, maxWidth } = containerData;
   return (
     <div
       className={cn(
         containerVariants({
-          paddingX,
           maxWidth,
+          paddingX,
         }),
-        className,
+        className
       )}
     >
       {children}
     </div>
-  )
+  );
 }

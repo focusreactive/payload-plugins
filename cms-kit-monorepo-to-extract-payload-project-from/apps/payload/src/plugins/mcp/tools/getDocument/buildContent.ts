@@ -1,23 +1,25 @@
-import type { CollectionSlug, Payload } from 'payload'
-import { getServerSideURL } from '@/core/lib/getURL'
-import { formatDocument } from '../../utils/markdown/formatDocument'
-import { resolveTitleField } from '../../utils/resolveTitleField'
-import { extractFields } from '../../utils/field/extractFields'
-import { buildLabelMaps } from '../../utils/field/buildLabelMaps'
-import { Locale } from '@/core/types'
-import { BaseDocument, ContentBlock } from '../../types'
-import { PRE_FORMATTED_CONTENT_INSTRUCTION } from '../../constants/instructions'
+import type { CollectionSlug, Payload } from "payload";
+
+import { getServerSideURL } from "@/core/lib/getURL";
+import type { Locale } from "@/core/types";
+
+import { PRE_FORMATTED_CONTENT_INSTRUCTION } from "../../constants/instructions";
+import type { BaseDocument, ContentBlock } from "../../types";
+import { buildLabelMaps } from "../../utils/field/buildLabelMaps";
+import { extractFields } from "../../utils/field/extractFields";
+import { formatDocument } from "../../utils/markdown/formatDocument";
+import { resolveTitleField } from "../../utils/resolveTitleField";
 
 interface Props {
-  doc: BaseDocument
-  skipKeys: Set<string>
-  collection: CollectionSlug
-  titleField?: string
-  payload: Payload
-  full?: boolean
-  raw?: boolean
-  locale?: Locale
-  buildUrl?: (doc: BaseDocument, locale?: Locale) => string | null
+  doc: BaseDocument;
+  skipKeys: Set<string>;
+  collection: CollectionSlug;
+  titleField?: string;
+  payload: Payload;
+  full?: boolean;
+  raw?: boolean;
+  locale?: Locale;
+  buildUrl?: (doc: BaseDocument, locale?: Locale) => string | null;
 }
 
 export function buildContent({
@@ -32,35 +34,38 @@ export function buildContent({
   buildUrl,
 }: Props): ContentBlock[] {
   if (raw) {
-    return [{ type: 'text', text: JSON.stringify(doc, null, 2) }]
+    return [{ text: JSON.stringify(doc, null, 2), type: "text" }];
   }
 
-  const title = resolveTitleField(doc, titleField)
-  const titleIsId = titleField === 'id' || !titleField
+  const title = resolveTitleField(doc, titleField);
+  const titleIsId = titleField === "id" || !titleField;
 
-  const url = buildUrl ? buildUrl(doc, locale) : null
+  const url = buildUrl ? buildUrl(doc, locale) : null;
   const adminUrl =
     doc.id && collection
-      ? `${getServerSideURL()}/admin/collections/${collection}/${doc.id}${locale ? `?locale=${locale}` : ''}`
-      : null
+      ? `${getServerSideURL()}/admin/collections/${collection}/${doc.id}${locale ? `?locale=${locale}` : ""}`
+      : null;
 
-  const extractedDoc = extractFields(doc, skipKeys)
+  const extractedDoc = extractFields(doc, skipKeys);
 
-  const { fieldLabels, blockLabels, fieldRelationTo } = buildLabelMaps(collection, payload)
+  const { fieldLabels, blockLabels, fieldRelationTo } = buildLabelMaps(
+    collection,
+    payload
+  );
 
   const body = formatDocument({
+    adminUrl,
+    blockLabels,
+    collectionSlug: collection,
+    extractedDoc,
+    fieldLabels,
+    fieldRelationTo,
     id: doc.id as string,
+    summarizeComplexValues: !full,
     title,
     titleIsId,
     url,
-    adminUrl,
-    extractedDoc,
-    collectionSlug: collection,
-    fieldLabels,
-    blockLabels,
-    fieldRelationTo,
-    summarizeComplexValues: !full,
-  })
+  });
 
-  return [{ type: 'text', text: PRE_FORMATTED_CONTENT_INSTRUCTION + body }]
+  return [{ text: PRE_FORMATTED_CONTENT_INSTRUCTION + body, type: "text" }];
 }

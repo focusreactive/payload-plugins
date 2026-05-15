@@ -1,1 +1,1 @@
-export { DocumentTranslationForm } from './DocumentTranslationForm'
+export { DocumentTranslationForm } from "./DocumentTranslationForm";

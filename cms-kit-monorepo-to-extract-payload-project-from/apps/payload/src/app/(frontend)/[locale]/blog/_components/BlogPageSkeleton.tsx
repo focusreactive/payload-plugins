@@ -10,7 +10,10 @@ export function BlogPageSkeleton() {
 
         <div className="flex flex-wrap gap-2 mb-8">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="animate-pulse rounded-full bg-primaryLightColor h-8 w-20" />
+            <div
+              key={i}
+              className="animate-pulse rounded-full bg-primaryLightColor h-8 w-20"
+            />
           ))}
         </div>
 
@@ -32,5 +35,5 @@ export function BlogPageSkeleton() {
         </div>
       </div>
     </section>
-  )
+  );
 }

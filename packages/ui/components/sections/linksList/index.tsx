@@ -7,11 +7,13 @@ export function LinksList({ links, alignVariant }: ILinksListProps) {
     <div
       className={cn("flex w-full flex-wrap items-center gap-6", {
         "justify-center": alignVariant === "center",
-        "justify-start": alignVariant === "left",
         "justify-end": alignVariant === "right",
+        "justify-start": alignVariant === "left",
       })}
     >
-      {links?.map((link, i) => <Link key={i} {...link} />)}
+      {links?.map((link, i) => (
+        <Link key={i} {...link} />
+      ))}
     </div>
   );
 }

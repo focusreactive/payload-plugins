@@ -1,6 +1,7 @@
 import type { CollectionSlug } from "payload";
-import type { Mode } from "../../types";
+
 import { EXCLUDED_ADMIN_ROUTES } from "../../constants";
+import type { Mode } from "../../types";
 
 interface ModeData {
   mode: Mode;
@@ -12,37 +13,39 @@ interface ModeData {
 export function defineModeByPathname(pathname: string): ModeData {
   if (EXCLUDED_ADMIN_ROUTES.some((route) => pathname?.startsWith(route))) {
     return {
-      mode: "global",
       collectionSlug: null,
       documentId: null,
       globalSlug: null,
+      mode: "global",
     };
   }
 
-  const documentModeMatch = pathname?.match(/\/admin\/collections\/([^/]+)\/(\d+)/);
+  const documentModeMatch = pathname?.match(
+    /\/admin\/collections\/([^/]+)\/(\d+)/
+  );
   if (documentModeMatch) {
     return {
-      mode: "document",
       collectionSlug: documentModeMatch[1] as CollectionSlug,
       documentId: Number(documentModeMatch[2]),
       globalSlug: null,
+      mode: "document",
     };
   }
 
   const globalDocumentMatch = pathname?.match(/\/admin\/globals\/([^/]+)$/);
   if (globalDocumentMatch) {
     return {
-      mode: "global-document",
-      globalSlug: globalDocumentMatch[1] ?? null,
       collectionSlug: null,
       documentId: null,
+      globalSlug: globalDocumentMatch[1] ?? null,
+      mode: "global-document",
     };
   }
 
   return {
-    mode: "global",
     collectionSlug: null,
     documentId: null,
     globalSlug: null,
+    mode: "global",
   };
 }

@@ -1,1 +1,1 @@
-export { createSyncRunner } from './SyncRunnerProvider'
+export { createSyncRunner } from "./SyncRunnerProvider";

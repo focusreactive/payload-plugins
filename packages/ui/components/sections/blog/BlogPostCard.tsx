@@ -1,7 +1,8 @@
 import { Image } from "../../ui/image";
 import { Link } from "../../ui/link";
 import { RichText } from "../../ui/richText";
-import { BlogStyle, type IBlogPostCardProps } from "./types";
+import { BlogStyle } from './types';
+import type { IBlogPostCardProps } from './types';
 
 export default function BlogPostCard({
   style,

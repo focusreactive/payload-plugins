@@ -1,1 +1,1 @@
-export { BulkDocumentTranslationDashboard } from './ui/BulkTranslationDashboard.export'
+export { BulkDocumentTranslationDashboard } from "./ui/BulkTranslationDashboard.export";

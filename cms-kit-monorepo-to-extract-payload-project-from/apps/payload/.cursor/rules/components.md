@@ -18,18 +18,18 @@ There are four main types of Custom Components:
 Components are defined using file paths (not direct imports) to keep the config lightweight and Node.js compatible.
 
 ```typescript
-import { buildConfig } from 'payload'
+import { buildConfig } from "payload";
 
 export default buildConfig({
   admin: {
     components: {
       logout: {
-        Button: '/src/components/Logout#MyComponent', // Named export
+        Button: "/src/components/Logout#MyComponent", // Named export
       },
-      Nav: '/src/components/Nav', // Default export
+      Nav: "/src/components/Nav", // Default export
     },
   },
-})
+});
 ```
 
 **Component Path Rules:**
@@ -68,22 +68,22 @@ Instead of a string path, you can pass a config object:
 ### Setting Base Directory
 
 ```typescript
-import path from 'path'
-import { fileURLToPath } from 'node:url'
+import path from "path";
+import { fileURLToPath } from "node:url";
 
-const filename = fileURLToPath(import.meta.url)
-const dirname = path.dirname(filename)
+const filename = fileURLToPath(import.meta.url);
+const dirname = path.dirname(filename);
 
 export default buildConfig({
   admin: {
     importMap: {
-      baseDir: path.resolve(dirname, 'src'), // Set base directory
+      baseDir: path.resolve(dirname, "src"), // Set base directory
     },
     components: {
-      Nav: '/components/Nav', // Now relative to src/
+      Nav: "/components/Nav", // Now relative to src/
     },
   },
-})
+});
 ```
 
 ## Server vs Client Components
@@ -95,19 +95,19 @@ export default buildConfig({
 Can use Local API directly, perform async operations, and access full Payload instance.
 
 ```tsx
-import React from 'react'
-import type { Payload } from 'payload'
+import React from "react";
+import type { Payload } from "payload";
 
 async function MyServerComponent({ payload }: { payload: Payload }) {
   const page = await payload.findByID({
-    collection: 'pages',
-    id: '123',
-  })
+    collection: "pages",
+    id: "123",
+  });
 
-  return <p>{page.title}</p>
+  return <p>{page.title}</p>;
 }
 
-export default MyServerComponent
+export default MyServerComponent;
 ```
 
 ### Client Components
@@ -115,13 +115,15 @@ export default MyServerComponent
 Use the `'use client'` directive for interactivity, hooks, state, etc.
 
 ```tsx
-'use client'
-import React, { useState } from 'react'
+"use client";
+import React, { useState } from "react";
 
 export function MyClientComponent() {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
 
-  return <button onClick={() => setCount(count + 1)}>Clicked {count} times</button>
+  return (
+    <button onClick={() => setCount(count + 1)}>Clicked {count} times</button>
+  );
 }
 ```
 
@@ -142,27 +144,27 @@ All Custom Components receive these props by default:
 ```tsx
 async function MyComponent({ payload, i18n, locale }) {
   const data = await payload.find({
-    collection: 'posts',
+    collection: "posts",
     locale,
-  })
+  });
 
-  return <div>{data.docs.length} posts</div>
+  return <div>{data.docs.length} posts</div>;
 }
 ```
 
 **Client Component Example:**
 
 ```tsx
-'use client'
-import { usePayload, useLocale, useTranslation } from '@payloadcms/ui'
+"use client";
+import { usePayload, useLocale, useTranslation } from "@payloadcms/ui";
 
 export function MyComponent() {
   // Access via hooks in client components
-  const { getLocal, getByID } = usePayload()
-  const locale = useLocale()
-  const { t, i18n } = useTranslation()
+  const { getLocal, getByID } = usePayload();
+  const locale = useLocale();
+  const { t, i18n } = useTranslation();
 
-  return <div>{t('myKey')}</div>
+  return <div>{t("myKey")}</div>;
 }
 ```
 
@@ -187,9 +189,9 @@ Pass additional props using `clientProps` or `serverProps`:
 Receive in component:
 
 ```tsx
-'use client'
+"use client";
 export function Logout({ buttonText, onLogout }) {
-  return <button onClick={onLogout}>{buttonText}</button>
+  return <button onClick={onLogout}>{buttonText}</button>;
 }
 ```
 
@@ -224,18 +226,18 @@ export default buildConfig({
   admin: {
     components: {
       graphics: {
-        Logo: '/components/Logo',
-        Icon: '/components/Icon',
+        Logo: "/components/Logo",
+        Icon: "/components/Icon",
       },
     },
   },
-})
+});
 ```
 
 ```tsx
 // components/Logo.tsx
 export default function Logo() {
-  return <img src="/logo.png" alt="My Brand" width={200} />
+  return <img src="/logo.png" alt="My Brand" width={200} />;
 }
 ```
 
@@ -245,26 +247,26 @@ export default function Logo() {
 export default buildConfig({
   admin: {
     components: {
-      actions: ['/components/ClearCacheButton', '/components/PreviewButton'],
+      actions: ["/components/ClearCacheButton", "/components/PreviewButton"],
     },
   },
-})
+});
 ```
 
 ```tsx
 // components/ClearCacheButton.tsx
-'use client'
+"use client";
 export default function ClearCacheButton() {
   return (
     <button
       onClick={async () => {
-        await fetch('/api/clear-cache', { method: 'POST' })
-        alert('Cache cleared!')
+        await fetch("/api/clear-cache", { method: "POST" });
+        alert("Cache cleared!");
       }}
     >
       Clear Cache
     </button>
-  )
+  );
 }
 ```
 
@@ -273,32 +275,32 @@ export default function ClearCacheButton() {
 Collection Components are specific to a collection's views.
 
 ```typescript
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig } from "payload";
 
 export const Posts: CollectionConfig = {
-  slug: 'posts',
+  slug: "posts",
   admin: {
     components: {
       // Edit view components
       edit: {
-        PreviewButton: '/components/PostPreview',
-        SaveButton: '/components/CustomSave',
-        SaveDraftButton: '/components/CustomSaveDraft',
-        PublishButton: '/components/CustomPublish',
+        PreviewButton: "/components/PostPreview",
+        SaveButton: "/components/CustomSave",
+        SaveDraftButton: "/components/CustomSaveDraft",
+        PublishButton: "/components/CustomPublish",
       },
 
       // List view components
       list: {
-        Header: '/components/PostsListHeader',
-        beforeList: ['/components/ListFilters'],
-        afterList: ['/components/ListFooter'],
+        Header: "/components/PostsListHeader",
+        beforeList: ["/components/ListFilters"],
+        afterList: ["/components/ListFooter"],
       },
     },
   },
   fields: [
     // ...
   ],
-}
+};
 ```
 
 ## Global Components
@@ -306,22 +308,22 @@ export const Posts: CollectionConfig = {
 Similar to Collection Components but for Global documents.
 
 ```typescript
-import type { GlobalConfig } from 'payload'
+import type { GlobalConfig } from "payload";
 
 export const Settings: GlobalConfig = {
-  slug: 'settings',
+  slug: "settings",
   admin: {
     components: {
       edit: {
-        PreviewButton: '/components/SettingsPreview',
-        SaveButton: '/components/SettingsSave',
+        PreviewButton: "/components/SettingsPreview",
+        SaveButton: "/components/SettingsSave",
       },
     },
   },
   fields: [
     // ...
   ],
-}
+};
 ```
 
 ## Field Components
@@ -345,12 +347,12 @@ Customize how fields render in Edit and List views.
 
 ```tsx
 // components/StatusField.tsx
-'use client'
-import { useField } from '@payloadcms/ui'
-import type { SelectFieldClientComponent } from 'payload'
+"use client";
+import { useField } from "@payloadcms/ui";
+import type { SelectFieldClientComponent } from "payload";
 
 export const StatusField: SelectFieldClientComponent = ({ path, field }) => {
-  const { value, setValue } = useField({ path })
+  const { value, setValue } = useField({ path });
 
   return (
     <div>
@@ -363,8 +365,8 @@ export const StatusField: SelectFieldClientComponent = ({ path, field }) => {
         ))}
       </select>
     </div>
-  )
-}
+  );
+};
 ```
 
 ### Cell Component (List View)
@@ -384,22 +386,22 @@ export const StatusField: SelectFieldClientComponent = ({ path, field }) => {
 
 ```tsx
 // components/StatusCell.tsx
-import type { SelectFieldCellComponent } from 'payload'
+import type { SelectFieldCellComponent } from "payload";
 
 export const StatusCell: SelectFieldCellComponent = ({ data, cellData }) => {
-  const isPublished = cellData === 'published'
+  const isPublished = cellData === "published";
 
   return (
     <span
       style={{
-        color: isPublished ? 'green' : 'orange',
-        fontWeight: 'bold',
+        color: isPublished ? "green" : "orange",
+        fontWeight: "bold",
       }}
     >
       {cellData}
     </span>
-  )
-}
+  );
+};
 ```
 
 ### UI Field (Presentational Only)
@@ -420,22 +422,22 @@ Special field type for adding custom UI without affecting data:
 
 ```tsx
 // components/RefundButton.tsx
-'use client'
-import { useDocumentInfo } from '@payloadcms/ui'
+"use client";
+import { useDocumentInfo } from "@payloadcms/ui";
 
 export default function RefundButton() {
-  const { id } = useDocumentInfo()
+  const { id } = useDocumentInfo();
 
   return (
     <button
       onClick={async () => {
-        await fetch(`/api/orders/${id}/refund`, { method: 'POST' })
-        alert('Refund processed')
+        await fetch(`/api/orders/${id}/refund`, { method: "POST" });
+        alert("Refund processed");
       }}
     >
       Process Refund
     </button>
-  )
+  );
 }
 ```
 
@@ -444,7 +446,7 @@ export default function RefundButton() {
 Payload provides many React hooks for Client Components:
 
 ```tsx
-'use client'
+"use client";
 import {
   useAuth, // Current user
   useConfig, // Payload config (client-safe)
@@ -455,16 +457,16 @@ import {
   useLocale, // Current locale
   useTranslation, // i18n translations
   usePayload, // Local API methods
-} from '@payloadcms/ui'
+} from "@payloadcms/ui";
 
 export function MyComponent() {
-  const { user } = useAuth()
-  const { config } = useConfig()
-  const { id, collection } = useDocumentInfo()
-  const locale = useLocale()
-  const { t } = useTranslation()
+  const { user } = useAuth();
+  const { config } = useConfig();
+  const { id, collection } = useDocumentInfo();
+  const locale = useLocale();
+  const { t } = useTranslation();
 
-  return <div>Hello {user?.email}</div>
+  return <div>Hello {user?.email}</div>;
 }
 ```
 
@@ -476,20 +478,20 @@ export function MyComponent() {
 
 ```tsx
 async function MyServerComponent({ payload }) {
-  const { config } = payload
-  return <div>{config.serverURL}</div>
+  const { config } = payload;
+  return <div>{config.serverURL}</div>;
 }
 ```
 
 **In Client Components:**
 
 ```tsx
-'use client'
-import { useConfig } from '@payloadcms/ui'
+"use client";
+import { useConfig } from "@payloadcms/ui";
 
 export function MyClientComponent() {
-  const { config } = useConfig() // Client-safe config
-  return <div>{config.serverURL}</div>
+  const { config } = useConfig(); // Client-safe config
+  return <div>{config.serverURL}</div>;
 }
 ```
 
@@ -500,23 +502,23 @@ export function MyClientComponent() {
 **Server Component:**
 
 ```tsx
-import type { TextFieldServerComponent } from 'payload'
+import type { TextFieldServerComponent } from "payload";
 
 export const MyFieldComponent: TextFieldServerComponent = ({ field }) => {
-  return <div>Field name: {field.name}</div>
-}
+  return <div>Field name: {field.name}</div>;
+};
 ```
 
 **Client Component:**
 
 ```tsx
-'use client'
-import type { TextFieldClientComponent } from 'payload'
+"use client";
+import type { TextFieldClientComponent } from "payload";
 
 export const MyFieldComponent: TextFieldClientComponent = ({ clientField }) => {
   // clientField has non-serializable props removed
-  return <div>Field name: {clientField.name}</div>
-}
+  return <div>Field name: {clientField.name}</div>;
+};
 ```
 
 ## Translations (i18n)
@@ -524,29 +526,29 @@ export const MyFieldComponent: TextFieldClientComponent = ({ clientField }) => {
 **Server Component:**
 
 ```tsx
-import { getTranslation } from '@payloadcms/translations'
+import { getTranslation } from "@payloadcms/translations";
 
 async function MyServerComponent({ i18n }) {
-  const translatedTitle = getTranslation(myTranslation, i18n)
-  return <p>{translatedTitle}</p>
+  const translatedTitle = getTranslation(myTranslation, i18n);
+  return <p>{translatedTitle}</p>;
 }
 ```
 
 **Client Component:**
 
 ```tsx
-'use client'
-import { useTranslation } from '@payloadcms/ui'
+"use client";
+import { useTranslation } from "@payloadcms/ui";
 
 export function MyClientComponent() {
-  const { t, i18n } = useTranslation()
+  const { t, i18n } = useTranslation();
 
   return (
     <div>
-      <p>{t('namespace:key', { variable: 'value' })}</p>
+      <p>{t("namespace:key", { variable: "value" })}</p>
       <p>Language: {i18n.language}</p>
     </div>
-  )
+  );
 }
 ```
 
@@ -555,10 +557,10 @@ export function MyClientComponent() {
 ### Using CSS Variables
 
 ```tsx
-import './styles.scss'
+import "./styles.scss";
 
 export function MyComponent() {
-  return <div className="my-component">Custom Component</div>
+  return <div className="my-component">Custom Component</div>;
 }
 ```
 
@@ -575,7 +577,7 @@ export function MyComponent() {
 ### Importing Payload SCSS
 
 ```scss
-@import '~@payloadcms/ui/scss';
+@import "~@payloadcms/ui/scss";
 
 .my-component {
   @include mid-break {
@@ -589,58 +591,58 @@ export function MyComponent() {
 ### Conditional Field Visibility
 
 ```tsx
-'use client'
-import { useFormFields } from '@payloadcms/ui'
-import type { TextFieldClientComponent } from 'payload'
+"use client";
+import { useFormFields } from "@payloadcms/ui";
+import type { TextFieldClientComponent } from "payload";
 
 export const ConditionalField: TextFieldClientComponent = ({ path }) => {
-  const showField = useFormFields(([fields]) => fields.enableFeature?.value)
+  const showField = useFormFields(([fields]) => fields.enableFeature?.value);
 
-  if (!showField) return null
+  if (!showField) return null;
 
-  return <input type="text" />
-}
+  return <input type="text" />;
+};
 ```
 
 ### Loading Data from API
 
 ```tsx
-'use client'
-import { useState, useEffect } from 'react'
+"use client";
+import { useState, useEffect } from "react";
 
 export function DataLoader() {
-  const [data, setData] = useState(null)
+  const [data, setData] = useState(null);
 
   useEffect(() => {
-    fetch('/api/custom-data')
+    fetch("/api/custom-data")
       .then((res) => res.json())
-      .then(setData)
-  }, [])
+      .then(setData);
+  }, []);
 
-  return <div>{JSON.stringify(data)}</div>
+  return <div>{JSON.stringify(data)}</div>;
 }
 ```
 
 ### Using Local API in Server Components
 
 ```tsx
-import type { Payload } from 'payload'
+import type { Payload } from "payload";
 
 async function RelatedPosts({ payload, id }: { payload: Payload; id: string }) {
   const post = await payload.findByID({
-    collection: 'posts',
+    collection: "posts",
     id,
     depth: 0,
-  })
+  });
 
   const related = await payload.find({
-    collection: 'posts',
+    collection: "posts",
     where: {
       category: { equals: post.category },
       id: { not_equals: id },
     },
     limit: 5,
-  })
+  });
 
   return (
     <div>
@@ -651,10 +653,10 @@ async function RelatedPosts({ payload, id }: { payload: Payload; id: string }) {
         ))}
       </ul>
     </div>
-  )
+  );
 }
 
-export default RelatedPosts
+export default RelatedPosts;
 ```
 
 ## Performance Best Practices
@@ -663,11 +665,11 @@ export default RelatedPosts
 
 ```tsx
 // ❌ BAD: Imports entire package
-'use client'
-import { Button } from '@payloadcms/ui'
+"use client";
+import { Button } from "@payloadcms/ui";
 
 // ✅ GOOD: Tree-shakeable import for frontend
-import { Button } from '@payloadcms/ui/elements/Button'
+import { Button } from "@payloadcms/ui/elements/Button";
 ```
 
 **Rule:** In Admin Panel UI, import from `@payloadcms/ui`. In frontend code, use specific paths.
@@ -676,20 +678,20 @@ import { Button } from '@payloadcms/ui/elements/Button'
 
 ```tsx
 // ❌ BAD: Re-renders on every form change
-'use client'
-import { useForm } from '@payloadcms/ui'
+"use client";
+import { useForm } from "@payloadcms/ui";
 
 export function MyComponent() {
-  const { fields } = useForm()
+  const { fields } = useForm();
   // Re-renders on ANY field change
 }
 
 // ✅ GOOD: Only re-renders when specific field changes
-;('use client')
-import { useFormFields } from '@payloadcms/ui'
+("use client");
+import { useFormFields } from "@payloadcms/ui";
 
 export function MyComponent({ path }) {
-  const value = useFormFields(([fields]) => fields[path])
+  const value = useFormFields(([fields]) => fields[path]);
   // Only re-renders when this field changes
 }
 ```
@@ -700,11 +702,11 @@ export function MyComponent({ path }) {
 // ✅ GOOD: No JavaScript sent to client
 async function PostCount({ payload }) {
   const { totalDocs } = await payload.find({
-    collection: 'posts',
+    collection: "posts",
     limit: 0,
-  })
+  });
 
-  return <p>{totalDocs} posts</p>
+  return <p>{totalDocs} posts</p>;
 }
 
 // Only use client components when you need:
@@ -737,11 +739,11 @@ payload generate:importmap
 export default buildConfig({
   admin: {
     importMap: {
-      baseDir: path.resolve(dirname, 'src'),
-      importMapFile: path.resolve(dirname, 'app', 'custom-import-map.js'),
+      baseDir: path.resolve(dirname, "src"),
+      importMapFile: path.resolve(dirname, "app", "custom-import-map.js"),
     },
   },
-})
+});
 ```
 
 ## Type Safety
@@ -753,11 +755,11 @@ import type {
   TextFieldServerComponent,
   TextFieldClientComponent,
   TextFieldCellComponent,
-} from 'payload'
+} from "payload";
 
 export const MyFieldComponent: TextFieldServerComponent = (props) => {
   // Fully typed props
-}
+};
 ```
 
 ## Troubleshooting

@@ -1,4 +1,4 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import { MigrateUpArgs, MigrateDownArgs, sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   // Migrate existing data before changing enums
@@ -493,10 +493,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   DROP TYPE "public"."enum__page_v_blocks_logos_section_margin_top";
   DROP TYPE "public"."enum__page_v_blocks_logos_section_margin_bottom";
   DROP TYPE "public"."enum__page_v_blocks_links_list_section_margin_top";
-  DROP TYPE "public"."enum__page_v_blocks_links_list_section_margin_bottom";`)
+  DROP TYPE "public"."enum__page_v_blocks_links_list_section_margin_bottom";`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    CREATE TYPE "public"."enum_page_blocks_hero_section_margin_top" AS ENUM('none', 'base', 'large');
   CREATE TYPE "public"."enum_page_blocks_hero_section_margin_bottom" AS ENUM('none', 'base', 'large');
@@ -858,5 +862,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   ALTER TABLE "_page_v_blocks_links_list" DROP COLUMN "section_background_media_id";
   ALTER TABLE "_page_v_blocks_links_list" DROP COLUMN "section_background_overlay";
   ALTER TABLE "_page_v_blocks_links_list" DROP COLUMN "section_background_opacity";
-  DROP TYPE "public"."sec_bg_ovrly";`)
+  DROP TYPE "public"."sec_bg_ovrly";`);
 }

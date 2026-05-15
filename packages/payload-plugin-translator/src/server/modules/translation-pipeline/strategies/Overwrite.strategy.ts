@@ -1,5 +1,8 @@
-import { isEmpty } from '../../../shared'
-import type { TranslationStrategy, StrategyContext } from './TranslationStrategy.interface'
+import { isEmpty } from "../../../shared";
+import type {
+  TranslationStrategy,
+  StrategyContext,
+} from "./TranslationStrategy.interface";
 
 /**
  * Translates all fields, overwriting existing translations.
@@ -7,6 +10,6 @@ import type { TranslationStrategy, StrategyContext } from './TranslationStrategy
  */
 export class OverwriteStrategy implements TranslationStrategy {
   shouldTranslate(ctx: StrategyContext): boolean {
-    return !isEmpty(ctx.sourceValue)
+    return !isEmpty(ctx.sourceValue);
   }
 }

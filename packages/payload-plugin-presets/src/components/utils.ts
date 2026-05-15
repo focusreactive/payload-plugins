@@ -8,15 +8,15 @@ export function getParentPath(path: string): string {
 
 export function getPresetTypeFromPath(
   parentPath: string,
-  validTypes: string[],
+  validTypes: string[]
 ) {
   const last = parentPath.split(".").pop();
-  if (last && validTypes.includes(last)) return last;
+  if (last && validTypes.includes(last)) {return last;}
   return null;
 }
 
 function isLexicalState(obj: Record<string, unknown>) {
-  const root = obj.root;
+  const {root} = obj;
   return (
     typeof root === "object" &&
     root !== null &&
@@ -26,9 +26,9 @@ function isLexicalState(obj: Record<string, unknown>) {
 
 export function cleanPresetData(
   obj: unknown,
-  excludeKeys: Set<string>,
+  excludeKeys: Set<string>
 ): unknown {
-  if (obj === null || typeof obj !== "object") return obj;
+  if (obj === null || typeof obj !== "object") {return obj;}
 
   if (Array.isArray(obj)) {
     return obj.map((item) => cleanPresetData(item, excludeKeys));
@@ -52,19 +52,19 @@ export function cleanPresetData(
 
 export function buildSubFieldStateFromPreset(
   presetBlockItem: Record<string, unknown>,
-  excludeKeys: string[],
+  excludeKeys: string[]
 ): Record<string, FieldState> {
   const excludeSet = new Set(excludeKeys);
   const subFieldState: Record<string, FieldState> = {};
 
   for (const [key, value] of Object.entries(presetBlockItem)) {
-    if (excludeSet.has(key)) continue;
+    if (excludeSet.has(key)) {continue;}
     const cleaned = cleanPresetData(value, excludeSet);
     subFieldState[key] = {
-      value: cleaned,
       initialValue: cleaned,
-      valid: true,
       passesCondition: true,
+      valid: true,
+      value: cleaned,
     };
   }
 

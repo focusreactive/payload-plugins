@@ -1,51 +1,51 @@
-'use client'
+"use client";
 
-import { useState, useEffect, useRef } from 'react'
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { useDebounce } from '@uidotdev/usehooks'
+import { useDebounce } from "@uidotdev/usehooks";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 
-const DEBOUNCE_MS = 500
+const DEBOUNCE_MS = 500;
 
 interface SearchInputProps {
-  defaultValue: string
+  defaultValue: string;
 }
 
 export function SearchInput({ defaultValue }: SearchInputProps) {
-  const { replace } = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
+  const { replace } = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const [value, setValue] = useState(defaultValue)
-  const debouncedValue = useDebounce(value, DEBOUNCE_MS)
-  const isFirstRender = useRef(true)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [value, setValue] = useState(defaultValue);
+  const debouncedValue = useDebounce(value, DEBOUNCE_MS);
+  const isFirstRender = useRef(true);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const input = inputRef.current
+    const input = inputRef.current;
 
     if (input) {
-      input.focus()
-      input.setSelectionRange(input.value.length, input.value.length)
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
+      isFirstRender.current = false;
+      return;
     }
 
-    const params = new URLSearchParams(searchParams)
+    const params = new URLSearchParams(searchParams);
 
     if (debouncedValue) {
-      params.set('query', debouncedValue)
+      params.set("query", debouncedValue);
     } else {
-      params.delete('query')
+      params.delete("query");
     }
 
-    const query = params.toString()
-    replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-  }, [debouncedValue]) // eslint-disable-line react-hooks/exhaustive-deps
+    const query = params.toString();
+    replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [debouncedValue]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="relative">
@@ -58,5 +58,5 @@ export function SearchInput({ defaultValue }: SearchInputProps) {
         className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base outline-none focus:border-gray-500"
       />
     </div>
-  )
+  );
 }

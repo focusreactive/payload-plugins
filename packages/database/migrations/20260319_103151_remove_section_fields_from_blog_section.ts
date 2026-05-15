@@ -1,4 +1,4 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import { MigrateUpArgs, MigrateDownArgs, sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -33,10 +33,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   DROP TYPE "public"."enum__page_v_blocks_blog_section_section_margin_bottom";
   DROP TYPE "public"."enum__page_v_blocks_blog_section_section_padding_x";
   DROP TYPE "public"."enum__page_v_blocks_blog_section_section_padding_y";
-  DROP TYPE "public"."enum__page_v_blocks_blog_section_section_max_width";`)
+  DROP TYPE "public"."enum__page_v_blocks_blog_section_section_max_width";`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    CREATE TYPE "public"."enum_page_blocks_blog_section_section_theme" AS ENUM('light', 'dark', 'light-gray', 'dark-gray');
   CREATE TYPE "public"."enum_page_blocks_blog_section_section_margin_top" AS ENUM('none', 'base', 'large');
@@ -67,5 +71,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   ALTER TABLE "page_blocks_blog_section" ADD CONSTRAINT "page_blocks_blog_section_section_background_image_id_media_id_fk" FOREIGN KEY ("section_background_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_page_v_blocks_blog_section" ADD CONSTRAINT "_page_v_blocks_blog_section_section_background_image_id_media_id_fk" FOREIGN KEY ("section_background_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   CREATE INDEX "page_blocks_blog_section_section_section_background_imag_idx" ON "page_blocks_blog_section" USING btree ("section_background_image_id");
-  CREATE INDEX "_page_v_blocks_blog_section_section_section_background_i_idx" ON "_page_v_blocks_blog_section" USING btree ("section_background_image_id");`)
+  CREATE INDEX "_page_v_blocks_blog_section_section_section_background_i_idx" ON "_page_v_blocks_blog_section" USING btree ("section_background_image_id");`);
 }

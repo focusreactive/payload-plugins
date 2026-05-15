@@ -1,9 +1,10 @@
-import { Media } from '@/core/ui'
-import type { Testimonial } from '@/payload-types'
-import { StarIcon } from 'lucide-react'
+import { StarIcon } from "lucide-react";
+
+import { Media } from "@/core/ui";
+import type { Testimonial } from "@/payload-types";
 
 const Rating: React.FC<{ rating: number }> = ({ rating }) => {
-  const numRating = typeof rating === 'number' ? rating : Number(rating) || 0
+  const numRating = typeof rating === "number" ? rating : Number(rating) || 0;
 
   return (
     <div className="flex gap-1">
@@ -13,22 +14,26 @@ const Rating: React.FC<{ rating: number }> = ({ rating }) => {
           size={18}
           className={`transition-all duration-200 ${
             star <= numRating
-              ? 'fill-yellow-400 text-yellow-400 drop-shadow-sm'
-              : 'text-textSecondaryColor'
+              ? "fill-yellow-400 text-yellow-400 drop-shadow-sm"
+              : "text-textSecondaryColor"
           }`}
         />
       ))}
     </div>
-  )
-}
+  );
+};
 
 export const TestimonialCard: React.FC<{
-  testimonial: Testimonial
-  showRating?: boolean
-  showAvatar?: boolean
+  testimonial: Testimonial;
+  showRating?: boolean;
+  showAvatar?: boolean;
 }> = ({ testimonial, showRating = true, showAvatar = true }) => {
-  if (typeof testimonial === 'number' || typeof testimonial === 'string' || !testimonial)
-    return null
+  if (
+    typeof testimonial === "number" ||
+    typeof testimonial === "string" ||
+    !testimonial
+  )
+    {return null;}
 
   return (
     <div
@@ -47,22 +52,26 @@ export const TestimonialCard: React.FC<{
 
       <div className="w-full mt-auto pt-5 border-t border-textSecondaryColor">
         <div className="flex items-center gap-4">
-          {showAvatar && testimonial.avatar && typeof testimonial.avatar !== 'number' && (
-            <div className="shrink-0">
-              <Media
-                resource={testimonial.avatar}
-                className="w-14 h-14 rounded-full object-cover ring-2 ring-textSecondaryColor"
-                imgClassName="rounded-full object-cover h-full w-full"
-              />
-            </div>
-          )}
+          {showAvatar &&
+            testimonial.avatar &&
+            typeof testimonial.avatar !== "number" && (
+              <div className="shrink-0">
+                <Media
+                  resource={testimonial.avatar}
+                  className="w-14 h-14 rounded-full object-cover ring-2 ring-textSecondaryColor"
+                  imgClassName="rounded-full object-cover h-full w-full"
+                />
+              </div>
+            )}
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-textColor truncate text-base">
               {testimonial.author}
             </p>
             {(testimonial.position || testimonial.company) && (
               <p className="text-sm text-textSecondaryColor truncate mt-1">
-                {[testimonial.position, testimonial.company].filter(Boolean).join(', ')}
+                {[testimonial.position, testimonial.company]
+                  .filter(Boolean)
+                  .join(", ")}
               </p>
             )}
           </div>
@@ -74,5 +83,5 @@ export const TestimonialCard: React.FC<{
         )}
       </div>
     </div>
-  )
-}
+  );
+};

@@ -1,14 +1,15 @@
-'use server'
+"use server";
 
-import type { Pool } from 'pg'
-import type { SearchCollection } from './types'
+import type { Pool } from "pg";
+
+import type { SearchCollection } from "./types";
 
 interface UpsertParams {
-  pool: Pool
-  documentId: string
-  collection: SearchCollection
-  locale: string
-  embedding: number[]
+  pool: Pool;
+  documentId: string;
+  collection: SearchCollection;
+  locale: string;
+  embedding: number[];
 }
 
 export async function upsertEmbedding({
@@ -18,7 +19,7 @@ export async function upsertEmbedding({
   locale,
   embedding,
 }: UpsertParams) {
-  const vectorStr = `[${embedding.join(',')}]`
+  const vectorStr = `[${embedding.join(",")}]`;
 
   await pool.query(
     `INSERT INTO document_embeddings
@@ -29,19 +30,23 @@ export async function upsertEmbedding({
      DO UPDATE SET
        embedding  = EXCLUDED.embedding,
        updated_at = NOW()`,
-    [documentId, collection, locale, vectorStr],
-  )
+    [documentId, collection, locale, vectorStr]
+  );
 }
 
 interface DeleteParams {
-  pool: Pool
-  documentId: string
-  collection: SearchCollection
+  pool: Pool;
+  documentId: string;
+  collection: SearchCollection;
 }
 
-export async function deleteEmbedding({ pool, documentId, collection }: DeleteParams) {
-  await pool.query('DELETE FROM document_embeddings WHERE document_id = $1 AND collection = $2', [
-    documentId,
-    collection,
-  ])
+export async function deleteEmbedding({
+  pool,
+  documentId,
+  collection,
+}: DeleteParams) {
+  await pool.query(
+    "DELETE FROM document_embeddings WHERE document_id = $1 AND collection = $2",
+    [documentId, collection]
+  );
 }

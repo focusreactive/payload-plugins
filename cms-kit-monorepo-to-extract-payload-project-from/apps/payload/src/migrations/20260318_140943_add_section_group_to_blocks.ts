@@ -1,4 +1,5 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import type { MigrateUpArgs, MigrateDownArgs} from "@payloadcms/db-postgres";
+import { sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -345,10 +346,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "_page_v_blocks_carousel_section_section_background_image_idx" ON "_page_v_blocks_carousel" USING btree ("section_background_image_id");
   CREATE INDEX "_page_v_blocks_logos_section_section_background_image_idx" ON "_page_v_blocks_logos" USING btree ("section_background_image_id");
   CREATE INDEX "_page_v_blocks_links_list_section_section_background_ima_idx" ON "_page_v_blocks_links_list" USING btree ("section_background_image_id");
-  CREATE INDEX "_page_v_blocks_blog_section_section_section_background_i_idx" ON "_page_v_blocks_blog_section" USING btree ("section_background_image_id");`)
+  CREATE INDEX "_page_v_blocks_blog_section_section_section_background_i_idx" ON "_page_v_blocks_blog_section" USING btree ("section_background_image_id");`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "payload_jobs_log" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "payload_jobs" DISABLE ROW LEVEL SECURITY;
@@ -676,5 +681,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "public"."enum__page_v_blocks_blog_section_section_max_width";
   DROP TYPE "public"."enum_payload_jobs_log_task_slug";
   DROP TYPE "public"."enum_payload_jobs_log_state";
-  DROP TYPE "public"."enum_payload_jobs_task_slug";`)
+  DROP TYPE "public"."enum_payload_jobs_task_slug";`);
 }

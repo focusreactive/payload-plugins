@@ -1,3 +1,1 @@
-export const nobody = () => {
-  return false
-}
+export const nobody = () => false;

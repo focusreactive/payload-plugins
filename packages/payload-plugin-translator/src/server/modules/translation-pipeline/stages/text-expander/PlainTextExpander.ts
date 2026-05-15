@@ -1,29 +1,33 @@
-import type { FieldChunk, PlainTextChunk } from '../../types'
-import type { ExpansionResult, TextExpander } from './TextExpander.interface'
+import type { FieldChunk, PlainTextChunk } from "../../types";
+import type { ExpansionResult, TextExpander } from "./TextExpander.interface";
 
 /**
  * Expands plain text and textarea fields into PlainTextChunks.
  */
 export class PlainTextExpander implements TextExpander {
   canExpand(_chunk: FieldChunk, value: unknown): boolean {
-    return typeof value === 'string' && value.trim().length > 0
+    return typeof value === "string" && value.trim().length > 0;
   }
 
-  expand(chunk: FieldChunk, value: unknown, startIndex: number): ExpansionResult {
-    const text = value as string
+  expand(
+    chunk: FieldChunk,
+    value: unknown,
+    startIndex: number
+  ): ExpansionResult {
+    const text = value as string;
 
     const textChunk: PlainTextChunk = {
-      type: 'plain',
-      index: startIndex,
-      text,
       dataRef: chunk.dataRef,
+      index: startIndex,
       key: chunk.key,
-    }
+      text,
+      type: "plain",
+    };
 
     return {
       chunks: [textChunk],
-      textMap: { [startIndex]: text },
       nextIndex: startIndex + 1,
-    }
+      textMap: { [startIndex]: text },
+    };
   }
 }

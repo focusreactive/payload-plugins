@@ -1,1 +1,1 @@
-export { default as OpenDocumentTranslationPopup } from './ui/OpenDocumentTranslationPopup'
+export { default as OpenDocumentTranslationPopup } from "./ui/OpenDocumentTranslationPopup";

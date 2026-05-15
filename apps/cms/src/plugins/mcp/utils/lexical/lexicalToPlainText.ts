@@ -1,9 +1,9 @@
-import { LexicalNode } from '../../types/lexical'
+import type { LexicalNode } from "../../types/lexical";
 
 export function lexicalToPlainText(node: LexicalNode): string {
-  if (node.text) return node.text
+  if (node.text) {return node.text;}
 
-  if (!node.children) return ''
+  if (!node.children) {return "";}
 
-  return node.children.map(lexicalToPlainText).join('')
+  return node.children.map(lexicalToPlainText).join("");
 }

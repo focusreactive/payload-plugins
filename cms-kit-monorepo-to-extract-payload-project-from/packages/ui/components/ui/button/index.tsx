@@ -2,12 +2,22 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva } from "class-variance-authority";
 
 import { cn } from "../../../utils";
-import { ButtonSize, ButtonVariant, type ButtonProps } from "./types";
+import { ButtonSize, ButtonVariant } from './types';
+import type { ButtonProps } from './types';
 
 export const buttonVariants = cva(
   "leading-none inline text-center transition-all duration-150",
   {
+    defaultVariants: {
+      size: ButtonSize.Base,
+      variant: ButtonVariant.Default,
+    },
     variants: {
+      size: {
+        [ButtonSize.Base]: "px-4 py-2 text-base",
+        [ButtonSize.Small]: "text-sm p-1",
+        [ButtonSize.Large]: "text-lg py-3 px-8",
+      },
       variant: {
         [ButtonVariant.Default]: "text-textColor",
         [ButtonVariant.Primary]:
@@ -21,17 +31,8 @@ export const buttonVariants = cva(
         [ButtonVariant.GhostDark]:
           "bg-textColor text-bgColor radius-md hover:bg-textSecondaryColor font-medium rounded-2xl",
       },
-      size: {
-        [ButtonSize.Base]: "px-4 py-2 text-base",
-        [ButtonSize.Small]: "text-sm p-1",
-        [ButtonSize.Large]: "text-lg py-3 px-8",
-      },
     },
-    defaultVariants: {
-      variant: ButtonVariant.Default,
-      size: ButtonSize.Base,
-    },
-  },
+  }
 );
 
 export function Button({
@@ -49,10 +50,10 @@ export function Button({
       className={cn(
         "not-prose",
         buttonVariants({
-          variant,
-          size,
           className,
-        }),
+          size,
+          variant,
+        })
       )}
       {...props}
     >

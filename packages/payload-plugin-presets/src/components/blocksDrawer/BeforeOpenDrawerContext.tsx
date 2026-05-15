@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext } from "react";
 import type { BlocksFieldClient, SanitizedFieldPermissions } from "payload";
+import React, { createContext, useContext } from "react";
 
 export interface BeforeOpenDrawerInfo {
   field: Omit<BlocksFieldClient, "type"> &
@@ -23,7 +23,7 @@ export interface BeforeOpenDrawerInfo {
  * Return `false` to prevent it.
  */
 export type BeforeOpenDrawerFn = (
-  info: BeforeOpenDrawerInfo,
+  info: BeforeOpenDrawerInfo
 ) => boolean | Promise<boolean>;
 
 interface BeforeOpenDrawerContextValue {
@@ -35,13 +35,11 @@ const BeforeOpenDrawerContext = createContext<BeforeOpenDrawerContextValue>({});
 export const BeforeOpenDrawerProvider: React.FC<{
   beforeOpenDrawer: BeforeOpenDrawerFn;
   children: React.ReactNode;
-}> = ({ beforeOpenDrawer, children }) => {
-  return (
+}> = ({ beforeOpenDrawer, children }) => (
     <BeforeOpenDrawerContext.Provider value={{ beforeOpenDrawer }}>
       {children}
     </BeforeOpenDrawerContext.Provider>
   );
-};
 
 export function useBeforeOpenDrawer(): BeforeOpenDrawerFn | undefined {
   return useContext(BeforeOpenDrawerContext).beforeOpenDrawer;

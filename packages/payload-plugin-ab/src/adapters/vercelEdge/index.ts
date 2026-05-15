@@ -10,7 +10,7 @@ import type { VercelEdgeAdapterConfig } from "./config";
  *   EDGE_CONFIG, EDGE_CONFIG_ID, VERCEL_REST_API_ACCESS_TOKEN
  */
 export function vercelEdgeAdapter<TVariantData extends object>(
-  config: VercelEdgeAdapterConfig,
+  config: VercelEdgeAdapterConfig
 ): StorageAdapter<TVariantData> {
   const manifestKey = config.manifestKey ?? "ab-testing";
   let localCache: Manifest<TVariantData> | null = null;
@@ -24,10 +24,13 @@ export function vercelEdgeAdapter<TVariantData extends object>(
   }
 
   return {
-    async write(path, variants) {
+    async clear(path) {
       const currentManifest = await getManifest();
+      const updated = { ...currentManifest };
 
-      localCache = { ...currentManifest, [path]: variants };
+      delete updated[path];
+
+      localCache = updated;
 
       await updateEdgeConfig(config, manifestKey, localCache);
     },
@@ -42,13 +45,10 @@ export function vercelEdgeAdapter<TVariantData extends object>(
       }
     },
 
-    async clear(path) {
+    async write(path, variants) {
       const currentManifest = await getManifest();
-      const updated = { ...currentManifest };
 
-      delete updated[path];
-
-      localCache = updated;
+      localCache = { ...currentManifest, [path]: variants };
 
       await updateEdgeConfig(config, manifestKey, localCache);
     },

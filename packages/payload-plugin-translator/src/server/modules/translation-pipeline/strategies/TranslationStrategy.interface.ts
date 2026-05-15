@@ -1,9 +1,9 @@
 /**
  * Context passed to translation strategy for decision making.
  */
-export type StrategyContext = {
-  sourceValue: unknown
-  targetValue: unknown
+export interface StrategyContext {
+  sourceValue: unknown;
+  targetValue: unknown;
 }
 
 /**
@@ -18,5 +18,5 @@ export interface TranslationStrategy {
    * @param ctx - context with source and target values
    * @returns true if field should be translated
    */
-  shouldTranslate(ctx: StrategyContext): boolean
+  shouldTranslate(ctx: StrategyContext): boolean;
 }

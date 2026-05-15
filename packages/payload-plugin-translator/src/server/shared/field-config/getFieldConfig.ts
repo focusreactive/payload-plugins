@@ -1,7 +1,7 @@
-import type { Field } from 'payload'
+import type { Field } from "payload";
 
-import type { FieldTranslationConfig } from './types'
-import { TRANSLATE_KIT_CUSTOM_KEY } from './types'
+import type { FieldTranslationConfig } from "./types";
+import { TRANSLATE_KIT_CUSTOM_KEY } from "./types";
 
 /**
  * Extract translation configuration from a Payload field.
@@ -9,24 +9,28 @@ import { TRANSLATE_KIT_CUSTOM_KEY } from './types'
  * @param field - The Payload field to extract config from
  * @returns The translation configuration, or empty object if not defined
  */
-export function getFieldTranslationConfig(field: Field): FieldTranslationConfig {
-  if (!field.custom || typeof field.custom !== 'object') {
-    return {}
+export function getFieldTranslationConfig(
+  field: Field
+): FieldTranslationConfig {
+  if (!field.custom || typeof field.custom !== "object") {
+    return {};
   }
 
-  const config = (field.custom as Record<string, unknown>)[TRANSLATE_KIT_CUSTOM_KEY]
+  const config = (field.custom as Record<string, unknown>)[
+    TRANSLATE_KIT_CUSTOM_KEY
+  ];
 
-  if (!config || typeof config !== 'object') {
-    return {}
+  if (!config || typeof config !== "object") {
+    return {};
   }
 
-  return config as FieldTranslationConfig
+  return config as FieldTranslationConfig;
 }
 
 /**
  * @deprecated Use `getFieldTranslationConfig` instead
  */
-export const getTranslateKitFieldConfig = getFieldTranslationConfig
+export const getTranslateKitFieldConfig = getFieldTranslationConfig;
 
 /**
  * Check if a field should be excluded from translation.
@@ -35,5 +39,5 @@ export const getTranslateKitFieldConfig = getFieldTranslationConfig
  * @returns true if the field has `translateKit.exclude: true`
  */
 export function isFieldExcludedFromTranslation(field: Field): boolean {
-  return getFieldTranslationConfig(field).exclude === true
+  return getFieldTranslationConfig(field).exclude === true;
 }

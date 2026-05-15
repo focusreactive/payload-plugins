@@ -1,19 +1,25 @@
-import styles from './styles.module.scss'
+import styles from "./styles.module.scss";
 
 interface TranslationDirectionProps {
-  sourceLocale: string
-  targetLocale: string
-  className?: string
+  sourceLocale: string;
+  targetLocale: string;
+  className?: string;
 }
 
-export const TranslationDirection = ({ sourceLocale, targetLocale, className }: TranslationDirectionProps) => {
-  return (
+export const TranslationDirection = ({
+  sourceLocale,
+  targetLocale,
+  className,
+}: TranslationDirectionProps) => (
     <div
-      className={`${styles.container} ${className || ''}`}
+      className={`${styles.container} ${className || ""}`}
       role="group"
       aria-label={`Translation from ${sourceLocale} to ${targetLocale}`}
     >
-      <span className={styles.locale} aria-label={`Source language: ${sourceLocale}`}>
+      <span
+        className={styles.locale}
+        aria-label={`Source language: ${sourceLocale}`}
+      >
         {sourceLocale.toLowerCase()}
       </span>
 
@@ -21,9 +27,11 @@ export const TranslationDirection = ({ sourceLocale, targetLocale, className }: 
         →
       </div>
 
-      <span className={styles.locale} aria-label={`Target language: ${targetLocale}`}>
+      <span
+        className={styles.locale}
+        aria-label={`Target language: ${targetLocale}`}
+      >
         {targetLocale.toLowerCase()}
       </span>
     </div>
-  )
-}
+  );

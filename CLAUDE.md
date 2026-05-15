@@ -1,12 +1,14 @@
 # payload-plugins — Agent Guide
 
 ## Stack
+
 - **Package manager**: bun
 - **Build system**: Turborepo (`turbo.json`)
 - **Language**: TypeScript (ESM, `"type": "module"`)
 - **Monorepo**: bun workspaces
 
 ## Structure
+
 ```
 apps/
   dev/                                → local Payload CMS sandbox app for plugin development (private)
@@ -39,6 +41,7 @@ also pin `payload@*`, `@payloadcms/*`, `next`, and `@types/react*` to one
 version each to keep the hoisted layout unambiguous.
 
 ## Key Commands
+
 ```bash
 bun install                        # install deps
 bun run build                      # build all packages via turbo
@@ -50,9 +53,11 @@ bun run multi-semantic-release --dry-run  # preview release locally
 ```
 
 ## Publishing Flow
+
 Releases are fully automated via **multi-semantic-release** + **semantic-release**.
 
 **How it works:**
+
 1. Push commits to `main`
 2. GitHub Actions (`.github/workflows/release.yml`) runs `multi-semantic-release --ignore-private-packages`
 3. Each package is released independently based on which files changed in commits since its last tag
@@ -75,12 +80,14 @@ Releases are fully automated via **multi-semantic-release** + **semantic-release
 > Note: `@semantic-release/npm` is configured with `"provenance": true` — packages are published with npm provenance attestations via GitHub OIDC (`id-token: write` permission is set).
 
 ## Adding a New Plugin
+
 1. Create `packages/your-plugin-name/` with `package.json` (set `"private": false`, `"publishConfig": { "access": "public" }`)
 2. Set `"repository".url` to `https://github.com/focusreactive/payload-plugins` (no hyphen — matches git remote)
 3. Add a `build` script compatible with turbo
 4. It will be auto-discovered by bun workspaces and included in releases
 
 ## Gotchas
+
 - Git remote is `focusreactive/payload-plugins` (no hyphen). Package `repository.url` must match exactly or semantic-release will fail with a 128 git error.
 - `apps/dev` and internal packages (`eslint-config`, `typescript-config`) are skipped via `--ignore-private-packages`.
 - Do not manually bump versions in `package.json` — semantic-release owns version fields.

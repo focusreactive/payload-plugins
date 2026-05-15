@@ -1,54 +1,62 @@
-import type { CollectionSlug, PayloadRequest } from 'payload'
-import { getPayload } from 'payload'
-
-import { draftMode } from 'next/headers'
-import { redirect } from 'next/navigation'
-import { NextRequest } from 'next/server'
-
-import configPromise from '@payload-config'
+import configPromise from "@payload-config";
+import { draftMode } from "next/headers";
+import { redirect } from "next/navigation";
+import type { NextRequest } from "next/server";
+import type { CollectionSlug, PayloadRequest } from "payload";
+import { getPayload } from "payload";
 
 export async function GET(req: NextRequest): Promise<Response> {
-  const payload = await getPayload({ config: configPromise })
+  const payload = await getPayload({ config: configPromise });
 
-  const { searchParams } = new URL(req.url)
+  const { searchParams } = new URL(req.url);
 
-  const path = searchParams.get('path') ?? ''
-  const collection = searchParams.get('collection') as CollectionSlug
-  const slug = searchParams.get('slug')
-  const previewSecret = searchParams.get('previewSecret')
+  const path = searchParams.get("path") ?? "";
+  const collection = searchParams.get("collection") as CollectionSlug;
+  const slug = searchParams.get("slug");
+  const previewSecret = searchParams.get("previewSecret");
 
   if (previewSecret !== process.env.PREVIEW_SECRET) {
-    return new Response('You are not allowed to preview this page', { status: 403 })
+    return new Response("You are not allowed to preview this page", {
+      status: 403,
+    });
   }
 
   if (!collection || !slug) {
-    return new Response('Insufficient search params', { status: 404 })
+    return new Response("Insufficient search params", { status: 404 });
   }
 
-  let user
+  let user;
 
   try {
     user = await payload.auth({
-      req: req as unknown as PayloadRequest,
       headers: req.headers,
-    })
+      req: req as unknown as PayloadRequest,
+    });
   } catch (error) {
-    payload.logger.error({ err: error }, 'Error verifying token for live preview')
-    return new Response('You are not allowed to preview this page', { status: 403 })
+    payload.logger.error(
+      { err: error },
+      "Error verifying token for live preview"
+    );
+    return new Response("You are not allowed to preview this page", {
+      status: 403,
+    });
   }
 
-  const draft = await draftMode()
+  const draft = await draftMode();
 
   if (!user) {
-    draft.disable()
-    return new Response('You are not allowed to preview this page', { status: 403 })
+    draft.disable();
+    return new Response("You are not allowed to preview this page", {
+      status: 403,
+    });
   }
 
-  const host = req.headers.get('host') ?? new URL(req.url).host
+  const host = req.headers.get("host") ?? new URL(req.url).host;
   const protocol =
-    req.headers.get('x-forwarded-proto') ?? new URL(req.url).protocol.replace(':', '')
+    req.headers.get("x-forwarded-proto") ??
+    new URL(req.url).protocol.replace(":", "");
 
-  const previewInitUrl = `${protocol}://${host}/next/preview-init?redirect=${encodeURIComponent(path)}&previewSecret=${encodeURIComponent(previewSecret)}`
+  const previewInitUrl = `${protocol}://${host}/next/preview-init?redirect=${encodeURIComponent(path)}&previewSecret=${encodeURIComponent(previewSecret)}`;
 
-  redirect(previewInitUrl)
+  redirect(previewInitUrl);
 }

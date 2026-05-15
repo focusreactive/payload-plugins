@@ -4,9 +4,8 @@ type Versions = CollectionConfig["versions"] | GlobalConfig["versions"];
 
 export function injectSchedulePublishToVersions(
   versions: Versions,
-  schedulePublish?: SchedulePublish,
+  schedulePublishValue: SchedulePublish = true
 ): Versions {
-  const schedulePublishValue = schedulePublish ?? true;
 
   if (!versions || versions === true) {
     return {

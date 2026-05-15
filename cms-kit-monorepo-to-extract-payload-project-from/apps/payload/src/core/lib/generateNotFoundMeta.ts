@@ -1,34 +1,35 @@
-import { getSiteSettings } from './getSiteSettings'
-import { Metadata } from 'next'
-import { buildPageTitle } from './buildPageTitle'
-import { Locale } from '../types'
+import type { Metadata } from "next";
+
+import type { Locale } from "../types";
+import { buildPageTitle } from "./buildPageTitle";
+import { getSiteSettings } from "./getSiteSettings";
 
 export async function generateNotFoundMeta({
   locale,
 }: {
-  locale: Locale
+  locale: Locale;
 }): Promise<Metadata> {
-  const settings = await getSiteSettings({ locale })
+  const settings = await getSiteSettings({ locale });
 
-  const baseTitle = settings.notFoundTitle || '404 - Page not found'
+  const baseTitle = settings.notFoundTitle || "404 - Page not found";
   const description =
     settings.notFoundDescription ||
-    'Unfortunately, the requested page does not exist or has been deleted.'
-  const separator = settings.seoTitleSeparator || '|'
-  const suffix = settings.seoTitleSuffix || (settings.siteName as string)
-  const siteName = settings.siteName || 'Site'
+    "Unfortunately, the requested page does not exist or has been deleted.";
+  const separator = settings.seoTitleSeparator || "|";
+  const suffix = settings.seoTitleSuffix || (settings.siteName as string);
+  const siteName = settings.siteName || "Site";
 
-  const title = buildPageTitle(baseTitle, separator, suffix, siteName)
+  const title = buildPageTitle(baseTitle, separator, suffix, siteName);
 
   return {
-    title,
+    alternates: {
+      canonical: "/",
+    },
     description,
     robots: {
-      index: false,
       follow: true,
+      index: false,
     },
-    alternates: {
-      canonical: '/',
-    },
-  }
+    title,
+  };
 }

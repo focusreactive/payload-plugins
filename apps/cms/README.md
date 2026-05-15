@@ -32,18 +32,18 @@ Every plugin works independently in any Payload project. For new projects, we re
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| CMS | [Payload CMS 3](https://payloadcms.com/) |
-| Framework | [Next.js 15+](https://nextjs.org/) (App Router) + React 19 |
-| Database | PostgreSQL · MongoDB · Supabase |
-| Styling | [Tailwind CSS](https://tailwindcss.com/) |
-| Rich Text | Lexical Editor |
-| Internationalization | [next-intl](https://next-intl-docs.vercel.app/) + AI translations |
-| Authentication | JWT + OIDC/SSO (Auth0, Keycloak, Okta) |
-| Storage | Vercel Blob · S3 · Supabase Storage |
-| Deployment | Optimized for [Vercel](https://vercel.com/), Docker-ready |
-| AI Development | Claude Code · Cursor · agent-ready (`CLAUDE.md`, `AGENTS.md`, `.claude/`, `.cursor/rules`) |
+| Layer                | Technology                                                                                 |
+| -------------------- | ------------------------------------------------------------------------------------------ |
+| CMS                  | [Payload CMS 3](https://payloadcms.com/)                                                   |
+| Framework            | [Next.js 15+](https://nextjs.org/) (App Router) + React 19                                 |
+| Database             | PostgreSQL · MongoDB · Supabase                                                            |
+| Styling              | [Tailwind CSS](https://tailwindcss.com/)                                                   |
+| Rich Text            | Lexical Editor                                                                             |
+| Internationalization | [next-intl](https://next-intl-docs.vercel.app/) + AI translations                          |
+| Authentication       | JWT + OIDC/SSO (Auth0, Keycloak, Okta)                                                     |
+| Storage              | Vercel Blob · S3 · Supabase Storage                                                        |
+| Deployment           | Optimized for [Vercel](https://vercel.com/), Docker-ready                                  |
+| AI Development       | Claude Code · Cursor · agent-ready (`CLAUDE.md`, `AGENTS.md`, `.claude/`, `.cursor/rules`) |
 
 ## AI Development
 
@@ -130,21 +130,21 @@ Copy the example file and fill in your values:
 cp .env.example .env
 ```
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `PAYLOAD_SECRET` | Yes | Secret key for encrypting Payload data |
-| `NEXT_PUBLIC_SERVER_URL` | Yes | Public-facing URL of the application |
-| `PREVIEW_SECRET` | No | Secret for validating live preview requests |
-| `BLOB_READ_WRITE_TOKEN` | Production | Vercel Blob storage token for media uploads |
-| `OPENAI_API_KEY` | No | Enables AI translations and semantic search embeddings |
-| `OIDC_ISSUER` | No | OIDC provider URL for SSO |
-| `OIDC_CLIENT_ID` | No | OIDC client ID |
-| `OIDC_CLIENT_SECRET` | No | OIDC client secret |
-| `OIDC_REDIRECT_URI` | No | Callback URL (defaults to `SERVER_URL/api/auth/oidc/callback`) |
-| `OIDC_USE_PKCE` | No | Enable PKCE flow (recommended for Auth0) |
-| `OIDC_PROVIDER_NAME` | No | Label shown on the SSO login button |
-| `NEXT_PUBLIC_OIDC_PROVIDER_NAME` | No | Client-side SSO provider label |
+| Variable                         | Required   | Description                                                    |
+| -------------------------------- | ---------- | -------------------------------------------------------------- |
+| `DATABASE_URL`                   | Yes        | PostgreSQL connection string                                   |
+| `PAYLOAD_SECRET`                 | Yes        | Secret key for encrypting Payload data                         |
+| `NEXT_PUBLIC_SERVER_URL`         | Yes        | Public-facing URL of the application                           |
+| `PREVIEW_SECRET`                 | No         | Secret for validating live preview requests                    |
+| `BLOB_READ_WRITE_TOKEN`          | Production | Vercel Blob storage token for media uploads                    |
+| `OPENAI_API_KEY`                 | No         | Enables AI translations and semantic search embeddings         |
+| `OIDC_ISSUER`                    | No         | OIDC provider URL for SSO                                      |
+| `OIDC_CLIENT_ID`                 | No         | OIDC client ID                                                 |
+| `OIDC_CLIENT_SECRET`             | No         | OIDC client secret                                             |
+| `OIDC_REDIRECT_URI`              | No         | Callback URL (defaults to `SERVER_URL/api/auth/oidc/callback`) |
+| `OIDC_USE_PKCE`                  | No         | Enable PKCE flow (recommended for Auth0)                       |
+| `OIDC_PROVIDER_NAME`             | No         | Label shown on the SSO login button                            |
+| `NEXT_PUBLIC_OIDC_PROVIDER_NAME` | No         | Client-side SSO provider label                                 |
 
 ### 3. Run database migrations
 

@@ -1,9 +1,15 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCommentsKey, getFieldLabelsKey, getDocumentTitlesKey, QUERY_KEYS } from "../queryKeys";
+
 import { createComment } from "../../services/createComment";
 import type { Comment, User, QueryContext } from "../../types";
+import {
+  getCommentsKey,
+  getFieldLabelsKey,
+  getDocumentTitlesKey,
+  QUERY_KEYS,
+} from "../queryKeys";
 
 interface AddCommentVariables {
   ctx: QueryContext;
@@ -22,38 +28,57 @@ export function useAddCommentMutation() {
 
   return useMutation({
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    mutationFn: ({ ctx: _ctx, currentUser: _user, ...data }: AddCommentVariables) => createComment(data),
+    mutationFn: ({
+      ctx: _ctx,
+      currentUser: _user,
+      ...data
+    }: AddCommentVariables) => createComment(data),
     onMutate: async (variables) => {
-      const { ctx, text, fieldPath, documentId, collectionSlug, globalSlug, locale, mentionIds, currentUser } =
-        variables;
+      const {
+        ctx,
+        text,
+        fieldPath,
+        documentId,
+        collectionSlug,
+        globalSlug,
+        locale,
+        mentionIds,
+        currentUser,
+      } = variables;
 
       const key = getCommentsKey(ctx);
 
       await queryClient.cancelQueries({ queryKey: key });
       const snapshot = queryClient.getQueryData<Comment[]>(key);
 
-      const cachedUsers = queryClient.getQueryData<User[]>(QUERY_KEYS.mentionableUsers()) ?? [];
-      const selectedUsers = cachedUsers.filter(({ id }) => mentionIds.includes(id));
+      const cachedUsers =
+        queryClient.getQueryData<User[]>(QUERY_KEYS.mentionableUsers()) ?? [];
+      const selectedUsers = cachedUsers.filter(({ id }) =>
+        mentionIds.includes(id)
+      );
       const mentions = selectedUsers.map((user) => ({ id: null, user }));
 
       const optimisticComment: Comment = {
-        id: -Date.now(),
-        text,
-        fieldPath: fieldPath ?? null,
-        locale,
-        documentId: documentId ?? null,
-        collectionSlug: collectionSlug ?? null,
-        globalSlug: globalSlug ?? null,
-        isResolved: false,
-        mentions,
         author: currentUser,
+        collectionSlug: collectionSlug ?? null,
         createdAt: new Date().toISOString(),
+        documentId: documentId ?? null,
+        fieldPath: fieldPath ?? null,
+        globalSlug: globalSlug ?? null,
+        id: -Date.now(),
+        isResolved: false,
+        locale,
+        mentions,
+        text,
         updatedAt: new Date().toISOString(),
       };
 
-      queryClient.setQueryData<Comment[]>(key, (prev = []) => [optimisticComment, ...prev]);
+      queryClient.setQueryData<Comment[]>(key, (prev = []) => [
+        optimisticComment,
+        ...prev,
+      ]);
 
-      return { snapshot, ctx };
+      return { ctx, snapshot };
     },
     onError: (_err, _vars, context) => {
       if (context?.snapshot !== undefined) {
@@ -61,9 +86,9 @@ export function useAddCommentMutation() {
       }
     },
     onSettled: (_data, _err, _vars, context) => {
-      if (!context?.ctx) return;
+      if (!context?.ctx) {return;}
 
-      const ctx = context.ctx;
+      const {ctx} = context;
 
       queryClient.invalidateQueries({ queryKey: getCommentsKey(ctx) });
       queryClient.invalidateQueries({ queryKey: getFieldLabelsKey(ctx) });

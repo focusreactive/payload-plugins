@@ -1,14 +1,14 @@
-import type { Field } from 'payload'
+import type { Field } from "payload";
 
-import type { FieldTranslationConfig } from './server/shared/field-config'
-import { TRANSLATE_KIT_CUSTOM_KEY } from './server/shared/field-config'
+import type { FieldTranslationConfig } from "./server/shared/field-config";
+import { TRANSLATE_KIT_CUSTOM_KEY } from "./server/shared/field-config";
 
-export type { FieldTranslationConfig }
+export type { FieldTranslationConfig };
 
 /**
  * @deprecated Use `FieldTranslationConfig` instead
  */
-export type { FieldTranslationConfig as TranslateKitFieldConfig }
+export type { FieldTranslationConfig as TranslateKitFieldConfig };
 
 /**
  * Apply translation configuration to a Payload field.
@@ -45,17 +45,20 @@ export type { FieldTranslationConfig as TranslateKitFieldConfig }
  * }
  * ```
  */
-export function withFieldTranslation<T extends Field>(field: T, config: FieldTranslationConfig): T {
+export function withFieldTranslation<T extends Field>(
+  field: T,
+  config: FieldTranslationConfig
+): T {
   return {
     ...field,
     custom: {
-      ...(field.custom ?? {}),
+      ...field.custom,
       [TRANSLATE_KIT_CUSTOM_KEY]: config,
     },
-  }
+  };
 }
 
 /**
  * @deprecated Use `withFieldTranslation` instead
  */
-export const translateKitField = withFieldTranslation
+export const translateKitField = withFieldTranslation;

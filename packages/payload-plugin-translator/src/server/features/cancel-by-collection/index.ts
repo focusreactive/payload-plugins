@@ -1,1 +1,1 @@
-export { createCancelByCollectionRoute } from './route'
+export { createCancelByCollectionRoute } from "./route";

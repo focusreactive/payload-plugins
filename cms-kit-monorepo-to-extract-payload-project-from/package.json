@@ -26,10 +26,6 @@
     "typecheck": "turbo typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
-  "engines": {
-    "node": ">=20.*"
-  },
-  "packageManager": "pnpm@9.2.0",
   "dependencies": {
     "@commitlint/cli": "^19.3.0",
     "@commitlint/config-conventional": "^19.2.2",
@@ -45,19 +41,6 @@
     "prettier-plugin-tailwindcss": "^0.5.14",
     "turbo": "^2.2.3"
   },
-  "manypkg": {
-    "ignoredRules": [
-      "INTERNAL_MISMATCH"
-    ]
-  },
-  "pnpm": {
-    "overrides": {
-      "@types/react": "^19",
-      "@types/react-dom": "^19",
-      "react": "19.2.1",
-      "react-dom": "19.2.1"
-    }
-  },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
@@ -66,5 +49,22 @@
     "@vercel/blob": "^0.22.3",
     "semantic-release": "^24.2.1",
     "vercel": "^42.3.0"
+  },
+  "engines": {
+    "node": ">=20.*"
+  },
+  "packageManager": "pnpm@9.2.0",
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^19",
+      "@types/react-dom": "^19",
+      "react": "19.2.1",
+      "react-dom": "19.2.1"
+    }
+  },
+  "manypkg": {
+    "ignoredRules": [
+      "INTERNAL_MISMATCH"
+    ]
   }
 }

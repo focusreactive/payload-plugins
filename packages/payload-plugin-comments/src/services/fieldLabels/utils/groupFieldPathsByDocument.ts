@@ -6,7 +6,7 @@ export function groupFieldPathsByDocument(comments: Comment[]) {
   const fieldPathsMap: FieldPathsMap = new Map();
 
   for (const { collectionSlug, documentId, fieldPath } of comments) {
-    if (!collectionSlug || !documentId || !fieldPath) continue;
+    if (!collectionSlug || !documentId || !fieldPath) {continue;}
 
     if (!fieldPathsMap.has(collectionSlug)) {
       fieldPathsMap.set(collectionSlug, new Map());

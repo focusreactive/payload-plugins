@@ -1,25 +1,26 @@
-import { link } from '@/fields/link'
-import { Field } from 'payload'
+import type { Field } from "payload";
+
+import { link } from "@/fields/link";
 
 export const linksListFields: Field[] = [
   {
-    name: 'alignVariant',
-    type: 'select',
-    defaultValue: 'left',
+    defaultValue: "left",
+    label: { en: "Alignment", es: "Alineación" },
+    name: "alignVariant",
     options: [
-      { label: { en: 'Left', es: 'Izquierda' }, value: 'left' },
-      { label: { en: 'Center', es: 'Centro' }, value: 'center' },
-      { label: { en: 'Right', es: 'Derecha' }, value: 'right' },
+      { label: { en: "Left", es: "Izquierda" }, value: "left" },
+      { label: { en: "Center", es: "Centro" }, value: "center" },
+      { label: { en: "Right", es: "Derecha" }, value: "right" },
     ],
-    label: { en: 'Alignment', es: 'Alineación' },
+    type: "select",
   },
   {
-    name: 'links',
-    type: 'array',
-    label: { en: 'Links', es: 'Enlaces' },
-    minRows: 1,
-    required: true,
-    localized: true,
     fields: [link()],
+    label: { en: "Links", es: "Enlaces" },
+    localized: true,
+    minRows: 1,
+    name: "links",
+    required: true,
+    type: "array",
   },
-]
+];

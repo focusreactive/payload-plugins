@@ -4,7 +4,7 @@ import type {
   SwiperModule,
 } from "swiper/types";
 
-import { type IRichTextProps } from "../richText/types";
+import type { IRichTextProps } from "../richText/types";
 
 export interface IGenericCarouselBaseProps {
   customModules?: SwiperModule[];

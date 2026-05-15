@@ -1,60 +1,68 @@
-import { DEFAULT_VALUES } from '@/core/constants/defaultValues'
-import { createLocalizedDefault } from '@/core/lib/createLocalizedDefault'
-import type { Field } from 'payload'
+import type { Field } from "payload";
+
+import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
+import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
 
 export const testimonialsListFields: Field[] = [
   {
-    name: 'heading',
-    type: 'text',
-    label: { en: 'Heading', es: 'Encabezado' },
+    defaultValue: createLocalizedDefault(
+      DEFAULT_VALUES.blocks.testimonialsList.heading
+    ),
+    label: { en: "Heading", es: "Encabezado" },
     localized: true,
-    defaultValue: createLocalizedDefault(DEFAULT_VALUES.blocks.testimonialsList.heading),
+    name: "heading",
+    type: "text",
   },
   {
-    name: 'subheading',
-    type: 'text',
-    label: { en: 'Subheading', es: 'Subencabezado' },
+    defaultValue: createLocalizedDefault(
+      DEFAULT_VALUES.blocks.testimonialsList.subheading
+    ),
+    label: { en: "Subheading", es: "Subencabezado" },
     localized: true,
-    defaultValue: createLocalizedDefault(DEFAULT_VALUES.blocks.testimonialsList.subheading),
+    name: "subheading",
+    type: "text",
   },
   {
-    name: 'testimonialItems',
-    type: 'array',
-    label: { en: 'Testimonials', es: 'Testimonios' },
-    minRows: 1,
     fields: [
       {
-        name: 'testimonial',
-        type: 'relationship',
-        relationTo: 'testimonials',
+        name: "testimonial",
+        type: "relationship",
+        relationTo: "testimonials",
         required: true,
-        label: { en: 'Testimonial', es: 'Testimonio' },
+        label: { en: "Testimonial", es: "Testimonio" },
       },
     ],
+    label: { en: "Testimonials", es: "Testimonios" },
+    minRows: 1,
+    name: "testimonialItems",
+    type: "array",
   },
   {
-    name: 'duration',
-    type: 'number',
-    defaultValue: 60,
-    label: { en: 'Animation duration (seconds)', es: 'Duración de la animación (segundos)' },
     admin: {
-      placeholder: '60',
       description: {
-        en: 'The duration of the animation in seconds. Default is 60 seconds.',
-        es: 'La duración de la animación en segundos. Por defecto es 60 segundos.',
+        en: "The duration of the animation in seconds. Default is 60 seconds.",
+        es: "La duración de la animación en segundos. Por defecto es 60 segundos.",
       },
+      placeholder: "60",
     },
+    defaultValue: 60,
+    label: {
+      en: "Animation duration (seconds)",
+      es: "Duración de la animación (segundos)",
+    },
+    name: "duration",
+    type: "number",
   },
   {
-    name: 'showRating',
-    type: 'checkbox',
     defaultValue: true,
-    label: { en: 'Show Rating', es: 'Mostrar Calificación' },
+    label: { en: "Show Rating", es: "Mostrar Calificación" },
+    name: "showRating",
+    type: "checkbox",
   },
   {
-    name: 'showAvatar',
-    type: 'checkbox',
     defaultValue: true,
-    label: { en: 'Show Avatar', es: 'Mostrar Avatar' },
+    label: { en: "Show Avatar", es: "Mostrar Avatar" },
+    name: "showAvatar",
+    type: "checkbox",
   },
-]
+];

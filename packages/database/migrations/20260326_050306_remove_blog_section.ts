@@ -1,4 +1,4 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import { MigrateUpArgs, MigrateDownArgs, sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -7,10 +7,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   DROP TYPE "public"."enum_page_blocks_blog_section_style";
   DROP TYPE "public"."enum_page_blocks_blog_section_aspect_ratio";
   DROP TYPE "public"."enum__page_v_blocks_blog_section_style";
-  DROP TYPE "public"."enum__page_v_blocks_blog_section_aspect_ratio";`)
+  DROP TYPE "public"."enum__page_v_blocks_blog_section_aspect_ratio";`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    CREATE TYPE "public"."enum_page_blocks_blog_section_style" AS ENUM('three-column', 'three-column-with-images', 'three-column-with-background-images');
   CREATE TYPE "public"."enum_page_blocks_blog_section_aspect_ratio" AS ENUM('16/9', '3/2', '4/3', '1/1', '9/16', '1/2', '4/1', '3/1', 'auto');
@@ -52,5 +56,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   CREATE INDEX "_page_v_blocks_blog_section_order_idx" ON "_page_v_blocks_blog_section" USING btree ("_order");
   CREATE INDEX "_page_v_blocks_blog_section_parent_id_idx" ON "_page_v_blocks_blog_section" USING btree ("_parent_id");
   CREATE INDEX "_page_v_blocks_blog_section_path_idx" ON "_page_v_blocks_blog_section" USING btree ("_path");
-  CREATE INDEX "_page_v_blocks_blog_section_locale_idx" ON "_page_v_blocks_blog_section" USING btree ("_locale");`)
+  CREATE INDEX "_page_v_blocks_blog_section_locale_idx" ON "_page_v_blocks_blog_section" USING btree ("_locale");`);
 }

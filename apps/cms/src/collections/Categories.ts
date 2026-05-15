@@ -1,22 +1,11 @@
-import { anyone, author, or, superAdmin, user } from '@/core/lib/access'
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig } from "payload";
+import { slugField } from "payload";
 
-import { slugField } from 'payload'
-import { createLocalizedDefault } from '@/core/lib/createLocalizedDefault'
-import { DEFAULT_VALUES } from '@/core/constants/defaultValues'
+import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
+import { anyone, author, or, superAdmin, user } from "@/core/lib/access";
+import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
 
-export const Categories: CollectionConfig<'categories'> = {
-  slug: 'categories',
-  labels: {
-    singular: {
-      en: 'Category',
-      es: 'Categoría',
-    },
-    plural: {
-      en: 'Categories',
-      es: 'Categorías',
-    },
-  },
+export const Categories: CollectionConfig<"categories"> = {
   access: {
     create: or(superAdmin, user, author),
     delete: or(superAdmin, user, author),
@@ -24,30 +13,43 @@ export const Categories: CollectionConfig<'categories'> = {
     update: or(superAdmin, user, author),
   },
   admin: {
-    useAsTitle: 'title',
-    defaultColumns: ['title'],
-    group: 'Blog',
+    defaultColumns: ["title"],
+    group: "Blog",
+    useAsTitle: "title",
   },
   fields: [
     {
-      name: 'title',
-      type: 'text',
+      name: "title",
+      type: "text",
       required: true,
       label: {
-        en: 'Title',
-        es: 'Título',
+        en: "Title",
+        es: "Título",
       },
       localized: true,
-      defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.categories.title),
+      defaultValue: createLocalizedDefault(
+        DEFAULT_VALUES.collections.categories.title
+      ),
     },
     slugField({
-      useAsSlug: 'title',
+      useAsSlug: "title",
       required: true,
       overrides: (field) => {
-        const slugSub = field.fields?.[1] as { unique?: boolean } | undefined
-        if (slugSub && 'unique' in slugSub) slugSub.unique = false
-        return field
+        const slugSub = field.fields?.[1] as { unique?: boolean } | undefined;
+        if (slugSub && "unique" in slugSub) slugSub.unique = false;
+        return field;
       },
     }),
   ],
-}
+  labels: {
+    plural: {
+      en: "Categories",
+      es: "Categorías",
+    },
+    singular: {
+      en: "Category",
+      es: "Categoría",
+    },
+  },
+  slug: "categories",
+};

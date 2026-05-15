@@ -2,11 +2,14 @@
   "name": "@repo/tailwind-config",
   "version": "0.2.0",
   "license": "MIT",
+  "files": [
+    "base.css",
+    "postcss.js"
+  ],
   "exports": {
     "./base.css": "./base.css",
     "./postcss": "./postcss.js"
   },
-  "files": ["base.css", "postcss.js"],
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.18",
     "@tailwindcss/typography": "^0.5.15",

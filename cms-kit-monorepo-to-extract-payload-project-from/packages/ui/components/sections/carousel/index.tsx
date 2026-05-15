@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useEffect, useRef } from "react";
 import {
   EffectCards,
   EffectCoverflow,
@@ -8,33 +9,37 @@ import {
   EffectFlip,
   Navigation,
 } from "swiper/modules";
-
-import { GenericCarousel } from "../../ui/GenericCarousel";
-import CarouselCard from "./CarouselCard";
-import type { ICarouselProps } from "./types";
-
-import "swiper/css/bundle";
-
-import React, { useEffect, useRef } from "react";
 import type { NavigationOptions } from "swiper/types";
 
 import { cn } from "../../../utils";
-import { type IGenericCarouselBaseProps } from "../../ui/GenericCarousel/types";
+
+import "swiper/css/bundle";
+
+import { GenericCarousel } from "../../ui/GenericCarousel";
+import type { IGenericCarouselBaseProps } from "../../ui/GenericCarousel/types";
+import CarouselCard from "./CarouselCard";
+import type { ICarouselProps } from "./types";
 
 const getEffectModule = (effect: IGenericCarouselBaseProps["effect"]) => {
   switch (effect) {
-    case "fade":
+    case "fade": {
       return EffectFade;
-    case "cube":
+    }
+    case "cube": {
       return EffectCube;
-    case "flip":
+    }
+    case "flip": {
       return EffectFlip;
-    case "coverflow":
+    }
+    case "coverflow": {
       return EffectCoverflow;
-    case "cards":
+    }
+    case "cards": {
       return EffectCards;
-    default:
+    }
+    default: {
       return undefined;
+    }
   }
 };
 
@@ -44,7 +49,7 @@ const ArrowButton = React.forwardRef<HTMLButtonElement, any>(
       ref={ref}
       className={cn(
         "z-10 flex size-12 items-center justify-center text-gray-500 transition-all hover:text-gray-700",
-        className,
+        className
       )}
       {...props}
     >
@@ -63,7 +68,7 @@ const ArrowButton = React.forwardRef<HTMLButtonElement, any>(
         />
       </svg>
     </button>
-  ),
+  )
 );
 
 export function Carousel({
@@ -79,15 +84,15 @@ export function Carousel({
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   const [navigation, setNavigation] = React.useState<NavigationOptions>({
     enabled: true,
-    prevEl: prevButtonRef.current,
     nextEl: nextButtonRef.current,
+    prevEl: prevButtonRef.current,
   });
   useEffect(() => {
     if (prevButtonRef.current && nextButtonRef.current) {
       setNavigation({
         enabled: true,
-        prevEl: prevButtonRef.current,
         nextEl: nextButtonRef.current,
+        prevEl: prevButtonRef.current,
       });
     }
   }, [prevButtonRef, nextButtonRef]);
@@ -126,7 +131,7 @@ export function Carousel({
         ]}
         customModulesParams={{
           navigation,
-          ...(customModulesParams || {}),
+          ...customModulesParams,
         }}
         effect={effect}
         params={params}

@@ -1,22 +1,23 @@
-'use server'
+"use server";
 
-import type { Pool } from 'pg'
-import type { SearchRawItem, SearchCollection } from './types'
+import type { Pool } from "pg";
+
+import type { SearchRawItem, SearchCollection } from "./types";
 
 interface DbRow {
-  document_id: string
-  collection: SearchCollection
-  locale: string
-  score: string
+  document_id: string;
+  collection: SearchCollection;
+  locale: string;
+  score: string;
 }
 
 interface RunSemanticSearchParams {
-  pool: Pool
-  embedding: number[]
-  locale: string
-  limit?: number
-  maxPerCollection?: number
-  scoreThreshold?: number
+  pool: Pool;
+  embedding: number[];
+  locale: string;
+  limit?: number;
+  maxPerCollection?: number;
+  scoreThreshold?: number;
 }
 
 export async function runSemanticSearch({
@@ -27,7 +28,7 @@ export async function runSemanticSearch({
   maxPerCollection = 5,
   scoreThreshold = 0.75,
 }: RunSemanticSearchParams): Promise<SearchRawItem[]> {
-  const vectorStr = `[${embedding.join(',')}]`
+  const vectorStr = `[${embedding.join(",")}]`;
 
   const { rows } = await pool.query<DbRow>(
     `WITH semantic AS (
@@ -53,13 +54,13 @@ export async function runSemanticSearch({
      WHERE collection_rank <= $4
      ORDER BY collection, distance ASC
      LIMIT $5`,
-    [vectorStr, locale, scoreThreshold, maxPerCollection, limit],
-  )
+    [vectorStr, locale, scoreThreshold, maxPerCollection, limit]
+  );
 
   return rows.map((row) => ({
-    documentId: row.document_id,
     collection: row.collection,
+    documentId: row.document_id,
     locale: row.locale,
     score: parseFloat(row.score),
-  }))
+  }));
 }

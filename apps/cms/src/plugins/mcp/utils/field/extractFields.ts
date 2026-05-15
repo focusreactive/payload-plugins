@@ -1,13 +1,13 @@
-import { BaseDocument } from '../../types'
+import type { BaseDocument } from "../../types";
 
 export const extractFields = (obj: BaseDocument, skipKeys: Set<string>) => {
-  const extracted: Record<string, unknown> = {}
+  const extracted: Record<string, unknown> = {};
 
   for (const [key, val] of Object.entries(obj)) {
-    if (skipKeys.has(key)) continue
+    if (skipKeys.has(key)) {continue;}
 
-    extracted[key] = val
+    extracted[key] = val;
   }
 
-  return extracted
-}
+  return extracted;
+};

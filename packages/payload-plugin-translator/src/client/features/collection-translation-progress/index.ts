@@ -1,1 +1,1 @@
-export { CollectionTranslationProgress } from './ui/CollectionTranslationProgress'
+export { CollectionTranslationProgress } from "./ui/CollectionTranslationProgress";

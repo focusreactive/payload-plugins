@@ -1,7 +1,9 @@
 export function buildInternalPathname(
   pathname: string,
   matchedLocale: string | undefined,
-  defaultLocale: string,
+  defaultLocale: string
 ) {
-  return matchedLocale ? pathname : `/${defaultLocale}${pathname === '/' ? '' : pathname}`
+  return matchedLocale
+    ? pathname
+    : `/${defaultLocale}${pathname === "/" ? "" : pathname}`;
 }

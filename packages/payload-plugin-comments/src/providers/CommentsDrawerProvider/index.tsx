@@ -1,7 +1,9 @@
 "use client";
 
 import { useDrawerSlug, useModal } from "@payloadcms/ui";
-import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
+
 import { COMMENTS_DRAWER_BASE_SLUG } from "../../constants";
 
 interface PendingField {
@@ -20,7 +22,9 @@ interface CommentsDrawerContextProps {
   clearPendingField: () => void;
 }
 
-const CommentsDrawerContext = createContext<CommentsDrawerContextProps | null>(null);
+const CommentsDrawerContext = createContext<CommentsDrawerContextProps | null>(
+  null
+);
 
 interface Props {
   children: ReactNode;
@@ -41,7 +45,7 @@ export function CommentsDrawerProvider({ children }: Props) {
 
   const openForField = (path: string, label: string) => {
     setScrollTargetPath(path);
-    setPendingField({ path, label });
+    setPendingField({ label, path });
     openModal(slug);
   };
 
@@ -55,7 +59,17 @@ export function CommentsDrawerProvider({ children }: Props) {
 
   return (
     <CommentsDrawerContext.Provider
-      value={{ slug, isOpen, scrollTargetPath, pendingField, open, setScrollTargetPath, openForField, clearPendingField }}>
+      value={{
+        clearPendingField,
+        isOpen,
+        open,
+        openForField,
+        pendingField,
+        scrollTargetPath,
+        setScrollTargetPath,
+        slug,
+      }}
+    >
       {children}
     </CommentsDrawerContext.Provider>
   );
@@ -64,7 +78,8 @@ export function CommentsDrawerProvider({ children }: Props) {
 export function useCommentsDrawer() {
   const context = useContext(CommentsDrawerContext);
 
-  if (!context) throw new Error("useCommentsDrawer must be used within a CommentsProvider");
+  if (!context)
+    {throw new Error("useCommentsDrawer must be used within a CommentsProvider");}
 
   return context;
 }

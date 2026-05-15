@@ -1,50 +1,61 @@
-import type { Media, Post } from '@/payload-types'
-import type { BlogPageSettingsData } from '@/core/lib/getBlogPageSettings'
-import { getServerSideURL } from '@/core/lib/getURL'
-import { buildUrl } from '@/core/utils/path/buildUrl'
-import { formatAuthorsToSchema } from '../lib/formatAuthorsToSchema'
-import { Locale } from '@/core/types'
+import type { BlogPageSettingsData } from "@/core/lib/getBlogPageSettings";
+import { getServerSideURL } from "@/core/lib/getURL";
+import type { Locale } from "@/core/types";
+import { buildUrl } from "@/core/utils/path/buildUrl";
+import type { Media, Post } from "@/payload-types";
 
-type PostPreview = Pick<Post, 'title' | 'slug' | 'publishedAt' | 'updatedAt' | 'authors' | 'meta'>
+import { formatAuthorsToSchema } from "../lib/formatAuthorsToSchema";
+
+type PostPreview = Pick<
+  Post,
+  "title" | "slug" | "publishedAt" | "updatedAt" | "authors" | "meta"
+>;
 
 interface BlogSchemaParams {
-  settings: BlogPageSettingsData
-  posts: PostPreview[]
-  siteName?: string
-  locale: Locale
+  settings: BlogPageSettingsData;
+  posts: PostPreview[];
+  siteName?: string;
+  locale: Locale;
 }
 
-export function createBlogSchema({ settings, posts, siteName, locale }: BlogSchemaParams) {
-  const baseUrl = getServerSideURL()
-  const blogUrl = buildUrl({ collection: 'posts', locale })
+export function createBlogSchema({
+  settings,
+  posts,
+  siteName,
+  locale,
+}: BlogSchemaParams) {
+  const baseUrl = getServerSideURL();
+  const blogUrl = buildUrl({ collection: "posts", locale });
 
-  const description = settings.blogMeta?.description || settings.blogDescription || ''
+  const description =
+    settings.blogMeta?.description || settings.blogDescription || "";
 
   const publisher = siteName
     ? {
-        '@type': 'Organization',
+        "@type": "Organization",
         name: siteName,
         url: baseUrl,
       }
-    : undefined
+    : undefined;
 
   const blogPostings = posts.map((post) => {
-    const postUrl = buildUrl({ collection: 'posts', slug: post.slug, locale })
-    const image = post.meta?.image as Media | undefined
-    const imageUrl = image && typeof image === 'object' ? `${baseUrl}${image.url}` : undefined
+    const postUrl = buildUrl({ collection: "posts", locale, slug: post.slug });
+    const image = post.meta?.image as Media | undefined;
+    const imageUrl =
+      image && typeof image === "object" ? `${baseUrl}${image.url}` : undefined;
 
-    const authors = formatAuthorsToSchema(post.authors)
+    const authors = formatAuthorsToSchema(post.authors);
 
     return {
-      '@type': 'BlogPosting',
+      "@type": "BlogPosting",
       headline: post.title,
-      url: postUrl,
       inLanguage: locale,
       mainEntityOfPage: {
-        '@type': 'WebPage',
-        '@id': postUrl,
+        "@id": postUrl,
+        "@type": "WebPage",
         inLanguage: locale,
       },
+      url: postUrl,
       ...(post.meta?.description && { description: post.meta.description }),
       ...(imageUrl && { image: imageUrl }),
       ...(post.publishedAt && {
@@ -53,24 +64,27 @@ export function createBlogSchema({ settings, posts, siteName, locale }: BlogSche
       ...(post.updatedAt && {
         dateModified: new Date(post.updatedAt).toISOString(),
       }),
-      ...(authors && authors.length > 0 && { author: authors.length === 1 ? authors[0] : authors }),
-      ...(publisher && { publisher: publisher }),
-    }
-  })
+      ...(authors &&
+        authors.length > 0 && {
+          author: authors.length === 1 ? authors[0] : authors,
+        }),
+      ...(publisher && { publisher }),
+    };
+  });
 
   return {
-    '@context': 'https://schema.org',
-    '@type': 'Blog',
-    name: settings.blogTitle || 'Blog',
-    url: blogUrl,
+    "@context": "https://schema.org",
+    "@type": "Blog",
     inLanguage: locale,
     mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': blogUrl,
+      "@id": blogUrl,
+      "@type": "WebPage",
       inLanguage: locale,
     },
-    ...(description && { description: description }),
-    ...(publisher && { publisher: publisher }),
+    name: settings.blogTitle || "Blog",
+    url: blogUrl,
+    ...(description && { description }),
+    ...(publisher && { publisher }),
     ...(blogPostings.length > 0 && { blogPost: blogPostings }),
-  }
+  };
 }

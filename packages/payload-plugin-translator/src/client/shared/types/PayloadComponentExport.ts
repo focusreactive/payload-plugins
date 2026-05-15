@@ -1,3 +1,3 @@
-import type { RawPayloadComponent } from 'payload'
+import type { RawPayloadComponent } from "payload";
 
-export type RawPayloadComponentExport = RawPayloadComponent
+export type RawPayloadComponentExport = RawPayloadComponent;

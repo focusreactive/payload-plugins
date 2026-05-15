@@ -1,5 +1,5 @@
-import type { TextChunk } from '../../types'
-import { isPlainTextChunk, isRichTextChunk } from '../../types'
+import type { TextChunk } from "../../types";
+import { isPlainTextChunk, isRichTextChunk } from "../../types";
 
 /**
  * Applies translations by mutating data through TextChunk references.
@@ -17,13 +17,13 @@ export class TranslationMutator {
    */
   apply(textChunks: TextChunk[], translations: Record<number, string>): void {
     for (const chunk of textChunks) {
-      const translation = translations[chunk.index]
-      if (translation === undefined) continue
+      const translation = translations[chunk.index];
+      if (translation === undefined) {continue;}
 
       if (isPlainTextChunk(chunk)) {
-        chunk.dataRef[chunk.key] = translation
+        chunk.dataRef[chunk.key] = translation;
       } else if (isRichTextChunk(chunk)) {
-        chunk.nodeRef.text = translation
+        chunk.nodeRef.text = translation;
       }
     }
   }

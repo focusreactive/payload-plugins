@@ -1,1 +1,1 @@
-export { TranslationDirection } from './TranslationDirection'
+export { TranslationDirection } from "./TranslationDirection";
