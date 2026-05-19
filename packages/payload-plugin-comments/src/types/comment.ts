@@ -23,4 +23,5 @@ export interface Comment {
   tenant?: number | string | null;
   createdAt: string;
   updatedAt: string;
+  isReadByCurrentUser?: boolean;
 }

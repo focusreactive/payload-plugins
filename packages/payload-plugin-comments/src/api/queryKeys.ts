@@ -1,4 +1,4 @@
-import type { QueryContext } from "../types";
+import type { Mode, QueryContext } from "../types";
 
 export const QUERY_KEYS = {
   comments: {
@@ -17,6 +17,13 @@ export const QUERY_KEYS = {
     global: () => ["document-titles", "global"] as const,
   },
   mentionableUsers: () => ["mentionable-users"] as const,
+  unreadMentionsCount: (
+    mode: Mode,
+    collectionSlug: string | null | undefined,
+    documentId: number | null | undefined,
+    globalSlug: string | null,
+    locale: string | null | undefined,
+  ) => ["unread-mentions-count", mode, collectionSlug ?? null, documentId ?? null, globalSlug, locale ?? null] as const,
 };
 
 export function getCommentsKey(ctx: QueryContext) {

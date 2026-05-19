@@ -6,6 +6,7 @@ import { CommentsDrawerProvider } from "../CommentsDrawerProvider";
 import { CommentsFilterProvider } from "../CommentsFilterProvider";
 import { CommentsProvider } from "../CommentsProvider";
 import { CommentsQueryClientProvider } from "../CommentsQueryClientProvider";
+import { UnreadMentionsProvider } from "../UnreadMentionsProvider";
 import type { CommentsPluginConfigStorage } from "../../types";
 
 import "../../styles.css";
@@ -25,7 +26,9 @@ export function CommentsProviderWrapper({ children }: Props) {
     <CommentsQueryClientProvider>
       <CommentsProvider usernameFieldPath={usernameFieldPath}>
         <CommentsDrawerProvider>
-          <CommentsFilterProvider>{children}</CommentsFilterProvider>
+          <CommentsFilterProvider>
+            <UnreadMentionsProvider>{children}</UnreadMentionsProvider>
+          </CommentsFilterProvider>
         </CommentsDrawerProvider>
       </CommentsProvider>
     </CommentsQueryClientProvider>

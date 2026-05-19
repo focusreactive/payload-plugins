@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, type ReactNode } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 
 const CommentsQueryClientContext = createContext<QueryClient | null>(null);
 
@@ -20,11 +20,7 @@ export function CommentsQueryClientProvider({ children }: Props) {
       }),
   );
 
-  return (
-    <CommentsQueryClientContext.Provider value={queryClient}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </CommentsQueryClientContext.Provider>
-  );
+  return <CommentsQueryClientContext.Provider value={queryClient}>{children}</CommentsQueryClientContext.Provider>;
 }
 
 export function useCommentsQueryClient(): QueryClient {

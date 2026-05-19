@@ -1,8 +1,9 @@
 "use server";
 
+import { headers } from "next/headers";
 import type { TypedUser, Where } from "payload";
 import { extractPayload } from "../utils/payload/extractPayload";
-import { DEFAULT_COLLECTION_SLUG } from "../constants";
+import { COMMENT_READS_COLLECTION_SLUG, DEFAULT_COLLECTION_SLUG } from "../constants";
 import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
 import type { Response, Comment, BaseServiceOptions } from "../types";
 import { getCurrentTenantId } from "./getCurrentTenantId";
@@ -79,9 +80,41 @@ export async function findAllComments({
       overrideAccess: true,
     });
 
+    const { user } = await payload.auth({ headers: await headers() });
+
+    let readSet: Set<number> | null = null;
+
+    if (user && comments.length > 0) {
+      const commentIds = comments.map((c) => c.id as number);
+
+      const { docs: reads } = await payload.find({
+        collection: COMMENT_READS_COLLECTION_SLUG,
+        where: {
+          and: [{ user: { equals: user.id } }, { comment: { in: commentIds } }],
+        },
+        limit: commentIds.length,
+        depth: 0,
+        overrideAccess: true,
+        select: { comment: true },
+      });
+
+      readSet = new Set<number>();
+
+      for (const r of reads as Array<{ comment: number | { id: number } }>) {
+        const id = typeof r.comment === "object" ? r.comment.id : r.comment;
+
+        if (typeof id === "number") readSet.add(id);
+      }
+    }
+
+    const enriched = comments.map((c) => ({
+      ...c,
+      isReadByCurrentUser: readSet ? readSet.has(c.id as number) : false,
+    })) as unknown as Comment[];
+
     return {
       success: true,
-      data: comments as unknown as Comment[],
+      data: enriched,
     };
   } catch (e) {
     console.error("findAllComments failed:", e);

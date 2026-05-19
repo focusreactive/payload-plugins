@@ -13,6 +13,8 @@ import { ToolsPanel } from "./ToolsPanel";
 import { useRelativeDate } from "../../hooks/useRelativeDate";
 import { Avatar } from "../Avatar";
 import { StrikethoroughOverlay } from "./StrikethoroughOverlay";
+import { useIsCommentUnread } from "../../utils/comment/useIsCommentUnread";
+import { useObserveCommentRead } from "../../utils/comment/useObserveCommentRead";
 
 interface Props {
   comment: Comment;
@@ -23,8 +25,10 @@ export function CommentItem({ comment, currentUserId }: Props) {
   const { resolveComment, removeComment, usernameFieldPath } = useComments();
   const { t } = useTranslation();
   const createdAtRelativeDate = useRelativeDate(comment.createdAt);
+  const isUnread = useIsCommentUnread(comment, currentUserId);
 
   const contentRef = useRef<HTMLParagraphElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const deletedUserLabel = t("comments:deletedUser" as never) ?? FALLBACK_DELETED_USERNAME;
   const mentionDeletedSuffix = t("comments:mentionDeletedSuffix" as never) ?? "(deleted)";
@@ -46,6 +50,8 @@ export function CommentItem({ comment, currentUserId }: Props) {
     mentionDeletedSuffix,
   });
 
+  useObserveCommentRead({ ref: rootRef, commentId: comment.id, enabled: isUnread });
+
   const handleToggleResolve = () => {
     startTransition(async () => {
       await resolveComment(comment.id, !isResolved);
@@ -59,7 +65,7 @@ export function CommentItem({ comment, currentUserId }: Props) {
   };
 
   return (
-    <div className={cn("group relative")}>
+    <div ref={rootRef} className={cn("group relative")}>
       <div className="flex gap-2.5 items-start">
         <Avatar user={narrowedAuthor} usernameFieldPath={usernameFieldPath} fallbackName={unknownLabel} />
 
@@ -72,6 +78,11 @@ export function CommentItem({ comment, currentUserId }: Props) {
             )}
 
             <span className="text-[11px] text-(--theme-elevation-450) shrink-0">{createdAtRelativeDate}</span>
+            <span
+              className={cn(
+                "block aspect-square w-2 bg-red-600 rounded-full opacity-0 transition-opacity duration-300 ease-in-out",
+                isUnread && "opacity-100",
+              )}></span>
           </div>
 
           <p
