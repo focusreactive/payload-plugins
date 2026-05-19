@@ -5,6 +5,8 @@ export const en: { comments: CommentsTranslations } = {
     label: "Comments",
     openComments_one: "{{count}} open comment",
     openComments_other: "{{count}} open comments",
+    unreadMentionsAria_one: "{{count}} unread mention",
+    unreadMentionsAria_other: "{{count}} unread mentions",
     add: "Add comment",
     writeComment: "Write a comment",
     comment: "Comment",

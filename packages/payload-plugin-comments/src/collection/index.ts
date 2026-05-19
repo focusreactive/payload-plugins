@@ -2,6 +2,7 @@ import type { CollectionConfig, CollectionSlug } from "payload";
 import { setAuthorBeforeCreate } from "./hooks/setAuthorBeforeCreate";
 import { setMentionSnapshotsBeforeChange } from "./hooks/setMentionSnapshotsBeforeChange";
 import { setTenantBeforeCreate } from "./hooks/setTenantBeforeCreate";
+import { cascadeDeleteCommentReads } from "./hooks/cascadeDeleteCommentReads";
 import { DEFAULT_COLLECTION_SLUG } from "../constants";
 import type { TenantPluginConfig } from "../types";
 import { isAuth } from "./access/isAuth";
@@ -29,6 +30,7 @@ export const baseCollection = (tenantConfig?: TenantPluginConfig): CollectionCon
       setMentionSnapshotsBeforeChange,
       ...(tenantConfig?.enabled ? [setTenantBeforeCreate] : []),
     ],
+    afterDelete: [cascadeDeleteCommentReads],
   },
   timestamps: true,
   fields: [
@@ -94,7 +96,10 @@ export const baseCollection = (tenantConfig?: TenantPluginConfig): CollectionCon
         {
           name: "displayNameSnapshot",
           type: "text",
-          admin: { readOnly: true, description: "Display name captured at mention time; used after the user is deleted." },
+          admin: {
+            readOnly: true,
+            description: "Display name captured at mention time; used after the user is deleted.",
+          },
         },
       ],
     },

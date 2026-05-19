@@ -1,5 +1,6 @@
 import type { Config, Plugin } from "payload";
 import { baseCollection as getBaseCollection } from "./collection";
+import { baseReadsCollection } from "./collection/commentReads";
 import type { CommentsPluginConfig } from "./types";
 import { overrideCommentsCollection } from "./utils/config/overrideCommentsCollection";
 import { getComponentPath } from "./utils/path/getComponentPath";
@@ -20,6 +21,7 @@ export const commentsPlugin =
 
     const baseCollection = getBaseCollection(config.tenant);
     const finalCollection = overrideCommentsCollection(baseCollection, overrides);
+    const readsCollection = baseReadsCollection(config.tenant);
 
     const allGlobalSlugs = (incomingConfig.globals ?? []).map((g) => g.slug);
     const allCollectionSlugs = (incomingConfig.collections ?? []).map((c) => c.slug);
@@ -70,7 +72,7 @@ export const commentsPlugin =
 
         await incomingConfig.onInit?.(payload);
       },
-      collections: [...overrideCollections(incomingConfig.collections), finalCollection],
+      collections: [...overrideCollections(incomingConfig.collections), finalCollection, readsCollection],
       globals: overrideGlobals(incomingConfig.globals),
     };
   };

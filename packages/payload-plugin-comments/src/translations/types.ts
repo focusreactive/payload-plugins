@@ -2,6 +2,8 @@ export interface CommentsTranslations {
   label: string;
   openComments_one: string;
   openComments_other: string;
+  unreadMentionsAria_one: string;
+  unreadMentionsAria_other: string;
   add: string;
   writeComment: string;
   comment: string;

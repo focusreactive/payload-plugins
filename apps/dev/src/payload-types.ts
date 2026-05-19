@@ -72,6 +72,7 @@ export interface Config {
     pages: Page;
     presets: Preset;
     comments: Comment;
+    'comment-reads': CommentRead;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -85,6 +86,7 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     presets: PresetsSelect<false> | PresetsSelect<true>;
     comments: CommentsSelect<false> | CommentsSelect<true>;
+    'comment-reads': CommentReadsSelect<false> | CommentReadsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -308,6 +310,18 @@ export interface Comment {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comment-reads".
+ */
+export interface CommentRead {
+  id: number;
+  comment: number | Comment;
+  user: number | User;
+  readAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -441,6 +455,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'comments';
         value: number | Comment;
+      } | null)
+    | ({
+        relationTo: 'comment-reads';
+        value: number | CommentRead;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -612,6 +630,17 @@ export interface CommentsSelect<T extends boolean = true> {
   isResolved?: T;
   resolvedBy?: T;
   resolvedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comment-reads_select".
+ */
+export interface CommentReadsSelect<T extends boolean = true> {
+  comment?: T;
+  user?: T;
+  readAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
