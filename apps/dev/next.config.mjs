@@ -38,8 +38,11 @@ const nextConfig = {
     webpackConfig.resolve.alias = {
       ...webpackConfig.resolve.alias,
       '@payloadcms/ui$': pkgDir('@payloadcms/ui'),
-      react: pkgDir('react'),
-      'react-dom': pkgDir('react-dom'),
+      react$: pkgDir('react'),
+      'react/jsx-runtime$': require.resolve('react/jsx-runtime'),
+      'react/jsx-dev-runtime$': require.resolve('react/jsx-dev-runtime'),
+      'react-dom$': pkgDir('react-dom'),
+      'react-dom/client$': require.resolve('react-dom/client'),
     }
 
     if (dev) {
