@@ -37,6 +37,8 @@ import type {
   TopSourcesRow,
 } from "../../../types/query";
 
+export type CountriesMode = "country" | "city";
+
 export interface OverviewTabViewProps {
   comparison: Comparison;
   kpis?: KpiResponse;
@@ -45,6 +47,8 @@ export interface OverviewTabViewProps {
   topEvents?: TopEventsResponse;
   topDevices?: TopDevicesResponse;
   topCountries?: TopCountriesResponse;
+  countriesMode?: CountriesMode;
+  onCountriesModeChange?: (mode: CountriesMode) => void;
   loading?: Partial<Record<"kpis" | "topPages" | "topSources" | "topEvents" | "topDevices" | "topCountries", boolean>>;
   errors?: Partial<Record<"kpis" | "topPages" | "topSources" | "topEvents" | "topDevices" | "topCountries", Error>>;
 }
@@ -73,6 +77,8 @@ export function OverviewTabView({
   topEvents,
   topDevices,
   topCountries,
+  countriesMode = "country",
+  onCountriesModeChange,
   loading,
   errors,
 }: OverviewTabViewProps) {
@@ -281,14 +287,27 @@ export function OverviewTabView({
           />
         </DataCard>
 
-        <DataCard title="Top countries" icon={MapPin}>
+        <DataCard
+          title={countriesMode === "city" ? "Top cities" : "Top countries"}
+          icon={MapPin}
+          action={
+            onCountriesModeChange ?
+              <MetricSwitcher<CountriesMode>
+                value={countriesMode}
+                onChange={onCountriesModeChange}
+                options={[
+                  { value: "country", label: "Country" },
+                  { value: "city", label: "City" },
+                ]}
+              />
+            : undefined
+          }>
           <BarList
-            rows={(topCountries?.rows ?? []).map((c) => ({
-              label: c.country,
-              sub: c.city || undefined,
-              value: c.sessions,
-            }))}
-            getIcon={() => MapPin}
+            rows={(topCountries?.rows ?? []).map(({ city, country, sessions }) =>
+              countriesMode === "city" ?
+                { label: city, sub: country || undefined, value: sessions }
+              : { label: country, value: sessions },
+            )}
             initialVisible={6}
             loading={loading?.topCountries}
             error={errors?.topCountries}

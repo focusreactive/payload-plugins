@@ -112,6 +112,12 @@ export interface TopCountriesResponse {
   comparison?: { rows: TopCountriesRow[] };
 }
 
+export type TopCountriesDimension = "country" | "city";
+
+export interface TopCountriesQuery extends TopNQuery {
+  dimension?: TopCountriesDimension;
+}
+
 export interface LeadActionsCurrent {
   totals: Record<LeadActionKind, number>;
   conversionRate: Record<LeadActionKind, number>;

@@ -1,7 +1,7 @@
 import type { Endpoint } from "payload";
 import { ANALYTICS_ENDPOINT_PATHS } from "../constants/endpoints";
 import { getTopCountries } from "../services/queries/getTopCountries";
-import { TopNQuerySchema, formatZodIssues } from "./validateBody";
+import { TopCountriesQuerySchema, formatZodIssues } from "./validateBody";
 import { mapGa4Error } from "./errorMapping";
 import { withAccess } from "./withAccess";
 import type { AnalyticsPluginConfig } from "../types/config";
@@ -19,7 +19,7 @@ export function buildTopCountriesEndpoint(config: AnalyticsPluginConfig): Endpoi
         return Response.json({ error: "Invalid JSON body" }, { status: 400 });
       }
 
-      const parsed = TopNQuerySchema.safeParse(body);
+      const parsed = TopCountriesQuerySchema.safeParse(body);
       if (!parsed.success) {
         return Response.json({ error: formatZodIssues(parsed.error.issues) }, { status: 400 });
       }

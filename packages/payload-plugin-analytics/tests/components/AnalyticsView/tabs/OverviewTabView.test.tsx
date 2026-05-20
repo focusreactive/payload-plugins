@@ -7,6 +7,7 @@ import topSources from "../../../../__fixtures__/admin/topSources.basic.json";
 import topEvents from "../../../../__fixtures__/admin/topEvents.basic.json";
 import topDevices from "../../../../__fixtures__/admin/topDevices.basic.json";
 import topCountries from "../../../../__fixtures__/admin/topCountries.basic.json";
+import topCities from "../../../../__fixtures__/admin/topCities.basic.json";
 
 vi.mock("next/dynamic", () => ({
   default: () => () => null,
@@ -48,5 +49,59 @@ describe("OverviewTabView", () => {
   it("shows percent deltas for KPIs when comparison is on", () => {
     render(<OverviewTabView comparison={{ kind: "previous-period" }} kpis={kpis as AnyKpi} />);
     expect(screen.getAllByText(/\d+\.\d+%/).length).toBeGreaterThan(0);
+  });
+
+  it("renders the Country/City switcher in the top-countries card", () => {
+    render(
+      <OverviewTabView
+        comparison={{ kind: "none" }}
+        topCountries={topCountries as AnyCountries}
+        countriesMode="country"
+        onCountriesModeChange={() => {}}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Country" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "City" })).toBeInTheDocument();
+  });
+
+  it("renders 'Top countries' as the card title in country mode", () => {
+    render(
+      <OverviewTabView
+        comparison={{ kind: "none" }}
+        topCountries={topCountries as AnyCountries}
+        countriesMode="country"
+        onCountriesModeChange={() => {}}
+      />,
+    );
+    expect(screen.getByText("Top countries")).toBeInTheDocument();
+  });
+
+  it("renders 'Top cities' as the card title in city mode and shows country subtext per row", () => {
+    render(
+      <OverviewTabView
+        comparison={{ kind: "none" }}
+        topCountries={topCities as AnyCountries}
+        countriesMode="city"
+        onCountriesModeChange={() => {}}
+      />,
+    );
+    expect(screen.getByText("Top cities")).toBeInTheDocument();
+    expect(screen.getByText("San Francisco")).toBeInTheDocument();
+    expect(screen.getByText("United States")).toBeInTheDocument();
+  });
+
+  it("calls onCountriesModeChange('city') when the City button is clicked", async () => {
+    const onChange = vi.fn();
+    const user = (await import("@testing-library/user-event")).default.setup();
+    render(
+      <OverviewTabView
+        comparison={{ kind: "none" }}
+        topCountries={topCountries as AnyCountries}
+        countriesMode="country"
+        onCountriesModeChange={onChange}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "City" }));
+    expect(onChange).toHaveBeenCalledWith("city");
   });
 });

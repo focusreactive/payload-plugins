@@ -30,6 +30,10 @@ export const TopNQuerySchema = AnalyticsQuerySchema.extend({
   limit: z.number().int().min(1).max(100).default(10),
 });
 
+export const TopCountriesQuerySchema = TopNQuerySchema.extend({
+  dimension: z.enum(["country", "city"]).default("country"),
+});
+
 const DeviceCategorySchema = z.enum(["desktop", "mobile", "tablet", "other"]);
 
 export const SessionsListQuerySchema = AnalyticsQuerySchema.extend({

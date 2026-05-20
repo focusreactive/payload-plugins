@@ -34,6 +34,26 @@ describe("POST /api/analytics/top-countries", () => {
     expect(Array.isArray(json.rows)).toBe(true);
   });
 
+  it("forwards dimension='city' to the service and returns 200", async () => {
+    const fake = { runReport: vi.fn().mockResolvedValue([topCountries]), batchRunReports: vi.fn() };
+    __setGa4ClientForTests(fake as never);
+    const ep = buildTopCountriesEndpoint(cfg);
+    const res = await callHandler(
+      ep,
+      makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" }, dimension: "city" } }),
+    );
+    expect(res.status).toBe(200);
+  });
+
+  it("rejects an unknown dimension with 400", async () => {
+    const ep = buildTopCountriesEndpoint(cfg);
+    const res = await callHandler(
+      ep,
+      makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" }, dimension: "region" } }),
+    );
+    expect(res.status).toBe(400);
+  });
+
   it("returns 429 when GA4 throws RESOURCE_EXHAUSTED", async () => {
     const err = new Error("8 RESOURCE_EXHAUSTED: quota");
     const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };

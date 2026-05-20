@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { OverviewTabView } from "./OverviewTabView";
+import { useMemo, useState } from "react";
+import { OverviewTabView, type CountriesMode } from "./OverviewTabView";
 import { useKpisQuery } from "../hooks/queries/useKpisQuery";
 import { useTopPagesQuery } from "../hooks/queries/useTopPagesQuery";
 import { useTopSourcesQuery } from "../hooks/queries/useTopSourcesQuery";
@@ -18,15 +18,18 @@ export interface OverviewTabProps {
 }
 
 export function OverviewTab({ dateRange, comparison }: OverviewTabProps) {
+  const [countriesMode, setCountriesMode] = useState<CountriesMode>("country");
+
   const base = useMemo(() => ({ dateRange, comparison }), [dateRange, comparison]);
   const topNQuery = useMemo(() => ({ ...base, limit: TOP_N_LIMIT }), [base]);
+  const topCountriesQuery = useMemo(() => ({ ...topNQuery, dimension: countriesMode }), [topNQuery, countriesMode]);
 
   const kpis = useKpisQuery(base);
   const topPages = useTopPagesQuery(topNQuery);
   const topSources = useTopSourcesQuery(topNQuery);
   const topEvents = useTopEventsQuery(topNQuery);
   const topDevices = useTopDevicesQuery(topNQuery);
-  const topCountries = useTopCountriesQuery(topNQuery);
+  const topCountries = useTopCountriesQuery(topCountriesQuery);
 
   return (
     <OverviewTabView
@@ -37,6 +40,8 @@ export function OverviewTab({ dateRange, comparison }: OverviewTabProps) {
       topEvents={topEvents.data}
       topDevices={topDevices.data}
       topCountries={topCountries.data}
+      countriesMode={countriesMode}
+      onCountriesModeChange={setCountriesMode}
       loading={{
         kpis: kpis.isLoading,
         topPages: topPages.isLoading,

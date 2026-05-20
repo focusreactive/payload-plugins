@@ -29,6 +29,8 @@ export type {
   TopDevicesRow,
   TopCountriesResponse,
   TopCountriesRow,
+  TopCountriesQuery,
+  TopCountriesDimension,
   LeadActionsResponse,
   LeadActionsCurrent,
   SessionsResponse,

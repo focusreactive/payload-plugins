@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { AnalyticsQuerySchema, TopNQuerySchema, SessionsListQuerySchema } from "../../src/endpoints/validateBody";
+import {
+  AnalyticsQuerySchema,
+  TopNQuerySchema,
+  SessionsListQuerySchema,
+  TopCountriesQuerySchema,
+} from "../../src/endpoints/validateBody";
 
 describe("AnalyticsQuerySchema", () => {
   it("accepts preset dateRange", () => {
@@ -53,6 +58,29 @@ describe("TopNQuerySchema", () => {
   });
 });
 
+describe("TopCountriesQuerySchema", () => {
+  it("defaults dimension to 'country' when omitted", () => {
+    const r = TopCountriesQuerySchema.parse({ dateRange: { preset: "last-7d" } });
+    expect(r.dimension).toBe("country");
+  });
+  it("accepts dimension 'country'", () => {
+    const r = TopCountriesQuerySchema.safeParse({ dateRange: { preset: "last-7d" }, dimension: "country" });
+    expect(r.success).toBe(true);
+  });
+  it("accepts dimension 'city'", () => {
+    const r = TopCountriesQuerySchema.safeParse({ dateRange: { preset: "last-7d" }, dimension: "city" });
+    expect(r.success).toBe(true);
+  });
+  it("rejects an unknown dimension", () => {
+    const r = TopCountriesQuerySchema.safeParse({ dateRange: { preset: "last-7d" }, dimension: "region" });
+    expect(r.success).toBe(false);
+  });
+  it("still defaults limit to 10", () => {
+    const r = TopCountriesQuerySchema.parse({ dateRange: { preset: "last-7d" } });
+    expect(r.limit).toBe(10);
+  });
+});
+
 describe("SessionsListQuerySchema", () => {
   it("defaults limit to 50, accepts hadLeadAction", () => {
     const r = SessionsListQuerySchema.parse({ dateRange: { preset: "last-7d" }, hadLeadAction: true });
@@ -93,17 +121,20 @@ describe("SessionsListQuerySchema", () => {
 });
 
 import type { z } from "zod";
-import type { AnalyticsQuery, TopNQuery, SessionsListQuery } from "../../src/types/query";
+import type { AnalyticsQuery, TopNQuery, SessionsListQuery, TopCountriesQuery } from "../../src/types/query";
 
 // Compile-time: these `_X` are unused at runtime but force tsc to verify the equivalence.
 type _ChkAnalytics = z.infer<typeof AnalyticsQuerySchema> extends AnalyticsQuery ? true : false;
 type _ChkTopN = z.infer<typeof TopNQuerySchema> extends TopNQuery ? true : false;
 type _ChkSessionList = z.infer<typeof SessionsListQuerySchema> extends SessionsListQuery ? true : false;
+type _ChkTopCountries = z.infer<typeof TopCountriesQuerySchema> extends TopCountriesQuery ? true : false;
 
 // Force usage so tsc doesn't elide them:
 const _x1: _ChkAnalytics = true;
 const _x2: _ChkTopN = true;
 const _x3: _ChkSessionList = true;
+const _x4: _ChkTopCountries = true;
 void _x1;
 void _x2;
 void _x3;
+void _x4;

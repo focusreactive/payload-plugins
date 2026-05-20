@@ -1,4 +1,11 @@
-import type { AnalyticsQuery, DateRange, JourneysQuery, SessionsListQuery, TopNQuery } from "../../../../types/query";
+import type {
+  AnalyticsQuery,
+  DateRange,
+  JourneysQuery,
+  SessionsListQuery,
+  TopCountriesQuery,
+  TopNQuery,
+} from "../../../../types/query";
 
 const ROOT = ["analytics"] as const;
 
@@ -9,7 +16,7 @@ export const analyticsKeys = {
   topSources: (q: TopNQuery) => [...ROOT, "topSources", q] as const,
   topEvents: (q: TopNQuery) => [...ROOT, "topEvents", q] as const,
   topDevices: (q: TopNQuery) => [...ROOT, "topDevices", q] as const,
-  topCountries: (q: TopNQuery) => [...ROOT, "topCountries", q] as const,
+  topCountries: (q: TopCountriesQuery) => [...ROOT, "topCountries", q] as const,
   leadActions: (q: AnalyticsQuery) => [...ROOT, "leadActions", q] as const,
   journeys: (q: JourneysQuery) => [...ROOT, "journeys", q] as const,
   sessions: (q: SessionsListQuery) => [...ROOT, "sessions", q] as const,

@@ -2,14 +2,14 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { ANALYTICS_ENDPOINT_PATHS } from "../../../../constants/endpoints";
-import type { TopCountriesResponse, TopNQuery } from "../../../../types/query";
+import type { TopCountriesQuery, TopCountriesResponse } from "../../../../types/query";
 import { analyticsFetch } from "./client";
 import { analyticsKeys } from "./keys";
 
-export function useTopCountriesQuery(query: TopNQuery) {
+export function useTopCountriesQuery(query: TopCountriesQuery) {
   return useQuery({
     queryKey: analyticsKeys.topCountries(query),
     queryFn: ({ signal }) =>
-      analyticsFetch<TopNQuery, TopCountriesResponse>(ANALYTICS_ENDPOINT_PATHS.topCountries, query, { signal }),
+      analyticsFetch<TopCountriesQuery, TopCountriesResponse>(ANALYTICS_ENDPOINT_PATHS.topCountries, query, { signal }),
   });
 }

@@ -48,4 +48,9 @@ describe("analyticsKeys", () => {
     expect(k[2]).toBe("sess-1");
     expect(k[3]).toEqual({ dateRange: q.dateRange });
   });
+
+  it("topCountries key includes the dimension field", () => {
+    const k = analyticsKeys.topCountries({ ...q, limit: 10, dimension: "city" });
+    expect(k[2]).toEqual({ ...q, limit: 10, dimension: "city" });
+  });
 });
