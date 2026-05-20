@@ -159,6 +159,8 @@ export function OverviewTabView({
               { value: "sessions", label: "Sessions" },
               { value: "users", label: "Users" },
               { value: "pageViews", label: "Pageviews" },
+              { value: "bounceRate", label: "Bounce rate" },
+              { value: "avgSessionDuration", label: "Average duration" },
             ]}
           />
         }>

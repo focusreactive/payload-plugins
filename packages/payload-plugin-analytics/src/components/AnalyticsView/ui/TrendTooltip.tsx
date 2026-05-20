@@ -1,5 +1,20 @@
 import type { TrendMetric } from "./TrendChart";
-import { formatShortDate, formatNumber } from "../numberFormatters";
+import { formatShortDate, formatNumber, formatPercentage, formatDurationClock } from "../numberFormatters";
+
+const METRIC_LABELS: Record<TrendMetric, string> = {
+  sessions: "Sessions",
+  users: "Users",
+  pageViews: "Pageviews",
+  bounceRate: "Bounce rate",
+  avgSessionDuration: "Avg duration",
+};
+
+function formatMetricValue(metric: TrendMetric, value: number) {
+  if (metric === "bounceRate") return formatPercentage(value);
+  if (metric === "avgSessionDuration") return formatDurationClock(value);
+
+  return formatNumber(value);
+}
 
 interface RechartsTooltipProps {
   active?: boolean;
@@ -26,15 +41,17 @@ export function TrendTooltip({ active, payload, metric }: RechartsTooltipProps &
 
       <div className="flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-[var(--theme-elevation-1000)]" />
-        <span className="capitalize">{metric}</span>
-        <span className="ml-auto font-semibold tabular-nums">{formatNumber(current)}</span>
+        <span>{METRIC_LABELS[metric]}</span>
+        <span className="ml-auto font-semibold tabular-nums">{formatMetricValue(metric, current)}</span>
       </div>
 
       {previous != null && (
         <div className="flex items-center gap-2 mt-0.5">
           <span className="w-2 h-2 rounded-full bg-[var(--theme-elevation-500)] outline outline-1 outline-dashed outline-[var(--theme-elevation-500)]" />
           <span>Previous</span>
-          <span className="ml-auto text-[var(--theme-elevation-500)] tabular-nums">{formatNumber(previous)}</span>
+          <span className="ml-auto text-[var(--theme-elevation-500)] tabular-nums">
+            {formatMetricValue(metric, previous)}
+          </span>
         </div>
       )}
     </div>

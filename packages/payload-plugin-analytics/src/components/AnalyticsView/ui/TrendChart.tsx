@@ -12,7 +12,7 @@ const TrendChartInner = dynamic(() => import("./TrendChartInner").then((m) => m.
   loading: () => <SkeletonBlock shape="chart" />,
 });
 
-export type TrendMetric = "sessions" | "users" | "pageViews";
+export type TrendMetric = "sessions" | "users" | "pageViews" | "bounceRate" | "avgSessionDuration";
 
 export interface TrendChartProps extends BlockStateProps {
   series: KpiSeriesPoint[];

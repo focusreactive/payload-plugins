@@ -22,6 +22,15 @@ export function formatDuration(seconds: number) {
   return `${m}m ${s}s`;
 }
 
+export function formatDurationClock(seconds: number) {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60)
+    .toString()
+    .padStart(2, "0");
+
+  return `${m}:${s}`;
+}
+
 export function formatShortDate(iso: string) {
   const d = new Date(iso + "T00:00:00Z");
 

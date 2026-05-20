@@ -58,6 +58,8 @@ function buildSeries(rows: Row[]): KpiSeriesPoint[] {
       sessions: convertMetricToNumber(r.metricValues?.[0]?.value),
       users: convertMetricToNumber(r.metricValues?.[1]?.value),
       pageViews: convertMetricToNumber(r.metricValues?.[2]?.value),
+      bounceRate: convertMetricToNumber(r.metricValues?.[3]?.value),
+      avgSessionDuration: convertMetricToNumber(r.metricValues?.[4]?.value),
     }))
     .filter((p) => p.date !== "");
 

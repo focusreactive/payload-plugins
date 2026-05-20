@@ -45,6 +45,8 @@ export interface KpiSeriesPoint {
   sessions: number;
   users: number;
   pageViews: number;
+  bounceRate: number;
+  avgSessionDuration: number;
 }
 export interface KpiResponse {
   current: KpiCurrent;

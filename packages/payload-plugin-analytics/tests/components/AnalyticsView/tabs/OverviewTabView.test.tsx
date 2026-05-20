@@ -36,7 +36,7 @@ describe("OverviewTabView", () => {
     expect(screen.getAllByText("Sessions").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Users").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Pageviews").length).toBeGreaterThan(0);
-    expect(screen.getByText("Bounce rate")).toBeInTheDocument();
+    expect(screen.getAllByText("Bounce rate").length).toBeGreaterThan(0);
     expect(screen.getByText("Avg duration")).toBeInTheDocument();
     expect(screen.getByText("Trend")).toBeInTheDocument();
     expect(screen.getByText("Top pages")).toBeInTheDocument();
