@@ -9,9 +9,9 @@ afterEach(() => {
 
 const sessionsBody = {
   rows: [
-    { sessionId: "s1", landingPage: "/", source: "google",  deviceCategory: "desktop", country: "US", startedAt: "2026-05-13T10:00:00.000Z", eventCount: 5, hadLeadAction: false },
-    { sessionId: "s2", landingPage: "/", source: "direct",  deviceCategory: "desktop", country: "DE", startedAt: "2026-05-13T10:01:00.000Z", eventCount: 3, hadLeadAction: false },
-    { sessionId: "s3", landingPage: "/", source: "google",  deviceCategory: "mobile",  country: "US", startedAt: "2026-05-13T10:02:00.000Z", eventCount: 2, hadLeadAction: false },
+    { sessionId: "s1", landingPage: "/", source: "google",  deviceCategory: ["desktop"], country: ["US"], startedAt: "2026-05-13T10:00:00.000Z", eventCount: 5, hadLeadAction: false },
+    { sessionId: "s2", landingPage: "/", source: "direct",  deviceCategory: ["desktop"], country: ["DE"], startedAt: "2026-05-13T10:01:00.000Z", eventCount: 3, hadLeadAction: false },
+    { sessionId: "s3", landingPage: "/", source: "google",  deviceCategory: ["mobile"],  country: ["US"], startedAt: "2026-05-13T10:02:00.000Z", eventCount: 2, hadLeadAction: false },
   ],
   pagination: { cursor: null, hasMore: false },
 };

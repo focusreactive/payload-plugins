@@ -31,7 +31,8 @@ function shortId(id: string): string {
 }
 
 export function SessionDrawer({ row, detail, onClose }: SessionDrawerProps) {
-  const Device = getDeviceIcon(row.deviceCategory);
+  const primaryDevice = row.deviceCategory[0] ?? "other";
+  const Device = getDeviceIcon(primaryDevice);
   const fullSetupRequired = detail?.setupRequired && detail.missing?.includes("fr_session_id");
   const seqOnlyMissing = detail?.missing?.includes("fr_event_seq") && !detail?.missing?.includes("fr_session_id");
 
@@ -110,7 +111,7 @@ export function SessionDrawer({ row, detail, onClose }: SessionDrawerProps) {
             <div className="text-base font-semibold text-[var(--theme-elevation-1000)] mt-0.5 inline-flex items-center gap-1.5">
               <Device size={15} />
 
-              <span className="text-[13px]">{row.deviceCategory}</span>
+              <span className="text-[13px]">{row.deviceCategory.join(", ")}</span>
             </div>
           </div>
 
@@ -119,7 +120,7 @@ export function SessionDrawer({ row, detail, onClose }: SessionDrawerProps) {
               Country
             </div>
 
-            <div className="text-base font-semibold text-[var(--theme-elevation-1000)] mt-0.5">{row.country}</div>
+            <div className="text-base font-semibold text-[var(--theme-elevation-1000)] mt-0.5">{row.country.join(", ")}</div>
           </div>
 
           <div>

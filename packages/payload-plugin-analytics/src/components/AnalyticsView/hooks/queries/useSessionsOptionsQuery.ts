@@ -25,7 +25,7 @@ export function useSessionsOptionsQuery(dateRange: DateRange) {
       ),
     select: (res): SessionsOptionsResult => ({
       sources: [...new Set(res.rows.map((r) => r.source))].sort(),
-      countries: [...new Set(res.rows.map((r) => r.country))].sort(),
+      countries: [...new Set(res.rows.flatMap((r) => r.country))].sort(),
       setupRequired: res.setupRequired,
     }),
   });

@@ -21,7 +21,7 @@ describe("SessionsTabView", () => {
         onCloseDrawer={() => {}}
       />,
     );
-    expect(screen.getByText(/Times shown at minute precision/i)).toBeInTheDocument();
+    expect(screen.getByText(/Sessions without a recorded start time/i)).toBeInTheDocument();
     expect(screen.getByText("Landing page")).toBeInTheDocument();
     expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
   });

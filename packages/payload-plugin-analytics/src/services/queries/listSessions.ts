@@ -30,25 +30,26 @@ function normaliseDeviceCategory(value: string | null | undefined): DeviceCatego
   return value === "desktop" || value === "mobile" || value === "tablet" ? value : "other";
 }
 
-function convertDateHourMinuteToIso(value: string | null | undefined): string {
-  if (!value || value.length !== 12) return "";
-
-  return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}T${value.slice(8, 10)}:${value.slice(10, 12)}:00.000Z`;
-}
-
 interface DimensionFilter {
   filter?: {
     fieldName: string;
-    stringFilter?: { value: string };
+    stringFilter?: { matchType?: string; value: string };
     inListFilter?: { values: string[] };
   };
-  andGroup?: {
-    expressions: DimensionFilter[];
-  };
+  andGroup?: { expressions: DimensionFilter[] };
+  notExpression?: DimensionFilter;
 }
 
 function stringFilter(fieldName: string, value: string): DimensionFilter {
   return { filter: { fieldName, stringFilter: { value } } };
+}
+
+function excludeNotSet(fieldName: string): DimensionFilter {
+  return {
+    notExpression: {
+      filter: { fieldName, stringFilter: { matchType: "EXACT", value: "(not set)" } },
+    },
+  };
 }
 
 function combineFilters(filters: DimensionFilter[]): DimensionFilter | undefined {
@@ -58,27 +59,14 @@ function combineFilters(filters: DimensionFilter[]): DimensionFilter | undefined
   return { andGroup: { expressions: filters } };
 }
 
-function convertRowToSessionsRow(row: Row, hadLeadAction: boolean): SessionsRow {
-  const dimensionValues = row.dimensionValues ?? [];
-  const metricValues = row.metricValues ?? [];
-
-  const sessionId = dimensionValues[0]?.value ?? "";
-  const landingPage = dimensionValues[1]?.value ?? "";
-  const source = dimensionValues[2]?.value ?? "";
-  const deviceCategory = normaliseDeviceCategory(dimensionValues[3]?.value);
-  const country = dimensionValues[4]?.value ?? "";
-  const dhm = dimensionValues[5]?.value ?? "";
-
-  return {
-    sessionId,
-    landingPage,
-    source,
-    deviceCategory,
-    country,
-    startedAt: convertDateHourMinuteToIso(dhm),
-    eventCount: convertMetricToNumber(metricValues[0]?.value),
-    hadLeadAction,
-  };
+interface MergedSession {
+  sessionId: string;
+  landingPage: string;
+  source: string;
+  startedAt: string;
+  devices: Set<DeviceCategory>;
+  countries: Set<string>;
+  eventCount: number;
 }
 
 export async function listSessions(propertyId: string, query: SessionsListQuery): Promise<SessionsResponse> {
@@ -92,7 +80,7 @@ export async function listSessions(propertyId: string, query: SessionsListQuery)
     { name: "sessionSource" },
     { name: "deviceCategory" },
     { name: "country" },
-    { name: "dateHourMinute" },
+    { name: "customEvent:fr_session_start" },
   ];
 
   let request: Record<string, unknown> = withRowLimit(
@@ -101,12 +89,15 @@ export async function listSessions(propertyId: string, query: SessionsListQuery)
       metrics: [{ name: "eventCount" }],
       dimensions,
       offset,
-      orderBys: [{ dimension: { dimensionName: "dateHourMinute" }, desc: true }],
+      orderBys: [{ dimension: { dimensionName: "customEvent:fr_session_start" }, desc: true }],
     },
     limit,
   );
 
-  const filters: DimensionFilter[] = [];
+  const filters: DimensionFilter[] = [
+    excludeNotSet("customEvent:fr_session_id"),
+    excludeNotSet("customEvent:fr_session_start"),
+  ];
 
   if (query.hadLeadAction) filters.push(leadActionFilter() as DimensionFilter);
   if (query.source) filters.push(stringFilter("sessionSource", query.source));
@@ -120,14 +111,63 @@ export async function listSessions(propertyId: string, query: SessionsListQuery)
   }
 
   try {
-    const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1]);
+    const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "sessions");
     const rows = (raw.rows ?? []) as Row[];
 
     const hadLeadAction = Boolean(query.hadLeadAction);
-    const sessionsRows: SessionsRow[] = rows.slice(0, limit).map((row) => convertRowToSessionsRow(row, hadLeadAction));
+    const merged = new Map<string, MergedSession>();
+
+    for (const row of rows) {
+      const dv = row.dimensionValues ?? [];
+      const mv = row.metricValues ?? [];
+      const id = dv[0]?.value ?? "";
+      if (!id) continue;
+
+      const device = normaliseDeviceCategory(dv[3]?.value);
+      const country = dv[4]?.value ?? "";
+      const events = convertMetricToNumber(mv[0]?.value);
+      const startedAt = dv[5]?.value ?? "";
+
+      const existing = merged.get(id);
+      if (existing) {
+        existing.devices.add(device);
+        if (country) existing.countries.add(country);
+        existing.eventCount += events;
+        if (startedAt && (!existing.startedAt || startedAt < existing.startedAt)) {
+          existing.startedAt = startedAt;
+        }
+      } else {
+        const devices = new Set<DeviceCategory>([device]);
+        const countries = new Set<string>();
+        if (country) countries.add(country);
+
+        merged.set(id, {
+          sessionId: id,
+          landingPage: dv[1]?.value ?? "",
+          source: dv[2]?.value ?? "",
+          startedAt,
+          devices,
+          countries,
+          eventCount: events,
+        });
+      }
+    }
+
+    const sessionsRows: SessionsRow[] = Array.from(merged.values())
+      .slice(0, limit)
+      .map((m) => ({
+        sessionId: m.sessionId,
+        landingPage: m.landingPage,
+        source: m.source,
+        deviceCategory: Array.from(m.devices),
+        country: Array.from(m.countries),
+        startedAt: m.startedAt,
+        eventCount: m.eventCount,
+        hadLeadAction,
+      }));
 
     const totalRows = raw.rowCount ?? rows.length;
-    const nextOffset = offset + sessionsRows.length;
+    const nextOffset = offset + rows.length;
     const hasMore = nextOffset < totalRows;
 
     return {
@@ -143,7 +183,7 @@ export async function listSessions(propertyId: string, query: SessionsListQuery)
     if (mapped.setupRequired) {
       return {
         setupRequired: true,
-        missing: deriveMissing({ message: mapped.message }, ["fr_session_id"]),
+        missing: deriveMissing({ message: mapped.message }, ["fr_session_id", "fr_session_start"]),
         rows: [],
         pagination: { cursor: null, hasMore: false },
       };

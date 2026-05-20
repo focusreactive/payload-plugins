@@ -5,7 +5,7 @@
     { "name": "sessionSource" },
     { "name": "deviceCategory" },
     { "name": "country" },
-    { "name": "dateHourMinute" }
+    { "name": "customEvent:fr_session_start" }
   ],
   "metricHeaders": [{ "name": "eventCount", "type": "TYPE_INTEGER" }],
   "rows": [
@@ -16,7 +16,7 @@
         { "value": "google" },
         { "value": "desktop" },
         { "value": "United States" },
-        { "value": "202605101430" }
+        { "value": "2026-05-10T14:30:00.000Z" }
       ],
       "metricValues": [{ "value": "8" }]
     },
@@ -27,7 +27,7 @@
         { "value": "(direct)" },
         { "value": "mobile" },
         { "value": "United Kingdom" },
-        { "value": "202605101515" }
+        { "value": "2026-05-10T15:15:00.000Z" }
       ],
       "metricValues": [{ "value": "4" }]
     }

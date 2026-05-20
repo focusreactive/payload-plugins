@@ -17,7 +17,7 @@ const page1 = {
   rows: [
     {
       sessionId: "s1", landingPage: "/", source: "google",
-      deviceCategory: "desktop", country: "US", startedAt: "2026-05-13T10:00:00.000Z",
+      deviceCategory: ["desktop"], country: ["US"], startedAt: "2026-05-13T10:00:00.000Z",
       eventCount: 5, hadLeadAction: false,
     },
   ],
@@ -28,7 +28,7 @@ const page2 = {
   rows: [
     {
       sessionId: "s2", landingPage: "/about", source: "direct",
-      deviceCategory: "mobile", country: "DE", startedAt: "2026-05-13T11:00:00.000Z",
+      deviceCategory: ["mobile"], country: ["DE"], startedAt: "2026-05-13T11:00:00.000Z",
       eventCount: 3, hadLeadAction: true,
     },
   ],

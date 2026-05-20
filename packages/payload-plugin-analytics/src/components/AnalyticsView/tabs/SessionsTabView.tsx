@@ -11,7 +11,7 @@ import { SessionDrawer } from "./SessionDrawer";
 import { getDeviceIcon, getLeadActionIcon, LEAD_ACTION_LABELS } from "../icons";
 import { cn } from "../../../utils/style";
 import { formatNumber } from "../numberFormatters";
-import type { CustomRegistrationKey, SessionDetailResponse, SessionsRow } from "../../../types/query";
+import type { CustomRegistrationKey, DeviceCategory, SessionDetailResponse, SessionsRow } from "../../../types/query";
 import type { SessionsFilters as Filters } from "../hooks/useAnalyticsParams";
 import type { LeadActionKind } from "../../../types/events";
 
@@ -61,8 +61,8 @@ export function SessionsTabView({
   return (
     <div>
       <CaveatBanner>
-        <b>Times shown at minute precision.</b> Order within the same minute is approximate. This is a permanent
-        limitation of the GA4 Data API path.
+        Sessions without a recorded start time (sessions that occurred before <code>fr_session_start</code> was
+        registered) are not shown.
       </CaveatBanner>
 
       <SessionsFilters
@@ -131,7 +131,7 @@ export function SessionsTabView({
 
               <tbody>
                 {typedRows.map((s) => {
-                  const Device = getDeviceIcon(s.deviceCategory);
+                  const devices = s.deviceCategory.length > 0 ? Array.from(new Set(s.deviceCategory)) : ["other" as const];
                   const isSelected = openId === s.sessionId;
                   const leadKind = s.leadKind;
                   const Lead = leadKind ? getLeadActionIcon(leadKind) : null;
@@ -154,12 +154,17 @@ export function SessionsTabView({
 
                       <td className="p-3 border-b border-[var(--theme-elevation-100)]">{s.source}</td>
 
-                      <td className="p-3 border-b border-[var(--theme-elevation-100)]" title={s.deviceCategory}>
-                        <Device size={14} />
+                      <td className="p-3 border-b border-[var(--theme-elevation-100)]" title={s.deviceCategory.join(", ")}>
+                        <span className="inline-flex items-center gap-1">
+                          {devices.map((d) => {
+                            const Device = getDeviceIcon(d);
+                            return <Device key={d} size={14} />;
+                          })}
+                        </span>
                       </td>
 
                       <td className="p-3 border-b border-[var(--theme-elevation-100)] font-[family-name:var(--font-mono)] text-[11.5px]">
-                        {s.country}
+                        {s.country.join(", ")}
                       </td>
 
                       <td className="p-3 border-b border-[var(--theme-elevation-100)] text-right tabular-nums">
@@ -205,7 +210,18 @@ export function SessionsTabView({
 
       {openId && (
         <SessionDrawer
-          row={typedRows.find((r) => r.sessionId === openId) ?? ({ sessionId: openId } as SessionsRowWithLead)}
+          row={
+            typedRows.find((r) => r.sessionId === openId) ?? {
+              sessionId: openId,
+              landingPage: "",
+              source: "",
+              deviceCategory: [] as DeviceCategory[],
+              country: [],
+              startedAt: "",
+              eventCount: 0,
+              hadLeadAction: false,
+            }
+          }
           detail={detail}
           onClose={onCloseDrawer}
         />
