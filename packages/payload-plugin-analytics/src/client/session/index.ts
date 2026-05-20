@@ -33,5 +33,6 @@ export function getSessionContext(): SessionContext {
     id: next.id,
     eventSeq: next.eventSeq,
     elapsedMs: Math.max(0, now - next.startedAt),
+    startedAtIso: new Date(next.startedAt).toISOString(),
   };
 }

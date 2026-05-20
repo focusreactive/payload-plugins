@@ -14,5 +14,6 @@ export function pushPageView(path: string, title: string, location: string): voi
     [SESSION_PARAM_KEYS.sessionId]: ctx.id,
     [SESSION_PARAM_KEYS.eventSeq]: ctx.eventSeq,
     [SESSION_PARAM_KEYS.elapsedMs]: ctx.elapsedMs,
+    [SESSION_PARAM_KEYS.sessionStart]: ctx.startedAtIso,
   });
 }

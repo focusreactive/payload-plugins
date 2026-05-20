@@ -29,4 +29,11 @@ describe("deriveMissing", () => {
       ["fr_event_seq"],
     )).toEqual(["fr_event_seq"]);
   });
+
+  it("returns fr_session_start when the message names customEvent:fr_session_start", () => {
+    expect(deriveMissing(
+      { message: "3 INVALID_ARGUMENT: Field customEvent:fr_session_start is unrecognized." },
+      ["fr_session_id", "fr_session_start"],
+    )).toEqual(["fr_session_start"]);
+  });
 });

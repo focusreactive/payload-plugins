@@ -1,6 +1,6 @@
 import type { LeadActionKind } from "./events";
 
-export type CustomRegistrationKey = "fr_session_id" | "fr_event_seq" | "fr_elapsed_ms";
+export type CustomRegistrationKey = "fr_session_id" | "fr_event_seq" | "fr_elapsed_ms" | "fr_session_start";
 
 export interface SetupGate {
   setupRequired: true;
@@ -128,8 +128,8 @@ export interface SessionsRow {
   sessionId: string;
   landingPage: string;
   source: string;
-  deviceCategory: DeviceCategory;
-  country: string;
+  deviceCategory: DeviceCategory[];
+  country: string[];
   startedAt: string;
   eventCount: number;
   hadLeadAction: boolean;

@@ -11,5 +11,6 @@ export function pushEvent(name: string, params: Record<string, unknown> = {}) {
     [SESSION_PARAM_KEYS.sessionId]: ctx.id,
     [SESSION_PARAM_KEYS.eventSeq]: ctx.eventSeq,
     [SESSION_PARAM_KEYS.elapsedMs]: ctx.elapsedMs,
+    [SESSION_PARAM_KEYS.sessionStart]: ctx.startedAtIso,
   });
 }

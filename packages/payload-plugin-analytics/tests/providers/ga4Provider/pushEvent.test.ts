@@ -51,6 +51,15 @@ describe("pushEvent", () => {
     expect(() => pushEvent("foo")).not.toThrow();
     // No assertion on store state — the no-op path is the contract.
   });
+
+  it("includes fr_session_start (ISO) in the pushed params", () => {
+    const spy = vi.fn();
+    window.gtag = spy;
+    pushEvent("page_view");
+    const [, , params] = spy.mock.calls[0];
+    expect(typeof params.fr_session_start).toBe("string");
+    expect(params.fr_session_start).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+  });
 });
 
 describe("pushPageView", () => {

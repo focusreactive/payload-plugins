@@ -4,6 +4,7 @@ const CUSTOM_KEY_PATTERNS: Array<{ key: CustomRegistrationKey; regex: RegExp }> 
   { key: "fr_session_id", regex: /customEvent:fr_session_id/ },
   { key: "fr_event_seq", regex: /customEvent:fr_event_seq/ },
   { key: "fr_elapsed_ms", regex: /(?:average)?[cC]ustomEvent:fr_elapsed_ms/ },
+  { key: "fr_session_start", regex: /customEvent:fr_session_start/ },
 ];
 
 export interface DerivableError {

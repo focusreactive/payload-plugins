@@ -9,4 +9,5 @@ export interface SessionContext {
   id: string;
   eventSeq: number;
   elapsedMs: number;
+  startedAtIso: string;
 }

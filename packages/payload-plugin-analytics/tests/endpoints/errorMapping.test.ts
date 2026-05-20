@@ -59,4 +59,10 @@ describe("mapGa4Error setupRequired derivation", () => {
     const m = mapGa4Error(new Error("8 RESOURCE_EXHAUSTED"));
     expect(m.setupRequired).toBeUndefined();
   });
+
+  it("flags setupRequired + fr_session_start for customEvent:fr_session_start", () => {
+    const m = mapGa4Error(new Error("3 INVALID_ARGUMENT: Field customEvent:fr_session_start is unrecognized."));
+    expect(m.setupRequired).toBe(true);
+    expect(m.missingKey).toBe("fr_session_start");
+  });
 });
