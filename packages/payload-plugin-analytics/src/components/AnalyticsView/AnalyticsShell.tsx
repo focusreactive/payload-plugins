@@ -19,7 +19,7 @@ export function AnalyticsShell({ title }: AnalyticsShellProps) {
 
   return (
     <AnalyticsProviders>
-      <div className="font-[family-name:var(--font-body)] text-[var(--theme-text)]">
+      <div className="pa-analytics-view font-[family-name:var(--font-body)] text-[var(--theme-text)]">
         <header className="flex items-start gap-6 mb-5 flex-wrap">
           <div>
             <h1 className="text-[26px] font-semibold tracking-tight text-[var(--theme-elevation-1000)] m-0">{title}</h1>
