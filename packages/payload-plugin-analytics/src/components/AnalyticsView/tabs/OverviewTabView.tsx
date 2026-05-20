@@ -22,7 +22,7 @@ import { MetricSwitcher } from "../ui/MetricSwitcher";
 import { DonutChart } from "../ui/DonutChart";
 import { BarList } from "../ui/BarList";
 import { getDeviceIcon } from "../icons";
-import { formatNumber } from "../numberFormatters";
+import { formatDuration, formatNumber } from "../numberFormatters";
 import type {
   Comparison,
   DeviceCategory,
@@ -210,7 +210,7 @@ export function OverviewTabView({
                 key: "avgTime",
                 header: "Avg",
                 align: "right",
-                render: (r) => `${r.avgTime}s`,
+                render: (r) => formatDuration(r.avgTime),
               },
             ]}
           />
