@@ -265,7 +265,7 @@ export function OverviewTabView({
               },
               {
                 key: "eventCountPerUser",
-                header: "/ user",
+                header: "Count per user",
                 align: "right",
                 render: (r) => r.eventCountPerUser.toFixed(2),
               },
