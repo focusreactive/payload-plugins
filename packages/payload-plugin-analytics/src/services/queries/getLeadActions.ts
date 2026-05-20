@@ -85,9 +85,11 @@ export async function getLeadActions(propertyId: string, query: AnalyticsQuery):
   let batch;
 
   try {
-    batch = await runQuery.batchRunReports(propertyId, [eventsRequest, sessionsRequest] as Parameters<
-      typeof runQuery.batchRunReports
-    >[1]);
+    batch = await runQuery.batchRunReports(
+      propertyId,
+      [eventsRequest, sessionsRequest] as Parameters<typeof runQuery.batchRunReports>[1],
+      "leadActions",
+    );
   } catch (err) {
     const mapped = mapGa4Error(err);
     const matchesElapsedMs =
@@ -96,9 +98,11 @@ export async function getLeadActions(propertyId: string, query: AnalyticsQuery):
     if (matchesElapsedMs) {
       elapsedMsAvailable = false;
       const fallbackEventsRequest = { ...eventsRequest, metrics: [{ name: "eventCount" }] };
-      batch = await runQuery.batchRunReports(propertyId, [fallbackEventsRequest, sessionsRequest] as Parameters<
-        typeof runQuery.batchRunReports
-      >[1]);
+      batch = await runQuery.batchRunReports(
+        propertyId,
+        [fallbackEventsRequest, sessionsRequest] as Parameters<typeof runQuery.batchRunReports>[1],
+        "leadActions",
+      );
     } else {
       throw err;
     }

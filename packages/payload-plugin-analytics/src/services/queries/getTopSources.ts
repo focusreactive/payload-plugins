@@ -39,7 +39,7 @@ export async function getTopSources(propertyId: string, query: TopNQuery): Promi
     : [{ name: "sessionSource" }, { name: "sessionMedium" }, { name: "sessionDefaultChannelGroup" }];
 
   const request = withRowLimit({ dateRanges, metrics: METRICS, dimensions }, query.limit);
-  const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1]);
+  const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "topSources");
   const rows = (raw.rows ?? []) as Row[];
 
   if (!previousDateRange) {

@@ -29,4 +29,5 @@ export interface AnalyticsPluginConfig {
   autoTrackLeadActions?: AutoTrackLeadActionsConfig;
   access?: AccessFn;
   translations?: Translations;
+  mocks?: boolean;
 }

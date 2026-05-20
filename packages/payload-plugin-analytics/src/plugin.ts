@@ -5,6 +5,7 @@ import { PLUGIN_NAME } from "./constants";
 import { buildEndpoints } from "./endpoints";
 import { overrideAdmin } from "./utils/config/overrideAdmin";
 import { mergeTranslations } from "./utils/config/mergeTranslations";
+import { registerAnalyticsMocks } from "./services/analyticsService/mockRegistry";
 
 const MEASUREMENT_ID_RE = /^G-[A-Z0-9]+$/;
 
@@ -33,6 +34,12 @@ export const analyticsPlugin =
     }
 
     setPluginConfig(config);
+
+    if (config.mocks === true) {
+      void import("./services/analyticsService/mocks").then(({ defaultMocks }) => {
+        registerAnalyticsMocks(defaultMocks);
+      });
+    }
 
     const incomingConfigTranslations = incomingConfig.i18n?.translations ?? {};
     const mergedTranslations = mergeTranslations(incomingConfigTranslations, config.translations ?? {});

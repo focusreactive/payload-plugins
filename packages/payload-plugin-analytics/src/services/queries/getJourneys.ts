@@ -97,7 +97,7 @@ export async function getJourneys(propertyId: string, query: JourneysQuery): Pro
 
   let raw;
   try {
-    raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1]);
+    raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "journeys");
   } catch (err) {
     const mapped = mapGa4Error(err);
 

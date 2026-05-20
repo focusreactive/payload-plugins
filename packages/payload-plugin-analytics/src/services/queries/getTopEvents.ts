@@ -25,7 +25,7 @@ export async function getTopEvents(propertyId: string, query: TopNQuery): Promis
   const dimensions = previousDateRange ? [{ name: "eventName" }, { name: "dateRange" }] : [{ name: "eventName" }];
 
   const request = withRowLimit({ dateRanges, metrics: METRICS, dimensions }, query.limit);
-  const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1]);
+  const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "topEvents");
   const rows = (raw.rows ?? []) as Row[];
 
   if (!previousDateRange) {

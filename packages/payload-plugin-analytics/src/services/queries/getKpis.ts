@@ -73,7 +73,7 @@ export async function getKpis(propertyId: string, query: AnalyticsQuery): Promis
 
   const dimensions = previousDateRange ? [{ name: "date" }, { name: "dateRange" }] : [{ name: "date" }];
 
-  const raw = await runQuery.runReport(propertyId, { dateRanges, metrics: METRICS, dimensions });
+  const raw = await runQuery.runReport(propertyId, { dateRanges, metrics: METRICS, dimensions }, "kpis");
   const rows = (raw.rows ?? []) as Row[];
 
   if (!previousDateRange) {

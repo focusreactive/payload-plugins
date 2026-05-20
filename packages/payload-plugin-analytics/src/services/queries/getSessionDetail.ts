@@ -47,7 +47,7 @@ export async function getSessionDetail(
   };
 
   try {
-    const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1]);
+    const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "sessionDetail");
     const rows = (raw.rows ?? []) as Row[];
 
     return { sessionId, events: rows.map(convertRowToSessionDetailEvent) };

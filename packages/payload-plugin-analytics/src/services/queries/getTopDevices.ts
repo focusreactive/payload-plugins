@@ -42,7 +42,7 @@ export async function getTopDevices(propertyId: string, query: TopNQuery): Promi
     : [{ name: "deviceCategory" }, { name: "browser" }, { name: "operatingSystem" }];
 
   const request = withRowLimit({ dateRanges, metrics: METRICS, dimensions }, query.limit);
-  const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1]);
+  const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "topDevices");
   const rows = (raw.rows ?? []) as Row[];
 
   if (!previousDateRange) {

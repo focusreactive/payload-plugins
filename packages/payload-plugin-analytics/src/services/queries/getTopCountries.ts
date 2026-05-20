@@ -33,7 +33,7 @@ export async function getTopCountries(propertyId: string, query: TopNQuery): Pro
     : [{ name: "country" }, { name: "city" }];
 
   const request = withRowLimit({ dateRanges, metrics: METRICS, dimensions }, query.limit);
-  const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1]);
+  const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "topCountries");
   const rows = (raw.rows ?? []) as Row[];
 
   if (!previousDateRange) {

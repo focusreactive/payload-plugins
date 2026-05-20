@@ -34,7 +34,7 @@ export async function getTopPages(propertyId: string, query: TopNQuery): Promise
     : [{ name: "pagePath" }, { name: "pageTitle" }];
 
   const request = withRowLimit({ dateRanges, metrics: METRICS, dimensions }, query.limit);
-  const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1]);
+  const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "topPages");
   const rows = (raw.rows ?? []) as Row[];
 
   if (!previousDateRange) {
