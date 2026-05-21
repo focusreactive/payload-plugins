@@ -5,9 +5,8 @@ import { X, Clock, Copy } from "lucide-react";
 import { EventTimeline } from "../ui/EventTimeline";
 import { SetupRequiredCard } from "../ui/SetupRequiredCard";
 import { SetupWarningIcon } from "../ui/SetupWarningIcon";
-import { getDeviceIcon, LEAD_ACTION_LABELS } from "../icons";
+import { getDeviceIcon } from "../icons";
 import type { SessionDetailResponse, SessionsRow } from "../../../types/query";
-import type { LeadActionKind } from "../../../types/events";
 
 const LEAD_ACTION_EVENT_NAMES = new Set<string>([
   "phone_click",
@@ -21,7 +20,7 @@ const LEAD_ACTION_EVENT_NAMES = new Set<string>([
 ]);
 
 export interface SessionDrawerProps {
-  row: SessionsRow & { leadKind?: LeadActionKind };
+  row: SessionsRow;
   detail?: SessionDetailResponse;
   onClose: () => void;
 }
@@ -30,9 +29,24 @@ function shortId(id: string): string {
   return `${id.slice(0, 6)}…${id.slice(-4)}`;
 }
 
+function formatStartedAt(iso: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+
+  return d.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "UTC",
+  });
+}
+
 export function SessionDrawer({ row, detail, onClose }: SessionDrawerProps) {
-  const primaryDevice = row.deviceCategory[0] ?? "other";
-  const Device = getDeviceIcon(primaryDevice);
+  const devices = row.deviceCategory.length > 0 ? Array.from(new Set(row.deviceCategory)) : ["other" as const];
   const fullSetupRequired = detail?.setupRequired && detail.missing?.includes("fr_session_id");
   const seqOnlyMissing = detail?.missing?.includes("fr_event_seq") && !detail?.missing?.includes("fr_session_id");
 
@@ -81,7 +95,7 @@ export function SessionDrawer({ row, detail, onClose }: SessionDrawerProps) {
 
           <div className="text-xs text-[var(--theme-elevation-500)] flex gap-2.5 items-center flex-wrap">
             <span className="inline-flex items-center gap-1">
-              <Clock size={11} /> Started {row.startedAt}
+              <Clock size={11} /> Started {formatStartedAt(row.startedAt)}
             </span>
 
             <span>·</span>
@@ -108,10 +122,11 @@ export function SessionDrawer({ row, detail, onClose }: SessionDrawerProps) {
               Device
             </div>
 
-            <div className="text-base font-semibold text-[var(--theme-elevation-1000)] mt-0.5 inline-flex items-center gap-1.5">
-              <Device size={15} />
-
-              <span className="text-[13px]">{row.deviceCategory.join(", ")}</span>
+            <div className="inline-flex items-center gap-1 mt-0.5">
+              {devices.map((d) => {
+                const Device = getDeviceIcon(d);
+                return <Device key={d} size={14} />;
+              })}
             </div>
           </div>
 
@@ -120,7 +135,9 @@ export function SessionDrawer({ row, detail, onClose }: SessionDrawerProps) {
               Country
             </div>
 
-            <div className="text-base font-semibold text-[var(--theme-elevation-1000)] mt-0.5">{row.country.join(", ")}</div>
+            <div className="text-base font-semibold text-[var(--theme-elevation-1000)] mt-0.5">
+              {row.country.join(", ")}
+            </div>
           </div>
 
           <div>
@@ -129,9 +146,7 @@ export function SessionDrawer({ row, detail, onClose }: SessionDrawerProps) {
             </div>
 
             <div className="text-[13px] mt-0.5">
-              {row.hadLeadAction && row.leadKind ?
-                <span className="text-[var(--theme-success-700)]">{LEAD_ACTION_LABELS[row.leadKind]}</span>
-              : row.hadLeadAction ?
+              {row.hadLeadAction ?
                 <span className="text-[var(--theme-success-700)]">Yes</span>
               : <span className="text-[var(--theme-elevation-500)]">—</span>}
             </div>

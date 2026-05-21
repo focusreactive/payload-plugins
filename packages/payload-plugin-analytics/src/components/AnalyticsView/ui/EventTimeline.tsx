@@ -1,4 +1,5 @@
 import type { SessionDetailEvent } from "../../../types/query";
+import { cn } from "../../../utils/style";
 
 export interface TimelineEvent extends SessionDetailEvent {
   isLeadAction?: boolean;
@@ -17,29 +18,42 @@ function pickDetail({ pagePath, params }: TimelineEvent) {
 }
 
 export function EventTimeline({ events }: EventTimelineProps) {
+  const eventCount = events.length;
+
   return (
-    <div className="relative pl-[22px] before:content-[''] before:absolute before:left-2 before:top-1.5 before:bottom-1.5 before:w-px before:bg-[var(--theme-border-color)]">
+    <div className="grid gap-4">
       {events.map((event, i) => {
         const { eventName, timestamp, isLeadAction, params } = event;
+        const isFirst = i === 0;
+        const isLast = i === events.length - 1;
 
         return (
           <div
             key={i}
             data-lead={isLeadAction ? "true" : undefined}
-            className="relative grid grid-cols-[44px_1fr] gap-3 py-2 items-baseline">
-            <span className="font-[family-name:var(--font-mono)] text-[11px] text-[var(--theme-elevation-500)] text-right pr-1">
+            className="grid grid-cols-[auto_10px_1fr] gap-3 items-baseline">
+            <span className="font-[family-name:var(--font-mono)] text-[11px] text-(--theme-elevation-500) text-right">
               {timestamp}
             </span>
 
-            <span
-              className={
-                isLeadAction ?
-                  "absolute -left-[22px] top-3 w-2.5 h-2.5 rounded-full bg-[var(--theme-success-500)] ring-1 ring-[var(--theme-success-200)] ring-offset-2 ring-offset-[var(--theme-elevation-0)]"
-                : "absolute -left-[22px] top-3 w-2.5 h-2.5 rounded-full bg-[var(--theme-elevation-300)] ring-1 ring-[var(--theme-border-color)] ring-offset-2 ring-offset-[var(--theme-elevation-0)]"
-              }
-            />
+            <div className="relative self-stretch">
+              {!isFirst && eventCount && (
+                <span className="absolute top-0 bottom-1/2 left-1/2 -translate-x-1/2 w-px bg-(--theme-border-color)" />
+              )}
+              {!isLast && eventCount && (
+                <span className="absolute top-1/2 -bottom-4 left-1/2 -translate-x-1/2 w-px bg-(--theme-border-color)" />
+              )}
+              <span
+                className={cn(
+                  "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full ring-1 ring-offset-2 ring-offset-(--theme-elevation-0)",
+                  isLeadAction ?
+                    "bg-(--theme-success-500) ring-(--theme-success-200)"
+                  : "bg-(--theme-elevation-300) ring-(--theme-border-color)",
+                )}
+              />
+            </div>
 
-            <div className="col-start-2 min-w-0">
+            <div className="min-w-0">
               <span
                 className={
                   isLeadAction ?
