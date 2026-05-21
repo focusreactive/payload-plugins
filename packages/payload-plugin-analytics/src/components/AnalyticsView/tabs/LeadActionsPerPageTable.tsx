@@ -7,6 +7,7 @@ import { BarList } from "../ui/BarList";
 import { getLeadActionIcon, LEAD_ACTION_LABELS } from "../icons";
 import { formatNumber } from "../numberFormatters";
 import type { LeadActionKind } from "../../../types/events";
+import { EmptyTile } from "../ui/EmptyTile";
 
 export interface PerPageRow {
   pagePath: string;
@@ -15,6 +16,8 @@ export interface PerPageRow {
 
 export function LeadActionsPerPageTable({ rows }: { rows: PerPageRow[] }) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
+
+  if (rows.length === 0) return <EmptyTile message="No data in this range." />;
 
   return (
     <table className="w-full border-collapse text-[12.5px]">
