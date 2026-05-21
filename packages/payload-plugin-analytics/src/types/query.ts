@@ -52,6 +52,7 @@ export interface KpiResponse {
   current: KpiCurrent;
   comparison?: KpiCurrent;
   series: KpiSeriesPoint[];
+  comparisonSeries?: KpiSeriesPoint[];
 }
 
 export interface TopPagesRow {

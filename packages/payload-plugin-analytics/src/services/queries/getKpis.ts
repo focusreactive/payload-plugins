@@ -91,5 +91,6 @@ export async function getKpis(propertyId: string, query: AnalyticsQuery): Promis
     current: aggregate(buckets.current),
     comparison: aggregate(buckets.previous),
     series: buildSeries(buckets.current),
+    comparisonSeries: buildSeries(buckets.previous),
   };
 }
