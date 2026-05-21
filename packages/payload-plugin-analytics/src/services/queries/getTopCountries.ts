@@ -33,10 +33,8 @@ function buildJoinKey(row: TopCountriesRow, dimension: "country" | "city"): stri
   return dimension === "city" ? `${row.city}|${row.country}` : row.country;
 }
 
-function dimensionsFor(dimension: "country" | "city", withCompare: boolean) {
-  const base = dimension === "city" ? [{ name: "city" }, { name: "country" }] : [{ name: "country" }];
-
-  return withCompare ? [...base, { name: "dateRange" }] : base;
+function dimensionsFor(dimension: "country" | "city") {
+  return dimension === "city" ? [{ name: "city" }, { name: "country" }] : [{ name: "country" }];
 }
 
 export async function getTopCountries(propertyId: string, query: TopCountriesQuery): Promise<TopCountriesResponse> {
@@ -45,7 +43,7 @@ export async function getTopCountries(propertyId: string, query: TopCountriesQue
   const previousDateRange = query.comparison?.kind === "previous-period" ? resolveComparison(dateRange) : undefined;
   const dateRanges = dateRangesFor(dateRange, previousDateRange);
 
-  const dimensions = dimensionsFor(dimension, Boolean(previousDateRange));
+  const dimensions = dimensionsFor(dimension);
 
   const request = withRowLimit({ dateRanges, metrics: METRICS, dimensions }, query.limit);
   const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "topCountries");

@@ -36,10 +36,7 @@ export async function getTopDevices(propertyId: string, query: TopNQuery): Promi
   const previousDateRange = query.comparison?.kind === "previous-period" ? resolveComparison(dateRange) : undefined;
   const dateRanges = dateRangesFor(dateRange, previousDateRange);
 
-  const dimensions =
-    previousDateRange ?
-      [{ name: "deviceCategory" }, { name: "browser" }, { name: "operatingSystem" }, { name: "dateRange" }]
-    : [{ name: "deviceCategory" }, { name: "browser" }, { name: "operatingSystem" }];
+  const dimensions = [{ name: "deviceCategory" }, { name: "browser" }, { name: "operatingSystem" }];
 
   const request = withRowLimit({ dateRanges, metrics: METRICS, dimensions }, query.limit);
   const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "topDevices");

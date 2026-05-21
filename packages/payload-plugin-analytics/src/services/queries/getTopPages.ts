@@ -28,10 +28,7 @@ export async function getTopPages(propertyId: string, query: TopNQuery): Promise
   const previousDateRange = query.comparison?.kind === "previous-period" ? resolveComparison(dateRange) : undefined;
   const dateRanges = dateRangesFor(dateRange, previousDateRange);
 
-  const dimensions =
-    previousDateRange ?
-      [{ name: "pagePath" }, { name: "pageTitle" }, { name: "dateRange" }]
-    : [{ name: "pagePath" }, { name: "pageTitle" }];
+  const dimensions = [{ name: "pagePath" }, { name: "pageTitle" }];
 
   const request = withRowLimit({ dateRanges, metrics: METRICS, dimensions }, query.limit);
   const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "topPages");

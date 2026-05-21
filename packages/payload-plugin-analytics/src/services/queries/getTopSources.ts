@@ -28,15 +28,7 @@ export async function getTopSources(propertyId: string, query: TopNQuery): Promi
   const previousDateRange = query.comparison?.kind === "previous-period" ? resolveComparison(dateRange) : undefined;
   const dateRanges = dateRangesFor(dateRange, previousDateRange);
 
-  const dimensions =
-    previousDateRange ?
-      [
-        { name: "sessionSource" },
-        { name: "sessionMedium" },
-        { name: "sessionDefaultChannelGroup" },
-        { name: "dateRange" },
-      ]
-    : [{ name: "sessionSource" }, { name: "sessionMedium" }, { name: "sessionDefaultChannelGroup" }];
+  const dimensions = [{ name: "sessionSource" }, { name: "sessionMedium" }, { name: "sessionDefaultChannelGroup" }];
 
   const request = withRowLimit({ dateRanges, metrics: METRICS, dimensions }, query.limit);
   const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "topSources");

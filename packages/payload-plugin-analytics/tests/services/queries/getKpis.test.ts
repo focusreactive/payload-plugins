@@ -33,7 +33,7 @@ describe("getKpis", () => {
     expect(arg.dateRanges).toHaveLength(2);
     expect(arg.dateRanges[0].name).toBe("current");
     expect(arg.dateRanges[1].name).toBe("previous");
-    expect(arg.dimensions).toEqual([{ name: "date" }, { name: "dateRange" }]);
+    expect(arg.dimensions).toEqual([{ name: "date" }]);
   });
 
   it("returns numeric current values", async () => {

@@ -69,16 +69,13 @@ export async function getLeadActions(propertyId: string, query: AnalyticsQuery):
   const eventsRequest = {
     dateRanges,
     metrics: [{ name: "eventCount" }, { name: "averageCustomEvent:fr_elapsed_ms" }],
-    dimensions:
-      previousDateRange ?
-        [{ name: "eventName" }, { name: "pagePath" }, { name: "dateRange" }]
-      : [{ name: "eventName" }, { name: "pagePath" }],
+    dimensions: [{ name: "eventName" }, { name: "pagePath" }],
     dimensionFilter: leadActionFilter(),
   };
   const sessionsRequest = {
     dateRanges,
     metrics: [{ name: "sessions" }],
-    dimensions: previousDateRange ? [{ name: "dateRange" }] : [],
+    dimensions: [],
   };
 
   let elapsedMsAvailable = true;
