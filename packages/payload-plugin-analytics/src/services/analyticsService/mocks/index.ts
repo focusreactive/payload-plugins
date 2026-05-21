@@ -18,11 +18,11 @@ export const defaultMocks: AnalyticsMockMap = {
     topSources: topSourcesMock,
     topDevices: topDevicesMock,
     topCountries: topCountriesMock,
-    sessions: sessionsMock,
     sessionDetail: sessionDetailMock,
     journeys: journeysMock,
   },
   batchRunReports: {
     leadActions: leadActionsMock,
+    sessions: sessionsMock,
   },
 };

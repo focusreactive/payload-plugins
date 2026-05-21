@@ -25,7 +25,16 @@ describe("POST /api/analytics/sessions", () => {
   });
 
   it("returns 200 with rows + pagination when valid", async () => {
-    const fake = { runReport: vi.fn().mockResolvedValue([sessions]), batchRunReports: vi.fn() };
+    const emptyLeadReport = {
+      dimensionHeaders: [{ name: "customEvent:fr_session_id" }],
+      metricHeaders: [{ name: "eventCount", type: "TYPE_INTEGER" }],
+      rows: [],
+      rowCount: 0,
+    };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue([{ reports: [sessions, emptyLeadReport] }]),
+    };
     __setGa4ClientForTests(fake as never);
     const ep = buildSessionsEndpoint(cfg);
     const res = await callHandler(ep, makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } }));
@@ -37,7 +46,7 @@ describe("POST /api/analytics/sessions", () => {
 
   it("returns 429 when GA4 throws RESOURCE_EXHAUSTED", async () => {
     const err = new Error("8 RESOURCE_EXHAUSTED: quota");
-    const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
+    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockRejectedValue(err) };
     __setGa4ClientForTests(fake as never);
     const ep = buildSessionsEndpoint(cfg);
     const res = await callHandler(ep, makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } }));
@@ -46,7 +55,7 @@ describe("POST /api/analytics/sessions", () => {
 
   it("returns 400 when GA4 throws INVALID_ARGUMENT", async () => {
     const err = new Error("3 INVALID_ARGUMENT: bad date format");
-    const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
+    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockRejectedValue(err) };
     __setGa4ClientForTests(fake as never);
     const ep = buildSessionsEndpoint(cfg);
     const res = await callHandler(ep, makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } }));
@@ -57,7 +66,7 @@ describe("POST /api/analytics/sessions", () => {
 
   it("returns 200 with setupRequired+missing when customEvent:fr_session_id is unregistered", async () => {
     const err = new Error("3 INVALID_ARGUMENT: Field customEvent:fr_session_id is unrecognized.");
-    const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
+    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockRejectedValue(err) };
     __setGa4ClientForTests(fake as never);
     const ep = buildSessionsEndpoint(cfg);
     const res = await callHandler(ep, makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } }));

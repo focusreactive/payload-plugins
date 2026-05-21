@@ -1,0 +1,51 @@
+{
+  "reports": [
+    {
+      "dimensionHeaders": [
+        { "name": "customEvent:fr_session_id" },
+        { "name": "landingPagePlusQueryString" },
+        { "name": "sessionSource" },
+        { "name": "deviceCategory" },
+        { "name": "country" },
+        { "name": "customEvent:fr_session_start" }
+      ],
+      "metricHeaders": [{ "name": "eventCount", "type": "TYPE_INTEGER" }],
+      "rows": [
+        {
+          "dimensionValues": [
+            { "value": "aaaaaaaa-1111-4222-8333-444444444444" },
+            { "value": "/landing" },
+            { "value": "google" },
+            { "value": "desktop" },
+            { "value": "United States" },
+            { "value": "2026-05-10T16:00:00.000Z" }
+          ],
+          "metricValues": [{ "value": "5" }]
+        },
+        {
+          "dimensionValues": [
+            { "value": "aaaaaaaa-1111-4222-8333-444444444444" },
+            { "value": "/landing" },
+            { "value": "google" },
+            { "value": "mobile" },
+            { "value": "Germany" },
+            { "value": "2026-05-10T16:00:00.000Z" }
+          ],
+          "metricValues": [{ "value": "3" }]
+        }
+      ],
+      "rowCount": 2
+    },
+    {
+      "dimensionHeaders": [{ "name": "customEvent:fr_session_id" }],
+      "metricHeaders": [{ "name": "eventCount", "type": "TYPE_INTEGER" }],
+      "rows": [
+        {
+          "dimensionValues": [{ "value": "aaaaaaaa-1111-4222-8333-444444444444" }],
+          "metricValues": [{ "value": "2" }]
+        }
+      ],
+      "rowCount": 1
+    }
+  ]
+}

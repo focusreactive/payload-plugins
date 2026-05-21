@@ -8,12 +8,11 @@ import { ErrorTile } from "../ui/ErrorTile";
 import { EmptyTile } from "../ui/EmptyTile";
 import { SessionsFilters } from "./SessionsFilters";
 import { SessionDrawer } from "./SessionDrawer";
-import { getDeviceIcon, getLeadActionIcon, LEAD_ACTION_LABELS } from "../icons";
+import { getDeviceIcon } from "../icons";
 import { cn } from "../../../utils/style";
 import { formatNumber } from "../numberFormatters";
 import type { CustomRegistrationKey, DeviceCategory, SessionDetailResponse, SessionsRow } from "../../../types/query";
 import type { SessionsFilters as Filters } from "../hooks/useAnalyticsParams";
-import type { LeadActionKind } from "../../../types/events";
 
 export interface SessionsTabViewProps {
   filters: Filters;
@@ -36,7 +35,7 @@ export interface SessionsTabViewProps {
   detailError?: Error;
 }
 
-type SessionsRowWithLead = SessionsRow & { leadKind?: LeadActionKind };
+type SessionsRowWithLead = SessionsRow;
 
 export function SessionsTabView({
   filters,
@@ -83,12 +82,10 @@ export function SessionsTabView({
             <ErrorTile error={error} />
           : typedRows.length === 0 ?
             <EmptyTile message="No sessions matched these filters." />
-          : <table className="w-full border-collapse">
+          : <table className="table-auto w-full border-collapse">
               <thead>
                 <tr>
-                  <th
-                    className="text-left text-[10px] uppercase tracking-widest text-[var(--theme-elevation-500)] font-semibold p-3 bg-[var(--theme-elevation-50)] border-b border-[var(--theme-border-color)]"
-                    style={{ width: 80 }}>
+                  <th className="text-left text-[10px] uppercase tracking-widest text-[var(--theme-elevation-500)] font-semibold p-3 bg-[var(--theme-elevation-50)] border-b border-[var(--theme-border-color)]">
                     Started
                   </th>
 
@@ -100,41 +97,31 @@ export function SessionsTabView({
                     Source
                   </th>
 
-                  <th
-                    className="text-left text-[10px] uppercase tracking-widest text-[var(--theme-elevation-500)] font-semibold p-3 bg-[var(--theme-elevation-50)] border-b border-[var(--theme-border-color)]"
-                    style={{ width: 60 }}>
-                    Dev
+                  <th className="text-left text-[10px] uppercase tracking-widest text-[var(--theme-elevation-500)] font-semibold p-3 bg-[var(--theme-elevation-50)] border-b border-[var(--theme-border-color)]">
+                    Device
                   </th>
 
-                  <th
-                    className="text-left text-[10px] uppercase tracking-widest text-[var(--theme-elevation-500)] font-semibold p-3 bg-[var(--theme-elevation-50)] border-b border-[var(--theme-border-color)]"
-                    style={{ width: 50 }}>
-                    Cnt
+                  <th className="text-left text-[10px] uppercase tracking-widest text-[var(--theme-elevation-500)] font-semibold p-3 bg-[var(--theme-elevation-50)] border-b border-[var(--theme-border-color)]">
+                    Country
                   </th>
 
-                  <th
-                    className="text-right text-[10px] uppercase tracking-widest text-[var(--theme-elevation-500)] font-semibold p-3 bg-[var(--theme-elevation-50)] border-b border-[var(--theme-border-color)]"
-                    style={{ width: 50 }}>
-                    Evt
+                  <th className="text-right text-[10px] uppercase tracking-widest text-[var(--theme-elevation-500)] font-semibold p-3 bg-[var(--theme-elevation-50)] border-b border-[var(--theme-border-color)]">
+                    Events
                   </th>
 
                   <th className="text-left text-[10px] uppercase tracking-widest text-[var(--theme-elevation-500)] font-semibold p-3 bg-[var(--theme-elevation-50)] border-b border-[var(--theme-border-color)]">
                     Lead
                   </th>
 
-                  <th
-                    className="text-left text-[10px] uppercase tracking-widest text-[var(--theme-elevation-500)] font-semibold p-3 bg-[var(--theme-elevation-50)] border-b border-[var(--theme-border-color)]"
-                    style={{ width: 30 }}
-                  />
+                  <th className="text-left text-[10px] uppercase tracking-widest text-[var(--theme-elevation-500)] font-semibold p-3 bg-[var(--theme-elevation-50)] border-b border-[var(--theme-border-color)]" />
                 </tr>
               </thead>
 
               <tbody>
                 {typedRows.map((s) => {
-                  const devices = s.deviceCategory.length > 0 ? Array.from(new Set(s.deviceCategory)) : ["other" as const];
+                  const devices =
+                    s.deviceCategory.length > 0 ? Array.from(new Set(s.deviceCategory)) : ["other" as const];
                   const isSelected = openId === s.sessionId;
-                  const leadKind = s.leadKind;
-                  const Lead = leadKind ? getLeadActionIcon(leadKind) : null;
 
                   return (
                     <tr
@@ -144,17 +131,19 @@ export function SessionsTabView({
                         "cursor-pointer hover:bg-[var(--theme-elevation-50)] text-[12.5px]",
                         isSelected && "bg-[var(--theme-elevation-100)]",
                       )}>
-                      <td className="p-3 border-b border-[var(--theme-elevation-100)] font-[family-name:var(--font-mono)] text-[11.5px]">
+                      <td className="max-w-[80px] p-3 border-b border-[var(--theme-elevation-100)] font-[family-name:var(--font-mono)] text-[11.5px]">
                         {s.startedAt.length > 5 ? s.startedAt.slice(11, 16) : s.startedAt}
                       </td>
 
-                      <td className="p-3 border-b border-[var(--theme-elevation-100)] font-[family-name:var(--font-mono)] text-[11.5px] truncate max-w-[180px]">
+                      <td className="w-full max-w-[200px] p-3 border-b border-[var(--theme-elevation-100)] font-[family-name:var(--font-mono)] text-[11.5px] truncate">
                         {s.landingPage}
                       </td>
 
-                      <td className="p-3 border-b border-[var(--theme-elevation-100)]">{s.source}</td>
+                      <td className="max-w-[100px] p-3 border-b border-[var(--theme-elevation-100)]">{s.source}</td>
 
-                      <td className="p-3 border-b border-[var(--theme-elevation-100)]" title={s.deviceCategory.join(", ")}>
+                      <td
+                        className="max-w-[100px] p-3 border-b border-[var(--theme-elevation-100)]"
+                        title={s.deviceCategory.join(", ")}>
                         <span className="inline-flex items-center gap-1">
                           {devices.map((d) => {
                             const Device = getDeviceIcon(d);
@@ -163,7 +152,7 @@ export function SessionsTabView({
                         </span>
                       </td>
 
-                      <td className="p-3 border-b border-[var(--theme-elevation-100)] font-[family-name:var(--font-mono)] text-[11.5px]">
+                      <td className="max-w-[200px] p-3 border-b border-[var(--theme-elevation-100)] font-[family-name:var(--font-mono)] text-[11.5px] truncate">
                         {s.country.join(", ")}
                       </td>
 
@@ -172,12 +161,7 @@ export function SessionsTabView({
                       </td>
 
                       <td className="p-3 border-b border-[var(--theme-elevation-100)]">
-                        {s.hadLeadAction && Lead && leadKind ?
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--theme-success-50)] text-[var(--theme-success-700)] border border-[var(--theme-success-100)] text-[11px] font-medium">
-                            <Lead size={11} />
-                            {LEAD_ACTION_LABELS[leadKind]}
-                          </span>
-                        : s.hadLeadAction ?
+                        {s.hadLeadAction ?
                           <span className="text-[var(--theme-success-700)] text-[11px]">Yes</span>
                         : <span className="text-[var(--theme-elevation-300)]">—</span>}
                       </td>

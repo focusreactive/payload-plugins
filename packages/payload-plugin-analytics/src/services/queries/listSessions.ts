@@ -83,7 +83,7 @@ export async function listSessions(propertyId: string, query: SessionsListQuery)
     { name: "customEvent:fr_session_start" },
   ];
 
-  let request: Record<string, unknown> = withRowLimit(
+  let sessionsRequest: Record<string, unknown> = withRowLimit(
     {
       dateRanges: dateRangesFor(dateRange),
       metrics: [{ name: "eventCount" }],
@@ -107,14 +107,38 @@ export async function listSessions(propertyId: string, query: SessionsListQuery)
   const combined = combineFilters(filters);
 
   if (combined) {
-    request = { ...request, dimensionFilter: combined };
+    sessionsRequest = { ...sessionsRequest, dimensionFilter: combined };
   }
 
-  try {
-    const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "sessions");
-    const rows = (raw.rows ?? []) as Row[];
+  const leadSessionsRequest = {
+    dateRanges: dateRangesFor(dateRange),
+    metrics: [{ name: "eventCount" }],
+    dimensions: [{ name: "customEvent:fr_session_id" }],
+    dimensionFilter: combineFilters([
+      excludeNotSet("customEvent:fr_session_id"),
+      leadActionFilter() as DimensionFilter,
+    ]),
+  };
 
-    const hadLeadAction = Boolean(query.hadLeadAction);
+  try {
+    const batch = await runQuery.batchRunReports(
+      propertyId,
+      [sessionsRequest, leadSessionsRequest] as Parameters<typeof runQuery.batchRunReports>[1],
+      "sessions",
+    );
+
+    const [sessionsReport, leadSessionsReport] = batch.reports ?? [];
+    const rows = (sessionsReport?.rows ?? []) as Row[];
+    const leadRows = (leadSessionsReport?.rows ?? []) as Row[];
+
+    const leadSessionIds = new Set<string>();
+
+    for (const row of leadRows) {
+      const id = row.dimensionValues?.[0]?.value ?? "";
+
+      if (id) leadSessionIds.add(id);
+    }
+
     const merged = new Map<string, MergedSession>();
 
     for (const row of rows) {
@@ -163,10 +187,10 @@ export async function listSessions(propertyId: string, query: SessionsListQuery)
         country: Array.from(m.countries),
         startedAt: m.startedAt,
         eventCount: m.eventCount,
-        hadLeadAction,
+        hadLeadAction: leadSessionIds.has(m.sessionId),
       }));
 
-    const totalRows = raw.rowCount ?? rows.length;
+    const totalRows = sessionsReport?.rowCount ?? rows.length;
     const nextOffset = offset + rows.length;
     const hasMore = nextOffset < totalRows;
 
