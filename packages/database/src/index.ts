@@ -6,6 +6,7 @@ import type { PostgresAdapter } from "@payloadcms/db-postgres";
 
 import { migrations } from "../migrations/index";
 
+const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
 
 export const migrationDir = path.resolve(__dirname, "../migrations");

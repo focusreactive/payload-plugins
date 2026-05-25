@@ -81,6 +81,7 @@ export interface Config {
     redirects: Redirect;
     presets: Preset;
     comments: Comment;
+    "comment-reads": CommentRead;
     "payload-mcp-api-keys": PayloadMcpApiKey;
     "payload-kv": PayloadKv;
     "payload-jobs": PayloadJob;
@@ -108,6 +109,7 @@ export interface Config {
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     presets: PresetsSelect<false> | PresetsSelect<true>;
     comments: CommentsSelect<false> | CommentsSelect<true>;
+    "comment-reads": CommentReadsSelect<false> | CommentReadsSelect<true>;
     "payload-mcp-api-keys": PayloadMcpApiKeysSelect<false> | PayloadMcpApiKeysSelect<true>;
     "payload-kv": PayloadKvSelect<false> | PayloadKvSelect<true>;
     "payload-jobs": PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -129,13 +131,10 @@ export interface Config {
     _abManifest: _AbManifestSelect<false> | _AbManifestSelect<true>;
   };
   locale: "en" | "es";
-  user:
-    | (User & {
-        collection: "users";
-      })
-    | (PayloadMcpApiKey & {
-        collection: "payload-mcp-api-keys";
-      });
+  widgets: {
+    collections: CollectionsWidget;
+  };
+  user: User | PayloadMcpApiKey;
   jobs: {
     tasks: {
       schedulePublish: TaskSchedulePublish;
@@ -214,6 +213,7 @@ export interface User {
       }[]
     | null;
   password?: string | null;
+  collection: "users";
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1602,7 +1602,15 @@ export interface Comment {
   text: string;
   mentions?:
     | {
-        user: number | User;
+        user?: (number | null) | User;
+        /**
+         * Original user id captured at mention time.
+         */
+        userIdSnapshot?: number | null;
+        /**
+         * Display name captured at mention time; used after the user is deleted.
+         */
+        displayNameSnapshot?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -1610,6 +1618,18 @@ export interface Comment {
   isResolved?: boolean | null;
   resolvedBy?: (number | null) | User;
   resolvedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comment-reads".
+ */
+export interface CommentRead {
+  id: number;
+  comment: number | Comment;
+  user: number | User;
+  readAt: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -1633,6 +1653,34 @@ export interface PayloadMcpApiKey {
    * The purpose of the API key.
    */
   description?: string | null;
+  footer?: {
+    /**
+     * Allow clients to create footer.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update footer.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete footer.
+     */
+    delete?: boolean | null;
+  };
+  header?: {
+    /**
+     * Allow clients to create header.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update header.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete header.
+     */
+    delete?: boolean | null;
+  };
   page?: {
     /**
      * Allow clients to create page.
@@ -1661,41 +1709,13 @@ export interface PayloadMcpApiKey {
      */
     delete?: boolean | null;
   };
-  header?: {
-    /**
-     * Allow clients to create header.
-     */
-    create?: boolean | null;
-    /**
-     * Allow clients to update header.
-     */
-    update?: boolean | null;
-    /**
-     * Allow clients to delete header.
-     */
-    delete?: boolean | null;
-  };
-  footer?: {
-    /**
-     * Allow clients to create footer.
-     */
-    create?: boolean | null;
-    /**
-     * Allow clients to update footer.
-     */
-    update?: boolean | null;
-    /**
-     * Allow clients to delete footer.
-     */
-    delete?: boolean | null;
-  };
   "payload-mcp-tool"?: {
     /**
-     * Fetch a collection document by ID. Specify collectionSlug (one of: page, posts, header, footer). Returns all top-level fields as a structured overview — complex fields (arrays, blocks, relations, rich text) are summarized with their type and item count. Use getAllDocuments to list documents first, then this tool by ID. Use getField to drill into specific fields. Do NOT pass full: true unless the user explicitly asks to extract the entire content. Pass raw: true to get the full raw JSON — use this when you need structured data for analysis or to construct an update payload. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
+     * Fetch a collection document by ID. Specify collectionSlug (one of: footer, header, page, posts). Returns all top-level fields as a structured overview — complex fields (arrays, blocks, relations, rich text) are summarized with their type and item count. Use getAllDocuments to list documents first, then this tool by ID. Use getField to drill into specific fields. Do NOT pass full: true unless the user explicitly asks to extract the entire content. Pass raw: true to get the full raw JSON — use this when you need structured data for analysis or to construct an update payload. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
      */
     getDocument?: boolean | null;
     /**
-     * List collection documents as a formatted summary. Specify collectionSlug (one of: page, posts, header, footer). Returns only scalar summary fields plus admin URL and public URL (where applicable). Objects, relations, arrays, and rich text are omitted from the list output. To get full details for a document, call getDocument with its ID. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
+     * List collection documents as a formatted summary. Specify collectionSlug (one of: footer, header, page, posts). Returns only scalar summary fields plus admin URL and public URL (where applicable). Objects, relations, arrays, and rich text are omitted from the list output. To get full details for a document, call getDocument with its ID. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
      */
     getAllDocuments?: boolean | null;
     /**
@@ -1703,7 +1723,7 @@ export interface PayloadMcpApiKey {
      */
     getGlobalDocument?: boolean | null;
     /**
-     * Fetch the full content of a specific field from a collection document or global. slug accepts a collection (page, posts, header, footer) or a global (site-settings). For collections, id is required. For globals, id is ignored. Use dot-notation for nested paths (e.g. "content", "blocks.0", "meta.description"). Rich text fields are returned as Markdown by default. IMPORTANT: You MUST call this with raw: true before any create/update action targeting this field — the raw JSON (block IDs, Lexical nodes, existing array items) is required to construct a valid update payload. Never attempt an update without first reading the field with raw: true.
+     * Fetch the full content of a specific field from a collection document or global. slug accepts a collection (footer, header, page, posts) or a global (site-settings). For collections, id is required. For globals, id is ignored. Use dot-notation for nested paths (e.g. "content", "blocks.0", "meta.description"). Rich text fields are returned as Markdown by default. IMPORTANT: You MUST call this with raw: true before any create/update action targeting this field — the raw JSON (block IDs, Lexical nodes, existing array items) is required to construct a valid update payload. Never attempt an update without first reading the field with raw: true.
      */
     getField?: boolean | null;
     /**
@@ -1716,6 +1736,7 @@ export interface PayloadMcpApiKey {
   enableAPIKey?: boolean | null;
   apiKey?: string | null;
   apiKeyIndex?: string | null;
+  collection: "payload-mcp-api-keys";
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1884,6 +1905,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: "comments";
         value: number | Comment;
+      } | null)
+    | ({
+        relationTo: "comment-reads";
+        value: number | CommentRead;
       } | null)
     | ({
         relationTo: "payload-mcp-api-keys";
@@ -2937,6 +2962,8 @@ export interface CommentsSelect<T extends boolean = true> {
     | T
     | {
         user?: T;
+        userIdSnapshot?: T;
+        displayNameSnapshot?: T;
         id?: T;
       };
   author?: T;
@@ -2948,20 +2975,24 @@ export interface CommentsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comment-reads_select".
+ */
+export interface CommentReadsSelect<T extends boolean = true> {
+  comment?: T;
+  user?: T;
+  readAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-mcp-api-keys_select".
  */
 export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
   user?: T;
   label?: T;
   description?: T;
-  page?:
-    | T
-    | {
-        create?: T;
-        update?: T;
-        delete?: T;
-      };
-  posts?:
+  footer?:
     | T
     | {
         create?: T;
@@ -2975,7 +3006,14 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
         update?: T;
         delete?: T;
       };
-  footer?:
+  page?:
+    | T
+    | {
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  posts?:
     | T
     | {
         create?: T;
@@ -3249,6 +3287,16 @@ export interface _AbManifestSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "collections_widget".
+ */
+export interface CollectionsWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: "full";
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

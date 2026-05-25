@@ -22,8 +22,8 @@ import { I18N_CONFIG } from "@/core/config/i18n";
 import { SiteSettings } from "@/globals/SiteSettings/config";
 import { plugins } from "@/plugins";
 
-const { filename } = import.meta;
-const { dirname } = import.meta;
+const filename = import.meta.filename;
+const dirname = import.meta.dirname;
 
 export default buildConfig({
   admin: {
