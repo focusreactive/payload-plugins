@@ -443,10 +443,7 @@ import { revalidateTag } from "next/cache";
 ### Signature
 
 ```tsx
-function revalidateTag(
-  tag: string,
-  profile: string | { expire?: number }
-): void;
+function revalidateTag(tag: string, profile: string | { expire?: number }): void;
 ```
 
 ### Parameters
@@ -676,13 +673,7 @@ Create category-level subshells by adding Suspense in layouts:
 
 ```tsx
 // app/products/[category]/layout.tsx
-export default async function CategoryLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: Promise<{ category: string }>;
-}) {
+export default async function CategoryLayout({ children, params }: { children: React.ReactNode; params: Promise<{ category: string }> }) {
   const { category } = await params;
 
   return (
@@ -919,11 +910,7 @@ export async function generateStaticParams() {
   return posts.map((post) => ({ slug: post.slug }));
 }
 
-export default async function BlogPost({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function BlogPost({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const post = await getPost(slug);
   return <Article post={post} />;
@@ -952,11 +939,7 @@ export async function getPost(slug: string) {
 }
 
 // app/blog/[slug]/page.tsx
-export default async function BlogPost({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function BlogPost({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const post = await getPost(slug);
   return <Article post={post} />;
@@ -1080,13 +1063,5 @@ type CacheLife = {
 ### CacheLifeProfile
 
 ```typescript
-type CacheLifeProfile =
-  | "default"
-  | "seconds"
-  | "minutes"
-  | "hours"
-  | "days"
-  | "weeks"
-  | "max"
-  | string; // Custom profiles
+type CacheLifeProfile = "default" | "seconds" | "minutes" | "hours" | "days" | "weeks" | "max" | string; // Custom profiles
 ```

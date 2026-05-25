@@ -16,19 +16,15 @@ interface Props {
   locale: Locale;
 }
 
-export const PayloadRedirects: React.FC<Props> = async ({
-  disableNotFound,
-  url,
-  locale,
-}) => {
+export const PayloadRedirects: React.FC<Props> = async ({ disableNotFound, url, locale }) => {
   const redirects = await getCachedRedirects({ locale })();
   const canonicalUrl = canonicalRedirectFrom(url);
-  const redirectItem = redirects.find(
-    (r) => canonicalRedirectFrom(r.from) === canonicalUrl
-  );
+  const redirectItem = redirects.find((r) => canonicalRedirectFrom(r.from) === canonicalUrl);
 
   if (!redirectItem || !redirectItem.isActive) {
-    if (disableNotFound) {return null;}
+    if (disableNotFound) {
+      return null;
+    }
     notFound();
   }
 
@@ -36,18 +32,12 @@ export const PayloadRedirects: React.FC<Props> = async ({
 
   if (redirectItem.to?.type === "custom") {
     redirectUrl = redirectItem.to?.url || null;
-  } else if (
-    redirectItem.to?.type === "reference" &&
-    redirectItem.to?.reference
-  ) {
+  } else if (redirectItem.to?.type === "reference" && redirectItem.to?.reference) {
     const { reference } = redirectItem.to;
     const collection = reference.relationTo;
 
     if (typeof reference.value === "number") {
-      const document = (await getCachedDocumentByID(
-        collection,
-        reference.value
-      )()) as Page | null;
+      const document = (await getCachedDocumentByID(collection, reference.value)()) as Page | null;
 
       if (collection === "page" && document && "breadcrumbs" in document) {
         redirectUrl = buildUrl({
@@ -55,23 +45,13 @@ export const PayloadRedirects: React.FC<Props> = async ({
           collection: "page",
           locale,
         });
-      } else if (
-        collection === BLOG_CONFIG.collection &&
-        document &&
-        "slug" in document &&
-        document.slug
-      ) {
+      } else if (collection === BLOG_CONFIG.collection && document && "slug" in document && document.slug) {
         redirectUrl = buildUrl({
           collection: "posts",
           locale,
           slug: document.slug,
         });
-      } else if (
-        document &&
-        "slug" in document &&
-        document.slug &&
-        "breadcrumbs" in document
-      ) {
+      } else if (document && "slug" in document && document.slug && "breadcrumbs" in document) {
         redirectUrl = buildUrl({
           breadcrumbs: document.breadcrumbs,
           collection: "page",
@@ -109,6 +89,8 @@ export const PayloadRedirects: React.FC<Props> = async ({
     }
   }
 
-  if (disableNotFound) {return null;}
+  if (disableNotFound) {
+    return null;
+  }
   notFound();
 };

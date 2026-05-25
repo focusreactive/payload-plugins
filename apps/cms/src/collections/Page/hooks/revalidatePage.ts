@@ -1,17 +1,10 @@
-import type {
-  CollectionAfterChangeHook,
-  CollectionAfterDeleteHook,
-} from "payload";
+import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from "payload";
 
 import { getLocaleFromRequest } from "@/core/lib/getLocaleFromRequest";
 import { revalidatePageCache } from "@/core/lib/revalidatePageCache";
 import type { Page } from "@/payload-types";
 
-export const revalidatePage: CollectionAfterChangeHook<Page> = async ({
-  doc,
-  previousDoc,
-  req,
-}) => {
+export const revalidatePage: CollectionAfterChangeHook<Page> = async ({ doc, previousDoc, req }) => {
   const { payload, context } = req;
   const locale = getLocaleFromRequest(req);
 
@@ -28,10 +21,7 @@ export const revalidatePage: CollectionAfterChangeHook<Page> = async ({
   return doc;
 };
 
-export const revalidateDelete: CollectionAfterDeleteHook<Page> = async ({
-  doc,
-  req,
-}) => {
+export const revalidateDelete: CollectionAfterDeleteHook<Page> = async ({ doc, req }) => {
   const { payload, context } = req;
   if (!context.disableRevalidate) {
     const locale = getLocaleFromRequest(req);

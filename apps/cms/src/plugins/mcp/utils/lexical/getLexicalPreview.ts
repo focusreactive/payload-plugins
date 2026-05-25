@@ -8,7 +8,9 @@ export function getLexicalPreview(root: LexicalNode) {
     if (child.type === "heading") {
       const text = lexicalToPlainText(child).trim();
 
-      if (text) {return text.slice(0, 100);}
+      if (text) {
+        return text.slice(0, 100);
+      }
     }
   }
 
@@ -16,7 +18,9 @@ export function getLexicalPreview(root: LexicalNode) {
     if (child.type === "paragraph") {
       const text = lexicalToPlainText(child).trim();
 
-      if (text) {return text.slice(0, 100);}
+      if (text) {
+        return text.slice(0, 100);
+      }
     }
   }
 

@@ -20,7 +20,9 @@ function discoveryUrl(issuer: string): string {
 export async function getDiscovery(issuer: string): Promise<OIDCDiscovery> {
   const url = discoveryUrl(issuer);
   const cached = cache.get(url);
-  if (cached && cached.expiresAt > Date.now()) {return cached.doc;}
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.doc;
+  }
 
   const res = await fetch(url, { next: { revalidate: 3600 } });
   if (!res.ok) {

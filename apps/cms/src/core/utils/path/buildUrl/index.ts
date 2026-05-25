@@ -24,23 +24,12 @@ type BuildUrlOptions = (
   locale: string;
 };
 
-export function buildUrl({
-  collection,
-  breadcrumbs,
-  absolute = true,
-  page,
-  slug,
-  locale,
-}: BuildUrlOptions): string {
+export function buildUrl({ collection, breadcrumbs, absolute = true, page, slug, locale }: BuildUrlOptions): string {
   const baseUrl = getServerSideURL();
   const currentLocale = locale || routing.defaultLocale;
-  const localePrefix = shouldIncludeLocalePrefix(currentLocale)
-    ? `/${currentLocale}`
-    : "";
+  const localePrefix = shouldIncludeLocalePrefix(currentLocale) ? `/${currentLocale}` : "";
 
-  const breadcrumbsPath = breadcrumbs
-    ? getPathFromBreadcrumbs(breadcrumbs)
-    : undefined;
+  const breadcrumbsPath = breadcrumbs ? getPathFromBreadcrumbs(breadcrumbs) : undefined;
 
   const relativePath = resolvePath({
     basePath: collection === "posts" ? BLOG_CONFIG.basePath : undefined,
@@ -51,7 +40,9 @@ export function buildUrl({
 
   const fullPath = `${localePrefix}${relativePath}`;
 
-  if (!absolute) {return fullPath;}
+  if (!absolute) {
+    return fullPath;
+  }
 
   return `${baseUrl}${fullPath}`;
 }

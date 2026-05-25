@@ -12,11 +12,7 @@ const spinKeyframes = `
 }
 `;
 
-const ssoProviderName =
-  typeof process.env.NEXT_PUBLIC_OIDC_PROVIDER_NAME === "string" &&
-  process.env.NEXT_PUBLIC_OIDC_PROVIDER_NAME.length > 0
-    ? process.env.NEXT_PUBLIC_OIDC_PROVIDER_NAME
-    : "SSO";
+const ssoProviderName = typeof process.env.NEXT_PUBLIC_OIDC_PROVIDER_NAME === "string" && process.env.NEXT_PUBLIC_OIDC_PROVIDER_NAME.length > 0 ? process.env.NEXT_PUBLIC_OIDC_PROVIDER_NAME : "SSO";
 
 export default function SSOButtons() {
   const { t } = useTranslation();
@@ -66,9 +62,7 @@ export default function SSOButtons() {
             height: 1,
           }}
         />
-        <div style={{ color: "var(--theme-text)", fontSize: 12, opacity: 0.7 }}>
-          {t("sso:dividerLabel" as never)}
-        </div>
+        <div style={{ color: "var(--theme-text)", fontSize: 12, opacity: 0.7 }}>{t("sso:dividerLabel" as never)}</div>
         <div
           style={{
             background: "var(--theme-elevation-150)",
@@ -79,14 +73,7 @@ export default function SSOButtons() {
       </div>
 
       <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-        <Button
-          size="large"
-          buttonStyle="secondary"
-          iconStyle="without-border"
-          disabled={loading}
-          extraButtonProps={{ style: { width: "100%" } }}
-          onClick={handleSSOClick}
-        >
+        <Button size="large" buttonStyle="secondary" iconStyle="without-border" disabled={loading} extraButtonProps={{ style: { width: "100%" } }} onClick={handleSSOClick}>
           <span
             style={{
               alignItems: "center",
@@ -109,11 +96,7 @@ export default function SSOButtons() {
                 <style>{spinKeyframes}</style>
               </>
             ) : null}
-            <span>
-              {loading
-                ? t("general:loading")
-                : t("sso:signInWith" as never, { provider: ssoProviderName })}
-            </span>
+            <span>{loading ? t("general:loading") : t("sso:signInWith" as never, { provider: ssoProviderName })}</span>
           </span>
         </Button>
       </div>

@@ -217,13 +217,7 @@ git commit -m "chore: add vitest test infrastructure for content-releases"
 ```typescript
 // src/__tests__/types.test.ts
 import { describe, it, expect } from "vitest";
-import type {
-  ContentReleasesPluginConfig,
-  ReleaseStatus,
-  ReleaseItemAction,
-  ReleaseItemStatus,
-  ConflictStrategy,
-} from "../types";
+import type { ContentReleasesPluginConfig, ReleaseStatus, ReleaseItemAction, ReleaseItemStatus, ConflictStrategy } from "../types";
 
 describe("types", () => {
   it("should accept a valid minimal config", () => {
@@ -246,14 +240,7 @@ describe("types", () => {
   });
 
   it("should define all release statuses", () => {
-    const statuses: ReleaseStatus[] = [
-      "draft",
-      "scheduled",
-      "publishing",
-      "published",
-      "failed",
-      "cancelled",
-    ];
+    const statuses: ReleaseStatus[] = ["draft", "scheduled", "publishing", "published", "failed", "cancelled"];
     expect(statuses).toHaveLength(6);
   });
 
@@ -263,12 +250,7 @@ describe("types", () => {
   });
 
   it("should define release item statuses", () => {
-    const statuses: ReleaseItemStatus[] = [
-      "pending",
-      "published",
-      "failed",
-      "skipped",
-    ];
+    const statuses: ReleaseItemStatus[] = ["pending", "published", "failed", "skipped"];
     expect(statuses).toHaveLength(4);
   });
 });
@@ -285,13 +267,7 @@ Expected: FAIL — cannot import from `../types`
 // src/types.ts
 import type { Access, PayloadRequest } from "payload";
 
-export type ReleaseStatus =
-  | "draft"
-  | "scheduled"
-  | "publishing"
-  | "published"
-  | "failed"
-  | "cancelled";
+export type ReleaseStatus = "draft" | "scheduled" | "publishing" | "published" | "failed" | "cancelled";
 
 export type ReleaseItemAction = "publish" | "unpublish";
 
@@ -338,15 +314,8 @@ export interface ContentReleasesPluginConfig {
 
   /** Lifecycle hooks */
   hooks?: {
-    afterPublish?: (args: {
-      releaseId: string;
-      req: PayloadRequest;
-    }) => void | Promise<void>;
-    onPublishError?: (args: {
-      releaseId: string;
-      errors: Array<{ collection: string; docId: string; error: string }>;
-      req: PayloadRequest;
-    }) => void | Promise<void>;
+    afterPublish?: (args: { releaseId: string; req: PayloadRequest }) => void | Promise<void>;
+    onPublishError?: (args: { releaseId: string; errors: Array<{ collection: string; docId: string; error: string }>; req: PayloadRequest }) => void | Promise<void>;
   };
 }
 ```
@@ -381,23 +350,11 @@ export const PLUGIN_NAME = "payload-plugin-content-releases";
 export const RELEASES_SLUG = "releases" as const;
 export const RELEASE_ITEMS_SLUG = "release-items" as const;
 
-export const RELEASE_STATUSES = [
-  "draft",
-  "scheduled",
-  "publishing",
-  "published",
-  "failed",
-  "cancelled",
-] as const;
+export const RELEASE_STATUSES = ["draft", "scheduled", "publishing", "published", "failed", "cancelled"] as const;
 
 export const RELEASE_ITEM_ACTIONS = ["publish", "unpublish"] as const;
 
-export const RELEASE_ITEM_STATUSES = [
-  "pending",
-  "published",
-  "failed",
-  "skipped",
-] as const;
+export const RELEASE_ITEM_STATUSES = ["pending", "published", "failed", "skipped"] as const;
 
 export const DEFAULT_CONFLICT_STRATEGY = "fail" as const;
 export const DEFAULT_PUBLISH_BATCH_SIZE = 20;
@@ -436,18 +393,14 @@ describe("releases collection", () => {
   });
 
   it("should have required name field", () => {
-    const nameField = collection.fields.find(
-      (f: any) => f.name === "name"
-    ) as any;
+    const nameField = collection.fields.find((f: any) => f.name === "name") as any;
     expect(nameField).toBeDefined();
     expect(nameField.type).toBe("text");
     expect(nameField.required).toBe(true);
   });
 
   it("should have status field with all valid statuses", () => {
-    const statusField = collection.fields.find(
-      (f: any) => f.name === "status"
-    ) as any;
+    const statusField = collection.fields.find((f: any) => f.name === "status") as any;
     expect(statusField).toBeDefined();
     expect(statusField.type).toBe("select");
     const optionValues = statusField.options.map((o: any) => o.value ?? o);
@@ -457,41 +410,31 @@ describe("releases collection", () => {
   });
 
   it("should have scheduledAt date field", () => {
-    const field = collection.fields.find(
-      (f: any) => f.name === "scheduledAt"
-    ) as any;
+    const field = collection.fields.find((f: any) => f.name === "scheduledAt") as any;
     expect(field).toBeDefined();
     expect(field.type).toBe("date");
   });
 
   it("should have publishedAt date field", () => {
-    const field = collection.fields.find(
-      (f: any) => f.name === "publishedAt"
-    ) as any;
+    const field = collection.fields.find((f: any) => f.name === "publishedAt") as any;
     expect(field).toBeDefined();
     expect(field.type).toBe("date");
   });
 
   it("should have description textarea field", () => {
-    const field = collection.fields.find(
-      (f: any) => f.name === "description"
-    ) as any;
+    const field = collection.fields.find((f: any) => f.name === "description") as any;
     expect(field).toBeDefined();
     expect(field.type).toBe("textarea");
   });
 
   it("should have rollbackSnapshot json field", () => {
-    const field = collection.fields.find(
-      (f: any) => f.name === "rollbackSnapshot"
-    ) as any;
+    const field = collection.fields.find((f: any) => f.name === "rollbackSnapshot") as any;
     expect(field).toBeDefined();
     expect(field.type).toBe("json");
   });
 
   it("should have errorLog json field", () => {
-    const field = collection.fields.find(
-      (f: any) => f.name === "errorLog"
-    ) as any;
+    const field = collection.fields.find((f: any) => f.name === "errorLog") as any;
     expect(field).toBeDefined();
     expect(field.type).toBe("json");
   });
@@ -525,9 +468,7 @@ interface BuildReleasesCollectionOptions {
   };
 }
 
-export function buildReleasesCollection(
-  options?: BuildReleasesCollectionOptions
-): CollectionConfig {
+export function buildReleasesCollection(options?: BuildReleasesCollectionOptions): CollectionConfig {
   return {
     slug: RELEASES_SLUG,
     labels: {
@@ -627,12 +568,7 @@ git commit -m "feat(content-releases): add releases collection definition"
 // src/__tests__/collections/releaseItems.test.ts
 import { describe, it, expect } from "vitest";
 import { buildReleaseItemsCollection } from "../../collections/releaseItems";
-import {
-  RELEASE_ITEMS_SLUG,
-  RELEASES_SLUG,
-  RELEASE_ITEM_ACTIONS,
-  RELEASE_ITEM_STATUSES,
-} from "../../constants";
+import { RELEASE_ITEMS_SLUG, RELEASES_SLUG, RELEASE_ITEM_ACTIONS, RELEASE_ITEM_STATUSES } from "../../constants";
 
 describe("release-items collection", () => {
   const enabledCollections = ["pages", "posts", "products"];
@@ -643,9 +579,7 @@ describe("release-items collection", () => {
   });
 
   it("should have release relationship to releases collection", () => {
-    const field = collection.fields.find(
-      (f: any) => f.name === "release"
-    ) as any;
+    const field = collection.fields.find((f: any) => f.name === "release") as any;
     expect(field).toBeDefined();
     expect(field.type).toBe("relationship");
     expect(field.relationTo).toBe(RELEASES_SLUG);
@@ -653,9 +587,7 @@ describe("release-items collection", () => {
   });
 
   it("should have targetCollection select with enabled collections", () => {
-    const field = collection.fields.find(
-      (f: any) => f.name === "targetCollection"
-    ) as any;
+    const field = collection.fields.find((f: any) => f.name === "targetCollection") as any;
     expect(field).toBeDefined();
     expect(field.type).toBe("select");
     const values = field.options.map((o: any) => o.value ?? o);
@@ -663,18 +595,14 @@ describe("release-items collection", () => {
   });
 
   it("should have targetDoc text field", () => {
-    const field = collection.fields.find(
-      (f: any) => f.name === "targetDoc"
-    ) as any;
+    const field = collection.fields.find((f: any) => f.name === "targetDoc") as any;
     expect(field).toBeDefined();
     expect(field.type).toBe("text");
     expect(field.required).toBe(true);
   });
 
   it("should have action select field", () => {
-    const field = collection.fields.find(
-      (f: any) => f.name === "action"
-    ) as any;
+    const field = collection.fields.find((f: any) => f.name === "action") as any;
     expect(field).toBeDefined();
     expect(field.type).toBe("select");
     const values = field.options.map((o: any) => o.value ?? o);
@@ -684,9 +612,7 @@ describe("release-items collection", () => {
   });
 
   it("should have status select field", () => {
-    const field = collection.fields.find(
-      (f: any) => f.name === "status"
-    ) as any;
+    const field = collection.fields.find((f: any) => f.name === "status") as any;
     expect(field).toBeDefined();
     expect(field.type).toBe("select");
     const values = field.options.map((o: any) => o.value ?? o);
@@ -696,17 +622,13 @@ describe("release-items collection", () => {
   });
 
   it("should have snapshot json field", () => {
-    const field = collection.fields.find(
-      (f: any) => f.name === "snapshot"
-    ) as any;
+    const field = collection.fields.find((f: any) => f.name === "snapshot") as any;
     expect(field).toBeDefined();
     expect(field.type).toBe("json");
   });
 
   it("should have baseVersion text field", () => {
-    const field = collection.fields.find(
-      (f: any) => f.name === "baseVersion"
-    ) as any;
+    const field = collection.fields.find((f: any) => f.name === "baseVersion") as any;
     expect(field).toBeDefined();
     expect(field.type).toBe("text");
   });
@@ -723,12 +645,7 @@ Expected: FAIL
 ```typescript
 // src/collections/releaseItems.ts
 import type { CollectionConfig, Access } from "payload";
-import {
-  RELEASE_ITEMS_SLUG,
-  RELEASES_SLUG,
-  RELEASE_ITEM_ACTIONS,
-  RELEASE_ITEM_STATUSES,
-} from "../constants";
+import { RELEASE_ITEMS_SLUG, RELEASES_SLUG, RELEASE_ITEM_ACTIONS, RELEASE_ITEM_STATUSES } from "../constants";
 
 interface BuildReleaseItemsCollectionOptions {
   access?: {
@@ -739,10 +656,7 @@ interface BuildReleaseItemsCollectionOptions {
   };
 }
 
-export function buildReleaseItemsCollection(
-  enabledCollections: string[],
-  options?: BuildReleaseItemsCollectionOptions
-): CollectionConfig {
+export function buildReleaseItemsCollection(enabledCollections: string[], options?: BuildReleaseItemsCollectionOptions): CollectionConfig {
   return {
     slug: RELEASE_ITEMS_SLUG,
     labels: {
@@ -877,9 +791,7 @@ describe("contentReleasesPlugin", () => {
       enabledCollections: ["pages"],
     });
     const config = plugin(makeBaseConfig());
-    const items = config.collections?.find(
-      (c) => c.slug === RELEASE_ITEMS_SLUG
-    );
+    const items = config.collections?.find((c) => c.slug === RELEASE_ITEMS_SLUG);
     expect(items).toBeDefined();
   });
 
@@ -900,9 +812,7 @@ describe("contentReleasesPlugin", () => {
       enabledCollections: ["nonexistent"],
     });
     plugin(makeBaseConfig());
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("nonexistent")
-    );
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("nonexistent"));
     warnSpy.mockRestore();
   });
 
@@ -936,18 +846,14 @@ import { PLUGIN_NAME } from "./constants";
 import { buildReleasesCollection } from "./collections/releases";
 import { buildReleaseItemsCollection } from "./collections/releaseItems";
 
-export function contentReleasesPlugin(
-  options: ContentReleasesPluginConfig
-): Plugin {
+export function contentReleasesPlugin(options: ContentReleasesPluginConfig): Plugin {
   const { enabledCollections, access } = options;
 
   return (config: Config): Config => {
     // Warn about unknown collection slugs
     for (const slug of enabledCollections) {
       if (!config.collections?.find((c) => c.slug === slug)) {
-        console.warn(
-          `[${PLUGIN_NAME}] Unknown collection slug: "${slug}". It will be included in release-items options but may not exist.`
-        );
+        console.warn(`[${PLUGIN_NAME}] Unknown collection slug: "${slug}". It will be included in release-items options but may not exist.`);
       }
     }
 
@@ -955,18 +861,11 @@ export function contentReleasesPlugin(
       access: access?.releases,
     });
 
-    const releaseItemsCollection = buildReleaseItemsCollection(
-      enabledCollections,
-      { access: access?.releaseItems }
-    );
+    const releaseItemsCollection = buildReleaseItemsCollection(enabledCollections, { access: access?.releaseItems });
 
     return {
       ...config,
-      collections: [
-        ...(config.collections ?? []),
-        releasesCollection,
-        releaseItemsCollection,
-      ],
+      collections: [...(config.collections ?? []), releasesCollection, releaseItemsCollection],
     };
   };
 }
@@ -978,12 +877,7 @@ export function contentReleasesPlugin(
 // src/index.ts
 export { contentReleasesPlugin } from "./plugin";
 export type { ContentReleasesPluginConfig } from "./types";
-export type {
-  ReleaseStatus,
-  ReleaseItemAction,
-  ReleaseItemStatus,
-  ConflictStrategy,
-} from "./types";
+export type { ReleaseStatus, ReleaseItemAction, ReleaseItemStatus, ConflictStrategy } from "./types";
 ```
 
 **Step 5: Run test to verify it passes**
@@ -1026,10 +920,7 @@ git commit -m "feat(content-releases): implement core plugin function with colle
 ```typescript
 // src/__tests__/validation/statusTransitions.test.ts
 import { describe, it, expect } from "vitest";
-import {
-  isValidTransition,
-  VALID_TRANSITIONS,
-} from "../../validation/statusTransitions";
+import { isValidTransition, VALID_TRANSITIONS } from "../../validation/statusTransitions";
 import type { ReleaseStatus } from "../../types";
 
 describe("isValidTransition", () => {
@@ -1059,12 +950,9 @@ describe("isValidTransition", () => {
     expect(isValidTransition(from, to)).toBe(true);
   });
 
-  it.each(invalidCases)(
-    "should reject transition from %s to %s",
-    (from, to) => {
-      expect(isValidTransition(from, to)).toBe(false);
-    }
-  );
+  it.each(invalidCases)("should reject transition from %s to %s", (from, to) => {
+    expect(isValidTransition(from, to)).toBe(false);
+  });
 
   it("should reject same-state transitions", () => {
     expect(isValidTransition("draft", "draft")).toBe(false);
@@ -1092,10 +980,7 @@ export const VALID_TRANSITIONS: Record<ReleaseStatus, ReleaseStatus[]> = {
   cancelled: [],
 };
 
-export function isValidTransition(
-  from: ReleaseStatus,
-  to: ReleaseStatus
-): boolean {
+export function isValidTransition(from: ReleaseStatus, to: ReleaseStatus): boolean {
   return VALID_TRANSITIONS[from]?.includes(to) ?? false;
 }
 ```
@@ -1129,10 +1014,7 @@ git commit -m "feat(content-releases): add release status transition validation"
 import { describe, it, expect } from "vitest";
 import { releasesBeforeChange } from "../../hooks/releasesBeforeChange";
 
-function makeArgs(
-  data: Record<string, any>,
-  originalDoc?: Record<string, any>
-) {
+function makeArgs(data: Record<string, any>, originalDoc?: Record<string, any>) {
   return {
     data,
     originalDoc: originalDoc ?? {},
@@ -1163,39 +1045,25 @@ describe("releasesBeforeChange", () => {
   });
 
   it("should allow valid transition from draft to scheduled", () => {
-    const result = releasesBeforeChange(
-      makeArgs({ status: "scheduled" }, { status: "draft" }) as any
-    );
+    const result = releasesBeforeChange(makeArgs({ status: "scheduled" }, { status: "draft" }) as any);
     expect(result.status).toBe("scheduled");
   });
 
   it("should throw on invalid transition from published to draft", () => {
-    expect(() =>
-      releasesBeforeChange(
-        makeArgs({ status: "draft" }, { status: "published" }) as any
-      )
-    ).toThrow(/Invalid status transition/);
+    expect(() => releasesBeforeChange(makeArgs({ status: "draft" }, { status: "published" }) as any)).toThrow(/Invalid status transition/);
   });
 
   it("should throw on invalid transition from cancelled to draft", () => {
-    expect(() =>
-      releasesBeforeChange(
-        makeArgs({ status: "draft" }, { status: "cancelled" }) as any
-      )
-    ).toThrow(/Invalid status transition/);
+    expect(() => releasesBeforeChange(makeArgs({ status: "draft" }, { status: "cancelled" }) as any)).toThrow(/Invalid status transition/);
   });
 
   it("should pass through unchanged status", () => {
-    const result = releasesBeforeChange(
-      makeArgs({ status: "draft", name: "Updated" }, { status: "draft" }) as any
-    );
+    const result = releasesBeforeChange(makeArgs({ status: "draft", name: "Updated" }, { status: "draft" }) as any);
     expect(result.name).toBe("Updated");
   });
 
   it("should set publishedAt when transitioning to published", () => {
-    const result = releasesBeforeChange(
-      makeArgs({ status: "published" }, { status: "publishing" }) as any
-    );
+    const result = releasesBeforeChange(makeArgs({ status: "published" }, { status: "publishing" }) as any);
     expect(result.publishedAt).toBeDefined();
   });
 });
@@ -1214,19 +1082,13 @@ import type { CollectionBeforeChangeHook } from "payload";
 import type { ReleaseStatus } from "../types";
 import { isValidTransition } from "../validation/statusTransitions";
 
-export const releasesBeforeChange: CollectionBeforeChangeHook = ({
-  data,
-  originalDoc,
-  operation,
-}) => {
+export const releasesBeforeChange: CollectionBeforeChangeHook = ({ data, originalDoc, operation }) => {
   // Force draft on creation
   if (operation === "create") {
     return { ...data, status: "draft" };
   }
 
-  const currentStatus = (originalDoc as any)?.status as
-    | ReleaseStatus
-    | undefined;
+  const currentStatus = (originalDoc as any)?.status as ReleaseStatus | undefined;
   const newStatus = data.status as ReleaseStatus | undefined;
 
   // If status hasn't changed, pass through
@@ -1238,9 +1100,7 @@ export const releasesBeforeChange: CollectionBeforeChangeHook = ({
   if (!isValidTransition(currentStatus, newStatus)) {
     throw new Error(
       `Invalid status transition: "${currentStatus}" → "${newStatus}". Allowed transitions from "${currentStatus}": ${JSON.stringify(
-        (await import("../validation/statusTransitions")).VALID_TRANSITIONS[
-          currentStatus
-        ]
+        (await import("../validation/statusTransitions")).VALID_TRANSITIONS[currentStatus]
       )}`
     );
   }
@@ -1260,23 +1120,14 @@ export const releasesBeforeChange: CollectionBeforeChangeHook = ({
 // src/hooks/releasesBeforeChange.ts
 import type { CollectionBeforeChangeHook } from "payload";
 import type { ReleaseStatus } from "../types";
-import {
-  isValidTransition,
-  VALID_TRANSITIONS,
-} from "../validation/statusTransitions";
+import { isValidTransition, VALID_TRANSITIONS } from "../validation/statusTransitions";
 
-export const releasesBeforeChange: CollectionBeforeChangeHook = ({
-  data,
-  originalDoc,
-  operation,
-}) => {
+export const releasesBeforeChange: CollectionBeforeChangeHook = ({ data, originalDoc, operation }) => {
   if (operation === "create") {
     return { ...data, status: "draft" };
   }
 
-  const currentStatus = (originalDoc as any)?.status as
-    | ReleaseStatus
-    | undefined;
+  const currentStatus = (originalDoc as any)?.status as ReleaseStatus | undefined;
   const newStatus = data.status as ReleaseStatus | undefined;
 
   if (!newStatus || !currentStatus || newStatus === currentStatus) {
@@ -1284,9 +1135,7 @@ export const releasesBeforeChange: CollectionBeforeChangeHook = ({
   }
 
   if (!isValidTransition(currentStatus, newStatus)) {
-    throw new Error(
-      `Invalid status transition: "${currentStatus}" → "${newStatus}". Allowed from "${currentStatus}": [${VALID_TRANSITIONS[currentStatus].join(", ")}]`
-    );
+    throw new Error(`Invalid status transition: "${currentStatus}" → "${newStatus}". Allowed from "${currentStatus}": [${VALID_TRANSITIONS[currentStatus].join(", ")}]`);
   }
 
   if (newStatus === "published") {
@@ -1333,12 +1182,7 @@ function makePayload(releaseStatus: string, existingItems: any[] = []) {
   };
 }
 
-function makeArgs(
-  data: Record<string, any>,
-  payload: any,
-  operation: "create" | "update" = "create",
-  originalDoc?: Record<string, any>
-) {
+function makeArgs(data: Record<string, any>, payload: any, operation: "create" | "update" = "create", originalDoc?: Record<string, any>) {
   return {
     data,
     originalDoc,
@@ -1369,9 +1213,7 @@ describe("releaseItemsBeforeChange", () => {
       targetCollection: "pages",
       targetDoc: "doc-1",
     };
-    await expect(hook(makeArgs(data, payload) as any)).rejects.toThrow(
-      /can only be modified.*draft/i
-    );
+    await expect(hook(makeArgs(data, payload) as any)).rejects.toThrow(/can only be modified.*draft/i);
   });
 
   it("should reject adding items to a published release", async () => {
@@ -1381,24 +1223,18 @@ describe("releaseItemsBeforeChange", () => {
       targetCollection: "pages",
       targetDoc: "doc-1",
     };
-    await expect(hook(makeArgs(data, payload) as any)).rejects.toThrow(
-      /can only be modified.*draft/i
-    );
+    await expect(hook(makeArgs(data, payload) as any)).rejects.toThrow(/can only be modified.*draft/i);
   });
 
   it("should reject duplicate doc in same release on create", async () => {
-    const existing = [
-      { id: "item-99", targetCollection: "pages", targetDoc: "doc-1" },
-    ];
+    const existing = [{ id: "item-99", targetCollection: "pages", targetDoc: "doc-1" }];
     const payload = makePayload("draft", existing);
     const data = {
       release: "rel-1",
       targetCollection: "pages",
       targetDoc: "doc-1",
     };
-    await expect(hook(makeArgs(data, payload) as any)).rejects.toThrow(
-      /already exists in this release/i
-    );
+    await expect(hook(makeArgs(data, payload) as any)).rejects.toThrow(/already exists in this release/i);
   });
 
   it("should allow updates to existing items in draft releases", async () => {
@@ -1409,9 +1245,7 @@ describe("releaseItemsBeforeChange", () => {
       targetDoc: "doc-1",
       snapshot: { title: "Updated" },
     };
-    const result = await hook(
-      makeArgs(data, payload, "update", { id: "item-1" }) as any
-    );
+    const result = await hook(makeArgs(data, payload, "update", { id: "item-1" }) as any);
     expect(result.snapshot.title).toBe("Updated");
   });
 });
@@ -1441,9 +1275,7 @@ export function buildReleaseItemsBeforeChange(): CollectionBeforeChangeHook {
     });
 
     if ((release as any).status !== "draft") {
-      throw new Error(
-        `Release items can only be modified when the release is in "draft" status. Current status: "${(release as any).status}"`
-      );
+      throw new Error(`Release items can only be modified when the release is in "draft" status. Current status: "${(release as any).status}"`);
     }
 
     // On create, check uniqueness: one document per release
@@ -1451,19 +1283,13 @@ export function buildReleaseItemsBeforeChange(): CollectionBeforeChangeHook {
       const existing = await req.payload.find({
         collection: RELEASE_ITEMS_SLUG,
         where: {
-          and: [
-            { release: { equals: releaseId } },
-            { targetCollection: { equals: data.targetCollection } },
-            { targetDoc: { equals: data.targetDoc } },
-          ],
+          and: [{ release: { equals: releaseId } }, { targetCollection: { equals: data.targetCollection } }, { targetDoc: { equals: data.targetDoc } }],
         },
         limit: 1,
       });
 
       if (existing.docs.length > 0) {
-        throw new Error(
-          `Document "${data.targetDoc}" (${data.targetCollection}) already exists in this release. Update the existing item instead.`
-        );
+        throw new Error(`Document "${data.targetDoc}" (${data.targetCollection}) already exists in this release. Update the existing item instead.`);
       }
     }
 
@@ -1668,10 +1494,7 @@ interface ReleaseItemForConflict {
   action: string;
 }
 
-export async function detectConflicts(
-  items: ReleaseItemForConflict[],
-  payload: Payload
-): Promise<ConflictResult[]> {
+export async function detectConflicts(items: ReleaseItemForConflict[], payload: Payload): Promise<ConflictResult[]> {
   const conflicts: ConflictResult[] = [];
 
   for (const item of items) {
@@ -1735,12 +1558,7 @@ import { describe, it, expect, vi } from "vitest";
 import { executePublish } from "../../publish/executePublish";
 import type { ConflictStrategy } from "../../types";
 
-function makePayload({
-  findResult = { docs: [] },
-  findByIdResult = {},
-  updateResult = {},
-  deleteResult = {},
-} = {}) {
+function makePayload({ findResult = { docs: [] }, findByIdResult = {}, updateResult = {}, deleteResult = {} } = {}) {
   return {
     find: vi.fn().mockResolvedValue(findResult),
     findByID: vi.fn().mockResolvedValue(findByIdResult),
@@ -1835,9 +1653,7 @@ describe("executePublish", () => {
     const payload = makePayload({
       findByIdResult: { id: "doc-0", updatedAt: "2026-01-02T00:00:00Z" },
     });
-    const items = makeItems([
-      { targetDoc: "doc-0", baseVersion: "2026-01-01T00:00:00Z" },
-    ]);
+    const items = makeItems([{ targetDoc: "doc-0", baseVersion: "2026-01-01T00:00:00Z" }]);
 
     const result = await executePublish({
       items: items as any,
@@ -1854,9 +1670,7 @@ describe("executePublish", () => {
     const payload = makePayload({
       findByIdResult: { id: "doc-0", updatedAt: "2026-01-02T00:00:00Z" },
     });
-    const items = makeItems([
-      { targetDoc: "doc-0", baseVersion: "2026-01-01T00:00:00Z" },
-    ]);
+    const items = makeItems([{ targetDoc: "doc-0", baseVersion: "2026-01-01T00:00:00Z" }]);
 
     const result = await executePublish({
       items: items as any,
@@ -1934,9 +1748,7 @@ interface ExecutePublishOptions {
   batchSize: number;
 }
 
-export async function executePublish(
-  options: ExecutePublishOptions
-): Promise<PublishResult> {
+export async function executePublish(options: ExecutePublishOptions): Promise<PublishResult> {
   const { items, payload, conflictStrategy, batchSize } = options;
 
   const published: PublishResult["published"] = [];
@@ -1956,10 +1768,7 @@ export async function executePublish(
         });
 
         // Conflict detection
-        if (
-          item.baseVersion &&
-          (currentDoc as any).updatedAt !== item.baseVersion
-        ) {
+        if (item.baseVersion && (currentDoc as any).updatedAt !== item.baseVersion) {
           if (conflictStrategy === "fail") {
             failed.push({
               itemId: item.id,
@@ -2047,12 +1856,7 @@ git commit -m "feat(content-releases): implement publish executor with conflict 
 import { describe, it, expect, vi } from "vitest";
 import { createPublishReleaseHandler } from "../../endpoints/publishRelease";
 
-function makeReq({
-  releaseId = "rel-1",
-  releaseData = { status: "draft", name: "Test" },
-  releaseItems = [] as any[],
-  updateResult = {},
-} = {}) {
+function makeReq({ releaseId = "rel-1", releaseData = { status: "draft", name: "Test" }, releaseItems = [] as any[], updateResult = {} } = {}) {
   return {
     routeParams: { id: releaseId },
     payload: {
@@ -2127,21 +1931,12 @@ interface PublishReleaseConfig {
   conflictStrategy: ConflictStrategy;
   publishBatchSize: number;
   hooks?: {
-    afterPublish?: (args: {
-      releaseId: string;
-      req: any;
-    }) => void | Promise<void>;
-    onPublishError?: (args: {
-      releaseId: string;
-      errors: any[];
-      req: any;
-    }) => void | Promise<void>;
+    afterPublish?: (args: { releaseId: string; req: any }) => void | Promise<void>;
+    onPublishError?: (args: { releaseId: string; errors: any[]; req: any }) => void | Promise<void>;
   };
 }
 
-export function createPublishReleaseHandler(
-  config: PublishReleaseConfig
-): PayloadHandler {
+export function createPublishReleaseHandler(config: PublishReleaseConfig): PayloadHandler {
   return async (req) => {
     const releaseId = (req.routeParams as any)?.id as string;
     if (!releaseId) {
@@ -2172,10 +1967,7 @@ export function createPublishReleaseHandler(
       });
 
       if (items.length === 0) {
-        return Response.json(
-          { error: "Release has no items to publish" },
-          { status: 400 }
-        );
+        return Response.json({ error: "Release has no items to publish" }, { status: 400 });
       }
 
       // Set status to publishing
@@ -2218,9 +2010,7 @@ export function createPublishReleaseHandler(
         id: releaseId,
         data: {
           status: finalStatus,
-          ...(hasFailures
-            ? { errorLog: result.failed }
-            : { publishedAt: new Date().toISOString() }),
+          ...(hasFailures ? { errorLog: result.failed } : { publishedAt: new Date().toISOString() }),
           rollbackSnapshot: result.rollbackSnapshot,
         } as any,
       });
@@ -2244,10 +2034,7 @@ export function createPublishReleaseHandler(
         errors: hasFailures ? result.failed : undefined,
       });
     } catch (err) {
-      return Response.json(
-        { error: err instanceof Error ? err.message : "Internal server error" },
-        { status: 500 }
-      );
+      return Response.json({ error: err instanceof Error ? err.message : "Internal server error" }, { status: 500 });
     }
   };
 }
@@ -2415,9 +2202,7 @@ describe("plugin endpoints", () => {
   it("should register publish endpoint", () => {
     const plugin = contentReleasesPlugin({ enabledCollections: ["pages"] });
     const config = plugin(makeBaseConfig());
-    const endpoint = config.endpoints?.find(
-      (e: any) => e.path === "/content-releases/:id/publish"
-    );
+    const endpoint = config.endpoints?.find((e: any) => e.path === "/content-releases/:id/publish");
     expect(endpoint).toBeDefined();
     expect(endpoint?.method).toBe("post");
   });
@@ -2425,9 +2210,7 @@ describe("plugin endpoints", () => {
   it("should register conflicts endpoint", () => {
     const plugin = contentReleasesPlugin({ enabledCollections: ["pages"] });
     const config = plugin(makeBaseConfig());
-    const endpoint = config.endpoints?.find(
-      (e: any) => e.path === "/content-releases/:id/conflicts"
-    );
+    const endpoint = config.endpoints?.find((e: any) => e.path === "/content-releases/:id/conflicts");
     expect(endpoint).toBeDefined();
     expect(endpoint?.method).toBe("get");
   });
@@ -2445,19 +2228,12 @@ Expected: FAIL
 // Add to plugin.ts:
 import { createPublishReleaseHandler } from "./endpoints/publishRelease";
 import { createCheckConflictsHandler } from "./endpoints/checkConflicts";
-import {
-  DEFAULT_CONFLICT_STRATEGY,
-  DEFAULT_PUBLISH_BATCH_SIZE,
-} from "./constants";
+import { DEFAULT_CONFLICT_STRATEGY, DEFAULT_PUBLISH_BATCH_SIZE } from "./constants";
 
 // Inside the returned config:
 return {
   ...config,
-  collections: [
-    ...(config.collections ?? []),
-    releasesCollection,
-    releaseItemsCollection,
-  ],
+  collections: [...(config.collections ?? []), releasesCollection, releaseItemsCollection],
   endpoints: [
     ...(config.endpoints ?? []),
     {
@@ -2465,8 +2241,7 @@ return {
       method: "post",
       handler: createPublishReleaseHandler({
         conflictStrategy: options.conflictStrategy ?? DEFAULT_CONFLICT_STRATEGY,
-        publishBatchSize:
-          options.publishBatchSize ?? DEFAULT_PUBLISH_BATCH_SIZE,
+        publishBatchSize: options.publishBatchSize ?? DEFAULT_PUBLISH_BATCH_SIZE,
         hooks: options.hooks,
       }),
     },
@@ -2652,9 +2427,7 @@ interface RunScheduledConfig {
   publishBatchSize: number;
 }
 
-export function createRunScheduledHandler(
-  config: RunScheduledConfig
-): PayloadHandler {
+export function createRunScheduledHandler(config: RunScheduledConfig): PayloadHandler {
   return async (req) => {
     const auth = req.headers.get("authorization");
     if (!config.secret || auth !== `Bearer ${config.secret}`) {
@@ -2666,10 +2439,7 @@ export function createRunScheduledHandler(
     const { docs: dueReleases } = await req.payload.find({
       collection: RELEASES_SLUG as any,
       where: {
-        and: [
-          { status: { equals: "scheduled" } },
-          { scheduledAt: { less_than_equal: now } },
-        ],
+        and: [{ status: { equals: "scheduled" } }, { scheduledAt: { less_than_equal: now } }],
       },
       limit: 0,
     });
@@ -2728,9 +2498,7 @@ export function createRunScheduledHandler(
         id: (release as any).id,
         data: {
           status: finalStatus,
-          ...(hasFailures
-            ? { errorLog: result.failed }
-            : { publishedAt: new Date().toISOString() }),
+          ...(hasFailures ? { errorLog: result.failed } : { publishedAt: new Date().toISOString() }),
           rollbackSnapshot: result.rollbackSnapshot,
         } as any,
       });

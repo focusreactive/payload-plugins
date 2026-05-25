@@ -7,15 +7,9 @@ import type { Locale } from "../types";
 import { getPathFromBreadcrumbs } from "../utils/path/getPathFromBreadcrumbs";
 import { cacheTag } from "./cacheTags";
 
-export function revalidatePageCache(params: {
-  doc: Page;
-  locale: Locale;
-  payload: Payload;
-}): void {
+export function revalidatePageCache(params: { doc: Page; locale: Locale; payload: Payload }): void {
   const path = getPathFromBreadcrumbs(params.doc.breadcrumbs) ?? "home";
-  params.payload.logger?.info?.(
-    `Revalidating page with slug: ${params.doc.slug}`
-  );
+  params.payload.logger?.info?.(`Revalidating page with slug: ${params.doc.slug}`);
   revalidateTag(cacheTag({ locale: params.locale, path, type: "page" }), "max");
   revalidateTag(cacheTag({ type: "sitemap" }), "max");
 }

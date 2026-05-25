@@ -31,11 +31,11 @@ const fields: Field[] = [
     fields: [
       imageField(),
       {
-        name: "text",
-        type: "richText",
         editor: generateRichText(),
         label: { en: "Slide Text", es: "Texto de la diapositiva" },
         localized: true,
+        name: "text",
+        type: "richText",
       },
     ],
     label: { en: "Slides", es: "Diapositivas" },

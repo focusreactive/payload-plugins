@@ -11,12 +11,7 @@ interface PostContentProps {
   readMoreLabel?: string | null;
 }
 
-export const PostContent: React.FC<PostContentProps> = async ({
-  post,
-  locale,
-  relatedPostsLabel,
-  readMoreLabel,
-}) => {
+export const PostContent: React.FC<PostContentProps> = async ({ post, locale, relatedPostsLabel, readMoreLabel }) => {
   const relatedPosts = await getRelatedPosts({ locale, post });
 
   return (
@@ -32,11 +27,7 @@ export const PostContent: React.FC<PostContentProps> = async ({
       {relatedPosts.length > 0 && (
         <div className="border-t border-border py-12 px-4 sm:px-6 md:px-8">
           <div className="mx-auto max-w-4xl">
-            <RelatedPosts
-              docs={relatedPosts}
-              relatedPostsLabel={relatedPostsLabel}
-              readMoreLabel={readMoreLabel}
-            />
+            <RelatedPosts docs={relatedPosts} relatedPostsLabel={relatedPostsLabel} readMoreLabel={readMoreLabel} />
           </div>
         </div>
       )}

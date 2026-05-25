@@ -6,13 +6,7 @@ interface ResolvePathProps {
   homeSlug?: string;
 }
 
-export function resolvePath({
-  breadcrumbsPath,
-  slug,
-  basePath,
-  page,
-  homeSlug = "home",
-}: ResolvePathProps) {
+export function resolvePath({ breadcrumbsPath, slug, basePath, page, homeSlug = "home" }: ResolvePathProps) {
   if (basePath !== undefined) {
     if (page !== undefined && page > 1) {
       return `${basePath}?page=${page}`;

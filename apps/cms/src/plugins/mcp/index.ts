@@ -5,8 +5,8 @@ import { buildUrl } from "@/core/utils/path/buildUrl";
 import type { Page } from "@/payload-types";
 
 import { LOCAL_DEV_MCP_USER, LOCAL_HOSTS } from "./constants/local";
-import { createMcpTools } from './tools';
-import type { McpToolsRegistry } from './tools';
+import { createMcpTools } from "./tools";
+import type { McpToolsRegistry } from "./tools";
 import { uploadImage } from "./tools/uploadImage";
 
 function isLocalDevMcpRequest(req: PayloadRequest) {
@@ -29,7 +29,9 @@ function isLocalDevMcpRequest(req: PayloadRequest) {
   } catch {
     const host = req.headers.get("host")?.split(":")[0];
 
-    if (!host) {return false;}
+    if (!host) {
+      return false;
+    }
 
     return LOCAL_HOSTS.includes(host);
   }
@@ -50,29 +52,21 @@ const registry: McpToolsRegistry = {
     page: {
       buildUrl: (doc, locale) =>
         buildUrl({
-          collection: "page",
           breadcrumbs: doc.breadcrumbs as Page["breadcrumbs"],
+          collection: "page",
           locale: locale ?? "en",
         }),
-      skipKeys: [
-        "id",
-        "generateSlug",
-        "parent",
-        "folder",
-        "_abPassPercentage",
-        "_abVariantOf",
-        "_abVariantPercentages",
-      ],
+      skipKeys: ["id", "generateSlug", "parent", "folder", "_abPassPercentage", "_abVariantOf", "_abVariantPercentages"],
       tableFields: ["slug", "_status"],
       titleField: "title",
     },
     posts: {
       buildUrl: (doc, locale) =>
         buildUrl({
-          collection: "posts",
-          slug: doc?.slug as string,
           absolute: false,
+          collection: "posts",
           locale: locale ?? "en",
+          slug: doc?.slug as string,
         }),
       skipKeys: ["id"],
       tableFields: ["slug", "_status", "publishedAt", "excerpt"],
@@ -142,18 +136,18 @@ export const mcpPluginConfig = mcpPlugin({
     }
 
     return {
-      user: LOCAL_DEV_MCP_USER,
-      page: { create: true, delete: true, find: false, update: true },
-      posts: { create: true, delete: true, find: false, update: true },
-      header: { create: true, delete: true, find: false, update: true },
       footer: { create: true, delete: true, find: false, update: true },
+      header: { create: true, delete: true, find: false, update: true },
+      page: { create: true, delete: true, find: false, update: true },
       "payload-mcp-tool": {
-        getDocument: true,
         getAllDocuments: true,
-        getGlobalDocument: true,
+        getDocument: true,
         getField: true,
+        getGlobalDocument: true,
         uploadImage: true,
       },
+      posts: { create: true, delete: true, find: false, update: true },
+      user: LOCAL_DEV_MCP_USER,
     };
   },
 });

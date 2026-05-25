@@ -2133,11 +2133,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE UNIQUE INDEX "_site_settings_v_locales_locale_parent_id_unique" ON "_site_settings_v_locales" USING btree ("_locale","_parent_id");`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    DROP TABLE "users_sessions" CASCADE;
   DROP TABLE "users" CASCADE;

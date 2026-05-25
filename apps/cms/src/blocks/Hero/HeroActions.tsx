@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  resolveAbCookieNames,
-  useABConversion,
-} from "@focus-reactive/payload-plugin-ab/analytics/client";
+import { resolveAbCookieNames, useABConversion } from "@focus-reactive/payload-plugin-ab/analytics/client";
 import { useParams } from "next/navigation";
 import React from "react";
 
@@ -20,11 +17,8 @@ export function HeroActions({ actions }: { actions: Action[] }) {
     slug?: string[];
   }>();
 
-  const slugPath =
-    Array.isArray(slug) && slug.length ? `/${  slug.join("/")}` : "";
-  const experimentId = locale
-    ? manifestKeyToExpId(`/${locale}${slugPath}`)
-    : "";
+  const slugPath = Array.isArray(slug) && slug.length ? `/${slug.join("/")}` : "";
+  const experimentId = locale ? manifestKeyToExpId(`/${locale}${slugPath}`) : "";
   const cookieNames = resolveAbCookieNames(abCookies, experimentId);
 
   const trackConversion = useABConversion({ experimentId, ...cookieNames });
@@ -33,10 +27,7 @@ export function HeroActions({ actions }: { actions: Action[] }) {
     <ul className="flex gap-4 flex-wrap">
       {actions.map((action, i) => (
         <li key={i}>
-          <CMSLink
-            {...action}
-            onClick={() => trackConversion({ goalId: "hero_cta_click" })}
-          />
+          <CMSLink {...action} onClick={() => trackConversion({ goalId: "hero_cta_click" })} />
         </li>
       ))}
     </ul>

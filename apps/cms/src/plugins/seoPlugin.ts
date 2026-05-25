@@ -1,9 +1,5 @@
 import { seoPlugin } from "@payloadcms/plugin-seo";
-import type {
-  GenerateTitle,
-  GenerateDescription,
-  GenerateURL,
-} from "@payloadcms/plugin-seo/types";
+import type { GenerateTitle, GenerateDescription, GenerateURL } from "@payloadcms/plugin-seo/types";
 
 import { getLocaleFromRequest } from "@/core/lib/getLocaleFromRequest";
 import { getServerSideURL } from "@/core/lib/getURL";
@@ -16,18 +12,12 @@ const generateTitle: GenerateTitle<Page | Post> = async ({ doc }) => {
   return doc.title || settings?.defaultOgTitle || "";
 };
 
-const generateDescription: GenerateDescription<Page | Post> = async ({
-  doc,
-}) => {
+const generateDescription: GenerateDescription<Page | Post> = async ({ doc }) => {
   const settings = await getSiteSettings({});
   return doc?.meta?.description || settings.defaultDescription || "";
 };
 
-const generateURL: GenerateURL<Page | Post> = async ({
-  doc,
-  collectionSlug,
-  req,
-}) => {
+const generateURL: GenerateURL<Page | Post> = async ({ doc, collectionSlug, req }) => {
   const baseUrl = getServerSideURL();
   const locale = getLocaleFromRequest(req);
   switch (collectionSlug) {

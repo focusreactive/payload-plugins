@@ -104,37 +104,22 @@ export interface Config {
     testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
-    "document-embeddings":
-      | DocumentEmbeddingsSelect<false>
-      | DocumentEmbeddingsSelect<true>;
+    "document-embeddings": DocumentEmbeddingsSelect<false> | DocumentEmbeddingsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     presets: PresetsSelect<false> | PresetsSelect<true>;
     comments: CommentsSelect<false> | CommentsSelect<true>;
-    "payload-mcp-api-keys":
-      | PayloadMcpApiKeysSelect<false>
-      | PayloadMcpApiKeysSelect<true>;
+    "payload-mcp-api-keys": PayloadMcpApiKeysSelect<false> | PayloadMcpApiKeysSelect<true>;
     "payload-kv": PayloadKvSelect<false> | PayloadKvSelect<true>;
     "payload-jobs": PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     "payload-folders": PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
-    "payload-locked-documents":
-      | PayloadLockedDocumentsSelect<false>
-      | PayloadLockedDocumentsSelect<true>;
-    "payload-preferences":
-      | PayloadPreferencesSelect<false>
-      | PayloadPreferencesSelect<true>;
-    "payload-migrations":
-      | PayloadMigrationsSelect<false>
-      | PayloadMigrationsSelect<true>;
+    "payload-locked-documents": PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
+    "payload-preferences": PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
+    "payload-migrations": PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
     defaultIDType: number;
   };
-  fallbackLocale:
-    | ("false" | "none" | "null")
-    | false
-    | null
-    | ("en" | "es")
-    | ("en" | "es")[];
+  fallbackLocale: ("false" | "none" | "null") | false | null | ("en" | "es") | ("en" | "es")[];
   globals: {
     "site-settings": SiteSetting;
     _abManifest: _AbManifest;
@@ -376,17 +361,7 @@ export interface Page {
    * The footer to display on the page
    */
   footer?: (number | null) | Footer;
-  blocks: (
-    | HeroBlock
-    | TextSectionBlock
-    | ContentBlock
-    | FaqBlock
-    | TestimonialsListBlock
-    | CardsGridBlock
-    | CarouselBlock
-    | LogosBlock
-    | LinksListBlock
-  )[];
+  blocks: (HeroBlock | TextSectionBlock | ContentBlock | FaqBlock | TestimonialsListBlock | CardsGridBlock | CarouselBlock | LogosBlock | LinksListBlock)[];
   meta?: {
     title?: string | null;
     /**
@@ -669,19 +644,7 @@ export interface HeroBlock {
     | null;
   image: {
     image: number | Media;
-    aspectRatio?:
-      | (
-          | "16/9"
-          | "3/2"
-          | "4/3"
-          | "1/1"
-          | "9/16"
-          | "1/2"
-          | "4/1"
-          | "3/1"
-          | "auto"
-        )
-      | null;
+    aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
   };
   enabled?: boolean | null;
   color?: ("black" | "white") | null;
@@ -907,19 +870,7 @@ export interface CardsGridBlock {
     description?: string | null;
     image?: {
       image?: (number | null) | Media;
-      aspectRatio?:
-        | (
-            | "16/9"
-            | "3/2"
-            | "4/3"
-            | "1/1"
-            | "9/16"
-            | "1/2"
-            | "4/1"
-            | "3/1"
-            | "auto"
-          )
-        | null;
+      aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
     };
     link?: {
       type?: ("reference" | "custom" | "customPage") | null;
@@ -943,9 +894,7 @@ export interface CardsGridBlock {
     };
     alignVariant?: ("left" | "center" | "right") | null;
     rounded?: ("none" | "large") | null;
-    backgroundColor?:
-      | ("none" | "light" | "dark" | "light-gray" | "dark-gray" | "gradient-2")
-      | null;
+    backgroundColor?: ("none" | "light" | "dark" | "light-gray" | "dark-gray" | "gradient-2") | null;
     id?: string | null;
   }[];
   section?: {
@@ -993,19 +942,7 @@ export interface CarouselBlock {
   slides: {
     image: {
       image: number | Media;
-      aspectRatio?:
-        | (
-            | "16/9"
-            | "3/2"
-            | "4/3"
-            | "1/1"
-            | "9/16"
-            | "1/2"
-            | "4/1"
-            | "3/1"
-            | "auto"
-          )
-        | null;
+      aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
     };
     text?: {
       root: {
@@ -1054,19 +991,7 @@ export interface LogosBlock {
   items: {
     image: {
       image: number | Media;
-      aspectRatio?:
-        | (
-            | "16/9"
-            | "3/2"
-            | "4/3"
-            | "1/1"
-            | "9/16"
-            | "1/2"
-            | "4/1"
-            | "3/1"
-            | "auto"
-          )
-        | null;
+      aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
     };
     link: {
       type?: ("reference" | "custom" | "customPage") | null;
@@ -1228,14 +1153,7 @@ export interface Preset {
               [k: string]: unknown;
             }[];
             direction: ("ltr" | "rtl") | null;
-            format:
-              | "left"
-              | "start"
-              | "center"
-              | "right"
-              | "end"
-              | "justify"
-              | "";
+            format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
             indent: number;
             version: number;
           };
@@ -1266,19 +1184,7 @@ export interface Preset {
           | null;
         image: {
           image: number | Media;
-          aspectRatio?:
-            | (
-                | "16/9"
-                | "3/2"
-                | "4/3"
-                | "1/1"
-                | "9/16"
-                | "1/2"
-                | "4/1"
-                | "3/1"
-                | "auto"
-              )
-            | null;
+          aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
         };
         enabled?: boolean | null;
         color?: ("black" | "white") | null;
@@ -1317,14 +1223,7 @@ export interface Preset {
               [k: string]: unknown;
             }[];
             direction: ("ltr" | "rtl") | null;
-            format:
-              | "left"
-              | "start"
-              | "center"
-              | "right"
-              | "end"
-              | "justify"
-              | "";
+            format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
             indent: number;
             version: number;
           };
@@ -1364,14 +1263,7 @@ export interface Preset {
               [k: string]: unknown;
             }[];
             direction: ("ltr" | "rtl") | null;
-            format:
-              | "left"
-              | "start"
-              | "center"
-              | "right"
-              | "end"
-              | "justify"
-              | "";
+            format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
             indent: number;
             version: number;
           };
@@ -1411,14 +1303,7 @@ export interface Preset {
                 [k: string]: unknown;
               }[];
               direction: ("ltr" | "rtl") | null;
-              format:
-                | "left"
-                | "start"
-                | "center"
-                | "right"
-                | "end"
-                | "justify"
-                | "";
+              format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
               indent: number;
               version: number;
             };
@@ -1490,19 +1375,7 @@ export interface Preset {
           description?: string | null;
           image?: {
             image?: (number | null) | Media;
-            aspectRatio?:
-              | (
-                  | "16/9"
-                  | "3/2"
-                  | "4/3"
-                  | "1/1"
-                  | "9/16"
-                  | "1/2"
-                  | "4/1"
-                  | "3/1"
-                  | "auto"
-                )
-              | null;
+            aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
           };
           link?: {
             type?: ("reference" | "custom" | "customPage") | null;
@@ -1526,16 +1399,7 @@ export interface Preset {
           };
           alignVariant?: ("left" | "center" | "right") | null;
           rounded?: ("none" | "large") | null;
-          backgroundColor?:
-            | (
-                | "none"
-                | "light"
-                | "dark"
-                | "light-gray"
-                | "dark-gray"
-                | "gradient-2"
-              )
-            | null;
+          backgroundColor?: ("none" | "light" | "dark" | "light-gray" | "dark-gray" | "gradient-2") | null;
           id?: string | null;
         }[];
         section?: {
@@ -1569,38 +1433,17 @@ export interface Preset {
               [k: string]: unknown;
             }[];
             direction: ("ltr" | "rtl") | null;
-            format:
-              | "left"
-              | "start"
-              | "center"
-              | "right"
-              | "end"
-              | "justify"
-              | "";
+            format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
             indent: number;
             version: number;
           };
           [k: string]: unknown;
         } | null;
-        effect?:
-          | ("slide" | "fade" | "cube" | "flip" | "coverflow" | "cards")
-          | null;
+        effect?: ("slide" | "fade" | "cube" | "flip" | "coverflow" | "cards") | null;
         slides: {
           image: {
             image: number | Media;
-            aspectRatio?:
-              | (
-                  | "16/9"
-                  | "3/2"
-                  | "4/3"
-                  | "1/1"
-                  | "9/16"
-                  | "1/2"
-                  | "4/1"
-                  | "3/1"
-                  | "auto"
-                )
-              | null;
+            aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
           };
           text?: {
             root: {
@@ -1611,14 +1454,7 @@ export interface Preset {
                 [k: string]: unknown;
               }[];
               direction: ("ltr" | "rtl") | null;
-              format:
-                | "left"
-                | "start"
-                | "center"
-                | "right"
-                | "end"
-                | "justify"
-                | "";
+              format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
               indent: number;
               version: number;
             };
@@ -1652,19 +1488,7 @@ export interface Preset {
         items: {
           image: {
             image: number | Media;
-            aspectRatio?:
-              | (
-                  | "16/9"
-                  | "3/2"
-                  | "4/3"
-                  | "1/1"
-                  | "9/16"
-                  | "1/2"
-                  | "4/1"
-                  | "3/1"
-                  | "auto"
-                )
-              | null;
+            aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
           };
           link: {
             type?: ("reference" | "custom" | "customPage") | null;
@@ -3459,19 +3283,7 @@ export interface CardsGridInlineBlock {
     description?: string | null;
     image?: {
       image?: (number | null) | Media;
-      aspectRatio?:
-        | (
-            | "16/9"
-            | "3/2"
-            | "4/3"
-            | "1/1"
-            | "9/16"
-            | "1/2"
-            | "4/1"
-            | "3/1"
-            | "auto"
-          )
-        | null;
+      aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
     };
     link?: {
       type?: ("reference" | "custom" | "customPage") | null;
@@ -3495,9 +3307,7 @@ export interface CardsGridInlineBlock {
     };
     alignVariant?: ("left" | "center" | "right") | null;
     rounded?: ("none" | "large") | null;
-    backgroundColor?:
-      | ("none" | "light" | "dark" | "light-gray" | "dark-gray" | "gradient-2")
-      | null;
+    backgroundColor?: ("none" | "light" | "dark" | "light-gray" | "dark-gray" | "gradient-2") | null;
     id?: string | null;
   }[];
   id?: string | null;
@@ -3513,19 +3323,7 @@ export interface LogosInlineBlock {
   items: {
     image: {
       image: number | Media;
-      aspectRatio?:
-        | (
-            | "16/9"
-            | "3/2"
-            | "4/3"
-            | "1/1"
-            | "9/16"
-            | "1/2"
-            | "4/1"
-            | "3/1"
-            | "auto"
-          )
-        | null;
+      aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
     };
     link: {
       type?: ("reference" | "custom" | "customPage") | null;

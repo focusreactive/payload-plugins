@@ -1,10 +1,7 @@
 import type { Field, GroupField } from "payload";
 
 import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
-import {
-  createLocalizedDefault,
-  createLocalizedRichText,
-} from "@/core/lib/createLocalizedDefault";
+import { createLocalizedDefault, createLocalizedRichText } from "@/core/lib/createLocalizedDefault";
 import { generateRichText } from "@/core/lib/generateRichText";
 import { imageField } from "@/fields/imageField";
 import { link } from "@/fields/link";
@@ -60,34 +57,34 @@ export const heroFields: Field[] = [
   {
     fields: [
       {
-        name: "enabled",
-        type: "checkbox",
         defaultValue: true,
         label: { en: "Enabled", es: "Habilitado" },
+        name: "enabled",
+        type: "checkbox",
       },
       {
-        name: "color",
-        type: "select",
         defaultValue: "black",
+        label: { en: "Color", es: "Color" },
+        name: "color",
         options: [
           { label: { en: "Black", es: "Negro" }, value: "black" },
           { label: { en: "White", es: "Blanco" }, value: "white" },
         ],
-        label: { en: "Color", es: "Color" },
+        type: "select",
       },
       {
-        name: "opacity",
-        type: "number",
-        defaultValue: 40,
-        min: 0,
-        max: 100,
         admin: {
           description: {
             en: "Overlay opacity (0-100)",
             es: "Opacidad del overlay (0-100)",
           },
         },
+        defaultValue: 40,
         label: { en: "Opacity", es: "Opacidad" },
+        max: 100,
+        min: 0,
+        name: "opacity",
+        type: "number",
       },
     ],
     label: { en: "Overlay", es: "Overlay" },

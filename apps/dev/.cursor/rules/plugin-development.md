@@ -89,11 +89,7 @@ export const redirectsPlugin =
 ## Adding Hooks
 
 ```typescript
-const resaveChildrenHook: CollectionAfterChangeHook = async ({
-  doc,
-  req,
-  operation,
-}) => {
+const resaveChildrenHook: CollectionAfterChangeHook = async ({ doc, req, operation }) => {
   if (operation === "update") {
     const children = await req.payload.find({
       collection: "pages",
@@ -121,10 +117,7 @@ export const nestedDocsPlugin =
           ...collection,
           hooks: {
             ...(collection.hooks || {}),
-            afterChange: [
-              resaveChildrenHook,
-              ...(collection.hooks?.afterChange || []),
-            ],
+            afterChange: [resaveChildrenHook, ...(collection.hooks?.afterChange || [])],
           },
         };
       }
@@ -144,9 +137,7 @@ export const seoPlugin =
       method: "post",
       handler: async (req) => {
         const data = await req.json?.();
-        const result = options.generateTitle
-          ? options.generateTitle(data.doc)
-          : "";
+        const result = options.generateTitle ? options.generateTitle(data.doc) : "";
         return Response.json({ result });
       },
     };
@@ -176,10 +167,7 @@ export const myPlugin =
       { name: "description", type: "textarea" },
     ];
 
-    const fields =
-      options.fields && typeof options.fields === "function"
-        ? options.fields({ defaultFields })
-        : defaultFields;
+    const fields = options.fields && typeof options.fields === "function" ? options.fields({ defaultFields }) : defaultFields;
 
     return {
       ...config,
@@ -249,14 +237,10 @@ export const myPlugin =
     }
 
     // Add client component
-    config.admin.components.beforeDashboard.push(
-      "my-plugin-name/client#BeforeDashboardClient"
-    );
+    config.admin.components.beforeDashboard.push("my-plugin-name/client#BeforeDashboardClient");
 
     // Add server component (RSC)
-    config.admin.components.beforeDashboard.push(
-      "my-plugin-name/rsc#BeforeDashboardServer"
-    );
+    config.admin.components.beforeDashboard.push("my-plugin-name/rsc#BeforeDashboardServer");
 
     return config;
   };

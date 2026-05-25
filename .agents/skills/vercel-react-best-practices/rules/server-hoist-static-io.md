@@ -110,10 +110,7 @@ const configPromise = fs.readFile("./config.json", "utf-8").then(JSON.parse);
 const templatePromise = fs.readFile("./template.html", "utf-8");
 
 export async function processRequest(data: Data) {
-  const [config, template] = await Promise.all([
-    configPromise,
-    templatePromise,
-  ]);
+  const [config, template] = await Promise.all([configPromise, templatePromise]);
 
   return render(template, data, config);
 }

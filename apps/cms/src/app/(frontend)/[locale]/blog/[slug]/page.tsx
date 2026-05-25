@@ -26,11 +26,7 @@ export default async function Page({ params }: Args) {
   const decodedSlug = decodeURIComponent(slug);
   const url = buildUrl({ collection: "posts", locale, slug: decodedSlug });
 
-  const [post, siteSettings, blogSettings] = await Promise.all([
-    getPostBySlug({ locale, slug: decodedSlug }),
-    getSiteSettings({ locale }),
-    getBlogPageSettings({ locale }),
-  ]);
+  const [post, siteSettings, blogSettings] = await Promise.all([getPostBySlug({ locale, slug: decodedSlug }), getSiteSettings({ locale }), getBlogPageSettings({ locale })]);
 
   if (!post) {
     return <PayloadRedirects url={url} locale={locale} />;
@@ -40,11 +36,7 @@ export default async function Page({ params }: Args) {
     <>
       <Header data={siteSettings.header as HeaderType} />
       <main>
-        <ArticleJsonLd
-          post={post}
-          siteName={siteSettings.siteName as string}
-          locale={locale}
-        />
+        <ArticleJsonLd post={post} siteName={siteSettings.siteName as string} locale={locale} />
         <BreadcrumbsJsonLd
           locale={locale}
           blog={{
@@ -58,12 +50,7 @@ export default async function Page({ params }: Args) {
 
         <PayloadRedirects disableNotFound url={url} locale={locale} />
 
-        <PostContent
-          post={post}
-          locale={locale}
-          relatedPostsLabel={blogSettings.relatedPostsLabel}
-          readMoreLabel={blogSettings.readMoreLabel}
-        />
+        <PostContent post={post} locale={locale} relatedPostsLabel={blogSettings.relatedPostsLabel} readMoreLabel={blogSettings.readMoreLabel} />
       </main>
       <Footer data={siteSettings.footer as FooterType} />
     </>

@@ -5,9 +5,7 @@ import { revalidatePageCache } from "@/core/lib/revalidatePageCache";
 import { revalidateGlobalTags } from "@/dal/getGlobals";
 import type { Header } from "@/payload-types";
 
-export const revalidateResourcesUsingHeader: CollectionAfterChangeHook<
-  Header
-> = async ({ doc, req }) => {
+export const revalidateResourcesUsingHeader: CollectionAfterChangeHook<Header> = async ({ doc, req }) => {
   const { payload, context } = req;
 
   if (!context.disableRevalidate) {
@@ -18,10 +16,7 @@ export const revalidateResourcesUsingHeader: CollectionAfterChangeHook<
       slug: "site-settings",
     });
 
-    const headerId =
-      typeof siteSettings?.header === "object"
-        ? siteSettings.header?.id
-        : siteSettings?.header;
+    const headerId = typeof siteSettings?.header === "object" ? siteSettings.header?.id : siteSettings?.header;
     if (headerId === doc.id) {
       revalidateGlobalTags({ collection: "site-settings", locale });
       payload.logger?.info?.(`Revalidated site-settings for locale: ${locale}`);

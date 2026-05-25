@@ -24,43 +24,21 @@ interface Props {
   buildUrl?: (doc: BaseDocument, locale?: Locale) => string | null;
 }
 
-export function buildDocumentsContent({
-  docs,
-  totalDocs,
-  page,
-  limit,
-  collection,
-  titleField,
-  tableFields,
-  locale,
-  payload,
-  buildUrl,
-}: Props): ContentBlock[] {
-  const { fieldLabels, blockLabels, fieldRelationTo } = buildLabelMaps(
-    collection,
-    payload
-  );
+export function buildDocumentsContent({ docs, totalDocs, page, limit, collection, titleField, tableFields, locale, payload, buildUrl }: Props): ContentBlock[] {
+  const { fieldLabels, blockLabels, fieldRelationTo } = buildLabelMaps(collection, payload);
   const titleIsId = titleField === "id" || !titleField;
 
   const formattedDocs = docs.map((doc) => {
     const raw = doc as BaseDocument;
 
-    const adminUrl = raw.id
-      ? `${getServerSideURL()}/admin/collections/${collection}/${raw.id}${locale ? `?locale=${locale}` : ""}`
-      : "";
+    const adminUrl = raw.id ? `${getServerSideURL()}/admin/collections/${collection}/${raw.id}${locale ? `?locale=${locale}` : ""}` : "";
     const url = buildUrl ? (buildUrl(raw, locale) ?? "") : undefined;
 
     return formatDocument({
       adminUrl,
       blockLabels,
       collectionSlug: String(collection),
-      extractedDoc: buildSummaryFields(
-        payload,
-        collection,
-        raw,
-        tableFields,
-        titleField
-      ),
+      extractedDoc: buildSummaryFields(payload, collection, raw, tableFields, titleField),
       fieldLabels,
       fieldRelationTo,
       id: raw.id as string,
@@ -73,10 +51,7 @@ export function buildDocumentsContent({
   const start = totalDocs === 0 ? 0 : ((page ?? 1) - 1) * limit + 1;
   const end = totalDocs === 0 ? 0 : start + formattedDocs.length - 1;
 
-  const documents =
-    formattedDocs.length === 0
-      ? "No documents found."
-      : formattedDocs.join("\n\n");
+  const documents = formattedDocs.length === 0 ? "No documents found." : formattedDocs.join("\n\n");
   const pagination = `Showing ${start}-${end} of ${totalDocs} total. Use \`page\` and \`limit\` to paginate.`;
   const followUp = `To get full details for a document, call [getDocument(collectionSlug: "${collection}", id: <id>)].`;
 
@@ -85,36 +60,32 @@ export function buildDocumentsContent({
   return [{ text: PRE_FORMATTED_CONTENT_INSTRUCTION + body, type: "text" }];
 }
 
-function shouldIncludeSummaryField(
-  payload: Payload,
-  collection: CollectionSlug,
-  fieldName: string,
-  value: unknown
-) {
-  if (!isScalar(value)) {return false;}
+function shouldIncludeSummaryField(payload: Payload, collection: CollectionSlug, fieldName: string, value: unknown) {
+  if (!isScalar(value)) {
+    return false;
+  }
 
   const field = findCollectionField(payload, collection, fieldName);
-  if (!field || !("type" in field)) {return true;}
+  if (!field || !("type" in field)) {
+    return true;
+  }
 
   return true;
 }
 
-function buildSummaryFields(
-  payload: Payload,
-  collection: CollectionSlug,
-  doc: BaseDocument,
-  tableFields: string[],
-  titleField?: string
-) {
+function buildSummaryFields(payload: Payload, collection: CollectionSlug, doc: BaseDocument, tableFields: string[], titleField?: string) {
   const summary: Record<string, unknown> = {};
 
   for (const fieldName of tableFields) {
-    if (fieldName === "id" || fieldName === titleField) {continue;}
+    if (fieldName === "id" || fieldName === titleField) {
+      continue;
+    }
 
     const value = doc[fieldName];
 
-    if (!shouldIncludeSummaryField(payload, collection, fieldName, value))
-      {continue;}
+    if (!shouldIncludeSummaryField(payload, collection, fieldName, value)) {
+      continue;
+    }
 
     summary[fieldName] = value;
   }

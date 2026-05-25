@@ -12,12 +12,7 @@ export interface SwitchProps {
 }
 
 export const HorizontalSelect = ({ className, ...props }: SwitchProps) => (
-  <div
-    className={cn(
-      "relative flex self-center rounded-lg bg-gray-100 p-0.5 sm:mt-8",
-      className
-    )}
-  >
+  <div className={cn("relative flex self-center rounded-lg bg-gray-100 p-0.5 sm:mt-8", className)}>
     {props.options?.map((option) => (
       <button
         key={option.value}
@@ -30,9 +25,7 @@ export const HorizontalSelect = ({ className, ...props }: SwitchProps) => (
         {option.label}
 
         {option.extraInfo && (
-          <span className="absolute -right-2.5 -top-1.5 m-0 rotate-6 rounded-full border border-blue-200 bg-blue-100 px-1.5 py-0.5 text-[11px] leading-none text-blue-700">
-            {option.extraInfo}
-          </span>
+          <span className="absolute -right-2.5 -top-1.5 m-0 rotate-6 rounded-full border border-blue-200 bg-blue-100 px-1.5 py-0.5 text-[11px] leading-none text-blue-700">{option.extraInfo}</span>
         )}
       </button>
     ))}

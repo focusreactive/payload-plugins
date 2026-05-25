@@ -12,10 +12,7 @@ interface BlogPageDynamicProps {
   locale: Locale;
 }
 
-export async function BlogPageDynamic({
-  searchParams,
-  locale,
-}: BlogPageDynamicProps) {
+export async function BlogPageDynamic({ searchParams, locale }: BlogPageDynamicProps) {
   const { page, categories: categoriesParam } = await searchParams;
   const pageNumber = page ? Number.parseInt(page, 10) : 1;
   const activeCategories = categoriesParam?.split(",").filter(Boolean) ?? [];

@@ -7,11 +7,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "users" DROP COLUMN "api_key_index";`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "users" ADD COLUMN "enable_a_p_i_key" boolean;
   ALTER TABLE "users" ADD COLUMN "api_key" varchar;

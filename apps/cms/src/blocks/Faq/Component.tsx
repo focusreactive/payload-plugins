@@ -4,20 +4,12 @@ import type { AccordionItemData } from "@/core/ui/components/Accordion";
 import { Accordion } from "@/core/ui/components/Accordion";
 import type { FaqBlock as FaqBlockProps } from "@/payload-types";
 
-export const FaqBlockComponent: React.FC<FaqBlockProps> = ({
-  heading,
-  items,
-  section,
-  id,
-  ...rest
-}) => {
-  const accordionItems: AccordionItemData[] = (items ?? []).map(
-    (item, index) => ({
-      content: <RichText content={item.answer} />,
-      id: String(index),
-      trigger: item.question,
-    })
-  );
+export const FaqBlockComponent: React.FC<FaqBlockProps> = ({ heading, items, section, id, ...rest }) => {
+  const accordionItems: AccordionItemData[] = (items ?? []).map((item, index) => ({
+    content: <RichText content={item.answer} />,
+    id: String(index),
+    trigger: item.question,
+  }));
 
   return (
     <SectionContainer sectionData={{ ...section, id }}>

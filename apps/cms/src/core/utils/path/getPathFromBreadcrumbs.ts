@@ -1,8 +1,6 @@
 import type { Page } from "@/payload-types";
 
-export function getPathFromBreadcrumbs(
-  breadcrumbs?: Page["breadcrumbs"]
-): string | undefined {
+export function getPathFromBreadcrumbs(breadcrumbs?: Page["breadcrumbs"]): string | undefined {
   if (!Array.isArray(breadcrumbs) || breadcrumbs.length === 0) {
     return undefined;
   }

@@ -142,12 +142,7 @@ const richTextWithToolbars: RichTextField = {
   type: "richText",
   editor: lexicalEditor({
     features: ({ rootFeatures }) => {
-      return [
-        ...rootFeatures,
-        HeadingFeature({ enabledHeadingSizes: ["h2", "h3", "h4"] }),
-        FixedToolbarFeature(),
-        InlineToolbarFeature(),
-      ];
+      return [...rootFeatures, HeadingFeature({ enabledHeadingSizes: ["h2", "h3", "h4"] }), FixedToolbarFeature(), InlineToolbarFeature()];
     },
   }),
   label: false,
@@ -413,9 +408,7 @@ const computedVirtualField: TextField = {
   type: "text",
   virtual: true,
   hooks: {
-    afterRead: [
-      ({ siblingData }) => `${siblingData.firstName} ${siblingData.lastName}`,
-    ],
+    afterRead: [({ siblingData }) => `${siblingData.firstName} ${siblingData.lastName}`],
   },
 };
 
@@ -459,8 +452,7 @@ const mediaField: UploadField = {
   type: "upload",
   relationTo: "media",
   admin: {
-    condition: (_, { type } = {}) =>
-      ["highImpact", "mediumImpact"].includes(type),
+    condition: (_, { type } = {}) => ["highImpact", "mediumImpact"].includes(type),
   },
   required: true,
 };
@@ -602,17 +594,9 @@ const deepMerge = <T>(target: T, source: Partial<T>): T => {
 };
 
 // Reusable link field factory
-type LinkType = (options?: {
-  appearances?: ("default" | "outline")[] | false;
-  disableLabel?: boolean;
-  overrides?: Record<string, unknown>;
-}) => GroupField;
+type LinkType = (options?: { appearances?: ("default" | "outline")[] | false; disableLabel?: boolean; overrides?: Record<string, unknown> }) => GroupField;
 
-export const link: LinkType = ({
-  appearances,
-  disableLabel = false,
-  overrides = {},
-} = {}) => {
+export const link: LinkType = ({ appearances, disableLabel = false, overrides = {} } = {}) => {
   const linkField: GroupField = {
     name: "link",
     type: "group",

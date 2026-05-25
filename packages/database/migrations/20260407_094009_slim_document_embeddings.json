@@ -17958,17 +17958,7 @@
     "public.enum_page_blocks_hero_image_aspect_ratio": {
       "name": "enum_page_blocks_hero_image_aspect_ratio",
       "schema": "public",
-      "values": [
-        "16/9",
-        "3/2",
-        "4/3",
-        "1/1",
-        "9/16",
-        "1/2",
-        "4/1",
-        "3/1",
-        "auto"
-      ]
+      "values": ["16/9", "3/2", "4/3", "1/1", "9/16", "1/2", "4/1", "3/1", "auto"]
     },
     "public.enum_page_blocks_hero_color": {
       "name": "enum_page_blocks_hero_color",
@@ -18133,17 +18123,7 @@
     "public.enum_page_blocks_cards_grid_items_image_aspect_ratio": {
       "name": "enum_page_blocks_cards_grid_items_image_aspect_ratio",
       "schema": "public",
-      "values": [
-        "16/9",
-        "3/2",
-        "4/3",
-        "1/1",
-        "9/16",
-        "1/2",
-        "4/1",
-        "3/1",
-        "auto"
-      ]
+      "values": ["16/9", "3/2", "4/3", "1/1", "9/16", "1/2", "4/1", "3/1", "auto"]
     },
     "public.enum_page_blocks_cards_grid_items_link_type": {
       "name": "enum_page_blocks_cards_grid_items_link_type",
@@ -18173,14 +18153,7 @@
     "public.enum_page_blocks_cards_grid_items_background_color": {
       "name": "enum_page_blocks_cards_grid_items_background_color",
       "schema": "public",
-      "values": [
-        "none",
-        "light",
-        "dark",
-        "light-gray",
-        "dark-gray",
-        "gradient-2"
-      ]
+      "values": ["none", "light", "dark", "light-gray", "dark-gray", "gradient-2"]
     },
     "public.enum_page_blocks_cards_grid_section_theme": {
       "name": "enum_page_blocks_cards_grid_section_theme",
@@ -18215,17 +18188,7 @@
     "public.enum_page_blocks_carousel_slides_image_aspect_ratio": {
       "name": "enum_page_blocks_carousel_slides_image_aspect_ratio",
       "schema": "public",
-      "values": [
-        "16/9",
-        "3/2",
-        "4/3",
-        "1/1",
-        "9/16",
-        "1/2",
-        "4/1",
-        "3/1",
-        "auto"
-      ]
+      "values": ["16/9", "3/2", "4/3", "1/1", "9/16", "1/2", "4/1", "3/1", "auto"]
     },
     "public.enum_page_blocks_carousel_effect": {
       "name": "enum_page_blocks_carousel_effect",
@@ -18265,17 +18228,7 @@
     "public.enum_page_blocks_logos_items_image_aspect_ratio": {
       "name": "enum_page_blocks_logos_items_image_aspect_ratio",
       "schema": "public",
-      "values": [
-        "16/9",
-        "3/2",
-        "4/3",
-        "1/1",
-        "9/16",
-        "1/2",
-        "4/1",
-        "3/1",
-        "auto"
-      ]
+      "values": ["16/9", "3/2", "4/3", "1/1", "9/16", "1/2", "4/1", "3/1", "auto"]
     },
     "public.enum_page_blocks_logos_items_link_type": {
       "name": "enum_page_blocks_logos_items_link_type",
@@ -18400,17 +18353,7 @@
     "public.enum__page_v_blocks_hero_image_aspect_ratio": {
       "name": "enum__page_v_blocks_hero_image_aspect_ratio",
       "schema": "public",
-      "values": [
-        "16/9",
-        "3/2",
-        "4/3",
-        "1/1",
-        "9/16",
-        "1/2",
-        "4/1",
-        "3/1",
-        "auto"
-      ]
+      "values": ["16/9", "3/2", "4/3", "1/1", "9/16", "1/2", "4/1", "3/1", "auto"]
     },
     "public.enum__page_v_blocks_hero_color": {
       "name": "enum__page_v_blocks_hero_color",
@@ -18575,17 +18518,7 @@
     "public.enum__page_v_blocks_cards_grid_items_image_aspect_ratio": {
       "name": "enum__page_v_blocks_cards_grid_items_image_aspect_ratio",
       "schema": "public",
-      "values": [
-        "16/9",
-        "3/2",
-        "4/3",
-        "1/1",
-        "9/16",
-        "1/2",
-        "4/1",
-        "3/1",
-        "auto"
-      ]
+      "values": ["16/9", "3/2", "4/3", "1/1", "9/16", "1/2", "4/1", "3/1", "auto"]
     },
     "public.enum__page_v_blocks_cards_grid_items_link_type": {
       "name": "enum__page_v_blocks_cards_grid_items_link_type",
@@ -18615,14 +18548,7 @@
     "public.enum__page_v_blocks_cards_grid_items_background_color": {
       "name": "enum__page_v_blocks_cards_grid_items_background_color",
       "schema": "public",
-      "values": [
-        "none",
-        "light",
-        "dark",
-        "light-gray",
-        "dark-gray",
-        "gradient-2"
-      ]
+      "values": ["none", "light", "dark", "light-gray", "dark-gray", "gradient-2"]
     },
     "public.enum__page_v_blocks_cards_grid_section_theme": {
       "name": "enum__page_v_blocks_cards_grid_section_theme",
@@ -18657,17 +18583,7 @@
     "public.enum__page_v_blocks_carousel_slides_image_aspect_ratio": {
       "name": "enum__page_v_blocks_carousel_slides_image_aspect_ratio",
       "schema": "public",
-      "values": [
-        "16/9",
-        "3/2",
-        "4/3",
-        "1/1",
-        "9/16",
-        "1/2",
-        "4/1",
-        "3/1",
-        "auto"
-      ]
+      "values": ["16/9", "3/2", "4/3", "1/1", "9/16", "1/2", "4/1", "3/1", "auto"]
     },
     "public.enum__page_v_blocks_carousel_effect": {
       "name": "enum__page_v_blocks_carousel_effect",
@@ -18707,17 +18623,7 @@
     "public.enum__page_v_blocks_logos_items_image_aspect_ratio": {
       "name": "enum__page_v_blocks_logos_items_image_aspect_ratio",
       "schema": "public",
-      "values": [
-        "16/9",
-        "3/2",
-        "4/3",
-        "1/1",
-        "9/16",
-        "1/2",
-        "4/1",
-        "3/1",
-        "auto"
-      ]
+      "values": ["16/9", "3/2", "4/3", "1/1", "9/16", "1/2", "4/1", "3/1", "auto"]
     },
     "public.enum__page_v_blocks_logos_items_link_type": {
       "name": "enum__page_v_blocks_logos_items_link_type",
@@ -18957,17 +18863,7 @@
     "public.enum_presets_cards_grid_items_image_aspect_ratio": {
       "name": "enum_presets_cards_grid_items_image_aspect_ratio",
       "schema": "public",
-      "values": [
-        "16/9",
-        "3/2",
-        "4/3",
-        "1/1",
-        "9/16",
-        "1/2",
-        "4/1",
-        "3/1",
-        "auto"
-      ]
+      "values": ["16/9", "3/2", "4/3", "1/1", "9/16", "1/2", "4/1", "3/1", "auto"]
     },
     "public.enum_presets_cards_grid_items_link_type": {
       "name": "enum_presets_cards_grid_items_link_type",
@@ -18997,44 +18893,17 @@
     "public.enum_presets_cards_grid_items_background_color": {
       "name": "enum_presets_cards_grid_items_background_color",
       "schema": "public",
-      "values": [
-        "none",
-        "light",
-        "dark",
-        "light-gray",
-        "dark-gray",
-        "gradient-2"
-      ]
+      "values": ["none", "light", "dark", "light-gray", "dark-gray", "gradient-2"]
     },
     "public.enum_presets_carousel_slides_image_aspect_ratio": {
       "name": "enum_presets_carousel_slides_image_aspect_ratio",
       "schema": "public",
-      "values": [
-        "16/9",
-        "3/2",
-        "4/3",
-        "1/1",
-        "9/16",
-        "1/2",
-        "4/1",
-        "3/1",
-        "auto"
-      ]
+      "values": ["16/9", "3/2", "4/3", "1/1", "9/16", "1/2", "4/1", "3/1", "auto"]
     },
     "public.enum_presets_logos_items_image_aspect_ratio": {
       "name": "enum_presets_logos_items_image_aspect_ratio",
       "schema": "public",
-      "values": [
-        "16/9",
-        "3/2",
-        "4/3",
-        "1/1",
-        "9/16",
-        "1/2",
-        "4/1",
-        "3/1",
-        "auto"
-      ]
+      "values": ["16/9", "3/2", "4/3", "1/1", "9/16", "1/2", "4/1", "3/1", "auto"]
     },
     "public.enum_presets_logos_items_link_type": {
       "name": "enum_presets_logos_items_link_type",
@@ -19064,32 +18933,12 @@
     "public.enum_presets_type": {
       "name": "enum_presets_type",
       "schema": "public",
-      "values": [
-        "hero",
-        "textSection",
-        "content",
-        "faq",
-        "testimonialsList",
-        "cardsGrid",
-        "carousel",
-        "logos",
-        "linksList"
-      ]
+      "values": ["hero", "textSection", "content", "faq", "testimonialsList", "cardsGrid", "carousel", "logos", "linksList"]
     },
     "public.enum_presets_hero_image_aspect_ratio": {
       "name": "enum_presets_hero_image_aspect_ratio",
       "schema": "public",
-      "values": [
-        "16/9",
-        "3/2",
-        "4/3",
-        "1/1",
-        "9/16",
-        "1/2",
-        "4/1",
-        "3/1",
-        "auto"
-      ]
+      "values": ["16/9", "3/2", "4/3", "1/1", "9/16", "1/2", "4/1", "3/1", "auto"]
     },
     "public.enum_presets_hero_color": {
       "name": "enum_presets_hero_color",

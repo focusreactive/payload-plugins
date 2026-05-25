@@ -126,9 +126,7 @@ describe("plugin sidebar injection", () => {
     const plugin = contentReleasesPlugin({ enabledCollections: ["pages"] });
     const config = plugin(makeBaseConfig());
     const pages = config.collections?.find((c) => c.slug === "pages");
-    const releasesField = pages?.fields.find(
-      (f: any) => f.name === "_releases"
-    );
+    const releasesField = pages?.fields.find((f: any) => f.name === "_releases");
     expect(releasesField).toBeDefined();
     expect((releasesField as any).type).toBe("ui");
     expect((releasesField as any).admin?.position).toBe("sidebar");
@@ -138,18 +136,14 @@ describe("plugin sidebar injection", () => {
     const plugin = contentReleasesPlugin({ enabledCollections: ["pages"] });
     const config = plugin(makeBaseConfig());
     const posts = config.collections?.find((c) => c.slug === "posts");
-    const releasesField = posts?.fields.find(
-      (f: any) => f.name === "_releases"
-    );
+    const releasesField = posts?.fields.find((f: any) => f.name === "_releases");
     expect(releasesField).toBeUndefined();
   });
 
   it("should pass enabledCollections via admin.custom", () => {
     const plugin = contentReleasesPlugin({ enabledCollections: ["pages"] });
     const config = plugin(makeBaseConfig());
-    expect(
-      (config.admin as any)?.custom?.contentReleases?.enabledCollections
-    ).toEqual(["pages"]);
+    expect((config.admin as any)?.custom?.contentReleases?.enabledCollections).toEqual(["pages"]);
   });
 
   it("should preserve existing fields on enabled collections", () => {
@@ -172,8 +166,7 @@ Expected: FAIL
 Add sidebar field injection — patch enabled collections to append the `_releases` UI field, and set `admin.custom.contentReleases`:
 
 ```typescript
-const SIDEBAR_FIELD_PATH =
-  "@focus-reactive/payload-plugin-content-releases/client#ReleaseSidebarField";
+const SIDEBAR_FIELD_PATH = "@focus-reactive/payload-plugin-content-releases/client#ReleaseSidebarField";
 
 // Inside the plugin return function, before the final return:
 
@@ -211,11 +204,7 @@ return {
       },
     },
   },
-  collections: [
-    ...patchedCollections,
-    releasesCollection,
-    releaseItemsCollection,
-  ],
+  collections: [...patchedCollections, releasesCollection, releaseItemsCollection],
   endpoints,
 };
 ```
@@ -272,22 +261,15 @@ export function ReleaseSidebarField() {
     if (!id || !collectionSlug) return;
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/release-items?where[targetDoc][equals]=${id}&where[targetCollection][equals]=${collectionSlug}&depth=1&limit=100`
-      );
+      const res = await fetch(`/api/release-items?where[targetDoc][equals]=${id}&where[targetCollection][equals]=${collectionSlug}&depth=1&limit=100`);
       if (!res.ok) return;
       const data = await res.json();
       setReleases(
         (data.docs ?? []).map((item: any) => ({
           id: item.id,
-          releaseId:
-            typeof item.release === "object" ? item.release.id : item.release,
-          releaseName:
-            typeof item.release === "object"
-              ? item.release.name
-              : `Release ${item.release}`,
-          releaseStatus:
-            typeof item.release === "object" ? item.release.status : "unknown",
+          releaseId: typeof item.release === "object" ? item.release.id : item.release,
+          releaseName: typeof item.release === "object" ? item.release.name : `Release ${item.release}`,
+          releaseStatus: typeof item.release === "object" ? item.release.status : "unknown",
         }))
       );
     } catch {
@@ -332,9 +314,7 @@ export function ReleaseSidebarField() {
       {loading ? (
         <div style={{ fontSize: "13px", color: "#888" }}>Loading...</div>
       ) : releases.length === 0 ? (
-        <div style={{ fontSize: "13px", color: "#888" }}>
-          Not in any release
-        </div>
+        <div style={{ fontSize: "13px", color: "#888" }}>Not in any release</div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           {releases.map((r) => (
@@ -367,19 +347,11 @@ export function ReleaseSidebarField() {
         </div>
       )}
 
-      <Button
-        size="small"
-        buttonStyle="secondary"
-        onClick={() => setShowReleaseDrawer(true)}
-      >
+      <Button size="small" buttonStyle="secondary" onClick={() => setShowReleaseDrawer(true)}>
         Add Current State to Release
       </Button>
 
-      <Button
-        size="small"
-        buttonStyle="secondary"
-        onClick={() => setShowVersionDrawer(true)}
-      >
+      <Button size="small" buttonStyle="secondary" onClick={() => setShowVersionDrawer(true)}>
         Add Version to Release
       </Button>
 
@@ -531,13 +503,7 @@ interface ReleaseDrawerProps {
   onClose: () => void;
 }
 
-export function ReleaseDrawer({
-  snapshot,
-  collectionSlug,
-  docId,
-  baseVersion,
-  onClose,
-}: ReleaseDrawerProps) {
+export function ReleaseDrawer({ snapshot, collectionSlug, docId, baseVersion, onClose }: ReleaseDrawerProps) {
   const [releases, setReleases] = useState<Release[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -548,9 +514,7 @@ export function ReleaseDrawer({
   const fetchDraftReleases = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/releases?where[status][equals]=draft&sort=-createdAt&limit=100`
-      );
+      const res = await fetch(`/api/releases?where[status][equals]=draft&sort=-createdAt&limit=100`);
       if (!res.ok) return;
       const data = await res.json();
       setReleases(data.docs ?? []);
@@ -587,14 +551,10 @@ export function ReleaseDrawer({
 
           // Check if duplicate
           if (errMsg.toLowerCase().includes("already exists")) {
-            const confirmed = window.confirm(
-              "This document is already in this release. Replace snapshot?"
-            );
+            const confirmed = window.confirm("This document is already in this release. Replace snapshot?");
             if (confirmed) {
               // Find existing item and update
-              const existing = await fetch(
-                `/api/release-items?where[release][equals]=${releaseId}&where[targetDoc][equals]=${docId}&where[targetCollection][equals]=${collectionSlug}&limit=1`
-              );
+              const existing = await fetch(`/api/release-items?where[release][equals]=${releaseId}&where[targetDoc][equals]=${docId}&where[targetCollection][equals]=${collectionSlug}&limit=1`);
               const existingData = await existing.json();
               const existingItem = existingData.docs?.[0];
               if (existingItem) {
@@ -746,18 +706,10 @@ export function ReleaseDrawer({
               }}
             />
             <div style={{ display: "flex", gap: 8 }}>
-              <Button
-                size="small"
-                onClick={createAndAdd}
-                disabled={!newName.trim() || creating}
-              >
+              <Button size="small" onClick={createAndAdd} disabled={!newName.trim() || creating}>
                 {creating ? "Creating..." : "Create & Add"}
               </Button>
-              <Button
-                size="small"
-                buttonStyle="secondary"
-                onClick={() => setShowCreateForm(false)}
-              >
+              <Button size="small" buttonStyle="secondary" onClick={() => setShowCreateForm(false)}>
                 Cancel
               </Button>
             </div>
@@ -779,9 +731,7 @@ export function ReleaseDrawer({
         {loading ? (
           <div style={{ fontSize: 13, color: "#888" }}>Loading...</div>
         ) : releases.length === 0 ? (
-          <div style={{ fontSize: 13, color: "#888" }}>
-            No draft releases. Create one above.
-          </div>
+          <div style={{ fontSize: 13, color: "#888" }}>No draft releases. Create one above.</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {releases.map((r) => (
@@ -804,9 +754,7 @@ export function ReleaseDrawer({
                 }}
               >
                 <span style={{ fontWeight: 500 }}>{r.name}</span>
-                <span style={{ fontSize: 12, color: "#888" }}>
-                  {new Date(r.createdAt).toLocaleDateString()}
-                </span>
+                <span style={{ fontSize: 12, color: "#888" }}>{new Date(r.createdAt).toLocaleDateString()}</span>
               </button>
             ))}
           </div>
@@ -901,23 +849,15 @@ interface VersionPickerDrawerProps {
   onClose: () => void;
 }
 
-export function VersionPickerDrawer({
-  collectionSlug,
-  docId,
-  onClose,
-}: VersionPickerDrawerProps) {
+export function VersionPickerDrawer({ collectionSlug, docId, onClose }: VersionPickerDrawerProps) {
   const [versions, setVersions] = useState<VersionEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedVersion, setSelectedVersion] = useState<VersionEntry | null>(
-    null
-  );
+  const [selectedVersion, setSelectedVersion] = useState<VersionEntry | null>(null);
 
   const fetchVersions = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/${collectionSlug}/versions?where[parent][equals]=${docId}&sort=-updatedAt&limit=20`
-      );
+      const res = await fetch(`/api/${collectionSlug}/versions?where[parent][equals]=${docId}&sort=-updatedAt&limit=20`);
       if (!res.ok) return;
       const data = await res.json();
       setVersions(
@@ -1005,9 +945,7 @@ export function VersionPickerDrawer({
         {loading ? (
           <div style={{ fontSize: 13, color: "#888" }}>Loading versions...</div>
         ) : versions.length === 0 ? (
-          <div style={{ fontSize: 13, color: "#888" }}>
-            No versions found for this document.
-          </div>
+          <div style={{ fontSize: 13, color: "#888" }}>No versions found for this document.</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {versions.map((v) => (
@@ -1029,17 +967,9 @@ export function VersionPickerDrawer({
                   width: "100%",
                 }}
               >
-                <div
-                  style={{ display: "flex", flexDirection: "column", gap: 2 }}
-                >
-                  <span style={{ fontWeight: 500 }}>
-                    {new Date(v.updatedAt).toLocaleString()}
-                  </span>
-                  {v.autosave && (
-                    <span style={{ fontSize: 11, color: "#888" }}>
-                      (autosave)
-                    </span>
-                  )}
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span style={{ fontWeight: 500 }}>{new Date(v.updatedAt).toLocaleString()}</span>
+                  {v.autosave && <span style={{ fontSize: 11, color: "#888" }}>(autosave)</span>}
                 </div>
                 {v.status && (
                   <span
@@ -1047,8 +977,7 @@ export function VersionPickerDrawer({
                       fontSize: 11,
                       padding: "2px 6px",
                       borderRadius: 10,
-                      backgroundColor:
-                        v.status === "published" ? "#22c55e" : "#94a3b8",
+                      backgroundColor: v.status === "published" ? "#22c55e" : "#94a3b8",
                       color: "#fff",
                     }}
                   >

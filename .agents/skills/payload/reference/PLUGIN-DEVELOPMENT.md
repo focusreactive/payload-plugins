@@ -241,11 +241,7 @@ export const redirectsPlugin =
 ```ts
 import type { Config, Plugin, CollectionAfterChangeHook } from "payload";
 
-const resaveChildrenHook: CollectionAfterChangeHook = async ({
-  doc,
-  req,
-  operation,
-}) => {
+const resaveChildrenHook: CollectionAfterChangeHook = async ({ doc, req, operation }) => {
   if (operation === "update") {
     // Resave child documents
     const children = await req.payload.find({
@@ -274,10 +270,7 @@ export const nestedDocsPlugin =
           ...collection,
           hooks: {
             ...(collection.hooks || {}),
-            afterChange: [
-              resaveChildrenHook,
-              ...(collection.hooks?.afterChange || []),
-            ],
+            afterChange: [resaveChildrenHook, ...(collection.hooks?.afterChange || [])],
           },
         };
       }
@@ -301,9 +294,7 @@ export const seoPlugin =
       method: "post",
       handler: async (req) => {
         const data = await req.json?.();
-        const result = options.generateTitle
-          ? options.generateTitle(data.doc)
-          : "";
+        const result = options.generateTitle ? options.generateTitle(data.doc) : "";
         return Response.json({ result });
       },
     };
@@ -324,11 +315,7 @@ const webhookEndpoint: Endpoint = {
   method: "post",
   handler: async (req) => {
     const signature = req.headers.get("stripe-signature");
-    const event = stripe.webhooks.constructEvent(
-      await req.text(),
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
+    const event = stripe.webhooks.constructEvent(await req.text(), signature, process.env.STRIPE_WEBHOOK_SECRET);
     // Handle webhook
     return Response.json({ received: true });
   },
@@ -355,10 +342,7 @@ export const myPlugin =
       { name: "description", type: "textarea" },
     ];
 
-    const fields =
-      options.fields && typeof options.fields === "function"
-        ? options.fields({ defaultFields })
-        : defaultFields;
+    const fields = options.fields && typeof options.fields === "function" ? options.fields({ defaultFields }) : defaultFields;
 
     return {
       ...config,
@@ -419,12 +403,7 @@ export const seoPlugin =
 
           return {
             ...collection,
-            fields: [
-              ...seoTabs,
-              ...(collection.fields?.[0]?.type === "tabs"
-                ? collection.fields.slice(1)
-                : []),
-            ],
+            fields: [...seoTabs, ...(collection.fields?.[0]?.type === "tabs" ? collection.fields.slice(1) : [])],
           };
         }
 
@@ -465,9 +444,7 @@ export const myPlugin =
     // Add fields to specified collections
     if (options.collections) {
       for (const collectionSlug of options.collections) {
-        const collection = config.collections.find(
-          (c) => c.slug === collectionSlug
-        );
+        const collection = config.collections.find((c) => c.slug === collectionSlug);
         if (collection) {
           collection.fields.push({
             name: "addedByPlugin",
@@ -513,14 +490,10 @@ export const myPlugin =
     }
 
     // Add client component
-    config.admin.components.beforeDashboard.push(
-      "my-plugin-name/client#BeforeDashboardClient"
-    );
+    config.admin.components.beforeDashboard.push("my-plugin-name/client#BeforeDashboardClient");
 
     // Add server component (RSC)
-    config.admin.components.beforeDashboard.push(
-      "my-plugin-name/rsc#BeforeDashboardServer"
-    );
+    config.admin.components.beforeDashboard.push("my-plugin-name/rsc#BeforeDashboardServer");
 
     return config;
   };
@@ -590,10 +563,7 @@ export const myPlugin =
     ...config,
     i18n: {
       ...config.i18n,
-      translations: deepMergeSimple(
-        translations,
-        config.i18n?.translations ?? {}
-      ),
+      translations: deepMergeSimple(translations, config.i18n?.translations ?? {}),
     },
   });
 ```
@@ -636,12 +606,7 @@ export const myPlugin =
 ### Plugin Config Types
 
 ```ts
-import type {
-  CollectionSlug,
-  GlobalSlug,
-  Field,
-  CollectionConfig,
-} from "payload";
+import type { CollectionSlug, GlobalSlug, Field, CollectionConfig } from "payload";
 
 export type FieldsOverride = (args: { defaultFields: Field[] }) => Field[];
 
@@ -689,10 +654,7 @@ import type { MyPluginConfig } from "@payloadcms/plugin-example/types";
 import { useField } from "@payloadcms/ui";
 import type { TextFieldClientComponent } from "payload";
 
-export const CustomFieldComponent: TextFieldClientComponent = ({
-  field,
-  path,
-}) => {
+export const CustomFieldComponent: TextFieldClientComponent = ({ field, path }) => {
   const { value, setValue } = useField<string>({ path });
 
   return (
@@ -779,14 +741,7 @@ hooks: {
 Use Payload's exported types:
 
 ```ts
-import type {
-  Config,
-  Plugin,
-  CollectionConfig,
-  Field,
-  CollectionSlug,
-  GlobalSlug,
-} from "payload";
+import type { Config, Plugin, CollectionConfig, Field, CollectionSlug, GlobalSlug } from "payload";
 ```
 
 ### Field Path Imports
@@ -836,9 +791,7 @@ export const myPlugin =
 Allow users to override entire collections with async functions:
 
 ```ts
-type CollectionOverride = (args: {
-  defaultCollection: CollectionConfig;
-}) => CollectionConfig | Promise<CollectionConfig>;
+type CollectionOverride = (args: { defaultCollection: CollectionConfig }) => CollectionConfig | Promise<CollectionConfig>;
 
 interface PluginConfig {
   products?: {
@@ -848,9 +801,7 @@ interface PluginConfig {
 
 // In plugin
 const defaultCollection = createProductsCollection(config);
-const finalCollection = config.products?.collectionOverride
-  ? await config.products.collectionOverride({ defaultCollection })
-  : defaultCollection;
+const finalCollection = config.products?.collectionOverride ? await config.products.collectionOverride({ defaultCollection }) : defaultCollection;
 ```
 
 #### Config Sanitization Pattern
@@ -858,9 +809,7 @@ const finalCollection = config.products?.collectionOverride
 Normalize plugin configuration with defaults:
 
 ```ts
-export const sanitizePluginConfig = ({
-  pluginConfig,
-}: Props): SanitizedPluginConfig => {
+export const sanitizePluginConfig = ({ pluginConfig }: Props): SanitizedPluginConfig => {
   const config = { ...pluginConfig } as Partial<SanitizedPluginConfig>;
 
   // Normalize boolean|object configs
@@ -930,9 +879,7 @@ interface PluginConfig {
 
 // In plugin
 for (const collection of config.collections!) {
-  const syncConfig = pluginConfig.sync?.find(
-    (s) => s.collection === collection.slug
-  );
+  const syncConfig = pluginConfig.sync?.find((s) => s.collection === collection.slug);
   if (!syncConfig) continue;
 
   collection.hooks.afterChange = [
@@ -1105,10 +1052,7 @@ export const multiTenantPlugin =
           read: ({ req }) => {
             // Inject tenant filter
             return {
-              and: [
-                collection.access?.read ? collection.access.read({ req }) : {},
-                { tenant: { equals: req.user?.tenant } },
-              ],
+              and: [collection.access?.read ? collection.access.read({ req }) : {}, { tenant: { equals: req.user?.tenant } }],
             };
           },
         },
@@ -1128,9 +1072,7 @@ const tenantFilter = { tenant: { equals: req.user?.tenant } };
 
 collection.admin = {
   ...collection.admin,
-  baseListFilter: existingBaseFilter
-    ? { and: [existingBaseFilter, tenantFilter] }
-    : tenantFilter,
+  baseListFilter: existingBaseFilter ? { and: [existingBaseFilter, tenantFilter] } : tenantFilter,
 };
 ```
 
@@ -1146,10 +1088,7 @@ collection.fields = collection.fields.map((field) => {
       ...field,
       filterOptions: ({ relationTo }) => {
         return {
-          and: [
-            field.filterOptions?.(relationTo) || {},
-            { tenant: { equals: req.user?.tenant } },
-          ],
+          and: [field.filterOptions?.(relationTo) || {}, { tenant: { equals: req.user?.tenant } }],
         };
       },
     };
@@ -1177,8 +1116,7 @@ export const nestedDocsPlugin =
         meta: {
           ...collection.admin?.meta,
           nestedDocs: {
-            breadcrumbsFieldSlug:
-              pluginOptions.breadcrumbsFieldSlug || "breadcrumbs",
+            breadcrumbsFieldSlug: pluginOptions.breadcrumbsFieldSlug || "breadcrumbs",
             parentFieldSlug: pluginOptions.parentFieldSlug || "parent",
           },
         },
@@ -1218,10 +1156,7 @@ collection.admin = {
   ...collection.admin,
   components: {
     ...collection.admin?.components,
-    providers: [
-      ...(collection.admin?.components?.providers || []),
-      "/components/NestedDocsProvider#NestedDocsProvider",
-    ],
+    providers: [...(collection.admin?.components?.providers || []), "/components/NestedDocsProvider#NestedDocsProvider"],
   },
 };
 ```
@@ -1236,11 +1171,7 @@ collection.admin = {
   ...collection.admin,
   components: {
     ...collection.admin?.components,
-    actions: [
-      ...(collection.admin?.components?.actions || []),
-      "/components/ImportButton#ImportButton",
-      "/components/ExportButton#ExportButton",
-    ],
+    actions: [...(collection.admin?.components?.actions || []), "/components/ImportButton#ImportButton", "/components/ExportButton#ExportButton"],
   },
 };
 ```

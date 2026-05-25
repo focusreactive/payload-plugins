@@ -22,9 +22,6 @@ export const Header: CollectionConfig<"header"> = {
   },
   fields: [
     {
-      name: "name",
-      type: "text",
-      localized: true,
       admin: {
         description: {
           en: "The name of the header",
@@ -32,12 +29,11 @@ export const Header: CollectionConfig<"header"> = {
         },
       },
       defaultValue: createLocalizedDefault({ en: "Header", es: "Header" }),
+      localized: true,
+      name: "name",
+      type: "text",
     },
     {
-      name: "logo",
-      type: "upload",
-      relationTo: "media",
-      required: true,
       admin: {
         description: {
           en: "The logo to display in the header",
@@ -45,11 +41,50 @@ export const Header: CollectionConfig<"header"> = {
         },
       },
       defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
+      name: "logo",
+      relationTo: "media",
+      required: true,
+      type: "upload",
     },
     {
-      name: "navItems",
-      localized: true,
-      type: "array",
+      admin: {
+        components: {
+          RowLabel: "@/core/ui/components/RowLabel#RowLabelGroupName",
+        },
+        description: {
+          en: "Navigation items in the header (up to 6 items)",
+          es: "Items de navegación en el header (hasta 6 items)",
+        },
+        initCollapsed: true,
+      },
+      defaultValue: createLocalizedDefault({
+        en: [
+          {
+            link: { label: "Link 1", newTab: false, type: "custom", url: "#" },
+          },
+          {
+            link: { label: "Link 2", newTab: false, type: "custom", url: "#" },
+          },
+        ],
+        es: [
+          {
+            link: {
+              label: "Enlace 1",
+              newTab: false,
+              type: "custom",
+              url: "#",
+            },
+          },
+          {
+            link: {
+              label: "Enlace 2",
+              newTab: false,
+              type: "custom",
+              url: "#",
+            },
+          },
+        ],
+      }),
       fields: [
         link({
           appearances: false,
@@ -63,45 +98,10 @@ export const Header: CollectionConfig<"header"> = {
           },
         }),
       ],
+      localized: true,
       maxRows: 6,
-      admin: {
-        description: {
-          en: "Navigation items in the header (up to 6 items)",
-          es: "Items de navegación en el header (hasta 6 items)",
-        },
-        initCollapsed: true,
-        components: {
-          RowLabel: "@/core/ui/components/RowLabel#RowLabelGroupName",
-        },
-      },
-      defaultValue: createLocalizedDefault({
-        en: [
-          {
-            link: { type: "custom", url: "#", label: "Link 1", newTab: false },
-          },
-          {
-            link: { type: "custom", url: "#", label: "Link 2", newTab: false },
-          },
-        ],
-        es: [
-          {
-            link: {
-              type: "custom",
-              url: "#",
-              label: "Enlace 1",
-              newTab: false,
-            },
-          },
-          {
-            link: {
-              type: "custom",
-              url: "#",
-              label: "Enlace 2",
-              newTab: false,
-            },
-          },
-        ],
-      }),
+      name: "navItems",
+      type: "array",
     },
   ],
   hooks: {

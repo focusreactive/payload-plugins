@@ -1,14 +1,11 @@
 "use client";
 
-import type { RowLabelProps} from "@payloadcms/ui";
+import type { RowLabelProps } from "@payloadcms/ui";
 import { useRowLabel } from "@payloadcms/ui";
 
 import type { Header } from "@/payload-types";
 
-const generateRowLabel = (
-  rowNumber: number | undefined,
-  label: string | undefined | null
-) => {
+const generateRowLabel = (rowNumber: number | undefined, label: string | undefined | null) => {
   if (label) {
     return `Row ${rowNumber !== undefined ? rowNumber + 1 : ""}: ${label}`;
   }

@@ -36,24 +36,18 @@ export async function search({ query, locale }: Params): Promise<Response> {
   }
 
   try {
-    const [embedding, payload] = await Promise.all([
-      generateEmbedding(query),
-      getPayloadClient(),
-    ]);
+    const [embedding, payload] = await Promise.all([generateEmbedding(query), getPayloadClient()]);
 
     const pool = payload.db.pool as unknown as Pool;
     const rawItems = await runSemanticSearch({ embedding, locale, pool });
 
     const enrichedItems = await Promise.all(
       rawItems.map(async (item) => {
-        const displayData = await getDocumentSearchData(
-          payload,
-          item.documentId,
-          item.collection,
-          item.locale
-        );
+        const displayData = await getDocumentSearchData(payload, item.documentId, item.collection, item.locale);
 
-        if (!displayData) {return null;}
+        if (!displayData) {
+          return null;
+        }
 
         return { ...item, ...displayData };
       })

@@ -21,20 +21,13 @@ export { getCachedDocument, getCachedDocumentByID } from "./getDocument";
 export { getAllDocuments } from "./getAllDocuments";
 
 // Globals
-export {
-  getCachedGlobal,
-  formatGlobalCacheTag,
-  revalidateGlobalTags,
-} from "./getGlobals";
+export { getCachedGlobal, formatGlobalCacheTag, revalidateGlobalTags } from "./getGlobals";
 export { getSiteSettings } from "./getSiteSettings";
 export { getBlogPageSettings } from "./getBlogPageSettings";
 export type { BlogPageSettingsData } from "./getBlogPageSettings";
 
 // Media
-export {
-  getDefaultMediaId,
-  DEFAULT_MEDIA_CACHE_TAG,
-} from "./getDefaultMediaId";
+export { getDefaultMediaId, DEFAULT_MEDIA_CACHE_TAG } from "./getDefaultMediaId";
 
 // Redirects
 export { getRedirects, getCachedRedirects } from "./getRedirects";

@@ -6,17 +6,12 @@ import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { CardsGridInlineBlock } from "@/payload-types";
 
-export async function CardsGridInlineComponent({
-  items,
-  columns,
-}: CardsGridInlineBlock) {
+export async function CardsGridInlineComponent({ items, columns }: CardsGridInlineBlock) {
   const locale = await resolveLocale();
 
   const cards: IDefaultCardProps[] = (items ?? []).map((item) => ({
-    alignVariant:
-      (item.alignVariant as IDefaultCardProps["alignVariant"]) ?? "center",
-    backgroundColor:
-      (item.backgroundColor as IDefaultCardProps["backgroundColor"]) ?? "none",
+    alignVariant: (item.alignVariant as IDefaultCardProps["alignVariant"]) ?? "center",
+    backgroundColor: (item.backgroundColor as IDefaultCardProps["backgroundColor"]) ?? "none",
     description: item.description ?? undefined,
     image: prepareImageProps(item.image ?? null),
     link: prepareLinkProps(item.link, locale),

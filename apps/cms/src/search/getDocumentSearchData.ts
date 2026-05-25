@@ -16,12 +16,7 @@ interface DisplayData {
   imageAlt: string | null;
 }
 
-export async function getDocumentSearchData(
-  payload: Payload,
-  documentId: string,
-  collection: SearchCollection,
-  locale: string
-): Promise<DisplayData | null> {
+export async function getDocumentSearchData(payload: Payload, documentId: string, collection: SearchCollection, locale: string): Promise<DisplayData | null> {
   if (collection === "page") {
     let doc: Page;
 
@@ -56,11 +51,11 @@ export async function getDocumentSearchData(
       title: doc.title,
       url:
         buildUrl({
-          collection: "page",
-          slug: doc.slug,
-          breadcrumbs: doc.breadcrumbs,
-          locale,
           absolute: false,
+          breadcrumbs: doc.breadcrumbs,
+          collection: "page",
+          locale,
+          slug: doc.slug,
         }) || "/",
     };
   }
@@ -79,7 +74,7 @@ export async function getDocumentSearchData(
       return null;
     }
 
-    const {heroImage} = doc;
+    const { heroImage } = doc;
     let imageUrl: string | null = null;
     let imageAlt: string | null = null;
 
@@ -94,10 +89,10 @@ export async function getDocumentSearchData(
       slug: doc.slug,
       title: doc.title,
       url: buildUrl({
-        collection: "posts",
-        slug: doc.slug,
-        locale,
         absolute: false,
+        collection: "posts",
+        locale,
+        slug: doc.slug,
       }),
     };
   }

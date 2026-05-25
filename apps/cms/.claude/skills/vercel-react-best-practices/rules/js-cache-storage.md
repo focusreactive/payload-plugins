@@ -45,9 +45,7 @@ let cookieCache: Record<string, string> | null = null;
 
 function getCookie(name: string) {
   if (!cookieCache) {
-    cookieCache = Object.fromEntries(
-      document.cookie.split("; ").map((c) => c.split("="))
-    );
+    cookieCache = Object.fromEntries(document.cookie.split("; ").map((c) => c.split("=")));
   }
   return cookieCache[name];
 }

@@ -89,11 +89,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "presets" DROP COLUMN "hero_media_id";`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "page_blocks_hero" DROP CONSTRAINT "page_blocks_hero_image_image_id_media_id_fk";
   

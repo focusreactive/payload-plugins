@@ -21,9 +21,7 @@ export const RelatedPosts: React.FC<RelatedPostsProps> = (props) => {
 
   return (
     <div className={cn("w-full", className)}>
-      {relatedPostsLabel && (
-        <h2 className="text-2xl font-bold mb-6">{relatedPostsLabel}</h2>
-      )}
+      {relatedPostsLabel && <h2 className="text-2xl font-bold mb-6">{relatedPostsLabel}</h2>}
       <BlogPostsGrid posts={docs} readMoreLabel={readMoreLabel} />
     </div>
   );

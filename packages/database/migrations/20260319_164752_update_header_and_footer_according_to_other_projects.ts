@@ -73,11 +73,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   DROP TYPE "public"."enum__footer_v_version_nav_items_links_link_type";`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    CREATE TYPE "public"."enum_header_nav_items_links_link_type" AS ENUM('reference', 'custom');
   CREATE TYPE "public"."enum_header_nav_items_type" AS ENUM('link', 'links_group');

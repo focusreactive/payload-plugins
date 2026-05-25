@@ -1,5 +1,5 @@
 import { draftMode } from "next/headers";
-import type { NextRequest} from "next/server";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 export async function GET(req: NextRequest): Promise<Response> {
@@ -12,9 +12,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   }
 
   const host = req.headers.get("host") ?? new URL(req.url).host;
-  const protocol =
-    req.headers.get("x-forwarded-proto") ??
-    new URL(req.url).protocol.replace(":", "");
+  const protocol = req.headers.get("x-forwarded-proto") ?? new URL(req.url).protocol.replace(":", "");
   const redirectUrl = `${protocol}://${host}${redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`}`;
 
   const draft = await draftMode();

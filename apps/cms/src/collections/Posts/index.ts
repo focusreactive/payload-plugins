@@ -4,10 +4,7 @@ import { BLOG_CONFIG } from "@/core/config/blog";
 import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/core/constants/mediaDefaults";
 import { anyone, author, or, user, superAdmin } from "@/core/lib/access";
-import {
-  createLocalizedDefault,
-  createLocalizedRichText,
-} from "@/core/lib/createLocalizedDefault";
+import { createLocalizedDefault, createLocalizedRichText } from "@/core/lib/createLocalizedDefault";
 import { generatePreviewPath } from "@/core/lib/generatePreviewPath";
 import { generateRichText } from "@/core/lib/generateRichText";
 import { generateSeoFields } from "@/core/lib/seoFields";
@@ -15,10 +12,7 @@ import { buildUrl } from "@/core/utils/path/buildUrl";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { createSharedSlugField } from "@/fields/slugField";
 
-import {
-  indexPostEmbedding,
-  deletePostEmbedding,
-} from "./hooks/indexEmbedding";
+import { indexPostEmbedding, deletePostEmbedding } from "./hooks/indexEmbedding";
 import { revalidateDelete, revalidatePost } from "./hooks/revalidatePost";
 
 export const Posts: CollectionConfig<"posts"> = {
@@ -36,23 +30,22 @@ export const Posts: CollectionConfig<"posts"> = {
         const locale = localeProp.code ?? localeProp.fallbackLocale;
 
         return generatePreviewPath({
-          slug: data?.slug,
-          path: buildUrl({
-            collection: "posts",
-            slug: data?.slug,
-            absolute: false,
-            locale,
-          }),
           collection: BLOG_CONFIG.collection,
+          path: buildUrl({
+            absolute: false,
+            collection: "posts",
+            locale,
+            slug: data?.slug,
+          }),
+          slug: data?.slug,
         });
       },
     },
     pagination: {
       limits: [20, 50, 100],
     },
-    preview: (data, { locale }) => {
-      return generatePreviewPath({
-        slug: data?.slug as string,
+    preview: (data, { locale }) =>
+      generatePreviewPath({
         collection: BLOG_CONFIG.collection,
         path: buildUrl({
           collection: "posts",
@@ -60,8 +53,8 @@ export const Posts: CollectionConfig<"posts"> = {
           absolute: false,
           locale,
         }),
-      });
-    },
+        slug: data?.slug as string,
+      }),
     useAsTitle: "title",
   },
   defaultPopulate: {
@@ -75,61 +68,53 @@ export const Posts: CollectionConfig<"posts"> = {
   },
   fields: [
     {
-      type: "tabs",
       tabs: [
         {
           fields: [
             {
-              name: "title",
-              type: "text",
-              required: true,
+              defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.posts.title),
               label: {
                 en: "Title",
                 es: "Título",
               },
               localized: true,
-              defaultValue: createLocalizedDefault(
-                DEFAULT_VALUES.collections.posts.title
-              ),
+              name: "title",
+              required: true,
+              type: "text",
             },
             {
-              name: "excerpt",
-              type: "textarea",
-              required: true,
+              defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.posts.excerpt),
               label: {
                 en: "Excerpt",
                 es: "Extracto",
               },
               localized: true,
-              defaultValue: createLocalizedDefault(
-                DEFAULT_VALUES.collections.posts.excerpt
-              ),
+              name: "excerpt",
+              required: true,
+              type: "textarea",
             },
             {
-              name: "heroImage",
-              type: "upload",
-              relationTo: "media",
-              required: true,
+              defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
               label: {
                 en: "Hero Image",
                 es: "Imagen de la cabecera",
               },
-              defaultValue: async () =>
-                getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
+              name: "heroImage",
+              relationTo: "media",
+              required: true,
+              type: "upload",
             },
             {
-              name: "content",
-              type: "richText",
+              defaultValue: createLocalizedRichText(DEFAULT_VALUES.richText.content),
               editor: generateRichText(),
               label: {
                 en: "Content",
                 es: "Contenido",
               },
-              required: true,
               localized: true,
-              defaultValue: createLocalizedRichText(
-                DEFAULT_VALUES.richText.content
-              ),
+              name: "content",
+              required: true,
+              type: "richText",
             },
           ],
           label: {
@@ -138,21 +123,19 @@ export const Posts: CollectionConfig<"posts"> = {
           },
         },
         {
-          name: "meta",
+          fields: generateSeoFields(),
           label: {
             en: "SEO",
             es: "SEO",
           },
-          fields: generateSeoFields(),
           localized: true,
+          name: "meta",
         },
       ],
+      type: "tabs",
     },
     createSharedSlugField("posts"),
     {
-      name: "publishedAt",
-      index: true,
-      type: "date",
       admin: {
         date: {
           pickerAppearance: "dayAndTime",
@@ -169,62 +152,63 @@ export const Posts: CollectionConfig<"posts"> = {
           },
         ],
       },
+      index: true,
       label: {
         en: "Published At",
         es: "Publicado el",
       },
+      name: "publishedAt",
+      type: "date",
     },
     {
-      name: "categories",
-      type: "relationship",
-      required: true,
       admin: {
         position: "sidebar",
       },
       hasMany: true,
-      relationTo: "categories",
       label: {
         en: "Categories",
         es: "Categorías",
       },
+      name: "categories",
+      relationTo: "categories",
+      required: true,
+      type: "relationship",
     },
     {
-      name: "authors",
-      type: "relationship",
-      required: true,
       admin: {
         position: "sidebar",
       },
       hasMany: true,
-      relationTo: "authors",
       label: {
         en: "Authors",
         es: "Autores",
       },
+      name: "authors",
+      relationTo: "authors",
+      required: true,
+      type: "relationship",
     },
     {
-      name: "relatedPosts",
-      type: "relationship",
       admin: {
-        position: "sidebar",
         description: {
           en: "Select up to 3 related posts. If fewer than 3 are selected, additional posts from the same categories will be shown automatically based on publish date.",
           es: "Selecciona hasta 3 publicaciones relacionadas. Si se seleccionan menos de 3, se mostrarán automáticamente publicaciones adicionales de las mismas categorías según la fecha de publicación.",
         },
+        position: "sidebar",
       },
-      filterOptions: ({ id }) => {
-        return {
-          id: {
-            not_in: [id],
-          },
-        };
-      },
+      filterOptions: ({ id }) => ({
+        id: {
+          not_in: [id],
+        },
+      }),
       hasMany: true,
-      relationTo: BLOG_CONFIG.collection,
       label: {
         en: "Related Posts",
         es: "Publicaciones relacionadas",
       },
+      name: "relatedPosts",
+      relationTo: BLOG_CONFIG.collection,
+      type: "relationship",
     },
   ],
   hooks: {

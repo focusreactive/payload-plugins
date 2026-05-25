@@ -9,12 +9,7 @@ import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { LogosBlock } from "@/payload-types";
 
-export const LogosBlockComponent: React.FC<LogosBlock> = async ({
-  items,
-  alignVariant,
-  section,
-  id,
-}) => {
+export const LogosBlockComponent: React.FC<LogosBlock> = async ({ items, alignVariant, section, id }) => {
   const locale = await resolveLocale();
 
   const logoItems: ILogoItem[] = (items ?? []).map((item) => ({
@@ -23,14 +18,8 @@ export const LogosBlockComponent: React.FC<LogosBlock> = async ({
   }));
 
   return (
-    <SectionContainer
-      sectionData={{ ...section, id }}
-      className="overflow-x-visible!"
-    >
-      <Logos
-        items={logoItems}
-        alignVariant={(alignVariant as AlignVariant) ?? AlignVariant.Center}
-      />
+    <SectionContainer sectionData={{ ...section, id }} className="overflow-x-visible!">
+      <Logos items={logoItems} alignVariant={(alignVariant as AlignVariant) ?? AlignVariant.Center} />
     </SectionContainer>
   );
 };

@@ -3,74 +3,70 @@ import type { GroupField } from "payload";
 export const sectionFields: GroupField = {
   fields: [
     {
-      name: "theme",
-      type: "select",
       label: { en: "Theme", es: "Tema" },
+      name: "theme",
       options: [
         { label: { en: "Light", es: "Claro" }, value: "light" },
         { label: { en: "Dark", es: "Oscuro" }, value: "dark" },
         { label: { en: "Light Gray", es: "Gris Claro" }, value: "light-gray" },
         { label: { en: "Dark Gray", es: "Gris Oscuro" }, value: "dark-gray" },
       ],
+      type: "select",
     },
     {
-      name: "paddingY",
-      type: "select",
-      label: { en: "Padding Y", es: "Relleno Vertical" },
       defaultValue: "base",
+      label: { en: "Padding Y", es: "Relleno Vertical" },
+      name: "paddingY",
       options: [
         { label: { en: "None", es: "Ninguno" }, value: "none" },
         { label: { en: "Base", es: "Base" }, value: "base" },
         { label: { en: "Large", es: "Grande" }, value: "large" },
       ],
+      type: "select",
     },
     {
-      name: "paddingX",
-      type: "select",
+      defaultValue: "base",
       label: { en: "Padding X", es: "Relleno Horizontal" },
-      defaultValue: "base",
+      name: "paddingX",
       options: [
         { label: { en: "None", es: "Ninguno" }, value: "none" },
         { label: { en: "Base", es: "Base" }, value: "base" },
       ],
-    },
-    {
-      name: "maxWidth",
       type: "select",
-      label: { en: "Max Width", es: "Ancho Máximo" },
+    },
+    {
       defaultValue: "base",
+      label: { en: "Max Width", es: "Ancho Máximo" },
+      name: "maxWidth",
       options: [
         { label: { en: "None", es: "Ninguno" }, value: "none" },
         { label: { en: "Base", es: "Base" }, value: "base" },
       ],
+      type: "select",
     },
     {
-      name: "background",
-      type: "group",
-      label: { en: "Background", es: "Fondo" },
       fields: [
         {
-          name: "media",
-          type: "upload",
-          relationTo: "media",
-          label: {
-            en: "Background (Image or Video)",
-            es: "Fondo (Imagen o Video)",
-          },
-          filterOptions: () => ({
-            "folder.name": {
-              equals: "Background",
-            },
-          }),
           admin: {
             description: {
               en: 'Upload an image or video. Use the "Background" folder.',
               es: 'Sube una imagen o video. Usa la carpeta "Background".',
             },
           },
+          filterOptions: () => ({
+            "folder.name": {
+              equals: "Background",
+            },
+          }),
+          label: {
+            en: "Background (Image or Video)",
+            es: "Fondo (Imagen o Video)",
+          },
+          name: "media",
+          relationTo: "media",
+          type: "upload",
         },
         {
-          type: "row",
           fields: [
             {
               name: "overlay",
@@ -103,8 +99,12 @@ export const sectionFields: GroupField = {
               },
             },
           ],
+          type: "row",
         },
       ],
+      label: { en: "Background", es: "Fondo" },
+      name: "background",
+      type: "group",
     },
   ],
   label: false,

@@ -11,9 +11,7 @@ import { TestimonialsListBlock } from "@/blocks/TestimonialsList/config";
 import { TextSectionBlock } from "@/blocks/TextSection/config";
 import { generateSeoFields } from "@/core/lib/seoFields";
 
-export function createBasePageFields({
-  withBlocksDefaultValue = false,
-} = {}): Field[] {
+export function createBasePageFields({ withBlocksDefaultValue = false } = {}): Field[] {
   return [
     {
       admin: {
@@ -40,45 +38,28 @@ export function createBasePageFields({
     {
       tabs: [
         {
-          label: { en: "Content", es: "Contenido" },
           fields: [
             {
-              name: "blocks",
-              type: "blocks",
-              blocks: [
-                HeroBlock,
-                TextSectionBlock,
-                ContentBlock,
-                FaqBlock,
-                TestimonialsListBlock,
-                CardsGridBlock,
-                CarouselBlock,
-                LogosBlock,
-                LinksListBlock,
-              ],
-              required: true,
               admin: {
                 initCollapsed: false,
               },
+              blocks: [HeroBlock, TextSectionBlock, ContentBlock, FaqBlock, TestimonialsListBlock, CardsGridBlock, CarouselBlock, LogosBlock, LinksListBlock],
               localized: true,
+              name: "blocks",
+              required: true,
+              type: "blocks",
               ...(withBlocksDefaultValue && {
-                defaultValue: () =>
-                  [
-                    "hero",
-                    "textSection",
-                    "content",
-                    "testimonialsList",
-                    "faq",
-                  ].map((blockType) => ({ blockType })),
+                defaultValue: () => ["hero", "textSection", "content", "testimonialsList", "faq"].map((blockType) => ({ blockType })),
               }),
             },
           ],
+          label: { en: "Content", es: "Contenido" },
         },
         {
-          name: "meta",
-          label: { en: "SEO", es: "SEO" },
           fields: generateSeoFields(),
+          label: { en: "SEO", es: "SEO" },
           localized: true,
+          name: "meta",
         },
       ],
       type: "tabs",

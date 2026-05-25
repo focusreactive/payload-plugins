@@ -8,11 +8,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "_page_v_version_breadcrumbs" DROP COLUMN "_locale";`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "page_breadcrumbs" ADD COLUMN "_locale" "_locales" NOT NULL;
   ALTER TABLE "_page_v_version_breadcrumbs" ADD COLUMN "_locale" "_locales" NOT NULL;

@@ -13,11 +13,7 @@ export function GoogleAnalyticsScript({ measurementId }: Props) {
 
   return (
     <>
-      <Script
-        id="gtag-lib"
-        strategy="afterInteractive"
-        src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
-      />
+      <Script id="gtag-lib" strategy="afterInteractive" src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`} />
 
       <Script
         id="gtag-init"

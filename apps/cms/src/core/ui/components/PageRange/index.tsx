@@ -14,24 +14,23 @@ export const PageRange: React.FC<{
   limit?: number;
   totalDocs?: number;
 }> = (props) => {
-  const {
-    className,
-    collection,
-    collectionLabels: collectionLabelsFromProps,
-    currentPage,
-    limit,
-    totalDocs,
-  } = props;
+  const { className, collection, collectionLabels: collectionLabelsFromProps, currentPage, limit, totalDocs } = props;
 
   const t = useTranslations("pageRange");
 
-  if (!totalDocs) {return null;}
+  if (!totalDocs) {
+    return null;
+  }
 
   let indexStart = (currentPage ? currentPage - 1 : 1) * (limit || 1) + 1;
-  if (totalDocs && indexStart > totalDocs) {indexStart = 0;}
+  if (totalDocs && indexStart > totalDocs) {
+    indexStart = 0;
+  }
 
   let indexEnd: number = (currentPage || 1) * (limit || 1);
-  if (totalDocs && indexEnd > totalDocs) {indexEnd = totalDocs;}
+  if (totalDocs && indexEnd > totalDocs) {
+    indexEnd = totalDocs;
+  }
 
   const getLabels = () => {
     if (collectionLabelsFromProps) {

@@ -6,10 +6,7 @@ import type { Media, Post } from "@/payload-types";
 
 import { formatAuthorsToSchema } from "../lib/formatAuthorsToSchema";
 
-type PostPreview = Pick<
-  Post,
-  "title" | "slug" | "publishedAt" | "updatedAt" | "authors" | "meta"
->;
+type PostPreview = Pick<Post, "title" | "slug" | "publishedAt" | "updatedAt" | "authors" | "meta">;
 
 interface BlogSchemaParams {
   settings: BlogPageSettingsData;
@@ -18,17 +15,11 @@ interface BlogSchemaParams {
   locale: Locale;
 }
 
-export function createBlogSchema({
-  settings,
-  posts,
-  siteName,
-  locale,
-}: BlogSchemaParams) {
+export function createBlogSchema({ settings, posts, siteName, locale }: BlogSchemaParams) {
   const baseUrl = getServerSideURL();
   const blogUrl = buildUrl({ collection: "posts", locale });
 
-  const description =
-    settings.blogMeta?.description || settings.blogDescription || "";
+  const description = settings.blogMeta?.description || settings.blogDescription || "";
 
   const publisher = siteName
     ? {
@@ -41,8 +32,7 @@ export function createBlogSchema({
   const blogPostings = posts.map((post) => {
     const postUrl = buildUrl({ collection: "posts", locale, slug: post.slug });
     const image = post.meta?.image as Media | undefined;
-    const imageUrl =
-      image && typeof image === "object" ? `${baseUrl}${image.url}` : undefined;
+    const imageUrl = image && typeof image === "object" ? `${baseUrl}${image.url}` : undefined;
 
     const authors = formatAuthorsToSchema(post.authors);
 

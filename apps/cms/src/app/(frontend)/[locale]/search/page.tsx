@@ -3,10 +3,7 @@ import { Suspense } from "react";
 
 import type { Locale } from "@/core/types";
 import { getSiteSettings } from "@/dal/getSiteSettings";
-import type {
-  Footer as FooterType,
-  Header as HeaderType,
-} from "@/payload-types";
+import type { Footer as FooterType, Header as HeaderType } from "@/payload-types";
 import { Footer, Header } from "@/widgets";
 
 import { SearchInput } from "./_components/SearchInput";
@@ -18,10 +15,7 @@ interface Args {
 }
 
 export default async function SearchPage({ params, searchParams }: Args) {
-  const [{ locale }, { query: rawQuery }] = await Promise.all([
-    params,
-    searchParams,
-  ]);
+  const [{ locale }, { query: rawQuery }] = await Promise.all([params, searchParams]);
   const query = rawQuery && decodeURIComponent(rawQuery);
   const siteSettings = await getSiteSettings({ locale });
 

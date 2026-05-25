@@ -17,20 +17,13 @@ export const SiteSettings: GlobalConfig = {
   },
   fields: [
     {
-      type: "tabs",
       tabs: [
         {
-          label: {
-            en: "General",
-            es: "General",
-          },
           fields: [
             {
               name: "siteName",
               type: "text",
-              defaultValue: createLocalizedDefault(
-                DEFAULT_VALUES.collections.siteSettings.siteName
-              ),
+              defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.siteName),
               admin: {
                 description: {
                   en: "The name of your website",
@@ -62,12 +55,12 @@ export const SiteSettings: GlobalConfig = {
               },
             },
           ],
+          label: {
+            en: "General",
+            es: "General",
+          },
         },
         {
-          label: {
-            en: "Admin Panel",
-            es: "Panel de administración",
-          },
           fields: [
             {
               name: "adminLogo",
@@ -100,12 +93,12 @@ export const SiteSettings: GlobalConfig = {
               },
             },
           ],
+          label: {
+            en: "Admin Panel",
+            es: "Panel de administración",
+          },
         },
         {
-          label: {
-            en: "SEO Defaults",
-            es: "Valores por defecto de SEO",
-          },
           fields: [
             {
               name: "seoTitleSeparator",
@@ -145,9 +138,7 @@ export const SiteSettings: GlobalConfig = {
                 },
               },
               localized: true,
-              defaultValue: createLocalizedDefault(
-                DEFAULT_VALUES.collections.siteSettings.seoTitleSuffix
-              ),
+              defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.seoTitleSuffix),
             },
             {
               name: "defaultOgTitle",
@@ -177,9 +168,7 @@ export const SiteSettings: GlobalConfig = {
                   es: "Descripción de respaldo cuando la página no tiene descripción",
                 },
               },
-              defaultValue: createLocalizedDefault(
-                DEFAULT_VALUES.collections.siteSettings.defaultDescription
-              ),
+              defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.defaultDescription),
               localized: true,
             },
             {
@@ -196,9 +185,7 @@ export const SiteSettings: GlobalConfig = {
                 },
               },
               localized: true,
-              defaultValue: createLocalizedDefault(
-                DEFAULT_VALUES.collections.siteSettings.defaultOgDescription
-              ),
+              defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.defaultOgDescription),
             },
             {
               name: "defaultOgImage",
@@ -301,12 +288,12 @@ export const SiteSettings: GlobalConfig = {
               },
             },
           ],
+          label: {
+            en: "SEO Defaults",
+            es: "Valores por defecto de SEO",
+          },
         },
         {
-          label: {
-            en: "404 Page",
-            es: "Página 404",
-          },
           fields: [
             {
               name: "notFoundTitle",
@@ -322,9 +309,7 @@ export const SiteSettings: GlobalConfig = {
                 },
               },
               localized: true,
-              defaultValue: createLocalizedDefault(
-                DEFAULT_VALUES.collections.siteSettings.notFoundTitle
-              ),
+              defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.notFoundTitle),
             },
             {
               name: "notFoundDescription",
@@ -333,9 +318,7 @@ export const SiteSettings: GlobalConfig = {
                 en: "404 Description",
                 es: "Descripción de la página 404",
               },
-              defaultValue: createLocalizedDefault(
-                DEFAULT_VALUES.collections.siteSettings.notFoundDescription
-              ),
+              defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.notFoundDescription),
               admin: {
                 description: {
                   en: "Text displayed on 404 page",
@@ -345,13 +328,12 @@ export const SiteSettings: GlobalConfig = {
               localized: true,
             },
           ],
+          label: {
+            en: "404 Page",
+            es: "Página 404",
+          },
         },
         {
-          name: "blog",
-          label: {
-            en: "Blog",
-            es: "Blog",
-          },
           fields: [
             {
               type: "tabs",
@@ -363,9 +345,7 @@ export const SiteSettings: GlobalConfig = {
                       name: "blogTitle",
                       type: "text",
                       required: true,
-                      defaultValue: createLocalizedDefault(
-                        DEFAULT_VALUES.collections.siteSettings.blog.blogTitle
-                      ),
+                      defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.blog.blogTitle),
                       localized: true,
                       label: {
                         en: "Blog Page Title",
@@ -381,10 +361,7 @@ export const SiteSettings: GlobalConfig = {
                         en: "Blog Page Description",
                         es: "Descripción de la página de blog",
                       },
-                      defaultValue: createLocalizedDefault(
-                        DEFAULT_VALUES.collections.siteSettings.blog
-                          .blogDescription
-                      ),
+                      defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.blog.blogDescription),
                     },
                     {
                       name: "readMoreLabel",
@@ -395,10 +372,7 @@ export const SiteSettings: GlobalConfig = {
                         es: "Etiqueta del botón Leer más",
                       },
                       localized: true,
-                      defaultValue: createLocalizedDefault(
-                        DEFAULT_VALUES.collections.siteSettings.blog
-                          .readMoreLabel
-                      ),
+                      defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.blog.readMoreLabel),
                     },
                     {
                       name: "relatedPostsLabel",
@@ -409,10 +383,7 @@ export const SiteSettings: GlobalConfig = {
                         es: "Etiqueta de publicaciones relacionadas",
                       },
                       localized: true,
-                      defaultValue: createLocalizedDefault(
-                        DEFAULT_VALUES.collections.siteSettings.blog
-                          .relatedPostsLabel
-                      ),
+                      defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.blog.relatedPostsLabel),
                     },
                   ],
                 },
@@ -431,8 +402,14 @@ export const SiteSettings: GlobalConfig = {
               ],
             },
           ],
+          label: {
+            en: "Blog",
+            es: "Blog",
+          },
+          name: "blog",
         },
       ],
+      type: "tabs",
     },
   ],
   hooks: {

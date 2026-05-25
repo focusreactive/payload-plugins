@@ -1,5 +1,4 @@
-import type {
-  FeatureProviderServer} from "@payloadcms/richtext-lexical";
+import type { FeatureProviderServer } from "@payloadcms/richtext-lexical";
 import {
   FixedToolbarFeature,
   HeadingFeature,
@@ -33,10 +32,7 @@ interface Options {
 
 const toolbarFeatures = [FixedToolbarFeature(), InlineToolbarFeature()];
 
-export function generateRichText(
-  preset: RichTextPreset = "default",
-  options?: Options
-) {
+export function generateRichText(preset: RichTextPreset = "default", options?: Options) {
   return lexicalEditor({
     features: ({ rootFeatures: _rootFeatures }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -80,15 +76,15 @@ export function generateRichText(
             IndentFeature(),
             AlignFeature(),
             LinkFeature({
+              enabledCollections: ["page", BLOG_CONFIG.collection],
               fields: ({ defaultFields }) => [
                 ...defaultFields,
                 {
                   name: "rel",
-                  type: "select",
                   options: ["noopener", "noreferrer", "nofollow"],
+                  type: "select",
                 },
               ],
-              enabledCollections: ["page", BLOG_CONFIG.collection],
               maxDepth: 2,
             }),
             UploadFeature({
@@ -96,10 +92,9 @@ export function generateRichText(
                 media: {
                   fields: [
                     {
-                      name: "aspectRatio",
-                      type: "select",
                       defaultValue: "1/1",
                       label: { en: "Aspect Ratio", es: "Relación de aspecto" },
+                      name: "aspectRatio",
                       options: [
                         { label: { en: "16/9", es: "16/9" }, value: "16/9" },
                         { label: { en: "3/2", es: "3/2" }, value: "3/2" },
@@ -111,6 +106,7 @@ export function generateRichText(
                         { label: { en: "3/1", es: "3/1" }, value: "3/1" },
                         { label: { en: "Auto", es: "Auto" }, value: "auto" },
                       ],
+                      type: "select",
                     },
                   ],
                 },
@@ -125,9 +121,7 @@ export function generateRichText(
         }
       }
 
-      const blockFeatures = options?.blocks?.length
-        ? [BlocksFeature({ blocks: options.blocks })]
-        : [];
+      const blockFeatures = options?.blocks?.length ? [BlocksFeature({ blocks: options.blocks })] : [];
 
       return [...defaultFeatures, ...blockFeatures];
     },

@@ -19,9 +19,7 @@ type GetAlternateLocalesOptions =
       page?: number;
     };
 
-export async function getAlternateLocales(
-  options: GetAlternateLocalesOptions
-): Promise<Record<string, string>> {
+export async function getAlternateLocales(options: GetAlternateLocalesOptions): Promise<Record<string, string>> {
   const payload = await getPayloadClient();
   const locales = I18N_CONFIG.locales.map((l) => l.code as Locale);
   const languages: Partial<Record<Locale | "x-default", string>> = {};
@@ -87,13 +85,9 @@ export async function getAlternateLocales(
     let pathSegments: string[] = [];
 
     if (options.breadcrumbs && options.breadcrumbs.length > 0) {
-      const lastBreadcrumb =
-        options.breadcrumbs.at(-1);
+      const lastBreadcrumb = options.breadcrumbs.at(-1);
       if (lastBreadcrumb?.url) {
-        pathSegments = lastBreadcrumb.url
-          .replace(/^\//, "")
-          .split("/")
-          .filter(Boolean);
+        pathSegments = lastBreadcrumb.url.replace(/^\//, "").split("/").filter(Boolean);
       }
     } else if (options.slug) {
       pathSegments = options.slug.split("/").filter(Boolean);

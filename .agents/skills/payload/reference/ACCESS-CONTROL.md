@@ -142,17 +142,13 @@ export const adminOnly: Access = ({ req: { user } }) => {
 
 // Check for multiple roles
 export const adminOrEditor: Access = ({ req: { user } }) => {
-  return Boolean(
-    user?.roles?.some((role) => ["admin", "editor"].includes(role))
-  );
+  return Boolean(user?.roles?.some((role) => ["admin", "editor"].includes(role)));
 };
 
 // Role hierarchy check
 export const hasMinimumRole: Access = ({ req: { user } }, minRole: string) => {
   const roleHierarchy = ["user", "editor", "admin"];
-  const userHighestRole = Math.max(
-    ...(user?.roles?.map((r) => roleHierarchy.indexOf(r)) || [-1])
-  );
+  const userHighestRole = Math.max(...(user?.roles?.map((r) => roleHierarchy.indexOf(r)) || [-1]));
   const requiredRoleIndex = roleHierarchy.indexOf(minRole);
 
   return userHighestRole >= requiredRoleIndex;
@@ -183,9 +179,7 @@ export const admins: Access = ({ req: { user } }) => {
 
 // Admin or editor
 export const adminsOrEditors: Access = ({ req: { user } }) => {
-  return Boolean(
-    user?.roles?.some((role) => ["admin", "editor"].includes(role))
-  );
+  return Boolean(user?.roles?.some((role) => ["admin", "editor"].includes(role)));
 };
 
 // Self or admin
@@ -231,10 +225,7 @@ export const complexAccess: Access = ({ req: { user } }) => {
       { status: { equals: "published" } },
       { "author.isActive": { equals: true } },
       {
-        or: [
-          { visibility: { equals: "public" } },
-          { author: { equals: user?.id } },
-        ],
+        or: [{ visibility: { equals: "public" } }, { author: { equals: user?.id } }],
       },
     ],
   };

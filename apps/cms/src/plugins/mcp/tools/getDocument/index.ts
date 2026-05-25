@@ -7,13 +7,7 @@ import type { BaseDocument, McpTool } from "../../types";
 import type { McpToolsRegistry } from "../index";
 import { buildContent } from "./buildContent";
 
-async function fetchDocument(
-  collection: CollectionSlug,
-  id: string,
-  req: PayloadRequest,
-  locale?: Locale,
-  full?: boolean
-): Promise<BaseDocument> {
+async function fetchDocument(collection: CollectionSlug, id: string, req: PayloadRequest, locale?: Locale, full?: boolean): Promise<BaseDocument> {
   return req.payload.findByID({
     collection,
     depth: full ? 2 : 1,
@@ -24,11 +18,7 @@ async function fetchDocument(
   }) as unknown as Promise<BaseDocument>;
 }
 
-export function createGetDocumentTool(
-  registry: McpToolsRegistry,
-  knownCollections: Set<CollectionSlug>,
-  baseSkipKeys: Set<string>
-): McpTool {
+export function createGetDocumentTool(registry: McpToolsRegistry, knownCollections: Set<CollectionSlug>, baseSkipKeys: Set<string>): McpTool {
   const knownSlugs = [...knownCollections].join(", ");
 
   return {
@@ -47,40 +37,35 @@ export function createGetDocumentTool(
         return {
           content: [
             {
-              type: "text" as const,
               text: `Error: unknown collectionSlug "${collectionSlug}". Known collections: ${knownSlugs}`,
+              type: "text" as const,
             },
           ],
         };
       }
 
       const collection = collectionSlug as CollectionSlug;
-      const effectiveSkipKeys = new Set([
-        ...baseSkipKeys,
-        ...(config.skipKeys ?? []),
-      ]);
+      const effectiveSkipKeys = new Set([...baseSkipKeys, ...(config.skipKeys ?? [])]);
 
       const doc = await fetchDocument(collection, id, req, locale, full);
 
       const content = buildContent({
-        doc,
-        skipKeys: effectiveSkipKeys,
-        collection,
-        titleField: config.titleField,
-        payload: req.payload,
-        full,
-        raw,
-        locale,
         buildUrl: config.buildUrl,
+        collection,
+        doc,
+        full,
+        locale,
+        payload: req.payload,
+        raw,
+        skipKeys: effectiveSkipKeys,
+        titleField: config.titleField,
       });
 
       return { content };
     },
     name: "getDocument",
     parameters: {
-      collectionSlug: z
-        .string()
-        .describe(`The collection slug. One of: ${knownSlugs}`),
+      collectionSlug: z.string().describe(`The collection slug. One of: ${knownSlugs}`),
       full: z
         .boolean()
         .optional()
@@ -88,12 +73,7 @@ export function createGetDocumentTool(
           "Only pass full: true when the user explicitly asks to extract the entire document content. Expands all nested fields, arrays, rich text, and relations inline (uses depth 2). Produces a much larger response — omit by default."
         ),
       id: z.string().describe("Document ID"),
-      locale: z
-        .string()
-        .optional()
-        .describe(
-          'Locale code, e.g. "en" or "es". Omit to use the default locale.'
-        ),
+      locale: z.string().optional().describe('Locale code, e.g. "en" or "es". Omit to use the default locale.'),
       raw: z
         .boolean()
         .optional()

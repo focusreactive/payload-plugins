@@ -130,15 +130,7 @@ Enable real-time content preview during editing.
 ```ts
 import type { CollectionConfig } from "payload";
 
-const generatePreviewPath = ({
-  slug,
-  collection,
-  req,
-}: {
-  slug: string;
-  collection: string;
-  req: any;
-}) => {
+const generatePreviewPath = ({ slug, collection, req }: { slug: string; collection: string; req: any }) => {
   const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL;
   return `${baseUrl}/api/preview?slug=${slug}&collection=${collection}`;
 };

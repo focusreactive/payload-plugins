@@ -4,9 +4,7 @@ const defaultOpenGraph: Metadata["openGraph"] = {
   type: "website",
 };
 
-export const mergeOpenGraph = (
-  og?: Metadata["openGraph"]
-): Metadata["openGraph"] => ({
-    ...defaultOpenGraph,
-    ...og,
-  });
+export const mergeOpenGraph = (og?: Metadata["openGraph"]): Metadata["openGraph"] => ({
+  ...defaultOpenGraph,
+  ...og,
+});

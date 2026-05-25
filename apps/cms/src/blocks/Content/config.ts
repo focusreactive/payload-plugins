@@ -3,10 +3,7 @@ import type { Block, Field } from "payload";
 import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/core/constants/mediaDefaults";
 import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
-import {
-  createLocalizedDefault,
-  createLocalizedRichText,
-} from "@/core/lib/createLocalizedDefault";
+import { createLocalizedDefault, createLocalizedRichText } from "@/core/lib/createLocalizedDefault";
 import { generateRichText } from "@/core/lib/generateRichText";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { embedSectionTab } from "@/fields/section/embedSectionTab";

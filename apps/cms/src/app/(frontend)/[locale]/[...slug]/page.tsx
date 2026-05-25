@@ -26,7 +26,7 @@ export default async function Page({ params }: Args) {
   const { decodedSegments, url } = parseSlugToPath(slug);
 
   if (decodedSegments[0] === "home") {
-    return redirect({ href: `/${  decodedSegments.slice(1).join("/")}`, locale });
+    return redirect({ href: `/${decodedSegments.slice(1).join("/")}`, locale });
   }
 
   const page = await getPageBySlug(decodedSegments, locale);

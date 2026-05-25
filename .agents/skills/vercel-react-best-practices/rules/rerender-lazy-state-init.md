@@ -23,9 +23,7 @@ function FilteredList({ items }: { items: Item[] }) {
 
 function UserProfile() {
   // JSON.parse runs on every render
-  const [settings, setSettings] = useState(
-    JSON.parse(localStorage.getItem("settings") || "{}")
-  );
+  const [settings, setSettings] = useState(JSON.parse(localStorage.getItem("settings") || "{}"));
 
   return <SettingsForm settings={settings} onChange={setSettings} />;
 }

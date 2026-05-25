@@ -14539,14 +14539,7 @@
     "public.enum_page_blocks_cards_grid_items_background_color": {
       "name": "enum_page_blocks_cards_grid_items_background_color",
       "schema": "public",
-      "values": [
-        "none",
-        "light",
-        "dark",
-        "light-gray",
-        "dark-gray",
-        "gradient-2"
-      ]
+      "values": ["none", "light", "dark", "light-gray", "dark-gray", "gradient-2"]
     },
     "public.enum_page_blocks_carousel_effect": {
       "name": "enum_page_blocks_carousel_effect",
@@ -14581,11 +14574,7 @@
     "public.enum_page_blocks_blog_section_style": {
       "name": "enum_page_blocks_blog_section_style",
       "schema": "public",
-      "values": [
-        "three-column",
-        "three-column-with-images",
-        "three-column-with-background-images"
-      ]
+      "values": ["three-column", "three-column-with-images", "three-column-with-background-images"]
     },
     "public.enum_page_status": {
       "name": "enum_page_status",
@@ -14640,14 +14629,7 @@
     "public.enum__page_v_blocks_cards_grid_items_background_color": {
       "name": "enum__page_v_blocks_cards_grid_items_background_color",
       "schema": "public",
-      "values": [
-        "none",
-        "light",
-        "dark",
-        "light-gray",
-        "dark-gray",
-        "gradient-2"
-      ]
+      "values": ["none", "light", "dark", "light-gray", "dark-gray", "gradient-2"]
     },
     "public.enum__page_v_blocks_carousel_effect": {
       "name": "enum__page_v_blocks_carousel_effect",
@@ -14682,11 +14664,7 @@
     "public.enum__page_v_blocks_blog_section_style": {
       "name": "enum__page_v_blocks_blog_section_style",
       "schema": "public",
-      "values": [
-        "three-column",
-        "three-column-with-images",
-        "three-column-with-background-images"
-      ]
+      "values": ["three-column", "three-column-with-images", "three-column-with-background-images"]
     },
     "public.enum__page_v_version_status": {
       "name": "enum__page_v_version_status",

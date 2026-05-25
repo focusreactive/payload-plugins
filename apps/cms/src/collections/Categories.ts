@@ -19,26 +19,26 @@ export const Categories: CollectionConfig<"categories"> = {
   },
   fields: [
     {
-      name: "title",
-      type: "text",
-      required: true,
+      defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.categories.title),
       label: {
         en: "Title",
         es: "Título",
       },
       localized: true,
-      defaultValue: createLocalizedDefault(
-        DEFAULT_VALUES.collections.categories.title
-      ),
+      name: "title",
+      required: true,
+      type: "text",
     },
     slugField({
-      useAsSlug: "title",
-      required: true,
       overrides: (field) => {
         const slugSub = field.fields?.[1] as { unique?: boolean } | undefined;
-        if (slugSub && "unique" in slugSub) slugSub.unique = false;
+        if (slugSub && "unique" in slugSub) {
+          slugSub.unique = false;
+        }
         return field;
       },
+      required: true,
+      useAsSlug: "title",
     }),
   ],
   labels: {

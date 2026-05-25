@@ -562,11 +562,7 @@ export function generateStaticParams() {
 // app/[slug]/page.tsx
 import { Suspense } from "react";
 
-export default function Page({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default function Page({ params }: { params: Promise<{ slug: string }> }) {
   return (
     <Suspense fallback={<PageSkeleton />}>
       <DynamicContent params={params} />

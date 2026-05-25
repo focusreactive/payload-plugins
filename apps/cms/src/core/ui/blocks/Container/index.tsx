@@ -28,11 +28,7 @@ interface ContainerProps {
   className?: string;
 }
 
-export function Container({
-  children,
-  containerData,
-  className,
-}: ContainerProps) {
+export function Container({ children, containerData, className }: ContainerProps) {
   const { paddingX, maxWidth } = containerData;
   return (
     <div

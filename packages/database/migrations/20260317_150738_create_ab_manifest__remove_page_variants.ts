@@ -83,11 +83,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   DROP TYPE IF EXISTS "public"."enum_page_variants_meta_robots";`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    CREATE TYPE "public"."enum_page_variants_blocks_hero_actions_type" AS ENUM('reference', 'custom');
   CREATE TYPE "public"."enum_page_variants_blocks_hero_actions_appearance" AS ENUM('default', 'outline');

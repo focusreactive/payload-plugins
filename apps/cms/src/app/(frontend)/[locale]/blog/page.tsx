@@ -55,8 +55,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     collection: "posts",
     doc: {
       meta: {
-        description:
-          blogSettings.blogMeta?.description || blogSettings.blogDescription,
+        description: blogSettings.blogMeta?.description || blogSettings.blogDescription,
         image: blogSettings.blogMeta?.image,
         robots: blogSettings.blogMeta?.robots,
         title: blogSettings.blogMeta?.title,

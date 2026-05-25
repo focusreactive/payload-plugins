@@ -58,10 +58,7 @@ import Script from "next/script";
 export default function Page() {
   return (
     <>
-      <Script
-        src="https://example.com/analytics.js"
-        strategy="afterInteractive"
-      />
+      <Script src="https://example.com/analytics.js" strategy="afterInteractive" />
       <Script src="/scripts/utils.js" strategy="beforeInteractive" />
     </>
   );

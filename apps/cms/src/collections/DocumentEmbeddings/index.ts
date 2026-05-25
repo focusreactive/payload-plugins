@@ -15,22 +15,22 @@ export const DocumentEmbeddings: CollectionConfig = {
   fields: [
     {
       name: "documentId",
-      type: "text",
       required: true,
+      type: "text",
     },
     {
       name: "collection",
-      type: "select",
-      required: true,
       options: [
         { label: "Page", value: "page" },
         { label: "Post", value: "post" },
       ],
+      required: true,
+      type: "select",
     },
     {
       name: "locale",
-      type: "text",
       required: true,
+      type: "text",
     },
   ],
   labels: {

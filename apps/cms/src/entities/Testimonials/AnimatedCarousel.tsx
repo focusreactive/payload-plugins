@@ -11,18 +11,12 @@ interface AnimatedCarouselProps {
   duration?: number;
 }
 
-export const AnimatedCarousel: React.FC<AnimatedCarouselProps> = ({
-  testimonials,
-  showRating = true,
-  showAvatar = true,
-  duration = 60,
-}) => {
-  const validTestimonials = testimonials.filter(
-    (t): t is Testimonial =>
-      typeof t !== "number" && t !== null && t !== undefined
-  );
+export const AnimatedCarousel: React.FC<AnimatedCarouselProps> = ({ testimonials, showRating = true, showAvatar = true, duration = 60 }) => {
+  const validTestimonials = testimonials.filter((t): t is Testimonial => typeof t !== "number" && t !== null && t !== undefined);
 
-  if (validTestimonials.length === 0) {return null;}
+  if (validTestimonials.length === 0) {
+    return null;
+  }
 
   return (
     <>
@@ -36,26 +30,13 @@ export const AnimatedCarousel: React.FC<AnimatedCarouselProps> = ({
       >
         <div className="testimonials-carousel-group flex gap-4 pr-4 will-change-transform flex-auto">
           {validTestimonials.map((testimonial, index) => (
-            <TestimonialCard
-              key={index}
-              testimonial={testimonial}
-              showRating={showRating}
-              showAvatar={showAvatar}
-            />
+            <TestimonialCard key={index} testimonial={testimonial} showRating={showRating} showAvatar={showAvatar} />
           ))}
         </div>
 
-        <div
-          aria-hidden
-          className="testimonials-carousel-group flex gap-4 pr-4 will-change-transform flex-auto"
-        >
+        <div aria-hidden className="testimonials-carousel-group flex gap-4 pr-4 will-change-transform flex-auto">
           {validTestimonials.map((testimonial, index) => (
-            <TestimonialCard
-              key={index}
-              testimonial={testimonial}
-              showRating={showRating}
-              showAvatar={showAvatar}
-            />
+            <TestimonialCard key={index} testimonial={testimonial} showRating={showRating} showAvatar={showAvatar} />
           ))}
         </div>
       </div>

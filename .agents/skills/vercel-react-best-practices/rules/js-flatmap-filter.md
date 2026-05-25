@@ -14,9 +14,7 @@ Chaining `.map().filter(Boolean)` creates an intermediate array and iterates twi
 **Incorrect (2 iterations, intermediate array):**
 
 ```typescript
-const userNames = users
-  .map((user) => (user.isActive ? user.name : null))
-  .filter(Boolean);
+const userNames = users.map((user) => (user.isActive ? user.name : null)).filter(Boolean);
 ```
 
 **Correct (1 iteration, no intermediate array):**
@@ -30,9 +28,7 @@ const userNames = users.flatMap((user) => (user.isActive ? [user.name] : []));
 ```typescript
 // Extract valid emails from responses
 // Before
-const emails = responses
-  .map((r) => (r.success ? r.data.email : null))
-  .filter(Boolean);
+const emails = responses.map((r) => (r.success ? r.data.email : null)).filter(Boolean);
 
 // After
 const emails = responses.flatMap((r) => (r.success ? [r.data.email] : []));

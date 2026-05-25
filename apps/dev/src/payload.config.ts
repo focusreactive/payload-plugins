@@ -5,11 +5,7 @@ import { abTestingPlugin } from "@focus-reactive/payload-plugin-ab";
 import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
-import {
-  translatorPlugin,
-  createOpenAIProvider,
-  createPayloadJobsRunner,
-} from "@focus-reactive/payload-plugin-translator";
+import { translatorPlugin, createOpenAIProvider, createPayloadJobsRunner } from "@focus-reactive/payload-plugin-translator";
 import { sqliteAdapter } from "@payloadcms/db-sqlite";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { buildConfig } from "payload";
@@ -21,8 +17,8 @@ import { Users } from "./collections/Users";
 import { Header } from "./globals/Header";
 import { abAdapter } from "./lib/ab-testing/dbAdapter";
 
-const filename = import.meta.filename;
-const dirname = import.meta.dirname;
+const { filename } = import.meta;
+const { dirname } = import.meta;
 
 export default buildConfig({
   admin: {
@@ -31,8 +27,8 @@ export default buildConfig({
     },
     livePreview: {
       breakpoints: [
-        { label: "Mobile", name: "mobile", width: 375, height: 667 },
-        { label: "Desktop", name: "desktop", width: 1280, height: 900 },
+        { height: 667, label: "Mobile", name: "mobile", width: 375 },
+        { height: 900, label: "Desktop", name: "desktop", width: 1280 },
       ],
     },
     user: Users.slug,
@@ -57,21 +53,23 @@ export default buildConfig({
   },
   plugins: [
     abTestingPlugin({
-      storage: abAdapter,
       collections: {
         pages: {
           generatePath: ({ doc }) => {
             const slug = doc.slug as string | undefined;
-            if (!slug) return null;
+            if (!slug) {
+              return null;
+            }
             return `/${slug}`;
           },
         },
       },
+      storage: abAdapter,
     }),
     presetsPlugin(),
     schedulePublicationPlugin({
-      secret: "secret",
       collections: ["pages", "users"],
+      secret: "secret",
     }),
     commentsPlugin({
       collections: [
@@ -84,11 +82,11 @@ export default buildConfig({
     }),
     translatorPlugin({
       collections: [Pages],
+      runner: createPayloadJobsRunner(),
       translationProvider: createOpenAIProvider({
         apiKey: process.env.OPENAI_API_KEY ?? "",
         dryRun: !process.env.OPENAI_API_KEY,
       }),
-      runner: createPayloadJobsRunner(),
     }),
   ],
   secret: process.env.PAYLOAD_SECRET || "",

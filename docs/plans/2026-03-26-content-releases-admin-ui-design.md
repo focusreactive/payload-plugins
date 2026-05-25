@@ -201,8 +201,7 @@ const patchedCollections = (config.collections ?? []).map((collection) => {
         admin: {
           position: "sidebar",
           components: {
-            Field:
-              "@focus-reactive/payload-plugin-content-releases/client#ReleaseSidebarField",
+            Field: "@focus-reactive/payload-plugin-content-releases/client#ReleaseSidebarField",
           },
         },
       },

@@ -44,8 +44,5 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
 }
 
 export function extractPageText(page: Pick<Page, "title" | "blocks">): string {
-  return joinText([
-    page.title,
-    ...(page.blocks ?? []).map(extractPageBlockText),
-  ]);
+  return joinText([page.title, ...(page.blocks ?? []).map(extractPageBlockText)]);
 }

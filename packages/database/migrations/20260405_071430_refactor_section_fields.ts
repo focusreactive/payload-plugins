@@ -496,11 +496,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   DROP TYPE "public"."enum__page_v_blocks_links_list_section_margin_bottom";`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    CREATE TYPE "public"."enum_page_blocks_hero_section_margin_top" AS ENUM('none', 'base', 'large');
   CREATE TYPE "public"."enum_page_blocks_hero_section_margin_bottom" AS ENUM('none', 'base', 'large');

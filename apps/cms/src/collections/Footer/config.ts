@@ -22,9 +22,6 @@ export const Footer: CollectionConfig<"footer"> = {
   },
   fields: [
     {
-      name: "name",
-      type: "text",
-      required: true,
       admin: {
         description: {
           en: "The name of the footer",
@@ -35,12 +32,11 @@ export const Footer: CollectionConfig<"footer"> = {
         en: "Footer",
         es: "Pie de página",
       }),
+      name: "name",
+      required: true,
+      type: "text",
     },
     {
-      name: "logo",
-      type: "upload",
-      relationTo: "media",
-      required: true,
       admin: {
         description: {
           en: "The logo to display in the footer",
@@ -48,11 +44,33 @@ export const Footer: CollectionConfig<"footer"> = {
         },
       },
       defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
+      name: "logo",
+      relationTo: "media",
+      required: true,
+      type: "upload",
     },
     {
-      name: "links",
-      type: "array",
-      localized: true,
+      admin: {
+        components: {
+          RowLabel: "@/core/ui/components/RowLabel#RowLabelGroupName",
+        },
+        description: {
+          en: "Footer navigation links (up to 10 items)",
+          es: "Enlaces de navegación del footer (hasta 10 items)",
+        },
+        initCollapsed: true,
+      },
+      defaultValue: createLocalizedDefault({
+        en: [{ link: { label: "Link", newTab: false, type: "custom", url: "#" } }, { link: { label: "Link", newTab: false, type: "custom", url: "#" } }],
+        es: [
+          {
+            link: { label: "Enlace", newTab: false, type: "custom", url: "#" },
+          },
+          {
+            link: { label: "Enlace", newTab: false, type: "custom", url: "#" },
+          },
+        ],
+      }),
       fields: [
         link({
           appearances: false,
@@ -66,48 +84,24 @@ export const Footer: CollectionConfig<"footer"> = {
           },
         }),
       ],
-      minRows: 1,
+      localized: true,
       maxRows: 10,
-      admin: {
-        description: {
-          en: "Footer navigation links (up to 10 items)",
-          es: "Enlaces de navegación del footer (hasta 10 items)",
-        },
-        initCollapsed: true,
-        components: {
-          RowLabel: "@/core/ui/components/RowLabel#RowLabelGroupName",
-        },
-      },
-      defaultValue: createLocalizedDefault({
-        en: [
-          { link: { type: "custom", url: "#", label: "Link", newTab: false } },
-          { link: { type: "custom", url: "#", label: "Link", newTab: false } },
-        ],
-        es: [
-          {
-            link: { type: "custom", url: "#", label: "Enlace", newTab: false },
-          },
-          {
-            link: { type: "custom", url: "#", label: "Enlace", newTab: false },
-          },
-        ],
-      }),
+      minRows: 1,
+      name: "links",
+      type: "array",
     },
     {
-      name: "text",
-      type: "richText",
-      localized: true,
       admin: {
         description: {
           en: "Footer body text",
           es: "Texto del footer",
         },
       },
+      localized: true,
+      name: "text",
+      type: "richText",
     },
     {
-      name: "copywriteText",
-      type: "text",
-      localized: true,
       admin: {
         description: {
           en: "Copyright text shown at the bottom",
@@ -118,6 +112,9 @@ export const Footer: CollectionConfig<"footer"> = {
         en: "© 2025 All rights reserved",
         es: "© 2025 Todos los derechos reservados",
       }),
+      localized: true,
+      name: "copywriteText",
+      type: "text",
     },
   ],
   hooks: {

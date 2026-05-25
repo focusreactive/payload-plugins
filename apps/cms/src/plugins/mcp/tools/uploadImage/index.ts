@@ -34,10 +34,10 @@ export const uploadImage = {
     "Partial failures are tolerated — check the `failed` array in the response.",
   handler: async ({ images }: Args, req: PayloadRequest) => {
     let running = 0;
-    const uploadQueue: Array<() => void> = [];
+    const uploadQueue: (() => void)[] = [];
 
-    const subscribeToUpload = (): Promise<void> => {
-      return new Promise((resolve) => {
+    const subscribeToUpload = (): Promise<void> =>
+      new Promise((resolve) => {
         if (running < 3) {
           running++;
           resolve();
@@ -48,7 +48,6 @@ export const uploadImage = {
           });
         }
       });
-    };
 
     const uploadNext = () => {
       running--;
@@ -66,10 +65,7 @@ export const uploadImage = {
         await subscribeToUpload();
 
         try {
-          const { buffer, mimeType, filename } = await resolveSource(
-            source,
-            filenameOverride
-          );
+          const { buffer, mimeType, filename } = await resolveSource(source, filenameOverride);
 
           const file = {
             data: buffer,
@@ -86,15 +82,15 @@ export const uploadImage = {
           });
 
           uploaded.push({
-            id: result.id,
-            url: result.url,
             filename: result.filename,
+            id: result.id,
             source,
+            url: result.url,
           });
-        } catch (e) {
+        } catch (error) {
           failed.push({
+            error: error instanceof Error ? error.message : String(error),
             source,
-            error: e instanceof Error ? e.message : String(e),
           });
         } finally {
           uploadNext();
@@ -107,8 +103,8 @@ export const uploadImage = {
     return {
       content: [
         {
+          text: JSON.stringify({ failed, uploaded }),
           type: "text",
-          text: JSON.stringify({ uploaded, failed }),
         },
       ],
       ...(allFailed ? { isError: true } : null),
@@ -119,22 +115,9 @@ export const uploadImage = {
     images: z
       .array(
         z.object({
-          source: z
-            .string()
-            .describe(
-              "Absolute local file path (development only) or http(s):// URL of the image to upload."
-            ),
-          alt: z
-            .string()
-            .describe(
-              "Concise description of the image content. Derive from what is visible — never copy the filename."
-            ),
-          filename: z
-            .string()
-            .optional()
-            .describe(
-              "Override for the stored filename including extension. Auto-derived from source if omitted."
-            ),
+          alt: z.string().describe("Concise description of the image content. Derive from what is visible — never copy the filename."),
+          filename: z.string().optional().describe("Override for the stored filename including extension. Auto-derived from source if omitted."),
+          source: z.string().describe("Absolute local file path (development only) or http(s):// URL of the image to upload."),
         })
       )
       .min(1)

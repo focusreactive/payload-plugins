@@ -21,20 +21,11 @@ interface Props {
   locale?: Locale;
 }
 
-function resolveGlobalTitle(
-  doc: BaseDocument,
-  titleField: string | undefined,
-  slug: GlobalSlug
-) {
+function resolveGlobalTitle(doc: BaseDocument, titleField: string | undefined, slug: GlobalSlug) {
   if (titleField) {
     const result = resolvePath(doc, titleField);
 
-    if (
-      !("error" in result) &&
-      result.value !== null &&
-      result.value !== undefined &&
-      typeof result.value !== "object"
-    ) {
+    if (!("error" in result) && result.value !== null && result.value !== undefined && typeof result.value !== "object") {
       return String(result.value);
     }
   }
@@ -42,16 +33,7 @@ function resolveGlobalTitle(
   return String(slug);
 }
 
-export function buildContent({
-  doc,
-  skipKeys,
-  slug,
-  titleField,
-  payload,
-  full,
-  raw,
-  locale,
-}: Props): ContentBlock[] {
+export function buildContent({ doc, skipKeys, slug, titleField, payload, full, raw, locale }: Props): ContentBlock[] {
   if (raw) {
     return [{ text: JSON.stringify(doc, null, 2), type: "text" }];
   }
@@ -59,11 +41,7 @@ export function buildContent({
   const title = resolveGlobalTitle(doc, titleField, slug);
   const adminUrl = `${getServerSideURL()}/admin/globals/${slug}${locale ? `?locale=${locale}` : ""}`;
   const extractedDoc = extractFields(doc, skipKeys);
-  const { fieldLabels, blockLabels, fieldRelationTo } = buildLabelMaps(
-    slug,
-    payload,
-    "global"
-  );
+  const { fieldLabels, blockLabels, fieldRelationTo } = buildLabelMaps(slug, payload, "global");
 
   const body = formatDocument({
     adminUrl,

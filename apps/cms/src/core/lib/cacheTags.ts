@@ -8,7 +8,9 @@ export type CacheTagParams =
   | { type: "sitemap" };
 
 export function cacheTag(params: CacheTagParams): string {
-  if (params.type === "sitemap") {return "sitemap";}
+  if (params.type === "sitemap") {
+    return "sitemap";
+  }
 
   const { type, locale } = params;
 

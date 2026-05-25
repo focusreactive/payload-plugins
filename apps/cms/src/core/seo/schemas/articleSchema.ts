@@ -11,11 +11,7 @@ interface ArticleSchemaParams {
   locale: Locale;
 }
 
-export function createArticleSchema({
-  post,
-  siteName,
-  locale,
-}: ArticleSchemaParams) {
+export function createArticleSchema({ post, siteName, locale }: ArticleSchemaParams) {
   const postUrl = buildUrl({
     collection: "posts",
     locale,
@@ -23,8 +19,7 @@ export function createArticleSchema({
   });
   const baseUrl = getServerSideURL();
   const image = post.meta?.image as Media | undefined;
-  const imageUrl =
-    image && typeof image === "object" ? `${baseUrl}${image.url}` : undefined;
+  const imageUrl = image && typeof image === "object" ? `${baseUrl}${image.url}` : undefined;
   const authors = formatAuthorsToSchema(post.authors);
 
   const publisher = siteName

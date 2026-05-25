@@ -43,8 +43,7 @@ export async function POST(request: Request) {
   // Log after response is sent
   after(async () => {
     const userAgent = (await headers()).get("user-agent") || "unknown";
-    const sessionCookie =
-      (await cookies()).get("session-id")?.value || "anonymous";
+    const sessionCookie = (await cookies()).get("session-id")?.value || "anonymous";
 
     logUserAction({ sessionCookie, userAgent });
   });

@@ -5,18 +5,14 @@ import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
 
 export const testimonialsListFields: Field[] = [
   {
-    defaultValue: createLocalizedDefault(
-      DEFAULT_VALUES.blocks.testimonialsList.heading
-    ),
+    defaultValue: createLocalizedDefault(DEFAULT_VALUES.blocks.testimonialsList.heading),
     label: { en: "Heading", es: "Encabezado" },
     localized: true,
     name: "heading",
     type: "text",
   },
   {
-    defaultValue: createLocalizedDefault(
-      DEFAULT_VALUES.blocks.testimonialsList.subheading
-    ),
+    defaultValue: createLocalizedDefault(DEFAULT_VALUES.blocks.testimonialsList.subheading),
     label: { en: "Subheading", es: "Subencabezado" },
     localized: true,
     name: "subheading",
@@ -25,11 +21,11 @@ export const testimonialsListFields: Field[] = [
   {
     fields: [
       {
+        label: { en: "Testimonial", es: "Testimonio" },
         name: "testimonial",
-        type: "relationship",
         relationTo: "testimonials",
         required: true,
-        label: { en: "Testimonial", es: "Testimonio" },
+        type: "relationship",
       },
     ],
     label: { en: "Testimonials", es: "Testimonios" },

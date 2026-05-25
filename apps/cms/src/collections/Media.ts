@@ -21,44 +21,44 @@ export const Media: CollectionConfig<"media"> = {
   },
   fields: [
     {
-      name: "alt",
-      type: "text",
-      required: true,
       label: {
         en: "Alt",
         es: "Alt",
       },
       localized: true,
+      name: "alt",
+      required: true,
+      type: "text",
     },
     {
-      name: "caption",
-      type: "richText",
       editor: generateRichText(),
       label: {
         en: "Caption",
         es: "Descripción",
       },
       localized: true,
+      name: "caption",
+      type: "richText",
     },
     {
-      name: "defaultFor",
-      type: "select",
-      hasMany: true,
-      options: [
-        {
-          value: "platform_default",
-          label: {
-            en: "Default image for the platform (logo, blocks, sections)",
-            es: "Imagen por defecto de la plataforma (logo, bloques, secciones)",
-          },
-        },
-      ],
       admin: {
         description: {
           en: "Use this file as default when no image is selected.",
           es: "Usar este archivo por defecto cuando no se seleccione ninguna imagen.",
         },
       },
+      hasMany: true,
+      name: "defaultFor",
+      options: [
+        {
+          label: {
+            en: "Default image for the platform (logo, blocks, sections)",
+            es: "Imagen por defecto de la plataforma (logo, bloques, secciones)",
+          },
+          value: "platform_default",
+        },
+      ],
+      type: "select",
     },
   ],
   folders: true,
@@ -95,9 +95,9 @@ export const Media: CollectionConfig<"media"> = {
         width: 300,
       },
       {
+        height: 500,
         name: "square",
         width: 500,
-        height: 500,
       },
       {
         name: "small",
@@ -116,13 +116,12 @@ export const Media: CollectionConfig<"media"> = {
         width: 1920,
       },
       {
+        crop: "center",
+        height: 630,
         name: "og",
         width: 1200,
-        height: 630,
-        crop: "center",
       },
     ],
-    staticDir:
-      process.env.NODE_ENV === "production" ? undefined : "public/media",
+    staticDir: process.env.NODE_ENV === "production" ? undefined : "public/media",
   },
 };

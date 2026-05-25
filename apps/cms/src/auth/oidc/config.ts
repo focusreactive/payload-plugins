@@ -4,7 +4,9 @@
  */
 function getBaseUrl(): string {
   const url = process.env.NEXT_PUBLIC_SERVER_URL;
-  if (url) {return url.replace(/\/$/, "");}
+  if (url) {
+    return url.replace(/\/$/, "");
+  }
   return "";
 }
 
@@ -23,14 +25,16 @@ export function getOIDCConfig(): OIDCConfig | null {
   const clientId = process.env.OIDC_CLIENT_ID;
   const clientSecret = process.env.OIDC_CLIENT_SECRET;
 
-  if (!issuer || !clientId || !clientSecret) {return null;}
+  if (!issuer || !clientId || !clientSecret) {
+    return null;
+  }
 
   const baseUrl = getBaseUrl();
-  const redirectUri =
-    process.env.OIDC_REDIRECT_URI ||
-    (baseUrl ? `${baseUrl}/api/auth/oidc/callback` : "");
+  const redirectUri = process.env.OIDC_REDIRECT_URI || (baseUrl ? `${baseUrl}/api/auth/oidc/callback` : "");
 
-  if (!redirectUri) {return null;}
+  if (!redirectUri) {
+    return null;
+  }
 
   return {
     clientId,

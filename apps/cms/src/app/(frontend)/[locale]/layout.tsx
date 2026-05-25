@@ -11,8 +11,8 @@ import { LivePreviewListener } from "@/features";
 export const viewport: Viewport = {
   initialScale: 1,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+    { color: "#ffffff", media: "(prefers-color-scheme: light)" },
+    { color: "#000000", media: "(prefers-color-scheme: dark)" },
   ],
   width: "device-width",
 };
@@ -35,9 +35,7 @@ export default async function RootLayout({ children, params }: Props) {
           {children}
           {draft && <LivePreviewListener />}
         </Providers>
-        <GoogleAnalyticsScript
-          measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}
-        />
+        <GoogleAnalyticsScript measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
       </body>
     </html>
   );

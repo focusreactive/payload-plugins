@@ -1,6 +1,6 @@
 import configPromise from "@payload-config";
-import { getPayload } from 'payload';
-import type { Payload } from 'payload';
+import { getPayload } from "payload";
+import type { Payload } from "payload";
 import { cache } from "react";
 
 /**

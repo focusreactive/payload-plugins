@@ -15,54 +15,41 @@ export interface GetPostsOptions {
   categories?: string[];
 }
 
-const getPostsQuery = cache(
-  async (payload: Payload, options: GetPostsOptions) => {
-    const {
-      page = 1,
-      limit = BLOG_CONFIG.postsPerPage,
-      overrideAccess = false,
-      locale,
-      categories,
-    } = options;
+const getPostsQuery = cache(async (payload: Payload, options: GetPostsOptions) => {
+  const { page = 1, limit = BLOG_CONFIG.postsPerPage, overrideAccess = false, locale, categories } = options;
 
-    return await payload.find({
-      collection: BLOG_CONFIG.collection,
-      depth: 1,
-      limit,
-      locale,
-      overrideAccess,
-      page,
-      select: {
-        authors: true,
-        categories: true,
-        excerpt: true,
-        heroImage: true,
-        meta: true,
-        publishedAt: true,
-        slug: true,
-        title: true,
-        updatedAt: true,
+  return await payload.find({
+    collection: BLOG_CONFIG.collection,
+    depth: 1,
+    limit,
+    locale,
+    overrideAccess,
+    page,
+    select: {
+      authors: true,
+      categories: true,
+      excerpt: true,
+      heroImage: true,
+      meta: true,
+      publishedAt: true,
+      slug: true,
+      title: true,
+      updatedAt: true,
+    },
+    sort: "-publishedAt",
+    where: {
+      _status: {
+        equals: "published",
       },
-      sort: "-publishedAt",
-      where: {
-        _status: {
-          equals: "published",
-        },
-        ...(categories?.length && {
-          "categories.slug": { in: categories },
-        }),
-      },
-    });
-  }
-);
+      ...(categories?.length && {
+        "categories.slug": { in: categories },
+      }),
+    },
+  });
+});
 
 export const getPosts = async (payload: Payload, options: GetPostsOptions) => {
-  const {
-    page = 1,
-    limit = BLOG_CONFIG.postsPerPage,
-    locale,
-    categories,
-  } = options;
+  const { page = 1, limit = BLOG_CONFIG.postsPerPage, locale, categories } = options;
 
   const resolvedLocale = await resolveLocale(locale);
 

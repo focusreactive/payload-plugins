@@ -14,22 +14,12 @@ interface Props {
   raw?: boolean;
 }
 
-export function buildCollectionFieldContent({
-  fieldPath,
-  value,
-  collection,
-  documentId,
-  payload,
-  raw,
-}: Props): ContentBlock[] {
+export function buildCollectionFieldContent({ fieldPath, value, collection, documentId, payload, raw }: Props): ContentBlock[] {
   if (raw) {
     return [{ text: JSON.stringify(value, null, 2), type: "text" }];
   }
 
-  const { fieldLabels, blockLabels, fieldRelationTo } = buildLabelMaps(
-    collection,
-    payload
-  );
+  const { fieldLabels, blockLabels, fieldRelationTo } = buildLabelMaps(collection, payload);
 
   const body = formatDocumentField(fieldPath, value, {
     blockLabels,

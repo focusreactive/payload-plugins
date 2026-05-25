@@ -13,28 +13,23 @@ export const createSharedSlugField = (currentCollection: "page" | "posts") => {
 
   return payloadSlugField({
     overrides: (field) => {
-      const slugInput = field.fields?.[1] as
-        | { unique?: boolean; validate?: unknown }
-        | undefined;
+      const slugInput = field.fields?.[1] as { unique?: boolean; validate?: unknown } | undefined;
 
       if (slugInput) {
         slugInput.unique = true;
-        slugInput.validate = async (
-          value: string | null | undefined,
-          { req }: { req: PayloadRequest }
-        ): Promise<string | true> => {
-          if (!value || !req?.payload) return true;
+        slugInput.validate = async (value: string | null | undefined, { req }: { req: PayloadRequest }): Promise<string | true> => {
+          if (!value || !req?.payload) {
+            return true;
+          }
 
           const result = await req.payload.find({
             collection: otherCollection,
-            where: { slug: { equals: value } },
             limit: 1,
             overrideAccess: true,
+            where: { slug: { equals: value } },
           });
 
-          return result.totalDocs === 0
-            ? true
-            : `This slug is already used by ${otherLabel}`;
+          return result.totalDocs === 0 ? true : `This slug is already used by ${otherLabel}`;
         };
       }
 

@@ -166,10 +166,7 @@ export const scheduledContentAccess: Access = ({ req: { user } }) => {
     and: [
       { publishDate: { less_than_equal: now } },
       {
-        or: [
-          { unpublishDate: { exists: false } },
-          { unpublishDate: { greater_than: now } },
-        ],
+        or: [{ unpublishDate: { exists: false } }, { unpublishDate: { greater_than: now } }],
       },
     ],
   };
@@ -433,9 +430,7 @@ export const PublicAuthCollection: CollectionConfig = {
   access: {
     // Only admins/editors can create
     create: ({ req: { user } }) => {
-      return (
-        user?.roles?.some((role) => ["admin", "editor"].includes(role)) || false
-      );
+      return user?.roles?.some((role) => ["admin", "editor"].includes(role)) || false;
     },
 
     // Authenticated users see all, public sees only published
@@ -446,9 +441,7 @@ export const PublicAuthCollection: CollectionConfig = {
 
     // Only admins/editors can update
     update: ({ req: { user } }) => {
-      return (
-        user?.roles?.some((role) => ["admin", "editor"].includes(role)) || false
-      );
+      return user?.roles?.some((role) => ["admin", "editor"].includes(role)) || false;
     },
 
     // Only admins can delete

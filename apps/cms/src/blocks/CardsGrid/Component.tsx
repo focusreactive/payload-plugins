@@ -8,19 +8,12 @@ import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { CardsGridBlock } from "@/payload-types";
 
-export async function CardsGridBlockComponent({
-  items,
-  columns,
-  section,
-  id,
-}: CardsGridBlock) {
+export async function CardsGridBlockComponent({ items, columns, section, id }: CardsGridBlock) {
   const locale = await resolveLocale();
 
   const cards: IDefaultCardProps[] = (items ?? []).map((item) => ({
-    alignVariant:
-      (item.alignVariant as IDefaultCardProps["alignVariant"]) ?? "center",
-    backgroundColor:
-      (item.backgroundColor as IDefaultCardProps["backgroundColor"]) ?? "none",
+    alignVariant: (item.alignVariant as IDefaultCardProps["alignVariant"]) ?? "center",
+    backgroundColor: (item.backgroundColor as IDefaultCardProps["backgroundColor"]) ?? "none",
     description: item.description ?? undefined,
     image: prepareImageProps(item.image ?? null),
     link: prepareLinkProps(item.link, locale),

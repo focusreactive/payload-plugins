@@ -1,16 +1,8 @@
 import type { LexicalNode } from "../../types/lexical";
-import {
-  isBlocksArray,
-  isObjectsArray,
-  isRelation,
-  isScalar,
-} from "../field/is";
+import { isBlocksArray, isObjectsArray, isRelation, isScalar } from "../field/is";
 import { isLexicalField } from "../lexical/isLexicalField";
 import { lexicalToMarkdown } from "../lexical/lexicalToMarkdown";
-import {
-  formatFieldValueClue,
-  formatRelationValueClue,
-} from "./formatValueClue";
+import { formatFieldValueClue, formatRelationValueClue } from "./formatValueClue";
 
 const LIST_INDENT = "    ";
 
@@ -27,9 +19,7 @@ function formatEmptyValue(value: unknown): string {
 }
 
 function formatLexicalContent(value: unknown): string {
-  const content = lexicalToMarkdown(
-    (value as { root: unknown }).root as LexicalNode
-  ).trim();
+  const content = lexicalToMarkdown((value as { root: unknown }).root as LexicalNode).trim();
 
   return content || "null";
 }
@@ -44,20 +34,8 @@ interface FormatFieldLineOpts {
   fieldPath?: string;
 }
 
-export function formatFieldLine(
-  key: string,
-  value: unknown,
-  depth: number,
-  options: FormatFieldLineOpts
-): string {
-  const {
-    fieldLabels,
-    blockLabels,
-    fieldPath = key,
-    summarizeComplexValues,
-    collectionSlug,
-    documentId,
-  } = options;
+export function formatFieldLine(key: string, value: unknown, depth: number, options: FormatFieldLineOpts): string {
+  const { fieldLabels, blockLabels, fieldPath = key, summarizeComplexValues, collectionSlug, documentId } = options;
 
   const indent = LIST_INDENT.repeat(depth);
   const childIndent = LIST_INDENT.repeat(depth + 1);
@@ -88,9 +66,7 @@ export function formatFieldLine(
         .join("\n");
       const idLine = `${childIndent}- **id**: ${formatEmptyValue(value.id)}`;
 
-      return fields
-        ? `${indent}- **${label}**:\n${idLine}\n${fields}`
-        : `${indent}- **${label}**:\n${idLine}`;
+      return fields ? `${indent}- **${label}**:\n${idLine}\n${fields}` : `${indent}- **${label}**:\n${idLine}`;
     }
     return `${indent}- **${label}**: ${formatRelationValueClue(value, options.fieldRelationTo?.[key])}`;
   }
@@ -102,18 +78,12 @@ export function formatFieldLine(
 
     const items = value
       .map((block, i) => {
-        const blockLabel =
-          blockLabels[block.blockType as string] ?? block.blockType;
+        const blockLabel = blockLabels[block.blockType as string] ?? block.blockType;
         const header = `${childIndent}- [${i}] ${String(blockLabel)}:`;
 
         const fields = Object.entries(block)
-          .filter(
-            ([key]) =>
-              key !== "blockType" && key !== "blockName" && key !== "id"
-          )
-          .map(([key, value]) =>
-            formatFieldLine(key, value, depth + 2, options)
-          )
+          .filter(([key]) => key !== "blockType" && key !== "blockName" && key !== "id")
+          .map(([key, value]) => formatFieldLine(key, value, depth + 2, options))
           .join("\n");
 
         return fields ? `${header}\n${fields}` : header;
@@ -132,9 +102,7 @@ export function formatFieldLine(
       .map((item, i) => {
         const header = `${childIndent}- [${i}]:`;
         const fields = Object.entries(item)
-          .map(([key, value]) =>
-            formatFieldLine(key, value, depth + 2, options)
-          )
+          .map(([key, value]) => formatFieldLine(key, value, depth + 2, options))
           .join("\n");
 
         return fields ? `${header}\n${fields}` : header;

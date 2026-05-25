@@ -3,7 +3,7 @@
  */
 function base64UrlEncode(bytes: Uint8Array): string {
   const b64 = Buffer.from(bytes).toString("base64");
-  return b64.replaceAll(/\+/g, "-").replaceAll(/\//g, "_").replace(/=+$/, "");
+  return b64.replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 }
 
 export async function generatePKCE(): Promise<{
@@ -12,10 +12,7 @@ export async function generatePKCE(): Promise<{
 }> {
   const verifier = crypto.getRandomValues(new Uint8Array(32));
   const codeVerifier = base64UrlEncode(verifier);
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(codeVerifier)
-  );
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(codeVerifier));
   const codeChallenge = base64UrlEncode(new Uint8Array(digest));
   return { codeChallenge, codeVerifier };
 }

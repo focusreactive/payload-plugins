@@ -21,11 +21,7 @@ async function getDocument(collection: Collection, slug: string, depth = 0) {
   return page.docs[0];
 }
 
-async function getDocumentByID(
-  collection: Collection,
-  id: number,
-  depth = 1
-): Promise<Config["collections"][Collection] | null> {
+async function getDocumentByID(collection: Collection, id: number, depth = 1): Promise<Config["collections"][Collection] | null> {
   const payload = await getPayloadClient();
   try {
     const doc = await payload.findByID({
@@ -41,19 +37,11 @@ async function getDocumentByID(
 }
 
 export const getCachedDocument = (collection: Collection, slug: string) =>
-  unstable_cache(
-    async () => getDocument(collection, slug),
-    [collection, slug],
-    {
-      tags: [`${collection}_${slug}`],
-    }
-  );
+  unstable_cache(async () => getDocument(collection, slug), [collection, slug], {
+    tags: [`${collection}_${slug}`],
+  });
 
 export const getCachedDocumentByID = (collection: Collection, id: number) =>
-  unstable_cache(
-    async () => getDocumentByID(collection, id),
-    [collection, id.toString()],
-    {
-      tags: [`${collection}_id_${id}`],
-    }
-  );
+  unstable_cache(async () => getDocumentByID(collection, id), [collection, id.toString()], {
+    tags: [`${collection}_id_${id}`],
+  });

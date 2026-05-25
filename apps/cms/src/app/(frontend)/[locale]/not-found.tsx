@@ -22,10 +22,7 @@ export default async function NotFound() {
   const segments = pathname.split("/").filter(Boolean);
   const locale = segments[0] as Locale;
 
-  const [settings, t] = await Promise.all([
-    getSiteSettings({ locale }),
-    getTranslations({ locale, namespace: "common" }),
-  ]);
+  const [settings, t] = await Promise.all([getSiteSettings({ locale }), getTranslations({ locale, namespace: "common" })]);
 
   return (
     <>
@@ -33,18 +30,11 @@ export default async function NotFound() {
       <main>
         <section className="flex items-center justify-center min-h-[60vh] py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8 lg:py-24">
           <div className="mx-auto max-w-7xl text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              {settings.notFoundTitle || "404 - Page not found"}
-            </h1>
+            <h1 className="text-4xl md:text-6xl font-bold mb-6">{settings.notFoundTitle || "404 - Page not found"}</h1>
             <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
-              {settings.notFoundDescription ||
-                "Unfortunately, the requested page does not exist or has been deleted."}
+              {settings.notFoundDescription || "Unfortunately, the requested page does not exist or has been deleted."}
             </p>
-            <Link
-              href="/"
-              locale={locale}
-              className={buttonVariants({ variant: ButtonVariant.Primary })}
-            >
+            <Link href="/" locale={locale} className={buttonVariants({ variant: ButtonVariant.Primary })}>
               {t("goToHomepage")}
             </Link>
           </div>

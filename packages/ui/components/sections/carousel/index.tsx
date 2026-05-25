@@ -1,14 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import {
-  EffectCards,
-  EffectCoverflow,
-  EffectCube,
-  EffectFade,
-  EffectFlip,
-  Navigation,
-} from "swiper/modules";
+import { EffectCards, EffectCoverflow, EffectCube, EffectFade, EffectFlip, Navigation } from "swiper/modules";
 import type { NavigationOptions } from "swiper/types";
 
 import { cn } from "../../../utils";
@@ -38,46 +31,20 @@ const getEffectModule = (effect: IGenericCarouselBaseProps["effect"]) => {
       return EffectCards;
     }
     default: {
-      return undefined;
+      return;
     }
   }
 };
 
-const ArrowButton = React.forwardRef<HTMLButtonElement, any>(
-  ({ className, ...props }, ref) => (
-    <button
-      ref={ref}
-      className={cn(
-        "z-10 flex size-12 items-center justify-center text-gray-500 transition-all hover:text-gray-700",
-        className
-      )}
-      {...props}
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        strokeWidth={1.5}
-        stroke="currentColor"
-        className=""
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M15.75 19.5L8.25 12l7.5-7.5"
-        />
-      </svg>
-    </button>
-  )
-);
+const ArrowButton = React.forwardRef<HTMLButtonElement, any>(({ className, ...props }, ref) => (
+  <button ref={ref} className={cn("z-10 flex size-12 items-center justify-center text-gray-500 transition-all hover:text-gray-700", className)} {...props}>
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+    </svg>
+  </button>
+));
 
-export function Carousel({
-  slides,
-  customModules,
-  customModulesParams,
-  effect,
-  params,
-}: ICarouselProps) {
+export function Carousel({ slides, customModules, customModulesParams, effect, params }: ICarouselProps) {
   const effectModule = getEffectModule(effect);
 
   const prevButtonRef = useRef<HTMLButtonElement>(null);
@@ -102,33 +69,19 @@ export function Carousel({
       <ArrowButton
         ref={prevButtonRef}
         className={cn("absolute left-0 top-1/2", {
-          "left-[15%]":
-            effect && ["cube", "fade", "flip", "cards"].includes(effect),
+          "left-[15%]": effect && ["cube", "fade", "flip", "cards"].includes(effect),
         })}
       />
 
       <GenericCarousel
         slides={
           slides.map((slide) => ({
-            children: (({
-              isNext,
-              isActive,
-            }: {
-              isNext: boolean;
-              isActive: boolean;
-            }) => (
-              <CarouselCard
-                {...slide}
-                isActive={effect === "coverflow" ? isNext : isActive}
-              />
+            children: (({ isNext, isActive }: { isNext: boolean; isActive: boolean }) => (
+              <CarouselCard {...slide} isActive={effect === "coverflow" ? isNext : isActive} />
             )) as unknown as React.ReactNode,
           })) as any
         }
-        customModules={[
-          Navigation,
-          ...(customModules || []),
-          ...(effectModule ? [effectModule] : []),
-        ]}
+        customModules={[Navigation, ...(customModules || []), ...(effectModule ? [effectModule] : [])]}
         customModulesParams={{
           navigation,
           ...customModulesParams,
@@ -140,8 +93,7 @@ export function Carousel({
       <ArrowButton
         ref={nextButtonRef}
         className={cn("absolute right-0 top-1/2 [&>svg]:rotate-180", {
-          "right-[15%]":
-            effect && ["cube", "fade", "flip", "cards"].includes(effect),
+          "right-[15%]": effect && ["cube", "fade", "flip", "cards"].includes(effect),
         })}
       />
     </div>

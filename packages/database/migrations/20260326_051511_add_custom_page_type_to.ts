@@ -43,11 +43,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "presets_hero_actions" ADD COLUMN "custom_page" "enum_presets_hero_actions_custom_page";`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "page_blocks_hero_actions" ALTER COLUMN "type" SET DATA TYPE text;
   ALTER TABLE "page_blocks_hero_actions" ALTER COLUMN "type" SET DEFAULT 'reference'::text;

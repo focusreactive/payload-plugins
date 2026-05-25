@@ -2,11 +2,7 @@ import type { Block, Field } from "payload";
 
 import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
 import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
-import {
-  createLocalizedDefault,
-  createLocalizedRichText,
-  createRichTextState,
-} from "@/core/lib/createLocalizedDefault";
+import { createLocalizedDefault, createLocalizedRichText, createRichTextState } from "@/core/lib/createLocalizedDefault";
 import { generateRichText } from "@/core/lib/generateRichText";
 import type { Locale } from "@/core/types";
 import { embedSectionTab } from "@/fields/section/embedSectionTab";
@@ -14,10 +10,7 @@ import { embedSectionTab } from "@/fields/section/embedSectionTab";
 function buildFaqItems(locale: Locale) {
   const { question, answer } = DEFAULT_VALUES.blocks.faq;
   return Array.from({ length: 3 }, () => ({
-    answer: createRichTextState(
-      answer[locale].heading,
-      answer[locale].paragraph
-    ),
+    answer: createRichTextState(answer[locale].heading, answer[locale].paragraph),
     question: question[locale],
   }));
 }
@@ -38,20 +31,20 @@ const fields: Field[] = [
     }),
     fields: [
       {
-        name: "question",
-        type: "text",
-        required: true,
         label: { en: "Question", es: "Pregunta" },
         localized: true,
+        name: "question",
+        required: true,
+        type: "text",
       },
       {
-        name: "answer",
-        type: "richText",
+        defaultValue: createLocalizedRichText(DEFAULT_VALUES.blocks.faq.answer),
         editor: generateRichText(),
-        required: true,
         label: { en: "Answer", es: "Respuesta" },
         localized: true,
-        defaultValue: createLocalizedRichText(DEFAULT_VALUES.blocks.faq.answer),
+        name: "answer",
+        required: true,
+        type: "richText",
       },
     ],
     localized: true,

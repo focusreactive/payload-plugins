@@ -8,12 +8,16 @@ import { getPageBySlug } from "@/dal/getPageBySlug";
 
 export { default } from "./[...slug]/page";
 
-interface Props { params: Promise<{ locale: Locale }> }
+interface Props {
+  params: Promise<{ locale: Locale }>;
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const page = await getPageBySlug(["home"], locale);
-  if (!page) {return generateNotFoundMeta({ locale });}
+  if (!page) {
+    return generateNotFoundMeta({ locale });
+  }
   return generateMeta({ collection: "page", doc: page, locale });
 }
 

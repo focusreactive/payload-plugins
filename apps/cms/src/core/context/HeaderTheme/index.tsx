@@ -17,26 +17,14 @@ const initialContext: ContextType = {
 
 const HeaderThemeContext = createContext(initialContext);
 
-export const HeaderThemeProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
-  const [headerTheme, setThemeState] = useState<Theme | undefined | null>(
-    canUseDOM
-      ? (document.documentElement.dataset.theme as Theme)
-      : undefined
-  );
+export const HeaderThemeProvider = ({ children }: { children: React.ReactNode }) => {
+  const [headerTheme, setThemeState] = useState<Theme | undefined | null>(canUseDOM ? (document.documentElement.dataset.theme as Theme) : undefined);
 
   const setHeaderTheme = (themeToSet: Theme | null) => {
     setThemeState(themeToSet);
   };
 
-  return (
-    <HeaderThemeContext value={{ headerTheme, setHeaderTheme }}>
-      {children}
-    </HeaderThemeContext>
-  );
+  return <HeaderThemeContext value={{ headerTheme, setHeaderTheme }}>{children}</HeaderThemeContext>;
 };
 
 export const useHeaderTheme = (): ContextType => use(HeaderThemeContext);

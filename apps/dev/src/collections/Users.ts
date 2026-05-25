@@ -7,8 +7,8 @@ export const Users: CollectionConfig = {
   auth: true,
   fields: [
     {
-      type: "text",
       name: "title",
+      type: "text",
     },
   ],
   slug: "users",

@@ -3,10 +3,7 @@ import type { GlobalAfterChangeHook } from "payload";
 import { getLocaleFromRequest } from "@/core/lib/getLocaleFromRequest";
 import { revalidateGlobalTags } from "@/dal/getGlobals";
 
-export const revalidateSiteSettings: GlobalAfterChangeHook = async ({
-  doc,
-  req,
-}) => {
+export const revalidateSiteSettings: GlobalAfterChangeHook = async ({ doc, req }) => {
   const { payload, context } = req;
 
   if (!context.disableRevalidate) {

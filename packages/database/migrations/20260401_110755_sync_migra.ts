@@ -21,11 +21,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "presets" DROP COLUMN IF EXISTS "hero_rich_text";`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
   DROP INDEX IF EXISTS "presets_hero_actions_locale_idx";
   DROP INDEX IF EXISTS "presets_logos_items_locale_idx";

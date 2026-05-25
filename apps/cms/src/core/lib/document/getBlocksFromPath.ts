@@ -1,7 +1,4 @@
-export function getBlocksFromPath<T = Record<string, unknown>>(
-  doc: Record<string, unknown>,
-  path: string
-): T[] {
+export function getBlocksFromPath<T = Record<string, unknown>>(doc: Record<string, unknown>, path: string): T[] {
   const segments = path.split(".");
 
   let current: unknown[] = [doc];
@@ -10,7 +7,9 @@ export function getBlocksFromPath<T = Record<string, unknown>>(
     const next: unknown[] = [];
 
     for (const item of current) {
-      if (item == null || typeof item !== "object") {continue;}
+      if (item == null || typeof item !== "object") {
+        continue;
+      }
 
       const value = (item as Record<string, unknown>)[segment];
 

@@ -1,12 +1,8 @@
 import { isLexicalField } from "../lexical/isLexicalField";
 
-export function formatRelationValueClue(
-  value: Record<string, unknown>,
-  knownCollectionSlug?: string
-): string {
+export function formatRelationValueClue(value: Record<string, unknown>, knownCollectionSlug?: string): string {
   const title = value.title ?? value.name ?? value.id;
-  const relationTo =
-    (value.relationTo as string | undefined) || knownCollectionSlug;
+  const relationTo = (value.relationTo as string | undefined) || knownCollectionSlug;
   const id = String(value.id);
 
   if (relationTo) {
@@ -16,12 +12,7 @@ export function formatRelationValueClue(
   return `[${String(title)}] no MCP tool available to fetch full document`;
 }
 
-export function formatFieldValueClue(
-  value: unknown,
-  fieldPath: string,
-  collectionSlug: string,
-  documentId?: string
-): string {
+export function formatFieldValueClue(value: unknown, fieldPath: string, collectionSlug: string, documentId?: string): string {
   if (documentId) {
     return `[${fieldPath}] getField(slug: "${collectionSlug}", id: "${documentId}", fieldPath: "${fieldPath}")`;
   }

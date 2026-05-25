@@ -1,36 +1,46 @@
 import type { CollectionConfig } from "payload";
 
-import {
-  authenticated,
-  onlySelf,
-  or,
-  superAdmin,
-  user,
-} from "@/core/lib/access";
+import { authenticated, onlySelf, or, superAdmin, user } from "@/core/lib/access";
 
 export const Users: CollectionConfig<"users"> = {
   access: {
     admin: authenticated,
     create: or(superAdmin, user),
     delete: ({ req: { user }, id }) => {
-      if (!user) return false;
-      if (user.collection !== "users") return true;
-      if (superAdmin({ req: { user } }) && id !== user.id) return true;
+      if (!user) {
+        return false;
+      }
+      if (user.collection !== "users") {
+        return true;
+      }
+      if (superAdmin({ req: { user } }) && id !== user.id) {
+        return true;
+      }
 
       if (user?.role === "admin") {
-        if (id === user.id) return false;
+        if (id === user.id) {
+          return false;
+        }
         return true;
       }
       return false;
     },
     read: ({ req: { user } }) => {
-      if (!user) return false;
+      if (!user) {
+        return false;
+      }
       return true;
     },
     update: ({ req: { user } }) => {
-      if (!user) return false;
-      if (user.collection !== "users") return true;
-      if (superAdmin({ req: { user } })) return true;
+      if (!user) {
+        return false;
+      }
+      if (user.collection !== "users") {
+        return true;
+      }
+      if (superAdmin({ req: { user } })) {
+        return true;
+      }
 
       return onlySelf({ req: { user } } as { req: { user: typeof user } });
     },
@@ -46,28 +56,53 @@ export const Users: CollectionConfig<"users"> = {
   auth: true,
   fields: [
     {
-      name: "name",
-      type: "text",
-      label: {
-        en: "Name",
-        es: "Nombre",
-      },
-      defaultValue: "",
-      required: true,
       admin: {
         description: {
           en: "The name of the user",
           es: "El nombre del usuario",
         },
       },
+      defaultValue: "",
+      label: {
+        en: "Name",
+        es: "Nombre",
+      },
+      name: "name",
+      required: true,
+      type: "text",
     },
     {
-      name: "role",
-      type: "select",
+      access: {
+        update: ({ req: { user }, doc }) => {
+          if (!user) {
+            return false;
+          }
+          if (user.collection !== "users") {
+            return false;
+          }
+          if (superAdmin({ req: { user } }) && user.id !== doc?.id) {
+            return true;
+          }
+          if (user?.role === "admin" && user.id !== doc?.id) {
+            return true;
+          }
+
+          return false;
+        },
+      },
+      admin: {
+        description: {
+          en: "The role of the user",
+          es: "El rol del usuario",
+        },
+        position: "sidebar",
+      },
+      defaultValue: "admin",
       label: {
         en: "Role",
         es: "Rol",
       },
+      name: "role",
       options: [
         {
           label: {
@@ -91,26 +126,9 @@ export const Users: CollectionConfig<"users"> = {
           value: "user",
         },
       ],
-      defaultValue: "admin",
-      admin: {
-        description: {
-          en: "The role of the user",
-          es: "El rol del usuario",
-        },
-        position: "sidebar",
-      },
       required: true,
       saveToJWT: true,
-      access: {
-        update: ({ req: { user }, doc }) => {
-          if (!user) return false;
-          if (user.collection !== "users") return false;
-          if (superAdmin({ req: { user } }) && user.id !== doc?.id) return true;
-          if (user?.role === "admin" && user.id !== doc?.id) return true;
-
-          return false;
-        },
-      },
+      type: "select",
     },
   ],
   labels: {

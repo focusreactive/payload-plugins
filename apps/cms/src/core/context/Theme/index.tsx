@@ -16,18 +16,16 @@ const initialContext: ThemeContextType = {
 const ThemeContext = createContext(initialContext);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [theme, setThemeState] = useState<Theme | undefined>(
-    canUseDOM
-      ? (document.documentElement.dataset.theme as Theme)
-      : undefined
-  );
+  const [theme, setThemeState] = useState<Theme | undefined>(canUseDOM ? (document.documentElement.dataset.theme as Theme) : undefined);
 
   const setTheme = (themeToSet: Theme | null) => {
     if (themeToSet === null) {
       window.localStorage.removeItem(themeLocalStorageKey);
       const implicitPreference = getImplicitPreference();
       document.documentElement.dataset.theme = implicitPreference || "";
-      if (implicitPreference) {setThemeState(implicitPreference);}
+      if (implicitPreference) {
+        setThemeState(implicitPreference);
+      }
     } else {
       setThemeState(themeToSet);
       window.localStorage.setItem(themeLocalStorageKey, themeToSet);

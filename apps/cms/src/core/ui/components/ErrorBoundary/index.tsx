@@ -18,14 +18,7 @@ interface ErrorBoundaryProps {
   wrapperClassName?: string;
 }
 
-export const ErrorBoundary: React.FC<ErrorBoundaryProps> = ({
-  error,
-  reset,
-  title,
-  message,
-  backLink,
-  wrapperClassName,
-}) => {
+export const ErrorBoundary: React.FC<ErrorBoundaryProps> = ({ error, reset, title, message, backLink, wrapperClassName }) => {
   const t = useTranslations("common");
   useEffect(() => {
     console.error("Error:", error);
@@ -41,16 +34,12 @@ export const ErrorBoundary: React.FC<ErrorBoundaryProps> = ({
             <div className="space-y-6">
               <div className="space-y-2">
                 <h1 className="text-4xl font-bold tracking-tight">{title}</h1>
-                <p className="text-textSecondaryColor text-lg">
-                  {errorMessage}
-                </p>
+                <p className="text-textSecondaryColor text-lg">{errorMessage}</p>
               </div>
 
               {error.message && process.env.NODE_ENV === "development" && (
                 <div className="mx-auto p-4 bg-error/10 border border-error/20 rounded-lg max-w-2xl">
-                  <p className="text-sm font-mono text-left break-words">
-                    {error.message}
-                  </p>
+                  <p className="text-sm font-mono text-left break-words">{error.message}</p>
                 </div>
               )}
 

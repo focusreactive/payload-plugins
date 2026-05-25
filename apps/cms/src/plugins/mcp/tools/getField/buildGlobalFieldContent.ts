@@ -13,22 +13,12 @@ interface Props {
   raw?: boolean;
 }
 
-export function buildGlobalFieldContent({
-  fieldPath,
-  value,
-  slug,
-  payload,
-  raw,
-}: Props): ContentBlock[] {
+export function buildGlobalFieldContent({ fieldPath, value, slug, payload, raw }: Props): ContentBlock[] {
   if (raw) {
     return [{ text: JSON.stringify(value, null, 2), type: "text" }];
   }
 
-  const { fieldLabels, blockLabels, fieldRelationTo } = buildLabelMaps(
-    slug,
-    payload,
-    "global"
-  );
+  const { fieldLabels, blockLabels, fieldRelationTo } = buildLabelMaps(slug, payload, "global");
 
   const body = formatDocumentField(fieldPath, value, {
     blockLabels,

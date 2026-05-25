@@ -57,12 +57,7 @@ export const ImageMedia: React.FC<MediaProps> = (props) => {
   let preferredSize: string | undefined = preferredSizeFromProps;
 
   if (!src && resource && typeof resource === "object") {
-    const {
-      alt: altFromResource,
-      height: fullHeight,
-      url,
-      width: fullWidth,
-    } = resource;
+    const { alt: altFromResource, height: fullHeight, url, width: fullWidth } = resource;
 
     width = fullWidth!;
     height = fullHeight!;
@@ -72,8 +67,7 @@ export const ImageMedia: React.FC<MediaProps> = (props) => {
 
     src = getMediaUrl(url, cacheTag);
 
-    preferredSize =
-      resource.sizes?.[preferredSizeFromProps || "small"]?.url || undefined;
+    preferredSize = resource.sizes?.[preferredSizeFromProps || "small"]?.url || undefined;
 
     if (preferredSize) {
       src = getMediaUrl(preferredSize, cacheTag);

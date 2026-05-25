@@ -348,11 +348,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "_page_v_blocks_blog_section_section_section_background_i_idx" ON "_page_v_blocks_blog_section" USING btree ("section_background_image_id");`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "payload_jobs_log" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "payload_jobs" DISABLE ROW LEVEL SECURITY;

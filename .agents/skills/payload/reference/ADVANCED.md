@@ -228,9 +228,7 @@ import type { TextFieldClientComponent } from "payload";
 export const CustomField: TextFieldClientComponent = () => {
   const { value, setValue } = useField();
 
-  return (
-    <input value={value || ""} onChange={(e) => setValue(e.target.value)} />
-  );
+  return <input value={value || ""} onChange={(e) => setValue(e.target.value)} />;
 };
 ```
 

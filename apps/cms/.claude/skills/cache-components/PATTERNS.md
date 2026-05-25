@@ -117,9 +117,7 @@ export function CreatePostForm() {
     >
       <input name="title" required />
       <textarea name="content" required />
-      <button disabled={isPending}>
-        {isPending ? "Creating..." : "Create Post"}
-      </button>
+      <button disabled={isPending}>{isPending ? "Creating..." : "Create Post"}</button>
     </form>
   );
 }
@@ -331,13 +329,7 @@ async function Sidebar({ category }: { category: string }) {
 }
 
 // Page composes cached components
-export default async function BlogLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: { category: string };
-}) {
+export default async function BlogLayout({ children, params }: { children: React.ReactNode; params: { category: string } }) {
   return (
     <>
       <Header />
@@ -404,23 +396,11 @@ async function InventoryStatus({ productId }: { productId: string }) {
     where: { productId },
   });
 
-  return (
-    <div>
-      {inventory.quantity > 0 ? (
-        <span className="text-green-600">In Stock ({inventory.quantity})</span>
-      ) : (
-        <span className="text-red-600">Out of Stock</span>
-      )}
-    </div>
-  );
+  return <div>{inventory.quantity > 0 ? <span className="text-green-600">In Stock ({inventory.quantity})</span> : <span className="text-red-600">Out of Stock</span>}</div>;
 }
 
 // Page composition
-export default async function ProductPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   return (
@@ -517,13 +497,7 @@ import { Suspense } from "react";
 import { cacheLife, cacheTag } from "next/cache";
 
 // Product details - uses both params
-async function ProductDetails({
-  category,
-  slug,
-}: {
-  category: string;
-  slug: string;
-}) {
+async function ProductDetails({ category, slug }: { category: string; slug: string }) {
   "use cache";
   cacheTag("products", `product-${slug}`);
   cacheLife("hours");
@@ -535,11 +509,7 @@ async function ProductDetails({
   return <ProductCard product={product} />;
 }
 
-export default async function ProductPage({
-  params,
-}: {
-  params: Promise<{ category: string; slug: string }>;
-}) {
+export default async function ProductPage({ params }: { params: Promise<{ category: string; slug: string }> }) {
   const { category, slug } = await params;
 
   return <ProductDetails category={category} slug={slug} />;
@@ -575,13 +545,7 @@ async function CategoryHeader({ category }: { category: string }) {
   );
 }
 
-export default async function CategoryLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: Promise<{ category: string }>;
-}) {
+export default async function CategoryLayout({ children, params }: { children: React.ReactNode; params: Promise<{ category: string }> }) {
   const { category } = await params;
 
   return (
@@ -610,13 +574,7 @@ For deeply nested routes, structure layouts to maximize subshell reuse:
 // Route: /store/[region]/[category]/[productId]
 
 // app/store/[region]/layout.tsx
-export default async function RegionLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: Promise<{ region: string }>;
-}) {
+export default async function RegionLayout({ children, params }: { children: React.ReactNode; params: Promise<{ region: string }> }) {
   const { region } = await params;
 
   return (
@@ -629,13 +587,7 @@ export default async function RegionLayout({
 }
 
 // app/store/[region]/[category]/layout.tsx
-export default async function CategoryLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: Promise<{ region: string; category: string }>;
-}) {
+export default async function CategoryLayout({ children, params }: { children: React.ReactNode; params: Promise<{ region: string; category: string }> }) {
   const { region, category } = await params;
 
   return (
@@ -647,11 +599,7 @@ export default async function CategoryLayout({
 }
 
 // app/store/[region]/[category]/[productId]/page.tsx
-export default async function ProductPage({
-  params,
-}: {
-  params: Promise<{ region: string; category: string; productId: string }>;
-}) {
+export default async function ProductPage({ params }: { params: Promise<{ region: string; category: string; productId: string }> }) {
   const { region, category, productId } = await params;
 
   return <ProductDetails region={region} productId={productId} />;

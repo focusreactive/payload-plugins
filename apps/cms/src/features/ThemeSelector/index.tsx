@@ -23,11 +23,7 @@ export const ThemeSelector: React.FC = () => {
 
   if (!value) {
     return (
-      <Button
-        variant={ButtonVariant.Ghost}
-        size={ButtonSize.Small}
-        className="w-9 h-9 !p-0"
-      >
+      <Button variant={ButtonVariant.Ghost} size={ButtonSize.Small} className="w-9 h-9 !p-0">
         <div className="size-5" />
       </Button>
     );
@@ -36,22 +32,12 @@ export const ThemeSelector: React.FC = () => {
   return (
     <>
       {value === "dark" && (
-        <Button
-          className="transition-none w-9 h-9 !p-0"
-          variant={ButtonVariant.Ghost}
-          size={ButtonSize.Small}
-          onClick={() => onThemeChange("light")}
-        >
+        <Button className="transition-none w-9 h-9 !p-0" variant={ButtonVariant.Ghost} size={ButtonSize.Small} onClick={() => onThemeChange("light")}>
           <MoonIcon className="size-5" />
         </Button>
       )}
       {value === "light" && (
-        <Button
-          className="transition-none w-9 h-9 !p-0"
-          variant={ButtonVariant.Ghost}
-          size={ButtonSize.Small}
-          onClick={() => onThemeChange("dark")}
-        >
+        <Button className="transition-none w-9 h-9 !p-0" variant={ButtonVariant.Ghost} size={ButtonSize.Small} onClick={() => onThemeChange("dark")}>
           <SunIcon className="size-5" />
         </Button>
       )}

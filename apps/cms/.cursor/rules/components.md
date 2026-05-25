@@ -121,9 +121,7 @@ import React, { useState } from "react";
 export function MyClientComponent() {
   const [count, setCount] = useState(0);
 
-  return (
-    <button onClick={() => setCount(count + 1)}>Clicked {count} times</button>
-  );
+  return <button onClick={() => setCount(count + 1)}>Clicked {count} times</button>;
 }
 ```
 
@@ -751,11 +749,7 @@ export default buildConfig({
 Use Payload's TypeScript types for components:
 
 ```tsx
-import type {
-  TextFieldServerComponent,
-  TextFieldClientComponent,
-  TextFieldCellComponent,
-} from "payload";
+import type { TextFieldServerComponent, TextFieldClientComponent, TextFieldCellComponent } from "payload";
 
 export const MyFieldComponent: TextFieldServerComponent = (props) => {
   // Fully typed props

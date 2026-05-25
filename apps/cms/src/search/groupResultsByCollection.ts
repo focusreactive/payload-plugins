@@ -1,12 +1,6 @@
-import type {
-  SearchResultItem,
-  SearchResultGroup,
-  SearchCollection,
-} from "./types";
+import type { SearchResultItem, SearchResultGroup, SearchCollection } from "./types";
 
-export function groupResultsByCollection(
-  items: SearchResultItem[]
-): SearchResultGroup[] {
+export function groupResultsByCollection(items: SearchResultItem[]): SearchResultGroup[] {
   const map = new Map<SearchCollection, SearchResultItem[]>();
 
   for (const item of items) {

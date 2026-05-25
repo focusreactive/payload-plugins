@@ -7,10 +7,7 @@ import type { BaseDocument, McpTool } from "../../types";
 import type { McpToolsRegistry } from "../index";
 import { buildDocumentsContent } from "./buildDocumentsContent";
 
-export function createGetAllDocumentsTool(
-  registry: McpToolsRegistry,
-  knownCollections: Set<CollectionSlug>
-): McpTool {
+export function createGetAllDocumentsTool(registry: McpToolsRegistry, knownCollections: Set<CollectionSlug>): McpTool {
   const knownSlugs = [...knownCollections].join(", ");
 
   return {
@@ -35,8 +32,8 @@ export function createGetAllDocumentsTool(
         return {
           content: [
             {
-              type: "text",
               text: `Error: unknown collectionSlug "${collectionSlug}". Known collections: ${knownSlugs}`,
+              type: "text",
             },
           ],
         };
@@ -46,13 +43,11 @@ export function createGetAllDocumentsTool(
       if (where) {
         try {
           parsedWhere = JSON.parse(where) as Where;
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
 
           return {
-            content: [
-              { type: "text", text: `Error: invalid where JSON - ${msg}` },
-            ],
+            content: [{ text: `Error: invalid where JSON - ${msg}`, type: "text" }],
           };
         }
       }
@@ -61,59 +56,39 @@ export function createGetAllDocumentsTool(
 
       const result = await req.payload.find({
         collection,
-        limit,
-        page,
-        where: parsedWhere,
-        overrideAccess: false,
-        req,
         depth: 0,
+        limit,
         locale,
+        overrideAccess: false,
+        page,
+        req,
+        where: parsedWhere,
       });
 
-      const {
-        docs,
-        totalDocs,
-        page: currentPage,
-        limit: effectiveLimit,
-      } = result;
+      const { docs, totalDocs, page: currentPage, limit: effectiveLimit } = result;
 
       const content = buildDocumentsContent({
-        docs: docs as BaseDocument[],
-        totalDocs,
-        limit: effectiveLimit,
-        page: currentPage,
-        collection,
-        titleField: config.titleField,
-        tableFields: config.tableFields,
-        locale,
-        payload: req.payload,
         buildUrl: config.buildUrl,
+        collection,
+        docs: docs as BaseDocument[],
+        limit: effectiveLimit,
+        locale,
+        page: currentPage,
+        payload: req.payload,
+        tableFields: config.tableFields,
+        titleField: config.titleField,
+        totalDocs,
       });
 
       return { content };
     },
     name: "getAllDocuments",
     parameters: {
-      collectionSlug: z
-        .string()
-        .describe(`The collection slug. One of: ${knownSlugs}`),
-      limit: z
-        .number()
-        .optional()
-        .describe("Max documents to return (default 10)"),
-      locale: z
-        .string()
-        .optional()
-        .describe(
-          'Locale code, e.g. "en" or "es". Omit to use the default locale.'
-        ),
+      collectionSlug: z.string().describe(`The collection slug. One of: ${knownSlugs}`),
+      limit: z.number().optional().describe("Max documents to return (default 10)"),
+      locale: z.string().optional().describe('Locale code, e.g. "en" or "es". Omit to use the default locale.'),
       page: z.number().optional().describe("Page number for pagination"),
-      where: z
-        .string()
-        .optional()
-        .describe(
-          'Payload where clause as a JSON string, e.g. \'{"_status":{"equals":"published"}}\''
-        ),
+      where: z.string().optional().describe('Payload where clause as a JSON string, e.g. \'{"_status":{"equals":"published"}}\''),
     },
   };
 }

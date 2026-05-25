@@ -9,11 +9,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "document_embeddings" DROP COLUMN "image_alt";`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "document_embeddings" ADD COLUMN "title" varchar DEFAULT '' NOT NULL;
   ALTER TABLE "document_embeddings" ADD COLUMN "slug" varchar DEFAULT '' NOT NULL;

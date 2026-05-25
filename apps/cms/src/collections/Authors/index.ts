@@ -19,19 +19,19 @@ export const Authors: CollectionConfig<"authors"> = {
   },
   fields: [
     {
-      name: "name",
-      type: "text",
-      label: {
-        en: "Name",
-        es: "Nombre",
-      },
-      required: true,
       admin: {
         description: {
           en: "The name of the author",
           es: "El nombre del autor",
         },
       },
+      label: {
+        en: "Name",
+        es: "Nombre",
+      },
+      name: "name",
+      required: true,
+      type: "text",
     },
   ],
   labels: {

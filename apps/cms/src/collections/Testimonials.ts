@@ -16,60 +16,60 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
   },
   fields: [
     {
-      name: "author",
-      type: "text",
-      required: true,
       label: {
         en: "Author",
         es: "Autor",
       },
+      name: "author",
+      required: true,
+      type: "text",
     },
     {
-      name: "company",
-      type: "text",
       label: {
         en: "Company",
         es: "Empresa",
       },
+      name: "company",
+      type: "text",
     },
     {
-      name: "position",
-      type: "text",
       label: {
         en: "Position",
         es: "Posición",
       },
       localized: true,
+      name: "position",
+      type: "text",
     },
     {
-      name: "avatar",
-      type: "upload",
-      relationTo: "media",
       label: {
         en: "Avatar",
         es: "Avatar",
       },
+      name: "avatar",
+      relationTo: "media",
+      type: "upload",
     },
     {
-      name: "content",
-      type: "textarea",
-      required: true,
       label: {
         en: "Review",
         es: "Reseña",
       },
       localized: true,
+      name: "content",
+      required: true,
+      type: "textarea",
     },
     {
-      name: "rating",
-      type: "number",
-      min: 1,
-      max: 5,
       defaultValue: 5,
       label: {
         en: "Rating (1-5)",
         es: "Calificación (1-5)",
       },
+      max: 5,
+      min: 1,
+      name: "rating",
+      type: "number",
     },
   ],
   labels: {

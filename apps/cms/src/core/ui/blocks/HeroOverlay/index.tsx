@@ -6,7 +6,9 @@ type Props = Pick<HeroBlock, "enabled" | "opacity" | "color">;
 
 export const HeroOverlay: React.FC<Props> = ({ enabled, opacity, color }) => {
   const getOverlayStyle = () => {
-    if (!enabled) {return {};}
+    if (!enabled) {
+      return {};
+    }
 
     const opacityValue = (opacity ?? 40) / 100;
     const baseColor = color === "white" ? "255, 255, 255" : "0, 0, 0";
@@ -16,9 +18,5 @@ export const HeroOverlay: React.FC<Props> = ({ enabled, opacity, color }) => {
     };
   };
 
-  return (
-    enabled && (
-      <div className="absolute inset-0 z-1" style={getOverlayStyle()} />
-    )
-  );
+  return enabled && <div className="absolute inset-0 z-1" style={getOverlayStyle()} />;
 };

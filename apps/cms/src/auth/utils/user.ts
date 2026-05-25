@@ -20,15 +20,11 @@ function normalizeEmailAndName(input: SSOUserInput): {
   email: string;
   displayName: string;
 } {
-  const email =
-    "emails" in input ? input.email || input.emails?.[0]?.value : input.email;
+  const email = "emails" in input ? input.email || input.emails?.[0]?.value : input.email;
   if (!email) {
     throw new Error("Email not provided by the provider");
   }
-  const displayName =
-    "displayName" in input
-      ? input.displayName || email.split("@")[0]
-      : input.displayName || email.split("@")[0];
+  const displayName = "displayName" in input ? input.displayName || email.split("@")[0] : input.displayName || email.split("@")[0];
   return { displayName, email };
 }
 
@@ -37,10 +33,7 @@ function normalizeEmailAndName(input: SSOUserInput): {
  * If the user exists and is admin, returns it.
  * If not exists, creates with role admin. If exists and is not admin, error.
  */
-export async function findOrCreateAdminUser(
-  payload: Payload,
-  profile: SSOUserInput
-): Promise<User> {
+export async function findOrCreateAdminUser(payload: Payload, profile: SSOUserInput): Promise<User> {
   const { email, displayName } = normalizeEmailAndName(profile);
 
   // Find existing user by email
@@ -63,10 +56,7 @@ export async function findOrCreateAdminUser(
   // User does not exist - create a new admin.
   // Payload auth requires password at create; for SSO user we set a random password,
   // so the login is only through IdP (password is not known to the user).
-  const randomPassword =
-    typeof crypto !== "undefined" && crypto.randomUUID
-      ? crypto.randomUUID() + crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const randomPassword = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() + crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
   const newUser = await payload.create({
     collection: "users",

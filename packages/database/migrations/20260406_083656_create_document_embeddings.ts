@@ -31,11 +31,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "payload_locked_documents_rels_document_embeddings_id_idx" ON "payload_locked_documents_rels" USING btree ("document_embeddings_id");`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
   ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_document_embeddings_fk";
   DROP INDEX IF EXISTS "payload_locked_documents_rels_document_embeddings_id_idx";

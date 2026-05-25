@@ -15,34 +15,27 @@ const aspectRatioOptions = [
   { label: { en: "Auto", es: "Auto" }, value: "auto" },
 ];
 
-export function imageField(
-  name = "image",
-  {
-    withDefaultMedia = false,
-    required = true,
-  }: { withDefaultMedia?: boolean; required?: boolean } = {}
-): GroupField {
+export function imageField(name = "image", { withDefaultMedia = false, required = true }: { withDefaultMedia?: boolean; required?: boolean } = {}): GroupField {
   return {
     fields: [
       {
+        label: { en: "Image File", es: "Archivo de imagen" },
         name: "image",
-        type: "upload",
         relationTo: "media",
         required,
-        label: { en: "Image File", es: "Archivo de imagen" },
+        type: "upload",
         ...(withDefaultMedia
           ? {
-              defaultValue: async () =>
-                getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
+              defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
             }
           : {}),
       },
       {
-        name: "aspectRatio",
-        type: "select",
         defaultValue: "1/1",
         label: { en: "Aspect Ratio", es: "Relación de aspecto" },
+        name: "aspectRatio",
         options: aspectRatioOptions,
+        type: "select",
       },
     ],
     label: { en: "Image", es: "Imagen" },

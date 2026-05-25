@@ -12,22 +12,22 @@ export const Pages: CollectionConfig = {
   },
   fields: [
     {
-      name: "title",
-      type: "text",
-      required: true,
       localized: true,
+      name: "title",
+      required: true,
+      type: "text",
     },
     {
       name: "slug",
-      type: "text",
       required: true,
+      type: "text",
       unique: true,
     },
     {
-      name: "sections",
-      type: "blocks",
       blocks: [HeroBlock, CopyBlock],
       localized: true,
+      name: "sections",
+      type: "blocks",
     },
   ],
   slug: "pages",

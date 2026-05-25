@@ -1,8 +1,8 @@
 import { ButtonVariant } from "@repo/ui/components/ui/button/types";
 import type { LinkProps } from "@repo/ui/components/ui/link/types";
 
-import { CUSTOM_PAGES_CONFIG } from '@/core/config/customPages';
-import type { CustomPageKey } from '@/core/config/customPages';
+import { CUSTOM_PAGES_CONFIG } from "@/core/config/customPages";
+import type { CustomPageKey } from "@/core/config/customPages";
 import { shouldIncludeLocalePrefix } from "@/core/lib/localePrefix";
 
 interface PayloadLink {
@@ -18,11 +18,10 @@ interface PayloadLink {
   newTab?: boolean | null;
 }
 
-export function prepareLinkProps(
-  link: PayloadLink | null | undefined,
-  locale: string
-): LinkProps {
-  if (!link) {return { text: "", href: "" };}
+export function prepareLinkProps(link: PayloadLink | null | undefined, locale: string): LinkProps {
+  if (!link) {
+    return { href: "", text: "" };
+  }
 
   let href = "";
 
@@ -32,16 +31,15 @@ export function prepareLinkProps(
     const value = link.reference.value as Record<string, unknown>;
     if (typeof value === "object" && value !== null) {
       const breadcrumbs = (value.breadcrumbs as { url?: string }[]) ?? [];
-      const path =
-        breadcrumbs.at(-1)?.url ??
-        (value.slug as string) ??
-        "";
+      const path = breadcrumbs.at(-1)?.url ?? (value.slug as string) ?? "";
       href = shouldIncludeLocalePrefix(locale) ? `/${locale}${path}` : path;
     }
   } else if (link.type === "customPage" && link.customPage) {
     const entry = CUSTOM_PAGES_CONFIG[link.customPage as CustomPageKey];
 
-    if (entry) {href = entry.resolver(locale);}
+    if (entry) {
+      href = entry.resolver(locale);
+    }
   }
 
   const variantMap: Record<string, ButtonVariant> = {

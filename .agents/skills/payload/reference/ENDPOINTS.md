@@ -331,10 +331,7 @@ export const externalUsersLogin = {
         and: [
           { email: { equals: email } },
           {
-            or: [
-              { tenants: { equals: tenant } },
-              { "tenants.tenant": { equals: tenant } },
-            ],
+            or: [{ tenants: { equals: tenant } }, { "tenants.tenant": { equals: tenant } }],
           },
         ],
       },
@@ -354,9 +351,7 @@ export const externalUsersLogin = {
       headers: headersWithCors({
         headers: new Headers({
           "Set-Cookie": generatePayloadCookie({
-            collectionAuthConfig: req.payload.config.collections.find(
-              (c) => c.slug === "users"
-            ).auth,
+            collectionAuthConfig: req.payload.config.collections.find((c) => c.slug === "users").auth,
             cookiePrefix: req.payload.config.cookiePrefix,
             token: result.token,
           }),
@@ -381,11 +376,7 @@ export const webhookEndpoint = {
     const signature = req.headers.get("stripe-signature");
 
     try {
-      const event = stripe.webhooks.constructEvent(
-        body,
-        signature,
-        webhookSecret
-      );
+      const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
 
       // Process event
       switch (event.type) {
@@ -426,9 +417,7 @@ export const previewEndpoint = {
     const { collection, where, limit = 10 } = req.data;
 
     // Validate collection exists
-    const collectionConfig = req.payload.config.collections.find(
-      (c) => c.slug === collection
-    );
+    const collectionConfig = req.payload.config.collections.find((c) => c.slug === collection);
     if (!collectionConfig) {
       throw new APIError("Collection not found", 404);
     }
@@ -466,11 +455,7 @@ export const reindexEndpoint = (pluginConfig) => ({
     const { collection } = req.routeParams;
 
     // Reindex collection
-    const result = await reindexCollection(
-      req.payload,
-      collection,
-      pluginConfig
-    );
+    const result = await reindexCollection(req.payload, collection, pluginConfig);
 
     return Response.json({
       message: `Reindexed ${result.count} documents`,

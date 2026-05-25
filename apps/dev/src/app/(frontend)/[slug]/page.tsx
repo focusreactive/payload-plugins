@@ -22,12 +22,9 @@ export default async function Page({ params }: Props) {
   });
 
   const page = docs[0];
-  if (!page) {notFound();}
+  if (!page) {
+    notFound();
+  }
 
-  return (
-    <PageClient
-      initialData={page as any}
-      serverURL={process.env.NEXT_PUBLIC_SERVER_URL ?? ""}
-    />
-  );
+  return <PageClient initialData={page as any} serverURL={process.env.NEXT_PUBLIC_SERVER_URL ?? ""} />;
 }

@@ -1,7 +1,4 @@
-import {
-  createParentField,
-  createBreadcrumbsField,
-} from "@payloadcms/plugin-nested-docs";
+import { createParentField, createBreadcrumbsField } from "@payloadcms/plugin-nested-docs";
 import type { CollectionConfig } from "payload";
 
 import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
@@ -14,15 +11,9 @@ import type { Page as PageType } from "@/payload-types";
 
 import { createBasePageFields } from "./basePageFields";
 import { fixBreadcrumbDocIds } from "./hooks/fixBreadcrumbDocIds";
-import {
-  indexPageEmbedding,
-  deletePageEmbedding,
-} from "./hooks/indexEmbedding";
+import { indexPageEmbedding, deletePageEmbedding } from "./hooks/indexEmbedding";
 import { revalidateDelete, revalidatePage } from "./hooks/revalidatePage";
-import {
-  validateReservedSlug,
-  validateReservedPath,
-} from "./hooks/validateReservedSlug";
+import { validateReservedSlug, validateReservedPath } from "./hooks/validateReservedSlug";
 
 export const Page: CollectionConfig<"page"> = {
   access: {
@@ -35,48 +26,44 @@ export const Page: CollectionConfig<"page"> = {
     defaultColumns: ["title", "slug", "updatedAt"],
     group: "Content",
     livePreview: {
-      url: ({ data, locale }) => {
-        return generatePreviewPath({
-          slug: data?.slug,
+      url: ({ data, locale }) =>
+        generatePreviewPath({
+          collection: "page",
           path: buildUrl({
             collection: "page",
             breadcrumbs: data?.breadcrumbs,
             absolute: false,
             locale: locale.code ?? locale.fallbackLocale,
           }),
-          collection: "page",
-        });
-      },
+          slug: data?.slug,
+        }),
     },
-    preview: (data, { locale }) => {
-      return generatePreviewPath({
-        slug: data?.slug as string,
+    preview: (data, { locale }) =>
+      generatePreviewPath({
+        collection: "page",
         path: buildUrl({
           collection: "page",
           breadcrumbs: data?.breadcrumbs as PageType["breadcrumbs"],
           absolute: false,
           locale,
         }),
-        collection: "page",
-      });
-    },
+        slug: data?.slug as string,
+      }),
     useAsTitle: "title",
   },
   fields: [
     {
-      name: "title",
-      type: "text",
-      required: true,
-      localized: true,
-      defaultValue: createLocalizedDefault(
-        DEFAULT_VALUES.collections.page.title
-      ),
       admin: {
         description: {
           en: "The title of the page",
           es: 'El título de la página (por defecto: "Page")',
         },
       },
+      defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.page.title),
+      localized: true,
+      name: "title",
+      required: true,
+      type: "text",
     },
     ...createBasePageFields({ withBlocksDefaultValue: true }),
     createSharedSlugField("page"),
@@ -84,24 +71,22 @@ export const Page: CollectionConfig<"page"> = {
       admin: {
         position: "sidebar",
       },
-      filterOptions: ({ id }) => {
-        return {
-          slug: {
-            not_equals: "home",
-          },
-          id: {
-            not_equals: id,
-          },
-        };
-      },
+      filterOptions: ({ id }) => ({
+        id: {
+          not_equals: id,
+        },
+        slug: {
+          not_equals: "home",
+        },
+      }),
     }),
     createBreadcrumbsField("page", {
+      admin: {
+        position: "sidebar",
+      },
       label: {
         en: "Page Breadcrumbs",
         es: "Breadcrumbs de la página",
-      },
-      admin: {
-        position: "sidebar",
       },
     }),
   ],
@@ -109,11 +94,7 @@ export const Page: CollectionConfig<"page"> = {
   hooks: {
     afterChange: [revalidatePage, indexPageEmbedding],
     afterDelete: [revalidateDelete, deletePageEmbedding],
-    beforeChange: [
-      fixBreadcrumbDocIds,
-      validateReservedSlug,
-      validateReservedPath,
-    ],
+    beforeChange: [fixBreadcrumbDocIds, validateReservedSlug, validateReservedPath],
   },
   labels: {
     plural: {

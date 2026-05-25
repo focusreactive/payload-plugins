@@ -1,16 +1,10 @@
 import { Image } from "../../ui/image";
 import { Link } from "../../ui/link";
 import { RichText } from "../../ui/richText";
-import { BlogStyle } from './types';
-import type { IBlogPostCardProps } from './types';
+import { BlogStyle } from "./types";
+import type { IBlogPostCardProps } from "./types";
 
-export default function BlogPostCard({
-  style,
-  image,
-  link,
-  text,
-  readMoreLabel,
-}: IBlogPostCardProps) {
+export default function BlogPostCard({ style, image, link, text, readMoreLabel }: IBlogPostCardProps) {
   return (
     <Link {...link}>
       <article className="bg-bgColor group flex max-w-xl flex-col items-start gap-y-4">

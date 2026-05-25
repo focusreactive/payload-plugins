@@ -5,17 +5,9 @@ import deepMerge from "@/core/lib/deepMerge";
 import type { LinkAppearances } from "./link";
 import { link } from "./link";
 
-type LinkGroupType = (options?: {
-  appearances?: LinkAppearances[] | false;
-  defaultValue?: ArrayField["defaultValue"];
-  overrides?: Partial<ArrayField>;
-}) => Field;
+type LinkGroupType = (options?: { appearances?: LinkAppearances[] | false; defaultValue?: ArrayField["defaultValue"]; overrides?: Partial<ArrayField> }) => Field;
 
-export const linkGroup: LinkGroupType = ({
-  appearances,
-  defaultValue,
-  overrides = {},
-} = {}) => {
+export const linkGroup: LinkGroupType = ({ appearances, defaultValue, overrides = {} } = {}) => {
   const generatedLinkGroup: Field = {
     admin: {
       components: {

@@ -16,11 +16,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "_site_settings_v_locales" DROP COLUMN "version_blog_blog_description";`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "posts_locales" ADD COLUMN "related_posts_intro" varchar;
   ALTER TABLE "_posts_v_locales" ADD COLUMN "version_related_posts_intro" varchar;

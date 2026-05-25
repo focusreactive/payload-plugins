@@ -273,11 +273,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "presets_rels_posts_id_idx" ON "presets_rels" USING btree ("posts_id","locale");`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "presets_faq_items" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "presets_cards_grid_items" DISABLE ROW LEVEL SECURITY;

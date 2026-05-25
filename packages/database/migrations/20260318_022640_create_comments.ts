@@ -52,11 +52,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "presets" DROP COLUMN "testimonials_list_subheading";`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "comments_mentions" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "comments" DISABLE ROW LEVEL SECURITY;

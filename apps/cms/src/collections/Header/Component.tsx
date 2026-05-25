@@ -13,22 +13,16 @@ interface Props {
 }
 
 export async function Header({ data }: Props) {
-  if (!data) {return null;}
+  if (!data) {
+    return null;
+  }
 
   const locale = await resolveLocale();
-  const links = (data.navItems ?? []).map((item) =>
-    prepareLinkProps(item.link, locale)
-  );
+  const links = (data.navItems ?? []).map((item) => prepareLinkProps(item.link, locale));
   const image = prepareImageProps({
     aspectRatio: ImageAspectRatio["1/1"],
     image: data.logo as Media,
   });
 
-  return (
-    <SharedHeader
-      links={links}
-      image={image}
-      alignVariant={AlignVariant.Right}
-    />
-  );
+  return <SharedHeader links={links} image={image} alignVariant={AlignVariant.Right} />;
 }

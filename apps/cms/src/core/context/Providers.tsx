@@ -13,9 +13,9 @@ export const Providers: React.FC<{
   messages: Record<string, string>;
   children: React.ReactNode;
 }> = ({ children, locale, messages }) => (
-    <NextIntlClientProvider locale={locale} messages={messages}>
-      <ABAnalyticsProvider adapter={analyticsAdapter}>
-        <ThemeProvider>{children}</ThemeProvider>
-      </ABAnalyticsProvider>
-    </NextIntlClientProvider>
-  );
+  <NextIntlClientProvider locale={locale} messages={messages}>
+    <ABAnalyticsProvider adapter={analyticsAdapter}>
+      <ThemeProvider>{children}</ThemeProvider>
+    </ABAnalyticsProvider>
+  </NextIntlClientProvider>
+);

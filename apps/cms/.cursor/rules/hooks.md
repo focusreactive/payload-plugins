@@ -123,11 +123,7 @@ export const Posts: CollectionConfig = {
 import type { CollectionAfterChangeHook } from "payload";
 import { revalidatePath } from "next/cache";
 
-export const revalidatePage: CollectionAfterChangeHook = ({
-  doc,
-  previousDoc,
-  req: { payload, context },
-}) => {
+export const revalidatePage: CollectionAfterChangeHook = ({ doc, previousDoc, req: { payload, context } }) => {
   if (!context.disableRevalidate) {
     if (doc._status === "published") {
       const path = doc.slug === "home" ? "/" : `/${doc.slug}`;
@@ -137,8 +133,7 @@ export const revalidatePage: CollectionAfterChangeHook = ({
 
     // Revalidate old path if unpublished
     if (previousDoc?._status === "published" && doc._status !== "published") {
-      const oldPath =
-        previousDoc.slug === "home" ? "/" : `/${previousDoc.slug}`;
+      const oldPath = previousDoc.slug === "home" ? "/" : `/${previousDoc.slug}`;
       revalidatePath(oldPath);
     }
   }

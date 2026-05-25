@@ -76,16 +76,13 @@ async function generateSitemap(): Promise<Sitemap> {
           const isHome = url === homeUrl;
           sitemap.push({
             changeFrequency,
-            lastModified: page.updatedAt
-              ? new Date(page.updatedAt)
-              : new Date(),
-            priority: isHome ? 1.0 : 0.8,
+            lastModified: page.updatedAt ? new Date(page.updatedAt) : new Date(),
+            priority: isHome ? 1 : 0.8,
             url,
           });
         });
 
-        const blogLastModified =
-          getLastModifiedDate(posts[0]?.publishedAt) || new Date();
+        const blogLastModified = getLastModifiedDate(posts[0]?.publishedAt) || new Date();
 
         sitemap.push({
           changeFrequency,
@@ -97,16 +94,12 @@ async function generateSitemap(): Promise<Sitemap> {
         posts.forEach((post) => {
           sitemap.push({
             changeFrequency: "monthly",
-            lastModified: post.publishedAt
-              ? new Date(post.publishedAt)
-              : post.updatedAt
-                ? new Date(post.updatedAt)
-                : new Date(),
+            lastModified: post.publishedAt ? new Date(post.publishedAt) : post.updatedAt ? new Date(post.updatedAt) : new Date(),
             priority: 0.7,
             url: buildUrl({
               collection: "posts",
-              slug: post.slug,
               locale,
+              slug: post.slug,
             }),
           });
         });
@@ -120,21 +113,17 @@ async function generateSitemap(): Promise<Sitemap> {
       {
         changeFrequency,
         lastModified: new Date(),
-        priority: 1.0,
+        priority: 1,
         url: baseUrl,
       },
     ];
   }
 }
 
-const getCachedSitemap = unstable_cache(
-  async () => generateSitemap(),
-  [cacheTag({ type: "sitemap" })],
-  {
-    revalidate: false,
-    tags: [cacheTag({ type: "sitemap" })],
-  }
-);
+const getCachedSitemap = unstable_cache(async () => generateSitemap(), [cacheTag({ type: "sitemap" })], {
+  revalidate: false,
+  tags: [cacheTag({ type: "sitemap" })],
+});
 
 export default async function sitemap(): Promise<Sitemap> {
   return getCachedSitemap();

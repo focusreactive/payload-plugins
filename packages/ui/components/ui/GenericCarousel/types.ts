@@ -1,8 +1,4 @@
-import type {
-  AutoplayOptions,
-  NavigationOptions,
-  SwiperModule,
-} from "swiper/types";
+import type { AutoplayOptions, NavigationOptions, SwiperModule } from "swiper/types";
 
 import type { IRichTextProps } from "../richText/types";
 

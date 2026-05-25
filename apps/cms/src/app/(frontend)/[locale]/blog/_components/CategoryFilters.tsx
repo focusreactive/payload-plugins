@@ -19,12 +19,7 @@ interface CategoryFiltersProps {
   startTransition: React.TransitionStartFunction;
 }
 
-export function CategoryFilters({
-  categories,
-  activeCategories,
-  isPending,
-  startTransition,
-}: CategoryFiltersProps) {
+export function CategoryFilters({ categories, activeCategories, isPending, startTransition }: CategoryFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -32,9 +27,7 @@ export function CategoryFilters({
 
   const toggle = (slug: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    const next = activeCategories.includes(slug)
-      ? activeCategories.filter((s) => s !== slug)
-      : [...activeCategories, slug];
+    const next = activeCategories.includes(slug) ? activeCategories.filter((s) => s !== slug) : [...activeCategories, slug];
 
     if (next.length > 0) {
       params.set("categories", next.join(","));
@@ -60,30 +53,13 @@ export function CategoryFilters({
   const isAllActive = activeCategories.length === 0;
 
   return (
-    <div
-      className={cn(
-        "flex flex-wrap gap-2 mb-8 transition-opacity",
-        isPending && "opacity-50 pointer-events-none"
-      )}
-    >
-      <Category
-        isActive={isAllActive}
-        title={t("all")}
-        onClick={() => clearAll()}
-      />
+    <div className={cn("flex flex-wrap gap-2 mb-8 transition-opacity", isPending && "opacity-50 pointer-events-none")}>
+      <Category isActive={isAllActive} title={t("all")} onClick={() => clearAll()} />
 
       {categories.map((category) => {
         const isActive = activeCategories.includes(category.slug);
 
-        return (
-          <Category
-            key={category.slug}
-            isActive={isActive}
-            slug={category.slug}
-            title={category.title}
-            onClick={() => toggle(category.slug)}
-          />
-        );
+        return <Category key={category.slug} isActive={isActive} slug={category.slug} title={category.title} onClick={() => toggle(category.slug)} />;
       })}
     </div>
   );

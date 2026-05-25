@@ -59,11 +59,7 @@ import type { PromoBlock } from "@/payload-types";
 import { extractLexicalText, joinText } from "@/core/utils/text";
 
 export function extractPromoText(block: PromoBlock): string {
-  return joinText([
-    block.text,
-    extractLexicalText(block.body),
-    ...(block.items ?? []).flatMap((item) => [item.label]),
-  ]);
+  return joinText([block.text, extractLexicalText(block.body), ...(block.items ?? []).flatMap((item) => [item.label])]);
 }
 ```
 

@@ -35,13 +35,7 @@ const defaultEffectsConfig = {
   },
 };
 
-export function GenericCarousel({
-  slides,
-  customModules,
-  customModulesParams,
-  effect,
-  params,
-}: IGenericCarouselProps) {
+export function GenericCarousel({ slides, customModules, customModulesParams, effect, params }: IGenericCarouselProps) {
   // to trigger rerender in preview when changing effect
   useEffect(() => {
     console.log("effect changed");
@@ -58,15 +52,14 @@ export function GenericCarousel({
         {...defaultEffectsConfig}
         className={cn("!py-10", {
           "w-1/2": effect === "fade",
-          "w-[500px] !pb-12 !pt-10":
-            effect && ["cube", "flip", "cards"].includes(effect),
+          "w-[500px] !pb-12 !pt-10": effect && ["cube", "flip", "cards"].includes(effect),
         })}
       >
         {(slides || []).map((slide, i) => (
-            <SwiperSlide className={cn("!h-auto", slide.className)} key={i}>
-              {slide.children}
-            </SwiperSlide>
-          ))}
+          <SwiperSlide className={cn("!h-auto", slide.className)} key={i}>
+            {slide.children}
+          </SwiperSlide>
+        ))}
       </Swiper>
     </div>
   );

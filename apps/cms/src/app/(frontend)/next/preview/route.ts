@@ -33,10 +33,7 @@ export async function GET(req: NextRequest): Promise<Response> {
       req: req as unknown as PayloadRequest,
     });
   } catch (error) {
-    payload.logger.error(
-      { err: error },
-      "Error verifying token for live preview"
-    );
+    payload.logger.error({ err: error }, "Error verifying token for live preview");
     return new Response("You are not allowed to preview this page", {
       status: 403,
     });
@@ -52,9 +49,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   }
 
   const host = req.headers.get("host") ?? new URL(req.url).host;
-  const protocol =
-    req.headers.get("x-forwarded-proto") ??
-    new URL(req.url).protocol.replace(":", "");
+  const protocol = req.headers.get("x-forwarded-proto") ?? new URL(req.url).protocol.replace(":", "");
 
   const previewInitUrl = `${protocol}://${host}/next/preview-init?redirect=${encodeURIComponent(path)}&previewSecret=${encodeURIComponent(previewSecret)}`;
 

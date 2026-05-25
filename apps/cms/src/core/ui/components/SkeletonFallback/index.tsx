@@ -2,10 +2,7 @@ import React from "react";
 
 export function HeroSkeletonFallback() {
   return (
-    <div
-      className="relative flex min-h-[80vh] items-center justify-center p-0"
-      aria-hidden
-    >
+    <div className="relative flex min-h-[80vh] items-center justify-center p-0" aria-hidden>
       <div className="flex w-full max-w-2xl flex-col items-center gap-4">
         <div className="animate-pulse rounded-md bg-primaryLightColor h-12 w-3/4" />
         <div className="animate-pulse rounded-md bg-primaryLightColor h-6 w-full" />

@@ -9,15 +9,7 @@ const Rating: React.FC<{ rating: number }> = ({ rating }) => {
   return (
     <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map((star) => (
-        <StarIcon
-          key={star}
-          size={18}
-          className={`transition-all duration-200 ${
-            star <= numRating
-              ? "fill-yellow-400 text-yellow-400 drop-shadow-sm"
-              : "text-textSecondaryColor"
-          }`}
-        />
+        <StarIcon key={star} size={18} className={`transition-all duration-200 ${star <= numRating ? "fill-yellow-400 text-yellow-400 drop-shadow-sm" : "text-textSecondaryColor"}`} />
       ))}
     </div>
   );
@@ -28,12 +20,9 @@ export const TestimonialCard: React.FC<{
   showRating?: boolean;
   showAvatar?: boolean;
 }> = ({ testimonial, showRating = true, showAvatar = true }) => {
-  if (
-    typeof testimonial === "number" ||
-    typeof testimonial === "string" ||
-    !testimonial
-  )
-    {return null;}
+  if (typeof testimonial === "number" || typeof testimonial === "string" || !testimonial) {
+    return null;
+  }
 
   return (
     <div
@@ -44,36 +33,18 @@ export const TestimonialCard: React.FC<{
       transition-all duration-300 hover:-translate-y-1
     "
     >
-      {testimonial.content && (
-        <p className="text-textColor mb-6 flex-1 text-lg leading-relaxed italic">
-          &ldquo;{testimonial.content}&rdquo;
-        </p>
-      )}
+      {testimonial.content && <p className="text-textColor mb-6 flex-1 text-lg leading-relaxed italic">&ldquo;{testimonial.content}&rdquo;</p>}
 
       <div className="w-full mt-auto pt-5 border-t border-textSecondaryColor">
         <div className="flex items-center gap-4">
-          {showAvatar &&
-            testimonial.avatar &&
-            typeof testimonial.avatar !== "number" && (
-              <div className="shrink-0">
-                <Media
-                  resource={testimonial.avatar}
-                  className="w-14 h-14 rounded-full object-cover ring-2 ring-textSecondaryColor"
-                  imgClassName="rounded-full object-cover h-full w-full"
-                />
-              </div>
-            )}
+          {showAvatar && testimonial.avatar && typeof testimonial.avatar !== "number" && (
+            <div className="shrink-0">
+              <Media resource={testimonial.avatar} className="w-14 h-14 rounded-full object-cover ring-2 ring-textSecondaryColor" imgClassName="rounded-full object-cover h-full w-full" />
+            </div>
+          )}
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-textColor truncate text-base">
-              {testimonial.author}
-            </p>
-            {(testimonial.position || testimonial.company) && (
-              <p className="text-sm text-textSecondaryColor truncate mt-1">
-                {[testimonial.position, testimonial.company]
-                  .filter(Boolean)
-                  .join(", ")}
-              </p>
-            )}
+            <p className="font-semibold text-textColor truncate text-base">{testimonial.author}</p>
+            {(testimonial.position || testimonial.company) && <p className="text-sm text-textSecondaryColor truncate mt-1">{[testimonial.position, testimonial.company].filter(Boolean).join(", ")}</p>}
           </div>
         </div>
         {showRating && testimonial.rating && (

@@ -2,11 +2,7 @@ import { abTestingPlugin } from "@focus-reactive/payload-plugin-ab";
 import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
-import {
-  translatorPlugin,
-  createOpenAIProvider,
-  createSyncRunner,
-} from "@focus-reactive/payload-plugin-translator";
+import { translatorPlugin, createOpenAIProvider, createSyncRunner } from "@focus-reactive/payload-plugin-translator";
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
 import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
@@ -50,21 +46,21 @@ export const plugins: Plugin[] = [
       fields: ({ defaultFields }) => {
         const customFields: Field[] = [
           {
-            name: "isActive",
-            type: "checkbox",
-            required: true,
-            defaultValue: true,
-            localized: true,
-            label: {
-              en: "Active",
-              es: "Activo",
-            },
             admin: {
               description: {
                 en: "Whether the redirect is active.",
                 es: "Si la redirección está activa.",
               },
             },
+            defaultValue: true,
+            label: {
+              en: "Active",
+              es: "Activo",
+            },
+            localized: true,
+            name: "isActive",
+            required: true,
+            type: "checkbox",
           },
         ];
 
@@ -72,14 +68,14 @@ export const plugins: Plugin[] = [
           if ("name" in field && field.name === "from") {
             return {
               ...field,
-              unique: false,
-              validate: validateRedirectPath,
               admin: {
                 description: {
                   en: "Latin letters, numbers, / - _ . ~ only. No spaces. Stored as lowercase with leading slash.",
                   es: "Solo letras latinas, números, / - _ . ~. Sin espacios. Se guarda en minúsculas con barra inicial.",
                 },
               },
+              unique: false,
+              validate: validateRedirectPath,
             };
           }
 
@@ -90,41 +86,35 @@ export const plugins: Plugin[] = [
             };
           }
 
-          if (
-            "name" in field &&
-            field.name === "to" &&
-            "fields" in field &&
-            Array.isArray(field.fields)
-          ) {
+          if ("name" in field && field.name === "to" && "fields" in field && Array.isArray(field.fields)) {
             return {
               ...field,
-              localized: true,
               fields: field.fields.map((sub: Field) =>
                 "name" in sub && sub.name === "url"
                   ? {
                       ...sub,
                       localized: true,
-                      validate: (v: unknown) =>
-                        validateRedirectPath(v as string, { allowUrl: true }),
+                      validate: (v: unknown) => validateRedirectPath(v as string, { allowUrl: true }),
                     }
                   : {
                       ...sub,
                       localized: true,
                     }
               ),
+              localized: true,
             };
           }
           return field;
         });
       },
       hooks: {
-        beforeChange: [normalizeRedirectFields],
         afterChange: [revalidateRedirects],
+        beforeChange: [normalizeRedirectFields],
       },
       access: {
-        read: or(superAdmin, user),
         create: or(superAdmin, user),
         delete: or(superAdmin, user),
+        read: or(superAdmin, user),
         update: or(superAdmin, user),
       },
     },
@@ -148,9 +138,7 @@ export const plugins: Plugin[] = [
 
   nestedDocsPlugin({
     collections: ["page"],
-    generateLabel: (_, doc: unknown) => {
-      return (doc as Page).title;
-    },
+    generateLabel: (_, doc: unknown) => (doc as Page).title,
     generateURL: (docs) => docs.reduce((url, doc) => `${url}/${doc.slug}`, ""),
   }),
 
@@ -227,26 +215,13 @@ export const plugins: Plugin[] = [
   }),
 
   translatorPlugin({
-    collections: [
-      PageCollection,
-      Posts,
-      Categories,
-      Authors,
-      Testimonials,
-      Header,
-      Footer,
-    ].map((col) =>
-      JSON.parse(
-        JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v))
-      )
-    ),
+    collections: [PageCollection, Posts, Categories, Authors, Testimonials, Header, Footer].map((col) => JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))),
     runner: createSyncRunner(),
     translationProvider: createOpenAIProvider({
       apiKey: process.env.OPENAI_API_KEY!,
-      model: "gpt-4o-mini",
-      systemPrompt: ({ defaultPrompt }) =>
-        `${defaultPrompt}\nUse formal language. Keep brand names unchanged.`,
       dryRun: false,
+      model: "gpt-4o-mini",
+      systemPrompt: ({ defaultPrompt }) => `${defaultPrompt}\nUse formal language. Keep brand names unchanged.`,
     }),
   }),
 
@@ -257,20 +232,13 @@ export const plugins: Plugin[] = [
           const doc = docProp as unknown as Page;
 
           const breadcrumbs = doc.breadcrumbs ?? [];
-          const lastUrl = breadcrumbs[breadcrumbs.length - 1]?.url ?? "";
+          const lastUrl = breadcrumbs.at(-1)?.url ?? "";
           const restPath = !lastUrl || lastUrl === "/home" ? "" : lastUrl;
 
           const resolvedLocale = locale ?? I18N_CONFIG.defaultLocale;
-          return shouldIncludeLocalePrefix(resolvedLocale)
-            ? `/${resolvedLocale}${restPath}`
-            : restPath || "/";
+          return shouldIncludeLocalePrefix(resolvedLocale) ? `/${resolvedLocale}${restPath}` : restPath || "/";
         },
-        generateVariantData: ({ variantDoc, locale }) => {
-          return buildVariantData(
-            variantDoc as unknown as Page & { _abPassPercentage?: number },
-            locale
-          );
-        },
+        generateVariantData: ({ variantDoc, locale }) => buildVariantData(variantDoc as unknown as Page & { _abPassPercentage?: number }, locale),
       },
     },
     debug: isDev(),

@@ -8,11 +8,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE UNIQUE INDEX "posts_slug_idx" ON "posts" USING btree ("slug");`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    DROP INDEX "page_slug_idx";
   DROP INDEX "posts_slug_idx";

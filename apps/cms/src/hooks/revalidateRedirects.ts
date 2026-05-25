@@ -4,10 +4,7 @@ import type { CollectionAfterChangeHook } from "payload";
 import { cacheTag } from "@/core/lib/cacheTags";
 import { getLocaleFromRequest } from "@/core/lib/getLocaleFromRequest";
 
-export const revalidateRedirects: CollectionAfterChangeHook = async ({
-  doc,
-  req,
-}) => {
+export const revalidateRedirects: CollectionAfterChangeHook = async ({ doc, req }) => {
   const { payload, context } = req;
 
   if (!context.disableRevalidate) {

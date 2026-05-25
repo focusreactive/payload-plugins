@@ -2,8 +2,8 @@ import type { Field, GroupField } from "payload";
 import type { Option } from "payload";
 
 import { BLOG_CONFIG } from "@/core/config/blog";
-import { CUSTOM_PAGES_CONFIG } from '@/core/config/customPages';
-import type { CustomPageKey } from '@/core/config/customPages';
+import { CUSTOM_PAGES_CONFIG } from "@/core/config/customPages";
+import type { CustomPageKey } from "@/core/config/customPages";
 import deepMerge from "@/core/lib/deepMerge";
 
 export type LinkAppearances = "default" | "outline";
@@ -25,35 +25,23 @@ export const appearanceOptions: Record<LinkAppearances, Option> = {
   },
 };
 
-type LinkType = (options?: {
-  appearances?: LinkAppearances[] | false;
-  disableLabel?: boolean;
-  required?: boolean;
-  overrides?: Partial<GroupField>;
-}) => Field;
+type LinkType = (options?: { appearances?: LinkAppearances[] | false; disableLabel?: boolean; required?: boolean; overrides?: Partial<GroupField> }) => Field;
 
-export const link: LinkType = ({
-  appearances,
-  disableLabel = false,
-  required = true,
-  overrides = {},
-} = {}) => {
+export const link: LinkType = ({ appearances, disableLabel = false, required = true, overrides = {} } = {}) => {
   const linkResult: GroupField = {
     admin: {
       hideGutter: true,
     },
     fields: [
       {
-        type: "row",
         fields: [
           {
-            name: "type",
-            type: "radio",
             admin: {
               layout: "horizontal",
               width: "50%",
             },
             defaultValue: "reference",
+            name: "type",
             options: [
               {
                 label: {
@@ -77,10 +65,9 @@ export const link: LinkType = ({
                 value: "customPage",
               },
             ],
+            type: "radio",
           },
           {
-            name: "newTab",
-            type: "checkbox",
             admin: {
               style: {
                 alignSelf: "flex-end",
@@ -91,8 +78,11 @@ export const link: LinkType = ({
               en: "Open in new tab",
               es: "Abrir en una nueva pestaña",
             },
+            name: "newTab",
+            type: "checkbox",
           },
         ],
+        type: "row",
       },
     ],
     name: "link",
@@ -135,8 +125,8 @@ export const link: LinkType = ({
       },
       name: "customPage",
       options: Object.entries(CUSTOM_PAGES_CONFIG).map(([key, entry]) => ({
-        value: key as CustomPageKey,
         label: entry.label,
+        value: key as CustomPageKey,
       })),
       required,
       type: "select",
@@ -156,8 +146,6 @@ export const link: LinkType = ({
       fields: [
         ...linkTypes,
         {
-          name: "label",
-          type: "text",
           admin: {
             width: "50%",
           },
@@ -165,8 +153,10 @@ export const link: LinkType = ({
             en: "Label",
             es: "Etiqueta",
           },
-          required,
           localized: true,
+          name: "label",
+          required,
+          type: "text",
         },
       ],
       type: "row",
@@ -176,15 +166,10 @@ export const link: LinkType = ({
   }
 
   if (appearances !== false) {
-    let appearanceOptionsToUse = [
-      appearanceOptions.default,
-      appearanceOptions.outline,
-    ];
+    let appearanceOptionsToUse = [appearanceOptions.default, appearanceOptions.outline];
 
     if (appearances) {
-      appearanceOptionsToUse = appearances.map(
-        (appearance) => appearanceOptions[appearance]
-      );
+      appearanceOptionsToUse = appearances.map((appearance) => appearanceOptions[appearance]);
     }
 
     linkResult.fields.push({

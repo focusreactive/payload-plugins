@@ -42,11 +42,7 @@ We can also create all the promises first, and do `Promise.all()` at the end.
 const userPromise = fetchUser();
 const profilePromise = userPromise.then((user) => fetchProfile(user.id));
 
-const [user, config, profile] = await Promise.all([
-  userPromise,
-  fetchConfig(),
-  profilePromise,
-]);
+const [user, config, profile] = await Promise.all([userPromise, fetchConfig(), profilePromise]);
 ```
 
 Reference: [https://github.com/shuding/better-all](https://github.com/shuding/better-all)

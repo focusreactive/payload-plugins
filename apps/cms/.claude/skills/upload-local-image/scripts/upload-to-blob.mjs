@@ -11,9 +11,8 @@ const token = process.env.BLOB_READ_WRITE_TOKEN;
 if (!token) {
   process.stdout.write(
     `${JSON.stringify({
-      error:
-        "BLOB_READ_WRITE_TOKEN is not set. Copy it from the Vercel dashboard and add it to .env.",
-    })  }\n`
+      error: "BLOB_READ_WRITE_TOKEN is not set. Copy it from the Vercel dashboard and add it to .env.",
+    })}\n`
   );
   process.exit(1);
 }
@@ -29,15 +28,13 @@ if (args[0] === "--delete") {
     process.stdout.write(
       `${JSON.stringify({
         deleted: [],
-        errors: [{ pathname: "", error: "No pathnames provided for --delete" }],
-      })  }\n`
+        errors: [{ error: "No pathnames provided for --delete", pathname: "" }],
+      })}\n`
     );
     process.exit(0);
   }
 
-  const settlements = await Promise.allSettled(
-    pathnames.map((pathname) => del(pathname, { token }).then(() => pathname))
-  );
+  const settlements = await Promise.allSettled(pathnames.map((pathname) => del(pathname, { token }).then(() => pathname)));
 
   const deleted = [];
   const errors = [];
@@ -55,7 +52,7 @@ if (args[0] === "--delete") {
     }
   }
 
-  process.stdout.write(`${JSON.stringify({ deleted, errors })  }\n`);
+  process.stdout.write(`${JSON.stringify({ deleted, errors })}\n`);
   process.exit(0);
 }
 
@@ -64,9 +61,8 @@ const filepaths = args;
 if (filepaths.length === 0) {
   process.stdout.write(
     `${JSON.stringify({
-      error:
-        "Missing filepath(s). Usage: node apps/payload/.claude/skills/upload-local-image/scripts/upload-to-blob.mjs <file1> [file2] ...",
-    })  }\n`
+      error: "Missing filepath(s). Usage: node apps/payload/.claude/skills/upload-local-image/scripts/upload-to-blob.mjs <file1> [file2] ...",
+    })}\n`
   );
   process.exit(1);
 }
@@ -102,5 +98,5 @@ for (let i = 0; i < settlements.length; i++) {
   }
 }
 
-process.stdout.write(`${JSON.stringify({ results, errors })  }\n`);
+process.stdout.write(`${JSON.stringify({ errors, results })}\n`);
 process.exit(results.length === 0 ? 1 : 0);

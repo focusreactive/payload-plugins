@@ -8,14 +8,7 @@ import { createGetDocumentTool } from "./getDocument";
 import { createGetFieldTool } from "./getField";
 import { createGetGlobalDocumentTool } from "./getGlobalDocument";
 
-export const SKIP_KEYS = new Set([
-  "blockType",
-  "blockName",
-  "url",
-  "locale",
-  "createdAt",
-  "updatedAt",
-]);
+export const SKIP_KEYS = new Set(["blockType", "blockName", "url", "locale", "createdAt", "updatedAt"]);
 
 export interface CollectionToolConfig {
   tableFields: string[];
@@ -35,9 +28,7 @@ export interface McpToolsRegistry {
 }
 
 export function createMcpTools(registry: McpToolsRegistry): McpTool[] {
-  const knownCollections = new Set(
-    Object.keys(registry.collections) as CollectionSlug[]
-  );
+  const knownCollections = new Set(Object.keys(registry.collections) as CollectionSlug[]);
 
   return [
     createGetDocumentTool(registry, knownCollections, SKIP_KEYS),

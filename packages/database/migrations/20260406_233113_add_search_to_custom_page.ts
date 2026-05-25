@@ -20,11 +20,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TYPE "public"."enum_presets_links_list_links_link_custom_page" ADD VALUE 'search';`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
   UPDATE "page_blocks_hero_actions" SET "custom_page" = NULL WHERE "custom_page"::text = 'search';
   UPDATE "page_blocks_cards_grid_items" SET "link_custom_page" = NULL WHERE "link_custom_page"::text = 'search';

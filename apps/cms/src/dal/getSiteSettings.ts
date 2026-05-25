@@ -6,11 +6,7 @@ import type { SiteSetting } from "@/payload-types";
 
 import { getCachedGlobal } from "./getGlobals";
 
-export const getSiteSettings = async ({
-  locale,
-}: {
-  locale?: Locale;
-}): Promise<SiteSetting> => {
+export const getSiteSettings = async ({ locale }: { locale?: Locale }): Promise<SiteSetting> => {
   const { isEnabled: draft } = await draftMode();
   const resolvedLocale = await resolveLocale(locale);
 

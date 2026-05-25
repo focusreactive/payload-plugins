@@ -19,53 +19,24 @@ interface BlogPageContentProps {
   activeCategories: string[];
 }
 
-export const BlogPageContent: React.FC<BlogPageContentProps> = ({
-  posts,
-  currentPage,
-  totalPages,
-  totalDocs,
-  readMoreLabel,
-  categories,
-  activeCategories,
-}) => {
+export const BlogPageContent: React.FC<BlogPageContentProps> = ({ posts, currentPage, totalPages, totalDocs, readMoreLabel, categories, activeCategories }) => {
   const [isPending, startTransition] = useTransition();
 
   return (
     <section className="py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8 lg:py-24">
       <div className="mx-auto max-w-7xl">
-        <CategoryFilters
-          categories={categories}
-          activeCategories={activeCategories}
-          isPending={isPending}
-          startTransition={startTransition}
-        />
+        <CategoryFilters categories={categories} activeCategories={activeCategories} isPending={isPending} startTransition={startTransition} />
 
-        <div
-          className={cn(
-            "transition-opacity",
-            isPending && "opacity-50 pointer-events-none"
-          )}
-        >
+        <div className={cn("transition-opacity", isPending && "opacity-50 pointer-events-none")}>
           {currentPage && totalDocs !== undefined && (
             <div className="mb-8">
-              <PageRange
-                collection="posts"
-                currentPage={currentPage}
-                limit={BLOG_CONFIG.postsPerPage}
-                totalDocs={totalDocs}
-              />
+              <PageRange collection="posts" currentPage={currentPage} limit={BLOG_CONFIG.postsPerPage} totalDocs={totalDocs} />
             </div>
           )}
 
           <BlogPostsGrid posts={posts} readMoreLabel={readMoreLabel} />
 
-          {currentPage && totalPages && totalPages > 1 && (
-            <Pagination
-              basePath={BLOG_CONFIG.basePath}
-              page={currentPage}
-              totalPages={totalPages}
-            />
-          )}
+          {currentPage && totalPages && totalPages > 1 && <Pagination basePath={BLOG_CONFIG.basePath} page={currentPage} totalPages={totalPages} />}
         </div>
       </div>
     </section>

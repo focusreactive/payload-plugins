@@ -4,8 +4,8 @@ export const Header: GlobalConfig = {
   fields: [
     {
       name: "name",
-      type: "text",
       required: true,
+      type: "text",
     },
   ],
   label: "Header",

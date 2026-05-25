@@ -22,8 +22,8 @@ import { I18N_CONFIG } from "@/core/config/i18n";
 import { SiteSettings } from "@/globals/SiteSettings/config";
 import { plugins } from "@/plugins";
 
-const filename = import.meta.filename;
-const dirname = import.meta.dirname;
+const { filename } = import.meta;
+const { dirname } = import.meta;
 
 export default buildConfig({
   admin: {
@@ -41,39 +41,28 @@ export default buildConfig({
     livePreview: {
       breakpoints: [
         {
+          height: 667,
           label: "Mobile",
           name: "mobile",
           width: 375,
-          height: 667,
         },
         {
+          height: 1024,
           label: "Tablet",
           name: "tablet",
           width: 768,
-          height: 1024,
         },
         {
+          height: 900,
           label: "Desktop",
           name: "desktop",
           width: 1440,
-          height: 900,
         },
       ],
     },
     user: Users.slug,
   },
-  collections: [
-    Users,
-    Media,
-    Page,
-    Categories,
-    Authors,
-    Posts,
-    Testimonials,
-    Header,
-    Footer,
-    DocumentEmbeddings,
-  ],
+  collections: [Users, Media, Page, Categories, Authors, Posts, Testimonials, Header, Footer, DocumentEmbeddings],
   db: createDatabaseAdapter({
     connectionString: process.env.DATABASE_URL,
   }),

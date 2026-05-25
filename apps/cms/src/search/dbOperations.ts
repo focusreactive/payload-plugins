@@ -12,13 +12,7 @@ interface UpsertParams {
   embedding: number[];
 }
 
-export async function upsertEmbedding({
-  pool,
-  documentId,
-  collection,
-  locale,
-  embedding,
-}: UpsertParams) {
+export async function upsertEmbedding({ pool, documentId, collection, locale, embedding }: UpsertParams) {
   const vectorStr = `[${embedding.join(",")}]`;
 
   await pool.query(
@@ -40,13 +34,6 @@ interface DeleteParams {
   collection: SearchCollection;
 }
 
-export async function deleteEmbedding({
-  pool,
-  documentId,
-  collection,
-}: DeleteParams) {
-  await pool.query(
-    "DELETE FROM document_embeddings WHERE document_id = $1 AND collection = $2",
-    [documentId, collection]
-  );
+export async function deleteEmbedding({ pool, documentId, collection }: DeleteParams) {
+  await pool.query("DELETE FROM document_embeddings WHERE document_id = $1 AND collection = $2", [documentId, collection]);
 }

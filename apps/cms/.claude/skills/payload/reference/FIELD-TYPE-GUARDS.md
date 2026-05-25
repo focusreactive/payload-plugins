@@ -491,18 +491,9 @@ function traverseFields(fields: Field[], callback: (field: Field) => void) {
 ### Filter Data-Bearing Fields
 
 ```ts
-import {
-  fieldAffectsData,
-  fieldIsPresentationalOnly,
-  fieldIsHiddenOrDisabled,
-} from "payload";
+import { fieldAffectsData, fieldIsPresentationalOnly, fieldIsHiddenOrDisabled } from "payload";
 
-const dataFields = fields.filter(
-  (field) =>
-    fieldAffectsData(field) &&
-    !fieldIsPresentationalOnly(field) &&
-    !fieldIsHiddenOrDisabled(field)
-);
+const dataFields = fields.filter((field) => fieldAffectsData(field) && !fieldIsPresentationalOnly(field) && !fieldIsHiddenOrDisabled(field));
 ```
 
 ### Container Type Switching

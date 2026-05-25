@@ -1,9 +1,4 @@
-import {
-  isBlocksArray,
-  isObjectsArray,
-  isRelation,
-  isScalar,
-} from "../field/is";
+import { isBlocksArray, isObjectsArray, isRelation, isScalar } from "../field/is";
 import { isLexicalField } from "../lexical/isLexicalField";
 import { lexicalToMarkdown } from "../lexical/lexicalToMarkdown";
 import { formatFieldLine } from "./formatFieldLine";
@@ -25,10 +20,7 @@ interface FormatDocumentFieldOpts {
   fieldRelationTo?: Record<string, string>;
 }
 
-export function formatFieldValue(
-  value: unknown,
-  options: FormatDocumentFieldOpts
-) {
+export function formatFieldValue(value: unknown, options: FormatDocumentFieldOpts) {
   const { blockLabels } = options;
 
   if (isLexicalField(value)) {
@@ -50,15 +42,11 @@ export function formatFieldValue(
       .map((item, i) => {
         if (isBlocks) {
           const block = item as Record<string, unknown>;
-          const blockLabel =
-            blockLabels[block.blockType as string] ?? block.blockType;
+          const blockLabel = blockLabels[block.blockType as string] ?? block.blockType;
           const header = `- [${i}] ${String(blockLabel)}:`;
 
           const fields = Object.entries(block)
-            .filter(
-              ([key]) =>
-                key !== "blockType" && key !== "blockName" && key !== "id"
-            )
+            .filter(([key]) => key !== "blockType" && key !== "blockName" && key !== "id")
             .map(([key, value]) => formatFieldLine(key, value, 1, options))
             .join("\n");
 
@@ -84,9 +72,7 @@ export function formatFieldValue(
   const obj = value as Record<string, unknown>;
 
   const fields = Object.entries(obj)
-    .filter(
-      ([key]) => key !== "blockType" && key !== "blockName" && key !== "id"
-    )
+    .filter(([key]) => key !== "blockType" && key !== "blockName" && key !== "id")
     .map(([key, value]) => formatFieldLine(key, value, 0, options))
     .join("\n");
 

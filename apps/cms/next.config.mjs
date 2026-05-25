@@ -21,9 +21,9 @@ const nextConfig = {
 
     return webpackConfig;
   },
+  reactCompiler: true,
   experimental: {
     inlineCss: true,
-    reactCompiler: true,
   },
   images: {
     remotePatterns: [
@@ -57,6 +57,4 @@ const nextConfig = {
 
 const withNextIntl = createNextIntlPlugin();
 
-export default withNextIntl(
-  withPayload(nextConfig, { devBundleServerPackages: false })
-);
+export default withNextIntl(withPayload(nextConfig, { devBundleServerPackages: false }));

@@ -6,38 +6,22 @@ import { getPayloadClient } from "@/dal/payload-client";
 
 type GlobalSlug = "site-settings";
 
-export function formatGlobalCacheTag(
-  collection: GlobalSlug,
-  locale?: Locale
-): string {
+export function formatGlobalCacheTag(collection: GlobalSlug, locale?: Locale): string {
   return `${collection}${locale ? `_${locale}` : ""}`;
 }
 
-export function revalidateGlobalTags(params: {
-  collection: GlobalSlug;
-  locale: Locale;
-}): void {
+export function revalidateGlobalTags(params: { collection: GlobalSlug; locale: Locale }): void {
   const { collection, locale } = params;
   revalidateTag(formatGlobalCacheTag(collection), "max");
   revalidateTag(formatGlobalCacheTag(collection, locale), "max");
 }
 
-async function getGlobal(
-  slug: GlobalSlug,
-  depth = 0,
-  locale?: Locale,
-  draft?: boolean
-) {
+async function getGlobal(slug: GlobalSlug, depth = 0, locale?: Locale, draft?: boolean) {
   const payload = await getPayloadClient();
   return await payload.findGlobal({ depth, draft, locale, slug });
 }
 
-export const getCachedGlobal = (
-  collection: GlobalSlug,
-  depth: number = 2,
-  locale?: Locale,
-  draft?: boolean
-) => {
+export const getCachedGlobal = (collection: GlobalSlug, depth: number = 2, locale?: Locale, draft?: boolean) => {
   if (draft) {
     return async () => {
       const resolvedLocale = locale ? await resolveLocale(locale) : undefined;

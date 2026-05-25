@@ -1,7 +1,7 @@
 import { cn } from "../../../utils";
 import LogoItem from "./LogoItem";
-import { AlignVariant } from './types';
-import type { ILogosProps } from './types';
+import { AlignVariant } from "./types";
+import type { ILogosProps } from "./types";
 
 export function Logos({ items, alignVariant }: ILogosProps) {
   return (

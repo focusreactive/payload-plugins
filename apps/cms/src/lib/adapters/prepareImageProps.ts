@@ -1,33 +1,21 @@
-import { ImageAspectRatio } from '@repo/ui/components/ui/image/types';
-import type { IImageProps } from '@repo/ui/components/ui/image/types';
+import { ImageAspectRatio } from "@repo/ui/components/ui/image/types";
+import type { IImageProps } from "@repo/ui/components/ui/image/types";
 
 import type { Media } from "@/payload-types";
 
-export interface ImageFieldData extends Partial<
-  Omit<IImageProps, "aspectRatio">
-> {
+export interface ImageFieldData extends Partial<Omit<IImageProps, "aspectRatio">> {
   image?: Media | number | null;
   aspectRatio?: ImageAspectRatio | string | null;
 }
 
 const validRatios = Object.values(ImageAspectRatio) as string[];
 
-function resolveAspectRatio(
-  raw: ImageAspectRatio | string | null | undefined
-): ImageAspectRatio {
-  return validRatios.includes(raw ?? "")
-    ? (raw as ImageAspectRatio)
-    : ImageAspectRatio["auto"];
+function resolveAspectRatio(raw: ImageAspectRatio | string | null | undefined): ImageAspectRatio {
+  return validRatios.includes(raw ?? "") ? (raw as ImageAspectRatio) : ImageAspectRatio["auto"];
 }
 
-export function prepareImageProps(
-  data: ImageFieldData | null | undefined
-): IImageProps {
-  const {
-    image: media,
-    aspectRatio: aspectRatioProp,
-    ...imageAttributes
-  } = data ?? {};
+export function prepareImageProps(data: ImageFieldData | null | undefined): IImageProps {
+  const { image: media, aspectRatio: aspectRatioProp, ...imageAttributes } = data ?? {};
 
   const aspectRatio = resolveAspectRatio(aspectRatioProp);
 

@@ -1,7 +1,11 @@
 import { I18N_CONFIG } from "@/core/config/i18n";
 import type { Locale } from "@/core/types";
 
-interface DefaultValueArgs { locale?: Locale; req: unknown; user: unknown }
+interface DefaultValueArgs {
+  locale?: Locale;
+  req: unknown;
+  user: unknown;
+}
 
 interface RichTextState {
   root: {
@@ -19,50 +23,47 @@ const DEFAULT_LOCALE = I18N_CONFIG.defaultLocale as Locale;
 /**
  * Creates Lexical richText state from heading and paragraph text
  */
-export function createRichTextState(
-  heading: string,
-  paragraph: string
-): RichTextState {
+export function createRichTextState(heading: string, paragraph: string): RichTextState {
   return {
     root: {
       children: [
         {
-          type: "heading",
-          tag: "h2",
-          direction: "ltr",
-          format: "",
-          indent: 0,
-          version: 1,
           children: [
             {
-              type: "text",
-              text: heading,
               detail: 0,
               format: 0,
               mode: "normal",
               style: "",
+              text: heading,
+              type: "text",
               version: 1,
             },
           ],
+          direction: "ltr",
+          format: "",
+          indent: 0,
+          tag: "h2",
+          type: "heading",
+          version: 1,
         },
         {
-          type: "paragraph",
+          children: [
+            {
+              detail: 0,
+              format: 0,
+              mode: "normal",
+              style: "",
+              text: paragraph,
+              type: "text",
+              version: 1,
+            },
+          ],
           direction: "ltr",
           format: "",
           indent: 0,
           textFormat: 0,
+          type: "paragraph",
           version: 1,
-          children: [
-            {
-              type: "text",
-              text: paragraph,
-              detail: 0,
-              format: 0,
-              mode: "normal",
-              style: "",
-              version: 1,
-            },
-          ],
         },
       ],
       direction: "ltr",
@@ -80,11 +81,8 @@ export function createRichTextState(
  * @example
  * defaultValue: createLocalizedDefault({ en: 'Hello', es: 'Hola' })
  */
-export function createLocalizedDefault<T>(
-  translations: Record<Locale, T>
-): (args: DefaultValueArgs) => T {
-  const fallback =
-    translations[DEFAULT_LOCALE] ?? (Object.values(translations)[0] as T);
+export function createLocalizedDefault<T>(translations: Record<Locale, T>): (args: DefaultValueArgs) => T {
+  const fallback = translations[DEFAULT_LOCALE] ?? (Object.values(translations)[0] as T);
 
   return (args) => {
     const locale = args.locale ?? DEFAULT_LOCALE;

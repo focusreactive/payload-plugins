@@ -36,11 +36,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   DROP TYPE "public"."enum__page_v_blocks_blog_section_section_max_width";`);
 }
 
-export async function down({
-  db,
-  payload,
-  req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    CREATE TYPE "public"."enum_page_blocks_blog_section_section_theme" AS ENUM('light', 'dark', 'light-gray', 'dark-gray');
   CREATE TYPE "public"."enum_page_blocks_blog_section_section_margin_top" AS ENUM('none', 'base', 'large');
