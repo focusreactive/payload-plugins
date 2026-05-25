@@ -48,7 +48,6 @@
     "@radix-ui/react-dropdown-menu": "2.1.16",
     "@radix-ui/react-navigation-menu": "1.2.14",
     "@radix-ui/react-slot": "1.2.4",
-    "@repo/database": "workspace:*",
     "@repo/ui": "workspace:*",
     "@uidotdev/usehooks": "2.4.1",
     "@vercel/edge-config": "1.4.3",

@@ -22,16 +22,15 @@ packages/
   payload-plugin-comments/            → @focus-reactive/payload-plugin-comments (published)
   payload-plugin-scheduling/          → @focus-reactive/payload-plugin-scheduling (published)
   payload-plugin-translator/          → @focus-reactive/payload-plugin-translator (published)
-  database/                           → @repo/database — postgres adapter + migrations (private)
   ui/                                 → @repo/ui — shared React UI components (private)
   tailwind-config/                    → @repo/tailwind-config — shared Tailwind v4 config (private)
   typescript-config/                  → @repo/typescript-config (private)
 ```
 
-`apps/cms` consumes the workspace plugins via `workspace:*`, gets its Postgres
-adapter from `@repo/database`, and runs all app-layer data access through
-its own `src/dal/` (see `apps/cms/src/dal/README.md`). `apps/dev` is the
-minimal plugin sandbox.
+`apps/cms` consumes the workspace plugins via `workspace:*`, owns its Postgres
+adapter + migrations under `src/database/`, and runs all app-layer data access
+through its own `src/dal/` (see `apps/cms/src/dal/README.md`). `apps/dev` is
+the minimal plugin sandbox.
 
 ## Bun layout
 

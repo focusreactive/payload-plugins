@@ -14,11 +14,11 @@ bun run test:int               # Vitest integration tests
 bun run test:e2e               # Playwright E2E tests (Chromium)
 bun run generate:types         # Regenerate Payload TypeScript types — run after schema changes
 bun run generate:importmap     # Regenerate Payload import map — run after adding/editing admin components
-bun run payload migrate:create # Create a new database migration (writes into packages/database/migrations)
+bun run payload migrate:create # Create a new database migration (writes into src/database/migrations)
 bun run payload migrate        # Apply pending migrations
 ```
 
-Migrations live in `packages/database/migrations/` (see `@repo/database`), not in this app.
+Migrations live in `src/database/migrations/`.
 
 Validate changes with: `bun run check-types && bun run lint`.
 
@@ -62,10 +62,10 @@ pattern.
 
 ## Database
 
-Postgres adapter + migrations live in `packages/database` (`@repo/database`).
-`payload.config.ts` imports `createDatabaseAdapter()` from that package; the
-adapter is configured with `migrationDir` pointing at the package's
-`migrations/` directory, so `payload migrate:create` writes new files there.
+Postgres adapter + migrations live in `src/database/`. `payload.config.ts`
+imports `createDatabaseAdapter()` from `@/database`; the adapter is configured
+with `migrationDir` pointing at `src/database/migrations/`, so `payload
+migrate:create` writes new files there.
 
 ## Wired Plugins
 

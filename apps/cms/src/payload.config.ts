@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { en } from "@payloadcms/translations/languages/en";
 import { es } from "@payloadcms/translations/languages/es";
-import { createDatabaseAdapter } from "@repo/database";
 import { buildConfig } from "payload";
 import sharp from "sharp";
 
@@ -19,11 +18,11 @@ import { Posts } from "@/collections/Posts";
 import { Testimonials } from "@/collections/Testimonials";
 import { Users } from "@/collections/Users";
 import { I18N_CONFIG } from "@/core/config/i18n";
+import { createDatabaseAdapter } from "@/database";
 import { SiteSettings } from "@/globals/SiteSettings/config";
 import { plugins } from "@/plugins";
 
-const filename = import.meta.filename;
-const dirname = import.meta.dirname;
+const baseDir = import.meta.dirname;
 
 export default buildConfig({
   admin: {
@@ -36,7 +35,7 @@ export default buildConfig({
       providers: ["/providers/BeforeOpenDrawerWrapper"],
     },
     importMap: {
-      baseDir: path.resolve(dirname),
+      baseDir,
     },
     livePreview: {
       breakpoints: [
@@ -95,6 +94,6 @@ export default buildConfig({
   secret: process.env.PAYLOAD_SECRET || "",
   sharp,
   typescript: {
-    outputFile: path.resolve(dirname, "payload-types.ts"),
+    outputFile: path.resolve(baseDir, "payload-types.ts"),
   },
 });

@@ -17,13 +17,12 @@ import { Users } from "./collections/Users";
 import { Header } from "./globals/Header";
 import { abAdapter } from "./lib/ab-testing/dbAdapter";
 
-const filename = import.meta.filename;
-const dirname = import.meta.dirname;
+const baseDir = import.meta.dirname;
 
 export default buildConfig({
   admin: {
     importMap: {
-      baseDir: path.resolve(dirname),
+      baseDir,
     },
     livePreview: {
       breakpoints: [
@@ -92,6 +91,6 @@ export default buildConfig({
   secret: process.env.PAYLOAD_SECRET || "",
   sharp,
   typescript: {
-    outputFile: path.resolve(dirname, "payload-types.ts"),
+    outputFile: path.resolve(baseDir, "payload-types.ts"),
   },
 });

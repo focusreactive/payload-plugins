@@ -4,12 +4,11 @@ import { fileURLToPath } from "node:url";
 import { postgresAdapter } from "@payloadcms/db-postgres";
 import type { PostgresAdapter } from "@payloadcms/db-postgres";
 
-import { migrations } from "../migrations/index";
+import { migrations } from "./migrations/index";
 
-const __filename = import.meta.filename;
-const __dirname = import.meta.dirname;
+const baseDir = import.meta.dirname;
 
-export const migrationDir = path.resolve(__dirname, "../migrations");
+export const migrationDir = path.resolve(baseDir, "migrations");
 
 export interface CreateDatabaseAdapterOptions {
   connectionString?: string;
