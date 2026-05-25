@@ -22,7 +22,7 @@ import { createDatabaseAdapter } from "@/database";
 import { SiteSettings } from "@/globals/SiteSettings/config";
 import { plugins } from "@/plugins";
 
-const baseDir = import.meta.dirname;
+const baseDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default buildConfig({
   admin: {

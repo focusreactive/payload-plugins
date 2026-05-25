@@ -56,6 +56,9 @@ export default defineConfig({
     // Module systems ────────────────────────────────────────────────────
     // postcss / tailwind configs require CommonJS `module.exports`.
     "unicorn/prefer-module": "off",
+    // `import.meta.dirname` / `import.meta.filename` are undefined under Turbopack
+    // bundling — we must use `path.dirname(fileURLToPath(import.meta.url))`.
+    "unicorn/prefer-import-meta-properties": "off",
 
     // Comments and naming ───────────────────────────────────────────────
     "no-inline-comments": "off",
