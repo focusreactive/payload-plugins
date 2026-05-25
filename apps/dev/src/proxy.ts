@@ -12,7 +12,7 @@ const resolveAbRewrite = createResolveAbRewrite<VariantData>({
   storage,
 });
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const result = await resolveAbRewrite(request as any, pathname, pathname, pathname);
   return result ?? NextResponse.next();

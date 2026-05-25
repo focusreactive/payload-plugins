@@ -61,7 +61,7 @@ const filepaths = args;
 if (filepaths.length === 0) {
   process.stdout.write(
     `${JSON.stringify({
-      error: "Missing filepath(s). Usage: node apps/payload/.claude/skills/upload-local-image/scripts/upload-to-blob.mjs <file1> [file2] ...",
+      error: "Missing filepath(s). Usage: node apps/cms/.claude/skills/upload-local-image/scripts/upload-to-blob.mjs <file1> [file2] ...",
     })}\n`
   );
   process.exit(1);

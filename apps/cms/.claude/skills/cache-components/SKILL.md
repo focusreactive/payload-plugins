@@ -1,6 +1,6 @@
 ---
 name: cache-components
-description: Expert guidance for Next.js Cache Components and Partial Prerendering (PPR). PROACTIVE ACTIVATION: Use this skill automatically when working in Next.js projects that have `cacheComponents: true` in their next.config.ts/next.config.js. When this config is detected, proactively apply Cache Components patterns and best practices to all React Server Component implementations. DETECTION: At the start of a session in a Next.js project, check for `cacheComponents: true` in next.config. If enabled, this skill's patterns should guide all component authoring, data fetching, and caching decisions. USE CASES: Implementing 'use cache' directive, configuring cache lifetimes with cacheLife(), tagging cached data with cacheTag(), invalidating caches with updateTag()/revalidateTag(), optimizing static vs dynamic content boundaries, debugging cache issues, and reviewing Cache Component implementations.
+description: Use when working in a Next.js project with `cacheComponents: true` in next.config — writing or reviewing React Server Components, adding `'use cache'`, configuring `cacheLife()`/`cacheTag()`, invalidating with `updateTag()`/`revalidateTag()`, debugging Partial Prerendering, or deciding static vs cached vs dynamic boundaries.
 ---
 
 # Next.js Cache Components

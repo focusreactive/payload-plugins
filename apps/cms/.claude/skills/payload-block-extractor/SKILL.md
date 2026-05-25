@@ -8,18 +8,18 @@ description: >
 
 # payload-block-extractor
 
-Use this skill when a new block has been created at `apps/payload/src/blocks/<BlockName>/config.ts`
+Use this skill when a new block has been created at `apps/cms/src/blocks/<BlockName>/config.ts`
 and needs its text extraction wired into semantic search.
 
-Each block owns its extractor at `apps/payload/src/blocks/<BlockName>/extractText.ts`.
-The orchestrator that calls all extractors is `apps/payload/src/collections/Page/extractPageText.ts`.
+Each block owns its extractor at `apps/cms/src/blocks/<BlockName>/extractText.ts`.
+The orchestrator that calls all extractors is `apps/cms/src/collections/Page/extractPageText.ts`.
 The two shared utilities are `extractLexicalText` and `joinText` from `@/core/utils/text`.
 
 ---
 
 ## Step 1 — Read the block config
 
-Read `apps/payload/src/blocks/<BlockName>/config.ts`. Identify all fields and their types.
+Read `apps/cms/src/blocks/<BlockName>/config.ts`. Identify all fields and their types.
 
 ---
 
@@ -36,7 +36,7 @@ For nested `array` fields, recurse into sub-fields using the same mapping rules.
 
 ---
 
-## Step 3 — Create `apps/payload/src/blocks/<BlockName>/extractText.ts`
+## Step 3 — Create `apps/cms/src/blocks/<BlockName>/extractText.ts`
 
 Write the extractor function in the block's own folder:
 
@@ -54,7 +54,7 @@ export function extract<BlockName>Text(block: <BlockName>Block): string {
 Example — for a block named `Promo` with a `text` field, a `richText` body, and an `items` array each having a `label` text field:
 
 ```ts
-// apps/payload/src/blocks/Promo/extractText.ts
+// apps/cms/src/blocks/Promo/extractText.ts
 import type { PromoBlock } from "@/payload-types";
 import { extractLexicalText, joinText } from "@/core/utils/text";
 
@@ -67,7 +67,7 @@ export function extractPromoText(block: PromoBlock): string {
 
 ## Step 4 — Register the extractor in `extractPageText.ts`
 
-Open `apps/payload/src/collections/Page/extractPageText.ts`.
+Open `apps/cms/src/collections/Page/extractPageText.ts`.
 
 1. Add an import for the new extractor function (keep imports sorted alphabetically by block name):
 
@@ -89,7 +89,7 @@ The `blockSlug` is the `slug` property defined in the block's `config.ts`.
 ## Step 5 — Lint and type-check
 
 ```bash
-cd apps/payload && npx tsc --noEmit && pnpm lint
+cd apps/cms && bun run check-types && bun run lint
 ```
 
 Fix any errors before committing.
@@ -99,8 +99,8 @@ Fix any errors before committing.
 ## Step 6 — Commit
 
 ```bash
-git add apps/payload/src/blocks/<BlockName>/extractText.ts
-git add apps/payload/src/collections/Page/extractPageText.ts
+git add apps/cms/src/blocks/<BlockName>/extractText.ts
+git add apps/cms/src/collections/Page/extractPageText.ts
 git commit -m "feat(search): add text extractor for <BlockName> block"
 ```
 

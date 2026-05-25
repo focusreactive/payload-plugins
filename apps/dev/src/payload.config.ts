@@ -17,8 +17,8 @@ import { Users } from "./collections/Users";
 import { Header } from "./globals/Header";
 import { abAdapter } from "./lib/ab-testing/dbAdapter";
 
-const { filename } = import.meta;
-const { dirname } = import.meta;
+const filename = import.meta.filename;
+const dirname = import.meta.dirname;
 
 export default buildConfig({
   admin: {

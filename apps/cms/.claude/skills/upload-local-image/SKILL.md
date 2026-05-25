@@ -22,7 +22,7 @@ If the user has not provided explicit local file paths, ask for them. One or mor
 ### Step 2 — Upload all to Vercel Blob
 
 ```bash
-node apps/payload/.claude/skills/upload-local-image/scripts/upload-to-blob.mjs "<file1>" "<file2>" ...
+node apps/cms/.claude/skills/upload-local-image/scripts/upload-to-blob.mjs "<file1>" "<file2>" ...
 ```
 
 Parse stdout JSON.
@@ -62,7 +62,7 @@ images: [
 ### Step 5 — Delete all temp blobs
 
 ```bash
-node apps/payload/.claude/skills/upload-local-image/scripts/upload-to-blob.mjs --delete "<pathname1>" "<pathname2>" ...
+node apps/cms/.claude/skills/upload-local-image/scripts/upload-to-blob.mjs --delete "<pathname1>" "<pathname2>" ...
 ```
 
 Parse `errors`. If any deletions failed, warn the user:
