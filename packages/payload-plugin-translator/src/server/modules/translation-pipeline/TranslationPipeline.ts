@@ -1,27 +1,22 @@
-import type { TranslationProvider } from "../translation-providers";
-import type { TextExpander } from "./stages";
+import type { TranslationProvider } from '../translation-providers'
+import type { PipelineConfig, PipelineResult, PipelineContext, PipelineStage } from './types'
+import type { TranslationStrategy } from './strategies'
+import type { TextExpander } from './stages'
 import {
   DataReconcilerStage,
   FieldChunkCollectorStage,
   TranslationStage,
   TextChunkExpanderStage,
   TranslationMutatorStage,
-} from "./stages";
-import type { TranslationStrategy } from "./strategies";
-import type {
-  PipelineConfig,
-  PipelineResult,
-  PipelineContext,
-  PipelineStage,
-} from "./types";
+} from './stages'
 
 /**
  * Options for TranslationPipeline.
  */
-export interface TranslationPipelineOptions {
-  translationProvider: TranslationProvider;
-  translationStrategy: TranslationStrategy;
-  textExpanders?: TextExpander[];
+export type TranslationPipelineOptions = {
+  translationProvider: TranslationProvider
+  translationStrategy: TranslationStrategy
+  textExpanders?: TextExpander[]
 }
 
 /**
@@ -38,7 +33,7 @@ export interface TranslationPipelineOptions {
  * Pipeline only transforms data. Saving is the caller's responsibility.
  */
 export class TranslationPipeline {
-  private readonly stages: PipelineStage[];
+  private readonly stages: PipelineStage[]
 
   constructor(options: TranslationPipelineOptions) {
     this.stages = [
@@ -47,7 +42,7 @@ export class TranslationPipeline {
       new TextChunkExpanderStage(options.textExpanders),
       new TranslationStage(options.translationProvider),
       new TranslationMutatorStage(),
-    ];
+    ]
   }
 
   /**
@@ -58,29 +53,29 @@ export class TranslationPipeline {
     let ctx: PipelineContext = {
       schema: config.schema,
       sourceData: config.sourceData,
-      sourceLng: config.sourceLng,
       targetData: config.targetData,
+      sourceLng: config.sourceLng,
       targetLng: config.targetLng,
-    };
+    }
 
     for (const stage of this.stages) {
-      ctx = await stage.execute(ctx);
+      ctx = await stage.execute(ctx)
 
       // Early exit checks
       if (ctx.fieldChunks !== undefined && ctx.fieldChunks.length === 0) {
-        return null;
+        return null
       }
       if (ctx.textMap !== undefined && Object.keys(ctx.textMap).length === 0) {
-        return null;
+        return null
       }
     }
 
     if (!ctx.filteredData) {
-      return null;
+      return null
     }
 
     return {
       translatedData: ctx.filteredData,
-    };
+    }
   }
 }

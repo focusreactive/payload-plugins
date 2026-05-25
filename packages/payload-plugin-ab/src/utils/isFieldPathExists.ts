@@ -1,10 +1,10 @@
 import type { Field } from "payload";
 
-interface TabLike { name?: string; fields: Field[] }
+type TabLike = { name?: string; fields: Field[] };
 
-interface TabsFieldLike { type: "tabs"; tabs: TabLike[] }
+type TabsFieldLike = { type: "tabs"; tabs: TabLike[] };
 
-interface FieldsContainer { fields: Field[] }
+type FieldsContainer = { fields: Field[] };
 
 export function isFieldPathExists(fields: Field[], path: string): boolean {
   const [head, ...rest] = path.split(".");
@@ -12,16 +12,10 @@ export function isFieldPathExists(fields: Field[], path: string): boolean {
   for (const field of fields) {
     // Named fields
     if ("name" in field && field.name === head) {
-      if (rest.length === 0) {return true;}
+      if (rest.length === 0) return true;
 
-      if (
-        "fields" in field &&
-        Array.isArray((field as unknown as FieldsContainer).fields)
-      ) {
-        return isFieldPathExists(
-          (field as unknown as FieldsContainer).fields,
-          rest.join(".")
-        );
+      if ("fields" in field && Array.isArray((field as unknown as FieldsContainer).fields)) {
+        return isFieldPathExists((field as unknown as FieldsContainer).fields, rest.join("."));
       }
 
       return false;
@@ -34,24 +28,23 @@ export function isFieldPathExists(fields: Field[], path: string): boolean {
       for (const tab of tabs) {
         if (tab.name) {
           if (tab.name === head) {
-            if (rest.length === 0) {return true;}
+            if (rest.length === 0) return true;
 
-            if (isFieldPathExists(tab.fields, rest.join("."))) {return true;}
+            if (isFieldPathExists(tab.fields, rest.join("."))) return true;
           }
         } else {
-          if (isFieldPathExists(tab.fields, path)) {return true;}
+          if (isFieldPathExists(tab.fields, path)) return true;
         }
       }
     }
 
     // Transparent layout fields
     if (
-      (field.type === "row" || field.type === "collapsible") &&
-      "fields" in field &&
-      Array.isArray((field as unknown as FieldsContainer).fields)
+      (field.type === "row" || field.type === "collapsible")
+      && "fields" in field
+      && Array.isArray((field as unknown as FieldsContainer).fields)
     ) {
-      if (isFieldPathExists((field as unknown as FieldsContainer).fields, path))
-        {return true;}
+      if (isFieldPathExists((field as unknown as FieldsContainer).fields, path)) return true;
     }
   }
 

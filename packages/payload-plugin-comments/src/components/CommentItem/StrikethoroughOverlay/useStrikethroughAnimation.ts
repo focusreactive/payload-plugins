@@ -1,15 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { RefObject } from 'react';
-
+import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { clamp } from "./clamp";
 import { measureLineRects } from "./measureLineRects";
 
 const SPEED = 20;
 
-export function useStrikethroughAnimation(
-  isResolved: boolean,
-  contentRect: RefObject<HTMLElement | null>
-) {
+export function useStrikethroughAnimation(isResolved: boolean, contentRect: RefObject<HTMLElement | null>) {
   const [lineRects, setLineRects] = useState<DOMRect[]>([]);
   const [lineContentRect, setLineContentRect] = useState<DOMRect | null>(null);
 
@@ -28,11 +23,13 @@ export function useStrikethroughAnimation(
     lineRefs.current[i] = el;
   };
 
-  const getTotalLineWidth = () => lineRectsRef.current.reduce((sum, r) => sum + r.width, 0) || 1;
+  const getTotalLineWidth = () => {
+    return lineRectsRef.current.reduce((sum, r) => sum + r.width, 0) || 1;
+  };
 
   const measureLines = () => {
     const el = contentRect.current;
-    if (!el) {return;}
+    if (!el) return;
 
     const lineRects = measureLineRects(contentRect);
     const lineContentRect = el.getBoundingClientRect();
@@ -48,8 +45,7 @@ export function useStrikethroughAnimation(
     };
 
     lineRectsRef.current = lineRects;
-    cumulativePixelStartPerLineRef.current =
-      precomputeCumulativePixelStartPerLine();
+    cumulativePixelStartPerLineRef.current = precomputeCumulativePixelStartPerLine();
 
     setLineRects(lineRects);
     setLineContentRect(lineContentRect);
@@ -60,10 +56,10 @@ export function useStrikethroughAnimation(
     const starts = cumulativePixelStartPerLineRef.current;
 
     lineRefs.current.forEach((line, i) => {
-      if (!line || !rects[i]) {return;}
+      if (!line || !rects[i]) return;
 
       const pixelStart = starts[i] ?? 0;
-      const {width} = rects[i];
+      const width = rects[i].width;
 
       const currentWidth = clamp(0, (progress - pixelStart) / width, 1) * width;
       line.style.width = `${currentWidth}px`;
@@ -75,16 +71,10 @@ export function useStrikethroughAnimation(
 
     const tick = () => {
       const direction = directionRef.current;
-      progressRef.current = clamp(
-        0,
-        progressRef.current + direction * SPEED,
-        n
-      );
+      progressRef.current = clamp(0, progressRef.current + direction * SPEED, n);
       updateLines(progressRef.current);
 
-      const done =
-        (direction === 1 && progressRef.current >= n) ||
-        (direction === -1 && progressRef.current <= 0);
+      const done = (direction === 1 && progressRef.current >= n) || (direction === -1 && progressRef.current <= 0);
 
       if (!done) {
         animationIdRef.current = requestAnimationFrame(tick);
@@ -103,8 +93,7 @@ export function useStrikethroughAnimation(
     mountedRef.current = true;
 
     const prefersReducedMotion =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     if (isResolved && !measuredRef.current) {
       measureLines();
@@ -122,7 +111,7 @@ export function useStrikethroughAnimation(
       return;
     }
 
-    if (isFirstRun) {return;}
+    if (isFirstRun) return;
 
     if (prefersReducedMotion) {
       const targetProgress = isResolved ? totalWidth : 0;
@@ -138,10 +127,10 @@ export function useStrikethroughAnimation(
 
   useEffect(() => {
     const el = contentRect.current;
-    if (!el) {return;}
+    if (!el) return;
 
     const observer = new ResizeObserver(() => {
-      if (!measuredRef.current) {return;}
+      if (!measuredRef.current) return;
 
       measureLines();
 
@@ -158,7 +147,9 @@ export function useStrikethroughAnimation(
     return () => observer.disconnect();
   }, [contentRect]);
 
-  useEffect(() => () => cancelAnimationFrame(animationIdRef.current), []);
+  useEffect(() => {
+    return () => cancelAnimationFrame(animationIdRef.current);
+  }, []);
 
-  return { getLineByIndexRef, lineContentRect, lineRects };
+  return { lineRects, lineContentRect, getLineByIndexRef };
 }

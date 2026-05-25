@@ -1,6 +1,5 @@
-import type { CollectionSlug } from "payload";
-
 import type { Comment, Mode } from "../../types";
+import type { CollectionSlug } from "payload";
 import { filterCommentsByLocale } from "./filterCommentsByLocale";
 
 interface Props {
@@ -12,23 +11,12 @@ interface Props {
   currentLocale?: string | null;
 }
 
-export function extractVisibleComments({
-  comments,
-  mode,
-  collectionSlug,
-  documentId,
-  globalSlug,
-  currentLocale,
-}: Props) {
-  const localeFilteredComments = filterCommentsByLocale(
-    comments,
-    currentLocale
-  );
+export function extractVisibleComments({ comments, mode, collectionSlug, documentId, globalSlug, currentLocale }: Props) {
+  const localeFilteredComments = filterCommentsByLocale(comments, currentLocale);
 
   if (mode === "document" && collectionSlug && documentId) {
     return localeFilteredComments.filter(
-      ({ collectionSlug: slug, documentId: id }) =>
-        slug === collectionSlug && id === documentId
+      ({ collectionSlug: slug, documentId: id }) => slug === collectionSlug && id === documentId,
     );
   }
 

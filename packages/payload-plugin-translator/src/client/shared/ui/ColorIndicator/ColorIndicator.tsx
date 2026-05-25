@@ -1,20 +1,15 @@
-import classNames from "classnames";
+import classNames from 'classnames'
 
-import styles from "./styles.module.scss";
+import styles from './styles.module.scss'
 
-interface ColorIndicatorProps {
-  $color: "red" | "green" | "blue" | "gray";
-  $animated?: boolean;
-  title?: string;
-  className?: string;
+type ColorIndicatorProps = {
+  $color: 'red' | 'green' | 'blue' | 'gray'
+  $animated?: boolean
+  title?: string
+  className?: string
 }
 
-export default function ColorIndicator({
-  $color,
-  $animated,
-  title,
-  className,
-}: ColorIndicatorProps) {
+export default function ColorIndicator({ $color, $animated, title, className }: ColorIndicatorProps) {
   return (
     <div
       title={title}
@@ -24,8 +19,8 @@ export default function ColorIndicator({
         {
           [styles.animated]: $animated,
         },
-        className
+        className,
       )}
     />
-  );
+  )
 }

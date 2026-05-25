@@ -75,8 +75,5 @@ export interface AnalyticsAdapter {
    * Powers the ExperimentStatsWidget admin component.
    * Requires propertyId and getAccessToken in the adapter config.
    */
-  getStats?(
-    experimentId: string,
-    dateRange?: DateRange
-  ): Promise<ExperimentStats>;
+  getStats?(experimentId: string, dateRange?: DateRange): Promise<ExperimentStats>;
 }

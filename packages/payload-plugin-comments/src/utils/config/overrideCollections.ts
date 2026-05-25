@@ -1,11 +1,10 @@
 import type { CollectionAfterDeleteHook, CollectionConfig } from "payload";
-
 import { DEFAULT_COLLECTION_SLUG } from "../../constants";
 import { injectFieldCommentComponents } from "./injectFieldCommentComponents";
 
 export function overrideCollections(collections?: CollectionConfig[]) {
   return (collections ?? []).map((collection) => {
-    if (collection.slug === DEFAULT_COLLECTION_SLUG) {return collection;}
+    if (collection.slug === DEFAULT_COLLECTION_SLUG) return collection;
 
     const patchedCollection = injectFieldCommentComponents(collection);
 
@@ -18,8 +17,6 @@ export function overrideCollections(collections?: CollectionConfig[]) {
           (async ({ doc, req }) => {
             await req.payload.delete({
               collection: DEFAULT_COLLECTION_SLUG,
-              overrideAccess: true,
-              req,
               where: {
                 and: [
                   {
@@ -30,6 +27,8 @@ export function overrideCollections(collections?: CollectionConfig[]) {
                   },
                 ],
               },
+              req,
+              overrideAccess: true,
             });
           }) satisfies CollectionAfterDeleteHook,
         ],

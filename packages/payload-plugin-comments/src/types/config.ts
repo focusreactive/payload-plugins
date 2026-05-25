@@ -1,5 +1,4 @@
 import type { CollectionConfig, Field } from "payload";
-
 import type { Translations } from "../translations/types";
 
 /**

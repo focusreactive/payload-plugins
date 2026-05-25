@@ -1,5 +1,6 @@
 "use client";
 
+import { ReactNode, useCallback, useEffect, useRef } from "react";
 import {
   BlocksField,
   useForm,
@@ -17,21 +18,17 @@ import type {
   FormState,
   SanitizedFieldPermissions,
 } from "payload";
-import type { ReactNode} from "react";
-import { useCallback, useEffect, useRef } from "react";
-
-import type { Preset } from "../shared/index.js";
 import { usePresetsConfig } from "../usePresetsConfig.js";
 import { buildSubFieldStateFromPreset } from "../utils.js";
+import { BlockSelectorWithPresets } from "./BlockSelectorWithPresets.js";
 import { useBeforeOpenDrawer } from "./BeforeOpenDrawerContext.js";
 import { BlocksConfigProvider } from "./BlocksConfigContext.js";
-import { BlockSelectorWithPresets } from "./BlockSelectorWithPresets.js";
-import { hydrateBlocksFieldCustomComponents } from "./clipboard.js";
 import { OpenDrawerProvider } from "./OpenDrawerContext.js";
-
+import type { Preset } from "../shared/index.js";
+import { hydrateBlocksFieldCustomComponents } from "./clipboard.js";
 import "./BlocksFieldWithPresets.scss";
 
-interface BlocksFieldWithPresetsProps {
+type BlocksFieldWithPresetsProps = {
   field: Omit<BlocksFieldClient, "type"> &
     Partial<Pick<BlocksFieldClient, "type">>;
   path: string;
@@ -41,13 +38,13 @@ interface BlocksFieldWithPresetsProps {
   parentSchemaPath: string;
   permissions?: SanitizedFieldPermissions;
   readOnly: boolean;
-}
+};
 
 export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
-  props
+  props,
 ) => {
   const { field, path, schemaPath, readOnly } = props;
-  const {blocks} = field;
+  const blocks = field.blocks;
 
   const { excludeKeys } = usePresetsConfig();
   const { user } = useAuth();
@@ -64,7 +61,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
   const currentFieldState = useFormFields(([fields]) => fields?.[path]);
 
   const existingFieldComponentRef = useRef<ReactNode>(
-    currentFieldState?.customComponents?.Field
+    currentFieldState?.customComponents?.Field,
   );
 
   useEffect(() => {
@@ -104,7 +101,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
 
       replaceState(nextState);
     },
-    [blocks, currentFieldState, path, replaceState, getFields]
+    [blocks, currentFieldState, path, replaceState, getFields],
   );
 
   form.replaceState = wrappedReplaceState;
@@ -128,14 +125,14 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
       if (presetData) {
         const subFieldState = buildSubFieldStateFromPreset(
           presetData,
-          excludeKeys
+          excludeKeys,
         );
 
         addFieldRow({
-          blockType,
           path,
           rowIndex: targetRowIndex,
           schemaPath,
+          blockType,
           subFieldState: subFieldState as FormState,
         });
 
@@ -143,13 +140,13 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
           t("presetsPlugin:blocksDrawer:successAddedWithPreset" as never, {
             blockType,
             name: preset.name,
-          })
+          }),
         );
       } else {
-        addFieldRow({ blockType, path, rowIndex: targetRowIndex, schemaPath });
+        addFieldRow({ path, rowIndex: targetRowIndex, schemaPath, blockType });
       }
     } else {
-      addFieldRow({ blockType, path, rowIndex: targetRowIndex, schemaPath });
+      addFieldRow({ path, rowIndex: targetRowIndex, schemaPath, blockType });
     }
 
     insertIndexRef.current = null;
@@ -159,15 +156,15 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
   const handleOpenDrawer = async (insertIndex: number | null = null) => {
     if (beforeOpenDrawer) {
       const allowed = await beforeOpenDrawer({
-        blocksData,
         field,
-        formData: fullData ?? {},
         path,
-        permissions: props.permissions,
-        readOnly,
         schemaPath,
+        readOnly,
+        permissions: props.permissions,
+        blocksData,
+        formData: fullData ?? {},
       });
-      if (!allowed) {return;}
+      if (!allowed) return;
     }
 
     insertIndexRef.current = insertIndex;

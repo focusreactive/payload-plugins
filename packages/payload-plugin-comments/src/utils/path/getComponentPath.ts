@@ -18,9 +18,9 @@ export function getComponentConfig({
   serverProps,
 }: GetComponentConfigProps) {
   return {
-    clientProps,
-    exportName: componentName,
     path: `${detectPluginBasePath()}/${componentPath}`,
+    exportName: componentName,
+    clientProps,
     serverProps,
   };
 }

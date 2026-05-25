@@ -1,11 +1,10 @@
 "use client";
 
 import { useCallback } from "react";
-
-import { DEFAULT_VISITOR_ID_COOKIE_NAME } from "../../cookie/constants";
-import { defaultGetExpCookieName } from "../../cookie/utils/defaultGetExpCookieName";
 import { useABAnalytics } from "../components/ABAnalyticsProvider";
 import { getCookie } from "../utils/getCookie";
+import { defaultGetExpCookieName } from "../../cookie/utils/defaultGetExpCookieName";
+import { DEFAULT_VISITOR_ID_COOKIE_NAME } from "../../cookie/constants";
 
 export interface UseABConversionOptions {
   experimentId: string;
@@ -23,10 +22,7 @@ export interface UseABConversionOptions {
   visitorCookieName?: string;
 }
 
-export type TrackConversionFn = (args: {
-  goalId: string;
-  goalValue?: number;
-}) => void;
+export type TrackConversionFn = (args: { goalId: string; goalValue?: number }) => void;
 
 export function useABConversion({
   experimentId,
@@ -37,23 +33,22 @@ export function useABConversion({
 
   return useCallback(
     ({ goalId, goalValue }: { goalId: string; goalValue?: number }) => {
-      if (!adapter) {return;}
+      if (!adapter) return;
 
-      const resolvedVariantCookie =
-        variantCookieName ?? defaultGetExpCookieName(experimentId);
+      const resolvedVariantCookie = variantCookieName ?? defaultGetExpCookieName(experimentId);
       const variantBucket = getCookie(resolvedVariantCookie);
       const visitorId = getCookie(visitorCookieName);
 
-      if (!variantBucket || !visitorId) {return;}
+      if (!variantBucket || !visitorId) return;
 
       adapter.trackConversion({
         experimentId,
-        goalId,
-        goalValue,
         variantBucket,
         visitorId,
+        goalId,
+        goalValue,
       });
     },
-    [adapter, experimentId, variantCookieName, visitorCookieName]
+    [adapter, experimentId, variantCookieName, visitorCookieName],
   );
 }

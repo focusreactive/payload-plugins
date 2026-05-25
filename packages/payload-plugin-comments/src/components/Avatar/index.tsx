@@ -1,5 +1,4 @@
 import type { ClientUser } from "payload";
-
 import type { User } from "../../types";
 import { resolveUsername } from "../../utils/user/resolveUsername";
 

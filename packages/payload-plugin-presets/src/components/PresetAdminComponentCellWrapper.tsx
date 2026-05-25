@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import { PresetAdminComponentCell } from "./PresetAdminComponentCell.js";
-import type { MediaData } from "./shared/index.js";
 import { usePresetsConfig } from "./usePresetsConfig.js";
+import type { MediaData } from "./shared/index.js";
 
 interface CellProps {
   cellData?: number | string | MediaData | null;
@@ -42,8 +41,8 @@ export function PresetAdminComponentCellWrapper(props: CellProps) {
         setMedia(data);
         setIsLoading(false);
       })
-      .catch((error) => {
-        if (error?.name === "AbortError") {return;}
+      .catch((err) => {
+        if (err?.name === "AbortError") return;
         setMedia(null);
         setIsLoading(false);
       });

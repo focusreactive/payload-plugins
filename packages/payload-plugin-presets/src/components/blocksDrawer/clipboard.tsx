@@ -1,8 +1,7 @@
 "use client";
 
+import { ReactNode } from "react";
 import type { BlocksFieldClient, FieldState, FormState } from "payload";
-import type { ReactNode } from "react";
-
 import { BlockLabelWithPresets } from "../presetActions/index.js";
 
 const LOCAL_STORAGE_CLIPBOARD_KEY = "_payloadClipboard";
@@ -81,8 +80,8 @@ export function hydrateBlocksFieldCustomComponents({
   nextState[path] = {
     ...fieldState,
     customComponents: {
-      ...currentFieldState?.customComponents,
-      ...fieldState.customComponents,
+      ...(currentFieldState?.customComponents ?? {}),
+      ...(fieldState.customComponents ?? {}),
       Field: existingFieldComponent,
     },
     rows: rows.map((row) => {
@@ -90,10 +89,12 @@ export function hydrateBlocksFieldCustomComponents({
         return row;
       }
 
-      const {blockType} = row;
-      const hasMatchingBlock = blocks.some((block) => typeof block === "string"
+      const blockType = row.blockType;
+      const hasMatchingBlock = blocks.some((block) => {
+        return typeof block === "string"
           ? block === blockType
-          : block.slug === blockType);
+          : block.slug === blockType;
+      });
 
       if (!hasMatchingBlock) {
         return row;
@@ -102,7 +103,7 @@ export function hydrateBlocksFieldCustomComponents({
       return {
         ...row,
         customComponents: {
-          ...row.customComponents,
+          ...(row.customComponents ?? {}),
           RowLabel: <BlockLabelWithPresets />,
         },
       };
@@ -139,14 +140,14 @@ function readClipboardPayload() {
   }
 }
 
-interface BlocksClipboardArgs {
+type BlocksClipboardArgs = {
   blocks: BlocksFieldClient["blocks"];
   currentFieldState: FieldState | undefined;
   existingFieldComponent: React.ReactNode;
   formState: FormState;
   path: string;
   type: string;
-}
+};
 
 export function copyBlocksFieldToClipboard({
   formState,

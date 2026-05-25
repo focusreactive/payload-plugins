@@ -2,20 +2,7 @@
   "name": "@focus-reactive/payload-plugin-translator",
   "version": "0.1.6",
   "description": "Translation plugin for Payload CMS 3.x. Automatically translate your localized content using any translation provider.",
-  "keywords": [
-    "ai-translation",
-    "i18n",
-    "localization",
-    "openai",
-    "payload",
-    "payload-plugin",
-    "payloadcms",
-    "translation"
-  ],
-  "homepage": "https://github.com/focusreactive/payload-plugins/tree/main/packages/payload-plugin-translator",
-  "bugs": {
-    "url": "https://github.com/focusreactive/payload-plugins/issues"
-  },
+  "type": "module",
   "license": "MIT",
   "author": "FocusReactive <ship@focusreactive.com>",
   "repository": {
@@ -23,12 +10,20 @@
     "url": "https://github.com/focusreactive/payload-plugins",
     "directory": "packages/payload-plugin-translator"
   },
-  "files": [
-    "dist",
-    "!dist/**/*.test.*",
-    "!dist/**/*.map"
+  "bugs": {
+    "url": "https://github.com/focusreactive/payload-plugins/issues"
+  },
+  "homepage": "https://github.com/focusreactive/payload-plugins/tree/main/packages/payload-plugin-translator",
+  "keywords": [
+    "payload",
+    "payloadcms",
+    "payload-plugin",
+    "translation",
+    "i18n",
+    "localization",
+    "openai",
+    "ai-translation"
   ],
-  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -41,6 +36,11 @@
       "types": "./dist/client/*.d.ts"
     }
   },
+  "files": [
+    "dist",
+    "!dist/**/*.test.*",
+    "!dist/**/*.map"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -57,6 +57,12 @@
     "test:watch": "vitest",
     "check-types": "tsgo --noEmit"
   },
+  "peerDependencies": {
+    "@payloadcms/richtext-lexical": "^3.76.0",
+    "@payloadcms/ui": "^3.76.0",
+    "payload": "^3.76.0",
+    "react": "^18.0.0 || ^19.0.0"
+  },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-popover": "^1.1.0",
@@ -66,6 +72,9 @@
     "ofetch": "^1.4.0",
     "react-hook-form": "^7.54.0",
     "zod": "^3.23.0"
+  },
+  "optionalDependencies": {
+    "openai": "^4.50.0"
   },
   "devDependencies": {
     "@payloadcms/richtext-lexical": "3.79.0",
@@ -79,14 +88,5 @@
     "react": "19.0.0",
     "typescript": "5.5.2",
     "vitest": "3.2.4"
-  },
-  "peerDependencies": {
-    "@payloadcms/richtext-lexical": "^3.76.0",
-    "@payloadcms/ui": "^3.76.0",
-    "payload": "^3.76.0",
-    "react": "^18.0.0 || ^19.0.0"
-  },
-  "optionalDependencies": {
-    "openai": "^4.50.0"
   }
 }

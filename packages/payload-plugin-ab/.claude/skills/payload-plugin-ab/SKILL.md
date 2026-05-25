@@ -225,9 +225,7 @@ abTestingPlugin({
       generatePath: ({ doc, locale }) => {
         const tenantId = (doc.tenant as { id: string })?.id;
         const slug = doc.slug as string;
-        return locale
-          ? `/${tenantId}/${locale}/${slug}`
-          : `/${tenantId}/${slug}`;
+        return locale ? `/${tenantId}/${locale}/${slug}` : `/${tenantId}/${slug}`;
       },
     },
   },
@@ -262,10 +260,7 @@ import { resolveAbCookieNames } from "@focus-reactive/payload-plugin-ab/middlewa
 
 export default async function Page({ params }) {
   const experimentId = `/${params.slug}`;
-  const { variantCookieName, visitorCookieName } = resolveAbCookieNames(
-    undefined,
-    experimentId
-  );
+  const { variantCookieName, visitorCookieName } = resolveAbCookieNames(undefined, experimentId);
   return (
     <>
       {/* page content */}
@@ -285,21 +280,13 @@ export default async function Page({ params }) {
 "use client";
 import { useABConversion } from "@focus-reactive/payload-plugin-ab/analytics/client";
 
-export function CTAButton({
-  experimentId,
-  variantCookieName,
-  visitorCookieName,
-}) {
+export function CTAButton({ experimentId, variantCookieName, visitorCookieName }) {
   const trackConversion = useABConversion({
     experimentId,
     variantCookieName,
     visitorCookieName,
   });
-  return (
-    <button onClick={() => trackConversion({ goalId: "cta_click" })}>
-      Get Started
-    </button>
-  );
+  return <button onClick={() => trackConversion({ goalId: "cta_click" })}>Get Started</button>;
 }
 ```
 
@@ -317,9 +304,7 @@ const analytics = googleAnalyticsAdapter({
 });
 
 export default function RootLayout({ children }) {
-  return (
-    <ABAnalyticsProvider adapter={analytics}>{children}</ABAnalyticsProvider>
-  );
+  return <ABAnalyticsProvider adapter={analytics}>{children}</ABAnalyticsProvider>;
 }
 ```
 

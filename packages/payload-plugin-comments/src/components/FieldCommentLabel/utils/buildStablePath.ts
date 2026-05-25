@@ -1,7 +1,4 @@
-export function buildStablePath(
-  positionPath: string,
-  getRowId: (positionalIdPath: string) => string | undefined
-) {
+export function buildStablePath(positionPath: string, getRowId: (positionalIdPath: string) => string | undefined) {
   const segments = positionPath.split(".");
   const result: string[] = [];
 
@@ -10,9 +7,7 @@ export function buildStablePath(
 
     if (/^\d+$/.test(seg)) {
       const positionalParent = segments.slice(0, i).join(".");
-      const idPath = positionalParent
-        ? `${positionalParent}.${seg}.id`
-        : `${seg}.id`;
+      const idPath = positionalParent ? `${positionalParent}.${seg}.id` : `${seg}.id`;
 
       result.push(getRowId(idPath) ?? seg);
     } else {

@@ -10,13 +10,12 @@ import {
   useAuth,
 } from "@payloadcms/ui";
 import type { Data, FormState } from "payload";
-
-import { usePresetsConfig } from "../usePresetsConfig.js";
 import {
   getParentPath,
   getPresetTypeFromPath,
   buildSubFieldStateFromPreset,
 } from "../utils.js";
+import { usePresetsConfig } from "../usePresetsConfig.js";
 
 import "./index.scss";
 
@@ -54,7 +53,7 @@ export function ApplyPresetButton() {
   const handleSelect = ({ doc }: { collectionSlug: string; doc: Data }) => {
     const preset = doc as Record<string, unknown>;
     const presetBlocks = preset.presetBlock as
-      | { blockType: string; [key: string]: unknown }[]
+      | Array<{ blockType: string; [key: string]: unknown }>
       | undefined;
     const presetBlockItem = presetBlocks?.[0];
 
@@ -73,42 +72,42 @@ export function ApplyPresetButton() {
 
     const baseState = buildSubFieldStateFromPreset(
       presetBlockItem,
-      excludeKeys
+      excludeKeys,
     );
     const subFieldState = Object.fromEntries(
       Object.entries(baseState).map(([key, entry]) => [
         key,
         { ...entry, isModified: true },
-      ])
+      ]),
     );
 
     try {
       if (typeof replaceFieldRow === "function") {
         replaceFieldRow({
-          blockType: presetType,
           path: arrayPath,
           rowIndex,
+          blockType: presetType,
           schemaPath: arrayPath,
           subFieldState: subFieldState as FormState,
         });
       } else {
         dispatchFields({
-          blockType: presetType,
+          type: "REPLACE_ROW",
           path: arrayPath,
           rowIndex,
+          blockType: presetType,
           subFieldState,
-          type: "REPLACE_ROW",
         });
       }
 
       toast.success(
         t("presetsPlugin:applyPreset:successApplied" as never, {
           name: preset.name,
-        })
+        }),
       );
       closeDrawer();
-    } catch (error) {
-      console.error("Apply preset error:", error);
+    } catch (err) {
+      console.error("Apply preset error:", err);
       toast.error(t("presetsPlugin:applyPreset:errorApplyFailed" as never));
     }
   };

@@ -1,26 +1,20 @@
 "use client";
 
+import { createContext, type ReactNode, useCallback, useContext } from "react";
 import { useAuth, useConfig } from "@payloadcms/ui";
 import { usePathname } from "next/navigation";
-import { createContext, useCallback, useContext } from 'react';
-import type { ReactNode } from 'react';
-
+import type { EntityLabelsMap, Comment, CommentsPluginConfigStorage } from "../../types";
+import type { QueryContext } from "../../types";
+import { toQueryContext } from "../../utils/query/toQueryContext";
+import { defineModeByPathname } from "../../utils/mode/defineModeByPathname";
+import { getEntitiesLabels } from "../../services/getEntitiesLabels";
+import type { EntityConfig } from "../../types";
+import { parseMentionIds } from "../../utils/mention/parseMentionIds";
+import { getDefaultErrorMessage } from "../../utils/error/getDefaultErrorMessage";
 import { useAddCommentMutation } from "../../api/mutations/useAddCommentMutation";
 import { useDeleteCommentMutation } from "../../api/mutations/useDeleteCommentMutation";
 import { useResolveCommentMutation } from "../../api/mutations/useResolveCommentMutation";
-import { getEntitiesLabels } from "../../services/getEntitiesLabels";
-import type {
-  EntityLabelsMap,
-  Comment,
-  CommentsPluginConfigStorage,
-} from "../../types";
-import type { QueryContext } from "../../types";
-import type { EntityConfig } from "../../types";
 import type { Mode } from "../../types";
-import { getDefaultErrorMessage } from "../../utils/error/getDefaultErrorMessage";
-import { parseMentionIds } from "../../utils/mention/parseMentionIds";
-import { defineModeByPathname } from "../../utils/mode/defineModeByPathname";
-import { toQueryContext } from "../../utils/query/toQueryContext";
 
 interface MutationResult {
   success: boolean;
@@ -42,13 +36,10 @@ interface CommentsContextProps {
     documentId?: number,
     collectionSlug?: string,
     locale?: string | null,
-    globalSlugOverride?: string
+    globalSlugOverride?: string,
   ) => Promise<MutationResult>;
   removeComment: (id: string | number) => Promise<MutationResult>;
-  resolveComment: (
-    id: string | number,
-    resolved: boolean
-  ) => Promise<MutationResult>;
+  resolveComment: (id: string | number, resolved: boolean) => Promise<MutationResult>;
 }
 
 const CommentsContext = createContext<CommentsContextProps | null>(null);
@@ -63,25 +54,17 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
   const pathname = usePathname();
   const { config } = useConfig();
 
-  const { mode, collectionSlug, documentId, globalSlug } =
-    defineModeByPathname(pathname);
-  const queryContext = toQueryContext(
-    mode,
-    collectionSlug,
-    documentId,
-    globalSlug
-  );
+  const { mode, collectionSlug, documentId, globalSlug } = defineModeByPathname(pathname);
+  const queryContext = toQueryContext(mode, collectionSlug, documentId, globalSlug);
 
-  const pluginConfig = config.admin?.custom?.commentsPlugin as
-    | CommentsPluginConfigStorage
-    | undefined;
+  const pluginConfig = config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
   const collectionLabels = getEntitiesLabels(
     (config.collections ?? []) as unknown as EntityConfig[],
-    pluginConfig?.collections ?? []
+    pluginConfig?.collections ?? [],
   );
   const globalLabels = getEntitiesLabels(
     (config.globals ?? []) as unknown as EntityConfig[],
-    pluginConfig?.globals ?? []
+    pluginConfig?.globals ?? [],
   );
 
   const addMutation = useAddCommentMutation();
@@ -95,126 +78,116 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
       documentIdOverride?: number,
       collectionSlugOverride?: string,
       locale?: string | null,
-      globalSlugOverride?: string
+      globalSlugOverride?: string,
     ): Promise<MutationResult> => {
-      const resolvedGlobalSlug =
-        globalSlugOverride ?? (mode === "global-document" ? globalSlug : null);
+      const resolvedGlobalSlug = globalSlugOverride ?? (mode === "global-document" ? globalSlug : null);
       const resolvedDocId = documentIdOverride ?? documentId;
       const resolvedSlug = collectionSlugOverride ?? collectionSlug;
 
       if (!resolvedGlobalSlug && (!resolvedDocId || !resolvedSlug)) {
         return {
-          error: "No document registered",
           success: false,
+          error: "No document registered",
         };
       }
 
       try {
         const res = await addMutation.mutateAsync({
-          collectionSlug: resolvedGlobalSlug ? null : resolvedSlug,
           ctx: queryContext,
-          currentUser: user as Comment["author"],
-          documentId: resolvedGlobalSlug ? null : resolvedDocId,
+          text,
           fieldPath: fieldPath ?? null,
+          documentId: resolvedGlobalSlug ? null : resolvedDocId,
+          collectionSlug: resolvedGlobalSlug ? null : resolvedSlug,
           globalSlug: resolvedGlobalSlug ?? null,
           locale: locale ?? null,
           mentionIds: parseMentionIds(text),
-          text,
+          currentUser: user as Comment["author"],
         });
 
         if (!res.success)
-          {return {
+          return {
             success: false,
             error: res.error,
-          };}
+          };
 
         return { success: true };
-      } catch (error) {
+      } catch (e) {
         return {
           success: false,
-          error: getDefaultErrorMessage(error),
+          error: getDefaultErrorMessage(e),
         };
       }
     },
-    [
-      addMutation,
-      mode,
-      globalSlug,
-      documentId,
-      collectionSlug,
-      queryContext,
-      user,
-    ]
+    [addMutation, mode, globalSlug, documentId, collectionSlug, queryContext, user],
   );
 
   const removeComment = useCallback(
     async (id: string | number): Promise<MutationResult> => {
       try {
         const res = await deleteMutation.mutateAsync({
-          commentId: id,
           ctx: queryContext,
+          commentId: id,
         });
 
         if (!res.success)
-          {return {
+          return {
             success: false,
             error: res.error,
-          };}
+          };
 
         return { success: true };
-      } catch (error) {
+      } catch (e) {
         return {
           success: false,
-          error: getDefaultErrorMessage(error),
+          error: getDefaultErrorMessage(e),
         };
       }
     },
-    [deleteMutation, queryContext]
+    [deleteMutation, queryContext],
   );
 
   const resolveComment = useCallback(
     async (id: string | number, resolved: boolean): Promise<MutationResult> => {
       try {
         const res = await resolveMutation.mutateAsync({
-          commentId: id,
           ctx: queryContext,
-          currentUser: user as Comment["author"],
+          commentId: id,
           resolved,
+          currentUser: user as Comment["author"],
         });
 
         if (!res.success)
-          {return {
+          return {
             success: false,
             error: res.error,
-          };}
+          };
 
         return { success: true };
-      } catch (error) {
+      } catch (e) {
         return {
           success: false,
-          error: getDefaultErrorMessage(error),
+          error: getDefaultErrorMessage(e),
         };
       }
     },
-    [resolveMutation, queryContext, user]
+    [resolveMutation, queryContext, user],
   );
 
   return (
     <CommentsContext.Provider
       value={{
-        addComment,
-        collectionLabels,
+        mode,
         collectionSlug,
         documentId,
-        globalLabels,
         globalSlug,
-        mode,
         queryContext,
+        collectionLabels,
+        globalLabels,
+        usernameFieldPath,
+        addComment,
         removeComment,
         resolveComment,
-        usernameFieldPath,
-      }}
-    >
+      }}>
       {children}
     </CommentsContext.Provider>
   );
@@ -223,8 +196,7 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
 export function useComments() {
   const context = useContext(CommentsContext);
 
-  if (!context)
-    {throw new Error("useComments must be used within a CommentsProvider");}
+  if (!context) throw new Error("useComments must be used within a CommentsProvider");
 
   return context;
 }

@@ -1,14 +1,6 @@
 import type { CollectionSlug, TypedLocale } from "payload";
-
-import {
-  AB_PASS_PERCENTAGE_FIELD,
-  AB_VARIANT_OF_FIELD,
-  DEFAULT_SLUG_FIELD,
-} from "../constants";
-import type {
-  AbTestingPluginConfig,
-  CollectionABConfig,
-} from "../types/config";
+import type { AbTestingPluginConfig, CollectionABConfig } from "../types/config";
+import { AB_PASS_PERCENTAGE_FIELD, AB_VARIANT_OF_FIELD, DEFAULT_SLUG_FIELD } from "../constants";
 import { getLocales } from "./getLocales";
 
 export async function recomputeManifestForParent<TVariantData extends object>(
@@ -18,7 +10,7 @@ export async function recomputeManifestForParent<TVariantData extends object>(
   pluginConfig: AbTestingPluginConfig<TVariantData>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   req: any,
-  options?: { excludeId?: string | number }
+  options?: { excludeId?: string | number },
 ): Promise<void> {
   const { payload } = req;
   const locales = getLocales(payload);
@@ -27,36 +19,33 @@ export async function recomputeManifestForParent<TVariantData extends object>(
   for (const locale of locales) {
     const parentDoc = await payload.findByID({
       collection: parentCollectionSlug as CollectionSlug,
-      depth: 1,
       id: parentId,
+      depth: 1,
       locale: locale as TypedLocale,
       overrideAccess: true,
       req,
     });
-    if (!parentDoc) {continue;}
+    if (!parentDoc) continue;
 
     const manifestKey = abConfig.generatePath({ doc: parentDoc, locale });
-    if (!manifestKey) {continue;}
+    if (!manifestKey) continue;
 
     const whereClause =
-      options?.excludeId !== undefined
-        ? {
-            and: [
-              { [AB_VARIANT_OF_FIELD]: { equals: parentId } },
-              { id: { not_equals: options.excludeId } },
-            ],
-          }
-        : { [AB_VARIANT_OF_FIELD]: { equals: parentId } };
+      options?.excludeId !== undefined ?
+        {
+          and: [{ [AB_VARIANT_OF_FIELD]: { equals: parentId } }, { id: { not_equals: options.excludeId } }],
+        }
+      : { [AB_VARIANT_OF_FIELD]: { equals: parentId } };
 
     const { docs: variantDocs } = await payload.find({
       collection: parentCollectionSlug as CollectionSlug,
+      where: whereClause,
       depth: 1,
       draft: false,
-      limit: 100,
       locale: locale as TypedLocale,
       overrideAccess: true,
+      limit: 100,
       req,
-      where: whereClause,
     });
 
     if (variantDocs.length === 0) {
@@ -64,24 +53,18 @@ export async function recomputeManifestForParent<TVariantData extends object>(
       continue;
     }
 
-    const variantData = variantDocs.map(
-      (variantDoc: Record<string, unknown>) => {
-        if (abConfig.generateVariantData) {
-          return abConfig.generateVariantData({
-            doc: parentDoc,
-            locale,
-            variantDoc,
-          });
-        }
-        // Default: derive bucket from slug, rewritePath from generatePath on variant doc
-        const variantPath = abConfig.generatePath({ doc: variantDoc, locale });
-        return {
-          bucket: (variantDoc[slugField] as string) ?? String(variantDoc.id),
-          passPercentage: (variantDoc[AB_PASS_PERCENTAGE_FIELD] as number) ?? 0,
-          rewritePath: variantPath ?? "",
-        } as unknown as TVariantData;
+    const variantData = variantDocs.map((variantDoc: Record<string, unknown>) => {
+      if (abConfig.generateVariantData) {
+        return abConfig.generateVariantData({ doc: parentDoc, variantDoc, locale });
       }
-    );
+      // Default: derive bucket from slug, rewritePath from generatePath on variant doc
+      const variantPath = abConfig.generatePath({ doc: variantDoc, locale });
+      return {
+        bucket: (variantDoc[slugField] as string) ?? String(variantDoc.id),
+        rewritePath: variantPath ?? "",
+        passPercentage: (variantDoc[AB_PASS_PERCENTAGE_FIELD] as number) ?? 0,
+      } as unknown as TVariantData;
+    });
 
     await pluginConfig.storage.write(manifestKey, variantData, payload);
   }

@@ -1,16 +1,15 @@
 "use server";
 
-import { headers } from "next/headers";
-
-import { DEFAULT_COLLECTION_SLUG } from "../constants";
 import type { Response, Comment, BaseServiceOptions } from "../types";
+import { headers } from "next/headers";
+import { DEFAULT_COLLECTION_SLUG } from "../constants";
 import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
 import { extractPayload } from "../utils/payload/extractPayload";
 
 export async function resolveComment(
   id: number | string,
   resolved: boolean,
-  options?: BaseServiceOptions
+  options?: BaseServiceOptions,
 ): Promise<Response<Comment>> {
   try {
     const payload = await extractPayload(options?.payload);
@@ -18,31 +17,31 @@ export async function resolveComment(
 
     if (!user) {
       return {
-        error: "Unauthorized",
         success: false,
+        error: "Unauthorized",
       };
     }
 
     const res = await payload.update({
       collection: DEFAULT_COLLECTION_SLUG,
+      id,
       data: {
         isResolved: resolved,
-        resolvedAt: resolved ? new Date().toISOString() : null,
         resolvedBy: resolved ? user.id : null,
+        resolvedAt: resolved ? new Date().toISOString() : null,
       },
-      id,
       overrideAccess: false,
       user,
     });
 
     return {
-      data: res as unknown as Comment,
       success: true,
+      data: res as unknown as Comment,
     };
-  } catch (error) {
+  } catch (err) {
     return {
       success: false,
-      error: getDefaultErrorMessage(error),
+      error: getDefaultErrorMessage(err),
     };
   }
 }

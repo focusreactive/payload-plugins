@@ -1,26 +1,10 @@
 "use client";
 
 import { useConfig } from "@payloadcms/ui";
-import type {
-  ArrayField,
-  BlocksField,
-  CollapsibleField,
-  Field,
-  GroupField,
-  RowField,
-  TabsField,
-} from "payload";
+import type { ArrayField, BlocksField, CollapsibleField, Field, GroupField, RowField, TabsField } from "payload";
+import { findFieldByName, getLabelString } from "../../../services/fieldLabels/utils/schemaUtils";
 
-import {
-  findFieldByName,
-  getLabelString,
-} from "../../../services/fieldLabels/utils/schemaUtils";
-
-function buildBreadcrumb(
-  positionPath: string,
-  leafLabel: string,
-  schemaFields: Field[]
-) {
+function buildBreadcrumb(positionPath: string, leafLabel: string, schemaFields: Field[]) {
   const segments = positionPath.split(".");
   const parts: string[] = [];
   let currentFields = schemaFields;
@@ -30,7 +14,7 @@ function buildBreadcrumb(
     const isLast = i === segments.length - 1;
 
     if (/^\d+$/.test(seg)) {
-      parts.push(`#${Number.parseInt(seg, 10) + 1}`);
+      parts.push(`#${parseInt(seg, 10) + 1}`);
       continue;
     }
 
@@ -70,15 +54,16 @@ export function useFieldBreadcrumb(
   positionPath: string | undefined,
   leafLabel: string | null | undefined,
   collectionSlug: string | null | undefined,
-  globalSlug: string | null
+  globalSlug: string | null,
 ) {
   const { config } = useConfig();
 
-  if (!positionPath || !leafLabel) {return leafLabel ?? positionPath ?? "";}
-  if (!positionPath.includes(".")) {return leafLabel;}
+  if (!positionPath || !leafLabel) return leafLabel ?? positionPath ?? "";
+  if (!positionPath.includes(".")) return leafLabel;
 
-  const schemaFields = collectionSlug
-    ? (config.collections.find((c) => c.slug === collectionSlug)?.fields ?? [])
+  const schemaFields =
+    collectionSlug ?
+      (config.collections.find((c) => c.slug === collectionSlug)?.fields ?? [])
     : (config.globals?.find((g) => g.slug === globalSlug)?.fields ?? []);
 
   return buildBreadcrumb(positionPath, leafLabel, schemaFields as Field[]);

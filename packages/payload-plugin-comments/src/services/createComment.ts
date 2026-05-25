@@ -1,12 +1,11 @@
 "use server";
 
 import { headers } from "next/headers";
-
-import { DEFAULT_COLLECTION_SLUG, FALLBACK_USERNAME } from "../constants";
-import type { Response, Comment, BaseServiceOptions } from "../types";
 import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
-import { extractPayload } from "../utils/payload/extractPayload";
+import type { Response, Comment, BaseServiceOptions } from "../types";
+import { DEFAULT_COLLECTION_SLUG, FALLBACK_USERNAME } from "../constants";
 import { sendMentionEmails } from "./sendMentionEmails";
+import { extractPayload } from "../utils/payload/extractPayload";
 
 interface Props extends BaseServiceOptions {
   documentId?: number | null;
@@ -33,41 +32,42 @@ export async function createComment({
 
     if (!user) {
       return {
-        error: "Unauthorized",
         success: false,
+        error: "Unauthorized",
       };
     }
 
     if (!globalSlug && (!documentId || !collectionSlug)) {
       return {
-        error: "No document registered",
         success: false,
+        error: "No document registered",
       };
     }
 
     const mentions = mentionIds.map((id) => ({ user: id }));
 
-    const data = globalSlug
-      ? {
-          author: user.id,
-          collectionSlug: null,
-          documentId: null,
-          fieldPath,
+    const data =
+      globalSlug ?
+        {
           globalSlug,
-          isResolved: false,
+          documentId: null,
+          collectionSlug: null,
+          fieldPath,
           locale,
-          mentions,
           text,
+          author: user.id,
+          isResolved: false,
+          mentions,
         }
       : {
-          author: user.id,
-          collectionSlug,
           documentId,
+          collectionSlug,
           fieldPath,
-          isResolved: false,
           locale,
-          mentions,
           text,
+          author: user.id,
+          isResolved: false,
+          mentions,
         };
 
     const comment = (await payload.create({
@@ -79,23 +79,23 @@ export async function createComment({
 
     if (mentionIds.length > 0) {
       sendMentionEmails({
-        authorName: user.name ?? user.email ?? FALLBACK_USERNAME,
-        collectionSlug: collectionSlug ?? globalSlug ?? "",
-        commentText: text,
-        documentId: documentId,
         mentionIds,
+        authorName: user.name ?? user.email ?? FALLBACK_USERNAME,
+        commentText: text,
+        collectionSlug: collectionSlug ?? globalSlug ?? "",
+        documentId: documentId,
         payload,
       });
     }
 
     return {
-      data: comment,
       success: true,
+      data: comment,
     };
-  } catch (error) {
+  } catch (err) {
     return {
       success: false,
-      error: getDefaultErrorMessage(error),
+      error: getDefaultErrorMessage(err),
     };
   }
 }

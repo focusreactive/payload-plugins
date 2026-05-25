@@ -1,7 +1,7 @@
+import type { VariantData } from "./VariantsField";
+
 import { useDocumentDrawer, EditIcon } from "@payloadcms/ui";
 import { TrashIcon } from "@payloadcms/ui/icons/Trash";
-
-import type { VariantData } from "./VariantsField";
 
 interface VariantRowProps {
   variant: VariantData;
@@ -35,24 +35,16 @@ export function VariantRow({
   return (
     <div
       style={{
+        display: "flex",
         alignItems: "center",
-        background: "var(--theme-elevation-50)",
+        gap: 8,
+        padding: "8px 12px",
         border: "1px solid var(--theme-elevation-150)",
         borderRadius: 4,
-        display: "flex",
-        gap: 8,
         marginBottom: 6,
-        padding: "8px 12px",
-      }}
-    >
-      <span
-        style={{
-          color: "var(--theme-elevation-800)",
-          flex: 1,
-          fontSize: 13,
-          fontWeight: 500,
-        }}
-      >
+        background: "var(--theme-elevation-50)",
+      }}>
+      <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: "var(--theme-elevation-800)" }}>
         {variant.title}
       </span>
 
@@ -70,12 +62,7 @@ export function VariantRow({
         <span className="ab-percent-suffix">%</span>
       </div>
 
-      <button
-        type="button"
-        onClick={openDrawer}
-        className="ab-variant-icon-btn"
-        title="Edit variant"
-      >
+      <button type="button" onClick={openDrawer} className="ab-variant-icon-btn" title="Edit variant">
         <EditIcon />
       </button>
 
@@ -83,8 +70,7 @@ export function VariantRow({
         type="button"
         onClick={onDelete}
         className="ab-variant-icon-btn ab-variant-icon-btn--danger"
-        title="Remove variant"
-      >
+        title="Remove variant">
         <TrashIcon />
       </button>
 

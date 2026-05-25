@@ -1,54 +1,50 @@
-import classNames from "classnames";
+import classNames from 'classnames'
 
-import StatusIndicator from "../StatusIndicator";
+import StatusIndicator from '../StatusIndicator'
 
-import styles from "./styles.module.scss";
+import styles from './styles.module.scss'
 
-interface StatusCounterProps {
-  status: "pending" | "running" | "completed" | "failed";
-  count: number;
-  label?: string;
-  animated?: boolean;
-  size?: "small" | "medium";
-  className?: string;
+type StatusCounterProps = {
+  status: 'pending' | 'running' | 'completed' | 'failed'
+  count: number
+  label?: string
+  animated?: boolean
+  size?: 'small' | 'medium'
+  className?: string
 }
 
 const statusColorMap = {
-  completed: "green" as const,
-  failed: "red" as const,
-  pending: "gray" as const,
-  running: "blue" as const,
-};
+  pending: 'gray' as const,
+  running: 'blue' as const,
+  completed: 'green' as const,
+  failed: 'red' as const,
+}
 
 const statusLabelMap = {
-  completed: "Завершено",
-  failed: "Ошибки",
-  pending: "В очереди",
-  running: "В процессе",
-};
+  pending: 'В очереди',
+  running: 'В процессе',
+  completed: 'Завершено',
+  failed: 'Ошибки',
+}
 
 export default function StatusCounter({
   status,
   count,
   label,
   animated = false,
-  size = "medium",
+  size = 'medium',
   className,
 }: StatusCounterProps) {
-  const displayLabel = label || statusLabelMap[status];
-  const color = statusColorMap[status];
+  const displayLabel = label || statusLabelMap[status]
+  const color = statusColorMap[status]
 
   return (
     <div className={classNames(styles.container, styles[size], className)}>
-      <StatusIndicator
-        $color={color}
-        $animated={animated && status === "running"}
-        className={styles.indicator}
-      />
+      <StatusIndicator $color={color} $animated={animated && status === 'running'} className={styles.indicator} />
       <div className={styles.content}>
         <span className={styles.count}>{count}</span>
         <span className={styles.label}>{displayLabel}</span>
       </div>
     </div>
-  );
+  )
 }

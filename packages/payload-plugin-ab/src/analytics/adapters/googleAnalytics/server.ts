@@ -1,25 +1,18 @@
 import type { TrackImpressionArgs } from "../../types";
-import {
-  DEFAULT_IMPRESSION_EVENT_NAME,
-  MEASUREMENT_PROTOCOL_URL,
-} from "./constants";
+import { DEFAULT_IMPRESSION_EVENT_NAME, MEASUREMENT_PROTOCOL_URL } from "./constants";
 import type { GoogleAnalyticsAdapterConfig } from "./types";
 
 export async function trackImpressionServer(
   config: GoogleAnalyticsAdapterConfig,
-  {
-    experimentId,
-    variantBucket,
-    visitorId,
-    locale,
-    metadata,
-  }: TrackImpressionArgs
+  { experimentId, variantBucket, visitorId, locale, metadata }: TrackImpressionArgs,
 ) {
-  if (!config.apiSecret) {return;}
+  if (!config.apiSecret) return;
 
   const url = `${MEASUREMENT_PROTOCOL_URL}?measurement_id=${config.measurementId}&api_secret=${config.apiSecret}`;
 
   await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       client_id: visitorId,
       events: [
@@ -36,7 +29,5 @@ export async function trackImpressionServer(
         },
       ],
     }),
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
   });
 }

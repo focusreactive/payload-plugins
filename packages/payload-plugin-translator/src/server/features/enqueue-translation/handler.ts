@@ -1,13 +1,10 @@
-import type { PayloadRequest } from "payload";
+import type { PayloadRequest } from 'payload'
 
-import type { TaskRunnerProvider } from "../../modules/task-runner";
-import { ServerResponse } from "../../shared";
-import {
-  isCollectionAvailable,
-  getAllCollectionIds,
-} from "../_lib/collection-utils";
-import { EnqueueInputSchema } from './model';
-import type { EnqueueConfig } from './model';
+import { ServerResponse } from '../../shared'
+import type { TaskRunnerProvider } from '../../modules/task-runner'
+import { isCollectionAvailable, getAllCollectionIds } from '../_lib/collection-utils'
+
+import { EnqueueInputSchema, type EnqueueConfig } from './model'
 
 /**
  * Enqueues translation tasks for documents
@@ -15,49 +12,33 @@ import type { EnqueueConfig } from './model';
 export class EnqueueTranslationHandler {
   constructor(
     private readonly config: EnqueueConfig,
-    private readonly taskRunnerFactory: TaskRunnerProvider
+    private readonly taskRunnerFactory: TaskRunnerProvider,
   ) {}
 
   async handle(req: PayloadRequest): Promise<Response> {
-    const validationResult = EnqueueInputSchema.safeParse(await req.json?.());
-    if (validationResult.error)
-      {return ServerResponse.validationError(validationResult.error.errors);}
+    const validationResult = EnqueueInputSchema.safeParse(await req.json?.())
+    if (validationResult.error) return ServerResponse.validationError(validationResult.error.errors)
 
-    const {
-      source_lng,
-      target_lng,
-      collection_slug,
-      collection_id,
-      select_all,
-      strategy,
-      publish_on_translation,
-    } = validationResult.data;
+    const { source_lng, target_lng, collection_slug, collection_id, select_all, strategy, publish_on_translation } =
+      validationResult.data
 
-    const collectionSlug = isCollectionAvailable(
-      collection_slug,
-      this.config.availableCollections
-    );
-    if (!collectionSlug)
-      {return ServerResponse.badRequest(
-        "Content of this collection is not available for translation"
-      );}
+    const collectionSlug = isCollectionAvailable(collection_slug, this.config.availableCollections)
+    if (!collectionSlug) return ServerResponse.badRequest('Content of this collection is not available for translation')
 
-    const collectionIds = select_all
-      ? await getAllCollectionIds(req.payload, collectionSlug)
-      : collection_id;
+    const collectionIds = select_all ? await getAllCollectionIds(req.payload, collectionSlug) : collection_id
 
-    const runner = this.taskRunnerFactory.create(req.payload);
+    const runner = this.taskRunnerFactory.create(req.payload)
     const tasks = collectionIds.map((id) => ({
-      collectionId: id,
       collectionSlug,
-      publishOnTranslation: publish_on_translation,
+      collectionId: id,
       sourceLng: source_lng,
-      strategy: strategy,
       targetLng: target_lng,
-    }));
+      strategy: strategy,
+      publishOnTranslation: publish_on_translation,
+    }))
 
-    await runner.enqueue(tasks);
+    await runner.enqueue(tasks)
 
-    return ServerResponse.success({ queued: tasks.length, success: true });
+    return ServerResponse.success({ success: true, queued: tasks.length })
   }
 }

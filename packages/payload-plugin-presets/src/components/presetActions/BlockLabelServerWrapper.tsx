@@ -1,6 +1,5 @@
-import { RenderServerComponent } from "@payloadcms/ui/elements/RenderServerComponent";
 import type { Payload, PayloadComponent } from "payload";
-
+import { RenderServerComponent } from "@payloadcms/ui/elements/RenderServerComponent";
 import { PresetActionsButton } from "./PresetActionsButton.js";
 
 interface Props {

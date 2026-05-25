@@ -17,9 +17,6 @@ export type FieldLabelSegment =
       position: number;
     };
 
-export type GlobalFieldLabelRegistry = Record<
-  string,
-  Record<number, Record<string, FieldLabelSegment[]>>
->;
+export type GlobalFieldLabelRegistry = Record<string, Record<number, Record<string, FieldLabelSegment[]>>>;
 
 export type Mode = "document" | "global-document" | "global";

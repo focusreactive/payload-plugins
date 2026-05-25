@@ -1,14 +1,13 @@
 import type { Config, Plugin } from "payload";
-
-import { DEFAULT_QUEUE } from "./constants";
 import type { SchedulePublicationPluginConfig } from "./types";
+import { DEFAULT_QUEUE } from "./constants";
 import { applySchedulePublish } from "./utils/applySchedulePublish";
-import { overrideEndpoints } from "./utils/overrideEndpoints";
-import { overrideJobs } from "./utils/overrideJobs";
 import { warnUnknownSlugs } from "./utils/warnUnknownSlugs";
+import { overrideJobs } from "./utils/overrideJobs";
+import { overrideEndpoints } from "./utils/overrideEndpoints";
 
 export function schedulePublicationPlugin(
-  options: SchedulePublicationPluginConfig
+  options: SchedulePublicationPluginConfig,
 ): Plugin {
   const {
     collections = [],
@@ -25,20 +24,20 @@ export function schedulePublicationPlugin(
     const updatedCollections = applySchedulePublish(
       config.collections,
       collections,
-      schedulePublish
+      schedulePublish,
     );
     const updatedGlobals = applySchedulePublish(
       config.globals,
       globals,
-      schedulePublish
+      schedulePublish,
     );
 
     return {
       ...config,
       collections: updatedCollections ?? config.collections,
-      endpoints: overrideEndpoints(config.endpoints, secret, queue),
       globals: updatedGlobals ?? config.globals,
       jobs: overrideJobs(config.jobs, queue),
+      endpoints: overrideEndpoints(config.endpoints, secret, queue),
     };
   };
 }

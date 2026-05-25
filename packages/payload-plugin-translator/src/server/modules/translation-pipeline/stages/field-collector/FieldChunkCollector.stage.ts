@@ -1,6 +1,6 @@
-import type { TranslationStrategy } from "../../strategies";
-import type { PipelineContext, PipelineStage } from "../../types";
-import { FieldChunkCollector } from "./FieldChunkCollector";
+import type { PipelineContext, PipelineStage } from '../../types'
+import type { TranslationStrategy } from '../../strategies'
+import { FieldChunkCollector } from './FieldChunkCollector'
 
 /**
  * Collects FieldChunks with schema metadata and data references.
@@ -12,9 +12,7 @@ export class FieldChunkCollectorStage implements PipelineStage {
 
   execute(ctx: PipelineContext): PipelineContext {
     if (!ctx.filteredData) {
-      throw new Error(
-        "FieldChunkCollectorStage requires filteredData from previous stage"
-      );
+      throw new Error('FieldChunkCollectorStage requires filteredData from previous stage')
     }
 
     const collector = new FieldChunkCollector(
@@ -22,11 +20,11 @@ export class FieldChunkCollectorStage implements PipelineStage {
       ctx.filteredData,
       ctx.sourceData,
       ctx.targetData,
-      this.strategy
-    );
+      this.strategy,
+    )
     return {
       ...ctx,
       fieldChunks: collector.collect(),
-    };
+    }
   }
 }

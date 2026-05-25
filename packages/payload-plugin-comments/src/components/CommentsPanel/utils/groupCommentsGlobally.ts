@@ -1,31 +1,28 @@
 import type { Comment } from "../../../types";
-import type { FieldPath } from "../types";
 import { sortGroupsByCreatedAt } from "./sortGroupsByCreatedAt";
+import type { FieldPath } from "../types";
 
 type CommentsMap = Map<FieldPath, Comment[]>;
 
 type CollectionCommentsMapByDoc = Map<number, CommentsMap>;
 
-export interface CollectionCommentsEntry {
+export type CollectionCommentsEntry = {
   type: "collection";
   slug: string;
   docs: CollectionCommentsMapByDoc;
-}
+};
 
-export interface GlobalCommentsEntry {
+export type GlobalCommentsEntry = {
   type: "global";
   slug: string;
   fields: CommentsMap;
-}
+};
 
 export type EntityCommentsEntry = CollectionCommentsEntry | GlobalCommentsEntry;
 
-const extractCommentCreatedAtTime = (c: Comment) =>
-  new Date(c.createdAt).getTime();
+const extractCommentCreatedAtTime = (c: Comment) => new Date(c.createdAt).getTime();
 
-export function groupCommentsGlobally(
-  comments: Comment[]
-): EntityCommentsEntry[] {
+export function groupCommentsGlobally(comments: Comment[]): EntityCommentsEntry[] {
   const collections = new Map<string, CollectionCommentsMapByDoc>();
   const globals = new Map<string, CommentsMap>();
 
@@ -34,11 +31,11 @@ export function groupCommentsGlobally(
       const slug = comment.globalSlug;
       const field = comment.fieldPath ?? null;
 
-      if (!globals.has(slug)) {globals.set(slug, new Map());}
+      if (!globals.has(slug)) globals.set(slug, new Map());
 
       const fields = globals.get(slug)!;
 
-      if (!fields.has(field)) {fields.set(field, []);}
+      if (!fields.has(field)) fields.set(field, []);
 
       fields.get(field)!.push(comment);
 
@@ -48,17 +45,17 @@ export function groupCommentsGlobally(
     const slug = comment.collectionSlug;
     const docId = comment.documentId;
     const field = comment.fieldPath ?? null;
-    if (!slug || !docId) {continue;}
+    if (!slug || !docId) continue;
 
-    if (!collections.has(slug)) {collections.set(slug, new Map());}
+    if (!collections.has(slug)) collections.set(slug, new Map());
 
     const docs = collections.get(slug)!;
 
-    if (!docs.has(docId)) {docs.set(docId, new Map());}
+    if (!docs.has(docId)) docs.set(docId, new Map());
 
     const fields = docs.get(docId)!;
 
-    if (!fields.has(field)) {fields.set(field, []);}
+    if (!fields.has(field)) fields.set(field, []);
 
     fields.get(field)!.push(comment);
   }
@@ -72,11 +69,7 @@ export function groupCommentsGlobally(
     const oldestInFields = (fields: Map<FieldPath, Comment[]>) =>
       Math.min(...[...fields.values()].flat().map(extractCommentCreatedAtTime));
 
-    const sortedDocs = new Map(
-      [...docs.entries()].toSorted(
-        ([, a], [, b]) => oldestInFields(a) - oldestInFields(b)
-      )
-    );
+    const sortedDocs = new Map([...docs.entries()].sort(([, a], [, b]) => oldestInFields(a) - oldestInFields(b)));
 
     collections.set(slug, sortedDocs);
   }
@@ -87,30 +80,26 @@ export function groupCommentsGlobally(
   }
 
   const oldestInCollectionDocs = (docs: CollectionCommentsMapByDoc) =>
-    Math.min(
-      ...[...docs.values()]
-        .flatMap((fields) => [...fields.values()].flat())
-        .map(extractCommentCreatedAtTime)
-    );
+    Math.min(...[...docs.values()].flatMap((fields) => [...fields.values()].flat()).map(extractCommentCreatedAtTime));
 
   const oldestInGlobalFields = (fields: Map<FieldPath, Comment[]>) =>
     Math.min(...[...fields.values()].flat().map(extractCommentCreatedAtTime));
 
-  const entries: { entry: EntityCommentsEntry; time: number }[] = [];
+  const entries: Array<{ entry: EntityCommentsEntry; time: number }> = [];
 
   for (const [slug, docs] of collections.entries()) {
     entries.push({
-      entry: { docs, slug, type: "collection" },
+      entry: { type: "collection", slug, docs },
       time: oldestInCollectionDocs(docs),
     });
   }
 
   for (const [slug, fields] of globals.entries()) {
     entries.push({
-      entry: { fields, slug, type: "global" },
+      entry: { type: "global", slug, fields },
       time: oldestInGlobalFields(fields),
     });
   }
 
-  return entries.toSorted((a, b) => a.time - b.time).map(({ entry }) => entry);
+  return entries.sort((a, b) => a.time - b.time).map(({ entry }) => entry);
 }

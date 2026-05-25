@@ -2,12 +2,13 @@ import type { JobsConfig } from "payload";
 
 export function overrideJobs(
   jobsConfig: JobsConfig | undefined,
-  queue: string
+  queue: string,
 ): JobsConfig {
   const existingJobsCollectionOverrides = jobsConfig?.jobsCollectionOverrides;
 
   return {
     ...jobsConfig,
+    runHooks: true,
     jobsCollectionOverrides: ({ defaultJobsCollection }) => {
       const baseJobsCollection = existingJobsCollectionOverrides
         ? existingJobsCollectionOverrides({ defaultJobsCollection })
@@ -30,6 +31,5 @@ export function overrideJobs(
         },
       };
     },
-    runHooks: true,
   };
 }

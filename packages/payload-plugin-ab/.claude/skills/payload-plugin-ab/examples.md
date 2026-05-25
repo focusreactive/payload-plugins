@@ -133,11 +133,7 @@ const analytics = googleAnalyticsAdapter({
   propertyId: process.env.GA4_PROPERTY_ID,
 });
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html>
       <body>
@@ -250,7 +246,7 @@ interface MyVariantData {
   bucket: string;
   rewritePath: string;
   passPercentage: number;
-  pageTitle: string; // extra field for analytics labeling
+  pageTitle: string;  // extra field for analytics labeling
 }
 
 abTestingPlugin<MyVariantData>({
