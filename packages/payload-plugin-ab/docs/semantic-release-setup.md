@@ -28,14 +28,20 @@ pnpm add -D semantic-release \
   "plugins": [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
-    ["@semantic-release/changelog", {
-      "changelogFile": "CHANGELOG.md"
-    }],
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md"
+      }
+    ],
     "@semantic-release/npm",
-    ["@semantic-release/git", {
-      "assets": ["CHANGELOG.md", "package.json"],
-      "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
-    }],
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["CHANGELOG.md", "package.json"],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ],
     "@semantic-release/github"
   ]
 }
@@ -126,12 +132,12 @@ npm publish --access public
 2. **Settings** → **Trusted Publishers** → **Add publisher**
 3. Fill in:
 
-| Field | Value |
-|---|---|
-| Repository owner | your GitHub org or username |
-| Repository name | your repo name (no `github.com/`) |
-| Workflow filename | `release.yml` |
-| Environment | *(leave empty)* |
+| Field             | Value                             |
+| ----------------- | --------------------------------- |
+| Repository owner  | your GitHub org or username       |
+| Repository name   | your repo name (no `github.com/`) |
+| Workflow filename | `release.yml`                     |
+| Environment       | _(leave empty)_                   |
 
 > **Common mistake:** Don't include `.github/workflows/` in the filename — just `release.yml`.
 
@@ -151,12 +157,12 @@ The first push will trigger the workflow. If there are `fix:` or `feat:` commits
 
 ## Commit message reference
 
-| Prefix | Version bump | Example |
-|---|---|---|
-| `fix:` | patch (`1.0.0` → `1.0.1`) | `fix: correct cookie scope` |
-| `feat:` | minor (`1.0.0` → `1.1.0`) | `feat: add new adapter` |
-| `feat!:` or `BREAKING CHANGE:` | major (`1.0.0` → `2.0.0`) | `feat!: remove legacy API` |
-| `chore:`, `docs:`, `refactor:` | no release | — |
+| Prefix                         | Version bump              | Example                     |
+| ------------------------------ | ------------------------- | --------------------------- |
+| `fix:`                         | patch (`1.0.0` → `1.0.1`) | `fix: correct cookie scope` |
+| `feat:`                        | minor (`1.0.0` → `1.1.0`) | `feat: add new adapter`     |
+| `feat!:` or `BREAKING CHANGE:` | major (`1.0.0` → `2.0.0`) | `feat!: remove legacy API`  |
+| `chore:`, `docs:`, `refactor:` | no release                | —                           |
 
 ---
 
@@ -173,6 +179,7 @@ An `NPM_TOKEN` is set but it's a regular token with 2FA. Either remove it (use O
 
 **Push rejected after workflow runs**
 semantic-release pushed the version bump commit to `main`. Pull before pushing:
+
 ```bash
 git pull --rebase origin main && git push origin main
 ```

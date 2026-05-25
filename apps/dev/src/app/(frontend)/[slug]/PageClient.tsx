@@ -1,30 +1,31 @@
-'use client'
+"use client";
 
-import React from 'react'
-import { useLivePreview } from '@payloadcms/live-preview-react'
-import { RenderBlocks } from '../../../components/RenderBlocks'
+import { useLivePreview } from "@payloadcms/live-preview-react";
+import React from "react";
 
-type Page = {
-  title: string
-  slug: string
-  sections: any[]
+import { RenderBlocks } from "../../../components/RenderBlocks";
+
+interface Page {
+  title: string;
+  slug: string;
+  sections: any[];
 }
 
-type Props = {
-  initialData: Page
-  serverURL: string
+interface Props {
+  initialData: Page;
+  serverURL: string;
 }
 
 export function PageClient({ initialData, serverURL }: Props) {
   const { data } = useLivePreview<Page>({
+    depth: 1,
     initialData,
     serverURL,
-    depth: 1,
-  })
+  });
 
   return (
     <div>
       <RenderBlocks blocks={data.sections ?? []} />
     </div>
-  )
+  );
 }

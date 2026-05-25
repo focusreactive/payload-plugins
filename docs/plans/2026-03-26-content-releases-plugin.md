@@ -15,6 +15,7 @@
 ### Task 1: Initialize package directory and config files
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/package.json`
 - Create: `packages/payload-plugin-content-releases/tsconfig.json`
 - Create: `packages/payload-plugin-content-releases/tsup.config.ts`
@@ -146,6 +147,7 @@ git commit -m "chore: scaffold payload-plugin-content-releases package"
 ### Task 2: Set up Vitest test infrastructure
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/vitest.config.ts`
 - Create: `packages/payload-plugin-content-releases/src/__tests__/setup.ts`
 - Create: `packages/payload-plugin-content-releases/src/__tests__/plugin.test.ts`
@@ -206,6 +208,7 @@ git commit -m "chore: add vitest test infrastructure for content-releases"
 ### Task 3: Define TypeScript types
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/src/types.ts`
 - Create: `packages/payload-plugin-content-releases/src/__tests__/types.test.ts`
 
@@ -335,7 +338,10 @@ export interface ContentReleasesPluginConfig {
 
   /** Lifecycle hooks */
   hooks?: {
-    afterPublish?: (args: { releaseId: string; req: PayloadRequest }) => void | Promise<void>;
+    afterPublish?: (args: {
+      releaseId: string;
+      req: PayloadRequest;
+    }) => void | Promise<void>;
     onPublishError?: (args: {
       releaseId: string;
       errors: Array<{ collection: string; docId: string; error: string }>;
@@ -363,6 +369,7 @@ git commit -m "feat(content-releases): define plugin config and domain types"
 ### Task 4: Define constants
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/src/constants.ts`
 
 **Step 1: Create constants**
@@ -409,6 +416,7 @@ git commit -m "feat(content-releases): add constants"
 ### Task 5: Create the `releases` collection definition
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/src/collections/releases.ts`
 - Create: `packages/payload-plugin-content-releases/src/__tests__/collections/releases.test.ts`
 
@@ -518,7 +526,7 @@ interface BuildReleasesCollectionOptions {
 }
 
 export function buildReleasesCollection(
-  options?: BuildReleasesCollectionOptions,
+  options?: BuildReleasesCollectionOptions
 ): CollectionConfig {
   return {
     slug: RELEASES_SLUG,
@@ -546,7 +554,10 @@ export function buildReleasesCollection(
         type: "select",
         required: true,
         defaultValue: "draft",
-        options: RELEASE_STATUSES.map((s) => ({ label: s.charAt(0).toUpperCase() + s.slice(1), value: s })),
+        options: RELEASE_STATUSES.map((s) => ({
+          label: s.charAt(0).toUpperCase() + s.slice(1),
+          value: s,
+        })),
         admin: {
           position: "sidebar",
         },
@@ -606,6 +617,7 @@ git commit -m "feat(content-releases): add releases collection definition"
 ### Task 6: Create the `release-items` collection definition
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/src/collections/releaseItems.ts`
 - Create: `packages/payload-plugin-content-releases/src/__tests__/collections/releaseItems.test.ts`
 
@@ -729,7 +741,7 @@ interface BuildReleaseItemsCollectionOptions {
 
 export function buildReleaseItemsCollection(
   enabledCollections: string[],
-  options?: BuildReleaseItemsCollectionOptions,
+  options?: BuildReleaseItemsCollectionOptions
 ): CollectionConfig {
   return {
     slug: RELEASE_ITEMS_SLUG,
@@ -818,6 +830,7 @@ git commit -m "feat(content-releases): add release-items collection definition"
 ### Task 7: Create the main plugin function
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/src/plugin.ts`
 - Create: `packages/payload-plugin-content-releases/src/__tests__/plugin-integration.test.ts`
 - Modify: `packages/payload-plugin-content-releases/src/index.ts`
@@ -855,9 +868,7 @@ describe("contentReleasesPlugin", () => {
       enabledCollections: ["pages"],
     });
     const config = plugin(makeBaseConfig());
-    const releases = config.collections?.find(
-      (c) => c.slug === RELEASES_SLUG
-    );
+    const releases = config.collections?.find((c) => c.slug === RELEASES_SLUG);
     expect(releases).toBeDefined();
   });
 
@@ -904,9 +915,7 @@ describe("contentReleasesPlugin", () => {
       },
     });
     const config = plugin(makeBaseConfig());
-    const releases = config.collections?.find(
-      (c) => c.slug === RELEASES_SLUG
-    );
+    const releases = config.collections?.find((c) => c.slug === RELEASES_SLUG);
     expect((releases as any)?.access?.read).toBe(readFn);
   });
 });
@@ -928,7 +937,7 @@ import { buildReleasesCollection } from "./collections/releases";
 import { buildReleaseItemsCollection } from "./collections/releaseItems";
 
 export function contentReleasesPlugin(
-  options: ContentReleasesPluginConfig,
+  options: ContentReleasesPluginConfig
 ): Plugin {
   const { enabledCollections, access } = options;
 
@@ -937,7 +946,7 @@ export function contentReleasesPlugin(
     for (const slug of enabledCollections) {
       if (!config.collections?.find((c) => c.slug === slug)) {
         console.warn(
-          `[${PLUGIN_NAME}] Unknown collection slug: "${slug}". It will be included in release-items options but may not exist.`,
+          `[${PLUGIN_NAME}] Unknown collection slug: "${slug}". It will be included in release-items options but may not exist.`
         );
       }
     }
@@ -948,7 +957,7 @@ export function contentReleasesPlugin(
 
     const releaseItemsCollection = buildReleaseItemsCollection(
       enabledCollections,
-      { access: access?.releaseItems },
+      { access: access?.releaseItems }
     );
 
     return {
@@ -1008,6 +1017,7 @@ git commit -m "feat(content-releases): implement core plugin function with colle
 ### Task 8: Implement release status transition validation
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/src/validation/statusTransitions.ts`
 - Create: `packages/payload-plugin-content-releases/src/__tests__/validation/statusTransitions.test.ts`
 
@@ -1016,7 +1026,10 @@ git commit -m "feat(content-releases): implement core plugin function with colle
 ```typescript
 // src/__tests__/validation/statusTransitions.test.ts
 import { describe, it, expect } from "vitest";
-import { isValidTransition, VALID_TRANSITIONS } from "../../validation/statusTransitions";
+import {
+  isValidTransition,
+  VALID_TRANSITIONS,
+} from "../../validation/statusTransitions";
 import type { ReleaseStatus } from "../../types";
 
 describe("isValidTransition", () => {
@@ -1042,18 +1055,15 @@ describe("isValidTransition", () => {
     ["scheduled", "published"],
   ];
 
-  it.each(validCases)(
-    "should allow transition from %s to %s",
-    (from, to) => {
-      expect(isValidTransition(from, to)).toBe(true);
-    },
-  );
+  it.each(validCases)("should allow transition from %s to %s", (from, to) => {
+    expect(isValidTransition(from, to)).toBe(true);
+  });
 
   it.each(invalidCases)(
     "should reject transition from %s to %s",
     (from, to) => {
       expect(isValidTransition(from, to)).toBe(false);
-    },
+    }
   );
 
   it("should reject same-state transitions", () => {
@@ -1084,7 +1094,7 @@ export const VALID_TRANSITIONS: Record<ReleaseStatus, ReleaseStatus[]> = {
 
 export function isValidTransition(
   from: ReleaseStatus,
-  to: ReleaseStatus,
+  to: ReleaseStatus
 ): boolean {
   return VALID_TRANSITIONS[from]?.includes(to) ?? false;
 }
@@ -1108,6 +1118,7 @@ git commit -m "feat(content-releases): add release status transition validation"
 ### Task 9: Implement releases `beforeChange` hook (status enforcement)
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/src/hooks/releasesBeforeChange.ts`
 - Create: `packages/payload-plugin-content-releases/src/__tests__/hooks/releasesBeforeChange.test.ts`
 
@@ -1118,7 +1129,10 @@ git commit -m "feat(content-releases): add release status transition validation"
 import { describe, it, expect } from "vitest";
 import { releasesBeforeChange } from "../../hooks/releasesBeforeChange";
 
-function makeArgs(data: Record<string, any>, originalDoc?: Record<string, any>) {
+function makeArgs(
+  data: Record<string, any>,
+  originalDoc?: Record<string, any>
+) {
   return {
     data,
     originalDoc: originalDoc ?? {},
@@ -1150,7 +1164,7 @@ describe("releasesBeforeChange", () => {
 
   it("should allow valid transition from draft to scheduled", () => {
     const result = releasesBeforeChange(
-      makeArgs({ status: "scheduled" }, { status: "draft" }) as any,
+      makeArgs({ status: "scheduled" }, { status: "draft" }) as any
     );
     expect(result.status).toBe("scheduled");
   });
@@ -1158,29 +1172,29 @@ describe("releasesBeforeChange", () => {
   it("should throw on invalid transition from published to draft", () => {
     expect(() =>
       releasesBeforeChange(
-        makeArgs({ status: "draft" }, { status: "published" }) as any,
-      ),
+        makeArgs({ status: "draft" }, { status: "published" }) as any
+      )
     ).toThrow(/Invalid status transition/);
   });
 
   it("should throw on invalid transition from cancelled to draft", () => {
     expect(() =>
       releasesBeforeChange(
-        makeArgs({ status: "draft" }, { status: "cancelled" }) as any,
-      ),
+        makeArgs({ status: "draft" }, { status: "cancelled" }) as any
+      )
     ).toThrow(/Invalid status transition/);
   });
 
   it("should pass through unchanged status", () => {
     const result = releasesBeforeChange(
-      makeArgs({ status: "draft", name: "Updated" }, { status: "draft" }) as any,
+      makeArgs({ status: "draft", name: "Updated" }, { status: "draft" }) as any
     );
     expect(result.name).toBe("Updated");
   });
 
   it("should set publishedAt when transitioning to published", () => {
     const result = releasesBeforeChange(
-      makeArgs({ status: "published" }, { status: "publishing" }) as any,
+      makeArgs({ status: "published" }, { status: "publishing" }) as any
     );
     expect(result.publishedAt).toBeDefined();
   });
@@ -1210,7 +1224,9 @@ export const releasesBeforeChange: CollectionBeforeChangeHook = ({
     return { ...data, status: "draft" };
   }
 
-  const currentStatus = (originalDoc as any)?.status as ReleaseStatus | undefined;
+  const currentStatus = (originalDoc as any)?.status as
+    | ReleaseStatus
+    | undefined;
   const newStatus = data.status as ReleaseStatus | undefined;
 
   // If status hasn't changed, pass through
@@ -1222,8 +1238,10 @@ export const releasesBeforeChange: CollectionBeforeChangeHook = ({
   if (!isValidTransition(currentStatus, newStatus)) {
     throw new Error(
       `Invalid status transition: "${currentStatus}" → "${newStatus}". Allowed transitions from "${currentStatus}": ${JSON.stringify(
-        (await import("../validation/statusTransitions")).VALID_TRANSITIONS[currentStatus],
-      )}`,
+        (await import("../validation/statusTransitions")).VALID_TRANSITIONS[
+          currentStatus
+        ]
+      )}`
     );
   }
 
@@ -1242,7 +1260,10 @@ export const releasesBeforeChange: CollectionBeforeChangeHook = ({
 // src/hooks/releasesBeforeChange.ts
 import type { CollectionBeforeChangeHook } from "payload";
 import type { ReleaseStatus } from "../types";
-import { isValidTransition, VALID_TRANSITIONS } from "../validation/statusTransitions";
+import {
+  isValidTransition,
+  VALID_TRANSITIONS,
+} from "../validation/statusTransitions";
 
 export const releasesBeforeChange: CollectionBeforeChangeHook = ({
   data,
@@ -1253,7 +1274,9 @@ export const releasesBeforeChange: CollectionBeforeChangeHook = ({
     return { ...data, status: "draft" };
   }
 
-  const currentStatus = (originalDoc as any)?.status as ReleaseStatus | undefined;
+  const currentStatus = (originalDoc as any)?.status as
+    | ReleaseStatus
+    | undefined;
   const newStatus = data.status as ReleaseStatus | undefined;
 
   if (!newStatus || !currentStatus || newStatus === currentStatus) {
@@ -1262,7 +1285,7 @@ export const releasesBeforeChange: CollectionBeforeChangeHook = ({
 
   if (!isValidTransition(currentStatus, newStatus)) {
     throw new Error(
-      `Invalid status transition: "${currentStatus}" → "${newStatus}". Allowed from "${currentStatus}": [${VALID_TRANSITIONS[currentStatus].join(", ")}]`,
+      `Invalid status transition: "${currentStatus}" → "${newStatus}". Allowed from "${currentStatus}": [${VALID_TRANSITIONS[currentStatus].join(", ")}]`
     );
   }
 
@@ -1292,6 +1315,7 @@ git commit -m "feat(content-releases): add releases beforeChange hook with statu
 ### Task 10: Implement release-items `beforeChange` hook (draft-only editing + uniqueness)
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/src/hooks/releaseItemsBeforeChange.ts`
 - Create: `packages/payload-plugin-content-releases/src/__tests__/hooks/releaseItemsBeforeChange.test.ts`
 
@@ -1313,7 +1337,7 @@ function makeArgs(
   data: Record<string, any>,
   payload: any,
   operation: "create" | "update" = "create",
-  originalDoc?: Record<string, any>,
+  originalDoc?: Record<string, any>
 ) {
   return {
     data,
@@ -1345,30 +1369,36 @@ describe("releaseItemsBeforeChange", () => {
       targetCollection: "pages",
       targetDoc: "doc-1",
     };
-    await expect(
-      hook(makeArgs(data, payload) as any),
-    ).rejects.toThrow(/can only be modified.*draft/i);
+    await expect(hook(makeArgs(data, payload) as any)).rejects.toThrow(
+      /can only be modified.*draft/i
+    );
   });
 
   it("should reject adding items to a published release", async () => {
     const payload = makePayload("published");
-    const data = { release: "rel-1", targetCollection: "pages", targetDoc: "doc-1" };
-    await expect(
-      hook(makeArgs(data, payload) as any),
-    ).rejects.toThrow(/can only be modified.*draft/i);
+    const data = {
+      release: "rel-1",
+      targetCollection: "pages",
+      targetDoc: "doc-1",
+    };
+    await expect(hook(makeArgs(data, payload) as any)).rejects.toThrow(
+      /can only be modified.*draft/i
+    );
   });
 
   it("should reject duplicate doc in same release on create", async () => {
-    const existing = [{ id: "item-99", targetCollection: "pages", targetDoc: "doc-1" }];
+    const existing = [
+      { id: "item-99", targetCollection: "pages", targetDoc: "doc-1" },
+    ];
     const payload = makePayload("draft", existing);
     const data = {
       release: "rel-1",
       targetCollection: "pages",
       targetDoc: "doc-1",
     };
-    await expect(
-      hook(makeArgs(data, payload) as any),
-    ).rejects.toThrow(/already exists in this release/i);
+    await expect(hook(makeArgs(data, payload) as any)).rejects.toThrow(
+      /already exists in this release/i
+    );
   });
 
   it("should allow updates to existing items in draft releases", async () => {
@@ -1380,7 +1410,7 @@ describe("releaseItemsBeforeChange", () => {
       snapshot: { title: "Updated" },
     };
     const result = await hook(
-      makeArgs(data, payload, "update", { id: "item-1" }) as any,
+      makeArgs(data, payload, "update", { id: "item-1" }) as any
     );
     expect(result.snapshot.title).toBe("Updated");
   });
@@ -1412,7 +1442,7 @@ export function buildReleaseItemsBeforeChange(): CollectionBeforeChangeHook {
 
     if ((release as any).status !== "draft") {
       throw new Error(
-        `Release items can only be modified when the release is in "draft" status. Current status: "${(release as any).status}"`,
+        `Release items can only be modified when the release is in "draft" status. Current status: "${(release as any).status}"`
       );
     }
 
@@ -1432,7 +1462,7 @@ export function buildReleaseItemsBeforeChange(): CollectionBeforeChangeHook {
 
       if (existing.docs.length > 0) {
         throw new Error(
-          `Document "${data.targetDoc}" (${data.targetCollection}) already exists in this release. Update the existing item instead.`,
+          `Document "${data.targetDoc}" (${data.targetCollection}) already exists in this release. Update the existing item instead.`
         );
       }
     }
@@ -1460,6 +1490,7 @@ git commit -m "feat(content-releases): add release-items beforeChange hook with 
 ### Task 11: Wire hooks into collections and update plugin
 
 **Files:**
+
 - Modify: `packages/payload-plugin-content-releases/src/collections/releases.ts`
 - Modify: `packages/payload-plugin-content-releases/src/collections/releaseItems.ts`
 - Modify: `packages/payload-plugin-content-releases/src/plugin.ts`
@@ -1487,15 +1518,12 @@ const releasesCollection = buildReleasesCollection({
   },
 });
 
-const releaseItemsCollection = buildReleaseItemsCollection(
-  enabledCollections,
-  {
-    access: access?.releaseItems,
-    hooks: {
-      beforeChange: [buildReleaseItemsBeforeChange()],
-    },
+const releaseItemsCollection = buildReleaseItemsCollection(enabledCollections, {
+  access: access?.releaseItems,
+  hooks: {
+    beforeChange: [buildReleaseItemsBeforeChange()],
   },
-);
+});
 ```
 
 **Step 4: Run all tests**
@@ -1522,6 +1550,7 @@ git commit -m "feat(content-releases): wire lifecycle hooks into collections"
 ### Task 12: Implement conflict detection logic
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/src/publish/detectConflicts.ts`
 - Create: `packages/payload-plugin-content-releases/src/__tests__/publish/detectConflicts.test.ts`
 
@@ -1641,7 +1670,7 @@ interface ReleaseItemForConflict {
 
 export async function detectConflicts(
   items: ReleaseItemForConflict[],
-  payload: Payload,
+  payload: Payload
 ): Promise<ConflictResult[]> {
   const conflicts: ConflictResult[] = [];
 
@@ -1694,6 +1723,7 @@ git commit -m "feat(content-releases): add conflict detection for release items"
 ### Task 13: Implement the publish executor
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/src/publish/executePublish.ts`
 - Create: `packages/payload-plugin-content-releases/src/__tests__/publish/executePublish.test.ts`
 
@@ -1751,14 +1781,18 @@ describe("executePublish", () => {
         collection: "pages",
         id: "doc-0",
         data: expect.objectContaining({ title: "Page 0" }),
-      }),
+      })
     );
     expect(result.published).toHaveLength(1);
     expect(result.failed).toHaveLength(0);
   });
 
   it("should capture rollback snapshot before publishing", async () => {
-    const originalDoc = { id: "doc-0", title: "Original", updatedAt: "2026-01-01" };
+    const originalDoc = {
+      id: "doc-0",
+      title: "Original",
+      updatedAt: "2026-01-01",
+    };
     const payload = makePayload({ findByIdResult: originalDoc });
     const items = makeItems([{ targetDoc: "doc-0" }]);
 
@@ -1775,7 +1809,11 @@ describe("executePublish", () => {
 
   it("should handle unpublish action by setting _status to draft", async () => {
     const payload = makePayload({
-      findByIdResult: { id: "doc-0", _status: "published", updatedAt: "2026-01-01" },
+      findByIdResult: {
+        id: "doc-0",
+        _status: "published",
+        updatedAt: "2026-01-01",
+      },
     });
     const items = makeItems([{ targetDoc: "doc-0", action: "unpublish" }]);
 
@@ -1789,7 +1827,7 @@ describe("executePublish", () => {
     expect(payload.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ _status: "draft" }),
-      }),
+      })
     );
   });
 
@@ -1880,7 +1918,12 @@ interface RollbackEntry {
 
 interface PublishResult {
   published: Array<{ itemId: string; collection: string; docId: string }>;
-  failed: Array<{ itemId: string; collection: string; docId: string; error: string }>;
+  failed: Array<{
+    itemId: string;
+    collection: string;
+    docId: string;
+    error: string;
+  }>;
   rollbackSnapshot: RollbackEntry[];
 }
 
@@ -1892,7 +1935,7 @@ interface ExecutePublishOptions {
 }
 
 export async function executePublish(
-  options: ExecutePublishOptions,
+  options: ExecutePublishOptions
 ): Promise<PublishResult> {
   const { items, payload, conflictStrategy, batchSize } = options;
 
@@ -1993,6 +2036,7 @@ git commit -m "feat(content-releases): implement publish executor with conflict 
 ### Task 14: Implement the publish release endpoint
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/src/endpoints/publishRelease.ts`
 - Create: `packages/payload-plugin-content-releases/src/__tests__/endpoints/publishRelease.test.ts`
 
@@ -2083,13 +2127,20 @@ interface PublishReleaseConfig {
   conflictStrategy: ConflictStrategy;
   publishBatchSize: number;
   hooks?: {
-    afterPublish?: (args: { releaseId: string; req: any }) => void | Promise<void>;
-    onPublishError?: (args: { releaseId: string; errors: any[]; req: any }) => void | Promise<void>;
+    afterPublish?: (args: {
+      releaseId: string;
+      req: any;
+    }) => void | Promise<void>;
+    onPublishError?: (args: {
+      releaseId: string;
+      errors: any[];
+      req: any;
+    }) => void | Promise<void>;
   };
 }
 
 export function createPublishReleaseHandler(
-  config: PublishReleaseConfig,
+  config: PublishReleaseConfig
 ): PayloadHandler {
   return async (req) => {
     const releaseId = (req.routeParams as any)?.id as string;
@@ -2106,8 +2157,10 @@ export function createPublishReleaseHandler(
 
       if ((release as any).status !== "draft") {
         return Response.json(
-          { error: `Release can only be published from "draft" status. Current: "${(release as any).status}"` },
-          { status: 400 },
+          {
+            error: `Release can only be published from "draft" status. Current: "${(release as any).status}"`,
+          },
+          { status: 400 }
         );
       }
 
@@ -2121,7 +2174,7 @@ export function createPublishReleaseHandler(
       if (items.length === 0) {
         return Response.json(
           { error: "Release has no items to publish" },
-          { status: 400 },
+          { status: 400 }
         );
       }
 
@@ -2193,7 +2246,7 @@ export function createPublishReleaseHandler(
     } catch (err) {
       return Response.json(
         { error: err instanceof Error ? err.message : "Internal server error" },
-        { status: 500 },
+        { status: 500 }
       );
     }
   };
@@ -2218,6 +2271,7 @@ git commit -m "feat(content-releases): add publish release REST endpoint"
 ### Task 15: Implement conflicts check endpoint
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/src/endpoints/checkConflicts.ts`
 - Create: `packages/payload-plugin-content-releases/src/__tests__/endpoints/checkConflicts.test.ts`
 
@@ -2338,6 +2392,7 @@ git commit -m "feat(content-releases): add conflicts check endpoint"
 ### Task 16: Register endpoints in the plugin
 
 **Files:**
+
 - Modify: `packages/payload-plugin-content-releases/src/plugin.ts`
 - Create: `packages/payload-plugin-content-releases/src/__tests__/plugin-endpoints.test.ts`
 
@@ -2361,7 +2416,7 @@ describe("plugin endpoints", () => {
     const plugin = contentReleasesPlugin({ enabledCollections: ["pages"] });
     const config = plugin(makeBaseConfig());
     const endpoint = config.endpoints?.find(
-      (e: any) => e.path === "/content-releases/:id/publish",
+      (e: any) => e.path === "/content-releases/:id/publish"
     );
     expect(endpoint).toBeDefined();
     expect(endpoint?.method).toBe("post");
@@ -2371,7 +2426,7 @@ describe("plugin endpoints", () => {
     const plugin = contentReleasesPlugin({ enabledCollections: ["pages"] });
     const config = plugin(makeBaseConfig());
     const endpoint = config.endpoints?.find(
-      (e: any) => e.path === "/content-releases/:id/conflicts",
+      (e: any) => e.path === "/content-releases/:id/conflicts"
     );
     expect(endpoint).toBeDefined();
     expect(endpoint?.method).toBe("get");
@@ -2410,7 +2465,8 @@ return {
       method: "post",
       handler: createPublishReleaseHandler({
         conflictStrategy: options.conflictStrategy ?? DEFAULT_CONFLICT_STRATEGY,
-        publishBatchSize: options.publishBatchSize ?? DEFAULT_PUBLISH_BATCH_SIZE,
+        publishBatchSize:
+          options.publishBatchSize ?? DEFAULT_PUBLISH_BATCH_SIZE,
         hooks: options.hooks,
       }),
     },
@@ -2453,6 +2509,7 @@ git commit -m "feat(content-releases): register publish and conflicts endpoints 
 ### Task 17: Integrate plugin into the dev app
 
 **Files:**
+
 - Modify: `apps/dev/package.json` — add `"@focus-reactive/payload-plugin-content-releases": "workspace:*"`
 - Modify: `apps/dev/src/payload.config.ts` — add plugin to plugins array
 - Modify: `apps/dev/src/collections/Pages.ts` — enable versions/drafts if not already
@@ -2460,6 +2517,7 @@ git commit -m "feat(content-releases): register publish and conflicts endpoints 
 **Step 1: Add workspace dependency to dev app**
 
 Add to `apps/dev/package.json` dependencies:
+
 ```json
 "@focus-reactive/payload-plugin-content-releases": "workspace:*"
 ```
@@ -2478,6 +2536,7 @@ contentReleasesPlugin({
 **Step 3: Ensure Pages has versions/drafts enabled**
 
 If not already present, add to Pages collection config:
+
 ```typescript
 versions: {
   drafts: true,
@@ -2508,6 +2567,7 @@ git commit -m "feat(dev): integrate content-releases plugin into dev app"
 ### Task 18: Add scheduled release cron check
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/src/endpoints/runScheduled.ts`
 - Create: `packages/payload-plugin-content-releases/src/__tests__/endpoints/runScheduled.test.ts`
 - Modify: `packages/payload-plugin-content-releases/src/types.ts` — add optional `schedulerSecret`
@@ -2555,7 +2615,8 @@ describe("runScheduled handler", () => {
     const req = {
       headers: { get: () => "Bearer test-secret" },
       payload: {
-        find: vi.fn()
+        find: vi
+          .fn()
           .mockResolvedValueOnce({ docs: [dueRelease] }) // scheduled releases
           .mockResolvedValueOnce({ docs: [] }), // release items (empty = skip)
         findByID: vi.fn().mockResolvedValue(dueRelease),
@@ -2592,7 +2653,7 @@ interface RunScheduledConfig {
 }
 
 export function createRunScheduledHandler(
-  config: RunScheduledConfig,
+  config: RunScheduledConfig
 ): PayloadHandler {
   return async (req) => {
     const auth = req.headers.get("authorization");
@@ -2613,7 +2674,12 @@ export function createRunScheduledHandler(
       limit: 0,
     });
 
-    const results: Array<{ releaseId: string; status: string; published: number; failed: number }> = [];
+    const results: Array<{
+      releaseId: string;
+      status: string;
+      published: number;
+      failed: number;
+    }> = [];
 
     for (const release of dueReleases) {
       const { docs: items } = await req.payload.find({
@@ -2626,9 +2692,17 @@ export function createRunScheduledHandler(
         await req.payload.update({
           collection: RELEASES_SLUG as any,
           id: (release as any).id,
-          data: { status: "failed", errorLog: [{ error: "No items in release" }] } as any,
+          data: {
+            status: "failed",
+            errorLog: [{ error: "No items in release" }],
+          } as any,
         });
-        results.push({ releaseId: (release as any).id, status: "failed", published: 0, failed: 0 });
+        results.push({
+          releaseId: (release as any).id,
+          status: "failed",
+          published: 0,
+          failed: 0,
+        });
         continue;
       }
 
@@ -2677,6 +2751,7 @@ export function createRunScheduledHandler(
 **Step 4: Update types to add schedulerSecret**
 
 Add to `ContentReleasesPluginConfig`:
+
 ```typescript
 /** Bearer token to authenticate the /content-releases/run-scheduled endpoint.
  * Required to enable scheduled release publishing.
@@ -2749,9 +2824,11 @@ Expected: No errors
 ### Task 20: Add README
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/README.md`
 
 Write a concise README covering:
+
 - What the plugin does
 - Installation (`bun add @focus-reactive/payload-plugin-content-releases`)
 - Basic config example
@@ -2760,6 +2837,7 @@ Write a concise README covering:
 - Link to the releases and release-items collection schemas
 
 **Commit:**
+
 ```bash
 git add packages/payload-plugin-content-releases/README.md
 git commit -m "docs(content-releases): add README"
@@ -2769,22 +2847,22 @@ git commit -m "docs(content-releases): add README"
 
 ## Summary of Test Coverage
 
-| Test file | Tests | What it covers |
-|-----------|-------|---------------|
-| `types.test.ts` | 5 | Type correctness for config and domain types |
-| `collections/releases.test.ts` | 9 | Releases collection fields, access config |
-| `collections/releaseItems.test.ts` | 8 | Release-items collection fields, enabled collections |
-| `plugin-integration.test.ts` | 6 | Plugin injects collections, preserves config, warns on bad slugs |
-| `plugin-endpoints.test.ts` | 2 | Plugin registers endpoints |
-| `validation/statusTransitions.test.ts` | ~17 | All valid/invalid state transitions |
-| `hooks/releasesBeforeChange.test.ts` | 7 | Status enforcement, forced draft on create, publishedAt |
-| `hooks/releaseItemsBeforeChange.test.ts` | 5 | Draft-only editing, uniqueness check |
-| `publish/detectConflicts.test.ts` | 4 | Conflict detection by version comparison |
-| `publish/executePublish.test.ts` | 6 | Publish flow, rollback capture, conflict strategies, error handling |
-| `endpoints/publishRelease.test.ts` | 3 | Endpoint validation, success path |
-| `endpoints/checkConflicts.test.ts` | 2 | Conflict check endpoint |
-| `endpoints/runScheduled.test.ts` | 3 | Auth, scheduled release processing |
-| **Total** | **~77** | |
+| Test file                                | Tests   | What it covers                                                      |
+| ---------------------------------------- | ------- | ------------------------------------------------------------------- |
+| `types.test.ts`                          | 5       | Type correctness for config and domain types                        |
+| `collections/releases.test.ts`           | 9       | Releases collection fields, access config                           |
+| `collections/releaseItems.test.ts`       | 8       | Release-items collection fields, enabled collections                |
+| `plugin-integration.test.ts`             | 6       | Plugin injects collections, preserves config, warns on bad slugs    |
+| `plugin-endpoints.test.ts`               | 2       | Plugin registers endpoints                                          |
+| `validation/statusTransitions.test.ts`   | ~17     | All valid/invalid state transitions                                 |
+| `hooks/releasesBeforeChange.test.ts`     | 7       | Status enforcement, forced draft on create, publishedAt             |
+| `hooks/releaseItemsBeforeChange.test.ts` | 5       | Draft-only editing, uniqueness check                                |
+| `publish/detectConflicts.test.ts`        | 4       | Conflict detection by version comparison                            |
+| `publish/executePublish.test.ts`         | 6       | Publish flow, rollback capture, conflict strategies, error handling |
+| `endpoints/publishRelease.test.ts`       | 3       | Endpoint validation, success path                                   |
+| `endpoints/checkConflicts.test.ts`       | 2       | Conflict check endpoint                                             |
+| `endpoints/runScheduled.test.ts`         | 3       | Auth, scheduled release processing                                  |
+| **Total**                                | **~77** |                                                                     |
 
 ## File Tree (Final State)
 

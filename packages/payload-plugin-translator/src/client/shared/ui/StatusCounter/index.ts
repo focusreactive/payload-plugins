@@ -1,1 +1,1 @@
-export { default as StatusCounter } from './StatusCounter'
+export { default as StatusCounter } from "./StatusCounter";

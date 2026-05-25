@@ -1,4 +1,5 @@
 import type { CollectionConfig, Field, GlobalConfig } from "payload";
+
 import { getComponentConfig } from "../path/getComponentPath";
 
 export type EntityConfig = CollectionConfig | GlobalConfig;
@@ -32,7 +33,7 @@ function buildPath(parentPath: string, segment: string): string {
 }
 
 function injectIntoField(field: Field, parentPath: string): Field {
-  if (field.type === "ui") return field;
+  if (field.type === "ui") {return field;}
 
   const f = field as BaseField;
   const { name } = f;
@@ -41,7 +42,10 @@ function injectIntoField(field: Field, parentPath: string): Field {
   let result: any = { ...f };
 
   if (Array.isArray(result.fields)) {
-    result = { ...result, fields: injectIntoFields(result.fields, currentPath) };
+    result = {
+      ...result,
+      fields: injectIntoFields(result.fields, currentPath),
+    };
   }
 
   if (result.type === "tabs" && Array.isArray(result.tabs)) {
@@ -49,7 +53,10 @@ function injectIntoField(field: Field, parentPath: string): Field {
       ...result,
       tabs: result.tabs.map((tab: { name?: string; fields: Field[] }) => ({
         ...tab,
-        fields: injectIntoFields(tab.fields, tab.name ? buildPath(currentPath, tab.name) : currentPath),
+        fields: injectIntoFields(
+          tab.fields,
+          tab.name ? buildPath(currentPath, tab.name) : currentPath
+        ),
       })),
     };
   }
@@ -64,7 +71,11 @@ function injectIntoField(field: Field, parentPath: string): Field {
     };
   }
 
-  if (name && LABELED_FIELD_TYPES.has(result.type) && !result.admin?.components?.Label) {
+  if (
+    name &&
+    LABELED_FIELD_TYPES.has(result.type) &&
+    !result.admin?.components?.Label
+  ) {
     result = {
       ...result,
       admin: {
@@ -72,8 +83,8 @@ function injectIntoField(field: Field, parentPath: string): Field {
         components: {
           ...result.admin?.components,
           Label: getComponentConfig({
-            componentPath: "components/FieldCommentLabel",
             componentName: "FieldCommentLabel",
+            componentPath: "components/FieldCommentLabel",
           }),
         },
       },
@@ -87,7 +98,9 @@ function injectIntoFields(fields: Field[], parentPath: string): Field[] {
   return fields.map((field) => injectIntoField(field, parentPath));
 }
 
-export function injectFieldCommentComponents<T extends EntityConfig>(entity: T): T {
+export function injectFieldCommentComponents<T extends EntityConfig>(
+  entity: T
+): T {
   return {
     ...entity,
     fields: injectIntoFields(entity.fields, ""),

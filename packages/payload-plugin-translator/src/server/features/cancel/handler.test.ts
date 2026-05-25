@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, PayloadRequest } from "payload";
-import { CancelHandler } from "./handler";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
 import type { TaskRunner, TaskRunnerProvider } from "../../modules/task-runner";
+import { CancelHandler } from "./handler";
 
 describe("CancelHandler", () => {
   let handler: CancelHandler;
@@ -10,21 +11,21 @@ describe("CancelHandler", () => {
 
   const createMockRequest = (body: unknown): PayloadRequest =>
     ({
-      payload: {} as Payload,
       json: vi.fn().mockResolvedValue(body),
+      payload: {} as Payload,
     }) as unknown as PayloadRequest;
 
   beforeEach(() => {
     mockTaskRunner = {
-      enqueue: vi.fn(),
       cancel: vi.fn().mockResolvedValue(undefined),
-      run: vi.fn(),
+      enqueue: vi.fn(),
       findByCollection: vi.fn(),
+      run: vi.fn(),
     };
 
     mockTaskRunnerFactory = {
-      create: vi.fn().mockReturnValue(mockTaskRunner),
       configure: vi.fn(),
+      create: vi.fn().mockReturnValue(mockTaskRunner),
     };
 
     handler = new CancelHandler(mockTaskRunnerFactory);

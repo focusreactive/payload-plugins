@@ -1,10 +1,11 @@
 "use server";
 
 import type { TypedUser, Where } from "payload";
-import { extractPayload } from "../utils/payload/extractPayload";
+
 import { DEFAULT_COLLECTION_SLUG } from "../constants";
-import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
 import type { Response, Comment, BaseServiceOptions } from "../types";
+import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
+import { extractPayload } from "../utils/payload/extractPayload";
 import { getCurrentTenantId } from "./getCurrentTenantId";
 
 interface Props {
@@ -48,20 +49,20 @@ export async function findAllComments({
 
       if (hasCollections || hasGlobals) {
         where.or = [
-          ...(hasCollections ?
-            [
-              {
-                collectionSlug: { in: enabledCollections },
-              },
-            ]
-          : []),
-          ...(hasGlobals ?
-            [
-              {
-                globalSlug: { in: enabledGlobals },
-              },
-            ]
-          : []),
+          ...(hasCollections
+            ? [
+                {
+                  collectionSlug: { in: enabledCollections },
+                },
+              ]
+            : []),
+          ...(hasGlobals
+            ? [
+                {
+                  globalSlug: { in: enabledGlobals },
+                },
+              ]
+            : []),
         ];
       }
     }
@@ -72,22 +73,22 @@ export async function findAllComments({
 
     const { docs: comments } = await payload.find({
       collection: DEFAULT_COLLECTION_SLUG,
-      where: Object.keys(where).length ? where : undefined,
-      sort: "createdAt",
-      limit: 200,
       depth: 1,
+      limit: 200,
       overrideAccess: true,
+      sort: "createdAt",
+      where: Object.keys(where).length ? where : undefined,
     });
 
     return {
-      success: true,
       data: comments as unknown as Comment[],
+      success: true,
     };
-  } catch (e) {
-    console.error("findAllComments failed:", e);
+  } catch (error) {
+    console.error("findAllComments failed:", error);
     return {
       success: false,
-      error: getDefaultErrorMessage(e),
+      error: getDefaultErrorMessage(error),
     };
   }
 }

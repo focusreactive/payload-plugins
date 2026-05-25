@@ -1,54 +1,61 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ofetch } from 'ofetch'
-import type { CollectionSlug } from 'payload'
-import { useCallback } from 'react'
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ofetch } from "ofetch";
+import type { CollectionSlug } from "payload";
+import { useCallback } from "react";
 
-import { useTranslateKitConfig } from '../../../../app/config'
-import { handleNextApiError } from '../../../../shared/lib/errors/handleApiError'
-import type { DocumentTranslation } from '../../model/types'
+import { useTranslateKitConfig } from "../../../../app/config";
+import { handleNextApiError } from "../../../../shared/lib/errors/handleApiError";
+import type { DocumentTranslation } from "../../model/types";
 
-type Props = {
-  collection: CollectionSlug
-  id: string
+interface Props {
+  collection: CollectionSlug;
+  id: string;
 }
 
-type Options = {
-  enabled?: boolean
+interface Options {
+  enabled?: boolean;
 }
 
-const getDocumentTranslationQueryKey = ({ collection, id }: Props) => {
-  return ['document-translation-status', collection, id]
-}
+const getDocumentTranslationQueryKey = ({ collection, id }: Props) => ["document-translation-status", collection, id];
 
-const POLLING_INTERVAL_MILLISECONDS = 20000 // 20 sec
+const POLLING_INTERVAL_MILLISECONDS = 20_000; // 20 sec
 
-export function useDocumentTranslation({ collection, id }: Props, options?: Options) {
-  const queryClient = useQueryClient()
-  const { basePath } = useTranslateKitConfig()
+export function useDocumentTranslation(
+  { collection, id }: Props,
+  options?: Options
+) {
+  const queryClient = useQueryClient();
+  const { basePath } = useTranslateKitConfig();
 
   const query = useQuery<DocumentTranslation, Error, DocumentTranslation>({
-    queryKey: getDocumentTranslationQueryKey({ collection, id }),
+    enabled: options?.enabled,
     queryFn: async ({ signal }) => {
       return handleNextApiError(async () => {
-        const response = await ofetch<{ data: DocumentTranslation }>(`/api${basePath}/document/${collection}/${id}`, {
-          method: 'get',
-          signal,
-        })
+        const response = await ofetch<{ data: DocumentTranslation }>(
+          `/api${basePath}/document/${collection}/${id}`,
+          {
+            method: "get",
+            signal,
+          }
+        );
 
-        return response.data
-      })
+        return response.data;
+      });
     },
-    enabled: options?.enabled,
+    queryKey: getDocumentTranslationQueryKey({ collection, id }),
     refetchInterval: (query) => {
-      return query.state.data?.status === 'failed' || query.state.data?.status === 'completed'
+      return query.state.data?.status === "failed" ||
+        query.state.data?.status === "completed"
         ? false
-        : POLLING_INTERVAL_MILLISECONDS
+        : POLLING_INTERVAL_MILLISECONDS;
     },
-  })
+  });
 
   const invalidate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: getDocumentTranslationQueryKey({ collection, id }) })
-  }, [collection, id, queryClient])
+    queryClient.invalidateQueries({
+      queryKey: getDocumentTranslationQueryKey({ collection, id }),
+    });
+  }, [collection, id, queryClient]);
 
-  return { ...query, invalidate }
+  return { ...query, invalidate };
 }

@@ -1,8 +1,10 @@
 "use client";
 
-import Image from "next/image";
-import { EmptyPlaceholder, type MediaData } from "./shared/index.js";
 import { ShimmerEffect, useTranslation } from "@payloadcms/ui";
+import Image from "next/image";
+
+import { EmptyPlaceholder } from './shared/index.js';
+import type { MediaData } from './shared/index.js';
 
 import "./PresetAdminComponent.scss";
 
@@ -15,20 +17,20 @@ interface PresetVariantValue {
 }
 
 const SIZE_MAP: Record<PresetCellSize, PresetVariantValue> = {
-  sm: {
-    width: 40,
-    height: 40,
-    shimmerClass: "preset-shimmer--sm",
-  },
-  md: {
-    width: 60,
-    height: 60,
-    shimmerClass: "preset-shimmer--md",
-  },
   lg: {
-    width: 400,
     height: 300,
     shimmerClass: "preset-shimmer--lg",
+    width: 400,
+  },
+  md: {
+    height: 60,
+    shimmerClass: "preset-shimmer--md",
+    width: 60,
+  },
+  sm: {
+    height: 40,
+    shimmerClass: "preset-shimmer--sm",
+    width: 40,
   },
 };
 

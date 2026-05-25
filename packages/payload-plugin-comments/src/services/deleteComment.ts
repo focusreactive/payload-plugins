@@ -1,18 +1,22 @@
 "use server";
 
 import { headers } from "next/headers";
+
 import { DEFAULT_COLLECTION_SLUG } from "../constants";
-import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
 import type { BaseServiceOptions, Response, Comment } from "../types";
+import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
 import { extractPayload } from "../utils/payload/extractPayload";
 
-export async function deleteComment(id: number | string, options?: BaseServiceOptions): Promise<Response<Comment>> {
+export async function deleteComment(
+  id: number | string,
+  options?: BaseServiceOptions
+): Promise<Response<Comment>> {
   try {
     const payload = await extractPayload(options?.payload);
     const { user } = await payload.auth({ headers: await headers() });
 
     if (!user) {
-      return { success: false, error: "Unauthorized" };
+      return { error: "Unauthorized", success: false };
     }
 
     const data = (await payload.delete({
@@ -23,15 +27,15 @@ export async function deleteComment(id: number | string, options?: BaseServiceOp
     })) as Comment;
 
     return {
-      success: true,
       data,
+      success: true,
     };
-  } catch (e) {
-    console.error(`Failed to delete ${id} comment`, e);
+  } catch (error) {
+    console.error(`Failed to delete ${id} comment`, error);
 
     return {
       success: false,
-      error: getDefaultErrorMessage(e),
+      error: getDefaultErrorMessage(error),
     };
   }
 }

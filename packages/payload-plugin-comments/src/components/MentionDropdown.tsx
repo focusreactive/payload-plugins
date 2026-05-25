@@ -1,7 +1,8 @@
 "use client";
 
-import { createPortal } from "react-dom";
 import { PopupList, useTranslation } from "@payloadcms/ui";
+import { createPortal } from "react-dom";
+
 import { FALLBACK_USERNAME } from "../constants";
 import { useComments } from "../providers/CommentsProvider";
 import type { User } from "../types";
@@ -23,9 +24,10 @@ export function MentionDropdown({
 }: MentionDropdownProps) {
   const { usernameFieldPath } = useComments();
   const { t } = useTranslation();
-  const unknownLabel = t("comments:unknownAuthor" as never) ?? FALLBACK_USERNAME;
+  const unknownLabel =
+    t("comments:unknownAuthor" as never) ?? FALLBACK_USERNAME;
 
-  if (!anchorRef.current) return null;
+  if (!anchorRef.current) {return null;}
 
   const rect = anchorRef.current.getBoundingClientRect();
 
@@ -33,32 +35,39 @@ export function MentionDropdown({
     <div
       onMouseDown={(e) => e.stopPropagation()}
       style={{
+        left: rect.left + window.scrollX,
+        maxHeight: "100px",
+        overflowY: "auto",
         position: "absolute",
         top: rect.top + window.scrollY,
-        left: rect.left + window.scrollX,
-        overflowY: "auto",
-        width: rect.width,
-        maxHeight: "100px",
         transform: "translateY(calc(-100% - 6px))",
+        width: rect.width,
         zIndex: 9999,
-      }}>
+      }}
+    >
       <div
         className="bg-(--theme-elevation-0) rounded-md shadow-[0_-2px_16px_-2px_rgba(0,0,0,0.2)]"
-        onMouseDown={(e) => e.preventDefault()}>
+        onMouseDown={(e) => e.preventDefault()}
+      >
         <PopupList.ButtonGroup>
-          {users.length === 0 ?
+          {users.length === 0 ? (
             <p className="m-0 px-3 py-1.5 text-[13px] text-(--theme-elevation-500)">
               {t("comments:noMentionMatches" as never)}
             </p>
-          : users.map((user, index) => (
-              <PopupList.Button key={user.id} active={index === selectedIndex} onClick={() => onSelect(user)}>
+          ) : (
+            users.map((user, index) => (
+              <PopupList.Button
+                key={user.id}
+                active={index === selectedIndex}
+                onClick={() => onSelect(user)}
+              >
                 @{resolveUsername(user, usernameFieldPath, unknownLabel)}
               </PopupList.Button>
             ))
-          }
+          )}
         </PopupList.ButtonGroup>
       </div>
     </div>,
-    document.body,
+    document.body
   );
 }

@@ -1,17 +1,19 @@
-import React from 'react'
+import React from "react";
 
-type Props = {
-  title: string
-  description?: string
+interface Props {
+  title: string;
+  description?: string;
 }
 
 export function HeroSection({ title, description }: Props) {
   return (
-    <section style={{ padding: '80px 40px', borderBottom: '1px solid #eee' }}>
-      <h1 style={{ fontSize: '3rem', margin: '0 0 16px' }}>{title}</h1>
+    <section style={{ borderBottom: "1px solid #eee", padding: "80px 40px" }}>
+      <h1 style={{ fontSize: "3rem", margin: "0 0 16px" }}>{title}</h1>
       {description && (
-        <p style={{ fontSize: '1.25rem', color: '#555', margin: 0 }}>{description}</p>
+        <p style={{ color: "#555", fontSize: "1.25rem", margin: 0 }}>
+          {description}
+        </p>
       )}
     </section>
-  )
+  );
 }

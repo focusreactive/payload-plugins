@@ -1,10 +1,9 @@
-import type { Endpoint } from 'payload'
+import type { Endpoint } from "payload";
 
-import { withErrorHandler, withAccessCheck } from '../../shared'
-import type { AccessGuard } from '../../shared'
-import type { TaskRunnerProvider } from '../../modules/task-runner'
-
-import { RunTranslationHandler } from './handler'
+import type { TaskRunnerProvider } from "../../modules/task-runner";
+import { withErrorHandler, withAccessCheck } from "../../shared";
+import type { AccessGuard } from "../../shared";
+import { RunTranslationHandler } from "./handler";
 
 /**
  * Creates the run translation endpoint
@@ -12,13 +11,16 @@ import { RunTranslationHandler } from './handler'
 export function createRunRoute(
   taskRunnerFactory: TaskRunnerProvider,
   access?: AccessGuard,
-  basePath = '/translate',
+  basePath = "/translate"
 ): Endpoint {
-  const handler = new RunTranslationHandler(taskRunnerFactory)
+  const handler = new RunTranslationHandler(taskRunnerFactory);
 
   return {
+    handler: withAccessCheck(
+      withErrorHandler(handler.handle.bind(handler)),
+      access
+    ),
+    method: "post",
     path: `${basePath}/run/:id`,
-    method: 'post',
-    handler: withAccessCheck(withErrorHandler(handler.handle.bind(handler)), access),
-  }
+  };
 }

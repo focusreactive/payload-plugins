@@ -1,44 +1,44 @@
-import type { DocumentTranslationStatus } from './enums'
+import type { DocumentTranslationStatus } from "./enums";
 
-type InputData = {
-  source_lng: string
-  target_lng: string
+interface InputData {
+  source_lng: string;
+  target_lng: string;
 }
 
-export type DocumentTranslationPending = {
-  id: string
-  status: DocumentTranslationStatus.PENDING
-  created_at: string
-  updated_at: string
-  input: InputData
+export interface DocumentTranslationPending {
+  id: string;
+  status: DocumentTranslationStatus.PENDING;
+  created_at: string;
+  updated_at: string;
+  input: InputData;
 }
 
-export type DocumentTranslationFailed = {
-  id: string
-  status: DocumentTranslationStatus.FAILED
-  created_at: string
-  updated_at: string
-  input: InputData
+export interface DocumentTranslationFailed {
+  id: string;
+  status: DocumentTranslationStatus.FAILED;
+  created_at: string;
+  updated_at: string;
+  input: InputData;
   error: {
-    message: string
-  }
+    message: string;
+  };
 }
 
-export type DocumentTranslationRunning = {
-  id: string
-  status: DocumentTranslationStatus.RUNNING
-  created_at: string
-  updated_at: string
-  input: InputData
+export interface DocumentTranslationRunning {
+  id: string;
+  status: DocumentTranslationStatus.RUNNING;
+  created_at: string;
+  updated_at: string;
+  input: InputData;
 }
 
-export type DocumentTranslationCompleted = {
-  id: string
-  status: DocumentTranslationStatus.COMPLETED
-  created_at: string
-  updated_at: string
-  completed_at: string
-  input: InputData
+export interface DocumentTranslationCompleted {
+  id: string;
+  status: DocumentTranslationStatus.COMPLETED;
+  created_at: string;
+  updated_at: string;
+  completed_at: string;
+  input: InputData;
 }
 
 export type DocumentTranslation =
@@ -46,12 +46,18 @@ export type DocumentTranslation =
   | DocumentTranslationRunning
   | DocumentTranslationFailed
   | DocumentTranslationPending
-  | null
+  | null;
 
-export type CollectionTranslationStatusItem = { id: string; status: DocumentTranslationStatus }
-
-export type CollectionTranslationStatus = {
-  docs: Array<CollectionTranslationStatusItem>
+export interface CollectionTranslationStatusItem {
+  id: string;
+  status: DocumentTranslationStatus;
 }
 
-export type GroupedCollectionTranslationStatus = Record<DocumentTranslationStatus, CollectionTranslationStatusItem[]>
+export interface CollectionTranslationStatus {
+  docs: Array<CollectionTranslationStatusItem>;
+}
+
+export type GroupedCollectionTranslationStatus = Record<
+  DocumentTranslationStatus,
+  CollectionTranslationStatusItem[]
+>;

@@ -2,13 +2,13 @@ import type { RefObject } from "react";
 
 export function measureLineRects(contentRef: RefObject<HTMLElement | null>) {
   const el = contentRef.current;
-  if (!el) return [];
+  if (!el) {return [];}
 
   const delEl = el.querySelector("del") ?? el;
 
   const range = document.createRange();
   range.selectNodeContents(delEl);
-  const rawRects = Array.from(range.getClientRects());
+  const rawRects = [...range.getClientRects()];
 
   const groups = new Map<number, DOMRect[]>();
   for (const rect of rawRects) {
@@ -22,7 +22,7 @@ export function measureLineRects(contentRef: RefObject<HTMLElement | null>) {
     }
   }
 
-  return Array.from(groups.values()).map((rects) => {
+  return [...groups.values()].map((rects) => {
     const left = Math.min(...rects.map((r) => r.left));
     const right = Math.max(...rects.map((r) => r.right));
     const top = Math.min(...rects.map((r) => r.top));

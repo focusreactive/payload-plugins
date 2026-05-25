@@ -1,15 +1,16 @@
 "use client";
 
-import { MediaData, Preset } from "../../shared";
-import { useEffect, useRef, useState } from "react";
 import { useTranslation, useDocumentDrawer } from "@payloadcms/ui";
-import { usePresetsConfig } from "../../usePresetsConfig.js";
-import { TrashIcon } from "@payloadcms/ui/icons/Trash";
 import { EditIcon } from "@payloadcms/ui/icons/Edit";
+import { TrashIcon } from "@payloadcms/ui/icons/Trash";
 import * as Popover from "@radix-ui/react-popover";
+import { useEffect, useRef, useState } from "react";
+
+import { PresetAdminComponentCell } from "../../PresetAdminComponentCell";
+import type { MediaData, Preset } from "../../shared";
 
 import "./styles.scss";
-import { PresetAdminComponentCell } from "../../PresetAdminComponentCell";
+import { usePresetsConfig } from "../../usePresetsConfig.js";
 
 function EditPresetButton({
   presetId,
@@ -101,7 +102,7 @@ export function PresetItem({
     e.stopPropagation();
     setIsHovered(false);
     setIsKeyboardFocused(false);
-    if (preset) onDeleteRequest?.(preset);
+    if (preset) {onDeleteRequest?.(preset);}
   };
 
   const handleButtonFocus = () => {
@@ -113,7 +114,7 @@ export function PresetItem({
   };
 
   useEffect(() => {
-    if (!isKeyboardFocused) return;
+    if (!isKeyboardFocused) {return;}
 
     const handleMouseMove = () => setIsKeyboardFocused(false);
 
@@ -187,7 +188,7 @@ export function PresetItem({
                     setIsKeyboardFocused(false);
                   }}
                   onDrawerOpenChange={(isOpen) => {
-                    if (!isOpen) suppressNextFocus.current = true;
+                    if (!isOpen) {suppressNextFocus.current = true;}
                     setIsEditDrawerOpen(isOpen);
                   }}
                 />

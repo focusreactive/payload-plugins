@@ -1,4 +1,5 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import type { MigrateUpArgs, MigrateDownArgs} from "@payloadcms/db-postgres";
+import { sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -18,10 +19,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX IF NOT EXISTS "presets_hero_actions_locale_idx" ON "presets_hero_actions" USING btree ("_locale");
   CREATE INDEX IF NOT EXISTS "presets_logos_items_locale_idx" ON "presets_logos_items" USING btree ("_locale");
   ALTER TABLE "testimonials" DROP COLUMN IF EXISTS "content";
-  ALTER TABLE "presets" DROP COLUMN IF EXISTS "hero_rich_text";`)
+  ALTER TABLE "presets" DROP COLUMN IF EXISTS "hero_rich_text";`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
   DROP INDEX IF EXISTS "presets_hero_actions_locale_idx";
   DROP INDEX IF EXISTS "presets_logos_items_locale_idx";
@@ -34,5 +39,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   ALTER TABLE "testimonials_locales" DROP COLUMN "content";
   ALTER TABLE "presets_hero_actions" DROP COLUMN "_locale";
   ALTER TABLE "presets_logos_items" DROP COLUMN "_locale";
-  ALTER TABLE "presets_locales" DROP COLUMN "hero_rich_text";`)
+  ALTER TABLE "presets_locales" DROP COLUMN "hero_rich_text";`);
 }

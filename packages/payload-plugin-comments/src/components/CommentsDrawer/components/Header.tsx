@@ -2,6 +2,7 @@
 
 import { useModal, useTranslation } from "@payloadcms/ui";
 import { XIcon } from "lucide-react";
+
 import { IconButton } from "../../IconButton";
 import { CommentsFilter } from "./CommentsFilter";
 
@@ -20,7 +21,10 @@ export function Header({ slug }: HeaderProps) {
       <div className="flex items-center gap-2 ml-auto">
         <CommentsFilter />
 
-        <IconButton onClick={() => closeModal(slug)} title={t("comments:close" as never)}>
+        <IconButton
+          onClick={() => closeModal(slug)}
+          title={t("comments:close" as never)}
+        >
           <XIcon width={16} height={16} />
         </IconButton>
       </div>

@@ -1,6 +1,6 @@
 import type { ArrayFieldProps } from "sanity";
 
-export type Preset = {
+export interface Preset {
   name: string;
   value: {
     _key: string;
@@ -12,7 +12,7 @@ export type Preset = {
     title: string;
     screenshot: string;
   };
-};
+}
 
 export type OnItemAppendType = (item: { _key: string }) => void;
 

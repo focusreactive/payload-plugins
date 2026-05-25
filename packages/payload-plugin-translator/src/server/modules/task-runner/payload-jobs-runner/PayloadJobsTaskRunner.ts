@@ -2,8 +2,8 @@ import type { Payload, Where, CollectionSlug } from "payload";
 
 import type { TaskRunner } from "../TaskRunner.interface";
 import type { Task, TaskInput, RunResult } from "../types";
-import type { PayloadJobsRunnerConfig, PayloadJob } from "./types";
 import { normalizeJob } from "./normalizeJob";
+import type { PayloadJobsRunnerConfig, PayloadJob } from "./types";
 
 /**
  * TaskRunner implementation using Payload Jobs.
@@ -13,7 +13,7 @@ import { normalizeJob } from "./normalizeJob";
 export class PayloadJobsTaskRunner implements TaskRunner {
   constructor(
     private readonly payload: Payload,
-    private readonly config: PayloadJobsRunnerConfig,
+    private readonly config: PayloadJobsRunnerConfig
   ) {}
 
   async enqueue(tasks: TaskInput[]): Promise<void> {
@@ -30,8 +30,6 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     await Promise.all(
       tasks.map((task) =>
         this.payload.jobs.queue({
-          task: this.config.taskName,
-          queue: this.config.queueName,
           input: {
             collection: {
               // Pass `value` through verbatim. The Payload Jobs `input` schema
@@ -46,36 +44,38 @@ export class PayloadJobsTaskRunner implements TaskRunner {
               relationTo: task.collectionSlug,
               value: task.collectionId,
             },
-            source_lng: task.sourceLng,
-            target_lng: task.targetLng,
-            strategy: task.strategy,
             publish_on_translation: task.publishOnTranslation,
+            source_lng: task.sourceLng,
+            strategy: task.strategy,
+            target_lng: task.targetLng,
           },
-        }),
-      ),
+          queue: this.config.queueName,
+          task: this.config.taskName,
+        })
+      )
     );
   }
 
   async cancel(taskIds: string[]): Promise<void> {
-    if (taskIds.length === 0) return;
+    if (taskIds.length === 0) {return;}
     await this.cancelInternal(taskIds);
   }
 
   async run(taskId: string): Promise<RunResult> {
     const tasks = await this.findJobsInternal(
       { id: { equals: taskId } },
-      { limit: 1 },
+      { limit: 1 }
     );
     const task = tasks[0];
 
     if (!task) {
-      return { success: false, error: "not_found" };
+      return { error: "not_found", success: false };
     }
     if (task.completedAt) {
-      return { success: false, error: "already_completed" };
+      return { error: "already_completed", success: false };
     }
     if (task.status === "running") {
-      return { success: false, error: "already_running" };
+      return { error: "already_running", success: false };
     }
 
     this.payload.jobs.runByID({ id: taskId });
@@ -160,13 +160,13 @@ export class PayloadJobsTaskRunner implements TaskRunner {
    */
   async findByCollection(
     collectionSlug: CollectionSlug,
-    documentIds?: Array<string | number>,
+    documentIds?: (string | number)[]
   ): Promise<Task[]> {
     const tasks = await this.findJobsInternal(
       { "input.collection.relationTo": { equals: collectionSlug } },
-      { pagination: false },
+      { pagination: false }
     );
-    if (!documentIds?.length) return tasks;
+    if (!documentIds?.length) {return tasks;}
     const wanted = new Set(documentIds.map(String));
     return tasks.filter((t) => wanted.has(String(t.input.collectionId)));
   }
@@ -175,7 +175,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
    * Group tasks by collection slug
    */
   private groupByCollection(
-    tasks: TaskInput[],
+    tasks: TaskInput[]
   ): Map<CollectionSlug, TaskInput[]> {
     const map = new Map<CollectionSlug, TaskInput[]>();
     for (const task of tasks) {
@@ -190,11 +190,11 @@ export class PayloadJobsTaskRunner implements TaskRunner {
    * Internal cancel implementation
    */
   private async cancelInternal(taskIds: string[]): Promise<void> {
-    if (taskIds.length === 0) return;
+    if (taskIds.length === 0) {return;}
 
     await this.payload.jobs.cancel({
-      where: { id: { in: taskIds } },
       queue: this.config.queueName,
+      where: { id: { in: taskIds } },
     });
 
     await this.payload.delete({
@@ -208,7 +208,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
    */
   private async findJobsInternal(
     where: Where,
-    params?: { limit?: number; pagination?: boolean },
+    params?: { limit?: number; pagination?: boolean }
   ): Promise<Task[]> {
     const response = await this.payload.find({
       collection: this.config.jobsCollection,

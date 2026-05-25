@@ -6,17 +6,18 @@ import {
   useRowLabel,
   useTranslation,
 } from "@payloadcms/ui";
-import { SaveAsPresetCore } from "./SaveAsPresetCore";
-import { PresetBlockData } from "./types";
+
 import { useBlocksConfig } from "../../blocksDrawer/BlocksConfigContext.js";
+import { SaveAsPresetCore } from "./SaveAsPresetCore";
+import type { PresetBlockData } from "./types";
 
 const baseClass = "blocks-field";
 
 function resolveLabel(
   label: string | Record<string, string> | undefined,
-  language: string,
+  language: string
 ) {
-  if (typeof label === "string") return label;
+  if (typeof label === "string") {return label;}
 
   if (label && typeof label === "object") {
     return label[language] ?? label["en"] ?? Object.values(label)[0] ?? "";

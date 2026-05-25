@@ -1,11 +1,16 @@
 "use server";
 
 import type { CollectionSlug, Field } from "payload";
-import type { BaseServiceOptions, Comment, GlobalFieldLabelRegistry } from "../../types";
+
+import type {
+  BaseServiceOptions,
+  Comment,
+  GlobalFieldLabelRegistry,
+} from "../../types";
 import { extractPayload } from "../../utils/payload/extractPayload";
 import { groupFieldPathsByDocument } from "./utils/groupFieldPathsByDocument";
-import { needsDocumentFetch } from "./utils/schemaUtils";
 import { resolveFieldPath } from "./utils/resolveFieldPath";
+import { needsDocumentFetch } from "./utils/schemaUtils";
 
 type BasePayloadCollections = Record<
   string,
@@ -22,7 +27,7 @@ type BaseDocumentData = Record<string, unknown>;
 
 export async function fetchFieldLabels(
   comments: Comment[],
-  options?: BaseServiceOptions,
+  options?: BaseServiceOptions
 ): Promise<GlobalFieldLabelRegistry> {
   const registry: GlobalFieldLabelRegistry = {};
 
@@ -34,13 +39,16 @@ export async function fetchFieldLabels(
 
   for (const [slug, fieldPathsMapByDocument] of fieldPathsMap.entries()) {
     const collectionConfig = collections[slug]?.config;
-    if (!collectionConfig) continue;
+    if (!collectionConfig) {continue;}
 
     const schemaFields = collectionConfig.fields;
 
-    for (const [documentId, fieldPathsSet] of fieldPathsMapByDocument.entries()) {
-      const fieldPaths = Array.from(fieldPathsSet);
-      if (!fieldPaths.length) continue;
+    for (const [
+      documentId,
+      fieldPathsSet,
+    ] of fieldPathsMapByDocument.entries()) {
+      const fieldPaths = [...fieldPathsSet];
+      if (!fieldPaths.length) {continue;}
 
       let docData: BaseDocumentData | null = null;
 
@@ -48,9 +56,9 @@ export async function fetchFieldLabels(
         try {
           const doc = await payload.findByID({
             collection: slug as CollectionSlug,
+            depth: 5,
             id: documentId,
             overrideAccess: true,
-            depth: 5,
           });
 
           docData = doc as unknown as BaseDocumentData;
@@ -63,9 +71,13 @@ export async function fetchFieldLabels(
       const documentRegistry = registry[slug][documentId];
 
       for (const fieldPath of fieldPaths) {
-        if (!fieldPath) continue;
+        if (!fieldPath) {continue;}
 
-        documentRegistry[fieldPath] = resolveFieldPath(fieldPath.split("."), schemaFields, docData);
+        documentRegistry[fieldPath] = resolveFieldPath(
+          fieldPath.split("."),
+          schemaFields,
+          docData
+        );
       }
     }
   }
@@ -74,8 +86,9 @@ export async function fetchFieldLabels(
   const globalFieldPathsMap = new Map<string, Set<string>>();
 
   for (const { globalSlug, fieldPath } of comments) {
-    if (!globalSlug || !fieldPath) continue;
-    if (!globalFieldPathsMap.has(globalSlug)) globalFieldPathsMap.set(globalSlug, new Set());
+    if (!globalSlug || !fieldPath) {continue;}
+    if (!globalFieldPathsMap.has(globalSlug))
+      {globalFieldPathsMap.set(globalSlug, new Set());}
     globalFieldPathsMap.get(globalSlug)!.add(fieldPath);
   }
 
@@ -83,17 +96,21 @@ export async function fetchFieldLabels(
 
   for (const [slug, fieldPathsSet] of globalFieldPathsMap.entries()) {
     const globalConfig = globals?.[slug]?.config;
-    if (!globalConfig) continue;
+    if (!globalConfig) {continue;}
 
     const schemaFields = globalConfig.fields;
-    const fieldPaths = Array.from(fieldPathsSet);
-    if (!fieldPaths.length) continue;
+    const fieldPaths = [...fieldPathsSet];
+    if (!fieldPaths.length) {continue;}
 
     let docData: BaseDocumentData | null = null;
 
     if (needsDocumentFetch(fieldPaths, schemaFields)) {
       try {
-        const doc = await payload.findGlobal({ slug, overrideAccess: true, depth: 5 });
+        const doc = await payload.findGlobal({
+          depth: 5,
+          overrideAccess: true,
+          slug,
+        });
         docData = doc as unknown as BaseDocumentData;
       } catch {}
     }
@@ -105,8 +122,12 @@ export async function fetchFieldLabels(
     const documentRegistry = registry[slug][0];
 
     for (const fieldPath of fieldPaths) {
-      if (!fieldPath) continue;
-      documentRegistry[fieldPath] = resolveFieldPath(fieldPath.split("."), schemaFields, docData);
+      if (!fieldPath) {continue;}
+      documentRegistry[fieldPath] = resolveFieldPath(
+        fieldPath.split("."),
+        schemaFields,
+        docData
+      );
     }
   }
 

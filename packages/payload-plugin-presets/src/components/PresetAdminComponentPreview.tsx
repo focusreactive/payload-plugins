@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
 import { useField, useTranslation, ShimmerEffect } from "@payloadcms/ui";
-import { EmptyPlaceholder, type MediaData } from "./shared/index.js";
+import Image from "next/image";
+import { useState, useEffect } from "react";
+
+import { EmptyPlaceholder } from './shared/index.js';
+import type { MediaData } from './shared/index.js';
 import { usePresetsConfig } from "./usePresetsConfig.js";
 
 import "./PresetAdminComponent.scss";
@@ -55,9 +57,9 @@ export const PresetAdminComponentPreview: React.FC = () => {
       {!media?.url ? (
         <EmptyPlaceholder
           style={{
-            objectFit: "contain",
             maxHeight: "var(--preset-admin-preview-max-height)",
             maxWidth: "var(--preset-admin-preview-max-width)",
+            objectFit: "contain",
             width: "100%",
           }}
         />

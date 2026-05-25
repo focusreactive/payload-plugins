@@ -40,6 +40,7 @@ Build a clear dependency graph and use parallel agents wherever tasks are indepe
 ### Phase 0 — Foundation (sequential)
 
 **T0: Move apps/payload**
+
 - Copy all files from `payload-cms-ideal-cms/` into `cms-kit/apps/payload/`
 - Exclude: `node_modules/`, `.next/`, `pnpm-lock.yaml` (monorepo has its own)
 - Update `package.json`: rename to `payload`, align pnpm/node engine fields
@@ -52,6 +53,7 @@ Build a clear dependency graph and use parallel agents wherever tasks are indepe
 ### Phase 1 — Shared Package Upgrades (parallel, runs after T0)
 
 **T1a: Upgrade packages/tailwind-config → Tailwind v4**
+
 - Tailwind v4 is CSS-first: no `tailwind.config.ts`, config lives in CSS `@theme {}` blocks
 - Replace JS config export with a CSS file export (`base.css`) containing shared theme tokens
 - Update `package.json`: `tailwindcss` → `^4.x`, add `@tailwindcss/postcss` or `@tailwindcss/vite`
@@ -59,12 +61,14 @@ Build a clear dependency graph and use parallel agents wherever tasks are indepe
 - Export: `@shared/tailwind-config/base.css` — apps import this in their global CSS
 
 **T1b: Upgrade packages/ts-config + packages/eslint-config**
+
 - `packages/ts-config`: bump TypeScript peer to `^5.7`, update `@types/react` to `^19`, add React 19 compiler-friendly settings
 - `packages/eslint-config`: upgrade to ESLint 9 flat config format, update `eslint-config-next` to `^15`, remove deprecated rules
 
 ### Phase 2 — App & UI Upgrades (parallel, runs after T1a + T1b complete)
 
 **T2a: Upgrade packages/ui**
+
 - Bump `react`/`react-dom` to `^19`, `@types/react` to `^19`
 - Bump `typescript` to `5.7.x`
 - Replace Tailwind v3 class usage and config with v4 CSS-based approach
@@ -73,17 +77,20 @@ Build a clear dependency graph and use parallel agents wherever tasks are indepe
 - Bump `next` peer to `15.5.9`
 
 **T2b: Upgrade apps/sanity → Tailwind v4**
+
 - Remove `tailwind.config.ts`, update `postcss.config.js` → use `@tailwindcss/postcss`
 - Update global CSS: replace `@tailwind` directives with `@import "tailwindcss"` + `@import "@shared/tailwind-config/base.css"`
 - Migrate any custom theme overrides to `@theme {}` blocks in CSS
 - Update `package.json` deps: `tailwindcss` → `^4.x`, `@tailwindcss/postcss`, remove `autoprefixer` (not needed in v4)
 
 **T2c: Upgrade apps/storyblok → Tailwind v4**
+
 - Same as T2b: remove `tailwind.config.ts`, update CSS imports, update deps
 
 ### Phase 3 — Payload Integration (sequential, after all T2 complete)
 
 **T3: Integrate apps/payload with shared packages**
+
 - Add `@shared/eslint-config`, `@shared/ts-config` as devDependencies
 - Replace `apps/payload/eslint.config.mjs` with shared config (extend with Payload-specific overrides)
 - Replace `apps/payload/tsconfig.json` with shared base + Payload overrides
@@ -96,6 +103,7 @@ Build a clear dependency graph and use parallel agents wherever tasks are indepe
 ## Key Technical Details
 
 ### Tailwind v4 Migration Notes
+
 - `@tailwind base/components/utilities` → `@import "tailwindcss"`
 - `tailwind.config.ts` theme customizations → `@theme {}` blocks in CSS
 - PostCSS: replace `tailwindcss` plugin with `@tailwindcss/postcss`
@@ -103,6 +111,7 @@ Build a clear dependency graph and use parallel agents wherever tasks are indepe
 - `@tailwindcss/typography` has a v4-compatible version
 
 ### Payload-Specific Monorepo Considerations
+
 - PostgreSQL via Docker — add `docker-compose.yml` note to README, not moved into monorepo root
 - Database migrations are explicit (`push: false`) — document in README
 - `pnpm generate:types` and `pnpm generate:importmap` must be added to turbo task graph

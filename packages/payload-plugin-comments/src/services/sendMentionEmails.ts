@@ -1,8 +1,13 @@
 import { Resend } from "resend";
-import { getServerSideURL } from "../utils/general/getURL";
-import type { BaseServiceOptions, CommentsPluginConfigStorage, User } from "../types";
-import { extractPayload } from "../utils/payload/extractPayload";
+
 import { FALLBACK_USERNAME, USERNAME_DEFAULT_FIELD_PATH } from "../constants";
+import type {
+  BaseServiceOptions,
+  CommentsPluginConfigStorage,
+  User,
+} from "../types";
+import { getServerSideURL } from "../utils/general/getURL";
+import { extractPayload } from "../utils/payload/extractPayload";
 
 interface SendMentionEmailsProps extends BaseServiceOptions {
   mentionIds: number[];
@@ -22,20 +27,23 @@ export async function sendMentionEmails({
 }: SendMentionEmailsProps) {
   const payload = await extractPayload(payloadProp);
 
-  const pluginConfig = payload.config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
-  const usernameFieldPath = pluginConfig?.usernameFieldPath ?? USERNAME_DEFAULT_FIELD_PATH;
+  const pluginConfig = payload.config.admin?.custom?.commentsPlugin as
+    | CommentsPluginConfigStorage
+    | undefined;
+  const usernameFieldPath =
+    pluginConfig?.usernameFieldPath ?? USERNAME_DEFAULT_FIELD_PATH;
 
   const userDocs = await payload.find({
     collection: "users",
-    overrideAccess: true,
     limit: mentionIds.length,
-    where: {
-      id: { in: mentionIds },
-    },
+    overrideAccess: true,
     select: {
       id: true,
       email: true,
       [usernameFieldPath]: true,
+    },
+    where: {
+      id: { in: mentionIds },
     },
   });
 
@@ -48,13 +56,9 @@ export async function sendMentionEmails({
     userMap[id] = name ?? email ?? FALLBACK_USERNAME;
   }
 
-  const resolvedText = commentText.replace(/@\((\d+)\)/g, (_match, id) => {
-    return `@${userMap[Number(id)]}`;
-  });
+  const resolvedText = commentText.replaceAll(/@\((\d+)\)/g, (_match, id) => `@${userMap[Number(id)]}`);
 
-  const resolvedTextHtml = commentText.replace(/@\((\d+)\)/g, (_match, id) => {
-    return `@<strong>${userMap[Number(id)]}</strong>`;
-  });
+  const resolvedTextHtml = commentText.replaceAll(/@\((\d+)\)/g, (_match, id) => `@<strong>${userMap[Number(id)]}</strong>`);
 
   const adminUrl = `${getServerSideURL()}/admin/collections/${collectionSlug}/${documentId}`;
   const resend = new Resend(process.env.RESEND_API_KEY);
@@ -62,25 +66,28 @@ export async function sendMentionEmails({
 
   if (!fromEmail) {
     console.error(
-      `[sendMentionEmails] fromEmail parameter wasn't provided. Use RESEND_FROM_EMAIL env to set up fromEmail`,
+      `[sendMentionEmails] fromEmail parameter wasn't provided. Use RESEND_FROM_EMAIL env to set up fromEmail`
     );
 
     return;
   }
 
   for (const u of users) {
-    if (!u.email) continue;
+    if (!u.email) {continue;}
 
     try {
       await resend.emails.send({
         from: fromEmail,
-        to: u.email,
+        html: `<p>${authorName} mentioned you in a comment:</p><blockquote>${resolvedTextHtml}</blockquote><p>View document: <a href="${adminUrl}">${adminUrl}</a></p>`,
         subject: `${authorName} mentioned you in a comment`,
         text: `${authorName} mentioned you in a comment:\n\n"${resolvedText}"\n\nView document: ${adminUrl}`,
-        html: `<p>${authorName} mentioned you in a comment:</p><blockquote>${resolvedTextHtml}</blockquote><p>View document: <a href="${adminUrl}">${adminUrl}</a></p>`,
+        to: u.email,
       });
-    } catch (err) {
-      console.error(`[sendMentionEmails] Failed to send email to user ${u.id}:`, err);
+    } catch (error) {
+      console.error(
+        `[sendMentionEmails] Failed to send email to user ${u.id}:`,
+        error
+      );
     }
   }
 }

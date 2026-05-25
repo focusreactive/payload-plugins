@@ -1,44 +1,48 @@
-import OpenAI from 'openai'
+import OpenAI from "openai";
+import type { ChatModel } from "openai/resources/index.mjs";
 
-import type { TranslationProvider, TranslationInput, TranslationOutput } from './TranslationProvider.interface'
-import { isObject } from '../../shared'
-import type { ChatModel } from 'openai/resources/index.mjs'
+import { isObject } from "../../shared";
+import type {
+  TranslationProvider,
+  TranslationInput,
+  TranslationOutput,
+} from "./TranslationProvider.interface";
 
 /**
  * Function to transform text in dry run mode.
  * Receives the original text and returns the transformed text.
  */
-type DryRunTransformer = (text: string) => string | Promise<string>
+type DryRunTransformer = (text: string) => string | Promise<string>;
 
 /**
  * Configuration for dry run mode with custom transformer.
  */
-export type DryRunConfig = {
+export interface DryRunConfig {
   /** Custom transformer function for text */
-  transform: DryRunTransformer
+  transform: DryRunTransformer;
   /** Delay in milliseconds before returning mock translation (simulates API latency) */
-  timeout?: number
+  timeout?: number;
 }
 
 /**
  * Context passed to the system prompt builder function.
  */
-export type SystemPromptContext = {
+export interface SystemPromptContext {
   /** Source language code (e.g., 'en', 'de') */
-  sourceLang: string
+  sourceLang: string;
   /** Target language code (e.g., 'fr', 'es') */
-  targetLang: string
+  targetLang: string;
   /** Default system prompt that can be extended or replaced */
-  defaultPrompt: string
+  defaultPrompt: string;
 }
 
 /**
  * Function to build a custom system prompt for translation.
  */
-type SystemPromptBuilder = (context: SystemPromptContext) => string
+type SystemPromptBuilder = (context: SystemPromptContext) => string;
 
-export type OpenAIProviderConfig = {
-  apiKey: string
+export interface OpenAIProviderConfig {
+  apiKey: string;
   /**
    * OpenAI model to use for translation.
    *
@@ -47,7 +51,7 @@ export type OpenAIProviderConfig = {
    * @example
    * model: 'gpt-4o-mini'
    */
-  model?: (string & {}) | ChatModel
+  model?: (string & {}) | ChatModel;
   /**
    * Custom system prompt builder for translation.
    * Receives context with source/target languages and the default prompt.
@@ -62,7 +66,7 @@ export type OpenAIProviderConfig = {
    * systemPrompt: ({ sourceLang, targetLang }) =>
    *   `Translate JSON values from ${sourceLang} to ${targetLang}. Be concise.`
    */
-  systemPrompt?: SystemPromptBuilder
+  systemPrompt?: SystemPromptBuilder;
   /**
    * When enabled, simulates translations without making actual API calls to OpenAI.
    *
@@ -82,55 +86,60 @@ export type OpenAIProviderConfig = {
    *
    * @default false
    */
-  dryRun?: boolean | DryRunConfig
+  dryRun?: boolean | DryRunConfig;
 }
 
 /** @deprecated Use `createOpenAIProvider` function instead */
 export class OpenAITranslationProvider implements TranslationProvider {
-  private openAiClient: OpenAI
+  private openAiClient: OpenAI;
 
   constructor(private readonly config: OpenAIProviderConfig) {
-    this.openAiClient = new OpenAI({ apiKey: config.apiKey })
+    this.openAiClient = new OpenAI({ apiKey: config.apiKey });
   }
 
-  async translate(content: TranslationInput, souceLng: string, targetLng: string): Promise<TranslationOutput | null> {
+  async translate(
+    content: TranslationInput,
+    souceLng: string,
+    targetLng: string
+  ): Promise<TranslationOutput | null> {
     if (this.config.dryRun) {
-      console.info('[DRY RUN] Translation simulation:', {
+      console.info("[DRY RUN] Translation simulation:", {
         content,
+        provider: "OpenAI",
         sourceLang: souceLng,
         targetLang: targetLng,
-        provider: 'OpenAI',
-      })
+      });
 
-      const timeout = this.getDryRunTimeout()
-      if (timeout > 0) await new Promise((resolve) => setTimeout(resolve, timeout))
+      const timeout = this.getDryRunTimeout();
+      if (timeout > 0)
+        {await new Promise((resolve) => setTimeout(resolve, timeout));}
 
-      const transformer = this.getDryRunTransformer()
-      return this.createMockTranslation(content, transformer)
+      const transformer = this.getDryRunTransformer();
+      return this.createMockTranslation(content, transformer);
     }
 
-    const systemPrompt = this.buildSystemPrompt(souceLng, targetLng)
+    const systemPrompt = this.buildSystemPrompt(souceLng, targetLng);
 
     const chatCompletion = await this.openAiClient.chat.completions.create({
+      frequency_penalty: 0,
       messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: JSON.stringify(content) },
+        { role: "system", content: systemPrompt },
+        { role: "user", content: JSON.stringify(content) },
       ],
-      model: this.config.model ?? 'gpt-4o',
+      model: this.config.model ?? "gpt-4o",
+      presence_penalty: 0,
+      response_format: { type: "json_object" },
       temperature: 0,
       top_p: 1,
-      frequency_penalty: 0,
-      presence_penalty: 0,
-      response_format: { type: 'json_object' },
-    })
+    });
 
-    const translatedContent = chatCompletion.choices[0].message.content
-    if (!translatedContent) return null
+    const translatedContent = chatCompletion.choices[0].message.content;
+    if (!translatedContent) {return null;}
 
     try {
-      return JSON.parse(translatedContent)
+      return JSON.parse(translatedContent);
     } catch {
-      return null
+      return null;
     }
   }
 
@@ -138,15 +147,19 @@ export class OpenAITranslationProvider implements TranslationProvider {
    * Builds the system prompt for translation.
    */
   private buildSystemPrompt(sourceLang: string, targetLang: string): string {
-    const defaultPrompt = `Translate the values from the JSON that the user will send you${sourceLang ? ` from ${sourceLang}` : ''} into ${targetLang}. Keep all JSON keys exactly as they are, only translate the values.
+    const defaultPrompt = `Translate the values from the JSON that the user will send you${sourceLang ? ` from ${sourceLang}` : ""} into ${targetLang}. Keep all JSON keys exactly as they are, only translate the values.
 The response should be a valid JSON object with the same structure and keys as the input, but with translated values.
-Maintain any special formatting, placeholders, or variables within the values if they exist.`
+Maintain any special formatting, placeholders, or variables within the values if they exist.`;
 
     if (this.config.systemPrompt) {
-      return this.config.systemPrompt({ sourceLang, targetLang, defaultPrompt })
+      return this.config.systemPrompt({
+        defaultPrompt,
+        sourceLang,
+        targetLang,
+      });
     }
 
-    return defaultPrompt
+    return defaultPrompt;
   }
 
   /**
@@ -155,10 +168,13 @@ Maintain any special formatting, placeholders, or variables within the values if
    * If dryRun is true, returns the default transformer that reverses text.
    */
   private getDryRunTransformer(): DryRunTransformer {
-    if (typeof this.config.dryRun === 'object' && this.config.dryRun.transform) {
-      return this.config.dryRun.transform
+    if (
+      typeof this.config.dryRun === "object" &&
+      this.config.dryRun.transform
+    ) {
+      return this.config.dryRun.transform;
     }
-    return (text: string) => text.split('').reverse().join('')
+    return (text: string) => [...text].toReversed().join("");
   }
 
   /**
@@ -167,25 +183,29 @@ Maintain any special formatting, placeholders, or variables within the values if
    * Otherwise returns 0 (no delay).
    */
   private getDryRunTimeout(): number {
-    if (typeof this.config.dryRun === 'object' && this.config.dryRun.timeout) {
-      return this.config.dryRun.timeout
+    if (typeof this.config.dryRun === "object" && this.config.dryRun.timeout) {
+      return this.config.dryRun.timeout;
     }
-    return 0
+    return 0;
   }
 
   private async createMockTranslation(
     content: TranslationInput,
-    transformer: DryRunTransformer,
+    transformer: DryRunTransformer
   ): Promise<TranslationOutput | null> {
     try {
-      const mockTranslation = await this.transformObjectValues(content, async (value) => {
-        if (typeof value === 'string' && value.trim()) return transformer(value)
-        return value
-      })
+      const mockTranslation = await this.transformObjectValues(
+        content,
+        async (value) => {
+          if (typeof value === "string" && value.trim())
+            {return transformer(value);}
+          return value;
+        }
+      );
 
-      return mockTranslation as TranslationOutput
+      return mockTranslation as TranslationOutput;
     } catch {
-      return null
+      return null;
     }
   }
 
@@ -197,21 +217,23 @@ Maintain any special formatting, placeholders, or variables within the values if
    */
   private async transformObjectValues(
     obj: unknown,
-    transformer: (value: unknown) => unknown | Promise<unknown>,
+    transformer: (value: unknown) => unknown | Promise<unknown>
   ): Promise<unknown> {
     if (Array.isArray(obj)) {
-      return Promise.all(obj.map((item) => this.transformObjectValues(item, transformer)))
+      return Promise.all(
+        obj.map((item) => this.transformObjectValues(item, transformer))
+      );
     }
 
     if (isObject(obj)) {
-      const result: Record<string, unknown> = {}
+      const result: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(obj)) {
-        result[key] = await this.transformObjectValues(value, transformer)
+        result[key] = await this.transformObjectValues(value, transformer);
       }
-      return result
+      return result;
     }
 
-    return transformer(obj)
+    return transformer(obj);
   }
 }
 
@@ -231,6 +253,8 @@ Maintain any special formatting, placeholders, or variables within the values if
  * })
  * ```
  */
-export function createOpenAIProvider(config: OpenAIProviderConfig): OpenAITranslationProvider {
-  return new OpenAITranslationProvider(config)
+export function createOpenAIProvider(
+  config: OpenAIProviderConfig
+): OpenAITranslationProvider {
+  return new OpenAITranslationProvider(config);
 }

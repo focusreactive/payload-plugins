@@ -1,8 +1,5 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import Image from "next/image";
-import * as Popover from "@radix-ui/react-popover";
 import {
   useTranslation,
   ShimmerEffect,
@@ -10,18 +7,24 @@ import {
   ConfirmationModal,
   useModal,
 } from "@payloadcms/ui";
+import * as Popover from "@radix-ui/react-popover";
+import Image from "next/image";
 import type { ClientBlock } from "payload";
+import React, { useEffect, useRef, useState } from "react";
+
+import { DefaultBlockImage } from '../shared/index.js';
+import type { Preset } from '../shared/index.js';
 import { usePresetsConfig } from "../usePresetsConfig.js";
-import { DefaultBlockImage, type Preset } from "../shared/index.js";
+
 import "./BlockSelectorWithPresets.scss";
 import { PresetItem } from "./PresetItem/index.js";
 
-type BlockSelectorWithPresetsProps = {
+interface BlockSelectorWithPresetsProps {
   blocks: (ClientBlock | string)[];
   onSelect: (blockType: string, preset?: Preset | null) => void;
   tenantId?: number | string | null;
   locale?: string;
-};
+}
 
 export const BlockSelectorWithPresets: React.FC<
   BlockSelectorWithPresetsProps
@@ -37,8 +40,8 @@ export const BlockSelectorWithPresets: React.FC<
 
   // Filter and group blocks
   const clientBlocks = blocks.filter((block): block is ClientBlock => {
-    if (typeof block === "string") return false;
-    if (!searchTerm) return true;
+    if (typeof block === "string") {return false;}
+    if (!searchTerm) {return true;}
     const label = getBlockLabel(block, i18n.language);
     return label.toLowerCase().includes(searchTerm.toLowerCase());
   });
@@ -47,11 +50,11 @@ export const BlockSelectorWithPresets: React.FC<
     (acc, block) => {
       const custom = block.admin?.custom as { group?: string } | undefined;
       const group = custom?.group || "Blocks";
-      if (!acc[group]) acc[group] = [];
+      if (!acc[group]) {acc[group] = [];}
       acc[group].push(block);
       return acc;
     },
-    {} as Record<string, ClientBlock[]>,
+    {} as Record<string, ClientBlock[]>
   );
 
   // Fetch presets for specific block type
@@ -73,7 +76,7 @@ export const BlockSelectorWithPresets: React.FC<
       params.append("limit", "50");
 
       const response = await fetch(
-        `/api/${presetsCollectionSlug}?${params.toString()}`,
+        `/api/${presetsCollectionSlug}?${params.toString()}`
       );
       const data = await response.json();
       const fetchedPresets: Preset[] = data.docs || [];
@@ -116,11 +119,9 @@ export const BlockSelectorWithPresets: React.FC<
   };
 
   // Get presets for specific block from cache
-  const getBlockPresets = (blockSlug: string): Preset[] => {
-    return presetsCache.filter(
-      (preset) => preset.presetBlock?.[0]?.blockType === blockSlug,
+  const getBlockPresets = (blockSlug: string): Preset[] => presetsCache.filter(
+      (preset) => preset.presetBlock?.[0]?.blockType === blockSlug
     );
-  };
 
   useEffect(() => {
     fetchPresets();
@@ -155,7 +156,7 @@ export const BlockSelectorWithPresets: React.FC<
         <input
           className="block-search__input"
           placeholder={t(
-            "presetsPlugin:blocksDrawer:searchPlaceholder" as never,
+            "presetsPlugin:blocksDrawer:searchPlaceholder" as never
           )}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -230,7 +231,7 @@ function useIsMobile(breakpoint = 500): boolean {
   return isMobile;
 }
 
-type BlockCardProps = {
+interface BlockCardProps {
   block: ClientBlock;
   label: string;
   hasPresets: boolean;
@@ -242,7 +243,7 @@ type BlockCardProps = {
   onClose: () => void;
   onDelete: (presetId: string | number) => void;
   onPresetUpdate: () => void;
-};
+}
 
 const BlockCard: React.FC<BlockCardProps> = ({
   block,
@@ -263,7 +264,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
   const { t } = useTranslation();
   const presetListRef = useRef<HTMLDivElement>(null);
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
-    null,
+    null
   );
 
   const modalSlug = `delete-preset-${block.slug}`;
@@ -290,14 +291,14 @@ const BlockCard: React.FC<BlockCardProps> = ({
   return (
     <div
       ref={(el) => {
-        if (el) setPortalContainer(el);
+        if (el) {setPortalContainer(el);}
       }}
       style={{ display: "contents" }}
     >
       <Popover.Root
         open={isActive}
         onOpenChange={(open) => {
-          if (!open) onClose();
+          if (!open) {onClose();}
         }}
       >
         <Popover.Trigger asChild>
@@ -365,7 +366,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
           onConfirm={async () => {
             const res = await fetch(
               `/api/${presetsCollectionSlug}/${deletingPreset.id}`,
-              { method: "DELETE" },
+              { method: "DELETE" }
             );
             if (res.ok) {
               onDelete(deletingPreset.id);
@@ -380,10 +381,10 @@ const BlockCard: React.FC<BlockCardProps> = ({
 };
 
 // Reusable BlockThumbnail component
-type BlockThumbnailProps = {
+interface BlockThumbnailProps {
   imageURL?: string | null;
   label: string;
-};
+}
 
 const BlockThumbnail: React.FC<BlockThumbnailProps> = ({ imageURL, label }) => (
   <div className="thumbnail-card__thumbnail">
@@ -397,7 +398,7 @@ const BlockThumbnail: React.FC<BlockThumbnailProps> = ({ imageURL, label }) => (
   </div>
 );
 
-type PresetsListProps = {
+interface PresetsListProps {
   blockSlug: string;
   label: string;
   presets: Preset[];
@@ -406,7 +407,7 @@ type PresetsListProps = {
   onClose: () => void;
   onPresetUpdate: () => void;
   listRef: React.RefObject<HTMLDivElement | null>;
-};
+}
 
 const PresetsList: React.FC<PresetsListProps> = ({
   blockSlug,
@@ -419,7 +420,7 @@ const PresetsList: React.FC<PresetsListProps> = ({
   listRef,
 }) => {
   const filteredPresets = presets.filter(
-    (preset) => preset.presetBlock?.[0]?.blockType === blockSlug,
+    (preset) => preset.presetBlock?.[0]?.blockType === blockSlug
   );
   const { mediaCollection } = usePresetsConfig();
   const { t } = useTranslation();
@@ -432,72 +433,74 @@ const PresetsList: React.FC<PresetsListProps> = ({
   const totalItems = 1 + filteredPresets.length;
 
   useEffect(() => {
-    itemsRef.current = Array.from(
-      listRef.current?.querySelectorAll<HTMLElement>("button.preset-item") ??
-        [],
-    );
+    itemsRef.current = [...listRef.current?.querySelectorAll<HTMLElement>('button.preset-item') ?? []];
   }, []);
 
   useEffect(() => {
     const container = listRef.current;
-    if (!container) return;
+    if (!container) {return;}
 
     const handleScroll = () => {
       setIsScrolling(true);
-      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+      if (scrollTimerRef.current) {clearTimeout(scrollTimerRef.current);}
       scrollTimerRef.current = setTimeout(() => setIsScrolling(false), 150);
     };
 
     container.addEventListener("scroll", handleScroll);
     return () => {
       container.removeEventListener("scroll", handleScroll);
-      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+      if (scrollTimerRef.current) {clearTimeout(scrollTimerRef.current);}
     };
   }, []);
 
   const moveFocus = (newIndex: number) => {
     setFocusedIndex(newIndex);
 
-    if (newIndex < 0) return;
+    if (newIndex < 0) {return;}
     itemsRef.current[newIndex]?.focus();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
-      case "ArrowDown":
+      case "ArrowDown": {
         e.preventDefault();
         e.stopPropagation();
 
         moveFocus(focusedIndex < totalItems - 1 ? focusedIndex + 1 : 0);
 
         break;
-      case "ArrowUp":
+      }
+      case "ArrowUp": {
         e.preventDefault();
         e.stopPropagation();
 
         moveFocus(focusedIndex > 0 ? focusedIndex - 1 : totalItems - 1);
 
         break;
-      case "Home":
+      }
+      case "Home": {
         e.preventDefault();
         e.stopPropagation();
 
         moveFocus(0);
 
         break;
-      case "End":
+      }
+      case "End": {
         e.preventDefault();
         e.stopPropagation();
 
         moveFocus(totalItems - 1);
 
         break;
-      case "Escape":
+      }
+      case "Escape": {
         e.preventDefault();
         e.stopPropagation();
         onClose();
 
         break;
+      }
     }
   };
 

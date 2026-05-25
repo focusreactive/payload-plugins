@@ -49,46 +49,46 @@ User makes request
 ### Basic Patterns
 
 ```ts
-import type { CollectionConfig, Access } from 'payload'
+import type { CollectionConfig, Access } from "payload";
 
 export const Posts: CollectionConfig = {
-  slug: 'posts',
+  slug: "posts",
   access: {
     // Boolean: Only authenticated users can create
     create: ({ req: { user } }) => Boolean(user),
 
     // Query constraint: Public sees published, users see all
     read: ({ req: { user } }) => {
-      if (user) return true
-      return { status: { equals: 'published' } }
+      if (user) return true;
+      return { status: { equals: "published" } };
     },
 
     // User-specific: Admins or document owner
     update: ({ req: { user }, id }) => {
-      if (user?.roles?.includes('admin')) return true
-      return { author: { equals: user?.id } }
+      if (user?.roles?.includes("admin")) return true;
+      return { author: { equals: user?.id } };
     },
 
     // Async: Check related data
     delete: async ({ req, id }) => {
       const hasComments = await req.payload.count({
-        collection: 'comments',
+        collection: "comments",
         where: { post: { equals: id } },
-      })
-      return hasComments === 0
+      });
+      return hasComments === 0;
     },
 
     // Admin panel visibility
     admin: ({ req: { user } }) => {
-      return user?.roles?.includes('admin') || user?.roles?.includes('editor')
+      return user?.roles?.includes("admin") || user?.roles?.includes("editor");
     },
   },
   fields: [
-    { name: 'title', type: 'text' },
-    { name: 'status', type: 'select', options: ['draft', 'published'] },
-    { name: 'author', type: 'relationship', relationTo: 'users' },
+    { name: "title", type: "text" },
+    { name: "status", type: "select", options: ["draft", "published"] },
+    { name: "author", type: "relationship", relationTo: "users" },
   ],
-}
+};
 ```
 
 ### Role-Based Access Control (RBAC) Pattern
@@ -96,30 +96,30 @@ export const Posts: CollectionConfig = {
 Payload does NOT provide a roles system by default. The following is a commonly accepted pattern for implementing role-based access control in auth collections:
 
 ```ts
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig } from "payload";
 
 export const Users: CollectionConfig = {
-  slug: 'users',
+  slug: "users",
   auth: true,
   fields: [
-    { name: 'name', type: 'text', required: true },
-    { name: 'email', type: 'email', required: true },
+    { name: "name", type: "text", required: true },
+    { name: "email", type: "email", required: true },
     {
-      name: 'roles',
-      type: 'select',
+      name: "roles",
+      type: "select",
       hasMany: true,
-      options: ['admin', 'editor', 'user'],
-      defaultValue: ['user'],
+      options: ["admin", "editor", "user"],
+      defaultValue: ["user"],
       required: true,
       // Save roles to JWT for access control without database lookups
       saveToJWT: true,
       access: {
         // Only admins can update roles
-        update: ({ req: { user } }) => user?.roles?.includes('admin'),
+        update: ({ req: { user } }) => user?.roles?.includes("admin"),
       },
     },
   ],
-}
+};
 ```
 
 **Important Notes:**
@@ -133,142 +133,151 @@ export const Users: CollectionConfig = {
 **Using Roles in Access Control:**
 
 ```ts
-import type { Access } from 'payload'
+import type { Access } from "payload";
 
 // Check for specific role
 export const adminOnly: Access = ({ req: { user } }) => {
-  return user?.roles?.includes('admin')
-}
+  return user?.roles?.includes("admin");
+};
 
 // Check for multiple roles
 export const adminOrEditor: Access = ({ req: { user } }) => {
-  return Boolean(user?.roles?.some((role) => ['admin', 'editor'].includes(role)))
-}
+  return Boolean(
+    user?.roles?.some((role) => ["admin", "editor"].includes(role))
+  );
+};
 
 // Role hierarchy check
 export const hasMinimumRole: Access = ({ req: { user } }, minRole: string) => {
-  const roleHierarchy = ['user', 'editor', 'admin']
-  const userHighestRole = Math.max(...(user?.roles?.map((r) => roleHierarchy.indexOf(r)) || [-1]))
-  const requiredRoleIndex = roleHierarchy.indexOf(minRole)
+  const roleHierarchy = ["user", "editor", "admin"];
+  const userHighestRole = Math.max(
+    ...(user?.roles?.map((r) => roleHierarchy.indexOf(r)) || [-1])
+  );
+  const requiredRoleIndex = roleHierarchy.indexOf(minRole);
 
-  return userHighestRole >= requiredRoleIndex
-}
+  return userHighestRole >= requiredRoleIndex;
+};
 ```
 
 ### Reusable Access Functions
 
 ```ts
-import type { Access } from 'payload'
+import type { Access } from "payload";
 
 // Anyone (public)
-export const anyone: Access = () => true
+export const anyone: Access = () => true;
 
 // Authenticated only
-export const authenticated: Access = ({ req: { user } }) => Boolean(user)
+export const authenticated: Access = ({ req: { user } }) => Boolean(user);
 
 // Authenticated or published content
 export const authenticatedOrPublished: Access = ({ req: { user } }) => {
-  if (user) return true
-  return { _status: { equals: 'published' } }
-}
+  if (user) return true;
+  return { _status: { equals: "published" } };
+};
 
 // Admin only
 export const admins: Access = ({ req: { user } }) => {
-  return user?.roles?.includes('admin')
-}
+  return user?.roles?.includes("admin");
+};
 
 // Admin or editor
 export const adminsOrEditors: Access = ({ req: { user } }) => {
-  return Boolean(user?.roles?.some((role) => ['admin', 'editor'].includes(role)))
-}
+  return Boolean(
+    user?.roles?.some((role) => ["admin", "editor"].includes(role))
+  );
+};
 
 // Self or admin
 export const adminsOrSelf: Access = ({ req: { user } }) => {
-  if (user?.roles?.includes('admin')) return true
-  return { id: { equals: user?.id } }
-}
+  if (user?.roles?.includes("admin")) return true;
+  return { id: { equals: user?.id } };
+};
 
 // Usage
 export const Posts: CollectionConfig = {
-  slug: 'posts',
+  slug: "posts",
   access: {
     create: authenticated,
     read: authenticatedOrPublished,
     update: adminsOrEditors,
     delete: admins,
   },
-  fields: [{ name: 'title', type: 'text' }],
-}
+  fields: [{ name: "title", type: "text" }],
+};
 ```
 
 ### Row-Level Security with Complex Queries
 
 ```ts
-import type { Access } from 'payload'
+import type { Access } from "payload";
 
 // Organization-scoped access
 export const organizationScoped: Access = ({ req: { user } }) => {
-  if (user?.roles?.includes('admin')) return true
+  if (user?.roles?.includes("admin")) return true;
 
   // Users see only their organization's data
   return {
     organization: {
       equals: user?.organization,
     },
-  }
-}
+  };
+};
 
 // Multiple conditions with AND
 export const complexAccess: Access = ({ req: { user } }) => {
   return {
     and: [
-      { status: { equals: 'published' } },
-      { 'author.isActive': { equals: true } },
+      { status: { equals: "published" } },
+      { "author.isActive": { equals: true } },
       {
-        or: [{ visibility: { equals: 'public' } }, { author: { equals: user?.id } }],
+        or: [
+          { visibility: { equals: "public" } },
+          { author: { equals: user?.id } },
+        ],
       },
     ],
-  }
-}
+  };
+};
 
 // Team-based access
 export const teamMemberAccess: Access = ({ req: { user } }) => {
-  if (!user) return false
-  if (user.roles?.includes('admin')) return true
+  if (!user) return false;
+  if (user.roles?.includes("admin")) return true;
 
   return {
-    'team.members': {
+    "team.members": {
       contains: user.id,
     },
-  }
-}
+  };
+};
 ```
 
 ### Header-Based Access (API Keys)
 
 ```ts
-import type { Access } from 'payload'
+import type { Access } from "payload";
 
 export const apiKeyAccess: Access = ({ req }) => {
-  const apiKey = req.headers.get('x-api-key')
+  const apiKey = req.headers.get("x-api-key");
 
-  if (!apiKey) return false
+  if (!apiKey) return false;
 
   // Validate against stored keys
-  return apiKey === process.env.VALID_API_KEY
-}
+  return apiKey === process.env.VALID_API_KEY;
+};
 
 // Bearer token validation
 export const bearerTokenAccess: Access = async ({ req }) => {
-  const auth = req.headers.get('authorization')
+  const auth = req.headers.get("authorization");
 
-  if (!auth?.startsWith('Bearer ')) return false
+  if (!auth?.startsWith("Bearer ")) return false;
 
-  const token = auth.slice(7)
-  const isValid = await validateToken(token)
+  const token = auth.slice(7);
+  const isValid = await validateToken(token);
 
-  return isValid
-}
+  return isValid;
+};
 ```
 
 ## Field Access Control
@@ -278,165 +287,165 @@ Field access does NOT support query constraints - only boolean returns.
 ### Basic Field Access
 
 ```ts
-import type { NumberField, FieldAccess } from 'payload'
+import type { NumberField, FieldAccess } from "payload";
 
 const salaryReadAccess: FieldAccess = ({ req: { user }, doc }) => {
   // Self can read own salary
-  if (user?.id === doc?.id) return true
+  if (user?.id === doc?.id) return true;
   // Admin can read all salaries
-  return user?.roles?.includes('admin')
-}
+  return user?.roles?.includes("admin");
+};
 
 const salaryUpdateAccess: FieldAccess = ({ req: { user } }) => {
   // Only admins can update salary
-  return user?.roles?.includes('admin')
-}
+  return user?.roles?.includes("admin");
+};
 
 const salaryField: NumberField = {
-  name: 'salary',
-  type: 'number',
+  name: "salary",
+  type: "number",
   access: {
     read: salaryReadAccess,
     update: salaryUpdateAccess,
   },
-}
+};
 ```
 
 ### Sibling Data Access
 
 ```ts
-import type { ArrayField, FieldAccess } from 'payload'
+import type { ArrayField, FieldAccess } from "payload";
 
 const contentReadAccess: FieldAccess = ({ req: { user }, siblingData }) => {
   // Authenticated users see all
-  if (user) return true
+  if (user) return true;
   // Public sees only if marked public
-  return siblingData?.isPublic === true
-}
+  return siblingData?.isPublic === true;
+};
 
 const arrayField: ArrayField = {
-  name: 'sections',
-  type: 'array',
+  name: "sections",
+  type: "array",
   fields: [
     {
-      name: 'isPublic',
-      type: 'checkbox',
+      name: "isPublic",
+      type: "checkbox",
       defaultValue: false,
     },
     {
-      name: 'content',
-      type: 'text',
+      name: "content",
+      type: "text",
       access: {
         read: contentReadAccess,
       },
     },
   ],
-}
+};
 ```
 
 ### Nested Field Access
 
 ```ts
-import type { GroupField, FieldAccess } from 'payload'
+import type { GroupField, FieldAccess } from "payload";
 
 const internalOnlyAccess: FieldAccess = ({ req: { user } }) => {
-  return user?.roles?.includes('admin') || user?.roles?.includes('internal')
-}
+  return user?.roles?.includes("admin") || user?.roles?.includes("internal");
+};
 
 const groupField: GroupField = {
-  name: 'internalMetadata',
-  type: 'group',
+  name: "internalMetadata",
+  type: "group",
   access: {
     read: internalOnlyAccess,
     update: internalOnlyAccess,
   },
   fields: [
-    { name: 'internalNotes', type: 'textarea' },
-    { name: 'priority', type: 'select', options: ['low', 'medium', 'high'] },
+    { name: "internalNotes", type: "textarea" },
+    { name: "priority", type: "select", options: ["low", "medium", "high"] },
   ],
-}
+};
 ```
 
 ### Hiding Admin Fields
 
 ```ts
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig } from "payload";
 
 export const Users: CollectionConfig = {
-  slug: 'users',
+  slug: "users",
   auth: true,
   fields: [
-    { name: 'name', type: 'text', required: true },
-    { name: 'email', type: 'email', required: true },
+    { name: "name", type: "text", required: true },
+    { name: "email", type: "email", required: true },
     {
-      name: 'roles',
-      type: 'select',
+      name: "roles",
+      type: "select",
       hasMany: true,
-      options: ['admin', 'editor', 'user'],
+      options: ["admin", "editor", "user"],
       access: {
         // Hide from UI, but still saved/queried
-        read: ({ req: { user } }) => user?.roles?.includes('admin'),
+        read: ({ req: { user } }) => user?.roles?.includes("admin"),
         // Only admins can update roles
-        update: ({ req: { user } }) => user?.roles?.includes('admin'),
+        update: ({ req: { user } }) => user?.roles?.includes("admin"),
       },
     },
   ],
-}
+};
 ```
 
 ## Global Access Control
 
 ```ts
-import type { GlobalConfig, Access } from 'payload'
+import type { GlobalConfig, Access } from "payload";
 
 const adminOnly: Access = ({ req: { user } }) => {
-  return user?.roles?.includes('admin')
-}
+  return user?.roles?.includes("admin");
+};
 
 export const SiteSettings: GlobalConfig = {
-  slug: 'site-settings',
+  slug: "site-settings",
   access: {
     read: () => true, // Anyone can read settings
     update: adminOnly, // Only admins can update
     readVersions: adminOnly, // Only admins can see version history
   },
   fields: [
-    { name: 'siteName', type: 'text' },
-    { name: 'maintenanceMode', type: 'checkbox' },
+    { name: "siteName", type: "text" },
+    { name: "maintenanceMode", type: "checkbox" },
   ],
-}
+};
 ```
 
 ## Multi-Tenant Access Control
 
 ```ts
-import type { Access, CollectionConfig } from 'payload'
+import type { Access, CollectionConfig } from "payload";
 
 // Add tenant field to user type
 interface User {
-  id: string
-  tenantId: string
-  roles?: string[]
+  id: string;
+  tenantId: string;
+  roles?: string[];
 }
 
 // Tenant-scoped access
 const tenantAccess: Access = ({ req: { user } }) => {
   // No user = no access
-  if (!user) return false
+  if (!user) return false;
 
   // Super admin sees all
-  if (user.roles?.includes('super-admin')) return true
+  if (user.roles?.includes("super-admin")) return true;
 
   // Users see only their tenant's data
   return {
     tenant: {
       equals: (user as User).tenantId,
     },
-  }
-}
+  };
+};
 
 export const Posts: CollectionConfig = {
-  slug: 'posts',
+  slug: "posts",
   access: {
     create: tenantAccess,
     read: tenantAccess,
@@ -444,29 +453,29 @@ export const Posts: CollectionConfig = {
     delete: tenantAccess,
   },
   fields: [
-    { name: 'title', type: 'text' },
+    { name: "title", type: "text" },
     {
-      name: 'tenant',
-      type: 'text',
+      name: "tenant",
+      type: "text",
       required: true,
       access: {
         // Tenant field hidden from non-admins
-        update: ({ req: { user } }) => user?.roles?.includes('super-admin'),
+        update: ({ req: { user } }) => user?.roles?.includes("super-admin"),
       },
       hooks: {
         // Auto-set tenant on create
         beforeChange: [
           ({ req, operation, value }) => {
-            if (operation === 'create' && !value) {
-              return (req.user as User)?.tenantId
+            if (operation === "create" && !value) {
+              return (req.user as User)?.tenantId;
             }
-            return value
+            return value;
           },
         ],
       },
     },
   ],
-}
+};
 ```
 
 ## Auth Collection Patterns
@@ -474,10 +483,10 @@ export const Posts: CollectionConfig = {
 ### Self or Admin Pattern
 
 ```ts
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig } from "payload";
 
 export const Users: CollectionConfig = {
-  slug: 'users',
+  slug: "users",
   auth: true,
   access: {
     // Anyone can read user profiles
@@ -485,85 +494,85 @@ export const Users: CollectionConfig = {
 
     // Users can update themselves, admins can update anyone
     update: ({ req: { user }, id }) => {
-      if (user?.roles?.includes('admin')) return true
-      return user?.id === id
+      if (user?.roles?.includes("admin")) return true;
+      return user?.id === id;
     },
 
     // Only admins can delete
-    delete: ({ req: { user } }) => user?.roles?.includes('admin'),
+    delete: ({ req: { user } }) => user?.roles?.includes("admin"),
   },
   fields: [
-    { name: 'name', type: 'text' },
-    { name: 'email', type: 'email' },
+    { name: "name", type: "text" },
+    { name: "email", type: "email" },
   ],
-}
+};
 ```
 
 ### Restrict Self-Updates
 
 ```ts
-import type { CollectionConfig, FieldAccess } from 'payload'
+import type { CollectionConfig, FieldAccess } from "payload";
 
 const preventSelfRoleChange: FieldAccess = ({ req: { user }, id }) => {
   // Admins can change anyone's roles
-  if (user?.roles?.includes('admin')) return true
+  if (user?.roles?.includes("admin")) return true;
   // Users cannot change their own roles
-  if (user?.id === id) return false
-  return false
-}
+  if (user?.id === id) return false;
+  return false;
+};
 
 export const Users: CollectionConfig = {
-  slug: 'users',
+  slug: "users",
   auth: true,
   fields: [
     {
-      name: 'roles',
-      type: 'select',
+      name: "roles",
+      type: "select",
       hasMany: true,
-      options: ['admin', 'editor', 'user'],
+      options: ["admin", "editor", "user"],
       access: {
         update: preventSelfRoleChange,
       },
     },
   ],
-}
+};
 ```
 
 ## Cross-Collection Validation
 
 ```ts
-import type { Access } from 'payload'
+import type { Access } from "payload";
 
 // Check if user is a project member before allowing access
 export const projectMemberAccess: Access = async ({ req, id }) => {
-  const { user, payload } = req
+  const { user, payload } = req;
 
-  if (!user) return false
-  if (user.roles?.includes('admin')) return true
+  if (!user) return false;
+  if (user.roles?.includes("admin")) return true;
 
   // Check if document exists and user is member
   const project = await payload.findByID({
-    collection: 'projects',
+    collection: "projects",
     id: id as string,
     depth: 0,
-  })
+  });
 
-  return project.members?.includes(user.id)
-}
+  return project.members?.includes(user.id);
+};
 
 // Prevent deletion if document has dependencies
 export const preventDeleteWithDependencies: Access = async ({ req, id }) => {
-  const { payload } = req
+  const { payload } = req;
 
   const dependencyCount = await payload.count({
-    collection: 'related-items',
+    collection: "related-items",
     where: {
       parent: { equals: id },
     },
-  })
+  });
 
-  return dependencyCount === 0
-}
+  return dependencyCount === 0;
+};
 ```
 
 ## Access Control Function Arguments
@@ -571,7 +580,7 @@ export const preventDeleteWithDependencies: Access = async ({ req, id }) => {
 ### Collection Create
 
 ```ts
-create: ({ req, data }) => boolean | Where
+create: ({ req, data }) => boolean | Where;
 
 // req: PayloadRequest
 //   - req.user: Authenticated user (if any)
@@ -584,7 +593,7 @@ create: ({ req, data }) => boolean | Where
 ### Collection Read
 
 ```ts
-read: ({ req, id }) => boolean | Where
+read: ({ req, id }) => boolean | Where;
 
 // req: PayloadRequest
 // id: Document ID being read
@@ -595,7 +604,7 @@ read: ({ req, id }) => boolean | Where
 ### Collection Update
 
 ```ts
-update: ({ req, id, data }) => boolean | Where
+update: ({ req, id, data }) => boolean | Where;
 
 // req: PayloadRequest
 // id: Document ID being updated
@@ -615,7 +624,7 @@ delete: ({ req, id }) => boolean | Where
 
 ```ts
 access: {
-  create: ({ req, data, siblingData }) => boolean
+  create: ({ req, data, siblingData }) => boolean;
 }
 
 // req: PayloadRequest
@@ -627,7 +636,7 @@ access: {
 
 ```ts
 access: {
-  read: ({ req, id, doc, siblingData }) => boolean
+  read: ({ req, id, doc, siblingData }) => boolean;
 }
 
 // req: PayloadRequest
@@ -640,7 +649,7 @@ access: {
 
 ```ts
 access: {
-  update: ({ req, id, data, doc, siblingData }) => boolean
+  update: ({ req, id, data, doc, siblingData }) => boolean;
 }
 
 // req: PayloadRequest
@@ -657,16 +666,16 @@ access: {
    ```ts
    // ❌ WRONG: Passes user but bypasses access control (default behavior)
    await payload.find({
-     collection: 'posts',
+     collection: "posts",
      user: someUser, // User is ignored for access control!
-   })
+   });
 
    // ✅ CORRECT: Respects the user's permissions
    await payload.find({
-     collection: 'posts',
+     collection: "posts",
      user: someUser,
      overrideAccess: false, // Required to enforce access control
-   })
+   });
    ```
 
    **Why this matters**: If you pass `user` without `overrideAccess: false`, the operation runs with admin privileges regardless of the user's actual permissions. This is a common security mistake.

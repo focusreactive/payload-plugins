@@ -15,19 +15,19 @@ Type guards for runtime field type checking and safe type narrowing.
 **Most commonly used guard.** Checks if field stores data (has name and is not UI-only).
 
 ```typescript
-import { fieldAffectsData } from 'payload'
+import { fieldAffectsData } from "payload";
 
 function generateSchema(fields: Field[]) {
   fields.forEach((field) => {
     if (fieldAffectsData(field)) {
       // Safe to access field.name
-      schema[field.name] = getFieldType(field)
+      schema[field.name] = getFieldType(field);
     }
-  })
+  });
 }
 
 // Filter data fields
-const dataFields = fields.filter(fieldAffectsData)
+const dataFields = fields.filter(fieldAffectsData);
 ```
 
 ### fieldHasSubFields
@@ -35,15 +35,15 @@ const dataFields = fields.filter(fieldAffectsData)
 Checks if field contains nested fields (group, array, row, or collapsible).
 
 ```typescript
-import { fieldHasSubFields } from 'payload'
+import { fieldHasSubFields } from "payload";
 
 function traverseFields(fields: Field[]): void {
   fields.forEach((field) => {
     if (fieldHasSubFields(field)) {
       // Safe to access field.fields
-      traverseFields(field.fields)
+      traverseFields(field.fields);
     }
-  })
+  });
 }
 ```
 
@@ -52,12 +52,12 @@ function traverseFields(fields: Field[]): void {
 Checks if field type is `'array'`.
 
 ```typescript
-import { fieldIsArrayType } from 'payload'
+import { fieldIsArrayType } from "payload";
 
 if (fieldIsArrayType(field)) {
   // field.type === 'array'
-  console.log(`Min rows: ${field.minRows}`)
-  console.log(`Max rows: ${field.maxRows}`)
+  console.log(`Min rows: ${field.minRows}`);
+  console.log(`Max rows: ${field.maxRows}`);
 }
 ```
 
@@ -68,12 +68,12 @@ if (fieldIsArrayType(field)) {
 Checks if field can have multiple values (select, relationship, or upload with `hasMany`).
 
 ```typescript
-import { fieldSupportsMany } from 'payload'
+import { fieldSupportsMany } from "payload";
 
 if (fieldSupportsMany(field)) {
   // field.type is 'select' | 'relationship' | 'upload'
   if (field.hasMany) {
-    console.log('Field accepts multiple values')
+    console.log("Field accepts multiple values");
   }
 }
 ```
@@ -83,12 +83,12 @@ if (fieldSupportsMany(field)) {
 Checks if field is relationship/upload/join with numeric `maxDepth` property.
 
 ```typescript
-import { fieldHasMaxDepth } from 'payload'
+import { fieldHasMaxDepth } from "payload";
 
 if (fieldHasMaxDepth(field)) {
   // field.type is 'upload' | 'relationship' | 'join'
   // AND field.maxDepth is number
-  const remainingDepth = field.maxDepth - currentDepth
+  const remainingDepth = field.maxDepth - currentDepth;
 }
 ```
 
@@ -97,12 +97,12 @@ if (fieldHasMaxDepth(field)) {
 Checks if field is virtual (computed or virtual relationship).
 
 ```typescript
-import { fieldIsVirtual } from 'payload'
+import { fieldIsVirtual } from "payload";
 
 if (fieldIsVirtual(field)) {
   // field.virtual is truthy
-  if (typeof field.virtual === 'string') {
-    console.log(`Virtual path: ${field.virtual}`)
+  if (typeof field.virtual === "string") {
+    console.log(`Virtual path: ${field.virtual}`);
   }
 }
 ```
@@ -112,36 +112,36 @@ if (fieldIsVirtual(field)) {
 ### fieldIsBlockType
 
 ```typescript
-import { fieldIsBlockType } from 'payload'
+import { fieldIsBlockType } from "payload";
 
 if (fieldIsBlockType(field)) {
   // field.type === 'blocks'
   field.blocks.forEach((block) => {
-    console.log(`Block: ${block.slug}`)
-  })
+    console.log(`Block: ${block.slug}`);
+  });
 }
 ```
 
 ### fieldIsGroupType
 
 ```typescript
-import { fieldIsGroupType } from 'payload'
+import { fieldIsGroupType } from "payload";
 
 if (fieldIsGroupType(field)) {
   // field.type === 'group'
-  console.log(`Interface: ${field.interfaceName}`)
+  console.log(`Interface: ${field.interfaceName}`);
 }
 ```
 
 ### fieldIsPresentationalOnly
 
 ```typescript
-import { fieldIsPresentationalOnly } from 'payload'
+import { fieldIsPresentationalOnly } from "payload";
 
 if (fieldIsPresentationalOnly(field)) {
   // field.type === 'ui'
   // Skip in data operations, GraphQL schema, etc.
-  return
+  return;
 }
 ```
 
@@ -150,36 +150,42 @@ if (fieldIsPresentationalOnly(field)) {
 ### Recursive Field Traversal
 
 ```typescript
-import { fieldAffectsData, fieldHasSubFields } from 'payload'
+import { fieldAffectsData, fieldHasSubFields } from "payload";
 
 function traverseFields(fields: Field[], callback: (field: Field) => void) {
   fields.forEach((field) => {
     if (fieldAffectsData(field)) {
-      callback(field)
+      callback(field);
     }
 
     if (fieldHasSubFields(field)) {
-      traverseFields(field.fields, callback)
+      traverseFields(field.fields, callback);
     }
-  })
+  });
 }
 ```
 
 ### Filter Data-Bearing Fields
 
 ```typescript
-import { fieldAffectsData, fieldIsPresentationalOnly, fieldIsHiddenOrDisabled } from 'payload'
+import {
+  fieldAffectsData,
+  fieldIsPresentationalOnly,
+  fieldIsHiddenOrDisabled,
+} from "payload";
 
 const dataFields = fields.filter(
   (field) =>
-    fieldAffectsData(field) && !fieldIsPresentationalOnly(field) && !fieldIsHiddenOrDisabled(field),
-)
+    fieldAffectsData(field) &&
+    !fieldIsPresentationalOnly(field) &&
+    !fieldIsHiddenOrDisabled(field)
+);
 ```
 
 ### Container Type Switching
 
 ```typescript
-import { fieldIsArrayType, fieldIsBlockType, fieldHasSubFields } from 'payload'
+import { fieldIsArrayType, fieldIsBlockType, fieldHasSubFields } from "payload";
 
 if (fieldIsArrayType(field)) {
   // Handle array-specific logic
@@ -193,15 +199,15 @@ if (fieldIsArrayType(field)) {
 ### Safe Property Access
 
 ```typescript
-import { fieldSupportsMany, fieldHasMaxDepth } from 'payload'
+import { fieldSupportsMany, fieldHasMaxDepth } from "payload";
 
 // With guard - safe access
 if (fieldSupportsMany(field) && field.hasMany) {
-  console.log('Multiple values supported')
+  console.log("Multiple values supported");
 }
 
 if (fieldHasMaxDepth(field)) {
-  const depth = field.maxDepth // TypeScript knows this is number
+  const depth = field.maxDepth; // TypeScript knows this is number
 }
 ```
 

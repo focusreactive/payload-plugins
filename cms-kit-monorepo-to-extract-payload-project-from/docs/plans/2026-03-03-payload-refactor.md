@@ -71,6 +71,7 @@ Add `import { generateSeoFields } from '@/shared/lib/seoFields'` at the top if n
 **Step 1:** Read the file, add the Blog tab, save.
 
 **Step 2:** Verify TypeScript compiles:
+
 ```bash
 cd apps/payload && pnpm exec tsc --noEmit 2>&1 | head -30
 ```
@@ -85,10 +86,10 @@ Remove `'blog-page-settings'` from the `GlobalCollection` type:
 
 ```typescript
 // Before:
-type GlobalCollection = 'site-settings' | 'blog-page-settings'
+type GlobalCollection = "site-settings" | "blog-page-settings";
 
 // After:
-type GlobalCollection = 'site-settings'
+type GlobalCollection = "site-settings";
 ```
 
 Also update the depth default — blog settings depth was `1`, site-settings is `2`. No change needed (site-settings default stays `2`).
@@ -102,42 +103,42 @@ Also update the depth default — blog settings depth was `1`, site-settings is 
 Replace the implementation to read from `site-settings` and return the blog tab fields:
 
 ```typescript
-import type { SiteSetting } from '@/payload-types'
-import { getCachedGlobal } from './getGlobals'
-import { Locale } from '@/shared/types'
-import { resolveLocale } from './resolveLocale'
-import { draftMode } from 'next/headers'
+import type { SiteSetting } from "@/payload-types";
+import { getCachedGlobal } from "./getGlobals";
+import { Locale } from "@/shared/types";
+import { resolveLocale } from "./resolveLocale";
+import { draftMode } from "next/headers";
 
 export type BlogPageSettingsData = {
-  blogTitle?: string | null
-  blogDescription?: string | null
-  blogMeta?: SiteSetting['blog']['blogMeta']
-}
+  blogTitle?: string | null;
+  blogDescription?: string | null;
+  blogMeta?: SiteSetting["blog"]["blogMeta"];
+};
 
 export const getBlogPageSettings = async ({
   locale,
   domain,
 }: {
-  locale?: Locale
-  domain: string
+  locale?: Locale;
+  domain: string;
 }): Promise<BlogPageSettingsData> => {
-  const { isEnabled: draft } = await draftMode()
-  const resolvedLocale = await resolveLocale(locale)
+  const { isEnabled: draft } = await draftMode();
+  const resolvedLocale = await resolveLocale(locale);
 
   const settings = (await getCachedGlobal(
-    'site-settings',
+    "site-settings",
     1,
     domain,
     resolvedLocale,
-    draft,
-  )()) as SiteSetting
+    draft
+  )()) as SiteSetting;
 
   return {
     blogTitle: settings?.blog?.blogTitle,
     blogDescription: settings?.blog?.blogDescription,
     blogMeta: settings?.blog?.blogMeta,
-  }
-}
+  };
+};
 ```
 
 > **Note:** After `pnpm generate:types` runs (T1.6), the `SiteSetting['blog']` type will be available. Until then, TypeScript may complain — that's fine, fix after types are generated.
@@ -153,14 +154,15 @@ Remove `'blog-page-settings'` from the `collections` array.
 **File 2:** `apps/payload/src/collections/Tenants/hooks/afterCreateTenant.ts`
 
 Remove the block that creates a `blog-page-settings` document:
+
 ```typescript
 // Delete these lines:
 await req.payload.create({
-  collection: 'blog-page-settings',
+  collection: "blog-page-settings",
   data: { tenant: doc.id },
   req,
   overrideAccess: true,
-})
+});
 ```
 
 ---
@@ -181,6 +183,7 @@ rm -rf apps/payload/src/collections/BlogPageSettings
 ```
 
 Then regenerate types:
+
 ```bash
 cd apps/payload && pnpm generate:types && pnpm generate:importmap
 ```
@@ -196,6 +199,7 @@ cd apps/payload && pnpm payload migrate:create
 ```
 
 This generates a migration file. Open it and edit the `up()` to:
+
 1. Add columns `blog_title`, `blog_description`, `blog_meta_*` to `site_settings` table
 2. Copy data from `blog_page_settings` to `site_settings` (matching by tenant)
 3. Drop `blog_page_settings` table
@@ -205,6 +209,7 @@ And edit `down()` to reverse: recreate `blog_page_settings`, copy back, remove b
 > **Tip:** Payload auto-generates most of the SQL. Review it carefully before running. The migrate:create output shows the diff.
 
 Run the migration:
+
 ```bash
 pnpm payload migrate
 ```
@@ -212,6 +217,7 @@ pnpm payload migrate
 **Verify:** Start dev server, confirm Settings group shows Blog tab inside Site Settings, and `blog-page-settings` collection is gone.
 
 **Commit:**
+
 ```bash
 git add apps/payload/src/
 git commit -m "feat(payload): merge BlogPageSettings into SiteSettings Blog tab"
@@ -233,10 +239,10 @@ The npm package already installed: `@focus-reactive/payload-plugin-presets@0.2.0
 
 ```typescript
 // Before:
-import { createPresetActionsField } from '@/plugins/presetsPlugin'
+import { createPresetActionsField } from "@/plugins/presetsPlugin";
 
 // After:
-import { createPresetActionsField } from '@focus-reactive/payload-plugin-presets'
+import { createPresetActionsField } from "@focus-reactive/payload-plugin-presets";
 ```
 
 ---
@@ -247,10 +253,10 @@ import { createPresetActionsField } from '@focus-reactive/payload-plugin-presets
 
 ```typescript
 // Before:
-import { getBlocksFieldWithPresetsPath } from '@/plugins/presetsPlugin'
+import { getBlocksFieldWithPresetsPath } from "@/plugins/presetsPlugin";
 
 // After:
-import { getBlocksFieldWithPresetsPath } from '@focus-reactive/payload-plugin-presets'
+import { getBlocksFieldWithPresetsPath } from "@focus-reactive/payload-plugin-presets";
 ```
 
 ---
@@ -260,15 +266,17 @@ import { getBlocksFieldWithPresetsPath } from '@focus-reactive/payload-plugin-pr
 **File:** `apps/payload/src/plugins/index.ts`
 
 Change the import:
+
 ```typescript
 // Before:
-import { presetsPlugin } from './presetsPlugin'
+import { presetsPlugin } from "./presetsPlugin";
 
 // After:
-import { presetsPlugin } from '@focus-reactive/payload-plugin-presets'
+import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 ```
 
 Add `packageName` to the presetsPlugin call:
+
 ```typescript
 presetsPlugin({
   packageName: '@focus-reactive/payload-plugin-presets',  // ← add this line
@@ -287,6 +295,7 @@ rm -rf apps/payload/src/plugins/presetsPlugin
 ```
 
 Regenerate import map:
+
 ```bash
 cd apps/payload && pnpm generate:importmap
 ```
@@ -294,6 +303,7 @@ cd apps/payload && pnpm generate:importmap
 **Verify:** TypeScript compiles, dev server starts, admin panel presets work.
 
 **Commit:**
+
 ```bash
 git add apps/payload/src/ apps/payload/package.json
 git commit -m "feat(payload): replace in-project presetsPlugin with @focus-reactive/payload-plugin-presets"
@@ -314,61 +324,68 @@ The npm package already installed: `@focus-reactive/payload-plugin-ab@1.1.2`
 Run global search for `@kiryl.pekarski/payload-plugin-ab` — there are 6 files:
 
 **1. `src/plugins/index.ts`**
+
 ```typescript
 // Before:
-import { abTestingPlugin } from '@kiryl.pekarski/payload-plugin-ab'
+import { abTestingPlugin } from "@kiryl.pekarski/payload-plugin-ab";
 // After:
-import { abTestingPlugin } from '@focus-reactive/payload-plugin-ab'
+import { abTestingPlugin } from "@focus-reactive/payload-plugin-ab";
 ```
 
 **2. `src/shared/lib/abTesting/abAdapter.ts`**
+
 ```typescript
 // Before:
-import { vercelEdgeAdapter } from '@kiryl.pekarski/payload-plugin-ab/adapters/vercel-edge'
+import { vercelEdgeAdapter } from "@kiryl.pekarski/payload-plugin-ab/adapters/vercel-edge";
 // After:
-import { vercelEdgeAdapter } from '@focus-reactive/payload-plugin-ab/adapters/vercel-edge'
+import { vercelEdgeAdapter } from "@focus-reactive/payload-plugin-ab/adapters/vercel-edge";
 ```
 
 **3. `src/shared/lib/abTesting/abCookies.ts`**
+
 ```typescript
 // Before:
-import { AbCookieConfig } from '@kiryl.pekarski/payload-plugin-ab'
+import { AbCookieConfig } from "@kiryl.pekarski/payload-plugin-ab";
 // After:
-import { AbCookieConfig } from '@focus-reactive/payload-plugin-ab'
+import { AbCookieConfig } from "@focus-reactive/payload-plugin-ab";
 ```
 
 **4. `src/shared/lib/abTesting/analyticsAdapter.ts`**
+
 ```typescript
 // Before:
-import { googleAnalyticsAdapter } from '@kiryl.pekarski/payload-plugin-ab/analytics/adapters/google-analytics'
+import { googleAnalyticsAdapter } from "@kiryl.pekarski/payload-plugin-ab/analytics/adapters/google-analytics";
 // After:
-import { googleAnalyticsAdapter } from '@focus-reactive/payload-plugin-ab/analytics/adapters/google-analytics'
+import { googleAnalyticsAdapter } from "@focus-reactive/payload-plugin-ab/analytics/adapters/google-analytics";
 ```
 
 **5. `src/middleware.ts`**
+
 ```typescript
 // Before:
-import { createResolveAbRewrite } from '@kiryl.pekarski/payload-plugin-ab/middleware'
+import { createResolveAbRewrite } from "@kiryl.pekarski/payload-plugin-ab/middleware";
 // After:
-import { createResolveAbRewrite } from '@focus-reactive/payload-plugin-ab/middleware'
+import { createResolveAbRewrite } from "@focus-reactive/payload-plugin-ab/middleware";
 ```
 
 **6. `src/shared/context/Providers.tsx`**
+
 ```typescript
 // Before:
-import { ABAnalyticsProvider } from '@kiryl.pekarski/payload-plugin-ab/analytics/client'
+import { ABAnalyticsProvider } from "@kiryl.pekarski/payload-plugin-ab/analytics/client";
 // After:
-import { ABAnalyticsProvider } from '@focus-reactive/payload-plugin-ab/analytics/client'
+import { ABAnalyticsProvider } from "@focus-reactive/payload-plugin-ab/analytics/client";
 ```
 
 **7. `src/app/(frontend)/[locale]/[domain]/variants/[bucketID]/[...slug]/page.tsx`**
+
 ```typescript
 // Before:
-import { ExperimentTracker } from '@kiryl.pekarski/payload-plugin-ab/analytics/client'
-import { resolveAbCookieNames } from '@kiryl.pekarski/payload-plugin-ab/analytics'
+import { ExperimentTracker } from "@kiryl.pekarski/payload-plugin-ab/analytics/client";
+import { resolveAbCookieNames } from "@kiryl.pekarski/payload-plugin-ab/analytics";
 // After:
-import { ExperimentTracker } from '@focus-reactive/payload-plugin-ab/analytics/client'
-import { resolveAbCookieNames } from '@focus-reactive/payload-plugin-ab/analytics'
+import { ExperimentTracker } from "@focus-reactive/payload-plugin-ab/analytics/client";
+import { resolveAbCookieNames } from "@focus-reactive/payload-plugin-ab/analytics";
 ```
 
 ---
@@ -382,6 +399,7 @@ cd apps/payload && pnpm remove @kiryl.pekarski/payload-plugin-ab
 **Verify:** `pnpm exec tsc --noEmit` passes, dev server starts, A/B variant pages load.
 
 **Commit:**
+
 ```bash
 git add apps/payload/src/ apps/payload/package.json pnpm-lock.yaml
 git commit -m "feat(payload): replace @kiryl.pekarski/payload-plugin-ab with @focus-reactive/payload-plugin-ab"
@@ -422,6 +440,7 @@ admin: {
 ```
 
 **Commit:**
+
 ```bash
 git add apps/payload/src/collections/Header/config.ts apps/payload/src/collections/Footer/config.ts
 git commit -m "feat(payload): move Header and Footer to Global Components admin group"
@@ -436,6 +455,7 @@ git commit -m "feat(payload): move Header and Footer to Global Components admin 
 **Pattern to follow:** Same controller pattern as `apps/sanity/src/contentSections/` — block Component receives Payload data, uses adapters to transform it to UI props, renders `@shared/ui` component.
 
 Key imports:
+
 - Shared UI components: `import { Hero, Copy, CardsGrid, Carousel, Logos, LinksList, BlogSection } from '@shared/ui'`
 - Payload's own `@/shared/ui` (Section, Container, RichText, Media) is separate and stays for internal Payload layouts
 
@@ -448,71 +468,79 @@ Key imports:
 **File 1:** `apps/payload/src/lib/adapters/prepareImageProps.ts`
 
 ```typescript
-import type { Media } from '@/payload-types'
-import { ImageAspectRatio, type IImageProps } from '@shared/ui/components/ui/image/types'
+import type { Media } from "@/payload-types";
+import {
+  ImageAspectRatio,
+  type IImageProps,
+} from "@shared/ui/components/ui/image/types";
 
 export function prepareImageProps(
   media: Media | number | null | undefined,
-  aspectRatio: ImageAspectRatio = ImageAspectRatio['16/9'],
+  aspectRatio: ImageAspectRatio = ImageAspectRatio["16/9"]
 ): IImageProps {
-  if (!media || typeof media !== 'object') {
+  if (!media || typeof media !== "object") {
     return {
-      src: '',
-      alt: '',
+      src: "",
+      alt: "",
       aspectRatio,
       fill: true,
-      fit: 'cover',
-    }
+      fit: "cover",
+    };
   }
 
   return {
-    src: media.url ?? '',
-    alt: media.alt ?? '',
+    src: media.url ?? "",
+    alt: media.alt ?? "",
     aspectRatio,
     fill: true,
-    fit: 'cover',
-    sizes: '(max-width: 1280px) 100vw, 1280px',
-  }
+    fit: "cover",
+    sizes: "(max-width: 1280px) 100vw, 1280px",
+  };
 }
 ```
 
 **File 2:** `apps/payload/src/lib/adapters/prepareLinkProps.ts`
 
 ```typescript
-import type { LinkProps } from '@shared/ui/components/ui/link/types'
+import type { LinkProps } from "@shared/ui/components/ui/link/types";
 
 type PayloadLink = {
-  type?: 'reference' | 'custom' | null
-  url?: string | null
+  type?: "reference" | "custom" | null;
+  url?: string | null;
   reference?: {
-    relationTo: string
-    value: unknown
-  } | null
-  label?: string | null
-  appearance?: string | null
-  newTab?: boolean | null
-}
+    relationTo: string;
+    value: unknown;
+  } | null;
+  label?: string | null;
+  appearance?: string | null;
+  newTab?: boolean | null;
+};
 
-export function prepareLinkProps(link: PayloadLink | null | undefined): LinkProps {
-  if (!link) return { text: '', href: '' }
+export function prepareLinkProps(
+  link: PayloadLink | null | undefined
+): LinkProps {
+  if (!link) return { text: "", href: "" };
 
-  let href = ''
+  let href = "";
 
-  if (link.type === 'custom' && link.url) {
-    href = link.url
-  } else if (link.type === 'reference' && link.reference) {
-    const value = link.reference.value as Record<string, unknown>
-    if (typeof value === 'object' && value !== null) {
-      const breadcrumbs = (value.breadcrumbs as Array<{ url?: string }>) ?? []
-      href = breadcrumbs[breadcrumbs.length - 1]?.url ?? (value.slug as string) ?? ''
+  if (link.type === "custom" && link.url) {
+    href = link.url;
+  } else if (link.type === "reference" && link.reference) {
+    const value = link.reference.value as Record<string, unknown>;
+    if (typeof value === "object" && value !== null) {
+      const breadcrumbs = (value.breadcrumbs as Array<{ url?: string }>) ?? [];
+      href =
+        breadcrumbs[breadcrumbs.length - 1]?.url ??
+        (value.slug as string) ??
+        "";
     }
   }
 
   return {
-    text: link.label ?? '',
+    text: link.label ?? "",
     href,
-    variant: (link.appearance as 'default' | 'outline') ?? 'default',
-  }
+    variant: (link.appearance as "default" | "outline") ?? "default",
+  };
 }
 ```
 
@@ -618,93 +646,102 @@ export const TextSectionBlockComponent: React.FC<TextSectionBlockProps> = ({ tex
 **File 1:** `apps/payload/src/blocks/CardsGrid/config.ts`
 
 ```typescript
-import type { Block } from 'payload'
-import { link } from '@/fields/link'
-import { getBlockPreviewImage } from '@/shared/lib/blockPreviewImage'
+import type { Block } from "payload";
+import { link } from "@/fields/link";
+import { getBlockPreviewImage } from "@/shared/lib/blockPreviewImage";
 
 export const CardsGridBlock: Block = {
-  slug: 'cardsGrid',
-  interfaceName: 'CardsGridBlock',
-  ...getBlockPreviewImage('Cards Grid'),
+  slug: "cardsGrid",
+  interfaceName: "CardsGridBlock",
+  ...getBlockPreviewImage("Cards Grid"),
   labels: {
-    singular: { en: 'Cards Grid', es: 'Cuadrícula de Tarjetas' },
-    plural: { en: 'Cards Grids', es: 'Cuadrículas de Tarjetas' },
+    singular: { en: "Cards Grid", es: "Cuadrícula de Tarjetas" },
+    plural: { en: "Cards Grids", es: "Cuadrículas de Tarjetas" },
   },
   fields: [
     {
-      name: 'columns',
-      type: 'number',
+      name: "columns",
+      type: "number",
       defaultValue: 3,
       min: 1,
       max: 4,
-      label: { en: 'Columns', es: 'Columnas' },
+      label: { en: "Columns", es: "Columnas" },
     },
     {
-      name: 'items',
-      type: 'array',
-      label: { en: 'Cards', es: 'Tarjetas' },
+      name: "items",
+      type: "array",
+      label: { en: "Cards", es: "Tarjetas" },
       minRows: 1,
       required: true,
       localized: true,
       fields: [
         {
-          name: 'title',
-          type: 'text',
+          name: "title",
+          type: "text",
           required: true,
-          label: { en: 'Title', es: 'Título' },
+          label: { en: "Title", es: "Título" },
         },
         {
-          name: 'description',
-          type: 'text',
-          label: { en: 'Description', es: 'Descripción' },
+          name: "description",
+          type: "text",
+          label: { en: "Description", es: "Descripción" },
         },
         {
-          name: 'image',
-          type: 'upload',
-          relationTo: 'media',
+          name: "image",
+          type: "upload",
+          relationTo: "media",
           required: true,
-          label: { en: 'Image', es: 'Imagen' },
+          label: { en: "Image", es: "Imagen" },
         },
         link(),
         {
-          name: 'alignVariant',
-          type: 'select',
-          defaultValue: 'center',
+          name: "alignVariant",
+          type: "select",
+          defaultValue: "center",
           options: [
-            { label: { en: 'Left', es: 'Izquierda' }, value: 'left' },
-            { label: { en: 'Center', es: 'Centro' }, value: 'center' },
-            { label: { en: 'Right', es: 'Derecha' }, value: 'right' },
+            { label: { en: "Left", es: "Izquierda" }, value: "left" },
+            { label: { en: "Center", es: "Centro" }, value: "center" },
+            { label: { en: "Right", es: "Derecha" }, value: "right" },
           ],
-          label: { en: 'Alignment', es: 'Alineación' },
+          label: { en: "Alignment", es: "Alineación" },
         },
         {
-          name: 'rounded',
-          type: 'select',
-          defaultValue: 'none',
+          name: "rounded",
+          type: "select",
+          defaultValue: "none",
           options: [
-            { label: { en: 'None', es: 'Ninguno' }, value: 'none' },
-            { label: { en: 'Large', es: 'Grande' }, value: 'large' },
+            { label: { en: "None", es: "Ninguno" }, value: "none" },
+            { label: { en: "Large", es: "Grande" }, value: "large" },
           ],
-          label: { en: 'Rounded', es: 'Bordes redondeados' },
+          label: { en: "Rounded", es: "Bordes redondeados" },
         },
         {
-          name: 'backgroundColor',
-          type: 'select',
-          defaultValue: 'none',
+          name: "backgroundColor",
+          type: "select",
+          defaultValue: "none",
           options: [
-            { label: { en: 'None', es: 'Ninguno' }, value: 'none' },
-            { label: { en: 'Light', es: 'Claro' }, value: 'light' },
-            { label: { en: 'Dark', es: 'Oscuro' }, value: 'dark' },
-            { label: { en: 'Light Gray', es: 'Gris claro' }, value: 'light-gray' },
-            { label: { en: 'Dark Gray', es: 'Gris oscuro' }, value: 'dark-gray' },
-            { label: { en: 'Gradient 2', es: 'Gradiente 2' }, value: 'gradient-2' },
+            { label: { en: "None", es: "Ninguno" }, value: "none" },
+            { label: { en: "Light", es: "Claro" }, value: "light" },
+            { label: { en: "Dark", es: "Oscuro" }, value: "dark" },
+            {
+              label: { en: "Light Gray", es: "Gris claro" },
+              value: "light-gray",
+            },
+            {
+              label: { en: "Dark Gray", es: "Gris oscuro" },
+              value: "dark-gray",
+            },
+            {
+              label: { en: "Gradient 2", es: "Gradiente 2" },
+              value: "gradient-2",
+            },
           ],
-          label: { en: 'Background Color', es: 'Color de fondo' },
+          label: { en: "Background Color", es: "Color de fondo" },
         },
       ],
     },
   ],
-}
+};
 ```
 
 **File 2:** `apps/payload/src/blocks/CardsGrid/Component.tsx`
@@ -739,65 +776,65 @@ export const CardsGridBlockComponent: React.FC<CardsGridBlock> = ({ items, colum
 **File 1:** `apps/payload/src/blocks/Carousel/config.ts`
 
 ```typescript
-import type { Block } from 'payload'
-import { getBlockPreviewImage } from '@/shared/lib/blockPreviewImage'
-import { generateRichText } from '@/shared/lib/generateRichText'
+import type { Block } from "payload";
+import { getBlockPreviewImage } from "@/shared/lib/blockPreviewImage";
+import { generateRichText } from "@/shared/lib/generateRichText";
 
 export const CarouselBlock: Block = {
-  slug: 'carousel',
-  interfaceName: 'CarouselBlock',
-  ...getBlockPreviewImage('Carousel'),
+  slug: "carousel",
+  interfaceName: "CarouselBlock",
+  ...getBlockPreviewImage("Carousel"),
   labels: {
-    singular: { en: 'Carousel', es: 'Carrusel' },
-    plural: { en: 'Carousels', es: 'Carruseles' },
+    singular: { en: "Carousel", es: "Carrusel" },
+    plural: { en: "Carousels", es: "Carruseles" },
   },
   fields: [
     {
-      name: 'text',
-      type: 'richText',
+      name: "text",
+      type: "richText",
       editor: generateRichText(),
-      label: { en: 'Intro Text', es: 'Texto introductorio' },
+      label: { en: "Intro Text", es: "Texto introductorio" },
       localized: true,
     },
     {
-      name: 'effect',
-      type: 'select',
-      defaultValue: 'slide',
+      name: "effect",
+      type: "select",
+      defaultValue: "slide",
       options: [
-        { label: 'Slide', value: 'slide' },
-        { label: 'Fade', value: 'fade' },
-        { label: 'Cube', value: 'cube' },
-        { label: 'Flip', value: 'flip' },
-        { label: 'Coverflow', value: 'coverflow' },
-        { label: 'Cards', value: 'cards' },
+        { label: "Slide", value: "slide" },
+        { label: "Fade", value: "fade" },
+        { label: "Cube", value: "cube" },
+        { label: "Flip", value: "flip" },
+        { label: "Coverflow", value: "coverflow" },
+        { label: "Cards", value: "cards" },
       ],
-      label: { en: 'Effect', es: 'Efecto' },
+      label: { en: "Effect", es: "Efecto" },
     },
     {
-      name: 'slides',
-      type: 'array',
-      label: { en: 'Slides', es: 'Diapositivas' },
+      name: "slides",
+      type: "array",
+      label: { en: "Slides", es: "Diapositivas" },
       minRows: 1,
       required: true,
       localized: true,
       fields: [
         {
-          name: 'image',
-          type: 'upload',
-          relationTo: 'media',
+          name: "image",
+          type: "upload",
+          relationTo: "media",
           required: true,
-          label: { en: 'Image', es: 'Imagen' },
+          label: { en: "Image", es: "Imagen" },
         },
         {
-          name: 'text',
-          type: 'richText',
+          name: "text",
+          type: "richText",
           editor: generateRichText(),
-          label: { en: 'Slide Text', es: 'Texto de la diapositiva' },
+          label: { en: "Slide Text", es: "Texto de la diapositiva" },
         },
       ],
     },
   ],
-}
+};
 ```
 
 **File 2:** `apps/payload/src/blocks/Carousel/Component.tsx`
@@ -834,49 +871,49 @@ export const CarouselBlockComponent: React.FC<CarouselBlock> = ({ text, effect, 
 **File 1:** `apps/payload/src/blocks/Logos/config.ts`
 
 ```typescript
-import type { Block } from 'payload'
-import { getBlockPreviewImage } from '@/shared/lib/blockPreviewImage'
-import { link } from '@/fields/link'
+import type { Block } from "payload";
+import { getBlockPreviewImage } from "@/shared/lib/blockPreviewImage";
+import { link } from "@/fields/link";
 
 export const LogosBlock: Block = {
-  slug: 'logos',
-  interfaceName: 'LogosBlock',
-  ...getBlockPreviewImage('Logos'),
+  slug: "logos",
+  interfaceName: "LogosBlock",
+  ...getBlockPreviewImage("Logos"),
   labels: {
-    singular: { en: 'Logos', es: 'Logos' },
-    plural: { en: 'Logos', es: 'Logos' },
+    singular: { en: "Logos", es: "Logos" },
+    plural: { en: "Logos", es: "Logos" },
   },
   fields: [
     {
-      name: 'alignVariant',
-      type: 'select',
-      defaultValue: 'center',
+      name: "alignVariant",
+      type: "select",
+      defaultValue: "center",
       options: [
-        { label: { en: 'Left', es: 'Izquierda' }, value: 'left' },
-        { label: { en: 'Center', es: 'Centro' }, value: 'center' },
-        { label: { en: 'Right', es: 'Derecha' }, value: 'right' },
+        { label: { en: "Left", es: "Izquierda" }, value: "left" },
+        { label: { en: "Center", es: "Centro" }, value: "center" },
+        { label: { en: "Right", es: "Derecha" }, value: "right" },
       ],
-      label: { en: 'Alignment', es: 'Alineación' },
+      label: { en: "Alignment", es: "Alineación" },
     },
     {
-      name: 'items',
-      type: 'array',
-      label: { en: 'Logo Items', es: 'Logos' },
+      name: "items",
+      type: "array",
+      label: { en: "Logo Items", es: "Logos" },
       minRows: 1,
       required: true,
       fields: [
         {
-          name: 'image',
-          type: 'upload',
-          relationTo: 'media',
+          name: "image",
+          type: "upload",
+          relationTo: "media",
           required: true,
-          label: { en: 'Logo Image', es: 'Imagen del logo' },
+          label: { en: "Logo Image", es: "Imagen del logo" },
         },
         link({ appearances: false }),
       ],
     },
   ],
-}
+};
 ```
 
 **File 2:** `apps/payload/src/blocks/Logos/Component.tsx`
@@ -912,41 +949,41 @@ export const LogosBlockComponent: React.FC<LogosBlock> = ({ items, alignVariant 
 **File 1:** `apps/payload/src/blocks/LinksList/config.ts`
 
 ```typescript
-import type { Block } from 'payload'
-import { getBlockPreviewImage } from '@/shared/lib/blockPreviewImage'
-import { link } from '@/fields/link'
+import type { Block } from "payload";
+import { getBlockPreviewImage } from "@/shared/lib/blockPreviewImage";
+import { link } from "@/fields/link";
 
 export const LinksListBlock: Block = {
-  slug: 'linksList',
-  interfaceName: 'LinksListBlock',
-  ...getBlockPreviewImage('Links List'),
+  slug: "linksList",
+  interfaceName: "LinksListBlock",
+  ...getBlockPreviewImage("Links List"),
   labels: {
-    singular: { en: 'Links List', es: 'Lista de enlaces' },
-    plural: { en: 'Links Lists', es: 'Listas de enlaces' },
+    singular: { en: "Links List", es: "Lista de enlaces" },
+    plural: { en: "Links Lists", es: "Listas de enlaces" },
   },
   fields: [
     {
-      name: 'alignVariant',
-      type: 'select',
-      defaultValue: 'left',
+      name: "alignVariant",
+      type: "select",
+      defaultValue: "left",
       options: [
-        { label: { en: 'Left', es: 'Izquierda' }, value: 'left' },
-        { label: { en: 'Center', es: 'Centro' }, value: 'center' },
-        { label: { en: 'Right', es: 'Derecha' }, value: 'right' },
+        { label: { en: "Left", es: "Izquierda" }, value: "left" },
+        { label: { en: "Center", es: "Centro" }, value: "center" },
+        { label: { en: "Right", es: "Derecha" }, value: "right" },
       ],
-      label: { en: 'Alignment', es: 'Alineación' },
+      label: { en: "Alignment", es: "Alineación" },
     },
     {
-      name: 'links',
-      type: 'array',
-      label: { en: 'Links', es: 'Enlaces' },
+      name: "links",
+      type: "array",
+      label: { en: "Links", es: "Enlaces" },
       minRows: 1,
       required: true,
       localized: true,
       fields: [link()],
     },
   ],
-}
+};
 ```
 
 **File 2:** `apps/payload/src/blocks/LinksList/Component.tsx`
@@ -977,47 +1014,62 @@ This block renders a preview of recent blog posts using `@shared/ui` BlogSection
 **File 1:** `apps/payload/src/blocks/BlogSection/config.ts`
 
 ```typescript
-import type { Block } from 'payload'
-import { getBlockPreviewImage } from '@/shared/lib/blockPreviewImage'
-import { generateRichText } from '@/shared/lib/generateRichText'
+import type { Block } from "payload";
+import { getBlockPreviewImage } from "@/shared/lib/blockPreviewImage";
+import { generateRichText } from "@/shared/lib/generateRichText";
 
 export const BlogSectionBlock: Block = {
-  slug: 'blogSection',
-  interfaceName: 'BlogSectionBlock',
-  ...getBlockPreviewImage('Blog Section'),
+  slug: "blogSection",
+  interfaceName: "BlogSectionBlock",
+  ...getBlockPreviewImage("Blog Section"),
   labels: {
-    singular: { en: 'Blog Section', es: 'Sección de Blog' },
-    plural: { en: 'Blog Sections', es: 'Secciones de Blog' },
+    singular: { en: "Blog Section", es: "Sección de Blog" },
+    plural: { en: "Blog Sections", es: "Secciones de Blog" },
   },
   fields: [
     {
-      name: 'text',
-      type: 'richText',
+      name: "text",
+      type: "richText",
       editor: generateRichText(),
-      label: { en: 'Intro Text', es: 'Texto introductorio' },
+      label: { en: "Intro Text", es: "Texto introductorio" },
       localized: true,
     },
     {
-      name: 'style',
-      type: 'select',
-      defaultValue: 'three-column',
+      name: "style",
+      type: "select",
+      defaultValue: "three-column",
       options: [
-        { label: { en: 'Three Column', es: 'Tres columnas' }, value: 'three-column' },
-        { label: { en: 'Three Column with Images', es: 'Tres columnas con imágenes' }, value: 'three-column-with-images' },
-        { label: { en: 'Three Column with Background Images', es: 'Tres columnas con imágenes de fondo' }, value: 'three-column-with-background-images' },
+        {
+          label: { en: "Three Column", es: "Tres columnas" },
+          value: "three-column",
+        },
+        {
+          label: {
+            en: "Three Column with Images",
+            es: "Tres columnas con imágenes",
+          },
+          value: "three-column-with-images",
+        },
+        {
+          label: {
+            en: "Three Column with Background Images",
+            es: "Tres columnas con imágenes de fondo",
+          },
+          value: "three-column-with-background-images",
+        },
       ],
-      label: { en: 'Style', es: 'Estilo' },
+      label: { en: "Style", es: "Estilo" },
     },
     {
-      name: 'postsLimit',
-      type: 'number',
+      name: "postsLimit",
+      type: "number",
       defaultValue: 3,
       min: 1,
       max: 12,
-      label: { en: 'Number of Posts', es: 'Número de publicaciones' },
+      label: { en: "Number of Posts", es: "Número de publicaciones" },
     },
   ],
-}
+};
 ```
 
 **File 2:** `apps/payload/src/blocks/BlogSection/Component.tsx`
@@ -1083,15 +1135,17 @@ export const BlogSectionBlockComponent: React.FC<BlogSectionBlock> = async ({
 **File 1:** `apps/payload/src/collections/Page/basePageFields.ts`
 
 Add imports for all new blocks:
+
 ```typescript
-import { CardsGridBlock } from '@/blocks/CardsGrid/config'
-import { CarouselBlock } from '@/blocks/Carousel/config'
-import { LogosBlock } from '@/blocks/Logos/config'
-import { LinksListBlock } from '@/blocks/LinksList/config'
-import { BlogSectionBlock } from '@/blocks/BlogSection/config'
+import { CardsGridBlock } from "@/blocks/CardsGrid/config";
+import { CarouselBlock } from "@/blocks/Carousel/config";
+import { LogosBlock } from "@/blocks/Logos/config";
+import { LinksListBlock } from "@/blocks/LinksList/config";
+import { BlogSectionBlock } from "@/blocks/BlogSection/config";
 ```
 
 Update the blocks array:
+
 ```typescript
 blocks: [
   HeroBlock,
@@ -1112,12 +1166,13 @@ Update the `defaultValue` to include new block slugs if desired (optional — ju
 **File 2:** `apps/payload/src/blocks/RenderBlocks.tsx`
 
 Add imports and entries:
+
 ```typescript
-import { CardsGridBlockComponent } from './CardsGrid/Component'
-import { CarouselBlockComponent } from './Carousel/Component'
-import { LogosBlockComponent } from './Logos/Component'
-import { LinksListBlockComponent } from './LinksList/Component'
-import { BlogSectionBlockComponent } from './BlogSection/Component'
+import { CardsGridBlockComponent } from "./CardsGrid/Component";
+import { CarouselBlockComponent } from "./Carousel/Component";
+import { LogosBlockComponent } from "./Logos/Component";
+import { LinksListBlockComponent } from "./LinksList/Component";
+import { BlogSectionBlockComponent } from "./BlogSection/Component";
 
 const blockComponents = {
   hero: HeroBlockComponent,
@@ -1130,7 +1185,7 @@ const blockComponents = {
   logos: LogosBlockComponent,
   linksList: LinksListBlockComponent,
   blogSection: BlogSectionBlockComponent,
-}
+};
 ```
 
 ---
@@ -1144,16 +1199,19 @@ cd apps/payload && pnpm generate:types && pnpm generate:importmap
 Fix any TypeScript errors (especially in BlogSection Component — adjust post field names to match generated types).
 
 Verify compile:
+
 ```bash
 pnpm exec tsc --noEmit 2>&1 | head -30
 ```
 
 Create migration (for new hero `title` field + all new block tables):
+
 ```bash
 pnpm payload migrate:create
 ```
 
 Run migration:
+
 ```bash
 pnpm payload migrate
 ```
@@ -1161,6 +1219,7 @@ pnpm payload migrate
 **Final verify:** Start dev server, open admin panel, confirm all new blocks appear in the page builder, Hero and TextSection render via @shared/ui.
 
 **Commit:**
+
 ```bash
 git add apps/payload/src/
 git commit -m "feat(payload): add shared UI adapters and align page builder blocks with @shared/ui"
@@ -1170,10 +1229,10 @@ git commit -m "feat(payload): add shared UI adapters and align page builder bloc
 
 ## Summary of Changes
 
-| Task | Files changed | Migration needed |
-|------|--------------|-----------------|
-| T1 — BlogPageSettings → SiteSettings tab | 7 files, 1 dir deleted | Yes |
-| T2a — presetsPlugin → npm | 3 files, 1 dir deleted | No |
-| T2b — @kiryl → @focus-reactive AB | 7 files | No |
-| T3 — Header/Footer group | 2 files | No |
-| T4 — Shared UI blocks | 15+ new/modified files | Yes (hero title + 5 new block tables) |
+| Task                                     | Files changed          | Migration needed                      |
+| ---------------------------------------- | ---------------------- | ------------------------------------- |
+| T1 — BlogPageSettings → SiteSettings tab | 7 files, 1 dir deleted | Yes                                   |
+| T2a — presetsPlugin → npm                | 3 files, 1 dir deleted | No                                    |
+| T2b — @kiryl → @focus-reactive AB        | 7 files                | No                                    |
+| T3 — Header/Footer group                 | 2 files                | No                                    |
+| T4 — Shared UI blocks                    | 15+ new/modified files | Yes (hero title + 5 new block tables) |

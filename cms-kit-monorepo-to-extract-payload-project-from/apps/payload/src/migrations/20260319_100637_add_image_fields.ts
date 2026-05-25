@@ -1,4 +1,5 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import type { MigrateUpArgs, MigrateDownArgs} from "@payloadcms/db-postgres";
+import { sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -86,10 +87,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "_page_v_blocks_cards_grid_items" DROP COLUMN "image_id";
   ALTER TABLE "_page_v_blocks_carousel_slides" DROP COLUMN "image_id";
   ALTER TABLE "_page_v_blocks_logos_items" DROP COLUMN "image_id";
-  ALTER TABLE "presets" DROP COLUMN "hero_media_id";`)
+  ALTER TABLE "presets" DROP COLUMN "hero_media_id";`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "page_blocks_hero" DROP CONSTRAINT "page_blocks_hero_image_image_id_media_id_fk";
   
@@ -175,5 +180,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "public"."enum__page_v_blocks_carousel_slides_image_aspect_ratio";
   DROP TYPE "public"."enum__page_v_blocks_logos_items_image_aspect_ratio";
   DROP TYPE "public"."enum__page_v_blocks_blog_section_aspect_ratio";
-  DROP TYPE "public"."enum_presets_hero_image_aspect_ratio";`)
+  DROP TYPE "public"."enum_presets_hero_image_aspect_ratio";`);
 }

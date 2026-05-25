@@ -1,8 +1,8 @@
-import { z } from "zod";
 import type { CollectionSlug } from "payload";
+import { z } from "zod";
 
-import { JobIdSchema } from "../../shared";
 import type { Task, TaskStatus } from "../../modules/task-runner";
+import { JobIdSchema } from "../../shared";
 
 /**
  * Input validation schema.
@@ -28,7 +28,7 @@ export type TranslationTaskStatus = TaskStatus;
 /**
  * Input format for API response (backwards compatible with Payload Jobs format)
  */
-export type JobInputOutput = {
+export interface JobInputOutput {
   collection: {
     relationTo: CollectionSlug;
     value: string | number;
@@ -36,12 +36,12 @@ export type JobInputOutput = {
   source_lng: string;
   target_lng: string;
   strategy?: string;
-};
+}
 
 /**
  * Normalized job output (snake_case for client compatibility)
  */
-export type JobStatusOutput = {
+export interface JobStatusOutput {
   id: string;
   status: TaskStatus;
   created_at: string;
@@ -50,35 +50,35 @@ export type JobStatusOutput = {
   input: JobInputOutput;
   error?: { message: string };
   cancelled: boolean;
-};
+}
 
 /**
  * Handler configuration
  */
-export type GetDocumentStatusConfig = {
+export interface GetDocumentStatusConfig {
   availableCollections: Set<CollectionSlug>;
-};
+}
 
 /**
  * Transforms a Task to API output format (snake_case for client compatibility)
  */
 export function taskToJobStatusOutput(task: Task): JobStatusOutput {
   return {
-    id: task.id,
-    status: task.status,
-    created_at: task.createdAt,
-    updated_at: task.updatedAt,
+    cancelled: task.cancelled,
     completed_at: task.completedAt,
+    created_at: task.createdAt,
+    error: task.error,
+    id: task.id,
     input: {
       collection: {
         relationTo: task.input.collectionSlug,
         value: task.input.collectionId,
       },
       source_lng: task.input.sourceLng,
-      target_lng: task.input.targetLng,
       strategy: task.input.strategy,
+      target_lng: task.input.targetLng,
     },
-    error: task.error,
-    cancelled: task.cancelled,
+    status: task.status,
+    updated_at: task.updatedAt,
   };
 }

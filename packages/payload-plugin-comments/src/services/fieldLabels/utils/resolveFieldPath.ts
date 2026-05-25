@@ -1,11 +1,20 @@
-import type { ArrayField, BlocksField, CollapsibleField, Field, GroupField, RowField, TabsField } from "payload";
+import type {
+  ArrayField,
+  BlocksField,
+  CollapsibleField,
+  Field,
+  GroupField,
+  RowField,
+  TabsField,
+} from "payload";
+
 import type { FieldLabelSegment } from "../../../types";
 import { findFieldByName, getLabelString } from "./schemaUtils";
 
 export function resolveFieldPath(
   segments: string[],
   schemaFields: Field[],
-  docData: Record<string, unknown> | null,
+  docData: Record<string, unknown> | null
 ): FieldLabelSegment[] {
   const result: FieldLabelSegment[] = [];
   let currentFields: Field[] = schemaFields;
@@ -21,8 +30,10 @@ export function resolveFieldPath(
       const arrayData = parentData?.[fieldName];
 
       if (Array.isArray(arrayData)) {
-        const idx = arrayData.findIndex((item: unknown) => String((item as { id?: unknown }).id) === rowId);
-        if (idx >= 0) {
+        const idx = arrayData.findIndex(
+          (item: unknown) => String((item as { id?: unknown }).id) === rowId
+        );
+        if (idx !== -1) {
           position = idx;
           const rowItem = arrayData[idx] as Record<string, unknown>;
           currentData = rowItem;
@@ -30,7 +41,9 @@ export function resolveFieldPath(
           if (awaitingRowForField.type === "blocks") {
             const blockType = rowItem["blockType"] as string | undefined;
             if (blockType) {
-              const blockConfig = (awaitingRowForField as BlocksField).blocks.find((b) => b.slug === blockType);
+              const blockConfig = (
+                awaitingRowForField as BlocksField
+              ).blocks.find((b) => b.slug === blockType);
               currentFields = blockConfig?.fields ?? [];
             } else {
               currentFields = [];
@@ -41,17 +54,17 @@ export function resolveFieldPath(
         }
       }
 
-      result.push({ type: "row", id: rowId, position });
+      result.push({ id: rowId, position, type: "row" });
       awaitingRowForField = null;
     } else {
       const field = findFieldByName(currentFields, segment);
       if (!field) {
-        result.push({ type: "field", label: segment });
+        result.push({ label: segment, type: "field" });
         currentFields = [];
         continue;
       }
 
-      result.push({ type: "field", label: getLabelString(field) });
+      result.push({ label: getLabelString(field), type: "field" });
 
       if (field.type === "array") {
         awaitingRowForField = field as ArrayField;
@@ -63,7 +76,9 @@ export function resolveFieldPath(
           currentData = (currentData as Record<string, unknown>)[segment];
         }
       } else if (field.type === "tabs") {
-        currentFields = (field as TabsField).tabs.flatMap((t) => t.fields ?? []);
+        currentFields = (field as TabsField).tabs.flatMap(
+          (t) => t.fields ?? []
+        );
       } else if (field.type === "collapsible" || field.type === "row") {
         currentFields = (field as CollapsibleField | RowField).fields;
       } else {

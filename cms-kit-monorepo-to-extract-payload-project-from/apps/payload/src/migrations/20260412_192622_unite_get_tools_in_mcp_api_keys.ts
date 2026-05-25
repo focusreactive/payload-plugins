@@ -1,4 +1,5 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import type { MigrateUpArgs, MigrateDownArgs} from "@payloadcms/db-postgres";
+import { sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -19,10 +20,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "payload_mcp_api_keys" DROP COLUMN "payload_mcp_tool_get_footer_field";
   ALTER TABLE "payload_mcp_api_keys" DROP COLUMN "payload_mcp_tool_get_all_footer";
   ALTER TABLE "payload_mcp_api_keys" DROP COLUMN "payload_mcp_tool_get_site_settings_content";
-  ALTER TABLE "payload_mcp_api_keys" DROP COLUMN "payload_mcp_tool_get_site_settings_field";`)
+  ALTER TABLE "payload_mcp_api_keys" DROP COLUMN "payload_mcp_tool_get_site_settings_field";`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req,
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "payload_mcp_api_keys" ADD COLUMN "payload_mcp_tool_get_page_content" boolean DEFAULT true;
   ALTER TABLE "payload_mcp_api_keys" ADD COLUMN "payload_mcp_tool_get_page_field" boolean DEFAULT true;
@@ -41,5 +46,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   ALTER TABLE "payload_mcp_api_keys" DROP COLUMN "payload_mcp_tool_get_document";
   ALTER TABLE "payload_mcp_api_keys" DROP COLUMN "payload_mcp_tool_get_all_documents";
   ALTER TABLE "payload_mcp_api_keys" DROP COLUMN "payload_mcp_tool_get_global_document";
-  ALTER TABLE "payload_mcp_api_keys" DROP COLUMN "payload_mcp_tool_get_field";`)
+  ALTER TABLE "payload_mcp_api_keys" DROP COLUMN "payload_mcp_tool_get_field";`);
 }

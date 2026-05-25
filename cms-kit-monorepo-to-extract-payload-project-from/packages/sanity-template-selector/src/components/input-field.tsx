@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
 import { AddIcon } from "@sanity/icons";
 import { Button, Card, Popover, Stack, Text } from "@sanity/ui";
+import React from "react";
 
 import type { InputFieldProps } from "../types";
 import { TemplatesBrowser } from "./templates-browser";
@@ -16,8 +16,8 @@ function ArrayFunctions(props: InputFieldProps) {
     <>
       <Popover
         style={{
-          width: "calc(100% - 48px)",
           maxWidth: "700px",
+          width: "calc(100% - 48px)",
         }}
         content={
           <TemplatesBrowser
@@ -56,7 +56,7 @@ export function InputField(props: InputFieldProps) {
       </Card>
       {props.inputProps.renderInput({
         ...props.inputProps,
-        // @ts-ignore
+        // @ts-expect-error
         arrayFunctions: () => <ArrayFunctions {...props} />,
       })}
     </Stack>

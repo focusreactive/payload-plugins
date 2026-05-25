@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
-import type { Comment, User } from "../../types";
+
 import { MentionLabel } from "../../components/MentionLabel";
+import { FALLBACK_DELETED_USERNAME } from "../../constants";
+import type { Comment, User } from "../../types";
 import { isSelfMention } from "../mention/isSelfMention";
 import { resolveUsername } from "../user/resolveUsername";
-import { FALLBACK_DELETED_USERNAME } from "../../constants";
 
 const MENTION_SPLIT = /(@\(\d+\))/;
 const MENTION_EXTRACT = /^@\((\d+)\)$/;
@@ -34,12 +35,15 @@ export function renderCommentText({
 
   if (Array.isArray(mentions)) {
     for (const mention of mentions) {
-      const userObj = mention.user && typeof mention.user === "object" ? (mention.user as User) : null;
+      const userObj =
+        mention.user && typeof mention.user === "object"
+          ? (mention.user as User)
+          : null;
       const id = userObj?.id ?? mention.userIdSnapshot ?? null;
-      if (id == null) continue;
+      if (id == null) {continue;}
       mentionMap[id] = {
-        user: userObj,
         displayNameSnapshot: mention.displayNameSnapshot ?? null,
+        user: userObj,
       };
     }
   }
@@ -58,9 +62,8 @@ export function renderCommentText({
           const user = record?.user ?? null;
           const isSelf = isSelfMention(currentUserId, userId);
           const isDeleted = !user;
-          const name =
-            user ?
-              resolveUsername(user, usernameFieldPath, fallbackDeleted)
+          const name = user
+            ? resolveUsername(user, usernameFieldPath, fallbackDeleted)
             : (record?.displayNameSnapshot ?? fallbackDeleted);
 
           return (

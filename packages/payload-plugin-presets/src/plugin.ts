@@ -28,7 +28,7 @@ export function getPluginComponentPath(
   packageName: string | undefined,
   componentPath: string,
   componentName: string,
-  entry: "client" | "rsc" = "client",
+  entry: "client" | "rsc" = "client"
 ): string {
   const resolvedName = packageName ?? DEFAULT_PACKAGE_NAME;
 
@@ -105,14 +105,14 @@ export interface PresetsPluginConfig {
 
 const createPresetsCollection = (
   config: PresetsPluginConfig | undefined,
-  resolvedPresetTypes: ResolvedPresetType[],
+  resolvedPresetTypes: ResolvedPresetType[]
 ): CollectionConfig<"presets"> => {
   const {
     overrides = {},
     slug = "presets",
     labels = {
-      singular: { en: "Preset", es: "Preset" },
       plural: { en: "Presets", es: "Presets" },
+      singular: { en: "Preset", es: "Preset" },
     },
     packageName,
     mediaCollection = "media",
@@ -121,54 +121,49 @@ const createPresetsCollection = (
   const previewFieldPath = getPluginComponentPath(
     packageName,
     "components/PresetAdminComponentPreview",
-    "PresetAdminComponentPreview",
+    "PresetAdminComponentPreview"
   );
 
   const previewCellPath = getPluginComponentPath(
     packageName,
     "components/PresetAdminComponentCellWrapper",
-    "PresetAdminComponentCellWrapper",
+    "PresetAdminComponentCellWrapper"
   );
 
   const defaultFields: Field[] = [
     {
-      name: "previewDisplay",
-      label: { en: "Preview", es: "Vista previa" },
-      type: "ui",
       admin: {
-        position: "sidebar",
         components: {
           Field: previewFieldPath,
         },
+        position: "sidebar",
       },
+      label: { en: "Preview", es: "Vista previa" },
+      name: "previewDisplay",
+      type: "ui",
     },
     {
-      name: "name",
-      type: "text",
-      required: true,
       label: { en: "Preset Name", es: "Nombre del Preset" },
       localized: true,
+      name: "name",
+      required: true,
+      type: "text",
     },
     {
-      name: "preview",
-      type: "upload",
-      relationTo: mediaCollection as CollectionSlug,
       admin: {
+        components: {
+          Cell: previewCellPath,
+        },
         description: {
           en: "The preview image for the preset",
           es: "La imagen de vista previa para el preset",
         },
-        components: {
-          Cell: previewCellPath,
-        },
       },
+      name: "preview",
+      relationTo: mediaCollection as CollectionSlug,
+      type: "upload",
     },
     {
-      name: "presetBlock",
-      type: "blocks",
-      required: true,
-      maxRows: 1,
-      label: { en: "Preset Block", es: "Bloque de Preset" },
       blocks: resolvedPresetTypes.map(({ slug: typeSlug, label, fields }) => ({
         slug: typeSlug,
         labels: {
@@ -177,6 +172,11 @@ const createPresetsCollection = (
         },
         fields,
       })),
+      label: { en: "Preset Block", es: "Bloque de Preset" },
+      maxRows: 1,
+      name: "presetBlock",
+      required: true,
+      type: "blocks",
     },
   ];
 
@@ -185,23 +185,23 @@ const createPresetsCollection = (
     : defaultFields;
 
   return {
-    slug,
-    labels,
     access: overrides.access || {},
     admin: {
-      useAsTitle: "name",
       defaultColumns: ["name", "preview", "updatedAt"],
-      group: "Collections",
       description: {
         en: "One preset = one block type. Add one block to store its field values.",
         es: "Un preset = un tipo de bloque. Añade un bloque para guardar sus valores.",
       },
+      group: "Collections",
       hidden: false,
+      useAsTitle: "name",
       ...overrides.admin,
     },
     fields: finalFields,
-    timestamps: true,
     hooks: overrides.hooks || {},
+    labels,
+    slug,
+    timestamps: true,
   };
 };
 
@@ -209,14 +209,14 @@ function getBlocksFieldWithPresetsPath(packageName?: string): string {
   return getPluginComponentPath(
     packageName,
     "components/blocksDrawer/BlocksFieldWithPresets",
-    "BlocksFieldWithPresets",
+    "BlocksFieldWithPresets"
   );
 }
 
 export function getBlockAdminComponents(
   block: Block,
   packageName?: string,
-  userLabels?: unknown[],
+  userLabels?: unknown[]
 ): NonNullable<Block["admin"]>["components"] {
   const userLabel = block.admin?.components?.Label;
 
@@ -226,14 +226,14 @@ export function getBlockAdminComponents(
       packageName,
       "components/presetActions/BlockLabelServerWrapper",
       "BlockLabelServerWrapper",
-      "rsc",
+      "rsc"
     );
     const [path, exportName] = wrapperPath.split("#");
     return {
       Label: {
-        path,
-        exportName,
         clientProps: { userLabel },
+        exportName,
+        path,
       },
     };
   }
@@ -242,7 +242,7 @@ export function getBlockAdminComponents(
     Label: getPluginComponentPath(
       packageName,
       "components/presetActions/BlockLabelWithPresets",
-      "BlockLabelWithPresets",
+      "BlockLabelWithPresets"
     ),
   };
 }
@@ -250,19 +250,19 @@ export function getBlockAdminComponents(
 function resolveBlockLabel(block: Block): StaticLabel {
   const singular = block.labels?.singular;
 
-  if (!singular || typeof singular === "function") return block.slug;
+  if (!singular || typeof singular === "function") {return block.slug;}
 
   return singular;
 }
 
 function fieldIsBlockType(
-  field: Field,
+  field: Field
 ): field is Extract<Field, { type: "blocks" }> {
   return field.type === "blocks";
 }
 
 function fieldHasSubFields(
-  field: Field,
+  field: Field
 ): field is Extract<Field, { fields: Field[] }> {
   return (
     "fields" in field && Array.isArray((field as { fields?: unknown }).fields)
@@ -273,7 +273,7 @@ function transformFields(
   fields: Field[],
   blockMap: Map<string, Block>,
   packageName: string | undefined,
-  userLabels: unknown[],
+  userLabels: unknown[]
 ): Field[] {
   return fields.map((field) => {
     if (fieldIsBlockType(field)) {
@@ -295,14 +295,13 @@ function transformFields(
             block.fields,
             blockMap,
             packageName,
-            userLabels,
+            userLabels
           ),
         };
       });
 
       return {
         ...field,
-        blocks: transformedBlocks,
         admin: {
           ...field.admin,
           components: {
@@ -310,6 +309,7 @@ function transformFields(
             Field: getBlocksFieldWithPresetsPath(packageName),
           },
         },
+        blocks: transformedBlocks,
       };
     }
 
@@ -324,7 +324,7 @@ function transformFields(
             tab.fields,
             blockMap,
             packageName,
-            userLabels,
+            userLabels
           ),
         })),
       };
@@ -337,7 +337,7 @@ function transformFields(
           (field as { fields: Field[] }).fields,
           blockMap,
           packageName,
-          userLabels,
+          userLabels
         ),
       };
     }
@@ -348,98 +348,98 @@ function transformFields(
 
 function buildEffectivePresetTypes(
   blockMap: Map<string, Block>,
-  overrides: PresetType[],
+  overrides: PresetType[]
 ): ResolvedPresetType[] {
   const overrideMap = new Map(overrides.map((o) => [o.slug, o]));
 
-  return Array.from(blockMap.values()).map((block) => ({
-    slug: block.slug,
-    label: overrideMap.get(block.slug)?.label ?? resolveBlockLabel(block),
+  return [...blockMap.values()].map((block) => ({
     fields: overrideMap.get(block.slug)?.fields ?? block.fields,
+    label: overrideMap.get(block.slug)?.label ?? resolveBlockLabel(block),
+    slug: block.slug,
   }));
 }
 
 const pluginTranslations = {
   en: {
     presetsPlugin: {
-      presetActions: {
-        heading: "Save as Preset",
-        presetName: "Preset name",
-        setAsPresetAfterSave: "Set as preset after save",
-        replaceBlockWithPreset: "Replace this block with preset after save",
-        save: "Save",
-        cancel: "Cancel",
-        saveButton: "Save as Preset",
-        errorEnterName: "Enter a preset name.",
-        successSaved: 'Preset "{{name}}" saved.',
-        errorFailed: "Failed to save preset",
-      },
       applyPreset: {
         applyButton: "Apply Preset",
+        errorApplyFailed: "Failed to apply preset structure.",
         errorInvalidPreset: "Invalid preset type.",
         errorNoData: "Preset has no data.",
         successApplied: 'Preset "{{name}}" applied.',
-        errorApplyFailed: "Failed to apply preset structure.",
       },
       blocksDrawer: {
-        noPresetsAvailable: "No presets available",
         addBlockTitle: "Add block",
         empty: "Empty",
+        imagePlaceholder: "Placeholder",
+        noPresetsAvailable: "No presets available",
+        presetPreview: "Preset Preview",
         presets: "Presets",
         preview: "Preview",
         searchPlaceholder: "Search for a block",
-        imagePlaceholder: "Placeholder",
-        presetPreview: "Preset Preview",
         successAddedWithPreset: "Added {{blockType}} with preset: {{name}}",
       },
       deletePreset: {
-        heading: "Confirm deletion",
         body: 'You are about to delete the preset "{{name}}". Are you sure?',
+        cancel: "Cancel",
         confirm: "Delete",
         confirming: "Deleting...",
+        heading: "Confirm deletion",
+      },
+      presetActions: {
         cancel: "Cancel",
+        errorEnterName: "Enter a preset name.",
+        errorFailed: "Failed to save preset",
+        heading: "Save as Preset",
+        presetName: "Preset name",
+        replaceBlockWithPreset: "Replace this block with preset after save",
+        save: "Save",
+        saveButton: "Save as Preset",
+        setAsPresetAfterSave: "Set as preset after save",
+        successSaved: 'Preset "{{name}}" saved.',
       },
     },
   },
   es: {
     presetsPlugin: {
-      presetActions: {
-        heading: "Guardar como preset",
-        presetName: "Nombre del preset",
-        setAsPresetAfterSave: "Usar como preset después de guardar",
-        replaceBlockWithPreset:
-          "Reemplazar este bloque por el preset tras guardar",
-        save: "Guardar",
-        cancel: "Cancelar",
-        saveButton: "Guardar como preset",
-        errorEnterName: "Introduce un nombre para el preset.",
-        successSaved: 'Preset "{{name}}" guardado.',
-        errorFailed: "Error al guardar el preset",
-      },
       applyPreset: {
         applyButton: "Aplicar Preset",
+        errorApplyFailed: "Error al aplicar la estructura del preset.",
         errorInvalidPreset: "Tipo de preset inválido.",
         errorNoData: "El preset no tiene datos.",
         successApplied: 'Preset "{{name}}" aplicado.',
-        errorApplyFailed: "Error al aplicar la estructura del preset.",
       },
       blocksDrawer: {
-        noPresetsAvailable: "No hay presets disponibles",
         addBlockTitle: "Añadir bloque",
         empty: "Vacío",
+        imagePlaceholder: "Marcador de posición",
+        noPresetsAvailable: "No hay presets disponibles",
+        presetPreview: "Vista previa del preset",
         presets: "Presets",
         preview: "Vista previa",
         searchPlaceholder: "Buscar un bloque",
-        imagePlaceholder: "Marcador de posición",
-        presetPreview: "Vista previa del preset",
         successAddedWithPreset: "{{blockType}} añadido con preset: {{name}}",
       },
       deletePreset: {
-        heading: "Confirmar eliminación",
         body: 'Estás a punto de eliminar el preset "{{name}}". ¿Estás seguro?',
+        cancel: "Cancelar",
         confirm: "Eliminar",
         confirming: "Eliminando...",
+        heading: "Confirmar eliminación",
+      },
+      presetActions: {
         cancel: "Cancelar",
+        errorEnterName: "Introduce un nombre para el preset.",
+        errorFailed: "Error al guardar el preset",
+        heading: "Guardar como preset",
+        presetName: "Nombre del preset",
+        replaceBlockWithPreset:
+          "Reemplazar este bloque por el preset tras guardar",
+        save: "Guardar",
+        saveButton: "Guardar como preset",
+        setAsPresetAfterSave: "Usar como preset después de guardar",
+        successSaved: 'Preset "{{name}}" guardado.',
       },
     },
   },
@@ -470,9 +470,9 @@ export const presetsPlugin =
           collection.fields,
           blockMap,
           packageName,
-          userLabels,
+          userLabels
         ),
-      }),
+      })
     );
 
     const transformedGlobals = (incomingConfig.globals || []).map((global) => ({
@@ -504,19 +504,19 @@ export const presetsPlugin =
 
     const effectivePresetTypes = buildEffectivePresetTypes(
       blockMap,
-      presetTypes,
+      presetTypes
     );
 
     const presetsCollection = createPresetsCollection(
       config,
-      effectivePresetTypes,
+      effectivePresetTypes
     );
 
     const clientConfig: PresetsPluginClientConfig = {
-      slug: slug as CollectionSlug,
-      presetTypes: effectivePresetTypes.map((pt) => pt.slug),
       excludeKeys: ["id", "blockType", "blockName", "experiment"],
       mediaCollection,
+      presetTypes: effectivePresetTypes.map((pt) => pt.slug),
+      slug: slug as CollectionSlug,
     };
 
     // Merge translations with English fallback for unsupported languages
@@ -530,7 +530,7 @@ export const presetsPlugin =
 
     for (const [lang, translations] of Object.entries(pluginTranslations)) {
       mergedTranslations[lang] = {
-        ...(mergedTranslations[lang] || {}),
+        ...mergedTranslations[lang],
         ...translations,
       };
     }
@@ -560,11 +560,11 @@ export const presetsPlugin =
           ...userLabelDeps,
         },
       },
+      collections: [...transformedCollections, presetsCollection],
+      globals: transformedGlobals,
       i18n: {
         ...incomingConfig.i18n,
         translations: mergedTranslations,
       },
-      collections: [...transformedCollections, presetsCollection],
-      globals: transformedGlobals,
     };
   };

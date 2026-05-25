@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext } from "react";
 import type { ClientBlock } from "payload";
+import { createContext, useContext } from "react";
 
 const BlocksConfigContext = createContext<ClientBlock[] | null>(null);
 

@@ -1,21 +1,21 @@
-import type { Block, Field } from 'payload'
+import type { Block, Field } from "payload";
 
 const heroFields: Field[] = [
   {
-    name: 'title',
-    type: 'text',
-    required: true,
     localized: true,
+    name: "title",
+    required: true,
+    type: "text",
   },
   {
-    name: 'description',
-    type: 'textarea',
     localized: true,
+    name: "description",
+    type: "textarea",
   },
-]
+];
 
 export const HeroBlock: Block = {
-  slug: 'hero',
-  labels: { singular: 'Hero', plural: 'Heroes' },
   fields: heroFields,
-}
+  labels: { plural: "Heroes", singular: "Hero" },
+  slug: "hero",
+};

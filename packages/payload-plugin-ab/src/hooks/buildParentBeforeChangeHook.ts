@@ -1,26 +1,37 @@
 import { ValidationError } from "payload";
-import type { CollectionBeforeChangeHook, CollectionSlug, Where } from "payload";
-import type { AbTestingPluginConfig, CollectionABConfig } from "../types/config";
+import type {
+  CollectionBeforeChangeHook,
+  CollectionSlug,
+  Where,
+} from "payload";
+
 import { AB_PASS_PERCENTAGE_FIELD, AB_VARIANT_OF_FIELD } from "../constants";
+import type {
+  AbTestingPluginConfig,
+  CollectionABConfig,
+} from "../types/config";
 import { resolveId } from "../utils/resolveId";
 
 export function buildParentBeforeChangeHook<TVariantData extends object>(
   parentCollectionSlug: string,
   _abConfig: CollectionABConfig<TVariantData>,
-  _pluginConfig: AbTestingPluginConfig<TVariantData>,
+  _pluginConfig: AbTestingPluginConfig<TVariantData>
 ): CollectionBeforeChangeHook {
   return async ({ data, originalDoc, req, operation }) => {
     // Only validate when saving a variant doc
-    const variantOfValue = data[AB_VARIANT_OF_FIELD] ?? originalDoc?.[AB_VARIANT_OF_FIELD];
-    if (!variantOfValue) return data;
+    const variantOfValue =
+      data[AB_VARIANT_OF_FIELD] ?? originalDoc?.[AB_VARIANT_OF_FIELD];
+    if (!variantOfValue) {return data;}
 
     const passPercentage = data[AB_PASS_PERCENTAGE_FIELD];
-    if (passPercentage === undefined || passPercentage === null) return data;
+    if (passPercentage === undefined || passPercentage === null) {return data;}
 
     const parentId = resolveId(variantOfValue);
-    if (!parentId) return data;
+    if (!parentId) {return data;}
 
-    const conditions: Where[] = [{ [AB_VARIANT_OF_FIELD]: { equals: parentId } }];
+    const conditions: Where[] = [
+      { [AB_VARIANT_OF_FIELD]: { equals: parentId } },
+    ];
 
     if (operation === "update" && originalDoc?.id) {
       conditions.push({ id: { not_equals: originalDoc.id } });
@@ -28,11 +39,11 @@ export function buildParentBeforeChangeHook<TVariantData extends object>(
 
     const { docs: siblings } = await req.payload.find({
       collection: parentCollectionSlug as CollectionSlug,
-      where: { and: conditions },
       depth: 0,
       draft: false,
       overrideAccess: true,
       req,
+      where: { and: conditions },
     });
 
     const existingSum = siblings.reduce((sum, doc) => {
@@ -45,8 +56,8 @@ export function buildParentBeforeChangeHook<TVariantData extends object>(
       throw new ValidationError({
         errors: [
           {
-            path: AB_PASS_PERCENTAGE_FIELD,
             message: `Total variant traffic for this page is ${existingSum}%. This variant cannot exceed ${remaining}% (would exceed 100%).`,
+            path: AB_PASS_PERCENTAGE_FIELD,
           },
         ],
       });

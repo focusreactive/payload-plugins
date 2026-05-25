@@ -1,97 +1,99 @@
-import type { Page } from '@/payload-types'
-import { buildUrl } from '@/core/utils/path/buildUrl'
-import { getSiteSettings } from '@/core/lib/getSiteSettings'
-import { getServerSideURL } from '@/core/lib/getURL'
-import type { BreadcrumbItem, Locale } from '@/core/types'
+import { getSiteSettings } from "@/core/lib/getSiteSettings";
+import { getServerSideURL } from "@/core/lib/getURL";
+import type { BreadcrumbItem, Locale } from "@/core/types";
+import { buildUrl } from "@/core/utils/path/buildUrl";
+import type { Page } from "@/payload-types";
 
 export type CreateBreadcrumbsOptions = (
   | {
-      items: Page['breadcrumbs']
+      items: Page["breadcrumbs"];
     }
   | {
       blog: {
-        title: string
-        page?: number
+        title: string;
+        page?: number;
         post?: {
-          title: string
-          slug: string
-        }
-      }
+          title: string;
+          slug: string;
+        };
+      };
     }
 ) & {
-  locale: Locale
-}
+  locale: Locale;
+};
 
-export async function createBreadcrumbsSchema(options: CreateBreadcrumbsOptions) {
-  const baseUrl = getServerSideURL()
-  const settings = await getSiteSettings({ locale: options.locale })
+export async function createBreadcrumbsSchema(
+  options: CreateBreadcrumbsOptions
+) {
+  const baseUrl = getServerSideURL();
+  const settings = await getSiteSettings({ locale: options.locale });
 
   const breadcrumbs: BreadcrumbItem[] = [
     {
-      name: settings?.siteName || 'Home',
+      name: settings?.siteName || "Home",
       url: buildUrl({
-        collection: 'page',
+        collection: "page",
         locale: options.locale,
-        slug: 'home',
+        slug: "home",
       }),
     },
-  ]
+  ];
 
-  if ('items' in options && Array.isArray(options.items)) {
+  if ("items" in options && Array.isArray(options.items)) {
     for (const item of options.items) {
       if (item?.label && item?.url) {
-        const url = item.url.startsWith('http')
+        const url = item.url.startsWith("http")
           ? item.url
-          : item.url.startsWith('/')
+          : (item.url.startsWith("/")
             ? `${baseUrl}${item.url}`
-            : `${baseUrl}/${item.url}`
+            : `${baseUrl}/${item.url}`);
 
-        breadcrumbs.push({ name: item.label, url })
+        breadcrumbs.push({ name: item.label, url });
       }
     }
   }
 
-  if ('blog' in options) {
-    const { blog } = options
+  if ("blog" in options) {
+    const { blog } = options;
     breadcrumbs.push({
       name: blog.title,
       url: buildUrl({
-        collection: 'posts',
+        collection: "posts",
         locale: options.locale,
       }),
-    })
+    });
 
     if (blog.post) {
       breadcrumbs.push({
         name: blog.post.title,
         url: buildUrl({
-          collection: 'posts',
-          slug: blog.post.slug,
+          collection: "posts",
           locale: options.locale,
+          slug: blog.post.slug,
         }),
-      })
+      });
     }
 
     if (blog.page && blog.page > 1) {
       breadcrumbs.push({
         name: `Page ${blog.page}`,
         url: buildUrl({
-          collection: 'posts',
-          page: blog.page,
+          collection: "posts",
           locale: options.locale,
+          page: blog.page,
         }),
-      })
+      });
     }
   }
 
   return {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
     itemListElement: breadcrumbs.map((item, index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
-      name: item.name,
+      "@type": "ListItem",
       item: item.url,
+      name: item.name,
+      position: index + 1,
     })),
-  }
+  };
 }

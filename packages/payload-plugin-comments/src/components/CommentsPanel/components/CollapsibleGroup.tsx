@@ -1,10 +1,12 @@
 "use client";
 
-import { useImperativeHandle, type ReactNode, type RefObject } from "react";
-import { ChevronDown } from "lucide-react";
 import { cva } from "class-variance-authority";
-import { useCollapseState } from "../hooks/useCollapseState";
+import { ChevronDown } from "lucide-react";
+import { useImperativeHandle } from 'react';
+import type { ReactNode, RefObject } from 'react';
+
 import { cn } from "../../../utils/general/cn";
+import { useCollapseState } from "../hooks/useCollapseState";
 
 export interface CollapsibleGroupHandle {
   open: () => void;
@@ -21,12 +23,12 @@ interface CollapsibleGroupProps {
 }
 
 const collapsibleGroupVariants = {
-  wrapper: cva("flex w-full items-center gap-2 cursor-pointer select-none", {
+  childWrapper: cva("", {
     variants: {
       level: {
-        collection: "py-2",
-        document: "py-2",
-        field: "py-1.5",
+        collection: "border-l-2 border-(--theme-elevation-100) pl-3",
+        document: "border-l-2 border-(--theme-elevation-100) pl-3",
+        field: "",
       },
     },
   }),
@@ -39,18 +41,25 @@ const collapsibleGroupVariants = {
       },
     },
   }),
-  childWrapper: cva("", {
+  wrapper: cva("flex w-full items-center gap-2 cursor-pointer select-none", {
     variants: {
       level: {
-        collection: "border-l-2 border-(--theme-elevation-100) pl-3",
-        document: "border-l-2 border-(--theme-elevation-100) pl-3",
-        field: "",
+        collection: "py-2",
+        document: "py-2",
+        field: "py-1.5",
       },
     },
   }),
 };
 
-export function CollapsibleGroup({ groupKey, fieldPath, label, children, level, ref }: CollapsibleGroupProps) {
+export function CollapsibleGroup({
+  groupKey,
+  fieldPath,
+  label,
+  children,
+  level,
+  ref,
+}: CollapsibleGroupProps) {
   const [isCollapsed, toggle, open] = useCollapseState(groupKey);
 
   useImperativeHandle(ref, () => ({
@@ -66,18 +75,25 @@ export function CollapsibleGroup({ groupKey, fieldPath, label, children, level, 
         onClick={toggle}
         onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && toggle()}
         aria-expanded={!isCollapsed}
-        className={collapsibleGroupVariants.wrapper({ level })}>
-        <span className={collapsibleGroupVariants.label({ level })}>{label}</span>
+        className={collapsibleGroupVariants.wrapper({ level })}
+      >
+        <span className={collapsibleGroupVariants.label({ level })}>
+          {label}
+        </span>
 
         <ChevronDown
           className={cn(
             "shrink-0 w-4 h-4 text-(--theme-elevation-450) transition-transform duration-150",
-            isCollapsed && "-rotate-90",
+            isCollapsed && "-rotate-90"
           )}
         />
       </div>
 
-      {!isCollapsed && <div className={collapsibleGroupVariants.childWrapper({ level })}>{children}</div>}
+      {!isCollapsed && (
+        <div className={collapsibleGroupVariants.childWrapper({ level })}>
+          {children}
+        </div>
+      )}
     </div>
   );
 }

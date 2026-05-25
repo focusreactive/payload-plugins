@@ -24,11 +24,11 @@ export function ImageContainer({
 export function Image({ aspectRatio, fit, ...props }: IImageProps) {
   return (
     <ImageContainer aspectRatio={aspectRatio}>
-      {/* @ts-ignore */}
+      {/* @ts-expect-error */}
       <NextImage
         style={{
-          marginTop: 0,
           marginBottom: 0,
+          marginTop: 0,
           objectFit: fit,
         }}
         {...props}

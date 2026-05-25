@@ -1,15 +1,16 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { useConfig } from "@payloadcms/ui";
 import { useLocale } from "@payloadcms/ui";
-import { getDocumentTitlesKey } from "../queryKeys";
-import { getDocumentTitles } from "../../services/getDocumentTitles";
+import { useQuery } from "@tanstack/react-query";
+
+import { REFETCH_INTERVAL } from "../../constants";
 import { useCommentsDrawer } from "../../providers/CommentsDrawerProvider";
-import { useCommentsQuery } from "./useCommentsQuery";
+import { getDocumentTitles } from "../../services/getDocumentTitles";
 import type { QueryContext } from "../../types";
 import type { CommentsPluginConfigStorage } from "../../types";
-import { REFETCH_INTERVAL } from "../../constants";
+import { getDocumentTitlesKey } from "../queryKeys";
+import { useCommentsQuery } from "./useCommentsQuery";
 
 export function useDocumentTitlesQuery(ctx: QueryContext) {
   const { isOpen } = useCommentsDrawer();
@@ -17,20 +18,26 @@ export function useDocumentTitlesQuery(ctx: QueryContext) {
   const { code: locale } = useLocale();
   const { config } = useConfig();
 
-  const pluginConfig = config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
+  const pluginConfig = config.admin?.custom?.commentsPlugin as
+    | CommentsPluginConfigStorage
+    | undefined;
 
   return useQuery({
-    queryKey: getDocumentTitlesKey(ctx),
+    enabled: isOpen && !!comments,
     queryFn: async () => {
-      const res = await getDocumentTitles(comments ?? [], pluginConfig?.documentTitleFields ?? {}, { locale });
+      const res = await getDocumentTitles(
+        comments ?? [],
+        pluginConfig?.documentTitleFields ?? {},
+        { locale }
+      );
 
       if (!res.success) throw new Error(res.error);
 
       return res.data;
     },
-    enabled: isOpen && !!comments,
-    staleTime: 0,
+    queryKey: getDocumentTitlesKey(ctx),
     refetchInterval: isOpen ? REFETCH_INTERVAL : false,
     refetchIntervalInBackground: false,
+    staleTime: 0,
   });
 }

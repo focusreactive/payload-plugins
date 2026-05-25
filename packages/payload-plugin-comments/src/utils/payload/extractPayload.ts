@@ -1,4 +1,6 @@
-import { getPayload, type Payload } from "payload";
+import { getPayload } from 'payload';
+import type { Payload } from 'payload';
+
 import { getPayloadConfig } from "../../config";
 
 export async function extractPayload(payload?: Payload): Promise<Payload> {

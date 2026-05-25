@@ -1,23 +1,23 @@
-import type { ReactElement } from 'react'
-import { useId } from 'react'
-import { useController } from 'react-hook-form'
+import type { ReactElement } from "react";
+import { useId } from "react";
+import { useController } from "react-hook-form";
 
-import Description from '../../Description'
-import Label from '../../Label'
-import Select from '../../Select'
+import Description from "../../Description";
+import Label from "../../Label";
+import Select from "../../Select";
 
-type FormSelectProps = {
-  name: string
-  required?: boolean
-  options: Array<{ value: string; label: string }>
-  label?: string | ReactElement
-  description?: string
-  placeholder?: string
-  disabled?: boolean
-  size?: 'sm' | 'md' | 'lg'
-  'aria-label'?: string
-  'aria-labelledby'?: string
-  className?: string
+interface FormSelectProps {
+  name: string;
+  required?: boolean;
+  options: Array<{ value: string; label: string }>;
+  label?: string | ReactElement;
+  description?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  size?: "sm" | "md" | "lg";
+  "aria-label"?: string;
+  "aria-labelledby"?: string;
+  className?: string;
 }
 
 export default function FormSelect({
@@ -29,29 +29,29 @@ export default function FormSelect({
   disabled,
   size,
   placeholder,
-  'aria-label': ariaLabel,
-  'aria-labelledby': ariaLabelledby,
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledby,
   className,
 }: FormSelectProps) {
-  const formControl = useController({ name, rules: { required } })
-  const errorId = useId()
-  const descriptionId = useId()
+  const formControl = useController({ name, rules: { required } });
+  const errorId = useId();
+  const descriptionId = useId();
 
   const getAccessibilityProps = () => {
     if (label) {
-      return {}
+      return {};
     }
 
     if (ariaLabelledby) {
-      return { 'aria-labelledby': ariaLabelledby }
+      return { "aria-labelledby": ariaLabelledby };
     }
 
     if (ariaLabel) {
-      return { 'aria-label': ariaLabel }
+      return { "aria-label": ariaLabel };
     }
 
-    return { 'aria-label': 'Select option' }
-  }
+    return { "aria-label": "Select option" };
+  };
 
   const selectElement = (
     <Select
@@ -64,19 +64,24 @@ export default function FormSelect({
       onChange={formControl.field.onChange}
       onBlur={formControl.field.onBlur}
       disabled={
-        formControl.field.disabled || formControl.formState.disabled || formControl.formState.isSubmitting || disabled
+        formControl.field.disabled ||
+        formControl.formState.disabled ||
+        formControl.formState.isSubmitting ||
+        disabled
       }
       aria-describedby={`${errorId} ${descriptionId}`}
       {...getAccessibilityProps()}
     >
-      {placeholder && <Select.SelectEmptyOption>{placeholder}</Select.SelectEmptyOption>}
+      {placeholder && (
+        <Select.SelectEmptyOption>{placeholder}</Select.SelectEmptyOption>
+      )}
       {options.map((option) => (
         <Select.SelectOption key={option.value} value={option.value}>
           {option.label}
         </Select.SelectOption>
       ))}
     </Select>
-  )
+  );
 
   const errorAndDescription = (
     <>
@@ -85,9 +90,11 @@ export default function FormSelect({
           {formControl.fieldState.error.message}
         </Description>
       )}
-      {description && <Description id={descriptionId}>{description}</Description>}
+      {description && (
+        <Description id={descriptionId}>{description}</Description>
+      )}
     </>
-  )
+  );
 
   if (!label) {
     return (
@@ -95,7 +102,7 @@ export default function FormSelect({
         {selectElement}
         {errorAndDescription}
       </div>
-    )
+    );
   }
 
   return (
@@ -103,5 +110,5 @@ export default function FormSelect({
       {selectElement}
       {errorAndDescription}
     </Label>
-  )
+  );
 }
