@@ -1,26 +1,38 @@
 import type { CollectionConfig, CollectionSlug } from "payload";
-
-import { DEFAULT_COLLECTION_SLUG } from "../constants";
-import type { TenantPluginConfig } from "../types";
-import { isAuth } from "./access/isAuth";
 import { setAuthorBeforeCreate } from "./hooks/setAuthorBeforeCreate";
 import { setMentionSnapshotsBeforeChange } from "./hooks/setMentionSnapshotsBeforeChange";
 import { setTenantBeforeCreate } from "./hooks/setTenantBeforeCreate";
+import { cascadeDeleteCommentReads } from "./hooks/cascadeDeleteCommentReads";
+import { DEFAULT_COLLECTION_SLUG } from "../constants";
+import type { TenantPluginConfig } from "../types";
+import { isAuth } from "./access/isAuth";
 
-export const baseCollection = (
-  tenantConfig?: TenantPluginConfig
-): CollectionConfig => ({
-  access: {
-    create: isAuth,
-    delete: isAuth,
-    read: isAuth,
-    update: isAuth,
+export const baseCollection = (tenantConfig?: TenantPluginConfig): CollectionConfig => ({
+  slug: DEFAULT_COLLECTION_SLUG,
+  labels: {
+    singular: { en: "Comment", es: "Comentario" },
+    plural: { en: "Comments", es: "Comentarios" },
   },
   admin: {
-    defaultColumns: ["author", "collectionSlug", "status", "createdAt"],
     hidden: true,
     useAsTitle: "text",
+    defaultColumns: ["author", "collectionSlug", "status", "createdAt"],
   },
+  access: {
+    create: isAuth,
+    read: isAuth,
+    update: isAuth,
+    delete: isAuth,
+  },
+  hooks: {
+    beforeChange: [
+      setAuthorBeforeCreate,
+      setMentionSnapshotsBeforeChange,
+      ...(tenantConfig?.enabled ? [setTenantBeforeCreate] : []),
+    ],
+    afterDelete: [cascadeDeleteCommentReads],
+  },
+  timestamps: true,
   fields: [
     {
       name: "documentId",
@@ -37,8 +49,7 @@ export const baseCollection = (
       type: "text",
       index: true,
       admin: {
-        description:
-          "Slug of the Payload global being commented on. Null = collection document comment.",
+        description: "Slug of the Payload global being commented on. Null = collection document comment.",
       },
     },
     {
@@ -46,8 +57,7 @@ export const baseCollection = (
       type: "text",
       index: true,
       admin: {
-        description:
-          "Dot-notation path of the field being commented on. Null = document-level.",
+        description: "Dot-notation path of the field being commented on. Null = document-level.",
       },
     },
     {
@@ -56,8 +66,7 @@ export const baseCollection = (
       required: false,
       index: true,
       admin: {
-        description:
-          "Locale for field-level comments. Null = document-level (shown in all locales).",
+        description: "Locale for field-level comments. Null = document-level (shown in all locales).",
       },
     },
     {
@@ -82,18 +91,14 @@ export const baseCollection = (
         {
           name: "userIdSnapshot",
           type: "number",
-          admin: {
-            readOnly: true,
-            description: "Original user id captured at mention time.",
-          },
+          admin: { readOnly: true, description: "Original user id captured at mention time." },
         },
         {
           name: "displayNameSnapshot",
           type: "text",
           admin: {
             readOnly: true,
-            description:
-              "Display name captured at mention time; used after the user is deleted.",
+            description: "Display name captured at mention time; used after the user is deleted.",
           },
         },
       ],
@@ -136,33 +141,19 @@ export const baseCollection = (
         condition: (_data, siblingData) => siblingData?.status === "resolved",
       },
     },
-    ...(tenantConfig?.enabled
-      ? [
-          {
-            name: "tenant",
-            type: "relationship" as const,
-            relationTo: (tenantConfig.collectionSlug ??
-              "tenants") as CollectionSlug,
-            index: true,
-            label: "Tenant",
-            admin: {
-              position: "sidebar" as const,
-            },
+    ...(tenantConfig?.enabled ?
+      [
+        {
+          name: "tenant",
+          type: "relationship" as const,
+          relationTo: (tenantConfig.collectionSlug ?? "tenants") as CollectionSlug,
+          index: true,
+          label: "Tenant",
+          admin: {
+            position: "sidebar" as const,
           },
-        ]
-      : []),
+        },
+      ]
+    : []),
   ],
-  hooks: {
-    beforeChange: [
-      setAuthorBeforeCreate,
-      setMentionSnapshotsBeforeChange,
-      ...(tenantConfig?.enabled ? [setTenantBeforeCreate] : []),
-    ],
-  },
-  labels: {
-    plural: { en: "Comments", es: "Comentarios" },
-    singular: { en: "Comment", es: "Comentario" },
-  },
-  slug: DEFAULT_COLLECTION_SLUG,
-  timestamps: true,
 });

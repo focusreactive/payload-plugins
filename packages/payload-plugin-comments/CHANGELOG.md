@@ -1,3 +1,16 @@
+# @focus-reactive/payload-plugin-comments [1.7.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.6.3...@focus-reactive/payload-plugin-comments@1.7.0) (2026-05-19)
+
+
+### Bug Fixes
+
+* **comments:** replace useQueryClient with useCommentsQueryClient in mutations and queries to avoid using query providers injected by other plugins ([df663da](https://github.com/focusreactive/payload-plugins/commit/df663daa6a320bb01b00691c3fa59e72f48f5551))
+
+
+### Features
+
+* **comments:** add comment reads service functionality and internal plugin config ([03717de](https://github.com/focusreactive/payload-plugins/commit/03717deab6f3ec06237078a988b51aac0f8ca4a1))
+* **comments:** add comment reads UI and client API ([ef6c54e](https://github.com/focusreactive/payload-plugins/commit/ef6c54e7cb8bc2512e2ccbca7f869c266b2ccc13))
+
 ## @focus-reactive/payload-plugin-comments [1.6.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.6.2...@focus-reactive/payload-plugin-comments@1.6.3) (2026-05-11)
 
 ### Bug Fixes

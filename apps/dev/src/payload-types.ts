@@ -13,53 +13,53 @@
  * via the `definition` "supportedTimezones".
  */
 export type SupportedTimezones =
-  | "Pacific/Midway"
-  | "Pacific/Niue"
-  | "Pacific/Honolulu"
-  | "Pacific/Rarotonga"
-  | "America/Anchorage"
-  | "Pacific/Gambier"
-  | "America/Los_Angeles"
-  | "America/Tijuana"
-  | "America/Denver"
-  | "America/Phoenix"
-  | "America/Chicago"
-  | "America/Guatemala"
-  | "America/New_York"
-  | "America/Bogota"
-  | "America/Caracas"
-  | "America/Santiago"
-  | "America/Buenos_Aires"
-  | "America/Sao_Paulo"
-  | "Atlantic/South_Georgia"
-  | "Atlantic/Azores"
-  | "Atlantic/Cape_Verde"
-  | "Europe/London"
-  | "Europe/Berlin"
-  | "Africa/Lagos"
-  | "Europe/Athens"
-  | "Africa/Cairo"
-  | "Europe/Moscow"
-  | "Asia/Riyadh"
-  | "Asia/Dubai"
-  | "Asia/Baku"
-  | "Asia/Karachi"
-  | "Asia/Tashkent"
-  | "Asia/Calcutta"
-  | "Asia/Dhaka"
-  | "Asia/Almaty"
-  | "Asia/Jakarta"
-  | "Asia/Bangkok"
-  | "Asia/Shanghai"
-  | "Asia/Singapore"
-  | "Asia/Tokyo"
-  | "Asia/Seoul"
-  | "Australia/Brisbane"
-  | "Australia/Sydney"
-  | "Pacific/Guam"
-  | "Pacific/Noumea"
-  | "Pacific/Auckland"
-  | "Pacific/Fiji";
+  | 'Pacific/Midway'
+  | 'Pacific/Niue'
+  | 'Pacific/Honolulu'
+  | 'Pacific/Rarotonga'
+  | 'America/Anchorage'
+  | 'Pacific/Gambier'
+  | 'America/Los_Angeles'
+  | 'America/Tijuana'
+  | 'America/Denver'
+  | 'America/Phoenix'
+  | 'America/Chicago'
+  | 'America/Guatemala'
+  | 'America/New_York'
+  | 'America/Bogota'
+  | 'America/Caracas'
+  | 'America/Santiago'
+  | 'America/Buenos_Aires'
+  | 'America/Sao_Paulo'
+  | 'Atlantic/South_Georgia'
+  | 'Atlantic/Azores'
+  | 'Atlantic/Cape_Verde'
+  | 'Europe/London'
+  | 'Europe/Berlin'
+  | 'Africa/Lagos'
+  | 'Europe/Athens'
+  | 'Africa/Cairo'
+  | 'Europe/Moscow'
+  | 'Asia/Riyadh'
+  | 'Asia/Dubai'
+  | 'Asia/Baku'
+  | 'Asia/Karachi'
+  | 'Asia/Tashkent'
+  | 'Asia/Calcutta'
+  | 'Asia/Dhaka'
+  | 'Asia/Almaty'
+  | 'Asia/Jakarta'
+  | 'Asia/Bangkok'
+  | 'Asia/Shanghai'
+  | 'Asia/Singapore'
+  | 'Asia/Tokyo'
+  | 'Asia/Seoul'
+  | 'Australia/Brisbane'
+  | 'Australia/Sydney'
+  | 'Pacific/Guam'
+  | 'Pacific/Noumea'
+  | 'Pacific/Auckland'
+  | 'Pacific/Fiji';
 
 export interface Config {
   auth: {
@@ -72,11 +72,12 @@ export interface Config {
     pages: Page;
     presets: Preset;
     comments: Comment;
-    "payload-kv": PayloadKv;
-    "payload-jobs": PayloadJob;
-    "payload-locked-documents": PayloadLockedDocument;
-    "payload-preferences": PayloadPreference;
-    "payload-migrations": PayloadMigration;
+    'comment-reads': CommentRead;
+    'payload-kv': PayloadKv;
+    'payload-jobs': PayloadJob;
+    'payload-locked-documents': PayloadLockedDocument;
+    'payload-preferences': PayloadPreference;
+    'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {};
   collectionsSelect: {
@@ -85,27 +86,22 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     presets: PresetsSelect<false> | PresetsSelect<true>;
     comments: CommentsSelect<false> | CommentsSelect<true>;
-    "payload-kv": PayloadKvSelect<false> | PayloadKvSelect<true>;
-    "payload-jobs": PayloadJobsSelect<false> | PayloadJobsSelect<true>;
-    "payload-locked-documents":
-      | PayloadLockedDocumentsSelect<false>
-      | PayloadLockedDocumentsSelect<true>;
-    "payload-preferences":
-      | PayloadPreferencesSelect<false>
-      | PayloadPreferencesSelect<true>;
-    "payload-migrations":
-      | PayloadMigrationsSelect<false>
-      | PayloadMigrationsSelect<true>;
+    'comment-reads': CommentReadsSelect<false> | CommentReadsSelect<true>;
+    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
+    'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
+    'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
+    'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
     defaultIDType: number;
   };
   fallbackLocale:
-    | ("false" | "none" | "null")
+    | ('false' | 'none' | 'null')
     | false
     | null
-    | ("en" | "de" | "fr" | "es")
-    | ("en" | "de" | "fr" | "es")[];
+    | ('en' | 'de' | 'fr' | 'es')
+    | ('en' | 'de' | 'fr' | 'es')[];
   globals: {
     header: Header;
     _abManifest: _AbManifest;
@@ -114,7 +110,7 @@ export interface Config {
     header: HeaderSelect<false> | HeaderSelect<true>;
     _abManifest: _AbManifestSelect<false> | _AbManifestSelect<true>;
   };
-  locale: "en" | "de" | "fr" | "es";
+  locale: 'en' | 'de' | 'fr' | 'es';
   widgets: {
     collections: CollectionsWidget;
   };
@@ -158,7 +154,7 @@ export interface User {
   title?: string | null;
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
   email: string;
   resetPasswordToken?: string | null;
   resetPasswordExpiration?: string | null;
@@ -174,7 +170,7 @@ export interface User {
       }[]
     | null;
   password?: string | null;
-  collection: "users";
+  collection: 'users';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -212,13 +208,13 @@ export interface Page {
             description?: string | null;
             id?: string | null;
             blockName?: string | null;
-            blockType: "hero";
+            blockType: 'hero';
           }
         | {
             text: string;
             id?: string | null;
             blockName?: string | null;
-            blockType: "copy";
+            blockType: 'copy';
           }
       )[]
     | null;
@@ -237,7 +233,7 @@ export interface Page {
     | null;
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * One preset = one block type. Add one block to store its field values.
@@ -258,13 +254,13 @@ export interface Preset {
         description?: string | null;
         id?: string | null;
         blockName?: string | null;
-        blockType: "hero";
+        blockType: 'hero';
       }
     | {
         text: string;
         id?: string | null;
         blockName?: string | null;
-        blockType: "copy";
+        blockType: 'copy';
       }
   )[];
   updatedAt: string;
@@ -309,6 +305,18 @@ export interface Comment {
   isResolved?: boolean | null;
   resolvedBy?: (number | null) | User;
   resolvedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comment-reads".
+ */
+export interface CommentRead {
+  id: number;
+  comment: number | Comment;
+  user: number | User;
+  readAt: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -381,7 +389,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: "inline" | "translate_document" | "schedulePublish";
+        taskSlug: 'inline' | 'translate_document' | 'schedulePublish';
         taskID: string;
         input?:
           | {
@@ -401,7 +409,7 @@ export interface PayloadJob {
           | number
           | boolean
           | null;
-        state: "failed" | "succeeded";
+        state: 'failed' | 'succeeded';
         error?:
           | {
               [k: string]: unknown;
@@ -414,7 +422,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ("inline" | "translate_document" | "schedulePublish") | null;
+  taskSlug?: ('inline' | 'translate_document' | 'schedulePublish') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -429,28 +437,32 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
-        relationTo: "users";
+        relationTo: 'users';
         value: number | User;
       } | null)
     | ({
-        relationTo: "media";
+        relationTo: 'media';
         value: number | Media;
       } | null)
     | ({
-        relationTo: "pages";
+        relationTo: 'pages';
         value: number | Page;
       } | null)
     | ({
-        relationTo: "presets";
+        relationTo: 'presets';
         value: number | Preset;
       } | null)
     | ({
-        relationTo: "comments";
+        relationTo: 'comments';
         value: number | Comment;
+      } | null)
+    | ({
+        relationTo: 'comment-reads';
+        value: number | CommentRead;
       } | null);
   globalSlug?: string | null;
   user: {
-    relationTo: "users";
+    relationTo: 'users';
     value: number | User;
   };
   updatedAt: string;
@@ -463,7 +475,7 @@ export interface PayloadLockedDocument {
 export interface PayloadPreference {
   id: number;
   user: {
-    relationTo: "users";
+    relationTo: 'users';
     value: number | User;
   };
   key?: string | null;
@@ -623,6 +635,17 @@ export interface CommentsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comment-reads_select".
+ */
+export interface CommentReadsSelect<T extends boolean = true> {
+  comment?: T;
+  user?: T;
+  readAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -751,7 +774,7 @@ export interface CollectionsWidget {
   data?: {
     [k: string]: unknown;
   };
-  width: "full";
+  width: 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -760,7 +783,7 @@ export interface CollectionsWidget {
 export interface TaskTranslateDocument {
   input: {
     collection: {
-      relationTo: "pages";
+      relationTo: 'pages';
       value: number | Page;
     };
     source_lng: string;
@@ -776,15 +799,15 @@ export interface TaskTranslateDocument {
  */
 export interface TaskSchedulePublish {
   input: {
-    type?: ("publish" | "unpublish") | null;
+    type?: ('publish' | 'unpublish') | null;
     locale?: string | null;
     doc?:
       | ({
-          relationTo: "users";
+          relationTo: 'users';
           value: number | User;
         } | null)
       | ({
-          relationTo: "pages";
+          relationTo: 'pages';
           value: number | Page;
         } | null);
     global?: string | null;
@@ -800,6 +823,7 @@ export interface Auth {
   [k: string]: unknown;
 }
 
-declare module "payload" {
+
+declare module 'payload' {
   export interface GeneratedTypes extends Config {}
 }

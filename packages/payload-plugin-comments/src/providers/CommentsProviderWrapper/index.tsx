@@ -1,14 +1,13 @@
 "use client";
 
+import { type ReactNode } from "react";
 import { useConfig } from "@payloadcms/ui";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from 'react';
-import type { ReactNode } from 'react';
-
-import type { CommentsPluginConfigStorage } from "../../types";
 import { CommentsDrawerProvider } from "../CommentsDrawerProvider";
 import { CommentsFilterProvider } from "../CommentsFilterProvider";
 import { CommentsProvider } from "../CommentsProvider";
+import { CommentsQueryClientProvider } from "../CommentsQueryClientProvider";
+import { UnreadMentionsProvider } from "../UnreadMentionsProvider";
+import type { CommentsPluginConfigStorage } from "../../types";
 
 import "../../styles.css";
 
@@ -18,30 +17,20 @@ interface Props {
 
 export function CommentsProviderWrapper({ children }: Props) {
   const { config } = useConfig();
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          mutations: { retry: 0 },
-          queries: { retry: 1 },
-        },
-      })
-  );
 
-  const pluginConfig = config.admin?.custom?.commentsPlugin as
-    | CommentsPluginConfigStorage
-    | undefined;
+  const pluginConfig = config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
   const usernameFieldRawPath = pluginConfig?.usernameFieldPath;
-  const usernameFieldPath =
-    usernameFieldRawPath === "" ? undefined : usernameFieldRawPath;
+  const usernameFieldPath = usernameFieldRawPath === "" ? undefined : usernameFieldRawPath;
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <CommentsQueryClientProvider>
       <CommentsProvider usernameFieldPath={usernameFieldPath}>
         <CommentsDrawerProvider>
-          <CommentsFilterProvider>{children}</CommentsFilterProvider>
+          <CommentsFilterProvider>
+            <UnreadMentionsProvider>{children}</UnreadMentionsProvider>
+          </CommentsFilterProvider>
         </CommentsDrawerProvider>
       </CommentsProvider>
-    </QueryClientProvider>
+    </CommentsQueryClientProvider>
   );
 }

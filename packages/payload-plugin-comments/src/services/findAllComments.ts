@@ -1,11 +1,11 @@
 "use server";
 
+import { headers } from "next/headers";
 import type { TypedUser, Where } from "payload";
-
-import { DEFAULT_COLLECTION_SLUG } from "../constants";
-import type { Response, Comment, BaseServiceOptions } from "../types";
-import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
 import { extractPayload } from "../utils/payload/extractPayload";
+import { COMMENT_READS_COLLECTION_SLUG, DEFAULT_COLLECTION_SLUG } from "../constants";
+import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
+import type { Response, Comment, BaseServiceOptions } from "../types";
 import { getCurrentTenantId } from "./getCurrentTenantId";
 
 interface Props {
@@ -49,20 +49,20 @@ export async function findAllComments({
 
       if (hasCollections || hasGlobals) {
         where.or = [
-          ...(hasCollections
-            ? [
-                {
-                  collectionSlug: { in: enabledCollections },
-                },
-              ]
-            : []),
-          ...(hasGlobals
-            ? [
-                {
-                  globalSlug: { in: enabledGlobals },
-                },
-              ]
-            : []),
+          ...(hasCollections ?
+            [
+              {
+                collectionSlug: { in: enabledCollections },
+              },
+            ]
+          : []),
+          ...(hasGlobals ?
+            [
+              {
+                globalSlug: { in: enabledGlobals },
+              },
+            ]
+          : []),
         ];
       }
     }
@@ -73,22 +73,54 @@ export async function findAllComments({
 
     const { docs: comments } = await payload.find({
       collection: DEFAULT_COLLECTION_SLUG,
-      depth: 1,
-      limit: 200,
-      overrideAccess: true,
-      sort: "createdAt",
       where: Object.keys(where).length ? where : undefined,
+      sort: "createdAt",
+      limit: 200,
+      depth: 1,
+      overrideAccess: true,
     });
 
+    const { user } = await payload.auth({ headers: await headers() });
+
+    let readSet: Set<number> | null = null;
+
+    if (user && comments.length > 0) {
+      const commentIds = comments.map((c) => c.id as number);
+
+      const { docs: reads } = await payload.find({
+        collection: COMMENT_READS_COLLECTION_SLUG,
+        where: {
+          and: [{ user: { equals: user.id } }, { comment: { in: commentIds } }],
+        },
+        limit: commentIds.length,
+        depth: 0,
+        overrideAccess: true,
+        select: { comment: true },
+      });
+
+      readSet = new Set<number>();
+
+      for (const r of reads as Array<{ comment: number | { id: number } }>) {
+        const id = typeof r.comment === "object" ? r.comment.id : r.comment;
+
+        if (typeof id === "number") readSet.add(id);
+      }
+    }
+
+    const enriched = comments.map((c) => ({
+      ...c,
+      isReadByCurrentUser: readSet ? readSet.has(c.id as number) : false,
+    })) as unknown as Comment[];
+
     return {
-      data: comments as unknown as Comment[],
       success: true,
+      data: enriched,
     };
-  } catch (error) {
-    console.error("findAllComments failed:", error);
+  } catch (e) {
+    console.error("findAllComments failed:", e);
     return {
       success: false,
-      error: getDefaultErrorMessage(error),
+      error: getDefaultErrorMessage(e),
     };
   }
 }
