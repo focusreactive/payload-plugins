@@ -1,36 +1,37 @@
-import type { CollectionConfig } from 'payload'
-import { HeroBlock } from '../blocks/Hero'
-import { CopyBlock } from '../blocks/Copy'
+import type { CollectionConfig } from "payload";
+
+import { CopyBlock } from "../blocks/Copy";
+import { HeroBlock } from "../blocks/Hero";
 
 export const Pages: CollectionConfig = {
-  slug: 'pages',
-  versions: {
-    drafts: true,
-  },
   admin: {
-    useAsTitle: 'title',
     livePreview: {
       url: ({ data }) => `${process.env.NEXT_PUBLIC_SERVER_URL}/${data.slug}`,
     },
+    useAsTitle: "title",
   },
   fields: [
     {
-      name: 'title',
-      type: 'text',
-      required: true,
       localized: true,
+      name: "title",
+      required: true,
+      type: "text",
     },
     {
-      name: 'slug',
-      type: 'text',
+      name: "slug",
       required: true,
+      type: "text",
       unique: true,
     },
     {
-      name: 'sections',
-      type: 'blocks',
       blocks: [HeroBlock, CopyBlock],
       localized: true,
+      name: "sections",
+      type: "blocks",
     },
   ],
-}
+  slug: "pages",
+  versions: {
+    drafts: true,
+  },
+};

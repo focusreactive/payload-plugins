@@ -13,6 +13,7 @@
 ## Task 1: Update build config for client entry point
 
 **Files:**
+
 - Modify: `packages/payload-plugin-content-releases/tsup.config.ts`
 - Modify: `packages/payload-plugin-content-releases/package.json`
 - Create: `packages/payload-plugin-content-releases/src/client.ts`
@@ -46,6 +47,7 @@ export default defineConfig({
 **Step 3: Update package.json — add exports, peerDependencies**
 
 Add to `"exports"`:
+
 ```json
 {
   ".": {
@@ -60,6 +62,7 @@ Add to `"exports"`:
 ```
 
 Add to `"peerDependencies"`:
+
 ```json
 {
   "payload": "^3.0.0",
@@ -69,6 +72,7 @@ Add to `"peerDependencies"`:
 ```
 
 Add to `"devDependencies"`:
+
 ```json
 {
   "@payloadcms/ui": "3.79.0",
@@ -95,6 +99,7 @@ git commit -m "chore(content-releases): add client entry point and peer deps for
 ## Task 2: Update plugin.ts to inject sidebar field into enabled collections
 
 **Files:**
+
 - Modify: `packages/payload-plugin-content-releases/src/plugin.ts`
 - Create: `packages/payload-plugin-content-releases/src/__tests__/plugin-sidebar.test.ts`
 
@@ -161,8 +166,7 @@ Expected: FAIL
 Add sidebar field injection — patch enabled collections to append the `_releases` UI field, and set `admin.custom.contentReleases`:
 
 ```typescript
-const SIDEBAR_FIELD_PATH =
-  "@focus-reactive/payload-plugin-content-releases/client#ReleaseSidebarField";
+const SIDEBAR_FIELD_PATH = "@focus-reactive/payload-plugin-content-releases/client#ReleaseSidebarField";
 
 // Inside the plugin return function, before the final return:
 
@@ -200,11 +204,7 @@ return {
       },
     },
   },
-  collections: [
-    ...patchedCollections,
-    releasesCollection,
-    releaseItemsCollection,
-  ],
+  collections: [...patchedCollections, releasesCollection, releaseItemsCollection],
   endpoints,
 };
 ```
@@ -230,6 +230,7 @@ git commit -m "feat(content-releases): inject _releases sidebar UI field into en
 ## Task 3: Create ReleaseSidebarField component
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/src/admin/components/ReleaseSidebarField.tsx`
 - Modify: `packages/payload-plugin-content-releases/src/client.ts`
 
@@ -260,9 +261,7 @@ export function ReleaseSidebarField() {
     if (!id || !collectionSlug) return;
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/release-items?where[targetDoc][equals]=${id}&where[targetCollection][equals]=${collectionSlug}&depth=1&limit=100`
-      );
+      const res = await fetch(`/api/release-items?where[targetDoc][equals]=${id}&where[targetCollection][equals]=${collectionSlug}&depth=1&limit=100`);
       if (!res.ok) return;
       const data = await res.json();
       setReleases(
@@ -288,16 +287,27 @@ export function ReleaseSidebarField() {
 
   const statusBadgeColor = (status: string) => {
     switch (status) {
-      case "published": return "#22c55e";
-      case "scheduled": return "#3b82f6";
-      case "failed": return "#ef4444";
-      default: return "#94a3b8";
+      case "published":
+        return "#22c55e";
+      case "scheduled":
+        return "#3b82f6";
+      case "failed":
+        return "#ef4444";
+      default:
+        return "#94a3b8";
     }
   };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-      <div style={{ fontWeight: 600, fontSize: "13px", textTransform: "uppercase", color: "#888" }}>
+      <div
+        style={{
+          fontWeight: 600,
+          fontSize: "13px",
+          textTransform: "uppercase",
+          color: "#888",
+        }}
+      >
         Releases
       </div>
 
@@ -337,19 +347,11 @@ export function ReleaseSidebarField() {
         </div>
       )}
 
-      <Button
-        size="small"
-        buttonStyle="secondary"
-        onClick={() => setShowReleaseDrawer(true)}
-      >
+      <Button size="small" buttonStyle="secondary" onClick={() => setShowReleaseDrawer(true)}>
         Add Current State to Release
       </Button>
 
-      <Button
-        size="small"
-        buttonStyle="secondary"
-        onClick={() => setShowVersionDrawer(true)}
-      >
+      <Button size="small" buttonStyle="secondary" onClick={() => setShowVersionDrawer(true)}>
         Add Version to Release
       </Button>
 
@@ -377,9 +379,31 @@ export function ReleaseSidebarField() {
 // Temporary placeholders — replaced in Tasks 4 and 5
 function ReleaseDrawerPlaceholder({ onClose }: { onClose: () => void }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", justifyContent: "flex-end" }}>
-      <div style={{ width: 400, background: "var(--theme-elevation-0)", padding: 20, overflowY: "auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.5)",
+        zIndex: 1000,
+        display: "flex",
+        justifyContent: "flex-end",
+      }}
+    >
+      <div
+        style={{
+          width: 400,
+          background: "var(--theme-elevation-0)",
+          padding: 20,
+          overflowY: "auto",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: 16,
+          }}
+        >
           <h3>Add to Release</h3>
           <button onClick={onClose}>✕</button>
         </div>
@@ -391,9 +415,31 @@ function ReleaseDrawerPlaceholder({ onClose }: { onClose: () => void }) {
 
 function VersionPickerDrawerPlaceholder({ onClose }: { onClose: () => void }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", justifyContent: "flex-end" }}>
-      <div style={{ width: 400, background: "var(--theme-elevation-0)", padding: 20, overflowY: "auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.5)",
+        zIndex: 1000,
+        display: "flex",
+        justifyContent: "flex-end",
+      }}
+    >
+      <div
+        style={{
+          width: 400,
+          background: "var(--theme-elevation-0)",
+          padding: 20,
+          overflowY: "auto",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: 16,
+          }}
+        >
           <h3>Select Version</h3>
           <button onClick={onClose}>✕</button>
         </div>
@@ -428,6 +474,7 @@ git commit -m "feat(content-releases): add ReleaseSidebarField component with pl
 ## Task 4: Create ReleaseDrawer component
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/src/admin/components/ReleaseDrawer.tsx`
 - Modify: `packages/payload-plugin-content-releases/src/admin/components/ReleaseSidebarField.tsx`
 
@@ -456,13 +503,7 @@ interface ReleaseDrawerProps {
   onClose: () => void;
 }
 
-export function ReleaseDrawer({
-  snapshot,
-  collectionSlug,
-  docId,
-  baseVersion,
-  onClose,
-}: ReleaseDrawerProps) {
+export function ReleaseDrawer({ snapshot, collectionSlug, docId, baseVersion, onClose }: ReleaseDrawerProps) {
   const [releases, setReleases] = useState<Release[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -473,9 +514,7 @@ export function ReleaseDrawer({
   const fetchDraftReleases = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/releases?where[status][equals]=draft&sort=-createdAt&limit=100`
-      );
+      const res = await fetch(`/api/releases?where[status][equals]=draft&sort=-createdAt&limit=100`);
       if (!res.ok) return;
       const data = await res.json();
       setReleases(data.docs ?? []);
@@ -512,14 +551,10 @@ export function ReleaseDrawer({
 
           // Check if duplicate
           if (errMsg.toLowerCase().includes("already exists")) {
-            const confirmed = window.confirm(
-              "This document is already in this release. Replace snapshot?"
-            );
+            const confirmed = window.confirm("This document is already in this release. Replace snapshot?");
             if (confirmed) {
               // Find existing item and update
-              const existing = await fetch(
-                `/api/release-items?where[release][equals]=${releaseId}&where[targetDoc][equals]=${docId}&where[targetCollection][equals]=${collectionSlug}&limit=1`
-              );
+              const existing = await fetch(`/api/release-items?where[release][equals]=${releaseId}&where[targetDoc][equals]=${docId}&where[targetCollection][equals]=${collectionSlug}&limit=1`);
               const existingData = await existing.json();
               const existingItem = existingData.docs?.[0];
               if (existingItem) {
@@ -602,11 +637,23 @@ export function ReleaseDrawer({
           gap: 16,
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <h3 style={{ margin: 0 }}>Add to Release</h3>
           <button
             onClick={onClose}
-            style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "var(--theme-text)" }}
+            style={{
+              background: "none",
+              border: "none",
+              fontSize: 18,
+              cursor: "pointer",
+              color: "var(--theme-text)",
+            }}
           >
             ✕
           </button>
@@ -670,7 +717,14 @@ export function ReleaseDrawer({
         )}
 
         {/* Release List */}
-        <div style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", color: "#888" }}>
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 600,
+            textTransform: "uppercase",
+            color: "#888",
+          }}
+        >
           Draft Releases
         </div>
 
@@ -700,9 +754,7 @@ export function ReleaseDrawer({
                 }}
               >
                 <span style={{ fontWeight: 500 }}>{r.name}</span>
-                <span style={{ fontSize: 12, color: "#888" }}>
-                  {new Date(r.createdAt).toLocaleDateString()}
-                </span>
+                <span style={{ fontSize: 12, color: "#888" }}>{new Date(r.createdAt).toLocaleDateString()}</span>
               </button>
             ))}
           </div>
@@ -718,6 +770,7 @@ export function ReleaseDrawer({
 Replace `ReleaseDrawerPlaceholder` import/usage with the real `ReleaseDrawer`. Import `useForm` from `@payloadcms/ui` to capture form data. When "Add Current State" is clicked, get `getData()` as snapshot and pass it to `ReleaseDrawer`.
 
 Key change in ReleaseSidebarField.tsx:
+
 ```tsx
 import { Button, useDocumentInfo, useForm } from "@payloadcms/ui";
 import { ReleaseDrawer } from "./ReleaseDrawer";
@@ -769,6 +822,7 @@ git commit -m "feat(content-releases): add ReleaseDrawer with create new + selec
 ## Task 5: Create VersionPickerDrawer component
 
 **Files:**
+
 - Create: `packages/payload-plugin-content-releases/src/admin/components/VersionPickerDrawer.tsx`
 - Modify: `packages/payload-plugin-content-releases/src/admin/components/ReleaseSidebarField.tsx`
 
@@ -795,11 +849,7 @@ interface VersionPickerDrawerProps {
   onClose: () => void;
 }
 
-export function VersionPickerDrawer({
-  collectionSlug,
-  docId,
-  onClose,
-}: VersionPickerDrawerProps) {
+export function VersionPickerDrawer({ collectionSlug, docId, onClose }: VersionPickerDrawerProps) {
   const [versions, setVersions] = useState<VersionEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVersion, setSelectedVersion] = useState<VersionEntry | null>(null);
@@ -807,9 +857,7 @@ export function VersionPickerDrawer({
   const fetchVersions = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/${collectionSlug}/versions?where[parent][equals]=${docId}&sort=-updatedAt&limit=20`
-      );
+      const res = await fetch(`/api/${collectionSlug}/versions?where[parent][equals]=${docId}&sort=-updatedAt&limit=20`);
       if (!res.ok) return;
       const data = await res.json();
       setVersions(
@@ -872,11 +920,23 @@ export function VersionPickerDrawer({
           gap: 16,
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <h3 style={{ margin: 0 }}>Select Version</h3>
           <button
             onClick={onClose}
-            style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "var(--theme-text)" }}
+            style={{
+              background: "none",
+              border: "none",
+              fontSize: 18,
+              cursor: "pointer",
+              color: "var(--theme-text)",
+            }}
           >
             ✕
           </button>
@@ -908,12 +968,8 @@ export function VersionPickerDrawer({
                 }}
               >
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <span style={{ fontWeight: 500 }}>
-                    {new Date(v.updatedAt).toLocaleString()}
-                  </span>
-                  {v.autosave && (
-                    <span style={{ fontSize: 11, color: "#888" }}>(autosave)</span>
-                  )}
+                  <span style={{ fontWeight: 500 }}>{new Date(v.updatedAt).toLocaleString()}</span>
+                  {v.autosave && <span style={{ fontSize: 11, color: "#888" }}>(autosave)</span>}
                 </div>
                 {v.status && (
                   <span
@@ -935,7 +991,11 @@ export function VersionPickerDrawer({
 
         <a
           href={`/admin/collections/${collectionSlug}/${docId}/versions`}
-          style={{ fontSize: 13, color: "var(--theme-text)", textDecoration: "underline" }}
+          style={{
+            fontSize: 13,
+            color: "var(--theme-text)",
+            textDecoration: "underline",
+          }}
         >
           View all versions →
         </a>
@@ -980,16 +1040,18 @@ Replace `VersionPickerDrawerPlaceholder` with real `VersionPickerDrawer`:
 import { VersionPickerDrawer } from "./VersionPickerDrawer";
 
 // Render:
-{showVersionDrawer && (
-  <VersionPickerDrawer
-    collectionSlug={collectionSlug!}
-    docId={String(id)}
-    onClose={() => {
-      setShowVersionDrawer(false);
-      fetchReleases();
-    }}
-  />
-)}
+{
+  showVersionDrawer && (
+    <VersionPickerDrawer
+      collectionSlug={collectionSlug!}
+      docId={String(id)}
+      onClose={() => {
+        setShowVersionDrawer(false);
+        fetchReleases();
+      }}
+    />
+  );
+}
 ```
 
 Remove `VersionPickerDrawerPlaceholder`.
@@ -1010,6 +1072,7 @@ git commit -m "feat(content-releases): add VersionPickerDrawer with two-step flo
 ## Task 6: Update dev app and verify E2E
 
 **Files:**
+
 - Modify: `apps/dev/src/collections/Pages.ts` — ensure `versions: { drafts: true }` is present
 
 **Step 1: Install deps and build**
@@ -1021,6 +1084,7 @@ Run: `cd /Users/pashahurs/Projects/payload-plugins && bun install && bunx turbo 
 Run: `bun run dev`
 
 Verify in browser at `http://localhost:4040/admin`:
+
 1. Navigate to a Page document
 2. See "Releases" section in sidebar
 3. Click "Add Current State to Release" → Release Drawer opens
@@ -1059,15 +1123,15 @@ Expected: `index.js`, `index.d.ts`, `client.js`, `client.d.ts` all present
 
 ## Summary
 
-| Task | What | Files |
-|------|------|-------|
-| 1 | Build config: client entry + peer deps | tsup.config.ts, package.json, client.ts |
-| 2 | Plugin: inject sidebar field + admin.custom | plugin.ts, plugin-sidebar.test.ts |
-| 3 | ReleaseSidebarField component | ReleaseSidebarField.tsx, client.ts |
-| 4 | ReleaseDrawer: create new + select existing | ReleaseDrawer.tsx |
-| 5 | VersionPickerDrawer: version list → release | VersionPickerDrawer.tsx |
-| 6 | Dev app integration + E2E verify | Pages.ts |
-| 7 | Full test suite + build verification | — |
+| Task | What                                        | Files                                   |
+| ---- | ------------------------------------------- | --------------------------------------- |
+| 1    | Build config: client entry + peer deps      | tsup.config.ts, package.json, client.ts |
+| 2    | Plugin: inject sidebar field + admin.custom | plugin.ts, plugin-sidebar.test.ts       |
+| 3    | ReleaseSidebarField component               | ReleaseSidebarField.tsx, client.ts      |
+| 4    | ReleaseDrawer: create new + select existing | ReleaseDrawer.tsx                       |
+| 5    | VersionPickerDrawer: version list → release | VersionPickerDrawer.tsx                 |
+| 6    | Dev app integration + E2E verify            | Pages.ts                                |
+| 7    | Full test suite + build verification        | —                                       |
 
 ## Final File Tree (new files only)
 

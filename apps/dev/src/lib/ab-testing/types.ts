@@ -1,5 +1,5 @@
 export interface VariantData {
-  bucket: string
-  rewritePath: string
-  passPercentage: number
+  bucket: string;
+  rewritePath: string;
+  passPercentage: number;
 }

@@ -1,0 +1,1 @@
+export const nobody = () => false;

@@ -1,0 +1,187 @@
+import { defineConfig } from "oxlint";
+import core from "ultracite/oxlint/core";
+import next from "ultracite/oxlint/next";
+
+// Curated overrides on top of ultracite's React/Next ruleset.
+// Disabled rules are noisy on this codebase without catching real bugs.
+// Warn-level rules are kept as nudges, not commit blockers.
+export default defineConfig({
+  extends: [core, next],
+  ignorePatterns: ["**/.next/**", "**/dist/**", "**/node_modules/**", "**/.turbo/**", "**/coverage/**", "**/src/database/migrations/**", "**/payload-types.ts", "**/importMap.js"],
+  rules: {
+    // Style/preference rules ────────────────────────────────────────────
+    // Alphabetical key sorting conflicts with logical Payload field configs.
+    "sort-keys": "off",
+    // Codebase mixes function declarations and expressions intentionally.
+    "func-style": "off",
+    // PascalCase for React components is the project convention.
+    "unicorn/filename-case": "off",
+    // Type aliases and interfaces are both fine; pick what reads best locally.
+    "typescript/consistent-type-definitions": "off",
+    // Nested ternaries are sometimes the clearest option.
+    "no-nested-ternary": "off",
+    // Single-line `if (cond) return x;` is readable and idiomatic.
+    curly: "off",
+
+    // Equality / null handling ──────────────────────────────────────────
+    // `!= null` / `== null` is the standard nullish-coalescing check.
+    "no-eq-null": "off",
+    eqeqeq: "off",
+    // `value!` is intentional when the type system can't see the guarantee.
+    "typescript/no-non-null-assertion": "off",
+    // Allow `any` — we use it sparingly for boundary code.
+    "typescript/no-explicit-any": "off",
+
+    // Async / await ─────────────────────────────────────────────────────
+    // Next.js requires `async` on certain exports even without await.
+    "require-await": "off",
+    // `(await import('...')).default` is a common dynamic-import pattern.
+    "unicorn/no-await-expression-member": "off",
+
+    // Array / object idioms ─────────────────────────────────────────────
+    // `forEach` is fine; not every loop needs to be a `for`.
+    "unicorn/no-array-for-each": "off",
+    // Spread arrays and `Array.from` are both legitimate.
+    "unicorn/no-useless-spread": "off",
+    "unicorn/prefer-spread": "off",
+    // `JSON.parse(JSON.stringify(x))` is intentional when structuredClone isn't available.
+    "unicorn/prefer-structured-clone": "off",
+
+    // Low-level operators ───────────────────────────────────────────────
+    // Hash functions and bit-fiddling need these.
+    "no-bitwise": "off",
+    "no-plusplus": "off",
+    "unicorn/prefer-math-trunc": "off",
+
+    // Module systems ────────────────────────────────────────────────────
+    // postcss / tailwind configs require CommonJS `module.exports`.
+    "unicorn/prefer-module": "off",
+    // `import.meta.dirname` / `import.meta.filename` are undefined under Turbopack
+    // bundling — we must use `path.dirname(fileURLToPath(import.meta.url))`.
+    "unicorn/prefer-import-meta-properties": "off",
+
+    // Comments and naming ───────────────────────────────────────────────
+    "no-inline-comments": "off",
+    // `e` / `err` are fine names for caught errors.
+    "unicorn/catch-error-name": "off",
+
+    // Style preferences ─────────────────────────────────────────────────
+    // Destructuring is a stylistic choice, not a correctness issue.
+    "prefer-destructuring": "off",
+    // Arrow body style (block vs expression) is a stylistic choice.
+    "arrow-body-style": "off",
+    // Braces around case bodies are optional.
+    "unicorn/switch-case-braces": "off",
+    // Negated conditions read fine in many contexts.
+    "no-negated-condition": "off",
+    "unicorn/no-negated-condition": "off",
+    // Explicit `undefined` is sometimes clearer than omitting it.
+    "unicorn/no-useless-undefined": "off",
+    // T[] and Array<T> are both fine; project mixes them.
+    "typescript/array-type": "off",
+    // class-methods-use-this has too many false positives on interface implementations.
+    "class-methods-use-this": "off",
+    // Numeric separators (1_000_000) are nice-to-have, not required.
+    "unicorn/numeric-separators-style": "off",
+    // Complexity rule fires on hand-written parsers and serializers; rarely actionable.
+    complexity: "off",
+    // Empty fallback in spreads — minor.
+    "unicorn/no-useless-fallback-in-spread": "off",
+    // Number.isNaN vs isNaN — both work.
+    "unicorn/prefer-number-properties": "off",
+    // String.prototype.replaceAll requires ES2021; older code uses replace + /g.
+    "unicorn/prefer-string-replace-all": "off",
+    // toSorted is newer; .sort() is fine.
+    "unicorn/no-array-sort": "off",
+    // Callback-to-await rewrites change semantics; leave to humans.
+    "promise/prefer-await-to-callbacks": "off",
+    // Duplicate imports are usually intentional (value + type from same module).
+    "no-duplicate-imports": "off",
+    "import/no-duplicates": "off",
+    // Type-only imports are nice but not load-bearing.
+    "typescript/consistent-type-imports": "off",
+    // Import cycles are pre-existing structural issues — track separately.
+    "import/no-cycle": "off",
+    // Barrel files (re-export indexes) are a deliberate API surface choice here.
+    "oxc/no-barrel-file": "off",
+    // `Array.prototype.reduce` is fine.
+    "unicorn/no-array-reduce": "off",
+    // Nested ternaries — already disabled the eslint variant.
+    "unicorn/no-nested-ternary": "off",
+    // ban-types catches `{}` and `Object` — sometimes intentional in generics.
+    "typescript/ban-types": "off",
+    // `new Promise(...)` is sometimes necessary.
+    "promise/avoid-new": "off",
+    // JSDoc param descriptions are nice-to-have, not required.
+    "jsdoc/require-param-description": "off",
+    "jsdoc/require-returns-description": "off",
+    // `import { default as X }` is a style choice.
+    "import/no-named-default": "off",
+    // Object shorthand — autofixable, leave for editor.
+    "object-shorthand": "off",
+    // Empty catches and blocks are sometimes intentional.
+    "no-empty": "off",
+    // Other unicorn micro-style rules.
+    "unicorn/prefer-ternary": "off",
+    "unicorn/prefer-dom-node-dataset": "off",
+    "unicorn/prefer-array-find": "off",
+    "unicorn/no-object-as-default-parameter": "off",
+    "unicorn/no-lonely-if": "off",
+    "unicorn/escape-case": "off",
+    "unicorn/custom-error-definition": "off",
+    "unicorn/prefer-modern-dom-apis": "off",
+    "unicorn/prefer-bigint-literals": "off",
+    "unicorn/prefer-at": "off",
+    "unicorn/no-useless-switch-case": "off",
+    "unicorn/no-typeof-undefined": "off",
+    "unicorn/no-static-only-class": "off",
+    "unicorn/no-new-array": "off",
+    "typescript/consistent-indexed-object-style": "off",
+    // TODO/FIXME comments are tracking devices, not errors.
+    "no-warning-comments": "off",
+    // Promise executor returns are sometimes intentional in tests.
+    "no-promise-executor-return": "off",
+    // Param reassignment is fine in many cases (e.g., normalizing inputs).
+    "no-param-reassign": "off",
+    // Default case — TypeScript's exhaustiveness already covers this.
+    "default-case": "off",
+    // Long-tail singletons — all style preferences, none catch real bugs.
+    "default-param-last": "off",
+    "func-names": "off",
+    "logical-assignment-operators": "off",
+    "no-alert": "off",
+    "no-lonely-if": "off",
+    "no-loop-func": "off",
+    "no-useless-return": "off",
+    "prefer-template": "off",
+    "promise/no-return-wrap": "off",
+    "typescript/no-extraneous-class": "off",
+    "typescript/no-import-type-side-effects": "off",
+    "typescript/no-inferrable-types": "off",
+    "typescript/no-invalid-void-type": "off",
+    "unicorn/consistent-existence-index-check": "off",
+    "unicorn/no-array-reverse": "off",
+    "unicorn/no-immediate-mutation": "off",
+
+    // Warn-level downgrades — visible but non-blocking ──────────────────
+    // Variant key management uses dynamic delete intentionally.
+    "typescript/no-dynamic-delete": "warn",
+    // Parameter properties are intentional for DI in classes.
+    "typescript/parameter-properties": "warn",
+    // Some helpers are intentionally closed over for state isolation.
+    "unicorn/consistent-function-scoping": "warn",
+    "unicorn/prefer-default-parameters": "warn",
+    // Callback-heavy preset logic uses promise chains for readability.
+    "promise/prefer-await-to-then": "warn",
+    // Large component files use forward refs intentionally.
+    "no-use-before-define": "warn",
+    // Most existing regexes are ASCII-only; `u` flag adds no safety.
+    "require-unicode-regexp": "warn",
+    // Field definitions sometimes mix inline type annotations with imports.
+    "import/consistent-type-specifier-style": "warn",
+    // Shadowing is occasionally meaningful — flag it but don't block.
+    "no-shadow": "warn",
+    // Unused vars allowed when prefixed with `_`; flag otherwise.
+    "no-unused-vars": "warn",
+  },
+});

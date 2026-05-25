@@ -1,13 +1,13 @@
-import type { GlobalConfig } from 'payload'
+import type { GlobalConfig } from "payload";
 
 export const Header: GlobalConfig = {
-  slug: 'header',
-  label: 'Header',
   fields: [
     {
-      name: 'name',
-      type: 'text',
+      name: "name",
       required: true,
+      type: "text",
     },
   ],
-}
+  label: "Header",
+  slug: "header",
+};

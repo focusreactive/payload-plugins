@@ -1,16 +1,16 @@
-import type { Block, Field } from 'payload'
+import type { Block, Field } from "payload";
 
 const copyFields: Field[] = [
   {
-    name: 'text',
-    type: 'textarea',
-    required: true,
     localized: true,
+    name: "text",
+    required: true,
+    type: "textarea",
   },
-]
+];
 
 export const CopyBlock: Block = {
-  slug: 'copy',
-  labels: { singular: 'Copy', plural: 'Copy Sections' },
   fields: copyFields,
-}
+  labels: { plural: "Copy Sections", singular: "Copy" },
+  slug: "copy",
+};

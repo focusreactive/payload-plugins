@@ -11,14 +11,14 @@
     "devsafe": "rm -rf .next && cross-env NODE_OPTIONS=--no-deprecation next dev",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
-    "lint": "cross-env NODE_OPTIONS=--no-deprecation next lint",
+    "lint": "ultracite check",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start"
   },
   "dependencies": {
     "@focus-reactive/payload-plugin-ab": "workspace:*",
-    "@focus-reactive/payload-plugin-presets": "workspace:*",
     "@focus-reactive/payload-plugin-comments": "workspace:*",
+    "@focus-reactive/payload-plugin-presets": "workspace:*",
     "@focus-reactive/payload-plugin-scheduling": "workspace:*",
     "@focus-reactive/payload-plugin-translator": "workspace:*",
     "@payloadcms/db-sqlite": "3.79.0",
@@ -29,7 +29,7 @@
     "cross-env": "7.0.3",
     "dotenv": "16.4.7",
     "graphql": "16.8.1",
-    "next": "15.4.11",
+    "next": "16.2.6",
     "payload": "3.79.0",
     "react": "19.2.1",
     "react-dom": "19.2.1",
@@ -39,9 +39,6 @@
     "@types/node": "22.19.9",
     "@types/react": "19.2.9",
     "@types/react-dom": "19.2.3",
-    "eslint": "9.16.0",
-    "eslint-config-next": "15.4.11",
-    "prettier": "3.4.2",
     "typescript": "5.9.2"
   },
   "engines": {

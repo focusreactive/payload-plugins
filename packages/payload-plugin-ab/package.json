@@ -92,14 +92,14 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix",
-    "format": "prettier --write src/",
-    "format:check": "prettier --check src/"
+    "lint": "ultracite check",
+    "lint:fix": "ultracite fix",
+    "format": "ultracite fix",
+    "format:check": "ultracite fix"
   },
   "peerDependencies": {
     "@payloadcms/ui": "^3.0.0",
-    "next": "^14.0.0 || ^15.0.0",
+    "next": "^14.0.0 || ^15.0.0 || ^16.0.0",
     "payload": "^3.0.0",
     "react": "^18.0.0 || ^19.0.0"
   },
@@ -121,13 +121,8 @@
     "@payloadcms/ui": "3.79.0",
     "@types/node": "22.19.9",
     "@types/react": "19.2.9",
-    "eslint": "9.0.0",
-    "eslint-config-prettier": "9.0.0",
-    "next": "15.4.11",
     "payload": "3.79.0",
-    "prettier": "3.0.0",
     "tsup": "8.0.0",
-    "typescript": "5.0.2",
-    "typescript-eslint": "8.0.0"
+    "typescript": "5.0.2"
   }
 }
