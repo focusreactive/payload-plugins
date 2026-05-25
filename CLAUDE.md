@@ -76,9 +76,9 @@ Releases are fully automated via **multi-semantic-release** + **semantic-release
 
 **To trigger a release for a specific package:** commit any change to a file inside its directory using one of the bump-triggering types above.
 
-**CI requires:** `GITHUB_TOKEN` (auto-provided) — no `NPM_TOKEN` needed currently (workflow uses OIDC provenance).
+**CI requires:** `GITHUB_TOKEN` (auto-provided) and **npm Trusted Publishing** configured per package — no `NPM_TOKEN` secret is used.
 
-> Note: `@semantic-release/npm` is configured with `"provenance": true` — packages are published with npm provenance attestations via GitHub OIDC (`id-token: write` permission is set).
+> npm auth: `provenance: true` alone only signs the artifact, it does NOT authenticate the publish. Authentication is via **npm Trusted Publishers** (OIDC). Each publishable package must be configured at `npmjs.com → <package> → Settings → Publishing access → Add trusted publisher` with this GitHub repo + the `Release` workflow + branch `main`. Without that, `@semantic-release/npm` fails verifyConditions with `ENONPMTOKEN`. The workflow already sets `id-token: write`, which is the only permission required on this side.
 
 ## Adding a New Plugin
 
