@@ -34,7 +34,7 @@ export const ErrorBoundary: React.FC<ErrorBoundaryProps> = ({ error, reset, titl
             <div className="space-y-6">
               <div className="space-y-2">
                 <h1 className="text-4xl font-bold tracking-tight">{title}</h1>
-                <p className="text-textSecondaryColor text-lg">{errorMessage}</p>
+                <p className="text-muted-foreground text-lg">{errorMessage}</p>
               </div>
 
               {error.message && process.env.NODE_ENV === "development" && (

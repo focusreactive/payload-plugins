@@ -31,9 +31,11 @@
     "ultracite": "7.7.0"
   },
   "overrides": {
+    "@modelcontextprotocol/sdk": "1.27.1",
     "@payloadcms/db-postgres": "3.84.1",
     "@payloadcms/live-preview-react": "3.84.1",
     "@payloadcms/next": "3.84.1",
+    "@payloadcms/plugin-mcp": "3.84.1",
     "@payloadcms/plugin-multi-tenant": "3.84.1",
     "@payloadcms/plugin-nested-docs": "3.84.1",
     "@payloadcms/plugin-redirects": "3.84.1",
@@ -45,7 +47,9 @@
     "@types/react": "19.2.9",
     "@types/react-dom": "19.2.3",
     "next": "16.2.6",
-    "payload": "3.84.1"
+    "payload": "3.84.1",
+    "react": "19.2.1",
+    "react-dom": "19.2.1"
   },
   "engines": {
     "node": ">=18"

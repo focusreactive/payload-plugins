@@ -11,9 +11,9 @@ export const TestimonialsHeading: React.FC<Props> = ({ heading, subheading }) =>
   }
 
   return (
-    <div className="mb-8 text-center">
-      {heading && <SectionHeader heading={heading} />}
-      {subheading && <p className="m-0 text-lg text-textSecondaryColor max-w-2xl mx-auto">{subheading}</p>}
+    <div className="mx-auto mb-12 max-w-3xl text-center sm:mb-16">
+      {heading && <SectionHeader heading={heading} eyebrow="Customer voices" align="center" />}
+      {subheading && <p className="mx-auto -mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:-mt-10">{subheading}</p>}
     </div>
   );
 };

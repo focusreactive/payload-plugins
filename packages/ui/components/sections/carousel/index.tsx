@@ -15,34 +15,37 @@ import type { ICarouselProps } from "./types";
 
 const getEffectModule = (effect: IGenericCarouselBaseProps["effect"]) => {
   switch (effect) {
-    case "fade": {
+    case "fade":
       return EffectFade;
-    }
-    case "cube": {
+    case "cube":
       return EffectCube;
-    }
-    case "flip": {
+    case "flip":
       return EffectFlip;
-    }
-    case "coverflow": {
+    case "coverflow":
       return EffectCoverflow;
-    }
-    case "cards": {
+    case "cards":
       return EffectCards;
-    }
-    default: {
+    default:
       return;
-    }
   }
 };
 
-const ArrowButton = React.forwardRef<HTMLButtonElement, any>(({ className, ...props }, ref) => (
-  <button ref={ref} className={cn("z-10 flex size-12 items-center justify-center text-gray-500 transition-all hover:text-gray-700", className)} {...props}>
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="">
+const NavButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement> & { direction: "prev" | "next" }>(({ className, direction, ...props }, ref) => (
+  <button
+    ref={ref}
+    aria-label={direction === "prev" ? "Previous slide" : "Next slide"}
+    className={cn(
+      "z-10 inline-flex size-12 items-center justify-center rounded-pill border border-foreground/20 bg-surface text-foreground transition-all hover:border-foreground hover:bg-foreground hover:text-background",
+      className
+    )}
+    {...props}
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={cn("size-5", direction === "next" && "rotate-180")}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
     </svg>
   </button>
 ));
+NavButton.displayName = "NavButton";
 
 export function Carousel({ slides, customModules, customModulesParams, effect, params }: ICarouselProps) {
   const effectModule = getEffectModule(effect);
@@ -54,6 +57,7 @@ export function Carousel({ slides, customModules, customModulesParams, effect, p
     nextEl: nextButtonRef.current,
     prevEl: prevButtonRef.current,
   });
+
   useEffect(() => {
     if (prevButtonRef.current && nextButtonRef.current) {
       setNavigation({
@@ -65,13 +69,11 @@ export function Carousel({ slides, customModules, customModulesParams, effect, p
   }, [prevButtonRef, nextButtonRef]);
 
   return (
-    <div className="not-prose relative">
-      <ArrowButton
-        ref={prevButtonRef}
-        className={cn("absolute left-0 top-1/2", {
-          "left-[15%]": effect && ["cube", "fade", "flip", "cards"].includes(effect),
-        })}
-      />
+    <div className="not-prose">
+      <div className="mb-6 flex items-center justify-end gap-3 sm:mb-8">
+        <NavButton ref={prevButtonRef} direction="prev" />
+        <NavButton ref={nextButtonRef} direction="next" />
+      </div>
 
       <GenericCarousel
         slides={
@@ -82,19 +84,9 @@ export function Carousel({ slides, customModules, customModulesParams, effect, p
           })) as any
         }
         customModules={[Navigation, ...(customModules || []), ...(effectModule ? [effectModule] : [])]}
-        customModulesParams={{
-          navigation,
-          ...customModulesParams,
-        }}
+        customModulesParams={{ navigation, ...customModulesParams }}
         effect={effect}
         params={params}
-      />
-
-      <ArrowButton
-        ref={nextButtonRef}
-        className={cn("absolute right-0 top-1/2 [&>svg]:rotate-180", {
-          "right-[15%]": effect && ["cube", "fade", "flip", "cards"].includes(effect),
-        })}
       />
     </div>
   );

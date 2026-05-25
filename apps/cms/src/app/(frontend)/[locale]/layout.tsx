@@ -1,4 +1,5 @@
 import type { Viewport } from "next";
+import { Instrument_Serif, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { getMessages } from "next-intl/server";
 import { draftMode } from "next/headers";
 import React from "react";
@@ -8,11 +9,33 @@ import { GoogleAnalyticsScript } from "@/core/lib/analytics/GoogleAnalyticsScrip
 import type { Locale } from "@/core/types";
 import { LivePreviewListener } from "@/features";
 
+const instrumentSerif = Instrument_Serif({
+  display: "swap",
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+  variable: "--font-instrument-serif",
+  weight: "400",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  display: "swap",
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
+  weight: ["400", "500", "600", "700"],
+});
+
+const jetBrainsMono = JetBrains_Mono({
+  display: "swap",
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+  weight: ["400", "500"],
+});
+
 export const viewport: Viewport = {
   initialScale: 1,
   themeColor: [
-    { color: "#ffffff", media: "(prefers-color-scheme: light)" },
-    { color: "#000000", media: "(prefers-color-scheme: dark)" },
+    { color: "#fafaf7", media: "(prefers-color-scheme: light)" },
+    { color: "#0e0e0c", media: "(prefers-color-scheme: dark)" },
   ],
   width: "device-width",
 };
@@ -28,7 +51,7 @@ export default async function RootLayout({ children, params }: Props) {
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className="light">
+    <html lang={locale} data-theme="light" className={`${instrumentSerif.variable} ${spaceGrotesk.variable} ${jetBrainsMono.variable}`}>
       <head />
       <body>
         <Providers locale={locale as Locale} messages={messages}>

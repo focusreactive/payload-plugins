@@ -11,12 +11,12 @@ const containerVariants = cva("mx-auto w-full", {
   },
   variants: {
     maxWidth: {
-      base: "max-w-containerMaxW",
+      base: "max-w-container-page",
       none: "max-w-none",
     },
 
     paddingX: {
-      base: "px-containerBase",
+      base: "gutter-x",
       none: "px-0",
     },
   },

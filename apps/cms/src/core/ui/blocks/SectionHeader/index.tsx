@@ -1,13 +1,23 @@
 import type { ComponentProps } from "react";
 
 import { cn } from "@/core/lib/utils";
+import { DisplayHeading, Eyebrow } from "@repo/ui";
 
 type Props = ComponentProps<"h2"> & {
   heading: string;
+  eyebrow?: string;
+  align?: "left" | "center";
+  size?: "sm" | "md" | "lg";
 };
 
-export const SectionHeader: React.FC<Props> = ({ className, heading, ...props }) => (
-  <h2 className={cn("text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-8 sm:mb-12 md:mb-16 text-center px-2 sm:px-0", className)} {...props}>
-    {heading}
-  </h2>
+export const SectionHeader: React.FC<Props> = ({ className, heading, eyebrow, align = "left", size = "lg" }) => (
+  <div
+    className={cn("mb-10 flex flex-col gap-4 sm:mb-14 lg:mb-16", {
+      "items-center text-center": align === "center",
+      "items-start": align === "left",
+    })}
+  >
+    {eyebrow && <Eyebrow tone="primary">{eyebrow}</Eyebrow>}
+    <DisplayHeading text={heading} size={size} className={className} />
+  </div>
 );
