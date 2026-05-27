@@ -1,46 +1,56 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { KpiCard } from "../../../../src/components/AnalyticsView/ui/KpiCard";
+import { formatNumber, formatPercentage, formatDuration } from "../../../../src/components/AnalyticsView/numberFormatters";
 
 describe("KpiCard", () => {
-  it("formats number values and shows delta with up arrow when positive", () => {
-    render(<KpiCard label="Sessions" value={18234} formatter="number" delta={12.4} />);
+  it("renders the current value through the provided format function", () => {
+    render(<KpiCard label="Sessions" value={18234} format={formatNumber} />);
     expect(screen.getByText("18,234")).toBeInTheDocument();
-    expect(screen.getByText(/12\.4%/)).toBeInTheDocument();
   });
 
-  it("formats percent and shows pp unit", () => {
-    render(<KpiCard label="Bounce" value={0.412} formatter="percent" delta={-3.1} deltaUnit="pp" invertDelta />);
-    expect(screen.getByText("41.2%")).toBeInTheDocument();
-    expect(screen.getByText(/3\.1 pp/)).toBeInTheDocument();
+  it("renders the previous-period pill when prevValue is provided", () => {
+    const { container } = render(
+      <KpiCard label="Sessions" value={18234} prevValue={16219} format={formatNumber} />,
+    );
+    expect(container.querySelector('[data-tone="positive"]')).not.toBeNull();
+    expect(container.querySelector('[data-tone="positive"]')?.textContent).toContain("16,219");
   });
 
-  it("formats duration", () => {
-    render(<KpiCard label="Avg" value={168} formatter="duration" />);
+  it("renders no pill when prevValue is null", () => {
+    const { container } = render(<KpiCard label="Sessions" value={18234} prevValue={null} format={formatNumber} />);
+    expect(container.querySelector('[data-tone]')).toBeNull();
+  });
+
+  it("invertDelta swaps the tone (lower bounce rate is positive)", () => {
+    const { container } = render(
+      <KpiCard label="Bounce" value={0.4} prevValue={0.5} format={formatPercentage} invertDelta />,
+    );
+    expect(container.querySelector('[data-tone="positive"]')).not.toBeNull();
+  });
+
+  it("never renders the text 'vs '", () => {
+    render(<KpiCard label="Sessions" value={18234} prevValue={16219} format={formatNumber} />);
+    expect(screen.queryByText(/^vs /)).toBeNull();
+  });
+
+  it("formats duration values", () => {
+    render(<KpiCard label="Avg" value={168} format={formatDuration} />);
     expect(screen.getByText("2m 48s")).toBeInTheDocument();
   });
 
-  it("invertDelta swaps the tone for the same delta sign", () => {
-    const { container } = render(
-      <KpiCard label="Bounce" value={0.4} formatter="percent" delta={3.1} invertDelta />,
-    );
-    expect(container.querySelector('[data-tone="negative"]')).toBeInTheDocument();
-  });
-
   it("renders SetupWarningIcon when missing keys passed", () => {
-    render(
-      <KpiCard label="Avg" value={0} formatter="duration" missing={["fr_elapsed_ms"]} />,
-    );
+    render(<KpiCard label="Avg" value={0} format={formatDuration} missing={["fr_elapsed_ms"]} />);
     expect(screen.getByRole("img", { name: /setup required/i })).toBeInTheDocument();
   });
 
   it("renders skeleton when loading", () => {
-    const { container } = render(<KpiCard label="X" value={0} formatter="number" loading />);
+    const { container } = render(<KpiCard label="X" value={0} format={formatNumber} loading />);
     expect(container.querySelector(".pa-animate-shimmer")).toBeInTheDocument();
   });
 
   it("renders error tile when error passed", () => {
-    render(<KpiCard label="X" value={0} formatter="number" error={new Error("oops")} />);
+    render(<KpiCard label="X" value={0} format={formatNumber} error={new Error("oops")} />);
     expect(screen.getByText(/couldn't load/i)).toBeInTheDocument();
   });
 });

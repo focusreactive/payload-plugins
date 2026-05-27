@@ -46,9 +46,9 @@ describe("OverviewTabView", () => {
     expect(screen.getByText("Top countries")).toBeInTheDocument();
   });
 
-  it("shows percent deltas for KPIs when comparison is on", () => {
-    render(<OverviewTabView comparison={{ kind: "previous-period" }} kpis={kpis as AnyKpi} />);
-    expect(screen.getAllByText(/\d+\.\d+%/).length).toBeGreaterThan(0);
+  it("renders previous-period pills on the KPI cards when comparison is on", () => {
+    const { container } = render(<OverviewTabView comparison={{ kind: "previous-period" }} kpis={kpis as AnyKpi} />);
+    expect(container.querySelectorAll('[data-tone]').length).toBeGreaterThan(0);
   });
 
   it("renders the Country/City switcher in the top-countries card", () => {

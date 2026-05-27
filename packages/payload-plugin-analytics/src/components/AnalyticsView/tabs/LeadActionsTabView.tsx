@@ -8,7 +8,7 @@ import { ChainList } from "../ui/ChainList";
 import { SetupRequiredCard } from "../ui/SetupRequiredCard";
 import { LeadActionsPerPageTable } from "./LeadActionsPerPageTable";
 import { getLeadActionIcon, LEAD_ACTION_LABELS } from "../icons";
-import { formatNumber } from "../numberFormatters";
+import { formatDuration, formatNumber, formatPercentage } from "../numberFormatters";
 import type { Comparison, JourneyResponse, LeadActionsResponse } from "../../../types/query";
 import type { LeadActionKind } from "../../../types/events";
 
@@ -43,13 +43,6 @@ export function LeadActionsTabView({
   const conversionRate = totalSessions ? totalLeads / totalSessions : 0;
   const prevConversionRate = totalSessions && prev ? prevTotalLeads / totalSessions : null;
 
-  const totalLeadsDelta = prev && prevTotalLeads ? ((totalLeads - prevTotalLeads) / prevTotalLeads) * 100 : undefined;
-  const convDelta = prevConversionRate != null ? (conversionRate - prevConversionRate) * 100 : undefined;
-  const avgTimeDelta =
-    cur?.avgTimeToAction != null && prev?.avgTimeToAction ?
-      ((cur.avgTimeToAction - prev.avgTimeToAction) / prev.avgTimeToAction) * 100
-    : undefined;
-
   const byType =
     cur ?
       (Object.entries(cur.totals) as Array<[LeadActionKind, number]>)
@@ -68,8 +61,7 @@ export function LeadActionsTabView({
           label="Total leads"
           icon={Zap}
           value={totalLeads}
-          formatter="number"
-          delta={totalLeadsDelta}
+          format={formatNumber}
           prevValue={showCompare ? prevTotalLeads : null}
           loading={loading?.leadActions}
           error={errors?.leadActions}
@@ -79,9 +71,7 @@ export function LeadActionsTabView({
           label="Conversion rate"
           icon={TrendingUp}
           value={conversionRate}
-          formatter="percent"
-          delta={convDelta}
-          deltaUnit="pp"
+          format={formatPercentage}
           prevValue={showCompare ? prevConversionRate : null}
           loading={loading?.kpis || loading?.leadActions}
           error={errors?.leadActions}
@@ -91,8 +81,8 @@ export function LeadActionsTabView({
           label="Avg time to action"
           icon={Clock}
           value={cur?.avgTimeToAction ?? 0}
-          formatter="duration"
-          delta={avgTimeDelta}
+          format={formatDuration}
+          invertDelta
           prevValue={showCompare ? (prev?.avgTimeToAction ?? null) : null}
           missing={leadActions?.missing?.filter((k) => k === "fr_elapsed_ms")}
           loading={loading?.leadActions}

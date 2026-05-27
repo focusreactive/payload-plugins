@@ -22,7 +22,7 @@ import { MetricSwitcher } from "../ui/MetricSwitcher";
 import { DonutChart } from "../ui/DonutChart";
 import { BarList } from "../ui/BarList";
 import { getDeviceIcon } from "../icons";
-import { formatDuration, formatNumber } from "../numberFormatters";
+import { formatDuration, formatNumber, formatPercentage } from "../numberFormatters";
 import type {
   Comparison,
   DeviceCategory,
@@ -51,12 +51,6 @@ export interface OverviewTabViewProps {
   onCountriesModeChange?: (mode: CountriesMode) => void;
   loading?: Partial<Record<"kpis" | "topPages" | "topSources" | "topEvents" | "topDevices" | "topCountries", boolean>>;
   errors?: Partial<Record<"kpis" | "topPages" | "topSources" | "topEvents" | "topDevices" | "topCountries", Error>>;
-}
-
-function deltaPercent(a: number | undefined, b: number | undefined) {
-  if (a == null || b == null || b === 0) return undefined;
-
-  return ((a - b) / b) * 100;
 }
 
 function aggregateByDevice(
@@ -94,8 +88,7 @@ export function OverviewTabView({
           label="Sessions"
           icon={Activity}
           value={cur?.sessions ?? 0}
-          formatter="number"
-          delta={deltaPercent(cur?.sessions, prev?.sessions)}
+          format={formatNumber}
           prevValue={showCompare ? (prev?.sessions ?? null) : null}
           loading={loading?.kpis}
           error={errors?.kpis}
@@ -105,8 +98,7 @@ export function OverviewTabView({
           label="Users"
           icon={Users}
           value={cur?.users ?? 0}
-          formatter="number"
-          delta={deltaPercent(cur?.users, prev?.users)}
+          format={formatNumber}
           prevValue={showCompare ? (prev?.users ?? null) : null}
           loading={loading?.kpis}
           error={errors?.kpis}
@@ -116,8 +108,7 @@ export function OverviewTabView({
           label="Pageviews"
           icon={Eye}
           value={cur?.pageViews ?? 0}
-          formatter="number"
-          delta={deltaPercent(cur?.pageViews, prev?.pageViews)}
+          format={formatNumber}
           prevValue={showCompare ? (prev?.pageViews ?? null) : null}
           loading={loading?.kpis}
           error={errors?.kpis}
@@ -127,9 +118,7 @@ export function OverviewTabView({
           label="Bounce rate"
           icon={ArrowDown}
           value={cur?.bounceRate ?? 0}
-          formatter="percent"
-          delta={cur && prev ? (cur.bounceRate - prev.bounceRate) * 100 : undefined}
-          deltaUnit="pp"
+          format={formatPercentage}
           invertDelta
           prevValue={showCompare ? (prev?.bounceRate ?? null) : null}
           loading={loading?.kpis}
@@ -140,8 +129,7 @@ export function OverviewTabView({
           label="Avg duration"
           icon={Clock}
           value={cur?.avgSessionDuration ?? 0}
-          formatter="duration"
-          delta={deltaPercent(cur?.avgSessionDuration, prev?.avgSessionDuration)}
+          format={formatDuration}
           prevValue={showCompare ? (prev?.avgSessionDuration ?? null) : null}
           loading={loading?.kpis}
           error={errors?.kpis}
