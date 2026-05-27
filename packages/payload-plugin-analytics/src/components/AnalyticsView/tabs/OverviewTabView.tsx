@@ -81,6 +81,16 @@ export function OverviewTabView({
   const cur = kpis?.current;
   const prev = kpis?.comparison;
 
+  const prevTopPages = new Map((topPages?.comparison?.rows ?? []).map((r) => [r.pagePath, r]));
+  const prevTopSources = new Map((topSources?.comparison?.rows ?? []).map((r) => [`${r.source}|${r.medium}`, r]));
+  const prevTopEvents = new Map((topEvents?.comparison?.rows ?? []).map((r) => [r.eventName, r]));
+  const prevTopCountries = new Map(
+    (topCountries?.comparison?.rows ?? []).map((r) => [countriesMode === "city" ? r.city : r.country, r]),
+  );
+  const prevDeviceSessions = new Map(
+    aggregateByDevice(topDevices?.comparison?.rows ?? []).map((d) => [d.deviceCategory, d.sessions]),
+  );
+
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-5 gap-4">
@@ -167,7 +177,13 @@ export function OverviewTabView({
           </div>
         </div>
 
-        <TrendChart series={kpis?.series ?? []} metric={metric} loading={loading?.kpis} error={errors?.kpis} />
+        <TrendChart
+          series={kpis?.series ?? []}
+          comparisonSeries={showCompare ? kpis?.comparisonSeries : undefined}
+          metric={metric}
+          loading={loading?.kpis}
+          error={errors?.kpis}
+        />
       </DataCard>
 
       <div className="grid grid-cols-3 gap-4">
@@ -185,7 +201,6 @@ export function OverviewTabView({
                     <span className="font-[family-name:var(--font-mono)] truncate text-xs" title={r.pagePath}>
                       {r.pagePath}
                     </span>
-
                     <span className="text-[var(--theme-elevation-500)] text-[11px] truncate">{r.pageTitle}</span>
                   </div>
                 ),
@@ -194,13 +209,17 @@ export function OverviewTabView({
                 key: "pageViews",
                 header: "Views",
                 align: "right",
-                render: (r) => formatNumber(r.pageViews),
+                value: (r) => r.pageViews,
+                prevValue: showCompare ? (r) => prevTopPages.get(r.pagePath)?.pageViews ?? null : undefined,
+                format: formatNumber,
               },
               {
                 key: "avgTime",
                 header: "Avg",
                 align: "right",
-                render: (r) => formatDuration(r.avgTime),
+                value: (r) => r.avgTime,
+                prevValue: showCompare ? (r) => prevTopPages.get(r.pagePath)?.avgTime ?? null : undefined,
+                format: formatDuration,
               },
             ]}
           />
@@ -220,7 +239,6 @@ export function OverviewTabView({
                     <span className="truncate">
                       {r.source} / {r.medium}
                     </span>
-
                     <span className="text-[var(--theme-elevation-500)] text-[11px]">{r.channel}</span>
                   </div>
                 ),
@@ -229,7 +247,10 @@ export function OverviewTabView({
                 key: "sessions",
                 header: "Sessions",
                 align: "right",
-                render: (r) => formatNumber(r.sessions),
+                value: (r) => r.sessions,
+                prevValue:
+                  showCompare ? (r) => prevTopSources.get(`${r.source}|${r.medium}`)?.sessions ?? null : undefined,
+                format: formatNumber,
               },
             ]}
           />
@@ -251,13 +272,17 @@ export function OverviewTabView({
                 key: "eventCount",
                 header: "Count",
                 align: "right",
-                render: (r) => formatNumber(r.eventCount),
+                value: (r) => r.eventCount,
+                prevValue: showCompare ? (r) => prevTopEvents.get(r.eventName)?.eventCount ?? null : undefined,
+                format: formatNumber,
               },
               {
                 key: "eventCountPerUser",
                 header: "Count per user",
                 align: "right",
-                render: (r) => r.eventCountPerUser.toFixed(2),
+                value: (r) => r.eventCountPerUser,
+                prevValue: showCompare ? (r) => prevTopEvents.get(r.eventName)?.eventCountPerUser ?? null : undefined,
+                format: (n) => n.toFixed(2),
               },
             ]}
           />
@@ -271,6 +296,7 @@ export function OverviewTabView({
               label: d.deviceCategory.charAt(0).toUpperCase() + d.deviceCategory.slice(1),
               value: d.sessions,
               icon: getDeviceIcon(d.deviceCategory),
+              prev: showCompare ? (prevDeviceSessions.get(d.deviceCategory) ?? undefined) : undefined,
             }))}
             loading={loading?.topDevices}
             error={errors?.topDevices}
@@ -293,14 +319,22 @@ export function OverviewTabView({
             : undefined
           }>
           <BarList
-            rows={(topCountries?.rows ?? []).map(({ city, country, sessions }) =>
-              countriesMode === "city" ?
-                { label: city, sub: country || undefined, value: sessions }
-              : { label: country, value: sessions },
-            )}
+            rows={(topCountries?.rows ?? []).map(({ city, country, sessions }) => {
+              const key = countriesMode === "city" ? city : country;
+              const prevRow = prevTopCountries.get(key);
+              return countriesMode === "city" ?
+                  {
+                    label: city,
+                    sub: country || undefined,
+                    value: sessions,
+                    prev: showCompare ? (prevRow?.sessions ?? undefined) : undefined,
+                  }
+                : { label: country, value: sessions, prev: showCompare ? (prevRow?.sessions ?? undefined) : undefined };
+            })}
             initialVisible={6}
             loading={loading?.topCountries}
             error={errors?.topCountries}
+            format={formatNumber}
           />
         </DataCard>
       </div>

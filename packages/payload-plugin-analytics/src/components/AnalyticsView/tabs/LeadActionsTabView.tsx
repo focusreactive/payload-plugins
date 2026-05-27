@@ -50,9 +50,12 @@ export function LeadActionsTabView({
         .map(([kind, value]) => ({
           label: LEAD_ACTION_LABELS[kind],
           value,
+          prev: showCompare ? (prev?.totals[kind] ?? undefined) : undefined,
           kind,
         }))
     : [];
+
+  const prevByPagePath = new Map((prev?.perPage ?? []).map((p) => [p.pagePath, p.counts]));
 
   return (
     <div className="flex flex-col gap-4">
@@ -95,6 +98,7 @@ export function LeadActionsTabView({
           rows={byType}
           getIcon={(r) => getLeadActionIcon(r.kind)}
           initialVisible={5}
+          format={formatNumber}
           loading={loading?.leadActions}
           error={errors?.leadActions}
         />
@@ -103,7 +107,11 @@ export function LeadActionsTabView({
       <DataCard title="Per-page breakdown" icon={FileText}>
         {loading?.leadActions || errors?.leadActions ?
           <BarList rows={[]} loading={loading?.leadActions} error={errors?.leadActions} />
-        : <LeadActionsPerPageTable rows={cur?.perPage ?? []} />}
+        : <LeadActionsPerPageTable
+            rows={cur?.perPage ?? []}
+            prevByPagePath={showCompare ? prevByPagePath : undefined}
+          />
+        }
       </DataCard>
 
       <DataCard

@@ -28,5 +28,21 @@
     { "date": "2026-05-10", "sessions": 1180, "users": 870, "pageViews": 3300 },
     { "date": "2026-05-11", "sessions": 1410, "users": 1050, "pageViews": 3900 },
     { "date": "2026-05-12", "sessions": 1500, "users": 1120, "pageViews": 4150 }
+  ],
+  "comparisonSeries": [
+    { "date": "2026-04-15", "sessions": 1000, "users": 780, "pageViews": 2900 },
+    { "date": "2026-04-16", "sessions": 1050, "users": 810, "pageViews": 3000 },
+    { "date": "2026-04-17", "sessions": 1100, "users": 840, "pageViews": 3100 },
+    { "date": "2026-04-18", "sessions": 1140, "users": 870, "pageViews": 3200 },
+    { "date": "2026-04-19", "sessions": 980,  "users": 740, "pageViews": 2750 },
+    { "date": "2026-04-20", "sessions": 1080, "users": 820, "pageViews": 3100 },
+    { "date": "2026-04-21", "sessions": 1210, "users": 910, "pageViews": 3450 },
+    { "date": "2026-04-22", "sessions": 1190, "users": 880, "pageViews": 3380 },
+    { "date": "2026-04-23", "sessions": 1240, "users": 930, "pageViews": 3520 },
+    { "date": "2026-04-24", "sessions": 1190, "users": 890, "pageViews": 3360 },
+    { "date": "2026-04-25", "sessions": 1020, "users": 760, "pageViews": 2820 },
+    { "date": "2026-04-26", "sessions": 1090, "users": 800, "pageViews": 3060 },
+    { "date": "2026-04-27", "sessions": 1280, "users": 970, "pageViews": 3580 },
+    { "date": "2026-04-28", "sessions": 1370, "users": 1030, "pageViews": 3820 }
   ]
 }
