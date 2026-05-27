@@ -1,3 +1,6 @@
+"use client";
+
+import { useLeadActionRegistry } from "../contexts/LeadActionRegistryContext";
 import type { SessionDetailEvent } from "../../../types/query";
 import { cn } from "../../../utils/style";
 
@@ -18,6 +21,7 @@ function pickDetail({ pagePath, params }: TimelineEvent) {
 }
 
 export function EventTimeline({ events }: EventTimelineProps) {
+  const { resolveLabel } = useLeadActionRegistry();
   const eventCount = events.length;
 
   return (
@@ -26,6 +30,9 @@ export function EventTimeline({ events }: EventTimelineProps) {
         const { eventName, timestamp, isLeadAction, params } = event;
         const isFirst = i === 0;
         const isLast = i === events.length - 1;
+        const leadType =
+          isLeadAction && typeof params?.fr_lead_type === "string" ? (params.fr_lead_type as string) : undefined;
+        const primaryLabel = isLeadAction && leadType ? `Lead action: ${resolveLabel(leadType)}` : eventName;
 
         return (
           <div
@@ -60,7 +67,7 @@ export function EventTimeline({ events }: EventTimelineProps) {
                     "text-sm font-semibold text-[var(--theme-success-700)]"
                   : "text-sm font-medium text-[var(--theme-elevation-900)]"
                 }>
-                {eventName}
+                {primaryLabel}
               </span>
               {pickDetail(event) && (
                 <span className="text-xs text-[var(--theme-elevation-500)] ml-2 font-[family-name:var(--font-mono)]">

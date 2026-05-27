@@ -6,7 +6,8 @@ const KEY_COPY: Record<CustomRegistrationKey, string> = {
   fr_event_seq: "Register `fr_event_seq` as a custom dimension to enable within-minute ordering.",
   fr_elapsed_ms: "Register `fr_elapsed_ms` as a Standard custom metric (Milliseconds) in GA4 Admin.",
   fr_session_start: "Register `fr_session_start` as a custom dimension (event-scoped) in GA4 Admin.",
-  fr_lead_type: "Register `fr_lead_type` as a custom dimension (event-scoped) in GA4 Admin.",
+  fr_lead_type:
+    "Register `fr_lead_type` as a custom dimension (event-scoped) in GA4 Admin to enable lead-action breakdowns.",
 };
 
 const SETUP_GUIDE_URL =

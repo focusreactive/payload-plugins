@@ -13,8 +13,8 @@
     { "timestamp": "14:35:02", "eventName": "click", "params": { "link_url": "/contact" } },
     {
       "timestamp": "14:36:00",
-      "eventName": "phone_click",
-      "params": { "value": "+1-415-555-0100" }
+      "eventName": "lead_action",
+      "params": { "fr_lead_type": "phone_click", "value": "+1-415-555-0100" }
     }
   ]
 }

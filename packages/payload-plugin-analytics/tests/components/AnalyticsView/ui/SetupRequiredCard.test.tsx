@@ -9,4 +9,10 @@ describe("SetupRequiredCard", () => {
     expect(screen.getByText(/fr_event_seq/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /setup guide/i })).toBeInTheDocument();
   });
+
+  it("renders the fr_lead_type copy with lead-action context", () => {
+    render(<SetupRequiredCard missingKeys={["fr_lead_type"]} />);
+    expect(screen.getByText(/fr_lead_type/)).toBeInTheDocument();
+    expect(screen.getByText(/lead-action breakdowns/i)).toBeInTheDocument();
+  });
 });

@@ -7,10 +7,9 @@ import { BarList } from "../ui/BarList";
 import { ChainList } from "../ui/ChainList";
 import { SetupRequiredCard } from "../ui/SetupRequiredCard";
 import { LeadActionsPerPageTable } from "./LeadActionsPerPageTable";
-import { getLeadActionIcon, LEAD_ACTION_LABELS } from "../icons";
+import { useLeadActionRegistry } from "../contexts/LeadActionRegistryContext";
 import { formatDuration, formatNumber, formatPercentage } from "../numberFormatters";
 import type { Comparison, JourneyResponse, LeadActionsResponse } from "../../../types/query";
-import type { LeadActionKind } from "../../../types/events";
 
 export interface LeadActionsTabViewProps {
   comparison: Comparison;
@@ -35,6 +34,7 @@ export function LeadActionsTabView({
   loading,
   errors,
 }: LeadActionsTabViewProps) {
+  const { resolveLabel, resolveIcon } = useLeadActionRegistry();
   const showCompare = comparison.kind === "previous-period";
   const cur = leadActions?.current;
   const prev = leadActions?.comparison;
@@ -45,10 +45,10 @@ export function LeadActionsTabView({
 
   const byType =
     cur ?
-      (Object.entries(cur.totals) as Array<[LeadActionKind, number]>)
+      (Object.entries(cur.totals) as Array<[string, number]>)
         .sort((a, b) => b[1] - a[1])
         .map(([kind, value]) => ({
-          label: LEAD_ACTION_LABELS[kind],
+          label: resolveLabel(kind),
           value,
           prev: showCompare ? (prev?.totals[kind] ?? undefined) : undefined,
           kind,
@@ -94,14 +94,17 @@ export function LeadActionsTabView({
       </div>
 
       <DataCard title="Lead actions by type" icon={BarChart3}>
-        <BarList
-          rows={byType}
-          getIcon={(r) => getLeadActionIcon(r.kind)}
-          initialVisible={5}
-          format={formatNumber}
-          loading={loading?.leadActions}
-          error={errors?.leadActions}
-        />
+        {leadActions?.missing?.includes("fr_lead_type") ?
+          <SetupRequiredCard missingKeys={["fr_lead_type"]} />
+        : <BarList
+            rows={byType}
+            getIcon={(r) => resolveIcon(r.kind)}
+            initialVisible={5}
+            format={formatNumber}
+            loading={loading?.leadActions}
+            error={errors?.leadActions}
+          />
+        }
       </DataCard>
 
       <DataCard title="Per-page breakdown" icon={FileText}>

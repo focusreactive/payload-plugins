@@ -6,18 +6,8 @@ import { EventTimeline } from "../ui/EventTimeline";
 import { SetupRequiredCard } from "../ui/SetupRequiredCard";
 import { SetupWarningIcon } from "../ui/SetupWarningIcon";
 import { getDeviceIcon } from "../icons";
+import { LEAD_ACTION_EVENT_NAME } from "../../../constants/events";
 import type { SessionDetailResponse, SessionsRow } from "../../../types/query";
-
-const LEAD_ACTION_EVENT_NAMES = new Set<string>([
-  "phone_click",
-  "email_click",
-  "directions_click",
-  "whatsapp_click",
-  "telegram_click",
-  "website_click",
-  "booking_click",
-  "form_submit",
-]);
 
 export interface SessionDrawerProps {
   row: SessionsRow;
@@ -165,7 +155,7 @@ export function SessionDrawer({ row, detail, onClose }: SessionDrawerProps) {
               events={detail.events.map((e) => ({
                 ...e,
                 timestamp: e.timestamp.length > 5 ? e.timestamp.slice(11, 16) : e.timestamp,
-                isLeadAction: LEAD_ACTION_EVENT_NAMES.has(e.eventName),
+                isLeadAction: e.eventName === LEAD_ACTION_EVENT_NAME,
               }))}
             />
           : <div className="text-[var(--theme-elevation-500)] py-5 text-center">

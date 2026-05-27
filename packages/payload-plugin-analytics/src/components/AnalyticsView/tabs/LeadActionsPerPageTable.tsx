@@ -5,23 +5,23 @@ import { ChevronRight } from "lucide-react";
 import { cn } from "../../../utils/style";
 import { BarList } from "../ui/BarList";
 import { Metric } from "../ui/Metric";
-import { getLeadActionIcon, LEAD_ACTION_LABELS } from "../icons";
+import { useLeadActionRegistry } from "../contexts/LeadActionRegistryContext";
 import { formatNumber } from "../numberFormatters";
-import type { LeadActionKind } from "../../../types/events";
 import { EmptyTile } from "../ui/EmptyTile";
 
 export interface PerPageRow {
   pagePath: string;
-  counts: Partial<Record<LeadActionKind, number>>;
+  counts: Record<string, number>;
 }
 
 export interface LeadActionsPerPageTableProps {
   rows: PerPageRow[];
-  prevByPagePath?: Map<string, Partial<Record<LeadActionKind, number>>>;
+  prevByPagePath?: Map<string, Record<string, number>>;
 }
 
 export function LeadActionsPerPageTable({ rows, prevByPagePath }: LeadActionsPerPageTableProps) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const { resolveLabel, resolveIcon } = useLeadActionRegistry();
 
   if (rows.length === 0) return <EmptyTile message="No data in this range." />;
 
@@ -44,7 +44,7 @@ export function LeadActionsPerPageTable({ rows, prevByPagePath }: LeadActionsPer
 
       <tbody>
         {rows.map((r, i) => {
-          const sorted = Object.entries(r.counts) as Array<[LeadActionKind, number]>;
+          const sorted = Object.entries(r.counts) as Array<[string, number]>;
           sorted.sort((a, b) => b[1] - a[1]);
           const top3 = sorted.slice(0, 3);
           const total = sorted.reduce((acc, [, v]) => acc + v, 0);
@@ -70,7 +70,7 @@ export function LeadActionsPerPageTable({ rows, prevByPagePath }: LeadActionsPer
                 <td className="p-2 border-b border-[var(--theme-elevation-100)]">
                   <div className="flex gap-2 flex-wrap">
                     {top3.map(([kind, count]) => {
-                      const Icon = getLeadActionIcon(kind);
+                      const Icon = resolveIcon(kind);
                       const prevCount = prevCounts?.[kind] ?? null;
                       return (
                         <Metric
@@ -101,12 +101,12 @@ export function LeadActionsPerPageTable({ rows, prevByPagePath }: LeadActionsPer
                     className="bg-[var(--theme-elevation-50)] p-4 border-b border-[var(--theme-elevation-100)]">
                     <BarList
                       rows={sorted.map(([kind, value]) => ({
-                        label: LEAD_ACTION_LABELS[kind],
+                        label: resolveLabel(kind),
                         value,
                         prev: prevCounts?.[kind] ?? undefined,
                         kind,
                       }))}
-                      getIcon={(row) => getLeadActionIcon(row.kind)}
+                      getIcon={(row) => resolveIcon((row as { kind: string }).kind)}
                       initialVisible={10}
                       format={formatNumber}
                     />

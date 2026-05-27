@@ -1,12 +1,13 @@
+"use client";
+
 import { Fragment } from "react";
 import { ChevronRight } from "lucide-react";
 import type { JourneyRow } from "../../../types/query";
-import { getLeadActionIcon, LEAD_ACTION_LABELS } from "../icons";
+import { useLeadActionRegistry } from "../contexts/LeadActionRegistryContext";
 import { SkeletonBlock } from "./SkeletonBlock";
 import { ErrorTile } from "./ErrorTile";
 import { EmptyTile } from "./EmptyTile";
 import type { BlockStateProps } from "../types/blockState";
-import type { LeadActionKind } from "../../../types/events";
 import { formatPercentage } from "../numberFormatters";
 
 export interface ChainListProps extends BlockStateProps {
@@ -14,6 +15,8 @@ export interface ChainListProps extends BlockStateProps {
 }
 
 export function ChainList({ rows, loading, error, onRetry }: ChainListProps) {
+  const { resolveLabel, resolveIcon } = useLeadActionRegistry();
+
   if (loading) return <SkeletonBlock shape="table" rows={5} />;
   if (error) return <ErrorTile error={error} onRetry={onRetry} />;
   if (rows.length === 0) return <EmptyTile message="No journeys in this range." />;
@@ -34,12 +37,12 @@ export function ChainList({ rows, loading, error, onRetry }: ChainListProps) {
                 {kind === "leadAction" ?
                   <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-[var(--theme-success-50)] text-[var(--theme-success-700)] border border-[var(--theme-success-100)] font-medium text-[11.5px] whitespace-nowrap shrink-0">
                     {(() => {
-                      const Icon = getLeadActionIcon(value as LeadActionKind);
+                      const Icon = resolveIcon(value);
 
                       return <Icon size={11} />;
                     })()}
 
-                    <span>{LEAD_ACTION_LABELS[value as LeadActionKind]}</span>
+                    <span>{`Lead action — ${resolveLabel(value)}`}</span>
                   </span>
                 : <span className="inline-flex items-center px-2 py-1 rounded-full bg-[var(--theme-elevation-100)] font-[family-name:var(--font-mono)] text-[var(--theme-elevation-800)] text-[11.5px] whitespace-nowrap shrink-0">
                     {value}
