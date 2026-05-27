@@ -82,6 +82,20 @@ export default buildConfig({
           privateKey: (process.env.GA4_PRIVATE_KEY ?? '').replace(/\\n/g, '\n'),
         },
       },
+      leadActions: {
+        types: [
+          'phone_click',
+          'email_click',
+          'directions_click',
+          'whatsapp_click',
+          'telegram_click',
+          'website_click',
+          'booking_click',
+          'form_submit',
+          'cta_pricing_click',
+        ],
+        adminRegistry: '@/lead-actions-admin#default',
+      },
     }),
   ],
 })
