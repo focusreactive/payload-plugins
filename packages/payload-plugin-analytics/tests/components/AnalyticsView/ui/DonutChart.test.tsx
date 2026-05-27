@@ -5,6 +5,7 @@ import { mockNextDynamic } from "../../../__helpers__/mockNextDynamic";
 vi.mock("next/dynamic", () => ({ default: mockNextDynamic }));
 
 import { DonutChart } from "../../../../src/components/AnalyticsView/ui/DonutChart";
+import { DonutChartInner } from "../../../../src/components/AnalyticsView/ui/DonutChartInner";
 
 const slices = [
   { label: "Desktop", value: 9846 },
@@ -26,5 +27,20 @@ describe("DonutChart", () => {
   it("renders skeleton when loading", () => {
     const { container } = render(<DonutChart data={[]} loading />);
     expect(container.querySelector(".pa-animate-shimmer")).toBeInTheDocument();
+  });
+
+  it("renders Metric on each legend row when any slice has prev", () => {
+    const { container } = render(
+      <DonutChartInner
+        centerCaption="SESSIONS"
+        data={[
+          { label: "Desktop", value: 2153, prev: 1742 },
+          { label: "Mobile",  value: 978,  prev: 1210 },
+        ]}
+      />,
+    );
+    expect(container.querySelectorAll('[data-metric-mode="inline"]').length).toBe(2);
+    expect(container.querySelector('[data-tone="positive"]')).not.toBeNull();
+    expect(container.querySelector('[data-tone="negative"]')).not.toBeNull();
   });
 });

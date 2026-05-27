@@ -2,6 +2,7 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { formatCompactNumber, formatNumber } from "../numberFormatters";
+import { Metric } from "./Metric";
 import type { DonutSlice } from "./DonutChart";
 
 const COLORS = [
@@ -13,6 +14,7 @@ const COLORS = [
 
 export function DonutChartInner({ data, centerCaption }: { data: DonutSlice[]; centerCaption: string }) {
   const total = data.reduce((a, d) => a + d.value, 0);
+  const hasPrev = data.some((d) => d.prev != null);
 
   return (
     <div data-testid="donut-chart-inner" className="flex flex-col items-center gap-4 py-2">
@@ -36,7 +38,7 @@ export function DonutChartInner({ data, centerCaption }: { data: DonutSlice[]; c
       </div>
 
       <div className="flex flex-row flex-wrap justify-center gap-4 w-full text-xs">
-        {data.map(({ label, value, icon: Icon }, i) => {
+        {data.map(({ label, value, icon: Icon, prev }, i) => {
           const percent = total === 0 ? 0 : (value / total) * 100;
 
           return (
@@ -44,7 +46,11 @@ export function DonutChartInner({ data, centerCaption }: { data: DonutSlice[]; c
               <span className="w-2.5 h-2.5 rounded-sm" style={{ background: COLORS[i % COLORS.length] }} />
               {Icon && <Icon size={12} className="text-[var(--theme-elevation-700)]" />}
               <span>{label}</span>
-              <span className="font-semibold tabular-nums">{formatNumber(value)}</span>
+
+              {hasPrev ?
+                <Metric value={value} prevValue={prev ?? null} format={formatNumber} mode="inline" />
+              : <span className="font-semibold tabular-nums">{formatNumber(value)}</span>}
+
               <span className="text-[var(--theme-elevation-500)] text-[11px]">{percent.toFixed(1)}%</span>
             </div>
           );

@@ -15,6 +15,7 @@ const DonutInner = dynamic(() => import("./DonutChartInner").then((m) => m.Donut
 export interface DonutSlice {
   label: string;
   value: number;
+  prev?: number;
   icon?: LucideIcon;
 }
 
