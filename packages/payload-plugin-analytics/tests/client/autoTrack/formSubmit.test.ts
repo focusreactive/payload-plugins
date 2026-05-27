@@ -16,15 +16,19 @@ function makeProvider(): AnalyticsProvider {
 }
 
 describe("installFormSubmit", () => {
-  it("fires form_submit on submit event", () => {
+  it("fires lead_action with fr_lead_type=form_submit on submit event", () => {
     const provider = makeProvider();
     const cleanup = installFormSubmit(provider);
     document.body.innerHTML = '<form id="f" name="newsletter"><button type="submit">x</button></form>';
     const form = document.getElementById("f") as HTMLFormElement;
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     expect(provider.trackEvent).toHaveBeenCalledWith(
-      "form_submit",
-      expect.objectContaining({ form_id: "f", form_name: "newsletter" }),
+      "lead_action",
+      expect.objectContaining({
+        fr_lead_type: "form_submit",
+        form_id: "f",
+        form_name: "newsletter",
+      }),
     );
     cleanup();
   });

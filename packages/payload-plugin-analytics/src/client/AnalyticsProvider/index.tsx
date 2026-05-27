@@ -4,13 +4,17 @@ import type { ReactNode } from "react";
 import { useContext, useEffect, useMemo } from "react";
 import type { AnalyticsProvider as AnalyticsProviderAdapter } from "../../types/provider";
 import type { AutoTrackLeadActionsConfig } from "../../types/config";
+import type { LeadActionType } from "../../types/leadActions";
 import { installLeadActionListeners } from "../autoTrack";
 import { RouteChangeTracker } from "../RouteChangeTracker";
 import { AnalyticsContext } from "./AnalyticsContext";
+import { LeadActionTypesContext } from "./LeadActionTypesContext";
+import { resolveLeadActionTypes } from "../../utils/leadActions/resolveLeadActionTypes";
 import { PLUGIN_NAME } from "../../constants";
 
 export interface AnalyticsProviderProps {
   provider: AnalyticsProviderAdapter;
+  leadActionTypes?: LeadActionType[];
   autoTrackLeadActions?: AutoTrackLeadActionsConfig;
   trackRouteChanges?: boolean;
   children: ReactNode;
@@ -18,6 +22,7 @@ export interface AnalyticsProviderProps {
 
 export function AnalyticsProvider({
   provider,
+  leadActionTypes,
   autoTrackLeadActions,
   trackRouteChanges = true,
   children,
@@ -30,19 +35,22 @@ export function AnalyticsProvider({
     }
   }, [parentCtx]);
 
+  const resolvedTypes = useMemo(() => resolveLeadActionTypes(leadActionTypes), [leadActionTypes]);
   const optsKey = useMemo(() => JSON.stringify(autoTrackLeadActions ?? {}), [autoTrackLeadActions]);
 
   useEffect(() => {
-    return installLeadActionListeners(provider, autoTrackLeadActions);
-  }, [provider, optsKey]);
+    return installLeadActionListeners(provider, autoTrackLeadActions, resolvedTypes);
+  }, [provider, optsKey, resolvedTypes]);
 
   const ctxValue = useMemo(() => ({ provider }), [provider]);
 
   return (
     <AnalyticsContext.Provider value={ctxValue}>
-      {provider.Scripts()}
-      {trackRouteChanges && <RouteChangeTracker provider={provider} />}
-      {children}
+      <LeadActionTypesContext.Provider value={resolvedTypes}>
+        {provider.Scripts()}
+        {trackRouteChanges && <RouteChangeTracker provider={provider} />}
+        {children}
+      </LeadActionTypesContext.Provider>
     </AnalyticsContext.Provider>
   );
 }

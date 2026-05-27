@@ -2,9 +2,28 @@
 
 export { AnalyticsProvider } from "./AnalyticsProvider";
 export type { AnalyticsProviderProps } from "./AnalyticsProvider";
+export { useLeadActionTypes } from "./AnalyticsProvider/LeadActionTypesContext";
 export { Track } from "./Track";
+export { TrackLeadAction } from "./Track/TrackLeadAction";
+export type { TrackLeadActionProps } from "./Track/TrackLeadAction";
 export { useAnalytics } from "./hooks/useAnalytics";
 export { ga4Provider } from "../providers/ga4Provider";
-export { ENGAGEMENT_EVENTS, LEAD_ACTION_EVENTS, TRAFFIC_EVENTS } from "../constants/events";
+export {
+  BUILT_IN_LEAD_ACTION_TYPES,
+  ENGAGEMENT_EVENTS,
+  FR_LEAD_TYPE_PARAM,
+  LEAD_ACTION_EVENT_NAME,
+  TRAFFIC_EVENTS,
+} from "../constants/events";
+export type { BuiltInLeadActionType } from "../constants/events";
 export type { AnalyticsProvider as AnalyticsProviderAdapter } from "../types/provider";
-export type { AnalyticsEventName, AutoTrackLeadActionsConfig, LeadActionKind, TrackOn, TrackProps } from "../types";
+export type {
+  AnalyticsEventName,
+  AutoTrackLeadActionsConfig,
+  LeadActionKind,
+  LeadActionRegistry,
+  LeadActionRegistryEntry,
+  LeadActionType,
+  TrackOn,
+  TrackProps,
+} from "../types";

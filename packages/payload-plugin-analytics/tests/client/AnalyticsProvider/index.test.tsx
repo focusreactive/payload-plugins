@@ -56,7 +56,7 @@ describe("<AnalyticsProvider>", () => {
     expect(provider.pageView).not.toHaveBeenCalled();
   });
 
-  it("installs phone-click listener (default on); fires on tel: anchor", () => {
+  it("installs phone-click listener (default on); fires lead_action+fr_lead_type on tel: anchor", () => {
     const provider = makeProvider();
     render(
       <AnalyticsProvider provider={provider}>
@@ -66,7 +66,10 @@ describe("<AnalyticsProvider>", () => {
       </AnalyticsProvider>,
     );
     document.getElementById("phone")!.click();
-    expect(provider.trackEvent).toHaveBeenCalledWith("phone_click", expect.any(Object));
+    expect(provider.trackEvent).toHaveBeenCalledWith(
+      "lead_action",
+      expect.objectContaining({ fr_lead_type: "phone_click" }),
+    );
   });
 
   it("does NOT install phone-click when phoneClicks=false", () => {
@@ -80,7 +83,25 @@ describe("<AnalyticsProvider>", () => {
     );
     document.getElementById("phone")!.click();
     const trackCalls = (provider.trackEvent as ReturnType<typeof vi.fn>).mock.calls;
-    expect(trackCalls.find((c) => c[0] === "phone_click")).toBeUndefined();
+    expect(
+      trackCalls.find((c) => c[0] === "lead_action" && (c[1] as Record<string, unknown>)?.fr_lead_type === "phone_click"),
+    ).toBeUndefined();
+  });
+
+  it("does NOT install phone-click when leadActionTypes excludes phone_click", () => {
+    const provider = makeProvider();
+    render(
+      <AnalyticsProvider provider={provider} leadActionTypes={["email_click"]}>
+        <a id="phone" href="tel:+1">
+          call
+        </a>
+      </AnalyticsProvider>,
+    );
+    document.getElementById("phone")!.click();
+    const trackCalls = (provider.trackEvent as ReturnType<typeof vi.fn>).mock.calls;
+    expect(
+      trackCalls.find((c) => c[0] === "lead_action" && (c[1] as Record<string, unknown>)?.fr_lead_type === "phone_click"),
+    ).toBeUndefined();
   });
 
   it("warns in dev when nested inside another <AnalyticsProvider>", () => {

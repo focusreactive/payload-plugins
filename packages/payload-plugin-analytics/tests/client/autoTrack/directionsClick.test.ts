@@ -21,14 +21,17 @@ describe("installDirectionsClick", () => {
     "https://google.com/maps/?q=foo",
     "https://maps.app.goo.gl/abc",
     "https://goo.gl/maps/xyz",
-  ])("fires directions_click on %s", (href) => {
+  ])("fires lead_action with fr_lead_type=directions_click on %s", (href) => {
     const provider = makeProvider();
     const cleanup = installDirectionsClick(provider);
     document.body.innerHTML = `<a id="a" href="${href}">x</a>`;
     document.getElementById("a")!.click();
     expect(provider.trackEvent).toHaveBeenCalledWith(
-      "directions_click",
-      expect.objectContaining({ link_url: expect.stringContaining(href) }),
+      "lead_action",
+      expect.objectContaining({
+        fr_lead_type: "directions_click",
+        link_url: expect.stringContaining(href),
+      }),
     );
     cleanup();
   });

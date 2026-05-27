@@ -17,13 +17,16 @@ function makeProvider(): AnalyticsProvider {
 
 describe("installWhatsappClick", () => {
   it.each(["https://wa.me/1234", "https://api.whatsapp.com/send?phone=1"])(
-    "fires whatsapp_click on %s",
+    "fires lead_action with fr_lead_type=whatsapp_click on %s",
     (href) => {
       const provider = makeProvider();
       const cleanup = installWhatsappClick(provider);
       document.body.innerHTML = `<a id="a" href="${href}">x</a>`;
       document.getElementById("a")!.click();
-      expect(provider.trackEvent).toHaveBeenCalledWith("whatsapp_click", expect.any(Object));
+      expect(provider.trackEvent).toHaveBeenCalledWith(
+        "lead_action",
+        expect.objectContaining({ fr_lead_type: "whatsapp_click" }),
+      );
       cleanup();
     },
   );
@@ -39,14 +42,20 @@ describe("installWhatsappClick", () => {
 });
 
 describe("installTelegramClick", () => {
-  it.each(["https://t.me/foo", "https://telegram.me/bar"])("fires telegram_click on %s", (href) => {
-    const provider = makeProvider();
-    const cleanup = installTelegramClick(provider);
-    document.body.innerHTML = `<a id="a" href="${href}">x</a>`;
-    document.getElementById("a")!.click();
-    expect(provider.trackEvent).toHaveBeenCalledWith("telegram_click", expect.any(Object));
-    cleanup();
-  });
+  it.each(["https://t.me/foo", "https://telegram.me/bar"])(
+    "fires lead_action with fr_lead_type=telegram_click on %s",
+    (href) => {
+      const provider = makeProvider();
+      const cleanup = installTelegramClick(provider);
+      document.body.innerHTML = `<a id="a" href="${href}">x</a>`;
+      document.getElementById("a")!.click();
+      expect(provider.trackEvent).toHaveBeenCalledWith(
+        "lead_action",
+        expect.objectContaining({ fr_lead_type: "telegram_click" }),
+      );
+      cleanup();
+    },
+  );
 
   it("does not fire on whatsapp links", () => {
     const provider = makeProvider();

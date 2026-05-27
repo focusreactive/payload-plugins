@@ -16,14 +16,17 @@ function makeProvider(): AnalyticsProvider {
 }
 
 describe("installEmailClick", () => {
-  it("fires email_click on mailto: anchor click", () => {
+  it("fires lead_action with fr_lead_type=email_click on mailto: anchor click", () => {
     const provider = makeProvider();
     const cleanup = installEmailClick(provider);
     document.body.innerHTML = '<a id="a" href="mailto:hello@example.com">x</a>';
     document.getElementById("a")!.click();
     expect(provider.trackEvent).toHaveBeenCalledWith(
-      "email_click",
-      expect.objectContaining({ link_url: expect.stringContaining("mailto:hello@example.com") }),
+      "lead_action",
+      expect.objectContaining({
+        fr_lead_type: "email_click",
+        link_url: expect.stringContaining("mailto:hello@example.com"),
+      }),
     );
     cleanup();
   });

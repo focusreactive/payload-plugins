@@ -1,4 +1,4 @@
-import { LEAD_ACTION_EVENTS } from "../../constants/events";
+import { FR_LEAD_TYPE_PARAM, LEAD_ACTION_EVENT_NAME } from "../../constants/events";
 import type { LeadActionInstaller } from "./types";
 import { shouldSkip } from "./shouldSkip";
 
@@ -21,7 +21,7 @@ function classify(href: string): Kind {
 }
 
 function makeInstaller(kind: "whatsapp" | "telegram"): LeadActionInstaller {
-  const eventName = kind === "whatsapp" ? LEAD_ACTION_EVENTS.WHATSAPP_CLICK : LEAD_ACTION_EVENTS.TELEGRAM_CLICK;
+  const leadType = kind === "whatsapp" ? "whatsapp_click" : "telegram_click";
 
   return (provider) => {
     const handler = (e: Event) => {
@@ -32,7 +32,8 @@ function makeInstaller(kind: "whatsapp" | "telegram"): LeadActionInstaller {
       if (classify(anchor.href) !== kind) return;
       if (shouldSkip(anchor)) return;
 
-      provider.trackEvent(eventName, {
+      provider.trackEvent(LEAD_ACTION_EVENT_NAME, {
+        [FR_LEAD_TYPE_PARAM]: leadType,
         link_url: anchor.href,
         page_path: window.location.pathname + window.location.search,
         page_title: document.title,

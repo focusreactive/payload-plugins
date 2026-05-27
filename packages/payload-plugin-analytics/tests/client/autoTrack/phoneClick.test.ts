@@ -16,14 +16,17 @@ function makeProvider(): AnalyticsProvider {
 }
 
 describe("installPhoneClick", () => {
-  it("fires phone_click on tel: anchor click", () => {
+  it("fires lead_action with fr_lead_type=phone_click on tel: anchor click", () => {
     const provider = makeProvider();
     const cleanup = installPhoneClick(provider);
     document.body.innerHTML = '<a id="a" href="tel:+1234567890">call</a>';
     document.getElementById("a")!.click();
     expect(provider.trackEvent).toHaveBeenCalledWith(
-      "phone_click",
-      expect.objectContaining({ link_url: expect.stringContaining("tel:+1234567890") }),
+      "lead_action",
+      expect.objectContaining({
+        fr_lead_type: "phone_click",
+        link_url: expect.stringContaining("tel:+1234567890"),
+      }),
     );
     cleanup();
   });

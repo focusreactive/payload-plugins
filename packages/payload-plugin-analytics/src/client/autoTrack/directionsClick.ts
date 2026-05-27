@@ -1,4 +1,4 @@
-import { LEAD_ACTION_EVENTS } from "../../constants/events";
+import { FR_LEAD_TYPE_PARAM, LEAD_ACTION_EVENT_NAME } from "../../constants/events";
 import type { LeadActionInstaller } from "./types";
 import { shouldSkip } from "./shouldSkip";
 
@@ -28,7 +28,8 @@ export const installDirectionsClick: LeadActionInstaller = (provider) => {
     if (!isDirectionsLink(anchor.href)) return;
     if (shouldSkip(anchor)) return;
 
-    provider.trackEvent(LEAD_ACTION_EVENTS.DIRECTIONS_CLICK, {
+    provider.trackEvent(LEAD_ACTION_EVENT_NAME, {
+      [FR_LEAD_TYPE_PARAM]: "directions_click",
       link_url: anchor.href,
       page_path: window.location.pathname + window.location.search,
       page_title: document.title,
