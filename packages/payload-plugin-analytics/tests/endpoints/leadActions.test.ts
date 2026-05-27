@@ -1,12 +1,18 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildLeadActionsEndpoint } from "../../src/endpoints/leadActions";
 import { __setGa4ClientForTests } from "../../src/services/ga4DataClient";
+import { setPluginConfig } from "../../src/config";
 import { makePayloadRequest } from "../../__fixtures__/http/payloadRequest";
 import leadActions from "../../__fixtures__/ga4/leadActions.batch.json";
 import withoutMetric from "../../__fixtures__/ga4/leadActions.batch.noElapsedMs.json";
 import type { AnalyticsPluginConfig } from "../../src/types/config";
 
 const cfg = { ga4: { propertyId: "12345", measurementId: "G-X", serviceAccount: { clientEmail: "x", privateKey: "y" } } } as AnalyticsPluginConfig;
+
+beforeEach(() => {
+  // getLeadActions reads the lead-action allowlist from getPluginConfig(); seed it.
+  setPluginConfig(cfg);
+});
 
 function callHandler(ep: { handler: unknown }, req: unknown): Promise<Response> {
   return (ep.handler as (r: unknown) => Promise<Response>)(req);

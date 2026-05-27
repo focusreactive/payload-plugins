@@ -1,13 +1,25 @@
 export { analyticsPlugin } from "./plugin";
-export { ENGAGEMENT_EVENTS, LEAD_ACTION_EVENTS, TRAFFIC_EVENTS } from "./constants/events";
+export {
+  BUILT_IN_LEAD_ACTION_TYPES,
+  ENGAGEMENT_EVENTS,
+  FR_LEAD_TYPE_PARAM,
+  LEAD_ACTION_EVENT_NAME,
+  TRAFFIC_EVENTS,
+} from "./constants/events";
+export type { BuiltInLeadActionType } from "./constants/events";
 export type { AccessFn, AnalyticsPluginConfig, AutoTrackLeadActionsConfig, Ga4Config } from "./types/config";
+export type { AnalyticsEventName, EngagementEventName, LeadActionKind, TrafficEventName } from "./types/events";
 export type {
-  AnalyticsEventName,
-  EngagementEventName,
-  LeadActionEventName,
-  LeadActionKind,
-  TrafficEventName,
-} from "./types/events";
+  LeadActionRegistry,
+  LeadActionRegistryEntry,
+  LeadActionType,
+  LeadActionsPluginConfig,
+} from "./types/leadActions";
+export {
+  LeadActionRegistryProvider,
+  createLeadActionRegistry,
+  useLeadActionRegistry,
+} from "./components/AnalyticsView/contexts/LeadActionRegistryContext";
 
 export type {
   AnalyticsQuery,

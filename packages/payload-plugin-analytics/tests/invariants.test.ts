@@ -87,15 +87,25 @@ describe("admin view invariants", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("getLeadActionIcon is the only file mapping LeadActionKind -> LucideIcon", async () => {
-    const files = await glob(`${COMPONENTS_DIR}/**/*.{ts,tsx}`, {
+  it("builtInRegistry.tsx is the only file mapping lead-action types -> LucideIcon", async () => {
+    const files = await glob(`src/**/*.{ts,tsx}`, {
       cwd: PKG,
-      ignore: [`${COMPONENTS_DIR}/icons/getLeadActionIcon.ts`],
+      ignore: [
+        "src/utils/leadActions/builtInRegistry.tsx",
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+      ],
     });
     const offenders = files.filter((f) => {
       const src = readFileSync(resolve(PKG, f), "utf8");
       return /"phone_click":|'phone_click':/.test(src) && /Lucide/.test(src);
     });
+    expect(offenders).toEqual([]);
+  });
+
+  it("no LEAD_ACTION_EVENTS imports remain in source", async () => {
+    const files = await glob("src/**/*.{ts,tsx}", { cwd: PKG });
+    const offenders = files.filter((f) => /LEAD_ACTION_EVENTS/.test(readFileSync(resolve(PKG, f), "utf8")));
     expect(offenders).toEqual([]);
   });
 });
