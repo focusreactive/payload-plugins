@@ -55,4 +55,27 @@ describe("TopNTable", () => {
     );
     expect(container.querySelector(".pa-animate-shimmer")).toBeInTheDocument();
   });
+
+  it("renders a metric-mode column through Metric with a prev pill", () => {
+    type R = { name: string; views: number };
+    const rows: R[] = [{ name: "Home", views: 12480 }];
+    const { container } = render(
+      <TopNTable<R>
+        rows={rows}
+        columns={[
+          { key: "name", header: "Name", render: (r) => r.name },
+          {
+            key: "views",
+            header: "Views",
+            align: "right",
+            value: (r) => r.views,
+            prevValue: () => 11210,
+            format: (n) => n.toLocaleString("en-US"),
+          },
+        ]}
+      />,
+    );
+    expect(container.querySelector('[data-metric-mode="inline"]')).not.toBeNull();
+    expect(container.querySelector('[data-tone="positive"]')?.textContent).toContain("11,210");
+  });
 });
