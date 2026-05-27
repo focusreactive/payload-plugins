@@ -4,6 +4,7 @@ import { Fragment, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { cn } from "../../../utils/style";
 import { BarList } from "../ui/BarList";
+import { Metric } from "../ui/Metric";
 import { getLeadActionIcon, LEAD_ACTION_LABELS } from "../icons";
 import { formatNumber } from "../numberFormatters";
 import type { LeadActionKind } from "../../../types/events";
@@ -14,7 +15,12 @@ export interface PerPageRow {
   counts: Partial<Record<LeadActionKind, number>>;
 }
 
-export function LeadActionsPerPageTable({ rows }: { rows: PerPageRow[] }) {
+export interface LeadActionsPerPageTableProps {
+  rows: PerPageRow[];
+  prevByPagePath?: Map<string, Partial<Record<LeadActionKind, number>>>;
+}
+
+export function LeadActionsPerPageTable({ rows, prevByPagePath }: LeadActionsPerPageTableProps) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
   if (rows.length === 0) return <EmptyTile message="No data in this range." />;
@@ -26,15 +32,12 @@ export function LeadActionsPerPageTable({ rows }: { rows: PerPageRow[] }) {
           <th className="text-left p-2 text-[10px] tracking-widest uppercase text-[var(--theme-elevation-500)] font-semibold border-b border-[var(--theme-border-color)]">
             Page
           </th>
-
           <th className="text-right p-2 text-[10px] tracking-widest uppercase text-[var(--theme-elevation-500)] font-semibold border-b border-[var(--theme-border-color)]">
             Leads
           </th>
-
           <th className="text-left p-2 text-[10px] tracking-widest uppercase text-[var(--theme-elevation-500)] font-semibold border-b border-[var(--theme-border-color)]">
             Top actions
           </th>
-
           <th style={{ width: 30 }} className="border-b border-[var(--theme-border-color)]" />
         </tr>
       </thead>
@@ -45,6 +48,8 @@ export function LeadActionsPerPageTable({ rows }: { rows: PerPageRow[] }) {
           sorted.sort((a, b) => b[1] - a[1]);
           const top3 = sorted.slice(0, 3);
           const total = sorted.reduce((acc, [, v]) => acc + v, 0);
+          const prevCounts = prevByPagePath?.get(r.pagePath);
+          const prevTotal = prevCounts ? Object.values(prevCounts).reduce((a, b) => a + (b ?? 0), 0) : null;
           const isOpen = !!open[r.pagePath];
 
           return (
@@ -56,21 +61,26 @@ export function LeadActionsPerPageTable({ rows }: { rows: PerPageRow[] }) {
                   {r.pagePath}
                 </td>
 
-                <td className="p-2 border-b border-[var(--theme-elevation-100)] text-right tabular-nums font-semibold">
-                  {formatNumber(total)}
+                <td className="p-2 border-b border-[var(--theme-elevation-100)] text-right">
+                  <span className="inline-flex justify-end">
+                    <Metric value={total} prevValue={prevTotal} format={formatNumber} mode="inline" />
+                  </span>
                 </td>
 
                 <td className="p-2 border-b border-[var(--theme-elevation-100)]">
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     {top3.map(([kind, count]) => {
                       const Icon = getLeadActionIcon(kind);
-
+                      const prevCount = prevCounts?.[kind] ?? null;
                       return (
-                        <span
+                        <Metric
                           key={kind}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--theme-elevation-100)] text-[var(--theme-elevation-700)] text-[11px]">
-                          <Icon size={11} /> {count}
-                        </span>
+                          value={count}
+                          prevValue={prevCount}
+                          format={formatNumber}
+                          icon={Icon}
+                          mode="chip"
+                        />
                       );
                     })}
                   </div>
@@ -93,10 +103,12 @@ export function LeadActionsPerPageTable({ rows }: { rows: PerPageRow[] }) {
                       rows={sorted.map(([kind, value]) => ({
                         label: LEAD_ACTION_LABELS[kind],
                         value,
+                        prev: prevCounts?.[kind] ?? undefined,
                         kind,
                       }))}
                       getIcon={(row) => getLeadActionIcon(row.kind)}
                       initialVisible={10}
+                      format={formatNumber}
                     />
                   </td>
                 </tr>

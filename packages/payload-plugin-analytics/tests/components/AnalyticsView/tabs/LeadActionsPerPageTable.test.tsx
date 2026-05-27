@@ -20,4 +20,18 @@ describe("LeadActionsPerPageTable", () => {
     fireEvent.click(screen.getByText("/contact"));
     expect(screen.getAllByText(/Phone click/).length).toBeGreaterThan(0);
   });
+
+  it("renders the previous-period pill on the Leads column and chips", () => {
+    const prevByPagePath = new Map([
+      ["/pricing", { contactClick: 41, downloadClick: 18 } as Record<string, number>],
+    ]);
+    const { container } = render(
+      <LeadActionsPerPageTable
+        rows={[{ pagePath: "/pricing", counts: { contactClick: 64, downloadClick: 26 } as Record<string, number> }]}
+        prevByPagePath={prevByPagePath as never}
+      />,
+    );
+    expect(container.querySelectorAll('[data-tone]').length).toBeGreaterThan(0);
+    expect(container.querySelector('[data-metric-mode="chip"]')).not.toBeNull();
+  });
 });
