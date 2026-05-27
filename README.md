@@ -1,14 +1,24 @@
 # Payload CMS Plugins
 
-Open-source Payload CMS plugins for A/B testing, content presets, inline comments, and scheduled publishing on serverless. Use them individually in any Payload project, or together as part of the Ideal CMS toolkit.
+Open-source Payload CMS plugins for A/B testing, content presets, inline comments, AI translation, and scheduled publishing on serverless. Drop any of them into an existing Payload project, or get all of them pre-wired into a production setup — Payload 3, Next.js 16, Postgres, page builder, SSO, semantic search — in the **Ideal CMS** starter that lives in this repo at [`apps/cms`](./apps/cms).
+
+## Quick Start
+
+Scaffold the **Ideal CMS** starter into a standalone repo:
+
+```bash
+npx @focus-reactive/create-ideal-cms new-cms-project
+```
+
+Interactive prompts collect a project name, brand color, Postgres URL, and optional OpenAI / Vercel Blob tokens. The scaffolder copies [`apps/cms`](./apps/cms), installs dependencies, and initializes git.
+
+To add an individual plugin to an existing Payload project, see the install command under each plugin below. To try the plugins locally first, see [Run Demo Locally](#run-demo-locally).
 
 ## About the Ideal CMS Project
 
 At FocusReactive we build projects on different CMSs — Sanity, Storyblok, Strapi, and Payload. Each platform has its own unique features and limitations, and sometimes a project needs a feature one CMS has but another doesn't.
 
-So we decided to build all of that into one open-source project — we call it **Ideal CMS**. Best features from every CMS we've worked with, available as Payload plugins. You can use the project with everything integrated, or install individual plugins to get the features you need. This often helps our clients free up budget for things we believe should be included from day one.
-
-Every plugin in this repository works independently in any Payload project. For new projects, we recommend starting from the repository that combines all of these plugins together with the basic setup you'll need.
+So we decided to build all of that into one open-source project — we call it **Ideal CMS**. Best features from every CMS we've worked with, available as Payload plugins, plus the boilerplate setup we'd write anyway on every project: a block-based page builder, locale-scoped semantic search, SSO, deployment configuration. Pick individual plugins for an existing Payload project, or start from the full starter — same plugins either way. This often helps our clients free up budget for things we believe should be included from day one.
 
 ## A/B Testing Plugin for Payload CMS
 
@@ -16,12 +26,26 @@ Every plugin in this repository works independently in any Payload project. For 
 
 Native experiments with a dynamic percentage of traffic going to each content variant. Control everything from the same page you're working on — page variants, middleware, and analytics adapters included.
 
+```bash
+npm install @focus-reactive/payload-plugin-ab
+yarn add @focus-reactive/payload-plugin-ab
+pnpm add @focus-reactive/payload-plugin-ab
+bun add @focus-reactive/payload-plugin-ab
+```
+
 - Package: [`@focus-reactive/payload-plugin-ab`](./packages/payload-plugin-ab)
 - [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-ab)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-ab)
 
 ## Presets Plugin for Payload CMS
 
 Multiple pre-configured block configurations you can use to build up your pages. It's like having multiple versions of default values — because content teams prefer editing over creating from scratch.
+
+```bash
+npm install @focus-reactive/payload-plugin-presets
+yarn add @focus-reactive/payload-plugin-presets
+pnpm add @focus-reactive/payload-plugin-presets
+bun add @focus-reactive/payload-plugin-presets
+```
 
 - Package: [`@focus-reactive/payload-plugin-presets`](./packages/payload-plugin-presets)
 - [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-presets)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-presets)
@@ -32,14 +56,42 @@ Multiple pre-configured block configurations you can use to build up your pages.
 
 A way to collaborate inside the CMS. Inline field comments, mentions, annotations — helpful for both the content team and developers, letting everyone leave feedback directly inside the admin.
 
+```bash
+npm install @focus-reactive/payload-plugin-comments
+yarn add @focus-reactive/payload-plugin-comments
+pnpm add @focus-reactive/payload-plugin-comments
+bun add @focus-reactive/payload-plugin-comments
+```
+
 - Package: [`@focus-reactive/payload-plugin-comments`](./packages/payload-plugin-comments)
 - [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-comments)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-comments)
+
+## AI Translation Plugin for Payload CMS
+
+Payload already has a localization plugin, so we built a plugin to do AI translations on top of it — fill in every localized field with one click. Pluggable providers (OpenAI included), bulk translation from list view, and full Lexical rich-text support.
+
+```bash
+npm install @focus-reactive/payload-plugin-translator
+yarn add @focus-reactive/payload-plugin-translator
+pnpm add @focus-reactive/payload-plugin-translator
+bun add @focus-reactive/payload-plugin-translator
+```
+
+- Package: [`@focus-reactive/payload-plugin-translator`](./packages/payload-plugin-translator)
+- [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-translator)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-translator)
 
 ## Scheduled Publishing Plugin for Payload CMS
 
 [publish scheduling demo](https://github.com/user-attachments/assets/ae90f371-3688-4fa8-a7a6-e6d996308a85)
 
 Payload CMS natively supports scheduled publishing, but not for serverless platforms like Vercel. Since that's where we deploy most of our projects, we built a plugin that makes it work.
+
+```bash
+npm install @focus-reactive/payload-plugin-scheduling
+yarn add @focus-reactive/payload-plugin-scheduling
+pnpm add @focus-reactive/payload-plugin-scheduling
+bun add @focus-reactive/payload-plugin-scheduling
+```
 
 - Package: [`@focus-reactive/payload-plugin-scheduling`](./packages/payload-plugin-scheduling)
 - [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-scheduling)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-scheduling)
@@ -51,11 +103,17 @@ Payload CMS natively supports scheduled publishing, but not for serverless platf
 | [`@focus-reactive/payload-plugin-ab`](./packages/payload-plugin-ab)                 | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-ab)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-ab)                 | A/B testing plugin — page variants, middleware, analytics adapters                |
 | [`@focus-reactive/payload-plugin-presets`](./packages/payload-plugin-presets)       | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-presets)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-presets)       | Presets plugin — save and apply reusable block configurations                     |
 | [`@focus-reactive/payload-plugin-comments`](./packages/payload-plugin-comments)     | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-comments)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-comments)     | Comments plugin — inline field comments, mentions, annotations, and collaboration |
+| [`@focus-reactive/payload-plugin-translator`](./packages/payload-plugin-translator) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-translator)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-translator) | AI translation plugin — one-click translations on top of Payload's localization   |
 | [`@focus-reactive/payload-plugin-scheduling`](./packages/payload-plugin-scheduling) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-scheduling)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-scheduling) | Schedule publication plugin — schedule documents to publish at a future date      |
 
 ## Run Demo Locally
 
-The `apps/dev` folder is a minimal dev project with plugins pre-installed, to run and test locally. Backed by SQLite — no external database required.
+This repo ships two ready-to-run Payload apps:
+
+- [`apps/dev`](./apps/dev) — minimal sandbox with every plugin wired up, backed by SQLite. Use this to try the plugins or hack on them.
+- [`apps/cms`](./apps/cms) — full **Ideal CMS** starter on Postgres (block-based page builder, SSO, semantic search, AI translations). See [`apps/cms/README.md`](./apps/cms/README.md) for setup, or scaffold a standalone copy with `npx @focus-reactive/create-ideal-cms`.
+
+The steps below cover the `apps/dev` sandbox.
 
 ### Prerequisites
 
