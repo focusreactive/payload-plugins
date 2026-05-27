@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/create-ideal-cms",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Scaffold a production-ready Payload CMS monorepo preconfigured with @focus-reactive plugins.",
   "keywords": [
     "payload-cms",
