@@ -98,4 +98,17 @@ describe("analyticsPlugin endpoint registration", () => {
     const result = analyticsPlugin(validConfig)({} as Config);
     expect((result as any).admin.components.views.analytics.path).toBe("/analytics");
   });
+
+  it("registers leadActions.adminRegistry into admin.components.providers", () => {
+    const result = analyticsPlugin({
+      ...validConfig,
+      leadActions: { adminRegistry: "@/lead-actions-admin#default" },
+    })({} as Config);
+    expect(result.admin?.components?.providers).toContain("@/lead-actions-admin#default");
+  });
+
+  it("does not add a provider when leadActions.adminRegistry is unset", () => {
+    const result = analyticsPlugin(validConfig)({} as Config);
+    expect(result.admin?.components?.providers ?? []).not.toContain("@/lead-actions-admin#default");
+  });
 });

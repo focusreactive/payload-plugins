@@ -44,12 +44,15 @@ export const analyticsPlugin =
     const incomingConfigTranslations = incomingConfig.i18n?.translations ?? {};
     const mergedTranslations = mergeTranslations(incomingConfigTranslations, config.translations ?? {});
 
-    return overrideAdmin({
-      ...incomingConfig,
-      i18n: {
-        ...incomingConfig.i18n,
-        translations: mergedTranslations,
+    return overrideAdmin(
+      {
+        ...incomingConfig,
+        i18n: {
+          ...incomingConfig.i18n,
+          translations: mergedTranslations,
+        },
+        endpoints: [...(incomingConfig.endpoints ?? []), ...buildEndpoints(config)],
       },
-      endpoints: [...(incomingConfig.endpoints ?? []), ...buildEndpoints(config)],
-    });
+      { adminRegistry: config.leadActions?.adminRegistry },
+    );
   };
