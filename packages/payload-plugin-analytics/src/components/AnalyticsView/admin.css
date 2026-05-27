@@ -11,6 +11,18 @@
   --shadow-drawer: 0 24px 60px -20px oklch(0.2 0.01 70 / 0.18), 0 4px 12px -4px oklch(0.2 0.01 70 / 0.08);
 }
 
+@layer base {
+  :root {
+    --metric-pos-bg: rgba(35, 134, 54, 0.14);
+    --metric-pos-fg: rgb(35, 134, 54);
+    --metric-neg-bg: rgba(207, 34, 46, 0.14);
+    --metric-neg-fg: rgb(207, 34, 46);
+    --metric-flat-bg: rgba(120, 120, 120, 0.18);
+    --metric-flat-fg: rgb(100, 100, 100);
+    --metric-prev-radius: 999px;
+  }
+}
+
 @layer utilities {
   .pa-animate-shimmer {
     background: linear-gradient(
