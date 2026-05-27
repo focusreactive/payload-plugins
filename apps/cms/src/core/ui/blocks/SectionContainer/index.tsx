@@ -6,14 +6,14 @@ import { Container } from "../Container";
 import { Media } from "../Media";
 import type { ISectionContainerProps } from "./types";
 
-const sectionVariants = cva("overflow-clip relative z-1", {
+const sectionVariants = cva("overflow-clip relative z-1 bg-background text-foreground", {
   defaultVariants: {
     paddingY: "base",
   },
   variants: {
     paddingY: {
-      base: "py-sectionBase",
-      large: "py-sectionLarge",
+      base: "py-section-base",
+      large: "py-section-large",
       none: "py-0",
     },
   },

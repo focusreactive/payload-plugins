@@ -12,7 +12,7 @@ export interface PaginationProps {
   basePath: string;
 }
 
-const itemClass = "flex items-center justify-center h-9 min-w-[2.25rem] rounded-md px-2 text-sm font-medium text-textColor hover:bg-primaryLightColor hover:text-primaryColor transition-colors";
+const itemClass = "flex items-center justify-center h-9 min-w-[2.25rem] rounded-md px-2 text-sm font-medium text-foreground hover:bg-primary-soft hover:text-primary transition-colors";
 
 export const Pagination: React.FC<PaginationProps> = async ({ className, page, totalPages, basePath }) => {
   const t = await getTranslations("pagination");
@@ -48,7 +48,7 @@ export const Pagination: React.FC<PaginationProps> = async ({ className, page, t
         </Link>
       )}
 
-      <span className={cn(itemClass, "bg-primaryColor text-bgColor pointer-events-none")} aria-current="page">
+      <span className={cn(itemClass, "bg-primary text-background pointer-events-none")} aria-current="page">
         {page}
       </span>
 

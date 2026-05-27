@@ -1,41 +1,135 @@
-/* Tailwind v4 base — imported by all apps */
+/* ============================================================
+   Ideal CMS — Design Tokens (Tailwind v4)
+   Tier 1: primitives (palette, fonts, radii)
+   Tier 2: semantic roles (background/foreground/primary/…)
+   Dark zones are opt-in via .dark-zone class, NOT full-page dark mode.
+   ============================================================ */
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
-/* Scan shared UI package (pnpm symlinks not auto-detected by Tailwind v4) */
 @source "../ui";
 
-/* Dark mode: class-based */
-@variant dark (&:where(.dark, .dark *));
+/* ──────────────── Tier 1: primitives ──────────────── */
+@theme {
+  /* Fonts — bound to next/font CSS vars from root layout.
+     Fallback INSIDE var() so the font-family stays valid if next/font
+     hasn't bound the variable yet (otherwise the whole declaration
+     becomes invalid and inherits from body → sans). */
+  --font-display: var(--font-instrument-serif, "Times New Roman"), Georgia, serif;
+  --font-sans:    var(--font-space-grotesk, ui-sans-serif), system-ui, -apple-system, sans-serif;
+  --font-mono:    var(--font-jetbrains-mono, ui-monospace), "SF Mono", Menlo, monospace;
 
-/* Custom utility from the old customPlugin */
+  /* Surfaces (warm off-whites) */
+  --color-white:    #ffffff;
+  --color-cream-50:  #fafaf7;
+  --color-cream-100: #f0ebe1;
+
+  /* Warm gray scale */
+  --color-gray-400: #a5a59c;
+  --color-gray-500: #6b6b66;
+  --color-gray-700: #2a2a28;
+  --color-gray-800: #1a1a17;
+  --color-gray-900: #111111;
+  --color-gray-950: #0e0e0c;
+
+  /* Alpha tints */
+  --color-black-10: #1111111a;
+  --color-black-20: #11111133;
+  --color-white-10: #ffffff1a;
+
+  /* Brand accent (orange) */
+  --color-orange-100: #ffe7da;
+  --color-orange-500: #ff5b1f;
+  --color-orange-700: #d94a14;
+
+  /* Secondary accents */
+  --color-lime-400: #d8ff3a;
+  --color-plum-900: #2b1a3d;
+
+  /* Radii */
+  --radius-sm:   8px;
+  --radius-md:   16px;
+  --radius-lg:   28px;
+  --radius-pill: 999px;
+
+  /* Layout */
+  --container-page: 1360px;
+}
+
+/* ──────────────── Tier 2: semantic roles ──────────────── */
+@theme {
+  --color-background:           var(--color-cream-50);
+  --color-foreground:           var(--color-gray-900);
+
+  --color-surface:              var(--color-white);
+  --color-surface-muted:        var(--color-cream-100);
+
+  --color-card:                 var(--color-white);
+  --color-card-foreground:      var(--color-gray-900);
+
+  --color-popover:              var(--color-white);
+  --color-popover-foreground:   var(--color-gray-900);
+
+  --color-primary:              var(--color-orange-500);
+  --color-primary-foreground:   var(--color-white);
+  --color-primary-hover:        var(--color-orange-700);
+  --color-primary-soft:         var(--color-orange-100);
+
+  --color-secondary:            var(--color-gray-900);
+  --color-secondary-foreground: var(--color-white);
+
+  --color-muted:                var(--color-cream-100);
+  --color-muted-foreground:     var(--color-gray-500);
+
+  --color-accent:               var(--color-lime-400);
+  --color-accent-foreground:    var(--color-gray-900);
+
+  --color-destructive:          oklch(0.577 0.245 27.325);
+  --color-destructive-foreground: var(--color-white);
+
+  --color-success:              oklch(0.6 0.15 145);
+  --color-warning:              oklch(0.75 0.15 85);
+
+  --color-border:               var(--color-black-10);
+  --color-border-strong:        var(--color-black-20);
+  --color-input:                var(--color-black-20);
+  --color-ring:                 var(--color-orange-500);
+
+  /* Prose */
+  --tw-prose-headings:          var(--color-foreground);
+  --tw-prose-invert-headings:   var(--color-cream-50);
+}
+
+/* ──────────────── Dark zones (section-scoped) ──────────────── */
+/* Apply .dark-zone OR data-theme="dark" to any section that should render
+   dark surfaces. Re-binds semantic tokens inside that subtree only. */
+.dark-zone,
+[data-theme="dark"] {
+  --color-background:           var(--color-gray-950);
+  --color-foreground:           var(--color-cream-50);
+  --color-surface:              var(--color-gray-900);
+  --color-surface-muted:        var(--color-gray-800);
+  --color-card:                 var(--color-gray-900);
+  --color-card-foreground:      var(--color-cream-50);
+  --color-muted:                var(--color-gray-800);
+  --color-muted-foreground:     var(--color-gray-400);
+  --color-border:               var(--color-white-10);
+  --color-border-strong:        var(--color-white-10);
+}
+
+/* ──────────────── Selection ──────────────── */
+::selection             { background: var(--color-orange-500); color: var(--color-white); }
+.dark-zone ::selection  { background: var(--color-lime-400);   color: var(--color-gray-900); }
+
+/* ──────────────── Custom utility ──────────────── */
 @utility mask-shadow-y {
   mask-image: linear-gradient(90deg, transparent, #fff 10%, #fff 90%, transparent);
 }
 
-/* Shared design tokens */
-@theme {
-  /* Font families (from old customPlugin) */
-  --font-family-body:
-    Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-family-sans:
-    Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-
-  /* Primary color scale (from old customPlugin) */
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-  --color-primary-950: #172554;
-
-  /* Typography prose heading colors (from old customPlugin) */
-  --tw-prose-headings: var(--text);
-  --tw-prose-invert-headings: var(--text);
+/* Page gutter helper (responsive padding) */
+@utility gutter-x {
+  padding-left: clamp(20px, 4vw, 56px);
+  padding-right: clamp(20px, 4vw, 56px);
 }

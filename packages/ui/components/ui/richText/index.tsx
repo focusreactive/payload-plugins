@@ -6,7 +6,7 @@ export function RichText({ className, richText, removeInnerMargins, alignVariant
   return (
     <div
       className={cn(
-        "text-textColor prose max-w-full dark:prose-invert lg:prose-xl",
+        "text-foreground prose max-w-full dark:prose-invert lg:prose-xl",
         {
           "no-children-margins": removeInnerMargins,
           "text-center": alignVariant === AlignVariant.Center,

@@ -13,7 +13,7 @@ export const templates: any = {
 
 export function BlogSection({ text, style, posts }: IBlogSectionProps) {
   return (
-    <div className="bg-bgColor py-12 sm:py-16">
+    <div className="bg-background py-12 sm:py-16">
       <div className="mx-auto max-w-7xl space-y-12 px-6 lg:px-8">
         <div className={`${templates[style]?.header}`}>
           <RichText {...text} />

@@ -1,0 +1,56 @@
+{
+  "name": "@focus-reactive/create-ideal-cms",
+  "version": "0.1.0",
+  "description": "Scaffold a production-ready Payload CMS monorepo preconfigured with @focus-reactive plugins.",
+  "keywords": [
+    "payload-cms",
+    "payload",
+    "create",
+    "scaffold",
+    "starter",
+    "monorepo",
+    "turborepo",
+    "next.js",
+    "cms"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/focusreactive/payload-plugins",
+    "directory": "packages/create-ideal-cms"
+  },
+  "author": "FocusReactive <ship@focusreactive.com>",
+  "type": "module",
+  "bin": {
+    "create-ideal-cms": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "ultracite check",
+    "lint:fix": "ultracite fix",
+    "format": "ultracite fix",
+    "format:check": "ultracite fix",
+    "start": "node ./dist/index.js",
+    "test:local": "bun run build && bash -c 'src=$PWD && repo=$(cd \"$src/../..\" && pwd) && out=\"$src/.test-output\" && mkdir -p \"$out\" && cd \"$out\" && echo \"\\nScaffolding into: $out\\n\" && node \"$src/dist/index.js\" --from-local \"$repo\"'"
+  },
+  "dependencies": {
+    "@clack/prompts": "0.9.1",
+    "giget": "1.2.5",
+    "picocolors": "1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.9",
+    "tsup": "8.0.0",
+    "typescript": "5.9.2"
+  },
+  "engines": {
+    "node": ">=18.20.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

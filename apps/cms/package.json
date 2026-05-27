@@ -34,7 +34,7 @@
     "@payloadcms/db-postgres": "3.84.1",
     "@payloadcms/live-preview-react": "3.84.1",
     "@payloadcms/next": "3.84.1",
-    "@payloadcms/plugin-mcp": "3.84.0",
+    "@payloadcms/plugin-mcp": "3.84.1",
     "@payloadcms/plugin-multi-tenant": "3.84.1",
     "@payloadcms/plugin-nested-docs": "3.84.1",
     "@payloadcms/plugin-redirects": "3.84.1",

@@ -9,7 +9,7 @@ const Rating: React.FC<{ rating: number }> = ({ rating }) => {
   return (
     <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map((star) => (
-        <StarIcon key={star} size={18} className={`transition-all duration-200 ${star <= numRating ? "fill-yellow-400 text-yellow-400 drop-shadow-sm" : "text-textSecondaryColor"}`} />
+        <StarIcon key={star} size={16} className={`transition-all duration-200 ${star <= numRating ? "fill-primary text-primary" : "text-muted-foreground/40"}`} />
       ))}
     </div>
   );
@@ -25,34 +25,26 @@ export const TestimonialCard: React.FC<{
   }
 
   return (
-    <div
-      className="
-      testimonials-card
-      w-[280px] sm:w-[320px] md:w-[360px] lg:w-[400px] xl:w-[450px] h-full
-      flex flex-col border border-border rounded-2xl overflow-hidden bg-bgColor p-8 shadow-sm hover:shadow-md
-      transition-all duration-300 hover:-translate-y-1
-    "
-    >
-      {testimonial.content && <p className="text-textColor mb-6 flex-1 text-lg leading-relaxed italic">&ldquo;{testimonial.content}&rdquo;</p>}
-
-      <div className="w-full mt-auto pt-5 border-t border-textSecondaryColor">
-        <div className="flex items-center gap-4">
-          {showAvatar && testimonial.avatar && typeof testimonial.avatar !== "number" && (
-            <div className="shrink-0">
-              <Media resource={testimonial.avatar} className="w-14 h-14 rounded-full object-cover ring-2 ring-textSecondaryColor" imgClassName="rounded-full object-cover h-full w-full" />
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-textColor truncate text-base">{testimonial.author}</p>
-            {(testimonial.position || testimonial.company) && <p className="text-sm text-textSecondaryColor truncate mt-1">{[testimonial.position, testimonial.company].filter(Boolean).join(", ")}</p>}
-          </div>
+    <article className="testimonials-card flex h-full w-[280px] flex-col rounded-lg border border-white-10 bg-gray-900 p-7 sm:w-[340px] md:w-[400px] lg:w-[440px]">
+      {showRating && testimonial.rating ? (
+        <div className="mb-6">
+          <Rating rating={testimonial.rating} />
         </div>
-        {showRating && testimonial.rating && (
-          <div className="mt-4">
-            <Rating rating={testimonial.rating} />
+      ) : null}
+
+      {testimonial.content && <p className="mb-6 flex-1 font-display text-xl italic leading-snug text-cream-50 lg:text-2xl">&ldquo;{testimonial.content}&rdquo;</p>}
+
+      <div className="mt-auto flex items-center gap-4 border-t border-white-10 pt-5">
+        {showAvatar && testimonial.avatar && typeof testimonial.avatar !== "number" && (
+          <div className="shrink-0">
+            <Media resource={testimonial.avatar} className="size-11 rounded-pill object-cover" imgClassName="rounded-pill object-cover h-full w-full" />
           </div>
         )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-cream-50">{testimonial.author}</p>
+          {(testimonial.position || testimonial.company) && <p className="mt-0.5 truncate text-xs text-gray-400">{[testimonial.position, testimonial.company].filter(Boolean).join(" · ")}</p>}
+        </div>
       </div>
-    </div>
+    </article>
   );
 };
