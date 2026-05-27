@@ -1,11 +1,9 @@
 import type { JourneyResponse, JourneyRow, JourneyStep, JourneysQuery, Row } from "../../types/query";
-import { LEAD_ACTION_EVENTS } from "../../constants/events";
+import { LEAD_ACTION_EVENT_NAME } from "../../constants/events";
 import { resolveDateRange } from "../../utils/date/resolveDateRange";
 import { dateRangesFor, deriveMissing, withRowLimit } from "../../utils/ga4";
 import { mapGa4Error } from "../../endpoints/errorMapping";
 import { runQuery } from "../analyticsService/runQuery";
-
-const LEAD_ACTION_EVENT_NAMES = new Set<string>(Object.values(LEAD_ACTION_EVENTS));
 
 interface OrderedRow {
   sessionId: string;
@@ -13,6 +11,7 @@ interface OrderedRow {
   pagePath: string;
   dhm: string;
   eventSeq: number;
+  leadType: string;
 }
 
 function parseRow(row: Row): OrderedRow {
@@ -26,46 +25,44 @@ function parseRow(row: Row): OrderedRow {
     pagePath: dim[2]?.value ?? "",
     dhm: dim[3]?.value ?? "",
     eventSeq: Number.isFinite(seq) ? seq : Number.MAX_SAFE_INTEGER,
+    leadType: dim[5]?.value ?? "",
   };
 }
 
 function sessionRowToJourneyStep(row: OrderedRow): JourneyStep {
-  if (LEAD_ACTION_EVENT_NAMES.has(row.eventName)) {
-    return { kind: "leadAction", value: row.eventName };
+  if (row.eventName === LEAD_ACTION_EVENT_NAME && row.leadType) {
+    return {
+      kind: "leadAction",
+      value: row.leadType,
+    };
   }
-
-  return { kind: "page", value: row.pagePath };
+  return {
+    kind: "page",
+    value: row.pagePath,
+  };
 }
 
 function collapseJourneyStepDuplicates(steps: JourneyStep[]): JourneyStep[] {
   const journeySteps: JourneyStep[] = [];
-
   for (const step of steps) {
-    const prevJourneyStep = journeySteps[journeySteps.length - 1];
-
-    if (prevJourneyStep && prevJourneyStep.kind === step.kind && prevJourneyStep.value === step.value) continue;
+    const prev = journeySteps[journeySteps.length - 1];
+    if (prev && prev.kind === step.kind && prev.value === step.value) continue;
     journeySteps.push(step);
   }
-
   return journeySteps;
 }
 
 function groupBySession(rows: OrderedRow[]): Map<string, OrderedRow[]> {
   const rowsMap = new Map<string, OrderedRow[]>();
-
   for (const row of rows) {
     if (!row.sessionId) continue;
-
     const sessionRows = rowsMap.get(row.sessionId) ?? [];
-
     sessionRows.push(row);
     rowsMap.set(row.sessionId, sessionRows);
   }
-
   for (const sessionRows of rowsMap.values()) {
     sessionRows.sort((a, b) => (a.dhm === b.dhm ? a.eventSeq - b.eventSeq : a.dhm.localeCompare(b.dhm)));
   }
-
   return rowsMap;
 }
 
@@ -85,6 +82,7 @@ export async function getJourneys(propertyId: string, query: JourneysQuery): Pro
         { name: "pagePath" },
         { name: "dateHourMinute" },
         { name: "customEvent:fr_event_seq" },
+        { name: "customEvent:fr_lead_type" },
       ],
       orderBys: [
         { dimension: { dimensionName: "customEvent:fr_session_id" } },
@@ -100,17 +98,15 @@ export async function getJourneys(propertyId: string, query: JourneysQuery): Pro
     raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "journeys");
   } catch (err) {
     const mapped = mapGa4Error(err);
-
     if (mapped.setupRequired) {
       return {
         setupRequired: true,
-        missing: deriveMissing({ message: mapped.message }, ["fr_session_id", "fr_event_seq"]),
+        missing: deriveMissing({ message: mapped.message }, ["fr_session_id", "fr_event_seq", "fr_lead_type"]),
         rows: [],
         sessionsConsidered: 0,
         truncated: false,
       };
     }
-
     throw err;
   }
 
@@ -121,16 +117,16 @@ export async function getJourneys(propertyId: string, query: JourneysQuery): Pro
   let sessionsConsidered = 0;
 
   for (const sessionRows of rowsMapBySession.values()) {
-    if (!sessionRows.some((row) => LEAD_ACTION_EVENT_NAMES.has(row.eventName))) continue;
+    if (!sessionRows.some((row) => row.eventName === LEAD_ACTION_EVENT_NAME)) continue;
 
     sessionsConsidered += 1;
 
     const journeySteps = collapseJourneyStepDuplicates(sessionRows.map(sessionRowToJourneyStep));
     const path = maxSteps === undefined ? journeySteps : journeySteps.slice(0, maxSteps);
     const pathKey = JSON.stringify(path);
-    const existingPathKey = journeysMapByPath.get(pathKey);
+    const existing = journeysMapByPath.get(pathKey);
 
-    if (existingPathKey) existingPathKey.count += 1;
+    if (existing) existing.count += 1;
     else journeysMapByPath.set(pathKey, { path, count: 1 });
   }
 

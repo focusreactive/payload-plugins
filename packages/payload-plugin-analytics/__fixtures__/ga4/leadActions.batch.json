@@ -1,10 +1,10 @@
 {
   "reports": [
     {
-      "dimensionHeaders": [{ "name": "eventName" }, { "name": "pagePath" }],
+      "dimensionHeaders": [{ "name": "customEvent:fr_lead_type" }, { "name": "pagePath" }],
       "metricHeaders": [
         { "name": "eventCount", "type": "TYPE_INTEGER" },
-        { "name": "userEngagementDuration", "type": "TYPE_SECONDS" }
+        { "name": "averageCustomEvent:fr_elapsed_ms", "type": "TYPE_FLOAT" }
       ],
       "rows": [
         {

@@ -18,6 +18,7 @@ describe("getJourneys", () => {
       { name: "pagePath" },
       { name: "dateHourMinute" },
       { name: "customEvent:fr_event_seq" },
+      { name: "customEvent:fr_lead_type" },
     ]);
     expect(arg.orderBys).toEqual([
       { dimension: { dimensionName: "customEvent:fr_session_id" } },
@@ -82,6 +83,14 @@ describe("getJourneys", () => {
     __setGa4ClientForTests(fake as never);
     const res = await getJourneys("12345", { dateRange: { preset: "last-7d" }, limit: 20, maxSteps: 8, sampleLimit: 50_000 });
     expect(res.missing).toEqual(["fr_event_seq"]);
+  });
+
+  it("returns setupRequired+missing when GA4 errors on customEvent:fr_lead_type", async () => {
+    const err = new Error("3 INVALID_ARGUMENT: Field customEvent:fr_lead_type is unrecognized.");
+    const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
+    __setGa4ClientForTests(fake as never);
+    const res = await getJourneys("12345", { dateRange: { preset: "last-7d" }, limit: 20, maxSteps: 8, sampleLimit: 50_000 });
+    expect(res.missing).toEqual(["fr_lead_type"]);
   });
 
   it("rethrows non-setupRequired errors", async () => {

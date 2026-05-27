@@ -1,10 +1,32 @@
-import { LEAD_ACTION_EVENTS } from "../../constants/events";
+import { LEAD_ACTION_EVENT_NAME } from "../../constants/events";
 
-export function leadActionFilter() {
+interface BaseFilter {
+  filter?: {
+    fieldName: string;
+    stringFilter?: { value: string };
+    inListFilter?: { values: string[] };
+  };
+  andGroup?: { expressions: BaseFilter[] };
+}
+
+export function leadActionFilter(types?: string[]): BaseFilter {
+  const eventNameFilter: BaseFilter = {
+    filter: { fieldName: "eventName", stringFilter: { value: LEAD_ACTION_EVENT_NAME } },
+  };
+
+  if (!types || types.length === 0) return eventNameFilter;
+
   return {
-    filter: {
-      fieldName: "eventName",
-      inListFilter: { values: Object.values(LEAD_ACTION_EVENTS) },
+    andGroup: {
+      expressions: [
+        eventNameFilter,
+        {
+          filter: {
+            fieldName: "customEvent:fr_lead_type",
+            inListFilter: { values: types },
+          },
+        },
+      ],
     },
   };
 }

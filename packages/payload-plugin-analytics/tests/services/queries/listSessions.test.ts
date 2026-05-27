@@ -152,7 +152,7 @@ describe("listSessions", () => {
     expect(requests[1].dimensions).toEqual([{ name: "customEvent:fr_session_id" }]);
     const json = JSON.stringify(requests[1].dimensionFilter);
     expect(json).toContain("eventName");
-    expect(json).toContain("phone_click");
+    expect(json).toContain("lead_action");
   });
 
   it("derives hadLeadAction per session from the lead-action report", async () => {

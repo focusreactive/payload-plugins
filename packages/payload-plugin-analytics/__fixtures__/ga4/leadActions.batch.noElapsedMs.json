@@ -1,7 +1,7 @@
 {
   "reports": [
     {
-      "dimensionHeaders": [{ "name": "eventName" }, { "name": "pagePath" }],
+      "dimensionHeaders": [{ "name": "customEvent:fr_lead_type" }, { "name": "pagePath" }],
       "metricHeaders": [{ "name": "eventCount", "type": "TYPE_INTEGER" }],
       "rows": [
         {

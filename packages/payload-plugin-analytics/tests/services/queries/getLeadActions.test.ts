@@ -1,6 +1,7 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getLeadActions } from "../../../src/services/queries/getLeadActions";
 import { __setGa4ClientForTests } from "../../../src/services/ga4DataClient";
+import { setPluginConfig } from "../../../src/config";
 import withMetric from "../../../__fixtures__/ga4/leadActions.batch.elapsedMs.json";
 import withoutMetric from "../../../__fixtures__/ga4/leadActions.batch.noElapsedMs.json";
 
@@ -9,9 +10,35 @@ import withoutMetric from "../../../__fixtures__/ga4/leadActions.batch.noElapsed
 // invokes the GA4 client as `client.batchRunReports({ property, requests })` — a single object arg —
 // so the requests array lives on `.requests`. Same workaround as the prior version of this file.
 
+beforeEach(() => {
+  // getLeadActions now calls getPluginConfig() directly to resolve leadAction types.
+  // Provide a minimal config so the call does not throw in tests.
+  setPluginConfig({
+    ga4: {
+      propertyId: "12345",
+      measurementId: "G-TEST",
+      serviceAccount: { clientEmail: "test@test.com", privateKey: "key" },
+    },
+  });
+});
+
 afterEach(() => vi.restoreAllMocks());
 
 describe("getLeadActions", () => {
+  it("requests customEvent:fr_lead_type as the first dimension (not eventName)", async () => {
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue([withMetric]),
+    };
+    __setGa4ClientForTests(fake as never);
+    await getLeadActions("12345", { dateRange: { preset: "last-7d" } });
+    const requests = fake.batchRunReports.mock.calls[0][0].requests;
+    expect(requests[0].dimensions).toEqual([
+      { name: "customEvent:fr_lead_type" },
+      { name: "pagePath" },
+    ]);
+  });
+
   it("requests averageCustomEvent:fr_elapsed_ms as the second metric", async () => {
     const fake = {
       runReport: vi.fn(),
@@ -49,6 +76,19 @@ describe("getLeadActions", () => {
     expect(res.current.conversionRate.phone_click).toBeCloseTo(0.1, 5);
   });
 
+  it("totals only contains keys that appeared in data (no zero pre-population for absent types)", async () => {
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue([withMetric]),
+    };
+    __setGa4ClientForTests(fake as never);
+    const res = await getLeadActions("12345", { dateRange: { preset: "last-7d" } });
+    // Fixture only has phone_click and form_submit rows — absent types must NOT appear
+    expect(Object.keys(res.current.totals)).toEqual(["phone_click", "form_submit"]);
+    expect(res.current.totals.booking_click).toBeUndefined();
+    expect(res.current.totals.email_click).toBeUndefined();
+  });
+
   it("retries without the metric on INVALID_ARGUMENT for averageCustomEvent:fr_elapsed_ms", async () => {
     const err = new Error("3 INVALID_ARGUMENT: Field averageCustomEvent:fr_elapsed_ms is unrecognized.");
     const fake = {
@@ -65,6 +105,21 @@ describe("getLeadActions", () => {
     expect(res.current.avgTimeToAction).toBeNull();
     expect(res.missing).toEqual(["fr_elapsed_ms"]);
     expect(res.current.totals.phone_click).toBe(10);
+  });
+
+  it("returns empty current and missing=['fr_lead_type'] on INVALID_ARGUMENT for customEvent:fr_lead_type", async () => {
+    const err = new Error("3 INVALID_ARGUMENT: Field customEvent:fr_lead_type is unrecognized.");
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockRejectedValueOnce(err),
+    };
+    __setGa4ClientForTests(fake as never);
+    const res = await getLeadActions("12345", { dateRange: { preset: "last-7d" } });
+    expect(fake.batchRunReports).toHaveBeenCalledTimes(1);
+    expect(res.missing).toEqual(["fr_lead_type"]);
+    expect(res.current.totals).toEqual({});
+    expect(res.current.perPage).toEqual([]);
+    expect(res.current.avgTimeToAction).toBe(0);
   });
 
   it("does NOT retry on unrelated INVALID_ARGUMENT", async () => {

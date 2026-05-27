@@ -4,11 +4,22 @@
     { "name": "eventName" },
     { "name": "pagePath" },
     { "name": "dateHourMinute" },
-    { "name": "customEvent:fr_event_seq" }
+    { "name": "customEvent:fr_event_seq" },
+    { "name": "customEvent:fr_lead_type" }
   ],
   "metricHeaders": [{ "name": "eventCount", "type": "TYPE_INTEGER" }],
   "rows": [
-    { "dimensionValues": [{ "value": "S1" }, { "value": "page_view" }, { "value": "/" }, { "value": "202605101430" }, { "value": "1" }], "metricValues": [{ "value": "1" }] }
+    {
+      "dimensionValues": [
+        { "value": "S1" },
+        { "value": "page_view" },
+        { "value": "/" },
+        { "value": "202605101430" },
+        { "value": "1" },
+        { "value": "" }
+      ],
+      "metricValues": [{ "value": "1" }]
+    }
   ],
   "rowCount": 999999
 }

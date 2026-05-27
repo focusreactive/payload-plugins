@@ -1,6 +1,5 @@
 import type { AnalyticsQuery, LeadActionsCurrent, LeadActionsResponse, Row } from "../../types/query";
-import type { LeadActionKind } from "../../types/events";
-import { LEAD_ACTION_EVENTS } from "../../constants/events";
+import { getPluginConfig } from "../../config";
 import { resolveDateRange } from "../../utils/date/resolveDateRange";
 import { resolveComparison } from "../../utils/date/resolveComparison";
 import {
@@ -10,20 +9,17 @@ import {
   deriveMissing,
   leadActionFilter,
 } from "../../utils/ga4";
+import { resolveLeadActionTypes } from "../../utils/leadActions/resolveLeadActionTypes";
 import { mapGa4Error } from "../../endpoints/errorMapping";
 import { runQuery } from "../analyticsService/runQuery";
 
-const LEAD_ACTION_KINDS = Object.values(LEAD_ACTION_EVENTS) as LeadActionKind[];
-
-function buildEmptyLeadActionsCurrent(): LeadActionsCurrent {
-  const zeroPerKind = Object.fromEntries(LEAD_ACTION_KINDS.map((kind) => [kind, 0])) as Record<LeadActionKind, number>;
-
-  return { totals: { ...zeroPerKind }, conversionRate: { ...zeroPerKind }, perPage: [], avgTimeToAction: 0 };
+function buildEmptyCurrent(): LeadActionsCurrent {
+  return { totals: {}, conversionRate: {}, perPage: [], avgTimeToAction: 0 };
 }
 
 function aggregate(eventRows: Row[], totalSessions: number, elapsedMsAvailable: boolean): LeadActionsCurrent {
-  const current = buildEmptyLeadActionsCurrent();
-  const countsByPage = new Map<string, Partial<Record<LeadActionKind, number>>>();
+  const current = buildEmptyCurrent();
+  const countsByPage = new Map<string, Record<string, number>>();
 
   let weightedSum = 0;
   let totalEventCount = 0;
@@ -32,24 +28,24 @@ function aggregate(eventRows: Row[], totalSessions: number, elapsedMsAvailable: 
     const dimensionValues = row.dimensionValues ?? [];
     const metricValues = row.metricValues ?? [];
 
-    const kind = dimensionValues[0]?.value as LeadActionKind | undefined;
+    const leadType = dimensionValues[0]?.value;
     const pagePath = dimensionValues[1]?.value ?? "";
     const eventCount = convertMetricToNumber(metricValues[0]?.value);
     const avgElapsedMs = elapsedMsAvailable ? convertMetricToNumber(metricValues[1]?.value) : 0;
 
-    if (!kind || !LEAD_ACTION_KINDS.includes(kind)) continue;
+    if (!leadType) continue;
 
-    current.totals[kind] += eventCount;
+    current.totals[leadType] = (current.totals[leadType] ?? 0) + eventCount;
     totalEventCount += eventCount;
     weightedSum += avgElapsedMs * eventCount;
 
     const pageCounts = countsByPage.get(pagePath) ?? {};
-    pageCounts[kind] = (pageCounts[kind] ?? 0) + eventCount;
+    pageCounts[leadType] = (pageCounts[leadType] ?? 0) + eventCount;
     countsByPage.set(pagePath, pageCounts);
   }
 
-  for (const kind of LEAD_ACTION_KINDS) {
-    current.conversionRate[kind] = totalSessions > 0 ? current.totals[kind] / totalSessions : 0;
+  for (const [leadType, total] of Object.entries(current.totals)) {
+    current.conversionRate[leadType] = totalSessions > 0 ? total / totalSessions : 0;
   }
 
   current.avgTimeToAction =
@@ -65,12 +61,13 @@ export async function getLeadActions(propertyId: string, query: AnalyticsQuery):
   const dateRange = resolveDateRange(query.dateRange);
   const previousDateRange = query.comparison?.kind === "previous-period" ? resolveComparison(dateRange) : undefined;
   const dateRanges = dateRangesFor(dateRange, previousDateRange);
+  const types = resolveLeadActionTypes(getPluginConfig().leadActions?.types);
 
   const eventsRequest = {
     dateRanges,
     metrics: [{ name: "eventCount" }, { name: "averageCustomEvent:fr_elapsed_ms" }],
-    dimensions: [{ name: "eventName" }, { name: "pagePath" }],
-    dimensionFilter: leadActionFilter(),
+    dimensions: [{ name: "customEvent:fr_lead_type" }, { name: "pagePath" }],
+    dimensionFilter: leadActionFilter(types),
   };
   const sessionsRequest = {
     dateRanges,
@@ -89,10 +86,17 @@ export async function getLeadActions(propertyId: string, query: AnalyticsQuery):
     );
   } catch (err) {
     const mapped = mapGa4Error(err);
-    const matchesElapsedMs =
-      mapped.setupRequired && deriveMissing({ message: mapped.message }, ["fr_elapsed_ms"])[0] === "fr_elapsed_ms";
+    const missing =
+      mapped.setupRequired ? deriveMissing({ message: mapped.message }, ["fr_elapsed_ms", "fr_lead_type"]) : [];
 
-    if (matchesElapsedMs) {
+    if (missing.includes("fr_lead_type")) {
+      return {
+        current: buildEmptyCurrent(),
+        missing: ["fr_lead_type"],
+      };
+    }
+
+    if (missing.includes("fr_elapsed_ms")) {
       elapsedMsAvailable = false;
       const fallbackEventsRequest = { ...eventsRequest, metrics: [{ name: "eventCount" }] };
       batch = await runQuery.batchRunReports(
@@ -113,7 +117,6 @@ export async function getLeadActions(propertyId: string, query: AnalyticsQuery):
 
   if (!previousDateRange) {
     const totalSessions = convertMetricToNumber(sessionsRows[0]?.metricValues?.[0]?.value);
-
     response = { current: aggregate(eventsRows, totalSessions, elapsedMsAvailable) };
   } else {
     const eventsBuckets = bucketByDateRange(eventsRows, ["current", "previous"]);

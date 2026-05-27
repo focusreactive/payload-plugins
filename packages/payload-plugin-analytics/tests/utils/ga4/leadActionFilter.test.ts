@@ -1,16 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { leadActionFilter } from "../../../src/utils/ga4";
-import { LEAD_ACTION_EVENTS } from "../../../src/constants/events";
+import { leadActionFilter } from "../../../src/utils/ga4/leadActionFilter";
 
 describe("leadActionFilter", () => {
-  it("emits inListFilter on eventName with all 8 LEAD_ACTION_EVENTS values", () => {
-    const expected = Object.values(LEAD_ACTION_EVENTS);
+  it("returns eventName==lead_action filter when no types are provided", () => {
     expect(leadActionFilter()).toEqual({
-      filter: {
-        fieldName: "eventName",
-        inListFilter: { values: expected },
+      filter: { fieldName: "eventName", stringFilter: { value: "lead_action" } },
+    });
+  });
+
+  it("AND-groups eventName filter with fr_lead_type IN list when types provided", () => {
+    expect(leadActionFilter(["phone_click", "cta_pricing_click"])).toEqual({
+      andGroup: {
+        expressions: [
+          { filter: { fieldName: "eventName", stringFilter: { value: "lead_action" } } },
+          {
+            filter: {
+              fieldName: "customEvent:fr_lead_type",
+              inListFilter: { values: ["phone_click", "cta_pricing_click"] },
+            },
+          },
+        ],
       },
     });
-    expect(expected.length).toBe(8);
+  });
+
+  it("falls back to eventName-only filter when types array is empty", () => {
+    expect(leadActionFilter([])).toEqual({
+      filter: { fieldName: "eventName", stringFilter: { value: "lead_action" } },
+    });
   });
 });
