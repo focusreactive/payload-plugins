@@ -36,4 +36,12 @@ describe("deriveMissing", () => {
       ["fr_session_id", "fr_session_start"],
     )).toEqual(["fr_session_start"]);
   });
+
+  it("derives fr_lead_type from customEvent:fr_lead_type message", () => {
+    const result = deriveMissing(
+      { message: "3 INVALID_ARGUMENT: Field customEvent:fr_lead_type is unrecognized." },
+      ["fr_lead_type"],
+    );
+    expect(result).toEqual(["fr_lead_type"]);
+  });
 });

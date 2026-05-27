@@ -11,5 +11,6 @@ export interface TrackProps {
 
 export * from "./config";
 export * from "./events";
+export * from "./leadActions";
 export * from "./provider";
 export * from "./query";

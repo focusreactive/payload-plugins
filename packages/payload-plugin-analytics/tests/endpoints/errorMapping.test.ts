@@ -65,4 +65,10 @@ describe("mapGa4Error setupRequired derivation", () => {
     expect(m.setupRequired).toBe(true);
     expect(m.missingKey).toBe("fr_session_start");
   });
+
+  it("flags setupRequired + fr_lead_type for customEvent:fr_lead_type", () => {
+    const m = mapGa4Error(new Error("3 INVALID_ARGUMENT: Field customEvent:fr_lead_type is unrecognized."));
+    expect(m.setupRequired).toBe(true);
+    expect(m.missingKey).toBe("fr_lead_type");
+  });
 });

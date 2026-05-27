@@ -7,6 +7,7 @@ const SETUP_COPY: Record<CustomRegistrationKey, string> = {
   fr_session_id: "Register `fr_session_id` as a custom dimension in GA4 Admin to enable session-level analytics.",
   fr_event_seq: "Register `fr_event_seq` as a custom dimension to enable within-minute event ordering.",
   fr_session_start: "Register `fr_session_start` as an event-scoped custom dimension to populate session start time.",
+  fr_lead_type: "Register `fr_lead_type` as an event-scoped custom dimension to track lead action types.",
 };
 
 const SETUP_GUIDE_URL =

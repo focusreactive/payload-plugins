@@ -1,6 +1,9 @@
-import type { LeadActionKind } from "./events";
-
-export type CustomRegistrationKey = "fr_session_id" | "fr_event_seq" | "fr_elapsed_ms" | "fr_session_start";
+export type CustomRegistrationKey =
+  | "fr_session_id"
+  | "fr_event_seq"
+  | "fr_elapsed_ms"
+  | "fr_session_start"
+  | "fr_lead_type";
 
 export interface SetupGate {
   setupRequired: true;
@@ -122,9 +125,9 @@ export interface TopCountriesQuery extends TopNQuery {
 }
 
 export interface LeadActionsCurrent {
-  totals: Record<LeadActionKind, number>;
-  conversionRate: Record<LeadActionKind, number>;
-  perPage: Array<{ pagePath: string; counts: Partial<Record<LeadActionKind, number>> }>;
+  totals: Record<string, number>;
+  conversionRate: Record<string, number>;
+  perPage: Array<{ pagePath: string; counts: Record<string, number> }>;
   avgTimeToAction: number | null;
 }
 export interface LeadActionsResponse {

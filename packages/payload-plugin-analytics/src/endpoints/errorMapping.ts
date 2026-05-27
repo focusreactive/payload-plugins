@@ -12,6 +12,7 @@ const MISSING_KEY_PATTERNS: Array<{ key: CustomRegistrationKey; regex: RegExp }>
   { key: "fr_event_seq", regex: /customEvent:fr_event_seq/ },
   { key: "fr_elapsed_ms", regex: /(?:average)?[cC]ustomEvent:fr_elapsed_ms/ },
   { key: "fr_session_start", regex: /customEvent:fr_session_start/ },
+  { key: "fr_lead_type", regex: /customEvent:fr_lead_type/ },
 ];
 
 function deriveMissingKey(msg: string): CustomRegistrationKey | undefined {

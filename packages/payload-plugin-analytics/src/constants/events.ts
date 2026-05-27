@@ -17,13 +17,19 @@ export const ENGAGEMENT_EVENTS = {
   VIDEO_COMPLETE: "video_complete",
 } as const;
 
-export const LEAD_ACTION_EVENTS = {
-  PHONE_CLICK: "phone_click",
-  EMAIL_CLICK: "email_click",
-  DIRECTIONS_CLICK: "directions_click",
-  WHATSAPP_CLICK: "whatsapp_click",
-  TELEGRAM_CLICK: "telegram_click",
-  WEBSITE_CLICK: "website_click",
-  BOOKING_CLICK: "booking_click",
-  FORM_SUBMIT: "form_submit",
-} as const;
+export const LEAD_ACTION_EVENT_NAME = "lead_action" as const;
+
+export const FR_LEAD_TYPE_PARAM = "fr_lead_type" as const;
+
+export const BUILT_IN_LEAD_ACTION_TYPES = [
+  "phone_click",
+  "email_click",
+  "directions_click",
+  "whatsapp_click",
+  "telegram_click",
+  "website_click",
+  "booking_click",
+  "form_submit",
+] as const;
+
+export type BuiltInLeadActionType = (typeof BUILT_IN_LEAD_ACTION_TYPES)[number];
