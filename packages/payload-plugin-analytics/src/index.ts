@@ -67,3 +67,30 @@ export type {
   RunReportMockFn,
   BatchRunReportsMockFn,
 } from "./services/analyticsService/mockRegistry";
+
+export type {
+  AnalyticsLayoutConfig,
+  BlockComponentProps,
+  BlockDefinition,
+  BlockFetchArgs,
+  BlockId,
+  BlockPlacement,
+  ResolvedBlock,
+  ResolvedLayout,
+  ResolvedRow,
+  ResolvedTab,
+  RowConfig,
+  RowId,
+  ScopedGa4Client,
+  TabId,
+  TabLayoutConfig,
+} from "./types/layout";
+
+export {
+  BUILTIN_TAB_IDS,
+  BUILTIN_OVERVIEW_ROW_IDS,
+  BUILTIN_LEAD_ACTIONS_ROW_IDS,
+  BUILTIN_OVERVIEW_BLOCK_IDS,
+  BUILTIN_LEAD_ACTIONS_BLOCK_IDS,
+} from "./constants/layout";
+export type { BuiltinBlockId, BuiltinOverviewBlockId, BuiltinLeadActionsBlockId } from "./constants/layout";

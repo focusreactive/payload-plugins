@@ -39,6 +39,10 @@
       "import": "./dist/client/index.js",
       "types": "./dist/client/index.d.ts"
     },
+    "./client/blocks": {
+      "import": "./dist/client/blocks/index.js",
+      "types": "./dist/client/blocks/index.d.ts"
+    },
     "./admin.css": "./dist/admin.css",
     "./components/AnalyticsView": {
       "import": "./dist/components/AnalyticsView/index.js",
