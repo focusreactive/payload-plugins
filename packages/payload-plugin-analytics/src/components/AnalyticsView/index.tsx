@@ -28,7 +28,7 @@ export default function AnalyticsView({ initPageResult, params, searchParams }: 
       <SetAnalyticsStepNav label={title} />
 
       <Gutter>
-        <AnalyticsShell title={title} />
+        <AnalyticsShell title={title} importMap={payload.importMap} />
       </Gutter>
     </DefaultTemplate>
   );

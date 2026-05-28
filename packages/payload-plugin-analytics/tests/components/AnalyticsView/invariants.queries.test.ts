@@ -47,13 +47,9 @@ describe("AnalyticsView query-layer invariants", () => {
 
   it("@tanstack/react-query only imported from the allow-list", () => {
     const allow = new Set(
-      [
-        "AnalyticsProviders.tsx",
-        "RefreshButton.tsx",
-        "tabs/OverviewTab.tsx",
-        "tabs/LeadActionsTab.tsx",
-        "tabs/SessionsTab.tsx",
-      ].map((p) => path.resolve(ROOT, p).replace(/\\/g, "/")),
+      ["AnalyticsProviders.tsx", "RefreshButton.tsx", "tabs/SessionsTab.tsx"].map((p) =>
+        path.resolve(ROOT, p).replace(/\\/g, "/"),
+      ),
     );
 
     const offenders: string[] = [];

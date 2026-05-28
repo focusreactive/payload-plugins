@@ -1,21 +1,32 @@
 "use client";
 
+import type { ImportMap } from "payload";
+import { RenderServerComponent } from "@payloadcms/ui/elements/RenderServerComponent";
 import { useAnalyticsParams } from "./hooks/useAnalyticsParams";
 import { AnalyticsProviders } from "./AnalyticsProviders";
 import { FilterBar } from "./FilterBar";
 import { RefreshButton } from "./RefreshButton";
 import { TabsNav } from "./TabsNav";
-import { OverviewTab } from "./tabs/OverviewTab";
-import { LeadActionsTab } from "./tabs/LeadActionsTab";
+import { TabRenderer } from "./render/TabRenderer";
 import { SessionsTab } from "./tabs/SessionsTab";
+import { getResolvedBlockRegistry, getResolvedLayout } from "../../config";
 
 export interface AnalyticsShellProps {
   title: string;
+  importMap?: ImportMap;
 }
 
-export function AnalyticsShell({ title }: AnalyticsShellProps) {
+const noopT = (s: string) => s;
+
+export function AnalyticsShell({ title, importMap }: AnalyticsShellProps) {
   const { tab, dateRange, comparison, sessions, setComparison, setDateRange, setSessions, setTab } =
     useAnalyticsParams();
+
+  const resolved = getResolvedLayout();
+  const registry = getResolvedBlockRegistry();
+
+  const overviewTab = resolved.tabs.find((t) => t.id === "overview");
+  const leadActionsTab = resolved.tabs.find((t) => t.id === "lead-actions");
 
   return (
     <AnalyticsProviders>
@@ -38,11 +49,41 @@ export function AnalyticsShell({ title }: AnalyticsShellProps) {
 
         <TabsNav active={tab} onChange={setTab} />
 
-        {tab === "overview" && <OverviewTab dateRange={dateRange} comparison={comparison} />}
+        {tab === "overview" && overviewTab && (
+          <TabRenderer
+            tab={overviewTab}
+            registry={registry}
+            dateRange={dateRange}
+            comparison={comparison}
+            t={noopT}
+            importMap={importMap}
+          />
+        )}
 
-        {tab === "lead-actions" && <LeadActionsTab dateRange={dateRange} comparison={comparison} />}
+        {tab === "lead-actions" && leadActionsTab && (
+          <TabRenderer
+            tab={leadActionsTab}
+            registry={registry}
+            dateRange={dateRange}
+            comparison={comparison}
+            t={noopT}
+            importMap={importMap}
+          />
+        )}
 
-        {tab === "sessions" && <SessionsTab dateRange={dateRange} filters={sessions} onFiltersChange={setSessions} />}
+        {tab === "sessions" &&
+          (resolved.sessionsTabComponent && importMap ?
+            <RenderServerComponent
+              Component={resolved.sessionsTabComponent}
+              clientProps={{
+                dateRange,
+                comparison,
+                sessionsFilters: sessions,
+                onSessionsFiltersChange: setSessions,
+              }}
+              importMap={importMap}
+            />
+          : <SessionsTab dateRange={dateRange} filters={sessions} onFiltersChange={setSessions} />)}
       </div>
     </AnalyticsProviders>
   );

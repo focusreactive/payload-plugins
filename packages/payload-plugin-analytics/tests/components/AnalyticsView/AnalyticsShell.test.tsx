@@ -1,6 +1,9 @@
 import { render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { AnalyticsShell } from "../../../src/components/AnalyticsView/AnalyticsShell";
+import { setPluginConfig, setResolvedLayout } from "../../../src/config";
+import { resolveLayout } from "../../../src/services/layout/resolveLayout";
+import type { AnalyticsPluginConfig } from "../../../src/types/config";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: vi.fn() }),
@@ -11,6 +14,16 @@ vi.mock("next/navigation", () => ({
 vi.mock("next/dynamic", () => ({
   default: () => () => null,
 }));
+
+const baseConfig: AnalyticsPluginConfig = {
+  ga4: { propertyId: "1", measurementId: "G-X", serviceAccount: { clientEmail: "x", privateKey: "x" } },
+};
+
+beforeAll(() => {
+  setPluginConfig(baseConfig);
+  const { resolved, registry } = resolveLayout(baseConfig);
+  setResolvedLayout(resolved, registry);
+});
 
 afterEach(() => {
   vi.unstubAllGlobals();
