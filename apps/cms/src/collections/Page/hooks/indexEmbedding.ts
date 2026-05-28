@@ -11,6 +11,9 @@ export const indexPageEmbedding: CollectionAfterChangeHook<Page> = async ({ doc,
   if (doc._status !== "published") {
     return doc;
   }
+  if (req.context?.skipEmbedding) {
+    return doc;
+  }
 
   try {
     const locale = (req.locale ?? I18N_CONFIG.defaultLocale) as string;

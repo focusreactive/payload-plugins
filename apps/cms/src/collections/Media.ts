@@ -64,13 +64,23 @@ export const Media: CollectionConfig<"media"> = {
   folders: true,
   hooks: {
     afterChange: [
-      () => {
-        revalidateTag(DEFAULT_MEDIA_CACHE_TAG, "max");
+      ({ req }) => {
+        if (req?.context?.disableRevalidate) return;
+        try {
+          revalidateTag(DEFAULT_MEDIA_CACHE_TAG, "max");
+        } catch {
+          // outside a Next.js request/build context (e.g. seed scripts, tests)
+        }
       },
     ],
     afterDelete: [
-      () => {
-        revalidateTag(DEFAULT_MEDIA_CACHE_TAG, "max");
+      ({ req }) => {
+        if (req?.context?.disableRevalidate) return;
+        try {
+          revalidateTag(DEFAULT_MEDIA_CACHE_TAG, "max");
+        } catch {
+          // outside a Next.js request/build context (e.g. seed scripts, tests)
+        }
       },
     ],
   },
