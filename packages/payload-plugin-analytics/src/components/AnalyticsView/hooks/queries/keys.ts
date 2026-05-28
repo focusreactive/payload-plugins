@@ -23,4 +23,5 @@ export const analyticsKeys = {
   sessionsOptions: (dateRange: DateRange) => [...ROOT, "sessionsOptions", { dateRange }] as const,
   sessionDetail: (id: string | null, q: { dateRange: DateRange }) =>
     id ? ([...ROOT, "sessionDetail", id, q] as const) : ([...ROOT, "sessionDetail", "__disabled__"] as const),
+  customBlock: (blockId: string, q: AnalyticsQuery) => [...ROOT, "customBlock", blockId, q] as const,
 };

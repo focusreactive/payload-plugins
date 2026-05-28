@@ -27,6 +27,7 @@ export function RowRenderer({ row, registry, dateRange, comparison, t, importMap
             <BlockRenderer
               blockId={b.id}
               componentPath={def?.component ?? ""}
+              hasFetch={Boolean(def?.fetch)}
               dateRange={dateRange}
               comparison={comparison}
               colSpan={b.colSpan}

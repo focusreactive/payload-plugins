@@ -14,5 +14,6 @@ export { useSessionsQuery } from "./useSessionsQuery";
 export { useSessionsOptionsQuery } from "./useSessionsOptionsQuery";
 export type { SessionsOptionsResult } from "./useSessionsOptionsQuery";
 export { useSessionDetailQuery } from "./useSessionDetailQuery";
+export { useCustomBlockQuery } from "./useCustomBlockQuery";
 export { useAnalyticsRefresh } from "./useAnalyticsRefresh";
 export type { AnalyticsRefreshState } from "./useAnalyticsRefresh";
