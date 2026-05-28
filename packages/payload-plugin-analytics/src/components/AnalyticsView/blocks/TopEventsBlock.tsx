@@ -10,13 +10,13 @@ import type { BlockComponentProps } from "../../../types/layout";
 
 const LIMIT = 10;
 
-export function TopEventsBlock({ dateRange, comparison }: BlockComponentProps) {
+export function TopEventsBlock({ dateRange, comparison, className }: BlockComponentProps) {
   const { data, isLoading, error } = useTopEventsQuery({ dateRange, comparison, limit: LIMIT });
   const showCompare = comparison.kind === "previous-period";
   const prev = new Map((data?.comparison?.rows ?? []).map((r) => [r.eventName, r]));
 
   return (
-    <DataCard title="Top events" icon={Sparkles}>
+    <DataCard title="Top events" icon={Sparkles} className={className}>
       <TopNTable<TopEventsRow>
         rows={data?.rows ?? []}
         loading={isLoading}

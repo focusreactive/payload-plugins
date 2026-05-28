@@ -8,7 +8,7 @@ import { MetricSwitcher } from "../ui/MetricSwitcher";
 import { TrendChart, type TrendMetric } from "../ui/TrendChart";
 import type { BlockComponentProps } from "../../../types/layout";
 
-export function TrendChartBlock({ dateRange, comparison }: BlockComponentProps) {
+export function TrendChartBlock({ dateRange, comparison, className }: BlockComponentProps) {
   const [metric, setMetric] = useState<TrendMetric>("sessions");
   const { data, isLoading, error } = useKpisQuery({ dateRange, comparison });
   const showCompare = comparison.kind === "previous-period";
@@ -17,6 +17,7 @@ export function TrendChartBlock({ dateRange, comparison }: BlockComponentProps) 
     <DataCard
       title="Trend"
       icon={TrendingUp}
+      className={className}
       action={
         <MetricSwitcher
           value={metric}

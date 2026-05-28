@@ -75,6 +75,7 @@ export interface BlockComponentProps<TData = unknown> {
   comparison: Comparison;
   colSpan: number;
   t: (key: string) => string;
+  className?: string;
 }
 
 export interface ResolvedRow extends RowConfig {

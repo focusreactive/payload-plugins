@@ -11,7 +11,7 @@ import type { BlockComponentProps } from "../../../types/layout";
 const LIMIT = 20;
 const MAX_STEPS = 8;
 
-export function DiscoveryPathsBlock({ dateRange, comparison }: BlockComponentProps) {
+export function DiscoveryPathsBlock({ dateRange, comparison, className }: BlockComponentProps) {
   const { data, isLoading, error } = useJourneysQuery({
     dateRange,
     comparison,
@@ -23,6 +23,7 @@ export function DiscoveryPathsBlock({ dateRange, comparison }: BlockComponentPro
     <DataCard
       title="Discovery paths"
       icon={Route}
+      className={className}
       action={
         data && (
           <span className="flex items-center gap-2 text-[11px] text-[var(--theme-elevation-500)]">

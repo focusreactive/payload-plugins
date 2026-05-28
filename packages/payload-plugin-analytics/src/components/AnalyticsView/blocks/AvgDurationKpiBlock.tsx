@@ -6,7 +6,7 @@ import { KpiCard } from "../ui/KpiCard";
 import { formatDuration } from "../numberFormatters";
 import type { BlockComponentProps } from "../../../types/layout";
 
-export function AvgDurationKpiBlock({ dateRange, comparison }: BlockComponentProps) {
+export function AvgDurationKpiBlock({ dateRange, comparison, className }: BlockComponentProps) {
   const { data, isLoading, error } = useKpisQuery({ dateRange, comparison });
   const showCompare = comparison.kind === "previous-period";
 
@@ -19,6 +19,7 @@ export function AvgDurationKpiBlock({ dateRange, comparison }: BlockComponentPro
       prevValue={showCompare ? (data?.comparison?.avgSessionDuration ?? null) : null}
       loading={isLoading}
       error={error ?? undefined}
+      className={className}
     />
   );
 }

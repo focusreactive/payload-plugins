@@ -12,7 +12,7 @@ import type { BlockComponentProps } from "../../../types/layout";
 
 const LIMIT = 10;
 
-export function TopCountriesBlock({ dateRange, comparison }: BlockComponentProps) {
+export function TopCountriesBlock({ dateRange, comparison, className }: BlockComponentProps) {
   const [mode, setMode] = useState<TopCountriesDimension>("country");
   const { data, isLoading, error } = useTopCountriesQuery({
     dateRange,
@@ -27,6 +27,7 @@ export function TopCountriesBlock({ dateRange, comparison }: BlockComponentProps
     <DataCard
       title={mode === "city" ? "Top cities" : "Top countries"}
       icon={MapPin}
+      className={className}
       action={
         <MetricSwitcher<TopCountriesDimension>
           value={mode}

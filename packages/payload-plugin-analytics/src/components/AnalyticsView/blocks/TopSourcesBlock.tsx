@@ -10,13 +10,13 @@ import type { BlockComponentProps } from "../../../types/layout";
 
 const LIMIT = 10;
 
-export function TopSourcesBlock({ dateRange, comparison }: BlockComponentProps) {
+export function TopSourcesBlock({ dateRange, comparison, className }: BlockComponentProps) {
   const { data, isLoading, error } = useTopSourcesQuery({ dateRange, comparison, limit: LIMIT });
   const showCompare = comparison.kind === "previous-period";
   const prev = new Map((data?.comparison?.rows ?? []).map((r) => [`${r.source}|${r.medium}`, r]));
 
   return (
-    <DataCard title="Top sources" icon={Globe}>
+    <DataCard title="Top sources" icon={Globe} className={className}>
       <TopNTable<TopSourcesRow>
         rows={data?.rows ?? []}
         loading={isLoading}

@@ -36,18 +36,24 @@ function CustomBlockShell({
 
 export function BlockRenderer({ blockId, Component, hasFetch, ...rest }: BlockRendererProps) {
   const BuiltIn = BUILTIN_BLOCK_COMPONENTS[blockId];
+  const propsWithClass = { ...rest, className: "h-full" };
 
   if (BuiltIn) {
-    return <BuiltIn {...rest} />;
+    return <BuiltIn {...propsWithClass} />;
   }
 
   if (!Component) {
-    return <ErrorTile error={new Error(`Block "${blockId}" has no resolvable component`)} />;
+    return (
+      <ErrorTile
+        error={new Error(`Block "${blockId}" has no resolvable component`)}
+        className={propsWithClass.className}
+      />
+    );
   }
 
   if (hasFetch) {
-    return <CustomBlockShell blockId={blockId} Component={Component} {...rest} />;
+    return <CustomBlockShell blockId={blockId} Component={Component} {...propsWithClass} />;
   }
 
-  return <Component {...(rest as unknown as Record<string, unknown>)} />;
+  return <Component {...(propsWithClass as unknown as Record<string, unknown>)} />;
 }

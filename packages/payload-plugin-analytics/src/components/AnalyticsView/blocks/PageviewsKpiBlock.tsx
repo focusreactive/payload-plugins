@@ -6,7 +6,7 @@ import { KpiCard } from "../ui/KpiCard";
 import { formatNumber } from "../numberFormatters";
 import type { BlockComponentProps } from "../../../types/layout";
 
-export function PageviewsKpiBlock({ dateRange, comparison }: BlockComponentProps) {
+export function PageviewsKpiBlock({ dateRange, comparison, className }: BlockComponentProps) {
   const { data, isLoading, error } = useKpisQuery({ dateRange, comparison });
   const showCompare = comparison.kind === "previous-period";
 
@@ -19,6 +19,7 @@ export function PageviewsKpiBlock({ dateRange, comparison }: BlockComponentProps
       prevValue={showCompare ? (data?.comparison?.pageViews ?? null) : null}
       loading={isLoading}
       error={error ?? undefined}
+      className={className}
     />
   );
 }

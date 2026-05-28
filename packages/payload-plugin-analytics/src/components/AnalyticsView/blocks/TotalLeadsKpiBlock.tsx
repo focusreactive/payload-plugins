@@ -11,7 +11,7 @@ function sumTotals(totals?: Record<string, number>) {
   return Object.values(totals).reduce((a, b) => a + b, 0);
 }
 
-export function TotalLeadsKpiBlock({ dateRange, comparison }: BlockComponentProps) {
+export function TotalLeadsKpiBlock({ dateRange, comparison, className }: BlockComponentProps) {
   const { data, isLoading, error } = useLeadActionsQuery({ dateRange, comparison });
   const showCompare = comparison.kind === "previous-period";
   const cur = sumTotals(data?.current.totals);
@@ -26,6 +26,7 @@ export function TotalLeadsKpiBlock({ dateRange, comparison }: BlockComponentProp
       prevValue={showCompare ? prev : null}
       loading={isLoading}
       error={error ?? undefined}
+      className={className}
     />
   );
 }

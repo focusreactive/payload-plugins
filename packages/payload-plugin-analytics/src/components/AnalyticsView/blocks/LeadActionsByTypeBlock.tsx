@@ -9,7 +9,7 @@ import { SetupRequiredCard } from "../ui/SetupRequiredCard";
 import { formatNumber } from "../numberFormatters";
 import type { BlockComponentProps } from "../../../types/layout";
 
-export function LeadActionsByTypeBlock({ dateRange, comparison }: BlockComponentProps) {
+export function LeadActionsByTypeBlock({ dateRange, comparison, className }: BlockComponentProps) {
   const { resolveLabel, resolveIcon } = useLeadActionRegistry();
   const { data, isLoading, error } = useLeadActionsQuery({ dateRange, comparison });
   const showCompare = comparison.kind === "previous-period";
@@ -29,7 +29,7 @@ export function LeadActionsByTypeBlock({ dateRange, comparison }: BlockComponent
     : [];
 
   return (
-    <DataCard title="Lead actions by type" icon={BarChart3}>
+    <DataCard title="Lead actions by type" icon={BarChart3} className={className}>
       {data?.missing?.includes("fr_lead_type") ?
         <SetupRequiredCard missingKeys={["fr_lead_type"]} />
       : <BarList

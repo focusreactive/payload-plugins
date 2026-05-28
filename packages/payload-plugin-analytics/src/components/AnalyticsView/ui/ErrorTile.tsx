@@ -1,4 +1,5 @@
 import { AlertCircle, RotateCcw } from "lucide-react";
+import { cn } from "../../../utils/style";
 
 function errorToMessage(err: Error) {
   const msg = err.message.toLowerCase();
@@ -13,11 +14,12 @@ function errorToMessage(err: Error) {
 export interface ErrorTileProps {
   error: Error;
   onRetry?: () => void;
+  className?: string;
 }
 
-export function ErrorTile({ error, onRetry }: ErrorTileProps) {
+export function ErrorTile({ error, onRetry, className }: ErrorTileProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-6 px-3 text-center gap-2">
+    <div className={cn("flex flex-col items-center justify-center py-6 px-3 text-center gap-2", className)}>
       <AlertCircle size={20} className="text-[var(--theme-error-500)]" />
 
       <div className="text-sm font-medium text-[var(--theme-elevation-800)]">Couldn&apos;t load this section.</div>

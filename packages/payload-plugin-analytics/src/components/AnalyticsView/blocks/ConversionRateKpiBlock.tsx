@@ -12,7 +12,7 @@ function sumTotals(totals?: Record<string, number>) {
   return Object.values(totals).reduce((a, b) => a + b, 0);
 }
 
-export function ConversionRateKpiBlock({ dateRange, comparison }: BlockComponentProps) {
+export function ConversionRateKpiBlock({ dateRange, comparison, className }: BlockComponentProps) {
   const kpis = useKpisQuery({ dateRange, comparison });
   const lead = useLeadActionsQuery({ dateRange, comparison });
   const showCompare = comparison.kind === "previous-period";
@@ -32,6 +32,7 @@ export function ConversionRateKpiBlock({ dateRange, comparison }: BlockComponent
       prevValue={prevValue}
       loading={kpis.isLoading || lead.isLoading}
       error={lead.error ?? undefined}
+      className={className}
     />
   );
 }

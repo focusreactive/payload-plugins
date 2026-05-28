@@ -10,13 +10,13 @@ import type { BlockComponentProps } from "../../../types/layout";
 
 const LIMIT = 10;
 
-export function TopPagesBlock({ dateRange, comparison }: BlockComponentProps) {
+export function TopPagesBlock({ dateRange, comparison, className }: BlockComponentProps) {
   const { data, isLoading, error } = useTopPagesQuery({ dateRange, comparison, limit: LIMIT });
   const showCompare = comparison.kind === "previous-period";
   const prev = new Map((data?.comparison?.rows ?? []).map((r) => [r.pagePath, r]));
 
   return (
-    <DataCard title="Top pages" icon={FileText}>
+    <DataCard title="Top pages" icon={FileText} className={className}>
       <TopNTable<TopPagesRow>
         rows={data?.rows ?? []}
         loading={isLoading}
