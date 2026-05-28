@@ -1,11 +1,12 @@
 import type { Config, Plugin } from "payload";
-import { setPluginConfig } from "./config";
+import { setPluginConfig, setResolvedLayout } from "./config";
 import type { AnalyticsPluginConfig } from "./types/config";
 import { PLUGIN_NAME } from "./constants";
 import { buildEndpoints } from "./endpoints";
 import { overrideAdmin } from "./utils/config/overrideAdmin";
 import { mergeTranslations } from "./utils/config/mergeTranslations";
 import { registerAnalyticsMocks } from "./services/analyticsService/mockRegistry";
+import { resolveLayout } from "./services/layout/resolveLayout";
 
 const MEASUREMENT_ID_RE = /^G-[A-Z0-9]+$/;
 
@@ -35,6 +36,9 @@ export const analyticsPlugin =
 
     setPluginConfig(config);
 
+    const { resolved, registry } = resolveLayout(config);
+    setResolvedLayout(resolved, registry);
+
     if (config.mocks === true) {
       void import("./services/analyticsService/mocks").then(({ defaultMocks }) => {
         registerAnalyticsMocks(defaultMocks);
@@ -51,8 +55,12 @@ export const analyticsPlugin =
           ...incomingConfig.i18n,
           translations: mergedTranslations,
         },
-        endpoints: [...(incomingConfig.endpoints ?? []), ...buildEndpoints(config)],
+        endpoints: [...(incomingConfig.endpoints ?? []), ...buildEndpoints(config, registry)],
       },
-      { adminRegistry: config.leadActions?.adminRegistry },
+      {
+        adminRegistry: config.leadActions?.adminRegistry,
+        registry,
+        sessionsTabComponent: resolved.sessionsTabComponent,
+      },
     );
   };
