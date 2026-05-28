@@ -1,6 +1,6 @@
 import type { PayloadRequest } from "payload";
 import type { Translations } from "../translations/types";
-import type { AnalyticsLayoutConfig, BlockDefinition, BlockId } from "./layout";
+import type { AnalyticsLayoutConfigInput, BlockDefinition, BlockId } from "./layout";
 import type { LeadActionsPluginConfig } from "./leadActions";
 
 export interface Ga4Config {
@@ -34,5 +34,5 @@ export interface AnalyticsPluginConfig {
   translations?: Translations;
   mocks?: boolean;
   blocks?: Record<BlockId, Partial<BlockDefinition>>;
-  layout?: AnalyticsLayoutConfig;
+  layout?: AnalyticsLayoutConfigInput;
 }

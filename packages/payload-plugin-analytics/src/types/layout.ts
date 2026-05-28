@@ -45,6 +45,28 @@ export interface AnalyticsLayoutConfig {
   sessionsTabComponent?: string;
 }
 
+export interface BlockPlacementInput {
+  order?: number;
+  colSpan?: number;
+  enabled?: boolean;
+}
+
+export interface RowConfigInput {
+  order?: number;
+  columns?: number;
+  blocks?: Record<BlockId, BlockPlacementInput>;
+  enabled?: boolean;
+}
+
+export interface TabLayoutConfigInput {
+  rows?: Record<RowId, RowConfigInput>;
+}
+
+export interface AnalyticsLayoutConfigInput {
+  tabs?: Partial<Record<TabId, TabLayoutConfigInput>>;
+  sessionsTabComponent?: string;
+}
+
 export interface BlockComponentProps<TData = unknown> {
   data?: TData;
   loading?: boolean;

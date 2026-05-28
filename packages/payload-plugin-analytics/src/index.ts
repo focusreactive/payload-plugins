@@ -70,20 +70,24 @@ export type {
 
 export type {
   AnalyticsLayoutConfig,
+  AnalyticsLayoutConfigInput,
   BlockComponentProps,
   BlockDefinition,
   BlockFetchArgs,
   BlockId,
   BlockPlacement,
+  BlockPlacementInput,
   ResolvedBlock,
   ResolvedLayout,
   ResolvedRow,
   ResolvedTab,
   RowConfig,
+  RowConfigInput,
   RowId,
   ScopedGa4Client,
   TabId,
   TabLayoutConfig,
+  TabLayoutConfigInput,
 } from "./types/layout";
 
 export {

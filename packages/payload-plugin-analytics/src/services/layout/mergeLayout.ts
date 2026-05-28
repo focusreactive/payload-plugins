@@ -1,17 +1,19 @@
 import type {
   AnalyticsLayoutConfig,
+  AnalyticsLayoutConfigInput,
   BlockDefinition,
   BlockId,
   BlockPlacement,
+  BlockPlacementInput,
   RowConfig,
+  RowConfigInput,
   RowId,
   TabId,
   TabLayoutConfig,
+  TabLayoutConfigInput,
 } from "../../types/layout";
 
-type DeepPartial<T> = T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
-
-function mergeBlockPlacement(user: DeepPartial<BlockPlacement> | undefined, base: BlockPlacement): BlockPlacement {
+function mergeBlockPlacement(user: BlockPlacementInput | undefined, base: BlockPlacement): BlockPlacement {
   if (!user) return base;
   return {
     order: user.order ?? base.order,
@@ -22,7 +24,7 @@ function mergeBlockPlacement(user: DeepPartial<BlockPlacement> | undefined, base
   };
 }
 
-function mergeRow(user: DeepPartial<RowConfig> | undefined, base: RowConfig): RowConfig {
+function mergeRow(user: RowConfigInput | undefined, base: RowConfig): RowConfig {
   if (!user) return base;
 
   const mergedBlocks: Record<BlockId, BlockPlacement> = { ...base.blocks };
@@ -30,18 +32,17 @@ function mergeRow(user: DeepPartial<RowConfig> | undefined, base: RowConfig): Ro
     for (const [id, override] of Object.entries(user.blocks)) {
       const baseBlock = base.blocks[id];
       if (baseBlock) {
-        mergedBlocks[id] = mergeBlockPlacement(override as DeepPartial<BlockPlacement>, baseBlock);
+        mergedBlocks[id] = mergeBlockPlacement(override, baseBlock);
       } else if (override) {
-        const o = override as DeepPartial<BlockPlacement>;
-        if (o.order === undefined || o.colSpan === undefined) {
+        if (override.order === undefined || override.colSpan === undefined) {
           throw new Error(
             `[payload-plugin-analytics] Block "${id}" added to row but is missing required fields { order, colSpan }`,
           );
         }
         mergedBlocks[id] = {
-          order: o.order,
-          colSpan: o.colSpan,
-          ...(o.enabled !== undefined ? { enabled: o.enabled } : {}),
+          order: override.order,
+          colSpan: override.colSpan,
+          ...(override.enabled !== undefined ? { enabled: override.enabled } : {}),
         };
       }
     }
@@ -57,7 +58,7 @@ function mergeRow(user: DeepPartial<RowConfig> | undefined, base: RowConfig): Ro
   };
 }
 
-function mergeTab(user: DeepPartial<TabLayoutConfig> | undefined, base: TabLayoutConfig | undefined): TabLayoutConfig {
+function mergeTab(user: TabLayoutConfigInput | undefined, base: TabLayoutConfig | undefined): TabLayoutConfig {
   const baseRows = base?.rows ?? {};
   const mergedRows: Record<RowId, RowConfig> = { ...baseRows };
 
@@ -65,17 +66,15 @@ function mergeTab(user: DeepPartial<TabLayoutConfig> | undefined, base: TabLayou
     for (const [rowId, override] of Object.entries(user.rows)) {
       const baseRow = baseRows[rowId];
       if (baseRow) {
-        mergedRows[rowId] = mergeRow(override as DeepPartial<RowConfig>, baseRow);
+        mergedRows[rowId] = mergeRow(override, baseRow);
       } else if (override) {
-        const o = override as DeepPartial<RowConfig>;
-        if (o.order === undefined || o.columns === undefined) {
+        if (override.order === undefined || override.columns === undefined) {
           throw new Error(
             `[payload-plugin-analytics] Row "${rowId}" added by user but is missing required fields { order, columns }`,
           );
         }
         const blocks: Record<BlockId, BlockPlacement> = {};
-        for (const [bid, b] of Object.entries(o.blocks ?? {})) {
-          const bp = b as DeepPartial<BlockPlacement>;
+        for (const [bid, bp] of Object.entries(override.blocks ?? {})) {
           if (bp?.order === undefined || bp?.colSpan === undefined) {
             throw new Error(
               `[payload-plugin-analytics] Block "${bid}" in user row "${rowId}" is missing { order, colSpan }`,
@@ -88,10 +87,10 @@ function mergeTab(user: DeepPartial<TabLayoutConfig> | undefined, base: TabLayou
           };
         }
         mergedRows[rowId] = {
-          order: o.order,
-          columns: o.columns,
+          order: override.order,
+          columns: override.columns,
           blocks,
-          ...(o.enabled !== undefined ? { enabled: o.enabled } : {}),
+          ...(override.enabled !== undefined ? { enabled: override.enabled } : {}),
         };
       }
     }
@@ -101,7 +100,7 @@ function mergeTab(user: DeepPartial<TabLayoutConfig> | undefined, base: TabLayou
 }
 
 export function mergeLayout(
-  user: DeepPartial<AnalyticsLayoutConfig> | undefined,
+  user: AnalyticsLayoutConfigInput | undefined,
   defaults: AnalyticsLayoutConfig,
 ): AnalyticsLayoutConfig {
   if (!user) return defaults;
