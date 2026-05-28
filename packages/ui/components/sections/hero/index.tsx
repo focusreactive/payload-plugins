@@ -6,10 +6,10 @@ import { RichText } from "../../ui/richText";
 import type { IHeroProps } from "./types";
 
 export function Hero({ title, text, image, links }: IHeroProps) {
-  const hasImage = Boolean(image?.src);
+  const hasImage = typeof image?.src === "string" && image.src.length > 0;
 
   return (
-    <header className={cn("grid grid-cols-1 items-center gap-10 lg:gap-16", hasImage && "lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]")}>
+    <div className={cn("grid grid-cols-1 items-center gap-10 lg:gap-16", hasImage && "lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]")}>
       <div className="flex flex-col gap-8 sm:gap-10">
         <DisplayHeading as="h1" text={title} size="xl" />
 
@@ -35,10 +35,10 @@ export function Hero({ title, text, image, links }: IHeroProps) {
       </div>
 
       {hasImage && (
-        <div className="relative aspect-square w-full overflow-hidden rounded-lg lg:aspect-[4/5]">
+        <div className="relative aspect-square w-full overflow-hidden rounded-lg">
           <Image {...image} fit="cover" />
         </div>
       )}
-    </header>
+    </div>
   );
 }

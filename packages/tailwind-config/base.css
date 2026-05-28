@@ -53,9 +53,6 @@
   --radius-md:   16px;
   --radius-lg:   28px;
   --radius-pill: 999px;
-
-  /* Layout */
-  --container-page: 1360px;
 }
 
 /* ──────────────── Tier 2: semantic roles ──────────────── */
@@ -126,10 +123,4 @@
 /* ──────────────── Custom utility ──────────────── */
 @utility mask-shadow-y {
   mask-image: linear-gradient(90deg, transparent, #fff 10%, #fff 90%, transparent);
-}
-
-/* Page gutter helper (responsive padding) */
-@utility gutter-x {
-  padding-left: clamp(20px, 4vw, 56px);
-  padding-right: clamp(20px, 4vw, 56px);
 }

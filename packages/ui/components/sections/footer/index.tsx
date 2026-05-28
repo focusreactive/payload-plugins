@@ -6,7 +6,7 @@ import type { IFooterProps } from "./types";
 export function Footer({ links, text, copywriteText, image }: IFooterProps) {
   return (
     <footer className="">
-      <div className="max-w-container-page gutter-x mx-auto space-y-12">
+      <div className="max-w-containerMaxW px-containerBase mx-auto space-y-12">
         <div className="flex flex-col items-center gap-x-12 gap-y-8 lg:flex-row">
           <div className="flex flex-col items-start space-y-8">
             <div className="h-24">
