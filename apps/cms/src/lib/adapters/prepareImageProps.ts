@@ -35,6 +35,7 @@ export function prepareImageProps(data: ImageFieldData | null | undefined): IIma
     aspectRatio,
     fill: true,
     fit: "cover",
+    quality: 85,
     sizes: "(max-width: 1280px) 100vw, 1280px",
     src: media.url ?? "",
     ...imageAttributes,

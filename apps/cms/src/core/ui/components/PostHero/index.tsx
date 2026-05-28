@@ -49,7 +49,7 @@ export const PostHero: React.FC<{
         {heroImage && typeof heroImage !== "number" && (
           <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
             {/* eslint-disable-next-line jsx-a11y/alt-text */}
-            <Image fill priority className="object-cover" {...prepareImageProps({ image: heroImage })} />
+            <Image fill priority quality={85} className="object-cover" {...prepareImageProps({ image: heroImage })} />
           </div>
         )}
       </div>

@@ -36,7 +36,7 @@ export function Hero({ title, text, image, links }: IHeroProps) {
 
       {hasImage && (
         <div className="relative aspect-square w-full overflow-hidden rounded-lg">
-          <Image {...image} fit="cover" />
+          <Image {...image} fit="cover" quality={85} sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 1280px" />
         </div>
       )}
     </div>

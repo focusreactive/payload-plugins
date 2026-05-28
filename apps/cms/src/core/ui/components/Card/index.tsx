@@ -32,7 +32,7 @@ export const Card: React.FC<{
         <div className="relative w-full">
           {!heroImage && (
             <div className="relative w-full aspect-[4/3]">
-              <NextImage src="/empty-placeholder.jpg" alt={`${titleToUse} - Placeholder image`} fill className="object-cover" sizes="33vw" />
+              <NextImage src="/empty-placeholder.jpg" alt={`${titleToUse} - Placeholder image`} fill className="object-cover" quality={85} sizes="33vw" />
             </div>
           )}
           {heroImage && typeof heroImage !== "number" && (

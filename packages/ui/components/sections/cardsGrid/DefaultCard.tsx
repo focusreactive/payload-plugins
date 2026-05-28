@@ -76,7 +76,7 @@ const linkVariants = cva("inline-flex items-center gap-1.5 font-mono text-[11px]
 export default function DefaultCard({ image, link, title, description, backgroundColor }: IDefaultCardProps) {
   return (
     <article className={cn(cardVariants({ backgroundColor }))}>
-      <div className={iconWrapVariants({ backgroundColor })}>{image?.src ? <Image {...image} fit="contain" /> : <span className="font-display text-lg italic">✦</span>}</div>
+      <div className={iconWrapVariants({ backgroundColor })}>{image?.src ? <Image {...image} fit="contain" quality={85} /> : <span className="font-display text-lg italic">✦</span>}</div>
 
       <div className="flex flex-1 flex-col gap-3">
         {title && <h3 className={titleVariants({ backgroundColor })}>{title}</h3>}

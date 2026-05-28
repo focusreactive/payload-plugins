@@ -20,7 +20,7 @@ export default function CarouselCard({ image, text, isActive, effect }: ICarouse
         "rounded-lg": effect !== "cube",
       })}
     >
-      <div {...imageWrapperProps}>{image?.src && <Image {...image} fit="contain" />}</div>
+      <div {...imageWrapperProps}>{image?.src && <Image {...image} fit="contain" quality={85} sizes="(max-width: 768px) 100vw, (max-width: 1024px) 80vw, 700px" priority />}</div>
       {text && (
         <div
           className={cn(

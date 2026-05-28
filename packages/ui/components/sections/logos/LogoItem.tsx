@@ -15,14 +15,14 @@ export default function LogoItem({ image, link }: ILogoItem) {
   if (link) {
     return (
       <Link {...link} {...imageWrapperProps}>
-        {image && <Image {...image} fit="contain" />}
+        {image && <Image {...image} fit="contain" quality={85} />}
       </Link>
     );
   }
 
   return (
     <div {...imageWrapperProps}>
-      <Image {...image} fit="contain" />
+      <Image {...image} fit="contain" quality={85} />
     </div>
   );
 }

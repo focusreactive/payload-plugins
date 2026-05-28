@@ -3,6 +3,9 @@ pre-commit:
   jobs:
     - name: format-and-lint
       glob: "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}"
+      exclude:
+        - "apps/cms/src/payload-types.ts"
+        - "apps/cms/src/app/(payload)/admin/importMap.js"
       run: bunx ultracite fix {staged_files}
       stage_fixed: true
 

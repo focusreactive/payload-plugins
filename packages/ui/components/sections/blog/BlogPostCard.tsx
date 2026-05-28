@@ -10,7 +10,7 @@ export default function BlogPostCard({ style, image, link, text, readMoreLabel }
       <article className="bg-background group flex max-w-xl flex-col items-start gap-y-4">
         {style === BlogStyle.ThreeColumnWithImages ? (
           <div className="h-56 w-full overflow-hidden rounded-2xl bg-cover bg-center">
-            <Image {...image} />
+            <Image {...image} quality={85} sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" priority />
           </div>
         ) : null}
         <div className="group relative group-hover:underline">

@@ -10,7 +10,7 @@ export function Footer({ links, text, copywriteText, image }: IFooterProps) {
         <div className="flex flex-col items-center gap-x-12 gap-y-8 lg:flex-row">
           <div className="flex flex-col items-start space-y-8">
             <div className="h-24">
-              <Image {...image} fit="contain" />
+              <Image {...image} fit="contain" quality={85} />
             </div>
             <RichText {...text} />
           </div>
