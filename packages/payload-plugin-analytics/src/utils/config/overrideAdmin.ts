@@ -15,21 +15,29 @@ export interface OverrideAdminOptions {
 export function overrideAdmin(incomingConfig: Config, options: OverrideAdminOptions = {}): Config {
   const existingProviders = incomingConfig.admin?.components?.providers ?? [];
 
-  const customBlockPaths = Object.entries(options.registry ?? {})
-    .filter(([id]) => !BUILTIN_BLOCK_IDS.has(id))
-    .map(([, def]) => def.component);
+  const customBlockEntries = Object.entries(options.registry ?? {}).filter(([id]) => !BUILTIN_BLOCK_IDS.has(id));
 
   const providers = [
     ...existingProviders,
     ...(options.adminRegistry ? [options.adminRegistry] : []),
     ...(options.sessionsTabComponent ? [options.sessionsTabComponent] : []),
-    ...customBlockPaths,
   ];
+
+  const customBlockDependencies = Object.fromEntries(
+    customBlockEntries.map(([id, def]) => [
+      `analyticsCustomBlock_${id}`,
+      { type: "component" as const, path: def.component },
+    ]),
+  );
 
   return {
     ...incomingConfig,
     admin: {
       ...incomingConfig.admin,
+      dependencies: {
+        ...incomingConfig.admin?.dependencies,
+        ...customBlockDependencies,
+      },
       components: {
         ...incomingConfig.admin?.components,
         providers,

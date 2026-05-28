@@ -1,10 +1,16 @@
 import "./admin.css";
 
+import type { ComponentType } from "react";
 import type { AdminViewServerProps } from "payload";
 import { DefaultTemplate } from "@payloadcms/next/templates";
 import { Gutter } from "@payloadcms/ui";
+import { getFromImportMap } from "payload/shared";
 import SetAnalyticsStepNav from "./SetAnalyticsStepNav";
 import { AnalyticsShell } from "./AnalyticsShell";
+import { getResolvedBlockRegistry, getResolvedLayout } from "../../config";
+import { BUILTIN_LEAD_ACTIONS_BLOCK_IDS, BUILTIN_OVERVIEW_BLOCK_IDS } from "../../constants/layout";
+
+const BUILTIN_BLOCK_IDS = new Set<string>([...BUILTIN_OVERVIEW_BLOCK_IDS, ...BUILTIN_LEAD_ACTIONS_BLOCK_IDS]);
 
 export default function AnalyticsView({ initPageResult, params, searchParams }: AdminViewServerProps) {
   const { req, permissions, locale, visibleEntities } = initPageResult;
@@ -12,6 +18,37 @@ export default function AnalyticsView({ initPageResult, params, searchParams }: 
 
   const viewActions = payload.config.admin?.components?.actions;
   const title = i18n.t("analytics:title" as never);
+
+  const resolved = getResolvedLayout();
+  const registry = getResolvedBlockRegistry();
+
+  const blockComponents: Record<string, ComponentType<Record<string, unknown>>> = {};
+  const clientRegistry: Record<string, { hasFetch: boolean }> = {};
+
+  for (const [id, def] of Object.entries(registry)) {
+    clientRegistry[id] = { hasFetch: Boolean(def.fetch) };
+    if (BUILTIN_BLOCK_IDS.has(id) || !def.component) continue;
+
+    const resolvedComponent = getFromImportMap<ComponentType<Record<string, unknown>> | undefined>({
+      importMap: payload.importMap,
+      PayloadComponent: def.component,
+      schemaPath: "",
+      silent: true,
+    });
+
+    if (resolvedComponent) blockComponents[id] = resolvedComponent;
+  }
+
+  let SessionsTabComponent: ComponentType<Record<string, unknown>> | null = null;
+  if (resolved.sessionsTabComponent) {
+    SessionsTabComponent =
+      getFromImportMap<ComponentType<Record<string, unknown>> | undefined>({
+        importMap: payload.importMap,
+        PayloadComponent: resolved.sessionsTabComponent,
+        schemaPath: "",
+        silent: true,
+      }) ?? null;
+  }
 
   return (
     <DefaultTemplate
@@ -28,7 +65,13 @@ export default function AnalyticsView({ initPageResult, params, searchParams }: 
       <SetAnalyticsStepNav label={title} />
 
       <Gutter>
-        <AnalyticsShell title={title} importMap={payload.importMap} />
+        <AnalyticsShell
+          title={title}
+          layout={resolved}
+          clientRegistry={clientRegistry}
+          blockComponents={blockComponents}
+          SessionsTabComponent={SessionsTabComponent}
+        />
       </Gutter>
     </DefaultTemplate>
   );

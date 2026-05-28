@@ -1,31 +1,31 @@
 "use client";
 
-import type { ImportMap } from "payload";
+import type { ComponentType } from "react";
 import { RowRenderer } from "./RowRenderer";
-import type { BlockDefinition, BlockId, ResolvedTab } from "../../../types/layout";
+import type { ResolvedTab } from "../../../types/layout";
 import type { Comparison, DateRange } from "../../../types/query";
 
 export interface TabRendererProps {
   tab: ResolvedTab;
-  registry: Record<BlockId, BlockDefinition>;
+  clientRegistry: Record<string, { hasFetch: boolean }>;
   dateRange: DateRange;
   comparison: Comparison;
   t: (key: string) => string;
-  importMap?: ImportMap;
+  blockComponents?: Record<string, ComponentType<Record<string, unknown>>>;
 }
 
-export function TabRenderer({ tab, registry, dateRange, comparison, t, importMap }: TabRendererProps) {
+export function TabRenderer({ tab, clientRegistry, dateRange, comparison, t, blockComponents }: TabRendererProps) {
   return (
     <div className="flex flex-col gap-4">
       {tab.rows.map((row) => (
         <RowRenderer
           key={row.id}
           row={row}
-          registry={registry}
+          clientRegistry={clientRegistry}
           dateRange={dateRange}
           comparison={comparison}
           t={t}
-          importMap={importMap}
+          blockComponents={blockComponents}
         />
       ))}
     </div>

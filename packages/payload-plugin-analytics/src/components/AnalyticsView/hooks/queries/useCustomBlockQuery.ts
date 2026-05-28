@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { analyticsFetch } from "./client";
 import { analyticsKeys } from "./keys";
-import { customBlockEndpointPath } from "../../../../endpoints/customBlock";
+import { customBlockEndpointPath } from "../../../../constants/endpoints";
 import type { AnalyticsQuery } from "../../../../types/query";
 
 export function useCustomBlockQuery<TData>(blockId: string, query: AnalyticsQuery) {

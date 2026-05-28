@@ -12,3 +12,7 @@ export const ANALYTICS_ENDPOINT_PATHS = {
 } as const;
 
 export type AnalyticsEndpointKey = keyof typeof ANALYTICS_ENDPOINT_PATHS;
+
+export function customBlockEndpointPath(blockId: string) {
+  return `/analytics/custom/${blockId}`;
+}

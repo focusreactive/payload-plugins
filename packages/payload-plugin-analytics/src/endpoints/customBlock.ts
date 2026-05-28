@@ -3,12 +3,9 @@ import { AnalyticsQuerySchema, formatZodIssues } from "./validateBody";
 import { withAccess } from "./withAccess";
 import { mapGa4Error } from "./errorMapping";
 import { createScopedGa4Client } from "../services/ga4DataClient/scopedClient";
+import { customBlockEndpointPath } from "../constants/endpoints";
 import type { AnalyticsPluginConfig } from "../types/config";
 import type { BlockDefinition, BlockId } from "../types/layout";
-
-export function customBlockEndpointPath(blockId: BlockId) {
-  return `/analytics/custom/${blockId}`;
-}
 
 export function buildCustomBlockEndpoint(
   config: AnalyticsPluginConfig,
