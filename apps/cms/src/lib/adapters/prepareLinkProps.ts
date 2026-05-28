@@ -43,12 +43,13 @@ export function prepareLinkProps(link: PayloadLink | null | undefined, locale: s
   }
 
   const variantMap: Record<string, ButtonVariant> = {
+    default: ButtonVariant.Primary,
     outline: ButtonVariant.Secondary,
   };
 
   return {
     href,
     text: link.label ?? "",
-    variant: variantMap[link.appearance ?? ""] ?? ButtonVariant.Default,
+    variant: variantMap[link.appearance ?? ""] ?? ButtonVariant.Primary,
   };
 }

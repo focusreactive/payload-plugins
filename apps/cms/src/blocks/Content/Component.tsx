@@ -33,7 +33,7 @@ export const ContentBlockComponent: React.FC<ContentBlockProps> = ({ heading, la
           )}
         </div>
         {hasImage && (
-          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg lg:w-1/2 lg:aspect-[5/6]">
+          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg lg:w-1/2">
             <Media resource={image} fill className="absolute inset-0" imgClassName="object-cover" />
           </div>
         )}

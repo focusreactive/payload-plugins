@@ -6,14 +6,14 @@ import { Container } from "../Container";
 import { Media } from "../Media";
 import type { ISectionContainerProps } from "./types";
 
-const sectionVariants = cva("overflow-clip relative z-1 bg-background text-foreground", {
+const sectionVariants = cva("overflow-clip relative z-1", {
   defaultVariants: {
     paddingY: "base",
   },
   variants: {
     paddingY: {
-      base: "py-section-base",
-      large: "py-section-large",
+      base: "py-sectionBase",
+      large: "py-sectionLarge",
       none: "py-0",
     },
   },
@@ -27,7 +27,7 @@ export function SectionContainer({ children, className, containerClassName, sect
   const hasMedia = !!media;
 
   return (
-    <section id={id ?? undefined} className={cn(sectionVariants({ paddingY }), className)} {...(theme ? { "data-theme": theme } : {})}>
+    <section id={id ?? undefined} className={cn(sectionVariants({ paddingY }), theme && "bg-background text-foreground", className)} {...(theme ? { "data-theme": theme } : {})}>
       <Container containerData={sectionData} className={containerClassName}>
         {children}
       </Container>

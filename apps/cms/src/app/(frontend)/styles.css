@@ -4,13 +4,23 @@
 
 /* App-specific layout vars (runtime, mutable via media queries) */
 :root {
-  --section-margin-base:  96px;
-  --section-margin-large: 120px;
+  --section-margin-base:    96px;
+  --section-margin-large:   120px;
+  --container-padding-base: 24px;
+  --container-max-width:    1440px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --container-padding-base: 40px;
+  }
 }
 
 @theme {
-  --spacing-section-base:  var(--section-margin-base);
-  --spacing-section-large: var(--section-margin-large);
+  --spacing-sectionBase:   var(--section-margin-base);
+  --spacing-sectionLarge:  var(--section-margin-large);
+  --spacing-containerBase: var(--container-padding-base);
+  --spacing-containerMaxW: var(--container-max-width);
 }
 
 /* Body defaults */

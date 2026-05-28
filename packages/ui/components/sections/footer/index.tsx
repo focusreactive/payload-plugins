@@ -5,8 +5,8 @@ import type { IFooterProps } from "./types";
 
 export function Footer({ links, text, copywriteText, image }: IFooterProps) {
   return (
-    <footer className="">
-      <div className="max-w-container-page gutter-x mx-auto space-y-12">
+    <footer className="py-12 lg:py-16">
+      <div className="max-w-containerMaxW px-containerBase mx-auto space-y-12">
         <div className="flex flex-col items-center gap-x-12 gap-y-8 lg:flex-row">
           <div className="flex flex-col items-start space-y-8">
             <div className="h-24">
@@ -14,14 +14,14 @@ export function Footer({ links, text, copywriteText, image }: IFooterProps) {
             </div>
             <RichText {...text} />
           </div>
-          <nav className="flex grow flex-wrap items-center justify-end gap-3 p-3" aria-label="footer mavigation">
+          <nav className="flex grow flex-wrap items-center justify-end gap-6 p-6 lg:p-8" aria-label="footer mavigation">
             {links.map((link, i) => (
               <Link key={link.text + i} {...link} />
             ))}
           </nav>
         </div>
 
-        {copywriteText && <p className="text-foreground text-center">{copywriteText}</p>}
+        {copywriteText && <p className="text-foreground text-center pt-8">{copywriteText}</p>}
       </div>
     </footer>
   );
