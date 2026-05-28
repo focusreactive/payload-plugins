@@ -1,4 +1,5 @@
 import type { AnalyticsQuery, Row, SessionDetailEvent, SessionDetailResponse } from "../../types/query";
+import { FR_LEAD_TYPE_PARAM } from "../../constants/events";
 import { resolveDateRange } from "../../utils/date/resolveDateRange";
 import { dateRangesFor, deriveMissing } from "../../utils/ga4";
 import { mapGa4Error } from "../../endpoints/errorMapping";
@@ -12,12 +13,40 @@ function convertDateHourMinuteToIso(value: string | null | undefined): string {
 
 function convertRowToSessionDetailEvent(row: Row): SessionDetailEvent {
   const dimensionValues = row.dimensionValues ?? [];
+  const leadType = dimensionValues[4]?.value ?? "";
+  const params: Record<string, unknown> = {};
+
+  if (leadType) params[FR_LEAD_TYPE_PARAM] = leadType;
 
   return {
     timestamp: convertDateHourMinuteToIso(dimensionValues[2]?.value),
     eventName: dimensionValues[0]?.value ?? "",
     pagePath: dimensionValues[1]?.value ?? undefined,
-    params: {},
+    params,
+  };
+}
+
+function buildRequest(sessionId: string, dateRange: ReturnType<typeof resolveDateRange>, includeLeadType: boolean) {
+  const dimensions: Array<{ name: string }> = [
+    { name: "eventName" },
+    { name: "pagePath" },
+    { name: "dateHourMinute" },
+    { name: "customEvent:fr_event_seq" },
+  ];
+
+  if (includeLeadType) dimensions.push({ name: "customEvent:fr_lead_type" });
+
+  return {
+    dateRanges: dateRangesFor(dateRange),
+    metrics: [{ name: "eventCount" }],
+    dimensions,
+    dimensionFilter: {
+      filter: { fieldName: "customEvent:fr_session_id", stringFilter: { value: sessionId } },
+    },
+    orderBys: [
+      { dimension: { dimensionName: "dateHourMinute" } },
+      { dimension: { dimensionName: "customEvent:fr_event_seq" } },
+    ],
   };
 }
 
@@ -28,41 +57,42 @@ export async function getSessionDetail(
 ): Promise<SessionDetailResponse> {
   const dateRange = resolveDateRange(query.dateRange);
 
-  const request = {
-    dateRanges: dateRangesFor(dateRange),
-    metrics: [{ name: "eventCount" }],
-    dimensions: [
-      { name: "eventName" },
-      { name: "pagePath" },
-      { name: "dateHourMinute" },
-      { name: "customEvent:fr_event_seq" },
-    ],
-    dimensionFilter: {
-      filter: { fieldName: "customEvent:fr_session_id", stringFilter: { value: sessionId } },
-    },
-    orderBys: [
-      { dimension: { dimensionName: "dateHourMinute" } },
-      { dimension: { dimensionName: "customEvent:fr_event_seq" } },
-    ],
-  };
-
   try {
-    const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "sessionDetail");
+    const request = buildRequest(sessionId, dateRange, true);
+    const raw = await runQuery.runReport(
+      propertyId,
+      request as Parameters<typeof runQuery.runReport>[1],
+      "sessionDetail",
+    );
     const rows = (raw.rows ?? []) as Row[];
 
     return { sessionId, events: rows.map(convertRowToSessionDetailEvent) };
   } catch (err) {
     const mapped = mapGa4Error(err);
 
-    if (mapped.setupRequired) {
-      return {
-        sessionId,
-        setupRequired: true,
-        missing: deriveMissing({ message: mapped.message }, ["fr_session_id", "fr_event_seq"]),
-        events: [],
-      };
+    if (!mapped.setupRequired) throw err;
+
+    const missing = deriveMissing({ message: mapped.message }, ["fr_session_id", "fr_event_seq", "fr_lead_type"]);
+
+    if (missing.length === 1 && missing[0] === "fr_lead_type") {
+      try {
+        const fallbackRequest = buildRequest(sessionId, dateRange, false);
+        const raw = await runQuery.runReport(
+          propertyId,
+          fallbackRequest as Parameters<typeof runQuery.runReport>[1],
+          "sessionDetail",
+        );
+        const rows = (raw.rows ?? []) as Row[];
+
+        return { sessionId, events: rows.map(convertRowToSessionDetailEvent), missing };
+      } catch {}
     }
 
-    throw err;
+    return {
+      sessionId,
+      setupRequired: true,
+      missing,
+      events: [],
+    };
   }
 }

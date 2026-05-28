@@ -74,17 +74,6 @@ export function EventTimeline({ events }: EventTimelineProps) {
                   {pickDetail(event)}
                 </span>
               )}
-              {params && Object.keys(params).length > 0 && (
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {Object.entries(params).map(([k, v]) => (
-                    <span
-                      key={k}
-                      className="text-[10px] font-[family-name:var(--font-mono)] px-1.5 py-px bg-[var(--theme-elevation-100)] rounded text-[var(--theme-elevation-700)]">
-                      <b className="text-[var(--theme-elevation-500)] font-normal">{k}:</b> {String(v)}
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         );

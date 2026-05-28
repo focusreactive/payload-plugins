@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowRight } from "lucide-react";
-import { CaveatBanner } from "../ui/CaveatBanner";
 import { SetupRequiredCard } from "../ui/SetupRequiredCard";
 import { SkeletonBlock } from "../ui/SkeletonBlock";
 import { ErrorTile } from "../ui/ErrorTile";
@@ -59,11 +58,6 @@ export function SessionsTabView({
 
   return (
     <div>
-      <CaveatBanner>
-        Sessions without a recorded start time (sessions that occurred before <code>fr_session_start</code> was
-        registered) are not shown.
-      </CaveatBanner>
-
       <SessionsFilters
         filters={filters}
         onChange={onFiltersChange}
