@@ -20,6 +20,12 @@ export interface CollectionABConfig<TVariantData extends object = object> {
    */
   tenantField?: string;
   /**
+   * Optional dot-notation path to a human-readable title field on the document,
+   * used as the variant display name in analytics surfaces. Falls back to the
+   * variant slug when unset or empty.
+   */
+  nameField?: string;
+  /**
    * Maps a document to the URL path used as the manifest key.
    * Return null to skip writing the manifest for that document.
    * Called once per locale when localization is enabled.
@@ -45,4 +51,10 @@ export interface AbTestingPluginConfig<TVariantData extends object = object> {
   collections: Record<string, CollectionABConfig<TVariantData>>;
   /** Storage adapter instance. */
   storage: StorageAdapter<TVariantData>;
+  /**
+   * Slug for the auto-injected lifecycle collection that records each
+   * experiment's `startedAt`. Default: 'ab-experiments'. Must match the
+   * analytics plugin's `ab.experimentsCollectionSlug` if overridden.
+   */
+  experimentsCollectionSlug?: string;
 }

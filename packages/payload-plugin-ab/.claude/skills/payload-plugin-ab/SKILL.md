@@ -12,7 +12,7 @@ description: >
 
 # payload-plugin-ab
 
-> Adds A/B testing to Payload CMS + Next.js: create page variants in the admin UI, route traffic at the edge via Next.js middleware, and track impressions/conversions with Google Analytics.
+> Adds A/B testing to Payload CMS + Next.js: create page variants in the admin UI, route traffic at the edge via Next.js middleware, and stamp GA4 custom dimensions for analytics attribution via `ExperimentTracker`.
 
 **Source**: [github.com/focusreactive/payload-plugins](https://github.com/focusreactive/payload-plugins)
 **npm**: `@focus-reactive/payload-plugin-ab`
@@ -251,7 +251,23 @@ abTestingPlugin({
 });
 ```
 
-### Analytics — tracking impressions
+### Analytics integration
+
+Mount `<ExperimentTracker experimentId={manifestKey} />` on each variant-served
+page. It stamps three GA4 event-scoped custom dimensions on every subsequent event:
+
+- `fr_ab_experiment` — the experiment id (manifest key, e.g. `/en/about`)
+- `fr_ab_variant` — the assigned bucket (`original` or a variant slug)
+- `fr_ab_visitor_id` — the `ab_visitor_id` cookie value
+
+Register these three dimensions in your GA4 property. The
+`@focus-reactive/payload-plugin-analytics` A/B tab reads them to compute
+exposure, conversion-rate, lift, significance, and SRM. Conversions are the
+analytics plugin's existing `lead_action` events on the experiment page — there
+is no separate AB conversion event.
+
+The plugin auto-creates an `ab-experiments` collection (hidden unless `debug: true`)
+that records each experiment's `startedAt` on first variant publish.
 
 ```tsx
 // Server component
@@ -271,40 +287,6 @@ export default async function Page({ params }) {
       />
     </>
   );
-}
-```
-
-### Analytics — tracking conversions
-
-```tsx
-"use client";
-import { useABConversion } from "@focus-reactive/payload-plugin-ab/analytics/client";
-
-export function CTAButton({ experimentId, variantCookieName, visitorCookieName }) {
-  const trackConversion = useABConversion({
-    experimentId,
-    variantCookieName,
-    visitorCookieName,
-  });
-  return <button onClick={() => trackConversion({ goalId: "cta_click" })}>Get Started</button>;
-}
-```
-
-### Analytics — provider setup
-
-```tsx
-// app/layout.tsx
-import { ABAnalyticsProvider } from "@focus-reactive/payload-plugin-ab/analytics/client";
-import { googleAnalyticsAdapter } from "@focus-reactive/payload-plugin-ab/analytics/adapters/google-analytics";
-
-const analytics = googleAnalyticsAdapter({
-  measurementId: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID!,
-  apiSecret: process.env.GA4_API_SECRET, // optional: server-side tracking
-  propertyId: process.env.GA4_PROPERTY_ID, // optional: enables getStats()
-});
-
-export default function RootLayout({ children }) {
-  return <ABAnalyticsProvider adapter={analytics}>{children}</ABAnalyticsProvider>;
 }
 ```
 
@@ -340,8 +322,8 @@ A: On first visit, the middleware assigns a bucket (variant or original) based o
 **Q: What cookies does the plugin set?**
 A: Three cookies: `payload_ab_bucket_{path}` (session, bucket assignment), `ab_visitor_id` (365-day, persistent visitor ID for analytics), `exp_{path}` (90-day, client-readable for analytics adapters).
 
-**Q: Can I use a custom analytics provider instead of Google Analytics?**
-A: Yes. Implement the `AnalyticsAdapter` interface and pass it to `ABAnalyticsProvider`. Google Analytics is a built-in adapter; custom adapters are fully supported.
+**Q: How does analytics attribution work?**
+A: Mount `<ExperimentTracker>` on each variant-served page. It stamps three GA4 event-scoped custom dimensions (`fr_ab_experiment`, `fr_ab_variant`, `fr_ab_visitor_id`) on every subsequent event. Register those dimensions in your GA4 property, then use `@focus-reactive/payload-plugin-analytics` to view exposure and conversion-rate results per experiment.
 
 **Q: What happens if `generatePath` returns the same path for multiple documents?**
 A: The last document processed will overwrite earlier entries in the manifest. Ensure `generatePath` returns unique paths per document.

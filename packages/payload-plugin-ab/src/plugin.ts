@@ -5,6 +5,8 @@ import { buildParentAfterChangeHook } from "./hooks/buildParentAfterChangeHook";
 import { buildParentAfterDeleteHook } from "./hooks/buildParentAfterDeleteHook";
 import { buildParentBeforeChangeHook } from "./hooks/buildParentBeforeChangeHook";
 import { duplicateVariantHandler } from "./endpoints/duplicateVariant";
+import { buildExperimentsCollection } from "./collections/buildExperimentsCollection";
+import { AB_EXPERIMENTS_SLUG } from "./constants";
 
 export const abTestingPlugin =
   <TVariantData extends object>(pluginConfig: AbTestingPluginConfig<TVariantData>): Plugin =>
@@ -43,9 +45,12 @@ export const abTestingPlugin =
       };
     });
 
+    const experimentsSlug = pluginConfig.experimentsCollectionSlug ?? AB_EXPERIMENTS_SLUG;
+    const experimentsCollection = buildExperimentsCollection(debug, experimentsSlug);
+
     return {
       ...incomingConfig,
-      collections: patchedCollections,
+      collections: [...patchedCollections, experimentsCollection],
       globals: [...(incomingConfig.globals ?? []), ...extraGlobals],
       endpoints: [
         ...(incomingConfig.endpoints ?? []),

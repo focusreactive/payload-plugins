@@ -3,6 +3,7 @@ import type { AbTestingPluginConfig, CollectionABConfig } from "../types/config"
 import { AB_PASS_PERCENTAGE_FIELD, AB_VARIANT_OF_FIELD, AB_VARIANT_PERCENTAGES_FIELD } from "../constants";
 import { resolveId } from "../utils/resolveId";
 import { recomputeManifestForParent } from "../utils/recomputeManifest";
+import { ensureExperimentRecords } from "./ensureExperimentRecords";
 
 export function buildParentAfterChangeHook<TVariantData extends object>(
   parentCollectionSlug: string,
@@ -22,6 +23,7 @@ export function buildParentAfterChangeHook<TVariantData extends object>(
       const parentId = resolveId(variantOfValue);
       if (!parentId) return;
       await recomputeManifestForParent(parentId, parentCollectionSlug, abConfig, pluginConfig, req);
+      await ensureExperimentRecords(parentId, parentCollectionSlug, abConfig, pluginConfig, req);
     } else {
       // This doc is an original — apply pending % changes to variant docs, then recompute.
       const pending = doc[AB_VARIANT_PERCENTAGES_FIELD] as Record<string, number> | undefined | null;

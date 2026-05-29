@@ -12,7 +12,6 @@ export function waitForGtag(callback: (gtag: GtagFn) => void, options: WaitForGt
 
   if (canUseGtag(window)) {
     callback(window.gtag);
-
     return;
   }
 
@@ -20,7 +19,6 @@ export function waitForGtag(callback: (gtag: GtagFn) => void, options: WaitForGt
   const id = setInterval(() => {
     if (canUseGtag(window)) {
       clearInterval(id);
-
       callback(window.gtag);
     } else if (Date.now() - start >= timeout) {
       clearInterval(id);
