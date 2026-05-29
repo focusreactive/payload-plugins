@@ -6,6 +6,7 @@ import type {
   TopCountriesQuery,
   TopNQuery,
 } from "../../../../types/query";
+import type { AbExperimentQuery } from "../../../../types/ab";
 
 const ROOT = ["analytics"] as const;
 
@@ -24,4 +25,11 @@ export const analyticsKeys = {
   sessionDetail: (id: string | null, q: { dateRange: DateRange }) =>
     id ? ([...ROOT, "sessionDetail", id, q] as const) : ([...ROOT, "sessionDetail", "__disabled__"] as const),
   customBlock: (blockId: string, q: AnalyticsQuery) => [...ROOT, "customBlock", blockId, q] as const,
+  abKpis: (q: AnalyticsQuery) => [...ROOT, "abKpis", q] as const,
+  abExperiments: (q: AnalyticsQuery) => [...ROOT, "abExperiments", q] as const,
+  abHeader: (q: AbExperimentQuery) => [...ROOT, "abHeader", q] as const,
+  abExposure: (q: AbExperimentQuery) => [...ROOT, "abExposure", q] as const,
+  abOutcome: (q: AbExperimentQuery) => [...ROOT, "abOutcome", q] as const,
+  abTimeSeries: (q: AbExperimentQuery) => [...ROOT, "abTimeSeries", q] as const,
+  abLeadBreakdown: (q: AbExperimentQuery) => [...ROOT, "abLeadBreakdown", q] as const,
 };
