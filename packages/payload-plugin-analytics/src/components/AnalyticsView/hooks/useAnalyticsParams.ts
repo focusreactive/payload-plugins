@@ -4,7 +4,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import type { DateRange, Comparison, DeviceCategory, DateRangePreset } from "../../../types/query";
 
-export type AnalyticsTab = "overview" | "lead-actions" | "sessions";
+export type AnalyticsTab = "overview" | "lead-actions" | "sessions" | "ab";
 
 export interface SessionsFilters {
   hadLeadAction?: boolean;
@@ -18,13 +18,15 @@ export interface UseAnalyticsParamsResult {
   dateRange: DateRange;
   comparison: Comparison;
   sessions: SessionsFilters;
+  selectedExperiment: string | null;
   setTab: (tab: AnalyticsTab) => void;
   setDateRange: (range: DateRange) => void;
   setComparison: (cmp: Comparison) => void;
   setSessions: (filters: Partial<SessionsFilters>) => void;
+  setSelectedExperiment: (manifestKey: string | null) => void;
 }
 
-const VALID_TABS = new Set<AnalyticsTab>(["overview", "lead-actions", "sessions"]);
+const VALID_TABS = new Set<AnalyticsTab>(["overview", "lead-actions", "sessions", "ab"]);
 const VALID_DEVICES = new Set<DeviceCategory>(["desktop", "mobile", "tablet", "other"]);
 const VALID_PRESETS = new Set(["today", "yesterday", "last-7d", "last-14d", "last-30d", "last-90d"]);
 
@@ -61,6 +63,10 @@ export function useAnalyticsParams(): UseAnalyticsParamsResult {
 
     return { kind: raw || "none" };
   }, [searchParams]);
+
+  const selectedExperiment = useMemo<string | null>(() => {
+    return tab === "ab" ? searchParams.get("experiment") : null;
+  }, [searchParams, tab]);
 
   const sessions: SessionsFilters = useMemo(() => {
     if (tab !== "sessions") return {};
@@ -130,6 +136,13 @@ export function useAnalyticsParams(): UseAnalyticsParamsResult {
     [writeParams],
   );
 
+  const setSelectedExperiment = useCallback(
+    (manifestKey: string | null) => {
+      writeParams({ experiment: manifestKey ?? null });
+    },
+    [writeParams],
+  );
+
   const setSessions = useCallback(
     (filters: Partial<SessionsFilters>) => {
       writeParams({
@@ -150,9 +163,11 @@ export function useAnalyticsParams(): UseAnalyticsParamsResult {
     dateRange,
     comparison,
     sessions,
+    selectedExperiment,
     setTab,
     setDateRange,
     setComparison,
     setSessions,
+    setSelectedExperiment,
   };
 }
