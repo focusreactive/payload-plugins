@@ -7,7 +7,7 @@ import { Gutter } from "@payloadcms/ui";
 import { getFromImportMap } from "payload/shared";
 import SetAnalyticsStepNav from "./SetAnalyticsStepNav";
 import { AnalyticsShell } from "./AnalyticsShell";
-import { getResolvedBlockRegistry, getResolvedLayout } from "../../config";
+import { getResolvedBlockRegistry, getResolvedLayout, getPluginConfig } from "../../config";
 import { BUILTIN_LEAD_ACTIONS_BLOCK_IDS, BUILTIN_OVERVIEW_BLOCK_IDS } from "../../constants/layout";
 
 const BUILTIN_BLOCK_IDS = new Set<string>([...BUILTIN_OVERVIEW_BLOCK_IDS, ...BUILTIN_LEAD_ACTIONS_BLOCK_IDS]);
@@ -21,6 +21,7 @@ export default function AnalyticsView({ initPageResult, params, searchParams }: 
 
   const resolved = getResolvedLayout();
   const registry = getResolvedBlockRegistry();
+  const abEnabled = Boolean(getPluginConfig().ab);
 
   const blockComponents: Record<string, ComponentType<Record<string, unknown>>> = {};
   const clientRegistry: Record<string, { hasFetch: boolean }> = {};
@@ -71,6 +72,7 @@ export default function AnalyticsView({ initPageResult, params, searchParams }: 
           clientRegistry={clientRegistry}
           blockComponents={blockComponents}
           SessionsTabComponent={SessionsTabComponent}
+          abEnabled={abEnabled}
         />
       </Gutter>
     </DefaultTemplate>

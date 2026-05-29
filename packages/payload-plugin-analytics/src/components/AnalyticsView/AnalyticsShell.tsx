@@ -8,6 +8,7 @@ import { RefreshButton } from "./RefreshButton";
 import { TabsNav } from "./TabsNav";
 import { TabRenderer } from "./render/TabRenderer";
 import { SessionsTab } from "./tabs/SessionsTab";
+import { AbTab } from "./tabs/ab/AbTab";
 import type { ResolvedLayout } from "../../types/layout";
 
 export interface AnalyticsShellProps {
@@ -16,6 +17,7 @@ export interface AnalyticsShellProps {
   clientRegistry: Record<string, { hasFetch: boolean }>;
   blockComponents?: Record<string, ComponentType<Record<string, unknown>>>;
   SessionsTabComponent?: ComponentType<Record<string, unknown>> | null;
+  abEnabled?: boolean;
 }
 
 const noopT = (s: string) => s;
@@ -26,6 +28,7 @@ export function AnalyticsShell({
   clientRegistry,
   blockComponents,
   SessionsTabComponent,
+  abEnabled,
 }: AnalyticsShellProps) {
   const { tab, dateRange, comparison, sessions, setComparison, setDateRange, setSessions, setTab } =
     useAnalyticsParams();
@@ -35,10 +38,10 @@ export function AnalyticsShell({
 
   return (
     <AnalyticsProviders>
-      <div className="pa-analytics-view font-[family-name:var(--font-body)] text-[var(--theme-text)] pb-(--gutter-h)">
+      <div className="pa-analytics-view font-[family-name:var(--font-body)] text-(--theme-text) pb-(--gutter-h)">
         <header className="flex items-start gap-6 mb-5 flex-wrap">
           <div>
-            <h1 className="text-[26px] font-semibold tracking-tight text-[var(--theme-elevation-1000)] m-0">{title}</h1>
+            <h1 className="text-[26px] font-semibold tracking-tight text-(--theme-elevation-1000) m-0">{title}</h1>
           </div>
 
           <div className="ml-auto flex items-center gap-3">
@@ -52,7 +55,7 @@ export function AnalyticsShell({
           </div>
         </header>
 
-        <TabsNav active={tab} onChange={setTab} />
+        <TabsNav active={tab} onChange={setTab} abEnabled={abEnabled} />
 
         {tab === "overview" && overviewTab && (
           <TabRenderer
@@ -85,6 +88,8 @@ export function AnalyticsShell({
               onSessionsFiltersChange={setSessions}
             />
           : <SessionsTab dateRange={dateRange} filters={sessions} onFiltersChange={setSessions} />)}
+
+        {tab === "ab" && abEnabled && <AbTab dateRange={dateRange} comparison={comparison} />}
       </div>
     </AnalyticsProviders>
   );

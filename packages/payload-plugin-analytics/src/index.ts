@@ -98,3 +98,18 @@ export {
   BUILTIN_LEAD_ACTIONS_BLOCK_IDS,
 } from "./constants/layout";
 export type { BuiltinBlockId, BuiltinOverviewBlockId, BuiltinLeadActionsBlockId } from "./constants/layout";
+
+export type { AbIntegrationConfig } from "./types/config";
+export type {
+  AbExperimentQuery,
+  AbKpisResponse,
+  AbExperimentsListResponse,
+  AbExperimentListRow,
+  AbExperimentHeaderResponse,
+  AbExposureResponse,
+  AbOutcomeResponse,
+  AbOutcomeRow,
+  AbTimeSeriesResponse,
+  AbLeadBreakdownResponse,
+  AbBucketCounts,
+} from "./types/ab";
