@@ -26,6 +26,10 @@ export const AnalyticsQuerySchema = z.object({
   comparison: ComparisonSchema.optional(),
 });
 
+export const AbExperimentQuerySchema = AnalyticsQuerySchema.extend({
+  manifestKey: z.string().min(1).max(512),
+});
+
 export const TopNQuerySchema = AnalyticsQuerySchema.extend({
   limit: z.number().int().min(1).max(100).default(10),
 });
