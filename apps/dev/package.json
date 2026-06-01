@@ -16,11 +16,14 @@
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start"
   },
   "dependencies": {
+    "@ai-sdk/openai": "3.0.25",
     "@focus-reactive/payload-plugin-ab": "workspace:*",
+    "@focus-reactive/payload-plugin-ai-page-builder": "workspace:*",
     "@focus-reactive/payload-plugin-comments": "workspace:*",
     "@focus-reactive/payload-plugin-presets": "workspace:*",
     "@focus-reactive/payload-plugin-scheduling": "workspace:*",
     "@focus-reactive/payload-plugin-translator": "workspace:*",
+    "ai": "6.0.68",
     "@payloadcms/db-sqlite": "3.79.0",
     "@payloadcms/live-preview-react": "3.79.0",
     "@payloadcms/next": "3.79.0",

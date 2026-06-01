@@ -1,0 +1,74 @@
+{
+  "name": "@focus-reactive/payload-plugin-ai-page-builder",
+  "version": "0.0.0",
+  "description": "AI-powered page builder plugin for Payload CMS — generate pages from natural language prompts using the Vercel AI SDK",
+  "keywords": [
+    "payload-cms",
+    "payload-plugin",
+    "ai",
+    "page-builder",
+    "vercel-ai-sdk",
+    "generative-ai",
+    "cms"
+  ],
+  "license": "MIT",
+  "author": "FocusReactive <ship@focusreactive.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/focusreactive/payload-plugins",
+    "directory": "packages/payload-plugin-ai-page-builder"
+  },
+  "bugs": {
+    "url": "https://github.com/focusreactive/payload-plugins/issues"
+  },
+  "homepage": "https://github.com/focusreactive/payload-plugins/tree/main/packages/payload-plugin-ai-page-builder",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "ultracite check",
+    "lint:fix": "ultracite fix",
+    "check-types": "tsgo --noEmit"
+  },
+  "peerDependencies": {
+    "@payloadcms/ui": "^3.0.0",
+    "ai": ">=4.0.0",
+    "payload": "^3.0.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "zod": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@payloadcms/ui": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@payloadcms/ui": "3.84.1",
+    "@types/node": "22.19.9",
+    "@types/react": "19.2.9",
+    "ai": "6.0.68",
+    "payload": "3.84.1",
+    "react": "19.2.1",
+    "tsup": "8.0.0",
+    "typescript": "5.9.2",
+    "zod": "3.24.1"
+  }
+}
