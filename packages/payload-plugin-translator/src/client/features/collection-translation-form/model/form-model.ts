@@ -30,7 +30,10 @@ export const useCollectionTranslationForm = ({ initialValues, disabled }: UseFor
 
   const form = useForm<FormValues>({
     defaultValues: defaultFormValues,
-    resolver: zodResolver(validationSchema),
+    // tsgo TS2589: zodResolver + computed-key zod schema causes infinite type
+    // instantiation in the native TS preview. Cast to break the inference chain.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: (zodResolver as any)(validationSchema) as import("react-hook-form").Resolver<FormValues>,
     mode: "onTouched",
     disabled,
   });
