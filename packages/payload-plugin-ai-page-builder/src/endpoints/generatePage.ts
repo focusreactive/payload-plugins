@@ -17,7 +17,10 @@ export function createGeneratePageHandler(pluginConfig: AiPageBuilderPluginConfi
   return async (req) => {
     let body: { prompt?: string; collectionSlug?: string };
     try {
-      body = await req.json();
+      if (!req.json) {
+        return Response.json({ error: "Invalid request body" }, { status: 400 });
+      }
+      body = (await req.json()) as { prompt?: string; collectionSlug?: string };
     } catch {
       return Response.json({ error: "Invalid request body" }, { status: 400 });
     }
@@ -38,13 +41,18 @@ export function createGeneratePageHandler(pluginConfig: AiPageBuilderPluginConfi
 
     let generated: { title: string; slug: string; sections: unknown[] };
     try {
+      // Cast schema to avoid deep-type-instantiation error from the complex
+      // discriminated-union Zod shape — the runtime behaviour is correct.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await generateObject({
-        model: pluginConfig.model as Parameters<typeof generateObject>[0]["model"],
-        schema,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        model: pluginConfig.model as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        schema: schema as any,
         system,
         prompt: prompt.trim(),
       });
-      generated = result.object;
+      generated = result.object as { title: string; slug: string; sections: unknown[] };
     } catch (err) {
       const message = err instanceof Error ? err.message : "AI generation failed";
       return Response.json({ error: message }, { status: 500 });

@@ -19,7 +19,10 @@ export function buildPageSchema(blocks: AiBlockDefinition[]) {
   } else if (blockSchemas.length === 1) {
     sectionsSchema = z.array(blockSchemas[0] as z.ZodObject<z.ZodRawShape>);
   } else {
-    sectionsSchema = z.array(z.discriminatedUnion("blockType", blockSchemas as [z.ZodObject<z.ZodRawShape>, z.ZodObject<z.ZodRawShape>, ...z.ZodObject<z.ZodRawShape>[]]));
+    // Cast through unknown: blockSchemas[N] have blockType via .extend() but
+    // the inferred type doesn't satisfy ZodDiscriminatedUnionOption constraint.
+    type DiscUnionOptions = [z.ZodDiscriminatedUnionOption<"blockType">, z.ZodDiscriminatedUnionOption<"blockType">, ...z.ZodDiscriminatedUnionOption<"blockType">[]];
+    sectionsSchema = z.array(z.discriminatedUnion("blockType", blockSchemas as unknown as DiscUnionOptions));
   }
 
   return z.object({
