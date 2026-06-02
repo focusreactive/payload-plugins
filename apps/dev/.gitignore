@@ -45,6 +45,9 @@ next-env.d.ts
 # SQLite dev database
 *.db
 
+# Database / file backups
+*.bak
+
 # Playwright
 node_modules/
 /test-results/
