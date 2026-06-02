@@ -54,8 +54,8 @@
     }
   },
   "scripts": {
-    "build": "node node_modules/tsup/dist/cli-default.js && tsc --emitDeclarationOnly --declarationMap",
-    "dev": "node node_modules/tsup/dist/cli-default.js --watch",
+    "build": "tsup && tsc --emitDeclarationOnly --declarationMap",
+    "dev": "tsup --watch",
     "lint": "eslint src/ tests/",
     "lint:fix": "eslint src/ tests/ --fix",
     "format": "prettier --write src/ tests/",

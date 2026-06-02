@@ -3,10 +3,13 @@
 import { defineConfig } from "tsup";
 import { spawn } from "node:child_process";
 import { copyFileSync, mkdirSync } from "node:fs";
+import { createRequire } from "node:module";
+
+const postcssCli = createRequire(import.meta.url).resolve("postcss-cli");
 
 const runPostcss = (input: string, output: string) =>
   new Promise<void>((resolve, reject) => {
-    const child = spawn("node", ["node_modules/postcss-cli/index.js", input, "-o", output], {
+    const child = spawn("node", [postcssCli, input, "-o", output], {
       stdio: "inherit",
       shell: false,
     });
