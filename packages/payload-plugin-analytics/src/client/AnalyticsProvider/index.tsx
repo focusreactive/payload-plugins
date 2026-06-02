@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useContext, useEffect, useMemo } from "react";
+import { Suspense, useContext, useEffect, useMemo } from "react";
 import type { AnalyticsProvider as AnalyticsProviderAdapter } from "../../types/provider";
 import type { AutoTrackLeadActionsConfig } from "../../types/config";
 import type { LeadActionType } from "../../types/leadActions";
@@ -42,7 +42,11 @@ export function AnalyticsProvider({ provider, leadActionTypes, autoTrackLeadActi
     <AnalyticsContext.Provider value={ctxValue}>
       <LeadActionTypesContext.Provider value={resolvedTypes}>
         {provider.Scripts()}
-        {trackRouteChanges && <RouteChangeTracker provider={provider} />}
+        {trackRouteChanges && (
+          <Suspense fallback={null}>
+            <RouteChangeTracker provider={provider} />
+          </Suspense>
+        )}
         {children}
       </LeadActionTypesContext.Provider>
     </AnalyticsContext.Provider>

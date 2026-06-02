@@ -70,6 +70,7 @@ export interface Config {
     users: User;
     media: Media;
     pages: Page;
+    "ab-experiments": AbExperiment;
     presets: Preset;
     comments: Comment;
     "comment-reads": CommentRead;
@@ -84,6 +85,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
+    "ab-experiments": AbExperimentsSelect<false> | AbExperimentsSelect<true>;
     presets: PresetsSelect<false> | PresetsSelect<true>;
     comments: CommentsSelect<false> | CommentsSelect<true>;
     "comment-reads": CommentReadsSelect<false> | CommentReadsSelect<true>;
@@ -229,6 +231,32 @@ export interface Page {
   updatedAt: string;
   createdAt: string;
   _status?: ("draft" | "published") | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ab-experiments".
+ */
+export interface AbExperiment {
+  id: number;
+  /**
+   * Internal URL path used as the experiment id; matches GA4 fr_ab_experiment.
+   */
+  manifestKey: string;
+  /**
+   * ID of the original (non-variant) document.
+   */
+  parentDocId: string;
+  parentCollection: string;
+  /**
+   * Locale this experiment row is scoped to; null when localization is disabled.
+   */
+  locale?: string | null;
+  /**
+   * Set to now() when the first variant for this parent+locale is published.
+   */
+  startedAt: string;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * One preset = one block type. Add one block to store its field values.
@@ -444,6 +472,10 @@ export interface PayloadLockedDocument {
         value: number | Page;
       } | null)
     | ({
+        relationTo: "ab-experiments";
+        value: number | AbExperiment;
+      } | null)
+    | ({
         relationTo: "presets";
         value: number | Preset;
       } | null)
@@ -572,6 +604,19 @@ export interface PagesSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ab-experiments_select".
+ */
+export interface AbExperimentsSelect<T extends boolean = true> {
+  manifestKey?: T;
+  parentDocId?: T;
+  parentCollection?: T;
+  locale?: T;
+  startedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
