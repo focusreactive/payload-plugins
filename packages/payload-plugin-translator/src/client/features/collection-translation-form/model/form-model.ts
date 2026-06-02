@@ -30,7 +30,7 @@ export const useCollectionTranslationForm = ({ initialValues, disabled }: UseFor
 
   const form = useForm<FormValues>({
     defaultValues: defaultFormValues,
-    resolver: zodResolver(validationSchema),
+    resolver: zodResolver(validationSchema as unknown as Parameters<typeof zodResolver>[0]),
     mode: "onTouched",
     disabled,
   });
