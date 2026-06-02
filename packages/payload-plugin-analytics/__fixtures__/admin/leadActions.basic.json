@@ -1,0 +1,72 @@
+{
+  "current": {
+    "totals": {
+      "phone_click": 612,
+      "email_click": 401,
+      "directions_click": 142,
+      "whatsapp_click": 88,
+      "telegram_click": 21,
+      "website_click": 215,
+      "booking_click": 174,
+      "form_submit": 188
+    },
+    "conversionRate": {
+      "phone_click": 3.4,
+      "email_click": 2.2,
+      "directions_click": 0.8,
+      "whatsapp_click": 0.5,
+      "telegram_click": 0.1,
+      "website_click": 1.2,
+      "booking_click": 1.0,
+      "form_submit": 1.1
+    },
+    "perPage": [
+      {
+        "pagePath": "/",
+        "counts": { "phone_click": 240, "email_click": 132, "form_submit": 64 }
+      },
+      {
+        "pagePath": "/pricing",
+        "counts": { "phone_click": 180, "form_submit": 72, "booking_click": 92 }
+      },
+      {
+        "pagePath": "/contact",
+        "counts": { "phone_click": 96, "email_click": 188, "form_submit": 42 }
+      }
+    ],
+    "avgTimeToAction": 84
+  },
+  "comparison": {
+    "totals": {
+      "phone_click": 540,
+      "email_click": 362,
+      "directions_click": 121,
+      "whatsapp_click": 74,
+      "telegram_click": 18,
+      "website_click": 188,
+      "booking_click": 152,
+      "form_submit": 164
+    },
+    "conversionRate": {
+      "phone_click": 3.3,
+      "email_click": 2.2,
+      "directions_click": 0.7,
+      "whatsapp_click": 0.4,
+      "telegram_click": 0.1,
+      "website_click": 1.1,
+      "booking_click": 0.9,
+      "form_submit": 1.0
+    },
+    "perPage": [
+      {
+        "pagePath": "/",
+        "counts": { "phone_click": 210, "email_click": 118, "form_submit": 56 }
+      },
+      {
+        "pagePath": "/pricing",
+        "counts": { "phone_click": 158, "form_submit": 60, "booking_click": 78 }
+      }
+    ],
+    "avgTimeToAction": 92
+  }
+}

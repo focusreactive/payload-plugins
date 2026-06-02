@@ -9,6 +9,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "test": "turbo run test",
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
     "format": "ultracite fix",

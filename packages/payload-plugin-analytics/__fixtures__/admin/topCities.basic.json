@@ -1,0 +1,7 @@
+{
+  "rows": [
+    { "country": "United States", "city": "San Francisco", "sessions": 4820, "users": 3702 },
+    { "country": "United Kingdom", "city": "London", "sessions": 2410, "users": 1990 },
+    { "country": "Germany", "city": "Berlin", "sessions": 1980, "users": 1612 }
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "name": "@focus-reactive/payload-plugin-analytics",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": "FocusReactive <ship@focusreactive.com>",
+  "keywords": [
+    "payload",
+    "payloadcms",
+    "payload-plugin",
+    "analytics",
+    "cms",
+    "plugin",
+    "react",
+    "nextjs",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/focusreactive/payload-plugins",
+    "directory": "packages/payload-plugin-analytics"
+  },
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./client": {
+      "import": "./dist/client/index.js",
+      "types": "./dist/client/index.d.ts"
+    },
+    "./client/blocks": {
+      "import": "./dist/client/blocks/index.js",
+      "types": "./dist/client/blocks/index.d.ts"
+    },
+    "./admin.css": "./dist/admin.css",
+    "./components/AnalyticsView": {
+      "import": "./dist/components/AnalyticsView/index.js",
+      "types": "./dist/components/AnalyticsView/index.d.ts"
+    },
+    "./components/AnalyticsView/AnalyticsHeaderLink": {
+      "import": "./dist/components/AnalyticsView/AnalyticsHeaderLink.js",
+      "types": "./dist/components/AnalyticsView/AnalyticsHeaderLink.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "node node_modules/tsup/dist/cli-default.js && tsc --emitDeclarationOnly --declarationMap",
+    "dev": "node node_modules/tsup/dist/cli-default.js --watch",
+    "lint": "eslint src/ tests/",
+    "lint:fix": "eslint src/ tests/ --fix",
+    "format": "prettier --write src/ tests/",
+    "format:check": "prettier --check src/ tests/",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "@payloadcms/next": "^3.0.0",
+    "@payloadcms/ui": "^3.0.0",
+    "@tanstack/react-query": "^5.59.0",
+    "lucide-react": "^0.469.0",
+    "next": "^14.0.0 || ^15.0.0",
+    "payload": "^3.0.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-day-picker": "^9.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "recharts": "^2.15.0"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@google-analytics/data": "^5.2.2",
+    "class-variance-authority": "0.7.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@payloadcms/next": "3.79.0",
+    "@payloadcms/ui": "3.79.0",
+    "@tanstack/react-query": "^5.59.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@types/node": "^25.7.0",
+    "@types/react": "19.2.9",
+    "@types/react-dom": "19.2.3",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "9.0.0",
+    "glob": "^11.0.0",
+    "jsdom": "^25.0.1",
+    "next": "15.4.10",
+    "payload": "3.79.0",
+    "postcss": "^8.5.1",
+    "postcss-cli": "^11.0.0",
+    "prettier": "3.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.0.0",
+    "tsup": "8.0.0",
+    "typescript": "5.7.3",
+    "typescript-eslint": "^8.20.0",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,12 +1,10 @@
-import { fileURLToPath } from "node:url";
-
 import { headers as getHeaders } from "next/headers.js";
 import Image from "next/image";
 import { getPayload } from "payload";
 import React from "react";
 
 import config from "@/payload.config";
-
+import { AnalyticsDemo } from "./AnalyticsDemo";
 import "./styles.css";
 
 export default async function HomePage() {
@@ -34,6 +32,7 @@ export default async function HomePage() {
             Documentation
           </a>
         </div>
+        <AnalyticsDemo />
       </div>
       <div className="footer">
         <p>Update this page by editing</p>

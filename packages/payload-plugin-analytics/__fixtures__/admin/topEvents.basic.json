@@ -1,0 +1,18 @@
+{
+  "rows": [
+    { "eventName": "page_view", "eventCount": 49826, "eventCountPerUser": 3.8 },
+    { "eventName": "scroll", "eventCount": 18210, "eventCountPerUser": 1.4 },
+    { "eventName": "session_start", "eventCount": 18234, "eventCountPerUser": 1.4 },
+    { "eventName": "click", "eventCount": 9404, "eventCountPerUser": 0.72 },
+    { "eventName": "phone_click", "eventCount": 612, "eventCountPerUser": 0.047 },
+    { "eventName": "email_click", "eventCount": 401, "eventCountPerUser": 0.031 },
+    { "eventName": "form_submit", "eventCount": 188, "eventCountPerUser": 0.014 }
+  ],
+  "comparison": {
+    "rows": [
+      { "eventName": "page_view", "eventCount": 43439, "eventCountPerUser": 3.6 },
+      { "eventName": "scroll", "eventCount": 16204, "eventCountPerUser": 1.3 },
+      { "eventName": "click", "eventCount": 8420, "eventCountPerUser": 0.69 }
+    ]
+  }
+}

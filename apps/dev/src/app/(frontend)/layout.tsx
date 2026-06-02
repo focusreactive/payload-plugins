@@ -1,5 +1,5 @@
 import React from "react";
-
+import { AnalyticsProviderClient } from "./AnalyticsProviderClient";
 import "./styles.css";
 
 export const metadata = {
@@ -9,11 +9,14 @@ export const metadata = {
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props;
+  const measurementId = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID!;
 
   return (
     <html lang="en">
       <body>
-        <main>{children}</main>
+        <AnalyticsProviderClient measurementId={measurementId}>
+          <main>{children}</main>
+        </AnalyticsProviderClient>
       </body>
     </html>
   );

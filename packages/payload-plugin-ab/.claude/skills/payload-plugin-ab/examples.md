@@ -120,34 +120,15 @@ export const config = {
 
 ---
 
-## Analytics — Full Provider + Tracker + Conversion
+## Analytics — ExperimentTracker
+
+Mount `<ExperimentTracker>` on each variant-served page. It stamps three GA4
+event-scoped custom dimensions on every subsequent event in that session:
+`fr_ab_experiment`, `fr_ab_variant`, and `fr_ab_visitor_id`. No provider or
+adapter setup is required.
 
 ```tsx
-// app/layout.tsx
-import { ABAnalyticsProvider } from "@focus-reactive/payload-plugin-ab/analytics/client";
-import { googleAnalyticsAdapter } from "@focus-reactive/payload-plugin-ab/analytics/adapters/google-analytics";
-
-const analytics = googleAnalyticsAdapter({
-  measurementId: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID!,
-  apiSecret: process.env.GA4_API_SECRET,
-  propertyId: process.env.GA4_PROPERTY_ID,
-});
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html>
-      <body>
-        <ABAnalyticsProvider adapter={analytics}>
-          {children}
-        </ABAnalyticsProvider>
-      </body>
-    </html>
-  );
-}
-```
-
-```tsx
-// app/[slug]/page.tsx — track impressions
+// app/[slug]/page.tsx
 import { ExperimentTracker } from "@focus-reactive/payload-plugin-ab/analytics/client";
 import { resolveAbCookieNames } from "@focus-reactive/payload-plugin-ab/middleware";
 
@@ -170,35 +151,10 @@ export default async function Page({ params }: { params: { slug: string } }) {
 }
 ```
 
-```tsx
-// components/CTAButton.tsx — track conversions
-"use client";
-import { useABConversion } from "@focus-reactive/payload-plugin-ab/analytics/client";
-
-interface CTAButtonProps {
-  experimentId: string;
-  variantCookieName: string;
-  visitorCookieName: string;
-}
-
-export function CTAButton({
-  experimentId,
-  variantCookieName,
-  visitorCookieName,
-}: CTAButtonProps) {
-  const trackConversion = useABConversion({
-    experimentId,
-    variantCookieName,
-    visitorCookieName,
-  });
-
-  return (
-    <button onClick={() => trackConversion({ goalId: "cta_click" })}>
-      Get Started
-    </button>
-  );
-}
-```
+Register the three dimensions (`fr_ab_experiment`, `fr_ab_variant`,
+`fr_ab_visitor_id`) as event-scoped custom dimensions in your GA4 property.
+The `@focus-reactive/payload-plugin-analytics` A/B tab then reads them to
+compute exposure, conversion-rate, lift, significance, and SRM.
 
 ---
 

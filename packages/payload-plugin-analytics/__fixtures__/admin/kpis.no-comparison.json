@@ -1,0 +1,25 @@
+{
+  "current": {
+    "sessions": 18234,
+    "users": 13107,
+    "pageViews": 49826,
+    "bounceRate": 0.412,
+    "avgSessionDuration": 168
+  },
+  "series": [
+    { "date": "2026-04-29", "sessions": 1100, "users": 860, "pageViews": 3200 },
+    { "date": "2026-04-30", "sessions": 1180, "users": 900, "pageViews": 3350 },
+    { "date": "2026-05-01", "sessions": 1240, "users": 920, "pageViews": 3450 },
+    { "date": "2026-05-02", "sessions": 1300, "users": 980, "pageViews": 3580 },
+    { "date": "2026-05-03", "sessions": 1050, "users": 800, "pageViews": 2900 },
+    { "date": "2026-05-04", "sessions": 1150, "users": 880, "pageViews": 3300 },
+    { "date": "2026-05-05", "sessions": 1320, "users": 990, "pageViews": 3700 },
+    { "date": "2026-05-06", "sessions": 1280, "users": 950, "pageViews": 3600 },
+    { "date": "2026-05-07", "sessions": 1340, "users": 1010, "pageViews": 3820 },
+    { "date": "2026-05-08", "sessions": 1290, "users": 970, "pageViews": 3650 },
+    { "date": "2026-05-09", "sessions": 1100, "users": 820, "pageViews": 3050 },
+    { "date": "2026-05-10", "sessions": 1180, "users": 870, "pageViews": 3300 },
+    { "date": "2026-05-11", "sessions": 1410, "users": 1050, "pageViews": 3900 },
+    { "date": "2026-05-12", "sessions": 1500, "users": 1120, "pageViews": 4150 }
+  ]
+}

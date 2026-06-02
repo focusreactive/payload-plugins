@@ -2,11 +2,19 @@
 
 import { useEffect } from "react";
 import { getCookie } from "../utils/getCookie";
-import { useABAnalytics } from "./ABAnalyticsProvider";
+import { waitForGtag } from "../utils/waitForGtag";
 import { defaultGetExpCookieName } from "../../cookie/utils/defaultGetExpCookieName";
 import { DEFAULT_VISITOR_ID_COOKIE_NAME } from "../../cookie/constants";
+import { AB_DIMENSION_PARAMS } from "../../constants";
+
+declare global {
+  interface Window {
+    gtag?: (command: string, ...args: unknown[]) => void;
+  }
+}
 
 export interface ExperimentTrackerProps {
+  /** The experiment identifier — typically the URL path / manifest key, e.g. "/en/about". */
   experimentId: string;
   /**
    * Name of the cookie that holds the assigned variant bucket.
@@ -16,37 +24,27 @@ export interface ExperimentTrackerProps {
   variantCookieName?: string;
   /**
    * Name of the visitor ID cookie.
-   * Use `resolveAbCookieNames(abCookies, experimentId).visitorCookieName` to derive
-   * this from a shared `AbCookieConfig`. Default: 'ab_visitor_id'.
+   * Default: 'ab_visitor_id'.
    */
   visitorCookieName?: string;
 }
 
-export function ExperimentTracker({
-  experimentId,
-  variantCookieName,
-  visitorCookieName = DEFAULT_VISITOR_ID_COOKIE_NAME,
-}: ExperimentTrackerProps) {
-  const adapter = useABAnalytics();
-
+export function ExperimentTracker({ experimentId, variantCookieName, visitorCookieName = DEFAULT_VISITOR_ID_COOKIE_NAME }: ExperimentTrackerProps) {
   useEffect(() => {
-    if (!adapter) return;
-
-    const sessionKey = `ab_tracked_${experimentId}`;
-    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(sessionKey)) {
-      return;
-    }
-
     const resolvedVariantCookie = variantCookieName ?? defaultGetExpCookieName(experimentId);
     const variantBucket = getCookie(resolvedVariantCookie);
     const visitorId = getCookie(visitorCookieName);
 
     if (!variantBucket || !visitorId) return;
 
-    adapter.trackImpression({ experimentId, variantBucket, visitorId });
-
-    sessionStorage.setItem(sessionKey, "1");
-  }, [adapter, experimentId, variantCookieName, visitorCookieName]);
+    waitForGtag((gtag) => {
+      gtag("set", {
+        [AB_DIMENSION_PARAMS.experiment]: experimentId,
+        [AB_DIMENSION_PARAMS.variant]: variantBucket,
+        [AB_DIMENSION_PARAMS.visitorId]: visitorId,
+      });
+    });
+  }, [experimentId, variantCookieName, visitorCookieName]);
 
   return null;
 }

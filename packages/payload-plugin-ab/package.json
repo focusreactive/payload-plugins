@@ -44,9 +44,6 @@
       "analytics/client": [
         "./dist/analytics/client.d.ts"
       ],
-      "analytics/adapters/google-analytics": [
-        "./dist/analytics/adapters/googleAnalytics/index.d.ts"
-      ],
       "middleware": [
         "./dist/middleware/index.d.ts"
       ],
@@ -76,10 +73,6 @@
       "import": "./dist/analytics/client.js",
       "types": "./dist/analytics/client.d.ts"
     },
-    "./analytics/adapters/google-analytics": {
-      "import": "./dist/analytics/adapters/googleAnalytics/index.js",
-      "types": "./dist/analytics/adapters/googleAnalytics/index.d.ts"
-    },
     "./middleware": {
       "import": "./dist/middleware/index.js",
       "types": "./dist/middleware/index.d.ts"
@@ -92,6 +85,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
     "format": "ultracite fix",
@@ -123,6 +118,8 @@
     "@types/react": "19.2.9",
     "payload": "3.79.0",
     "tsup": "8.0.0",
-    "typescript": "5.0.2"
+    "typescript": "5.0.2",
+    "typescript-eslint": "8.0.0",
+    "vitest": "^2.1.8"
   }
 }

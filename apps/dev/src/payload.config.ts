@@ -6,6 +6,7 @@ import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
 import { translatorPlugin, createOpenAIProvider, createPayloadJobsRunner } from "@focus-reactive/payload-plugin-translator";
+import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { sqliteAdapter } from "@payloadcms/db-sqlite";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { buildConfig } from "payload";
@@ -86,6 +87,20 @@ export default buildConfig({
         apiKey: process.env.OPENAI_API_KEY ?? "",
         dryRun: !process.env.OPENAI_API_KEY,
       }),
+    }),
+    analyticsPlugin({
+      ga4: {
+        measurementId: process.env.GA4_MEASUREMENT_ID!,
+        propertyId: process.env.GA4_PROPERTY_ID!,
+        serviceAccount: {
+          clientEmail: process.env.GA4_CLIENT_EMAIL!,
+          privateKey: (process.env.GA4_PRIVATE_KEY ?? "").replace(/\\n/gu, "\n"),
+        },
+      },
+      leadActions: {
+        types: ["phone_click", "email_click", "directions_click", "whatsapp_click", "telegram_click", "website_click", "booking_click", "form_submit", "cta_pricing_click"],
+        adminRegistry: "@/lead-actions-admin#default",
+      },
     }),
   ],
   secret: process.env.PAYLOAD_SECRET || "",

@@ -1,0 +1,13 @@
+{
+  "sessionId": "s_2026_05_12_001",
+  "events": [
+    {
+      "timestamp": "14:32:00",
+      "eventName": "session_start",
+      "pagePath": "/pricing"
+    },
+    { "timestamp": "14:32:00", "eventName": "page_view", "pagePath": "/pricing" },
+    { "timestamp": "14:32:00", "eventName": "scroll", "params": { "scroll_depth": "50" } }
+  ],
+  "missing": ["fr_event_seq"]
+}

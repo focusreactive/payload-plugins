@@ -1,0 +1,6 @@
+{
+  "rows": [],
+  "pagination": { "cursor": null, "hasMore": false },
+  "setupRequired": true,
+  "missing": ["fr_session_id"]
+}

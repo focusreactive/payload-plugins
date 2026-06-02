@@ -1,0 +1,87 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@import "./reset.css";
+
+@source "./**/*.{ts,tsx}";
+
+@custom-variant dark ([data-theme="dark"] &);
+
+@theme {
+  --shadow-popover: 0 12px 32px -12px oklch(0.2 0.01 70 / 0.14), 0 2px 6px -2px oklch(0.2 0.01 70 / 0.06);
+  --shadow-drawer: 0 24px 60px -20px oklch(0.2 0.01 70 / 0.18), 0 4px 12px -4px oklch(0.2 0.01 70 / 0.08);
+}
+
+@layer base {
+  :root {
+    --metric-pos-bg: rgba(35, 134, 54, 0.14);
+    --metric-pos-fg: rgb(35, 134, 54);
+    --metric-neg-bg: rgba(207, 34, 46, 0.14);
+    --metric-neg-fg: rgb(207, 34, 46);
+    --metric-flat-bg: rgba(120, 120, 120, 0.18);
+    --metric-flat-fg: rgb(100, 100, 100);
+    --metric-prev-radius: 999px;
+
+    --ab-bucket-0: oklch(0.62 0.012 70);
+    --ab-bucket-1: oklch(0.58 0.13 150);
+    --ab-bucket-2: oklch(0.56 0.13 255);
+    --ab-bucket-3: oklch(0.56 0.14 330);
+  }
+
+  [data-theme="dark"] {
+    --ab-bucket-0: oklch(0.66 0.012 250);
+    --ab-bucket-1: oklch(0.74 0.14 150);
+    --ab-bucket-2: oklch(0.7 0.13 255);
+    --ab-bucket-3: oklch(0.74 0.14 330);
+  }
+}
+
+@layer utilities {
+  .pa-animate-shimmer {
+    background: linear-gradient(90deg, var(--theme-elevation-100) 0%, var(--theme-elevation-50) 50%, var(--theme-elevation-100) 100%);
+    background-size: 200% 100%;
+    animation: pa-shimmer 1.4s infinite ease-in-out;
+  }
+
+  @keyframes pa-shimmer {
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  .pa-animate-drawer-in {
+    animation: pa-slide-in 0.2s ease;
+  }
+
+  @keyframes pa-slide-in {
+    from {
+      transform: translateX(20px);
+      opacity: 0;
+    }
+  }
+
+  .pa-animate-fade-in {
+    animation: pa-fade-in 0.18s ease;
+  }
+
+  @keyframes pa-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pa-animate-shimmer {
+      animation: none;
+    }
+
+    .pa-animate-drawer-in {
+      animation: none;
+    }
+
+    .pa-animate-fade-in {
+      animation: none;
+    }
+  }
+}

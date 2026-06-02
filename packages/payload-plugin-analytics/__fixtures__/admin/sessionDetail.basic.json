@@ -1,0 +1,20 @@
+{
+  "sessionId": "s_2026_05_12_001",
+  "events": [
+    {
+      "timestamp": "14:32:00",
+      "eventName": "session_start",
+      "pagePath": "/pricing",
+      "params": { "source": "google", "medium": "organic" }
+    },
+    { "timestamp": "14:32:05", "eventName": "page_view", "pagePath": "/pricing" },
+    { "timestamp": "14:33:20", "eventName": "scroll", "params": { "scroll_depth": "50" } },
+    { "timestamp": "14:34:11", "eventName": "page_view", "pagePath": "/features" },
+    { "timestamp": "14:35:02", "eventName": "click", "params": { "link_url": "/contact" } },
+    {
+      "timestamp": "14:36:00",
+      "eventName": "lead_action",
+      "params": { "fr_lead_type": "phone_click", "value": "+1-415-555-0100" }
+    }
+  ]
+}

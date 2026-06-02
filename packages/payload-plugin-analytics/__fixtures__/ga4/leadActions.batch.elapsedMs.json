@@ -1,0 +1,28 @@
+{
+  "reports": [
+    {
+      "dimensionHeaders": [{ "name": "customEvent:fr_lead_type" }, { "name": "pagePath" }],
+      "metricHeaders": [
+        { "name": "eventCount", "type": "TYPE_INTEGER" },
+        { "name": "averageCustomEvent:fr_elapsed_ms", "type": "TYPE_FLOAT" }
+      ],
+      "rows": [
+        {
+          "dimensionValues": [{ "value": "phone_click" }, { "value": "/" }],
+          "metricValues": [{ "value": "10" }, { "value": "8000" }]
+        },
+        {
+          "dimensionValues": [{ "value": "form_submit" }, { "value": "/contact" }],
+          "metricValues": [{ "value": "5" }, { "value": "12000" }]
+        }
+      ],
+      "rowCount": 2
+    },
+    {
+      "dimensionHeaders": [],
+      "metricHeaders": [{ "name": "sessions", "type": "TYPE_INTEGER" }],
+      "rows": [{ "dimensionValues": [], "metricValues": [{ "value": "100" }] }],
+      "rowCount": 1
+    }
+  ]
+}

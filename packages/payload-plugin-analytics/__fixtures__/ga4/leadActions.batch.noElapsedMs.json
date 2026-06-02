@@ -1,0 +1,21 @@
+{
+  "reports": [
+    {
+      "dimensionHeaders": [{ "name": "customEvent:fr_lead_type" }, { "name": "pagePath" }],
+      "metricHeaders": [{ "name": "eventCount", "type": "TYPE_INTEGER" }],
+      "rows": [
+        {
+          "dimensionValues": [{ "value": "phone_click" }, { "value": "/" }],
+          "metricValues": [{ "value": "10" }]
+        }
+      ],
+      "rowCount": 1
+    },
+    {
+      "dimensionHeaders": [],
+      "metricHeaders": [{ "name": "sessions", "type": "TYPE_INTEGER" }],
+      "rows": [{ "dimensionValues": [], "metricValues": [{ "value": "100" }] }],
+      "rowCount": 1
+    }
+  ]
+}

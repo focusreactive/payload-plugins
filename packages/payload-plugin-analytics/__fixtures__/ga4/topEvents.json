@@ -1,0 +1,14 @@
+{
+  "dimensionHeaders": [{ "name": "eventName" }],
+  "metricHeaders": [
+    { "name": "eventCount", "type": "TYPE_INTEGER" },
+    { "name": "eventCountPerUser", "type": "TYPE_FLOAT" }
+  ],
+  "rows": [
+    { "dimensionValues": [{ "value": "page_view" }], "metricValues": [{ "value": "5000" }, { "value": "12.5" }] },
+    { "dimensionValues": [{ "value": "scroll" }], "metricValues": [{ "value": "2200" }, { "value": "5.5" }] },
+    { "dimensionValues": [{ "value": "session_start" }], "metricValues": [{ "value": "400" }, { "value": "1.0" }] },
+    { "dimensionValues": [{ "value": "form_submit" }], "metricValues": [{ "value": "85" }, { "value": "0.21" }] }
+  ],
+  "rowCount": 4
+}
