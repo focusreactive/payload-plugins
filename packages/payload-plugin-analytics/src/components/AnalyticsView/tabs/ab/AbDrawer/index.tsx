@@ -179,7 +179,7 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
               <span className="flex min-w-0 flex-col gap-[3px]">
                 <span className="flex items-center gap-2">
                   <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-(--theme-elevation-500)">
-                    Sensitivity
+                    Minimum Detectable Effect
                   </span>
                   <span className={cn(indPillVariants({ tone: mdeTone }))}>
                     {!mdeKnown ?
@@ -190,7 +190,7 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                   </span>
                 </span>
                 <span className="font-[family-name:var(--font-mono)] text-[14px] font-semibold tracking-[-0.01em] tabular-nums text-(--theme-elevation-1000)">
-                  {mdeKnown ? `MDE ${(h!.mdeRelative! * 100).toFixed(1)}%` : "—"}
+                  {mdeKnown ? `${(h!.mdeRelative! * 100).toFixed(1)}%` : "—"}
                 </span>
               </span>
             </Tooltip>
