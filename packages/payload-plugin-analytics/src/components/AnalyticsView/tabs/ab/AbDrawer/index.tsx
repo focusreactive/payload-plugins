@@ -136,7 +136,7 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
               <span className="flex min-w-0 flex-col gap-[3px]">
                 <span className="flex items-center gap-2">
                   <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-(--theme-elevation-500)">
-                    Sample ratio
+                    Sample ratio Mismatch
                   </span>
                   <span className={cn(indPillVariants({ tone: srmTone }))}>
                     {!exp ?
@@ -147,7 +147,7 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                   </span>
                 </span>
                 <span className="font-[family-name:var(--font-mono)] text-[14px] font-semibold tracking-[-0.01em] tabular-nums text-(--theme-elevation-1000)">
-                  {exp ? `χ² p ${exp.srmPValue < 0.001 ? "< 0.001" : "= " + exp.srmPValue.toFixed(3)}` : "—"}
+                  {exp ? `${exp.srmPValue < 0.001 ? "< 0.001" : exp.srmPValue.toFixed(3)}` : "—"}
                 </span>
               </span>
             </Tooltip>
@@ -241,7 +241,7 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                   {exp.srmPassed ?
                     <CheckCircle2 size={12} />
                   : <AlertOctagon size={12} />}
-                  SRM {exp.srmPassed ? "pass" : "fail"} · p {formatPValue(exp.srmPValue)}
+                  SRM {exp.srmPassed ? "pass" : "fail"}
                 </span>
               : undefined
             }>
