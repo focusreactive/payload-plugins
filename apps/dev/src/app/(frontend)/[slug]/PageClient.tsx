@@ -1,15 +1,15 @@
 "use client";
 
-import { useLivePreview } from "@payloadcms/live-preview-react";
 import React from "react";
-
+import { useLivePreview } from "@payloadcms/live-preview-react";
+import { ExperimentTracker } from "@focus-reactive/payload-plugin-ab/analytics/client";
 import { RenderBlocks } from "../../../components/RenderBlocks";
 
-interface Page {
+type Page = {
   title: string;
   slug: string;
   sections: any[];
-}
+};
 
 interface Props {
   initialData: Page;
@@ -25,6 +25,7 @@ export function PageClient({ initialData, serverURL }: Props) {
 
   return (
     <div>
+      <ExperimentTracker experimentId={`/${data.slug}`} />
       <RenderBlocks blocks={data.sections ?? []} />
     </div>
   );

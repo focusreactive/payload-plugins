@@ -5,6 +5,7 @@ import * as migration_20260422_214318_add_rollback_skipped_column_to_releases fr
 import * as migration_20260508_140239_align_schema_and_localize from "./20260508_140239_align_schema_and_localize";
 import * as migration_20260512_104342_localize_block_fields from "./20260512_104342_localize_block_fields";
 import * as migration_20260518_215435_create_comment_reads from "./20260518_215435_create_comment_reads";
+import * as migration_20260529_121405_create_ab_experiments from "./20260529_121405_create_ab_experiments";
 
 export const migrations = [
   {
@@ -41,5 +42,10 @@ export const migrations = [
     down: migration_20260518_215435_create_comment_reads.down,
     name: "20260518_215435_create_comment_reads",
     up: migration_20260518_215435_create_comment_reads.up,
+  },
+  {
+    up: migration_20260529_121405_create_ab_experiments.up,
+    down: migration_20260529_121405_create_ab_experiments.down,
+    name: "20260529_121405_create_ab_experiments",
   },
 ];

@@ -101,6 +101,9 @@ export default buildConfig({
         types: ["phone_click", "email_click", "directions_click", "whatsapp_click", "telegram_click", "website_click", "booking_click", "form_submit", "cta_pricing_click"],
         adminRegistry: "@/lead-actions-admin#default",
       },
+      ab: {
+        variantFields: { name: "title" },
+      },
     }),
   ],
   secret: process.env.PAYLOAD_SECRET || "",
