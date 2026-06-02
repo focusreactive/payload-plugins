@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   AlertOctagon,
   Trophy,
-  ArrowDown,
   Minus,
   Hourglass,
   CircleDot,
@@ -37,7 +36,7 @@ import {
 } from "../../../hooks/queries/useAbQueries";
 import type { AnalyticsQuery } from "../../../../../types/query";
 import { Tooltip, TooltipTitle, TooltipText, TooltipLegend, TooltipLegendRow } from "../../../ui/Tooltip";
-import { indBoxVariants, indPillVariants, verdictBadgeVariants, PANEL_TBL, type IndTone } from "./variants";
+import { indBoxVariants, indPillVariants, PANEL_TBL, type IndTone } from "./variants";
 
 export interface AbDrawerProps {
   manifestKey: string;
@@ -337,13 +336,46 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                           </span>
                         </Tooltip>
                       </th>
-                      <th>Significance</th>
+                      <th>
+                        <Tooltip
+                          side="bottom"
+                          align="end"
+                          width={300}
+                          content={
+                            <>
+                              <TooltipTitle>Significance</TooltipTitle>
+                              <TooltipText>
+                                Whether you can trust this difference — or whether it could just be random noise. A
+                                "significant" result is large enough that chance is an unlikely explanation.
+                              </TooltipText>
+                              <TooltipText>
+                                Based on a two-proportion z-test: it compares the conversion rates of two independent
+                                groups (variant vs. control) and tests the null hypothesis that they are equal. When p
+                                &lt; α (default = 0.05) the null is rejected — the difference is significant, not
+                                chance.
+                              </TooltipText>
+                              <TooltipLegend>
+                                <TooltipLegendRow color="var(--theme-elevation-700)">
+                                  Significant — p &lt; α, the difference is real
+                                </TooltipLegendRow>
+                                <TooltipLegendRow color="var(--theme-elevation-400)">
+                                  Not significant — p ≥ α, could be noise
+                                </TooltipLegendRow>
+                              </TooltipLegend>
+                            </>
+                          }>
+                          <span className="underline decoration-dotted decoration-(--theme-elevation-300) underline-offset-2">
+                            Significance
+                          </span>
+                        </Tooltip>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {(out?.rows ?? []).map((r, i) => {
                       const isWinner = out?.winnerBucket === r.bucket;
                       const isLeader = !out?.winnerBucket && out?.leaderBucket === r.bucket;
+                      const isSig = r.verdict === "winner" || r.verdict === "loser";
 
                       return (
                         <tr
@@ -394,21 +426,25 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                           </td>
                           <td>
                             {r.verdict ?
-                              <span className={cn(verdictBadgeVariants({ verdict: r.verdict }))}>
-                                {r.verdict === "winner" && <Trophy size={11} />}
-                                {r.verdict === "loser" && <ArrowDown size={11} />}
-                                {r.verdict === "ns" && <Minus size={11} />}
-                                {r.verdict === "winner" ?
-                                  "Significant winner"
-                                : r.verdict === "loser" ?
-                                  "Significant loser"
-                                : "Not significant"}
-                                {r.pValue != null && (
-                                  <span className="pl-0.5 font-[family-name:var(--font-mono)] text-[10px] opacity-85">
-                                    p {formatPValue(r.pValue)}
-                                  </span>
-                                )}
-                              </span>
+                              <div className="flex flex-col items-start gap-1">
+                                <span
+                                  className={cn(
+                                    "text-[12px]",
+                                    isSig ?
+                                      "font-semibold text-(--theme-elevation-900)"
+                                    : "font-medium text-(--theme-elevation-500)",
+                                  )}>
+                                  {isSig ? "Significant" : "Not significant"}
+                                </span>
+                                {r.pValue != null
+                                  && (isSig ?
+                                    <span className="inline-flex items-center rounded-full border border-(--theme-border-color) bg-(--theme-elevation-100) px-2 py-[2px] font-[family-name:var(--font-mono)] text-[10.5px] text-(--theme-elevation-700)">
+                                      p {formatPValue(r.pValue)}
+                                    </span>
+                                  : <span className="font-[family-name:var(--font-mono)] text-[10.5px] text-(--theme-elevation-500)">
+                                      p {formatPValue(r.pValue)}
+                                    </span>)}
+                              </div>
                             : <span className="text-(--theme-elevation-500)">baseline</span>}
                           </td>
                         </tr>
