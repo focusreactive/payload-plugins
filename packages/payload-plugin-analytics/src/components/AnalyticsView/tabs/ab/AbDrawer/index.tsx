@@ -304,7 +304,39 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                       <th className="num">Session conversions</th>
                       <th className="num">Rate</th>
                       <th className="num">Lift</th>
-                      <th className="num">Confidence</th>
+                      <th className="num">
+                        <Tooltip
+                          side="bottom"
+                          align="end"
+                          width={300}
+                          content={
+                            <>
+                              <TooltipTitle>Confidence</TooltipTitle>
+                              <TooltipText>
+                                How likely this variant truly beats the original, based on the conversions seen so far.
+                              </TooltipText>
+                              <TooltipText>
+                                Φ(z) = 1 − one-sided p-value of a two-proportion z-test versus the control (normal
+                                approximation).
+                              </TooltipText>
+                              <TooltipLegend>
+                                <TooltipLegendRow color="var(--theme-success-500)">
+                                  ≥ 97.5% — significant winner
+                                </TooltipLegendRow>
+                                <TooltipLegendRow color="var(--theme-elevation-400)">
+                                  ~ 50% — no real difference
+                                </TooltipLegendRow>
+                                <TooltipLegendRow color="var(--theme-error-500)">
+                                  &lt; 50% — worse than the original
+                                </TooltipLegendRow>
+                              </TooltipLegend>
+                            </>
+                          }>
+                          <span className="underline decoration-dotted decoration-(--theme-elevation-300) underline-offset-2">
+                            Confidence
+                          </span>
+                        </Tooltip>
+                      </th>
                       <th>Significance</th>
                     </tr>
                   </thead>
@@ -355,7 +387,7 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                             {r.confidence != null ?
                               <span
                                 className="cursor-help font-semibold tabular-nums text-(--theme-elevation-900)"
-                                title="Φ(z) — one-sided normal reading of the z-score. Not a Bayesian win probability.">
+                                title="Probability this variant beats the original — Φ(z).">
                                 {(r.confidence * 100).toFixed(1)}%
                               </span>
                             : <span className="text-(--theme-elevation-500)">—</span>}
