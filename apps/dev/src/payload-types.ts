@@ -203,12 +203,14 @@ export interface Page {
         | {
             title: string;
             description?: string | null;
+            _hidden?: boolean | null;
             id?: string | null;
             blockName?: string | null;
             blockType: "hero";
           }
         | {
             text: string;
+            _hidden?: boolean | null;
             id?: string | null;
             blockName?: string | null;
             blockType: "copy";
@@ -275,12 +277,14 @@ export interface Preset {
     | {
         title: string;
         description?: string | null;
+        _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: "hero";
       }
     | {
         text: string;
+        _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: "copy";
@@ -588,6 +592,7 @@ export interface PagesSelect<T extends boolean = true> {
           | {
               title?: T;
               description?: T;
+              _hidden?: T;
               id?: T;
               blockName?: T;
             };
@@ -595,6 +600,7 @@ export interface PagesSelect<T extends boolean = true> {
           | T
           | {
               text?: T;
+              _hidden?: T;
               id?: T;
               blockName?: T;
             };
@@ -633,6 +639,7 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               title?: T;
               description?: T;
+              _hidden?: T;
               id?: T;
               blockName?: T;
             };
@@ -640,6 +647,7 @@ export interface PresetsSelect<T extends boolean = true> {
           | T
           | {
               text?: T;
+              _hidden?: T;
               id?: T;
               blockName?: T;
             };

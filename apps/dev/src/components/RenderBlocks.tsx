@@ -1,18 +1,19 @@
-import React from "react";
-
+import { filterHiddenBlocks } from "../lib/section-visibility/filterHiddenBlocks";
 import { CopySection } from "./blocks/CopySection";
 import { HeroSection } from "./blocks/HeroSection";
 
-type Block = { blockType: "hero"; title: string; description?: string } | { blockType: "copy"; text: string };
+type Block = { blockType: "hero"; title: string; description?: string; _hidden?: boolean | null } | { blockType: "copy"; text: string; _hidden?: boolean | null };
 
 interface Props {
   blocks: Block[];
 }
 
 export function RenderBlocks({ blocks }: Props) {
+  const visibleBlocks = filterHiddenBlocks(blocks);
+
   return (
     <>
-      {blocks.map((block, i) => {
+      {visibleBlocks.map((block, i) => {
         if (block.blockType === "hero") {
           return <HeroSection key={i} title={block.title} description={block.description} />;
         }
