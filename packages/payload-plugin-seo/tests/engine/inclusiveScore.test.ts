@@ -14,7 +14,7 @@ describe("scoreInclusive", () => {
   it("groups flags by category and lists remaining categories as clean", () => {
     const r = scoreInclusive(
       [
-        { category: "Gendered language", term: "chairman", suggestion: "chair, chairperson", location: "Section 1, ¶3" },
+        { category: "Gendered langkuage", term: "chairman", suggestion: "chair, chairperson", location: "Section 1, ¶3" },
         { category: "Gendered language", term: "manpower", suggestion: "workforce, staff", location: "Section 4, ¶2" },
       ],
       ALL
