@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-translator [0.2.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.2.0...@focus-reactive/payload-plugin-translator@0.2.1) (2026-06-04)
+
+
+### Bug Fixes
+
+* **translator:** cast zod schema to resolver param type to fix build ([5d4fbe0](https://github.com/focusreactive/payload-plugins/commit/5d4fbe01362224924a63b5ed87234be889ff0c54))
+
 # @focus-reactive/payload-plugin-translator [0.2.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.1.6...@focus-reactive/payload-plugin-translator@0.2.0) (2026-05-25)
 
 
