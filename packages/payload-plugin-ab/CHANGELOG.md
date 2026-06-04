@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-ab [2.7.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.6.0...@focus-reactive/payload-plugin-ab@2.7.0) (2026-06-04)
+
+
+### Features
+
+* **ab:** replace analytics adapter with GA4-native dimension tracking ([d3bb9ce](https://github.com/focusreactive/payload-plugins/commit/d3bb9cee3712349e91665d6400a8b751791d38ea))
+
 # @focus-reactive/payload-plugin-ab [2.6.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.5.0...@focus-reactive/payload-plugin-ab@2.6.0) (2026-05-25)
 
 
