@@ -1,0 +1,57 @@
+import { describe, expect, it, vi } from "vitest";
+import { runAnalysis } from "../../src/engine/runAnalysis";
+import type { AnalysisInput } from "../../src/engine/types";
+
+// Reconciled against the installed yoastseo@3.6.0 (Task 0.4): export names are
+// `SeoAssessor` / `ContentAssessor`, and the inclusive assessor lives on the
+// `assessors` namespace. The (English) researcher is a deep default export and
+// is mocked separately — `vi.mock("yoastseo")` does not cover that subpath, and
+// the real module loads `yoastseo`'s languageProcessing at import time.
+vi.mock("yoastseo", () => {
+  const res = (id: string, score: number) => ({ getIdentifier: () => id, score });
+  const assessorReturning = (results: ReturnType<typeof res>[]) =>
+    function FakeAssessor() {
+      return { assess: () => undefined, getValidResults: () => results };
+    };
+  return {
+    Paper: function (text: string, attributes: Record<string, unknown>) {
+      return { text, attributes };
+    },
+    SeoAssessor: assessorReturning([res("introductionKeyword", 3), res("textLength", 9)]),
+    ContentAssessor: assessorReturning([res("textParagraphTooLong", 6)]),
+    assessors: { InclusiveLanguageAssessor: assessorReturning([]) },
+  };
+});
+
+vi.mock("yoastseo/build/languageProcessing/languages/en/Researcher", () => ({
+  default: function () {
+    return {
+      getResearch: () => {
+        throw new Error("no research in test");
+      },
+    };
+  },
+}));
+
+const input: AnalysisInput = {
+  title: "Best Running Shoes",
+  slug: "running-shoes",
+  description: "Discover the best running shoes.",
+  contentHtml: "<p>Running shoes.</p>",
+  keyphrase: "running shoes",
+  locale: "en_US",
+  site: { name: "RunShop", baseUrl: "https://runshop.com" },
+  has: { seoTitle: true, metaDescription: true, slug: true, content: true },
+};
+
+describe("runAnalysis", () => {
+  it("produces overall, keyphrase, on-page, readability, inclusive, vitals, serp", () => {
+    const r = runAnalysis(input);
+    expect(r.keyphrase.checks.map((c) => c.id)).toContain("introductionKeyword");
+    expect(r.onPage.checks.map((c) => c.id)).toContain("textLength");
+    expect(r.readability.checks.map((c) => c.id)).toContain("textParagraphTooLong");
+    expect(r.inclusive.cleanCategories.length).toBeGreaterThan(0);
+    expect(r.serp.url).toBe("https://runshop.com/running-shoes");
+    expect(typeof r.overall.seoScore).toBe("number");
+  });
+});
