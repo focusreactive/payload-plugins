@@ -13,58 +13,58 @@
  * via the `definition` "supportedTimezones".
  */
 export type SupportedTimezones =
-  | "Pacific/Midway"
-  | "Pacific/Niue"
-  | "Pacific/Honolulu"
-  | "Pacific/Rarotonga"
-  | "America/Anchorage"
-  | "Pacific/Gambier"
-  | "America/Los_Angeles"
-  | "America/Tijuana"
-  | "America/Denver"
-  | "America/Phoenix"
-  | "America/Chicago"
-  | "America/Guatemala"
-  | "America/New_York"
-  | "America/Bogota"
-  | "America/Caracas"
-  | "America/Santiago"
-  | "America/Buenos_Aires"
-  | "America/Sao_Paulo"
-  | "Atlantic/South_Georgia"
-  | "Atlantic/Azores"
-  | "Atlantic/Cape_Verde"
-  | "Europe/London"
-  | "Europe/Berlin"
-  | "Africa/Lagos"
-  | "Europe/Athens"
-  | "Africa/Cairo"
-  | "Europe/Moscow"
-  | "Asia/Riyadh"
-  | "Asia/Dubai"
-  | "Asia/Baku"
-  | "Asia/Karachi"
-  | "Asia/Tashkent"
-  | "Asia/Calcutta"
-  | "Asia/Dhaka"
-  | "Asia/Almaty"
-  | "Asia/Jakarta"
-  | "Asia/Bangkok"
-  | "Asia/Shanghai"
-  | "Asia/Singapore"
-  | "Asia/Tokyo"
-  | "Asia/Seoul"
-  | "Australia/Brisbane"
-  | "Australia/Sydney"
-  | "Pacific/Guam"
-  | "Pacific/Noumea"
-  | "Pacific/Auckland"
-  | "Pacific/Fiji";
+  | 'Pacific/Midway'
+  | 'Pacific/Niue'
+  | 'Pacific/Honolulu'
+  | 'Pacific/Rarotonga'
+  | 'America/Anchorage'
+  | 'Pacific/Gambier'
+  | 'America/Los_Angeles'
+  | 'America/Tijuana'
+  | 'America/Denver'
+  | 'America/Phoenix'
+  | 'America/Chicago'
+  | 'America/Guatemala'
+  | 'America/New_York'
+  | 'America/Bogota'
+  | 'America/Caracas'
+  | 'America/Santiago'
+  | 'America/Buenos_Aires'
+  | 'America/Sao_Paulo'
+  | 'Atlantic/South_Georgia'
+  | 'Atlantic/Azores'
+  | 'Atlantic/Cape_Verde'
+  | 'Europe/London'
+  | 'Europe/Berlin'
+  | 'Africa/Lagos'
+  | 'Europe/Athens'
+  | 'Africa/Cairo'
+  | 'Europe/Moscow'
+  | 'Asia/Riyadh'
+  | 'Asia/Dubai'
+  | 'Asia/Baku'
+  | 'Asia/Karachi'
+  | 'Asia/Tashkent'
+  | 'Asia/Calcutta'
+  | 'Asia/Dhaka'
+  | 'Asia/Almaty'
+  | 'Asia/Jakarta'
+  | 'Asia/Bangkok'
+  | 'Asia/Shanghai'
+  | 'Asia/Singapore'
+  | 'Asia/Tokyo'
+  | 'Asia/Seoul'
+  | 'Australia/Brisbane'
+  | 'Australia/Sydney'
+  | 'Pacific/Guam'
+  | 'Pacific/Noumea'
+  | 'Pacific/Auckland'
+  | 'Pacific/Fiji';
 
 export interface Config {
   auth: {
     users: UserAuthOperations;
-    "payload-mcp-api-keys": PayloadMcpApiKeyAuthOperations;
+    'payload-mcp-api-keys': PayloadMcpApiKeyAuthOperations;
   };
   blocks: {};
   collections: {
@@ -77,22 +77,23 @@ export interface Config {
     testimonials: Testimonial;
     header: Header;
     footer: Footer;
-    "document-embeddings": DocumentEmbedding;
+    'document-embeddings': DocumentEmbedding;
     redirects: Redirect;
     presets: Preset;
     comments: Comment;
-    "comment-reads": CommentRead;
-    "payload-mcp-api-keys": PayloadMcpApiKey;
-    "payload-kv": PayloadKv;
-    "payload-jobs": PayloadJob;
-    "payload-folders": FolderInterface;
-    "payload-locked-documents": PayloadLockedDocument;
-    "payload-preferences": PayloadPreference;
-    "payload-migrations": PayloadMigration;
+    'comment-reads': CommentRead;
+    'ab-experiments': AbExperiment;
+    'payload-mcp-api-keys': PayloadMcpApiKey;
+    'payload-kv': PayloadKv;
+    'payload-jobs': PayloadJob;
+    'payload-folders': FolderInterface;
+    'payload-locked-documents': PayloadLockedDocument;
+    'payload-preferences': PayloadPreference;
+    'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {
-    "payload-folders": {
-      documentsAndFolders: "payload-folders" | "media" | "page";
+    'payload-folders': {
+      documentsAndFolders: 'payload-folders' | 'media' | 'page';
     };
   };
   collectionsSelect: {
@@ -105,32 +106,33 @@ export interface Config {
     testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
-    "document-embeddings": DocumentEmbeddingsSelect<false> | DocumentEmbeddingsSelect<true>;
+    'document-embeddings': DocumentEmbeddingsSelect<false> | DocumentEmbeddingsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     presets: PresetsSelect<false> | PresetsSelect<true>;
     comments: CommentsSelect<false> | CommentsSelect<true>;
-    "comment-reads": CommentReadsSelect<false> | CommentReadsSelect<true>;
-    "payload-mcp-api-keys": PayloadMcpApiKeysSelect<false> | PayloadMcpApiKeysSelect<true>;
-    "payload-kv": PayloadKvSelect<false> | PayloadKvSelect<true>;
-    "payload-jobs": PayloadJobsSelect<false> | PayloadJobsSelect<true>;
-    "payload-folders": PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
-    "payload-locked-documents": PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
-    "payload-preferences": PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
-    "payload-migrations": PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
+    'comment-reads': CommentReadsSelect<false> | CommentReadsSelect<true>;
+    'ab-experiments': AbExperimentsSelect<false> | AbExperimentsSelect<true>;
+    'payload-mcp-api-keys': PayloadMcpApiKeysSelect<false> | PayloadMcpApiKeysSelect<true>;
+    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
+    'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
+    'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
+    'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
+    'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
     defaultIDType: number;
   };
-  fallbackLocale: ("false" | "none" | "null") | false | null | ("en" | "es") | ("en" | "es")[];
+  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('en' | 'es') | ('en' | 'es')[];
   globals: {
-    "site-settings": SiteSetting;
+    'site-settings': SiteSetting;
     _abManifest: _AbManifest;
   };
   globalsSelect: {
-    "site-settings": SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     _abManifest: _AbManifestSelect<false> | _AbManifestSelect<true>;
   };
-  locale: "en" | "es";
+  locale: 'en' | 'es';
   widgets: {
     collections: CollectionsWidget;
   };
@@ -195,7 +197,7 @@ export interface User {
   /**
    * The role of the user
    */
-  role: "admin" | "author" | "user";
+  role: 'admin' | 'author' | 'user';
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -213,7 +215,7 @@ export interface User {
       }[]
     | null;
   password?: string | null;
-  collection: "users";
+  collection: 'users';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -230,8 +232,8 @@ export interface Media {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -240,7 +242,7 @@ export interface Media {
   /**
    * Use this file as default when no image is selected.
    */
-  defaultFor?: "platform_default"[] | null;
+  defaultFor?: 'platform_default'[] | null;
   folder?: (number | null) | FolderInterface;
   updatedAt: string;
   createdAt: string;
@@ -323,22 +325,22 @@ export interface FolderInterface {
   documentsAndFolders?: {
     docs?: (
       | {
-          relationTo?: "payload-folders";
+          relationTo?: 'payload-folders';
           value: number | FolderInterface;
         }
       | {
-          relationTo?: "media";
+          relationTo?: 'media';
           value: number | Media;
         }
       | {
-          relationTo?: "page";
+          relationTo?: 'page';
           value: number | Page;
         }
     )[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
-  folderType?: ("media" | "page")[] | null;
+  folderType?: ('media' | 'page')[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -361,7 +363,17 @@ export interface Page {
    * The footer to display on the page
    */
   footer?: (number | null) | Footer;
-  blocks: (HeroBlock | TextSectionBlock | ContentBlock | FaqBlock | TestimonialsListBlock | CardsGridBlock | CarouselBlock | LogosBlock | LinksListBlock)[];
+  blocks: (
+    | HeroBlock
+    | TextSectionBlock
+    | ContentBlock
+    | FaqBlock
+    | TestimonialsListBlock
+    | CardsGridBlock
+    | CarouselBlock
+    | LogosBlock
+    | LinksListBlock
+  )[];
   meta?: {
     title?: string | null;
     /**
@@ -372,7 +384,7 @@ export interface Page {
     /**
      * Allow search engines to index this page
      */
-    robots?: ("index" | "noindex") | null;
+    robots?: ('index' | 'noindex') | null;
   };
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
@@ -404,7 +416,7 @@ export interface Page {
   folder?: (number | null) | FolderInterface;
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -429,19 +441,19 @@ export interface Header {
          * Link settings
          */
         link: {
-          type?: ("reference" | "custom" | "customPage") | null;
+          type?: ('reference' | 'custom' | 'customPage') | null;
           newTab?: boolean | null;
           reference?:
             | ({
-                relationTo: "page";
+                relationTo: 'page';
                 value: number | Page;
               } | null)
             | ({
-                relationTo: "posts";
+                relationTo: 'posts';
                 value: number | Post;
               } | null);
           url?: string | null;
-          customPage?: ("blog" | "search") | null;
+          customPage?: ('blog' | 'search') | null;
           label: string;
         };
         id?: string | null;
@@ -449,7 +461,7 @@ export interface Header {
     | null;
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -468,8 +480,8 @@ export interface Post {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -485,7 +497,7 @@ export interface Post {
     /**
      * Allow search engines to index this page
      */
-    robots?: ("index" | "noindex") | null;
+    robots?: ('index' | 'noindex') | null;
   };
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
@@ -501,7 +513,7 @@ export interface Post {
   relatedPosts?: (number | Post)[] | null;
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -554,19 +566,19 @@ export interface Footer {
          * Link settings
          */
         link: {
-          type?: ("reference" | "custom" | "customPage") | null;
+          type?: ('reference' | 'custom' | 'customPage') | null;
           newTab?: boolean | null;
           reference?:
             | ({
-                relationTo: "page";
+                relationTo: 'page';
                 value: number | Page;
               } | null)
             | ({
-                relationTo: "posts";
+                relationTo: 'posts';
                 value: number | Post;
               } | null);
           url?: string | null;
-          customPage?: ("blog" | "search") | null;
+          customPage?: ('blog' | 'search') | null;
           label: string;
         };
         id?: string | null;
@@ -583,8 +595,8 @@ export interface Footer {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -596,7 +608,7 @@ export interface Footer {
   copywriteText?: string | null;
   updatedAt: string;
   createdAt: string;
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -612,8 +624,8 @@ export interface HeroBlock {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
@@ -621,48 +633,48 @@ export interface HeroBlock {
   } | null;
   actions?:
     | {
-        type?: ("reference" | "custom" | "customPage") | null;
+        type?: ('reference' | 'custom' | 'customPage') | null;
         newTab?: boolean | null;
         reference?:
           | ({
-              relationTo: "page";
+              relationTo: 'page';
               value: number | Page;
             } | null)
           | ({
-              relationTo: "posts";
+              relationTo: 'posts';
               value: number | Post;
             } | null);
         url?: string | null;
-        customPage?: ("blog" | "search") | null;
+        customPage?: ('blog' | 'search') | null;
         label: string;
         /**
          * Choose how the link should be rendered.
          */
-        appearance?: ("default" | "outline") | null;
+        appearance?: ('default' | 'outline') | null;
         id?: string | null;
       }[]
     | null;
   image: {
     image: number | Media;
-    aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
+    aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
   };
   enabled?: boolean | null;
-  color?: ("black" | "white") | null;
+  color?: ('black' | 'white') | null;
   /**
    * Overlay opacity (0-100)
    */
   opacity?: number | null;
   section?: {
-    theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-    paddingY?: ("none" | "base" | "large") | null;
-    paddingX?: ("none" | "base") | null;
-    maxWidth?: ("none" | "base") | null;
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
        */
       media?: (number | null) | Media;
-      overlay?: ("black" | "white") | null;
+      overlay?: ('black' | 'white') | null;
       /**
        * 0 = transparent, 100 = fully opaque
        */
@@ -671,7 +683,7 @@ export interface HeroBlock {
   };
   id?: string | null;
   blockName?: string | null;
-  blockType: "hero";
+  blockType: 'hero';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -686,24 +698,24 @@ export interface TextSectionBlock {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
     [k: string]: unknown;
   };
   section?: {
-    theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-    paddingY?: ("none" | "base" | "large") | null;
-    paddingX?: ("none" | "base") | null;
-    maxWidth?: ("none" | "base") | null;
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
        */
       media?: (number | null) | Media;
-      overlay?: ("black" | "white") | null;
+      overlay?: ('black' | 'white') | null;
       /**
        * 0 = transparent, 100 = fully opaque
        */
@@ -712,7 +724,7 @@ export interface TextSectionBlock {
   };
   id?: string | null;
   blockName?: string | null;
-  blockType: "textSection";
+  blockType: 'textSection';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -720,7 +732,7 @@ export interface TextSectionBlock {
  */
 export interface ContentBlock {
   heading?: string | null;
-  layout: "image-text" | "text-image";
+  layout: 'image-text' | 'text-image';
   image: number | Media;
   content: {
     root: {
@@ -730,24 +742,24 @@ export interface ContentBlock {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
     [k: string]: unknown;
   };
   section?: {
-    theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-    paddingY?: ("none" | "base" | "large") | null;
-    paddingX?: ("none" | "base") | null;
-    maxWidth?: ("none" | "base") | null;
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
        */
       media?: (number | null) | Media;
-      overlay?: ("black" | "white") | null;
+      overlay?: ('black' | 'white') | null;
       /**
        * 0 = transparent, 100 = fully opaque
        */
@@ -756,7 +768,7 @@ export interface ContentBlock {
   };
   id?: string | null;
   blockName?: string | null;
-  blockType: "content";
+  blockType: 'content';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -774,8 +786,8 @@ export interface FaqBlock {
           version: number;
           [k: string]: unknown;
         }[];
-        direction: ("ltr" | "rtl") | null;
-        format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
         indent: number;
         version: number;
       };
@@ -784,16 +796,16 @@ export interface FaqBlock {
     id?: string | null;
   }[];
   section?: {
-    theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-    paddingY?: ("none" | "base" | "large") | null;
-    paddingX?: ("none" | "base") | null;
-    maxWidth?: ("none" | "base") | null;
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
        */
       media?: (number | null) | Media;
-      overlay?: ("black" | "white") | null;
+      overlay?: ('black' | 'white') | null;
       /**
        * 0 = transparent, 100 = fully opaque
        */
@@ -802,7 +814,7 @@ export interface FaqBlock {
   };
   id?: string | null;
   blockName?: string | null;
-  blockType: "faq";
+  blockType: 'faq';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -824,16 +836,16 @@ export interface TestimonialsListBlock {
   showRating?: boolean | null;
   showAvatar?: boolean | null;
   section?: {
-    theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-    paddingY?: ("none" | "base" | "large") | null;
-    paddingX?: ("none" | "base") | null;
-    maxWidth?: ("none" | "base") | null;
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
        */
       media?: (number | null) | Media;
-      overlay?: ("black" | "white") | null;
+      overlay?: ('black' | 'white') | null;
       /**
        * 0 = transparent, 100 = fully opaque
        */
@@ -842,7 +854,7 @@ export interface TestimonialsListBlock {
   };
   id?: string | null;
   blockName?: string | null;
-  blockType: "testimonialsList";
+  blockType: 'testimonialsList';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -870,44 +882,44 @@ export interface CardsGridBlock {
     description?: string | null;
     image?: {
       image?: (number | null) | Media;
-      aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
+      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
     };
     link?: {
-      type?: ("reference" | "custom" | "customPage") | null;
+      type?: ('reference' | 'custom' | 'customPage') | null;
       newTab?: boolean | null;
       reference?:
         | ({
-            relationTo: "page";
+            relationTo: 'page';
             value: number | Page;
           } | null)
         | ({
-            relationTo: "posts";
+            relationTo: 'posts';
             value: number | Post;
           } | null);
       url?: string | null;
-      customPage?: ("blog" | "search") | null;
+      customPage?: ('blog' | 'search') | null;
       label?: string | null;
       /**
        * Choose how the link should be rendered.
        */
-      appearance?: ("default" | "outline") | null;
+      appearance?: ('default' | 'outline') | null;
     };
-    alignVariant?: ("left" | "center" | "right") | null;
-    rounded?: ("none" | "large") | null;
-    backgroundColor?: ("none" | "light" | "dark" | "light-gray" | "dark-gray" | "gradient-2") | null;
+    alignVariant?: ('left' | 'center' | 'right') | null;
+    rounded?: ('none' | 'large') | null;
+    backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
     id?: string | null;
   }[];
   section?: {
-    theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-    paddingY?: ("none" | "base" | "large") | null;
-    paddingX?: ("none" | "base") | null;
-    maxWidth?: ("none" | "base") | null;
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
        */
       media?: (number | null) | Media;
-      overlay?: ("black" | "white") | null;
+      overlay?: ('black' | 'white') | null;
       /**
        * 0 = transparent, 100 = fully opaque
        */
@@ -916,7 +928,7 @@ export interface CardsGridBlock {
   };
   id?: string | null;
   blockName?: string | null;
-  blockType: "cardsGrid";
+  blockType: 'cardsGrid';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -931,18 +943,18 @@ export interface CarouselBlock {
         version: number;
         [k: string]: unknown;
       }[];
-      direction: ("ltr" | "rtl") | null;
-      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
       indent: number;
       version: number;
     };
     [k: string]: unknown;
   } | null;
-  effect?: ("slide" | "fade" | "cube" | "flip" | "coverflow" | "cards") | null;
+  effect?: ('slide' | 'fade' | 'cube' | 'flip' | 'coverflow' | 'cards') | null;
   slides: {
     image: {
       image: number | Media;
-      aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
+      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
     };
     text?: {
       root: {
@@ -952,8 +964,8 @@ export interface CarouselBlock {
           version: number;
           [k: string]: unknown;
         }[];
-        direction: ("ltr" | "rtl") | null;
-        format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
         indent: number;
         version: number;
       };
@@ -962,16 +974,16 @@ export interface CarouselBlock {
     id?: string | null;
   }[];
   section?: {
-    theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-    paddingY?: ("none" | "base" | "large") | null;
-    paddingX?: ("none" | "base") | null;
-    maxWidth?: ("none" | "base") | null;
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
        */
       media?: (number | null) | Media;
-      overlay?: ("black" | "white") | null;
+      overlay?: ('black' | 'white') | null;
       /**
        * 0 = transparent, 100 = fully opaque
        */
@@ -980,48 +992,48 @@ export interface CarouselBlock {
   };
   id?: string | null;
   blockName?: string | null;
-  blockType: "carousel";
+  blockType: 'carousel';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "LogosBlock".
  */
 export interface LogosBlock {
-  alignVariant?: ("left" | "center" | "right") | null;
+  alignVariant?: ('left' | 'center' | 'right') | null;
   items: {
     image: {
       image: number | Media;
-      aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
+      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
     };
     link: {
-      type?: ("reference" | "custom" | "customPage") | null;
+      type?: ('reference' | 'custom' | 'customPage') | null;
       newTab?: boolean | null;
       reference?:
         | ({
-            relationTo: "page";
+            relationTo: 'page';
             value: number | Page;
           } | null)
         | ({
-            relationTo: "posts";
+            relationTo: 'posts';
             value: number | Post;
           } | null);
       url?: string | null;
-      customPage?: ("blog" | "search") | null;
+      customPage?: ('blog' | 'search') | null;
       label: string;
     };
     id?: string | null;
   }[];
   section?: {
-    theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-    paddingY?: ("none" | "base" | "large") | null;
-    paddingX?: ("none" | "base") | null;
-    maxWidth?: ("none" | "base") | null;
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
        */
       media?: (number | null) | Media;
-      overlay?: ("black" | "white") | null;
+      overlay?: ('black' | 'white') | null;
       /**
        * 0 = transparent, 100 = fully opaque
        */
@@ -1030,48 +1042,48 @@ export interface LogosBlock {
   };
   id?: string | null;
   blockName?: string | null;
-  blockType: "logos";
+  blockType: 'logos';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "LinksListBlock".
  */
 export interface LinksListBlock {
-  alignVariant?: ("left" | "center" | "right") | null;
+  alignVariant?: ('left' | 'center' | 'right') | null;
   links: {
     link: {
-      type?: ("reference" | "custom" | "customPage") | null;
+      type?: ('reference' | 'custom' | 'customPage') | null;
       newTab?: boolean | null;
       reference?:
         | ({
-            relationTo: "page";
+            relationTo: 'page';
             value: number | Page;
           } | null)
         | ({
-            relationTo: "posts";
+            relationTo: 'posts';
             value: number | Post;
           } | null);
       url?: string | null;
-      customPage?: ("blog" | "search") | null;
+      customPage?: ('blog' | 'search') | null;
       label: string;
       /**
        * Choose how the link should be rendered.
        */
-      appearance?: ("default" | "outline") | null;
+      appearance?: ('default' | 'outline') | null;
     };
     id?: string | null;
   }[];
   section?: {
-    theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-    paddingY?: ("none" | "base" | "large") | null;
-    paddingX?: ("none" | "base") | null;
-    maxWidth?: ("none" | "base") | null;
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
        */
       media?: (number | null) | Media;
-      overlay?: ("black" | "white") | null;
+      overlay?: ('black' | 'white') | null;
       /**
        * 0 = transparent, 100 = fully opaque
        */
@@ -1080,7 +1092,7 @@ export interface LinksListBlock {
   };
   id?: string | null;
   blockName?: string | null;
-  blockType: "linksList";
+  blockType: 'linksList';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1089,7 +1101,7 @@ export interface LinksListBlock {
 export interface DocumentEmbedding {
   id: number;
   documentId: string;
-  collection: "page" | "post";
+  collection: 'page' | 'post';
   locale: string;
   updatedAt: string;
   createdAt: string;
@@ -1105,14 +1117,14 @@ export interface Redirect {
    */
   from: string;
   to?: {
-    type?: ("reference" | "custom") | null;
+    type?: ('reference' | 'custom') | null;
     reference?:
       | ({
-          relationTo: "page";
+          relationTo: 'page';
           value: number | Page;
         } | null)
       | ({
-          relationTo: "posts";
+          relationTo: 'posts';
           value: number | Post;
         } | null);
     url?: string | null;
@@ -1120,7 +1132,7 @@ export interface Redirect {
   /**
    * Choose the redirect type. 307 - temporary, 308 - permanent.
    */
-  type: "307" | "308";
+  type: '307' | '308';
   /**
    * Whether the redirect is active.
    */
@@ -1152,8 +1164,8 @@ export interface Preset {
               version: number;
               [k: string]: unknown;
             }[];
-            direction: ("ltr" | "rtl") | null;
-            format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
             indent: number;
             version: number;
           };
@@ -1161,48 +1173,48 @@ export interface Preset {
         } | null;
         actions?:
           | {
-              type?: ("reference" | "custom" | "customPage") | null;
+              type?: ('reference' | 'custom' | 'customPage') | null;
               newTab?: boolean | null;
               reference?:
                 | ({
-                    relationTo: "page";
+                    relationTo: 'page';
                     value: number | Page;
                   } | null)
                 | ({
-                    relationTo: "posts";
+                    relationTo: 'posts';
                     value: number | Post;
                   } | null);
               url?: string | null;
-              customPage?: ("blog" | "search") | null;
+              customPage?: ('blog' | 'search') | null;
               label: string;
               /**
                * Choose how the link should be rendered.
                */
-              appearance?: ("default" | "outline") | null;
+              appearance?: ('default' | 'outline') | null;
               id?: string | null;
             }[]
           | null;
         image: {
           image: number | Media;
-          aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
+          aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
         };
         enabled?: boolean | null;
-        color?: ("black" | "white") | null;
+        color?: ('black' | 'white') | null;
         /**
          * Overlay opacity (0-100)
          */
         opacity?: number | null;
         section?: {
-          theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-          paddingY?: ("none" | "base" | "large") | null;
-          paddingX?: ("none" | "base") | null;
-          maxWidth?: ("none" | "base") | null;
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
              */
             media?: (number | null) | Media;
-            overlay?: ("black" | "white") | null;
+            overlay?: ('black' | 'white') | null;
             /**
              * 0 = transparent, 100 = fully opaque
              */
@@ -1211,7 +1223,7 @@ export interface Preset {
         };
         id?: string | null;
         blockName?: string | null;
-        blockType: "hero";
+        blockType: 'hero';
       }
     | {
         text: {
@@ -1222,24 +1234,24 @@ export interface Preset {
               version: number;
               [k: string]: unknown;
             }[];
-            direction: ("ltr" | "rtl") | null;
-            format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
             indent: number;
             version: number;
           };
           [k: string]: unknown;
         };
         section?: {
-          theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-          paddingY?: ("none" | "base" | "large") | null;
-          paddingX?: ("none" | "base") | null;
-          maxWidth?: ("none" | "base") | null;
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
              */
             media?: (number | null) | Media;
-            overlay?: ("black" | "white") | null;
+            overlay?: ('black' | 'white') | null;
             /**
              * 0 = transparent, 100 = fully opaque
              */
@@ -1248,11 +1260,11 @@ export interface Preset {
         };
         id?: string | null;
         blockName?: string | null;
-        blockType: "textSection";
+        blockType: 'textSection';
       }
     | {
         heading?: string | null;
-        layout: "image-text" | "text-image";
+        layout: 'image-text' | 'text-image';
         image: number | Media;
         content: {
           root: {
@@ -1262,24 +1274,24 @@ export interface Preset {
               version: number;
               [k: string]: unknown;
             }[];
-            direction: ("ltr" | "rtl") | null;
-            format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
             indent: number;
             version: number;
           };
           [k: string]: unknown;
         };
         section?: {
-          theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-          paddingY?: ("none" | "base" | "large") | null;
-          paddingX?: ("none" | "base") | null;
-          maxWidth?: ("none" | "base") | null;
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
              */
             media?: (number | null) | Media;
-            overlay?: ("black" | "white") | null;
+            overlay?: ('black' | 'white') | null;
             /**
              * 0 = transparent, 100 = fully opaque
              */
@@ -1288,7 +1300,7 @@ export interface Preset {
         };
         id?: string | null;
         blockName?: string | null;
-        blockType: "content";
+        blockType: 'content';
       }
     | {
         heading: string;
@@ -1302,8 +1314,8 @@ export interface Preset {
                 version: number;
                 [k: string]: unknown;
               }[];
-              direction: ("ltr" | "rtl") | null;
-              format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+              direction: ('ltr' | 'rtl') | null;
+              format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
               indent: number;
               version: number;
             };
@@ -1312,16 +1324,16 @@ export interface Preset {
           id?: string | null;
         }[];
         section?: {
-          theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-          paddingY?: ("none" | "base" | "large") | null;
-          paddingX?: ("none" | "base") | null;
-          maxWidth?: ("none" | "base") | null;
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
              */
             media?: (number | null) | Media;
-            overlay?: ("black" | "white") | null;
+            overlay?: ('black' | 'white') | null;
             /**
              * 0 = transparent, 100 = fully opaque
              */
@@ -1330,7 +1342,7 @@ export interface Preset {
         };
         id?: string | null;
         blockName?: string | null;
-        blockType: "faq";
+        blockType: 'faq';
       }
     | {
         heading?: string | null;
@@ -1348,16 +1360,16 @@ export interface Preset {
         showRating?: boolean | null;
         showAvatar?: boolean | null;
         section?: {
-          theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-          paddingY?: ("none" | "base" | "large") | null;
-          paddingX?: ("none" | "base") | null;
-          maxWidth?: ("none" | "base") | null;
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
              */
             media?: (number | null) | Media;
-            overlay?: ("black" | "white") | null;
+            overlay?: ('black' | 'white') | null;
             /**
              * 0 = transparent, 100 = fully opaque
              */
@@ -1366,7 +1378,7 @@ export interface Preset {
         };
         id?: string | null;
         blockName?: string | null;
-        blockType: "testimonialsList";
+        blockType: 'testimonialsList';
       }
     | {
         columns?: number | null;
@@ -1375,44 +1387,44 @@ export interface Preset {
           description?: string | null;
           image?: {
             image?: (number | null) | Media;
-            aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
+            aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
           };
           link?: {
-            type?: ("reference" | "custom" | "customPage") | null;
+            type?: ('reference' | 'custom' | 'customPage') | null;
             newTab?: boolean | null;
             reference?:
               | ({
-                  relationTo: "page";
+                  relationTo: 'page';
                   value: number | Page;
                 } | null)
               | ({
-                  relationTo: "posts";
+                  relationTo: 'posts';
                   value: number | Post;
                 } | null);
             url?: string | null;
-            customPage?: ("blog" | "search") | null;
+            customPage?: ('blog' | 'search') | null;
             label?: string | null;
             /**
              * Choose how the link should be rendered.
              */
-            appearance?: ("default" | "outline") | null;
+            appearance?: ('default' | 'outline') | null;
           };
-          alignVariant?: ("left" | "center" | "right") | null;
-          rounded?: ("none" | "large") | null;
-          backgroundColor?: ("none" | "light" | "dark" | "light-gray" | "dark-gray" | "gradient-2") | null;
+          alignVariant?: ('left' | 'center' | 'right') | null;
+          rounded?: ('none' | 'large') | null;
+          backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
           id?: string | null;
         }[];
         section?: {
-          theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-          paddingY?: ("none" | "base" | "large") | null;
-          paddingX?: ("none" | "base") | null;
-          maxWidth?: ("none" | "base") | null;
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
              */
             media?: (number | null) | Media;
-            overlay?: ("black" | "white") | null;
+            overlay?: ('black' | 'white') | null;
             /**
              * 0 = transparent, 100 = fully opaque
              */
@@ -1421,7 +1433,7 @@ export interface Preset {
         };
         id?: string | null;
         blockName?: string | null;
-        blockType: "cardsGrid";
+        blockType: 'cardsGrid';
       }
     | {
         text?: {
@@ -1432,18 +1444,18 @@ export interface Preset {
               version: number;
               [k: string]: unknown;
             }[];
-            direction: ("ltr" | "rtl") | null;
-            format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
             indent: number;
             version: number;
           };
           [k: string]: unknown;
         } | null;
-        effect?: ("slide" | "fade" | "cube" | "flip" | "coverflow" | "cards") | null;
+        effect?: ('slide' | 'fade' | 'cube' | 'flip' | 'coverflow' | 'cards') | null;
         slides: {
           image: {
             image: number | Media;
-            aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
+            aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
           };
           text?: {
             root: {
@@ -1453,8 +1465,8 @@ export interface Preset {
                 version: number;
                 [k: string]: unknown;
               }[];
-              direction: ("ltr" | "rtl") | null;
-              format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+              direction: ('ltr' | 'rtl') | null;
+              format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
               indent: number;
               version: number;
             };
@@ -1463,16 +1475,16 @@ export interface Preset {
           id?: string | null;
         }[];
         section?: {
-          theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-          paddingY?: ("none" | "base" | "large") | null;
-          paddingX?: ("none" | "base") | null;
-          maxWidth?: ("none" | "base") | null;
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
              */
             media?: (number | null) | Media;
-            overlay?: ("black" | "white") | null;
+            overlay?: ('black' | 'white') | null;
             /**
              * 0 = transparent, 100 = fully opaque
              */
@@ -1481,44 +1493,44 @@ export interface Preset {
         };
         id?: string | null;
         blockName?: string | null;
-        blockType: "carousel";
+        blockType: 'carousel';
       }
     | {
-        alignVariant?: ("left" | "center" | "right") | null;
+        alignVariant?: ('left' | 'center' | 'right') | null;
         items: {
           image: {
             image: number | Media;
-            aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
+            aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
           };
           link: {
-            type?: ("reference" | "custom" | "customPage") | null;
+            type?: ('reference' | 'custom' | 'customPage') | null;
             newTab?: boolean | null;
             reference?:
               | ({
-                  relationTo: "page";
+                  relationTo: 'page';
                   value: number | Page;
                 } | null)
               | ({
-                  relationTo: "posts";
+                  relationTo: 'posts';
                   value: number | Post;
                 } | null);
             url?: string | null;
-            customPage?: ("blog" | "search") | null;
+            customPage?: ('blog' | 'search') | null;
             label: string;
           };
           id?: string | null;
         }[];
         section?: {
-          theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-          paddingY?: ("none" | "base" | "large") | null;
-          paddingX?: ("none" | "base") | null;
-          maxWidth?: ("none" | "base") | null;
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
              */
             media?: (number | null) | Media;
-            overlay?: ("black" | "white") | null;
+            overlay?: ('black' | 'white') | null;
             /**
              * 0 = transparent, 100 = fully opaque
              */
@@ -1527,44 +1539,44 @@ export interface Preset {
         };
         id?: string | null;
         blockName?: string | null;
-        blockType: "logos";
+        blockType: 'logos';
       }
     | {
-        alignVariant?: ("left" | "center" | "right") | null;
+        alignVariant?: ('left' | 'center' | 'right') | null;
         links: {
           link: {
-            type?: ("reference" | "custom" | "customPage") | null;
+            type?: ('reference' | 'custom' | 'customPage') | null;
             newTab?: boolean | null;
             reference?:
               | ({
-                  relationTo: "page";
+                  relationTo: 'page';
                   value: number | Page;
                 } | null)
               | ({
-                  relationTo: "posts";
+                  relationTo: 'posts';
                   value: number | Post;
                 } | null);
             url?: string | null;
-            customPage?: ("blog" | "search") | null;
+            customPage?: ('blog' | 'search') | null;
             label: string;
             /**
              * Choose how the link should be rendered.
              */
-            appearance?: ("default" | "outline") | null;
+            appearance?: ('default' | 'outline') | null;
           };
           id?: string | null;
         }[];
         section?: {
-          theme?: ("light" | "dark" | "light-gray" | "dark-gray") | null;
-          paddingY?: ("none" | "base" | "large") | null;
-          paddingX?: ("none" | "base") | null;
-          maxWidth?: ("none" | "base") | null;
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
              */
             media?: (number | null) | Media;
-            overlay?: ("black" | "white") | null;
+            overlay?: ('black' | 'white') | null;
             /**
              * 0 = transparent, 100 = fully opaque
              */
@@ -1573,7 +1585,7 @@ export interface Preset {
         };
         id?: string | null;
         blockName?: string | null;
-        blockType: "linksList";
+        blockType: 'linksList';
       }
   )[];
   updatedAt: string;
@@ -1630,6 +1642,32 @@ export interface CommentRead {
   comment: number | Comment;
   user: number | User;
   readAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ab-experiments".
+ */
+export interface AbExperiment {
+  id: number;
+  /**
+   * Internal URL path used as the experiment id; matches GA4 fr_ab_experiment.
+   */
+  manifestKey: string;
+  /**
+   * ID of the original (non-variant) document.
+   */
+  parentDocId: string;
+  parentCollection: string;
+  /**
+   * Locale this experiment row is scoped to; null when localization is disabled.
+   */
+  locale?: string | null;
+  /**
+   * Set to now() when the first variant for this parent+locale is published.
+   */
+  startedAt: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -1709,7 +1747,7 @@ export interface PayloadMcpApiKey {
      */
     delete?: boolean | null;
   };
-  "payload-mcp-tool"?: {
+  'payload-mcp-tool'?: {
     /**
      * Fetch a collection document by ID. Specify collectionSlug (one of: footer, header, page, posts). Returns all top-level fields as a structured overview — complex fields (arrays, blocks, relations, rich text) are summarized with their type and item count. Use getAllDocuments to list documents first, then this tool by ID. Use getField to drill into specific fields. Do NOT pass full: true unless the user explicitly asks to extract the entire content. Pass raw: true to get the full raw JSON — use this when you need structured data for analysis or to construct an update payload. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
      */
@@ -1736,7 +1774,7 @@ export interface PayloadMcpApiKey {
   enableAPIKey?: boolean | null;
   apiKey?: string | null;
   apiKeyIndex?: string | null;
-  collection: "payload-mcp-api-keys";
+  collection: 'payload-mcp-api-keys';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1807,7 +1845,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: "inline" | "schedulePublish";
+        taskSlug: 'inline' | 'schedulePublish';
         taskID: string;
         input?:
           | {
@@ -1827,7 +1865,7 @@ export interface PayloadJob {
           | number
           | boolean
           | null;
-        state: "failed" | "succeeded";
+        state: 'failed' | 'succeeded';
         error?:
           | {
               [k: string]: unknown;
@@ -1840,7 +1878,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ("inline" | "schedulePublish") | null;
+  taskSlug?: ('inline' | 'schedulePublish') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1855,77 +1893,81 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
-        relationTo: "users";
+        relationTo: 'users';
         value: number | User;
       } | null)
     | ({
-        relationTo: "media";
+        relationTo: 'media';
         value: number | Media;
       } | null)
     | ({
-        relationTo: "page";
+        relationTo: 'page';
         value: number | Page;
       } | null)
     | ({
-        relationTo: "categories";
+        relationTo: 'categories';
         value: number | Category;
       } | null)
     | ({
-        relationTo: "authors";
+        relationTo: 'authors';
         value: number | Author;
       } | null)
     | ({
-        relationTo: "posts";
+        relationTo: 'posts';
         value: number | Post;
       } | null)
     | ({
-        relationTo: "testimonials";
+        relationTo: 'testimonials';
         value: number | Testimonial;
       } | null)
     | ({
-        relationTo: "header";
+        relationTo: 'header';
         value: number | Header;
       } | null)
     | ({
-        relationTo: "footer";
+        relationTo: 'footer';
         value: number | Footer;
       } | null)
     | ({
-        relationTo: "document-embeddings";
+        relationTo: 'document-embeddings';
         value: number | DocumentEmbedding;
       } | null)
     | ({
-        relationTo: "redirects";
+        relationTo: 'redirects';
         value: number | Redirect;
       } | null)
     | ({
-        relationTo: "presets";
+        relationTo: 'presets';
         value: number | Preset;
       } | null)
     | ({
-        relationTo: "comments";
+        relationTo: 'comments';
         value: number | Comment;
       } | null)
     | ({
-        relationTo: "comment-reads";
+        relationTo: 'comment-reads';
         value: number | CommentRead;
       } | null)
     | ({
-        relationTo: "payload-mcp-api-keys";
+        relationTo: 'ab-experiments';
+        value: number | AbExperiment;
+      } | null)
+    | ({
+        relationTo: 'payload-mcp-api-keys';
         value: number | PayloadMcpApiKey;
       } | null)
     | ({
-        relationTo: "payload-folders";
+        relationTo: 'payload-folders';
         value: number | FolderInterface;
       } | null);
   globalSlug?: string | null;
   user:
     | {
-        relationTo: "users";
+        relationTo: 'users';
         value: number | User;
       }
     | {
-        relationTo: "payload-mcp-api-keys";
+        relationTo: 'payload-mcp-api-keys';
         value: number | PayloadMcpApiKey;
       };
   updatedAt: string;
@@ -1939,11 +1981,11 @@ export interface PayloadPreference {
   id: number;
   user:
     | {
-        relationTo: "users";
+        relationTo: 'users';
         value: number | User;
       }
     | {
-        relationTo: "payload-mcp-api-keys";
+        relationTo: 'payload-mcp-api-keys';
         value: number | PayloadMcpApiKey;
       };
   key?: string | null;
@@ -2986,6 +3028,19 @@ export interface CommentReadsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ab-experiments_select".
+ */
+export interface AbExperimentsSelect<T extends boolean = true> {
+  manifestKey?: T;
+  parentDocId?: T;
+  parentCollection?: T;
+  locale?: T;
+  startedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-mcp-api-keys_select".
  */
 export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
@@ -3020,7 +3075,7 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
         update?: T;
         delete?: T;
       };
-  "payload-mcp-tool"?:
+  'payload-mcp-tool'?:
     | T
     | {
         getDocument?: T;
@@ -3147,7 +3202,7 @@ export interface SiteSetting {
   /**
    * Character used to separate page title from site name
    */
-  seoTitleSeparator?: ("|" | "-" | "•") | null;
+  seoTitleSeparator?: ('|' | '-' | '•') | null;
   /**
    * Text added after separator (defaults to Site Name if empty)
    */
@@ -3183,7 +3238,7 @@ export interface SiteSetting {
   /**
    * Type of Twitter Card to display
    */
-  defaultTwitterCard?: ("summary_large_image" | "summary") | null;
+  defaultTwitterCard?: ('summary_large_image' | 'summary') | null;
   /**
    * Heading displayed on 404 page
    */
@@ -3207,10 +3262,10 @@ export interface SiteSetting {
       /**
        * Allow search engines to index this page
        */
-      robots?: ("index" | "noindex") | null;
+      robots?: ('index' | 'noindex') | null;
     };
   };
-  _status?: ("draft" | "published") | null;
+  _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -3296,7 +3351,7 @@ export interface CollectionsWidget {
   data?: {
     [k: string]: unknown;
   };
-  width: "full";
+  width: 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3304,18 +3359,18 @@ export interface CollectionsWidget {
  */
 export interface TaskSchedulePublish {
   input: {
-    type?: ("publish" | "unpublish") | null;
+    type?: ('publish' | 'unpublish') | null;
     locale?: string | null;
     doc?:
       | ({
-          relationTo: "page";
+          relationTo: 'page';
           value: number | Page;
         } | null)
       | ({
-          relationTo: "posts";
+          relationTo: 'posts';
           value: number | Post;
         } | null);
-    global?: "site-settings" | null;
+    global?: 'site-settings' | null;
     user?: (number | null) | User;
   };
   output?: unknown;
@@ -3331,102 +3386,102 @@ export interface CardsGridInlineBlock {
     description?: string | null;
     image?: {
       image?: (number | null) | Media;
-      aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
+      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
     };
     link?: {
-      type?: ("reference" | "custom" | "customPage") | null;
+      type?: ('reference' | 'custom' | 'customPage') | null;
       newTab?: boolean | null;
       reference?:
         | ({
-            relationTo: "page";
+            relationTo: 'page';
             value: number | Page;
           } | null)
         | ({
-            relationTo: "posts";
+            relationTo: 'posts';
             value: number | Post;
           } | null);
       url?: string | null;
-      customPage?: ("blog" | "search") | null;
+      customPage?: ('blog' | 'search') | null;
       label?: string | null;
       /**
        * Choose how the link should be rendered.
        */
-      appearance?: ("default" | "outline") | null;
+      appearance?: ('default' | 'outline') | null;
     };
-    alignVariant?: ("left" | "center" | "right") | null;
-    rounded?: ("none" | "large") | null;
-    backgroundColor?: ("none" | "light" | "dark" | "light-gray" | "dark-gray" | "gradient-2") | null;
+    alignVariant?: ('left' | 'center' | 'right') | null;
+    rounded?: ('none' | 'large') | null;
+    backgroundColor?: ('none' | 'light' | 'dark' | 'light-gray' | 'dark-gray' | 'gradient-2') | null;
     id?: string | null;
   }[];
   id?: string | null;
   blockName?: string | null;
-  blockType: "cardsGridInline";
+  blockType: 'cardsGridInline';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "LogosInlineBlock".
  */
 export interface LogosInlineBlock {
-  alignVariant?: ("left" | "center" | "right") | null;
+  alignVariant?: ('left' | 'center' | 'right') | null;
   items: {
     image: {
       image: number | Media;
-      aspectRatio?: ("16/9" | "3/2" | "4/3" | "1/1" | "9/16" | "1/2" | "4/1" | "3/1" | "auto") | null;
+      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
     };
     link: {
-      type?: ("reference" | "custom" | "customPage") | null;
+      type?: ('reference' | 'custom' | 'customPage') | null;
       newTab?: boolean | null;
       reference?:
         | ({
-            relationTo: "page";
+            relationTo: 'page';
             value: number | Page;
           } | null)
         | ({
-            relationTo: "posts";
+            relationTo: 'posts';
             value: number | Post;
           } | null);
       url?: string | null;
-      customPage?: ("blog" | "search") | null;
+      customPage?: ('blog' | 'search') | null;
       label: string;
     };
     id?: string | null;
   }[];
   id?: string | null;
   blockName?: string | null;
-  blockType: "logosInline";
+  blockType: 'logosInline';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "LinksListInlineBlock".
  */
 export interface LinksListInlineBlock {
-  alignVariant?: ("left" | "center" | "right") | null;
+  alignVariant?: ('left' | 'center' | 'right') | null;
   links: {
     link: {
-      type?: ("reference" | "custom" | "customPage") | null;
+      type?: ('reference' | 'custom' | 'customPage') | null;
       newTab?: boolean | null;
       reference?:
         | ({
-            relationTo: "page";
+            relationTo: 'page';
             value: number | Page;
           } | null)
         | ({
-            relationTo: "posts";
+            relationTo: 'posts';
             value: number | Post;
           } | null);
       url?: string | null;
-      customPage?: ("blog" | "search") | null;
+      customPage?: ('blog' | 'search') | null;
       label: string;
       /**
        * Choose how the link should be rendered.
        */
-      appearance?: ("default" | "outline") | null;
+      appearance?: ('default' | 'outline') | null;
     };
     id?: string | null;
   }[];
   id?: string | null;
   blockName?: string | null;
-  blockType: "linksListInline";
+  blockType: 'linksListInline';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3436,6 +3491,7 @@ export interface Auth {
   [k: string]: unknown;
 }
 
-declare module "payload" {
+
+declare module 'payload' {
   export interface GeneratedTypes extends Config {}
 }
