@@ -1,25 +1,14 @@
 /// <reference types="node" />
 
 import { defineConfig } from "tsup";
-import { spawn } from "node:child_process";
-import { createRequire } from "node:module";
+import { copyFileSync, mkdirSync } from "node:fs";
 
-const postcssCli = createRequire(import.meta.url).resolve("postcss-cli");
-
-const runPostcss = (input: string, output: string) =>
-  new Promise<void>((resolve, reject) => {
-    const child = spawn("node", [postcssCli, input, "-o", output], {
-      stdio: "inherit",
-      shell: false,
-    });
-    child.on("exit", (code) => {
-      if (code !== 0) {
-        reject(new Error(`postcss exited ${code} for ${input}`));
-        return;
-      }
-      resolve();
-    });
-  });
+const copyCss = () => {
+  const source = "src/components/SeoDrawer/admin.css";
+  mkdirSync("dist/components/SeoDrawer", { recursive: true });
+  copyFileSync(source, "dist/components/SeoDrawer/admin.css");
+  copyFileSync(source, "dist/admin.css");
+};
 
 export default defineConfig({
   entry: ["src/**/*.{ts,tsx}"],
@@ -43,6 +32,6 @@ export default defineConfig({
     "@yoast/search-metadata-previews",
   ],
   async onSuccess() {
-    await runPostcss("src/components/SeoDrawer/admin.css", "dist/admin.css");
+    copyCss();
   },
 });
