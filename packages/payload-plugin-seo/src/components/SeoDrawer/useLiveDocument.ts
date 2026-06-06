@@ -1,53 +1,80 @@
 "use client";
 
-import { useMemo } from "react";
-import { useAllFormFields, useLocale } from "@payloadcms/ui";
+import { useAllFormFields, useDebounce, useLocale } from "@payloadcms/ui";
+import { useCallback, useMemo, useRef } from "react";
 import { reduceFieldsToValues } from "payload/shared";
-import { resolveExtractor } from "../../content/resolveExtractor";
 import type { ExtractorFn } from "../../content/resolveExtractor";
-import type { SeoFieldPaths } from "../../types/config";
 import type { AnalysisInput } from "../../engine/types";
+import type { SeoFieldPaths } from "../../types/config";
+import { buildInput } from "./buildInput";
+
+const DEBOUNCE_MS = 500;
 
 export interface LiveDocArgs {
   fields: SeoFieldPaths;
   site: { name: string; baseUrl: string };
   keyphrase: string;
+  enabled?: boolean;
   override?: ExtractorFn;
 }
 
-function valueAt(values: Record<string, unknown>, path?: string): string {
-  if (!path) return "";
-
-  const v = path.split(".").reduce<unknown>((acc, k) => (acc && typeof acc === "object" ? (acc as Record<string, unknown>)[k] : undefined), values);
-
-  return typeof v === "string" ? v : "";
+export interface UseLiveDocumentResult {
+  input: AnalysisInput;
+  getLiveInput: () => AnalysisInput;
 }
 
-export function useLiveDocument({ fields, site, keyphrase, override }: LiveDocArgs): AnalysisInput {
+export function useLiveDocument({ fields, site, keyphrase, enabled = true, override }: LiveDocArgs): UseLiveDocumentResult {
   const [formFields] = useAllFormFields();
   const locale = useLocale();
 
-  return useMemo(() => {
-    const values = reduceFieldsToValues(formFields, true) as Record<string, unknown>;
+  const debouncedFields = useDebounce(formFields, DEBOUNCE_MS);
+  const debouncedKeyphrase = useDebounce(keyphrase, DEBOUNCE_MS);
 
-    const extractor = resolveExtractor(override, fields);
-    const title = valueAt(values, fields.seoTitle) || valueAt(values, "title");
-    const localeCode = (typeof locale === "object" && locale ? (locale as { code?: string }).code : String(locale)) ?? "en";
+  const values = useMemo<Record<string, unknown>>(() => (enabled ? (reduceFieldsToValues(debouncedFields, true) as Record<string, unknown>) : {}), [enabled, debouncedFields]);
 
-    return {
-      title,
-      slug: valueAt(values, fields.slug ?? "slug"),
-      description: valueAt(values, fields.metaDescription),
-      contentHtml: extractor(values),
-      keyphrase,
-      locale: localeCode.includes("_") ? localeCode : `${localeCode}_${localeCode.toUpperCase()}`,
-      site,
-      has: {
-        seoTitle: Boolean(fields.seoTitle && valueAt(values, fields.seoTitle)),
-        metaDescription: Boolean(fields.metaDescription),
-        slug: Boolean(fields.slug ?? "slug"),
-        content: Boolean(fields.content),
-      },
-    };
-  }, [formFields, locale, fields, site, keyphrase, override]);
+  const input = useMemo<AnalysisInput>(
+    () =>
+      buildInput({
+        values,
+        locale,
+        keyphrase: debouncedKeyphrase,
+        fields,
+        site,
+        override,
+      }),
+    [values, locale, debouncedKeyphrase, fields, site.name, site.baseUrl, override]
+  );
+
+  const liveRef = useRef({
+    formFields,
+    locale,
+    keyphrase,
+    fields,
+    site,
+    override,
+  });
+  liveRef.current = {
+    formFields,
+    locale,
+    keyphrase,
+    fields,
+    site,
+    override,
+  };
+
+  const getLiveInput = useCallback((): AnalysisInput => {
+    const live = liveRef.current;
+    const liveValues = reduceFieldsToValues(live.formFields, true) as Record<string, unknown>;
+
+    return buildInput({
+      values: liveValues,
+      locale: live.locale,
+      keyphrase: live.keyphrase,
+      fields: live.fields,
+      site: live.site,
+      override: live.override,
+    });
+  }, []);
+
+  return { input, getLiveInput };
 }
