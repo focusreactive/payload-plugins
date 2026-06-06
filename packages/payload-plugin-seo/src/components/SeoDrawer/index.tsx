@@ -1,17 +1,18 @@
 "use client";
-import { useState } from "react";
 import { Drawer } from "@payloadcms/ui";
+import { useState } from "react";
 import "./admin.css";
-import { cn } from "../../utils/style";
 import type { AnalysisResult } from "../../engine/types";
+import { cn } from "../../utils/style";
+import { InclusiveTab } from "./tabs/InclusiveTab";
 import { KeyphraseTab } from "./tabs/KeyphraseTab";
 import { OnPageTab } from "./tabs/OnPageTab";
 import { ReadabilityTab } from "./tabs/ReadabilityTab";
-import { InclusiveTab } from "./tabs/InclusiveTab";
-import { VitalsTab } from "./tabs/VitalsTab";
 import { SerpTab } from "./tabs/SerpTab";
+import { VitalsTab } from "./tabs/VitalsTab";
 
 type TabKey = "keyphrase" | "onpage" | "readability" | "inclusive" | "vitals" | "serp";
+
 const TABS: { key: TabKey; label: string }[] = [
   { key: "keyphrase", label: "Keyphrase" },
   { key: "onpage", label: "On-page SEO" },
@@ -32,7 +33,6 @@ export interface SeoDrawerProps {
 }
 
 export function SeoDrawer({ drawerSlug, keyphrase, setKeyphrase, result, analyzing, analyzeNow, site }: SeoDrawerProps) {
-  const [draft, setDraft] = useState("");
   const [tab, setTab] = useState<TabKey>("keyphrase");
 
   const total = result?.overall.seoScore ?? 0;
@@ -53,16 +53,9 @@ export function SeoDrawer({ drawerSlug, keyphrase, setKeyphrase, result, analyzi
 
         <div className="seo-kp">
           <label className="seo-input">
-            <input type="text" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Focus keyphrase" aria-label="Focus keyphrase" />
+            <input type="text" value={keyphrase} onChange={(e) => setKeyphrase(e.target.value)} placeholder="Focus keyphrase" aria-label="Focus keyphrase" />
           </label>
-          <button
-            type="button"
-            className="seo-btn"
-            onClick={() => {
-              setKeyphrase(draft);
-              analyzeNow();
-            }}
-          >
+          <button type="button" className="seo-btn" disabled={!keyphrase.trim()} onClick={() => analyzeNow()}>
             {analyzing ? "Analyzing…" : "Analyze"}
           </button>
         </div>
