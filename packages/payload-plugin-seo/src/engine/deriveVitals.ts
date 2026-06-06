@@ -1,5 +1,5 @@
-import { getResearch } from './researcherAdapter';
-import type { YoastResearcher } from './researcherAdapter';
+import { getResearch } from "./researcherAdapter";
+import type { YoastResearcher } from "./researcherAdapter";
 import type { VitalsResult } from "./types";
 
 export function deriveVitals(researcher: YoastResearcher, keyphrase: string): VitalsResult {
@@ -21,7 +21,10 @@ export function deriveVitals(researcher: YoastResearcher, keyphrase: string): Vi
     };
   });
 
-  const linking = getResearch<{ getWord?: () => string }[]>(researcher, "getProminentWordsForInternalLinking") ?? [];
+  const linkingResult = getResearch<{
+    prominentWords?: { getWord?: () => string }[];
+  }>(researcher, "getProminentWordsForInternalLinking");
+  const linking = linkingResult?.prominentWords ?? [];
   const internalLinkingPhrases = linking.slice(0, 5).map((w) => w.getWord?.() ?? String(w));
 
   return {
