@@ -4,7 +4,8 @@ import type { VitalsResult } from "./types";
 
 export function deriveVitals(researcher: YoastResearcher, keyphrase: string): VitalsResult {
   const kp = new Set(keyphrase.toLowerCase().split(/\s+/u).filter(Boolean));
-  const words = getResearch<number>(researcher, "wordCountInText") ?? 0;
+  const wordCount = getResearch<number | { count?: number }>(researcher, "wordCountInText");
+  const words = typeof wordCount === "number" ? wordCount : (wordCount?.count ?? 0);
   const sentences = (getResearch<unknown[]>(researcher, "countSentencesFromText") ?? []).length || (getResearch<number>(researcher, "countSentencesFromText") ?? 0);
   const paragraphs = (getResearch<unknown[]>(researcher, "getParagraphs") ?? []).length;
   const images = getResearch<number>(researcher, "imageCount") ?? 0;
