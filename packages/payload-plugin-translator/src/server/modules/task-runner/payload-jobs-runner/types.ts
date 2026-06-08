@@ -43,6 +43,22 @@ export type PayloadJobsRunnerOptions = {
    */
   autoRun?: false | AutoRunConfig;
   /**
+   * How long (ms) a job may stay `processing: true` before its lock is
+   * considered stale and the job becomes eligible to be re-run.
+   *
+   * A process killed mid-run (deploy, crash, request timeout) leaves a job
+   * stuck at `processing: true`; the autorun picker only takes
+   * `processing: false`, so without recovery such a job would hang forever.
+   * On boot the runner resets stale locks, and manual `run()` will re-claim a
+   * stale-locked job instead of refusing it as already-running.
+   *
+   * MUST be larger than the longest a single document translation can
+   * legitimately take, otherwise a genuinely in-flight job could be reclaimed
+   * and run twice (safe under the idempotent `overwrite` strategy, but wasteful).
+   * @default 300000 (5 minutes)
+   */
+  staleJobTimeoutMs?: number;
+  /**
    * Retry configuration for failed jobs.
    */
   retries?: {
@@ -59,6 +75,7 @@ export type PayloadJobsRunnerConfig = {
   queueName: string;
   jobsCollection: CollectionSlug;
   autoRun: false | Required<AutoRunConfig>;
+  staleJobTimeoutMs: number;
   retries?: PayloadJobsRunnerOptions["retries"];
 };
 

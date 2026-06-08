@@ -12,11 +12,14 @@ const defaultAutoRun: Required<AutoRunConfig> = {
   limit: 50,
 };
 
+const DEFAULT_STALE_JOB_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
 const defaultValues = {
   taskName: "translate_document",
   queueName: "translations",
   jobsCollection: "payload-jobs",
   autoRun: defaultAutoRun,
+  staleJobTimeoutMs: DEFAULT_STALE_JOB_TIMEOUT_MS,
   retries: {
     attempts: 3,
     backoff: {
@@ -37,11 +40,17 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
   constructor(options?: PayloadJobsRunnerOptions) {
     const autoRun = options?.autoRun === false ? false : options?.autoRun ? { ...defaultAutoRun, ...options.autoRun } : defaultAutoRun;
 
+    const staleJobTimeoutMs = options?.staleJobTimeoutMs ?? defaultValues.staleJobTimeoutMs;
+    if (!Number.isFinite(staleJobTimeoutMs) || staleJobTimeoutMs <= 0) {
+      throw new Error(`[payload-plugin-translator] staleJobTimeoutMs must be a positive finite number (got ${staleJobTimeoutMs})`);
+    }
+
     this.config = {
       taskName: options?.taskName ?? defaultValues.taskName,
       queueName: options?.queueName ?? defaultValues.queueName,
       jobsCollection: options?.jobsCollection ?? defaultValues.jobsCollection,
       autoRun,
+      staleJobTimeoutMs,
       retries: options?.retries ?? defaultValues.retries,
     };
   }
@@ -163,6 +172,26 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
           config.jobs.autoRun = [autoRunConfig];
         }
       }
+
+      // Reset stale locks on boot so jobs abandoned by a killed process
+      // (deploy/crash/timeout) become eligible for the autorun picker again.
+      // The picker requires processing:false, no error, and no pending waitUntil;
+      // a mid-run casualty (no error, no waitUntil) satisfies the rest, so
+      // clearing processing is sufficient for that case. Threshold-based, so a
+      // job genuinely in flight on another live instance (fresh updatedAt) is
+      // left alone. Wrapped so a reclaim failure never blocks startup.
+      const existingOnInit = config.onInit;
+      config.onInit = async (payload) => {
+        if (existingOnInit) await existingOnInit(payload);
+        try {
+          await new PayloadJobsTaskRunner(payload, this.config).reclaimStaleJobs();
+        } catch (err) {
+          payload.logger?.error?.({
+            err,
+            msg: "[translator] failed to reclaim stale translation jobs",
+          });
+        }
+      };
 
       return config;
     };

@@ -46,6 +46,7 @@ export interface TaskRunnerProvider {
   /**
    * Configures the runner and returns a Payload config modifier.
    * The modifier adds necessary tasks, jobs, queues to Payload config.
+   * Implementations may also install a `config.onInit` hook for boot-time initialization (e.g. stale-lock recovery).
    */
   configure(context: TaskRunnerContext): (config: Config) => Config;
 }

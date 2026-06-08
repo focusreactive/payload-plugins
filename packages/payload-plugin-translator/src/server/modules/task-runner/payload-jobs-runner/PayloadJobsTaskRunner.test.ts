@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner";
 import type { PayloadJobsRunnerConfig, PayloadJob } from "./types";
@@ -8,9 +8,11 @@ describe("PayloadJobsTaskRunner", () => {
   let mockPayload: {
     find: ReturnType<typeof vi.fn>;
     delete: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
     jobs: {
       queue: ReturnType<typeof vi.fn>;
       cancel: ReturnType<typeof vi.fn>;
+      run: ReturnType<typeof vi.fn>;
       runByID: ReturnType<typeof vi.fn>;
     };
   };
@@ -21,9 +23,13 @@ describe("PayloadJobsTaskRunner", () => {
     mockPayload = {
       find: vi.fn().mockResolvedValue({ docs: [] }),
       delete: vi.fn().mockResolvedValue(undefined),
+      update: vi.fn().mockResolvedValue({ docs: [] }),
       jobs: {
         queue: vi.fn().mockResolvedValue(undefined),
         cancel: vi.fn().mockResolvedValue(undefined),
+        run: vi.fn().mockResolvedValue({ jobStatus: {}, remainingJobsFromQueried: 0 }),
+        // kept only so tests can assert run() never falls back to the broken
+        // runByID id-path — production code does not call it.
         runByID: vi.fn().mockResolvedValue(undefined),
       },
     };
@@ -35,6 +41,7 @@ describe("PayloadJobsTaskRunner", () => {
         cron: "* * * * *",
         limit: 50,
       },
+      staleJobTimeoutMs: 300_000,
     };
     runner = new PayloadJobsTaskRunner(mockPayload as unknown as Payload, config);
   });
@@ -197,6 +204,10 @@ describe("PayloadJobsTaskRunner", () => {
   });
 
   describe("run", () => {
+    afterEach(() => {
+      expect(mockPayload.jobs.runByID).not.toHaveBeenCalled();
+    });
+
     it("returns not_found when task does not exist", async () => {
       mockPayload.find.mockResolvedValue({ docs: [] });
 
@@ -214,23 +225,148 @@ describe("PayloadJobsTaskRunner", () => {
       expect(result).toEqual({ success: false, error: "already_completed" });
     });
 
-    it("returns already_running when task is running", async () => {
-      const runningJob = createJob({ processing: true });
+    it("returns already_running when a job is genuinely in flight (fresh lock)", async () => {
+      const runningJob = createJob({
+        processing: true,
+        updatedAt: new Date().toISOString(),
+      });
       mockPayload.find.mockResolvedValue({ docs: [runningJob] });
 
       const result = await runner.run("job-123");
 
       expect(result).toEqual({ success: false, error: "already_running" });
+      expect(mockPayload.jobs.run).not.toHaveBeenCalled();
     });
 
-    it("runs task and returns success", async () => {
+    it("re-runs a job whose processing lock is stale (killed mid-run)", async () => {
+      // processing=true but updatedAt far older than staleJobTimeoutMs — the
+      // owning run is presumed dead, so force-run clears the lock and re-runs
+      // it instead of refusing it as already-running.
+      const staleJob = createJob({
+        processing: true,
+        updatedAt: "2024-01-01T00:00:00Z",
+      });
+      mockPayload.find.mockResolvedValue({ docs: [staleJob] });
+
+      const result = await runner.run("job-123");
+
+      expect(result).toEqual({ success: true });
+      // stale lock cleared first so the queue picker can select it
+      expect(mockPayload.update).toHaveBeenCalledWith({
+        collection: "payload-jobs",
+        depth: 0,
+        where: { id: { equals: "job-123" } },
+        data: { processing: false },
+      });
+      // run via the where-based picker, NOT runByID
+      expect(mockPayload.jobs.run).toHaveBeenCalledWith({
+        queue: "translations",
+        where: { id: { equals: "job-123" } },
+        limit: 1,
+      });
+      // update (lock reset) must precede jobs.run — a regression that runs first
+      // would leave the job stuck processing: true when run rejects
+      expect(mockPayload.update.mock.invocationCallOrder[0]).toBeLessThan(mockPayload.jobs.run.mock.invocationCallOrder[0]);
+    });
+
+    it("re-runs a stale locked job and propagates jobs.run rejection after resetting the lock", async () => {
+      const staleJob = createJob({
+        processing: true,
+        updatedAt: "2024-01-01T00:00:00Z",
+      });
+      mockPayload.find.mockResolvedValue({ docs: [staleJob] });
+      mockPayload.update.mockResolvedValue({ docs: [staleJob] });
+      mockPayload.jobs.run.mockRejectedValueOnce(new Error("boom"));
+
+      await expect(runner.run("job-123")).rejects.toThrow("boom");
+      // lock reset must have been called even though jobs.run threw
+      expect(mockPayload.update).toHaveBeenCalledWith({
+        collection: "payload-jobs",
+        depth: 0,
+        where: { id: { equals: "job-123" } },
+        data: { processing: false },
+      });
+    });
+
+    it("runs a pending task via the where-based picker (not runByID)", async () => {
       const pendingJob = createJob();
       mockPayload.find.mockResolvedValue({ docs: [pendingJob] });
 
       const result = await runner.run("job-123");
 
       expect(result).toEqual({ success: true });
-      expect(mockPayload.jobs.runByID).toHaveBeenCalledWith({ id: "job-123" });
+      expect(mockPayload.jobs.run).toHaveBeenCalledWith({
+        queue: "translations",
+        where: { id: { equals: "job-123" } },
+        limit: 1,
+      });
+      // a pending job (processing:false) needs no lock reset
+      expect(mockPayload.update).not.toHaveBeenCalled();
+      // findJobsInternal must narrow by taskSlug AND the given id
+      expect(mockPayload.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            and: [{ taskSlug: { equals: "translate_document" } }, { id: { equals: "job-123" } }],
+          },
+        })
+      );
+    });
+
+    it("awaits the job execution before resolving", async () => {
+      // The run must complete within the request (so nothing is abandoned after
+      // the HTTP response). A rejection from jobs.run must propagate, not be
+      // swallowed as a false success.
+      const pendingJob = createJob();
+      mockPayload.find.mockResolvedValue({ docs: [pendingJob] });
+      mockPayload.jobs.run.mockRejectedValueOnce(new Error("boom"));
+
+      await expect(runner.run("job-123")).rejects.toThrow("boom");
+    });
+
+    it("treats a running job with a missing/invalid updatedAt as stale and re-runs it", async () => {
+      // isStale returns true for NaN updatedAt — the job must be re-run rather
+      // than permanently refused as already-running.
+      const badJob = createJob({ processing: true, updatedAt: "" });
+      mockPayload.find.mockResolvedValue({ docs: [badJob] });
+
+      const result = await runner.run("job-123");
+
+      expect(result).toEqual({ success: true });
+      expect(mockPayload.jobs.run).toHaveBeenCalled();
+    });
+  });
+
+  describe("reclaimStaleJobs", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("resets stale processing locks via a real-column where clause", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+
+      mockPayload.update.mockResolvedValue({
+        docs: [{ id: "a" }, { id: "b" }],
+      });
+
+      const count = await runner.reclaimStaleJobs();
+
+      expect(count).toBe(2);
+      const arg = mockPayload.update.mock.calls[0][0];
+      expect(arg.collection).toBe("payload-jobs");
+      expect(arg.data).toEqual({ processing: false });
+      expect(arg.depth).toBe(0);
+      // Narrows by real payload-jobs columns only (no JSON-path traversal,
+      // which would hit the drizzle SQLite issue documented in findByCollection).
+      const expectedCutoff = new Date(Date.parse("2026-01-01T00:00:00.000Z") - 300_000).toISOString();
+      expect(arg.where).toEqual({
+        and: [{ taskSlug: { equals: "translate_document" } }, { processing: { equals: true } }, { completedAt: { exists: false } }, { updatedAt: { less_than: expectedCutoff } }],
+      });
+    });
+
+    it("returns 0 when nothing is stale", async () => {
+      mockPayload.update.mockResolvedValue({ docs: [] });
+      expect(await runner.reclaimStaleJobs()).toBe(0);
     });
   });
 
