@@ -2,7 +2,7 @@
 
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
-import { cn } from "../../../utils/style";
+import { cn } from "../utils/style";
 
 interface DrillDownProps {
   items: { left: string; right: string }[];

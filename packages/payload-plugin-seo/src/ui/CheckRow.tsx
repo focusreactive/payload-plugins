@@ -1,9 +1,10 @@
 "use client";
 
 import { StatusPill } from "./StatusPill";
-import { CHECK_ICONS } from "../../icons";
-import { CheckViz, pillFor } from "../checkDisplay";
-import type { CheckResult } from "../../../engine/types";
+import { CHECK_ICONS } from "../components/icons";
+import { CheckViz, pillFor } from "../components/SeoDrawer/checkDisplay";
+import type { CheckResult } from "../engine/types";
+import { cn, ROW_SEPARATOR } from "../utils/style";
 
 const LABELS: Record<string, { name: string; tip: string }> = {
   introductionKeyword: {
@@ -114,10 +115,7 @@ export function CheckRow({ check }: CheckRowProps) {
   const Icon = CHECK_ICONS[check.id] ?? CHECK_ICONS._default;
 
   return (
-    <div
-      className="relative px-[15px] py-[13px] overflow-visible not-last:after:content-[''] not-last:after:absolute not-last:after:inset-x-[15px] not-last:after:bottom-0 not-last:after:h-px not-last:after:bg-neutral-200"
-      data-status={check.status}
-    >
+    <div className={cn("relative px-[15px] py-[13px] overflow-visible", ROW_SEPARATOR)} data-status={check.status}>
       <div className="flex items-center gap-[9px]">
         <span className="w-[26px] h-[26px] rounded-rs bg-neutral-100 text-neutral-600 grid place-items-center flex-none [&_svg]:size-[15px]">
           <Icon size={15} />

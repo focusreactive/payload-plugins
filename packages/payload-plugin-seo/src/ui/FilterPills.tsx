@@ -1,9 +1,9 @@
 "use client";
 
 import { cva } from "class-variance-authority";
-import { cn } from "../../../utils/style";
-import type { CheckResult, Status } from "../../../engine/types";
-import { statusVar } from "../variants";
+import { cn } from "../utils/style";
+import type { CheckResult, Status } from "../engine/types";
+import { statusVar } from "../components/SeoDrawer/variants";
 
 export type Filter = "all" | Status;
 

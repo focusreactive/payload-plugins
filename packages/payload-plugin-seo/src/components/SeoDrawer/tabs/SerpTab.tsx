@@ -2,7 +2,8 @@
 import { cva } from "class-variance-authority";
 import { useState } from "react";
 import type { SerpResult, Status } from "../../../engine/types";
-import { MeterBar } from "../parts/MeterBar";
+import { MeterBar } from "../../../ui/MeterBar";
+import { SectionCard } from "../../../ui/SectionCard";
 import { TITLE_WIDTH_BUDGET_PX, META_DESCRIPTION_MAX_CHARS } from "../../../constants";
 
 type Mode = "mobile" | "desktop";
@@ -26,9 +27,9 @@ export function SerpTab({ data }: { data: SerpResult; keyphrase: string; favicon
 
   return (
     <section className="flex flex-col gap-[13px]">
-      <div className="bg-neutral-0 border border-neutral-200 rounded-rm overflow-hidden">
-        <div className="flex items-center justify-between px-[15px] py-[11px] border-b border-neutral-200">
-          <span className="font-semibold text-[12.5px]">Search result preview</span>
+      <SectionCard
+        title="Search result preview"
+        widget={
           <div className="inline-flex bg-neutral-100 border border-neutral-200 rounded-rm p-[2px] gap-[2px]">
             <button type="button" className={serpModeVariants({ active: mode === "mobile" })} onClick={() => setMode("mobile")}>
               Mobile
@@ -37,13 +38,14 @@ export function SerpTab({ data }: { data: SerpResult; keyphrase: string; favicon
               Desktop
             </button>
           </div>
-        </div>
+        }
+      >
         <div className="p-[15px]"></div>
         <div className="border-t border-neutral-200 px-[15px] py-[12px] flex flex-col gap-[10px]">
           <MeterBar name="Title width" valueLabel={`${data.titleWidthPx} / ${TITLE_WIDTH_BUDGET_PX} px`} pct={titlePct} status={titleStatus} />
           <MeterBar name="Meta description" valueLabel={`${data.descriptionChars} / ${META_DESCRIPTION_MAX_CHARS} chars`} pct={descPct} status={descStatus} />
         </div>
-      </div>
+      </SectionCard>
     </section>
   );
 }

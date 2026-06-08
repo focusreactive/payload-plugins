@@ -1,8 +1,8 @@
 "use client";
 
-import { cn } from "../../../utils/style";
-import type { Status } from "../../../engine/types";
-import { statusVar } from "../variants";
+import { cn } from "../utils/style";
+import type { Status } from "../engine/types";
+import { statusVar } from "../components/SeoDrawer/variants";
 
 export interface Band {
   width: number;

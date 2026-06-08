@@ -1,38 +1,32 @@
 "use client";
 
-import { ScoreRing } from "../parts/ScoreRing";
-import { StatusPill } from "../parts/StatusPill";
 import type { AnalysisResult } from "../../../engine/types";
+import { cn, ROW_SEPARATOR } from "../../../utils/style";
+import { TabHeader } from "../../../ui/TabHeader";
+import { SectionCard } from "../../../ui/SectionCard";
+import { CountPill } from "../../../ui/CountPill";
 
 export function InclusiveTab({ data }: { data: AnalysisResult["inclusive"] }) {
   const flagged = data.categories.reduce((n, c) => n + c.flags.length, 0);
 
   return (
     <section className="flex flex-col gap-[13px]">
-      <div className="bg-neutral-0 border border-neutral-200 rounded-rm p-[14px] flex items-center gap-[15px]">
-        <ScoreRing score={data.ringScore} status={data.status} />
-        <div className="flex-1">
-          <div className="flex items-center gap-[8px]">
-            <b className="text-[14px]">Inclusive language</b>
-            <StatusPill status={data.status}>{data.status === "good" ? "Good" : "Needs work"}</StatusPill>
-          </div>
-          <div className="text-neutral-500 text-[11.5px] mt-[4px]">
+      <TabHeader
+        title="Inclusive language"
+        score={data.ringScore}
+        status={data.status}
+        statusLabel={data.status === "good" ? "Good" : "Needs work"}
+        subtitle={
+          <>
             {flagged} phrases flagged across {data.categories.length} categories
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {data.categories.length > 0 && (
-        <div className="bg-neutral-0 border border-neutral-200 rounded-rm overflow-hidden">
-          <div className="flex items-center justify-between px-[15px] py-[12px] border-b border-neutral-200">
-            <span className="font-semibold text-[13px]">Marked by category</span>
-            <span className="font-mono text-[11px] text-neutral-500 bg-neutral-100 rounded-[20px] px-[9px] py-[2px]">{flagged}</span>
-          </div>
+        <SectionCard title="Marked by category" widget={<CountPill count={flagged} />}>
           {data.categories.map((cat) => (
-            <div
-              className="relative px-[15px] py-[12px] not-last:after:content-[''] not-last:after:absolute not-last:after:inset-x-[15px] not-last:after:bottom-0 not-last:after:h-px not-last:after:bg-neutral-200"
-              key={cat.name}
-            >
+            <div className={cn("relative px-[15px] py-[12px]", ROW_SEPARATOR)} key={cat.name}>
               <div className="flex items-center gap-[8px] mb-[9px]">
                 <span className="font-bold text-[12.5px]">{cat.name}</span>
                 <span className="font-mono text-[10.5px] text-seo-bad bg-seo-bad-100 border border-seo-bad rounded-[20px] px-[8px] py-[1px]">{cat.flags.length}</span>
@@ -47,15 +41,11 @@ export function InclusiveTab({ data }: { data: AnalysisResult["inclusive"] }) {
               ))}
             </div>
           ))}
-        </div>
+        </SectionCard>
       )}
 
       {data.cleanCategories.length > 0 && (
-        <div className="bg-neutral-0 border border-neutral-200 rounded-rm overflow-hidden">
-          <div className="flex items-center justify-between px-[15px] py-[12px] border-b border-neutral-200">
-            <span className="font-semibold text-[13px]">No issues found</span>
-            <span className="font-mono text-[11px] text-neutral-500 bg-neutral-100 rounded-[20px] px-[9px] py-[2px]">{data.cleanCategories.length}</span>
-          </div>
+        <SectionCard title="No issues found" widget={<CountPill count={data.cleanCategories.length} />}>
           <div className="flex gap-[8px] flex-wrap px-[15px] py-[13px]">
             {data.cleanCategories.map((n) => (
               <span className="inline-flex items-center gap-[6px] text-[11.5px] text-seo-good bg-seo-good-100 border border-seo-good-200 rounded-[20px] px-[11px] py-[4px] font-medium" key={n}>
@@ -63,7 +53,7 @@ export function InclusiveTab({ data }: { data: AnalysisResult["inclusive"] }) {
               </span>
             ))}
           </div>
-        </div>
+        </SectionCard>
       )}
     </section>
   );

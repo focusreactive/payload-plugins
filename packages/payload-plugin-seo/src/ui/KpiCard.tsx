@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { SectionWrapper } from "./SectionWrapper";
 
 interface KpiCardProps {
   label: string;
@@ -10,7 +11,7 @@ interface KpiCardProps {
 
 export function KpiCard({ label, value, suffix }: KpiCardProps) {
   return (
-    <div className="bg-neutral-0 border border-neutral-200 rounded-rm px-[13px] py-[12px]">
+    <SectionWrapper className="px-[13px] py-[12px]">
       <div className="flex items-center gap-[6px]">
         <span className="text-[9.5px] uppercase tracking-[0.05em] text-neutral-500 font-semibold">{label}</span>
       </div>
@@ -19,6 +20,6 @@ export function KpiCard({ label, value, suffix }: KpiCardProps) {
         {value}
         {suffix && <small className="text-[11px] font-medium text-neutral-500"> {suffix}</small>}
       </div>
-    </div>
+    </SectionWrapper>
   );
 }

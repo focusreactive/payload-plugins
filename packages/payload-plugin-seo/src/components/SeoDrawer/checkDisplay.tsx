@@ -3,12 +3,12 @@
 import type { ReactNode } from "react";
 import type { CheckResult, Status } from "../../engine/types";
 import type { CheckId } from "../../constants/checkIds";
-import { DensityGauge } from "./parts/DensityGauge";
-import type { Band } from "./parts/DensityGauge";
-import { SegmentBar } from "./parts/SegmentBar";
-import type { SwatchTone } from "./parts/SegmentBar";
-import { DrillDown } from "./parts/DrillDown";
-import { DistributionBar } from "./parts/DistributionBar";
+import { DensityGauge } from "../../ui/DensityGauge";
+import type { Band } from "../../ui/DensityGauge";
+import { SegmentBar } from "../../ui/SegmentBar";
+import type { SwatchTone } from "../../ui/SegmentBar";
+import { DrillDown } from "../../ui/DrillDown";
+import { DistributionBar } from "../../ui/DistributionBar";
 
 type PillFn = (check: CheckResult) => ReactNode;
 

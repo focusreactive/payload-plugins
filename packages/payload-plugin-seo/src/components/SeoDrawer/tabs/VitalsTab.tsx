@@ -1,8 +1,10 @@
 "use client";
 
 import type { VitalsResult } from "../../../engine/types";
-import { cn } from "../../../utils/style";
-import { KpiCard } from "../parts/KpiCard";
+import { cn, ROW_SEPARATOR } from "../../../utils/style";
+import { KpiCard } from "../../../ui/KpiCard";
+import { SectionCard } from "../../../ui/SectionCard";
+import { CountPill } from "../../../ui/CountPill";
 
 export function VitalsTab({ data }: { data: VitalsResult }) {
   const max = Math.max(1, ...data.prominentWords.map((w) => w.count));
@@ -18,18 +20,9 @@ export function VitalsTab({ data }: { data: VitalsResult }) {
         <KpiCard label="Reading time" value={data.readingTimeMinutes} suffix="min" />
       </div>
 
-      <div className="text-[11px] font-bold uppercase tracking-[0.05em] text-neutral-500 mt-[6px] mb-[-3px]">Prominent words</div>
-      <div className="bg-neutral-0 border border-neutral-200 rounded-rm overflow-hidden">
-        <div className="flex items-center justify-between px-[15px] py-[12px] border-b border-neutral-200">
-          <span className="font-semibold text-[13px]">Prominent words</span>
-          <span className="font-mono text-[11px] text-neutral-500 bg-neutral-100 rounded-[20px] px-[9px] py-[2px]">{data.prominentWords.length}</span>
-        </div>
-
+      <SectionCard title="Prominent words" widget={<CountPill count={data.prominentWords.length} />}>
         {data.prominentWords.map((w) => (
-          <div
-            className="relative flex items-center gap-[12px] px-[15px] py-[9px] not-last:after:content-[''] not-last:after:absolute not-last:after:inset-x-[15px] not-last:after:bottom-0 not-last:after:h-px not-last:after:bg-neutral-200"
-            key={w.word}
-          >
+          <div className={cn("relative flex items-center gap-[12px] px-[15px] py-[9px]", ROW_SEPARATOR)} key={w.word}>
             <div className="w-[120px] flex-none text-[12px] font-medium flex items-center gap-[6px]">
               {w.word} {w.isKeyphrase && <span className="text-[9px] font-bold uppercase tracking-[0.04em] text-neutral-1000 bg-neutral-150 rounded-[3px] px-[5px] py-[1px]">Key</span>}
             </div>
@@ -39,23 +32,15 @@ export function VitalsTab({ data }: { data: VitalsResult }) {
             <div className="w-[30px] text-right font-mono text-[11px] font-semibold text-neutral-700">{w.count}</div>
           </div>
         ))}
-      </div>
+      </SectionCard>
 
-      <div className="text-[11px] font-bold uppercase tracking-[0.05em] text-neutral-500 mt-[6px] mb-[-3px]">Internal-linking suggestions</div>
-      <div className="bg-neutral-0 border border-neutral-200 rounded-rm overflow-hidden">
-        <div className="flex items-center justify-between px-[15px] py-[12px] border-b border-neutral-200">
-          <span className="font-semibold text-[13px]">Suggested anchor phrases</span>
-          <span className="font-mono text-[11px] text-neutral-500 bg-neutral-100 rounded-[20px] px-[9px] py-[2px]">{data.internalLinkingPhrases.length}</span>
-        </div>
+      <SectionCard title="Suggested anchor phrases" widget={<CountPill count={data.internalLinkingPhrases.length} />}>
         {data.internalLinkingPhrases.map((p) => (
-          <div
-            className="relative flex items-center gap-[10px] px-[15px] py-[11px] not-last:after:content-[''] not-last:after:absolute not-last:after:inset-x-[15px] not-last:after:bottom-0 not-last:after:h-px not-last:after:bg-neutral-200"
-            key={p}
-          >
+          <div className={cn("relative flex items-center gap-[10px] px-[15px] py-[11px]", ROW_SEPARATOR)} key={p}>
             <span className="text-[12px] font-semibold">{p}</span>
           </div>
         ))}
-      </div>
+      </SectionCard>
     </section>
   );
 }

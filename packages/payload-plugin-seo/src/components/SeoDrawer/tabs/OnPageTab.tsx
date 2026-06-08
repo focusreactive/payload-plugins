@@ -1,31 +1,38 @@
 "use client";
+
 import { useState } from "react";
 import type { CategoryResult } from "../../../engine/types";
-import { SummaryHeader } from "../parts/SummaryHeader";
-import { FilterPills } from "../parts/FilterPills";
-import type { Filter } from "../parts/FilterPills";
-import { CheckRow } from "../parts/CheckRow";
+import { TabHeader } from "../../../ui/TabHeader";
+import { SectionCard } from "../../../ui/SectionCard";
+import { CountPill } from "../../../ui/CountPill";
+import { FilterPills } from "../../../ui/FilterPills";
+import type { Filter } from "../../../ui/FilterPills";
+import { CheckRow } from "../../../ui/CheckRow";
 
 export function OnPageTab({ data }: { data: CategoryResult }) {
   const [filter, setFilter] = useState<Filter>("all");
   const visible = data.checks.filter((c) => filter === "all" || c.status === filter);
+  const passing = data.checks.filter((c) => c.status === "good").length;
 
   return (
     <section className="flex flex-col gap-[13px]">
-      <SummaryHeader title="On-page structure" data={data} />
+      <TabHeader
+        title="On-page structure"
+        score={data.ringScore}
+        status={data.status}
+        subtitle={
+          <>
+            {passing} / {data.checks.length} checks passing
+          </>
+        }
+      />
 
-      <div className="bg-neutral-0 border border-neutral-200 rounded-rm overflow-hidden">
-        <div className="flex items-center justify-between px-[15px] py-[12px] border-b border-neutral-200">
-          <span className="font-semibold text-[13px]">Checks</span>
-          <span className="font-mono text-[11px] text-neutral-500 bg-neutral-100 rounded-[20px] px-[9px] py-[2px]">{data.checks.length}</span>
-        </div>
-
+      <SectionCard title="Checks" widget={<CountPill count={data.checks.length} />}>
         <FilterPills checks={data.checks} value={filter} onChange={setFilter} />
-
         {visible.map((c) => (
           <CheckRow key={c.id} check={c} />
         ))}
-      </div>
+      </SectionCard>
     </section>
   );
 }

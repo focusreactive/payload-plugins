@@ -1,8 +1,8 @@
 "use client";
 
-import type { Status } from "../../../engine/types";
-import { cn } from "../../../utils/style";
-import { statusVar } from "../variants";
+import type { Status } from "../engine/types";
+import { cn } from "../utils/style";
+import { statusVar } from "../components/SeoDrawer/variants";
 
 interface ScoreRingProps {
   score: number;

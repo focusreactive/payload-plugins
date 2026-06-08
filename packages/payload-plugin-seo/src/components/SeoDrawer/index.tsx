@@ -6,10 +6,10 @@ import "../../admin.css";
 import type { AnalysisResult } from "../../engine/types";
 import { cn } from "../../utils/style";
 import { statusVar, tabVariants, totalPillVariants } from "./variants";
-import { InclusiveTab } from "./tabs/InclusiveTab";
 import { KeyphraseTab } from "./tabs/KeyphraseTab";
 import { OnPageTab } from "./tabs/OnPageTab";
 import { ReadabilityTab } from "./tabs/ReadabilityTab";
+import { InclusiveTab } from "./tabs/InclusiveTab";
 import { SerpTab } from "./tabs/SerpTab";
 import { VitalsTab } from "./tabs/VitalsTab";
 
@@ -82,7 +82,7 @@ export function SeoDrawer({ drawerSlug, keyphrase, setKeyphrase, result, analyzi
           ))}
         </nav>
 
-        <div className="bg-neutral-50 py-[18px]">
+        <div className="py-[18px]">
           {!result ? (
             <p className="text-neutral-500">Enter a focus keyphrase and click Analyze.</p>
           ) : (
