@@ -13,7 +13,7 @@ function getByPath(data: Record<string, unknown>, path: string): unknown {
 }
 
 function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return s.replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;");
 }
 
 export function extractContent(data: Record<string, unknown>, fields: SeoFieldPaths): string {
@@ -23,7 +23,12 @@ export function extractContent(data: Record<string, unknown>, fields: SeoFieldPa
   if (value === undefined || value === null) return "";
 
   return walkValue(value)
-    .map((fragment) => (fragment.kind === "lexical" ? lexicalToHtml(fragment.value) : `<p>${escapeHtml(fragment.value)}</p>`))
+    .map((fragment) => {
+      if (fragment.kind === "lexical") return lexicalToHtml(fragment.value);
+      if (fragment.kind === "html") return fragment.value;
+
+      return `<p>${escapeHtml(fragment.value)}</p>`;
+    })
     .filter(Boolean)
     .join("\n");
 }

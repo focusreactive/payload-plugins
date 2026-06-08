@@ -11,7 +11,7 @@ vi.mock("yoastseo", () => {
   const res = (id: string, score: number) => ({ getIdentifier: () => id, score });
   const assessorReturning = (results: ReturnType<typeof res>[]) =>
     function FakeAssessor() {
-      return { assess: () => undefined, getValidResults: () => results };
+      return { assess: () => undefined, getValidResults: () => results, addAssessment: () => undefined };
     };
   return {
     Paper: function (text: string, attributes: Record<string, unknown>) {
@@ -53,5 +53,14 @@ describe("runAnalysis", () => {
     expect(r.inclusive.cleanCategories.length).toBeGreaterThan(0);
     expect(r.serp.url).toBe("https://runshop.com/running-shoes");
     expect(typeof r.overall.seoScore).toBe("number");
+  });
+
+  it("attaches a data field to every check via the enrich step", () => {
+    const r = runAnalysis(input);
+    const all = [...r.keyphrase.checks, ...r.onPage.checks, ...r.readability.checks];
+    expect(all.length).toBeGreaterThan(0);
+    for (const c of all) {
+      expect(Object.hasOwn(c, "data")).toBe(true);
+    }
   });
 });

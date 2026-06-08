@@ -1,8 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { StatusPill } from "./StatusPill";
 import { CHECK_ICONS } from "../../icons";
+import { CheckViz, pillFor } from "../checkDisplay";
 import type { CheckResult } from "../../../engine/types";
 
 const LABELS: Record<string, { name: string; tip: string }> = {
@@ -45,6 +45,10 @@ const LABELS: Record<string, { name: string; tip: string }> = {
   textCompetingLinks: {
     name: "Competing links",
     tip: "Links that use your keyphrase as anchor text.",
+  },
+  functionWordsInKeyphrase: {
+    name: "Function words in keyphrase",
+    tip: "Your keyphrase is made up only of function words.",
   },
   textLength: {
     name: "Total word count",
@@ -95,15 +99,17 @@ const LABELS: Record<string, { name: string; tip: string }> = {
     name: "Consecutive sentences",
     tip: "Repetitive sentence beginnings.",
   },
+  fleschReadingEase: {
+    name: "Reading ease",
+    tip: "Flesch Reading Ease (0–100); higher is easier. Aim for 60+.",
+  },
 };
 
 interface CheckRowProps {
   check: CheckResult;
-  pillLabel: ReactNode;
-  children?: ReactNode;
 }
 
-export function CheckRow({ check, pillLabel, children }: CheckRowProps) {
+export function CheckRow({ check }: CheckRowProps) {
   const meta = LABELS[check.id] ?? { name: check.id, tip: "" };
   const Icon = CHECK_ICONS[check.id] ?? CHECK_ICONS._default;
 
@@ -120,10 +126,10 @@ export function CheckRow({ check, pillLabel, children }: CheckRowProps) {
           </span>
         </span>
 
-        <StatusPill status={check.status}>{pillLabel}</StatusPill>
+        <StatusPill status={check.status}>{pillFor(check)}</StatusPill>
       </div>
 
-      {children}
+      <CheckViz check={check} />
 
       {check.recommendation && <div className="rec">{check.recommendation}</div>}
     </div>

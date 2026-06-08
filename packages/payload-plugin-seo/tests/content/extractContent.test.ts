@@ -29,4 +29,22 @@ describe("extractContent", () => {
     const html = extractContent({ meta: { body: "Nested" } }, { content: "meta.body" });
     expect(html).toContain("<p>Nested</p>");
   });
+
+  it("passes link and image fragments through as raw html (no paragraph wrap, no escaping)", () => {
+    const data = {
+      sections: [
+        {
+          blockType: "hero",
+          title: "Big",
+          links: [{ id: "1", label: "running shoes", url: "https://other.example/running-shoes" }],
+          image: { id: "m1", url: "/media/trail.jpg", mimeType: "image/jpeg", alt: "running shoes on a trail" },
+        },
+      ],
+    };
+    const html = extractContent(data, { content: "sections" });
+    expect(html).toContain('<a href="https://other.example/running-shoes">running shoes</a>');
+    expect(html).toContain('<img src="/media/trail.jpg" alt="running shoes on a trail" />');
+    expect(html).not.toContain("<p><a");
+    expect(html).not.toContain("&lt;a");
+  });
 });

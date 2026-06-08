@@ -7,6 +7,13 @@ export function scoreToStatus(score: number): Status {
   return "bad";
 }
 
+export function fleschToStatus(score: number): Status {
+  if (score >= 60) return "good";
+  if (score >= 50) return "warn";
+
+  return "bad";
+}
+
 const WEIGHT: Record<Status, number> = { good: 1, warn: 0.5, bad: 0 };
 
 export function statusToRing(checks: { status: Status }[]): number {

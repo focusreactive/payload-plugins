@@ -38,6 +38,10 @@ const MAP: Record<string, Partial<Record<Status, Builder>>> = {
     bad: () => `Add more content — aim for at least 300 words.`,
     warn: () => `Add more content to comfortably clear the minimum.`,
   },
+  fleschReadingEase: {
+    warn: () => `Shorten sentences and prefer simpler words to make the text easier to read.`,
+    bad: () => `The text is hard to read — use shorter sentences and simpler words.`,
+  },
 };
 
 const GENERIC: Record<Status, string> = {
