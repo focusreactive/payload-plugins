@@ -1,0 +1,32 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@source "./**/*.{ts,tsx}";
+
+@custom-variant dark ([data-theme="dark"] &);
+
+@theme static {
+  --color-neutral-0: var(--theme-elevation-0);
+  --color-neutral-50: var(--theme-elevation-50);
+  --color-neutral-100: var(--theme-elevation-100);
+  --color-neutral-150: var(--theme-elevation-150);
+  --color-neutral-200: var(--theme-elevation-200);
+  --color-neutral-300: var(--theme-elevation-300);
+  --color-neutral-400: var(--theme-elevation-400);
+  --color-neutral-500: var(--theme-elevation-500);
+  --color-neutral-600: var(--theme-elevation-600);
+  --color-neutral-700: var(--theme-elevation-700);
+  --color-neutral-800: var(--theme-elevation-800);
+  --color-neutral-1000: var(--theme-elevation-1000);
+
+  --color-seo-good: var(--theme-success-500);
+  --color-seo-warn: var(--theme-warning-500);
+  --color-seo-bad: var(--theme-error-500);
+
+  --radius-rs: var(--style-radius-s);
+  --radius-rm: var(--style-radius-m);
+}
+
+@layer components {
+}

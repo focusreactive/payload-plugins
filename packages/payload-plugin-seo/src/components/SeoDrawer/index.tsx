@@ -1,7 +1,7 @@
 "use client";
 import { Drawer } from "@payloadcms/ui";
 import { useState } from "react";
-import "./admin.css";
+import "../../admin.css";
 import type { AnalysisResult } from "../../engine/types";
 import { cn } from "../../utils/style";
 import { InclusiveTab } from "./tabs/InclusiveTab";
