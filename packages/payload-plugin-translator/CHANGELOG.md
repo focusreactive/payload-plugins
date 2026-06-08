@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-translator [0.3.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.2.1...@focus-reactive/payload-plugin-translator@0.3.0) (2026-06-08)
+
+
+### Features
+
+* **translator:** make job document references ID-agnostic ([81cb463](https://github.com/focusreactive/payload-plugins/commit/81cb46383ad37eabf1453f7657677c0903fedba4)), closes [docs/DEPRECATIONS.md#jobs-input-collection-field](https://github.com/docs/DEPRECATIONS.md/issues/jobs-input-collection-field)
+
 ## @focus-reactive/payload-plugin-translator [0.2.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.2.0...@focus-reactive/payload-plugin-translator@0.2.1) (2026-06-04)
 
 
