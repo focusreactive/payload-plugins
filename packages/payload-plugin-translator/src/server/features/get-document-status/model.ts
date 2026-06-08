@@ -16,9 +16,7 @@ export const GetDocumentStatusInputSchema = z.object({
   collection_slug: z.string().nonempty(),
 });
 
-export type GetDocumentStatusInput = z.infer<
-  typeof GetDocumentStatusInputSchema
->;
+export type GetDocumentStatusInput = z.infer<typeof GetDocumentStatusInputSchema>;
 
 /**
  * Translation task status (re-export for backwards compatibility)
@@ -31,7 +29,7 @@ export type TranslationTaskStatus = TaskStatus;
 export type JobInputOutput = {
   collection: {
     relationTo: CollectionSlug;
-    value: string | number;
+    value: string;
   };
   source_lng: string;
   target_lng: string;
