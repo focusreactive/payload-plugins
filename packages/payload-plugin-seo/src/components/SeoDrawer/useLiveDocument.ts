@@ -8,7 +8,7 @@ import type { AnalysisInput } from "../../engine/types";
 import type { SeoFieldPaths } from "../../types/config";
 import { buildInput } from "./buildInput";
 
-const DEBOUNCE_MS = 500;
+const DEBOUNCE_MS = 1000;
 
 export interface LiveDocArgs {
   fields: SeoFieldPaths;

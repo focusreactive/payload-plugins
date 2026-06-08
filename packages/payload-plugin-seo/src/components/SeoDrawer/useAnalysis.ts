@@ -9,12 +9,14 @@ import { ensureLanguagePack } from "./languagePacks";
 export interface UseAnalysisResult {
   result: AnalysisResult | null;
   analyzing: boolean;
+  analyzedKeyphrase: string | null;
   analyzeNow: (override?: Partial<AnalysisInput>) => void;
 }
 
 export function useAnalysis(input: AnalysisInput, supportedLocales: string[], enabled = true): UseAnalysisResult {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analyzedKeyphrase, setAnalyzedKeyphrase] = useState<string | null>(null);
 
   const inputRef = useRef(input);
   inputRef.current = input;
@@ -29,6 +31,7 @@ export function useAnalysis(input: AnalysisInput, supportedLocales: string[], en
     if (!hasKeyphrase(current.keyphrase)) {
       lastSignature.current = null;
       setResult(null);
+      setAnalyzedKeyphrase(null);
       return;
     }
 
@@ -39,6 +42,7 @@ export function useAnalysis(input: AnalysisInput, supportedLocales: string[], en
 
     try {
       setResult(runAnalysis(current));
+      setAnalyzedKeyphrase(current.keyphrase);
     } finally {
       setAnalyzing(false);
     }
@@ -64,6 +68,7 @@ export function useAnalysis(input: AnalysisInput, supportedLocales: string[], en
     if (action === "reset") {
       lastSignature.current = null;
       setResult(null);
+      setAnalyzedKeyphrase(null);
       return;
     }
 
@@ -75,6 +80,7 @@ export function useAnalysis(input: AnalysisInput, supportedLocales: string[], en
   return {
     result,
     analyzing,
+    analyzedKeyphrase,
     analyzeNow,
   };
 }
