@@ -16,7 +16,11 @@ export function DrillDown({ items, label }: DrillDownProps) {
 
   return (
     <>
-      <button type="button" className="drill-btn" onClick={() => setOpen((o) => !o)}>
+      <button
+        type="button"
+        className="mt-[8px] text-[11px] text-neutral-700 bg-neutral-100 border border-neutral-200 rounded-rs px-[9px] py-[4px] cursor-pointer inline-flex items-center gap-[4px]"
+        onClick={() => setOpen((o) => !o)}
+      >
         {open ? (
           <>
             Hide <ChevronUp size={14} />
@@ -28,12 +32,11 @@ export function DrillDown({ items, label }: DrillDownProps) {
         )}
       </button>
 
-      <div className={cn("drill", open && "open")}>
+      <div className={cn("mt-[8px] flex-col gap-[4px]", open ? "flex" : "hidden")}>
         {items.map((it, i) => (
-          <div className="it" key={`${it.left}-${i}`}>
+          <div className="flex justify-between text-[11px] text-neutral-700 bg-neutral-50 rounded-rs px-[9px] py-[4px]" key={`${it.left}-${i}`}>
             <span>{it.left}</span>
-
-            <span className="val">{it.right}</span>
+            <span className="text-neutral-1000">{it.right}</span>
           </div>
         ))}
       </div>

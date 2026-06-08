@@ -11,13 +11,13 @@ export function ReadabilityTab({ data }: { data: CategoryResult }) {
   const visible = data.checks.filter((c) => filter === "all" || c.status === filter);
 
   return (
-    <section className="panel on">
+    <section className="flex flex-col gap-[13px]">
       <SummaryHeader title="Readability" data={data} />
 
-      <div className="section">
-        <div className="sec-head">
-          <span className="ttl">Checks</span>
-          <span className="cnt">{data.checks.length}</span>
+      <div className="bg-neutral-0 border border-neutral-200 rounded-rm overflow-hidden">
+        <div className="flex items-center justify-between px-[15px] py-[12px] border-b border-neutral-200">
+          <span className="font-semibold text-[13px]">Checks</span>
+          <span className="font-mono text-[11px] text-neutral-500 bg-neutral-100 rounded-[20px] px-[9px] py-[2px]">{data.checks.length}</span>
         </div>
 
         <FilterPills checks={data.checks} value={filter} onChange={setFilter} />

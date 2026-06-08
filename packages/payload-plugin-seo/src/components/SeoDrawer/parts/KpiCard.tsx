@@ -10,14 +10,14 @@ interface KpiCardProps {
 
 export function KpiCard({ label, value, suffix }: KpiCardProps) {
   return (
-    <div className="kpiA">
-      <div className="ktop">
-        <span className="lbl">{label}</span>
+    <div className="bg-neutral-0 border border-neutral-200 rounded-rm px-[13px] py-[12px]">
+      <div className="flex items-center gap-[6px]">
+        <span className="text-[9.5px] uppercase tracking-[0.05em] text-neutral-500 font-semibold">{label}</span>
       </div>
 
-      <div className="num">
+      <div className="text-[23px] font-bold mt-[5px] leading-none">
         {value}
-        {suffix && <small> {suffix}</small>}
+        {suffix && <small className="text-[11px] font-medium text-neutral-500"> {suffix}</small>}
       </div>
     </div>
   );

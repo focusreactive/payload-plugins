@@ -18,16 +18,16 @@ export function SummaryHeader({ title, data }: SummaryHeaderProps) {
   const passing = data.checks.filter((c) => c.status === "good").length;
 
   return (
-    <div className="sumA">
+    <div className="bg-neutral-0 border border-neutral-200 rounded-rm p-[14px] flex items-center gap-[15px]">
       <ScoreRing score={data.ringScore} status={data.status} />
 
-      <div style={{ flex: 1 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <b style={{ fontSize: 14 }}>{title}</b>
+      <div className="flex-1">
+        <div className="flex items-center gap-[8px]">
+          <b className="text-[14px]">{title}</b>
           <StatusPill status={data.status}>{LABEL[data.status]}</StatusPill>
         </div>
 
-        <div className="seo-muted" style={{ fontSize: 11.5, marginTop: 4 }}>
+        <div className="text-neutral-500 text-[11.5px] mt-[4px]">
           {passing} / {data.checks.length} checks passing
         </div>
       </div>

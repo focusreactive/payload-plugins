@@ -6,6 +6,7 @@ import type { CheckId } from "../../constants/checkIds";
 import { DensityGauge } from "./parts/DensityGauge";
 import type { Band } from "./parts/DensityGauge";
 import { SegmentBar } from "./parts/SegmentBar";
+import type { SwatchTone } from "./parts/SegmentBar";
 import { DrillDown } from "./parts/DrillDown";
 import { DistributionBar } from "./parts/DistributionBar";
 
@@ -15,14 +16,14 @@ interface GaugeProps {
   bands: Band[];
   markerPct: number;
   markerLabel: string;
-  markerColor: string;
+  markerStatus: Status;
   scale: [string, string, string];
 }
 interface SegmentProps {
   countLabel?: string;
   filledPct: number;
-  filledColor: string;
-  legend?: { color: string; label: string }[];
+  filledStatus: Status;
+  legend?: { tone: SwatchTone; label: string }[];
 }
 interface DrillProps {
   items: { left: string; right: string }[];
@@ -57,7 +58,6 @@ type DisplayEntry =
 
 const num = (c: CheckResult) => (c.data ?? {}) as Record<string, number>;
 const items = (c: CheckResult) => (c.data as { items?: { left: string; right: string }[] } | undefined)?.items;
-const markerColor = (c: CheckResult) => `var(--seo-${c.status})`;
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 const CHECK_DISPLAY: Record<CheckId, DisplayEntry> = {
@@ -80,14 +80,14 @@ const CHECK_DISPLAY: Record<CheckId, DisplayEntry> = {
       if (words == null) return null;
       return {
         bands: [
-          { width: 12, color: "var(--seo-bad)" },
-          { width: 50, color: "var(--seo-good)" },
-          { width: 18, color: "var(--seo-warn)" },
-          { width: 20, color: "var(--seo-bad)" },
+          { width: 12, status: "bad" },
+          { width: 50, status: "good" },
+          { width: 18, status: "warn" },
+          { width: 20, status: "bad" },
         ],
         markerPct: Math.min(100, (words / 8) * 100),
         markerLabel: `${words}`,
-        markerColor: markerColor(c),
+        markerStatus: c.status,
         scale: ["0", "1–4 ideal", "8"],
       };
     },
@@ -110,15 +110,15 @@ const CHECK_DISPLAY: Record<CheckId, DisplayEntry> = {
       if (textLength != null && textLength < 100) return null;
       return {
         bands: [
-          { width: 8, color: "var(--seo-bad)" },
-          { width: 5, color: "var(--seo-warn)" },
-          { width: 54, color: "var(--seo-good)" },
-          { width: 5, color: "var(--seo-warn)" },
-          { width: 28, color: "var(--seo-bad)" },
+          { width: 8, status: "bad" },
+          { width: 5, status: "warn" },
+          { width: 54, status: "good" },
+          { width: 5, status: "warn" },
+          { width: 28, status: "bad" },
         ],
         markerPct: Math.min(100, (densityPct / 4) * 100),
         markerLabel: `${densityPct.toFixed(1)}%`,
-        markerColor: markerColor(c),
+        markerStatus: c.status,
         scale: ["0%", "ideal 0.5–2.5%", ">4%"],
       };
     },
@@ -132,7 +132,7 @@ const CHECK_DISPLAY: Record<CheckId, DisplayEntry> = {
       return {
         countLabel: `${matched ?? 0} / ${total}`,
         filledPct: total ? ((matched ?? 0) / total) * 100 : 0,
-        filledColor: c.status === "good" ? "var(--seo-good)" : "var(--seo-warn)",
+        filledStatus: c.status === "good" ? "good" : "warn",
       };
     },
   },
@@ -153,7 +153,7 @@ const CHECK_DISPLAY: Record<CheckId, DisplayEntry> = {
       return {
         countLabel: `${matched ?? 0} / ${total}`,
         filledPct: total ? ((matched ?? 0) / total) * 100 : 0,
-        filledColor: "var(--seo-warn)",
+        filledStatus: "warn",
       };
     },
   },
@@ -178,12 +178,12 @@ const CHECK_DISPLAY: Record<CheckId, DisplayEntry> = {
       if (words == null) return null;
       return {
         bands: [
-          { width: 50, color: "var(--seo-bad)" },
-          { width: 50, color: "var(--seo-good)" },
+          { width: 50, status: "bad" },
+          { width: 50, status: "good" },
         ],
         markerPct: Math.min(100, (words / 600) * 100),
         markerLabel: `${words}`,
-        markerColor: markerColor(c),
+        markerStatus: c.status,
         scale: ["0", "≥300 good", "600"],
       };
     },
@@ -196,15 +196,15 @@ const CHECK_DISPLAY: Record<CheckId, DisplayEntry> = {
       if (chars == null) return null;
       return {
         bands: [
-          { width: 20, color: "var(--seo-bad)" },
-          { width: 8, color: "var(--seo-warn)" },
-          { width: 55, color: "var(--seo-good)" },
-          { width: 7, color: "var(--seo-warn)" },
-          { width: 10, color: "var(--seo-bad)" },
+          { width: 20, status: "bad" },
+          { width: 8, status: "warn" },
+          { width: 55, status: "good" },
+          { width: 7, status: "warn" },
+          { width: 10, status: "bad" },
         ],
         markerPct: Math.min(100, (chars / 180) * 100),
         markerLabel: `${chars}`,
-        markerColor: markerColor(c),
+        markerStatus: c.status,
         scale: ["0", "120–158 chars", "180"],
       };
     },
@@ -221,15 +221,15 @@ const CHECK_DISPLAY: Record<CheckId, DisplayEntry> = {
       if (px == null) return null;
       return {
         bands: [
-          { width: 18, color: "var(--seo-bad)" },
-          { width: 8, color: "var(--seo-warn)" },
-          { width: 61, color: "var(--seo-good)" },
-          { width: 4, color: "var(--seo-warn)" },
-          { width: 9, color: "var(--seo-bad)" },
+          { width: 18, status: "bad" },
+          { width: 8, status: "warn" },
+          { width: 61, status: "good" },
+          { width: 4, status: "warn" },
+          { width: 9, status: "bad" },
         ],
         markerPct: Math.min(100, (px / 600) * 100),
         markerLabel: `${px}px`,
-        markerColor: markerColor(c),
+        markerStatus: c.status,
         scale: ["0", "fits ≤ 580px", "600"],
       };
     },
@@ -256,10 +256,10 @@ const CHECK_DISPLAY: Record<CheckId, DisplayEntry> = {
       return {
         countLabel: `${f} / ${total}`,
         filledPct: total ? (f / total) * 100 : 0,
-        filledColor: c.status === "good" ? "var(--seo-good)" : "var(--seo-warn)",
+        filledStatus: c.status === "good" ? "good" : "warn",
         legend: [
-          { color: "var(--seo-good)", label: `${f} dofollow` },
-          { color: "var(--seo-e300)", label: `${total - f} nofollow` },
+          { tone: "good", label: `${f} dofollow` },
+          { tone: "muted", label: `${total - f} nofollow` },
         ],
       };
     },
@@ -278,10 +278,10 @@ const CHECK_DISPLAY: Record<CheckId, DisplayEntry> = {
       return {
         countLabel: `${f} / ${total}`,
         filledPct: total ? (f / total) * 100 : 0,
-        filledColor: c.status === "good" ? "var(--seo-good)" : "var(--seo-warn)",
+        filledStatus: c.status === "good" ? "good" : "warn",
         legend: [
-          { color: "var(--seo-good)", label: `${f} dofollow` },
-          { color: "var(--seo-e300)", label: `${total - f} nofollow` },
+          { tone: "good", label: `${f} dofollow` },
+          { tone: "muted", label: `${total - f} nofollow` },
         ],
       };
     },
@@ -321,13 +321,13 @@ const CHECK_DISPLAY: Record<CheckId, DisplayEntry> = {
       if (pct == null) return null;
       return {
         bands: [
-          { width: 60, color: "var(--seo-good)" },
-          { width: 15, color: "var(--seo-warn)" },
-          { width: 25, color: "var(--seo-bad)" },
+          { width: 60, status: "good" },
+          { width: 15, status: "warn" },
+          { width: 25, status: "bad" },
         ],
         markerPct: Math.min(100, pct),
         markerLabel: `${pct}%`,
-        markerColor: markerColor(c),
+        markerStatus: c.status,
         scale: ["0%", "", "50%+"],
       };
     },
@@ -340,13 +340,13 @@ const CHECK_DISPLAY: Record<CheckId, DisplayEntry> = {
       if (pct == null) return null;
       return {
         bands: [
-          { width: 60, color: "var(--seo-good)" },
-          { width: 15, color: "var(--seo-warn)" },
-          { width: 25, color: "var(--seo-bad)" },
+          { width: 60, status: "good" },
+          { width: 15, status: "warn" },
+          { width: 25, status: "bad" },
         ],
         markerPct: Math.min(100, pct),
         markerLabel: `${pct}%`,
-        markerColor: markerColor(c),
+        markerStatus: c.status,
         scale: ["0%", "", "50%+"],
       };
     },
@@ -359,13 +359,13 @@ const CHECK_DISPLAY: Record<CheckId, DisplayEntry> = {
       if (pct == null) return null;
       return {
         bands: [
-          { width: 33, color: "var(--seo-good)" },
-          { width: 17, color: "var(--seo-warn)" },
-          { width: 50, color: "var(--seo-bad)" },
+          { width: 33, status: "good" },
+          { width: 17, status: "warn" },
+          { width: 50, status: "bad" },
         ],
         markerPct: Math.min(100, (pct / 30) * 100),
         markerLabel: `${pct}%`,
-        markerColor: markerColor(c),
+        markerStatus: c.status,
         scale: ["0%", "≤10% ideal", "30%+"],
       };
     },
@@ -391,13 +391,13 @@ const CHECK_DISPLAY: Record<CheckId, DisplayEntry> = {
       if (score == null) return null;
       return {
         bands: [
-          { width: 50, color: "var(--seo-bad)" },
-          { width: 10, color: "var(--seo-warn)" },
-          { width: 40, color: "var(--seo-good)" },
+          { width: 50, status: "bad" },
+          { width: 10, status: "warn" },
+          { width: 40, status: "good" },
         ],
         markerPct: Math.min(100, score),
         markerLabel: `${score}`,
-        markerColor: markerColor(c),
+        markerStatus: c.status,
         scale: ["0", "60+ easy", "100"],
       };
     },

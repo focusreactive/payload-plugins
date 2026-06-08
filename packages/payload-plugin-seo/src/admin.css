@@ -20,13 +20,40 @@
   --color-neutral-800: var(--theme-elevation-800);
   --color-neutral-1000: var(--theme-elevation-1000);
 
-  --color-seo-good: var(--theme-success-500);
-  --color-seo-warn: var(--theme-warning-500);
-  --color-seo-bad: var(--theme-error-500);
+  --color-seo-good: #2a9d5c;
+  --color-seo-good-100: #e8f5ed;
+  --color-seo-good-200: #cfe8d8;
+  --color-seo-warn: #e08a1e;
+  --color-seo-warn-100: #fbf2e0;
+  --color-seo-bad: #d9483f;
+  --color-seo-bad-100: #fbe9e7;
 
   --radius-rs: var(--style-radius-s);
   --radius-rm: var(--style-radius-m);
 }
 
 @layer components {
+  .seo-docbar {
+    background: repeating-linear-gradient(
+      90deg,
+      var(--theme-elevation-100) 0 2px,
+      transparent 2px 7px
+    );
+  }
+
+  .seo-doc-btn .btn__content {
+    display: inline-flex;
+  }
+
+  .seo-doc-btn .btn__icon {
+    width: 17px;
+    height: 17px;
+    border: 0;
+    padding: 0;
+  }
+
+  .seo-doc-btn .btn__icon svg {
+    width: 100%;
+    height: 100%;
+  }
 }

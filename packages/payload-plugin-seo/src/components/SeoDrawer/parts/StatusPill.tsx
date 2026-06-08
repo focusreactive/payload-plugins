@@ -1,10 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { cn } from "../../../utils/style";
 import type { Status } from "../../../engine/types";
-
-const CLS: Record<Status, string> = { good: "g", warn: "w", bad: "b" };
+import { statusPillVariants } from "../variants";
 
 interface StatusPillProps {
   status: Status;
@@ -12,5 +10,5 @@ interface StatusPillProps {
 }
 
 export function StatusPill({ status, children }: StatusPillProps) {
-  return <span className={cn("pill", CLS[status])}>{children}</span>;
+  return <span className={statusPillVariants({ status })}>{children}</span>;
 }

@@ -1,12 +1,8 @@
 "use client";
 
 import type { Status } from "../../../engine/types";
-
-const COLOR: Record<Status, string> = {
-  good: "var(--seo-good)",
-  warn: "var(--seo-warn)",
-  bad: "var(--seo-bad)",
-};
+import { cn } from "../../../utils/style";
+import { statusVar } from "../variants";
 
 interface ScoreRingProps {
   score: number;
@@ -16,12 +12,12 @@ interface ScoreRingProps {
 export function ScoreRing({ score, status }: ScoreRingProps) {
   return (
     <div
-      className="ring"
+      className={cn("w-[60px] h-[60px] rounded-full flex-none grid place-items-center", statusVar({ status }))}
       style={{
-        background: `conic-gradient(${COLOR[status]} ${score}%, var(--seo-e150) 0)`,
+        background: `conic-gradient(var(--seo-c) ${score}%, var(--theme-elevation-150) 0)`,
       }}
     >
-      <div className="in" style={{ color: COLOR[status] }}>
+      <div className="w-[48px] h-[48px] rounded-full bg-neutral-0 grid place-items-center font-bold text-[18px]" style={{ color: "var(--seo-c)" }}>
         {score}
       </div>
     </div>

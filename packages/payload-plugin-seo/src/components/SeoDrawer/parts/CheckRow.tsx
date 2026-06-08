@@ -114,14 +114,17 @@ export function CheckRow({ check }: CheckRowProps) {
   const Icon = CHECK_ICONS[check.id] ?? CHECK_ICONS._default;
 
   return (
-    <div className="crow" data-status={check.status}>
-      <div className="chk-head">
-        <span className="t-ico">
+    <div
+      className="relative px-[15px] py-[13px] overflow-visible not-last:after:content-[''] not-last:after:absolute not-last:after:inset-x-[15px] not-last:after:bottom-0 not-last:after:h-px not-last:after:bg-neutral-200"
+      data-status={check.status}
+    >
+      <div className="flex items-center gap-[9px]">
+        <span className="w-[26px] h-[26px] rounded-rs bg-neutral-100 text-neutral-600 grid place-items-center flex-none [&_svg]:size-[15px]">
           <Icon size={15} />
         </span>
 
-        <span className="t-name">
-          <span className="tip" title={meta.tip}>
+        <span className="flex-1 font-semibold text-[12.5px]">
+          <span className="border-0 border-b border-dotted border-neutral-400 cursor-help" title={meta.tip}>
             {meta.name}
           </span>
         </span>
@@ -131,7 +134,7 @@ export function CheckRow({ check }: CheckRowProps) {
 
       <CheckViz check={check} />
 
-      {check.recommendation && <div className="rec">{check.recommendation}</div>}
+      {check.recommendation && <div className="text-neutral-600 text-[11.5px] mt-[7px]">{check.recommendation}</div>}
     </div>
   );
 }
