@@ -66,11 +66,83 @@ export class PayloadJobsTaskRunner implements TaskRunner {
       return { success: false, error: "already_completed" };
     }
     if (task.status === "running") {
-      return { success: false, error: "already_running" };
+      // A genuinely in-flight job is refused. A stale processing lock (left by
+      // a process killed mid-run) is reclaimable: clear it first so the queue
+      // picker below — which only selects `processing: false` — can re-run it.
+      if (!this.isStale(task.updatedAt)) {
+        return { success: false, error: "already_running" };
+      }
+      await this.resetProcessing({ id: { equals: taskId } });
     }
 
-    this.payload.jobs.runByID({ id: taskId });
+    // Execute synchronously via the queue + `where` picker so the job runs to
+    // completion within this request (nothing is abandoned after the HTTP
+    // response — reliable on serverless too).
+    //
+    // NOT `payload.jobs.runByID({ id })`: on the drizzle adapter the id-path
+    // (`db.updateJobs({ id })`) writes `processing: true` but returns no rows,
+    // so `runJobs` reports `noJobsRemaining` and the handler never runs —
+    // leaving the job stuck at `processing: true` forever. The `where`-based
+    // picker selects, runs, and finalizes the job correctly (verified against
+    // sqlite). The picker also enforces processing:false / no-error / no
+    // pending waitUntil, so a failed (max-retries) job is not re-run here.
+    await this.payload.jobs.run({
+      queue: this.config.queueName,
+      where: { id: { equals: taskId } },
+      limit: 1,
+    });
     return { success: true };
+  }
+
+  /**
+   * Reset stale processing locks so abandoned jobs become eligible for the
+   * autorun picker again. The picker requires processing:false, no error, and
+   * no pending waitUntil; a job abandoned mid-run (no error, no waitUntil)
+   * satisfies the rest, so clearing processing is sufficient for that case.
+   * A job that already exhausted retries (hasError:true) stays excluded from
+   * autorun and is only recoverable via a manual run().
+   *
+   * A job is stale when it is still `processing: true`, not yet completed, and
+   * its `updatedAt` is older than `staleJobTimeoutMs` — i.e. a process was
+   * killed mid-run (deploy/crash/timeout). Threshold-based, so a job genuinely
+   * in flight on another live instance (fresh `updatedAt`) is left alone.
+   * Filters on real `payload-jobs` columns only (no JSON-path traversal), so
+   * the drizzle SQLite issue in `findByCollection` does not apply here.
+   * @returns the number of jobs reclaimed.
+   */
+  async reclaimStaleJobs(): Promise<number> {
+    const cutoff = new Date(Date.now() - this.config.staleJobTimeoutMs).toISOString();
+    return this.resetProcessing({
+      and: [{ taskSlug: { equals: this.config.taskName } }, { processing: { equals: true } }, { completedAt: { exists: false } }, { updatedAt: { less_than: cutoff } }],
+    });
+  }
+
+  /**
+   * Clear the `processing` lock on every job matching `where`, returning how
+   * many were reset. Shared by the per-job reset in `run()` (a stale lock) and
+   * the bulk boot/recovery reset in `reclaimStaleJobs()`. `depth: 0` because
+   * only the count is needed — no relationships to populate.
+   */
+  private async resetProcessing(where: Where): Promise<number> {
+    const result = await this.payload.update({
+      collection: this.config.jobsCollection,
+      depth: 0,
+      where,
+      data: { processing: false },
+    });
+    return result.docs.length;
+  }
+
+  /**
+   * A processing lock is stale once `updatedAt` is older than the configured
+   * timeout — the owning run is presumed dead.
+   */
+  private isStale(updatedAt: string): boolean {
+    const parsed = Date.parse(updatedAt);
+    // Unknown/corrupt timestamp → treat as stale so the job can be recovered
+    // rather than permanently refused as already-running.
+    if (Number.isNaN(parsed)) return true;
+    return Date.now() - parsed > this.config.staleJobTimeoutMs;
   }
 
   /**
