@@ -5,8 +5,8 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import "../../admin.css";
 import type { AnalysisResult } from "../../engine/types";
-import { cn } from "../../utils/style";
-import { statusVar, tabVariants, totalPillVariants } from "./variants";
+import { tabVariants } from "./variants";
+import { Header } from "./components/Header";
 import { KeyphraseTab } from "./tabs/KeyphraseTab";
 import { OnPageTab } from "./tabs/OnPageTab";
 import { ReadabilityTab } from "./tabs/ReadabilityTab";
@@ -43,18 +43,8 @@ export function SeoDrawer({ drawerSlug, keyphrase, setKeyphrase, result, analyzi
   const totalStatus = result?.overall.status ?? "warn";
 
   return (
-    <Drawer slug={drawerSlug} title="SEO Analytics" className="seo-drawer">
+    <Drawer slug={drawerSlug} className="seo-drawer" Header={<Header drawerSlug={drawerSlug} total={total} totalStatus={totalStatus} />}>
       <div className="seo-root relative text-neutral-800" data-status={totalStatus}>
-        <div className="relative flex items-center justify-between px-[4px] py-[16px]">
-          <div className="flex items-center gap-[11px]">
-            <h2 className="text-[16px] font-semibold m-0">SEO Analytics</h2>
-            <span className={totalPillVariants({ status: totalStatus })}>{total}</span>
-          </div>
-          <div className="absolute inset-x-0 bottom-0 h-[2px] bg-neutral-150">
-            <i className={cn("block h-full", statusVar({ status: totalStatus }))} style={{ width: `${total}%`, background: "var(--seo-c)" }} />
-          </div>
-        </div>
-
         <div className="flex gap-[8px] py-[13px]">
           <label className="flex-1 flex items-center gap-[8px] px-[12px] py-[9px] border border-neutral-200 rounded-rs bg-neutral-0">
             <input
