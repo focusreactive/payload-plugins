@@ -36,10 +36,7 @@ describe("PayloadJobsTaskRunner", () => {
         limit: 50,
       },
     };
-    runner = new PayloadJobsTaskRunner(
-      mockPayload as unknown as Payload,
-      config,
-    );
+    runner = new PayloadJobsTaskRunner(mockPayload as unknown as Payload, config);
   });
 
   const createInput = (overrides: Partial<TaskInput> = {}): TaskInput => ({
@@ -74,7 +71,8 @@ describe("PayloadJobsTaskRunner", () => {
         task: "translate_document",
         queue: "translations",
         input: {
-          collection: { relationTo: "posts", value: "doc-123" },
+          collection_slug: "posts",
+          collection_id: "doc-123",
           source_lng: "en",
           target_lng: "de",
           strategy: "overwrite",
@@ -84,10 +82,7 @@ describe("PayloadJobsTaskRunner", () => {
     });
 
     it("queues multiple tasks", async () => {
-      const inputs = [
-        createInput({ collectionId: "doc-1" }),
-        createInput({ collectionId: "doc-2" }),
-      ];
+      const inputs = [createInput({ collectionId: "doc-1" }), createInput({ collectionId: "doc-2" })];
       await runner.enqueue(inputs);
 
       expect(mockPayload.jobs.queue).toHaveBeenCalledTimes(2);
@@ -142,31 +137,40 @@ describe("PayloadJobsTaskRunner", () => {
       expect(mockPayload.find).toHaveBeenCalledTimes(2);
     });
 
-    it("preserves the collectionId type when storing job input", async () => {
-      // Payload's Jobs `input` schema declares `collection` as a relationship
-      // field which validates the value's type against the target collection's
-      // ID type (number for autoincrement, string for uuid). The runner must
-      // not coerce the type on write or jobs would silently fail validation
-      // and stay stuck in processing. Findability across mixed types is
-      // handled by in-memory filtering in `findByCollection`.
-      await runner.enqueue([createInput({ collectionId: 5 })]);
+    it("stores the reference as flat text, coercing the id to a string", async () => {
+      // The job input stores a flat text reference (ID-agnostic) instead of a
+      // Payload relationship field. The relationship field validated the value
+      // type against the collection's ID type, so a string id for a number-id
+      // collection silently failed validation and left the job stuck. Text
+      // storage sidesteps that; the id is normalized to a string on write.
+      // See docs/DEPRECATIONS.md#jobs-input-collection-field
+
+      // A number id (e.g. from a number-id collection) is stored as a string
+      await runner.enqueue([createInput({ collectionId: 5 as unknown as string })]);
       expect(mockPayload.jobs.queue).toHaveBeenCalledWith(
         expect.objectContaining({
           input: expect.objectContaining({
-            collection: { relationTo: "posts", value: 5 },
+            collection_slug: "posts",
+            collection_id: "5",
           }),
-        }),
+        })
       );
       mockPayload.jobs.queue.mockClear();
 
+      // A string id (uuid/text collection) round-trips unchanged
       await runner.enqueue([createInput({ collectionId: "uuid-abc" })]);
       expect(mockPayload.jobs.queue).toHaveBeenCalledWith(
         expect.objectContaining({
           input: expect.objectContaining({
-            collection: { relationTo: "posts", value: "uuid-abc" },
+            collection_slug: "posts",
+            collection_id: "uuid-abc",
           }),
-        }),
+        })
       );
+
+      // The legacy relationship field is no longer written
+      const lastCall = mockPayload.jobs.queue.mock.calls.at(-1)?.[0];
+      expect(lastCall?.input).not.toHaveProperty("collection");
     });
   });
 
@@ -266,10 +270,7 @@ describe("PayloadJobsTaskRunner", () => {
       ];
       mockPayload.find.mockResolvedValue({ docs: jobs });
 
-      const tasks = await runner.findByCollection("posts" as CollectionSlug, [
-        "doc-1",
-        "doc-2",
-      ]);
+      const tasks = await runner.findByCollection("posts" as CollectionSlug, ["doc-1", "doc-2"]);
 
       expect(tasks).toHaveLength(2);
       expect(tasks[0].id).toBe("job-1");
@@ -295,27 +296,27 @@ describe("PayloadJobsTaskRunner", () => {
       });
     });
 
-    it("does not put `collection.value` into the SQL where clause", async () => {
-      // Filtering by value happens in memory (see PayloadJobsTaskRunner.findByCollection
-      // for the full reasoning). The WHERE sent to Payload must narrow only by
-      // taskSlug + relationTo — never by `input.collection.value`, otherwise we
-      // re-introduce the SQLite type-coercion bug this code path works around.
+    it("narrows the SQL where clause by taskSlug only", async () => {
+      // Slug and id are matched in memory (see PayloadJobsTaskRunner.findByCollection
+      // for the full reasoning), spanning both the new flat-text shape and the
+      // legacy relationship shape. The WHERE sent to Payload must narrow only by
+      // taskSlug — never by the collection slug or id — otherwise we both
+      // re-introduce the SQLite type-coercion bug and drop one of the two shapes.
       await runner.findByCollection("posts" as CollectionSlug, [5, 6]);
 
       const whereArg = mockPayload.find.mock.calls[0][0].where;
       expect(whereArg).toEqual({
-        and: [
-          { taskSlug: { equals: "translate_document" } },
-          { "input.collection.relationTo": { equals: "posts" } },
-        ],
+        and: [{ taskSlug: { equals: "translate_document" } }],
       });
-      expect(JSON.stringify(whereArg)).not.toContain("input.collection.value");
+      expect(JSON.stringify(whereArg)).not.toContain("collection_id");
+      expect(JSON.stringify(whereArg)).not.toContain("collection.value");
     });
 
-    it("filters in memory and matches both number- and string-typed stored values", async () => {
-      // payload.find returns the full per-collection set; the runner narrows
-      // it client-side by `collection.value`. Both legacy (number) and new
-      // (string) stored shapes must match when the caller passes either type.
+    it("matches jobs stored in both the legacy and the new shape", async () => {
+      // payload.find returns the full per-task set; the runner narrows it
+      // client-side by slug + id. The result must span both stored shapes:
+      // legacy `collection: { relationTo, value }` (value possibly a number)
+      // and the new flat `collection_slug` / `collection_id` text fields.
       const legacyJob = createJob({
         id: "legacy-job",
         input: {
@@ -324,24 +325,17 @@ describe("PayloadJobsTaskRunner", () => {
       });
       const newJob = createJob({
         id: "new-job",
-        input: {
-          collection: { relationTo: "posts" as CollectionSlug, value: "7" },
-        },
+        input: { collection_slug: "posts", collection_id: "7" },
       });
       const unrelatedJob = createJob({
         id: "unrelated",
-        input: {
-          collection: { relationTo: "posts" as CollectionSlug, value: "99" },
-        },
+        input: { collection_slug: "posts", collection_id: "99" },
       });
       mockPayload.find.mockResolvedValue({
         docs: [legacyJob, newJob, unrelatedJob],
       });
 
-      const tasks = await runner.findByCollection("posts" as CollectionSlug, [
-        5,
-        "7",
-      ]);
+      const tasks = await runner.findByCollection("posts" as CollectionSlug, [5, "7"]);
 
       expect(tasks.map((t) => t.id).sort()).toEqual(["legacy-job", "new-job"]);
     });
