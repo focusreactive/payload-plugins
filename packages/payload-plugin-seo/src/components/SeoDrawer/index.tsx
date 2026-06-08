@@ -1,6 +1,7 @@
 "use client";
 
 import { Drawer } from "@payloadcms/ui";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import "../../admin.css";
 import type { AnalysisResult } from "../../engine/types";
@@ -30,11 +31,12 @@ export interface SeoDrawerProps {
   setKeyphrase: (keyphrase: string) => void;
   result: AnalysisResult | null;
   analyzing: boolean;
+  keyphrasePending: boolean;
   analyzeNow: () => void;
   site: { name: string; baseUrl: string; faviconUrl: string };
 }
 
-export function SeoDrawer({ drawerSlug, keyphrase, setKeyphrase, result, analyzing, analyzeNow, site }: SeoDrawerProps) {
+export function SeoDrawer({ drawerSlug, keyphrase, setKeyphrase, result, analyzing, keyphrasePending, analyzeNow, site }: SeoDrawerProps) {
   const [tab, setTab] = useState<TabKey>("keyphrase");
 
   const total = result?.overall.seoScore ?? 0;
@@ -63,7 +65,11 @@ export function SeoDrawer({ drawerSlug, keyphrase, setKeyphrase, result, analyzi
               placeholder="Focus keyphrase"
               aria-label="Focus keyphrase"
             />
+            {keyphrasePending ? <Loader2 aria-hidden="true" className="w-[14px] h-[14px] shrink-0 animate-spin text-neutral-400" /> : null}
           </label>
+          <span aria-live="polite" className="sr-only" role="status">
+            {keyphrasePending ? "Analyzing keyphrase…" : ""}
+          </span>
           <button
             type="button"
             className="px-[18px] py-[9px] bg-neutral-1000 text-neutral-0 border-0 rounded-rs font-medium text-[13px] cursor-pointer disabled:opacity-50"

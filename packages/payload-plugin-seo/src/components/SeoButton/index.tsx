@@ -4,6 +4,7 @@ import { cva } from "class-variance-authority";
 import { Gauge } from "lucide-react";
 import { useCallback, useState } from "react";
 import { SeoDrawer } from "../SeoDrawer";
+import { isKeyphrasePending } from "../SeoDrawer/keyphrasePending";
 import { useAnalysis } from "../SeoDrawer/useAnalysis";
 import { useLiveDocument } from "../SeoDrawer/useLiveDocument";
 
@@ -38,7 +39,9 @@ export function SeoButton({ fields, site, supportedLocales }: SeoButtonProps) {
     keyphrase,
     enabled: activated,
   });
-  const { result, analyzing, analyzeNow } = useAnalysis(input, supportedLocales, activated);
+  const { result, analyzing, analyzedKeyphrase, analyzeNow } = useAnalysis(input, supportedLocales, activated);
+
+  const keyphrasePending = isKeyphrasePending(keyphrase, analyzedKeyphrase);
 
   const status = result?.overall.status ?? null;
 
@@ -66,7 +69,16 @@ export function SeoButton({ fields, site, supportedLocales }: SeoButtonProps) {
         tooltip="SEO Analytics"
       />
       {status ? <span aria-hidden="true" className={dotVariants({ status })} /> : null}
-      <SeoDrawer analyzeNow={handleAnalyze} analyzing={analyzing} drawerSlug={DRAWER_SLUG} keyphrase={keyphrase} result={result} setKeyphrase={setKeyphrase} site={site} />
+      <SeoDrawer
+        analyzeNow={handleAnalyze}
+        analyzing={analyzing}
+        drawerSlug={DRAWER_SLUG}
+        keyphrase={keyphrase}
+        keyphrasePending={keyphrasePending}
+        result={result}
+        setKeyphrase={setKeyphrase}
+        site={site}
+      />
     </span>
   );
 }
