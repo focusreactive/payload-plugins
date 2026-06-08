@@ -1,3 +1,15 @@
+# @focus-reactive/payload-plugin-translator [0.4.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.3.0...@focus-reactive/payload-plugin-translator@0.4.0) (2026-06-08)
+
+
+### Bug Fixes
+
+* **translator:** use ZodError.issues instead of removed .errors (zod v4) ([bcc85f7](https://github.com/focusreactive/payload-plugins/commit/bcc85f7366753169db7402a3fcfa7125e9b74049))
+
+
+### Features
+
+* **translator:** reliable manual job run + stale-lock recovery ([d61acc5](https://github.com/focusreactive/payload-plugins/commit/d61acc5a7c898a0619f04a970a41a26d05c8fb9d))
+
 # @focus-reactive/payload-plugin-translator [0.3.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.2.1...@focus-reactive/payload-plugin-translator@0.3.0) (2026-06-08)
 
 
