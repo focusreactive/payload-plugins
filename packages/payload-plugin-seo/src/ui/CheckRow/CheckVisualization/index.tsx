@@ -11,21 +11,8 @@ export function CheckVisualization({ check }: { check: CheckResult }) {
   if (!viz) return null;
 
   switch (viz.type) {
-    case "value-range": {
-      const g = viz.gauge;
-      return (
-        <DensityGauge
-          bands={g.bands.map((b) => ({
-            width: b.endPct - b.startPct,
-            status: b.status,
-          }))}
-          markerPct={g.markerPct}
-          markerLabel={g.markerLabel}
-          markerStatus={g.markerStatus}
-          scale={[g.labels[0]?.text ?? "", g.labels.find((l) => l.emphasis === "good")?.text ?? "", g.labels[g.labels.length - 1]?.text ?? ""]}
-        />
-      );
-    }
+    case "value-range":
+      return <DensityGauge {...viz.gauge} />;
     case "proportion":
       return <SegmentBar {...viz.segment} />;
     case "count-drilldown":
