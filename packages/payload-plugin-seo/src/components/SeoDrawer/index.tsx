@@ -3,10 +3,10 @@
 import { Drawer } from "@payloadcms/ui";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
-import "../../admin.css";
 import type { AnalysisResult } from "../../engine/types/analysis";
-import { tabVariants } from "./variants";
 import { Header } from "./components/Header";
+import { TabsNav } from './TabsNav';
+import type { TabKey } from './TabsNav';
 import { KeyphraseTab } from "./tabs/KeyphraseTab";
 import { OnPageTab } from "./tabs/OnPageTab";
 import { ReadabilityTab } from "./tabs/ReadabilityTab";
@@ -14,16 +14,7 @@ import { InclusiveTab } from "./tabs/InclusiveTab";
 import { SerpTab } from "./tabs/SerpTab";
 import { VitalsTab } from "./tabs/VitalsTab";
 
-type TabKey = "keyphrase" | "onpage" | "readability" | "inclusive" | "vitals" | "serp";
-
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "keyphrase", label: "Keyphrase" },
-  { key: "onpage", label: "On-page SEO" },
-  { key: "readability", label: "Readability" },
-  { key: "inclusive", label: "Inclusive" },
-  { key: "vitals", label: "Content vitals" },
-  { key: "serp", label: "Search result preview" },
-];
+import "../../admin.css";
 
 export interface SeoDrawerProps {
   drawerSlug: string;
@@ -70,13 +61,7 @@ export function SeoDrawer({ drawerSlug, keyphrase, setKeyphrase, result, analyzi
           </button>
         </div>
 
-        <nav className="flex gap-[20px] border-b border-neutral-200 overflow-x-auto">
-          {TABS.map((t) => (
-            <button key={t.key} type="button" className={tabVariants({ active: tab === t.key })} onClick={() => setTab(t.key)}>
-              {t.label}
-            </button>
-          ))}
-        </nav>
+        <TabsNav active={tab} onChange={setTab} />
 
         <div className="py-[18px]">
           {!result ? (

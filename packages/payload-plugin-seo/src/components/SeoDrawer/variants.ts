@@ -20,16 +20,6 @@ export const totalPillVariants = cva("inline-flex items-center rounded-[20px] px
   },
 });
 
-export const tabVariants = cva("py-[11px] border-0 bg-transparent border-b-2 border-transparent whitespace-nowrap text-[12.5px] cursor-pointer", {
-  variants: {
-    active: {
-      true: "text-neutral-1000 border-b-neutral-1000 font-medium",
-      false: "text-neutral-500 hover:text-neutral-800",
-    },
-  },
-  defaultVariants: { active: false },
-});
-
 export const statusPillVariants = cva("inline-flex items-center gap-[4px] px-[9px] py-[2px] rounded-[20px] text-[11px] font-semibold", {
   variants: {
     status: {

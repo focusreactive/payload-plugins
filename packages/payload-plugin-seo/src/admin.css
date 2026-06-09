@@ -32,6 +32,15 @@
   --radius-rm: var(--style-radius-m);
 }
 
+.seo-root [role="tab"] {
+  border: 0;
+  border-bottom: 2px solid transparent;
+}
+
+.seo-root [role="tab"][aria-selected="true"] {
+  border-bottom-color: var(--theme-elevation-1000);
+}
+
 @layer components {
   .seo-docbar {
     background: repeating-linear-gradient(
