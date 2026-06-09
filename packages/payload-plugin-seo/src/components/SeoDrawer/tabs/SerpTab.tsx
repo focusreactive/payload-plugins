@@ -1,22 +1,12 @@
 "use client";
-import { cva } from "class-variance-authority";
 import { useState } from "react";
 import type { SerpResult, Status } from "../../../engine/types/analysis";
 import { MeterBar } from "../../../ui/MeterBar";
 import { SectionCard } from "../../../ui/SectionCard";
+import { SegmentedControl } from "../../../ui/SegmentedControl";
 import { TITLE_WIDTH_BUDGET_PX, META_DESCRIPTION_MAX_CHARS } from "../../../constants";
 
 type Mode = "mobile" | "desktop";
-
-const serpModeVariants = cva("inline-flex items-center gap-[5px] px-[11px] py-[4px] rounded-rs text-[11px] font-medium border-0 bg-transparent cursor-pointer text-neutral-600", {
-  variants: {
-    active: {
-      true: "bg-neutral-0 text-neutral-1000 shadow-[0_1px_2px_rgba(0,0,0,0.08)]",
-      false: "",
-    },
-  },
-  defaultVariants: { active: false },
-});
 
 export function SerpTab({ data }: { data: SerpResult; keyphrase: string; faviconUrl: string }) {
   const [mode, setMode] = useState<Mode>("mobile");
@@ -30,14 +20,15 @@ export function SerpTab({ data }: { data: SerpResult; keyphrase: string; favicon
       <SectionCard
         title="Search result preview"
         widget={
-          <div className="inline-flex bg-neutral-100 border border-neutral-200 rounded-rm p-[2px] gap-[2px]">
-            <button type="button" className={serpModeVariants({ active: mode === "mobile" })} onClick={() => setMode("mobile")}>
-              Mobile
-            </button>
-            <button type="button" className={serpModeVariants({ active: mode === "desktop" })} onClick={() => setMode("desktop")}>
-              Desktop
-            </button>
-          </div>
+          <SegmentedControl
+            options={[
+              { value: "mobile", label: "Mobile" },
+              { value: "desktop", label: "Desktop" },
+            ]}
+            value={mode}
+            onChange={setMode}
+            label="Preview device"
+          />
         }
       >
         <div className="p-[15px]"></div>
