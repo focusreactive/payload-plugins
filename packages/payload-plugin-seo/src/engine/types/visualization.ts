@@ -41,3 +41,28 @@ interface DirectStatusSpec {
 }
 
 export type GaugeSpec = YoastScoredSpec | DirectStatusSpec;
+
+export type SwatchTone = "good" | "warn" | "bad" | "muted";
+
+export interface SegmentModel {
+  countLabel?: string;
+  filledPct: number;
+  filledStatus: Status;
+  legend?: { tone: SwatchTone; label: string }[];
+}
+
+export interface DrilldownModel {
+  items: { left: string; right: string }[];
+  label: string;
+}
+
+export interface DistributionModel {
+  positions: number[];
+}
+
+export type Visualization =
+  | { type: "presence" }
+  | { type: "value-range"; gauge: GaugeModel }
+  | { type: "proportion"; segment: SegmentModel }
+  | { type: "count-drilldown"; drilldown: DrilldownModel }
+  | { type: "distribution"; distribution: DistributionModel };
