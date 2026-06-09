@@ -2,7 +2,7 @@
 
 import { cva } from "class-variance-authority";
 import { cn } from "../../../../utils/style";
-import type { Status } from "../../../../engine/types/analysis";
+import type { SegmentModel } from "../../../../engine/types/visualization";
 import { statusVar } from "../../../../components/SeoDrawer/variants";
 
 const swatchVariants = cva("w-[8px] h-[8px] rounded-[2px] inline-block", {
@@ -16,16 +16,7 @@ const swatchVariants = cva("w-[8px] h-[8px] rounded-[2px] inline-block", {
   },
 });
 
-export type SwatchTone = "good" | "warn" | "bad" | "muted";
-
-export interface SegmentBarProps {
-  countLabel?: string;
-  filledPct: number;
-  filledStatus: Status;
-  legend?: { tone: SwatchTone; label: string }[];
-}
-
-export function SegmentBar({ countLabel, filledPct, filledStatus, legend }: SegmentBarProps) {
+export function SegmentBar({ countLabel, filledPct, filledStatus, legend }: SegmentModel) {
   return (
     <>
       {countLabel && (

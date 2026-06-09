@@ -1,10 +1,8 @@
 "use client";
 
-export interface DistributionBarProps {
-  positions: number[];
-}
+import type { DistributionModel } from "../../../../engine/types/visualization";
 
-export function DistributionBar({ positions }: DistributionBarProps) {
+export function DistributionBar({ positions }: DistributionModel) {
   return (
     <>
       <div className="seo-docbar relative h-[24px] rounded-rs border border-neutral-200">

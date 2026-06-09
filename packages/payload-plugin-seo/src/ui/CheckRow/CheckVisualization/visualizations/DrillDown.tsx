@@ -3,13 +3,9 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../../../../utils/style";
+import type { DrilldownModel } from "../../../../engine/types/visualization";
 
-export interface DrillDownProps {
-  items: { left: string; right: string }[];
-  label: string;
-}
-
-export function DrillDown({ items, label }: DrillDownProps) {
+export function DrillDown({ items, label }: DrilldownModel) {
   const [open, setOpen] = useState(false);
 
   if (!items.length) return null;
