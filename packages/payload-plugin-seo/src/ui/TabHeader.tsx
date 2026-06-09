@@ -4,13 +4,7 @@ import type { ReactNode } from "react";
 import type { Status } from "../engine/types/analysis";
 import { SectionWrapper } from "./SectionWrapper";
 import { ScoreRing } from "./ScoreRing";
-import { StatusPill } from "./StatusPill";
-
-const DEFAULT_STATUS_LABEL: Record<Status, string> = {
-  good: "Good",
-  warn: "Needs work",
-  bad: "Problem",
-};
+import { StatusPill, STATUS_PILL_LABEL } from "./StatusPill";
 
 interface TabHeaderProps {
   title: string;
@@ -28,7 +22,7 @@ export function TabHeader({ title, score, status, statusLabel, subtitle }: TabHe
       <div className="flex-1">
         <div className="flex items-center gap-[8px]">
           <b className="text-[14px]">{title}</b>
-          <StatusPill status={status}>{statusLabel ?? DEFAULT_STATUS_LABEL[status]}</StatusPill>
+          <StatusPill status={status}>{statusLabel ?? STATUS_PILL_LABEL[status]}</StatusPill>
         </div>
 
         <div className="text-neutral-500 text-[11.5px] mt-[4px]">{subtitle}</div>
