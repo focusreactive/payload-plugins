@@ -4,7 +4,7 @@ import { useAllFormFields, useDebounce, useLocale } from "@payloadcms/ui";
 import { useCallback, useMemo, useRef } from "react";
 import { reduceFieldsToValues } from "payload/shared";
 import type { ExtractorFn } from "../../content/resolveExtractor";
-import type { AnalysisInput } from "../../engine/types";
+import type { AnalysisInput } from "../../engine/types/analysis";
 import type { SeoFieldPaths } from "../../types/config";
 import { buildInput } from "./buildInput";
 

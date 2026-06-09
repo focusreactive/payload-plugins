@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { Status } from "../engine/types";
+import type { Status } from "../engine/types/analysis";
 import { SectionWrapper } from "./SectionWrapper";
 import { ScoreRing } from "./ScoreRing";
 import { StatusPill } from "./StatusPill";

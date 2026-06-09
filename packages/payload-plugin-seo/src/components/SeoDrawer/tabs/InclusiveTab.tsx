@@ -1,6 +1,6 @@
 "use client";
 
-import type { AnalysisResult } from "../../../engine/types";
+import type { AnalysisResult } from "../../../engine/types/analysis";
 import { cn, ROW_SEPARATOR } from "../../../utils/style";
 import { TabHeader } from "../../../ui/TabHeader";
 import { SectionCard } from "../../../ui/SectionCard";

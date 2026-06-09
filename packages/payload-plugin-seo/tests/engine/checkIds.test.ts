@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CHECK_IDS } from "../../src/constants/checkIds";
-import { partitionSeo } from "../../src/engine/partitionSeo";
-import type { CheckResult } from "../../src/engine/types";
+import { partitionSeo } from "../../src/engine/runAnalysis/services/derive-seo";
+import type { CheckResult } from "../../src/engine/types/analysis";
 
 const mk = (id: string): CheckResult => ({ id, status: "good", score: 9 });
 

@@ -5,7 +5,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { runAnalysis } from "../../src/engine/runAnalysis";
-import type { AnalysisInput, CheckResult } from "../../src/engine/types";
+import type { AnalysisInput, CheckResult } from "../../src/engine/types/analysis";
 
 // Rich content designed to trigger every visualization-bearing check:
 // - keyphrase repeated multiple times for density + distribution

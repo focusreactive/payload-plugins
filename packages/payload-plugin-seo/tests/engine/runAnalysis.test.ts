@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { runAnalysis } from "../../src/engine/runAnalysis";
-import type { AnalysisInput } from "../../src/engine/types";
+import type { AnalysisInput } from "../../src/engine/types/analysis";
 
 // Reconciled against the installed yoastseo@3.6.0 (Task 0.4): export names are
 // `SeoAssessor` / `ContentAssessor`, and the inclusive assessor lives on the

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { CheckResult, Status } from "../../engine/types";
+import type { CheckResult, Status } from "../../engine/types/analysis";
 import type { CheckId } from "../../constants/checkIds";
 import { DensityGauge } from "../../ui/DensityGauge";
 import type { Band } from "../../ui/DensityGauge";

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CHECK_IDS } from "../../src/constants/checkIds";
 import { getDisplay, pillFor } from "../../src/components/SeoDrawer/checkDisplay";
-import type { CheckResult } from "../../src/engine/types";
+import type { CheckResult } from "../../src/engine/types/analysis";
 
 const ALL = [...CHECK_IDS.keyphrase, ...CHECK_IDS.onPage, ...CHECK_IDS.readability];
 const mk = (id: string, over: Partial<CheckResult> = {}): CheckResult => ({ id, status: "good", score: 9, ...over });

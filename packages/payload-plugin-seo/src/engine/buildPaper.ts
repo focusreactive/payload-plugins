@@ -1,7 +1,8 @@
 import { Paper } from "yoastseo";
-import type { AnalysisInput } from "./types";
+import type { AnalysisInput } from "./types/analysis";
+import type { PaperData } from "./types/paper";
 
-export function buildPaper(input: AnalysisInput): InstanceType<typeof Paper> {
+export function buildPaper(input: AnalysisInput): PaperData {
   return new Paper(input.contentHtml, {
     keyword: input.keyphrase,
     title: input.title,

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { runAnalysis } from "../../engine/runAnalysis";
-import type { AnalysisInput, AnalysisResult } from "../../engine/types";
+import type { AnalysisInput, AnalysisResult } from "../../engine/types/analysis";
 import { decideAutoAction, hasKeyphrase } from "./analysisDecision";
 import { ensureLanguagePack } from "./languagePacks";
 

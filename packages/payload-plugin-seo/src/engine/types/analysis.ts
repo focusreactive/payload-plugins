@@ -18,6 +18,12 @@ export interface InclusiveCategory {
   flags: InclusiveFlag[];
 }
 
+export interface ProminentWord {
+  word: string;
+  count: number;
+  isKeyphrase: boolean;
+}
+
 export interface VitalsResult {
   words: number;
   sentences: number;
@@ -25,7 +31,7 @@ export interface VitalsResult {
   images: number;
   videos: number;
   readingTimeMinutes: number;
-  prominentWords: { word: string; count: number; isKeyphrase: boolean }[];
+  prominentWords: ProminentWord[];
   internalLinkingPhrases: string[];
 }
 

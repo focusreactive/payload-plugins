@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "../utils/style";
-import type { Status } from "../engine/types";
+import type { Status } from "../engine/types/analysis";
 import { statusVar } from "../components/SeoDrawer/variants";
 
 export interface Band {

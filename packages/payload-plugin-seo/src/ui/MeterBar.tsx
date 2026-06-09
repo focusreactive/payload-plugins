@@ -1,6 +1,6 @@
 "use client";
 
-import type { Status } from "../engine/types";
+import type { Status } from "../engine/types/analysis";
 import { statusVar } from "../components/SeoDrawer/variants";
 
 interface MeterBarProps {

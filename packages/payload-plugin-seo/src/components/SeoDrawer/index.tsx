@@ -4,7 +4,7 @@ import { Drawer } from "@payloadcms/ui";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import "../../admin.css";
-import type { AnalysisResult } from "../../engine/types";
+import type { AnalysisResult } from "../../engine/types/analysis";
 import { tabVariants } from "./variants";
 import { Header } from "./components/Header";
 import { KeyphraseTab } from "./tabs/KeyphraseTab";

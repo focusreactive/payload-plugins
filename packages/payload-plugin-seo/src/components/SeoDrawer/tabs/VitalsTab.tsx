@@ -1,6 +1,6 @@
 "use client";
 
-import type { VitalsResult } from "../../../engine/types";
+import type { VitalsResult } from "../../../engine/types/analysis";
 import { cn, ROW_SEPARATOR } from "../../../utils/style";
 import { KpiCard } from "../../../ui/KpiCard";
 import { SectionCard } from "../../../ui/SectionCard";

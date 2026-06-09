@@ -2,7 +2,7 @@
 
 import { cva } from "class-variance-authority";
 import { cn } from "../utils/style";
-import type { Status } from "../engine/types";
+import type { Status } from "../engine/types/analysis";
 import { statusVar } from "../components/SeoDrawer/variants";
 
 const swatchVariants = cva("w-[8px] h-[8px] rounded-[2px] inline-block", {

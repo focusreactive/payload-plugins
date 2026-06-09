@@ -3,7 +3,7 @@
 import { StatusPill } from "./StatusPill";
 import { CHECK_ICONS } from "../components/icons";
 import { CheckViz, pillFor } from "../components/SeoDrawer/checkDisplay";
-import type { CheckResult } from "../engine/types";
+import type { CheckResult } from "../engine/types/analysis";
 import { cn, ROW_SEPARATOR } from "../utils/style";
 
 const LABELS: Record<string, { name: string; tip: string }> = {

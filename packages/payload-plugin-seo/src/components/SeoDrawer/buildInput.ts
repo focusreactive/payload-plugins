@@ -1,6 +1,6 @@
 import type { ExtractorFn } from "../../content/resolveExtractor";
 import { resolveExtractor } from "../../content/resolveExtractor";
-import type { AnalysisInput } from "../../engine/types";
+import type { AnalysisInput } from "../../engine/types/analysis";
 import type { SeoFieldPaths } from "../../types/config";
 
 function valueAt(values: Record<string, unknown>, path?: string): string {

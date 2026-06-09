@@ -1,7 +1,7 @@
 import { getRecommendation } from "./recommendations";
 import type { RecoContext } from "./recommendations";
 import { scoreToStatus } from "./scoreStatus";
-import type { CheckResult } from "./types";
+import type { CheckResult } from "./types/analysis";
 
 interface YoastAssessmentResult {
   getIdentifier?: () => string;
@@ -20,13 +20,13 @@ function identifierOf(r: YoastAssessmentResult): string {
 export function runAssessor(assessor: YoastAssessor, ctx: RecoContext, paper?: unknown): CheckResult[] {
   assessor.assess(paper);
 
-  return assessor.getValidResults().map((r) => {
-    const id = identifierOf(r);
-    const status = scoreToStatus(r.score);
+  return assessor.getValidResults().map((result) => {
+    const id = identifierOf(result);
+    const status = scoreToStatus(result.score);
 
     return {
       id,
-      score: r.score,
+      score: result.score,
       status,
       recommendation: getRecommendation(id, status, ctx),
       data: undefined,

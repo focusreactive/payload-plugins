@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { extractCheckData } from "../../src/engine/extractCheckData";
-import type { PaperLike } from "../../src/engine/extractCheckData";
+import type { PaperLike } from "../../src/engine/types/paper";
 import type { YoastResearcher } from "../../src/engine/researcherAdapter";
 
 // Mirrors verified yoastseo@3.6.0 research return shapes.

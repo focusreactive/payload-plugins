@@ -2,7 +2,7 @@
 
 import { cva } from "class-variance-authority";
 import { cn } from "../utils/style";
-import type { CheckResult, Status } from "../engine/types";
+import type { CheckResult, Status } from "../engine/types/analysis";
 import { statusVar } from "../components/SeoDrawer/variants";
 
 export type Filter = "all" | Status;

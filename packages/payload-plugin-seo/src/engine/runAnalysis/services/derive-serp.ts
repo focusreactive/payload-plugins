@@ -1,4 +1,4 @@
-import type { AnalysisInput, SerpResult } from "./types";
+import type { AnalysisInput, SerpResult } from "../../types/analysis";
 
 const AVG_GLYPH_PX = 8.5;
 

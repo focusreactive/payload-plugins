@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { buildPaper } from "../../src/engine/buildPaper";
-import type { AnalysisInput } from "../../src/engine/types";
+import type { AnalysisInput } from "../../src/engine/types/analysis";
 
 vi.mock("yoastseo", () => ({
   Paper: class {

@@ -1,7 +1,7 @@
 "use client";
 import { cva } from "class-variance-authority";
 import { useState } from "react";
-import type { SerpResult, Status } from "../../../engine/types";
+import type { SerpResult, Status } from "../../../engine/types/analysis";
 import { MeterBar } from "../../../ui/MeterBar";
 import { SectionCard } from "../../../ui/SectionCard";
 import { TITLE_WIDTH_BUDGET_PX, META_DESCRIPTION_MAX_CHARS } from "../../../constants";

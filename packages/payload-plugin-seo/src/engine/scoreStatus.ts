@@ -1,4 +1,4 @@
-import type { Status } from "./types";
+import type { Status } from "./types/analysis";
 
 export function scoreToStatus(score: number): Status {
   if (score > 7) return "good";

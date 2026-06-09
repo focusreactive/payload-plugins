@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { CategoryResult } from "../../../engine/types";
+import type { CategoryResult } from "../../../engine/types/analysis";
 import { TabHeader } from "../../../ui/TabHeader";
 import { SectionCard } from "../../../ui/SectionCard";
 import { CountPill } from "../../../ui/CountPill";

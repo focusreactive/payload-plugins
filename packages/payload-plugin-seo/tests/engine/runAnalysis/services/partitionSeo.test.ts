@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { partitionSeo } from "../../src/engine/partitionSeo";
+import { partitionSeo } from "../../../../src/engine/runAnalysis/services/derive-seo";
 
 const results = [
   { id: "keyphraseDensity", status: "warn" as const, score: 6 },

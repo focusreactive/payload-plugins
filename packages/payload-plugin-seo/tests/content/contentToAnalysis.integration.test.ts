@@ -8,7 +8,7 @@
 import { describe, expect, it } from "vitest";
 import { extractContent } from "../../src/content/extractContent";
 import { runAnalysis } from "../../src/engine/runAnalysis";
-import type { AnalysisInput } from "../../src/engine/types";
+import type { AnalysisInput } from "../../src/engine/types/analysis";
 
 describe("content extraction → analysis (links + images)", () => {
   it("a Hero link with keyphrase anchor text and a keyphrase image alt light up the checks", () => {

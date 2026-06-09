@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { deriveSerp } from "../../src/engine/deriveSerp";
-import type { AnalysisInput } from "../../src/engine/types";
+import { deriveSerp } from "../../src/engine/runAnalysis/services/derive-serp";
+import type { AnalysisInput } from "../../src/engine/types/analysis";
 
 const base: AnalysisInput = {
   title: "Best Running Shoes 2026",

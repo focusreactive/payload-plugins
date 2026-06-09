@@ -1,7 +1,7 @@
 "use client";
 
 import { useModal, XIcon } from "@payloadcms/ui";
-import type { Status } from "../../../engine/types";
+import type { Status } from "../../../engine/types/analysis";
 import { cn } from "../../../utils/style";
 import { statusVar, totalPillVariants } from "../variants";
 

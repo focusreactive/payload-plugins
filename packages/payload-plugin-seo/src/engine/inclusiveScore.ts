@@ -1,4 +1,4 @@
-import type { InclusiveCategory, Status } from "./types";
+import type { InclusiveCategory, Status } from "./types/analysis";
 
 export interface RawInclusiveFlag {
   category: string;

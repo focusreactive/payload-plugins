@@ -1,5 +1,6 @@
 import { getResearch } from "./researcherAdapter";
 import type { YoastResearcher } from "./researcherAdapter";
+import type { PaperLike } from "./types/paper";
 
 const TITLE_PX_PER_CHAR = 9;
 const MAX_SENTENCE_WORDS = 20;
@@ -40,12 +41,6 @@ function keyphrasePositions(text: string, keyphrase: string): number[] {
 function snippet(text: string): string {
   const t = text.trim();
   return t.length > SNIPPET_MAX ? `${t.slice(0, SNIPPET_MAX - 1)}…` : t;
-}
-
-export interface PaperLike {
-  getTitle?: () => string;
-  getText?: () => string;
-  getKeyword?: () => string;
 }
 
 export function extractCheckData(id: string, paper: PaperLike, researcher: YoastResearcher): Record<string, unknown> | undefined {
