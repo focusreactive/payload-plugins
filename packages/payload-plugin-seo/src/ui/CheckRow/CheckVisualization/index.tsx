@@ -1,24 +1,37 @@
 "use client";
 
 import type { CheckResult } from "../../../engine/types/analysis";
-import { resolveVisualization } from "./resolveVisualization";
 import { DensityGauge } from "./visualizations/DensityGauge";
 import { SegmentBar } from "./visualizations/SegmentBar";
 import { DrillDown } from "./visualizations/DrillDown";
 import { DistributionBar } from "./visualizations/DistributionBar";
 
 export function CheckVisualization({ check }: { check: CheckResult }) {
-  const visualization = resolveVisualization(check);
+  const viz = check.viz;
+  if (!viz) return null;
 
-  switch (visualization.type) {
-    case "value-range":
-      return <DensityGauge {...visualization.props} />;
+  switch (viz.type) {
+    case "value-range": {
+      const g = viz.gauge;
+      return (
+        <DensityGauge
+          bands={g.bands.map((b) => ({
+            width: b.endPct - b.startPct,
+            status: b.status,
+          }))}
+          markerPct={g.markerPct}
+          markerLabel={g.markerLabel}
+          markerStatus={g.markerStatus}
+          scale={[g.labels[0]?.text ?? "", g.labels.find((l) => l.emphasis === "good")?.text ?? "", g.labels[g.labels.length - 1]?.text ?? ""]}
+        />
+      );
+    }
     case "proportion":
-      return <SegmentBar {...visualization.props} />;
+      return <SegmentBar {...viz.segment} />;
     case "count-drilldown":
-      return <DrillDown {...visualization.props} />;
+      return <DrillDown {...viz.drilldown} />;
     case "distribution":
-      return <DistributionBar {...visualization.props} />;
+      return <DistributionBar {...viz.distribution} />;
     case "presence":
       return null;
   }
