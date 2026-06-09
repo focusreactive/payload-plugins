@@ -3,8 +3,7 @@ import { APIError } from "payload";
 
 import type { Handler } from "../../shared";
 import type { TranslationProvider } from "../../modules/translation-providers";
-import { TranslationPipeline } from "../../modules/translation-pipeline";
-import { createTranslationStrategy } from "../../modules/translation-pipeline/strategies";
+import { translateContent } from "../../modules/translation-pipeline";
 
 import type { CollectionSchemaMap, TranslateDocumentInput, TranslateDocumentOutput } from "./model";
 
@@ -43,23 +42,19 @@ export class TranslateDocumentHandler implements Handler<TranslateDocumentInput,
       depth: 0,
     });
 
-    const translationStrategy = createTranslationStrategy(strategy);
-    const pipeline = new TranslationPipeline({
-      translationProvider: this.translationProvider,
-      translationStrategy,
-    });
-
-    const result = await pipeline.execute({
+    const translatedData = await translateContent({
       schema,
       sourceData,
       targetData,
       sourceLng,
       targetLng,
+      translationProvider: this.translationProvider,
+      strategy,
     });
-    if (!result) return { success: true };
+    if (!translatedData) return { success: true };
 
     const collectionConfig = payload.collections[collection].config;
-    await this.saveTranslatedDocument(payload, collection, collectionId, result.translatedData, targetLng, sourceLng, collectionConfig, publishOnTranslation);
+    await this.saveTranslatedDocument(payload, collection, collectionId, translatedData, targetLng, sourceLng, collectionConfig, publishOnTranslation);
 
     return { success: true };
   }
