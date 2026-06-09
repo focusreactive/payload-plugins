@@ -4,6 +4,7 @@ import { CHECK_ICONS } from "../../components/icons";
 import { CheckVisualization } from "./CheckVisualization";
 import { LABELS } from "./constants/labels";
 import { StatusPill, STATUS_PILL_LABEL } from "../StatusPill";
+import { Tooltip } from "../Tooltip";
 import type { CheckResult } from "../../engine/types/analysis";
 import { cn, ROW_SEPARATOR } from "../../utils/style";
 
@@ -26,9 +27,9 @@ export function CheckRow({ check }: CheckRowProps) {
         </span>
 
         <span className="flex-1 font-semibold text-[12.5px]">
-          <span className="border-0 border-b border-dotted border-neutral-400 cursor-help" title={meta.tip}>
+          <Tooltip content={meta.tip} className="border-0 border-b border-dotted border-neutral-400">
             {meta.name}
-          </span>
+          </Tooltip>
         </span>
 
         <StatusPill status={check.status}>{STATUS_PILL_LABEL[check.status]}</StatusPill>
