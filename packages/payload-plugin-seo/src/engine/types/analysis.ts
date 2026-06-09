@@ -1,3 +1,5 @@
+import type { Visualization } from "./visualization";
+
 export type Status = "good" | "warn" | "bad";
 
 export type TotalStatus = Status | "idle";
@@ -8,6 +10,7 @@ export interface CheckResult {
   score: number;
   recommendation?: string;
   data?: Record<string, unknown>;
+  viz?: Visualization;
 }
 
 export interface InclusiveFlag {
