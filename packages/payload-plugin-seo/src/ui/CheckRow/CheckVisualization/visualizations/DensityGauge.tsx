@@ -1,15 +1,15 @@
 "use client";
 
-import { cn } from "../utils/style";
-import type { Status } from "../engine/types/analysis";
-import { statusVar } from "../components/SeoDrawer/variants";
+import { cn } from "../../../../utils/style";
+import type { Status } from "../../../../engine/types/analysis";
+import { statusVar } from "../../../../components/SeoDrawer/variants";
 
 export interface Band {
   width: number;
   status: Status;
 }
 
-interface DensityGaugeProps {
+export interface DensityGaugeProps {
   bands: Band[];
   markerPct: number;
   markerLabel: string;

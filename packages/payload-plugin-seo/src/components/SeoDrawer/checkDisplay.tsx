@@ -3,12 +3,12 @@
 import type { ReactNode } from "react";
 import type { CheckResult, Status } from "../../engine/types/analysis";
 import type { CheckId } from "../../constants/checkIds";
-import { DensityGauge } from "../../ui/DensityGauge";
-import type { Band } from "../../ui/DensityGauge";
-import { SegmentBar } from "../../ui/SegmentBar";
-import type { SwatchTone } from "../../ui/SegmentBar";
-import { DrillDown } from "../../ui/DrillDown";
-import { DistributionBar } from "../../ui/DistributionBar";
+import { DensityGauge } from "../../ui/CheckRow/CheckVisualization/visualizations/DensityGauge";
+import type { Band } from "../../ui/CheckRow/CheckVisualization/visualizations/DensityGauge";
+import { SegmentBar } from "../../ui/CheckRow/CheckVisualization/visualizations/SegmentBar";
+import type { SwatchTone } from "../../ui/CheckRow/CheckVisualization/visualizations/SegmentBar";
+import { DrillDown } from "../../ui/CheckRow/CheckVisualization/visualizations/DrillDown";
+import { DistributionBar } from "../../ui/CheckRow/CheckVisualization/visualizations/DistributionBar";
 
 type PillFn = (check: CheckResult) => ReactNode;
 
@@ -421,6 +421,7 @@ export function pillFor(check: CheckResult): ReactNode {
 
 export function CheckViz({ check }: { check: CheckResult }) {
   const entry = getDisplay(check.id);
+
   switch (entry.type) {
     case "value-range": {
       const p = entry.toProps(check);

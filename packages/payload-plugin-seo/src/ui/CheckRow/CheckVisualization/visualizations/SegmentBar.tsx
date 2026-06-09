@@ -1,9 +1,9 @@
 "use client";
 
 import { cva } from "class-variance-authority";
-import { cn } from "../utils/style";
-import type { Status } from "../engine/types/analysis";
-import { statusVar } from "../components/SeoDrawer/variants";
+import { cn } from "../../../../utils/style";
+import type { Status } from "../../../../engine/types/analysis";
+import { statusVar } from "../../../../components/SeoDrawer/variants";
 
 const swatchVariants = cva("w-[8px] h-[8px] rounded-[2px] inline-block", {
   variants: {
@@ -18,7 +18,7 @@ const swatchVariants = cva("w-[8px] h-[8px] rounded-[2px] inline-block", {
 
 export type SwatchTone = "good" | "warn" | "bad" | "muted";
 
-interface SegmentBarProps {
+export interface SegmentBarProps {
   countLabel?: string;
   filledPct: number;
   filledStatus: Status;

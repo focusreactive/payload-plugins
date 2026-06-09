@@ -1,6 +1,10 @@
 "use client";
 
-export function DistributionBar({ positions }: { positions: number[] }) {
+export interface DistributionBarProps {
+  positions: number[];
+}
+
+export function DistributionBar({ positions }: DistributionBarProps) {
   return (
     <>
       <div className="seo-docbar relative h-[24px] rounded-rs border border-neutral-200">
