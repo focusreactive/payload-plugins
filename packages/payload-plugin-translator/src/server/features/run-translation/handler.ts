@@ -1,7 +1,7 @@
 import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared";
-import type { TaskRunnerProvider } from "../../modules/task-runner";
+import type { TaskRunnerFactory } from "../../modules/task-runner";
 
 import { RunInputSchema } from "./model";
 
@@ -9,7 +9,7 @@ import { RunInputSchema } from "./model";
  * Runs a translation task by ID
  */
 export class RunTranslationHandler {
-  constructor(private readonly taskRunnerFactory: TaskRunnerProvider) {}
+  constructor(private readonly taskRunnerFactory: TaskRunnerFactory) {}
 
   async handle(req: PayloadRequest): Promise<Response> {
     const validationResult = RunInputSchema.safeParse(req.routeParams);

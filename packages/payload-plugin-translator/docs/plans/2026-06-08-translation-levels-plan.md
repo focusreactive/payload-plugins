@@ -13,7 +13,7 @@ text-like fields + wrappers (richText write-back deferred). Default levels stay
 
 - **0a. Contract tests for the 6 routes.** Pin path + method + access-guard + error-wrapper →
   status/body for `enqueue`, `run/:id`, `cancel`, `cancel-by-collection`, `get-document-status`,
-  `get-collection-status`. (Handlers already cover status codes; this pins the route *wiring* so the
+  `get-collection-status`. (Handlers already cover status codes; this pins the route _wiring_ so the
   Phase 1 relocation is verifiably behavior-preserving.) Lowest-risk; can be partial if Phase 1
   keeps route construction identical.
 - **0b. `translateContent()` + subtree resolver.** No core change (pipeline already pure). Add a
@@ -21,10 +21,25 @@ text-like fields + wrappers (richText write-back deferred). Default levels stay
   `{ [name]: value }`; add `translateContent(subtreeSchema, values, src, tgt)` that calls the
   existing `TranslationPipeline`. Unit-test on a leaf field, a group wrapper, and a nested
   array/blocks subtree. **Direct building block of Phase 2.**
-- **0c. Idempotent `configure()` + de-couple `SyncRunner`.** Guard `PayloadJobsRunnerProvider.configure`
-  against double-registering task/autoRun (so two levels sharing a runner configure it once). Remove
-  `SyncRunnerProvider`'s mutable `this.handler` / "create() throws unless configure() first" coupling.
-  Prerequisite for per-level runners.
+- **0c. De-couple `SyncRunner` from configure→create ordering.** Prerequisite for per-level runners.
+
+  `SyncRunnerProvider` stashed `this.handler` in `configure()` and `create()` threw unless it was set
+  first — a temporal coupling on mutable instance state (needed because `SyncTaskRunner` runs the
+  translation inline on enqueue, with no Payload task to bake the handler into). Fix: the handler now
+  flows through `create(payload, context)`, and the plugin binds the context **once** into a narrow
+  `TaskRunnerFactory` (`{ create(payload) }`) that the 6 routes depend on. The provider keeps no
+  mutable handler state and `create()` is a pure function of its arguments — no "configure() first"
+  ordering. Routes never `configure()`, so the narrower factory type is also more honest.
+
+  > **Idempotent `configure()` — moved to Phase 1, not done here.** An earlier 0c draft added a guard
+  > inside `PayloadJobsRunnerProvider.configure()` (skip if the task slug is already in
+  > `config.jobs.tasks`) so two levels sharing a runner wouldn't double-register task/autoRun/onInit.
+  > Dropped: it's a content-sniffing belt at the wrong layer, and moving the state onto the provider
+  > (an instance `configured` flag, "singleton") is worse — the flag sticks across `Config` objects
+  > and would silently skip registration on hot-reload / a second `buildConfig`. Idempotency belongs
+  > at the **orchestration layer**: Phase 1 configures each _distinct_ runner exactly once via
+  > `new Set(levels.map(l => l.runner))`, deduped by instance identity. Until levels exist there is a
+  > single runner configured exactly once — so no guard is needed today, and the provider stays pure.
 
 ## Phase 1 — Levels refactoring (no new features)
 
@@ -33,7 +48,10 @@ text-like fields + wrappers (richText write-back deferred). Default levels stay
 - Move the existing admin components (document popup → `documentLevel`, bulk dashboard →
   `collectionLevel`) into their level modules.
 - The 6 job-API routes stay **one shared bundle**, registered when any job-based level is present.
-- Per-level runner with **deduplication** (configure each distinct runner once — uses 0c).
+- Per-level runner with **deduplication**: configure each _distinct_ runner exactly once —
+  `new Set(levels.map(l => l.runner ?? rootRunner))`, deduped by instance identity. **This is where
+  `configure()` idempotency lives** — no guard inside the provider. Each distinct runner also gets one
+  bound `TaskRunnerFactory` (introduced in 0c), so no `create()`-site changes are needed here.
 - Add optional `levels` config field, default `[documentLevel(), collectionLevel()]`. Omitted =
   exactly today's behavior.
 - Exit criteria: Phase 0a contract tests + existing suite green (pure relocation).
@@ -42,7 +60,7 @@ text-like fields + wrappers (richText write-back deferred). Default levels stay
 
 - `fieldLevel({ mode: 'in-place' })` factory.
 - `POST {basePath}/field` — synchronous endpoint: receives `{ collectionSlug, fieldPath, value,
-  targetLng }`, runs `translateContent` (0b), returns the translated subtree. **No persistence.**
+targetLng }`, runs `translateContent` (0b), returns the translated subtree. **No persistence.**
 - Security: enforce `AccessGuard`; validate `fieldPath` exists in the collection `schemaMap`; content
   size limit.
 - Tests: leaf + wrapper; localized-only (non-localized skipped); access denied; unknown fieldPath.

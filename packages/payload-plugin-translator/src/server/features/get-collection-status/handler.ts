@@ -1,11 +1,11 @@
 import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared";
-import type { TaskRunnerProvider } from "../../modules/task-runner";
+import type { TaskRunnerFactory } from "../../modules/task-runner";
 import { isCollectionAvailable } from "../_lib/collection-utils";
 
-import { GetCollectionStatusInputSchema } from './model';
-import type { GetCollectionStatusConfig } from './model';
+import { GetCollectionStatusInputSchema } from "./model";
+import type { GetCollectionStatusConfig } from "./model";
 
 /**
  * Gets translation status for all documents in a collection
@@ -13,7 +13,7 @@ import type { GetCollectionStatusConfig } from './model';
 export class GetCollectionStatusHandler {
   constructor(
     private readonly config: GetCollectionStatusConfig,
-    private readonly taskRunnerFactory: TaskRunnerProvider
+    private readonly taskRunnerFactory: TaskRunnerFactory
   ) {}
 
   async handle(req: PayloadRequest): Promise<Response> {
