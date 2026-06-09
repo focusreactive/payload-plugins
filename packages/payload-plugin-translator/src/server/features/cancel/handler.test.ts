@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, PayloadRequest } from "payload";
 import { CancelHandler } from "./handler";
-import type { TaskRunner, TaskRunnerProvider } from "../../modules/task-runner";
+import type { TaskRunner, TaskRunnerFactory } from "../../modules/task-runner";
 
 describe("CancelHandler", () => {
   let handler: CancelHandler;
   let mockTaskRunner: TaskRunner;
-  let mockTaskRunnerFactory: TaskRunnerProvider;
+  let mockTaskRunnerFactory: TaskRunnerFactory;
 
   const createMockRequest = (body: unknown): PayloadRequest =>
     ({
@@ -24,7 +24,6 @@ describe("CancelHandler", () => {
 
     mockTaskRunnerFactory = {
       create: vi.fn().mockReturnValue(mockTaskRunner),
-      configure: vi.fn(),
     };
 
     handler = new CancelHandler(mockTaskRunnerFactory);
@@ -73,11 +72,7 @@ describe("CancelHandler", () => {
 
       await handler.handle(req);
 
-      expect(mockTaskRunner.cancel).toHaveBeenCalledWith([
-        "task-1",
-        "task-2",
-        "task-3",
-      ]);
+      expect(mockTaskRunner.cancel).toHaveBeenCalledWith(["task-1", "task-2", "task-3"]);
     });
 
     it("coerces numeric ids to strings (autoincrement DB ids)", async () => {

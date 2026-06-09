@@ -1,11 +1,11 @@
 import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared";
-import type { TaskRunnerProvider } from "../../modules/task-runner";
+import type { TaskRunnerFactory } from "../../modules/task-runner";
 import { isCollectionAvailable, getAllCollectionIds } from "../_lib/collection-utils";
 
-import { EnqueueInputSchema } from './model';
-import type { EnqueueConfig } from './model';
+import { EnqueueInputSchema } from "./model";
+import type { EnqueueConfig } from "./model";
 
 /**
  * Enqueues translation tasks for documents
@@ -13,7 +13,7 @@ import type { EnqueueConfig } from './model';
 export class EnqueueTranslationHandler {
   constructor(
     private readonly config: EnqueueConfig,
-    private readonly taskRunnerFactory: TaskRunnerProvider
+    private readonly taskRunnerFactory: TaskRunnerFactory
   ) {}
 
   async handle(req: PayloadRequest): Promise<Response> {

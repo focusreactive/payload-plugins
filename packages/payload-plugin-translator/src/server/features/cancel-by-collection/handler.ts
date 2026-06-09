@@ -1,11 +1,11 @@
 import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared";
-import type { TaskRunnerProvider } from "../../modules/task-runner";
+import type { TaskRunnerFactory } from "../../modules/task-runner";
 import { isCollectionAvailable } from "../_lib/collection-utils";
 
-import { CancelByCollectionInputSchema } from './model';
-import type { CancelConfig } from './model';
+import { CancelByCollectionInputSchema } from "./model";
+import type { CancelConfig } from "./model";
 
 /**
  * Cancels all pending translation tasks for a collection
@@ -13,7 +13,7 @@ import type { CancelConfig } from './model';
 export class CancelByCollectionHandler {
   constructor(
     private readonly config: CancelConfig,
-    private readonly taskRunnerFactory: TaskRunnerProvider
+    private readonly taskRunnerFactory: TaskRunnerFactory
   ) {}
 
   async handle(req: PayloadRequest): Promise<Response> {
