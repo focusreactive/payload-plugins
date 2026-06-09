@@ -30,4 +30,22 @@ describe("Header", () => {
 
     expect(closeModal).toHaveBeenCalledWith("seo-drawer");
   });
+
+  it("hides the score pill in the idle (pre-analysis) state", () => {
+    render(<Header drawerSlug="seo-drawer" total={0} totalStatus="idle" />);
+
+    expect(screen.queryByText("0")).not.toBeInTheDocument();
+  });
+
+  it("still shows the pill for a real zero score", () => {
+    render(<Header drawerSlug="seo-drawer" total={0} totalStatus="bad" />);
+
+    expect(screen.getByText("0")).toBeInTheDocument();
+  });
+
+  it("renders the close button regardless of status, including idle", () => {
+    render(<Header drawerSlug="seo-drawer" total={0} totalStatus="idle" />);
+
+    expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
+  });
 });

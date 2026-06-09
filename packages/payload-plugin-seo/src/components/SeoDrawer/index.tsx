@@ -3,10 +3,10 @@
 import { Drawer } from "@payloadcms/ui";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
-import type { AnalysisResult } from "../../engine/types/analysis";
+import type { AnalysisResult, TotalStatus } from "../../engine/types/analysis";
 import { Header } from "./components/Header";
-import { TabsNav } from './TabsNav';
-import type { TabKey } from './TabsNav';
+import { TabsNav } from "./TabsNav";
+import type { TabKey } from "./TabsNav";
 import { KeyphraseTab } from "./tabs/KeyphraseTab";
 import { OnPageTab } from "./tabs/OnPageTab";
 import { ReadabilityTab } from "./tabs/ReadabilityTab";
@@ -31,7 +31,7 @@ export function SeoDrawer({ drawerSlug, keyphrase, setKeyphrase, result, analyzi
   const [tab, setTab] = useState<TabKey>("keyphrase");
 
   const total = result?.overall.seoScore ?? 0;
-  const totalStatus = result?.overall.status ?? "warn";
+  const totalStatus: TotalStatus = result ? result.overall.status : "idle";
 
   return (
     <Drawer slug={drawerSlug} className="seo-drawer" Header={<Header drawerSlug={drawerSlug} total={total} totalStatus={totalStatus} />}>

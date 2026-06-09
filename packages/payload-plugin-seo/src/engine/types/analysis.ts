@@ -1,5 +1,7 @@
 export type Status = "good" | "warn" | "bad";
 
+export type TotalStatus = Status | "idle";
+
 export interface CheckResult {
   id: string;
   status: Status;
