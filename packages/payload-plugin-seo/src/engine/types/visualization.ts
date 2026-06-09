@@ -20,7 +20,7 @@ export interface GaugeModel {
   labels: GaugeTickLabel[];
 }
 
-type GaugeUnit = "words" | "chars" | "px" | "percent" | "score";
+export type GaugeUnit = "words" | "chars" | "px" | "percent" | "score";
 
 interface YoastScoredSpec {
   statusSource: "yoast";
