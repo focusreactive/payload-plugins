@@ -5,7 +5,7 @@ import { abTestingPlugin } from "@focus-reactive/payload-plugin-ab";
 import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
-import { translatorPlugin, createOpenAIProvider, createPayloadJobsRunner } from "@focus-reactive/payload-plugin-translator";
+import { translatorPlugin, createOpenAIProvider, createPayloadJobsRunner, documentLevel, collectionLevel } from "@focus-reactive/payload-plugin-translator";
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { sqliteAdapter } from "@payloadcms/db-sqlite";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
@@ -87,6 +87,7 @@ export default buildConfig({
         apiKey: process.env.OPENAI_API_KEY ?? "",
         dryRun: !process.env.OPENAI_API_KEY,
       }),
+      levels: [documentLevel(), collectionLevel()],
     }),
     analyticsPlugin({
       ga4: {
