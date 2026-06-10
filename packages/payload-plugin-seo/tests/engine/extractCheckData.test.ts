@@ -74,9 +74,9 @@ describe("extractCheckData", () => {
   });
 
   // Task 4: titleWidth + textTransitionWords + textSentenceLength
-  it("approximates titleWidth px from title length", () => {
-    // "Best Running Shoes for Trail" = 28 chars * 9 px = 252
-    expect(extractCheckData("titleWidth", makePaper(), makeResearcher({}))).toEqual({ px: 252 });
+  it("approximates titleWidth px through the title helper", () => {
+    // "Best Running Shoes for Trail" = 28 chars; Node fallback = Math.round(28 * 8.5) = 238
+    expect(extractCheckData("titleWidth", makePaper(), makeResearcher({}))).toEqual({ px: 238 });
   });
 
   it("returns undefined titleWidth when paper has no title accessor", () => {

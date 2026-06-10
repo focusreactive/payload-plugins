@@ -1,8 +1,8 @@
 import { getResearch } from "./researcherAdapter";
 import type { YoastResearcher } from "./researcherAdapter";
+import { getTitleProgressGuarded } from "./helpers/title-progress";
 import type { PaperLike } from "./types/paper";
 
-const TITLE_PX_PER_CHAR = 9;
 const MAX_SENTENCE_WORDS = 20;
 const MAX_PARAGRAPH_WORDS = 150;
 const SNIPPET_MAX = 64;
@@ -86,7 +86,7 @@ export function extractCheckData(id: string, paper: PaperLike, researcher: Yoast
     }
     case "titleWidth": {
       const title = paper.getTitle?.() ?? "";
-      return title ? { px: Math.round(title.length * TITLE_PX_PER_CHAR) } : undefined;
+      return title ? { px: getTitleProgressGuarded(title).actual } : undefined;
     }
     case "textTransitionWords": {
       const r = getResearch<{
