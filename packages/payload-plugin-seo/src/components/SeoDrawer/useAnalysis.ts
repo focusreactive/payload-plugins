@@ -1,54 +1,61 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { runAnalysis } from "../../engine/runAnalysis";
 import type { AnalysisInput, AnalysisResult } from "../../engine/types/analysis";
 import { decideAutoAction } from "./analysisDecision";
 import { ensureLanguagePack } from "./languagePacks";
 
+export interface UseAnalysisArgs {
+  getInput: (opts?: { live?: boolean }) => Promise<AnalysisInput>;
+  signature: string;
+  supportedLocales: string[];
+  enabled?: boolean;
+}
+
 export interface UseAnalysisResult {
   result: AnalysisResult | null;
   analyzing: boolean;
   analyzedKeyphrase: string | null;
-  analyzeNow: (override?: Partial<AnalysisInput>) => void;
+  analyzeNow: () => void;
 }
 
-export function useAnalysis(input: AnalysisInput, supportedLocales: string[], enabled = true): UseAnalysisResult {
+export function useAnalysis({ getInput, signature, supportedLocales, enabled = true }: UseAnalysisArgs): UseAnalysisResult {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzedKeyphrase, setAnalyzedKeyphrase] = useState<string | null>(null);
 
-  const inputRef = useRef(input);
-  inputRef.current = input;
+  const getInputRef = useRef(getInput);
+  getInputRef.current = getInput;
+  const signatureRef = useRef(signature);
+  signatureRef.current = signature;
   const localesRef = useRef(supportedLocales);
   localesRef.current = supportedLocales;
 
   const lastSignature = useRef<string | null>(null);
+  const runSeq = useRef(0);
 
-  const run = useCallback(async (override?: Partial<AnalysisInput>) => {
-    const current = override ? { ...inputRef.current, ...override } : inputRef.current;
+  const run = useCallback(async (live: boolean) => {
+    const runId = ++runSeq.current;
 
-    lastSignature.current = JSON.stringify(current);
+    lastSignature.current = signatureRef.current;
     setAnalyzing(true);
 
-    await ensureLanguagePack(current.locale, localesRef.current);
-
     try {
-      setResult(runAnalysis(current));
-      setAnalyzedKeyphrase(current.keyphrase);
+      const input = await getInputRef.current({ live });
+      await ensureLanguagePack(input.locale, localesRef.current);
+      if (runId !== runSeq.current) return;
+
+      setResult(runAnalysis(input));
+      setAnalyzedKeyphrase(input.keyphrase);
     } finally {
-      setAnalyzing(false);
+      if (runId === runSeq.current) setAnalyzing(false);
     }
   }, []);
 
-  const analyzeNow = useCallback(
-    (override?: Partial<AnalysisInput>) => {
-      void run(override);
-    },
-    [run]
-  );
-
-  const signature = useMemo(() => JSON.stringify(input), [input]);
+  const analyzeNow = useCallback(() => {
+    void run(true);
+  }, [run]);
 
   useEffect(() => {
     const action = decideAutoAction({
@@ -59,7 +66,7 @@ export function useAnalysis(input: AnalysisInput, supportedLocales: string[], en
 
     if (action === "skip") return;
 
-    void run();
+    void run(false);
   }, [signature, run, enabled]);
 
   return {

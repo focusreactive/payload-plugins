@@ -6,9 +6,13 @@
  * silently returning undefined.
  */
 import { describe, expect, it } from "vitest";
+import type { ClientField } from "payload";
 import { extractContent } from "../../src/content/extractContent";
 import { runAnalysis } from "../../src/engine/runAnalysis";
 import type { AnalysisInput } from "../../src/engine/types/analysis";
+import { collectUploadRefs } from "../../src/content/uploads/collect-upload-refs";
+import { hydrateUploadValues } from "../../src/content/uploads/hydrate-values";
+import type { UploadWalkContext } from "../../src/content/uploads/transform-upload-values";
 
 describe("content extraction → analysis (links + images)", () => {
   it("a Hero link with keyphrase anchor text and a keyphrase image alt light up the checks", () => {
@@ -54,5 +58,56 @@ describe("content extraction → analysis (links + images)", () => {
     const image = result.keyphrase.checks.find((c) => c.id === "imageKeyphrase");
     expect(image?.data, "imageKeyphrase must resolve once an <img> exists").toBeDefined();
     expect((image?.data as { total?: number } | undefined)?.total).toBeGreaterThan(0);
+  });
+
+  it("form-state upload IDs hydrate into <img> and light up imageCount/altTagCount", () => {
+    const schema = [
+      {
+        name: "sections",
+        type: "blocks",
+        blocks: [
+          {
+            slug: "hero",
+            fields: [
+              { name: "title", type: "text" },
+              { name: "image", type: "upload", relationTo: "media" },
+            ],
+          },
+        ],
+      },
+    ] as unknown as ClientField[];
+    const walkCtx: UploadWalkContext = { isUploadCollection: (slug) => slug === "media", blocksBySlug: {} };
+    // what reduceFieldsToValues actually yields: the upload field is a bare ID
+    const formValues = {
+      sections: [{ blockType: "hero", title: "The Best Running Shoes", image: 7 }],
+    };
+
+    const refs = collectUploadRefs(formValues, schema, walkCtx);
+    expect(refs).toEqual([{ collection: "media", id: 7 }]);
+
+    const resolved = new Map([["media:7", { id: 7, url: "/media/trail.jpg", mimeType: "image/jpeg", alt: "running shoes on a trail" }]]);
+    const hydrated = hydrateUploadValues(formValues, schema, walkCtx, resolved);
+    const contentHtml = extractContent(hydrated, { content: "sections" });
+    expect(contentHtml).toContain('<img src="/media/trail.jpg" alt="running shoes on a trail" />');
+
+    const result = runAnalysis({
+      title: "The Best Running Shoes",
+      slug: "best-running-shoes",
+      description: "Best running shoes for runners.",
+      contentHtml,
+      keyphrase: "running shoes",
+      locale: "en_US",
+      site: { name: "Shop", baseUrl: "https://shop.example" },
+      has: { seoTitle: true, metaDescription: true, slug: true, content: true },
+    });
+
+    const images = result.onPage.checks.find((c) => c.id === "images");
+    expect((images?.data as { count?: number } | undefined)?.count).toBe(1);
+
+    const imageKeyphrase = result.keyphrase.checks.find((c) => c.id === "imageKeyphrase");
+    expect((imageKeyphrase?.data as { total?: number; matched?: number } | undefined)?.total).toBe(1);
+    expect((imageKeyphrase?.data as { matched?: number } | undefined)?.matched).toBe(1);
+
+    expect(result.vitals.images).toBe(1);
   });
 });

@@ -28,31 +28,33 @@ const dotVariants = cva("absolute -top-[2px] -right-[2px] w-[8px] h-[8px] rounde
   },
 });
 
-export function SeoButton({ fields, site, supportedLocales }: SeoButtonProps) {
+export function SeoButton({ collectionSlug, fields, site, supportedLocales }: SeoButtonProps) {
   const { openModal } = useModal();
   const [keyphrase, setKeyphrase] = useState("");
   const [activated, setActivated] = useState(false);
 
-  const { input, getLiveInput } = useLiveDocument({
+  const { signature, getInput, invalidateMedia } = useLiveDocument({
+    collectionSlug,
     fields,
     site: { name: site.name, baseUrl: site.baseUrl },
     keyphrase,
     enabled: activated,
   });
-  const { result, analyzing, analyzedKeyphrase, analyzeNow } = useAnalysis(input, supportedLocales, activated);
+  const { result, analyzing, analyzedKeyphrase, analyzeNow } = useAnalysis({ getInput, signature, supportedLocales, enabled: activated });
 
   const keyphrasePending = isKeyphrasePending(keyphrase, analyzedKeyphrase);
 
   const status = result?.overall.status ?? null;
 
   const open = useCallback(() => {
-    setActivated(true);
+    invalidateMedia();
+    if (activated) {
+      analyzeNow();
+    } else {
+      setActivated(true);
+    }
     openModal(DRAWER_SLUG);
-  }, [openModal]);
-
-  const handleAnalyze = useCallback(() => {
-    analyzeNow(getLiveInput());
-  }, [analyzeNow, getLiveInput]);
+  }, [activated, analyzeNow, invalidateMedia, openModal]);
 
   return (
     <span className="relative inline-flex">
@@ -70,7 +72,7 @@ export function SeoButton({ fields, site, supportedLocales }: SeoButtonProps) {
       />
       {status ? <span aria-hidden="true" className={dotVariants({ status })} /> : null}
       <SeoDrawer
-        analyzeNow={handleAnalyze}
+        analyzeNow={analyzeNow}
         analyzing={analyzing}
         drawerSlug={DRAWER_SLUG}
         keyphrase={keyphrase}

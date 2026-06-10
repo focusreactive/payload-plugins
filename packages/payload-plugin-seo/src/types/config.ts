@@ -1,5 +1,8 @@
 import type { Translations } from "../translations/types";
 
+/** Client extractor: receives raw (unhydrated) form values, returns analyzed HTML. */
+export type ExtractorFn = (data: Record<string, unknown>) => string | Promise<string>;
+
 export interface SeoFieldPaths {
   /** Dot-path to the SEO title. Falls back to the collection useAsTitle / `title` if absent. */
   seoTitle?: string;
@@ -18,7 +21,7 @@ export interface SeoCollectionConfig {
   slug: string;
   fields?: SeoFieldPaths;
   /**
-   * importMap module-path string to a client extractor `(formData) => string` (HTML).
+   * importMap module-path string to a client extractor `(formData) => string | Promise<string>` (HTML).
    * Example: "@/seo/my-extractor#default".
    * @default built-in smart extractor
    */

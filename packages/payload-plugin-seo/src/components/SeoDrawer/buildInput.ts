@@ -1,5 +1,3 @@
-import type { ExtractorFn } from "../../content/resolveExtractor";
-import { resolveExtractor } from "../../content/resolveExtractor";
 import type { AnalysisInput } from "../../engine/types/analysis";
 import type { SeoFieldPaths } from "../../types/config";
 
@@ -19,22 +17,21 @@ function normalizeLocale(locale: string | { code?: string } | null | undefined):
 
 export interface BuildInputArgs {
   values: Record<string, unknown>;
+  contentHtml: string;
   locale: string | { code?: string } | null | undefined;
   keyphrase: string;
   fields: SeoFieldPaths;
   site: { name: string; baseUrl: string };
-  override?: ExtractorFn;
 }
 
-export function buildInput({ values, locale, keyphrase, fields, site, override }: BuildInputArgs): AnalysisInput {
-  const extractor = resolveExtractor(override, fields);
+export function buildInput({ values, contentHtml, locale, keyphrase, fields, site }: BuildInputArgs): AnalysisInput {
   const title = valueAt(values, fields.seoTitle) || valueAt(values, "title");
 
   return {
     title,
     slug: valueAt(values, fields.slug ?? "slug"),
     description: valueAt(values, fields.metaDescription),
-    contentHtml: extractor(values),
+    contentHtml,
     keyphrase,
     locale: normalizeLocale(locale),
     site,
