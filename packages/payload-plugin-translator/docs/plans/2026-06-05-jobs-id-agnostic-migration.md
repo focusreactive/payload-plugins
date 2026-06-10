@@ -1,7 +1,7 @@
 # Jobs ID-Agnostic Migration (expand/contract)
 
 **Date:** 2026-06-05
-**Status:** Proposed
+**Status:** ✅ Shipped (0.3.0 / PR #18) — the deprecated relationship fallback is removed in the next major
 **Related:** [Foundation Prep Plan](./2026-06-05-foundation-prep-plan.md) · [Deprecations Ledger](../DEPRECATIONS.md#jobs-input-collection-field)
 
 ## Overview

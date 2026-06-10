@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-08
 **Status:** Ready
-**Design:** [translation-levels-design](./2026-06-05-translation-levels-design.md) · **Groundwork:** [foundation-prep-plan](./2026-06-05-foundation-prep-plan.md)
+**Design:** [translation-levels-design](./2026-06-05-translation-levels-design.md) · **Phase 1 design:** [translation-levels-phase1-design](./2026-06-09-translation-levels-phase1-design.md) · **Groundwork:** [foundation-prep-plan](./2026-06-05-foundation-prep-plan.md)
 
 Ordered, each step a self-contained PR. Field-level translation = `in-place` mode (translate the
 current unsaved form value into the current locale, synchronously, no DB), localized fields only,
@@ -11,17 +11,19 @@ text-like fields + wrappers (richText write-back deferred). Default levels stay
 
 ## Phase 0 — Groundwork (prerequisites, each shippable alone)
 
-- **0a. Contract tests for the 6 routes.** Pin path + method + access-guard + error-wrapper →
-  status/body for `enqueue`, `run/:id`, `cancel`, `cancel-by-collection`, `get-document-status`,
-  `get-collection-status`. (Handlers already cover status codes; this pins the route _wiring_ so the
-  Phase 1 relocation is verifiably behavior-preserving.) Lowest-risk; can be partial if Phase 1
-  keeps route construction identical.
-- **0b. `translateContent()` + subtree resolver.** No core change (pipeline already pure). Add a
-  resolver: given a declared field config + form value(s), produce `[fieldConfig]` + data rooted as
-  `{ [name]: value }`; add `translateContent(subtreeSchema, values, src, tgt)` that calls the
-  existing `TranslationPipeline`. Unit-test on a leaf field, a group wrapper, and a nested
-  array/blocks subtree. **Direct building block of Phase 2.**
-- **0c. De-couple `SyncRunner` from configure→create ordering.** Prerequisite for per-level runners.
+- **0a. Contract tests for the 6 routes.** ✅ Shipped (PR #24). Pinned path + method + access-guard
+  wiring for `enqueue`, `run/:id`, `cancel`, `cancel-by-collection`, `get-document-status`,
+  `get-collection-status` (status/body for the wrappers are covered by their own unit tests). Also
+  extracted the 6 registrations into one `createTranslationRoutes()` bundle, so the Phase 1
+  relocation is verifiably behavior-preserving.
+- **0b. `translateContent()`.** ✅ Shipped (PR #22). No core change (pipeline already pure):
+  `translateContent({ schema, sourceData, targetData?, sourceLng, targetLng, translationProvider,
+strategy? })` is a thin reusable entry over the existing `TranslationPipeline`. Unit-tested on a
+  leaf field, a group wrapper, and nested array/blocks. The subtree **resolver** (declared field
+  path → `[fieldConfig]` + data rooted as `{ [name]: value }`) was **deferred to Phase 2** — it has
+  no caller until the `POST /field` endpoint, so building it now was premature. **Direct building
+  block of Phase 2.**
+- **0c. De-couple `SyncRunner` from configure→create ordering.** ✅ Shipped (PR #23). Prerequisite for per-level runners.
 
   `SyncRunnerProvider` stashed `this.handler` in `configure()` and `create()` threw unless it was set
   first — a temporal coupling on mutable instance state (needed because `SyncTaskRunner` runs the
@@ -37,9 +39,11 @@ text-like fields + wrappers (richText write-back deferred). Default levels stay
   > Dropped: it's a content-sniffing belt at the wrong layer, and moving the state onto the provider
   > (an instance `configured` flag, "singleton") is worse — the flag sticks across `Config` objects
   > and would silently skip registration on hot-reload / a second `buildConfig`. Idempotency belongs
-  > at the **orchestration layer**: Phase 1 configures each _distinct_ runner exactly once via
-  > `new Set(levels.map(l => l.runner))`, deduped by instance identity. Until levels exist there is a
-  > single runner configured exactly once — so no guard is needed today, and the provider stays pure.
+  > at the **orchestration layer**. Phase 1 keeps a **single root runner** configured exactly once
+  > (no dedup needed); the runner-agnostic document-translation routes are contributed by the
+  > doc-levels and deduped by content (see the Phase 1 design). A future per-level runner override
+  > would configure each _distinct_ runner once via `new Set(...)`, deduped by instance identity. So
+  > no guard is needed today, and the provider stays pure.
 
 ## Phase 1 — Levels refactoring (no new features)
 
@@ -48,10 +52,12 @@ text-like fields + wrappers (richText write-back deferred). Default levels stay
 - Move the existing admin components (document popup → `documentLevel`, bulk dashboard →
   `collectionLevel`) into their level modules.
 - The 6 job-API routes stay **one shared bundle**, registered when any job-based level is present.
-- Per-level runner with **deduplication**: configure each _distinct_ runner exactly once —
-  `new Set(levels.map(l => l.runner ?? rootRunner))`, deduped by instance identity. **This is where
-  `configure()` idempotency lives** — no guard inside the provider. Each distinct runner also gets one
-  bound `TaskRunnerFactory` (introduced in 0c), so no `create()`-site changes are needed here.
+- **Single shared doc-translation runner** (per-level runner deferred). `documentLevel` and
+  `collectionLevel` share the top-level `runner` (sync or async), configured once. They contribute
+  the runner-agnostic 6-route bundle via generic context primitives, deduped by content; the
+  `CacheProvider` is plugin-level. `field` uses `translateContent` (sync), no runner. Per-level
+  runners (which need a breaking route split) are deferred to the major — see the
+  [Phase 1 design](./2026-06-09-translation-levels-phase1-design.md).
 - Add optional `levels` config field, default `[documentLevel(), collectionLevel()]`. Omitted =
   exactly today's behavior.
 - Exit criteria: Phase 0a contract tests + existing suite green (pure relocation).
@@ -82,7 +88,7 @@ targetLng }`, runs `translateContent` (0b), returns the translated subtree. **No
 
 ## Release shape
 
-- Phase 0: `refactor`/`fix` (patch). Phase 1: `feat` (minor), non-breaking (default levels unchanged).
+- Phase 0: shipped as `chore` (no release) — internal groundwork, no user-facing change. Phase 1: `feat` (minor), non-breaking (default levels unchanged).
 - Phase 2–3: `feat` (minor) — the new field level is opt-in via `levels` + `control: true`.
 - No breaking change; the deprecated job-input relationship field and API unification (foundation-prep
   §3) remain queued for the single planned major.

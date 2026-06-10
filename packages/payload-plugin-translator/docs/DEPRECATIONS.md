@@ -34,7 +34,7 @@ the single source of truth — code annotations link here by anchor instead of d
 
 - **What:** the `collection` field (Payload `relationship`) in the translate task `inputSchema`.
 - **Status:** live
-- **Deprecated:** 2026-06-05 / PR #TBD
+- **Deprecated:** 2026-06-05 / PR #18 (shipped in 0.3.0)
 - **Replacement:** flat text reference — `collection_slug` + `collection_id`.
 - **Remove in:** next major
 - **Why:** the relationship field validates the stored value's type against the target collection's

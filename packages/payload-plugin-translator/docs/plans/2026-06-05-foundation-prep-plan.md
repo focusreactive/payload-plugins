@@ -1,7 +1,7 @@
 # Foundation Prep Plan
 
 **Date:** 2026-06-05
-**Status:** Proposed
+**Status:** In progress (§1 shipped; §2 mostly shipped — see PR refs; §3 API unification still queued for the major)
 **Related:** [Translation Levels Design](./2026-06-05-translation-levels-design.md)
 
 ## Overview
@@ -36,23 +36,24 @@ cost.
 
 ## 2. Levels prerequisites (minor)
 
-- [ ] **Contract tests for the 6 existing routes** (request/response shapes: `enqueue`, `run/:id`,
-      `cancel`, `cancel-by-collection`, `get-document-status`, `get-collection-status`) — written
-      **before** any relocation, so "pure refactoring, tests stay green" is verifiable.
-- [ ] **Subtree `translateContent()` wrapper** — NOT a core extraction. Investigated: the core is
-      already pure and reusable. `TranslationPipeline.execute({ schema, sourceData, targetData,
-      sourceLng, targetLng })` is a relative recursive walk over any `Field[]` + matching data
-      (collector/reconciler/mutator carry no DB, root, or absolute-path assumptions), so a schema
-      subtree + partial data works unchanged. Work needed: a resolver that, for a declared field
-      path, produces `[fieldConfig]` + data rooted as `{ [name]: value }`, and a thin
-      `translateContent()` entry that calls the existing pipeline. Prerequisite for `POST /field`.
-- [ ] **Idempotent `runner.configure()`** + the "one runner is configured exactly once" contract —
-      required before per-level runners. Includes removing the temporal coupling in
-      `SyncRunnerProvider` (`create()` throws unless `configure()` was called first — mutable
-      provider state).
+- [x] **Contract tests for the 6 existing routes** (`enqueue`, `run/:id`, `cancel`,
+      `cancel-by-collection`, `get-document-status`, `get-collection-status`) — ✅ shipped (PR #24):
+      path + method + access-guard wiring pinned, before any relocation, so "pure refactoring, tests
+      stay green" is verifiable. (Also extracted the 6 into a `createTranslationRoutes()` bundle.)
+- [x] **`translateContent()` wrapper** — ✅ shipped (PR #22). NOT a core extraction: the core is
+      already pure and reusable (`TranslationPipeline.execute({ schema, sourceData, targetData,
+      sourceLng, targetLng })` is a relative recursive walk over any `Field[]` + matching data —
+      collector/reconciler/mutator carry no DB, root, or absolute-path assumptions). The **subtree
+      resolver** (declared field path → `[fieldConfig]` + data rooted as `{ [name]: value }`) was
+      **deferred to Phase 2** — it has no caller until `POST /field`, so building it now was premature.
+- [x] **De-couple `SyncRunner` from the configure→create ordering** — ✅ shipped (PR #23): the handler
+      flows through `create(payload, handler)`; no mutable provider state, no "configure() first"
+      coupling. **Idempotent `runner.configure()` / "one runner configured once" was dropped** — it is
+      an orchestration concern and moot in Phase 1 (single root runner, configured once); it returns
+      only if per-level runners are added later.
 - [ ] **Introduce optional `levels` config field** with default `[documentLevel(),
-    collectionLevel()]` — non-breaking by construction. (Implementation itself tracked by the
-      levels design doc; this item is only the config surface + back-compat default.)
+    collectionLevel()]` — non-breaking by construction. (Phase 1 — see the
+      [Phase 1 design](./2026-06-09-translation-levels-phase1-design.md).)
 
 ## 3. API surface unification (minor: deprecate, major: remove)
 
