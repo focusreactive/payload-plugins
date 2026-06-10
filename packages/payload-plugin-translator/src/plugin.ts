@@ -1,14 +1,14 @@
 import type { CollectionConfig, Config } from "payload";
 
 import { CacheProviderExport } from "./client/app/cache/CacheProvider.export";
-import { BulkDocumentTranslationDashboard } from "./client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.export";
-import { TranslateDocumentExport } from "./client/widgets/translate-document";
 import type { AccessGuard } from "./types/AccessGuard";
 import type { TranslationProvider } from "./server/modules/translation-providers";
 import type { TaskRunnerProvider, TaskRunnerContext, TaskRunnerFactory } from "./server/modules/task-runner";
 import { TranslateDocumentHandler } from "./server/features/translate-document";
-import { createTranslationRoutes } from "./server/features/createTranslationRoutes";
-import { normalizePath, pipe } from "./server/shared";
+import { documentLevel, collectionLevel } from "./server/modules/translation-levels";
+import type { TranslationLevel } from "./server/modules/translation-levels";
+import { PluginConfigBuilder } from "./server/modules/translation-levels/PluginConfigBuilder";
+import { normalizePath } from "./server/shared";
 
 export type TranslatorPluginConfig = {
   /**
@@ -40,6 +40,16 @@ export type TranslatorPluginConfig = {
    * @default '/translate'
    */
   basePath?: string;
+  /**
+   * Which translation surfaces to enable, as level factories — `documentLevel()`,
+   * `collectionLevel()` (and, from a later phase, `fieldLevel()`). Omit for the
+   * default `[documentLevel(), collectionLevel()]`, which is exactly today's behaviour.
+   * Each level should appear at most once: endpoints are deduplicated, but admin
+   * components are not, so a duplicated level renders a duplicated control.
+   * @default [documentLevel(), collectionLevel()]
+   * @since 0.5.0
+   */
+  levels?: TranslationLevel[];
 };
 
 /** @deprecated Use `TranslatorPluginConfig` instead */
@@ -47,11 +57,15 @@ export type TranslateCollectionPluginConfig = TranslatorPluginConfig;
 
 /** @deprecated Use `translatorPlugin` function instead */
 export class TranslateCollectionPlugin {
-  constructor(private readonly pluginConfig: TranslatorPluginConfig) {}
+  private readonly pluginConfig: TranslatorPluginConfig;
+
+  constructor(pluginConfig: TranslatorPluginConfig) {
+    this.pluginConfig = pluginConfig;
+  }
 
   init(): (config: Config) => Promise<Config> {
     return async (config) => {
-      const { access, translationProvider, basePath: rawBasePath = "/translate" } = this.pluginConfig;
+      const { access, translationProvider, runner, collections, levels, basePath: rawBasePath = "/translate" } = this.pluginConfig;
 
       // Build schema map from deep-cloned collections
       // Deep clone is required because Payload mutates the original collection objects,
@@ -61,7 +75,7 @@ export class TranslateCollectionPlugin {
       // TODO: Consider introducing a FieldLike interface with only the properties
       // used by the pipeline (name, type, localized, fields, blocks, tabs, custom)
       // to make the contract explicit and avoid reliance on JSON round-trip.
-      const schemaMap = new Map(this.pluginConfig.collections.map((col) => [col.slug, JSON.parse(JSON.stringify(col.fields))]));
+      const schemaMap = new Map(collections.map((col) => [col.slug, JSON.parse(JSON.stringify(col.fields))]));
       const collectionSlugs = new Set(schemaMap.keys());
       const basePath = normalizePath(rawBasePath);
       const translateHandler = new TranslateDocumentHandler(translationProvider, schemaMap);
@@ -79,67 +93,33 @@ export class TranslateCollectionPlugin {
         },
         collections: Array.from(collectionSlugs),
       };
-      const runnerConfigModifier = this.pluginConfig.runner.configure(runnerContext);
+      const runnerConfigModifier = runner.configure(runnerContext);
 
       // Bind the context once so routes receive a self-sufficient factory: the
       // runner needs no mutable per-instance handler state and create() has no
       // "configure() must run first" ordering coupling (translator plan, 0c).
       const taskRunnerFactory: TaskRunnerFactory = {
-        create: (payload) => this.pluginConfig.runner.create(payload, runnerContext.handler),
+        create: (payload) => runner.create(payload, runnerContext.handler),
       };
 
-      return pipe<Config>(
-        // 1. Set up UI component provider import
-        (cfg) => {
-          if (!cfg.admin) cfg.admin = {};
-          if (!cfg.admin.components) cfg.admin.components = {};
-          if (!cfg.admin.components.providers) cfg.admin.components.providers = [];
+      const activeLevels = levels ?? [documentLevel(), collectionLevel()];
+      const builder = new PluginConfigBuilder({
+        collections,
+        basePath,
+        access,
+        taskRunnerFactory,
+      });
+      for (const level of activeLevels) level.extend(builder);
 
-          cfg.admin.components.providers.push(new CacheProviderExport(basePath));
-          return cfg;
-        },
+      // Plugin-level contributions, routed through the same single config-writer:
+      //  - the runner's jobs/autorun/onInit modifier (the builder applies it first,
+      //    so a modifier returning a fresh config object doesn't drop later writes),
+      //  - the always-on client cache provider.
+      builder.addConfigModifier(runnerConfigModifier);
+      builder.addAdminProvider(new CacheProviderExport(basePath));
 
-        // 2. Set up UI component import
-        (cfg) => {
-          cfg.collections?.forEach((collection) => {
-            if (!collectionSlugs.has(collection.slug)) {
-              return;
-            }
-
-            if (!collection.admin) collection.admin = {};
-            if (!collection.admin.components) collection.admin.components = {};
-            if (!collection.admin.components.edit) collection.admin.components.edit = {};
-            if (!collection.admin.components.edit.beforeDocumentControls) {
-              collection.admin.components.edit.beforeDocumentControls = [];
-            }
-            if (!collection.admin.components.beforeListTable) {
-              collection.admin.components.beforeListTable = [];
-            }
-
-            collection.admin.components.edit.beforeDocumentControls.push(new TranslateDocumentExport(collection, access));
-            collection.admin.components.beforeListTable.push(new BulkDocumentTranslationDashboard(access));
-          });
-          return cfg;
-        },
-
-        // 3. Runner configures jobs/tasks/autorun
-        runnerConfigModifier,
-
-        // 4. Add global endpoints — the 6 job-API routes as one shared bundle
-        (cfg) => {
-          if (!cfg.endpoints) cfg.endpoints = [];
-          const collectionConfig = { availableCollections: collectionSlugs };
-          cfg.endpoints.push(
-            ...createTranslationRoutes({
-              taskRunnerFactory,
-              collectionConfig,
-              access,
-              basePath,
-            })
-          );
-          return cfg;
-        }
-      )(config);
+      // The single place the Payload config is mutated.
+      return builder.applyTo(config);
     };
   }
 }

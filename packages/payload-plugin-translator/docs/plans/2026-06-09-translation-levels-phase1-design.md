@@ -42,9 +42,7 @@ export interface TranslationLevel {
 }
 
 export function documentLevel(options?: DocumentLevelOptions): TranslationLevel;
-export function collectionLevel(
-  options?: CollectionLevelOptions,
-): TranslationLevel;
+export function collectionLevel(options?: CollectionLevelOptions): TranslationLevel;
 export function fieldLevel(options: FieldLevelOptions): TranslationLevel; // Phase 2
 
 // Config (added to TranslatorPluginConfig)
@@ -95,10 +93,7 @@ interface LevelContext {
    *  adding the same bundle collapse to one set. */
   addEndpoints(endpoints: Endpoint[]): void;
   /** Attach an admin component to a slot on every managed collection. */
-  addCollectionComponent(
-    slot: CollectionAdminSlot,
-    make: (collection: CollectionConfig) => RawPayloadComponentExport,
-  ): void;
+  addCollectionComponent(slot: CollectionAdminSlot, make: (collection: CollectionConfig) => RawPayloadComponentExport): void;
 }
 
 type CollectionAdminSlot = "beforeDocumentControls" | "beforeListTable";
@@ -132,7 +127,7 @@ function useDocTranslationApi(ctx: LevelContext) {
       },
       access: ctx.access,
       basePath: ctx.basePath,
-    }),
+    })
   );
 }
 
@@ -141,10 +136,7 @@ function documentLevel(): TranslationLevel {
   return {
     extend(ctx) {
       useDocTranslationApi(ctx);
-      ctx.addCollectionComponent(
-        "beforeDocumentControls",
-        (collection) => new TranslateDocumentExport(collection, ctx.access),
-      );
+      ctx.addCollectionComponent("beforeDocumentControls", (collection) => new TranslateDocumentExport(collection, ctx.access));
     },
   };
 }
@@ -154,10 +146,7 @@ function collectionLevel(): TranslationLevel {
   return {
     extend(ctx) {
       useDocTranslationApi(ctx);
-      ctx.addCollectionComponent(
-        "beforeListTable",
-        () => new BulkDocumentTranslationDashboard(ctx.access),
-      );
+      ctx.addCollectionComponent("beforeListTable", () => new BulkDocumentTranslationDashboard(ctx.access));
     },
   };
 }
@@ -167,14 +156,7 @@ function collectionLevel(): TranslationLevel {
 function fieldLevel(options: FieldLevelOptions): TranslationLevel {
   return {
     extend(ctx) {
-      ctx.addEndpoints([
-        createFieldRoute(
-          ctx.schemaMap,
-          ctx.translationProvider,
-          ctx.access,
-          ctx.basePath,
-        ),
-      ]);
+      ctx.addEndpoints([createFieldRoute(ctx.schemaMap, ctx.translationProvider, ctx.access, ctx.basePath)]);
       // The per-field control UI is wired separately, at field-declaration time,
       // via withFieldTranslation(field, { control: true }) — NOT here. (Phase 3)
     },
@@ -192,6 +174,11 @@ per-collection. The generic primitives accommodate it with no special-casing.
 `plugin.init()` collapses from the hard-coded 4-step `pipe` into: build context → run
 each level's `extend` → build config.
 
+`plugin.init()` never touches `config` directly. A single `PluginConfigBuilder` is the
+**only config-writer**: levels (via the narrow `LevelContext`) and the plugin (via the
+builder-only `addAdminProvider` / `addConfigModifier`) all _describe_ contributions;
+`builder.applyTo(config)` is the one sink that mutates.
+
 ```
 init(config):
   schemaMap, collectionSlugs, basePath, translateHandler   // unchanged
@@ -199,23 +186,26 @@ init(config):
 
   levels = config.levels ?? [documentLevel(), collectionLevel()]
 
-  ctx = makeLevelContext({ collections, schemaMap, basePath, access,
-                           translationProvider, taskRunnerFactory })
-  for (const level of levels) level.extend(ctx)            // accumulate contributions
+  builder = new PluginConfigBuilder({ collections, basePath, access, taskRunnerFactory })
+  for (const level of levels) level.extend(builder)        // levels describe (endpoints, components)
 
-  // plugin-level infra (not a level concern) — added straight to the config:
-  config.admin.components.providers.push(new CacheProviderExport(basePath)) // client cache — always, once
-  runnerConfigModifier = runner.configure(runnerContext)                    // root runner configured once
+  // plugin-level contributions, routed through the same single writer:
+  builder.addConfigModifier(runner.configure(runnerContext))   // root runner: jobs/autorun/onInit
+  builder.addAdminProvider(new CacheProviderExport(basePath))  // client cache — always, once
 
-  return ctx.applyTo(config, runnerConfigModifier)         // dedup endpoints (method+path) → pipe
+  return builder.applyTo(config)   // THE ONLY place config is mutated
 ```
 
-`ctx.applyTo` deduplicates the accumulated endpoints by content (method + path) before
-composing them, so two doc-levels each contributing the 6-route bundle collapse to one
-set. The `CacheProvider` is **plugin-level** — always needed for requests/caching, so
-the plugin adds it directly to `config.admin.components.providers` (once, regardless of
-which levels are active). It is **not** a `LevelContext` primitive: no level
-contributes it, so `addAdminProvider` would be dead surface.
+`applyTo` writes everything in one place, in order: **config modifiers first** (a runner
+modifier may return a fresh config object, so later writes must land on its result) →
+admin providers → collection components → endpoints (deduplicated by method + path, so
+two doc-levels each contributing the 6-route bundle collapse to one set).
+
+The `CacheProvider` is **plugin-level** — always needed for requests/caching — and the
+runner config is **runner-level**; both are contributed through the builder rather than
+mutating `config` in `plugin.ts`, so the in-place-mutation style stays confined to the
+one writer. Neither is on the level-facing `LevelContext`: levels see only `addEndpoints`
+/ `addCollectionComponent`; `addAdminProvider` / `addConfigModifier` are builder-only.
 
 ## Runners — one shared doc-translation runner + two backends by request shape
 
@@ -288,10 +278,17 @@ infrastructure — levels are effectively "sub-plugins coordinated inside one pl
   - `translateContent` (field, sync). The runner is not generalized.
 - **One shared doc-translation runner**; per-level runners deferred to the planned major
   (they need a breaking route split).
-- **`CacheProvider` is plugin-level** — always needed for requests/caching, added
-  directly to the config by the plugin. Not a `LevelContext` primitive (no level
-  contributes it), so `addAdminProvider` stays out of the interface. Its own QueryClient
-  is isolated and nests safely under any host-app react-query provider.
+- **Single config-writer (`PluginConfigBuilder`)** — the one place that mutates `config`.
+  `plugin.ts` and the levels never touch `config` directly; they describe contributions
+  and `applyTo(config)` writes them (modifiers → providers → components → endpoints). This
+  confines Payload's in-place-mutation style (and the lazy nested-config init) to one
+  tested class.
+- **`CacheProvider` is plugin-level** — always needed for requests/caching, contributed
+  through the builder-only `addAdminProvider` (the runner config likewise via
+  `addConfigModifier`). Neither is on the level-facing `LevelContext` (levels see only
+  `addEndpoints` / `addCollectionComponent`), so the interface stays minimal while the
+  plugin still routes its infra through the single writer instead of poking `config`.
+  The cache's own QueryClient is isolated and nests safely under any host react-query provider.
 
 ## Exit criteria
 
