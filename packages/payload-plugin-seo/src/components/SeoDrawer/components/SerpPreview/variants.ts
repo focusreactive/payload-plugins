@@ -18,7 +18,7 @@ export const serpUrlRow = cva("flex items-center gap-x-[12px] mb-[12px] pt-[1px]
   },
 });
 
-export const serpSiteName = cva("text-[14px] leading-[18px] text-black font-normal", {
+export const serpSiteName = cva("text-[14px] leading-[18px] text-serp-sitename font-normal", {
   variants: {
     mode: {
       desktop: "",
@@ -30,8 +30,8 @@ export const serpSiteName = cva("text-[14px] leading-[18px] text-black font-norm
 export const serpHostname = cva("", {
   variants: {
     mode: {
-      desktop: "text-[14px] leading-[1.3] text-[#4d5156]",
-      mobile: "text-[12px] leading-[20px] text-[#70757a]",
+      desktop: "text-[14px] leading-[1.3] text-serp-hostname",
+      mobile: "text-[12px] leading-[20px] text-serp-hostname-mobile",
     },
   },
 });
@@ -39,8 +39,8 @@ export const serpHostname = cva("", {
 export const serpTitle = cva("text-[20px] font-normal", {
   variants: {
     mode: {
-      desktop: "block leading-[1.3] text-[#1a0dab] max-w-[600px] overflow-hidden text-ellipsis whitespace-nowrap",
-      mobile: "leading-[26px] text-[#1558d6] line-clamp-2 max-h-[52px] overflow-hidden",
+      desktop: "block leading-[1.3] text-serp-title max-w-[600px] overflow-hidden text-ellipsis whitespace-nowrap",
+      mobile: "leading-[26px] text-serp-title-mobile line-clamp-2 max-h-[52px] overflow-hidden",
     },
   },
 });
@@ -48,8 +48,8 @@ export const serpTitle = cva("text-[20px] font-normal", {
 export const serpDescription = cva("text-[14px] [&_strong]:font-bold", {
   variants: {
     mode: {
-      desktop: "leading-[1.58] text-[#4d5156] max-w-[600px]",
-      mobile: "leading-[1.4] text-[#3c4043]",
+      desktop: "leading-[1.58] text-serp-description max-w-[600px]",
+      mobile: "leading-[1.4] text-serp-description-mobile",
     },
   },
 });

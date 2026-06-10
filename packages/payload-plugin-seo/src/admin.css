@@ -28,6 +28,15 @@
   --color-seo-bad: #d9483f;
   --color-seo-bad-100: #fbe9e7;
 
+  --color-serp-title: var(--serp-title);
+  --color-serp-title-mobile: var(--serp-title-mobile);
+  --color-serp-sitename: var(--serp-sitename);
+  --color-serp-hostname: var(--serp-hostname);
+  --color-serp-hostname-mobile: var(--serp-hostname-mobile);
+  --color-serp-description: var(--serp-description);
+  --color-serp-description-mobile: var(--serp-description-mobile);
+  --color-serp-favicon-bg: var(--serp-favicon-bg);
+
   --radius-rs: var(--style-radius-s);
   --radius-rm: var(--style-radius-m);
 
@@ -46,11 +55,29 @@
 :root {
   --seo-shadow-strong: oklch(0.2 0.01 70 / 0.14);
   --seo-shadow-soft: oklch(0.2 0.01 70 / 0.06);
+
+  --serp-title: #1a0dab;
+  --serp-title-mobile: #1558d6;
+  --serp-sitename: #000;
+  --serp-hostname: #4d5156;
+  --serp-hostname-mobile: #70757a;
+  --serp-description: #4d5156;
+  --serp-description-mobile: #3c4043;
+  --serp-favicon-bg: #f1f3f4;
 }
 
 [data-theme="dark"] {
   --seo-shadow-strong: oklch(0.97 0 0 / 0.2);
   --seo-shadow-soft: oklch(0.97 0 0 / 0.09);
+
+  --serp-title: #99c3ff;
+  --serp-title-mobile: #99c3ff;
+  --serp-sitename: #e8e8e8;
+  --serp-hostname: #bdc1c6;
+  --serp-hostname-mobile: #bdc1c6;
+  --serp-description: #bdc1c6;
+  --serp-description-mobile: #bdc1c6;
+  --serp-favicon-bg: #303134;
 }
 
 .seo-root [role="tab"] {
