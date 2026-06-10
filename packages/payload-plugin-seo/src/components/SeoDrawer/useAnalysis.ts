@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { runAnalysis } from "../../engine/runAnalysis";
 import type { AnalysisInput, AnalysisResult } from "../../engine/types/analysis";
-import { decideAutoAction, hasKeyphrase } from "./analysisDecision";
+import { decideAutoAction } from "./analysisDecision";
 import { ensureLanguagePack } from "./languagePacks";
 
 export interface UseAnalysisResult {
@@ -27,13 +27,6 @@ export function useAnalysis(input: AnalysisInput, supportedLocales: string[], en
 
   const run = useCallback(async (override?: Partial<AnalysisInput>) => {
     const current = override ? { ...inputRef.current, ...override } : inputRef.current;
-
-    if (!hasKeyphrase(current.keyphrase)) {
-      lastSignature.current = null;
-      setResult(null);
-      setAnalyzedKeyphrase(null);
-      return;
-    }
 
     lastSignature.current = JSON.stringify(current);
     setAnalyzing(true);
@@ -60,17 +53,9 @@ export function useAnalysis(input: AnalysisInput, supportedLocales: string[], en
   useEffect(() => {
     const action = decideAutoAction({
       enabled,
-      hasKeyphrase: hasKeyphrase(inputRef.current.keyphrase),
       signature,
       lastSignature: lastSignature.current,
     });
-
-    if (action === "reset") {
-      lastSignature.current = null;
-      setResult(null);
-      setAnalyzedKeyphrase(null);
-      return;
-    }
 
     if (action === "skip") return;
 

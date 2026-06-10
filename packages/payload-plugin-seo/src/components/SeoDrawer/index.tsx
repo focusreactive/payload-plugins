@@ -36,43 +36,23 @@ export function SeoDrawer({ drawerSlug, keyphrase, setKeyphrase, result, analyzi
   return (
     <Drawer slug={drawerSlug} className="seo-drawer" Header={<Header drawerSlug={drawerSlug} total={total} totalStatus={totalStatus} />}>
       <div className="seo-root relative text-neutral-800" data-status={totalStatus}>
-        <div className="flex gap-[8px] py-[13px]">
-          <label className="flex-1 flex items-center gap-[8px] px-[12px] py-[9px] border border-neutral-200 rounded-rs bg-neutral-0">
-            <input
-              type="text"
-              className="border-0 outline-none flex-1 text-[13px] text-neutral-800 bg-transparent"
-              value={keyphrase}
-              onChange={(e) => setKeyphrase(e.target.value)}
-              placeholder="Focus keyphrase"
-              aria-label="Focus keyphrase"
-            />
-            {keyphrasePending ? <Loader2 aria-hidden="true" className="w-[14px] h-[14px] shrink-0 animate-spin text-neutral-400" /> : null}
-          </label>
-          <span aria-live="polite" className="sr-only" role="status">
-            {keyphrasePending ? "Analyzing keyphrase…" : ""}
-          </span>
-          <button
-            type="button"
-            className="px-[18px] py-[9px] bg-neutral-1000 text-neutral-0 border-0 rounded-rs font-medium text-[13px] cursor-pointer disabled:opacity-50"
-            disabled={!keyphrase.trim()}
-            onClick={() => analyzeNow()}
-          >
-            {analyzing ? "Analyzing…" : "Analyze"}
-          </button>
-        </div>
-
         <TabsNav active={tab} onChange={setTab} />
 
         <div className="py-[18px]">
-          {!result ? (
-            <p className="text-neutral-500">Enter a focus keyphrase and click Analyze.</p>
+          {result === null ? (
+            <div className="flex items-center gap-[8px] text-neutral-500 text-[13px]" role="status" aria-live="polite">
+              <Loader2 aria-hidden="true" className="w-[14px] h-[14px] animate-spin" />
+              Analyzing…
+            </div>
           ) : (
             <>
-              {tab === "keyphrase" && <KeyphraseTab data={result.keyphrase} />}
+              {tab === "keyphrase" && (
+                <KeyphraseTab data={result.keyphrase} keyphrase={keyphrase} setKeyphrase={setKeyphrase} analyzing={analyzing} keyphrasePending={keyphrasePending} analyzeNow={analyzeNow} />
+              )}
               {tab === "onpage" && <OnPageTab data={result.onPage} />}
               {tab === "readability" && <ReadabilityTab data={result.readability} />}
               {tab === "inclusive" && <InclusiveTab data={result.inclusive} />}
-              {tab === "vitals" && <VitalsTab data={result.vitals} />}
+              {tab === "vitals" && <VitalsTab data={result.vitals} onRequestKeyphrase={() => setTab("keyphrase")} />}
               {tab === "serp" && <SerpTab data={result.serp} keyphrase={keyphrase} faviconUrl={site.faviconUrl} />}
             </>
           )}

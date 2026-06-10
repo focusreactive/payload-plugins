@@ -24,7 +24,15 @@ describe("isKeyphrasePending", () => {
     expect(isKeyphrasePending("payload cms", "payload cms")).toBe(false);
   });
 
-  it("stays false on a form-field edit (live unchanged, analyzed re-set to same value)", () => {
-    expect(isKeyphrasePending("payload cms", "payload cms")).toBe(false);
+  it("is false when both live and analyzed are empty (auto-run analyzed an empty keyphrase)", () => {
+    expect(isKeyphrasePending("", "")).toBe(false);
+  });
+
+  it("reports pending when a real keyphrase is typed against a previously analyzed empty string", () => {
+    expect(isKeyphrasePending("payload cms", "")).toBe(true);
+  });
+
+  it("stays false for whitespace-only live against an analyzed empty string", () => {
+    expect(isKeyphrasePending("   ", "")).toBe(false);
   });
 });

@@ -6,8 +6,14 @@ import { KpiCard } from "../../../ui/KpiCard";
 import { SectionCard } from "../../../ui/SectionCard";
 import { Pill } from "../../../ui/Pill";
 
-export function VitalsTab({ data }: { data: VitalsResult }) {
+export interface VitalsTabProps {
+  data: VitalsResult;
+  onRequestKeyphrase: () => void;
+}
+
+export function VitalsTab({ data, onRequestKeyphrase }: VitalsTabProps) {
   const max = Math.max(1, ...data.prominentWords.map((w) => w.count));
+  const noKeyphraseMatch = data.prominentWords.every((w) => !w.isKeyphrase);
 
   return (
     <section className="flex flex-col gap-[13px]">
@@ -33,6 +39,16 @@ export function VitalsTab({ data }: { data: VitalsResult }) {
           </div>
         ))}
       </SectionCard>
+
+      {noKeyphraseMatch && (
+        <button
+          type="button"
+          onClick={onRequestKeyphrase}
+          className="self-start text-[12px] text-neutral-600 underline underline-offset-2 hover:text-neutral-800 cursor-pointer bg-transparent border-0 p-0"
+        >
+          Set a focus keyphrase to see which prominent words match it
+        </button>
+      )}
     </section>
   );
 }

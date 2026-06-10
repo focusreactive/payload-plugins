@@ -22,7 +22,7 @@ export function CheckRow({ check }: CheckRowProps) {
 
   return (
     <div className={cn("relative px-[15px] py-[13px] overflow-visible", ROW_SEPARATOR)} data-status={check.status}>
-      <div className="flex items-center gap-[9px]">
+      <div className="flex items-center gap-[9px] mb-[7px]">
         <span className="w-[26px] h-[26px] rounded-rs bg-neutral-100 text-neutral-600 grid place-items-center flex-none [&_svg]:size-[15px]">
           <Icon size={15} />
         </span>
@@ -38,7 +38,7 @@ export function CheckRow({ check }: CheckRowProps) {
 
       <CheckVisualization check={check} />
 
-      {check.recommendation && <div className="text-neutral-600 text-[11.5px] mt-[7px]">{check.recommendation}</div>}
+      {check.recommendation && <div className="text-neutral-600 text-[11.5px]">{check.recommendation}</div>}
     </div>
   );
 }

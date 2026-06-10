@@ -5,6 +5,7 @@ import { SeoAssessor } from "yoastseo";
 import KeyphraseDistributionAssessment from "yoastseo/build/scoring/assessments/seo/KeyphraseDistributionAssessment";
 import { CHECK_IDS } from "../../../constants/checkIds";
 import { runAssessor } from "../../assessorAdapter";
+import { hasKeyphrase } from "../../helpers/has-keyphrase";
 import { makeResearcher } from "../../researcherAdapter";
 import { scoreToStatus, statusToRing } from "../../scoreStatus";
 import { enrich } from "../utils/enrich";
@@ -44,14 +45,16 @@ export function deriveSeo(paper: PaperData, keyphrase: string): DeriveSeoResult 
   const seoChecks = enrich(runAssessor(seoAssessor, ctx, paper), paper as PaperLike, researcher);
 
   const { keyphrase: keyphraseChecks, onPage } = partitionSeo(seoChecks);
-  const seoScore = statusToRing(seoChecks);
+
+  const scoredChecks = hasKeyphrase(keyphrase) ? seoChecks : onPage;
+  const seoScore = statusToRing(scoredChecks);
 
   return {
     overall: {
       seoScore,
       status: scoreToStatus(seoScore / 10),
     },
-    keyphrase: toCategory(keyphraseChecks),
+    keyphrase: toCategory(hasKeyphrase(keyphrase) ? keyphraseChecks : []),
     onPage: toCategory(onPage),
   };
 }
