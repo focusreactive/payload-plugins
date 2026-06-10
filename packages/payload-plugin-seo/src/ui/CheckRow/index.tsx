@@ -3,7 +3,8 @@
 import { CHECK_ICONS } from "../../components/icons";
 import { CheckVisualization } from "./CheckVisualization";
 import { LABELS } from "./constants/labels";
-import { StatusPill, STATUS_PILL_LABEL } from "../StatusPill";
+import { Pill } from "../Pill";
+import { STATUS_PILL_LABEL } from "../../constants";
 import { Tooltip } from "../Tooltip";
 import type { CheckResult } from "../../engine/types/analysis";
 import { cn, ROW_SEPARATOR } from "../../utils/style";
@@ -32,7 +33,7 @@ export function CheckRow({ check }: CheckRowProps) {
           </Tooltip>
         </span>
 
-        <StatusPill status={check.status}>{STATUS_PILL_LABEL[check.status]}</StatusPill>
+        <Pill variant={check.status}>{STATUS_PILL_LABEL[check.status]}</Pill>
       </div>
 
       <CheckVisualization check={check} />

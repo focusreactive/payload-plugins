@@ -4,7 +4,7 @@ import type { AnalysisResult } from "../../../engine/types/analysis";
 import { cn, ROW_SEPARATOR } from "../../../utils/style";
 import { TabHeader } from "../../../ui/TabHeader";
 import { SectionCard } from "../../../ui/SectionCard";
-import { CountPill } from "../../../ui/CountPill";
+import { Pill } from "../../../ui/Pill";
 
 export function InclusiveTab({ data }: { data: AnalysisResult["inclusive"] }) {
   const flagged = data.categories.reduce((n, c) => n + c.flags.length, 0);
@@ -24,12 +24,12 @@ export function InclusiveTab({ data }: { data: AnalysisResult["inclusive"] }) {
       />
 
       {data.categories.length > 0 && (
-        <SectionCard title="Marked by category" widget={<CountPill count={flagged} />}>
+        <SectionCard title="Marked by category" widget={<Pill variant="neutral">{flagged}</Pill>}>
           {data.categories.map((cat) => (
             <div className={cn("relative px-[15px] py-[12px]", ROW_SEPARATOR)} key={cat.name}>
               <div className="flex items-center gap-[8px] mb-[9px]">
                 <span className="font-bold text-[12.5px]">{cat.name}</span>
-                <span className="font-mono text-[10.5px] text-seo-bad bg-seo-bad-100 border border-seo-bad rounded-[20px] px-[8px] py-[1px]">{cat.flags.length}</span>
+                <Pill variant="bad">{cat.flags.length}</Pill>
               </div>
               {cat.flags.map((f, i) => (
                 <div className="flex items-center gap-[9px] py-[6px] text-[12px]" key={`${f.term}-${i}`}>
@@ -45,7 +45,7 @@ export function InclusiveTab({ data }: { data: AnalysisResult["inclusive"] }) {
       )}
 
       {data.cleanCategories.length > 0 && (
-        <SectionCard title="No issues found" widget={<CountPill count={data.cleanCategories.length} />}>
+        <SectionCard title="No issues found" widget={<Pill variant="neutral">{data.cleanCategories.length}</Pill>}>
           <div className="flex gap-[8px] flex-wrap px-[15px] py-[13px]">
             {data.cleanCategories.map((n) => (
               <span className="inline-flex items-center gap-[6px] text-[11.5px] text-seo-good bg-seo-good-100 border border-seo-good-200 rounded-[20px] px-[11px] py-[4px] font-medium" key={n}>

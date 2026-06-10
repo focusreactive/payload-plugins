@@ -20,13 +20,13 @@
   --color-neutral-800: var(--theme-elevation-800);
   --color-neutral-1000: var(--theme-elevation-1000);
 
-  --color-seo-good: #2a9d5c;
-  --color-seo-good-100: #e8f5ed;
-  --color-seo-good-200: #cfe8d8;
-  --color-seo-warn: #e08a1e;
-  --color-seo-warn-100: #fbf2e0;
-  --color-seo-bad: #d9483f;
-  --color-seo-bad-100: #fbe9e7;
+  --color-seo-good: var(--seo-good);
+  --color-seo-good-100: var(--seo-good-100);
+  --color-seo-good-200: var(--seo-good-200);
+  --color-seo-warn: var(--seo-warn);
+  --color-seo-warn-100: var(--seo-warn-100);
+  --color-seo-bad: var(--seo-bad);
+  --color-seo-bad-100: var(--seo-bad-100);
 
   --color-serp-title: var(--serp-title);
   --color-serp-title-mobile: var(--serp-title-mobile);
@@ -64,6 +64,14 @@
   --serp-description: #4d5156;
   --serp-description-mobile: #3c4043;
   --serp-favicon-bg: #f1f3f4;
+
+  --seo-good: #2a9d5c;
+  --seo-good-100: #e8f5ed;
+  --seo-good-200: #cfe8d8;
+  --seo-warn: #e08a1e;
+  --seo-warn-100: #fbf2e0;
+  --seo-bad: #d9483f;
+  --seo-bad-100: #fbe9e7;
 }
 
 [data-theme="dark"] {
@@ -78,6 +86,14 @@
   --serp-description: #bdc1c6;
   --serp-description-mobile: #bdc1c6;
   --serp-favicon-bg: #303134;
+
+  --seo-good: #4ade80;
+  --seo-good-100: #14271c;
+  --seo-good-200: #1c3b29;
+  --seo-warn: #f0b04e;
+  --seo-warn-100: #2e2310;
+  --seo-bad: #f0746b;
+  --seo-bad-100: #311714;
 }
 
 .seo-root [role="tab"] {

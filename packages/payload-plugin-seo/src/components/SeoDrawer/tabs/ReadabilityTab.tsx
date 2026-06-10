@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { CategoryResult } from "../../../engine/types/analysis";
 import { TabHeader } from "../../../ui/TabHeader";
 import { SectionCard } from "../../../ui/SectionCard";
-import { CountPill } from "../../../ui/CountPill";
+import { Pill } from "../../../ui/Pill";
 import { FilterPills } from "../../../ui/FilterPills";
 import type { Filter } from "../../../ui/FilterPills";
 import { CheckRow } from "../../../ui/CheckRow";
@@ -27,7 +27,7 @@ export function ReadabilityTab({ data }: { data: CategoryResult }) {
         }
       />
 
-      <SectionCard title="Checks" widget={<CountPill count={data.checks.length} />}>
+      <SectionCard title="Checks" widget={<Pill variant="neutral">{data.checks.length}</Pill>}>
         <FilterPills checks={data.checks} value={filter} onChange={setFilter} />
         {visible.map((c) => (
           <CheckRow key={c.id} check={c} />

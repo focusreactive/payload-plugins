@@ -3,7 +3,8 @@
 import { useModal, XIcon } from "@payloadcms/ui";
 import type { TotalStatus } from "../../../engine/types/analysis";
 import { cn } from "../../../utils/style";
-import { statusVar, totalPillVariants } from "../variants";
+import { statusVar } from "../variants";
+import { Pill } from "../../../ui/Pill";
 
 interface HeaderProps {
   drawerSlug: string;
@@ -19,7 +20,7 @@ export function Header({ drawerSlug, total, totalStatus }: HeaderProps) {
       <div className="flex items-center gap-[11px]">
         <h2 className="text-[16px] font-semibold m-0">SEO Analytics</h2>
 
-        {totalStatus === "idle" ? null : <span className={totalPillVariants({ status: totalStatus })}>{total}</span>}
+        {totalStatus === "idle" ? null : <Pill variant={totalStatus}>{total}</Pill>}
       </div>
 
       <button aria-label="Close" className="drawer__header__close" onClick={() => closeModal(drawerSlug)} type="button">

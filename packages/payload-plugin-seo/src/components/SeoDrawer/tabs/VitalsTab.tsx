@@ -4,7 +4,7 @@ import type { VitalsResult } from "../../../engine/types/analysis";
 import { cn, ROW_SEPARATOR } from "../../../utils/style";
 import { KpiCard } from "../../../ui/KpiCard";
 import { SectionCard } from "../../../ui/SectionCard";
-import { CountPill } from "../../../ui/CountPill";
+import { Pill } from "../../../ui/Pill";
 
 export function VitalsTab({ data }: { data: VitalsResult }) {
   const max = Math.max(1, ...data.prominentWords.map((w) => w.count));
@@ -20,7 +20,7 @@ export function VitalsTab({ data }: { data: VitalsResult }) {
         <KpiCard label="Reading time" value={data.readingTimeMinutes} suffix="min" />
       </div>
 
-      <SectionCard title="Prominent words" widget={<CountPill count={data.prominentWords.length} />}>
+      <SectionCard title="Prominent words" widget={<Pill variant="neutral">{data.prominentWords.length}</Pill>}>
         {data.prominentWords.map((w) => (
           <div className={cn("relative flex items-center gap-[12px] px-[15px] py-[9px]", ROW_SEPARATOR)} key={w.word}>
             <div className="w-[120px] flex-none text-[12px] font-medium flex items-center gap-[6px]">
