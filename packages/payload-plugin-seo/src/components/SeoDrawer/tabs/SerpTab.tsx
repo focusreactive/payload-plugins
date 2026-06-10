@@ -1,19 +1,16 @@
 "use client";
+
+import { Monitor, Smartphone } from "lucide-react";
 import { useState } from "react";
-import type { SerpResult, Status } from "../../../engine/types/analysis";
-import { MeterBar } from "../../../ui/MeterBar";
+
+import type { SerpResult } from "../../../engine/types/analysis";
 import { SectionCard } from "../../../ui/SectionCard";
 import { SegmentedControl } from "../../../ui/SegmentedControl";
-import { TITLE_WIDTH_BUDGET_PX, META_DESCRIPTION_MAX_CHARS } from "../../../constants";
+import { SerpPreview } from "../components/SerpPreview";
+import type { SerpMode } from "../components/SerpPreview";
 
-type Mode = "mobile" | "desktop";
-
-export function SerpTab({ data }: { data: SerpResult; keyphrase: string; faviconUrl: string }) {
-  const [mode, setMode] = useState<Mode>("mobile");
-  const titlePct = (data.titleWidthPx / TITLE_WIDTH_BUDGET_PX) * 100;
-  const descPct = (data.descriptionChars / META_DESCRIPTION_MAX_CHARS) * 100;
-  const titleStatus: Status = data.titleWidthPx <= 580 ? "good" : data.titleWidthPx <= 600 ? "warn" : "bad";
-  const descStatus: Status = data.descriptionChars >= 120 && data.descriptionChars <= META_DESCRIPTION_MAX_CHARS ? "good" : "warn";
+export function SerpTab({ data, keyphrase, faviconUrl }: { data: SerpResult; keyphrase: string; faviconUrl: string }) {
+  const [mode, setMode] = useState<SerpMode>("mobile");
 
   return (
     <section className="flex flex-col gap-[13px]">
@@ -22,8 +19,16 @@ export function SerpTab({ data }: { data: SerpResult; keyphrase: string; favicon
         widget={
           <SegmentedControl
             options={[
-              { value: "mobile", label: "Mobile" },
-              { value: "desktop", label: "Desktop" },
+              {
+                value: "mobile",
+                label: "Mobile",
+                icon: <Smartphone aria-hidden="true" className="w-[13px] h-[13px]" />,
+              },
+              {
+                value: "desktop",
+                label: "Desktop",
+                icon: <Monitor aria-hidden="true" className="w-[13px] h-[13px]" />,
+              },
             ]}
             value={mode}
             onChange={setMode}
@@ -31,10 +36,8 @@ export function SerpTab({ data }: { data: SerpResult; keyphrase: string; favicon
           />
         }
       >
-        <div className="p-[15px]"></div>
-        <div className="border-t border-neutral-200 px-[15px] py-[12px] flex flex-col gap-[10px]">
-          <MeterBar name="Title width" valueLabel={`${data.titleWidthPx} / ${TITLE_WIDTH_BUDGET_PX} px`} pct={titlePct} status={titleStatus} />
-          <MeterBar name="Meta description" valueLabel={`${data.descriptionChars} / ${META_DESCRIPTION_MAX_CHARS} chars`} pct={descPct} status={descStatus} />
+        <div className="p-4">
+          <SerpPreview data={data} keyphrase={keyphrase} faviconUrl={faviconUrl} mode={mode} />
         </div>
       </SectionCard>
     </section>

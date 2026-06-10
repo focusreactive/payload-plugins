@@ -45,8 +45,6 @@ export interface SerpResult {
   url: string;
   description: string;
   siteName: string;
-  titleWidthPx: number;
-  descriptionChars: number;
 }
 
 export interface CategoryResult {

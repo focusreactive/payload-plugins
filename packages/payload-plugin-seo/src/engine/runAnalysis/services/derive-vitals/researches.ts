@@ -1,5 +1,5 @@
-import { getResearch } from '../../../researcherAdapter';
-import type { YoastResearcher } from '../../../researcherAdapter';
+import { getResearch } from "../../../researcherAdapter";
+import type { YoastResearcher } from "../../../researcherAdapter";
 import type { ProminentWord } from "../../../types/analysis";
 
 const WORDS_PER_MINUTE = 200;
