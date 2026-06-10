@@ -7,12 +7,7 @@ import type { AccessGuard } from "./types/AccessGuard";
 import type { TranslationProvider } from "./server/modules/translation-providers";
 import type { TaskRunnerProvider, TaskRunnerContext, TaskRunnerFactory } from "./server/modules/task-runner";
 import { TranslateDocumentHandler } from "./server/features/translate-document";
-import { createEnqueueRoute } from "./server/features/enqueue-translation";
-import { createRunRoute } from "./server/features/run-translation";
-import { createCancelRoute } from "./server/features/cancel";
-import { createCancelByCollectionRoute } from "./server/features/cancel-by-collection";
-import { createGetDocumentStatusRoute } from "./server/features/get-document-status";
-import { createGetCollectionStatusRoute } from "./server/features/get-collection-status";
+import { createTranslationRoutes } from "./server/features/createTranslationRoutes";
 import { normalizePath, pipe } from "./server/shared";
 
 export type TranslatorPluginConfig = {
@@ -130,19 +125,17 @@ export class TranslateCollectionPlugin {
         // 3. Runner configures jobs/tasks/autorun
         runnerConfigModifier,
 
-        // 4. Add global endpoints
+        // 4. Add global endpoints — the 6 job-API routes as one shared bundle
         (cfg) => {
           if (!cfg.endpoints) cfg.endpoints = [];
           const collectionConfig = { availableCollections: collectionSlugs };
           cfg.endpoints.push(
-            ...[
-              createEnqueueRoute(taskRunnerFactory, collectionConfig, access, basePath),
-              createRunRoute(taskRunnerFactory, access, basePath),
-              createCancelRoute(taskRunnerFactory, access, basePath),
-              createCancelByCollectionRoute(collectionConfig, taskRunnerFactory, access, basePath),
-              createGetDocumentStatusRoute(collectionConfig, taskRunnerFactory, access, basePath),
-              createGetCollectionStatusRoute(collectionConfig, taskRunnerFactory, access, basePath),
-            ]
+            ...createTranslationRoutes({
+              taskRunnerFactory,
+              collectionConfig,
+              access,
+              basePath,
+            })
           );
           return cfg;
         }
