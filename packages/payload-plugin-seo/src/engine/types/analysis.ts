@@ -37,7 +37,6 @@ export interface VitalsResult {
   videos: number;
   readingTimeMinutes: number;
   prominentWords: ProminentWord[];
-  internalLinkingPhrases: string[];
 }
 
 export interface SerpResult {

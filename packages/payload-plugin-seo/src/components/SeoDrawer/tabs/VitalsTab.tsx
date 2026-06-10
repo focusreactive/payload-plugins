@@ -33,14 +33,6 @@ export function VitalsTab({ data }: { data: VitalsResult }) {
           </div>
         ))}
       </SectionCard>
-
-      <SectionCard title="Suggested anchor phrases" widget={<CountPill count={data.internalLinkingPhrases.length} />}>
-        {data.internalLinkingPhrases.map((p) => (
-          <div className={cn("relative flex items-center gap-[10px] px-[15px] py-[11px]", ROW_SEPARATOR)} key={p}>
-            <span className="text-[12px] font-semibold">{p}</span>
-          </div>
-        ))}
-      </SectionCard>
     </section>
   );
 }

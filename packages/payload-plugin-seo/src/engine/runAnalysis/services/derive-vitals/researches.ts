@@ -4,7 +4,6 @@ import type { ProminentWord } from "../../../types/analysis";
 
 const WORDS_PER_MINUTE = 200;
 const MAX_PROMINENT_WORDS = 5;
-const MAX_INTERNAL_LINKING_PHRASES = 5;
 
 export function countWords(researcher: YoastResearcher): number {
   const raw = getResearch<number | { count?: number }>(researcher, "wordCountInText");
@@ -60,12 +59,4 @@ export function findProminentWords({ researcher, keyphrase }: FindProminentWords
       isKeyphrase: keyphraseWords.has(word.toLowerCase()),
     };
   });
-}
-
-export function findInternalLinkingPhrases(researcher: YoastResearcher): string[] {
-  const result = getResearch<{
-    prominentWords?: { getWord?: () => string }[];
-  }>(researcher, "getProminentWordsForInternalLinking");
-
-  return (result?.prominentWords ?? []).slice(0, MAX_INTERNAL_LINKING_PHRASES).map((entry) => entry.getWord?.() ?? String(entry));
 }

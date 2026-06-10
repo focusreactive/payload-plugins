@@ -5,8 +5,6 @@ import { deriveVitals } from "../../src/engine/runAnalysis/services/derive-vital
 // Mirrors the real yoastseo@3.6.0 return shapes, verified against
 // node_modules/yoastseo/build/languageProcessing/researches/*:
 //  - getProminentWordsForInsights returns a bare WordCombination[]
-//  - getProminentWordsForInternalLinking returns a COMPOUND object
-//    { prominentWords: ProminentWord[] }, NOT an array.
 //
 // deriveVitals now builds its researcher from the paper internally, so the
 // stubbed shapes are injected by mocking makeResearcher.
@@ -33,8 +31,6 @@ const { researcher } = vi.hoisted(() => {
             return 2;
           case "getProminentWordsForInsights":
             return [word("running", 9), word("shoes", 7)];
-          case "getProminentWordsForInternalLinking":
-            return { prominentWords: [word("trail", 4), word("marathon", 3)] };
           default:
             return undefined;
         }
@@ -50,9 +46,8 @@ vi.mock("../../src/engine/researcherAdapter", async (importOriginal) => {
 });
 
 describe("deriveVitals", () => {
-  it("reads internalLinkingPhrases from the compound internal-linking research object", () => {
+  it("derives prominent words from the insights research object", () => {
     const v = deriveVitals(new Paper(""), "running shoes");
-    expect(v.internalLinkingPhrases).toEqual(["trail", "marathon"]);
     expect(v.prominentWords.map((p) => p.word)).toEqual(["running", "shoes"]);
   });
 });
