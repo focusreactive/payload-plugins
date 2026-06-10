@@ -2,6 +2,7 @@
 
 import { cva } from "class-variance-authority";
 import { useRef } from "react";
+import type { ReactNode } from "react";
 
 const segmentVariants = cva("inline-flex items-center gap-[5px] px-[11px] py-[4px] rounded-rs text-[11px] font-medium border-0 cursor-pointer", {
   variants: {
@@ -16,6 +17,7 @@ const segmentVariants = cva("inline-flex items-center gap-[5px] px-[11px] py-[4p
 interface SegmentedControlOption<T extends string> {
   value: T;
   label: string;
+  icon?: ReactNode;
 }
 
 interface SegmentedControlProps<T extends string> {
@@ -82,6 +84,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange, l
             onClick={() => selectIndex(index)}
             onKeyDown={(event) => handleKeyDown(event, index)}
           >
+            {option.icon}
             {option.label}
           </button>
         );
