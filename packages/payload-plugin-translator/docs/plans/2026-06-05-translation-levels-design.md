@@ -36,29 +36,22 @@ translatorPlugin({
   translationProvider: createOpenAIProvider({ ... }),
   runner: createPayloadJobsRunner(),          // stays = default runner for job-based levels
   levels: [
-    documentLevel(),                          // inherits root runner
-    collectionLevel({ runner: otherRunner }), // or its own
+    documentLevel(),                          // job-based, uses the root runner
+    collectionLevel(),                        // job-based, uses the root runner (per-level runner override is a future addition)
     fieldLevel({ mode: 'in-place' }),         // no runner at all
   ],
 })
 ```
 
-```ts
-interface TranslationLevel {
-  readonly name: string; // 'field' | 'document' | 'collection' | custom
-  configure(ctx: TranslationLevelContext): (config: Config) => Config;
-}
-
-type TranslationLevelContext = {
-  collections: CollectionSlug[];
-  schemaMap: Map<string, Field[]>;
-  basePath: string;
-  access?: AccessGuard;
-  translateDocument: TaskHandler; // for job-based levels (existing TranslateDocumentHandler)
-  translateContent: ContentTranslator; // for the field level: (values, src?, tgt) => translated
-  defaultRunner?: TaskRunnerProvider; // root runner inheritance
-};
-```
+> **Interface superseded — see the [Phase 1 design](./2026-06-09-translation-levels-phase1-design.md)
+> (authoritative).** The concrete level interface evolved during implementation. In short: a level
+> exposes `extend(ctx)` (not `configure()` returning a config modifier); the context provides
+> generic contribution primitives (`addEndpoints`, `addAdminProvider`, `addCollectionComponent`,
+> deduped by the plugin) instead of raw `translateDocument` / `translateContent` / `defaultRunner`;
+> there is **no public `name`/`kind`** and no `ensureJobApi` (levels are a closed-but-openable set
+> produced by factories); and `document`/`collection` share one runner while `field` is sync via
+> `translateContent` (per-level runner deferred). The earlier interface sketch was removed from this
+> doc to avoid two conflicting definitions.
 
 ### Backwards compatibility
 
@@ -67,7 +60,7 @@ type TranslationLevelContext = {
 
 ### Implementation pitfalls to handle
 
-- **Job infrastructure deduplication**: `document` and `collection` both need the task + autoRun registered. When they share one runner, its `configure()` must run exactly once — the plugin collects the _distinct set_ of runners across levels and configures each once.
+- **Job infrastructure deduplication**: `document` and `collection` both need the task + autoRun registered. **Phase 1 keeps a single root runner**, configured exactly once — no dedup needed; the runner-agnostic routes are contributed by both doc-levels and deduped by content. Once a per-level runner override exists (a future addition), the plugin collects the _distinct set_ of runners across levels and configures each once.
 
 ### Endpoints: not split per level
 
@@ -152,5 +145,5 @@ For text fields it is a trivial dispatch by path. For **Lexical richText** it re
 
 1. **Non-localized fields inside a declared wrapper → SKIPPED.** The field level translates only `localized` fields, exactly like the document level (`FieldChunkCollector` already gates on `isLocalizedField`). A non-localized value is shared across all locales, so translating it in place would corrupt every other locale. This means **no core change** — the existing pipeline's gate is correct as-is. (Superseded the earlier "translate the whole subtree" lean.)
 2. **richText → deferred (follow-up).** The bottleneck is purely the **client-side write-back** into the Lexical editor state, not translation: the server pipeline (`RichTextExpander`) already handles richText. MVP = text-like fields and wrappers, no richText write-back.
-3. **A separate, on-demand future feature** (not this work): a "translate this content" *utility* that translates a field's text regardless of `localized` — its only real value is richText (round-tripping richText through an external tool mangles formatting). It needs both relaxing the `isLocalizedField` gate AND the deferred richText write-back, so it is naturally a later, opt-in addition.
+3. **A separate, on-demand future feature** (not this work): a "translate this content" _utility_ that translates a field's text regardless of `localized` — its only real value is richText (round-tripping richText through an external tool mangles formatting). It needs both relaxing the `isLocalizedField` gate AND the deferred richText write-back, so it is naturally a later, opt-in addition.
 4. Naming/UX of the control button and the endpoint payload shape — settled during implementation.
