@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-translator [0.5.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.4.0...@focus-reactive/payload-plugin-translator@0.5.0) (2026-06-10)
+
+
+### Features
+
+* **translator:** add configurable translation levels ([888fb4a](https://github.com/focusreactive/payload-plugins/commit/888fb4a3efbaf16a622be30d0de819219fbfedfc))
+
 # @focus-reactive/payload-plugin-translator [0.4.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.3.0...@focus-reactive/payload-plugin-translator@0.4.0) (2026-06-08)
 
 
