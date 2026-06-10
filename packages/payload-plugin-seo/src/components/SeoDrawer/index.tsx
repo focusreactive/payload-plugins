@@ -2,7 +2,7 @@
 
 import { Drawer } from "@payloadcms/ui";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { memo, useState } from "react";
 import type { AnalysisResult, TotalStatus } from "../../engine/types/analysis";
 import { Header } from "./components/Header";
 import { TabsNav } from "./TabsNav";
@@ -27,7 +27,7 @@ export interface SeoDrawerProps {
   site: { name: string; baseUrl: string; faviconUrl: string };
 }
 
-export function SeoDrawer({ drawerSlug, keyphrase, setKeyphrase, result, analyzing, keyphrasePending, analyzeNow, site }: SeoDrawerProps) {
+export const SeoDrawer = memo(function SeoDrawer({ drawerSlug, keyphrase, setKeyphrase, result, analyzing, keyphrasePending, analyzeNow, site }: SeoDrawerProps) {
   const [tab, setTab] = useState<TabKey>("keyphrase");
 
   const total = result?.overall.seoScore ?? 0;
@@ -60,4 +60,4 @@ export function SeoDrawer({ drawerSlug, keyphrase, setKeyphrase, result, analyzi
       </div>
     </Drawer>
   );
-}
+});
