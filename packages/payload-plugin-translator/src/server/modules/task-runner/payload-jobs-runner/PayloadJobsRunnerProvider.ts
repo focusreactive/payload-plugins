@@ -199,7 +199,22 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
 }
 
 /**
- * Creates a TaskRunnerProvider that uses Payload Jobs for task execution.
+ * Creates the **recommended** task runner: translations run as Payload Jobs
+ * (queued, executed by autoRun cron or a manual run, with stale-lock recovery).
+ * Durable across restarts and suited to production/serverless. Pass the result
+ * as `translatorPlugin({ runner })`.
+ *
+ * @param options - Queue/task names, `autoRun` cron (or `false` to disable),
+ *   `staleJobTimeoutMs`, and retry policy. See {@link PayloadJobsRunnerOptions}.
+ * @returns A {@link TaskRunnerProvider} for the plugin's `runner` option.
+ * @example
+ * ```ts
+ * translatorPlugin({
+ *   collections: [Posts],
+ *   translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY! }),
+ *   runner: createPayloadJobsRunner({ autoRun: { cron: '* * * * *' } }),
+ * })
+ * ```
  */
 export function createPayloadJobsRunner(options?: PayloadJobsRunnerOptions): TaskRunnerProvider {
   return new PayloadJobsRunnerProvider(options);

@@ -23,10 +23,10 @@ export type TranslationRoutesDeps = {
  * (enqueue / run / cancel / cancel-by-collection / document-status /
  * collection-status), all wired to the same runner factory and access guard.
  *
- * Extracted from the plugin's `init()` so registration is a single unit — Phase
- * 1 will register this bundle conditionally (only when a job-based level is
- * present) instead of unconditionally. Behaviour-preserving: same endpoints,
- * same order, same wiring as the previous inline registration.
+ * Extracted from the plugin's `init()` so registration is a single unit. The
+ * document and collection levels each contribute this bundle via the level
+ * context; the plugin deduplicates by method + path, so it registers exactly
+ * once. Behaviour-preserving: same endpoints, same order, same wiring.
  */
 export function createTranslationRoutes({ taskRunnerFactory, collectionConfig, access, basePath }: TranslationRoutesDeps): Endpoint[] {
   return [

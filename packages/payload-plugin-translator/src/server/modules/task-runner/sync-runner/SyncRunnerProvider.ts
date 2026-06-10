@@ -46,10 +46,19 @@ export class SyncRunnerProvider implements TaskRunnerProvider {
 }
 
 /**
- * Creates a synchronous TaskRunnerProvider.
+ * Creates a synchronous task runner: translations execute inline on enqueue,
+ * with no Payload Jobs queue. Status is kept in an in-memory map (bounded by
+ * `maxSize`/`ttlMs`) and is **lost on server restart**, so this is best for
+ * development, tests, or simple single-process setups — not serverless. Pass the
+ * result as `translatorPlugin({ runner })`.
  *
- * Executes translations immediately without queuing.
- * Results are stored in memory and lost on server restart.
+ * @param options - In-memory store bounds: `maxSize` (default 100) and `ttlMs`
+ *   (default 1h) for completed/failed task records.
+ * @returns A {@link TaskRunnerProvider} for the plugin's `runner` option.
+ * @example
+ * ```ts
+ * translatorPlugin({ collections, translationProvider, runner: createSyncRunner() })
+ * ```
  */
 export function createSyncRunner(options?: SyncRunnerOptions): TaskRunnerProvider {
   return new SyncRunnerProvider(options);

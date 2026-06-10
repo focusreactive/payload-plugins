@@ -12,6 +12,7 @@ Translation plugin for Payload CMS 3.x. Automatically translate your localized c
 - **Pluggable providers** — use OpenAI or create custom translation providers
 - **Field exclusion** — exclude specific fields from translation via `withFieldTranslation`
 - **Translation strategies** — choose between overwrite all or skip existing translations
+- **Configurable surfaces** — enable the per-document popup and/or the bulk-collection dashboard via the `levels` option _(since v0.5.0)_
 
 ## Installation
 
@@ -33,11 +34,7 @@ yarn add @focus-reactive/payload-plugin-translator
 
 ```typescript
 import { buildConfig } from "payload";
-import {
-  translatorPlugin,
-  createOpenAIProvider,
-  createPayloadJobsRunner,
-} from "@focus-reactive/payload-plugin-translator";
+import { translatorPlugin, createOpenAIProvider, createPayloadJobsRunner } from "@focus-reactive/payload-plugin-translator";
 import { Posts } from "./collections/Posts";
 import { Pages } from "./collections/Pages";
 
@@ -65,13 +62,14 @@ export default buildConfig({
 
 Configuration for `translatorPlugin()`.
 
-| Property              | Type                  | Required | Default        | Description                                                                                                         |
-| --------------------- | --------------------- | -------- | -------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `collections`         | `CollectionConfig[]`  | Yes      | —              | Original collection configs to enable translation for. Must be the same objects passed to `buildConfig`, not slugs. |
-| `translationProvider` | `TranslationProvider` | Yes      | —              | Translation provider instance (e.g., `createOpenAIProvider(...)`)                                                   |
-| `runner`              | `TaskRunnerProvider`  | Yes      | —              | Task runner provider for background processing (e.g., `createPayloadJobsRunner()`)                                  |
-| `access`              | `AccessGuard`         | No       | `undefined`    | Access control function for translation endpoints                                                                   |
-| `basePath`            | `string`              | No       | `'/translate'` | Base path for all API endpoints                                                                                     |
+| Property              | Type                  | Required | Default                                | Description                                                                                                         |
+| --------------------- | --------------------- | -------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `collections`         | `CollectionConfig[]`  | Yes      | —                                      | Original collection configs to enable translation for. Must be the same objects passed to `buildConfig`, not slugs. |
+| `translationProvider` | `TranslationProvider` | Yes      | —                                      | Translation provider instance (e.g., `createOpenAIProvider(...)`)                                                   |
+| `runner`              | `TaskRunnerProvider`  | Yes      | —                                      | Task runner provider for background processing (e.g., `createPayloadJobsRunner()`)                                  |
+| `access`              | `AccessGuard`         | No       | `undefined`                            | Access guard (`{ check }`) for the translation endpoints; omit to leave them open                                   |
+| `basePath`            | `string`              | No       | `'/translate'`                         | Base path for all API endpoints                                                                                     |
+| `levels`              | `TranslationLevel[]`  | No       | `[documentLevel(), collectionLevel()]` | Which translation surfaces to enable. See [Translation Levels](#translation-levels)                                 |
 
 ```typescript
 translatorPlugin({
@@ -80,10 +78,36 @@ translatorPlugin({
     apiKey: process.env.OPENAI_API_KEY,
   }),
   runner: createPayloadJobsRunner(),
-  access: async ({ req }) => req.user?.role === "admin",
+  access: { check: ({ req }) => req.user?.role === "admin" },
   basePath: "/translate",
 });
 ```
+
+### Translation Levels
+
+_Since v0.5.0._
+
+The `levels` option controls which translation surfaces the plugin exposes. Each entry is a factory you import and list:
+
+- `documentLevel()` — a **Translate** popup on the document edit view (translate one document).
+- `collectionLevel()` — a **bulk dashboard** on the collection list view (translate many at once).
+
+Both run through the configured `runner` (async Payload Jobs by default, or synchronous via `createSyncRunner()`) and share the same translation REST API.
+
+```typescript
+import { translatorPlugin, documentLevel, collectionLevel, createOpenAIProvider, createPayloadJobsRunner } from "@focus-reactive/payload-plugin-translator";
+
+translatorPlugin({
+  collections: [Posts],
+  translationProvider: createOpenAIProvider({
+    apiKey: process.env.OPENAI_API_KEY,
+  }),
+  runner: createPayloadJobsRunner(),
+  levels: [collectionLevel()], // bulk dashboard only — no per-document popup
+});
+```
+
+Omit `levels` for the default `[documentLevel(), collectionLevel()]`, which is identical to the previous behaviour — so adopting this option is non-breaking. A synchronous `fieldLevel()` (in-place field translation) is planned for a later release.
 
 ### OpenAIProviderConfig
 
@@ -100,8 +124,7 @@ Configuration for `createOpenAIProvider()`.
 createOpenAIProvider({
   apiKey: process.env.OPENAI_API_KEY,
   model: "gpt-4o-mini",
-  systemPrompt: ({ sourceLang, targetLang, defaultPrompt }) =>
-    `${defaultPrompt}\nUse formal language. Keep brand names unchanged.`,
+  systemPrompt: ({ sourceLang, targetLang, defaultPrompt }) => `${defaultPrompt}\nUse formal language. Keep brand names unchanged.`,
   dryRun: false,
 });
 ```
@@ -165,10 +188,7 @@ Configuration for `withFieldTranslation()` helper or `field.custom.translateKit`
 ```typescript
 import { withFieldTranslation } from "@focus-reactive/payload-plugin-translator";
 
-withFieldTranslation(
-  { name: "sku", type: "text", localized: true },
-  { exclude: true },
-);
+withFieldTranslation({ name: "sku", type: "text", localized: true }, { exclude: true });
 ```
 
 ## Translation Strategies
@@ -310,20 +330,12 @@ type TranslationOutput = Record<TranslationIndex, string>;
 #### Example Implementation
 
 ```typescript
-import type {
-  TranslationProvider,
-  TranslationInput,
-  TranslationOutput,
-} from "@focus-reactive/payload-plugin-translator";
+import type { TranslationProvider, TranslationInput, TranslationOutput } from "@focus-reactive/payload-plugin-translator";
 
 class DeepLProvider implements TranslationProvider {
   constructor(private apiKey: string) {}
 
-  async translate(
-    content: TranslationInput,
-    sourceLng: string,
-    targetLng: string,
-  ): Promise<TranslationOutput | null> {
+  async translate(content: TranslationInput, sourceLng: string, targetLng: string): Promise<TranslationOutput | null> {
     try {
       // content example: { "0": "Hello", "1": "World" }
       const texts = Object.values(content);
@@ -401,6 +413,9 @@ import type {
 
   // Field config
   FieldTranslationConfig,
+
+  // Translation levels
+  TranslationLevel,
 } from "@focus-reactive/payload-plugin-translator";
 ```
 
