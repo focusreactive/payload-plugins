@@ -1,13 +1,39 @@
 "use client";
 
+import { useLayoutEffect, useRef, useState } from "react";
 import { cn } from "../../../../utils/style";
 import { statusVar } from "../../../../components/SeoDrawer/variants";
 import type { GaugeModel } from "../../../../engine/types/visualization";
 
 export function DensityGauge({ bands, markerPct, markerLabel, markerStatus, labels }: GaugeModel) {
+  const barRef = useRef<HTMLDivElement>(null);
+  const labelRef = useRef<HTMLSpanElement>(null);
+  const [dims, setDims] = useState({ bar: 0, label: 0 });
+
+  const markerPx = (markerPct / 100) * dims.bar;
+  const halfLabel = dims.label / 2;
+  const labelAlign = dims.label === 0 ? "-translate-x-1/2" : markerPx < halfLabel ? "translate-x-0" : markerPx > dims.bar - halfLabel ? "-translate-x-full" : "-translate-x-1/2";
+
+  useLayoutEffect(() => {
+    const bar = barRef.current;
+    const label = labelRef.current;
+
+    if (!(bar && label)) return;
+
+    const measure = () => setDims({ bar: bar.offsetWidth, label: label.offsetWidth });
+
+    const observer = new ResizeObserver(measure);
+
+    measure();
+    observer.observe(bar);
+    observer.observe(label);
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <>
-      <div className="relative h-[6px] rounded-[3px] mt-[24px] mb-[14px]">
+      <div ref={barRef} className="relative h-[6px] rounded-[3px] mt-[24px] mb-[14px]">
         {bands.map((band, i) => (
           <i
             key={`${band.status}-${i}`}
@@ -19,12 +45,17 @@ export function DensityGauge({ bands, markerPct, markerLabel, markerStatus, labe
             }}
           />
         ))}
-        <div className={cn("absolute -top-[3px] -translate-x-1/2 flex flex-col items-center", statusVar({ status: markerStatus }))} style={{ left: `${markerPct}%` }}>
-          <span className="absolute bottom-[16px] font-mono font-bold text-[11px] whitespace-nowrap" style={{ color: "var(--seo-c)" }}>
-            {markerLabel}
-          </span>
-          <span className="w-[12px] h-[12px] rounded-full bg-neutral-0 border-2" style={{ borderColor: "var(--seo-c)" }} />
-        </div>
+        <span
+          ref={labelRef}
+          className={cn("absolute bottom-[13px] font-mono font-bold text-[11px] whitespace-nowrap", statusVar({ status: markerStatus }), labelAlign)}
+          style={{ left: `${markerPct}%`, color: "var(--seo-c)" }}
+        >
+          {markerLabel}
+        </span>
+        <span
+          className={cn("absolute -top-[3px] -translate-x-1/2 block w-[12px] h-[12px] rounded-full bg-neutral-0 border-2", statusVar({ status: markerStatus }))}
+          style={{ left: `${markerPct}%`, borderColor: "var(--seo-c)" }}
+        />
       </div>
       <div className="relative h-[14px] text-[10px] text-neutral-500">
         {labels.map((label, i) => (
