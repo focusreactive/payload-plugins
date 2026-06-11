@@ -55,7 +55,7 @@
     "lint:fix": "ultracite fix",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check-types": "tsgo --noEmit"
+    "check-types": "tsgo --noEmit -p tsconfig.check.json"
   },
   "peerDependencies": {
     "@payloadcms/richtext-lexical": "^3.76.0",
