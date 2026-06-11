@@ -650,7 +650,7 @@ export interface HeroBlock {
         /**
          * Choose how the link should be rendered.
          */
-        appearance?: ('default' | 'outline') | null;
+        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
         id?: string | null;
       }[]
     | null;
@@ -902,7 +902,7 @@ export interface CardsGridBlock {
       /**
        * Choose how the link should be rendered.
        */
-      appearance?: ('default' | 'outline') | null;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     };
     alignVariant?: ('left' | 'center' | 'right') | null;
     rounded?: ('none' | 'large') | null;
@@ -1069,7 +1069,7 @@ export interface LinksListBlock {
       /**
        * Choose how the link should be rendered.
        */
-      appearance?: ('default' | 'outline') | null;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     };
     id?: string | null;
   }[];
@@ -1190,7 +1190,7 @@ export interface Preset {
               /**
                * Choose how the link should be rendered.
                */
-              appearance?: ('default' | 'outline') | null;
+              appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
               id?: string | null;
             }[]
           | null;
@@ -1407,7 +1407,7 @@ export interface Preset {
             /**
              * Choose how the link should be rendered.
              */
-            appearance?: ('default' | 'outline') | null;
+            appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
           };
           alignVariant?: ('left' | 'center' | 'right') | null;
           rounded?: ('none' | 'large') | null;
@@ -1562,7 +1562,7 @@ export interface Preset {
             /**
              * Choose how the link should be rendered.
              */
-            appearance?: ('default' | 'outline') | null;
+            appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
           };
           id?: string | null;
         }[];
@@ -3406,7 +3406,7 @@ export interface CardsGridInlineBlock {
       /**
        * Choose how the link should be rendered.
        */
-      appearance?: ('default' | 'outline') | null;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     };
     alignVariant?: ('left' | 'center' | 'right') | null;
     rounded?: ('none' | 'large') | null;
@@ -3475,7 +3475,7 @@ export interface LinksListInlineBlock {
       /**
        * Choose how the link should be rendered.
        */
-      appearance?: ('default' | 'outline') | null;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     };
     id?: string | null;
   }[];

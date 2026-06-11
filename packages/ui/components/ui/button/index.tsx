@@ -14,17 +14,18 @@ export const buttonVariants = cva(
     },
     variants: {
       size: {
-        [ButtonSize.Small]: "px-3 py-1.5 text-xs",
-        [ButtonSize.Base]: "px-5 py-2.5 text-sm",
-        [ButtonSize.Large]: "px-6 py-3.5 text-base",
+        [ButtonSize.Small]: "px-4 py-[9px] text-[0.82rem]",
+        [ButtonSize.Base]: "px-6 py-[13px] text-[0.95rem]",
+        [ButtonSize.Large]: "px-[30px] py-4 text-[1.02rem]",
       },
       variant: {
         [ButtonVariant.Default]: "text-foreground hover:text-primary underline-offset-4 hover:underline",
-        [ButtonVariant.Primary]: "rounded-pill font-medium bg-foreground text-background hover:bg-gray-700",
-        [ButtonVariant.Secondary]: "rounded-pill font-medium border border-foreground text-foreground hover:bg-foreground hover:text-background",
-        [ButtonVariant.Badge]: "rounded-pill border border-foreground px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-foreground",
-        [ButtonVariant.Ghost]: "rounded-pill font-medium bg-surface text-foreground border border-border hover:border-foreground",
-        [ButtonVariant.GhostDark]: "rounded-pill font-medium bg-foreground text-background hover:bg-gray-700",
+        [ButtonVariant.Primary]: "rounded-pill font-semibold bg-secondary text-secondary-foreground hover:bg-secondary-hover",
+        [ButtonVariant.Accent]: "rounded-pill font-semibold bg-accent text-accent-foreground hover:bg-accent-hover",
+        [ButtonVariant.Secondary]: "rounded-pill font-semibold border border-foreground text-foreground hover:bg-foreground hover:text-background",
+        [ButtonVariant.Badge]: "rounded-pill border border-foreground px-3 py-1.5 text-eyebrow text-foreground",
+        [ButtonVariant.Ghost]: "rounded-pill font-semibold bg-surface text-foreground border border-border-strong hover:border-foreground",
+        [ButtonVariant.GhostDark]: "rounded-pill font-semibold bg-secondary text-secondary-foreground hover:bg-secondary-hover",
       },
     },
   }

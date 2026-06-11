@@ -19,12 +19,12 @@ const toneMap: Record<Tone, string> = {
 
 const sizeMap = {
   sm: "px-2.5 py-1 text-[10px]",
-  md: "px-3 py-1.5 text-[11px]",
+  md: "px-3.5 py-[7px] text-[0.72rem] font-semibold",
 };
 
 export function Pill({ children, tone = "muted", size = "md", className }: Props) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-pill font-mono uppercase tracking-[0.12em] leading-none whitespace-nowrap", toneMap[tone], sizeMap[size], className)}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-pill font-mono uppercase tracking-[0.16em] leading-none whitespace-nowrap", toneMap[tone], sizeMap[size], className)}>
       {children}
     </span>
   );

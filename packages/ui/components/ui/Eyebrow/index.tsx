@@ -16,7 +16,7 @@ const toneMap = {
 
 export function Eyebrow({ children, prefix = "none", tone = "primary", className }: Props) {
   return (
-    <span className={cn("inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em]", toneMap[tone], className)}>
+    <span className={cn("inline-flex items-center gap-2 font-mono text-[0.72rem] font-medium uppercase tracking-[0.16em]", toneMap[tone], className)}>
       {prefix === "dot" && <span aria-hidden className="inline-block size-1.5 rounded-pill bg-primary" />}
       {prefix === "dash" && <span aria-hidden>—</span>}
       <span>{children}</span>

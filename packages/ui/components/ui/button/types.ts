@@ -14,6 +14,7 @@ export interface ButtonProps extends ButtonVariantProps {
 export enum ButtonVariant {
   Default = "default",
   Primary = "primary",
+  Accent = "accent",
   Secondary = "secondary",
   Badge = "badge",
   Ghost = "ghost",

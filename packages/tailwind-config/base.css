@@ -228,3 +228,24 @@
     transparent
   );
 }
+
+/* ──────────────── Backdrop float keyframes (AbstractBackdrop) ──────────────── */
+@keyframes backdrop-float-a {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(38px, 28px);
+  }
+}
+
+@keyframes backdrop-float-b {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-46px, 36px);
+  }
+}
