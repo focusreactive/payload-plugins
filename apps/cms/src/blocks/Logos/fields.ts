@@ -1,9 +1,20 @@
 import type { Field } from "payload";
 
+import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
 import { imageField } from "@/fields/imageField";
 import { link } from "@/fields/link";
 
 export const logosFields: Field[] = [
+  {
+    defaultValue: createLocalizedDefault({
+      en: "Trusted by 4,000+ teams in rhythm",
+      es: "Con la confianza de más de 4.000 equipos en sintonía",
+    }),
+    label: { en: "Label", es: "Etiqueta" },
+    localized: true,
+    name: "label",
+    type: "text",
+  },
   {
     defaultValue: "center",
     label: { en: "Alignment", es: "Alineación" },

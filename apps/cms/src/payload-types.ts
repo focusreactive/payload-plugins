@@ -1065,6 +1065,7 @@ export interface CarouselBlock {
  * via the `definition` "LogosBlock".
  */
 export interface LogosBlock {
+  label?: string | null;
   alignVariant?: ('left' | 'center' | 'right') | null;
   items: {
     image: {
@@ -1564,6 +1565,7 @@ export interface Preset {
         blockType: 'carousel';
       }
     | {
+        label?: string | null;
         alignVariant?: ('left' | 'center' | 'right') | null;
         items: {
           image: {
@@ -2504,6 +2506,7 @@ export interface CarouselBlockSelect<T extends boolean = true> {
  * via the `definition` "LogosBlock_select".
  */
 export interface LogosBlockSelect<T extends boolean = true> {
+  label?: T;
   alignVariant?: T;
   items?:
     | T
@@ -3030,6 +3033,7 @@ export interface PresetsSelect<T extends boolean = true> {
         logos?:
           | T
           | {
+              label?: T;
               alignVariant?: T;
               items?:
                 | T
@@ -3545,6 +3549,7 @@ export interface CardsGridInlineBlock {
  * via the `definition` "LogosInlineBlock".
  */
 export interface LogosInlineBlock {
+  label?: string | null;
   alignVariant?: ('left' | 'center' | 'right') | null;
   items: {
     image: {
