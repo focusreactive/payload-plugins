@@ -46,9 +46,9 @@ export const appearanceOptions: Record<LinkAppearances, Option> = {
   },
 };
 
-type LinkType = (options?: { appearances?: LinkAppearances[] | false; disableLabel?: boolean; required?: boolean; overrides?: Partial<GroupField> }) => Field;
+type LinkType = (options?: { appearances?: LinkAppearances[] | false; customPageDbName?: string; disableLabel?: boolean; required?: boolean; overrides?: Partial<GroupField> }) => Field;
 
-export const link: LinkType = ({ appearances, disableLabel = false, required = true, overrides = {} } = {}) => {
+export const link: LinkType = ({ appearances, customPageDbName, disableLabel = false, required = true, overrides = {} } = {}) => {
   const linkResult: GroupField = {
     admin: {
       hideGutter: true,
@@ -140,6 +140,7 @@ export const link: LinkType = ({ appearances, disableLabel = false, required = t
       admin: {
         condition: (_, siblingData) => siblingData?.type === "customPage",
       },
+      ...(customPageDbName ? { dbName: customPageDbName } : {}),
       label: {
         en: "Custom Page",
         es: "Página personalizada",

@@ -432,15 +432,11 @@ export interface Header {
    * The logo to display in the header
    */
   logo: number | Media;
-  /**
-   * Navigation items in the header (up to 6 items)
-   */
   navItems?:
     | {
-        /**
-         * Link settings
-         */
-        link: {
+        label: string;
+        type: 'link' | 'dropdown';
+        link?: {
           type?: ('reference' | 'custom' | 'customPage') | null;
           newTab?: boolean | null;
           reference?:
@@ -454,8 +450,76 @@ export interface Header {
               } | null);
           url?: string | null;
           customPage?: ('blog' | 'search') | null;
-          label: string;
         };
+        dropdown?: {
+          featured?: {
+            enabled?: boolean | null;
+            badge?: string | null;
+            title?: string | null;
+            description?: string | null;
+            link?: {
+              type?: ('reference' | 'custom' | 'customPage') | null;
+              newTab?: boolean | null;
+              reference?:
+                | ({
+                    relationTo: 'page';
+                    value: number | Page;
+                  } | null)
+                | ({
+                    relationTo: 'posts';
+                    value: number | Post;
+                  } | null);
+              url?: string | null;
+              customPage?: ('blog' | 'search') | null;
+              label?: string | null;
+            };
+          };
+          links?:
+            | {
+                title: string;
+                description?: string | null;
+                link?: {
+                  type?: ('reference' | 'custom' | 'customPage') | null;
+                  newTab?: boolean | null;
+                  reference?:
+                    | ({
+                        relationTo: 'page';
+                        value: number | Page;
+                      } | null)
+                    | ({
+                        relationTo: 'posts';
+                        value: number | Post;
+                      } | null);
+                  url?: string | null;
+                  customPage?: ('blog' | 'search') | null;
+                };
+                id?: string | null;
+              }[]
+            | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  actions?:
+    | {
+        type?: ('reference' | 'custom' | 'customPage') | null;
+        newTab?: boolean | null;
+        reference?:
+          | ({
+              relationTo: 'page';
+              value: number | Page;
+            } | null)
+          | ({
+              relationTo: 'posts';
+              value: number | Post;
+            } | null);
+        url?: string | null;
+        customPage?: ('blog' | 'search') | null;
+        label: string;
+        /**
+         * Choose how the link should be rendered.
+         */
+        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
         id?: string | null;
       }[]
     | null;
@@ -2585,6 +2649,8 @@ export interface HeaderSelect<T extends boolean = true> {
   navItems?:
     | T
     | {
+        label?: T;
+        type?: T;
         link?:
           | T
           | {
@@ -2593,8 +2659,57 @@ export interface HeaderSelect<T extends boolean = true> {
               reference?: T;
               url?: T;
               customPage?: T;
-              label?: T;
             };
+        dropdown?:
+          | T
+          | {
+              featured?:
+                | T
+                | {
+                    enabled?: T;
+                    badge?: T;
+                    title?: T;
+                    description?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          label?: T;
+                        };
+                  };
+              links?:
+                | T
+                | {
+                    title?: T;
+                    description?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                        };
+                    id?: T;
+                  };
+            };
+        id?: T;
+      };
+  actions?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+        appearance?: T;
         id?: T;
       };
   updatedAt?: T;
