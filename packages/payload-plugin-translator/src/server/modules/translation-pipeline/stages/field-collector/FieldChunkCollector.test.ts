@@ -880,4 +880,20 @@ describe("FieldChunkCollector", () => {
       expect(chunks[0].path).toEqual(["items", "1", "label"]);
     });
   });
+
+  describe("excluded fields", () => {
+    it("skips fields excluded via custom.translateKit.exclude", () => {
+      const schema: Field[] = [
+        { name: "title", type: "text", localized: true, custom: { translateKit: { exclude: true } } },
+        { name: "subtitle", type: "text", localized: true },
+      ];
+      const data = { title: "Hello", subtitle: "World" };
+
+      const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
+      const chunks = collector.collect();
+
+      expect(chunks).toHaveLength(1);
+      expect(chunks[0].key).toBe("subtitle"); // title excluded via translateKit.exclude
+    });
+  });
 });

@@ -363,4 +363,18 @@ describe("DataReconciler", () => {
       });
     });
   });
+
+  describe("malformed source", () => {
+    it("drops a group field whose source value is not an object", () => {
+      const schema: Field[] = [
+        { name: "meta", type: "group", fields: [{ name: "title", type: "text", localized: true }] },
+        { name: "keep", type: "text", localized: true },
+      ];
+      const sourceData = { meta: null, keep: "K" };
+
+      const reconciler = new DataReconciler(schema);
+      // non-object source for a group → the group is skipped entirely
+      expect(reconciler.reconcile(sourceData, {})).toEqual({ keep: "K" });
+    });
+  });
 });

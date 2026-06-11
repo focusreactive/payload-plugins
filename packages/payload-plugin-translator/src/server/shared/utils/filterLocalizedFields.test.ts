@@ -455,4 +455,20 @@ describe("filterLocalizedFields", () => {
       });
     });
   });
+
+  describe("named tab", () => {
+    it("keeps localized fields inside a NAMED tab, nested under the tab name", () => {
+      const schema: Field[] = [{ type: "tabs", tabs: [{ name: "seo", fields: [{ name: "title", type: "text", localized: true }] }] }];
+      // Named tabs nest data under the tab name; the walk descends into data.seo. (Before the
+      // walkFields migration this site read flat and silently dropped the field — now fixed.)
+      const data = { seo: { title: "Hi" } };
+      expect(filterLocalizedFields(schema, data)).toEqual({ seo: { title: "Hi" } });
+    });
+
+    it("drops a named tab whose fields have no localized content", () => {
+      const schema: Field[] = [{ type: "tabs", tabs: [{ name: "seo", fields: [{ name: "slug", type: "text" }] }] }];
+      const data = { seo: { slug: "x" } };
+      expect(filterLocalizedFields(schema, data)).toEqual({});
+    });
+  });
 });
