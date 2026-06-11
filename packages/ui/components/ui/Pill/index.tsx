@@ -24,7 +24,7 @@ const sizeMap = {
 
 export function Pill({ children, tone = "muted", size = "md", className }: Props) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-pill font-mono uppercase tracking-[0.16em] leading-none whitespace-nowrap", toneMap[tone], sizeMap[size], className)}>
+    <span className={cn("inline-flex w-fit items-center gap-1.5 rounded-pill font-mono uppercase tracking-[0.16em] leading-none whitespace-nowrap", toneMap[tone], sizeMap[size], className)}>
       {children}
     </span>
   );

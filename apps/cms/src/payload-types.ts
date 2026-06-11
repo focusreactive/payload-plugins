@@ -679,6 +679,8 @@ export interface Footer {
  * via the `definition` "HeroBlock".
  */
 export interface HeroBlock {
+  variant: 'media-background' | 'showcase' | 'centered';
+  badge?: string | null;
   title?: string | null;
   richText?: {
     root: {
@@ -718,7 +720,7 @@ export interface HeroBlock {
         id?: string | null;
       }[]
     | null;
-  image: {
+  image?: {
     image: number | Media;
     aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
   };
@@ -1219,6 +1221,8 @@ export interface Preset {
   preview?: (number | null) | Media;
   presetBlock: (
     | {
+        variant: 'media-background' | 'showcase' | 'centered';
+        badge?: string | null;
         title?: string | null;
         richText?: {
           root: {
@@ -1258,7 +1262,7 @@ export interface Preset {
               id?: string | null;
             }[]
           | null;
-        image: {
+        image?: {
           image: number | Media;
           aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
         };
@@ -2248,6 +2252,8 @@ export interface PageSelect<T extends boolean = true> {
  * via the `definition` "HeroBlock_select".
  */
 export interface HeroBlockSelect<T extends boolean = true> {
+  variant?: T;
+  badge?: T;
   title?: T;
   richText?: T;
   actions?:
@@ -2786,6 +2792,8 @@ export interface PresetsSelect<T extends boolean = true> {
         hero?:
           | T
           | {
+              variant?: T;
+              badge?: T;
               title?: T;
               richText?: T;
               actions?:

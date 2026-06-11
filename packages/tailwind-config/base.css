@@ -249,3 +249,14 @@
     transform: translate(-46px, 36px);
   }
 }
+
+/* ──────────────── Showcase window slow float (Hero showcase variant) ──────────────── */
+@keyframes hero-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
