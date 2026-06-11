@@ -1,10 +1,3 @@
-/* ============================================================
-   Ideal CMS — Design Tokens (Tailwind v4)
-   Tier 1: primitives (palette, fonts, radii)
-   Tier 2: semantic roles (background/foreground/primary/…)
-   Dark zones are opt-in via .dark-zone class, NOT full-page dark mode.
-   ============================================================ */
-
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -13,114 +6,225 @@
 
 /* ──────────────── Tier 1: primitives ──────────────── */
 @theme {
-  /* Fonts — bound to next/font CSS vars from root layout.
-     Fallback INSIDE var() so the font-family stays valid if next/font
-     hasn't bound the variable yet (otherwise the whole declaration
-     becomes invalid and inherits from body → sans). */
-  --font-display: var(--font-instrument-serif, "Times New Roman"), Georgia, serif;
-  --font-sans:    var(--font-space-grotesk, ui-sans-serif), system-ui, -apple-system, sans-serif;
-  --font-mono:    var(--font-jetbrains-mono, ui-monospace), "SF Mono", Menlo, monospace;
+  --font-display: var(--font-newsreader, "Times New Roman"), Georgia, serif;
+  --font-sans: var(--font-archivo, ui-sans-serif), system-ui, -apple-system,
+    sans-serif;
+  --font-mono: var(--font-ibm-plex-mono, ui-monospace), "SF Mono", Menlo,
+    monospace;
 
-  /* Surfaces (warm off-whites) */
-  --color-white:    #ffffff;
-  --color-cream-50:  #fafaf7;
-  --color-cream-100: #f0ebe1;
+  --color-white: #ffffff;
+  --color-slate-50: #eef2f3;
+  --color-slate-100: #dde6e7;
+  --color-slate-200: #e1e8e9;
+  --color-slate-300: #d3dedf;
+  --color-slate-400: #8fa3a1;
+  --color-slate-450: #9ab0ad;
+  --color-slate-500: #5a6a6b;
 
-  /* Warm gray scale */
-  --color-gray-400: #a5a59c;
-  --color-gray-500: #6b6b66;
-  --color-gray-700: #2a2a28;
-  --color-gray-800: #1a1a17;
-  --color-gray-900: #111111;
-  --color-gray-950: #0e0e0c;
+  --color-ink-950: #0a1314;
+  --color-deep-950: #08100f;
+  --color-deep-900: #11201d;
+  --color-deep-850: #16241f;
+  --color-pine-950: #17211f;
+  --color-pine-900: #212e2b;
+  --color-pine-850: #1b2724;
 
-  /* Alpha tints */
-  --color-black-10: #1111111a;
-  --color-black-20: #11111133;
-  --color-white-10: #ffffff1a;
+  --color-teal-600: #0d9488;
+  --color-teal-700: #0a7268;
+  --color-teal-400: #2dd4bf;
+  --color-teal-300: #5fe3d2;
+  --color-teal-soft-light: #d6efeb;
+  --color-teal-soft-dark: #103b35;
+  --color-teal-soft-pine: #1d3a35;
 
-  /* Brand accent (orange) */
-  --color-orange-100: #ffe7da;
-  --color-orange-500: #ff5b1f;
-  --color-orange-700: #d94a14;
-
-  /* Secondary accents */
   --color-lime-400: #d8ff3a;
-  --color-plum-900: #2b1a3d;
+  --color-lime-500: #c6ec33;
 
-  /* Radii */
-  --radius-sm:   8px;
-  --radius-md:   16px;
-  --radius-lg:   28px;
+  --color-ink-12: rgba(10, 19, 20, 0.12);
+  --color-ink-22: rgba(10, 19, 20, 0.22);
+  --color-white-11: rgba(255, 255, 255, 0.11);
+  --color-white-13: rgba(255, 255, 255, 0.13);
+  --color-white-24: rgba(255, 255, 255, 0.24);
+  --color-white-28: rgba(255, 255, 255, 0.28);
+
+  --color-cream-50: var(--color-slate-50);
+  --color-cream-100: var(--color-slate-100);
+  --color-white-10: var(--color-white-11);
+
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 28px;
   --radius-pill: 999px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 /* ──────────────── Tier 2: semantic roles ──────────────── */
 @theme {
-  --color-background:           var(--color-cream-50);
-  --color-foreground:           var(--color-gray-900);
+  --color-background: var(--color-slate-50);
+  --color-foreground: var(--color-ink-950);
 
-  --color-surface:              var(--color-white);
-  --color-surface-muted:        var(--color-cream-100);
+  --color-surface: var(--color-white);
+  --color-surface-muted: var(--color-slate-100);
 
-  --color-card:                 var(--color-white);
-  --color-card-foreground:      var(--color-gray-900);
+  --color-card: var(--color-white);
+  --color-card-foreground: var(--color-ink-950);
 
-  --color-popover:              var(--color-white);
-  --color-popover-foreground:   var(--color-gray-900);
+  --color-popover: var(--color-white);
+  --color-popover-foreground: var(--color-ink-950);
 
-  --color-primary:              var(--color-orange-500);
-  --color-primary-foreground:   var(--color-white);
-  --color-primary-hover:        var(--color-orange-700);
-  --color-primary-soft:         var(--color-orange-100);
+  --color-primary: var(--color-teal-600);
+  --color-primary-foreground: var(--color-white);
+  --color-primary-hover: var(--color-teal-700);
+  --color-primary-soft: var(--color-teal-soft-light);
 
-  --color-secondary:            var(--color-gray-900);
+  --color-secondary: var(--color-ink-950);
   --color-secondary-foreground: var(--color-white);
+  --color-secondary-hover: color-mix(
+    in srgb,
+    var(--color-secondary) 80%,
+    var(--color-background)
+  );
 
-  --color-muted:                var(--color-cream-100);
-  --color-muted-foreground:     var(--color-gray-500);
+  --color-muted: var(--color-slate-100);
+  --color-muted-foreground: var(--color-slate-500);
 
-  --color-accent:               var(--color-lime-400);
-  --color-accent-foreground:    var(--color-gray-900);
+  --color-accent: var(--color-lime-400);
+  --color-accent-hover: var(--color-lime-500);
+  --color-accent-foreground: var(--color-ink-950);
 
-  --color-destructive:          oklch(0.577 0.245 27.325);
+  --color-destructive: oklch(0.577 0.245 27.325);
   --color-destructive-foreground: var(--color-white);
 
-  --color-success:              oklch(0.6 0.15 145);
-  --color-warning:              oklch(0.75 0.15 85);
+  --color-success: oklch(0.6 0.15 145);
+  --color-warning: oklch(0.75 0.15 85);
 
-  --color-border:               var(--color-black-10);
-  --color-border-strong:        var(--color-black-20);
-  --color-input:                var(--color-black-20);
-  --color-ring:                 var(--color-orange-500);
+  --color-border: var(--color-ink-12);
+  --color-border-strong: var(--color-ink-22);
+  --color-input: var(--color-ink-22);
+  --color-ring: var(--color-teal-600);
 
   /* Prose */
-  --tw-prose-headings:          var(--color-foreground);
-  --tw-prose-invert-headings:   var(--color-cream-50);
+  --tw-prose-headings: var(--color-foreground);
+  --tw-prose-invert-headings: var(--color-slate-50);
 }
 
-/* ──────────────── Dark zones (section-scoped) ──────────────── */
-/* Apply .dark-zone OR data-theme="dark" to any section that should render
-   dark surfaces. Re-binds semantic tokens inside that subtree only. */
+/* ──────────────── Section theme zones ──────────────── */
 .dark-zone,
 [data-theme="dark"] {
-  --color-background:           var(--color-gray-950);
-  --color-foreground:           var(--color-cream-50);
-  --color-surface:              var(--color-gray-900);
-  --color-surface-muted:        var(--color-gray-800);
-  --color-card:                 var(--color-gray-900);
-  --color-card-foreground:      var(--color-cream-50);
-  --color-muted:                var(--color-gray-800);
-  --color-muted-foreground:     var(--color-gray-400);
-  --color-border:               var(--color-white-10);
-  --color-border-strong:        var(--color-white-10);
+  --color-background: var(--color-deep-950);
+  --color-foreground: var(--color-slate-50);
+  --color-surface: var(--color-deep-900);
+  --color-surface-muted: var(--color-deep-850);
+  --color-card: var(--color-deep-900);
+  --color-card-foreground: var(--color-slate-50);
+  --color-popover: var(--color-deep-900);
+  --color-popover-foreground: var(--color-slate-50);
+  --color-primary: var(--color-teal-400);
+  --color-primary-hover: var(--color-teal-300);
+  --color-primary-soft: var(--color-teal-soft-dark);
+  --color-secondary: var(--color-slate-50);
+  --color-secondary-foreground: var(--color-ink-950);
+  --color-muted: var(--color-deep-850);
+  --color-muted-foreground: var(--color-slate-400);
+  --color-border: var(--color-white-13);
+  --color-border-strong: var(--color-white-28);
+}
+
+[data-theme="dark-gray"] {
+  --color-background: var(--color-pine-950);
+  --color-foreground: var(--color-slate-50);
+  --color-surface: var(--color-pine-900);
+  --color-surface-muted: var(--color-pine-850);
+  --color-card: var(--color-pine-900);
+  --color-card-foreground: var(--color-slate-50);
+  --color-popover: var(--color-pine-900);
+  --color-popover-foreground: var(--color-slate-50);
+  --color-primary: var(--color-teal-400);
+  --color-primary-hover: var(--color-teal-300);
+  --color-primary-soft: var(--color-teal-soft-pine);
+  --color-secondary: var(--color-slate-50);
+  --color-secondary-foreground: var(--color-ink-950);
+  --color-muted: var(--color-pine-850);
+  --color-muted-foreground: var(--color-slate-450);
+  --color-border: var(--color-white-11);
+  --color-border-strong: var(--color-white-24);
+}
+
+[data-theme="light-gray"] {
+  --color-background: var(--color-slate-200);
+  --color-surface-muted: var(--color-slate-300);
 }
 
 /* ──────────────── Selection ──────────────── */
-::selection             { background: var(--color-orange-500); color: var(--color-white); }
-.dark-zone ::selection  { background: var(--color-lime-400);   color: var(--color-gray-900); }
+::selection {
+  background: var(--color-accent);
+  color: var(--color-ink-950);
+}
+
+@utility text-display-1 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(2.8rem, 7vw, 5.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+}
+
+@utility text-display-2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+}
+
+@utility text-h-section {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+}
+
+@utility text-h-card {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.5rem;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+@utility text-lead {
+  font-size: clamp(1.1rem, 1.6vw, 1.32rem);
+  line-height: 1.55;
+}
+
+@utility text-body-lg {
+  font-size: 1.0625rem;
+  line-height: 1.7;
+}
+
+@utility text-small {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+@utility text-eyebrow {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
 
 /* ──────────────── Custom utility ──────────────── */
 @utility mask-shadow-y {
-  mask-image: linear-gradient(90deg, transparent, #fff 10%, #fff 90%, transparent);
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #fff 10%,
+    #fff 90%,
+    transparent
+  );
 }

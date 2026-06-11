@@ -1,59 +1,54 @@
-@import "@repo/tailwind-config/base.css";
+﻿@import '@repo/tailwind-config/base.css';
 
 @source "../..";
 
-/* App-specific layout vars (runtime, mutable via media queries) */
 :root {
-  --section-margin-base:    96px;
-  --section-margin-large:   120px;
-  --container-padding-base: 24px;
-  --container-max-width:    1440px;
-}
-
-@media (min-width: 768px) {
-  :root {
-    --container-padding-base: 40px;
-  }
+  --section-margin-base: clamp(56px, 8vw, 104px);
+  --section-margin-large: clamp(96px, 14vw, 180px);
+  --container-padding-base: clamp(20px, 5vw, 64px);
+  --container-max-width: 1180px;
 }
 
 @theme {
-  --spacing-sectionBase:   var(--section-margin-base);
-  --spacing-sectionLarge:  var(--section-margin-large);
+  --spacing-sectionBase: var(--section-margin-base);
+  --spacing-sectionLarge: var(--section-margin-large);
   --spacing-containerBase: var(--container-padding-base);
   --spacing-containerMaxW: var(--container-max-width);
 }
 
-/* Body defaults */
 body {
   background: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
-  font-size: 19px;
-  line-height: 1.6;
+  font-size: 18px;
+  line-height: 1.65;
   text-rendering: optimizeLegibility;
 }
 
-/* Prose theming */
 .prose {
-  --tw-prose-body:     var(--color-foreground);
+  --tw-prose-body: var(--color-foreground);
   --tw-prose-headings: var(--color-foreground);
-  --tw-prose-lead:     var(--color-muted-foreground);
-  --tw-prose-bold:     var(--color-foreground);
-  --tw-prose-links:    var(--color-primary);
+  --tw-prose-lead: var(--color-muted-foreground);
+  --tw-prose-bold: var(--color-foreground);
+  --tw-prose-links: var(--color-primary);
   --tw-prose-counters: var(--color-muted-foreground);
-  --tw-prose-bullets:  var(--color-muted-foreground);
-  --tw-prose-quotes:   var(--color-foreground);
-  --tw-prose-code:     var(--color-foreground);
+  --tw-prose-bullets: var(--color-muted-foreground);
+  --tw-prose-quotes: var(--color-foreground);
+  --tw-prose-code: var(--color-foreground);
 }
 
-/* Testimonials carousel keyframe */
 .testimonials-carousel:hover .testimonials-carousel-group {
   animation-play-state: paused;
 }
 .testimonials-carousel-group {
-  animation: testimonials-carousel-scrolling var(--testimonials-carousel-duration, 60s) linear infinite;
+  animation: testimonials-carousel-scrolling var(--testimonials-carousel-duration, 60s) linear
+    infinite;
 }
 @keyframes testimonials-carousel-scrolling {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-100%); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
 }
