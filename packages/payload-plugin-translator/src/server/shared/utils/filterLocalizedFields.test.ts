@@ -1,387 +1,387 @@
-import type { Field } from 'payload'
-import { describe, expect, it } from 'vitest'
-import { filterLocalizedFields } from './filterLocalizedFields'
+import type { Field } from "payload";
+import { describe, expect, it } from "vitest";
+import { filterLocalizedFields } from "./filterLocalizedFields";
 
-describe('filterLocalizedFields', () => {
-  describe('simple fields', () => {
-    it('should keep localized text field', () => {
-      const schema: Field[] = [{ name: 'title', type: 'text', localized: true }]
-      const data = { title: 'Hello', other: 'World' }
+describe("filterLocalizedFields", () => {
+  describe("simple fields", () => {
+    it("should keep localized text field", () => {
+      const schema: Field[] = [{ name: "title", type: "text", localized: true }];
+      const data = { title: "Hello", other: "World" };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({ title: 'Hello' })
-    })
+      expect(result).toEqual({ title: "Hello" });
+    });
 
-    it('should filter out non-localized text field', () => {
-      const schema: Field[] = [{ name: 'slug', type: 'text' }]
-      const data = { slug: 'hello-world' }
+    it("should filter out non-localized text field", () => {
+      const schema: Field[] = [{ name: "slug", type: "text" }];
+      const data = { slug: "hello-world" };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({})
-    })
+      expect(result).toEqual({});
+    });
 
-    it('should handle mixed localized and non-localized fields', () => {
+    it("should handle mixed localized and non-localized fields", () => {
       const schema: Field[] = [
-        { name: 'title', type: 'text', localized: true },
-        { name: 'slug', type: 'text' },
-        { name: 'description', type: 'textarea', localized: true },
-      ]
-      const data = { title: 'Hello', slug: 'hello', description: 'World' }
+        { name: "title", type: "text", localized: true },
+        { name: "slug", type: "text" },
+        { name: "description", type: "textarea", localized: true },
+      ];
+      const data = { title: "Hello", slug: "hello", description: "World" };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({ title: 'Hello', description: 'World' })
-    })
+      expect(result).toEqual({ title: "Hello", description: "World" });
+    });
 
-    it('should skip undefined values', () => {
-      const schema: Field[] = [{ name: 'title', type: 'text', localized: true }]
-      const data = {}
+    it("should skip undefined values", () => {
+      const schema: Field[] = [{ name: "title", type: "text", localized: true }];
+      const data = {};
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({})
-    })
-  })
+      expect(result).toEqual({});
+    });
+  });
 
-  describe('group fields', () => {
-    it('should recursively filter group with localized nested field', () => {
+  describe("group fields", () => {
+    it("should recursively filter group with localized nested field", () => {
       const schema: Field[] = [
         {
-          name: 'seo',
-          type: 'group',
+          name: "seo",
+          type: "group",
           fields: [
-            { name: 'title', type: 'text', localized: true },
-            { name: 'canonical', type: 'text' },
+            { name: "title", type: "text", localized: true },
+            { name: "canonical", type: "text" },
           ],
         },
-      ]
-      const data = { seo: { title: 'SEO Title', canonical: '/page' } }
+      ];
+      const data = { seo: { title: "SEO Title", canonical: "/page" } };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({ seo: { title: 'SEO Title' } })
-    })
+      expect(result).toEqual({ seo: { title: "SEO Title" } });
+    });
 
-    it('should exclude group if no localized fields inside', () => {
+    it("should exclude group if no localized fields inside", () => {
       const schema: Field[] = [
         {
-          name: 'settings',
-          type: 'group',
-          fields: [{ name: 'enabled', type: 'checkbox' }],
+          name: "settings",
+          type: "group",
+          fields: [{ name: "enabled", type: "checkbox" }],
         },
-      ]
-      const data = { settings: { enabled: true } }
+      ];
+      const data = { settings: { enabled: true } };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({})
-    })
-  })
+      expect(result).toEqual({});
+    });
+  });
 
-  describe('array fields', () => {
-    it('should recursively filter array items', () => {
+  describe("array fields", () => {
+    it("should recursively filter array items", () => {
       const schema: Field[] = [
         {
-          name: 'items',
-          type: 'array',
+          name: "items",
+          type: "array",
           fields: [
-            { name: 'text', type: 'text', localized: true },
-            { name: 'order', type: 'number' },
+            { name: "text", type: "text", localized: true },
+            { name: "order", type: "number" },
           ],
         },
-      ]
+      ];
       const data = {
         items: [
-          { id: '1', text: 'First', order: 1 },
-          { id: '2', text: 'Second', order: 2 },
+          { id: "1", text: "First", order: 1 },
+          { id: "2", text: "Second", order: 2 },
         ],
-      }
+      };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
       expect(result).toEqual({
         items: [
-          { id: '1', text: 'First' },
-          { id: '2', text: 'Second' },
+          { id: "1", text: "First" },
+          { id: "2", text: "Second" },
         ],
-      })
-    })
+      });
+    });
 
-    it('should exclude array if no localized fields inside items', () => {
+    it("should exclude array if no localized fields inside items", () => {
       const schema: Field[] = [
         {
-          name: 'tags',
-          type: 'array',
-          fields: [{ name: 'name', type: 'text' }],
+          name: "tags",
+          type: "array",
+          fields: [{ name: "name", type: "text" }],
         },
-      ]
-      const data = { tags: [{ id: '1', name: 'tag1' }] }
+      ];
+      const data = { tags: [{ id: "1", name: "tag1" }] };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({})
-    })
-  })
+      expect(result).toEqual({});
+    });
+  });
 
-  describe('blocks fields', () => {
-    it('should recursively filter blocks with blockType and id preserved', () => {
+  describe("blocks fields", () => {
+    it("should recursively filter blocks with blockType and id preserved", () => {
       const schema: Field[] = [
         {
-          name: 'content',
-          type: 'blocks',
+          name: "content",
+          type: "blocks",
           blocks: [
             {
-              slug: 'text',
+              slug: "text",
               fields: [
-                { name: 'body', type: 'richText', localized: true },
-                { name: 'alignment', type: 'select', options: ['left', 'center'] },
+                { name: "body", type: "richText", localized: true },
+                { name: "alignment", type: "select", options: ["left", "center"] },
               ],
             },
           ],
         },
-      ]
+      ];
       const data = {
-        content: [{ id: 'block1', blockType: 'text', body: { root: {} }, alignment: 'center' }],
-      }
+        content: [{ id: "block1", blockType: "text", body: { root: {} }, alignment: "center" }],
+      };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
       expect(result).toEqual({
-        content: [{ id: 'block1', blockType: 'text', body: { root: {} } }],
-      })
-    })
+        content: [{ id: "block1", blockType: "text", body: { root: {} } }],
+      });
+    });
 
-    it('should handle multiple block types', () => {
+    it("should handle multiple block types", () => {
       const schema: Field[] = [
         {
-          name: 'content',
-          type: 'blocks',
+          name: "content",
+          type: "blocks",
           blocks: [
             {
-              slug: 'heading',
-              fields: [{ name: 'title', type: 'text', localized: true }],
+              slug: "heading",
+              fields: [{ name: "title", type: "text", localized: true }],
             },
             {
-              slug: 'image',
-              fields: [{ name: 'alt', type: 'text', localized: true }],
+              slug: "image",
+              fields: [{ name: "alt", type: "text", localized: true }],
             },
           ],
         },
-      ]
+      ];
       const data = {
         content: [
-          { id: '1', blockType: 'heading', title: 'Hello' },
-          { id: '2', blockType: 'image', alt: 'Image alt' },
+          { id: "1", blockType: "heading", title: "Hello" },
+          { id: "2", blockType: "image", alt: "Image alt" },
         ],
-      }
+      };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
       expect(result).toEqual({
         content: [
-          { id: '1', blockType: 'heading', title: 'Hello' },
-          { id: '2', blockType: 'image', alt: 'Image alt' },
+          { id: "1", blockType: "heading", title: "Hello" },
+          { id: "2", blockType: "image", alt: "Image alt" },
         ],
-      })
-    })
-  })
+      });
+    });
+  });
 
-  describe('tabs fields', () => {
-    it('should process tabs as flat fields', () => {
+  describe("tabs fields", () => {
+    it("should process tabs as flat fields", () => {
       const schema: Field[] = [
         {
-          type: 'tabs',
+          type: "tabs",
           tabs: [
             {
-              label: 'Content',
-              fields: [{ name: 'title', type: 'text', localized: true }],
+              label: "Content",
+              fields: [{ name: "title", type: "text", localized: true }],
             },
             {
-              label: 'Settings',
-              fields: [{ name: 'slug', type: 'text' }],
+              label: "Settings",
+              fields: [{ name: "slug", type: "text" }],
             },
           ],
         },
-      ]
-      const data = { title: 'Hello', slug: 'hello' }
+      ];
+      const data = { title: "Hello", slug: "hello" };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({ title: 'Hello' })
-    })
-  })
+      expect(result).toEqual({ title: "Hello" });
+    });
+  });
 
-  describe('row/collapsible fields', () => {
-    it('should process row fields as flat', () => {
+  describe("row/collapsible fields", () => {
+    it("should process row fields as flat", () => {
       const schema: Field[] = [
         {
-          type: 'row',
+          type: "row",
           fields: [
-            { name: 'firstName', type: 'text', localized: true },
-            { name: 'lastName', type: 'text', localized: true },
+            { name: "firstName", type: "text", localized: true },
+            { name: "lastName", type: "text", localized: true },
           ],
         },
-      ]
-      const data = { firstName: 'John', lastName: 'Doe' }
+      ];
+      const data = { firstName: "John", lastName: "Doe" };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({ firstName: 'John', lastName: 'Doe' })
-    })
+      expect(result).toEqual({ firstName: "John", lastName: "Doe" });
+    });
 
-    it('should process collapsible fields', () => {
+    it("should process collapsible fields", () => {
       const schema: Field[] = [
         {
-          type: 'collapsible',
-          label: 'Advanced',
-          fields: [{ name: 'meta', type: 'text', localized: true }],
+          type: "collapsible",
+          label: "Advanced",
+          fields: [{ name: "meta", type: "text", localized: true }],
         },
-      ]
-      const data = { meta: 'Some meta' }
+      ];
+      const data = { meta: "Some meta" };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({ meta: 'Some meta' })
-    })
-  })
+      expect(result).toEqual({ meta: "Some meta" });
+    });
+  });
 
-  describe('non-translatable fields', () => {
-    it('should filter out localized number field', () => {
-      const schema: Field[] = [{ name: 'count', type: 'number', localized: true }]
-      const data = { count: 42 }
+  describe("non-translatable fields", () => {
+    it("should filter out localized number field", () => {
+      const schema: Field[] = [{ name: "count", type: "number", localized: true }];
+      const data = { count: 42 };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({})
-    })
+      expect(result).toEqual({});
+    });
 
-    it('should filter out localized checkbox field', () => {
-      const schema: Field[] = [{ name: 'enabled', type: 'checkbox', localized: true }]
-      const data = { enabled: true }
+    it("should filter out localized checkbox field", () => {
+      const schema: Field[] = [{ name: "enabled", type: "checkbox", localized: true }];
+      const data = { enabled: true };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({})
-    })
+      expect(result).toEqual({});
+    });
 
-    it('should filter out localized select field', () => {
-      const schema: Field[] = [{ name: 'status', type: 'select', options: ['draft', 'published'], localized: true }]
-      const data = { status: 'draft' }
+    it("should filter out localized select field", () => {
+      const schema: Field[] = [{ name: "status", type: "select", options: ["draft", "published"], localized: true }];
+      const data = { status: "draft" };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({})
-    })
+      expect(result).toEqual({});
+    });
 
-    it('should filter out localized json field', () => {
-      const schema: Field[] = [{ name: 'metadata', type: 'json', localized: true }]
-      const data = { metadata: { key: 'value' } }
+    it("should filter out localized json field", () => {
+      const schema: Field[] = [{ name: "metadata", type: "json", localized: true }];
+      const data = { metadata: { key: "value" } };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({})
-    })
+      expect(result).toEqual({});
+    });
 
-    it('should filter out localized code field', () => {
-      const schema: Field[] = [{ name: 'snippet', type: 'code', localized: true }]
-      const data = { snippet: 'const x = 1' }
+    it("should filter out localized code field", () => {
+      const schema: Field[] = [{ name: "snippet", type: "code", localized: true }];
+      const data = { snippet: "const x = 1" };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({})
-    })
+      expect(result).toEqual({});
+    });
 
-    it('should filter out localized point field', () => {
-      const schema: Field[] = [{ name: 'location', type: 'point', localized: true }]
-      const data = { location: [0, 0] }
+    it("should filter out localized point field", () => {
+      const schema: Field[] = [{ name: "location", type: "point", localized: true }];
+      const data = { location: [0, 0] };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({})
-    })
+      expect(result).toEqual({});
+    });
 
-    it('should filter out localized relationship field', () => {
-      const schema: Field[] = [{ name: 'author', type: 'relationship', relationTo: 'users', localized: true }]
-      const data = { author: '123' }
+    it("should filter out localized relationship field", () => {
+      const schema: Field[] = [{ name: "author", type: "relationship", relationTo: "users", localized: true }];
+      const data = { author: "123" };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({})
-    })
+      expect(result).toEqual({});
+    });
 
-    it('should filter out localized upload field', () => {
-      const schema: Field[] = [{ name: 'image', type: 'upload', relationTo: 'media', localized: true }]
-      const data = { image: '456' }
+    it("should filter out localized upload field", () => {
+      const schema: Field[] = [{ name: "image", type: "upload", relationTo: "media", localized: true }];
+      const data = { image: "456" };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({})
-    })
+      expect(result).toEqual({});
+    });
 
-    it('should filter out localized date field', () => {
-      const schema: Field[] = [{ name: 'publishedAt', type: 'date', localized: true }]
-      const data = { publishedAt: '2024-01-01' }
+    it("should filter out localized date field", () => {
+      const schema: Field[] = [{ name: "publishedAt", type: "date", localized: true }];
+      const data = { publishedAt: "2024-01-01" };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({})
-    })
+      expect(result).toEqual({});
+    });
 
-    it('should filter out localized email field', () => {
-      const schema: Field[] = [{ name: 'contact', type: 'email', localized: true }]
-      const data = { contact: 'test@example.com' }
+    it("should filter out localized email field", () => {
+      const schema: Field[] = [{ name: "contact", type: "email", localized: true }];
+      const data = { contact: "test@example.com" };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
-      expect(result).toEqual({})
-    })
+      expect(result).toEqual({});
+    });
 
-    it('should keep translatable fields while filtering non-translatable', () => {
+    it("should keep translatable fields while filtering non-translatable", () => {
       const schema: Field[] = [
-        { name: 'title', type: 'text', localized: true },
-        { name: 'count', type: 'number', localized: true },
-        { name: 'description', type: 'textarea', localized: true },
-        { name: 'status', type: 'select', options: ['a', 'b'], localized: true },
-        { name: 'body', type: 'richText', localized: true },
-      ]
+        { name: "title", type: "text", localized: true },
+        { name: "count", type: "number", localized: true },
+        { name: "description", type: "textarea", localized: true },
+        { name: "status", type: "select", options: ["a", "b"], localized: true },
+        { name: "body", type: "richText", localized: true },
+      ];
       const data = {
-        title: 'Hello',
+        title: "Hello",
         count: 42,
-        description: 'World',
-        status: 'a',
+        description: "World",
+        status: "a",
         body: { root: {} },
-      }
+      };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
       expect(result).toEqual({
-        title: 'Hello',
-        description: 'World',
+        title: "Hello",
+        description: "World",
         body: { root: {} },
-      })
-    })
-  })
+      });
+    });
+  });
 
-  describe('nested structures', () => {
-    it('should handle deeply nested localized fields', () => {
+  describe("nested structures", () => {
+    it("should handle deeply nested localized fields", () => {
       const schema: Field[] = [
         {
-          name: 'sections',
-          type: 'array',
+          name: "sections",
+          type: "array",
           fields: [
             {
-              name: 'content',
-              type: 'blocks',
+              name: "content",
+              type: "blocks",
               blocks: [
                 {
-                  slug: 'text',
+                  slug: "text",
                   fields: [
                     {
-                      name: 'wrapper',
-                      type: 'group',
-                      fields: [{ name: 'body', type: 'richText', localized: true }],
+                      name: "wrapper",
+                      type: "group",
+                      fields: [{ name: "body", type: "richText", localized: true }],
                     },
                   ],
                 },
@@ -389,26 +389,70 @@ describe('filterLocalizedFields', () => {
             },
           ],
         },
-      ]
+      ];
       const data = {
         sections: [
           {
-            id: 's1',
-            content: [{ id: 'b1', blockType: 'text', wrapper: { body: { root: {} } } }],
+            id: "s1",
+            content: [{ id: "b1", blockType: "text", wrapper: { body: { root: {} } } }],
           },
         ],
-      }
+      };
 
-      const result = filterLocalizedFields(schema, data)
+      const result = filterLocalizedFields(schema, data);
 
       expect(result).toEqual({
         sections: [
           {
-            id: 's1',
-            content: [{ id: 'b1', blockType: 'text', wrapper: { body: { root: {} } } }],
+            id: "s1",
+            content: [{ id: "b1", blockType: "text", wrapper: { body: { root: {} } } }],
           },
         ],
-      })
-    })
-  })
-})
+      });
+    });
+  });
+
+  describe("edge cases — empty / unknown / non-object", () => {
+    it("drops a blocks field whose blocks have no localized content", () => {
+      const schema: Field[] = [
+        {
+          name: "content",
+          type: "blocks",
+          blocks: [{ slug: "plain", fields: [{ name: "caption", type: "text" }] }],
+        },
+      ];
+      const data = { content: [{ id: "b1", blockType: "plain", caption: "no-translate" }] };
+
+      expect(filterLocalizedFields(schema, data)).toEqual({});
+    });
+
+    it("drops block items with an unknown blockType, keeping known ones", () => {
+      const schema: Field[] = [
+        {
+          name: "content",
+          type: "blocks",
+          blocks: [{ slug: "heading", fields: [{ name: "title", type: "text", localized: true }] }],
+        },
+      ];
+      const data = {
+        content: [
+          { id: "1", blockType: "heading", title: "Hello" },
+          { id: "2", blockType: "ghost", title: "Ignored" },
+        ],
+      };
+
+      expect(filterLocalizedFields(schema, data)).toEqual({
+        content: [{ id: "1", blockType: "heading", title: "Hello" }],
+      });
+    });
+
+    it("drops non-object items from arrays, keeping object items", () => {
+      const schema: Field[] = [{ name: "items", type: "array", fields: [{ name: "text", type: "text", localized: true }] }];
+      const data = { items: [{ id: "1", text: "A" }, "oops", 42, null] };
+
+      expect(filterLocalizedFields(schema, data)).toEqual({
+        items: [{ id: "1", text: "A" }],
+      });
+    });
+  });
+});
