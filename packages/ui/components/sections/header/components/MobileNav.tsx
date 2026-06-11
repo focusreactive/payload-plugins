@@ -55,11 +55,11 @@ export function MobileNav({ navItems, actions }: MobileNavProps) {
       <div
         id={panelId}
         className={cn(
-          "overflow-hidden border-border transition-[max-height,padding] duration-300 ease-out motion-reduce:transition-none min-[860px]:hidden",
-          open ? "max-h-[60vh] border-t px-containerBase pb-5 pt-2" : "max-h-0"
+          "absolute left-0 top-full w-full bg-background px-containerBase overflow-hidden border-border border-t transition-[max-height,padding] duration-300 ease-out motion-reduce:transition-none min-[860px]:hidden",
+          open ? "max-h-[60vh]" : "max-h-0"
         )}
       >
-        <nav aria-label="Mobile" className="flex flex-col gap-1">
+        <nav aria-label="Mobile" className="flex flex-col gap-1 pb-5 pt-2">
           {navItems.map((item, index) => {
             const itemKey = `${item.label}-${index}`;
 
