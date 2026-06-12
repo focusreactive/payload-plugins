@@ -35,20 +35,144 @@ body {
   --tw-prose-bullets: var(--color-muted-foreground);
   --tw-prose-quotes: var(--color-foreground);
   --tw-prose-code: var(--color-foreground);
+
+  --tw-prose-invert-body: var(--color-foreground);
+  --tw-prose-invert-headings: var(--color-foreground);
+  --tw-prose-invert-lead: var(--color-muted-foreground);
+  --tw-prose-invert-bold: var(--color-foreground);
+  --tw-prose-invert-links: var(--color-primary);
+  --tw-prose-invert-counters: var(--color-muted-foreground);
+  --tw-prose-invert-bullets: var(--color-muted-foreground);
+  --tw-prose-invert-quotes: var(--color-foreground);
+  --tw-prose-invert-code: var(--color-foreground);
 }
 
-.testimonials-carousel:hover .testimonials-carousel-group {
-  animation-play-state: paused;
+.prose :where(p):not(:where(.content-section-prose *)) {
+  font-size: 1.18rem;
+  line-height: 1.75;
+  color: color-mix(in srgb, var(--color-foreground) 88%, transparent);
 }
+
+.prose :where(h2):not(:where(.content-section-prose *)) {
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 3vw, 2.2rem);
+  line-height: 1.1;
+  letter-spacing: -0.012em;
+  margin-top: 1.8em;
+  color: var(--color-foreground);
+}
+
+.prose :where(h3):not(:where(.content-section-prose *)) {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin-top: 1.6em;
+  color: var(--color-foreground);
+}
+
+.prose :where(blockquote):not(:where(.content-section-prose *)) {
+  margin: 1.8em 0;
+  padding: 4px 0 4px 28px;
+  border-left: 3px solid var(--color-primary);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-weight: 500;
+  font-style: italic;
+  color: color-mix(in srgb, var(--color-foreground) 80%, transparent);
+}
+
+.prose :where(ul):not(:where(.content-section-prose *)) {
+  list-style: none;
+  padding-left: 0;
+  font-size: 1.12rem;
+  line-height: 1.7;
+  color: color-mix(in srgb, var(--color-foreground) 88%, transparent);
+}
+
+.prose :where(ul > li):not(:where(.content-section-prose *)) {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.prose :where(ul > li):not(:where(.content-section-prose *))::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+}
+
+.prose :where(ul > li):not(:where(.content-section-prose *))::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 10px;
+  width: 5px;
+  height: 9px;
+  border-right: 2px solid var(--color-primary);
+  border-bottom: 2px solid var(--color-primary);
+  transform: rotate(45deg);
+}
+
+.prose :where(figcaption):not(:where(.content-section-prose *)) {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+  margin-top: 12px;
+  text-align: center;
+}
+
+.prose :where(figure):not(:where(.content-section-prose *)) {
+  margin-top: 2em;
+  margin-bottom: 2em;
+}
+
+.prose-embedded-block {
+  margin-block: 2.4em;
+  padding: 1.875rem; /* 30px */
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.prose-embedded-block__label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  margin-bottom: 18px;
+}
+
 .testimonials-carousel-group {
   animation: testimonials-carousel-scrolling var(--testimonials-carousel-duration, 60s) linear
     infinite;
 }
+
+.testimonials-carousel:hover .testimonials-carousel-group,
+.testimonials-carousel:focus-within .testimonials-carousel-group {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .testimonials-carousel-group {
+    animation: none;
+  }
+}
+
 @keyframes testimonials-carousel-scrolling {
-  0% {
+  from {
     transform: translateX(0);
   }
-  100% {
+  to {
     transform: translateX(-100%);
   }
 }

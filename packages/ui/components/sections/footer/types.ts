@@ -1,10 +1,26 @@
 import type { IImageProps } from "../../ui/image/types";
-import type { LinkProps } from "../../ui/link/types";
-import type { IRichTextProps } from "../../ui/richText/types";
+
+export interface FooterLink {
+  label: string;
+  href: string;
+  newTab?: boolean;
+}
+
+export interface FooterLinkGroup {
+  label: string;
+  links: FooterLink[];
+}
+
+export interface FooterBrand {
+  label: string;
+  href: string;
+  logo?: IImageProps | null;
+}
 
 export interface IFooterProps {
-  links: LinkProps[];
-  image: IImageProps;
-  text: IRichTextProps;
+  brand: FooterBrand;
+  description?: string;
+  linkGroups: FooterLinkGroup[];
+  legalLinks: FooterLink[];
   copywriteText?: string;
 }

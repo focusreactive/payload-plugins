@@ -4,7 +4,11 @@ import type { Page } from "@/payload-types";
 
 import { CardsGridBlockComponent } from "./CardsGrid/Component";
 import { CarouselBlockComponent } from "./Carousel/Component";
+import { ChartBlockComponent } from "./Chart/Component";
 import { ContentBlockComponent } from "./Content/Component";
+import { CtaBandBlockComponent } from "./CtaBand/Component";
+import { NewsletterBlockComponent } from "./Newsletter/Component";
+import { StatsBlockComponent } from "./Stats/Component";
 import { FaqBlockComponent } from "./Faq/Component";
 import { HeroBlockComponent } from "./Hero/Component";
 import { LinksListBlockComponent } from "./LinksList/Component";
@@ -15,7 +19,11 @@ import { TextSectionBlockComponent } from "./TextSection/Component";
 const blockComponents = {
   cardsGrid: CardsGridBlockComponent,
   carousel: CarouselBlockComponent,
+  chart: ChartBlockComponent,
   content: ContentBlockComponent,
+  ctaBand: CtaBandBlockComponent,
+  newsletter: NewsletterBlockComponent,
+  stats: StatsBlockComponent,
   faq: FaqBlockComponent,
   hero: HeroBlockComponent,
   linksList: LinksListBlockComponent,

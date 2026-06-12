@@ -29,7 +29,7 @@
     "cmdk": "1.0.0",
     "next": "15.5.9",
     "react-hook-form": "7.51.5",
-    "swiper": "11.1.14",
+    "recharts": "2.15.4",
     "tailwind-merge": "3.4.0"
   },
   "devDependencies": {

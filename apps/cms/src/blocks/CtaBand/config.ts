@@ -1,0 +1,55 @@
+import type { Block, Field, GroupField } from "payload";
+
+import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
+import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
+import { embedSectionTab } from "@/fields/section/embedSectionTab";
+import { link } from "@/fields/link";
+
+const fields: Field[] = [
+  {
+    defaultValue: createLocalizedDefault({ en: "Get started", es: "Empieza ahora" }),
+    label: { en: "Badge", es: "Insignia" },
+    localized: true,
+    name: "badge",
+    type: "text",
+  },
+  {
+    defaultValue: createLocalizedDefault({ en: "Start shipping in rhythm.", es: "Empieza a publicar con ritmo." }),
+    label: { en: "Heading", es: "Encabezado" },
+    localized: true,
+    name: "heading",
+    required: true,
+    type: "text",
+  },
+  {
+    label: { en: "Lead", es: "Entradilla" },
+    localized: true,
+    name: "lead",
+    type: "text",
+  },
+  {
+    admin: {
+      components: { RowLabel: "@/core/ui/components/RowLabel#RowLabel" },
+      initCollapsed: true,
+    },
+    fields: (link() as GroupField).fields,
+    label: { en: "Actions", es: "Acciones" },
+    localized: true,
+    maxRows: 2,
+    minRows: 1,
+    name: "actions",
+    required: true,
+    type: "array",
+  },
+];
+
+export const CtaBandBlock: Block = {
+  slug: "ctaBand",
+  interfaceName: "CtaBandBlock",
+  ...getBlockPreviewImage("CTA Band"),
+  labels: {
+    plural: { en: "CTA Bands", es: "Bandas CTA" },
+    singular: { en: "CTA Band", es: "Banda CTA" },
+  },
+  fields: embedSectionTab(fields),
+};

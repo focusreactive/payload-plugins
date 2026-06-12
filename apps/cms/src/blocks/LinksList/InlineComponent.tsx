@@ -8,5 +8,9 @@ import type { LinksListInlineBlock } from "@/payload-types";
 export async function LinksListInlineComponent({ links, alignVariant }: LinksListInlineBlock) {
   const locale = await resolveLocale();
 
-  return <LinksList links={(links ?? []).map((item) => prepareLinkProps(item.link, locale))} alignVariant={(alignVariant as AlignVariant) ?? AlignVariant.Left} />;
+  return (
+    <div className="prose-embedded-block">
+      <LinksList links={(links ?? []).map((item) => prepareLinkProps(item.link, locale))} alignVariant={(alignVariant as AlignVariant) ?? AlignVariant.Left} />
+    </div>
+  );
 }

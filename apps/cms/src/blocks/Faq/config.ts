@@ -17,11 +17,23 @@ function buildFaqItems(locale: Locale) {
 
 const fields: Field[] = [
   {
+    label: { en: "Badge", es: "Insignia" },
+    localized: true,
+    name: "badge",
+    type: "text",
+  },
+  {
     defaultValue: createLocalizedDefault(DEFAULT_VALUES.blocks.faq.heading),
     label: { en: "Heading", es: "Encabezado" },
     localized: true,
     name: "heading",
     required: true,
+    type: "text",
+  },
+  {
+    label: { en: "Lead", es: "Entradilla" },
+    localized: true,
+    name: "lead",
     type: "text",
   },
   {

@@ -2,7 +2,11 @@ import type { Field } from "payload";
 
 import { CardsGridBlock } from "@/blocks/CardsGrid/config";
 import { CarouselBlock } from "@/blocks/Carousel/config";
+import { ChartBlock } from "@/blocks/Chart/config";
 import { ContentBlock } from "@/blocks/Content/config";
+import { CtaBandBlock } from "@/blocks/CtaBand/config";
+import { NewsletterBlock } from "@/blocks/Newsletter/config";
+import { StatsBlock } from "@/blocks/Stats/config";
 import { FaqBlock } from "@/blocks/Faq/config";
 import { HeroBlock } from "@/blocks/Hero/config";
 import { LinksListBlock } from "@/blocks/LinksList/config";
@@ -43,7 +47,21 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
               admin: {
                 initCollapsed: false,
               },
-              blocks: [HeroBlock, TextSectionBlock, ContentBlock, FaqBlock, TestimonialsListBlock, CardsGridBlock, CarouselBlock, LogosBlock, LinksListBlock],
+              blocks: [
+                HeroBlock,
+                TextSectionBlock,
+                ContentBlock,
+                FaqBlock,
+                TestimonialsListBlock,
+                CardsGridBlock,
+                CarouselBlock,
+                LogosBlock,
+                LinksListBlock,
+                ChartBlock,
+                CtaBandBlock,
+                NewsletterBlock,
+                StatsBlock,
+              ],
               localized: true,
               name: "blocks",
               required: true,

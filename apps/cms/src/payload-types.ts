@@ -373,6 +373,10 @@ export interface Page {
     | CarouselBlock
     | LogosBlock
     | LinksListBlock
+    | ChartBlock
+    | CtaBandBlock
+    | NewsletterBlock
+    | StatsBlock
   )[];
   meta?: {
     title?: string | null;
@@ -621,14 +625,34 @@ export interface Footer {
    * The logo to display in the footer
    */
   logo: number | Media;
-  /**
-   * Footer navigation links (up to 10 items)
-   */
-  links?:
+  description?: string | null;
+  linkGroups?:
     | {
-        /**
-         * Link settings
-         */
+        label: string;
+        links: {
+          link: {
+            type?: ('reference' | 'custom' | 'customPage') | null;
+            newTab?: boolean | null;
+            reference?:
+              | ({
+                  relationTo: 'page';
+                  value: number | Page;
+                } | null)
+              | ({
+                  relationTo: 'posts';
+                  value: number | Post;
+                } | null);
+            url?: string | null;
+            customPage?: ('blog' | 'search') | null;
+            label: string;
+          };
+          id?: string | null;
+        }[];
+        id?: string | null;
+      }[]
+    | null;
+  legalLinks?:
+    | {
         link: {
           type?: ('reference' | 'custom' | 'customPage') | null;
           newTab?: boolean | null;
@@ -648,24 +672,6 @@ export interface Footer {
         id?: string | null;
       }[]
     | null;
-  /**
-   * Footer body text
-   */
-  text?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
   /**
    * Copyright text shown at the bottom
    */
@@ -797,6 +803,7 @@ export interface TextSectionBlock {
  * via the `definition` "ContentBlock".
  */
 export interface ContentBlock {
+  badge?: string | null;
   heading?: string | null;
   layout: 'image-text' | 'text-image';
   image: number | Media;
@@ -815,6 +822,29 @@ export interface ContentBlock {
     };
     [k: string]: unknown;
   };
+  actions?:
+    | {
+        type?: ('reference' | 'custom' | 'customPage') | null;
+        newTab?: boolean | null;
+        reference?:
+          | ({
+              relationTo: 'page';
+              value: number | Page;
+            } | null)
+          | ({
+              relationTo: 'posts';
+              value: number | Post;
+            } | null);
+        url?: string | null;
+        customPage?: ('blog' | 'search') | null;
+        label: string;
+        /**
+         * Choose how the link should be rendered.
+         */
+        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+        id?: string | null;
+      }[]
+    | null;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
     paddingY?: ('none' | 'base' | 'large') | null;
@@ -841,7 +871,9 @@ export interface ContentBlock {
  * via the `definition` "FaqBlock".
  */
 export interface FaqBlock {
+  badge?: string | null;
   heading: string;
+  lead?: string | null;
   items: {
     question: string;
     answer: {
@@ -944,6 +976,33 @@ export interface Testimonial {
 export interface CardsGridBlock {
   columns?: number | null;
   items: {
+    /**
+     * Optional icon shown in a tinted tile
+     */
+    icon?:
+      | (
+          | 'map'
+          | 'clock'
+          | 'zap'
+          | 'activity'
+          | 'layout-grid'
+          | 'sparkles'
+          | 'file-text'
+          | 'users'
+          | 'bar-chart-3'
+          | 'plug'
+          | 'shield'
+          | 'git-branch'
+          | 'gauge'
+          | 'bell'
+          | 'layers'
+          | 'workflow'
+          | 'calendar'
+          | 'compass'
+          | 'target'
+          | 'wand-2'
+        )
+      | null;
     title: string;
     description?: string | null;
     image?: {
@@ -1163,6 +1222,158 @@ export interface LinksListBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ChartBlock".
+ */
+export interface ChartBlock {
+  title: string;
+  subtitle?: string | null;
+  /**
+   * Each range becomes a tab. The first range is shown by default.
+   */
+  ranges: {
+    label: string;
+    dataPoints: {
+      label: string;
+      value: number;
+      id?: string | null;
+    }[];
+    id?: string | null;
+  }[];
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    maxWidth?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'chart';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CtaBandBlock".
+ */
+export interface CtaBandBlock {
+  badge?: string | null;
+  heading: string;
+  lead?: string | null;
+  actions: {
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+    label: string;
+    /**
+     * Choose how the link should be rendered.
+     */
+    appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+    id?: string | null;
+  }[];
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    maxWidth?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'ctaBand';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "NewsletterBlock".
+ */
+export interface NewsletterBlock {
+  badge?: string | null;
+  heading: string;
+  inputPlaceholder: string;
+  buttonLabel: string;
+  disclaimer?: string | null;
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    maxWidth?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'newsletter';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "StatsBlock".
+ */
+export interface StatsBlock {
+  items: {
+    value: string;
+    label: string;
+    id?: string | null;
+  }[];
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    maxWidth?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'stats';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "document-embeddings".
  */
 export interface DocumentEmbedding {
@@ -1332,6 +1543,7 @@ export interface Preset {
         blockType: 'textSection';
       }
     | {
+        badge?: string | null;
         heading?: string | null;
         layout: 'image-text' | 'text-image';
         image: number | Media;
@@ -1350,6 +1562,29 @@ export interface Preset {
           };
           [k: string]: unknown;
         };
+        actions?:
+          | {
+              type?: ('reference' | 'custom' | 'customPage') | null;
+              newTab?: boolean | null;
+              reference?:
+                | ({
+                    relationTo: 'page';
+                    value: number | Page;
+                  } | null)
+                | ({
+                    relationTo: 'posts';
+                    value: number | Post;
+                  } | null);
+              url?: string | null;
+              customPage?: ('blog' | 'search') | null;
+              label: string;
+              /**
+               * Choose how the link should be rendered.
+               */
+              appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+              id?: string | null;
+            }[]
+          | null;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
           paddingY?: ('none' | 'base' | 'large') | null;
@@ -1372,7 +1607,9 @@ export interface Preset {
         blockType: 'content';
       }
     | {
+        badge?: string | null;
         heading: string;
+        lead?: string | null;
         items: {
           question: string;
           answer: {
@@ -1452,6 +1689,33 @@ export interface Preset {
     | {
         columns?: number | null;
         items: {
+          /**
+           * Optional icon shown in a tinted tile
+           */
+          icon?:
+            | (
+                | 'map'
+                | 'clock'
+                | 'zap'
+                | 'activity'
+                | 'layout-grid'
+                | 'sparkles'
+                | 'file-text'
+                | 'users'
+                | 'bar-chart-3'
+                | 'plug'
+                | 'shield'
+                | 'git-branch'
+                | 'gauge'
+                | 'bell'
+                | 'layers'
+                | 'workflow'
+                | 'calendar'
+                | 'compass'
+                | 'target'
+                | 'wand-2'
+              )
+            | null;
           title: string;
           description?: string | null;
           image?: {
@@ -1656,6 +1920,142 @@ export interface Preset {
         id?: string | null;
         blockName?: string | null;
         blockType: 'linksList';
+      }
+    | {
+        title: string;
+        subtitle?: string | null;
+        /**
+         * Each range becomes a tab. The first range is shown by default.
+         */
+        ranges: {
+          label: string;
+          dataPoints: {
+            label: string;
+            value: number;
+            id?: string | null;
+          }[];
+          id?: string | null;
+        }[];
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          maxWidth?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'chart';
+      }
+    | {
+        badge?: string | null;
+        heading: string;
+        lead?: string | null;
+        actions: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label: string;
+          /**
+           * Choose how the link should be rendered.
+           */
+          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+          id?: string | null;
+        }[];
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          maxWidth?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'ctaBand';
+      }
+    | {
+        badge?: string | null;
+        heading: string;
+        inputPlaceholder: string;
+        buttonLabel: string;
+        disclaimer?: string | null;
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          maxWidth?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'newsletter';
+      }
+    | {
+        items: {
+          value: string;
+          label: string;
+          id?: string | null;
+        }[];
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          maxWidth?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'stats';
       }
   )[];
   updatedAt: string;
@@ -2222,6 +2622,10 @@ export interface PageSelect<T extends boolean = true> {
         carousel?: T | CarouselBlockSelect<T>;
         logos?: T | LogosBlockSelect<T>;
         linksList?: T | LinksListBlockSelect<T>;
+        chart?: T | ChartBlockSelect<T>;
+        ctaBand?: T | CtaBandBlockSelect<T>;
+        newsletter?: T | NewsletterBlockSelect<T>;
+        stats?: T | StatsBlockSelect<T>;
       };
   meta?:
     | T
@@ -2326,10 +2730,23 @@ export interface TextSectionBlockSelect<T extends boolean = true> {
  * via the `definition` "ContentBlock_select".
  */
 export interface ContentBlockSelect<T extends boolean = true> {
+  badge?: T;
   heading?: T;
   layout?: T;
   image?: T;
   content?: T;
+  actions?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+        appearance?: T;
+        id?: T;
+      };
   section?:
     | T
     | {
@@ -2353,7 +2770,9 @@ export interface ContentBlockSelect<T extends boolean = true> {
  * via the `definition` "FaqBlock_select".
  */
 export interface FaqBlockSelect<T extends boolean = true> {
+  badge?: T;
   heading?: T;
+  lead?: T;
   items?:
     | T
     | {
@@ -2422,6 +2841,7 @@ export interface CardsGridBlockSelect<T extends boolean = true> {
   items?:
     | T
     | {
+        icon?: T;
         title?: T;
         description?: T;
         image?:
@@ -2589,6 +3009,140 @@ export interface LinksListBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ChartBlock_select".
+ */
+export interface ChartBlockSelect<T extends boolean = true> {
+  title?: T;
+  subtitle?: T;
+  ranges?:
+    | T
+    | {
+        label?: T;
+        dataPoints?:
+          | T
+          | {
+              label?: T;
+              value?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        paddingY?: T;
+        paddingX?: T;
+        maxWidth?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CtaBandBlock_select".
+ */
+export interface CtaBandBlockSelect<T extends boolean = true> {
+  badge?: T;
+  heading?: T;
+  lead?: T;
+  actions?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+        appearance?: T;
+        id?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        paddingY?: T;
+        paddingX?: T;
+        maxWidth?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "NewsletterBlock_select".
+ */
+export interface NewsletterBlockSelect<T extends boolean = true> {
+  badge?: T;
+  heading?: T;
+  inputPlaceholder?: T;
+  buttonLabel?: T;
+  disclaimer?: T;
+  section?:
+    | T
+    | {
+        theme?: T;
+        paddingY?: T;
+        paddingX?: T;
+        maxWidth?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "StatsBlock_select".
+ */
+export interface StatsBlockSelect<T extends boolean = true> {
+  items?:
+    | T
+    | {
+        value?: T;
+        label?: T;
+        id?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        paddingY?: T;
+        paddingX?: T;
+        maxWidth?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories_select".
  */
 export interface CategoriesSelect<T extends boolean = true> {
@@ -2732,7 +3286,29 @@ export interface HeaderSelect<T extends boolean = true> {
 export interface FooterSelect<T extends boolean = true> {
   name?: T;
   logo?: T;
-  links?:
+  description?: T;
+  linkGroups?:
+    | T
+    | {
+        label?: T;
+        links?:
+          | T
+          | {
+              link?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                  };
+              id?: T;
+            };
+        id?: T;
+      };
+  legalLinks?:
     | T
     | {
         link?:
@@ -2747,7 +3323,6 @@ export interface FooterSelect<T extends boolean = true> {
             };
         id?: T;
       };
-  text?: T;
   copywriteText?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -2863,10 +3438,23 @@ export interface PresetsSelect<T extends boolean = true> {
         content?:
           | T
           | {
+              badge?: T;
               heading?: T;
               layout?: T;
               image?: T;
               content?: T;
+              actions?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                    appearance?: T;
+                    id?: T;
+                  };
               section?:
                 | T
                 | {
@@ -2888,7 +3476,9 @@ export interface PresetsSelect<T extends boolean = true> {
         faq?:
           | T
           | {
+              badge?: T;
               heading?: T;
+              lead?: T;
               items?:
                 | T
                 | {
@@ -2953,6 +3543,7 @@ export interface PresetsSelect<T extends boolean = true> {
               items?:
                 | T
                 | {
+                    icon?: T;
                     title?: T;
                     description?: T;
                     image?:
@@ -3092,6 +3683,132 @@ export interface PresetsSelect<T extends boolean = true> {
                           label?: T;
                           appearance?: T;
                         };
+                    id?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    maxWidth?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        chart?:
+          | T
+          | {
+              title?: T;
+              subtitle?: T;
+              ranges?:
+                | T
+                | {
+                    label?: T;
+                    dataPoints?:
+                      | T
+                      | {
+                          label?: T;
+                          value?: T;
+                          id?: T;
+                        };
+                    id?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    maxWidth?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        ctaBand?:
+          | T
+          | {
+              badge?: T;
+              heading?: T;
+              lead?: T;
+              actions?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                    appearance?: T;
+                    id?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    maxWidth?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        newsletter?:
+          | T
+          | {
+              badge?: T;
+              heading?: T;
+              inputPlaceholder?: T;
+              buttonLabel?: T;
+              disclaimer?: T;
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    maxWidth?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        stats?:
+          | T
+          | {
+              items?:
+                | T
+                | {
+                    value?: T;
+                    label?: T;
                     id?: T;
                   };
               section?:
@@ -3509,6 +4226,33 @@ export interface TaskSchedulePublish {
 export interface CardsGridInlineBlock {
   columns?: number | null;
   items: {
+    /**
+     * Optional icon shown in a tinted tile
+     */
+    icon?:
+      | (
+          | 'map'
+          | 'clock'
+          | 'zap'
+          | 'activity'
+          | 'layout-grid'
+          | 'sparkles'
+          | 'file-text'
+          | 'users'
+          | 'bar-chart-3'
+          | 'plug'
+          | 'shield'
+          | 'git-branch'
+          | 'gauge'
+          | 'bell'
+          | 'layers'
+          | 'workflow'
+          | 'calendar'
+          | 'compass'
+          | 'target'
+          | 'wand-2'
+        )
+      | null;
     title: string;
     description?: string | null;
     image?: {
