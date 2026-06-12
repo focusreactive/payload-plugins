@@ -51,7 +51,8 @@ function RangeTab({ label, isActive, onSelect }: RangeTabProps) {
         "cursor-pointer rounded-pill border-none px-[15px] py-2 text-[0.82rem] font-semibold whitespace-nowrap",
         "transition-colors duration-150 ease-out",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-        isActive ? "bg-primary-soft text-primary" : "text-muted-foreground hover:text-foreground"
+        "text-muted-foreground hover:text-foreground",
+        isActive && "bg-surface"
       )}
     >
       {label}
