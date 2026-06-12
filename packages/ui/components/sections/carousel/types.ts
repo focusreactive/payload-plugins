@@ -1,15 +1,18 @@
-import type { IGenericCarouselBaseProps } from "../../ui/GenericCarousel/types";
 import type { IImageProps } from "../../ui/image/types";
 import type { IRichTextProps } from "../../ui/richText/types";
 
-export interface ICarouselProps extends IGenericCarouselBaseProps {
-  text?: IRichTextProps;
+export type CarouselEffect = "slide" | "fade" | "cube" | "flip" | "coverflow" | "cards";
+
+export interface ICarouselProps {
+  effect?: CarouselEffect;
   slides: ICarouselCardProps[];
 }
 
 export interface ICarouselCardProps {
   image: IImageProps;
   text?: IRichTextProps;
-  effect: IGenericCarouselBaseProps["effect"];
+  /** @deprecated kept for backward compat; no longer used in rendering */
+  effect?: CarouselEffect;
+  /** @deprecated kept for backward compat; no longer used in rendering */
   isActive?: boolean;
 }
