@@ -33,6 +33,12 @@ export const Authors: CollectionConfig<"authors"> = {
       required: true,
       type: "text",
     },
+    {
+      label: { en: "Avatar", es: "Avatar" },
+      name: "avatar",
+      relationTo: "media",
+      type: "upload",
+    },
   ],
   labels: {
     plural: {

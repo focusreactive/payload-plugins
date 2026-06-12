@@ -14,6 +14,7 @@ import * as migration_20260612_010046_add_stats_block from "./20260612_010046_ad
 import * as migration_20260612_011722_drop_old_footer_links_text from "./20260612_011722_drop_old_footer_links_text";
 import * as migration_20260612_084209_add_footer_link_groups_legal_links from "./20260612_084209_add_footer_link_groups_legal_links";
 import * as migration_20260612_183356_add_section_header_fields_to_blocks from "./20260612_183356_add_section_header_fields_to_blocks";
+import * as migration_20260612_195026_add_faq_cta_author_avatar_to_post_add_blog_badge_search_placeholder_to_global_settings from "./20260612_195026_add_faq_cta_author_avatar_to_post_add_blog_badge_search_placeholder_to_global_settings";
 
 export const migrations = [
   {
@@ -95,5 +96,10 @@ export const migrations = [
     up: migration_20260612_183356_add_section_header_fields_to_blocks.up,
     down: migration_20260612_183356_add_section_header_fields_to_blocks.down,
     name: "20260612_183356_add_section_header_fields_to_blocks",
+  },
+  {
+    up: migration_20260612_195026_add_faq_cta_author_avatar_to_post_add_blog_badge_search_placeholder_to_global_settings.up,
+    down: migration_20260612_195026_add_faq_cta_author_avatar_to_post_add_blog_badge_search_placeholder_to_global_settings.down,
+    name: "20260612_195026_add_faq_cta_author_avatar_to_post_add_blog_badge_search_placeholder_to_global_settings",
   },
 ];

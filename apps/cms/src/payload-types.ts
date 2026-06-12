@@ -555,6 +555,64 @@ export interface Post {
     };
     [k: string]: unknown;
   };
+  /**
+   * Optional FAQ shown after the article body.
+   */
+  faq?: {
+    heading?: string | null;
+    items?:
+      | {
+          question: string;
+          answer: {
+            root: {
+              type: string;
+              children: {
+                type: any;
+                version: number;
+                [k: string]: unknown;
+              }[];
+              direction: ('ltr' | 'rtl') | null;
+              format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+              indent: number;
+              version: number;
+            };
+            [k: string]: unknown;
+          };
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
+   * Optional CTA band shown at the end of the post. Hidden when the heading is empty.
+   */
+  cta?: {
+    badge?: string | null;
+    heading?: string | null;
+    lead?: string | null;
+    actions?:
+      | {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label: string;
+          /**
+           * Choose how the link should be rendered.
+           */
+          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
   meta?: {
     title?: string | null;
     /**
@@ -608,6 +666,7 @@ export interface Author {
    * The name of the author
    */
   name: string;
+  avatar?: (number | null) | Media;
   updatedAt: string;
   createdAt: string;
 }
@@ -3202,6 +3261,7 @@ export interface CategoriesSelect<T extends boolean = true> {
  */
 export interface AuthorsSelect<T extends boolean = true> {
   name?: T;
+  avatar?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3214,6 +3274,37 @@ export interface PostsSelect<T extends boolean = true> {
   excerpt?: T;
   heroImage?: T;
   content?: T;
+  faq?:
+    | T
+    | {
+        heading?: T;
+        items?:
+          | T
+          | {
+              question?: T;
+              answer?: T;
+              id?: T;
+            };
+      };
+  cta?:
+    | T
+    | {
+        badge?: T;
+        heading?: T;
+        lead?: T;
+        actions?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+              appearance?: T;
+              id?: T;
+            };
+      };
   meta?:
     | T
     | {
@@ -4150,6 +4241,8 @@ export interface SiteSetting {
     blogDescription: string;
     readMoreLabel: string;
     relatedPostsLabel: string;
+    blogBadge?: string | null;
+    searchPlaceholder?: string | null;
     blogMeta?: {
       title?: string | null;
       /**
@@ -4217,6 +4310,8 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         blogDescription?: T;
         readMoreLabel?: T;
         relatedPostsLabel?: T;
+        blogBadge?: T;
+        searchPlaceholder?: T;
         blogMeta?:
           | T
           | {
