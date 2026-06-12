@@ -4,6 +4,7 @@ import * as migration_20260611_185703_add_accent_ghost_link_appearances_to_link_
 import * as migration_20260611_193219_restructure_header_nav from "./20260611_193219_restructure_header_nav";
 import * as migration_20260611_211958_add_hero_variant_badge from "./20260611_211958_add_hero_variant_badge";
 import * as migration_20260611_225544_add_label_to_logos_field from "./20260611_225544_add_label_to_logos_field";
+import * as migration_20260611_234007_add_cards_grid_icon from "./20260611_234007_add_cards_grid_icon";
 
 export const migrations = [
   {
@@ -35,5 +36,10 @@ export const migrations = [
     up: migration_20260611_225544_add_label_to_logos_field.up,
     down: migration_20260611_225544_add_label_to_logos_field.down,
     name: "20260611_225544_add_label_to_logos_field",
+  },
+  {
+    up: migration_20260611_234007_add_cards_grid_icon.up,
+    down: migration_20260611_234007_add_cards_grid_icon.down,
+    name: "20260611_234007_add_cards_grid_icon",
   },
 ];
