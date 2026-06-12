@@ -13,6 +13,7 @@ import * as migration_20260612_004802_add_newsletter_block from "./20260612_0048
 import * as migration_20260612_010046_add_stats_block from "./20260612_010046_add_stats_block";
 import * as migration_20260612_011722_drop_old_footer_links_text from "./20260612_011722_drop_old_footer_links_text";
 import * as migration_20260612_084209_add_footer_link_groups_legal_links from "./20260612_084209_add_footer_link_groups_legal_links";
+import * as migration_20260612_183356_add_section_header_fields_to_blocks from "./20260612_183356_add_section_header_fields_to_blocks";
 
 export const migrations = [
   {
@@ -89,5 +90,10 @@ export const migrations = [
     up: migration_20260612_084209_add_footer_link_groups_legal_links.up,
     down: migration_20260612_084209_add_footer_link_groups_legal_links.down,
     name: "20260612_084209_add_footer_link_groups_legal_links",
+  },
+  {
+    up: migration_20260612_183356_add_section_header_fields_to_blocks.up,
+    down: migration_20260612_183356_add_section_header_fields_to_blocks.down,
+    name: "20260612_183356_add_section_header_fields_to_blocks",
   },
 ];

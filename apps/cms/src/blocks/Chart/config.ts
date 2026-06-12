@@ -3,8 +3,10 @@ import type { Block, Field } from "payload";
 import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
 import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
 import { embedSectionTab } from "@/fields/section/embedSectionTab";
+import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
 
 const fields: Field[] = [
+  ...sectionHeaderFields(),
   {
     defaultValue: createLocalizedDefault({ en: "Total Visitors", es: "Visitantes totales" }),
     label: { en: "Title", es: "Título" },

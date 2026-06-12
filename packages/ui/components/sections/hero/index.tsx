@@ -1,4 +1,4 @@
-import { cn } from "../../../utils";
+import { cn, resolveBackdropTone } from "../../../utils";
 import { AbstractBackdrop } from "../../ui/AbstractBackdrop";
 import { DisplayHeading } from "../../ui/DisplayHeading";
 import { GridLines } from "../../ui/GridLines";
@@ -8,11 +8,7 @@ import { Link } from "../../ui/link";
 import type { LinkProps } from "../../ui/link/types";
 import { Eyebrow } from "../../ui/Eyebrow";
 import { RichText } from "../../ui/richText";
-import type { HeroTheme, IHeroProps } from "./types";
-
-function isDarkZone(theme: HeroTheme | undefined): boolean {
-  return theme === "dark" || theme === "dark-gray";
-}
+import type { IHeroProps } from "./types";
 
 interface HeroBadgeProps {
   badge?: string | null;
@@ -61,7 +57,7 @@ function ShowcaseWindow({ image }: { image: IImageProps }) {
 }
 
 export function Hero({ variant, theme, badge, title, text, image, links }: IHeroProps) {
-  const backdropTone = isDarkZone(theme) ? "dark" : "light";
+  const backdropTone = resolveBackdropTone(theme);
   const hasImage = typeof image?.src === "string" && image.src.length > 0;
 
   if (variant === "centered") {

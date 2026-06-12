@@ -1,23 +1,13 @@
 import type { Field } from "payload";
 
 import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
-import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
+import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
 
 export const testimonialsListFields: Field[] = [
-  {
-    defaultValue: createLocalizedDefault(DEFAULT_VALUES.blocks.testimonialsList.heading),
-    label: { en: "Heading", es: "Encabezado" },
-    localized: true,
-    name: "heading",
-    type: "text",
-  },
-  {
-    defaultValue: createLocalizedDefault(DEFAULT_VALUES.blocks.testimonialsList.subheading),
-    label: { en: "Subheading", es: "Subencabezado" },
-    localized: true,
-    name: "subheading",
-    type: "text",
-  },
+  ...sectionHeaderFields({
+    headingDefault: DEFAULT_VALUES.blocks.testimonialsList.heading,
+    leadDefault: DEFAULT_VALUES.blocks.testimonialsList.subheading,
+  }),
   {
     fields: [
       {

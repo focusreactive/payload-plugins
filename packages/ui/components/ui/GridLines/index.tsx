@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
+import type { BackdropTone } from "../../../utils";
 import { cn } from "../../../utils";
 
 const DOT_SPACING_PX = 34;
@@ -19,7 +20,7 @@ const REST_ALPHA = {
 const PEAK_ALPHA = { dot: 0.66, line: 0.5 };
 
 interface GridLinesProps {
-  tone?: "dark" | "light";
+  tone?: BackdropTone;
   className?: string;
 }
 

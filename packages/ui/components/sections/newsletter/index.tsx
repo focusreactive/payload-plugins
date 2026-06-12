@@ -2,27 +2,23 @@
 
 import { useState } from "react";
 
-import { cn } from "../../../utils";
+import { cn, resolveBackdropTone } from "../../../utils";
 import { AbstractBackdrop } from "../../ui/AbstractBackdrop";
 import { GridLines } from "../../ui/GridLines";
+import type { SectionHeaderProps } from "../../ui/SectionHeader";
 import { SectionHeader } from "../../ui/SectionHeader";
 
 interface NewsletterSectionProps {
-  badge?: string | null;
-  heading: string;
+  header?: SectionHeaderProps | null;
   inputPlaceholder: string;
   buttonLabel: string;
   disclaimer?: string | null;
   theme?: string | null;
 }
 
-function isDarkTheme(theme: string | null | undefined): boolean {
-  return theme === "dark" || theme === "dark-gray";
-}
-
-export function NewsletterSection({ badge, heading, inputPlaceholder, buttonLabel, disclaimer, theme }: NewsletterSectionProps) {
+export function NewsletterSection({ header, inputPlaceholder, buttonLabel, disclaimer, theme }: NewsletterSectionProps) {
   const [submitted, setSubmitted] = useState(false);
-  const dark = isDarkTheme(theme);
+  const backdropTone = resolveBackdropTone(theme);
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,15 +26,11 @@ export function NewsletterSection({ badge, heading, inputPlaceholder, buttonLabe
   }
 
   return (
-    <div className="relative overflow-hidden">
-      {dark && (
-        <>
-          <AbstractBackdrop variant="orbs" tone="dark" />
-          <GridLines tone="dark" />
-        </>
-      )}
+    <div>
+      <AbstractBackdrop variant="orbs" tone={backdropTone} />
+      <GridLines tone={backdropTone} />
       <div className="relative z-10 flex flex-col items-center gap-[26px] py-[clamp(56px,8vw,104px)] text-center">
-        <SectionHeader badge={badge} heading={heading} align="center" className="max-w-[760px]" />
+        {header && <SectionHeader {...header} align="center" className="max-w-[760px]" />}
 
         <div aria-live="polite" className="flex flex-col items-center gap-4">
           {submitted ? (

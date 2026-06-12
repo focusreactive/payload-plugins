@@ -1,12 +1,13 @@
+import type { BackdropTone } from "../../../utils";
 import { cn } from "../../../utils";
 
 interface AbstractBackdropProps {
   variant?: "orbs" | "blobs";
-  tone?: "dark" | "light";
+  tone?: BackdropTone;
   className?: string;
 }
 
-type ShapeMap = Record<NonNullable<AbstractBackdropProps["variant"]>, Record<NonNullable<AbstractBackdropProps["tone"]>, string[]>>;
+type ShapeMap = Record<NonNullable<AbstractBackdropProps["variant"]>, Record<BackdropTone, string[]>>;
 
 const SHAPES: ShapeMap = {
   orbs: {

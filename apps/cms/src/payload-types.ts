@@ -803,8 +803,12 @@ export interface TextSectionBlock {
  * via the `definition` "ContentBlock".
  */
 export interface ContentBlock {
-  badge?: string | null;
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
   heading?: string | null;
+  lead?: string | null;
   layout: 'image-text' | 'text-image';
   image: number | Media;
   content: {
@@ -871,8 +875,11 @@ export interface ContentBlock {
  * via the `definition` "FaqBlock".
  */
 export interface FaqBlock {
-  badge?: string | null;
-  heading: string;
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
   lead?: string | null;
   items: {
     question: string;
@@ -919,8 +926,12 @@ export interface FaqBlock {
  * via the `definition` "TestimonialsListBlock".
  */
 export interface TestimonialsListBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
   heading?: string | null;
-  subheading?: string | null;
+  lead?: string | null;
   testimonialItems?:
     | {
         testimonial: number | Testimonial;
@@ -974,6 +985,12 @@ export interface Testimonial {
  * via the `definition` "CardsGridBlock".
  */
 export interface CardsGridBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  lead?: string | null;
   columns?: number | null;
   items: {
     /**
@@ -1060,21 +1077,12 @@ export interface CardsGridBlock {
  * via the `definition` "CarouselBlock".
  */
 export interface CarouselBlock {
-  text?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  lead?: string | null;
   effect?: ('slide' | 'fade' | 'cube' | 'flip' | 'coverflow' | 'cards') | null;
   slides: {
     image: {
@@ -1225,6 +1233,12 @@ export interface LinksListBlock {
  * via the `definition` "ChartBlock".
  */
 export interface ChartBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  lead?: string | null;
   title: string;
   subtitle?: string | null;
   /**
@@ -1265,8 +1279,11 @@ export interface ChartBlock {
  * via the `definition` "CtaBandBlock".
  */
 export interface CtaBandBlock {
-  badge?: string | null;
-  heading: string;
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
   lead?: string | null;
   actions: {
     type?: ('reference' | 'custom' | 'customPage') | null;
@@ -1543,8 +1560,12 @@ export interface Preset {
         blockType: 'textSection';
       }
     | {
-        badge?: string | null;
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
         heading?: string | null;
+        lead?: string | null;
         layout: 'image-text' | 'text-image';
         image: number | Media;
         content: {
@@ -1607,8 +1628,11 @@ export interface Preset {
         blockType: 'content';
       }
     | {
-        badge?: string | null;
-        heading: string;
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
         lead?: string | null;
         items: {
           question: string;
@@ -1651,8 +1675,12 @@ export interface Preset {
         blockType: 'faq';
       }
     | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
         heading?: string | null;
-        subheading?: string | null;
+        lead?: string | null;
         testimonialItems?:
           | {
               testimonial: number | Testimonial;
@@ -1687,6 +1715,12 @@ export interface Preset {
         blockType: 'testimonialsList';
       }
     | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        lead?: string | null;
         columns?: number | null;
         items: {
           /**
@@ -1769,21 +1803,12 @@ export interface Preset {
         blockType: 'cardsGrid';
       }
     | {
-        text?: {
-          root: {
-            type: string;
-            children: {
-              type: any;
-              version: number;
-              [k: string]: unknown;
-            }[];
-            direction: ('ltr' | 'rtl') | null;
-            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-            indent: number;
-            version: number;
-          };
-          [k: string]: unknown;
-        } | null;
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        lead?: string | null;
         effect?: ('slide' | 'fade' | 'cube' | 'flip' | 'coverflow' | 'cards') | null;
         slides: {
           image: {
@@ -1922,6 +1947,12 @@ export interface Preset {
         blockType: 'linksList';
       }
     | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        lead?: string | null;
         title: string;
         subtitle?: string | null;
         /**
@@ -1958,8 +1989,11 @@ export interface Preset {
         blockType: 'chart';
       }
     | {
-        badge?: string | null;
-        heading: string;
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
         lead?: string | null;
         actions: {
           type?: ('reference' | 'custom' | 'customPage') | null;
@@ -2730,8 +2764,9 @@ export interface TextSectionBlockSelect<T extends boolean = true> {
  * via the `definition` "ContentBlock_select".
  */
 export interface ContentBlockSelect<T extends boolean = true> {
-  badge?: T;
+  eyebrow?: T;
   heading?: T;
+  lead?: T;
   layout?: T;
   image?: T;
   content?: T;
@@ -2770,7 +2805,7 @@ export interface ContentBlockSelect<T extends boolean = true> {
  * via the `definition` "FaqBlock_select".
  */
 export interface FaqBlockSelect<T extends boolean = true> {
-  badge?: T;
+  eyebrow?: T;
   heading?: T;
   lead?: T;
   items?:
@@ -2803,8 +2838,9 @@ export interface FaqBlockSelect<T extends boolean = true> {
  * via the `definition` "TestimonialsListBlock_select".
  */
 export interface TestimonialsListBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
   heading?: T;
-  subheading?: T;
+  lead?: T;
   testimonialItems?:
     | T
     | {
@@ -2837,6 +2873,9 @@ export interface TestimonialsListBlockSelect<T extends boolean = true> {
  * via the `definition` "CardsGridBlock_select".
  */
 export interface CardsGridBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  lead?: T;
   columns?: T;
   items?:
     | T
@@ -2889,7 +2928,9 @@ export interface CardsGridBlockSelect<T extends boolean = true> {
  * via the `definition` "CarouselBlock_select".
  */
 export interface CarouselBlockSelect<T extends boolean = true> {
-  text?: T;
+  eyebrow?: T;
+  heading?: T;
+  lead?: T;
   effect?: T;
   slides?:
     | T
@@ -3012,6 +3053,9 @@ export interface LinksListBlockSelect<T extends boolean = true> {
  * via the `definition` "ChartBlock_select".
  */
 export interface ChartBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  lead?: T;
   title?: T;
   subtitle?: T;
   ranges?:
@@ -3050,7 +3094,7 @@ export interface ChartBlockSelect<T extends boolean = true> {
  * via the `definition` "CtaBandBlock_select".
  */
 export interface CtaBandBlockSelect<T extends boolean = true> {
-  badge?: T;
+  eyebrow?: T;
   heading?: T;
   lead?: T;
   actions?:
@@ -3438,8 +3482,9 @@ export interface PresetsSelect<T extends boolean = true> {
         content?:
           | T
           | {
-              badge?: T;
+              eyebrow?: T;
               heading?: T;
+              lead?: T;
               layout?: T;
               image?: T;
               content?: T;
@@ -3476,7 +3521,7 @@ export interface PresetsSelect<T extends boolean = true> {
         faq?:
           | T
           | {
-              badge?: T;
+              eyebrow?: T;
               heading?: T;
               lead?: T;
               items?:
@@ -3507,8 +3552,9 @@ export interface PresetsSelect<T extends boolean = true> {
         testimonialsList?:
           | T
           | {
+              eyebrow?: T;
               heading?: T;
-              subheading?: T;
+              lead?: T;
               testimonialItems?:
                 | T
                 | {
@@ -3539,6 +3585,9 @@ export interface PresetsSelect<T extends boolean = true> {
         cardsGrid?:
           | T
           | {
+              eyebrow?: T;
+              heading?: T;
+              lead?: T;
               columns?: T;
               items?:
                 | T
@@ -3589,7 +3638,9 @@ export interface PresetsSelect<T extends boolean = true> {
         carousel?:
           | T
           | {
-              text?: T;
+              eyebrow?: T;
+              heading?: T;
+              lead?: T;
               effect?: T;
               slides?:
                 | T
@@ -3706,6 +3757,9 @@ export interface PresetsSelect<T extends boolean = true> {
         chart?:
           | T
           | {
+              eyebrow?: T;
+              heading?: T;
+              lead?: T;
               title?: T;
               subtitle?: T;
               ranges?:
@@ -3742,7 +3796,7 @@ export interface PresetsSelect<T extends boolean = true> {
         ctaBand?:
           | T
           | {
-              badge?: T;
+              eyebrow?: T;
               heading?: T;
               lead?: T;
               actions?:

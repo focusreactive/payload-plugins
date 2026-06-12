@@ -6,6 +6,7 @@ import { createLocalizedDefault, createLocalizedRichText, createRichTextState } 
 import { generateRichText } from "@/core/lib/generateRichText";
 import type { Locale } from "@/core/types";
 import { embedSectionTab } from "@/fields/section/embedSectionTab";
+import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
 
 function buildFaqItems(locale: Locale) {
   const { question, answer } = DEFAULT_VALUES.blocks.faq;
@@ -16,26 +17,7 @@ function buildFaqItems(locale: Locale) {
 }
 
 const fields: Field[] = [
-  {
-    label: { en: "Badge", es: "Insignia" },
-    localized: true,
-    name: "badge",
-    type: "text",
-  },
-  {
-    defaultValue: createLocalizedDefault(DEFAULT_VALUES.blocks.faq.heading),
-    label: { en: "Heading", es: "Encabezado" },
-    localized: true,
-    name: "heading",
-    required: true,
-    type: "text",
-  },
-  {
-    label: { en: "Lead", es: "Entradilla" },
-    localized: true,
-    name: "lead",
-    type: "text",
-  },
+  ...sectionHeaderFields({ headingDefault: DEFAULT_VALUES.blocks.faq.heading }),
   {
     defaultValue: createLocalizedDefault({
       en: buildFaqItems("en"),

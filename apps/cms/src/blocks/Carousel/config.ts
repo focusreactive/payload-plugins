@@ -4,15 +4,10 @@ import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
 import { generateRichText } from "@/core/lib/generateRichText";
 import { imageField } from "@/fields/imageField";
 import { embedSectionTab } from "@/fields/section/embedSectionTab";
+import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
 
 const fields: Field[] = [
-  {
-    editor: generateRichText(),
-    label: { en: "Intro Text", es: "Texto introductorio" },
-    localized: true,
-    name: "text",
-    type: "richText",
-  },
+  ...sectionHeaderFields(),
   {
     defaultValue: "slide",
     label: { en: "Effect", es: "Efecto" },

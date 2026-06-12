@@ -5,14 +5,15 @@ import { SectionContainer } from "@/core/ui";
 import { CMSLink } from "@/core/ui/blocks/CMSLink";
 import type { CtaBandBlock } from "@/payload-types";
 import type { Page, Post } from "@/payload-types";
+import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 
-export const CtaBandBlockComponent: React.FC<CtaBandBlock> = ({ badge, heading, lead, actions, section, id }) => {
+export const CtaBandBlockComponent: React.FC<CtaBandBlock> = ({ eyebrow, heading, lead, actions, section, id }) => {
+  const header = prepareSectionHeaderProps({ eyebrow, subtitle: lead, title: heading });
+
   return (
     <SectionContainer sectionData={{ ...section, id }}>
       <CtaBand
-        badge={badge}
-        heading={heading}
-        lead={lead}
+        header={header}
         theme={section?.theme}
         actions={(actions ?? []).map((action) => (
           <CMSLink

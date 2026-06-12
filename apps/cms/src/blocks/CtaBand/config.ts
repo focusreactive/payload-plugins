@@ -1,32 +1,15 @@
 import type { Block, Field, GroupField } from "payload";
 
 import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
-import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
 import { embedSectionTab } from "@/fields/section/embedSectionTab";
+import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
 import { link } from "@/fields/link";
 
 const fields: Field[] = [
-  {
-    defaultValue: createLocalizedDefault({ en: "Get started", es: "Empieza ahora" }),
-    label: { en: "Badge", es: "Insignia" },
-    localized: true,
-    name: "badge",
-    type: "text",
-  },
-  {
-    defaultValue: createLocalizedDefault({ en: "Start shipping in rhythm.", es: "Empieza a publicar con ritmo." }),
-    label: { en: "Heading", es: "Encabezado" },
-    localized: true,
-    name: "heading",
-    required: true,
-    type: "text",
-  },
-  {
-    label: { en: "Lead", es: "Entradilla" },
-    localized: true,
-    name: "lead",
-    type: "text",
-  },
+  ...sectionHeaderFields({
+    eyebrowDefault: { en: "Get started", es: "Empieza ahora" },
+    headingDefault: { en: "Start shipping in rhythm.", es: "Empieza a publicar con ritmo." },
+  }),
   {
     admin: {
       components: { RowLabel: "@/core/ui/components/RowLabel#RowLabel" },

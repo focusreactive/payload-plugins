@@ -4,6 +4,7 @@ export * from "./components/sections/blog";
 export * from "./components/sections/cardsGrid";
 export * from "./components/sections/carousel";
 export * from "./components/sections/chart";
+export * from "./components/sections/content";
 export * from "./components/sections/cookieBanner";
 export * from "./components/sections/copy";
 export * from "./components/sections/ctaBand";
@@ -24,6 +25,7 @@ export * from "./components/ui/link";
 export * from "./components/ui/richText";
 // end component exports
 
-export { cn, cva } from "./utils";
+export { cn, cva, resolveBackdropTone } from "./utils";
+export type { BackdropTone } from "./utils";
 export { Button, buttonVariants } from "./components/ui/button";
 export { ButtonVariant, ButtonSize } from "./components/ui/button/types";

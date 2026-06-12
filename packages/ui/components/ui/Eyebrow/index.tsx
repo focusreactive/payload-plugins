@@ -1,20 +1,20 @@
 import { cn } from "../../../utils";
 
-type Tone = "default" | "primary" | "muted" | "accent" | "outline";
+export type EyebrowTone = "default" | "primary" | "muted" | "accent" | "outline";
 
 interface Props {
   children: React.ReactNode;
   /** "dot" = circle prefix (adapts to chip text color); "dash" = em-dash prefix; "none" = no prefix */
   prefix?: "dot" | "dash" | "none";
-  tone?: Tone;
+  tone?: EyebrowTone;
   size?: "sm" | "md";
   className?: string;
 }
 
-const toneMap: Record<Tone, string> = {
+const toneMap: Record<EyebrowTone, string> = {
   default: "bg-foreground text-background",
   primary: "bg-primary text-primary-foreground",
-  muted: "text-foreground",
+  muted: "text-muted-foreground",
   accent: "bg-accent text-accent-foreground",
   outline: "border border-foreground text-foreground",
 };

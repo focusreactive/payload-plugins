@@ -1,27 +1,36 @@
 import { cn } from "../../../utils";
 import { DisplayHeading } from "../DisplayHeading";
+import type { EyebrowTone } from "../Eyebrow";
 import { Eyebrow } from "../Eyebrow";
 
-interface SectionHeaderProps {
-  badge?: string | null;
-  heading: string;
-  headingAs?: "h1" | "h2" | "h3";
-  headingSize?: "display-1" | "display-2" | "h-section";
-  lead?: string | null;
-  align?: "left" | "center";
+export interface SectionHeaderEyebrow {
+  text: string;
+  variant?: EyebrowTone;
+}
+
+export interface SectionHeaderProps {
+  eyebrow?: SectionHeaderEyebrow | null;
+  title?: string | null;
+  subtitle?: React.ReactNode;
+  align?: "left" | "center" | null;
+  size?: "display-1" | "display-2" | "h-section" | null;
   className?: string;
 }
 
-export function SectionHeader({ badge, heading, headingAs = "h2", headingSize = "display-2", lead, align = "left", className }: SectionHeaderProps) {
+export function SectionHeader({ eyebrow, title, subtitle, align = "left", size = "display-2", className }: SectionHeaderProps) {
+  if (!(eyebrow?.text || title || subtitle)) {
+    return null;
+  }
+
   return (
-    <div className={cn("flex max-w-[720px] flex-col gap-5", align === "center" && "items-center text-center", className)}>
-      {badge && (
-        <Eyebrow prefix="dot" tone="accent">
-          {badge}
+    <div className={cn("flex max-w-[720px] flex-col gap-5", align === "center" && "mx-auto items-center text-center", className)}>
+      {eyebrow?.text && (
+        <Eyebrow prefix="dot" tone={eyebrow.variant ?? "accent"}>
+          {eyebrow.text}
         </Eyebrow>
       )}
-      <DisplayHeading as={headingAs} size={headingSize} text={heading} />
-      {lead && <p className="text-lead text-muted-foreground">{lead}</p>}
+      {title && <DisplayHeading as="h2" size={size ?? "display-2"} text={title} />}
+      {subtitle && <div className="text-lead text-muted-foreground">{subtitle}</div>}
     </div>
   );
 }
