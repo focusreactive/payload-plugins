@@ -2,7 +2,7 @@ import type { Field } from "payload";
 
 import { isEmpty, isObject } from "../../../../shared";
 import type { ChildCursor, FieldWalker } from "../../../../shared/field-traversal";
-import { resolveBlockFields, walkFields } from "../../../../shared/field-traversal";
+import { matchElementById, resolveBlockFields, walkFields } from "../../../../shared/field-traversal";
 
 /** Data position for the reconcile walk: the source + target objects at the current level. */
 type Cursor = { source: Record<string, unknown>; target: Record<string, unknown> };
@@ -15,6 +15,9 @@ const asObject = (value: unknown): Record<string, unknown> => (isObject(value) ?
  * no source value is dropped, `id` is stripped from array/block elements (Postgres rejects it
  * on update), `blockType` is preserved, and non-object array items / unknown blocks pass
  * through unchanged.
+ *
+ * Array/block elements are paired with their target counterpart by `id`, not by position (see
+ * {@link matchElementById}); output order always follows `source`.
  */
 const reconcileWalker: FieldWalker<Cursor, unknown> = {
   enterObject(field, cursor) {
@@ -28,13 +31,15 @@ const reconcileWalker: FieldWalker<Cursor, unknown> = {
     if (!Array.isArray(sourceValue)) return "skip";
     const targetValue = cursor.target[field.name];
     const targetArr: unknown[] = Array.isArray(targetValue) ? targetValue : [];
+    const isBlocks = field.type === "blocks";
 
     const children: ChildCursor<Cursor>[] = [];
     sourceValue.forEach((item, index) => {
       if (!isObject(item)) return; // non-object element → passthrough (rebuilt in combine)
-      const fields = field.type === "blocks" ? resolveBlockFields(field, item) : field.fields;
+      const fields = isBlocks ? resolveBlockFields(field, item) : field.fields;
       if (!fields) return; // unknown blockType → passthrough
-      children.push({ cursor: { source: item, target: asObject(targetArr[index]) }, fields, key: index });
+      // Pair by id, not position: target[index] may be a different element under per-locale ordering.
+      children.push({ cursor: { source: item, target: matchElementById(targetArr, item, isBlocks) }, fields, key: index });
     });
     return children;
   },
@@ -48,7 +53,8 @@ const reconcileWalker: FieldWalker<Cursor, unknown> = {
 
   combine(container, children, cursor) {
     if (container.kind === "list") {
-      // Rebuild the full array: reconciled objects where present (by index), raw source items otherwise.
+      // Rebuild the full array in source order: reconciled objects keyed by source position, raw
+      // source items (non-object / unknown block) otherwise.
       const sourceArr = (cursor.source[container.key] ?? []) as unknown[];
       const byIndex = new Map(children.map((child) => [child.key, child.out]));
       return sourceArr.map((item, index) => (byIndex.has(index) ? byIndex.get(index) : item));

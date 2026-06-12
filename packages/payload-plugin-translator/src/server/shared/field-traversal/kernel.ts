@@ -2,6 +2,7 @@ import type { BlocksField, Field, TabsField } from "payload";
 import { fieldAffectsData, fieldIsArrayType, fieldIsBlockType, fieldIsGroupType, tabHasName } from "payload/shared";
 
 import { hasFields, isBlockItem, isTabsField } from "../guards";
+import { isObject } from "../utils";
 import type { FieldStructure, LeafField, TabScope } from "./types";
 
 /**
@@ -122,4 +123,32 @@ export function resolveBlockFields(field: BlocksField, item: unknown): Field[] |
   if (!isBlockItem(item)) return null;
   const block = field.blocks.find((candidate) => candidate.slug === item.blockType);
   return block ? block.fields : null;
+}
+
+/**
+ * Find the element of a parallel data array that corresponds to `refItem` by `id` — not by
+ * position.
+ *
+ * Localized `blocks`/`array` fields are stored independently per locale, so the locales can be
+ * reordered or differ entirely; pairing two parallel trees by position then cross-contaminates
+ * unrelated elements ("blocks don't line up across locales"). Matching by `id` is correct in both
+ * regimes: a non-localized field is one shared row with the same `id` across locales (so id-match
+ * equals the old positional match), while independent localized content has diverging ids (no
+ * match → the caller falls back to `refItem`'s own values, never another element's). For blocks the
+ * `blockType` must also match, so an id collision across types can't graft mismatched fields.
+ *
+ * Shared by the translation pipeline's two multi-tree walkers — reconcile and collect — to pair
+ * their `target` array against the source/reference element currently being visited.
+ *
+ * @param arr - The array to search (e.g. the target-locale elements).
+ * @param refItem - The element being matched, carrying the canonical `id` (and `blockType`).
+ * @param isBlocks - Whether the field is a `blocks` field (then `blockType` must also match).
+ * @returns The matched element, or `{}` when there is no counterpart (or `refItem` carries no `id`).
+ * @public
+ */
+export function matchElementById(arr: unknown[], refItem: Record<string, unknown>, isBlocks: boolean): Record<string, unknown> {
+  const id = refItem.id;
+  if (id === undefined || id === null) return {};
+  const match = arr.find((candidate) => isObject(candidate) && candidate.id === id && (!isBlocks || candidate.blockType === refItem.blockType));
+  return isObject(match) ? match : {};
 }

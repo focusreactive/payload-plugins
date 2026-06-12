@@ -336,14 +336,32 @@ describe("DataReconciler", () => {
       });
     });
 
-    it("falls back to source when the target array is shorter than source", () => {
+    it("falls back to source for a source element with no id-match in target", () => {
       const schema: Field[] = [{ name: "items", type: "array", fields: [{ name: "label", type: "text", localized: true }] }];
-      const sourceData = { items: [{ label: "A" }, { label: "B" }] };
-      const targetData = { items: [{ label: "T" }] };
+      const sourceData = {
+        items: [
+          { id: "1", label: "A" },
+          { id: "2", label: "B" },
+        ],
+      };
+      const targetData = { items: [{ id: "1", label: "T" }] };
 
       const reconciler = new DataReconciler(schema);
+      // id 1 → target "T" wins; id 2 → no counterpart → source "B"
       expect(reconciler.reconcile(sourceData, targetData)).toEqual({
         items: [{ label: "T" }, { label: "B" }],
+      });
+    });
+
+    it("mirrors source when array items carry no id to match on", () => {
+      const schema: Field[] = [{ name: "items", type: "array", fields: [{ name: "label", type: "text", localized: true }] }];
+      const sourceData = { items: [{ label: "A" }, { label: "B" }] };
+      const targetData = { items: [{ label: "T" }, { label: "U" }] };
+
+      const reconciler = new DataReconciler(schema);
+      // No ids on either side → nothing to pair → target is ignored, source fills throughout.
+      expect(reconciler.reconcile(sourceData, targetData)).toEqual({
+        items: [{ label: "A" }, { label: "B" }],
       });
     });
 
@@ -360,6 +378,111 @@ describe("DataReconciler", () => {
       const reconciler = new DataReconciler(schema);
       expect(reconciler.reconcile(sourceData, {})).toEqual({
         layout: [{ id: "1", blockType: "ghost", body: "X" }],
+      });
+    });
+
+    it("ignores the target when the source element id is null", () => {
+      const schema: Field[] = [{ name: "items", type: "array", fields: [{ name: "label", type: "text", localized: true }] }];
+      const sourceData = { items: [{ id: null, label: "A" }] };
+      const targetData = { items: [{ id: null, label: "T" }] };
+
+      const reconciler = new DataReconciler(schema);
+      // id null → no usable key → no match → source fills (target ignored)
+      expect(reconciler.reconcile(sourceData, targetData)).toEqual({ items: [{ label: "A" }] });
+    });
+
+    it("pairs reordered array items by id (output keeps source order)", () => {
+      const schema: Field[] = [{ name: "items", type: "array", fields: [{ name: "label", type: "text", localized: true }] }];
+      const sourceData = {
+        items: [
+          { id: "1", label: "A" },
+          { id: "2", label: "B" },
+        ],
+      };
+      const targetData = {
+        items: [
+          { id: "2", label: "T2" },
+          { id: "1", label: "T1" },
+        ],
+      };
+
+      const reconciler = new DataReconciler(schema);
+      // id 1 ↔ "T1", id 2 ↔ "T2"; output follows source order
+      expect(reconciler.reconcile(sourceData, targetData)).toEqual({ items: [{ label: "T1" }, { label: "T2" }] });
+    });
+
+    it("drops target elements with no source counterpart", () => {
+      const schema: Field[] = [{ name: "items", type: "array", fields: [{ name: "label", type: "text", localized: true }] }];
+      const sourceData = { items: [{ id: "1", label: "A" }] };
+      const targetData = {
+        items: [
+          { id: "1", label: "T" },
+          { id: "2", label: "Extra" },
+        ],
+      };
+
+      const reconciler = new DataReconciler(schema);
+      // output is driven by source → only id 1 survives, id-1 target value wins
+      expect(reconciler.reconcile(sourceData, targetData)).toEqual({ items: [{ label: "T" }] });
+    });
+  });
+
+  describe("cross-locale block identity", () => {
+    const blocksSchema: Field[] = [
+      {
+        name: "layout",
+        type: "blocks",
+        blocks: [
+          { slug: "text", fields: [{ name: "content", type: "text", localized: true }] },
+          { slug: "quote", fields: [{ name: "content", type: "text", localized: true }] },
+        ],
+      },
+    ];
+
+    it("pairs reordered blocks by id, not position (output keeps source order)", () => {
+      const sourceData = {
+        layout: [
+          { id: "1", blockType: "text", content: "Hello" },
+          { id: "2", blockType: "text", content: "World" },
+        ],
+      };
+      // Same blocks, reordered in the target locale (independent per-locale ordering).
+      const targetData = {
+        layout: [
+          { id: "2", blockType: "text", content: "Welt" },
+          { id: "1", blockType: "text", content: "Hallo" },
+        ],
+      };
+
+      const reconciler = new DataReconciler(blocksSchema);
+      // id 1 ↔ "Hallo", id 2 ↔ "Welt"; positional merge would wrongly give block 1 "Welt".
+      expect(reconciler.reconcile(sourceData, targetData)).toEqual({
+        layout: [
+          { blockType: "text", content: "Hallo" },
+          { blockType: "text", content: "Welt" },
+        ],
+      });
+    });
+
+    it("uses source when no target block shares the id (independent localized content)", () => {
+      const sourceData = { layout: [{ id: "en-1", blockType: "text", content: "Hello" }] };
+      const targetData = { layout: [{ id: "fr-9", blockType: "text", content: "Hallo" }] };
+
+      const reconciler = new DataReconciler(blocksSchema);
+      // Ids don't correspond → no merge → mirror source, never graft the other block's value.
+      expect(reconciler.reconcile(sourceData, targetData)).toEqual({
+        layout: [{ blockType: "text", content: "Hello" }],
+      });
+    });
+
+    it("does not merge a target block of a different type that shares an id", () => {
+      const sourceData = { layout: [{ id: "1", blockType: "text", content: "Hello" }] };
+      const targetData = { layout: [{ id: "1", blockType: "quote", content: "Zitat" }] };
+
+      const reconciler = new DataReconciler(blocksSchema);
+      // Same id but different blockType → not the same block → source fills.
+      expect(reconciler.reconcile(sourceData, targetData)).toEqual({
+        layout: [{ blockType: "text", content: "Hello" }],
       });
     });
   });

@@ -1,7 +1,7 @@
 import type { ArrayField, BlocksField, Field, NamedGroupField, RowField, TabsField, TextField, UIField } from "payload";
 import { describe, expect, it } from "vitest";
 
-import { classifyField, resolveBlockFields, tabScopes } from "./kernel";
+import { classifyField, matchElementById, resolveBlockFields, tabScopes } from "./kernel";
 
 const text = (name: string, extra: Record<string, unknown> = {}): TextField => ({ name, type: "text", ...extra }) as unknown as TextField;
 
@@ -122,5 +122,34 @@ describe("resolveBlockFields", () => {
   it("returns null for a non-block item", () => {
     expect(resolveBlockFields(field, "not-an-object")).toBeNull();
     expect(resolveBlockFields(field, { noBlockType: true })).toBeNull();
+  });
+});
+
+describe("matchElementById", () => {
+  it("finds the array element with the matching id, regardless of position", () => {
+    const arr = [
+      { id: "2", v: "b" },
+      { id: "1", v: "a" },
+    ];
+    expect(matchElementById(arr, { id: "1" }, false)).toEqual({ id: "1", v: "a" });
+  });
+
+  it("returns {} when no element shares the id", () => {
+    expect(matchElementById([{ id: "1" }], { id: "9" }, false)).toEqual({});
+  });
+
+  it("returns {} when the reference element has no usable id (undefined or null)", () => {
+    expect(matchElementById([{ id: "1" }], {}, false)).toEqual({});
+    expect(matchElementById([{ id: "1" }], { id: null }, false)).toEqual({});
+  });
+
+  it("requires blockType to match too when isBlocks is true", () => {
+    const arr = [{ id: "1", blockType: "quote", v: "x" }];
+    expect(matchElementById(arr, { id: "1", blockType: "text" }, true)).toEqual({}); // same id, wrong type
+    expect(matchElementById(arr, { id: "1", blockType: "quote" }, true)).toEqual({ id: "1", blockType: "quote", v: "x" });
+  });
+
+  it("ignores non-object candidates", () => {
+    expect(matchElementById(["raw", 42, { id: "1", v: "a" }], { id: "1" }, false)).toEqual({ id: "1", v: "a" });
   });
 });
