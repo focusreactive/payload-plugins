@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-translator [0.5.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.5.0...@focus-reactive/payload-plugin-translator@0.5.1) (2026-06-12)
+
+
+### Bug Fixes
+
+* **translator:** tidy shared UI primitives (Button/Select/Popup) ([19b1f65](https://github.com/focusreactive/payload-plugins/commit/19b1f655fdf2eeebb5b7972b0ed108bb20bf94ac))
+
 # @focus-reactive/payload-plugin-translator [0.5.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.4.0...@focus-reactive/payload-plugin-translator@0.5.0) (2026-06-10)
 
 
