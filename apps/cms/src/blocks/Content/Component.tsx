@@ -30,7 +30,7 @@ export const ContentBlockComponent: React.FC<ContentBlockProps> = ({ badge, head
 
         <div className="flex max-w-[520px] flex-col gap-[18px]">
           {badge && (
-            <Eyebrow prefix="dot" tone="primary">
+            <Eyebrow prefix="dot" tone="accent">
               {badge}
             </Eyebrow>
           )}

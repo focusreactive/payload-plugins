@@ -2,7 +2,7 @@ import * as NavigationMenu from "@radix-ui/react-navigation-menu";
 import NextLink from "next/link";
 
 import { cn } from "../../../../utils";
-import { Pill } from "../../../ui/Pill";
+import { Eyebrow } from "../../../ui/Eyebrow";
 import type { HeaderFeatured } from "../types";
 
 interface FeaturedCardProps {
@@ -15,10 +15,10 @@ export function FeaturedCard({ featured }: FeaturedCardProps) {
   const content = (
     <>
       {badge && (
-        <Pill tone="accent" size="md" className="self-start">
+        <Eyebrow tone="accent" prefix="dot" size="md" className="self-start">
           <span aria-hidden className="size-1.5 rounded-pill bg-accent-foreground opacity-50" />
           {badge}
-        </Pill>
+        </Eyebrow>
       )}
       {title && <span className="mt-auto font-display text-[1.32rem] font-semibold leading-[1.08] tracking-[-0.01em]">{title}</span>}
       {description && <span className="text-[0.88rem] leading-[1.5] text-white/80">{description}</span>}

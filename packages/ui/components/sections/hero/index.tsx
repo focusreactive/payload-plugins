@@ -6,7 +6,7 @@ import { Image } from "../../ui/image";
 import type { IImageProps } from "../../ui/image/types";
 import { Link } from "../../ui/link";
 import type { LinkProps } from "../../ui/link/types";
-import { Pill } from "../../ui/Pill";
+import { Eyebrow } from "../../ui/Eyebrow";
 import { RichText } from "../../ui/richText";
 import type { HeroTheme, IHeroProps } from "./types";
 
@@ -20,7 +20,11 @@ interface HeroBadgeProps {
 
 function HeroBadge({ badge }: HeroBadgeProps) {
   if (!badge) return null;
-  return <Pill tone="accent">{badge}</Pill>;
+  return (
+    <Eyebrow tone="accent" prefix="dot">
+      {badge}
+    </Eyebrow>
+  );
 }
 
 interface HeroActionsProps {

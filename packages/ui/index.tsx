@@ -18,7 +18,6 @@ export * from "./components/ui/AbstractBackdrop";
 export * from "./components/ui/DisplayHeading";
 export * from "./components/ui/Eyebrow";
 export * from "./components/ui/GridLines";
-export * from "./components/ui/Pill";
 export * from "./components/ui/SectionHeader";
 export * from "./components/ui/image";
 export * from "./components/ui/link";
