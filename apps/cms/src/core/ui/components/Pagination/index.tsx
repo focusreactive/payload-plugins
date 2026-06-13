@@ -10,18 +10,31 @@ export interface PaginationProps {
   page: number;
   totalPages: number;
   basePath: string;
+  query?: Record<string, string | undefined>;
 }
 
 const itemClass = "flex items-center justify-center h-9 min-w-[2.25rem] rounded-md px-2 text-sm font-medium text-foreground hover:bg-primary-soft hover:text-primary transition-colors";
 
-export const Pagination: React.FC<PaginationProps> = async ({ className, page, totalPages, basePath }) => {
+export const Pagination: React.FC<PaginationProps> = async ({ className, page, totalPages, basePath, query }) => {
   const t = await getTranslations("pagination");
   const hasNextPage = page < totalPages;
   const hasPrevPage = page > 1;
   const hasExtraPrevPages = page - 1 > 1;
   const hasExtraNextPages = page + 1 < totalPages;
 
-  const getPagePath = (pageNumber: number) => (pageNumber === 1 ? basePath : `${basePath}?page=${pageNumber}`);
+  const getPagePath = (pageNumber: number) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query ?? {})) {
+      if (value) {
+        params.set(key, value);
+      }
+    }
+    if (pageNumber > 1) {
+      params.set("page", pageNumber.toString());
+    }
+    const queryString = params.toString();
+    return queryString ? `${basePath}?${queryString}` : basePath;
+  };
 
   return (
     <nav className={cn("my-12 flex items-center justify-center gap-1", className)} aria-label="Pagination navigation">

@@ -12,22 +12,22 @@ export interface GetPostsOptions {
   limit?: number;
   overrideAccess?: boolean;
   locale?: Locale;
-  categories?: string[];
+  category?: string;
+  q?: string;
 }
 
-const getPostsQuery = cache(async (payload: Payload, options: GetPostsOptions) => {
-  const { page = 1, limit = BLOG_CONFIG.postsPerPage, overrideAccess = false, locale, categories } = options;
-
+async function getPostsQuery(payload: Payload, page: number, limit: number, locale: Locale, category: string | undefined, q: string | undefined) {
   return await payload.find({
     collection: BLOG_CONFIG.collection,
-    depth: 1,
+    depth: 2,
     limit,
     locale,
-    overrideAccess,
+    overrideAccess: true,
     page,
     select: {
       authors: true,
       categories: true,
+      content: true,
       excerpt: true,
       heroImage: true,
       meta: true,
@@ -41,29 +41,26 @@ const getPostsQuery = cache(async (payload: Payload, options: GetPostsOptions) =
       _status: {
         equals: "published",
       },
-      ...(categories?.length && {
-        "categories.slug": { in: categories },
+      ...(category && {
+        "categories.slug": { equals: category },
+      }),
+      ...(q && {
+        or: [{ title: { like: q } }, { excerpt: { like: q } }],
       }),
     },
   });
-});
+}
+
+const getPostsCached = cache(async (payload: Payload, page: number, limit: number, locale: Locale, category: string | undefined, q: string | undefined) =>
+  unstable_cache(() => getPostsQuery(payload, page, limit, locale, category, q), [page.toString(), limit.toString(), locale, category ?? "", q ?? ""], {
+    tags: [cacheTag({ locale, type: "postsList" })],
+  })()
+);
 
 export const getPosts = async (payload: Payload, options: GetPostsOptions) => {
-  const { page = 1, limit = BLOG_CONFIG.postsPerPage, locale, categories } = options;
+  const { page = 1, limit = BLOG_CONFIG.postsPerPage, locale, category, q } = options;
 
   const resolvedLocale = await resolveLocale(locale);
 
-  return unstable_cache(
-    async () =>
-      getPostsQuery(payload, {
-        categories,
-        limit,
-        locale: resolvedLocale,
-        page,
-      }),
-    [page.toString(), limit.toString(), resolvedLocale, ...(categories ?? [])],
-    {
-      tags: [cacheTag({ locale: resolvedLocale, type: "postsList" })],
-    }
-  )();
+  return getPostsCached(payload, page, limit, resolvedLocale, category, q);
 };

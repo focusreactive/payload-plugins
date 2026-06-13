@@ -4,6 +4,7 @@ import { cn } from "../../../utils";
 interface AbstractBackdropProps {
   variant?: "orbs" | "blobs";
   tone?: BackdropTone;
+  intensity?: "default" | "subtle";
   className?: string;
 }
 
@@ -36,8 +37,21 @@ const SHAPES: ShapeMap = {
   },
 };
 
-export function AbstractBackdrop({ variant = "orbs", tone = "dark", className }: AbstractBackdropProps) {
-  const shapes = SHAPES[variant][tone];
+const SUBTLE_ORBS_DARK = [
+  "-left-[10%] -top-[14%] size-[540px] bg-[#0d9488] opacity-25 blur-[72px] animate-[backdrop-float-a_19s_var(--ease-in-out)_infinite]",
+  "right-[2%] top-[14%] size-[380px] bg-[#1fb9a6] opacity-[0.19] blur-[72px] animate-[backdrop-float-b_23s_var(--ease-in-out)_infinite]",
+  "-bottom-[8%] right-[28%] size-[260px] bg-accent opacity-[0.15] blur-[72px] animate-[backdrop-float-a_27s_var(--ease-in-out)_infinite_reverse]",
+];
+
+const SUBTLE_BLOBS_DARK: string[] = [];
+
+function subtleDarkShapes(variant: NonNullable<AbstractBackdropProps["variant"]>) {
+  return variant === "orbs" ? SUBTLE_ORBS_DARK : SUBTLE_BLOBS_DARK;
+}
+
+export function AbstractBackdrop({ variant = "orbs", tone = "dark", intensity = "default", className }: AbstractBackdropProps) {
+  const subtle = intensity === "subtle" && tone === "dark";
+  const shapes = subtle ? subtleDarkShapes(variant) : SHAPES[variant][tone];
   return (
     <div
       aria-hidden="true"
@@ -45,6 +59,9 @@ export function AbstractBackdrop({ variant = "orbs", tone = "dark", className }:
         "pointer-events-none absolute inset-0 overflow-hidden",
         tone === "dark" && variant === "orbs" && "bg-[#070f0d] bg-[radial-gradient(120%_90%_at_78%_8%,#103a34_0%,transparent_52%),radial-gradient(110%_100%_at_8%_100%,#0a201d_0%,transparent_58%)]",
         tone === "light" && variant === "orbs" && "bg-[radial-gradient(120%_90%_at_78%_8%,var(--color-teal-soft-light)_0%,transparent_52%)]",
+        subtle &&
+          variant === "blobs" &&
+          "bg-[#070f0d] bg-[radial-gradient(75%_135%_at_50%_128%,rgba(216,255,58,0.15),transparent_60%),radial-gradient(120%_90%_at_80%_6%,#123f38_0%,transparent_52%),radial-gradient(115%_100%_at_6%_100%,#0a201d_0%,transparent_58%)]",
         className
       )}
     >

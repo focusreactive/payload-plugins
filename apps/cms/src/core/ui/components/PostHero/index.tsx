@@ -1,65 +1,83 @@
-import { Image } from "@repo/ui";
-import React from "react";
+import { DisplayHeading, Eyebrow } from "@repo/ui";
+import { getTranslations } from "next-intl/server";
+import NextImage from "next/image";
 
-import { formatAuthors } from "@/core/lib/formatAuthors";
-import { formatDateTime } from "@/core/lib/formatDateTime";
-import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
-import type { Post } from "@/payload-types";
+import { BLOG_CONFIG } from "@/core/config/blog";
+import type { Locale } from "@/core/types";
+import { readingTimeMinutes } from "@/core/utils/readingTime";
+import type { Author, Category, Post } from "@/payload-types";
 
-export const PostHero: React.FC<{
+import { AuthorAvatar } from "../AuthorAvatar";
+import { Link } from "../Link";
+
+interface PostHeroProps {
   post: Post;
-}> = ({ post }) => {
-  const { categories, heroImage, authors, publishedAt, title, excerpt } = post;
+  locale: Locale;
+}
 
-  const hasAuthors = authors && authors.length > 0 && formatAuthors(authors) !== "";
+function DotSeparator() {
+  return <span aria-hidden className="inline-block size-1 rounded-pill bg-border-strong" />;
+}
+
+export async function PostHero({ post, locale }: PostHeroProps) {
+  const t = await getTranslations("blog");
+
+  const category = post.categories?.find((entry): entry is Category => typeof entry === "object" && entry !== null);
+  const author = post.authors?.find((entry): entry is Author => typeof entry === "object" && entry !== null);
+  const heroImage = typeof post.heroImage === "object" && post.heroImage !== null ? post.heroImage : undefined;
+  const publishedDate = post.publishedAt ? new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric" }).format(new Date(post.publishedAt)) : null;
 
   return (
-    <div className="py-6 px-4 sm:py-8 sm:px-6 md:py-10 md:px-8">
-      <div className="mx-auto max-w-3xl">
-        {/* Categories */}
-        {categories && categories.length > 0 && (
-          <div className="flex gap-2 flex-wrap mb-4">
-            {categories.map((category, index) => {
-              if (typeof category === "object" && category !== null) {
-                return (
-                  <span key={index} className="text-sm font-medium text-primary uppercase tracking-wide">
-                    {category.title || "Untitled category"}
-                    {index < categories.length - 1 && <span className="text-muted-foreground ml-2 mr-1">&middot;</span>}
-                  </span>
-                );
-              }
-              return null;
-            })}
+    <div>
+      <section className="pb-[clamp(28px,4vw,44px)] pt-[clamp(40px,6vw,72px)]">
+        <div className="mx-auto w-full max-w-containerMaxW px-containerBase">
+          <div className="mb-[26px]">
+            <Link
+              href={BLOG_CONFIG.basePath}
+              className="inline-flex items-center gap-2 text-[0.95rem] font-semibold text-foreground transition-colors hover:text-primary motion-reduce:transition-none"
+            >
+              <span aria-hidden>←</span> {t("backToJournal")}
+            </Link>
           </div>
-        )}
 
-        {/* Title */}
-        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight tracking-tight mb-6">{title}</h1>
+          <div className="mx-auto flex max-w-[760px] flex-col items-center gap-[22px] text-center">
+            {category && (
+              <Eyebrow prefix="dot" tone="accent">
+                {category.title}
+              </Eyebrow>
+            )}
 
-        {/* Author & Date */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-8">
-          {hasAuthors && <span className="font-medium text-foreground">{formatAuthors(authors)}</span>}
-          {hasAuthors && publishedAt && <span>&middot;</span>}
-          {publishedAt && <time dateTime={publishedAt}>{formatDateTime(publishedAt)}</time>}
-        </div>
-      </div>
+            <DisplayHeading as="h1" size="display-1" text={post.title} />
 
-      {/* Hero Image */}
-      <div className="mx-auto max-w-4xl mb-8">
-        {heroImage && typeof heroImage !== "number" && (
-          <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
-            {/* eslint-disable-next-line jsx-a11y/alt-text */}
-            <Image fill priority quality={85} className="object-cover" {...prepareImageProps({ image: heroImage })} />
+            <div className="flex flex-wrap items-center justify-center gap-[18px] text-[0.92rem] text-muted-foreground">
+              {author && (
+                <span className="flex items-center gap-2.5 whitespace-nowrap">
+                  <AuthorAvatar author={author} size="sm" />
+                  {author.name}
+                </span>
+              )}
+              {author && publishedDate && <DotSeparator />}
+              {publishedDate && (
+                <time dateTime={post.publishedAt ?? undefined} className="whitespace-nowrap">
+                  {publishedDate}
+                </time>
+              )}
+              {(author || publishedDate) && <DotSeparator />}
+              <span className="whitespace-nowrap">{t("readTimeLong", { minutes: readingTimeMinutes(post.content) })}</span>
+            </div>
           </div>
-        )}
-      </div>
-
-      {/* Excerpt */}
-      {excerpt && (
-        <div className="mx-auto max-w-3xl">
-          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">{excerpt}</p>
         </div>
+      </section>
+
+      {heroImage && (
+        <section>
+          <div className="mx-auto w-full max-w-containerMaxW px-containerBase">
+            <div className="relative aspect-[21/9] w-full overflow-hidden rounded-lg bg-surface-muted">
+              <NextImage src={heroImage.url ?? "/empty-placeholder.jpg"} alt={heroImage.alt ?? ""} fill priority quality={85} className="object-cover" sizes="(max-width: 1180px) 100vw, 1180px" />
+            </div>
+          </div>
+        </section>
       )}
     </div>
   );
-};
+}

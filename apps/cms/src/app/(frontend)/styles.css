@@ -1,4 +1,4 @@
-﻿@import '@repo/tailwind-config/base.css';
+﻿@import "@repo/tailwind-config/base.css";
 
 @source "../..";
 
@@ -85,39 +85,10 @@ body {
 }
 
 .prose :where(ul):not(:where(.content-section-prose *)) {
-  list-style: none;
-  padding-left: 0;
+  padding-left: 1.3em;
   font-size: 1.12rem;
   line-height: 1.7;
   color: color-mix(in srgb, var(--color-foreground) 88%, transparent);
-}
-
-.prose :where(ul > li):not(:where(.content-section-prose *)) {
-  position: relative;
-  padding-left: 2rem;
-}
-
-.prose :where(ul > li):not(:where(.content-section-prose *))::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 6px;
-  width: 20px;
-  height: 20px;
-  border-radius: 999px;
-  background: var(--color-primary-soft);
-}
-
-.prose :where(ul > li):not(:where(.content-section-prose *))::after {
-  content: '';
-  position: absolute;
-  left: 6px;
-  top: 10px;
-  width: 5px;
-  height: 9px;
-  border-right: 2px solid var(--color-primary);
-  border-bottom: 2px solid var(--color-primary);
-  transform: rotate(45deg);
 }
 
 .prose :where(figcaption):not(:where(.content-section-prose *)) {
@@ -153,8 +124,7 @@ body {
 }
 
 .testimonials-carousel-group {
-  animation: testimonials-carousel-scrolling var(--testimonials-carousel-duration, 60s) linear
-    infinite;
+  animation: testimonials-carousel-scrolling var(--testimonials-carousel-duration, 60s) linear infinite;
 }
 
 .testimonials-carousel:hover .testimonials-carousel-group,

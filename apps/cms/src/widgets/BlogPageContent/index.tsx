@@ -1,44 +1,89 @@
-"use client";
+import { DisplayHeading, Eyebrow } from "@repo/ui";
+import { getTranslations } from "next-intl/server";
 
-import { useTransition } from "react";
-
-import { CategoryFilters } from "@/app/(frontend)/[locale]/blog/_components/CategoryFilters";
 import { BLOG_CONFIG } from "@/core/config/blog";
-import { cn } from "@/core/lib/utils";
-import type { CardPostData } from "@/core/types";
-import { PageRange, Pagination } from "@/core/ui";
-import { BlogPostsGrid } from "@/entities";
+import type { Locale } from "@/core/types";
+import { EmptyState, Pagination } from "@/core/ui";
+
+import { FeaturedPost } from "./components/FeaturedPost";
+import { FilterChip } from "./components/FilterChip";
+import { NewsletterBand } from "./components/NewsletterBand";
+import { PostsGrid } from "./components/PostsGrid";
+import { SearchOverlay } from "./components/SearchOverlay";
+import type { BlogListPost } from "./types";
+import { blogHref } from "./utils/blogHref";
 
 interface BlogPageContentProps {
-  posts: CardPostData[];
-  currentPage?: number;
-  totalPages?: number;
-  totalDocs?: number;
+  posts: BlogListPost[];
+  currentPage: number;
+  totalPages: number;
+  blogBadge?: string | null;
+  blogTitle?: string | null;
+  searchPlaceholder?: string | null;
   readMoreLabel?: string | null;
   categories: { title: string; slug: string }[];
-  activeCategories: string[];
+  activeCategory?: string;
+  searchQuery?: string;
+  locale: Locale;
 }
 
-export const BlogPageContent: React.FC<BlogPageContentProps> = ({ posts, currentPage, totalPages, totalDocs, readMoreLabel, categories, activeCategories }) => {
-  const [isPending, startTransition] = useTransition();
+export async function BlogPageContent({
+  posts,
+  currentPage,
+  totalPages,
+  blogBadge,
+  blogTitle,
+  searchPlaceholder,
+  readMoreLabel,
+  categories,
+  activeCategory,
+  searchQuery,
+  locale,
+}: BlogPageContentProps) {
+  const t = await getTranslations("blog");
+
+  const showFeatured = currentPage === 1 && !activeCategory && !searchQuery && posts.length > 0;
+  const featuredPost = showFeatured ? posts[0] : undefined;
+  const gridPosts = showFeatured ? posts.slice(1) : posts;
 
   return (
-    <section className="py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8 lg:py-24">
-      <div className="mx-auto max-w-7xl">
-        <CategoryFilters categories={categories} activeCategories={activeCategories} isPending={isPending} startTransition={startTransition} />
+    <>
+      <section className="pt-[clamp(48px,7vw,88px)]">
+        <div className="mx-auto w-full max-w-containerMaxW px-containerBase">
+          <div className="mx-auto flex max-w-[720px] flex-col items-center gap-5 text-center">
+            {blogBadge && (
+              <Eyebrow prefix="dot" tone="accent">
+                {blogBadge}
+              </Eyebrow>
+            )}
+            {blogTitle && <DisplayHeading as="h1" size="display-1" text={blogTitle} />}
+          </div>
 
-        <div className={cn("transition-opacity", isPending && "opacity-50 pointer-events-none")}>
-          {currentPage && totalDocs !== undefined && (
-            <div className="mb-8">
-              <PageRange collection="posts" currentPage={currentPage} limit={BLOG_CONFIG.postsPerPage} totalDocs={totalDocs} />
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-2.5 py-2">
+            <div className="flex flex-wrap gap-2.5">
+              <FilterChip href={blogHref({ q: searchQuery })} label={t("all")} isActive={!activeCategory} />
+              {categories.map((category) => (
+                <FilterChip key={category.slug} href={blogHref({ category: category.slug, q: searchQuery })} label={category.title} isActive={activeCategory === category.slug} />
+              ))}
             </div>
-          )}
-
-          <BlogPostsGrid posts={posts} readMoreLabel={readMoreLabel} />
-
-          {currentPage && totalPages && totalPages > 1 && <Pagination basePath={BLOG_CONFIG.basePath} page={currentPage} totalPages={totalPages} />}
+            <SearchOverlay placeholder={searchPlaceholder ?? ""} activeCategory={activeCategory} initialQuery={searchQuery} />
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <section className="pb-sectionBase pt-[clamp(28px,4vw,44px)]">
+        <div className="mx-auto w-full max-w-containerMaxW px-containerBase">
+          {featuredPost && <FeaturedPost post={featuredPost} readMoreLabel={readMoreLabel} locale={locale} className="mb-sectionBase" />}
+
+          {posts.length === 0 && <EmptyState title={t("noResults")} description="" />}
+
+          {gridPosts.length > 0 && <PostsGrid posts={gridPosts} />}
+
+          {totalPages > 1 && <Pagination basePath={BLOG_CONFIG.basePath} page={currentPage} totalPages={totalPages} query={{ category: activeCategory, q: searchQuery }} />}
+        </div>
+      </section>
+
+      <NewsletterBand />
+    </>
   );
-};
+}

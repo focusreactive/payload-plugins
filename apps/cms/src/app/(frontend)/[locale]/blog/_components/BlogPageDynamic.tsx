@@ -7,15 +7,17 @@ import { BlogPageContent } from "@/widgets";
 interface BlogPageDynamicProps {
   searchParams: Promise<{
     page?: string;
-    categories?: string;
+    category?: string;
+    q?: string;
   }>;
   locale: Locale;
 }
 
 export async function BlogPageDynamic({ searchParams, locale }: BlogPageDynamicProps) {
-  const { page, categories: categoriesParam } = await searchParams;
+  const { page, category, q } = await searchParams;
   const pageNumber = page ? Number.parseInt(page, 10) : 1;
-  const activeCategories = categoriesParam?.split(",").filter(Boolean) ?? [];
+  const activeCategory = category?.trim() || undefined;
+  const searchQuery = q?.trim() || undefined;
 
   if (pageNumber < 1 || !Number.isInteger(pageNumber)) {
     redirect({ href: BLOG_CONFIG.basePath, locale });
@@ -25,9 +27,10 @@ export async function BlogPageDynamic({ searchParams, locale }: BlogPageDynamicP
 
   const [posts, blogSettings, allCategories] = await Promise.all([
     getPosts(payload, {
-      categories: activeCategories,
+      category: activeCategory,
       locale,
       page: pageNumber,
+      q: searchQuery,
     }),
     getBlogPageSettings({ locale }),
     payload.find({
@@ -48,12 +51,16 @@ export async function BlogPageDynamic({ searchParams, locale }: BlogPageDynamicP
   return (
     <BlogPageContent
       posts={posts.docs}
-      currentPage={posts.page}
+      currentPage={posts.page ?? pageNumber}
       totalPages={posts.totalPages}
-      totalDocs={posts.totalDocs}
+      blogBadge={blogSettings.blogBadge}
+      blogTitle={blogSettings.blogTitle}
+      searchPlaceholder={blogSettings.searchPlaceholder}
       readMoreLabel={blogSettings.readMoreLabel}
       categories={allCategories.docs}
-      activeCategories={activeCategories}
+      activeCategory={activeCategory}
+      searchQuery={searchQuery}
+      locale={locale}
     />
   );
 }

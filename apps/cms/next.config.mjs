@@ -26,6 +26,7 @@ const nextConfig = {
     inlineCss: true,
   },
   images: {
+    qualities: [75, 85],
     remotePatterns: [
       {
         hostname: "localhost",

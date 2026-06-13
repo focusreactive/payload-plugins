@@ -27,7 +27,7 @@ export function NewsletterSection({ header, inputPlaceholder, buttonLabel, discl
 
   return (
     <div>
-      <AbstractBackdrop variant="orbs" tone={backdropTone} />
+      <AbstractBackdrop variant="orbs" tone={backdropTone} intensity="subtle" />
       <GridLines tone={backdropTone} />
       <div className="relative z-10 flex flex-col items-center gap-[26px] py-[clamp(56px,8vw,104px)] text-center">
         {header && <SectionHeader {...header} align="center" className="max-w-[760px]" />}
@@ -47,8 +47,8 @@ export function NewsletterSection({ header, inputPlaceholder, buttonLabel, discl
                 required
                 placeholder={inputPlaceholder}
                 className={cn(
-                  "min-w-[280px] rounded-pill border border-transparent bg-surface px-5 py-3.5",
-                  "text-foreground placeholder:text-muted-foreground",
+                  "min-w-[280px] rounded-pill border border-transparent bg-white px-5 py-3.5",
+                  "text-ink-950 placeholder:text-slate-500",
                   "outline-none ring-offset-0 focus-visible:ring-2 focus-visible:ring-accent",
                   "text-base"
                 )}

@@ -15,7 +15,7 @@ export function CtaBand({ header, theme, actions }: CtaBandProps) {
 
   return (
     <div>
-      <AbstractBackdrop variant="blobs" tone={backdropTone} />
+      <AbstractBackdrop variant="blobs" tone={backdropTone} intensity="subtle" />
       <GridLines tone={backdropTone} />
       <div className="relative z-10 flex flex-col items-center gap-[26px] py-[clamp(56px,8vw,104px)] text-center">
         {header && <SectionHeader {...header} align="center" className="max-w-[760px]" />}
