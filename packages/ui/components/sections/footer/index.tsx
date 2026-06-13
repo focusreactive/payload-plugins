@@ -13,7 +13,7 @@ function FooterAnchor({ link, className }: { link: FooterLink; className?: strin
 
 export function Footer({ brand, description, linkGroups, legalLinks, copywriteText }: IFooterProps) {
   return (
-    <footer className="dark-zone bg-background text-foreground border-t border-border">
+    <footer className="bg-background text-foreground border-t border-border">
       <div className="mx-auto max-w-containerMaxW px-containerBase pb-10 pt-[72px]">
         <div className="grid grid-cols-[1.6fr_repeat(3,1fr)] gap-10 max-[760px]:grid-cols-2 max-[760px]:gap-8">
           <div className="flex flex-col">
