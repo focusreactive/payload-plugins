@@ -5,6 +5,8 @@ import { BLOG_CONFIG } from "@/core/config/blog";
 import type { Locale } from "@/core/types";
 import { EmptyState, Pagination } from "@/core/ui";
 
+import { BlogFilterProvider } from "./components/BlogFilterProvider";
+import { DimWhilePending } from "./components/DimWhilePending";
 import { FeaturedPost } from "./components/FeaturedPost";
 import { FilterChip } from "./components/FilterChip";
 import { NewsletterBand } from "./components/NewsletterBand";
@@ -47,7 +49,7 @@ export async function BlogPageContent({
   const gridPosts = showFeatured ? posts.slice(1) : posts;
 
   return (
-    <>
+    <BlogFilterProvider>
       <section className="pt-[clamp(48px,7vw,88px)]">
         <div className="mx-auto w-full max-w-containerMaxW px-containerBase">
           <div className="mx-auto flex max-w-[720px] flex-col items-center gap-5 text-center">
@@ -73,17 +75,19 @@ export async function BlogPageContent({
 
       <section className="pb-sectionBase pt-[clamp(28px,4vw,44px)]">
         <div className="mx-auto w-full max-w-containerMaxW px-containerBase">
-          {featuredPost && <FeaturedPost post={featuredPost} readMoreLabel={readMoreLabel} locale={locale} className="mb-sectionBase" />}
+          <DimWhilePending>
+            {featuredPost && <FeaturedPost post={featuredPost} readMoreLabel={readMoreLabel} locale={locale} className="mb-sectionBase" />}
 
-          {posts.length === 0 && <EmptyState title={t("noResults")} description="" />}
+            {posts.length === 0 && <EmptyState title={t("noResults")} description="" />}
 
-          {gridPosts.length > 0 && <PostsGrid posts={gridPosts} />}
+            {gridPosts.length > 0 && <PostsGrid posts={gridPosts} />}
+          </DimWhilePending>
 
           {totalPages > 1 && <Pagination basePath={BLOG_CONFIG.basePath} page={currentPage} totalPages={totalPages} query={{ category: activeCategory, q: searchQuery }} />}
         </div>
       </section>
 
       <NewsletterBand />
-    </>
+    </BlogFilterProvider>
   );
 }
