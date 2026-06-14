@@ -21,6 +21,7 @@
     "@focus-reactive/payload-plugin-comments": "workspace:*",
     "@focus-reactive/payload-plugin-presets": "workspace:*",
     "@focus-reactive/payload-plugin-scheduling": "workspace:*",
+    "@focus-reactive/payload-plugin-seo": "workspace:*",
     "@focus-reactive/payload-plugin-translator": "workspace:*",
     "@google-analytics/data": "^5.2.2",
     "@grpc/grpc-js": "^1.14.3",

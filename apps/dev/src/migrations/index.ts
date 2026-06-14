@@ -7,6 +7,7 @@ import * as migration_20260512_104342_localize_block_fields from "./20260512_104
 import * as migration_20260518_215435_create_comment_reads from "./20260518_215435_create_comment_reads";
 import * as migration_20260529_121405_create_ab_experiments from "./20260529_121405_create_ab_experiments";
 import * as migration_20260602_230716_add_hidden_to_sections from "./20260602_230716_add_hidden_to_sections";
+import * as migration_20260614_230241_add_content_block_hero_media_cta_remove_copy from "./20260614_230241_add_content_block_hero_media_cta_remove_copy";
 
 export const migrations = [
   {
@@ -53,5 +54,10 @@ export const migrations = [
     up: migration_20260602_230716_add_hidden_to_sections.up,
     down: migration_20260602_230716_add_hidden_to_sections.down,
     name: "20260602_230716_add_hidden_to_sections",
+  },
+  {
+    up: migration_20260614_230241_add_content_block_hero_media_cta_remove_copy.up,
+    down: migration_20260614_230241_add_content_block_hero_media_cta_remove_copy.down,
+    name: "20260614_230241_add_content_block_hero_media_cta_remove_copy",
   },
 ];
