@@ -1,6 +1,6 @@
-import { Header as SharedHeader } from "@repo/ui";
-import { AlignVariant } from "@repo/ui/components/sections/header/types";
-import { ImageAspectRatio } from "@repo/ui/components/ui/image/types";
+import { Header as HeaderUI } from "@repo/ui";
+import { ButtonVariant } from "@repo/ui/components/ui/button/types";
+import type { HeaderAction, HeaderFeatured, HeaderLink, HeaderNavItem, IHeaderProps } from "@repo/ui/components/sections/header/types";
 import React from "react";
 
 import { resolveLocale } from "@/core/lib/resolveLocale";
@@ -12,17 +12,112 @@ interface Props {
   data: HeaderType;
 }
 
+type PayloadNavItem = NonNullable<HeaderType["navItems"]>[number];
+type PayloadLink = NonNullable<PayloadNavItem["link"]> & { label?: string | null };
+type PayloadAction = NonNullable<HeaderType["actions"]>[number];
+
+const actionAppearanceToVariant: Record<string, ButtonVariant> = {
+  accent: ButtonVariant.Accent,
+  default: ButtonVariant.Primary,
+  ghost: ButtonVariant.Ghost,
+  link: ButtonVariant.Default,
+  outline: ButtonVariant.Secondary,
+};
+
+function resolveHeaderLink(link: PayloadLink | null | undefined, locale: string, fallbackLabel?: string): HeaderLink | undefined {
+  if (!link) {
+    return undefined;
+  }
+
+  const { href } = prepareLinkProps(link, locale);
+
+  if (!href) {
+    return undefined;
+  }
+
+  return {
+    href,
+    label: link.label ?? fallbackLabel ?? "",
+    newTab: link.newTab ?? false,
+  };
+}
+
+function mapFeatured(featured: NonNullable<NonNullable<PayloadNavItem["dropdown"]>["featured"]>, locale: string): HeaderFeatured {
+  return {
+    badge: featured.badge ?? undefined,
+    title: featured.title ?? undefined,
+    description: featured.description ?? undefined,
+    link: resolveHeaderLink(featured.link, locale),
+  };
+}
+
+function mapNavItem(item: PayloadNavItem, locale: string): HeaderNavItem | null {
+  if (item.type === "link") {
+    const resolved = resolveHeaderLink(item.link, locale, item.label);
+    if (!resolved) {
+      return null;
+    }
+    return { kind: "link", label: item.label, href: resolved.href, newTab: resolved.newTab };
+  }
+
+  const dropdown = item.dropdown;
+  const featuredEnabled = dropdown?.featured?.enabled === true;
+
+  const links: HeaderLink[] = (dropdown?.links ?? []).flatMap((entry) => {
+    const resolved = resolveHeaderLink(entry.link, locale, entry.title);
+    if (!resolved) {
+      return [];
+    }
+    return [
+      {
+        href: resolved.href,
+        label: entry.title,
+        newTab: resolved.newTab,
+        description: entry.description ?? undefined,
+      },
+    ];
+  });
+
+  return {
+    kind: "dropdown",
+    label: item.label,
+    layout: featuredEnabled ? "feature" : "grid",
+    featured: featuredEnabled && dropdown?.featured ? mapFeatured(dropdown.featured, locale) : undefined,
+    links,
+  };
+}
+
+function mapAction(action: PayloadAction, locale: string): HeaderAction | null {
+  const { href } = prepareLinkProps(action, locale);
+  if (!href) {
+    return null;
+  }
+  return {
+    href,
+    label: action.label,
+    newTab: action.newTab ?? false,
+    variant: actionAppearanceToVariant[action.appearance ?? "default"] ?? ButtonVariant.Primary,
+  };
+}
+
 export async function Header({ data }: Props) {
   if (!data) {
     return null;
   }
 
   const locale = await resolveLocale();
-  const links = (data.navItems ?? []).map((item) => prepareLinkProps(item.link, locale));
-  const image = prepareImageProps({
-    aspectRatio: ImageAspectRatio["1/1"],
-    image: data.logo as Media,
-  });
 
-  return <SharedHeader links={links} image={image} alignVariant={AlignVariant.Right} />;
+  const logo: Media | null = typeof data.logo === "object" ? data.logo : null;
+
+  const props: IHeaderProps = {
+    brand: {
+      href: "/",
+      label: data.name ?? "",
+      logo: logo ? prepareImageProps({ image: logo }) : null,
+    },
+    navItems: (data.navItems ?? []).map((item) => mapNavItem(item, locale)).filter((item): item is HeaderNavItem => item !== null),
+    actions: (data.actions ?? []).map((action) => mapAction(action, locale)).filter((action): action is HeaderAction => action !== null),
+  };
+
+  return <HeaderUI {...props} />;
 }

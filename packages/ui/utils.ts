@@ -15,4 +15,12 @@ export function getLinkClickParams(disabled = false) {
   };
 }
 
+export type BackdropTone = "dark" | "light";
+
+const DARK_THEMES = new Set(["dark", "dark-gray"]);
+
+export function resolveBackdropTone(theme: string | null | undefined): BackdropTone {
+  return theme && DARK_THEMES.has(theme) ? "dark" : "light";
+}
+
 export { cva };

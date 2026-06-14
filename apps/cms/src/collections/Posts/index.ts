@@ -1,5 +1,8 @@
-import type { CollectionConfig } from "payload";
+import type { CollectionConfig, GroupField } from "payload";
 
+import { CardsGridInlineBlock } from "@/blocks/CardsGrid/inlineConfig";
+import { LinksListInlineBlock } from "@/blocks/LinksList/inlineConfig";
+import { LogosInlineBlock } from "@/blocks/Logos/inlineConfig";
 import { BLOG_CONFIG } from "@/core/config/blog";
 import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/core/constants/mediaDefaults";
@@ -10,6 +13,7 @@ import { generateRichText } from "@/core/lib/generateRichText";
 import { generateSeoFields } from "@/core/lib/seoFields";
 import { buildUrl } from "@/core/utils/path/buildUrl";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
+import { link } from "@/fields/link";
 import { createSharedSlugField } from "@/fields/slugField";
 
 import { indexPostEmbedding, deletePostEmbedding } from "./hooks/indexEmbedding";
@@ -106,7 +110,9 @@ export const Posts: CollectionConfig<"posts"> = {
             },
             {
               defaultValue: createLocalizedRichText(DEFAULT_VALUES.richText.content),
-              editor: generateRichText(),
+              editor: generateRichText("default", {
+                blocks: [CardsGridInlineBlock, LogosInlineBlock, LinksListInlineBlock],
+              }),
               label: {
                 en: "Content",
                 es: "Contenido",
@@ -115,6 +121,53 @@ export const Posts: CollectionConfig<"posts"> = {
               name: "content",
               required: true,
               type: "richText",
+            },
+            {
+              admin: {
+                description: {
+                  en: "Optional FAQ shown after the article body.",
+                  es: "FAQ opcional mostrado tras el cuerpo del artículo.",
+                },
+              },
+              fields: [
+                { label: { en: "Heading", es: "Encabezado" }, localized: true, name: "heading", type: "text" },
+                {
+                  fields: [
+                    { label: { en: "Question", es: "Pregunta" }, localized: true, name: "question", required: true, type: "text" },
+                    { editor: generateRichText(), label: { en: "Answer", es: "Respuesta" }, localized: true, name: "answer", required: true, type: "richText" },
+                  ],
+                  localized: true,
+                  name: "items",
+                  type: "array",
+                },
+              ],
+              label: { en: "FAQ", es: "FAQ" },
+              name: "faq",
+              type: "group",
+            },
+            {
+              admin: {
+                description: {
+                  en: "Optional CTA band shown at the end of the post. Hidden when the heading is empty.",
+                  es: "Banda CTA opcional al final de la publicación. Oculta si el encabezado está vacío.",
+                },
+              },
+              fields: [
+                { label: { en: "Badge", es: "Insignia" }, localized: true, name: "badge", type: "text" },
+                { label: { en: "Heading", es: "Encabezado" }, localized: true, name: "heading", type: "text" },
+                { label: { en: "Lead", es: "Entradilla" }, localized: true, name: "lead", type: "text" },
+                {
+                  fields: (link() as GroupField).fields,
+                  label: { en: "Actions", es: "Acciones" },
+                  localized: true,
+                  maxRows: 2,
+                  name: "actions",
+                  type: "array",
+                },
+              ],
+              label: { en: "CTA", es: "CTA" },
+              name: "cta",
+              type: "group",
             },
           ],
           label: {

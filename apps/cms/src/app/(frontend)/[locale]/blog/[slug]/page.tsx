@@ -50,7 +50,7 @@ export default async function Page({ params }: Args) {
 
         <PayloadRedirects disableNotFound url={url} locale={locale} />
 
-        <PostContent post={post} locale={locale} relatedPostsLabel={blogSettings.relatedPostsLabel} readMoreLabel={blogSettings.readMoreLabel} />
+        <PostContent post={post} locale={locale} relatedPostsLabel={blogSettings.relatedPostsLabel} />
       </main>
       <Footer data={siteSettings.footer as FooterType} />
     </>

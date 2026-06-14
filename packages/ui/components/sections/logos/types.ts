@@ -15,4 +15,5 @@ export interface ILogoItem {
 export interface ILogosProps {
   items: ILogoItem[];
   alignVariant: AlignVariant;
+  label?: string | null;
 }

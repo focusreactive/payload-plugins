@@ -1,5 +1,5 @@
-import type { IImageProps } from "../../ui/image/types";
-import type { LinkProps } from "../../ui/link/types";
+import type { ReactNode } from "react";
+
 import type { IRichTextProps } from "../../ui/richText/types";
 
 export enum BlogStyle {
@@ -8,16 +8,17 @@ export enum BlogStyle {
   ThreeColumnWithBackgroundImages = "three-column-with-background-images",
 }
 
-export interface IBlogPostCardProps {
-  text: IRichTextProps;
-  image: IImageProps;
-  link: LinkProps;
-  style: BlogStyle;
-  readMoreLabel?: string;
+export interface BlogPostCardProps {
+  title: string;
+  excerpt?: string | null;
+  category?: string | null;
+  readTime?: string | null;
+  image?: ReactNode;
+  className?: string;
 }
 
 export interface IBlogSectionProps {
   text: IRichTextProps;
-  posts: IBlogPostCardProps[];
+  posts: BlogPostCardProps[];
   style: BlogStyle;
 }

@@ -23,5 +23,5 @@ export const RowLabel: React.FC<RowLabelProps> = () => {
 
 export const RowLabelGroupName: React.FC<RowLabelProps> = () => {
   const data = useRowLabel<NonNullable<Header["navItems"]>[number]>();
-  return generateRowLabel(data.rowNumber, data?.data?.link?.label);
+  return generateRowLabel(data.rowNumber, data?.data?.label);
 };

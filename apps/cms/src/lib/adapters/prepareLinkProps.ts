@@ -43,7 +43,10 @@ export function prepareLinkProps(link: PayloadLink | null | undefined, locale: s
   }
 
   const variantMap: Record<string, ButtonVariant> = {
+    accent: ButtonVariant.Accent,
     default: ButtonVariant.Primary,
+    ghost: ButtonVariant.Ghost,
+    link: ButtonVariant.Default,
     outline: ButtonVariant.Secondary,
   };
 

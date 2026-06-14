@@ -2,6 +2,7 @@ import type { Block } from "payload";
 
 import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
 import { embedSectionTab } from "@/fields/section/embedSectionTab";
+import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
 
 import { cardsGridFields } from "./fields";
 
@@ -13,5 +14,5 @@ export const CardsGridBlock: Block = {
     plural: { en: "Cards Grids", es: "Cuadrículas de Tarjetas" },
     singular: { en: "Cards Grid", es: "Cuadrícula de Tarjetas" },
   },
-  fields: embedSectionTab(cardsGridFields),
+  fields: embedSectionTab([...sectionHeaderFields(), ...cardsGridFields]),
 };

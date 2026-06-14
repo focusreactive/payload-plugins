@@ -1,24 +1,17 @@
-import type { Block, Field } from "payload";
+import type { Block, Field, GroupField } from "payload";
 
 import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/core/constants/mediaDefaults";
 import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
-import { createLocalizedDefault, createLocalizedRichText } from "@/core/lib/createLocalizedDefault";
+import { createLocalizedRichText } from "@/core/lib/createLocalizedDefault";
 import { generateRichText } from "@/core/lib/generateRichText";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
+import { link } from "@/fields/link";
 import { embedSectionTab } from "@/fields/section/embedSectionTab";
+import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
 
 const fields: Field[] = [
-  {
-    defaultValue: createLocalizedDefault(DEFAULT_VALUES.blocks.content.heading),
-    label: {
-      en: "Heading",
-      es: "Encabezado",
-    },
-    localized: true,
-    name: "heading",
-    type: "text",
-  },
+  ...sectionHeaderFields({ headingDefault: DEFAULT_VALUES.blocks.content.heading }),
   {
     defaultValue: "image-text",
     label: {
@@ -67,6 +60,18 @@ const fields: Field[] = [
     name: "content",
     required: true,
     type: "richText",
+  },
+  {
+    admin: {
+      components: { RowLabel: "@/core/ui/components/RowLabel#RowLabel" },
+      initCollapsed: true,
+    },
+    fields: (link() as GroupField).fields,
+    label: { en: "Actions", es: "Acciones" },
+    localized: true,
+    maxRows: 2,
+    name: "actions",
+    type: "array",
   },
 ];
 

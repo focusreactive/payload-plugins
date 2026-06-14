@@ -385,6 +385,20 @@ export const SiteSettings: GlobalConfig = {
                       localized: true,
                       defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.blog.relatedPostsLabel),
                     },
+                    {
+                      defaultValue: createLocalizedDefault({ en: "The Journal", es: "The Journal" }),
+                      label: { en: "Blog badge", es: "Insignia del blog" },
+                      localized: true,
+                      name: "blogBadge",
+                      type: "text",
+                    },
+                    {
+                      defaultValue: createLocalizedDefault({ en: "Search articles…", es: "Buscar artículos…" }),
+                      label: { en: "Search placeholder", es: "Marcador de búsqueda" },
+                      localized: true,
+                      name: "searchPlaceholder",
+                      type: "text",
+                    },
                   ],
                 },
                 {

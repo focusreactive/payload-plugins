@@ -1,93 +1,200 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
-import { EffectCards, EffectCoverflow, EffectCube, EffectFade, EffectFlip, Navigation } from "swiper/modules";
-import type { NavigationOptions } from "swiper/types";
+import React, { useEffect, useRef, useState } from "react";
 
 import { cn } from "../../../utils";
-
-import "swiper/css/bundle";
-
-import { GenericCarousel } from "../../ui/GenericCarousel";
-import type { IGenericCarouselBaseProps } from "../../ui/GenericCarousel/types";
-import CarouselCard from "./CarouselCard";
+import { Image } from "../../ui/image";
+import { RichText } from "../../ui/richText";
 import type { ICarouselProps } from "./types";
 
-const getEffectModule = (effect: IGenericCarouselBaseProps["effect"]) => {
-  switch (effect) {
-    case "fade":
-      return EffectFade;
-    case "cube":
-      return EffectCube;
-    case "flip":
-      return EffectFlip;
-    case "coverflow":
-      return EffectCoverflow;
-    case "cards":
-      return EffectCards;
-    default:
-      return;
-  }
-};
+const AUTOPLAY_DELAY = 6500;
 
-const NavButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement> & { direction: "prev" | "next" }>(({ className, direction, ...props }, ref) => (
-  <button
-    ref={ref}
-    aria-label={direction === "prev" ? "Previous slide" : "Next slide"}
-    className={cn(
-      "z-10 inline-flex size-12 items-center justify-center rounded-pill border border-foreground/20 bg-surface text-foreground transition-all hover:border-foreground hover:bg-foreground hover:text-background",
-      className
-    )}
-    {...props}
-  >
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={cn("size-5", direction === "next" && "rotate-180")}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-    </svg>
-  </button>
-));
-NavButton.displayName = "NavButton";
+interface NavButtonProps {
+  direction: "prev" | "next";
+  onClick: () => void;
+}
 
-export function Carousel({ slides, customModules, customModulesParams, effect, params }: ICarouselProps) {
-  const effectModule = getEffectModule(effect);
+function NavButton({ direction, onClick }: NavButtonProps) {
+  return (
+    <button
+      type="button"
+      aria-label={direction === "prev" ? "Previous slide" : "Next slide"}
+      onClick={onClick}
+      className={cn(
+        "inline-grid size-[46px] flex-none place-items-center rounded-pill",
+        "border border-border-strong bg-surface text-foreground",
+        "transition-colors duration-150 ease-out",
+        "hover:border-foreground",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+        "active:scale-[0.93]"
+      )}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden className={cn("size-[18px]", direction === "next" && "rotate-180")}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="m15 18-6-6 6-6" />
+      </svg>
+    </button>
+  );
+}
 
-  const prevButtonRef = useRef<HTMLButtonElement>(null);
-  const nextButtonRef = useRef<HTMLButtonElement>(null);
-  const [navigation, setNavigation] = React.useState<NavigationOptions>({
-    enabled: true,
-    nextEl: nextButtonRef.current,
-    prevEl: prevButtonRef.current,
-  });
+interface DotProps {
+  index: number;
+  isActive: boolean;
+  total: number;
+  onSelect: (index: number) => void;
+}
 
-  useEffect(() => {
-    if (prevButtonRef.current && nextButtonRef.current) {
-      setNavigation({
-        enabled: true,
-        nextEl: nextButtonRef.current,
-        prevEl: prevButtonRef.current,
-      });
-    }
-  }, [prevButtonRef, nextButtonRef]);
+function Dot({ index, isActive, total, onSelect }: DotProps) {
+  return (
+    <button
+      type="button"
+      aria-label={`Go to slide ${index + 1} of ${total}`}
+      aria-current={isActive ? ("true" as const) : undefined}
+      onClick={() => onSelect(index)}
+      className={cn(
+        "h-[9px] cursor-pointer rounded-pill border-none p-0",
+        "transition-[width,background-color] duration-200 ease-out",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+        isActive ? "w-[26px] bg-primary" : "w-[9px] bg-border-strong"
+      )}
+    />
+  );
+}
+
+interface SlideContentProps {
+  slide: ICarouselProps["slides"][number];
+  index: number;
+}
+
+function SlideContent({ slide, index }: SlideContentProps) {
+  const { image, text } = slide;
 
   return (
-    <div className="not-prose">
-      <div className="mb-6 flex items-center justify-end gap-3 sm:mb-8">
-        <NavButton ref={prevButtonRef} direction="prev" />
-        <NavButton ref={nextButtonRef} direction="next" />
+    <div className="grid min-h-[420px] grid-cols-1 md:grid-cols-[1.1fr_0.9fr]">
+      <div className="relative overflow-hidden rounded-t-lg md:rounded-l-lg md:rounded-tr-none">
+        {image?.src ? (
+          <Image {...image} fit="cover" quality={85} sizes="(max-width: 768px) 100vw, (max-width: 1280px) 60vw, 700px" priority={index === 0} />
+        ) : (
+          <div className="h-full min-h-[260px] w-full bg-surface-muted md:min-h-0" />
+        )}
       </div>
 
-      <GenericCarousel
-        slides={
-          slides.map((slide) => ({
-            children: (({ isNext, isActive }: { isNext: boolean; isActive: boolean }) => (
-              <CarouselCard {...slide} isActive={effect === "coverflow" ? isNext : isActive} />
-            )) as unknown as React.ReactNode,
-          })) as any
+      <div className="flex flex-col justify-center gap-4 rounded-b-lg bg-surface px-8 py-10 md:rounded-r-lg md:rounded-bl-none md:px-[clamp(2rem,4vw,3.5rem)] md:py-[clamp(2rem,5vw,3.5rem)]">
+        {text && (
+          <div
+            className={cn(
+              "prose max-w-none",
+              "prose-h4:mb-3 prose-h4:font-mono prose-h4:text-eyebrow prose-h4:text-primary",
+              "prose-h3:mb-3 prose-h3:font-display prose-h3:text-h-card prose-h3:text-foreground",
+              "prose-h2:mb-3 prose-h2:font-display prose-h2:text-h-section prose-h2:text-foreground",
+              "prose-p:leading-relaxed prose-p:text-muted-foreground",
+              "prose-a:text-primary prose-a:underline-offset-4"
+            )}
+          >
+            <RichText {...text} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function Carousel({ slides, effect }: ICarouselProps) {
+  const [current, setCurrent] = useState(0);
+  const [isHovering, setIsHovering] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const count = (slides ?? []).length;
+  const isFade = effect === "fade";
+
+  const goTo = (index: number) => {
+    setCurrent(((index % count) + count) % count);
+  };
+
+  const goPrev = () => goTo(current - 1);
+  const goNext = () => goTo(current + 1);
+
+  useEffect(() => {
+    if (count <= 1) return;
+    if (isHovering || isFocused) return;
+
+    const mq = typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+    if (mq?.matches) return;
+
+    const id = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % count);
+    }, AUTOPLAY_DELAY);
+
+    return () => clearInterval(id);
+  }, [count, isHovering, isFocused]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      goPrev();
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      goNext();
+    }
+  };
+
+  if (!slides?.length) return null;
+
+  return (
+    <div
+      ref={containerRef}
+      className="not-prose relative"
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+      onFocus={() => setIsFocused(true)}
+      onBlur={(e) => {
+        if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+          setIsFocused(false);
         }
-        customModules={[Navigation, ...(customModules || []), ...(effectModule ? [effectModule] : [])]}
-        customModulesParams={{ navigation, ...customModulesParams }}
-        effect={effect}
-        params={params}
-      />
+      }}
+      onKeyDown={handleKeyDown}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Product tour"
+    >
+      <div className="relative grid overflow-hidden rounded-lg border border-border" aria-live="polite" aria-atomic="true">
+        {slides.map((slide, i) => {
+          const isActive = i === current;
+          const offsetPct = `${(i - current) * 100}%`;
+
+          return (
+            <div
+              key={i}
+              aria-roledescription="slide"
+              aria-label={`Slide ${i + 1} of ${count}`}
+              aria-hidden={!isActive ? true : undefined}
+              style={{
+                gridArea: "1 / 1",
+                transform: isFade ? undefined : `translateX(${offsetPct})`,
+              }}
+              className={cn(
+                isFade
+                  ? cn("transition-opacity duration-[600ms] ease-out", isActive ? "opacity-100" : "pointer-events-none opacity-0")
+                  : cn("transition-[transform] duration-[600ms] ease-out", !isActive && "pointer-events-none")
+              )}
+            >
+              <SlideContent slide={slide} index={i} />
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-[26px] flex items-center justify-between gap-5">
+        <div className="flex items-center gap-[9px]" role="tablist" aria-label="Slide indicators">
+          {slides.map((_, i) => (
+            <Dot key={i} index={i} isActive={i === current} total={count} onSelect={goTo} />
+          ))}
+        </div>
+
+        <div className="flex items-center gap-[10px]">
+          <NavButton direction="prev" onClick={goPrev} />
+          <NavButton direction="next" onClick={goNext} />
+        </div>
+      </div>
     </div>
   );
 }
