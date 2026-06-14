@@ -6,6 +6,7 @@ pre-commit:
       exclude:
         - "apps/cms/src/payload-types.ts"
         - "apps/cms/src/app/(payload)/admin/importMap.js"
+        - "apps/cms/src/database/migrations/**"
       run: bunx ultracite fix {staged_files}
       stage_fixed: true
 
