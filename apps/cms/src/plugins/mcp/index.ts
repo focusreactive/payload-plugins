@@ -39,6 +39,16 @@ function isLocalDevMcpRequest(req: PayloadRequest) {
 
 const registry: McpToolsRegistry = {
   collections: {
+    authors: {
+      skipKeys: ["id"],
+      tableFields: [],
+      titleField: "name",
+    },
+    categories: {
+      skipKeys: ["id"],
+      tableFields: ["slug"],
+      titleField: "title",
+    },
     footer: {
       skipKeys: ["id"],
       tableFields: [],
@@ -48,6 +58,11 @@ const registry: McpToolsRegistry = {
       skipKeys: ["id"],
       tableFields: [],
       titleField: "name",
+    },
+    media: {
+      skipKeys: ["id"],
+      tableFields: ["filename", "alt"],
+      titleField: "filename",
     },
     page: {
       buildUrl: (doc, locale) =>
@@ -72,6 +87,16 @@ const registry: McpToolsRegistry = {
       tableFields: ["slug", "_status", "publishedAt", "excerpt"],
       titleField: "title",
     },
+    testimonials: {
+      skipKeys: ["id"],
+      tableFields: ["company", "rating"],
+      titleField: "author",
+    },
+    users: {
+      skipKeys: ["id"],
+      tableFields: ["name", "role", "email"],
+      titleField: "email",
+    },
   },
   globals: {
     "site-settings": {
@@ -82,6 +107,24 @@ const registry: McpToolsRegistry = {
 
 export const mcpPluginConfig = mcpPlugin({
   collections: {
+    authors: {
+      description: "Blog authors. Each author has a name and an avatar image. Use this collection to read, create, update or delete authors.",
+      enabled: {
+        create: true,
+        delete: true,
+        find: false,
+        update: true,
+      },
+    },
+    categories: {
+      description: "Blog categories. Each category has a localized title and URL slug. Supports localization (en/es). Use this collection to read, create, update or delete blog categories.",
+      enabled: {
+        create: true,
+        delete: true,
+        find: false,
+        update: true,
+      },
+    },
     footer: {
       description:
         "Site footer configurations. Each footer has a name, logo, navigation links (up to 10), body text, and copyright text. Supports draft/publish versioning and localization (en/es). Use this collection to read, create, update or delete site footers.",
@@ -95,6 +138,16 @@ export const mcpPluginConfig = mcpPlugin({
     header: {
       description:
         "Site header configurations. Each header has a name, logo, and navigation items (up to 6 links). Supports draft/publish versioning and localization (en/es). Use this collection to read, create, update or delete site headers.",
+      enabled: {
+        create: true,
+        delete: true,
+        find: false,
+        update: true,
+      },
+    },
+    media: {
+      description:
+        "Media library of uploaded files (images and documents). Each item has localized alt text, an optional rich-text caption, platform-default flags, and generated image sizes. Use this collection to read, create, update or delete media.",
       enabled: {
         create: true,
         delete: true,
@@ -122,6 +175,35 @@ export const mcpPluginConfig = mcpPlugin({
         update: true,
       },
     },
+    testimonials: {
+      description:
+        "Customer testimonials. Each testimonial has an author, company, position, avatar, localized review content, and a 1–5 rating. Supports localization (en/es). Use this collection to read, create, update or delete testimonials.",
+      enabled: {
+        create: true,
+        delete: true,
+        find: false,
+        update: true,
+      },
+    },
+    users: {
+      description: "CMS user accounts. Each user has a name, email, and role (admin/author/user). Authentication-enabled. Use this collection to read, create, update or delete users.",
+      enabled: {
+        create: true,
+        delete: true,
+        find: false,
+        update: true,
+      },
+    },
+  },
+  globals: {
+    "site-settings": {
+      description:
+        "Global site settings singleton: site name, header/footer references, admin panel branding, SEO defaults, 404 page content, and blog listing configuration. Supports draft/publish versioning and localization (en/es). Use to read or update site-wide settings.",
+      enabled: {
+        find: false,
+        update: true,
+      },
+    },
   },
   mcp: {
     tools: [
@@ -136,8 +218,11 @@ export const mcpPluginConfig = mcpPlugin({
     }
 
     return {
+      authors: { create: true, delete: true, find: false, update: true },
+      categories: { create: true, delete: true, find: false, update: true },
       footer: { create: true, delete: true, find: false, update: true },
       header: { create: true, delete: true, find: false, update: true },
+      media: { create: true, delete: true, find: false, update: true },
       page: { create: true, delete: true, find: false, update: true },
       "payload-mcp-tool": {
         getAllDocuments: true,
@@ -147,6 +232,9 @@ export const mcpPluginConfig = mcpPlugin({
         uploadImage: true,
       },
       posts: { create: true, delete: true, find: false, update: true },
+      siteSettings: { find: false, update: true },
+      testimonials: { create: true, delete: true, find: false, update: true },
+      users: { create: true, delete: true, find: false, update: true },
       user: LOCAL_DEV_MCP_USER,
     };
   },
