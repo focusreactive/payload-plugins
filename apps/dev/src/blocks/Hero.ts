@@ -13,6 +13,30 @@ const heroFields: Field[] = [
     name: "description",
     type: "textarea",
   },
+  {
+    name: "image",
+    relationTo: "media",
+    type: "upload",
+  },
+  {
+    fields: [
+      {
+        localized: true,
+        name: "label",
+        required: true,
+        type: "text",
+      },
+      {
+        name: "url",
+        required: true,
+        type: "text",
+      },
+    ],
+    labels: { plural: "CTAs", singular: "CTA" },
+    localized: true,
+    name: "cta",
+    type: "array",
+  },
 ];
 
 export const HeroBlock: Block = withSectionVisibility({

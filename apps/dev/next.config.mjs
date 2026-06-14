@@ -25,6 +25,7 @@ const GA4_SERVER_EXTERNALS = ["@google-analytics/data", "@grpc/grpc-js", "@grpc/
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: ["@yoast/search-metadata-previews", "@yoast/components"],
   webpack: (webpackConfig, { dev, isServer }) => {
     webpackConfig.resolve.extensionAlias = {
       ".cjs": [".cts", ".cjs"],

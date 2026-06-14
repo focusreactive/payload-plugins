@@ -1,5 +1,5 @@
-import { cva } from 'class-variance-authority';
-import type { VariantProps } from 'class-variance-authority';
+import { cva } from "class-variance-authority";
+import type { VariantProps } from "class-variance-authority";
 import NextImage from "next/image";
 
 import type { Author } from "@/payload-types";

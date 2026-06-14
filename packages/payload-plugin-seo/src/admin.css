@@ -1,0 +1,132 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@source "./**/*.{ts,tsx}";
+
+@custom-variant dark ([data-theme="dark"] &);
+
+@theme static {
+  --color-neutral-0: var(--theme-elevation-0);
+  --color-neutral-50: var(--theme-elevation-50);
+  --color-neutral-100: var(--theme-elevation-100);
+  --color-neutral-150: var(--theme-elevation-150);
+  --color-neutral-200: var(--theme-elevation-200);
+  --color-neutral-300: var(--theme-elevation-300);
+  --color-neutral-400: var(--theme-elevation-400);
+  --color-neutral-500: var(--theme-elevation-500);
+  --color-neutral-600: var(--theme-elevation-600);
+  --color-neutral-700: var(--theme-elevation-700);
+  --color-neutral-800: var(--theme-elevation-800);
+  --color-neutral-1000: var(--theme-elevation-1000);
+
+  --color-seo-good: var(--seo-good);
+  --color-seo-good-100: var(--seo-good-100);
+  --color-seo-good-200: var(--seo-good-200);
+  --color-seo-warn: var(--seo-warn);
+  --color-seo-warn-100: var(--seo-warn-100);
+  --color-seo-bad: var(--seo-bad);
+  --color-seo-bad-100: var(--seo-bad-100);
+
+  --color-serp-title: var(--serp-title);
+  --color-serp-title-mobile: var(--serp-title-mobile);
+  --color-serp-sitename: var(--serp-sitename);
+  --color-serp-hostname: var(--serp-hostname);
+  --color-serp-hostname-mobile: var(--serp-hostname-mobile);
+  --color-serp-description: var(--serp-description);
+  --color-serp-description-mobile: var(--serp-description-mobile);
+  --color-serp-favicon-bg: var(--serp-favicon-bg);
+
+  --radius-rs: var(--style-radius-s);
+  --radius-rm: var(--style-radius-m);
+
+  --shadow-popover: 0 12px 32px -12px var(--seo-shadow-strong),
+    0 2px 6px -2px var(--seo-shadow-soft);
+
+  --animate-seo-fade-in: seo-fade-in 0.18s ease;
+
+  @keyframes seo-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+}
+
+:root {
+  --seo-shadow-strong: oklch(0.2 0.01 70 / 0.14);
+  --seo-shadow-soft: oklch(0.2 0.01 70 / 0.06);
+
+  --serp-title: #1a0dab;
+  --serp-title-mobile: #1558d6;
+  --serp-sitename: #000;
+  --serp-hostname: #4d5156;
+  --serp-hostname-mobile: #70757a;
+  --serp-description: #4d5156;
+  --serp-description-mobile: #3c4043;
+  --serp-favicon-bg: #f1f3f4;
+
+  --seo-good: #2a9d5c;
+  --seo-good-100: #e8f5ed;
+  --seo-good-200: #cfe8d8;
+  --seo-warn: #e08a1e;
+  --seo-warn-100: #fbf2e0;
+  --seo-bad: #d9483f;
+  --seo-bad-100: #fbe9e7;
+}
+
+[data-theme="dark"] {
+  --seo-shadow-strong: oklch(0.97 0 0 / 0.2);
+  --seo-shadow-soft: oklch(0.97 0 0 / 0.09);
+
+  --serp-title: #99c3ff;
+  --serp-title-mobile: #99c3ff;
+  --serp-sitename: #e8e8e8;
+  --serp-hostname: #bdc1c6;
+  --serp-hostname-mobile: #bdc1c6;
+  --serp-description: #bdc1c6;
+  --serp-description-mobile: #bdc1c6;
+  --serp-favicon-bg: #303134;
+
+  --seo-good: #4ade80;
+  --seo-good-100: #14271c;
+  --seo-good-200: #1c3b29;
+  --seo-warn: #f0b04e;
+  --seo-warn-100: #2e2310;
+  --seo-bad: #f0746b;
+  --seo-bad-100: #311714;
+}
+
+.seo-root [role="tab"] {
+  border: 0;
+  border-bottom: 2px solid transparent;
+}
+
+.seo-root [role="tab"][aria-selected="true"] {
+  border-bottom-color: var(--theme-elevation-1000);
+}
+
+@layer components {
+  .seo-docbar {
+    background: repeating-linear-gradient(
+      90deg,
+      var(--theme-elevation-100) 0 2px,
+      transparent 2px 7px
+    );
+  }
+
+  .seo-doc-btn .btn__content {
+    display: inline-flex;
+  }
+
+  .seo-doc-btn .btn__icon {
+    width: 17px;
+    height: 17px;
+    border: 0;
+    padding: 0;
+  }
+
+  .seo-doc-btn .btn__icon svg {
+    width: 100%;
+    height: 100%;
+  }
+}

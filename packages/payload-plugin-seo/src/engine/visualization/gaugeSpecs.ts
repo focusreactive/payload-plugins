@@ -1,0 +1,77 @@
+import type { CheckId } from "../../constants/checkIds";
+import type { GaugeSpec } from "../types/visualization";
+
+export const GAUGE_SPECS: Partial<Record<CheckId, GaugeSpec>> = {
+  keyphraseLength: {
+    statusSource: "yoast",
+    axisMin: 0,
+    axisMax: 12,
+    thresholds: [4, 8],
+    scores: [9, 6, 3],
+    unit: "words",
+  },
+  keyphraseDensity: {
+    statusSource: "yoast",
+    axisMin: 0,
+    axisMax: 5,
+    thresholds: [0.5, 3],
+    scores: [4, 9, -10],
+    unit: "percent",
+  },
+  metaDescriptionLength: {
+    statusSource: "yoast",
+    axisMin: 0,
+    axisMax: 180,
+    thresholds: [120, 156],
+    scores: [6, 9, 6],
+    unit: "chars",
+  },
+  titleWidth: {
+    statusSource: "yoast",
+    axisMin: 0,
+    axisMax: 700,
+    thresholds: [400, 600],
+    scores: [6, 9, 3],
+    unit: "px",
+  },
+  textLength: {
+    statusSource: "yoast",
+    axisMin: 0,
+    axisMax: 350,
+    thresholds: [250, 300],
+    scores: [3, 6, 9],
+    unit: "words",
+  },
+  fleschReadingEase: {
+    statusSource: "direct",
+    axisMin: 0,
+    axisMax: 100,
+    thresholds: [50, 60],
+    statuses: ["bad", "warn", "good"],
+    unit: "score",
+  },
+  textSentenceLength: {
+    statusSource: "direct",
+    axisMin: 0,
+    axisMax: 50,
+    thresholds: [25, 30],
+    statuses: ["good", "warn", "bad"],
+    unit: "percent",
+  },
+  passiveVoice: {
+    statusSource: "direct",
+    axisMin: 0,
+    axisMax: 50,
+    thresholds: [10, 15],
+    statuses: ["good", "warn", "bad"],
+    unit: "percent",
+  },
+  textTransitionWords: {
+    statusSource: "direct",
+    axisMin: 0,
+    axisMax: 50,
+    thresholds: [20, 30],
+    statuses: ["bad", "warn", "good"],
+    unit: "percent",
+  },
+};

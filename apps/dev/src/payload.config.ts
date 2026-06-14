@@ -7,6 +7,7 @@ import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
 import { translatorPlugin, createOpenAIProvider, createPayloadJobsRunner, documentLevel, collectionLevel } from "@focus-reactive/payload-plugin-translator";
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
+import { seoPlugin } from "@focus-reactive/payload-plugin-seo";
 import { sqliteAdapter } from "@payloadcms/db-sqlite";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { buildConfig } from "payload";
@@ -105,6 +106,16 @@ export default buildConfig({
       ab: {
         variantFields: { name: "title" },
       },
+    }),
+    seoPlugin({
+      collections: [
+        {
+          slug: "pages",
+          fields: { seoTitle: "seoTitle", metaDescription: "metaDescription", slug: "slug", content: "sections" },
+        },
+      ],
+      site: { name: "Dev Site", baseUrl: process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3000" },
+      supportedLocales: ["en", "de", "fr", "es"],
     }),
   ],
   secret: process.env.PAYLOAD_SECRET || "",

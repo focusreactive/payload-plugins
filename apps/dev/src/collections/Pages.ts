@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 
-import { CopyBlock } from "../blocks/Copy";
+import { ContentBlock } from "../blocks/Content";
 import { HeroBlock } from "../blocks/Hero";
 
 export const Pages: CollectionConfig = {
@@ -23,8 +23,10 @@ export const Pages: CollectionConfig = {
       type: "text",
       unique: true,
     },
+    { name: "seoTitle", type: "text", localized: true },
+    { name: "metaDescription", type: "textarea", localized: true },
     {
-      blocks: [HeroBlock, CopyBlock],
+      blocks: [HeroBlock, ContentBlock],
       localized: true,
       name: "sections",
       type: "blocks",

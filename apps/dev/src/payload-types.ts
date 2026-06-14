@@ -198,22 +198,47 @@ export interface Page {
   _abPassPercentage?: number | null;
   title: string;
   slug?: string | null;
+  seoTitle?: string | null;
+  metaDescription?: string | null;
   sections?:
     | (
         | {
             title: string;
             description?: string | null;
+            image?: (number | null) | Media;
+            cta?:
+              | {
+                  label: string;
+                  url: string;
+                  id?: string | null;
+                }[]
+              | null;
             _hidden?: boolean | null;
             id?: string | null;
             blockName?: string | null;
             blockType: "hero";
           }
         | {
-            text: string;
+            content: {
+              root: {
+                type: string;
+                children: {
+                  type: any;
+                  version: number;
+                  [k: string]: unknown;
+                }[];
+                direction: ("ltr" | "rtl") | null;
+                format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+                indent: number;
+                version: number;
+              };
+              [k: string]: unknown;
+            };
+            image?: (number | null) | Media;
             _hidden?: boolean | null;
             id?: string | null;
             blockName?: string | null;
-            blockType: "copy";
+            blockType: "content";
           }
       )[]
     | null;
@@ -277,17 +302,40 @@ export interface Preset {
     | {
         title: string;
         description?: string | null;
+        image?: (number | null) | Media;
+        cta?:
+          | {
+              label: string;
+              url: string;
+              id?: string | null;
+            }[]
+          | null;
         _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: "hero";
       }
     | {
-        text: string;
+        content: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ("ltr" | "rtl") | null;
+            format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        };
+        image?: (number | null) | Media;
         _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
-        blockType: "copy";
+        blockType: "content";
       }
   )[];
   updatedAt: string;
@@ -584,6 +632,8 @@ export interface PagesSelect<T extends boolean = true> {
   _abPassPercentage?: T;
   title?: T;
   slug?: T;
+  seoTitle?: T;
+  metaDescription?: T;
   sections?:
     | T
     | {
@@ -592,14 +642,23 @@ export interface PagesSelect<T extends boolean = true> {
           | {
               title?: T;
               description?: T;
+              image?: T;
+              cta?:
+                | T
+                | {
+                    label?: T;
+                    url?: T;
+                    id?: T;
+                  };
               _hidden?: T;
               id?: T;
               blockName?: T;
             };
-        copy?:
+        content?:
           | T
           | {
-              text?: T;
+              content?: T;
+              image?: T;
               _hidden?: T;
               id?: T;
               blockName?: T;
@@ -639,14 +698,23 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               title?: T;
               description?: T;
+              image?: T;
+              cta?:
+                | T
+                | {
+                    label?: T;
+                    url?: T;
+                    id?: T;
+                  };
               _hidden?: T;
               id?: T;
               blockName?: T;
             };
-        copy?:
+        content?:
           | T
           | {
-              text?: T;
+              content?: T;
+              image?: T;
               _hidden?: T;
               id?: T;
               blockName?: T;
