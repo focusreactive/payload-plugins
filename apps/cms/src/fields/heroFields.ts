@@ -74,7 +74,7 @@ export const heroFields: Field[] = [
     type: "array",
   },
   {
-    ...imageField("image", { withDefaultMedia: true }),
+    ...imageField("image", { required: false, withDefaultMedia: true }),
     admin: {
       condition: (_, siblingData) => siblingData?.variant !== "centered",
     },

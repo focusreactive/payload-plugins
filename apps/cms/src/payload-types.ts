@@ -786,7 +786,7 @@ export interface HeroBlock {
       }[]
     | null;
   image?: {
-    image: number | Media;
+    image?: (number | null) | Media;
     aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
   };
   enabled?: boolean | null;
@@ -1551,7 +1551,7 @@ export interface Preset {
             }[]
           | null;
         image?: {
-          image: number | Media;
+          image?: (number | null) | Media;
           aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
         };
         enabled?: boolean | null;
@@ -4619,6 +4619,20 @@ export interface LinksListInlineBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'linksListInline';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CodeInlineBlock".
+ */
+export interface CodeInlineBlock {
+  /**
+   * Language hint (e.g. typescript, bash). Used for the syntax class.
+   */
+  language?: string | null;
+  code: string;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'codeInline';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
