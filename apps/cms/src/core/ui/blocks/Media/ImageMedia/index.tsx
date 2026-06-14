@@ -2,7 +2,6 @@ import type { StaticImageData } from "next/image";
 import NextImage from "next/image";
 import React from "react";
 
-import { getMediaUrl } from "@/core/lib/getMediaUrl";
 import { cn } from "@/core/lib/utils";
 
 import type { MediaProps } from "../index";
@@ -54,8 +53,6 @@ export const ImageMedia: React.FC<MediaProps> = (props) => {
   let alt = altFromProps;
   let src: StaticImageData | string = srcFromProps || "";
 
-  let preferredSize: string | undefined = preferredSizeFromProps;
-
   if (!src && resource && typeof resource === "object") {
     const { alt: altFromResource, height: fullHeight, url, width: fullWidth } = resource;
 
@@ -63,14 +60,12 @@ export const ImageMedia: React.FC<MediaProps> = (props) => {
     height = fullHeight!;
     alt = altFromResource || "";
 
-    const cacheTag = resource.updatedAt;
+    src = url ?? "";
 
-    src = getMediaUrl(url, cacheTag);
+    const preferredSizeUrl = resource.sizes?.[preferredSizeFromProps || "small"]?.url;
 
-    preferredSize = resource.sizes?.[preferredSizeFromProps || "small"]?.url || undefined;
-
-    if (preferredSize) {
-      src = getMediaUrl(preferredSize, cacheTag);
+    if (preferredSizeUrl) {
+      src = preferredSizeUrl;
     }
   }
 
@@ -87,7 +82,7 @@ export const ImageMedia: React.FC<MediaProps> = (props) => {
         fill={fill}
         height={!fill ? height : undefined}
         priority={priority}
-        quality={100}
+        quality={85}
         loading={loading}
         sizes={sizes}
         src={src}

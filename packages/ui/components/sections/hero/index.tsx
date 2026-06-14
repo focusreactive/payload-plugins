@@ -41,17 +41,10 @@ function HeroActions({ links, className }: HeroActionsProps) {
   );
 }
 
-function ShowcaseWindow({ image }: { image: IImageProps }) {
+function HeroImage({ image }: { image: IImageProps }) {
   return (
-    <div className="ml-auto w-full max-w-[480px] rounded-md border border-border-strong bg-surface p-[26px] shadow-[0_44px_90px_-34px_rgba(0,0,0,0.55)] motion-safe:animate-[hero-bob_8s_var(--ease-in-out)_infinite]">
-      <div aria-hidden className="mb-4 flex items-center gap-[7px]">
-        <span className="size-[9px] rounded-pill bg-muted-foreground/40" />
-        <span className="size-[9px] rounded-pill bg-muted-foreground/40" />
-        <span className="size-[9px] rounded-pill bg-accent" />
-      </div>
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-sm">
-        <Image {...image} fit="cover" quality={85} sizes="(max-width: 900px) 92vw, 480px" />
-      </div>
+    <div className="relative ml-auto aspect-[4/3] w-full max-w-[480px] overflow-hidden rounded-md">
+      <Image {...image} fit="cover" quality={85} sizes="(max-width: 900px) 92vw, 480px" />
     </div>
   );
 }
@@ -93,7 +86,7 @@ export function Hero({ variant, theme, badge, title, text, image, links }: IHero
           </div>
           {hasImage && (
             <div className="hidden lg:block">
-              <ShowcaseWindow image={image} />
+              <HeroImage image={image} />
             </div>
           )}
         </div>
