@@ -126,6 +126,7 @@
   --color-primary-soft: var(--color-teal-soft-dark);
   --color-secondary: var(--color-slate-50);
   --color-secondary-foreground: var(--color-ink-950);
+  --color-secondary-hover: var(--color-slate-100);
   --color-muted: var(--color-deep-850);
   --color-muted-foreground: var(--color-slate-400);
   --color-border: var(--color-white-13);
@@ -146,6 +147,7 @@
   --color-primary-soft: var(--color-teal-soft-pine);
   --color-secondary: var(--color-slate-50);
   --color-secondary-foreground: var(--color-ink-950);
+  --color-secondary-hover: var(--color-slate-100);
   --color-muted: var(--color-pine-850);
   --color-muted-foreground: var(--color-slate-450);
   --color-border: var(--color-white-11);
