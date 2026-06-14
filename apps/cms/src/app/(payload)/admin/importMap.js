@@ -2,6 +2,8 @@ import { FieldCommentLabel as FieldCommentLabel_d1361f235be9df6e08bfd730fe68e7c8
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { LexicalDiffComponent as LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
+import { TableFeatureClient as TableFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { BlockquoteFeatureClient as BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { UploadFeatureClient as UploadFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { LinkFeatureClient as LinkFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { AlignFeatureClient as AlignFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
@@ -35,10 +37,6 @@ import { VariantsField as VariantsField_1e5bf2338fb8c7d4f6284f3e67c93951 } from 
 import { default as default_5a9e6bfe3379b31c0258f532ec5399fb } from '@focus-reactive/payload-plugin-translator/client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.server'
 import { default as default_587142b484744b5573788fdf4a68522a } from '@focus-reactive/payload-plugin-translator/client/widgets/translate-document/ui/TranslateDocument.server'
 import { RowLabelGroupName as RowLabelGroupName_e82054cbfea0bb801c8062fddecc03a2 } from '@/core/ui/components/RowLabel'
-import { HorizontalRuleFeatureClient as HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
-import { BlockquoteFeatureClient as BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
-import { RelationshipFeatureClient as RelationshipFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
-import { ChecklistFeatureClient as ChecklistFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { PresetAdminComponentPreview as PresetAdminComponentPreview_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { PresetAdminComponentCellWrapper as PresetAdminComponentCellWrapper_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { FolderTypeField as FolderTypeField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
@@ -58,6 +56,8 @@ export const importMap = {
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#LexicalDiffComponent": LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e,
+  "@payloadcms/richtext-lexical/client#TableFeatureClient": TableFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "@payloadcms/richtext-lexical/client#BlockquoteFeatureClient": BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#UploadFeatureClient": UploadFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#LinkFeatureClient": LinkFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#AlignFeatureClient": AlignFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
@@ -91,10 +91,6 @@ export const importMap = {
   "@focus-reactive/payload-plugin-translator/client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.server#default": default_5a9e6bfe3379b31c0258f532ec5399fb,
   "@focus-reactive/payload-plugin-translator/client/widgets/translate-document/ui/TranslateDocument.server#default": default_587142b484744b5573788fdf4a68522a,
   "@/core/ui/components/RowLabel#RowLabelGroupName": RowLabelGroupName_e82054cbfea0bb801c8062fddecc03a2,
-  "@payloadcms/richtext-lexical/client#HorizontalRuleFeatureClient": HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
-  "@payloadcms/richtext-lexical/client#BlockquoteFeatureClient": BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
-  "@payloadcms/richtext-lexical/client#RelationshipFeatureClient": RelationshipFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
-  "@payloadcms/richtext-lexical/client#ChecklistFeatureClient": ChecklistFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@focus-reactive/payload-plugin-presets/client#PresetAdminComponentPreview": PresetAdminComponentPreview_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-presets/client#PresetAdminComponentCellWrapper": PresetAdminComponentCellWrapper_f0a4a6f21f15d606fa328a5e35f17d11,
   "@payloadcms/next/client#FolderTypeField": FolderTypeField_2b8867833a34864a02ddf429b0728a40,

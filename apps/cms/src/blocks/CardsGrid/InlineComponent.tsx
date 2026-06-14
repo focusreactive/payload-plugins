@@ -19,5 +19,9 @@ export async function CardsGridInlineComponent({ items, columns }: CardsGridInli
     title: item.title,
   }));
 
-  return <CardsGrid items={cards} columns={columns ?? 3} />;
+  return (
+    <div className="prose-embedded-block">
+      <CardsGrid items={cards} columns={columns ?? 3} />
+    </div>
+  );
 }

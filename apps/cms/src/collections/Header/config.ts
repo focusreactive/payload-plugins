@@ -1,4 +1,4 @@
-import type { CollectionConfig } from "payload";
+import type { CollectionConfig, GroupField } from "payload";
 
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/core/constants/mediaDefaults";
 import { anyone, or, user, superAdmin } from "@/core/lib/access";
@@ -49,58 +49,135 @@ export const Header: CollectionConfig<"header"> = {
     {
       admin: {
         components: {
-          RowLabel: "@/core/ui/components/RowLabel#RowLabelGroupName",
-        },
-        description: {
-          en: "Navigation items in the header (up to 6 items)",
-          es: "Items de navegación en el header (hasta 6 items)",
+          RowLabel: "@/core/ui/components/RowLabel#RowLabel",
         },
         initCollapsed: true,
       },
       defaultValue: createLocalizedDefault({
         en: [
-          {
-            link: { label: "Link 1", newTab: false, type: "custom", url: "#" },
-          },
-          {
-            link: { label: "Link 2", newTab: false, type: "custom", url: "#" },
-          },
+          { type: "link", link: { label: "Blog", newTab: false, type: "custom", url: "/blog" } },
+          { type: "link", link: { label: "Pricing", newTab: false, type: "custom", url: "#" } },
         ],
         es: [
-          {
-            link: {
-              label: "Enlace 1",
-              newTab: false,
-              type: "custom",
-              url: "#",
-            },
-          },
-          {
-            link: {
-              label: "Enlace 2",
-              newTab: false,
-              type: "custom",
-              url: "#",
-            },
-          },
+          { type: "link", link: { label: "Blog", newTab: false, type: "custom", url: "/blog" } },
+          { type: "link", link: { label: "Pricing", newTab: false, type: "custom", url: "#" } },
         ],
       }),
       fields: [
+        {
+          label: { en: "Label", es: "Etiqueta" },
+          localized: true,
+          name: "label",
+          required: true,
+          type: "text",
+        },
+        {
+          defaultValue: "link",
+          label: { en: "Type", es: "Tipo" },
+          name: "type",
+          options: [
+            { label: { en: "Link", es: "Enlace" }, value: "link" },
+            { label: { en: "Dropdown", es: "Desplegable" }, value: "dropdown" },
+          ],
+          required: true,
+          type: "select",
+        },
         link({
           appearances: false,
+          disableLabel: true,
           overrides: {
-            admin: {
-              description: {
-                en: "Link settings",
-                es: "Configuración del enlace",
-              },
-            },
+            admin: { condition: (_, siblingData) => siblingData?.type === "link" },
           },
         }),
+        {
+          admin: { condition: (_, siblingData) => siblingData?.type === "dropdown" },
+          fields: [
+            {
+              fields: [
+                {
+                  defaultValue: false,
+                  label: { en: "Enabled", es: "Habilitado" },
+                  name: "enabled",
+                  type: "checkbox",
+                },
+                {
+                  admin: { condition: (_, siblingData) => !!siblingData?.enabled },
+                  label: { en: "Badge", es: "Insignia" },
+                  localized: true,
+                  name: "badge",
+                  type: "text",
+                },
+                {
+                  admin: { condition: (_, siblingData) => !!siblingData?.enabled },
+                  label: { en: "Title", es: "Título" },
+                  localized: true,
+                  name: "title",
+                  type: "text",
+                },
+                {
+                  admin: { condition: (_, siblingData) => !!siblingData?.enabled },
+                  label: { en: "Description", es: "Descripción" },
+                  localized: true,
+                  name: "description",
+                  type: "textarea",
+                },
+                link({
+                  appearances: false,
+                  customPageDbName: "hdr_ni_dd_ft_lnk_cp",
+                  required: false,
+                  overrides: {
+                    admin: { condition: (_, siblingData) => !!siblingData?.enabled },
+                  },
+                }),
+              ],
+              label: { en: "Featured card", es: "Tarjeta destacada" },
+              name: "featured",
+              type: "group",
+            },
+            {
+              fields: [
+                {
+                  label: { en: "Title", es: "Título" },
+                  localized: true,
+                  name: "title",
+                  required: true,
+                  type: "text",
+                },
+                {
+                  label: { en: "Description", es: "Descripción" },
+                  localized: true,
+                  name: "description",
+                  type: "text",
+                },
+                link({
+                  appearances: false,
+                  customPageDbName: "hdr_ni_dd_lnks_lnk_cp",
+                  disableLabel: true,
+                }),
+              ],
+              label: { en: "Menu links", es: "Enlaces del menú" },
+              minRows: 1,
+              name: "links",
+              type: "array",
+            },
+          ],
+          label: { en: "Dropdown", es: "Desplegable" },
+          name: "dropdown",
+          type: "group",
+        },
       ],
       localized: true,
       maxRows: 6,
       name: "navItems",
+      type: "array",
+    },
+    {
+      admin: { initCollapsed: true },
+      fields: (link() as GroupField).fields,
+      label: { en: "Actions", es: "Acciones" },
+      localized: true,
+      maxRows: 2,
+      name: "actions",
       type: "array",
     },
   ],

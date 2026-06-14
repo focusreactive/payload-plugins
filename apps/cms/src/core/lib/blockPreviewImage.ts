@@ -5,12 +5,16 @@ const FG = "6b7280";
 const PREVIEW_IMAGES: Record<string, string> = {
   "Cards Grid": "/block-preview-images/cards-grid.png",
   Carousel: "/block-preview-images/carousel.png",
+  Chart: "/block-preview-images/chart.png",
+  "CTA Band": "/block-preview-images/cta-band.png",
   "Content Section": "/block-preview-images/content-section.png",
   "FAQ Section": "/block-preview-images/faq.png",
   Hero: "/block-preview-images/hero.png",
   "Links List": "/block-preview-images/links-list.png",
   Logos: "/block-preview-images/logos.png",
   Testimonials: "/block-preview-images/testimonials.png",
+  Newsletter: "/block-preview-images/newsletter.png",
+  Stats: "/block-preview-images/stats.png",
   "Text Section": "/block-preview-images/text-section.png",
 };
 

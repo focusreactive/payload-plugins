@@ -16,12 +16,26 @@ const defaultHeroLinkItem = (label: string) => ({
 
 export const heroFields: Field[] = [
   {
-    defaultValue: createLocalizedDefault(
-      DEFAULT_VALUES.blocks.hero.title ?? {
-        en: "Hero Title",
-        es: "Título Hero",
-      }
-    ),
+    defaultValue: "media-background",
+    label: { en: "Variant", es: "Variante" },
+    name: "variant",
+    options: [
+      { label: { en: "Media background", es: "Fondo multimedia" }, value: "media-background" },
+      { label: { en: "Showcase window", es: "Ventana de producto" }, value: "showcase" },
+      { label: { en: "Centered", es: "Centrado" }, value: "centered" },
+    ],
+    required: true,
+    type: "select",
+  },
+  {
+    defaultValue: createLocalizedDefault({ en: "New · Cadence 3.0", es: "Nuevo · Cadence 3.0" }),
+    label: { en: "Badge", es: "Insignia" },
+    localized: true,
+    name: "badge",
+    type: "text",
+  },
+  {
+    defaultValue: createLocalizedDefault(DEFAULT_VALUES.blocks.hero.title),
     label: { en: "Title", es: "Título" },
     localized: true,
     name: "title",
@@ -43,8 +57,14 @@ export const heroFields: Field[] = [
       initCollapsed: true,
     },
     defaultValue: createLocalizedDefault({
-      en: [defaultHeroLinkItem("Learn more")],
-      es: [defaultHeroLinkItem("Saber más")],
+      en: [
+        { ...defaultHeroLinkItem("Start free"), appearance: "accent" as const },
+        { ...defaultHeroLinkItem("Watch the tour"), appearance: "outline" as const },
+      ],
+      es: [
+        { ...defaultHeroLinkItem("Comenzar gratis"), appearance: "accent" as const },
+        { ...defaultHeroLinkItem("Ver el tour"), appearance: "outline" as const },
+      ],
     }),
     fields: (link() as GroupField).fields,
     label: { en: "Actions", es: "Acciones" },
@@ -53,7 +73,12 @@ export const heroFields: Field[] = [
     name: "actions",
     type: "array",
   },
-  imageField("image", { withDefaultMedia: true }),
+  {
+    ...imageField("image", { required: false, withDefaultMedia: true }),
+    admin: {
+      condition: (_, siblingData) => siblingData?.variant !== "centered",
+    },
+  },
   {
     fields: [
       {

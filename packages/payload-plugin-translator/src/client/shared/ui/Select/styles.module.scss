@@ -31,6 +31,11 @@
   }
 }
 
+/* Opt out of full width (`$fullWidth={false}`) — size to content, e.g. inline in a row. */
+.auto {
+  width: auto;
+}
+
 /* Size-specific styles if needed */
 .size-sm {
   background-size: 12px 12px;

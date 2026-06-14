@@ -1,0 +1,13 @@
+{
+  // Type-checking config for `check-types`. Unlike the build config (tsconfig.json,
+  // used by `build:types`), this INCLUDES test files so they are type-checked too —
+  // without that, type errors in `*.test.ts` go undetected (vitest runs via esbuild,
+  // which strips types without checking). Kept separate so the build never emits
+  // `.d.ts` for test files into `dist`.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

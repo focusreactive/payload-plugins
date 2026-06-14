@@ -12,34 +12,27 @@ interface AnimatedCarouselProps {
 }
 
 export const AnimatedCarousel: React.FC<AnimatedCarouselProps> = ({ testimonials, showRating = true, showAvatar = true, duration = 60 }) => {
-  const validTestimonials = testimonials.filter((t): t is Testimonial => typeof t !== "number" && t !== null && t !== undefined);
+  const valid = testimonials.filter((t): t is Testimonial => typeof t !== "number" && t !== null && t !== undefined);
 
-  if (validTestimonials.length === 0) {
+  if (valid.length === 0) {
     return null;
   }
 
   return (
-    <>
-      <div
-        style={
-          {
-            "--testimonials-carousel-duration": `${duration}s`,
-          } as React.CSSProperties
-        }
-        className="testimonials-carousel basic my-0 mx-auto py-5 max-w-screen overflow-hidden flex"
-      >
-        <div className="testimonials-carousel-group flex gap-4 pr-4 will-change-transform flex-auto">
-          {validTestimonials.map((testimonial, index) => (
+    <div className="testimonials-carousel mask-shadow-y overflow-hidden" style={{ "--testimonials-carousel-duration": `${duration}s` } as React.CSSProperties}>
+      <div className="flex w-max">
+        <div className="testimonials-carousel-group flex gap-4 pr-4 will-change-transform">
+          {valid.map((testimonial, index) => (
             <TestimonialCard key={index} testimonial={testimonial} showRating={showRating} showAvatar={showAvatar} />
           ))}
         </div>
 
-        <div aria-hidden className="testimonials-carousel-group flex gap-4 pr-4 will-change-transform flex-auto">
-          {validTestimonials.map((testimonial, index) => (
+        <div aria-hidden className="testimonials-carousel-group flex gap-4 pr-4 will-change-transform">
+          {valid.map((testimonial, index) => (
             <TestimonialCard key={index} testimonial={testimonial} showRating={showRating} showAvatar={showAvatar} />
           ))}
         </div>
       </div>
-    </>
+    </div>
   );
 };

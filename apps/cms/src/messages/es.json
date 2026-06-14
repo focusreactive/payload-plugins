@@ -29,7 +29,23 @@
     "morePages": "Más páginas"
   },
   "blog": {
-    "all": "Todas"
+    "all": "Todas",
+    "backToJournal": "Volver al Journal",
+    "noResults": "Ningún artículo coincide con tu búsqueda.",
+    "readTime": "{minutes} min",
+    "readTimeLong": "{minutes} min de lectura",
+    "search": {
+      "label": "Buscar artículos",
+      "open": "Buscar artículos",
+      "close": "Cerrar búsqueda"
+    },
+    "newsletter": {
+      "badge": "The Journal, cada mes",
+      "heading": "Un correo reflexivo al mes. Sin ruido.",
+      "placeholder": "tu@equipo.com",
+      "button": "Suscribirse",
+      "disclaimer": "Sin spam. Cancela tu suscripción cuando quieras."
+    }
   },
   "announcements": {
     "title": "Anuncios",

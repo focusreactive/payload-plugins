@@ -898,10 +898,15 @@ export interface CollectionsWidget {
  */
 export interface TaskTranslateDocument {
   input: {
-    collection: {
+    collection_slug: string;
+    collection_id: string;
+    /**
+     * Deprecated. See docs/DEPRECATIONS.md#jobs-input-collection-field
+     */
+    collection?: {
       relationTo: "pages";
       value: number | Page;
-    };
+    } | null;
     source_lng: string;
     target_lng: string;
     strategy: string;

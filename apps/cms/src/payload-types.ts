@@ -373,6 +373,10 @@ export interface Page {
     | CarouselBlock
     | LogosBlock
     | LinksListBlock
+    | ChartBlock
+    | CtaBandBlock
+    | NewsletterBlock
+    | StatsBlock
   )[];
   meta?: {
     title?: string | null;
@@ -432,15 +436,11 @@ export interface Header {
    * The logo to display in the header
    */
   logo: number | Media;
-  /**
-   * Navigation items in the header (up to 6 items)
-   */
   navItems?:
     | {
-        /**
-         * Link settings
-         */
-        link: {
+        label: string;
+        type: 'link' | 'dropdown';
+        link?: {
           type?: ('reference' | 'custom' | 'customPage') | null;
           newTab?: boolean | null;
           reference?:
@@ -454,8 +454,76 @@ export interface Header {
               } | null);
           url?: string | null;
           customPage?: ('blog' | 'search') | null;
-          label: string;
         };
+        dropdown?: {
+          featured?: {
+            enabled?: boolean | null;
+            badge?: string | null;
+            title?: string | null;
+            description?: string | null;
+            link?: {
+              type?: ('reference' | 'custom' | 'customPage') | null;
+              newTab?: boolean | null;
+              reference?:
+                | ({
+                    relationTo: 'page';
+                    value: number | Page;
+                  } | null)
+                | ({
+                    relationTo: 'posts';
+                    value: number | Post;
+                  } | null);
+              url?: string | null;
+              customPage?: ('blog' | 'search') | null;
+              label?: string | null;
+            };
+          };
+          links?:
+            | {
+                title: string;
+                description?: string | null;
+                link?: {
+                  type?: ('reference' | 'custom' | 'customPage') | null;
+                  newTab?: boolean | null;
+                  reference?:
+                    | ({
+                        relationTo: 'page';
+                        value: number | Page;
+                      } | null)
+                    | ({
+                        relationTo: 'posts';
+                        value: number | Post;
+                      } | null);
+                  url?: string | null;
+                  customPage?: ('blog' | 'search') | null;
+                };
+                id?: string | null;
+              }[]
+            | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  actions?:
+    | {
+        type?: ('reference' | 'custom' | 'customPage') | null;
+        newTab?: boolean | null;
+        reference?:
+          | ({
+              relationTo: 'page';
+              value: number | Page;
+            } | null)
+          | ({
+              relationTo: 'posts';
+              value: number | Post;
+            } | null);
+        url?: string | null;
+        customPage?: ('blog' | 'search') | null;
+        label: string;
+        /**
+         * Choose how the link should be rendered.
+         */
+        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
         id?: string | null;
       }[]
     | null;
@@ -486,6 +554,64 @@ export interface Post {
       version: number;
     };
     [k: string]: unknown;
+  };
+  /**
+   * Optional FAQ shown after the article body.
+   */
+  faq?: {
+    heading?: string | null;
+    items?:
+      | {
+          question: string;
+          answer: {
+            root: {
+              type: string;
+              children: {
+                type: any;
+                version: number;
+                [k: string]: unknown;
+              }[];
+              direction: ('ltr' | 'rtl') | null;
+              format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+              indent: number;
+              version: number;
+            };
+            [k: string]: unknown;
+          };
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
+   * Optional CTA band shown at the end of the post. Hidden when the heading is empty.
+   */
+  cta?: {
+    badge?: string | null;
+    heading?: string | null;
+    lead?: string | null;
+    actions?:
+      | {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label: string;
+          /**
+           * Choose how the link should be rendered.
+           */
+          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+          id?: string | null;
+        }[]
+      | null;
   };
   meta?: {
     title?: string | null;
@@ -540,6 +666,7 @@ export interface Author {
    * The name of the author
    */
   name: string;
+  avatar?: (number | null) | Media;
   updatedAt: string;
   createdAt: string;
 }
@@ -557,14 +684,34 @@ export interface Footer {
    * The logo to display in the footer
    */
   logo: number | Media;
-  /**
-   * Footer navigation links (up to 10 items)
-   */
-  links?:
+  description?: string | null;
+  linkGroups?:
     | {
-        /**
-         * Link settings
-         */
+        label: string;
+        links: {
+          link: {
+            type?: ('reference' | 'custom' | 'customPage') | null;
+            newTab?: boolean | null;
+            reference?:
+              | ({
+                  relationTo: 'page';
+                  value: number | Page;
+                } | null)
+              | ({
+                  relationTo: 'posts';
+                  value: number | Post;
+                } | null);
+            url?: string | null;
+            customPage?: ('blog' | 'search') | null;
+            label: string;
+          };
+          id?: string | null;
+        }[];
+        id?: string | null;
+      }[]
+    | null;
+  legalLinks?:
+    | {
         link: {
           type?: ('reference' | 'custom' | 'customPage') | null;
           newTab?: boolean | null;
@@ -585,24 +732,6 @@ export interface Footer {
       }[]
     | null;
   /**
-   * Footer body text
-   */
-  text?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  /**
    * Copyright text shown at the bottom
    */
   copywriteText?: string | null;
@@ -615,6 +744,8 @@ export interface Footer {
  * via the `definition` "HeroBlock".
  */
 export interface HeroBlock {
+  variant: 'media-background' | 'showcase' | 'centered';
+  badge?: string | null;
   title?: string | null;
   richText?: {
     root: {
@@ -650,12 +781,12 @@ export interface HeroBlock {
         /**
          * Choose how the link should be rendered.
          */
-        appearance?: ('default' | 'outline') | null;
+        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
         id?: string | null;
       }[]
     | null;
-  image: {
-    image: number | Media;
+  image?: {
+    image?: (number | null) | Media;
     aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
   };
   enabled?: boolean | null;
@@ -731,7 +862,12 @@ export interface TextSectionBlock {
  * via the `definition` "ContentBlock".
  */
 export interface ContentBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
   heading?: string | null;
+  lead?: string | null;
   layout: 'image-text' | 'text-image';
   image: number | Media;
   content: {
@@ -749,6 +885,29 @@ export interface ContentBlock {
     };
     [k: string]: unknown;
   };
+  actions?:
+    | {
+        type?: ('reference' | 'custom' | 'customPage') | null;
+        newTab?: boolean | null;
+        reference?:
+          | ({
+              relationTo: 'page';
+              value: number | Page;
+            } | null)
+          | ({
+              relationTo: 'posts';
+              value: number | Post;
+            } | null);
+        url?: string | null;
+        customPage?: ('blog' | 'search') | null;
+        label: string;
+        /**
+         * Choose how the link should be rendered.
+         */
+        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+        id?: string | null;
+      }[]
+    | null;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
     paddingY?: ('none' | 'base' | 'large') | null;
@@ -775,7 +934,12 @@ export interface ContentBlock {
  * via the `definition` "FaqBlock".
  */
 export interface FaqBlock {
-  heading: string;
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  lead?: string | null;
   items: {
     question: string;
     answer: {
@@ -821,8 +985,12 @@ export interface FaqBlock {
  * via the `definition` "TestimonialsListBlock".
  */
 export interface TestimonialsListBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
   heading?: string | null;
-  subheading?: string | null;
+  lead?: string | null;
   testimonialItems?:
     | {
         testimonial: number | Testimonial;
@@ -876,8 +1044,41 @@ export interface Testimonial {
  * via the `definition` "CardsGridBlock".
  */
 export interface CardsGridBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  lead?: string | null;
   columns?: number | null;
   items: {
+    /**
+     * Optional icon shown in a tinted tile
+     */
+    icon?:
+      | (
+          | 'map'
+          | 'clock'
+          | 'zap'
+          | 'activity'
+          | 'layout-grid'
+          | 'sparkles'
+          | 'file-text'
+          | 'users'
+          | 'bar-chart-3'
+          | 'plug'
+          | 'shield'
+          | 'git-branch'
+          | 'gauge'
+          | 'bell'
+          | 'layers'
+          | 'workflow'
+          | 'calendar'
+          | 'compass'
+          | 'target'
+          | 'wand-2'
+        )
+      | null;
     title: string;
     description?: string | null;
     image?: {
@@ -902,7 +1103,7 @@ export interface CardsGridBlock {
       /**
        * Choose how the link should be rendered.
        */
-      appearance?: ('default' | 'outline') | null;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     };
     alignVariant?: ('left' | 'center' | 'right') | null;
     rounded?: ('none' | 'large') | null;
@@ -935,21 +1136,12 @@ export interface CardsGridBlock {
  * via the `definition` "CarouselBlock".
  */
 export interface CarouselBlock {
-  text?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  lead?: string | null;
   effect?: ('slide' | 'fade' | 'cube' | 'flip' | 'coverflow' | 'cards') | null;
   slides: {
     image: {
@@ -999,6 +1191,7 @@ export interface CarouselBlock {
  * via the `definition` "LogosBlock".
  */
 export interface LogosBlock {
+  label?: string | null;
   alignVariant?: ('left' | 'center' | 'right') | null;
   items: {
     image: {
@@ -1069,7 +1262,7 @@ export interface LinksListBlock {
       /**
        * Choose how the link should be rendered.
        */
-      appearance?: ('default' | 'outline') | null;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     };
     id?: string | null;
   }[];
@@ -1093,6 +1286,167 @@ export interface LinksListBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'linksList';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ChartBlock".
+ */
+export interface ChartBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  lead?: string | null;
+  title: string;
+  subtitle?: string | null;
+  /**
+   * Each range becomes a tab. The first range is shown by default.
+   */
+  ranges: {
+    label: string;
+    dataPoints: {
+      label: string;
+      value: number;
+      id?: string | null;
+    }[];
+    id?: string | null;
+  }[];
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    maxWidth?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'chart';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CtaBandBlock".
+ */
+export interface CtaBandBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  lead?: string | null;
+  actions: {
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+    label: string;
+    /**
+     * Choose how the link should be rendered.
+     */
+    appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+    id?: string | null;
+  }[];
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    maxWidth?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'ctaBand';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "NewsletterBlock".
+ */
+export interface NewsletterBlock {
+  badge?: string | null;
+  heading: string;
+  inputPlaceholder: string;
+  buttonLabel: string;
+  disclaimer?: string | null;
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    maxWidth?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'newsletter';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "StatsBlock".
+ */
+export interface StatsBlock {
+  items: {
+    value: string;
+    label: string;
+    id?: string | null;
+  }[];
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    maxWidth?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'stats';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1155,6 +1509,8 @@ export interface Preset {
   preview?: (number | null) | Media;
   presetBlock: (
     | {
+        variant: 'media-background' | 'showcase' | 'centered';
+        badge?: string | null;
         title?: string | null;
         richText?: {
           root: {
@@ -1190,12 +1546,12 @@ export interface Preset {
               /**
                * Choose how the link should be rendered.
                */
-              appearance?: ('default' | 'outline') | null;
+              appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
               id?: string | null;
             }[]
           | null;
-        image: {
-          image: number | Media;
+        image?: {
+          image?: (number | null) | Media;
           aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
         };
         enabled?: boolean | null;
@@ -1263,7 +1619,12 @@ export interface Preset {
         blockType: 'textSection';
       }
     | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
         heading?: string | null;
+        lead?: string | null;
         layout: 'image-text' | 'text-image';
         image: number | Media;
         content: {
@@ -1281,6 +1642,29 @@ export interface Preset {
           };
           [k: string]: unknown;
         };
+        actions?:
+          | {
+              type?: ('reference' | 'custom' | 'customPage') | null;
+              newTab?: boolean | null;
+              reference?:
+                | ({
+                    relationTo: 'page';
+                    value: number | Page;
+                  } | null)
+                | ({
+                    relationTo: 'posts';
+                    value: number | Post;
+                  } | null);
+              url?: string | null;
+              customPage?: ('blog' | 'search') | null;
+              label: string;
+              /**
+               * Choose how the link should be rendered.
+               */
+              appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+              id?: string | null;
+            }[]
+          | null;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
           paddingY?: ('none' | 'base' | 'large') | null;
@@ -1303,7 +1687,12 @@ export interface Preset {
         blockType: 'content';
       }
     | {
-        heading: string;
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        lead?: string | null;
         items: {
           question: string;
           answer: {
@@ -1345,8 +1734,12 @@ export interface Preset {
         blockType: 'faq';
       }
     | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
         heading?: string | null;
-        subheading?: string | null;
+        lead?: string | null;
         testimonialItems?:
           | {
               testimonial: number | Testimonial;
@@ -1381,8 +1774,41 @@ export interface Preset {
         blockType: 'testimonialsList';
       }
     | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        lead?: string | null;
         columns?: number | null;
         items: {
+          /**
+           * Optional icon shown in a tinted tile
+           */
+          icon?:
+            | (
+                | 'map'
+                | 'clock'
+                | 'zap'
+                | 'activity'
+                | 'layout-grid'
+                | 'sparkles'
+                | 'file-text'
+                | 'users'
+                | 'bar-chart-3'
+                | 'plug'
+                | 'shield'
+                | 'git-branch'
+                | 'gauge'
+                | 'bell'
+                | 'layers'
+                | 'workflow'
+                | 'calendar'
+                | 'compass'
+                | 'target'
+                | 'wand-2'
+              )
+            | null;
           title: string;
           description?: string | null;
           image?: {
@@ -1407,7 +1833,7 @@ export interface Preset {
             /**
              * Choose how the link should be rendered.
              */
-            appearance?: ('default' | 'outline') | null;
+            appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
           };
           alignVariant?: ('left' | 'center' | 'right') | null;
           rounded?: ('none' | 'large') | null;
@@ -1436,21 +1862,12 @@ export interface Preset {
         blockType: 'cardsGrid';
       }
     | {
-        text?: {
-          root: {
-            type: string;
-            children: {
-              type: any;
-              version: number;
-              [k: string]: unknown;
-            }[];
-            direction: ('ltr' | 'rtl') | null;
-            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-            indent: number;
-            version: number;
-          };
-          [k: string]: unknown;
-        } | null;
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        lead?: string | null;
         effect?: ('slide' | 'fade' | 'cube' | 'flip' | 'coverflow' | 'cards') | null;
         slides: {
           image: {
@@ -1496,6 +1913,7 @@ export interface Preset {
         blockType: 'carousel';
       }
     | {
+        label?: string | null;
         alignVariant?: ('left' | 'center' | 'right') | null;
         items: {
           image: {
@@ -1562,7 +1980,7 @@ export interface Preset {
             /**
              * Choose how the link should be rendered.
              */
-            appearance?: ('default' | 'outline') | null;
+            appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
           };
           id?: string | null;
         }[];
@@ -1586,6 +2004,151 @@ export interface Preset {
         id?: string | null;
         blockName?: string | null;
         blockType: 'linksList';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        lead?: string | null;
+        title: string;
+        subtitle?: string | null;
+        /**
+         * Each range becomes a tab. The first range is shown by default.
+         */
+        ranges: {
+          label: string;
+          dataPoints: {
+            label: string;
+            value: number;
+            id?: string | null;
+          }[];
+          id?: string | null;
+        }[];
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          maxWidth?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'chart';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        lead?: string | null;
+        actions: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label: string;
+          /**
+           * Choose how the link should be rendered.
+           */
+          appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+          id?: string | null;
+        }[];
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          maxWidth?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'ctaBand';
+      }
+    | {
+        badge?: string | null;
+        heading: string;
+        inputPlaceholder: string;
+        buttonLabel: string;
+        disclaimer?: string | null;
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          maxWidth?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'newsletter';
+      }
+    | {
+        items: {
+          value: string;
+          label: string;
+          id?: string | null;
+        }[];
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          maxWidth?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'stats';
       }
   )[];
   updatedAt: string;
@@ -1691,6 +2254,34 @@ export interface PayloadMcpApiKey {
    * The purpose of the API key.
    */
   description?: string | null;
+  authors?: {
+    /**
+     * Allow clients to create authors.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update authors.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete authors.
+     */
+    delete?: boolean | null;
+  };
+  categories?: {
+    /**
+     * Allow clients to create categories.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update categories.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete categories.
+     */
+    delete?: boolean | null;
+  };
   footer?: {
     /**
      * Allow clients to create footer.
@@ -1716,6 +2307,20 @@ export interface PayloadMcpApiKey {
     update?: boolean | null;
     /**
      * Allow clients to delete header.
+     */
+    delete?: boolean | null;
+  };
+  media?: {
+    /**
+     * Allow clients to create media.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update media.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete media.
      */
     delete?: boolean | null;
   };
@@ -1747,13 +2352,47 @@ export interface PayloadMcpApiKey {
      */
     delete?: boolean | null;
   };
+  testimonials?: {
+    /**
+     * Allow clients to create testimonials.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update testimonials.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete testimonials.
+     */
+    delete?: boolean | null;
+  };
+  users?: {
+    /**
+     * Allow clients to create users.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update users.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete users.
+     */
+    delete?: boolean | null;
+  };
+  siteSettings?: {
+    /**
+     * Allow clients to update site-settings global.
+     */
+    update?: boolean | null;
+  };
   'payload-mcp-tool'?: {
     /**
-     * Fetch a collection document by ID. Specify collectionSlug (one of: footer, header, page, posts). Returns all top-level fields as a structured overview — complex fields (arrays, blocks, relations, rich text) are summarized with their type and item count. Use getAllDocuments to list documents first, then this tool by ID. Use getField to drill into specific fields. Do NOT pass full: true unless the user explicitly asks to extract the entire content. Pass raw: true to get the full raw JSON — use this when you need structured data for analysis or to construct an update payload. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
+     * Fetch a collection document by ID. Specify collectionSlug (one of: authors, categories, footer, header, media, page, posts, testimonials, users). Returns all top-level fields as a structured overview — complex fields (arrays, blocks, relations, rich text) are summarized with their type and item count. Use getAllDocuments to list documents first, then this tool by ID. Use getField to drill into specific fields. Do NOT pass full: true unless the user explicitly asks to extract the entire content. Pass raw: true to get the full raw JSON — use this when you need structured data for analysis or to construct an update payload. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
      */
     getDocument?: boolean | null;
     /**
-     * List collection documents as a formatted summary. Specify collectionSlug (one of: footer, header, page, posts). Returns only scalar summary fields plus admin URL and public URL (where applicable). Objects, relations, arrays, and rich text are omitted from the list output. To get full details for a document, call getDocument with its ID. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
+     * List collection documents as a formatted summary. Specify collectionSlug (one of: authors, categories, footer, header, media, page, posts, testimonials, users). Returns only scalar summary fields plus admin URL and public URL (where applicable). Objects, relations, arrays, and rich text are omitted from the list output. To get full details for a document, call getDocument with its ID. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
      */
     getAllDocuments?: boolean | null;
     /**
@@ -1761,7 +2400,7 @@ export interface PayloadMcpApiKey {
      */
     getGlobalDocument?: boolean | null;
     /**
-     * Fetch the full content of a specific field from a collection document or global. slug accepts a collection (footer, header, page, posts) or a global (site-settings). For collections, id is required. For globals, id is ignored. Use dot-notation for nested paths (e.g. "content", "blocks.0", "meta.description"). Rich text fields are returned as Markdown by default. IMPORTANT: You MUST call this with raw: true before any create/update action targeting this field — the raw JSON (block IDs, Lexical nodes, existing array items) is required to construct a valid update payload. Never attempt an update without first reading the field with raw: true.
+     * Fetch the full content of a specific field from a collection document or global. slug accepts a collection (authors, categories, footer, header, media, page, posts, testimonials, users) or a global (site-settings). For collections, id is required. For globals, id is ignored. Use dot-notation for nested paths (e.g. "content", "blocks.0", "meta.description"). Rich text fields are returned as Markdown by default. IMPORTANT: You MUST call this with raw: true before any create/update action targeting this field — the raw JSON (block IDs, Lexical nodes, existing array items) is required to construct a valid update payload. Never attempt an update without first reading the field with raw: true.
      */
     getField?: boolean | null;
     /**
@@ -2152,6 +2791,10 @@ export interface PageSelect<T extends boolean = true> {
         carousel?: T | CarouselBlockSelect<T>;
         logos?: T | LogosBlockSelect<T>;
         linksList?: T | LinksListBlockSelect<T>;
+        chart?: T | ChartBlockSelect<T>;
+        ctaBand?: T | CtaBandBlockSelect<T>;
+        newsletter?: T | NewsletterBlockSelect<T>;
+        stats?: T | StatsBlockSelect<T>;
       };
   meta?:
     | T
@@ -2184,6 +2827,8 @@ export interface PageSelect<T extends boolean = true> {
  * via the `definition` "HeroBlock_select".
  */
 export interface HeroBlockSelect<T extends boolean = true> {
+  variant?: T;
+  badge?: T;
   title?: T;
   richText?: T;
   actions?:
@@ -2254,10 +2899,24 @@ export interface TextSectionBlockSelect<T extends boolean = true> {
  * via the `definition` "ContentBlock_select".
  */
 export interface ContentBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
   heading?: T;
+  lead?: T;
   layout?: T;
   image?: T;
   content?: T;
+  actions?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+        appearance?: T;
+        id?: T;
+      };
   section?:
     | T
     | {
@@ -2281,7 +2940,9 @@ export interface ContentBlockSelect<T extends boolean = true> {
  * via the `definition` "FaqBlock_select".
  */
 export interface FaqBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
   heading?: T;
+  lead?: T;
   items?:
     | T
     | {
@@ -2312,8 +2973,9 @@ export interface FaqBlockSelect<T extends boolean = true> {
  * via the `definition` "TestimonialsListBlock_select".
  */
 export interface TestimonialsListBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
   heading?: T;
-  subheading?: T;
+  lead?: T;
   testimonialItems?:
     | T
     | {
@@ -2346,10 +3008,14 @@ export interface TestimonialsListBlockSelect<T extends boolean = true> {
  * via the `definition` "CardsGridBlock_select".
  */
 export interface CardsGridBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  lead?: T;
   columns?: T;
   items?:
     | T
     | {
+        icon?: T;
         title?: T;
         description?: T;
         image?:
@@ -2397,7 +3063,9 @@ export interface CardsGridBlockSelect<T extends boolean = true> {
  * via the `definition` "CarouselBlock_select".
  */
 export interface CarouselBlockSelect<T extends boolean = true> {
-  text?: T;
+  eyebrow?: T;
+  heading?: T;
+  lead?: T;
   effect?: T;
   slides?:
     | T
@@ -2434,6 +3102,7 @@ export interface CarouselBlockSelect<T extends boolean = true> {
  * via the `definition` "LogosBlock_select".
  */
 export interface LogosBlockSelect<T extends boolean = true> {
+  label?: T;
   alignVariant?: T;
   items?:
     | T
@@ -2516,6 +3185,143 @@ export interface LinksListBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ChartBlock_select".
+ */
+export interface ChartBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  lead?: T;
+  title?: T;
+  subtitle?: T;
+  ranges?:
+    | T
+    | {
+        label?: T;
+        dataPoints?:
+          | T
+          | {
+              label?: T;
+              value?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        paddingY?: T;
+        paddingX?: T;
+        maxWidth?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CtaBandBlock_select".
+ */
+export interface CtaBandBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  lead?: T;
+  actions?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+        appearance?: T;
+        id?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        paddingY?: T;
+        paddingX?: T;
+        maxWidth?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "NewsletterBlock_select".
+ */
+export interface NewsletterBlockSelect<T extends boolean = true> {
+  badge?: T;
+  heading?: T;
+  inputPlaceholder?: T;
+  buttonLabel?: T;
+  disclaimer?: T;
+  section?:
+    | T
+    | {
+        theme?: T;
+        paddingY?: T;
+        paddingX?: T;
+        maxWidth?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "StatsBlock_select".
+ */
+export interface StatsBlockSelect<T extends boolean = true> {
+  items?:
+    | T
+    | {
+        value?: T;
+        label?: T;
+        id?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        paddingY?: T;
+        paddingX?: T;
+        maxWidth?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories_select".
  */
 export interface CategoriesSelect<T extends boolean = true> {
@@ -2531,6 +3337,7 @@ export interface CategoriesSelect<T extends boolean = true> {
  */
 export interface AuthorsSelect<T extends boolean = true> {
   name?: T;
+  avatar?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2543,6 +3350,37 @@ export interface PostsSelect<T extends boolean = true> {
   excerpt?: T;
   heroImage?: T;
   content?: T;
+  faq?:
+    | T
+    | {
+        heading?: T;
+        items?:
+          | T
+          | {
+              question?: T;
+              answer?: T;
+              id?: T;
+            };
+      };
+  cta?:
+    | T
+    | {
+        badge?: T;
+        heading?: T;
+        lead?: T;
+        actions?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+              appearance?: T;
+              id?: T;
+            };
+      };
   meta?:
     | T
     | {
@@ -2585,6 +3423,8 @@ export interface HeaderSelect<T extends boolean = true> {
   navItems?:
     | T
     | {
+        label?: T;
+        type?: T;
         link?:
           | T
           | {
@@ -2593,8 +3433,57 @@ export interface HeaderSelect<T extends boolean = true> {
               reference?: T;
               url?: T;
               customPage?: T;
-              label?: T;
             };
+        dropdown?:
+          | T
+          | {
+              featured?:
+                | T
+                | {
+                    enabled?: T;
+                    badge?: T;
+                    title?: T;
+                    description?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          label?: T;
+                        };
+                  };
+              links?:
+                | T
+                | {
+                    title?: T;
+                    description?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                        };
+                    id?: T;
+                  };
+            };
+        id?: T;
+      };
+  actions?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+        appearance?: T;
         id?: T;
       };
   updatedAt?: T;
@@ -2608,7 +3497,29 @@ export interface HeaderSelect<T extends boolean = true> {
 export interface FooterSelect<T extends boolean = true> {
   name?: T;
   logo?: T;
-  links?:
+  description?: T;
+  linkGroups?:
+    | T
+    | {
+        label?: T;
+        links?:
+          | T
+          | {
+              link?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                  };
+              id?: T;
+            };
+        id?: T;
+      };
+  legalLinks?:
     | T
     | {
         link?:
@@ -2623,7 +3534,6 @@ export interface FooterSelect<T extends boolean = true> {
             };
         id?: T;
       };
-  text?: T;
   copywriteText?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -2671,6 +3581,8 @@ export interface PresetsSelect<T extends boolean = true> {
         hero?:
           | T
           | {
+              variant?: T;
+              badge?: T;
               title?: T;
               richText?: T;
               actions?:
@@ -2737,10 +3649,24 @@ export interface PresetsSelect<T extends boolean = true> {
         content?:
           | T
           | {
+              eyebrow?: T;
               heading?: T;
+              lead?: T;
               layout?: T;
               image?: T;
               content?: T;
+              actions?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                    appearance?: T;
+                    id?: T;
+                  };
               section?:
                 | T
                 | {
@@ -2762,7 +3688,9 @@ export interface PresetsSelect<T extends boolean = true> {
         faq?:
           | T
           | {
+              eyebrow?: T;
               heading?: T;
+              lead?: T;
               items?:
                 | T
                 | {
@@ -2791,8 +3719,9 @@ export interface PresetsSelect<T extends boolean = true> {
         testimonialsList?:
           | T
           | {
+              eyebrow?: T;
               heading?: T;
-              subheading?: T;
+              lead?: T;
               testimonialItems?:
                 | T
                 | {
@@ -2823,10 +3752,14 @@ export interface PresetsSelect<T extends boolean = true> {
         cardsGrid?:
           | T
           | {
+              eyebrow?: T;
+              heading?: T;
+              lead?: T;
               columns?: T;
               items?:
                 | T
                 | {
+                    icon?: T;
                     title?: T;
                     description?: T;
                     image?:
@@ -2872,7 +3805,9 @@ export interface PresetsSelect<T extends boolean = true> {
         carousel?:
           | T
           | {
-              text?: T;
+              eyebrow?: T;
+              heading?: T;
+              lead?: T;
               effect?: T;
               slides?:
                 | T
@@ -2907,6 +3842,7 @@ export interface PresetsSelect<T extends boolean = true> {
         logos?:
           | T
           | {
+              label?: T;
               alignVariant?: T;
               items?:
                 | T
@@ -2965,6 +3901,135 @@ export interface PresetsSelect<T extends boolean = true> {
                           label?: T;
                           appearance?: T;
                         };
+                    id?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    maxWidth?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        chart?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              lead?: T;
+              title?: T;
+              subtitle?: T;
+              ranges?:
+                | T
+                | {
+                    label?: T;
+                    dataPoints?:
+                      | T
+                      | {
+                          label?: T;
+                          value?: T;
+                          id?: T;
+                        };
+                    id?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    maxWidth?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        ctaBand?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              lead?: T;
+              actions?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                    appearance?: T;
+                    id?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    maxWidth?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        newsletter?:
+          | T
+          | {
+              badge?: T;
+              heading?: T;
+              inputPlaceholder?: T;
+              buttonLabel?: T;
+              disclaimer?: T;
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    maxWidth?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        stats?:
+          | T
+          | {
+              items?:
+                | T
+                | {
+                    value?: T;
+                    label?: T;
                     id?: T;
                   };
               section?:
@@ -3047,6 +4112,20 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
   user?: T;
   label?: T;
   description?: T;
+  authors?:
+    | T
+    | {
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  categories?:
+    | T
+    | {
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
   footer?:
     | T
     | {
@@ -3055,6 +4134,13 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
         delete?: T;
       };
   header?:
+    | T
+    | {
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  media?:
     | T
     | {
         create?: T;
@@ -3074,6 +4160,25 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
         create?: T;
         update?: T;
         delete?: T;
+      };
+  testimonials?:
+    | T
+    | {
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  users?:
+    | T
+    | {
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  siteSettings?:
+    | T
+    | {
+        update?: T;
       };
   'payload-mcp-tool'?:
     | T
@@ -3252,6 +4357,8 @@ export interface SiteSetting {
     blogDescription: string;
     readMoreLabel: string;
     relatedPostsLabel: string;
+    blogBadge?: string | null;
+    searchPlaceholder?: string | null;
     blogMeta?: {
       title?: string | null;
       /**
@@ -3319,6 +4426,8 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         blogDescription?: T;
         readMoreLabel?: T;
         relatedPostsLabel?: T;
+        blogBadge?: T;
+        searchPlaceholder?: T;
         blogMeta?:
           | T
           | {
@@ -3382,6 +4491,33 @@ export interface TaskSchedulePublish {
 export interface CardsGridInlineBlock {
   columns?: number | null;
   items: {
+    /**
+     * Optional icon shown in a tinted tile
+     */
+    icon?:
+      | (
+          | 'map'
+          | 'clock'
+          | 'zap'
+          | 'activity'
+          | 'layout-grid'
+          | 'sparkles'
+          | 'file-text'
+          | 'users'
+          | 'bar-chart-3'
+          | 'plug'
+          | 'shield'
+          | 'git-branch'
+          | 'gauge'
+          | 'bell'
+          | 'layers'
+          | 'workflow'
+          | 'calendar'
+          | 'compass'
+          | 'target'
+          | 'wand-2'
+        )
+      | null;
     title: string;
     description?: string | null;
     image?: {
@@ -3406,7 +4542,7 @@ export interface CardsGridInlineBlock {
       /**
        * Choose how the link should be rendered.
        */
-      appearance?: ('default' | 'outline') | null;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     };
     alignVariant?: ('left' | 'center' | 'right') | null;
     rounded?: ('none' | 'large') | null;
@@ -3422,6 +4558,7 @@ export interface CardsGridInlineBlock {
  * via the `definition` "LogosInlineBlock".
  */
 export interface LogosInlineBlock {
+  label?: string | null;
   alignVariant?: ('left' | 'center' | 'right') | null;
   items: {
     image: {
@@ -3475,13 +4612,27 @@ export interface LinksListInlineBlock {
       /**
        * Choose how the link should be rendered.
        */
-      appearance?: ('default' | 'outline') | null;
+      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     };
     id?: string | null;
   }[];
   id?: string | null;
   blockName?: string | null;
   blockType: 'linksListInline';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CodeInlineBlock".
+ */
+export interface CodeInlineBlock {
+  /**
+   * Language hint (e.g. typescript, bash). Used for the syntax class.
+   */
+  language?: string | null;
+  code: string;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'codeInline';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

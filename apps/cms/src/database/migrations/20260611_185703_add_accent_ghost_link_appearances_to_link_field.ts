@@ -1,0 +1,90 @@
+import { MigrateUpArgs, MigrateDownArgs, sql } from "@payloadcms/db-postgres";
+
+export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
+  await db.execute(sql`
+   ALTER TYPE "public"."enum_page_blocks_hero_actions_appearance" ADD VALUE 'accent';
+  ALTER TYPE "public"."enum_page_blocks_hero_actions_appearance" ADD VALUE 'ghost';
+  ALTER TYPE "public"."enum_page_blocks_hero_actions_appearance" ADD VALUE 'link';
+  ALTER TYPE "public"."enum_page_blocks_cards_grid_items_link_appearance" ADD VALUE 'accent';
+  ALTER TYPE "public"."enum_page_blocks_cards_grid_items_link_appearance" ADD VALUE 'ghost';
+  ALTER TYPE "public"."enum_page_blocks_cards_grid_items_link_appearance" ADD VALUE 'link';
+  ALTER TYPE "public"."enum_page_blocks_links_list_links_link_appearance" ADD VALUE 'accent';
+  ALTER TYPE "public"."enum_page_blocks_links_list_links_link_appearance" ADD VALUE 'ghost';
+  ALTER TYPE "public"."enum_page_blocks_links_list_links_link_appearance" ADD VALUE 'link';
+  ALTER TYPE "public"."enum__page_v_blocks_hero_actions_appearance" ADD VALUE 'accent';
+  ALTER TYPE "public"."enum__page_v_blocks_hero_actions_appearance" ADD VALUE 'ghost';
+  ALTER TYPE "public"."enum__page_v_blocks_hero_actions_appearance" ADD VALUE 'link';
+  ALTER TYPE "public"."enum__page_v_blocks_cards_grid_items_link_appearance" ADD VALUE 'accent';
+  ALTER TYPE "public"."enum__page_v_blocks_cards_grid_items_link_appearance" ADD VALUE 'ghost';
+  ALTER TYPE "public"."enum__page_v_blocks_cards_grid_items_link_appearance" ADD VALUE 'link';
+  ALTER TYPE "public"."enum__page_v_blocks_links_list_links_link_appearance" ADD VALUE 'accent';
+  ALTER TYPE "public"."enum__page_v_blocks_links_list_links_link_appearance" ADD VALUE 'ghost';
+  ALTER TYPE "public"."enum__page_v_blocks_links_list_links_link_appearance" ADD VALUE 'link';
+  ALTER TYPE "public"."enum_presets_blocks_hero_actions_appearance" ADD VALUE 'accent';
+  ALTER TYPE "public"."enum_presets_blocks_hero_actions_appearance" ADD VALUE 'ghost';
+  ALTER TYPE "public"."enum_presets_blocks_hero_actions_appearance" ADD VALUE 'link';
+  ALTER TYPE "public"."enum_presets_blocks_cards_grid_items_link_appearance" ADD VALUE 'accent';
+  ALTER TYPE "public"."enum_presets_blocks_cards_grid_items_link_appearance" ADD VALUE 'ghost';
+  ALTER TYPE "public"."enum_presets_blocks_cards_grid_items_link_appearance" ADD VALUE 'link';
+  ALTER TYPE "public"."enum_presets_blocks_links_list_links_link_appearance" ADD VALUE 'accent';
+  ALTER TYPE "public"."enum_presets_blocks_links_list_links_link_appearance" ADD VALUE 'ghost';
+  ALTER TYPE "public"."enum_presets_blocks_links_list_links_link_appearance" ADD VALUE 'link';`);
+}
+
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+  await db.execute(sql`
+   ALTER TABLE "page_blocks_hero_actions" ALTER COLUMN "appearance" SET DATA TYPE text;
+  ALTER TABLE "page_blocks_hero_actions" ALTER COLUMN "appearance" SET DEFAULT 'default'::text;
+  DROP TYPE "public"."enum_page_blocks_hero_actions_appearance";
+  CREATE TYPE "public"."enum_page_blocks_hero_actions_appearance" AS ENUM('default', 'outline');
+  ALTER TABLE "page_blocks_hero_actions" ALTER COLUMN "appearance" SET DEFAULT 'default'::"public"."enum_page_blocks_hero_actions_appearance";
+  ALTER TABLE "page_blocks_hero_actions" ALTER COLUMN "appearance" SET DATA TYPE "public"."enum_page_blocks_hero_actions_appearance" USING "appearance"::"public"."enum_page_blocks_hero_actions_appearance";
+  ALTER TABLE "page_blocks_cards_grid_items" ALTER COLUMN "link_appearance" SET DATA TYPE text;
+  ALTER TABLE "page_blocks_cards_grid_items" ALTER COLUMN "link_appearance" SET DEFAULT 'default'::text;
+  DROP TYPE "public"."enum_page_blocks_cards_grid_items_link_appearance";
+  CREATE TYPE "public"."enum_page_blocks_cards_grid_items_link_appearance" AS ENUM('default', 'outline');
+  ALTER TABLE "page_blocks_cards_grid_items" ALTER COLUMN "link_appearance" SET DEFAULT 'default'::"public"."enum_page_blocks_cards_grid_items_link_appearance";
+  ALTER TABLE "page_blocks_cards_grid_items" ALTER COLUMN "link_appearance" SET DATA TYPE "public"."enum_page_blocks_cards_grid_items_link_appearance" USING "link_appearance"::"public"."enum_page_blocks_cards_grid_items_link_appearance";
+  ALTER TABLE "page_blocks_links_list_links" ALTER COLUMN "link_appearance" SET DATA TYPE text;
+  ALTER TABLE "page_blocks_links_list_links" ALTER COLUMN "link_appearance" SET DEFAULT 'default'::text;
+  DROP TYPE "public"."enum_page_blocks_links_list_links_link_appearance";
+  CREATE TYPE "public"."enum_page_blocks_links_list_links_link_appearance" AS ENUM('default', 'outline');
+  ALTER TABLE "page_blocks_links_list_links" ALTER COLUMN "link_appearance" SET DEFAULT 'default'::"public"."enum_page_blocks_links_list_links_link_appearance";
+  ALTER TABLE "page_blocks_links_list_links" ALTER COLUMN "link_appearance" SET DATA TYPE "public"."enum_page_blocks_links_list_links_link_appearance" USING "link_appearance"::"public"."enum_page_blocks_links_list_links_link_appearance";
+  ALTER TABLE "_page_v_blocks_hero_actions" ALTER COLUMN "appearance" SET DATA TYPE text;
+  ALTER TABLE "_page_v_blocks_hero_actions" ALTER COLUMN "appearance" SET DEFAULT 'default'::text;
+  DROP TYPE "public"."enum__page_v_blocks_hero_actions_appearance";
+  CREATE TYPE "public"."enum__page_v_blocks_hero_actions_appearance" AS ENUM('default', 'outline');
+  ALTER TABLE "_page_v_blocks_hero_actions" ALTER COLUMN "appearance" SET DEFAULT 'default'::"public"."enum__page_v_blocks_hero_actions_appearance";
+  ALTER TABLE "_page_v_blocks_hero_actions" ALTER COLUMN "appearance" SET DATA TYPE "public"."enum__page_v_blocks_hero_actions_appearance" USING "appearance"::"public"."enum__page_v_blocks_hero_actions_appearance";
+  ALTER TABLE "_page_v_blocks_cards_grid_items" ALTER COLUMN "link_appearance" SET DATA TYPE text;
+  ALTER TABLE "_page_v_blocks_cards_grid_items" ALTER COLUMN "link_appearance" SET DEFAULT 'default'::text;
+  DROP TYPE "public"."enum__page_v_blocks_cards_grid_items_link_appearance";
+  CREATE TYPE "public"."enum__page_v_blocks_cards_grid_items_link_appearance" AS ENUM('default', 'outline');
+  ALTER TABLE "_page_v_blocks_cards_grid_items" ALTER COLUMN "link_appearance" SET DEFAULT 'default'::"public"."enum__page_v_blocks_cards_grid_items_link_appearance";
+  ALTER TABLE "_page_v_blocks_cards_grid_items" ALTER COLUMN "link_appearance" SET DATA TYPE "public"."enum__page_v_blocks_cards_grid_items_link_appearance" USING "link_appearance"::"public"."enum__page_v_blocks_cards_grid_items_link_appearance";
+  ALTER TABLE "_page_v_blocks_links_list_links" ALTER COLUMN "link_appearance" SET DATA TYPE text;
+  ALTER TABLE "_page_v_blocks_links_list_links" ALTER COLUMN "link_appearance" SET DEFAULT 'default'::text;
+  DROP TYPE "public"."enum__page_v_blocks_links_list_links_link_appearance";
+  CREATE TYPE "public"."enum__page_v_blocks_links_list_links_link_appearance" AS ENUM('default', 'outline');
+  ALTER TABLE "_page_v_blocks_links_list_links" ALTER COLUMN "link_appearance" SET DEFAULT 'default'::"public"."enum__page_v_blocks_links_list_links_link_appearance";
+  ALTER TABLE "_page_v_blocks_links_list_links" ALTER COLUMN "link_appearance" SET DATA TYPE "public"."enum__page_v_blocks_links_list_links_link_appearance" USING "link_appearance"::"public"."enum__page_v_blocks_links_list_links_link_appearance";
+  ALTER TABLE "presets_blocks_hero_actions" ALTER COLUMN "appearance" SET DATA TYPE text;
+  ALTER TABLE "presets_blocks_hero_actions" ALTER COLUMN "appearance" SET DEFAULT 'default'::text;
+  DROP TYPE "public"."enum_presets_blocks_hero_actions_appearance";
+  CREATE TYPE "public"."enum_presets_blocks_hero_actions_appearance" AS ENUM('default', 'outline');
+  ALTER TABLE "presets_blocks_hero_actions" ALTER COLUMN "appearance" SET DEFAULT 'default'::"public"."enum_presets_blocks_hero_actions_appearance";
+  ALTER TABLE "presets_blocks_hero_actions" ALTER COLUMN "appearance" SET DATA TYPE "public"."enum_presets_blocks_hero_actions_appearance" USING "appearance"::"public"."enum_presets_blocks_hero_actions_appearance";
+  ALTER TABLE "presets_blocks_cards_grid_items" ALTER COLUMN "link_appearance" SET DATA TYPE text;
+  ALTER TABLE "presets_blocks_cards_grid_items" ALTER COLUMN "link_appearance" SET DEFAULT 'default'::text;
+  DROP TYPE "public"."enum_presets_blocks_cards_grid_items_link_appearance";
+  CREATE TYPE "public"."enum_presets_blocks_cards_grid_items_link_appearance" AS ENUM('default', 'outline');
+  ALTER TABLE "presets_blocks_cards_grid_items" ALTER COLUMN "link_appearance" SET DEFAULT 'default'::"public"."enum_presets_blocks_cards_grid_items_link_appearance";
+  ALTER TABLE "presets_blocks_cards_grid_items" ALTER COLUMN "link_appearance" SET DATA TYPE "public"."enum_presets_blocks_cards_grid_items_link_appearance" USING "link_appearance"::"public"."enum_presets_blocks_cards_grid_items_link_appearance";
+  ALTER TABLE "presets_blocks_links_list_links" ALTER COLUMN "link_appearance" SET DATA TYPE text;
+  ALTER TABLE "presets_blocks_links_list_links" ALTER COLUMN "link_appearance" SET DEFAULT 'default'::text;
+  DROP TYPE "public"."enum_presets_blocks_links_list_links_link_appearance";
+  CREATE TYPE "public"."enum_presets_blocks_links_list_links_link_appearance" AS ENUM('default', 'outline');
+  ALTER TABLE "presets_blocks_links_list_links" ALTER COLUMN "link_appearance" SET DEFAULT 'default'::"public"."enum_presets_blocks_links_list_links_link_appearance";
+  ALTER TABLE "presets_blocks_links_list_links" ALTER COLUMN "link_appearance" SET DATA TYPE "public"."enum_presets_blocks_links_list_links_link_appearance" USING "link_appearance"::"public"."enum_presets_blocks_links_list_links_link_appearance";`);
+}

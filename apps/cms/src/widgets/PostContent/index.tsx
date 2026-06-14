@@ -1,36 +1,41 @@
 import type { Locale } from "@/core/types";
-import { RichText, PostHero } from "@/core/ui";
+import { PostHero, RichText } from "@/core/ui";
 import { getRelatedPosts } from "@/dal/getRelatedPosts";
-import { RelatedPosts } from "@/entities";
 import type { Post } from "@/payload-types";
+
+import { PostCta } from "./components/PostCta";
+import { PostFaq } from "./components/PostFaq";
+import { RelatedPostsSection } from "./components/RelatedPostsSection";
 
 interface PostContentProps {
   post: Post;
   locale: Locale;
   relatedPostsLabel?: string | null;
-  readMoreLabel?: string | null;
 }
 
-export const PostContent: React.FC<PostContentProps> = async ({ post, locale, relatedPostsLabel, readMoreLabel }) => {
+export const PostContent: React.FC<PostContentProps> = async ({ post, locale, relatedPostsLabel }) => {
   const relatedPosts = await getRelatedPosts({ locale, post });
+
+  const hasFaq = (post.faq?.items?.length ?? 0) > 0;
+  const hasCta = Boolean(post.cta?.heading);
 
   return (
     <article>
-      <PostHero post={post} />
+      <PostHero post={post} locale={locale} />
 
-      <div className="py-8 px-4 sm:py-10 sm:px-6 md:py-12 md:px-8">
-        <div className="mx-auto max-w-3xl">
-          <RichText className="mx-auto" content={post.content} />
-        </div>
-      </div>
-
-      {relatedPosts.length > 0 && (
-        <div className="border-t border-border py-12 px-4 sm:px-6 md:px-8">
-          <div className="mx-auto max-w-4xl">
-            <RelatedPosts docs={relatedPosts} relatedPostsLabel={relatedPostsLabel} readMoreLabel={readMoreLabel} />
+      <section className="py-sectionBase">
+        <div className="mx-auto w-full max-w-containerMaxW px-containerBase">
+          <div className="mx-auto max-w-[720px]">
+            <RichText content={post.content} />
           </div>
         </div>
-      )}
+      </section>
+
+      {hasFaq && post.faq && <PostFaq faq={post.faq} />}
+
+      {relatedPosts.length > 0 && <RelatedPostsSection posts={relatedPosts} relatedPostsLabel={relatedPostsLabel} />}
+
+      {hasCta && post.cta && <PostCta cta={post.cta} />}
     </article>
   );
 };

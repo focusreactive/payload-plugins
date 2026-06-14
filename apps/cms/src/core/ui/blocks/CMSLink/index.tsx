@@ -5,6 +5,7 @@ import React from "react";
 import { BLOG_CONFIG } from "@/core/config/blog";
 import { cn } from "@/core/lib/utils";
 import { Button, ButtonVariant, Link } from "@/core/ui";
+import type { LinkAppearances } from "@/fields/link";
 import type { Page, Post } from "@/payload-types";
 
 type ButtonProps = React.ComponentProps<typeof Button>;
@@ -16,7 +17,6 @@ const linkVariants = cva("transition-all", {
   variants: {
     appearance: {
       inline: "text-primary underline-offset-4",
-      link: "text-primary underline-offset-4 hover:underline",
     },
   },
 });
@@ -26,11 +26,8 @@ const collectionPaths: Record<string, string> = {
   posts: BLOG_CONFIG.basePath,
 };
 
-// Legacy shadcn variants from Payload CMS field definitions
-type LegacyAppearance = "default" | "outline";
-
 interface Props {
-  appearance?: VariantProps<typeof linkVariants>["appearance"] | ButtonProps["variant"] | LegacyAppearance | null;
+  appearance?: VariantProps<typeof linkVariants>["appearance"] | ButtonProps["variant"] | LinkAppearances | null;
   children?: React.ReactNode;
   className?: string;
   label?: string | null;
@@ -45,12 +42,17 @@ interface Props {
   url?: string | null;
 }
 
+const fieldAppearanceToVariant: Record<LinkAppearances, ButtonVariant> = {
+  accent: ButtonVariant.Accent,
+  default: ButtonVariant.Primary,
+  ghost: ButtonVariant.Ghost,
+  link: ButtonVariant.Default,
+  outline: ButtonVariant.Secondary,
+};
+
 function mapAppearanceToVariant(appearance: Props["appearance"]): ButtonProps["variant"] {
-  if (appearance === "default") {
-    return ButtonVariant.Primary;
-  }
-  if (appearance === "outline") {
-    return ButtonVariant.Secondary;
+  if (appearance && appearance in fieldAppearanceToVariant) {
+    return fieldAppearanceToVariant[appearance as LinkAppearances];
   }
   return appearance as ButtonProps["variant"];
 }
@@ -66,15 +68,14 @@ export const CMSLink: React.FC<Props> = (props) => {
 
   const newTabProps = newTab ? { rel: "noopener noreferrer", target: "_blank" } : {};
 
-  const isInline = appearance === "link" || appearance === "inline" || !appearance;
+  const isInline = appearance === "inline" || !appearance;
 
   const hrefToUse = (href || url) === "/home" ? "/" : href || url || "";
 
   /* Ensure we don't break any styles set by richText */
   if (isInline) {
-    const linkAppearance = appearance === "link" ? "link" : "inline";
     return (
-      <Link className={cn(linkVariants({ appearance: linkAppearance }), className)} href={hrefToUse} onClick={onClick} {...newTabProps}>
+      <Link className={cn(linkVariants({ appearance: "inline" }), className)} href={hrefToUse} onClick={onClick} {...newTabProps}>
         {label}
         {children}
       </Link>

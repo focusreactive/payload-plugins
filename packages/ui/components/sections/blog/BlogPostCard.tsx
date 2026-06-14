@@ -1,28 +1,30 @@
-import { Image } from "../../ui/image";
-import { Link } from "../../ui/link";
-import { RichText } from "../../ui/richText";
-import { BlogStyle } from "./types";
-import type { IBlogPostCardProps } from "./types";
+import { cn } from "../../../utils";
+import type { BlogPostCardProps } from "./types";
 
-export default function BlogPostCard({ style, image, link, text, readMoreLabel }: IBlogPostCardProps) {
+export function BlogPostCard({ title, excerpt, category, readTime, image, className }: BlogPostCardProps) {
   return (
-    <Link {...link}>
-      <article className="bg-background group flex max-w-xl flex-col items-start gap-y-4">
-        {style === BlogStyle.ThreeColumnWithImages ? (
-          <div className="h-56 w-full overflow-hidden rounded-2xl bg-cover bg-center">
-            <Image {...image} quality={85} sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" priority />
-          </div>
-        ) : null}
-        <div className="group relative group-hover:underline">
-          <RichText {...text} />
-        </div>
-        {readMoreLabel && (
-          <span className="text-sm font-medium text-primary inline-flex items-center gap-1">
-            {readMoreLabel}
-            <span aria-hidden="true">&rsaquo;</span>
-          </span>
+    <article className={cn("group flex flex-col gap-4", className)}>
+      <div
+        className={cn(
+          "relative aspect-[3/2] w-full overflow-hidden rounded-md bg-surface-muted",
+          "transition-[scale,box-shadow] duration-420 ease-out",
+          "group-hover:scale-[1.025] group-hover:shadow-[0_28px_52px_-26px_rgba(10,19,20,0.5)]",
+          "motion-reduce:transition-none motion-reduce:group-hover:scale-100"
         )}
-      </article>
-    </Link>
+      >
+        {image}
+      </div>
+
+      {(category || readTime) && (
+        <div className="text-muted-foreground flex flex-wrap items-center gap-3 font-mono text-[0.72rem] uppercase tracking-[0.08em]">
+          {category && <span className="text-primary whitespace-nowrap">{category}</span>}
+          {readTime && <span className="whitespace-nowrap">{readTime}</span>}
+        </div>
+      )}
+
+      <h3 className="text-h-card text-foreground transition-colors duration-150 group-hover:text-primary motion-reduce:transition-none">{title}</h3>
+
+      {excerpt && <p className="text-muted-foreground text-[0.98rem] leading-[1.6]">{excerpt}</p>}
+    </article>
   );
 }

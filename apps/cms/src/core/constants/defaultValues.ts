@@ -21,7 +21,10 @@ export const DEFAULT_VALUES = {
       },
     },
     hero: {
-      title: { en: "Hero", es: "Hero" },
+      title: {
+        en: "The operating system for teams that ship.",
+        es: "El sistema operativo para equipos que lanzan.",
+      },
     },
     testimonialsList: {
       heading: { en: "Our testimonials", es: "Nuestros testimonios" },

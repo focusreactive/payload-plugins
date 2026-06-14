@@ -14,7 +14,7 @@ export default function LogoItem({ image, link }: ILogoItem) {
 
   if (link) {
     return (
-      <Link {...link} {...imageWrapperProps}>
+      <Link {...link} style={imageWrapperProps.style} className={cn(imageWrapperProps.className, "bg-transparent hover:bg-transparent focus:bg-transparent")}>
         {image && <Image {...image} fit="contain" quality={85} />}
       </Link>
     );

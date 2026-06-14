@@ -6,28 +6,49 @@ import { CUSTOM_PAGES_CONFIG } from "@/core/config/customPages";
 import type { CustomPageKey } from "@/core/config/customPages";
 import deepMerge from "@/core/lib/deepMerge";
 
-export type LinkAppearances = "default" | "outline";
+export type LinkAppearances = "default" | "outline" | "accent" | "ghost" | "link";
 
 export const appearanceOptions: Record<LinkAppearances, Option> = {
   default: {
     label: {
-      en: "Default",
-      es: "Por defecto",
+      en: "Primary (solid)",
+      es: "Primario (sólido)",
     },
     value: "default",
   },
   outline: {
     label: {
-      en: "Outline",
-      es: "Contorno",
+      en: "Secondary (outline)",
+      es: "Secundario (contorno)",
     },
     value: "outline",
   },
+  accent: {
+    label: {
+      en: "Accent (lime)",
+      es: "Acento (lima)",
+    },
+    value: "accent",
+  },
+  ghost: {
+    label: {
+      en: "Ghost",
+      es: "Fantasma",
+    },
+    value: "ghost",
+  },
+  link: {
+    label: {
+      en: "Text link",
+      es: "Enlace de texto",
+    },
+    value: "link",
+  },
 };
 
-type LinkType = (options?: { appearances?: LinkAppearances[] | false; disableLabel?: boolean; required?: boolean; overrides?: Partial<GroupField> }) => Field;
+type LinkType = (options?: { appearances?: LinkAppearances[] | false; customPageDbName?: string; disableLabel?: boolean; required?: boolean; overrides?: Partial<GroupField> }) => Field;
 
-export const link: LinkType = ({ appearances, disableLabel = false, required = true, overrides = {} } = {}) => {
+export const link: LinkType = ({ appearances, customPageDbName, disableLabel = false, required = true, overrides = {} } = {}) => {
   const linkResult: GroupField = {
     admin: {
       hideGutter: true,
@@ -119,6 +140,7 @@ export const link: LinkType = ({ appearances, disableLabel = false, required = t
       admin: {
         condition: (_, siblingData) => siblingData?.type === "customPage",
       },
+      ...(customPageDbName ? { dbName: customPageDbName } : {}),
       label: {
         en: "Custom Page",
         es: "Página personalizada",
@@ -166,7 +188,7 @@ export const link: LinkType = ({ appearances, disableLabel = false, required = t
   }
 
   if (appearances !== false) {
-    let appearanceOptionsToUse = [appearanceOptions.default, appearanceOptions.outline];
+    let appearanceOptionsToUse = [appearanceOptions.default, appearanceOptions.outline, appearanceOptions.accent, appearanceOptions.ghost, appearanceOptions.link];
 
     if (appearances) {
       appearanceOptionsToUse = appearances.map((appearance) => appearanceOptions[appearance]);

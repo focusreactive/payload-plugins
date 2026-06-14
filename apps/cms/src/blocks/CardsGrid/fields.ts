@@ -3,6 +3,8 @@ import type { Field } from "payload";
 import { imageField } from "@/fields/imageField";
 import { link } from "@/fields/link";
 
+import { CARD_ICONS } from "./icons";
+
 export const cardsGridFields: Field[] = [
   {
     defaultValue: 3,
@@ -14,6 +16,18 @@ export const cardsGridFields: Field[] = [
   },
   {
     fields: [
+      {
+        admin: {
+          description: {
+            en: "Optional icon shown in a tinted tile",
+            es: "Icono opcional en un mosaico tintado",
+          },
+        },
+        label: { en: "Icon", es: "Icono" },
+        name: "icon",
+        options: CARD_ICONS.map((icon) => ({ label: icon, value: icon })),
+        type: "select",
+      },
       {
         label: { en: "Title", es: "Título" },
         localized: true,

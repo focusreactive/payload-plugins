@@ -1,26 +1,43 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 import { cn } from "../../../utils";
-import { AlignVariant } from "../../sections/header/types";
-import { Image } from "../../ui/image";
-import { Link } from "../../ui/link";
+import { Brand } from "./components/Brand";
+import { DesktopNav } from "./components/DesktopNav";
+import { HeaderActions } from "./components/HeaderActions";
+import { MobileNav } from "./components/MobileNav";
 import type { IHeaderProps } from "./types";
 
-export function Header({ links, className, image, alignVariant }: IHeaderProps) {
+const SCROLL_THRESHOLD_PX = 8;
+
+export function Header({ brand, navItems, actions, className }: IHeaderProps) {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > SCROLL_THRESHOLD_PX);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <header className={cn("sticky left-0 top-0 z-50  bg-white/30  backdrop-blur-md", className)}>
-      <div className="flex gap-10 max-w-containerMaxW px-containerBase mx-auto">
-        <div className="h-20">{image && <Image {...image} fit="contain" quality={85} />}</div>
-        <nav
-          className={cn("flex grow flex-wrap items-center justify-center gap-3 gap-x-6", {
-            "justify-center": alignVariant === AlignVariant.Center,
-            "justify-end": alignVariant === AlignVariant.Right,
-            "justify-start": alignVariant === AlignVariant.Left,
-          })}
-          aria-label="main mavigation"
-        >
-          {links.map((link, i) => (
-            <Link key={i} {...link} />
-          ))}
-        </nav>
+    <header
+      className={cn(
+        "sticky left-0 top-0 z-[100] bg-background/[0.82] backdrop-blur-[14px] backdrop-saturate-[1.4] transition-[background-color,border-color] duration-200 ease-out motion-reduce:transition-none",
+        scrolled ? "border-b border-border" : "border-b border-transparent",
+        className
+      )}
+    >
+      <div className="mx-auto flex max-w-containerMaxW items-center justify-between gap-6 px-containerBase py-[15px]">
+        <Brand brand={brand} />
+        <DesktopNav navItems={navItems} />
+        <div className="flex items-center gap-2.5">
+          <div className="hidden items-center gap-2.5 min-[860px]:flex">
+            <HeaderActions actions={actions} />
+          </div>
+          <MobileNav navItems={navItems} actions={actions} />
+        </div>
       </div>
     </header>
   );

@@ -29,7 +29,23 @@
     "morePages": "More pages"
   },
   "blog": {
-    "all": "All"
+    "all": "All",
+    "backToJournal": "Back to the Journal",
+    "noResults": "No articles match your search.",
+    "readTime": "{minutes} min",
+    "readTimeLong": "{minutes} min read",
+    "search": {
+      "label": "Search articles",
+      "open": "Search articles",
+      "close": "Close search"
+    },
+    "newsletter": {
+      "badge": "The Journal, monthly",
+      "heading": "One thoughtful email a month. No noise.",
+      "placeholder": "you@team.com",
+      "button": "Subscribe",
+      "disclaimer": "No spam. Unsubscribe anytime."
+    }
   },
   "announcements": {
     "title": "Announcements",

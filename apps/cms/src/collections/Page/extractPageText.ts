@@ -1,5 +1,9 @@
 import { extractCardsGridText } from "@/blocks/CardsGrid/extractText";
 import { extractCarouselText } from "@/blocks/Carousel/extractText";
+import { extractChartText } from "@/blocks/Chart/extractText";
+import { extractCtaBandText } from "@/blocks/CtaBand/extractText";
+import { extractNewsletterText } from "@/blocks/Newsletter/extractText";
+import { extractStatsText } from "@/blocks/Stats/extractText";
 import { extractFaqText } from "@/blocks/Faq/extractText";
 import { extractHeroText } from "@/blocks/Hero/extractText";
 import { extractLinksListText } from "@/blocks/LinksList/extractText";
@@ -17,7 +21,13 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
       return extractLexicalText(block.text);
     }
     case "content": {
-      return joinText([block.heading, extractLexicalText(block.content)]);
+      return joinText([block.eyebrow, block.heading, block.lead, extractLexicalText(block.content)]);
+    }
+    case "chart": {
+      return extractChartText(block);
+    }
+    case "ctaBand": {
+      return extractCtaBandText(block);
     }
     case "faq": {
       return extractFaqText(block);
@@ -36,6 +46,12 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
     }
     case "linksList": {
       return extractLinksListText(block);
+    }
+    case "newsletter": {
+      return extractNewsletterText(block);
+    }
+    case "stats": {
+      return extractStatsText(block);
     }
     default: {
       return "";

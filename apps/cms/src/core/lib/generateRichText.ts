@@ -19,6 +19,8 @@ import {
   LinkFeature,
   UploadFeature,
   BlocksFeature,
+  BlockquoteFeature,
+  EXPERIMENTAL_TableFeature,
 } from "@payloadcms/richtext-lexical";
 import type { Block } from "payload";
 
@@ -112,6 +114,8 @@ export function generateRichText(preset: RichTextPreset = "default", options?: O
                 },
               },
             }),
+            BlockquoteFeature(),
+            EXPERIMENTAL_TableFeature(),
           ];
           break;
         }
