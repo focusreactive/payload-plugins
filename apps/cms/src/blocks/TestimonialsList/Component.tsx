@@ -1,21 +1,39 @@
-import { SectionHeader } from "@repo/ui";
+import { cn, SectionHeader } from "@repo/ui";
 import React from "react";
 
 import { SectionContainer } from "@/core/ui";
 import { AnimatedCarousel } from "@/entities";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { Testimonial, TestimonialsListBlock } from "@/payload-types";
+import { Container } from "@/core/ui/blocks/Container";
+import { sectionVariants } from "@/core/ui/blocks/SectionContainer";
 
 type Props = TestimonialsListBlock;
 
 export const TestimonialsListBlockComponent: React.FC<Props> = ({ eyebrow, heading, lead, testimonialItems, showRating = true, showAvatar = true, duration = 60, section, id }) => {
   const testimonials = (testimonialItems ?? []).map((item) => item.testimonial).filter((t): t is Testimonial => typeof t !== "number" && t !== null && t !== undefined);
-  const header = prepareSectionHeaderProps({ align: "center", eyebrow, subtitle: lead, title: heading });
+  const header = prepareSectionHeaderProps({
+    align: "center",
+    eyebrow,
+    subtitle: lead,
+    title: heading,
+  });
+
+  const theme = section?.theme;
 
   return (
-    <SectionContainer sectionData={{ ...section, id }}>
-      {header && <SectionHeader {...header} className="mb-12 sm:mb-16" />}
+    <section
+      id={id ?? undefined}
+      className={cn(sectionVariants({ paddingY: section?.paddingY }), theme && "bg-background text-foreground", "relative overflow-hidden")}
+      {...(theme ? { "data-theme": theme } : {})}
+    >
+      {header && (
+        <Container containerData={{ maxWidth: section?.maxWidth, paddingX: section?.paddingX }}>
+          <SectionHeader {...header} className="mb-12 sm:mb-16" />
+        </Container>
+      )}
+
       <AnimatedCarousel testimonials={testimonials} showRating={showRating ?? true} showAvatar={showAvatar ?? true} duration={duration ?? 60} />
-    </SectionContainer>
+    </section>
   );
 };

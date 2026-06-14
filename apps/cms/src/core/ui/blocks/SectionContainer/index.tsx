@@ -6,7 +6,7 @@ import { Container } from "../Container";
 import { Media } from "../Media";
 import type { ISectionContainerProps } from "./types";
 
-const sectionVariants = cva("overflow-clip relative z-1", {
+export const sectionVariants = cva("overflow-clip relative z-1", {
   defaultVariants: {
     paddingY: "base",
   },

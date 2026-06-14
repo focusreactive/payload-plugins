@@ -2254,6 +2254,34 @@ export interface PayloadMcpApiKey {
    * The purpose of the API key.
    */
   description?: string | null;
+  authors?: {
+    /**
+     * Allow clients to create authors.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update authors.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete authors.
+     */
+    delete?: boolean | null;
+  };
+  categories?: {
+    /**
+     * Allow clients to create categories.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update categories.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete categories.
+     */
+    delete?: boolean | null;
+  };
   footer?: {
     /**
      * Allow clients to create footer.
@@ -2279,6 +2307,20 @@ export interface PayloadMcpApiKey {
     update?: boolean | null;
     /**
      * Allow clients to delete header.
+     */
+    delete?: boolean | null;
+  };
+  media?: {
+    /**
+     * Allow clients to create media.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update media.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete media.
      */
     delete?: boolean | null;
   };
@@ -2310,13 +2352,47 @@ export interface PayloadMcpApiKey {
      */
     delete?: boolean | null;
   };
+  testimonials?: {
+    /**
+     * Allow clients to create testimonials.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update testimonials.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete testimonials.
+     */
+    delete?: boolean | null;
+  };
+  users?: {
+    /**
+     * Allow clients to create users.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update users.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete users.
+     */
+    delete?: boolean | null;
+  };
+  siteSettings?: {
+    /**
+     * Allow clients to update site-settings global.
+     */
+    update?: boolean | null;
+  };
   'payload-mcp-tool'?: {
     /**
-     * Fetch a collection document by ID. Specify collectionSlug (one of: footer, header, page, posts). Returns all top-level fields as a structured overview — complex fields (arrays, blocks, relations, rich text) are summarized with their type and item count. Use getAllDocuments to list documents first, then this tool by ID. Use getField to drill into specific fields. Do NOT pass full: true unless the user explicitly asks to extract the entire content. Pass raw: true to get the full raw JSON — use this when you need structured data for analysis or to construct an update payload. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
+     * Fetch a collection document by ID. Specify collectionSlug (one of: authors, categories, footer, header, media, page, posts, testimonials, users). Returns all top-level fields as a structured overview — complex fields (arrays, blocks, relations, rich text) are summarized with their type and item count. Use getAllDocuments to list documents first, then this tool by ID. Use getField to drill into specific fields. Do NOT pass full: true unless the user explicitly asks to extract the entire content. Pass raw: true to get the full raw JSON — use this when you need structured data for analysis or to construct an update payload. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
      */
     getDocument?: boolean | null;
     /**
-     * List collection documents as a formatted summary. Specify collectionSlug (one of: footer, header, page, posts). Returns only scalar summary fields plus admin URL and public URL (where applicable). Objects, relations, arrays, and rich text are omitted from the list output. To get full details for a document, call getDocument with its ID. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
+     * List collection documents as a formatted summary. Specify collectionSlug (one of: authors, categories, footer, header, media, page, posts, testimonials, users). Returns only scalar summary fields plus admin URL and public URL (where applicable). Objects, relations, arrays, and rich text are omitted from the list output. To get full details for a document, call getDocument with its ID. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
      */
     getAllDocuments?: boolean | null;
     /**
@@ -2324,7 +2400,7 @@ export interface PayloadMcpApiKey {
      */
     getGlobalDocument?: boolean | null;
     /**
-     * Fetch the full content of a specific field from a collection document or global. slug accepts a collection (footer, header, page, posts) or a global (site-settings). For collections, id is required. For globals, id is ignored. Use dot-notation for nested paths (e.g. "content", "blocks.0", "meta.description"). Rich text fields are returned as Markdown by default. IMPORTANT: You MUST call this with raw: true before any create/update action targeting this field — the raw JSON (block IDs, Lexical nodes, existing array items) is required to construct a valid update payload. Never attempt an update without first reading the field with raw: true.
+     * Fetch the full content of a specific field from a collection document or global. slug accepts a collection (authors, categories, footer, header, media, page, posts, testimonials, users) or a global (site-settings). For collections, id is required. For globals, id is ignored. Use dot-notation for nested paths (e.g. "content", "blocks.0", "meta.description"). Rich text fields are returned as Markdown by default. IMPORTANT: You MUST call this with raw: true before any create/update action targeting this field — the raw JSON (block IDs, Lexical nodes, existing array items) is required to construct a valid update payload. Never attempt an update without first reading the field with raw: true.
      */
     getField?: boolean | null;
     /**
@@ -4036,6 +4112,20 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
   user?: T;
   label?: T;
   description?: T;
+  authors?:
+    | T
+    | {
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  categories?:
+    | T
+    | {
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
   footer?:
     | T
     | {
@@ -4044,6 +4134,13 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
         delete?: T;
       };
   header?:
+    | T
+    | {
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  media?:
     | T
     | {
         create?: T;
@@ -4063,6 +4160,25 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
         create?: T;
         update?: T;
         delete?: T;
+      };
+  testimonials?:
+    | T
+    | {
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  users?:
+    | T
+    | {
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  siteSettings?:
+    | T
+    | {
+        update?: T;
       };
   'payload-mcp-tool'?:
     | T
