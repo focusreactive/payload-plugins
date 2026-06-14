@@ -1,6 +1,6 @@
 # Payload CMS Plugins
 
-Open-source Payload CMS plugins for A/B testing, GA4 analytics, content presets, inline comments, AI translation, and scheduled publishing on serverless. Drop any of them into an existing Payload project, or get all of them pre-wired into a production setup — Payload 3, Next.js 16, Postgres, page builder, SSO, semantic search — in the **Ideal CMS** starter that lives in this repo at [`apps/cms`](./apps/cms).
+Open-source Payload CMS plugins for A/B testing, GA4 analytics, live SEO analysis, content presets, inline comments, AI translation, and scheduled publishing on serverless. Drop any of them into an existing Payload project, or get all of them pre-wired into a production setup — Payload 3, Next.js 16, Postgres, page builder, SSO, semantic search — in the **Ideal CMS** starter that lives in this repo at [`apps/cms`](./apps/cms).
 
 ## Quick Start
 
@@ -51,6 +51,22 @@ bun add @focus-reactive/payload-plugin-analytics
 
 - Package: [`@focus-reactive/payload-plugin-analytics`](./packages/payload-plugin-analytics)
 - [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-analytics)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-analytics)
+
+## SEO Plugin for Payload CMS
+
+[seo analysis demo](https://github.com/user-attachments/assets/7c27aafe-60ae-46dc-80d9-8413a0ab5c75)
+
+Real-time SEO analysis right inside the document editor, powered by Yoast. A button in the editor toolbar opens a drawer that reads your unsaved form values and runs the full Yoast engine in the browser — keyphrase optimization, on-page checks, readability, inclusive language, content vitals, and a live Google SERP preview. Nothing touches your database: zero new fields, collections, or globals.
+
+```bash
+npm install @focus-reactive/payload-plugin-seo
+yarn add @focus-reactive/payload-plugin-seo
+pnpm add @focus-reactive/payload-plugin-seo
+bun add @focus-reactive/payload-plugin-seo
+```
+
+- Package: [`@focus-reactive/payload-plugin-seo`](./packages/payload-plugin-seo)
+- [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-seo)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-seo)
 
 ## Presets Plugin for Payload CMS
 
@@ -118,6 +134,7 @@ bun add @focus-reactive/payload-plugin-scheduling
 | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | [`@focus-reactive/payload-plugin-ab`](./packages/payload-plugin-ab)                 | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-ab)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-ab)                 | A/B testing plugin — page variants, middleware, analytics adapters                |
 | [`@focus-reactive/payload-plugin-analytics`](./packages/payload-plugin-analytics)   | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-analytics)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-analytics)   | Analytics plugin — GA4 dashboard in the admin, client tracking, optional A/B tab  |
+| [`@focus-reactive/payload-plugin-seo`](./packages/payload-plugin-seo)               | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-seo)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-seo)               | SEO plugin — live Yoast analysis in the editor, SERP preview, zero DB fields      |
 | [`@focus-reactive/payload-plugin-presets`](./packages/payload-plugin-presets)       | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-presets)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-presets)       | Presets plugin — save and apply reusable block configurations                     |
 | [`@focus-reactive/payload-plugin-comments`](./packages/payload-plugin-comments)     | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-comments)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-comments)     | Comments plugin — inline field comments, mentions, annotations, and collaboration |
 | [`@focus-reactive/payload-plugin-translator`](./packages/payload-plugin-translator) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-translator)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-translator) | AI translation plugin — one-click translations on top of Payload's localization   |
