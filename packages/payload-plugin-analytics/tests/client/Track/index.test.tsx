@@ -19,21 +19,50 @@ function renderWithProvider(ui: React.ReactElement, provider: AnalyticsProvider)
 }
 
 describe("<Track>", () => {
-  it("React.Children.only — fails on multiple children", () => {
+  it("renders multiple children without throwing (no tracking attached)", () => {
     const provider = makeProvider();
-    // Spy on console.error to suppress React's noisy error log for the throwing render.
-    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    expect(() =>
-      renderWithProvider(
-        // @ts-expect-error - intentionally passing two children to verify Children.only throws
-        <Track on="click" event="x">
-          <button>a</button>
-          <button>b</button>
-        </Track>,
-        provider
-      )
-    ).toThrow();
-    errSpy.mockRestore();
+    // Multiple children can't receive a single cloned handler, but Track must not
+    // crash the page — it renders them untouched and warns in dev.
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { getByText } = renderWithProvider(
+      // @ts-expect-error - intentionally passing two children
+      <Track on="click" event="x">
+        <button>a</button>
+        <button>b</button>
+      </Track>,
+      provider
+    );
+    expect(getByText("a")).toBeInTheDocument();
+    expect(getByText("b")).toBeInTheDocument();
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it("renders nothing (no throw) when children is null", () => {
+    const provider = makeProvider();
+    const { container } = renderWithProvider(
+      <Track on="click" event="x">
+        {null}
+      </Track>,
+      provider
+    );
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("clones the single element when it arrives wrapped (array + null siblings)", () => {
+    const provider = makeProvider();
+    // Mirrors what the RSC boundary delivers: one real element alongside a null
+    // (e.g. a sibling that rendered nothing). Children.only would throw here.
+    const { getByRole } = renderWithProvider(
+      <Track on="click" event="x">
+        {[<button key="b">btn</button>, null]}
+      </Track>,
+      provider
+    );
+    const btn = getByRole("button");
+    expect(btn).toHaveAttribute("data-analytics-skip", "1");
+    fireEvent.click(btn);
+    expect(provider.trackEvent).toHaveBeenCalledWith("x", undefined);
   });
 
   it("on=click merges with existing onClick (ours fires first)", () => {

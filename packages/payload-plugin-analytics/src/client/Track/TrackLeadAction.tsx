@@ -10,7 +10,7 @@ export interface TrackLeadActionProps {
   on: TrackOn;
   type: LeadActionType;
   payload?: Record<string, unknown>;
-  children: ReactElement;
+  children: ReactElement | null | undefined;
 }
 
 export function TrackLeadAction({ on, type, payload, children }: TrackLeadActionProps) {

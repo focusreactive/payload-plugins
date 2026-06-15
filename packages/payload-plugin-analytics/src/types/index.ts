@@ -6,7 +6,7 @@ export interface TrackProps {
   on: TrackOn;
   event: string;
   payload?: Record<string, unknown>;
-  children: ReactElement;
+  children: ReactElement | null | undefined;
 }
 
 export * from "./config";
