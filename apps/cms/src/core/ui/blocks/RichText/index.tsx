@@ -2,6 +2,7 @@ import type { DefaultNodeTypes, SerializedLinkNode } from "@payloadcms/richtext-
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
 import type { JSXConvertersFunction } from "@payloadcms/richtext-lexical/react";
 import { LinkJSXConverter, RichText as RichTextReact } from "@payloadcms/richtext-lexical/react";
+import { withVisualEditingPath } from "@fr-private/payload-plugin-visual-editing/client";
 import { Image } from "@repo/ui/components/ui/image";
 
 import { CardsGridInlineComponent } from "@/blocks/CardsGrid/InlineComponent";
@@ -21,7 +22,7 @@ type UploadNodeWithAspectRatio = DefaultNodeTypes & {
 
 type NodeTypes = DefaultNodeTypes | UploadNodeWithAspectRatio;
 
-const internalDocToHref = ({ linkNode }: { linkNode: SerializedLinkNode }) => {
+const internalDocToHref = ({ linkNode }: { linkNode: SerializedLinkNode }): string => {
   const { value, relationTo } = linkNode.fields.doc!;
   if (typeof value !== "object") {
     throw new TypeError("Expected value to be an object");
@@ -57,5 +58,10 @@ export const RichText = ({ content, className }: { content: SerializedEditorStat
   if (!content) {
     return null;
   }
-  return <RichTextReact className={cn("prose prose-sm sm:prose-base md:prose-lg max-w-full", className)} converters={jsxConverters} data={content} />;
+
+  return (
+    <div {...withVisualEditingPath(content)}>
+      <RichTextReact className={cn("prose prose-sm sm:prose-base md:prose-lg max-w-full", className)} converters={jsxConverters} data={content} />
+    </div>
+  );
 };

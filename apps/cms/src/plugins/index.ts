@@ -4,6 +4,7 @@ import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
 import { translatorPlugin, createOpenAIProvider, createSyncRunner } from "@focus-reactive/payload-plugin-translator";
+import { visualEditingPlugin } from "@fr-private/payload-plugin-visual-editing";
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
 import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
@@ -261,6 +262,27 @@ export const plugins: Plugin[] = [
     ab: {
       experimentsCollectionSlug: "ab-experiments",
     },
+  }),
+
+  visualEditingPlugin({
+    adminBasePath: "/admin",
+    skipCollections: [
+      "users",
+      "media",
+      "categories",
+      "authors",
+      "testimonials",
+      "header",
+      "footer",
+      "document-embeddings",
+      "redirects",
+      "presets",
+      "comments",
+      "comment-reads",
+      "ab-experiments",
+      "payload-mcp-api-keys",
+    ],
+    skipGlobals: ["site-settings"],
   }),
 
   mcpPluginConfig,

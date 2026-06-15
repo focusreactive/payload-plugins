@@ -4,6 +4,8 @@ import { getMessages } from "next-intl/server";
 import { draftMode } from "next/headers";
 import React from "react";
 
+import { VisualEditing } from "@fr-private/payload-plugin-visual-editing/client";
+
 import { Providers } from "@/core/context";
 import { AnalyticsProviderClient } from "@/core/lib/analytics/AnalyticsProviderClient";
 import type { Locale } from "@/core/types";
@@ -56,8 +58,15 @@ export default async function RootLayout({ children, params }: Props) {
       <body>
         <AnalyticsProviderClient measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID!}>
           <Providers locale={locale as Locale} messages={messages}>
-            {children}
-            {draft && <LivePreviewListener />}
+            {draft ? (
+              <VisualEditing.Provider available framedOnly adminBasePath="/admin">
+                <VisualEditing.Toggle />
+                <VisualEditing.Overlay locale={locale}>{children}</VisualEditing.Overlay>
+                <LivePreviewListener />
+              </VisualEditing.Provider>
+            ) : (
+              children
+            )}
           </Providers>
         </AnalyticsProviderClient>
       </body>

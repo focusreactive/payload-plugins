@@ -1,3 +1,4 @@
+import { withVisualEditingPath } from "@fr-private/payload-plugin-visual-editing/client";
 import type { StaticImageData } from "next/image";
 import React, { Fragment } from "react";
 import type { ElementType, Ref } from "react";
@@ -31,12 +32,14 @@ export const Media: React.FC<MediaProps> = (props) => {
 
   const isVideo = typeof resource === "object" && resource?.mimeType?.includes("video");
   const Tag = htmlElement || Fragment;
+  const visualEditing = withVisualEditingPath(resource);
 
   return (
     <Tag
       {...(htmlElement !== null
         ? {
             className,
+            ...visualEditing,
           }
         : {})}
     >

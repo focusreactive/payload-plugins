@@ -31,6 +31,7 @@
         "@focus-reactive/payload-plugin-presets": "workspace:*",
         "@focus-reactive/payload-plugin-scheduling": "workspace:*",
         "@focus-reactive/payload-plugin-translator": "workspace:*",
+        "@fr-private/payload-plugin-visual-editing": "^1.0.1",
         "@payloadcms/db-postgres": "3.84.1",
         "@payloadcms/live-preview-react": "3.84.1",
         "@payloadcms/next": "3.84.1",
@@ -758,6 +759,8 @@
     "@formatjs/icu-skeleton-parser": ["@formatjs/icu-skeleton-parser@2.1.10", "", {}, "sha512-XuSva+8ZGawk8VnD5VD6UeH8KarQ/Z022zgjHDoHmlNiAewstXuuzXc0Hk5pGFSdG+nNw5bfJKXqj1ZXHn9yUA=="],
 
     "@formatjs/intl-localematcher": ["@formatjs/intl-localematcher@0.8.10", "", { "dependencies": { "@formatjs/fast-memoize": "3.1.6" } }, "sha512-P/IC3qws3jH+1fEs+o0RIFgXKRaQlFehjS5W0FPAqdo6hgzawLl+eD0q0JjheQ3XtoOe5n8WSYfX06KQZI/QJA=="],
+
+    "@fr-private/payload-plugin-visual-editing": ["@fr-private/payload-plugin-visual-editing@1.0.1", "", { "dependencies": { "@vercel/stega": "^1.1.0" }, "peerDependencies": { "@payloadcms/ui": "^3.79.0", "next": "^14.0.0 || ^15.0.0 || ^16.0.0", "payload": "^3.79.0", "react": "^18.0.0 || ^19.0.0" }, "optionalPeers": ["next"] }, "sha512-ouCYbTlByzm+zV1qeG77jdC+pFQrgdTsO0E7d5vbm3u9pQp/4+yJUMFXl4uYO5AxoUhTDYUObubZ9Hb5B51Blw=="],
 
     "@google-analytics/data": ["@google-analytics/data@5.2.2", "", { "dependencies": { "google-gax": "^5.0.0" } }, "sha512-W6p4Z8IG5Uol2x9NNYA1IfCGbAClyt/dGHv+d1KO8ML658hBq/RUPg4iXc3whdgiJIu6QkVGgcXUO65lkEiLnA=="],
 
@@ -1662,6 +1665,8 @@
     "@vercel/edge-config-fs": ["@vercel/edge-config-fs@0.1.0", "", {}, "sha512-NRIBwfcS0bUoUbRWlNGetqjvLSwgYH/BqKqDN7vK1g32p7dN96k0712COgaz6VFizAm9b0g6IG6hR6+hc0KCPg=="],
 
     "@vercel/oidc": ["@vercel/oidc@3.1.0", "", {}, "sha512-Fw28YZpRnA3cAHHDlkt7xQHiJ0fcL+NRcIqsocZQUSmbzeIKRpwttJjik5ZGanXP+vlA4SbTg+AbA3bP363l+w=="],
+
+    "@vercel/stega": ["@vercel/stega@1.1.0", "", {}, "sha512-DFOm3Gk78nKDkppQEG5aj8Wj8R8hPKu/xrz4Rtp0AfiaNbZNCoJbxn7VI6iMxqhGeLdUDy/8mTuTWMz/izAtPA=="],
 
     "@vitejs/plugin-react": ["@vitejs/plugin-react@4.5.2", "", { "dependencies": { "@babel/core": "^7.27.4", "@babel/plugin-transform-react-jsx-self": "^7.27.1", "@babel/plugin-transform-react-jsx-source": "^7.27.1", "@rolldown/pluginutils": "1.0.0-beta.11", "@types/babel__core": "^7.20.5", "react-refresh": "^0.17.0" }, "peerDependencies": { "vite": "^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0-beta.0" } }, "sha512-QNVT3/Lxx99nMQWJWF7K4N6apUEuT0KlZA3mx/mVaoGj3smm/8rc8ezz15J1pcbcjDK0V15rpHetVfya08r76Q=="],
 
