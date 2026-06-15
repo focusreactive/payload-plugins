@@ -43,11 +43,13 @@ import { FolderTypeField as FolderTypeField_2b8867833a34864a02ddf429b0728a40 } f
 import { default as default_7f68c8599c3d7b5d2129a6ae7f4980ff } from '../../../core/ui/components/Admin/Icon'
 import { default as default_5df3fc9f82e232c8de10a82a9a443e7d } from '../../../core/ui/components/Admin/Logo'
 import { CommentsHeaderButton as CommentsHeaderButton_30d38dd40c31eff500900a16a2792204 } from '@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton'
+import { default as default_293abdab3a9d96b17cfed3bec5ca5deb } from '@focus-reactive/payload-plugin-analytics/components/AnalyticsView/AnalyticsHeaderLink'
 import { default as default_88a77bb5f874c6169bfbae723148426a } from '../../../core/ui/components/Admin/SSOButtons'
 import { default as default_00d3674195ceabea61e57994789ae3d5 } from '../../../providers/BeforeOpenDrawerWrapper'
 import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e } from '@payloadcms/storage-vercel-blob/client'
 import { CommentsProviderWrapper as CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a } from '@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper'
 import { default as default_5668654bc04fc84f784cb30b290f6f3d } from '@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider'
+import { default as default_7772b5ceb4db588e7e8d7d6ad669ce76 } from '@focus-reactive/payload-plugin-analytics/components/AnalyticsView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -97,10 +99,12 @@ export const importMap = {
   "/core/ui/components/Admin/Icon#default": default_7f68c8599c3d7b5d2129a6ae7f4980ff,
   "/core/ui/components/Admin/Logo#default": default_5df3fc9f82e232c8de10a82a9a443e7d,
   "@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton#CommentsHeaderButton": CommentsHeaderButton_30d38dd40c31eff500900a16a2792204,
+  "@focus-reactive/payload-plugin-analytics/components/AnalyticsView/AnalyticsHeaderLink#default": default_293abdab3a9d96b17cfed3bec5ca5deb,
   "/core/ui/components/Admin/SSOButtons#default": default_88a77bb5f874c6169bfbae723148426a,
   "/providers/BeforeOpenDrawerWrapper#default": default_00d3674195ceabea61e57994789ae3d5,
   "@payloadcms/storage-vercel-blob/client#VercelBlobClientUploadHandler": VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e,
   "@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper#CommentsProviderWrapper": CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a,
   "@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider#default": default_5668654bc04fc84f784cb30b290f6f3d,
+  "@focus-reactive/payload-plugin-analytics/components/AnalyticsView#default": default_7772b5ceb4db588e7e8d7d6ad669ce76,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

@@ -5,7 +5,7 @@ import { draftMode } from "next/headers";
 import React from "react";
 
 import { Providers } from "@/core/context";
-import { GoogleAnalyticsScript } from "@/core/lib/analytics/GoogleAnalyticsScript";
+import { AnalyticsProviderClient } from "@/core/lib/analytics/AnalyticsProviderClient";
 import type { Locale } from "@/core/types";
 import { LivePreviewListener } from "@/features";
 
@@ -54,11 +54,12 @@ export default async function RootLayout({ children, params }: Props) {
     <html lang={locale} data-theme="light" className={`${newsreader.variable} ${archivo.variable} ${ibmPlexMono.variable}`}>
       <head />
       <body>
-        <Providers locale={locale as Locale} messages={messages}>
-          {children}
-          {draft && <LivePreviewListener />}
-        </Providers>
-        <GoogleAnalyticsScript measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+        <AnalyticsProviderClient measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID!}>
+          <Providers locale={locale as Locale} messages={messages}>
+            {children}
+            {draft && <LivePreviewListener />}
+          </Providers>
+        </AnalyticsProviderClient>
       </body>
     </html>
   );

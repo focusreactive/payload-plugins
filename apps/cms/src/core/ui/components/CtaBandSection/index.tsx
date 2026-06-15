@@ -1,3 +1,4 @@
+import { TrackLeadAction } from "@focus-reactive/payload-plugin-analytics/client";
 import { CtaBand } from "@repo/ui";
 import { ButtonSize } from "@repo/ui/components/ui/button/types";
 
@@ -39,23 +40,24 @@ export function CtaBandSection({ eyebrow, heading, lead, actions, theme }: CtaBa
       header={header}
       theme={theme}
       actions={(actions ?? []).map((action) => (
-        <CMSLink
-          key={action.id ?? action.label}
-          type={action.type}
-          reference={
-            action.reference
-              ? {
-                  relationTo: action.reference.relationTo as "page" | "posts",
-                  value: action.reference.value as Page | Post | string | number,
-                }
-              : null
-          }
-          url={action.url}
-          newTab={action.newTab}
-          label={action.label}
-          appearance={action.appearance}
-          size={ButtonSize.Large}
-        />
+        <TrackLeadAction key={action.id ?? action.label} on="click" type="cta_click">
+          <CMSLink
+            type={action.type}
+            reference={
+              action.reference
+                ? {
+                    relationTo: action.reference.relationTo as "page" | "posts",
+                    value: action.reference.value as Page | Post | string | number,
+                  }
+                : null
+            }
+            url={action.url}
+            newTab={action.newTab}
+            label={action.label}
+            appearance={action.appearance}
+            size={ButtonSize.Large}
+          />
+        </TrackLeadAction>
       ))}
     />
   );
