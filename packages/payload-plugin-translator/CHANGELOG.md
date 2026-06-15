@@ -1,3 +1,19 @@
+## @focus-reactive/payload-plugin-translator [0.6.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.6.0...@focus-reactive/payload-plugin-translator@0.6.1) (2026-06-15)
+
+# @focus-reactive/payload-plugin-translator [0.6.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.5.1...@focus-reactive/payload-plugin-translator@0.6.0) (2026-06-15)
+
+
+### Bug Fixes
+
+* **translator:** guard empty OpenAI choices and expose client timeout/maxRetries ([475540c](https://github.com/focusreactive/payload-plugins/commit/475540c0ba17c12f0f57b0bfe831264824ae0003))
+* **translator:** native, muted translate controls (outlined-light + send icon) ([e4cb54e](https://github.com/focusreactive/payload-plugins/commit/e4cb54e19648aed78005a0d978d3edfc70087016))
+* **translator:** pair localized blocks/arrays by id across locales ([af1be76](https://github.com/focusreactive/payload-plugins/commit/af1be764bcc91ec702bdf5a6f4e8f83c7ac04c27))
+
+
+### Features
+
+* **translator:** per-field translation control (field level) ([dd0e52c](https://github.com/focusreactive/payload-plugins/commit/dd0e52cb0291ac7d2a11cf42c06fcb4db4adfdb3))
+
 ## @focus-reactive/payload-plugin-translator [0.5.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.5.0...@focus-reactive/payload-plugin-translator@0.5.1) (2026-06-12)
 
 

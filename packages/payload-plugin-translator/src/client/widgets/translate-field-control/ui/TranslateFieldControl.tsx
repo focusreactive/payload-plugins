@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useTranslateField } from "../../../entities/translation/api/mutations/useTranslateField";
 import { LanguageTranslateIcon } from "../../../shared/lib/assets/icons/LanguageTranslateIcon";
 import { ReloadIcon } from "../../../shared/lib/assets/icons/ReloadIcon";
+import { SendIcon } from "../../../shared/lib/assets/icons/SendIcon";
 import { useLocaleOptions } from "../../../shared/lib/payload/hooks/useLocaleOptions";
 import { useToggle } from "../../../shared/lib/utils/react/useToggle";
 import Button from "../../../shared/ui/Button";
@@ -165,7 +166,7 @@ const TranslateFieldControl = () => {
               aria-label={`Translate from ${sourceLng || "the selected locale"} into ${locale.code}`}
               onClick={handleTranslate}
             >
-              <LanguageTranslateIcon />
+              <SendIcon />
             </Button>
           </Tooltip>
 
