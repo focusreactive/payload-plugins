@@ -84,6 +84,23 @@ export type OpenAIProviderConfig = {
    * @default false
    */
   dryRun?: boolean | DryRunConfig;
+  /**
+   * Per-request timeout in milliseconds for the OpenAI client. A translation job blocks on this
+   * call, so the OpenAI SDK default (10 minutes) is usually too long. Omit to keep the SDK default.
+   *
+   * @example
+   * timeout: 60_000 // 60s
+   *
+   * @since 0.6.0
+   */
+  timeout?: number;
+  /**
+   * Maximum automatic retries the OpenAI client performs on transient errors (429, 5xx, network).
+   * Omit to keep the SDK default (2). Set `0` to disable retries.
+   *
+   * @since 0.6.0
+   */
+  maxRetries?: number;
 };
 
 /** @deprecated Use `createOpenAIProvider` function instead */
@@ -92,7 +109,9 @@ export class OpenAITranslationProvider implements TranslationProvider {
   private readonly config: OpenAIProviderConfig;
 
   constructor(config: OpenAIProviderConfig) {
-    this.openAiClient = new OpenAI({ apiKey: config.apiKey });
+    // `timeout`/`maxRetries` are passed through to the OpenAI SDK; `undefined` keeps the SDK
+    // defaults (10 min timeout, 2 retries). A blocking translation job rarely wants the full 10 min.
+    this.openAiClient = new OpenAI({ apiKey: config.apiKey, timeout: config.timeout, maxRetries: config.maxRetries });
     this.config = config;
   }
 
@@ -127,7 +146,9 @@ export class OpenAITranslationProvider implements TranslationProvider {
       response_format: { type: "json_object" },
     });
 
-    const translatedContent = chatCompletion.choices[0].message.content;
+    // Guard `choices[0]`: an empty `choices` array (e.g. content-filtered response) would otherwise
+    // throw a TypeError instead of the intended graceful `null`.
+    const translatedContent = chatCompletion.choices[0]?.message?.content;
     if (!translatedContent) return null;
 
     try {
