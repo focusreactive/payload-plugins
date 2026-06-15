@@ -149,12 +149,14 @@ The translated value is written straight back to form state — no save, no queu
 
 Configuration for `createOpenAIProvider()`.
 
-| Property       | Type                      | Required | Default         | Description                                |
-| -------------- | ------------------------- | -------- | --------------- | ------------------------------------------ |
-| `apiKey`       | `string`                  | Yes      | —               | OpenAI API key                             |
-| `model`        | `string \| ChatModel`     | No       | `'gpt-4o'`      | OpenAI model to use for translation        |
-| `systemPrompt` | `SystemPromptBuilder`     | No       | Built-in prompt | Custom function to build the system prompt |
-| `dryRun`       | `boolean \| DryRunConfig` | No       | `false`         | Simulate translations without API calls    |
+| Property       | Type                      | Required | Default              | Description                                                                                                            |
+| -------------- | ------------------------- | -------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `apiKey`       | `string`                  | Yes      | —                    | OpenAI API key                                                                                                         |
+| `model`        | `string \| ChatModel`     | No       | `'gpt-4o'`           | OpenAI model to use for translation                                                                                    |
+| `systemPrompt` | `SystemPromptBuilder`     | No       | Built-in prompt      | Custom function to build the system prompt                                                                             |
+| `dryRun`       | `boolean \| DryRunConfig` | No       | `false`              | Simulate translations without API calls                                                                                |
+| `timeout`      | `number`                  | No       | SDK default (10 min) | Per-request timeout in ms. A job blocks on this call, so the 10-min SDK default is usually too long. _(Since v0.6.0.)_ |
+| `maxRetries`   | `number`                  | No       | SDK default (2)      | Max automatic retries on transient errors (429/5xx/network). `0` disables. _(Since v0.6.0.)_                           |
 
 ```typescript
 createOpenAIProvider({
