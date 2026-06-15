@@ -2,7 +2,7 @@ import type { Field } from "payload";
 
 import { isFieldExcludedFromTranslation, isLocalizedField, isObject, isTranslatableField } from "../../../../shared";
 import type { ChildCursor, FieldWalker } from "../../../../shared/field-traversal";
-import { resolveBlockFields, walkFields } from "../../../../shared/field-traversal";
+import { matchElementById, resolveBlockFields, walkFields } from "../../../../shared/field-traversal";
 import type { TranslationStrategy } from "../../strategies";
 import type { FieldChunk } from "../../types";
 
@@ -22,6 +22,11 @@ const asObject = (value: unknown): Record<string, unknown> => (isObject(value) ?
  * the strategy approves is written with its source value and pushed as a chunk carrying a
  * mutable reference to its parent object (for later write-back). Collect-only — `combine` is a
  * no-op; results accumulate in a closure.
+ *
+ * Array/block elements pair their `source` by position (`filteredData` is built in source order)
+ * but their `target` by `id` (see {@link matchElementById}) — the target locale's elements may be
+ * independently ordered, so a positional target would feed `strategy.shouldTranslate` the wrong
+ * element's value and skip/re-translate the wrong leaf.
  *
  * IMPORTANT: Expects ORIGINAL collection schemas (before Payload sanitization). Original
  * schemas preserve `localized: true` on nested fields.
@@ -65,17 +70,21 @@ export class FieldChunkCollector {
         const targetValue = cursor.target[field.name];
         const sourceArr: unknown[] = Array.isArray(sourceValue) ? sourceValue : [];
         const targetArr: unknown[] = Array.isArray(targetValue) ? targetValue : [];
+        const isBlocks = field.type === "blocks";
 
         const children: ChildCursor<Cursor>[] = [];
         value.forEach((item, index) => {
           if (!isObject(item)) return;
-          const fields = field.type === "blocks" ? resolveBlockFields(field, item) : field.fields;
+          const fields = isBlocks ? resolveBlockFields(field, item) : field.fields;
           if (!fields) return; // unknown blockType → skip element
+          // source pairs by index (filteredData shares source order); target by the source
+          // element's id, since the target locale may be reordered independently.
+          const sourceItem = asObject(sourceArr[index]);
           children.push({
             cursor: {
               data: item,
-              source: asObject(sourceArr[index]),
-              target: asObject(targetArr[index]),
+              source: sourceItem,
+              target: matchElementById(targetArr, sourceItem, isBlocks),
               path: [...cursor.path, field.name, String(index)],
             },
             fields,

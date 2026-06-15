@@ -786,6 +786,48 @@ describe("FieldChunkCollector", () => {
       expect(chunks).toHaveLength(1);
       expect(chunks[0].path).toEqual(["layout", "1", "content"]);
     });
+
+    it("pairs the target by id, not position, for reordered localized blocks (SkipExisting)", () => {
+      // Regression: the target locale orders its blocks differently from source. Pairing target by
+      // position would feed shouldTranslate the WRONG block's value — skipping a block that needs
+      // translation and re-translating one that doesn't.
+      const schema: Field[] = [
+        {
+          name: "layout",
+          type: "blocks",
+          blocks: [{ slug: "text", fields: [{ name: "content", type: "text", localized: true }] }],
+        },
+      ];
+      // filteredData is post-reconcile: source order, id stripped, blockType kept.
+      const filteredData = {
+        layout: [
+          { blockType: "text", content: "Hello" },
+          { blockType: "text", content: "World" },
+        ],
+      };
+      const sourceData = {
+        layout: [
+          { id: "1", blockType: "text", content: "Hello" },
+          { id: "2", blockType: "text", content: "World" },
+        ],
+      };
+      // Reordered target: id 2 first (empty → needs translation), id 1 second (already translated).
+      const targetData = {
+        layout: [
+          { id: "2", blockType: "text", content: "" },
+          { id: "1", blockType: "text", content: "Hallo" },
+        ],
+      };
+
+      const collector = new FieldChunkCollector(schema, filteredData, sourceData, targetData, skipExistingStrategy);
+      const chunks = collector.collect();
+
+      // Only id-2's content (source index 1) is collected; id-1 is skipped (its target is non-empty).
+      // Positional pairing would have collected index 0 and skipped index 1 — both wrong.
+      expect(chunks).toHaveLength(1);
+      expect(chunks[0].path).toEqual(["layout", "1", "content"]);
+      expect(chunks[0].dataRef.content).toBe("World");
+    });
   });
 
   describe("sourceValue mutation", () => {
