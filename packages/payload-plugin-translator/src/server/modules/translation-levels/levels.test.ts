@@ -27,6 +27,8 @@ const makeCtx = (): LevelContext => ({
   basePath: "/translate",
   access: undefined,
   taskRunnerFactory: { create: vi.fn() },
+  schemaMap: new Map(),
+  translationProvider: { translate: vi.fn() },
   addEndpoints: vi.fn(),
   addCollectionComponent: vi.fn(),
 });

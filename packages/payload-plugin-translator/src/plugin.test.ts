@@ -3,7 +3,7 @@ import type { Config } from "payload";
 
 import { translatorPlugin } from "./plugin";
 import type { TranslatorPluginConfig } from "./plugin";
-import { documentLevel } from "./server/modules/translation-levels";
+import { documentLevel, fieldLevel } from "./server/modules/translation-levels";
 import { TranslateDocumentExport } from "./client/widgets/translate-document";
 import { BulkDocumentTranslationDashboard } from "./client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.export";
 
@@ -91,6 +91,14 @@ describe("translatorPlugin — explicit levels", () => {
     expect(result.endpoints).toHaveLength(6);
     expect(posts.admin.components.edit.beforeDocumentControls).toHaveLength(1);
     expect(posts.admin.components.beforeListTable).toBeUndefined();
+  });
+
+  it("fieldLevel only → one /field endpoint, no doc routes, no collection components", async () => {
+    const { result, posts } = await build({ levels: [fieldLevel()] });
+    expect(result.endpoints).toHaveLength(1);
+    expect(result.endpoints?.[0].path).toBe("/translate/field");
+    expect(result.endpoints?.[0].method).toBe("post");
+    expect(posts.admin).toBeUndefined();
   });
 
   it("empty levels → no endpoints/components, but cache provider + runner config still happen", async () => {
