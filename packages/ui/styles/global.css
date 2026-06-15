@@ -1,5 +1,12 @@
 @reference "tailwindcss";
 
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}
+
 @layer utilities {
   .no-children-margins {
     & > * {
