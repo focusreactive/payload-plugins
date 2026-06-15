@@ -1,7 +1,7 @@
 import { MetaDescriptionField, MetaImageField, MetaTitleField, OverviewField, PreviewField } from "@payloadcms/plugin-seo/fields";
 import type { Field } from "payload";
 
-export const generateSeoFields = (): Field[] => [
+export const generateSeoFields = ({ robotsDefault = "index" }: { robotsDefault?: "index" | "noindex" } = {}): Field[] => [
   OverviewField({
     descriptionPath: "meta.description",
     imagePath: "meta.image",
@@ -28,7 +28,7 @@ export const generateSeoFields = (): Field[] => [
         es: "Permite a los motores de búsqueda indexar esta página",
       },
     },
-    defaultValue: "index",
+    defaultValue: robotsDefault,
     label: {
       en: "Robots",
       es: "Robots",

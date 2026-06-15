@@ -177,7 +177,7 @@ export const Posts: CollectionConfig<"posts"> = {
           },
         },
         {
-          fields: generateSeoFields(),
+          fields: generateSeoFields({ robotsDefault: "noindex" }),
           label: {
             en: "SEO",
             es: "SEO",
