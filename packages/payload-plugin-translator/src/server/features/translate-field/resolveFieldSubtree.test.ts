@@ -80,8 +80,23 @@ describe("resolveFieldSubtree", () => {
     expect(resolveFieldSubtree(schema, "meta", {}).status).toBe("not-translatable");
   });
 
-  it("returns inside-blocks when the path descends through a blocks field", () => {
+  it("returns inside-blocks when the path descends through a blocks field with no document data", () => {
     expect(resolveFieldSubtree(schema, "layout.0.headline", "x").status).toBe("inside-blocks");
+  });
+
+  it("resolves a field inside a block when the document data is supplied (blockType picks the schema)", () => {
+    const doc = { layout: [{ blockType: "hero", headline: "Hi" }] };
+    const result = resolveFieldSubtree(schema, "layout.0.headline", "Hi", doc);
+    expect(result.status).toBe("resolved");
+    if (result.status === "resolved") {
+      expect(result.fieldName).toBe("headline");
+      expect(result.sourceData).toEqual({ headline: "Hi" });
+    }
+  });
+
+  it("returns inside-blocks when the block element's blockType matches no defined block", () => {
+    const doc = { layout: [{ blockType: "unknown", headline: "x" }] };
+    expect(resolveFieldSubtree(schema, "layout.0.headline", "x", doc).status).toBe("inside-blocks");
   });
 
   it("returns not-found when the path continues past a leaf", () => {
@@ -129,5 +144,16 @@ describe("resolveFieldSubtree", () => {
     expect(resolveFieldSubtree(schema, "hero", {}).status).toBe("not-translatable"); // group
     expect(resolveFieldSubtree(schema, "items", []).status).toBe("not-translatable"); // array
     expect(resolveFieldSubtree(schema, "layout", []).status).toBe("not-translatable"); // blocks
+  });
+
+  it("returns localized-list-ancestor when the path descends through a localized array/blocks field", () => {
+    const localized: Field[] = [
+      f({ name: "locItems", type: "array", localized: true, fields: [f({ name: "label", type: "text", localized: true })] }),
+      f({ name: "locLayout", type: "blocks", localized: true, blocks: [{ slug: "hero", fields: [f({ name: "headline", type: "text", localized: true })] }] }),
+    ];
+    expect(resolveFieldSubtree(localized, "locItems.0.label", "A").status).toBe("localized-list-ancestor");
+    expect(resolveFieldSubtree(localized, "locItems.label", "A").status).toBe("localized-list-ancestor");
+    const doc = { locLayout: [{ blockType: "hero", headline: "Hi" }] };
+    expect(resolveFieldSubtree(localized, "locLayout.0.headline", "Hi", doc).status).toBe("localized-list-ancestor");
   });
 });

@@ -2,6 +2,8 @@ import type { CollectionConfig, Config, Endpoint } from "payload";
 
 import type { AccessGuard } from "../../../types/AccessGuard";
 import type { RawPayloadComponentExport } from "../../../client/shared/types/PayloadComponentExport";
+import type { CollectionSchemaMap } from "../../features/translate-document";
+import type { TranslationProvider } from "../translation-providers";
 import type { TaskRunnerFactory } from "../task-runner";
 
 import type { CollectionAdminSlot, LevelContext } from "./types";
@@ -18,6 +20,8 @@ export type PluginConfigBuilderDeps = {
   basePath: string;
   access?: AccessGuard;
   taskRunnerFactory: TaskRunnerFactory;
+  schemaMap: CollectionSchemaMap;
+  translationProvider: TranslationProvider;
 };
 
 const endpointKey = (endpoint: Endpoint): string => `${endpoint.method} ${endpoint.path}`;
@@ -60,6 +64,8 @@ export class PluginConfigBuilder implements LevelContext {
   readonly basePath: string;
   readonly access?: AccessGuard;
   readonly taskRunnerFactory: TaskRunnerFactory;
+  readonly schemaMap: CollectionSchemaMap;
+  readonly translationProvider: TranslationProvider;
 
   private readonly endpoints: Endpoint[] = [];
   private readonly collectionComponents: CollectionComponent[] = [];
@@ -71,6 +77,8 @@ export class PluginConfigBuilder implements LevelContext {
     this.basePath = deps.basePath;
     this.access = deps.access;
     this.taskRunnerFactory = deps.taskRunnerFactory;
+    this.schemaMap = deps.schemaMap;
+    this.translationProvider = deps.translationProvider;
   }
 
   addEndpoints(endpoints: Endpoint[]): void {

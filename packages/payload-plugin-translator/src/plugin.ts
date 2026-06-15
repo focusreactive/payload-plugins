@@ -42,7 +42,7 @@ export type TranslatorPluginConfig = {
   basePath?: string;
   /**
    * Which translation surfaces to enable, as level factories — `documentLevel()`,
-   * `collectionLevel()` (and, from a later phase, `fieldLevel()`). Omit for the
+   * `collectionLevel()`, `fieldLevel()`. Omit for the
    * default `[documentLevel(), collectionLevel()]`, which is exactly today's behaviour.
    * Each level should appear at most once: endpoints are deduplicated, but admin
    * components are not, so a duplicated level renders a duplicated control.
@@ -108,6 +108,8 @@ export class TranslateCollectionPlugin {
         basePath,
         access,
         taskRunnerFactory,
+        schemaMap,
+        translationProvider,
       });
       for (const level of activeLevels) level.extend(builder);
 
