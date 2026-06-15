@@ -2,6 +2,8 @@ import type { CollectionConfig, Endpoint } from "payload";
 
 import type { AccessGuard } from "../../../types/AccessGuard";
 import type { RawPayloadComponentExport } from "../../../client/shared/types/PayloadComponentExport";
+import type { CollectionSchemaMap } from "../../features/translate-document";
+import type { TranslationProvider } from "../translation-providers";
 import type { TaskRunnerFactory } from "../task-runner";
 
 export type CollectionAdminSlot = "beforeDocumentControls" | "beforeListTable";
@@ -31,7 +33,6 @@ export interface TranslationLevel {
  *
  * A level contributes via these generic primitives; it never mutates the raw
  * Payload config. The plugin deduplicates endpoints by method + path on apply.
- * (fieldLevel — Phase 2 — will also read `schemaMap` + `translationProvider`.)
  * @internal
  */
 export interface LevelContext {
@@ -39,6 +40,10 @@ export interface LevelContext {
   readonly basePath: string;
   readonly access?: AccessGuard;
   readonly taskRunnerFactory: TaskRunnerFactory;
+  /** Deep-cloned localized field schema per managed collection slug. */
+  readonly schemaMap: CollectionSchemaMap;
+  /** The configured translation backend (used by the synchronous field level). */
+  readonly translationProvider: TranslationProvider;
 
   /** Register endpoints. Deduplicated by method + path when applied. */
   addEndpoints(endpoints: Endpoint[]): void;

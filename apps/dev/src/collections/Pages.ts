@@ -1,4 +1,5 @@
 import type { CollectionConfig } from "payload";
+import { withFieldTranslation } from "@focus-reactive/payload-plugin-translator";
 
 import { ContentBlock } from "../blocks/Content";
 import { HeroBlock } from "../blocks/Hero";
@@ -11,12 +12,12 @@ export const Pages: CollectionConfig = {
     useAsTitle: "title",
   },
   fields: [
-    {
+    withFieldTranslation({
       localized: true,
       name: "title",
       required: true,
       type: "text",
-    },
+    }),
     {
       name: "slug",
       required: true,

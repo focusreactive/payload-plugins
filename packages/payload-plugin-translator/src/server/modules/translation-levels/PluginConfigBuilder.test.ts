@@ -9,6 +9,8 @@ const deps = (collections: Array<{ slug: string }> = []) => ({
   collections: collections as unknown as CollectionConfig[],
   basePath: "/translate",
   taskRunnerFactory: { create: vi.fn() },
+  schemaMap: new Map(),
+  translationProvider: { translate: vi.fn() },
 });
 
 const ep = (method: string, path: string): Endpoint => ({ method, path, handler: vi.fn() }) as unknown as Endpoint;

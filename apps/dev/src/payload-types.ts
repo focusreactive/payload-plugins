@@ -70,6 +70,8 @@ export interface Config {
     users: User;
     media: Media;
     pages: Page;
+    articles: Article;
+    playground: Playground;
     "ab-experiments": AbExperiment;
     presets: Preset;
     comments: Comment;
@@ -85,6 +87,8 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
+    articles: ArticlesSelect<false> | ArticlesSelect<true>;
+    playground: PlaygroundSelect<false> | PlaygroundSelect<true>;
     "ab-experiments": AbExperimentsSelect<false> | AbExperimentsSelect<true>;
     presets: PresetsSelect<false> | PresetsSelect<true>;
     comments: CommentsSelect<false> | CommentsSelect<true>;
@@ -261,6 +265,154 @@ export interface Page {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "articles".
+ */
+export interface Article {
+  id: number;
+  title: string;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ("ltr" | "rtl") | null;
+      format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "playground".
+ */
+export interface Playground {
+  id: number;
+  title: string;
+  layout?:
+    | {
+        panel?: {
+          heading?: string | null;
+          subheading?: string | null;
+          intro?: {
+            root: {
+              type: string;
+              children: {
+                type: any;
+                version: number;
+                [k: string]: unknown;
+              }[];
+              direction: ("ltr" | "rtl") | null;
+              format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+              indent: number;
+              version: number;
+            };
+            [k: string]: unknown;
+          } | null;
+        };
+        meta?: {
+          seoTitle?: string | null;
+          seoDescription?: string | null;
+        };
+        body?: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ("ltr" | "rtl") | null;
+            format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        } | null;
+        items?:
+          | {
+              label?: string | null;
+              richBody?: {
+                root: {
+                  type: string;
+                  children: {
+                    type: any;
+                    version: number;
+                    [k: string]: unknown;
+                  }[];
+                  direction: ("ltr" | "rtl") | null;
+                  format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+                  indent: number;
+                  version: number;
+                };
+                [k: string]: unknown;
+              } | null;
+              id?: string | null;
+            }[]
+          | null;
+        nested?:
+          | {
+              innerText?: string | null;
+              innerNote?: string | null;
+              innerRich?: {
+                root: {
+                  type: string;
+                  children: {
+                    type: any;
+                    version: number;
+                    [k: string]: unknown;
+                  }[];
+                  direction: ("ltr" | "rtl") | null;
+                  format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+                  indent: number;
+                  version: number;
+                };
+                [k: string]: unknown;
+              } | null;
+              leaves?:
+                | {
+                    deepText?: string | null;
+                    deepRich?: {
+                      root: {
+                        type: string;
+                        children: {
+                          type: any;
+                          version: number;
+                          [k: string]: unknown;
+                        }[];
+                        direction: ("ltr" | "rtl") | null;
+                        format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+                        indent: number;
+                        version: number;
+                      };
+                      [k: string]: unknown;
+                    } | null;
+                    id?: string | null;
+                    blockName?: string | null;
+                    blockType: "leaf";
+                  }[]
+                | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: "inner";
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: "deepNest";
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ab-experiments".
  */
 export interface AbExperiment {
@@ -336,6 +488,183 @@ export interface Preset {
         id?: string | null;
         blockName?: string | null;
         blockType: "content";
+      }
+    | {
+        panel?: {
+          heading?: string | null;
+          subheading?: string | null;
+          intro?: {
+            root: {
+              type: string;
+              children: {
+                type: any;
+                version: number;
+                [k: string]: unknown;
+              }[];
+              direction: ("ltr" | "rtl") | null;
+              format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+              indent: number;
+              version: number;
+            };
+            [k: string]: unknown;
+          } | null;
+        };
+        meta?: {
+          seoTitle?: string | null;
+          seoDescription?: string | null;
+        };
+        body?: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ("ltr" | "rtl") | null;
+            format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        } | null;
+        items?:
+          | {
+              label?: string | null;
+              richBody?: {
+                root: {
+                  type: string;
+                  children: {
+                    type: any;
+                    version: number;
+                    [k: string]: unknown;
+                  }[];
+                  direction: ("ltr" | "rtl") | null;
+                  format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+                  indent: number;
+                  version: number;
+                };
+                [k: string]: unknown;
+              } | null;
+              id?: string | null;
+            }[]
+          | null;
+        nested?:
+          | {
+              innerText?: string | null;
+              innerNote?: string | null;
+              innerRich?: {
+                root: {
+                  type: string;
+                  children: {
+                    type: any;
+                    version: number;
+                    [k: string]: unknown;
+                  }[];
+                  direction: ("ltr" | "rtl") | null;
+                  format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+                  indent: number;
+                  version: number;
+                };
+                [k: string]: unknown;
+              } | null;
+              leaves?:
+                | {
+                    deepText?: string | null;
+                    deepRich?: {
+                      root: {
+                        type: string;
+                        children: {
+                          type: any;
+                          version: number;
+                          [k: string]: unknown;
+                        }[];
+                        direction: ("ltr" | "rtl") | null;
+                        format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+                        indent: number;
+                        version: number;
+                      };
+                      [k: string]: unknown;
+                    } | null;
+                    id?: string | null;
+                    blockName?: string | null;
+                    blockType: "leaf";
+                  }[]
+                | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: "inner";
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: "deepNest";
+      }
+    | {
+        innerText?: string | null;
+        innerNote?: string | null;
+        innerRich?: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ("ltr" | "rtl") | null;
+            format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        } | null;
+        leaves?:
+          | {
+              deepText?: string | null;
+              deepRich?: {
+                root: {
+                  type: string;
+                  children: {
+                    type: any;
+                    version: number;
+                    [k: string]: unknown;
+                  }[];
+                  direction: ("ltr" | "rtl") | null;
+                  format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+                  indent: number;
+                  version: number;
+                };
+                [k: string]: unknown;
+              } | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: "leaf";
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: "inner";
+      }
+    | {
+        deepText?: string | null;
+        deepRich?: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ("ltr" | "rtl") | null;
+            format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        } | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: "leaf";
       }
   )[];
   updatedAt: string;
@@ -524,6 +853,14 @@ export interface PayloadLockedDocument {
         value: number | Page;
       } | null)
     | ({
+        relationTo: "articles";
+        value: number | Article;
+      } | null)
+    | ({
+        relationTo: "playground";
+        value: number | Playground;
+      } | null)
+    | ({
         relationTo: "ab-experiments";
         value: number | AbExperiment;
       } | null)
@@ -672,6 +1009,81 @@ export interface PagesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "articles_select".
+ */
+export interface ArticlesSelect<T extends boolean = true> {
+  title?: T;
+  content?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "playground_select".
+ */
+export interface PlaygroundSelect<T extends boolean = true> {
+  title?: T;
+  layout?:
+    | T
+    | {
+        deepNest?:
+          | T
+          | {
+              panel?:
+                | T
+                | {
+                    heading?: T;
+                    subheading?: T;
+                    intro?: T;
+                  };
+              meta?:
+                | T
+                | {
+                    seoTitle?: T;
+                    seoDescription?: T;
+                  };
+              body?: T;
+              items?:
+                | T
+                | {
+                    label?: T;
+                    richBody?: T;
+                    id?: T;
+                  };
+              nested?:
+                | T
+                | {
+                    inner?:
+                      | T
+                      | {
+                          innerText?: T;
+                          innerNote?: T;
+                          innerRich?: T;
+                          leaves?:
+                            | T
+                            | {
+                                leaf?:
+                                  | T
+                                  | {
+                                      deepText?: T;
+                                      deepRich?: T;
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                              };
+                          id?: T;
+                          blockName?: T;
+                        };
+                  };
+              id?: T;
+              blockName?: T;
+            };
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ab-experiments_select".
  */
 export interface AbExperimentsSelect<T extends boolean = true> {
@@ -716,6 +1128,87 @@ export interface PresetsSelect<T extends boolean = true> {
               content?: T;
               image?: T;
               _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        deepNest?:
+          | T
+          | {
+              panel?:
+                | T
+                | {
+                    heading?: T;
+                    subheading?: T;
+                    intro?: T;
+                  };
+              meta?:
+                | T
+                | {
+                    seoTitle?: T;
+                    seoDescription?: T;
+                  };
+              body?: T;
+              items?:
+                | T
+                | {
+                    label?: T;
+                    richBody?: T;
+                    id?: T;
+                  };
+              nested?:
+                | T
+                | {
+                    inner?:
+                      | T
+                      | {
+                          innerText?: T;
+                          innerNote?: T;
+                          innerRich?: T;
+                          leaves?:
+                            | T
+                            | {
+                                leaf?:
+                                  | T
+                                  | {
+                                      deepText?: T;
+                                      deepRich?: T;
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                              };
+                          id?: T;
+                          blockName?: T;
+                        };
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        inner?:
+          | T
+          | {
+              innerText?: T;
+              innerNote?: T;
+              innerRich?: T;
+              leaves?:
+                | T
+                | {
+                    leaf?:
+                      | T
+                      | {
+                          deepText?: T;
+                          deepRich?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        leaf?:
+          | T
+          | {
+              deepText?: T;
+              deepRich?: T;
               id?: T;
               blockName?: T;
             };
@@ -903,10 +1396,19 @@ export interface TaskTranslateDocument {
     /**
      * Deprecated. See docs/DEPRECATIONS.md#jobs-input-collection-field
      */
-    collection?: {
-      relationTo: "pages";
-      value: number | Page;
-    } | null;
+    collection?:
+      | ({
+          relationTo: "pages";
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: "articles";
+          value: number | Article;
+        } | null)
+      | ({
+          relationTo: "playground";
+          value: number | Playground;
+        } | null);
     source_lng: string;
     target_lng: string;
     strategy: string;

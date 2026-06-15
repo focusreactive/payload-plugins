@@ -26,15 +26,15 @@ export interface FieldTranslationConfig {
    * - Technical identifiers
    * - Numeric values that should remain unchanged
    */
-  exclude?: boolean
+  exclude?: boolean;
 }
 
 /**
  * @deprecated Use `FieldTranslationConfig` instead
  */
-export type TranslateKitFieldConfig = FieldTranslationConfig
+export type TranslateKitFieldConfig = FieldTranslationConfig;
 
 /**
  * Key used to store TranslateKit configuration in field.custom
  */
-export const TRANSLATE_KIT_CUSTOM_KEY = 'translateKit' as const
+export const TRANSLATE_KIT_CUSTOM_KEY = "translateKit" as const;

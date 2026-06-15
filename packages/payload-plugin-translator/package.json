@@ -50,7 +50,7 @@
     "build:types": "tsc --emitDeclarationOnly --declaration --outDir dist",
     "copyfiles": "copyfiles -u 1 \"src/**/*.scss\" dist",
     "clean": "rm -rf dist",
-    "dev": "bun run build:swc -- --watch",
+    "dev": "bun run build:swc -- --watch --copy-files",
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
     "test": "vitest run",

@@ -91,8 +91,9 @@ The `levels` option controls which translation surfaces the plugin exposes. Each
 
 - `documentLevel()` — a **Translate** popup on the document edit view (translate one document).
 - `collectionLevel()` — a **bulk dashboard** on the collection list view (translate many at once).
+- `fieldLevel()` — a synchronous **single-field** endpoint (`POST {basePath}/field`) that translates one field from a chosen source locale, with no persistence. _(Since v0.6.0.)_
 
-Both run through the configured `runner` (async Payload Jobs by default, or synchronous via `createSyncRunner()`) and share the same translation REST API.
+`documentLevel` and `collectionLevel` run through the configured `runner` (async Payload Jobs by default, or synchronous via `createSyncRunner()`) and share the same translation REST API. `fieldLevel` is always synchronous and uses no runner.
 
 ```typescript
 import { translatorPlugin, documentLevel, collectionLevel, createOpenAIProvider, createPayloadJobsRunner } from "@focus-reactive/payload-plugin-translator";
@@ -107,7 +108,42 @@ translatorPlugin({
 });
 ```
 
-Omit `levels` for the default `[documentLevel(), collectionLevel()]`, which is identical to the previous behaviour — so adopting this option is non-breaking. A synchronous `fieldLevel()` (in-place field translation) is planned for a later release.
+Omit `levels` for the default `[documentLevel(), collectionLevel()]`, which is identical to the previous behaviour — so adopting this option is non-breaking.
+
+#### Field-level translation
+
+_Since v0.6.0._
+
+`fieldLevel` adds a per-field **Translate** control. Two steps:
+
+1. Add `fieldLevel()` to `levels` (registers the endpoint).
+2. Wrap the fields that should get a control with `withFieldTranslation(field)`.
+
+```typescript
+import { translatorPlugin, documentLevel, fieldLevel, withFieldTranslation } from "@focus-reactive/payload-plugin-translator";
+
+// In a collection:
+const Posts = {
+  slug: "posts",
+  fields: [withFieldTranslation({ name: "title", type: "text", localized: true })],
+};
+
+// In the plugin:
+translatorPlugin({
+  collections: [Posts],
+  translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
+  runner: createPayloadJobsRunner(),
+  levels: [documentLevel(), fieldLevel()],
+});
+```
+
+The control is an icon button (rendered just above the input) that opens a compact popup showing the translation **direction** — a source-locale `Select`, an arrow, then the **current locale** (the fixed target): `en → fr`. You pick the **source** locale; the **target is always the locale you're editing**. The server reads the source locale's _saved_ value and translates it into the current locale, so the control needs a **saved document** (it's disabled on new documents). The source defaults to your Payload `defaultLocale` when that isn't the current locale, otherwise you choose it explicitly.
+
+> This is intentionally the reverse of the document/collection level (which translates _from_ the current locale _to_ chosen targets): the field control pulls content _into_ the locale you're standing in.
+
+The translated value is written straight back to form state — no save, no queue — and an **Undo** restores the previous value. Wrapping for a control is allowed on **`text`, `textarea`, and `richText`** fields (a compile error on other types — pass `{ exclude: true }` for those). For `richText` the Lexical editor is re-mounted with the translated content. Fields **inside blocks** are supported too: the server reads the source document's `blockType` to resolve the right block schema. Needs a **saved document** (the source value is read from it), so the control is hidden while creating a new document. The endpoint itself (`POST {basePath}/field`) is also usable directly by custom clients.
+
+> **Localized `blocks`/`array` containers.** Per-field translation works when the **container is not localized** — the block/array structure is then shared across locales and only the leaf values differ per locale (wrap the leaves, not the container). If a `blocks`/`array` field is itself `localized`, each locale has an independent structure (different order/content), so a field inside it can't be matched to the source locale by position — the control no-ops with a notice asking you to translate the whole document instead. (Whole-document translation handles this case by matching elements by `id`.)
 
 ### OpenAIProviderConfig
 

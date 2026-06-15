@@ -1,0 +1,48 @@
+.popup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* The from → to direction group; lays the source select, arrow and target chip out inline. */
+.direction {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.arrow {
+  display: flex;
+  align-items: center;
+  color: var(--theme-elevation-400);
+}
+
+/* The fixed target locale — framed like the source Select (same border/radius/height/font) for
+   a consistent two-box "source → target" look, but with a muted bg to read as read-only. */
+.current {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: 24px;
+  padding-inline: 0.5rem;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: var(--style-radius-s);
+  background: var(--theme-elevation-50);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--theme-elevation-800);
+}
+
+.trigger {
+  /* inline-flex so the wrapper hugs the icon button — a block/flex div stretches full width,
+     which drags the popover anchor across the field. */
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 0.25rem;
+}
