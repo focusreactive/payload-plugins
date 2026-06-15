@@ -17,23 +17,35 @@ const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? "dev123456";
 // Child nodes are typed loosely by Payload (root.children is `{ [k]: unknown; type; version }[]`),
 // so only the root needs the narrow `as const` on direction/format — the rest is free-form.
 type LexNode = { type: string; version: number; [k: string]: unknown };
+type Inline = string | LexNode;
 
 // Inline text. `format` is a bitmask: bold=1, italic=2, underline=8, code=16.
 const BOLD = 1;
 const ITALIC = 2;
+const UNDERLINE = 8;
+const CODE = 16;
 const txt = (text: string, format = 0): LexNode => ({ type: "text", detail: 0, format, mode: "normal", style: "", text, version: 1 });
 const link = (text: string, url: string): LexNode => ({ type: "link", fields: { linkType: "custom", newTab: true, url }, children: [txt(text)], direction: "ltr", format: "", indent: 0, version: 3 });
+// Inline children may be plain strings (→ text nodes) or pre-built nodes (txt/link).
+const asNode = (x: Inline): LexNode => (typeof x === "string" ? txt(x) : x);
 
 // Block-level nodes.
-const para = (...children: LexNode[]): LexNode => ({ type: "paragraph", children, direction: "ltr", format: "", indent: 0, textFormat: 0, version: 1 });
-const heading = (tag: "h2" | "h3", text: string): LexNode => ({ type: "heading", tag, children: [txt(text)], direction: "ltr", format: "", indent: 0, version: 1 });
-const quote = (text: string): LexNode => ({ type: "quote", children: [txt(text)], direction: "ltr", format: "", indent: 0, version: 1 });
-const list = (listType: "bullet" | "number", ...items: string[]): LexNode => ({
+const para = (...children: Inline[]): LexNode => ({ type: "paragraph", children: children.map(asNode), direction: "ltr", format: "", indent: 0, textFormat: 0, version: 1 });
+const heading = (tag: "h2" | "h3", ...children: Inline[]): LexNode => ({ type: "heading", tag, children: children.map(asNode), direction: "ltr", format: "", indent: 0, version: 1 });
+const quote = (...children: Inline[]): LexNode => ({ type: "quote", children: children.map(asNode), direction: "ltr", format: "", indent: 0, version: 1 });
+const li = (...children: Inline[]): LexNode => ({ type: "listitem", value: 1, children: children.map(asNode), direction: "ltr", format: "", indent: 0, version: 1 });
+
+// A list. Items may be plain strings, pre-built `li(...)` rows (for inline formatting), or a
+// nested `list(...)` (wrapped in a listitem to indent it) — so lists can nest arbitrarily.
+const list = (listType: "bullet" | "number", ...items: (string | LexNode)[]): LexNode => ({
   type: "list",
   listType,
   tag: listType === "bullet" ? "ul" : "ol",
   start: 1,
-  children: items.map((text, i) => ({ type: "listitem", value: i + 1, children: [txt(text)], direction: "ltr", format: "", indent: 0, version: 1 })),
+  children: items.map((item, i) => {
+    const node = typeof item === "string" ? li(item) : item.type === "listitem" ? item : li(item);
+    return { ...node, value: i + 1 };
+  }),
   direction: "ltr",
   format: "",
   indent: 0,
@@ -45,10 +57,6 @@ const list = (listType: "bullet" | "number", ...items: string[]): LexNode => ({
 const doc = (...children: LexNode[]) => ({
   root: { type: "root", children, direction: "ltr" as const, format: "" as const, indent: 0, version: 1 },
 });
-
-// Convenience: a doc of one-or-more plain paragraphs — for the deep-nest leaves where the point
-// is the field path, not the formatting.
-const richText = (...paragraphs: string[]) => doc(...paragraphs.map((p) => para(txt(p))));
 
 // hero + content blocks both pass through withSectionVisibility, which only adds an optional
 // hidden checkbox — no extra required data needed here.
@@ -172,8 +180,9 @@ const run = async () => {
             subheading: "Panel subheading, a textarea inside group → collapsible → row (en).",
             intro: doc(
               heading("h3", "Panel intro (en)"),
-              para(txt("Rich text inside group → collapsible (en), now with a heading and a list.")),
-              list("bullet", "First intro point (en)", "Second intro point (en)")
+              para(txt("Group → collapsible rich text with "), txt("bold", BOLD), txt(", "), txt("italic", ITALIC), txt(" and a "), link("link", "https://payloadcms.com"), txt(" (en).")),
+              list("bullet", "First intro point (en)", list("bullet", "Nested bullet A (en)", "Nested bullet B (en)"), "Second intro point (en)"),
+              list("number", "Ordered one (en)", "Ordered two (en)")
             ),
           },
           // named tab
@@ -182,11 +191,27 @@ const run = async () => {
             seoDescription: "SEO description textarea from the named Meta tab (en).",
           },
           // unnamed (transparent) tab
-          body: doc(heading("h2", "Body heading (en)"), para(txt("Body rich text — unnamed tab, transparent in the path (en).")), quote("A quote in the body tab (en).")),
+          body: doc(
+            heading("h2", "Body heading (en)"),
+            para(txt("Unnamed-tab rich text, transparent in the path. Inline "), txt("code", CODE), txt(" and "), txt("underline", UNDERLINE), txt(" (en).")),
+            heading("h3", "A subsection (en)"),
+            quote(txt("A blockquote with "), txt("emphasis", ITALIC), txt(" inside (en).")),
+            list("number", "Step one (en)", li(txt("Step two with a "), link("link", "https://payloadcms.com"), txt(" (en)")))
+          ),
           // array, with a collapsible inside each row wrapping the richText
           items: [
-            { label: "Item one label (en)", richBody: richText("Item one rich body — array → collapsible (en).") },
-            { label: "Item two label (en)", richBody: richText("Item two rich body — array → collapsible (en).") },
+            {
+              label: "Item one label (en)",
+              richBody: doc(
+                heading("h3", "Item one body (en)"),
+                para(txt("Array → collapsible rich text (en).")),
+                list("bullet", "Point A (en)", list("bullet", "Sub-point A1 (en)", "Sub-point A2 (en)"), "Point B (en)")
+              ),
+            },
+            {
+              label: "Item two label (en)",
+              richBody: doc(para(txt("Item two body with "), txt("bold", BOLD), txt(" and "), txt("italic", ITALIC), txt(" (en).")), quote("A short quote in item two (en).")),
+            },
           ],
           // nested blocks (block-in-block) → and leaves (block→block→block)
           nested: [
@@ -194,13 +219,30 @@ const run = async () => {
               blockType: "inner",
               innerText: "Inner text — one block deep (en)",
               innerNote: "Inner note textarea — one block deep (en).",
-              innerRich: richText("Inner rich text — block-in-block (en)."),
+              innerRich: doc(
+                heading("h3", "Inner rich (en)"),
+                para(txt("Block-in-block rich text (en) with a "), link("link", "https://payloadcms.com"), txt(".")),
+                list("number", "Inner step one (en)", "Inner step two (en)")
+              ),
               leaves: [
                 {
                   blockType: "leaf",
                   deepText: "Deep text — three blocks deep (en)",
-                  // inline formatting three blocks deep — the hardest data-aware resolution case.
-                  deepRich: doc(para(txt("Deep rich text — "), txt("block → block → block", BOLD), txt(" (en)."))),
+                  // The hardest data-aware case: structurally complex rich text three blocks deep —
+                  // headings, mixed inline formatting, a nested list with a link, and a blockquote.
+                  deepRich: doc(
+                    heading("h2", "Deep heading (en)"),
+                    para(txt("Three blocks deep: "), txt("bold", BOLD), txt(", "), txt("italic", ITALIC), txt(", "), txt("code", CODE), txt(" (en).")),
+                    heading("h3", "Nested list (en)"),
+                    list(
+                      "bullet",
+                      "Deep bullet one (en)",
+                      list("bullet", "Deep nested A (en)", "Deep nested B (en)"),
+                      li(txt("Deep bullet with "), link("a link", "https://payloadcms.com"), txt(" (en)"))
+                    ),
+                    quote(txt("A deep blockquote with "), txt("emphasis", ITALIC), txt(" (en).")),
+                    para(txt("Closing paragraph at the deepest path (en)."))
+                  ),
                 },
               ],
             },
