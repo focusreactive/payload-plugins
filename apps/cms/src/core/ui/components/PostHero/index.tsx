@@ -40,7 +40,7 @@ export async function PostHero({ post, locale }: PostHeroProps) {
             </Link>
           </div>
 
-          <div className="mx-auto flex max-w-[760px] flex-col items-center gap-[22px] text-center">
+          <div className="mx-auto flex flex-col items-center gap-[22px] text-center">
             {category && (
               <Eyebrow prefix="dot" tone="accent">
                 {category.title}
