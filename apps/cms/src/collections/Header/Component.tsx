@@ -1,4 +1,3 @@
-import { Header as HeaderUI } from "@repo/ui";
 import { ButtonVariant } from "@repo/ui/components/ui/button/types";
 import type { HeaderAction, HeaderFeatured, HeaderLink, HeaderNavItem, IHeaderProps } from "@repo/ui/components/sections/header/types";
 import React from "react";
@@ -7,6 +6,8 @@ import { resolveLocale } from "@/core/lib/resolveLocale";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { Header as HeaderType, Media } from "@/payload-types";
+
+import { HeaderClient } from "./HeaderClient";
 
 interface Props {
   data: HeaderType;
@@ -119,5 +120,5 @@ export async function Header({ data }: Props) {
     actions: (data.actions ?? []).map((action) => mapAction(action, locale)).filter((action): action is HeaderAction => action !== null),
   };
 
-  return <HeaderUI {...props} />;
+  return <HeaderClient {...props} />;
 }

@@ -67,7 +67,14 @@ export function MobileNav({ navItems, actions }: MobileNavProps) {
               const newTabProps = item.newTab ? { rel: "noopener noreferrer", target: "_blank" } : {};
 
               return (
-                <NextLink key={itemKey} href={item.href} onClick={close} className={panelLinkClassName} {...newTabProps}>
+                <NextLink
+                  key={itemKey}
+                  href={item.href}
+                  onClick={close}
+                  aria-current={item.active ? "page" : undefined}
+                  className={cn(panelLinkClassName, item.active && "font-bold")}
+                  {...newTabProps}
+                >
                   {item.label}
                 </NextLink>
               );
@@ -81,7 +88,10 @@ export function MobileNav({ navItems, actions }: MobileNavProps) {
                   type="button"
                   aria-expanded={isExpanded}
                   onClick={() => setExpanded(isExpanded ? null : itemKey)}
-                  className="flex w-full items-center justify-between px-1 py-3 text-left text-[1.05rem] text-foreground transition-colors duration-150 hover:text-primary focus-visible:outline-none"
+                  className={cn(
+                    "flex w-full items-center justify-between px-1 py-3 text-left text-[1.05rem] text-foreground transition-colors duration-150 hover:text-primary focus-visible:outline-none",
+                    item.active && "font-bold"
+                  )}
                 >
                   {item.label}
                   <Chevron className={cn("transition-transform duration-200 ease-out motion-reduce:transition-none", isExpanded && "rotate-180")} />
@@ -102,7 +112,17 @@ export function MobileNav({ navItems, actions }: MobileNavProps) {
                       const linkNewTabProps = link.newTab ? { rel: "noopener noreferrer", target: "_blank" } : {};
 
                       return (
-                        <NextLink key={`${link.label}-${linkIndex}`} href={link.href} onClick={close} className="py-2 text-[0.95rem] text-muted-foreground hover:text-primary" {...linkNewTabProps}>
+                        <NextLink
+                          key={`${link.label}-${linkIndex}`}
+                          href={link.href}
+                          onClick={close}
+                          aria-current={link.active ? "page" : undefined}
+                          className={cn(
+                            "border-l-2 border-transparent py-2 pl-2 text-[0.95rem] transition-colors duration-150 hover:text-primary",
+                            link.active ? "border-primary text-primary" : "text-muted-foreground"
+                          )}
+                          {...linkNewTabProps}
+                        >
                           {link.label}
                         </NextLink>
                       );

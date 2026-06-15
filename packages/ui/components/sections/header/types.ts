@@ -6,6 +6,7 @@ export interface HeaderLink {
   href: string;
   newTab?: boolean;
   description?: string;
+  active?: boolean;
 }
 
 export interface HeaderFeatured {
@@ -22,6 +23,7 @@ export interface HeaderNavLinkItem {
   label: string;
   href: string;
   newTab?: boolean;
+  active?: boolean;
 }
 
 export interface HeaderNavDropdownItem {
@@ -30,6 +32,7 @@ export interface HeaderNavDropdownItem {
   layout: HeaderDropdownLayout;
   featured?: HeaderFeatured;
   links: HeaderLink[];
+  active?: boolean;
 }
 
 export type HeaderNavItem = HeaderNavLinkItem | HeaderNavDropdownItem;

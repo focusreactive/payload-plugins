@@ -13,6 +13,8 @@ interface DesktopNavProps {
 const itemLinkClassName =
   "inline-flex items-center rounded-pill px-3.5 py-2 text-[0.95rem] font-medium text-muted-foreground transition-colors duration-150 hover:bg-surface-muted hover:text-foreground focus-visible:bg-surface-muted focus-visible:text-foreground focus-visible:outline-none";
 
+const activeItemClassName = "font-bold text-foreground";
+
 export function DesktopNav({ navItems }: DesktopNavProps) {
   return (
     <NavigationMenu.Root className="hidden items-center min-[860px]:flex" delayDuration={0}>
@@ -23,8 +25,8 @@ export function DesktopNav({ navItems }: DesktopNavProps) {
 
             return (
               <NavigationMenu.Item key={`${item.label}-${index}`}>
-                <NavigationMenu.Link asChild>
-                  <NextLink href={item.href} className={itemLinkClassName} {...newTabProps}>
+                <NavigationMenu.Link active={item.active} asChild>
+                  <NextLink href={item.href} className={cn(itemLinkClassName, item.active && activeItemClassName)} aria-current={item.active ? "page" : undefined} {...newTabProps}>
                     {item.label}
                   </NextLink>
                 </NavigationMenu.Link>
@@ -34,7 +36,7 @@ export function DesktopNav({ navItems }: DesktopNavProps) {
 
           return (
             <NavigationMenu.Item key={`${item.label}-${index}`} className="relative">
-              <NavigationMenu.Trigger className={cn("group", itemLinkClassName, "gap-1.5 data-[state=open]:bg-surface-muted data-[state=open]:text-foreground")}>
+              <NavigationMenu.Trigger className={cn("group", itemLinkClassName, "gap-1.5 data-[state=open]:bg-surface-muted data-[state=open]:text-foreground", item.active && activeItemClassName)}>
                 {item.label}
                 <Chevron className="transition-transform duration-200 ease-out group-data-[state=open]:rotate-180 motion-reduce:transition-none" />
               </NavigationMenu.Trigger>
