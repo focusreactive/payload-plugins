@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-analytics [1.0.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.0.0...@focus-reactive/payload-plugin-analytics@1.0.1) (2026-06-15)
+
+
+### Bug Fixes
+
+* **analytics:** make Track tolerate null and multiple children ([127a8d2](https://github.com/focusreactive/payload-plugins/commit/127a8d297d7e897cf6e2e61712289924ec40bb1d))
+
 # @focus-reactive/payload-plugin-analytics 1.0.0 (2026-06-04)
 
 
