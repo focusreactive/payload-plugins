@@ -8,7 +8,8 @@ import styles from "./styles.module.scss";
 
 type ButtonProps = ComponentPropsWithRef<"button"> & {
   $fullWidth?: boolean;
-  $variant?: "outlined" | "filled" | "unstyled" | "transparent" | "light";
+  $variant?: "outlined" | "outlined-light" | "filled" | "unstyled" | "transparent" | "light";
+  /** Leading content (e.g. an icon) before children. Hidden while `$isLoading` — the spinner replaces it. */
   $startContent?: ReactNode;
   $size?: "sm" | "md" | "lg";
   $isLoading?: boolean;
@@ -49,7 +50,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
 
   return (
     <button {...props} style={_style} ref={ref} className={buttonClassName}>
-      {$startContent && <div className={styles["start-content"]}>{$startContent}</div>}
+      {!$isLoading && $startContent && <div className={styles["start-content"]}>{$startContent}</div>}
       {$isLoading ? <Loading size={$isIconButton ? "small" : "medium"} /> : children}
     </button>
   );

@@ -26,18 +26,41 @@
   margin-right: calc(var(--base) / 2);
 }
 
+/* Mirrors Payload's `.btn--style-secondary` (@payloadcms/ui Button): transparent fill, a
+   theme-elevation-800 border (faint + low-contrast in the dark admin theme), text in theme-text. */
 .outlined {
-  border: 1px solid var(--theme-elevation-200);
+  color: var(--theme-text);
+  border: 1px solid var(--theme-elevation-800);
 
   &:hover:not(:disabled),
   &:focus {
-    border-color: var(--theme-elevation-100);
+    color: var(--theme-elevation-600);
+    border-color: var(--theme-elevation-400);
   }
 
   &:disabled {
     cursor: not-allowed;
-    background-color: var(--theme-elevation-200);
-    color: var(--theme-elevation-800);
+    color: var(--theme-elevation-200);
+    border-color: var(--theme-elevation-200);
+  }
+}
+
+/* A muted outlined: transparent fill + a faint elev-200 border (Payload's subtle/dashed border
+   weight) instead of secondary's strong elev-800. For low-emphasis triggers that should sit
+   quietly next to other plugins' admin buttons. */
+.outlined-light {
+  color: var(--theme-text);
+  border: 1px solid var(--theme-elevation-200);
+
+  &:hover:not(:disabled),
+  &:focus {
+    border-color: var(--theme-elevation-300);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    color: var(--theme-elevation-200);
+    border-color: var(--theme-elevation-150);
   }
 }
 
