@@ -6,7 +6,6 @@ import { extractNewsletterText } from "@/blocks/Newsletter/extractText";
 import { extractStatsText } from "@/blocks/Stats/extractText";
 import { extractFaqText } from "@/blocks/Faq/extractText";
 import { extractHeroText } from "@/blocks/Hero/extractText";
-import { extractLinksListText } from "@/blocks/LinksList/extractText";
 import { extractLogosText } from "@/blocks/Logos/extractText";
 import { extractTestimonialsText } from "@/blocks/TestimonialsList/extractText";
 import { extractLexicalText, joinText } from "@/core/utils/text";
@@ -16,9 +15,6 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
   switch (block.blockType) {
     case "hero": {
       return extractHeroText(block);
-    }
-    case "textSection": {
-      return extractLexicalText(block.text);
     }
     case "content": {
       return joinText([block.eyebrow, block.heading, block.description, extractLexicalText(block.content)]);
@@ -43,9 +39,6 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
     }
     case "logos": {
       return extractLogosText(block);
-    }
-    case "linksList": {
-      return extractLinksListText(block);
     }
     case "newsletter": {
       return extractNewsletterText(block);

@@ -2,7 +2,6 @@ import type { CollectionConfig, GroupField } from "payload";
 
 import { CardsGridInlineBlock } from "@/blocks/CardsGrid/inlineConfig";
 import { CodeInlineBlock } from "@/blocks/Code/inlineConfig";
-import { LinksListInlineBlock } from "@/blocks/LinksList/inlineConfig";
 import { LogosInlineBlock } from "@/blocks/Logos/inlineConfig";
 import { BLOG_CONFIG } from "@/core/config/blog";
 import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
@@ -112,7 +111,7 @@ export const Posts: CollectionConfig<"posts"> = {
             {
               defaultValue: createLocalizedRichText(DEFAULT_VALUES.richText.content),
               editor: generateRichText("default", {
-                blocks: [CardsGridInlineBlock, LogosInlineBlock, LinksListInlineBlock, CodeInlineBlock],
+                blocks: [CardsGridInlineBlock, LogosInlineBlock, CodeInlineBlock],
               }),
               label: {
                 en: "Content",

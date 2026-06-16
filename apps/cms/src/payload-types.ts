@@ -365,14 +365,12 @@ export interface Page {
   footer?: (number | null) | Footer;
   blocks: (
     | HeroBlock
-    | TextSectionBlock
     | ContentBlock
     | FaqBlock
     | TestimonialsListBlock
     | CardsGridBlock
     | CarouselBlock
     | LogosBlock
-    | LinksListBlock
     | ChartBlock
     | CtaBandBlock
     | NewsletterBlock
@@ -812,47 +810,6 @@ export interface HeroBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TextSectionBlock".
- */
-export interface TextSectionBlock {
-  text: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  };
-  section?: {
-    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
-    paddingY?: ('none' | 'base' | 'large') | null;
-    paddingX?: ('none' | 'base') | null;
-    maxWidth?: ('none' | 'base') | null;
-    background?: {
-      /**
-       * Upload an image or video. Use the "Background" folder.
-       */
-      media?: (number | null) | Media;
-      overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
-      opacity?: number | null;
-    };
-  };
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'textSection';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ContentBlock".
  */
 export interface ContentBlock {
@@ -1233,56 +1190,6 @@ export interface LogosBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "LinksListBlock".
- */
-export interface LinksListBlock {
-  alignVariant?: ('left' | 'center' | 'right') | null;
-  links: {
-    link: {
-      type?: ('reference' | 'custom' | 'customPage') | null;
-      newTab?: boolean | null;
-      reference?:
-        | ({
-            relationTo: 'page';
-            value: number | Page;
-          } | null)
-        | ({
-            relationTo: 'posts';
-            value: number | Post;
-          } | null);
-      url?: string | null;
-      customPage?: ('blog' | 'search') | null;
-      label: string;
-      /**
-       * Choose how the link should be rendered.
-       */
-      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
-    };
-    id?: string | null;
-  }[];
-  section?: {
-    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
-    paddingY?: ('none' | 'base' | 'large') | null;
-    paddingX?: ('none' | 'base') | null;
-    maxWidth?: ('none' | 'base') | null;
-    background?: {
-      /**
-       * Upload an image or video. Use the "Background" folder.
-       */
-      media?: (number | null) | Media;
-      overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
-      opacity?: number | null;
-    };
-  };
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'linksList';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ChartBlock".
  */
 export interface ChartBlock {
@@ -1568,43 +1475,6 @@ export interface Preset {
         id?: string | null;
         blockName?: string | null;
         blockType: 'hero';
-      }
-    | {
-        text: {
-          root: {
-            type: string;
-            children: {
-              type: any;
-              version: number;
-              [k: string]: unknown;
-            }[];
-            direction: ('ltr' | 'rtl') | null;
-            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-            indent: number;
-            version: number;
-          };
-          [k: string]: unknown;
-        };
-        section?: {
-          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
-          paddingY?: ('none' | 'base' | 'large') | null;
-          paddingX?: ('none' | 'base') | null;
-          maxWidth?: ('none' | 'base') | null;
-          background?: {
-            /**
-             * Upload an image or video. Use the "Background" folder.
-             */
-            media?: (number | null) | Media;
-            overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
-            opacity?: number | null;
-          };
-        };
-        id?: string | null;
-        blockName?: string | null;
-        blockType: 'textSection';
       }
     | {
         eyebrow?: string | null;
@@ -1946,52 +1816,6 @@ export interface Preset {
         id?: string | null;
         blockName?: string | null;
         blockType: 'logos';
-      }
-    | {
-        alignVariant?: ('left' | 'center' | 'right') | null;
-        links: {
-          link: {
-            type?: ('reference' | 'custom' | 'customPage') | null;
-            newTab?: boolean | null;
-            reference?:
-              | ({
-                  relationTo: 'page';
-                  value: number | Page;
-                } | null)
-              | ({
-                  relationTo: 'posts';
-                  value: number | Post;
-                } | null);
-            url?: string | null;
-            customPage?: ('blog' | 'search') | null;
-            label: string;
-            /**
-             * Choose how the link should be rendered.
-             */
-            appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
-          };
-          id?: string | null;
-        }[];
-        section?: {
-          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
-          paddingY?: ('none' | 'base' | 'large') | null;
-          paddingX?: ('none' | 'base') | null;
-          maxWidth?: ('none' | 'base') | null;
-          background?: {
-            /**
-             * Upload an image or video. Use the "Background" folder.
-             */
-            media?: (number | null) | Media;
-            overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
-            opacity?: number | null;
-          };
-        };
-        id?: string | null;
-        blockName?: string | null;
-        blockType: 'linksList';
       }
     | {
         eyebrow?: string | null;
@@ -2771,14 +2595,12 @@ export interface PageSelect<T extends boolean = true> {
     | T
     | {
         hero?: T | HeroBlockSelect<T>;
-        textSection?: T | TextSectionBlockSelect<T>;
         content?: T | ContentBlockSelect<T>;
         faq?: T | FaqBlockSelect<T>;
         testimonialsList?: T | TestimonialsListBlockSelect<T>;
         cardsGrid?: T | CardsGridBlockSelect<T>;
         carousel?: T | CarouselBlockSelect<T>;
         logos?: T | LogosBlockSelect<T>;
-        linksList?: T | LinksListBlockSelect<T>;
         chart?: T | ChartBlockSelect<T>;
         ctaBand?: T | CtaBandBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
@@ -2837,30 +2659,6 @@ export interface HeroBlockSelect<T extends boolean = true> {
         image?: T;
         aspectRatio?: T;
       };
-  section?:
-    | T
-    | {
-        theme?: T;
-        paddingY?: T;
-        paddingX?: T;
-        maxWidth?: T;
-        background?:
-          | T
-          | {
-              media?: T;
-              overlay?: T;
-              opacity?: T;
-            };
-      };
-  id?: T;
-  blockName?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TextSectionBlock_select".
- */
-export interface TextSectionBlockSelect<T extends boolean = true> {
-  text?: T;
   section?:
     | T
     | {
@@ -3107,46 +2905,6 @@ export interface LogosBlockSelect<T extends boolean = true> {
               url?: T;
               customPage?: T;
               label?: T;
-            };
-        id?: T;
-      };
-  section?:
-    | T
-    | {
-        theme?: T;
-        paddingY?: T;
-        paddingX?: T;
-        maxWidth?: T;
-        background?:
-          | T
-          | {
-              media?: T;
-              overlay?: T;
-              opacity?: T;
-            };
-      };
-  id?: T;
-  blockName?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "LinksListBlock_select".
- */
-export interface LinksListBlockSelect<T extends boolean = true> {
-  alignVariant?: T;
-  links?:
-    | T
-    | {
-        link?:
-          | T
-          | {
-              type?: T;
-              newTab?: T;
-              reference?: T;
-              url?: T;
-              customPage?: T;
-              label?: T;
-              appearance?: T;
             };
         id?: T;
       };
@@ -3606,28 +3364,6 @@ export interface PresetsSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
-        textSection?:
-          | T
-          | {
-              text?: T;
-              section?:
-                | T
-                | {
-                    theme?: T;
-                    paddingY?: T;
-                    paddingX?: T;
-                    maxWidth?: T;
-                    background?:
-                      | T
-                      | {
-                          media?: T;
-                          overlay?: T;
-                          opacity?: T;
-                        };
-                  };
-              id?: T;
-              blockName?: T;
-            };
         content?:
           | T
           | {
@@ -3844,44 +3580,6 @@ export interface PresetsSelect<T extends boolean = true> {
                           url?: T;
                           customPage?: T;
                           label?: T;
-                        };
-                    id?: T;
-                  };
-              section?:
-                | T
-                | {
-                    theme?: T;
-                    paddingY?: T;
-                    paddingX?: T;
-                    maxWidth?: T;
-                    background?:
-                      | T
-                      | {
-                          media?: T;
-                          overlay?: T;
-                          opacity?: T;
-                        };
-                  };
-              id?: T;
-              blockName?: T;
-            };
-        linksList?:
-          | T
-          | {
-              alignVariant?: T;
-              links?:
-                | T
-                | {
-                    link?:
-                      | T
-                      | {
-                          type?: T;
-                          newTab?: T;
-                          reference?: T;
-                          url?: T;
-                          customPage?: T;
-                          label?: T;
-                          appearance?: T;
                         };
                     id?: T;
                   };
@@ -4568,39 +4266,6 @@ export interface LogosInlineBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'logosInline';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "LinksListInlineBlock".
- */
-export interface LinksListInlineBlock {
-  alignVariant?: ('left' | 'center' | 'right') | null;
-  links: {
-    link: {
-      type?: ('reference' | 'custom' | 'customPage') | null;
-      newTab?: boolean | null;
-      reference?:
-        | ({
-            relationTo: 'page';
-            value: number | Page;
-          } | null)
-        | ({
-            relationTo: 'posts';
-            value: number | Post;
-          } | null);
-      url?: string | null;
-      customPage?: ('blog' | 'search') | null;
-      label: string;
-      /**
-       * Choose how the link should be rendered.
-       */
-      appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
-    };
-    id?: string | null;
-  }[];
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'linksListInline';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

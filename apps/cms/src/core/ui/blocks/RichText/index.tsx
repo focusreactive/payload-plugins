@@ -7,7 +7,6 @@ import { Image } from "@repo/ui/components/ui/image";
 
 import { CardsGridInlineComponent } from "@/blocks/CardsGrid/InlineComponent";
 import { CodeInlineComponent } from "@/blocks/Code/InlineComponent";
-import { LinksListInlineComponent } from "@/blocks/LinksList/InlineComponent";
 import { LogosInlineComponent } from "@/blocks/Logos/InlineComponent";
 import { BLOG_CONFIG } from "@/core/config/blog";
 import { cn } from "@/core/lib/utils";
@@ -38,7 +37,6 @@ const jsxConverters: JSXConvertersFunction<NodeTypes> = ({ defaultConverters }) 
     /* eslint-disable @typescript-eslint/no-explicit-any */
     cardsGridInline: ({ node }: { node: any }) => <CardsGridInlineComponent {...(node.fields as any)} />,
     logosInline: ({ node }: { node: any }) => <LogosInlineComponent {...(node.fields as any)} />,
-    linksListInline: ({ node }: { node: any }) => <LinksListInlineComponent {...(node.fields as any)} />,
     codeInline: ({ node }: { node: any }) => <CodeInlineComponent {...(node.fields as any)} />,
     /* eslint-enable @typescript-eslint/no-explicit-any */
   },

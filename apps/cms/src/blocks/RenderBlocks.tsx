@@ -11,10 +11,8 @@ import { NewsletterBlockComponent } from "./Newsletter/Component";
 import { StatsBlockComponent } from "./Stats/Component";
 import { FaqBlockComponent } from "./Faq/Component";
 import { HeroBlockComponent } from "./Hero/Component";
-import { LinksListBlockComponent } from "./LinksList/Component";
 import { LogosBlockComponent } from "./Logos/Component";
 import { TestimonialsListBlockComponent } from "./TestimonialsList/Component";
-import { TextSectionBlockComponent } from "./TextSection/Component";
 
 const blockComponents = {
   cardsGrid: CardsGridBlockComponent,
@@ -26,10 +24,8 @@ const blockComponents = {
   stats: StatsBlockComponent,
   faq: FaqBlockComponent,
   hero: HeroBlockComponent,
-  linksList: LinksListBlockComponent,
   logos: LogosBlockComponent,
   testimonialsList: TestimonialsListBlockComponent,
-  textSection: TextSectionBlockComponent,
 };
 
 export const RenderBlocks: React.FC<{

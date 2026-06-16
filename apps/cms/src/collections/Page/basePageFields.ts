@@ -9,10 +9,8 @@ import { NewsletterBlock } from "@/blocks/Newsletter/config";
 import { StatsBlock } from "@/blocks/Stats/config";
 import { FaqBlock } from "@/blocks/Faq/config";
 import { HeroBlock } from "@/blocks/Hero/config";
-import { LinksListBlock } from "@/blocks/LinksList/config";
 import { LogosBlock } from "@/blocks/Logos/config";
 import { TestimonialsListBlock } from "@/blocks/TestimonialsList/config";
-import { TextSectionBlock } from "@/blocks/TextSection/config";
 import { generateSeoFields } from "@/core/lib/seoFields";
 
 export function createBasePageFields({ withBlocksDefaultValue = false } = {}): Field[] {
@@ -47,27 +45,13 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
               admin: {
                 initCollapsed: false,
               },
-              blocks: [
-                HeroBlock,
-                TextSectionBlock,
-                ContentBlock,
-                FaqBlock,
-                TestimonialsListBlock,
-                CardsGridBlock,
-                CarouselBlock,
-                LogosBlock,
-                LinksListBlock,
-                ChartBlock,
-                CtaBandBlock,
-                NewsletterBlock,
-                StatsBlock,
-              ],
+              blocks: [HeroBlock, ContentBlock, FaqBlock, TestimonialsListBlock, CardsGridBlock, CarouselBlock, LogosBlock, ChartBlock, CtaBandBlock, NewsletterBlock, StatsBlock],
               localized: true,
               name: "blocks",
               required: true,
               type: "blocks",
               ...(withBlocksDefaultValue && {
-                defaultValue: () => ["hero", "textSection", "content", "testimonialsList", "faq"].map((blockType) => ({ blockType })),
+                defaultValue: () => ["hero", "content", "testimonialsList", "faq"].map((blockType) => ({ blockType })),
               }),
             },
           ],
