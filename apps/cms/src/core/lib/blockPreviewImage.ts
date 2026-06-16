@@ -3,19 +3,17 @@ const BG = "e5e7eb";
 const FG = "6b7280";
 
 const PREVIEW_IMAGES: Record<string, string> = {
-  "Cards Grid": "/block-preview-images/cards-grid.png",
-  Carousel: "/block-preview-images/carousel.png",
-  Chart: "/block-preview-images/chart.png",
-  "CTA Band": "/block-preview-images/cta-band.png",
-  "Content Section": "/block-preview-images/content-section.png",
-  "FAQ Section": "/block-preview-images/faq.png",
-  Hero: "/block-preview-images/hero.png",
-  "Links List": "/block-preview-images/links-list.png",
-  Logos: "/block-preview-images/logos.png",
-  Testimonials: "/block-preview-images/testimonials.png",
-  Newsletter: "/block-preview-images/newsletter.png",
-  Stats: "/block-preview-images/stats.png",
-  "Text Section": "/block-preview-images/text-section.png",
+  "Cards Grid": "/block-preview-images/preview-cards-grid.png",
+  Carousel: "/block-preview-images/preview-carusel.png",
+  Chart: "/block-preview-images/preview-chart.png",
+  "CTA Band": "/block-preview-images/preview-cta.png",
+  "Content Section": "/block-preview-images/preview-content.png",
+  "FAQ Section": "/block-preview-images/preview-faq.png",
+  Hero: "/block-preview-images/preview-hero.png",
+  Logos: "/block-preview-images/preview-logos.png",
+  Testimonials: "/block-preview-images/preview-testimonials.png",
+  Newsletter: "/block-preview-images/preview-newsletter.png",
+  Stats: "/block-preview-images/preview-stats.png",
 };
 
 export function getBlockPreviewImage(label: string): {
