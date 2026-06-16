@@ -65,22 +65,29 @@ export const Header: CollectionConfig<"header"> = {
       }),
       fields: [
         {
-          label: { en: "Label", es: "Etiqueta" },
-          localized: true,
-          name: "label",
-          required: true,
-          type: "text",
-        },
-        {
-          defaultValue: "link",
-          label: { en: "Type", es: "Tipo" },
-          name: "type",
-          options: [
-            { label: { en: "Link", es: "Enlace" }, value: "link" },
-            { label: { en: "Dropdown", es: "Desplegable" }, value: "dropdown" },
+          type: "row",
+          fields: [
+            {
+              admin: { width: "60%" },
+              label: { en: "Label", es: "Etiqueta" },
+              localized: true,
+              name: "label",
+              required: true,
+              type: "text",
+            },
+            {
+              admin: { width: "40%" },
+              defaultValue: "link",
+              label: { en: "Type", es: "Tipo" },
+              name: "type",
+              options: [
+                { label: { en: "Link", es: "Enlace" }, value: "link" },
+                { label: { en: "Dropdown", es: "Desplegable" }, value: "dropdown" },
+              ],
+              required: true,
+              type: "select",
+            },
           ],
-          required: true,
-          type: "select",
         },
         link({
           appearances: false,
@@ -101,18 +108,24 @@ export const Header: CollectionConfig<"header"> = {
                   type: "checkbox",
                 },
                 {
+                  type: "row",
                   admin: { condition: (_, siblingData) => !!siblingData?.enabled },
-                  label: { en: "Eyebrow", es: "Antetítulo" },
-                  localized: true,
-                  name: "eyebrow",
-                  type: "text",
-                },
-                {
-                  admin: { condition: (_, siblingData) => !!siblingData?.enabled },
-                  label: { en: "Title", es: "Título" },
-                  localized: true,
-                  name: "title",
-                  type: "text",
+                  fields: [
+                    {
+                      admin: { width: "40%" },
+                      label: { en: "Eyebrow", es: "Antetítulo" },
+                      localized: true,
+                      name: "eyebrow",
+                      type: "text",
+                    },
+                    {
+                      admin: { width: "60%" },
+                      label: { en: "Title", es: "Título" },
+                      localized: true,
+                      name: "title",
+                      type: "text",
+                    },
+                  ],
                 },
                 {
                   admin: { condition: (_, siblingData) => !!siblingData?.enabled },
@@ -137,17 +150,24 @@ export const Header: CollectionConfig<"header"> = {
             {
               fields: [
                 {
-                  label: { en: "Title", es: "Título" },
-                  localized: true,
-                  name: "title",
-                  required: true,
-                  type: "text",
-                },
-                {
-                  label: { en: "Description", es: "Descripción" },
-                  localized: true,
-                  name: "description",
-                  type: "text",
+                  type: "row",
+                  fields: [
+                    {
+                      admin: { width: "50%" },
+                      label: { en: "Title", es: "Título" },
+                      localized: true,
+                      name: "title",
+                      required: true,
+                      type: "text",
+                    },
+                    {
+                      admin: { width: "50%" },
+                      label: { en: "Description", es: "Descripción" },
+                      localized: true,
+                      name: "description",
+                      type: "text",
+                    },
+                  ],
                 },
                 link({
                   appearances: false,

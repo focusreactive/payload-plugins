@@ -3,46 +3,60 @@ import type { GroupField } from "payload";
 export const sectionFields: GroupField = {
   fields: [
     {
-      label: { en: "Theme", es: "Tema" },
-      name: "theme",
-      options: [
-        { label: { en: "Light", es: "Claro" }, value: "light" },
-        { label: { en: "Dark", es: "Oscuro" }, value: "dark" },
-        { label: { en: "Light Gray", es: "Gris Claro" }, value: "light-gray" },
-        { label: { en: "Dark Gray", es: "Gris Oscuro" }, value: "dark-gray" },
+      type: "row",
+      fields: [
+        {
+          admin: { width: "50%" },
+          label: { en: "Theme", es: "Tema" },
+          name: "theme",
+          options: [
+            { label: { en: "Light", es: "Claro" }, value: "light" },
+            { label: { en: "Dark", es: "Oscuro" }, value: "dark" },
+            { label: { en: "Light Gray", es: "Gris Claro" }, value: "light-gray" },
+            { label: { en: "Dark Gray", es: "Gris Oscuro" }, value: "dark-gray" },
+          ],
+          type: "select",
+        },
+        {
+          admin: { width: "50%" },
+          defaultValue: "base",
+          label: { en: "Max Width", es: "Ancho Máximo" },
+          name: "maxWidth",
+          options: [
+            { label: { en: "None", es: "Ninguno" }, value: "none" },
+            { label: { en: "Base", es: "Base" }, value: "base" },
+          ],
+          type: "select",
+        },
       ],
-      type: "select",
     },
     {
-      defaultValue: "base",
-      label: { en: "Padding Y", es: "Relleno Vertical" },
-      name: "paddingY",
-      options: [
-        { label: { en: "None", es: "Ninguno" }, value: "none" },
-        { label: { en: "Base", es: "Base" }, value: "base" },
-        { label: { en: "Large", es: "Grande" }, value: "large" },
+      type: "row",
+      fields: [
+        {
+          admin: { width: "50%" },
+          defaultValue: "base",
+          label: { en: "Padding Y", es: "Relleno Vertical" },
+          name: "paddingY",
+          options: [
+            { label: { en: "None", es: "Ninguno" }, value: "none" },
+            { label: { en: "Base", es: "Base" }, value: "base" },
+            { label: { en: "Large", es: "Grande" }, value: "large" },
+          ],
+          type: "select",
+        },
+        {
+          admin: { width: "50%" },
+          defaultValue: "base",
+          label: { en: "Padding X", es: "Relleno Horizontal" },
+          name: "paddingX",
+          options: [
+            { label: { en: "None", es: "Ninguno" }, value: "none" },
+            { label: { en: "Base", es: "Base" }, value: "base" },
+          ],
+          type: "select",
+        },
       ],
-      type: "select",
-    },
-    {
-      defaultValue: "base",
-      label: { en: "Padding X", es: "Relleno Horizontal" },
-      name: "paddingX",
-      options: [
-        { label: { en: "None", es: "Ninguno" }, value: "none" },
-        { label: { en: "Base", es: "Base" }, value: "base" },
-      ],
-      type: "select",
-    },
-    {
-      defaultValue: "base",
-      label: { en: "Max Width", es: "Ancho Máximo" },
-      name: "maxWidth",
-      options: [
-        { label: { en: "None", es: "Ninguno" }, value: "none" },
-        { label: { en: "Base", es: "Base" }, value: "base" },
-      ],
-      type: "select",
     },
     {
       fields: [

@@ -16,26 +16,33 @@ import { generateSeoFields } from "@/core/lib/seoFields";
 export function createBasePageFields({ withBlocksDefaultValue = false } = {}): Field[] {
   return [
     {
-      admin: {
-        description: {
-          en: "The header to display on the page",
-          es: "El header a mostrar en la página",
+      type: "row",
+      fields: [
+        {
+          admin: {
+            width: "50%",
+            description: {
+              en: "The header to display on the page",
+              es: "El header a mostrar en la página",
+            },
+          },
+          name: "header",
+          relationTo: "header",
+          type: "relationship",
         },
-      },
-      name: "header",
-      relationTo: "header",
-      type: "relationship",
-    },
-    {
-      admin: {
-        description: {
-          en: "The footer to display on the page",
-          es: "El footer a mostrar en la página",
+        {
+          admin: {
+            width: "50%",
+            description: {
+              en: "The footer to display on the page",
+              es: "El footer a mostrar en la página",
+            },
+          },
+          name: "footer",
+          relationTo: "footer",
+          type: "relationship",
         },
-      },
-      name: "footer",
-      relationTo: "footer",
-      type: "relationship",
+      ],
     },
     {
       tabs: [

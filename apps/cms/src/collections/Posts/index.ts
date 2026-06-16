@@ -153,8 +153,13 @@ export const Posts: CollectionConfig<"posts"> = {
                 },
               },
               fields: [
-                { label: { en: "Eyebrow", es: "Antetítulo" }, localized: true, name: "eyebrow", type: "text" },
-                { label: { en: "Heading", es: "Encabezado" }, localized: true, name: "heading", type: "text" },
+                {
+                  type: "row",
+                  fields: [
+                    { admin: { width: "40%" }, label: { en: "Eyebrow", es: "Antetítulo" }, localized: true, name: "eyebrow", type: "text" },
+                    { admin: { width: "60%" }, label: { en: "Heading", es: "Encabezado" }, localized: true, name: "heading", type: "text" },
+                  ],
+                },
                 { label: { en: "Description", es: "Descripción" }, localized: true, name: "description", type: "textarea" },
                 {
                   fields: (link() as GroupField).fields,

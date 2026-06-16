@@ -16,30 +16,55 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
   },
   fields: [
     {
-      label: {
-        en: "Author",
-        es: "Autor",
-      },
-      name: "author",
-      required: true,
-      type: "text",
+      type: "row",
+      fields: [
+        {
+          admin: { width: "50%" },
+          label: {
+            en: "Author",
+            es: "Autor",
+          },
+          name: "author",
+          required: true,
+          type: "text",
+        },
+        {
+          admin: { width: "50%" },
+          label: {
+            en: "Company",
+            es: "Empresa",
+          },
+          name: "company",
+          type: "text",
+        },
+      ],
     },
     {
-      label: {
-        en: "Company",
-        es: "Empresa",
-      },
-      name: "company",
-      type: "text",
-    },
-    {
-      label: {
-        en: "Position",
-        es: "Posición",
-      },
-      localized: true,
-      name: "position",
-      type: "text",
+      type: "row",
+      fields: [
+        {
+          admin: { width: "50%" },
+          label: {
+            en: "Position",
+            es: "Posición",
+          },
+          localized: true,
+          name: "position",
+          type: "text",
+        },
+        {
+          admin: { width: "50%" },
+          defaultValue: 5,
+          label: {
+            en: "Rating (1-5)",
+            es: "Calificación (1-5)",
+          },
+          max: 5,
+          min: 1,
+          name: "rating",
+          type: "number",
+        },
+      ],
     },
     {
       label: {
@@ -59,17 +84,6 @@ export const Testimonials: CollectionConfig<"testimonials"> = {
       name: "content",
       required: true,
       type: "textarea",
-    },
-    {
-      defaultValue: 5,
-      label: {
-        en: "Rating (1-5)",
-        es: "Calificación (1-5)",
-      },
-      max: 5,
-      min: 1,
-      name: "rating",
-      type: "number",
     },
   ],
   labels: {

@@ -16,22 +16,32 @@ const defaultHeroLinkItem = (label: string) => ({
 
 export const heroFields: Field[] = [
   {
-    defaultValue: "showcase",
-    label: { en: "Variant", es: "Variante" },
-    name: "variant",
-    options: [
-      { label: { en: "Showcase window", es: "Ventana de producto" }, value: "showcase" },
-      { label: { en: "Centered", es: "Centrado" }, value: "centered" },
+    type: "row",
+    fields: [
+      {
+        admin: { width: "50%" },
+        defaultValue: "showcase",
+        label: { en: "Variant", es: "Variante" },
+        name: "variant",
+        options: [
+          { label: { en: "Showcase window", es: "Ventana de producto" }, value: "showcase" },
+          { label: { en: "Centered", es: "Centrado" }, value: "centered" },
+        ],
+        required: true,
+        type: "select",
+      },
+      {
+        admin: { width: "50%" },
+        defaultValue: createLocalizedDefault({
+          en: "New · Cadence 3.0",
+          es: "Nuevo · Cadence 3.0",
+        }),
+        label: { en: "Eyebrow", es: "Antetítulo" },
+        localized: true,
+        name: "eyebrow",
+        type: "text",
+      },
     ],
-    required: true,
-    type: "select",
-  },
-  {
-    defaultValue: createLocalizedDefault({ en: "New · Cadence 3.0", es: "Nuevo · Cadence 3.0" }),
-    label: { en: "Eyebrow", es: "Antetítulo" },
-    localized: true,
-    name: "eyebrow",
-    type: "text",
   },
   {
     defaultValue: createLocalizedDefault(DEFAULT_VALUES.blocks.hero.title),

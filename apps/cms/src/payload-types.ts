@@ -789,9 +789,9 @@ export interface HeroBlock {
   };
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
     paddingY?: ('none' | 'base' | 'large') | null;
     paddingX?: ('none' | 'base') | null;
-    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
@@ -861,9 +861,9 @@ export interface ContentBlock {
     | null;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
     paddingY?: ('none' | 'base' | 'large') | null;
     paddingX?: ('none' | 'base') | null;
-    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
@@ -912,9 +912,9 @@ export interface FaqBlock {
   }[];
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
     paddingY?: ('none' | 'base' | 'large') | null;
     paddingX?: ('none' | 'base') | null;
-    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
@@ -948,17 +948,17 @@ export interface TestimonialsListBlock {
         id?: string | null;
       }[]
     | null;
+  showRating?: boolean | null;
+  showAvatar?: boolean | null;
   /**
    * The duration of the animation in seconds. Default is 60 seconds.
    */
   duration?: number | null;
-  showRating?: boolean | null;
-  showAvatar?: boolean | null;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
     paddingY?: ('none' | 'base' | 'large') | null;
     paddingX?: ('none' | 'base') | null;
-    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
@@ -984,9 +984,9 @@ export interface Testimonial {
   author: string;
   company?: string | null;
   position?: string | null;
+  rating?: number | null;
   avatar?: (number | null) | Media;
   content: string;
-  rating?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1063,9 +1063,9 @@ export interface CardsGridBlock {
   }[];
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
     paddingY?: ('none' | 'base' | 'large') | null;
     paddingX?: ('none' | 'base') | null;
-    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
@@ -1118,9 +1118,9 @@ export interface CarouselBlock {
   }[];
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
     paddingY?: ('none' | 'base' | 'large') | null;
     paddingX?: ('none' | 'base') | null;
-    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
@@ -1169,9 +1169,9 @@ export interface LogosBlock {
   }[];
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
     paddingY?: ('none' | 'base' | 'large') | null;
     paddingX?: ('none' | 'base') | null;
-    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
@@ -1215,9 +1215,9 @@ export interface ChartBlock {
   }[];
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
     paddingY?: ('none' | 'base' | 'large') | null;
     paddingX?: ('none' | 'base') | null;
-    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
@@ -1268,9 +1268,9 @@ export interface CtaBandBlock {
   }[];
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
     paddingY?: ('none' | 'base' | 'large') | null;
     paddingX?: ('none' | 'base') | null;
-    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
@@ -1299,9 +1299,9 @@ export interface NewsletterBlock {
   disclaimer?: string | null;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
     paddingY?: ('none' | 'base' | 'large') | null;
     paddingX?: ('none' | 'base') | null;
-    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
@@ -1330,9 +1330,9 @@ export interface StatsBlock {
   }[];
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
     paddingY?: ('none' | 'base' | 'large') | null;
     paddingX?: ('none' | 'base') | null;
-    maxWidth?: ('none' | 'base') | null;
     background?: {
       /**
        * Upload an image or video. Use the "Background" folder.
@@ -1457,9 +1457,9 @@ export interface Preset {
         };
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
           paddingY?: ('none' | 'base' | 'large') | null;
           paddingX?: ('none' | 'base') | null;
-          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
@@ -1525,9 +1525,9 @@ export interface Preset {
           | null;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
           paddingY?: ('none' | 'base' | 'large') | null;
           paddingX?: ('none' | 'base') | null;
-          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
@@ -1572,9 +1572,9 @@ export interface Preset {
         }[];
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
           paddingY?: ('none' | 'base' | 'large') | null;
           paddingX?: ('none' | 'base') | null;
-          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
@@ -1604,17 +1604,17 @@ export interface Preset {
               id?: string | null;
             }[]
           | null;
+        showRating?: boolean | null;
+        showAvatar?: boolean | null;
         /**
          * The duration of the animation in seconds. Default is 60 seconds.
          */
         duration?: number | null;
-        showRating?: boolean | null;
-        showAvatar?: boolean | null;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
           paddingY?: ('none' | 'base' | 'large') | null;
           paddingX?: ('none' | 'base') | null;
-          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
@@ -1700,9 +1700,9 @@ export interface Preset {
         }[];
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
           paddingY?: ('none' | 'base' | 'large') | null;
           paddingX?: ('none' | 'base') | null;
-          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
@@ -1751,9 +1751,9 @@ export interface Preset {
         }[];
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
           paddingY?: ('none' | 'base' | 'large') | null;
           paddingX?: ('none' | 'base') | null;
-          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
@@ -1798,9 +1798,9 @@ export interface Preset {
         }[];
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
           paddingY?: ('none' | 'base' | 'large') | null;
           paddingX?: ('none' | 'base') | null;
-          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
@@ -1840,9 +1840,9 @@ export interface Preset {
         }[];
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
           paddingY?: ('none' | 'base' | 'large') | null;
           paddingX?: ('none' | 'base') | null;
-          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
@@ -1889,9 +1889,9 @@ export interface Preset {
         }[];
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
           paddingY?: ('none' | 'base' | 'large') | null;
           paddingX?: ('none' | 'base') | null;
-          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
@@ -1916,9 +1916,9 @@ export interface Preset {
         disclaimer?: string | null;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
           paddingY?: ('none' | 'base' | 'large') | null;
           paddingX?: ('none' | 'base') | null;
-          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
@@ -1943,9 +1943,9 @@ export interface Preset {
         }[];
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
           paddingY?: ('none' | 'base' | 'large') | null;
           paddingX?: ('none' | 'base') | null;
-          maxWidth?: ('none' | 'base') | null;
           background?: {
             /**
              * Upload an image or video. Use the "Background" folder.
@@ -2663,9 +2663,9 @@ export interface HeroBlockSelect<T extends boolean = true> {
     | T
     | {
         theme?: T;
+        maxWidth?: T;
         paddingY?: T;
         paddingX?: T;
-        maxWidth?: T;
         background?:
           | T
           | {
@@ -2704,9 +2704,9 @@ export interface ContentBlockSelect<T extends boolean = true> {
     | T
     | {
         theme?: T;
+        maxWidth?: T;
         paddingY?: T;
         paddingX?: T;
-        maxWidth?: T;
         background?:
           | T
           | {
@@ -2737,9 +2737,9 @@ export interface FaqBlockSelect<T extends boolean = true> {
     | T
     | {
         theme?: T;
+        maxWidth?: T;
         paddingY?: T;
         paddingX?: T;
-        maxWidth?: T;
         background?:
           | T
           | {
@@ -2765,16 +2765,16 @@ export interface TestimonialsListBlockSelect<T extends boolean = true> {
         testimonial?: T;
         id?: T;
       };
-  duration?: T;
   showRating?: T;
   showAvatar?: T;
+  duration?: T;
   section?:
     | T
     | {
         theme?: T;
+        maxWidth?: T;
         paddingY?: T;
         paddingX?: T;
-        maxWidth?: T;
         background?:
           | T
           | {
@@ -2827,9 +2827,9 @@ export interface CardsGridBlockSelect<T extends boolean = true> {
     | T
     | {
         theme?: T;
+        maxWidth?: T;
         paddingY?: T;
         paddingX?: T;
-        maxWidth?: T;
         background?:
           | T
           | {
@@ -2866,9 +2866,9 @@ export interface CarouselBlockSelect<T extends boolean = true> {
     | T
     | {
         theme?: T;
+        maxWidth?: T;
         paddingY?: T;
         paddingX?: T;
-        maxWidth?: T;
         background?:
           | T
           | {
@@ -2912,9 +2912,9 @@ export interface LogosBlockSelect<T extends boolean = true> {
     | T
     | {
         theme?: T;
+        maxWidth?: T;
         paddingY?: T;
         paddingX?: T;
-        maxWidth?: T;
         background?:
           | T
           | {
@@ -2953,9 +2953,9 @@ export interface ChartBlockSelect<T extends boolean = true> {
     | T
     | {
         theme?: T;
+        maxWidth?: T;
         paddingY?: T;
         paddingX?: T;
-        maxWidth?: T;
         background?:
           | T
           | {
@@ -2991,9 +2991,9 @@ export interface CtaBandBlockSelect<T extends boolean = true> {
     | T
     | {
         theme?: T;
+        maxWidth?: T;
         paddingY?: T;
         paddingX?: T;
-        maxWidth?: T;
         background?:
           | T
           | {
@@ -3019,9 +3019,9 @@ export interface NewsletterBlockSelect<T extends boolean = true> {
     | T
     | {
         theme?: T;
+        maxWidth?: T;
         paddingY?: T;
         paddingX?: T;
-        maxWidth?: T;
         background?:
           | T
           | {
@@ -3049,9 +3049,9 @@ export interface StatsBlockSelect<T extends boolean = true> {
     | T
     | {
         theme?: T;
+        maxWidth?: T;
         paddingY?: T;
         paddingX?: T;
-        maxWidth?: T;
         background?:
           | T
           | {
@@ -3150,9 +3150,9 @@ export interface TestimonialsSelect<T extends boolean = true> {
   author?: T;
   company?: T;
   position?: T;
+  rating?: T;
   avatar?: T;
   content?: T;
-  rating?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3350,9 +3350,9 @@ export interface PresetsSelect<T extends boolean = true> {
                 | T
                 | {
                     theme?: T;
+                    maxWidth?: T;
                     paddingY?: T;
                     paddingX?: T;
-                    maxWidth?: T;
                     background?:
                       | T
                       | {
@@ -3389,9 +3389,9 @@ export interface PresetsSelect<T extends boolean = true> {
                 | T
                 | {
                     theme?: T;
+                    maxWidth?: T;
                     paddingY?: T;
                     paddingX?: T;
-                    maxWidth?: T;
                     background?:
                       | T
                       | {
@@ -3420,9 +3420,9 @@ export interface PresetsSelect<T extends boolean = true> {
                 | T
                 | {
                     theme?: T;
+                    maxWidth?: T;
                     paddingY?: T;
                     paddingX?: T;
-                    maxWidth?: T;
                     background?:
                       | T
                       | {
@@ -3446,16 +3446,16 @@ export interface PresetsSelect<T extends boolean = true> {
                     testimonial?: T;
                     id?: T;
                   };
-              duration?: T;
               showRating?: T;
               showAvatar?: T;
+              duration?: T;
               section?:
                 | T
                 | {
                     theme?: T;
+                    maxWidth?: T;
                     paddingY?: T;
                     paddingX?: T;
-                    maxWidth?: T;
                     background?:
                       | T
                       | {
@@ -3506,9 +3506,9 @@ export interface PresetsSelect<T extends boolean = true> {
                 | T
                 | {
                     theme?: T;
+                    maxWidth?: T;
                     paddingY?: T;
                     paddingX?: T;
-                    maxWidth?: T;
                     background?:
                       | T
                       | {
@@ -3543,9 +3543,9 @@ export interface PresetsSelect<T extends boolean = true> {
                 | T
                 | {
                     theme?: T;
+                    maxWidth?: T;
                     paddingY?: T;
                     paddingX?: T;
-                    maxWidth?: T;
                     background?:
                       | T
                       | {
@@ -3587,9 +3587,9 @@ export interface PresetsSelect<T extends boolean = true> {
                 | T
                 | {
                     theme?: T;
+                    maxWidth?: T;
                     paddingY?: T;
                     paddingX?: T;
-                    maxWidth?: T;
                     background?:
                       | T
                       | {
@@ -3626,9 +3626,9 @@ export interface PresetsSelect<T extends boolean = true> {
                 | T
                 | {
                     theme?: T;
+                    maxWidth?: T;
                     paddingY?: T;
                     paddingX?: T;
-                    maxWidth?: T;
                     background?:
                       | T
                       | {
@@ -3662,9 +3662,9 @@ export interface PresetsSelect<T extends boolean = true> {
                 | T
                 | {
                     theme?: T;
+                    maxWidth?: T;
                     paddingY?: T;
                     paddingX?: T;
-                    maxWidth?: T;
                     background?:
                       | T
                       | {
@@ -3688,9 +3688,9 @@ export interface PresetsSelect<T extends boolean = true> {
                 | T
                 | {
                     theme?: T;
+                    maxWidth?: T;
                     paddingY?: T;
                     paddingX?: T;
-                    maxWidth?: T;
                     background?:
                       | T
                       | {
@@ -3716,9 +3716,9 @@ export interface PresetsSelect<T extends boolean = true> {
                 | T
                 | {
                     theme?: T;
+                    maxWidth?: T;
                     paddingY?: T;
                     paddingX?: T;
-                    maxWidth?: T;
                     background?:
                       | T
                       | {
@@ -3997,6 +3997,10 @@ export interface SiteSetting {
    */
   defaultOgTitle?: string | null;
   /**
+   * Site name for Open Graph. Defaults to Site Name if empty
+   */
+  ogSiteName?: string | null;
+  /**
    * Fallback description when page has no description
    */
   defaultDescription?: string | null;
@@ -4008,10 +4012,6 @@ export interface SiteSetting {
    * Fallback image for social media sharing
    */
   defaultOgImage?: (number | null) | Media;
-  /**
-   * Site name for Open Graph. Defaults to Site Name if empty
-   */
-  ogSiteName?: string | null;
   /**
    * Twitter/X username for the website (e.g., @yoursite)
    */
@@ -4033,11 +4033,11 @@ export interface SiteSetting {
    */
   notFoundDescription?: string | null;
   blog: {
+    eyebrow?: string | null;
     blogTitle: string;
     blogDescription: string;
     readMoreLabel: string;
     relatedPostsLabel: string;
-    eyebrow?: string | null;
     searchPlaceholder?: string | null;
     blogMeta?: {
       title?: string | null;
@@ -4090,10 +4090,10 @@ export interface SiteSettingsSelect<T extends boolean = true> {
   seoTitleSeparator?: T;
   seoTitleSuffix?: T;
   defaultOgTitle?: T;
+  ogSiteName?: T;
   defaultDescription?: T;
   defaultOgDescription?: T;
   defaultOgImage?: T;
-  ogSiteName?: T;
   twitterSite?: T;
   twitterCreator?: T;
   defaultTwitterCard?: T;
@@ -4102,11 +4102,11 @@ export interface SiteSettingsSelect<T extends boolean = true> {
   blog?:
     | T
     | {
+        eyebrow?: T;
         blogTitle?: T;
         blogDescription?: T;
         readMoreLabel?: T;
         relatedPostsLabel?: T;
-        eyebrow?: T;
         searchPlaceholder?: T;
         blogMeta?:
           | T

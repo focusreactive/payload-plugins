@@ -24,6 +24,25 @@ export const testimonialsListFields: Field[] = [
     type: "array",
   },
   {
+    type: "row",
+    fields: [
+      {
+        admin: { width: "50%" },
+        defaultValue: true,
+        label: { en: "Show Rating", es: "Mostrar Calificación" },
+        name: "showRating",
+        type: "checkbox",
+      },
+      {
+        admin: { width: "50%" },
+        defaultValue: true,
+        label: { en: "Show Avatar", es: "Mostrar Avatar" },
+        name: "showAvatar",
+        type: "checkbox",
+      },
+    ],
+  },
+  {
     admin: {
       description: {
         en: "The duration of the animation in seconds. Default is 60 seconds.",
@@ -38,17 +57,5 @@ export const testimonialsListFields: Field[] = [
     },
     name: "duration",
     type: "number",
-  },
-  {
-    defaultValue: true,
-    label: { en: "Show Rating", es: "Mostrar Calificación" },
-    name: "showRating",
-    type: "checkbox",
-  },
-  {
-    defaultValue: true,
-    label: { en: "Show Avatar", es: "Mostrar Avatar" },
-    name: "showAvatar",
-    type: "checkbox",
   },
 ];

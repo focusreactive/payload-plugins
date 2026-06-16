@@ -8,22 +8,29 @@ import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields"
 const fields: Field[] = [
   ...sectionHeaderFields(),
   {
-    defaultValue: createLocalizedDefault({ en: "Total Visitors", es: "Visitantes totales" }),
-    label: { en: "Title", es: "Título" },
-    localized: true,
-    name: "title",
-    required: true,
-    type: "text",
-  },
-  {
-    defaultValue: createLocalizedDefault({
-      en: "Total for the last 3 months",
-      es: "Total de los últimos 3 meses",
-    }),
-    label: { en: "Subtitle", es: "Subtítulo" },
-    localized: true,
-    name: "subtitle",
-    type: "text",
+    type: "row",
+    fields: [
+      {
+        admin: { width: "50%" },
+        defaultValue: createLocalizedDefault({ en: "Total Visitors", es: "Visitantes totales" }),
+        label: { en: "Title", es: "Título" },
+        localized: true,
+        name: "title",
+        required: true,
+        type: "text",
+      },
+      {
+        admin: { width: "50%" },
+        defaultValue: createLocalizedDefault({
+          en: "Total for the last 3 months",
+          es: "Total de los últimos 3 meses",
+        }),
+        label: { en: "Subtitle", es: "Subtítulo" },
+        localized: true,
+        name: "subtitle",
+        type: "text",
+      },
+    ],
   },
   {
     admin: {
@@ -43,8 +50,13 @@ const fields: Field[] = [
       },
       {
         fields: [
-          { label: { en: "Label", es: "Etiqueta" }, name: "label", required: true, type: "text" },
-          { label: { en: "Value", es: "Valor" }, name: "value", required: true, type: "number" },
+          {
+            type: "row",
+            fields: [
+              { admin: { width: "50%" }, label: { en: "Label", es: "Etiqueta" }, name: "label", required: true, type: "text" },
+              { admin: { width: "50%" }, label: { en: "Value", es: "Valor" }, name: "value", required: true, type: "number" },
+            ],
+          },
         ],
         minRows: 2,
         name: "dataPoints",

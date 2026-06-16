@@ -14,24 +14,31 @@ interface SectionHeaderFieldsOptions {
 export function sectionHeaderFields(options: SectionHeaderFieldsOptions = {}): Field[] {
   return [
     {
-      ...(options.eyebrowDefault ? { defaultValue: createLocalizedDefault(options.eyebrowDefault) } : {}),
-      label: { en: "Eyebrow", es: "Antetítulo" },
-      localized: true,
-      name: "eyebrow",
-      type: "text",
-    },
-    {
-      ...(options.headingDefault ? { defaultValue: createLocalizedDefault(options.headingDefault) } : {}),
-      admin: {
-        description: {
-          en: "Wrap a word in *asterisks* to accent it in the brand colour.",
-          es: "Envuelve una palabra en *asteriscos* para resaltarla con el color de marca.",
+      type: "row",
+      fields: [
+        {
+          ...(options.eyebrowDefault ? { defaultValue: createLocalizedDefault(options.eyebrowDefault) } : {}),
+          admin: { width: "40%" },
+          label: { en: "Eyebrow", es: "Antetítulo" },
+          localized: true,
+          name: "eyebrow",
+          type: "text",
         },
-      },
-      label: { en: "Heading", es: "Encabezado" },
-      localized: true,
-      name: "heading",
-      type: "text",
+        {
+          ...(options.headingDefault ? { defaultValue: createLocalizedDefault(options.headingDefault) } : {}),
+          admin: {
+            width: "60%",
+            description: {
+              en: "Wrap a word in *asterisks* to accent it in the brand colour.",
+              es: "Envuelve una palabra en *asteriscos* para resaltarla con el color de marca.",
+            },
+          },
+          label: { en: "Heading", es: "Encabezado" },
+          localized: true,
+          name: "heading",
+          type: "text",
+        },
+      ],
     },
     {
       ...(options.descriptionDefault ? { defaultValue: createLocalizedDefault(options.descriptionDefault) } : {}),
