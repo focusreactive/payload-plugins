@@ -183,7 +183,7 @@
     },
     "packages/payload-plugin-analytics": {
       "name": "@focus-reactive/payload-plugin-analytics",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "dependencies": {
         "@google-analytics/data": "^5.2.2",
         "class-variance-authority": "0.7.1",
@@ -369,7 +369,7 @@
     },
     "packages/payload-plugin-translator": {
       "name": "@focus-reactive/payload-plugin-translator",
-      "version": "0.5.1",
+      "version": "0.6.1",
       "dependencies": {
         "@hookform/resolvers": "^3.9.0",
         "@radix-ui/react-popover": "^1.1.0",
