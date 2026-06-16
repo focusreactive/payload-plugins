@@ -94,6 +94,8 @@
   --color-accent-hover: var(--color-lime-500);
   --color-accent-foreground: var(--color-ink-950);
 
+  --color-highlight: var(--color-primary);
+
   --color-destructive: oklch(0.577 0.245 27.325);
   --color-destructive-foreground: var(--color-white);
 
@@ -131,6 +133,7 @@
   --color-muted-foreground: var(--color-slate-400);
   --color-border: var(--color-white-13);
   --color-border-strong: var(--color-white-28);
+  --color-highlight: var(--color-accent);
 }
 
 [data-theme="dark-gray"] {
@@ -152,6 +155,7 @@
   --color-muted-foreground: var(--color-slate-450);
   --color-border: var(--color-white-11);
   --color-border-strong: var(--color-white-24);
+  --color-highlight: var(--color-accent);
 }
 
 [data-theme="light-gray"] {

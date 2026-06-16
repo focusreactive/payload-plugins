@@ -44,7 +44,7 @@ export function DisplayHeading({ as: Tag = "h2", text, size = "lg", className, a
     <Tag className={cn("font-display text-balance text-primary", sizeMap[size], !TOKEN_SIZES.has(size) && ["tracking-tight", size === "xl" ? "leading-[0.95]" : "leading-[1.05]"], className)}>
       {parts.map((p, i) =>
         p.type === "accent" ? (
-          <em key={i} className={cn("font-display not-italic text-accent", accentClassName)}>
+          <em key={i} className={cn("font-display not-italic text-highlight", accentClassName)}>
             {p.value}
           </em>
         ) : (
