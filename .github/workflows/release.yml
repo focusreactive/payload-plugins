@@ -36,7 +36,7 @@ jobs:
           node-version: "24"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --filter='./packages/*'
 
       - name: Build
         run: bunx turbo run build --filter='./packages/*'
