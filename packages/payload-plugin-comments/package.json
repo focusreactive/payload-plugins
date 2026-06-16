@@ -50,7 +50,7 @@
     }
   },
   "scripts": {
-    "build": "tsup && tsgo --emitDeclarationOnly --declarationMap",
+    "build": "tsup && tsc --emitDeclarationOnly --declarationMap",
     "dev": "tsup --watch",
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
