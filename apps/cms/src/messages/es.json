@@ -40,7 +40,7 @@
       "close": "Cerrar búsqueda"
     },
     "newsletter": {
-      "badge": "The Journal, cada mes",
+      "eyebrow": "The Journal, cada mes",
       "heading": "Un correo reflexivo al mes. Sin ruido.",
       "placeholder": "tu@equipo.com",
       "button": "Suscribirse",

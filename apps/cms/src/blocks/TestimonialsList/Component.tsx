@@ -10,13 +10,13 @@ import { sectionVariants } from "@/core/ui/blocks/SectionContainer";
 
 type Props = TestimonialsListBlock;
 
-export const TestimonialsListBlockComponent: React.FC<Props> = ({ eyebrow, heading, lead, testimonialItems, showRating = true, showAvatar = true, duration = 60, section, id }) => {
+export const TestimonialsListBlockComponent: React.FC<Props> = ({ eyebrow, heading, description, testimonialItems, showRating = true, showAvatar = true, duration = 60, section, id }) => {
   const testimonials = (testimonialItems ?? []).map((item) => item.testimonial).filter((t): t is Testimonial => typeof t !== "number" && t !== null && t !== undefined);
   const header = prepareSectionHeaderProps({
     align: "center",
     eyebrow,
-    subtitle: lead,
-    title: heading,
+    description,
+    heading,
   });
 
   const theme = section?.theme;

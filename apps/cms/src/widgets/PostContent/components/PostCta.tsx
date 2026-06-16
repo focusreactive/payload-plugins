@@ -9,7 +9,7 @@ interface PostCtaProps {
 export function PostCta({ cta }: PostCtaProps) {
   return (
     <SectionContainer sectionData={{ paddingY: "none", theme: "dark" }}>
-      <CtaBandSection eyebrow={cta.badge} heading={cta.heading} lead={cta.lead} actions={cta.actions} theme="dark" />
+      <CtaBandSection eyebrow={cta.eyebrow} heading={cta.heading} description={cta.description} actions={cta.actions} theme="dark" />
     </SectionContainer>
   );
 }

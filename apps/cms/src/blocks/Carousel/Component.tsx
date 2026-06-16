@@ -8,7 +8,7 @@ import { prepareRichTextProps } from "@/lib/adapters/prepareRichTextProps";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { CarouselBlock } from "@/payload-types";
 
-export const CarouselBlockComponent: React.FC<CarouselBlock> = ({ eyebrow, heading, lead, effect, slides, section, id }) => {
+export const CarouselBlockComponent: React.FC<CarouselBlock> = ({ eyebrow, heading, description, effect, slides, section, id }) => {
   const cards: ICarouselCardProps[] = (slides ?? []).map((slide) => ({
     effect: (effect as ICarouselCardProps["effect"]) ?? "slide",
     image: prepareImageProps(slide.image),
@@ -17,8 +17,8 @@ export const CarouselBlockComponent: React.FC<CarouselBlock> = ({ eyebrow, headi
 
   const header = prepareSectionHeaderProps({
     eyebrow,
-    subtitle: lead,
-    title: heading,
+    description,
+    heading,
     align: "center",
   });
 

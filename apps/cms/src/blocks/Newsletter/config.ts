@@ -7,9 +7,9 @@ import { embedSectionTab } from "@/fields/section/embedSectionTab";
 const fields: Field[] = [
   {
     defaultValue: createLocalizedDefault({ en: "The Journal, monthly", es: "The Journal, mensual" }),
-    label: { en: "Badge", es: "Insignia" },
+    label: { en: "Eyebrow", es: "Antetítulo" },
     localized: true,
-    name: "badge",
+    name: "eyebrow",
     type: "text",
   },
   {

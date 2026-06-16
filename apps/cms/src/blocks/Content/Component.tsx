@@ -4,9 +4,9 @@ import { CMSLink, Media, RichText, SectionContainer } from "@/core/ui";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { ContentBlock as ContentBlockProps, Page, Post } from "@/payload-types";
 
-export const ContentBlockComponent: React.FC<ContentBlockProps> = ({ eyebrow, heading, lead, layout, content, image, actions, section, id }) => {
+export const ContentBlockComponent: React.FC<ContentBlockProps> = ({ eyebrow, heading, description, layout, content, image, actions, section, id }) => {
   const resolvedImage = typeof image !== "number" ? image : null;
-  const header = prepareSectionHeaderProps({ eyebrow, subtitle: lead, title: heading });
+  const header = prepareSectionHeaderProps({ eyebrow, description, heading });
 
   return (
     <SectionContainer sectionData={{ ...section, id }}>

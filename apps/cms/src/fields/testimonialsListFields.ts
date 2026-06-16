@@ -6,7 +6,7 @@ import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields"
 export const testimonialsListFields: Field[] = [
   ...sectionHeaderFields({
     headingDefault: DEFAULT_VALUES.blocks.testimonialsList.heading,
-    leadDefault: DEFAULT_VALUES.blocks.testimonialsList.subheading,
+    descriptionDefault: DEFAULT_VALUES.blocks.testimonialsList.subheading,
   }),
   {
     fields: [

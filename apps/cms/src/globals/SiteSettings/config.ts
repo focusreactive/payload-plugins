@@ -387,9 +387,9 @@ export const SiteSettings: GlobalConfig = {
                     },
                     {
                       defaultValue: createLocalizedDefault({ en: "The Journal", es: "The Journal" }),
-                      label: { en: "Blog badge", es: "Insignia del blog" },
+                      label: { en: "Eyebrow", es: "Antetítulo" },
                       localized: true,
-                      name: "blogBadge",
+                      name: "eyebrow",
                       type: "text",
                     },
                     {

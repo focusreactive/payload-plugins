@@ -2,15 +2,15 @@ import type { SectionHeaderEyebrow, SectionHeaderProps } from "@repo/ui";
 
 export interface SectionHeaderInput {
   eyebrow?: string | null;
-  title?: string | null;
-  subtitle?: React.ReactNode;
+  heading?: string | null;
+  description?: React.ReactNode;
   size?: SectionHeaderProps["size"];
   align?: SectionHeaderProps["align"];
   eyebrowVariant?: SectionHeaderEyebrow["variant"];
 }
 
-export function prepareSectionHeaderProps({ eyebrow, title, subtitle, size, align, eyebrowVariant }: SectionHeaderInput): SectionHeaderProps | null {
-  if (!eyebrow && !title && !subtitle) {
+export function prepareSectionHeaderProps({ eyebrow, heading, description, size, align, eyebrowVariant }: SectionHeaderInput): SectionHeaderProps | null {
+  if (!eyebrow && !heading && !description) {
     return null;
   }
 
@@ -18,7 +18,7 @@ export function prepareSectionHeaderProps({ eyebrow, title, subtitle, size, alig
     align,
     eyebrow: eyebrow ? { text: eyebrow, variant: eyebrowVariant } : null,
     size,
-    subtitle,
-    title,
+    subtitle: description,
+    title: heading,
   };
 }

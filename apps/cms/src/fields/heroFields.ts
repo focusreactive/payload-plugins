@@ -28,9 +28,9 @@ export const heroFields: Field[] = [
   },
   {
     defaultValue: createLocalizedDefault({ en: "New · Cadence 3.0", es: "Nuevo · Cadence 3.0" }),
-    label: { en: "Badge", es: "Insignia" },
+    label: { en: "Eyebrow", es: "Antetítulo" },
     localized: true,
-    name: "badge",
+    name: "eyebrow",
     type: "text",
   },
   {

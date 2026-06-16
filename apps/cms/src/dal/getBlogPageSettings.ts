@@ -8,7 +8,7 @@ import { getCachedGlobal } from "./getGlobals";
 
 export interface BlogPageSettingsData {
   blogTitle?: string | null;
-  blogBadge?: string | null;
+  eyebrow?: string | null;
   blogDescription?: string | null;
   readMoreLabel?: string | null;
   relatedPostsLabel?: string | null;
@@ -23,7 +23,7 @@ export const getBlogPageSettings = async ({ locale }: { locale?: Locale }): Prom
   const settings = (await getCachedGlobal("site-settings", 1, resolvedLocale, draft)()) as SiteSetting;
 
   return {
-    blogBadge: settings?.blog?.blogBadge,
+    eyebrow: settings?.blog?.eyebrow,
     blogDescription: settings?.blog?.blogDescription,
     blogMeta: settings?.blog?.blogMeta,
     blogTitle: settings?.blog?.blogTitle,

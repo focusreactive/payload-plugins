@@ -102,9 +102,9 @@ export const Header: CollectionConfig<"header"> = {
                 },
                 {
                   admin: { condition: (_, siblingData) => !!siblingData?.enabled },
-                  label: { en: "Badge", es: "Insignia" },
+                  label: { en: "Eyebrow", es: "Antetítulo" },
                   localized: true,
-                  name: "badge",
+                  name: "eyebrow",
                   type: "text",
                 },
                 {

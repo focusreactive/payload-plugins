@@ -154,9 +154,9 @@ export const Posts: CollectionConfig<"posts"> = {
                 },
               },
               fields: [
-                { label: { en: "Badge", es: "Insignia" }, localized: true, name: "badge", type: "text" },
+                { label: { en: "Eyebrow", es: "Antetítulo" }, localized: true, name: "eyebrow", type: "text" },
                 { label: { en: "Heading", es: "Encabezado" }, localized: true, name: "heading", type: "text" },
-                { label: { en: "Lead", es: "Entradilla" }, localized: true, name: "lead", type: "text" },
+                { label: { en: "Description", es: "Descripción" }, localized: true, name: "description", type: "textarea" },
                 {
                   fields: (link() as GroupField).fields,
                   label: { en: "Actions", es: "Acciones" },

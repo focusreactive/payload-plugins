@@ -8,7 +8,7 @@ type LocalizedDefault = Record<Locale, string>;
 interface SectionHeaderFieldsOptions {
   eyebrowDefault?: LocalizedDefault;
   headingDefault?: LocalizedDefault;
-  leadDefault?: LocalizedDefault;
+  descriptionDefault?: LocalizedDefault;
 }
 
 export function sectionHeaderFields(options: SectionHeaderFieldsOptions = {}): Field[] {
@@ -34,11 +34,11 @@ export function sectionHeaderFields(options: SectionHeaderFieldsOptions = {}): F
       type: "text",
     },
     {
-      ...(options.leadDefault ? { defaultValue: createLocalizedDefault(options.leadDefault) } : {}),
-      label: { en: "Lead", es: "Entradilla" },
+      ...(options.descriptionDefault ? { defaultValue: createLocalizedDefault(options.descriptionDefault) } : {}),
+      label: { en: "Description", es: "Descripción" },
       localized: true,
-      name: "lead",
-      type: "text",
+      name: "description",
+      type: "textarea",
     },
   ];
 }

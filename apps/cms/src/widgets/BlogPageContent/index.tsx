@@ -19,7 +19,7 @@ interface BlogPageContentProps {
   posts: BlogListPost[];
   currentPage: number;
   totalPages: number;
-  blogBadge?: string | null;
+  eyebrow?: string | null;
   blogTitle?: string | null;
   searchPlaceholder?: string | null;
   readMoreLabel?: string | null;
@@ -29,19 +29,7 @@ interface BlogPageContentProps {
   locale: Locale;
 }
 
-export async function BlogPageContent({
-  posts,
-  currentPage,
-  totalPages,
-  blogBadge,
-  blogTitle,
-  searchPlaceholder,
-  readMoreLabel,
-  categories,
-  activeCategory,
-  searchQuery,
-  locale,
-}: BlogPageContentProps) {
+export async function BlogPageContent({ posts, currentPage, totalPages, eyebrow, blogTitle, searchPlaceholder, readMoreLabel, categories, activeCategory, searchQuery, locale }: BlogPageContentProps) {
   const t = await getTranslations("blog");
 
   const showFeatured = currentPage === 1 && !activeCategory && !searchQuery && posts.length > 0;
@@ -53,9 +41,9 @@ export async function BlogPageContent({
       <section className="pt-[clamp(48px,7vw,88px)]">
         <div className="mx-auto w-full max-w-containerMaxW px-containerBase">
           <div className="mx-auto flex max-w-[720px] flex-col items-center gap-5 text-center">
-            {blogBadge && (
+            {eyebrow && (
               <Eyebrow prefix="dot" tone="accent">
-                {blogBadge}
+                {eyebrow}
               </Eyebrow>
             )}
             {blogTitle && <DisplayHeading as="h1" size="display-1" text={blogTitle} />}

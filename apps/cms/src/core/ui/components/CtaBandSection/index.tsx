@@ -27,13 +27,13 @@ export interface CtaBandSectionAction {
 interface CtaBandSectionProps {
   eyebrow?: string | null;
   heading?: string | null;
-  lead?: string | null;
+  description?: string | null;
   actions?: CtaBandSectionAction[] | null;
   theme?: string | null;
 }
 
-export function CtaBandSection({ eyebrow, heading, lead, actions, theme }: CtaBandSectionProps) {
-  const header = prepareSectionHeaderProps({ eyebrow, subtitle: lead, title: heading });
+export function CtaBandSection({ eyebrow, heading, description, actions, theme }: CtaBandSectionProps) {
+  const header = prepareSectionHeaderProps({ eyebrow, description, heading });
 
   return (
     <CtaBand

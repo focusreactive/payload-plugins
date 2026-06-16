@@ -9,5 +9,5 @@ export function extractTestimonialsText(block: TestimonialsListBlock): string {
     const testimonial = item.testimonial as Testimonial;
     return [testimonial.author, testimonial.company, testimonial.position, testimonial.content];
   });
-  return joinText([block.eyebrow, block.heading, block.lead, ...testimonialText]);
+  return joinText([block.eyebrow, block.heading, block.description, ...testimonialText]);
 }

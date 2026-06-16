@@ -45,7 +45,7 @@ function resolveHeaderLink(link: PayloadLink | null | undefined, locale: string,
 
 function mapFeatured(featured: NonNullable<NonNullable<PayloadNavItem["dropdown"]>["featured"]>, locale: string): HeaderFeatured {
   return {
-    badge: featured.badge ?? undefined,
+    badge: featured.eyebrow ?? undefined,
     title: featured.title ?? undefined,
     description: featured.description ?? undefined,
     link: resolveHeaderLink(featured.link, locale),

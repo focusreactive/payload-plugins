@@ -458,7 +458,7 @@ export interface Header {
         dropdown?: {
           featured?: {
             enabled?: boolean | null;
-            badge?: string | null;
+            eyebrow?: string | null;
             title?: string | null;
             description?: string | null;
             link?: {
@@ -586,9 +586,9 @@ export interface Post {
    * Optional CTA band shown at the end of the post. Hidden when the heading is empty.
    */
   cta?: {
-    badge?: string | null;
+    eyebrow?: string | null;
     heading?: string | null;
-    lead?: string | null;
+    description?: string | null;
     actions?:
       | {
           type?: ('reference' | 'custom' | 'customPage') | null;
@@ -745,7 +745,7 @@ export interface Footer {
  */
 export interface HeroBlock {
   variant: 'showcase' | 'centered';
-  badge?: string | null;
+  eyebrow?: string | null;
   title?: string | null;
   richText?: {
     root: {
@@ -861,7 +861,7 @@ export interface ContentBlock {
    * Wrap a word in *asterisks* to accent it in the brand colour.
    */
   heading?: string | null;
-  lead?: string | null;
+  description?: string | null;
   layout: 'image-text' | 'text-image';
   image: number | Media;
   content: {
@@ -933,7 +933,7 @@ export interface FaqBlock {
    * Wrap a word in *asterisks* to accent it in the brand colour.
    */
   heading?: string | null;
-  lead?: string | null;
+  description?: string | null;
   items: {
     question: string;
     answer: {
@@ -984,7 +984,7 @@ export interface TestimonialsListBlock {
    * Wrap a word in *asterisks* to accent it in the brand colour.
    */
   heading?: string | null;
-  lead?: string | null;
+  description?: string | null;
   testimonialItems?:
     | {
         testimonial: number | Testimonial;
@@ -1043,7 +1043,7 @@ export interface CardsGridBlock {
    * Wrap a word in *asterisks* to accent it in the brand colour.
    */
   heading?: string | null;
-  lead?: string | null;
+  description?: string | null;
   columns?: number | null;
   items: {
     /**
@@ -1135,7 +1135,7 @@ export interface CarouselBlock {
    * Wrap a word in *asterisks* to accent it in the brand colour.
    */
   heading?: string | null;
-  lead?: string | null;
+  description?: string | null;
   effect?: ('slide' | 'fade' | 'cube' | 'flip' | 'coverflow' | 'cards') | null;
   slides: {
     image: {
@@ -1291,7 +1291,7 @@ export interface ChartBlock {
    * Wrap a word in *asterisks* to accent it in the brand colour.
    */
   heading?: string | null;
-  lead?: string | null;
+  description?: string | null;
   title: string;
   subtitle?: string | null;
   /**
@@ -1337,7 +1337,7 @@ export interface CtaBandBlock {
    * Wrap a word in *asterisks* to accent it in the brand colour.
    */
   heading?: string | null;
-  lead?: string | null;
+  description?: string | null;
   actions: {
     type?: ('reference' | 'custom' | 'customPage') | null;
     newTab?: boolean | null;
@@ -1385,7 +1385,7 @@ export interface CtaBandBlock {
  * via the `definition` "NewsletterBlock".
  */
 export interface NewsletterBlock {
-  badge?: string | null;
+  eyebrow?: string | null;
   heading: string;
   inputPlaceholder: string;
   buttonLabel: string;
@@ -1504,7 +1504,7 @@ export interface Preset {
   presetBlock: (
     | {
         variant: 'showcase' | 'centered';
-        badge?: string | null;
+        eyebrow?: string | null;
         title?: string | null;
         richText?: {
           root: {
@@ -1612,7 +1612,7 @@ export interface Preset {
          * Wrap a word in *asterisks* to accent it in the brand colour.
          */
         heading?: string | null;
-        lead?: string | null;
+        description?: string | null;
         layout: 'image-text' | 'text-image';
         image: number | Media;
         content: {
@@ -1680,7 +1680,7 @@ export interface Preset {
          * Wrap a word in *asterisks* to accent it in the brand colour.
          */
         heading?: string | null;
-        lead?: string | null;
+        description?: string | null;
         items: {
           question: string;
           answer: {
@@ -1727,7 +1727,7 @@ export interface Preset {
          * Wrap a word in *asterisks* to accent it in the brand colour.
          */
         heading?: string | null;
-        lead?: string | null;
+        description?: string | null;
         testimonialItems?:
           | {
               testimonial: number | Testimonial;
@@ -1767,7 +1767,7 @@ export interface Preset {
          * Wrap a word in *asterisks* to accent it in the brand colour.
          */
         heading?: string | null;
-        lead?: string | null;
+        description?: string | null;
         columns?: number | null;
         items: {
           /**
@@ -1855,7 +1855,7 @@ export interface Preset {
          * Wrap a word in *asterisks* to accent it in the brand colour.
          */
         heading?: string | null;
-        lead?: string | null;
+        description?: string | null;
         effect?: ('slide' | 'fade' | 'cube' | 'flip' | 'coverflow' | 'cards') | null;
         slides: {
           image: {
@@ -1999,7 +1999,7 @@ export interface Preset {
          * Wrap a word in *asterisks* to accent it in the brand colour.
          */
         heading?: string | null;
-        lead?: string | null;
+        description?: string | null;
         title: string;
         subtitle?: string | null;
         /**
@@ -2041,7 +2041,7 @@ export interface Preset {
          * Wrap a word in *asterisks* to accent it in the brand colour.
          */
         heading?: string | null;
-        lead?: string | null;
+        description?: string | null;
         actions: {
           type?: ('reference' | 'custom' | 'customPage') | null;
           newTab?: boolean | null;
@@ -2085,7 +2085,7 @@ export interface Preset {
         blockType: 'ctaBand';
       }
     | {
-        badge?: string | null;
+        eyebrow?: string | null;
         heading: string;
         inputPlaceholder: string;
         buttonLabel: string;
@@ -2816,7 +2816,7 @@ export interface PageSelect<T extends boolean = true> {
  */
 export interface HeroBlockSelect<T extends boolean = true> {
   variant?: T;
-  badge?: T;
+  eyebrow?: T;
   title?: T;
   richText?: T;
   actions?:
@@ -2886,7 +2886,7 @@ export interface TextSectionBlockSelect<T extends boolean = true> {
 export interface ContentBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   heading?: T;
-  lead?: T;
+  description?: T;
   layout?: T;
   image?: T;
   content?: T;
@@ -2927,7 +2927,7 @@ export interface ContentBlockSelect<T extends boolean = true> {
 export interface FaqBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   heading?: T;
-  lead?: T;
+  description?: T;
   items?:
     | T
     | {
@@ -2960,7 +2960,7 @@ export interface FaqBlockSelect<T extends boolean = true> {
 export interface TestimonialsListBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   heading?: T;
-  lead?: T;
+  description?: T;
   testimonialItems?:
     | T
     | {
@@ -2995,7 +2995,7 @@ export interface TestimonialsListBlockSelect<T extends boolean = true> {
 export interface CardsGridBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   heading?: T;
-  lead?: T;
+  description?: T;
   columns?: T;
   items?:
     | T
@@ -3050,7 +3050,7 @@ export interface CardsGridBlockSelect<T extends boolean = true> {
 export interface CarouselBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   heading?: T;
-  lead?: T;
+  description?: T;
   effect?: T;
   slides?:
     | T
@@ -3175,7 +3175,7 @@ export interface LinksListBlockSelect<T extends boolean = true> {
 export interface ChartBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   heading?: T;
-  lead?: T;
+  description?: T;
   title?: T;
   subtitle?: T;
   ranges?:
@@ -3216,7 +3216,7 @@ export interface ChartBlockSelect<T extends boolean = true> {
 export interface CtaBandBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   heading?: T;
-  lead?: T;
+  description?: T;
   actions?:
     | T
     | {
@@ -3252,7 +3252,7 @@ export interface CtaBandBlockSelect<T extends boolean = true> {
  * via the `definition` "NewsletterBlock_select".
  */
 export interface NewsletterBlockSelect<T extends boolean = true> {
-  badge?: T;
+  eyebrow?: T;
   heading?: T;
   inputPlaceholder?: T;
   buttonLabel?: T;
@@ -3350,9 +3350,9 @@ export interface PostsSelect<T extends boolean = true> {
   cta?:
     | T
     | {
-        badge?: T;
+        eyebrow?: T;
         heading?: T;
-        lead?: T;
+        description?: T;
         actions?:
           | T
           | {
@@ -3426,7 +3426,7 @@ export interface HeaderSelect<T extends boolean = true> {
                 | T
                 | {
                     enabled?: T;
-                    badge?: T;
+                    eyebrow?: T;
                     title?: T;
                     description?: T;
                     link?:
@@ -3567,7 +3567,7 @@ export interface PresetsSelect<T extends boolean = true> {
           | T
           | {
               variant?: T;
-              badge?: T;
+              eyebrow?: T;
               title?: T;
               richText?: T;
               actions?:
@@ -3633,7 +3633,7 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               eyebrow?: T;
               heading?: T;
-              lead?: T;
+              description?: T;
               layout?: T;
               image?: T;
               content?: T;
@@ -3672,7 +3672,7 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               eyebrow?: T;
               heading?: T;
-              lead?: T;
+              description?: T;
               items?:
                 | T
                 | {
@@ -3703,7 +3703,7 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               eyebrow?: T;
               heading?: T;
-              lead?: T;
+              description?: T;
               testimonialItems?:
                 | T
                 | {
@@ -3736,7 +3736,7 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               eyebrow?: T;
               heading?: T;
-              lead?: T;
+              description?: T;
               columns?: T;
               items?:
                 | T
@@ -3789,7 +3789,7 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               eyebrow?: T;
               heading?: T;
-              lead?: T;
+              description?: T;
               effect?: T;
               slides?:
                 | T
@@ -3908,7 +3908,7 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               eyebrow?: T;
               heading?: T;
-              lead?: T;
+              description?: T;
               title?: T;
               subtitle?: T;
               ranges?:
@@ -3947,7 +3947,7 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               eyebrow?: T;
               heading?: T;
-              lead?: T;
+              description?: T;
               actions?:
                 | T
                 | {
@@ -3981,7 +3981,7 @@ export interface PresetsSelect<T extends boolean = true> {
         newsletter?:
           | T
           | {
-              badge?: T;
+              eyebrow?: T;
               heading?: T;
               inputPlaceholder?: T;
               buttonLabel?: T;
@@ -4339,7 +4339,7 @@ export interface SiteSetting {
     blogDescription: string;
     readMoreLabel: string;
     relatedPostsLabel: string;
-    blogBadge?: string | null;
+    eyebrow?: string | null;
     searchPlaceholder?: string | null;
     blogMeta?: {
       title?: string | null;
@@ -4408,7 +4408,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         blogDescription?: T;
         readMoreLabel?: T;
         relatedPostsLabel?: T;
-        blogBadge?: T;
+        eyebrow?: T;
         searchPlaceholder?: T;
         blogMeta?:
           | T

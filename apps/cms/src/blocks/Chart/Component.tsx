@@ -4,13 +4,13 @@ import { SectionContainer } from "@/core/ui";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { ChartBlock } from "@/payload-types";
 
-export const ChartBlockComponent: React.FC<ChartBlock> = ({ eyebrow, heading, lead, title, subtitle, ranges, section, id }) => {
+export const ChartBlockComponent: React.FC<ChartBlock> = ({ eyebrow, heading, description, title, subtitle, ranges, section, id }) => {
   const cleanRanges = (ranges ?? []).map((range) => ({
     label: range.label,
     dataPoints: (range.dataPoints ?? []).filter((point) => typeof point.value === "number").map((point) => ({ label: point.label, value: point.value })),
   }));
 
-  const header = prepareSectionHeaderProps({ eyebrow, subtitle: lead, title: heading });
+  const header = prepareSectionHeaderProps({ eyebrow, description, heading });
 
   return (
     <SectionContainer sectionData={{ ...section, id }}>

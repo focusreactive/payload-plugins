@@ -11,7 +11,7 @@ import type { HeroBlock } from "@/payload-types";
 
 type Props = HeroBlock;
 
-export async function HeroBlockComponent({ variant, badge, title, richText, actions, image, section, id }: Props) {
+export async function HeroBlockComponent({ variant, eyebrow, title, richText, actions, image, section, id }: Props) {
   const locale = await resolveLocale();
 
   return (
@@ -19,7 +19,7 @@ export async function HeroBlockComponent({ variant, badge, title, richText, acti
       <Hero
         variant={variant}
         theme={section?.theme ?? null}
-        badge={badge}
+        badge={eyebrow}
         title={title ?? ""}
         text={prepareRichTextProps(richText)}
         image={prepareImageProps(image)}

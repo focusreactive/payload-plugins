@@ -2,6 +2,7 @@ import { NewsletterSection } from "@repo/ui";
 import { getTranslations } from "next-intl/server";
 
 import { SectionContainer } from "@/core/ui";
+import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 
 export async function NewsletterBand() {
   const t = await getTranslations("blog.newsletter");
@@ -9,7 +10,7 @@ export async function NewsletterBand() {
   return (
     <SectionContainer sectionData={{ paddingY: "none", theme: "dark" }}>
       <NewsletterSection
-        header={{ align: "center", eyebrow: { text: t("badge") }, title: t("heading") }}
+        header={prepareSectionHeaderProps({ align: "center", eyebrow: t("eyebrow"), heading: t("heading") })}
         inputPlaceholder={t("placeholder")}
         buttonLabel={t("button")}
         disclaimer={t("disclaimer")}

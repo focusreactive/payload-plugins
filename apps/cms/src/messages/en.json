@@ -40,7 +40,7 @@
       "close": "Close search"
     },
     "newsletter": {
-      "badge": "The Journal, monthly",
+      "eyebrow": "The Journal, monthly",
       "heading": "One thoughtful email a month. No noise.",
       "placeholder": "you@team.com",
       "button": "Subscribe",
