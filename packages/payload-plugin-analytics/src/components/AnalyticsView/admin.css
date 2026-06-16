@@ -6,6 +6,12 @@
 
 @source "./**/*.{ts,tsx}";
 
+@layer utilities {
+  .table {
+    display: revert-layer;
+  }
+}
+
 @custom-variant dark ([data-theme="dark"] &);
 
 @theme {
