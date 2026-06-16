@@ -789,12 +789,6 @@ export interface HeroBlock {
     image?: (number | null) | Media;
     aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
   };
-  enabled?: boolean | null;
-  color?: ('black' | 'white') | null;
-  /**
-   * Overlay opacity (0-100)
-   */
-  opacity?: number | null;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
     paddingY?: ('none' | 'base' | 'large') | null;
@@ -1554,12 +1548,6 @@ export interface Preset {
           image?: (number | null) | Media;
           aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
         };
-        enabled?: boolean | null;
-        color?: ('black' | 'white') | null;
-        /**
-         * Overlay opacity (0-100)
-         */
-        opacity?: number | null;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
           paddingY?: ('none' | 'base' | 'large') | null;
@@ -2849,9 +2837,6 @@ export interface HeroBlockSelect<T extends boolean = true> {
         image?: T;
         aspectRatio?: T;
       };
-  enabled?: T;
-  color?: T;
-  opacity?: T;
   section?:
     | T
     | {
@@ -3603,9 +3588,6 @@ export interface PresetsSelect<T extends boolean = true> {
                     image?: T;
                     aspectRatio?: T;
                   };
-              enabled?: T;
-              color?: T;
-              opacity?: T;
               section?:
                 | T
                 | {

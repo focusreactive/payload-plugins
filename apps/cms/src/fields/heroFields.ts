@@ -79,40 +79,4 @@ export const heroFields: Field[] = [
       condition: (_, siblingData) => siblingData?.variant !== "centered",
     },
   },
-  {
-    fields: [
-      {
-        defaultValue: true,
-        label: { en: "Enabled", es: "Habilitado" },
-        name: "enabled",
-        type: "checkbox",
-      },
-      {
-        defaultValue: "black",
-        label: { en: "Color", es: "Color" },
-        name: "color",
-        options: [
-          { label: { en: "Black", es: "Negro" }, value: "black" },
-          { label: { en: "White", es: "Blanco" }, value: "white" },
-        ],
-        type: "select",
-      },
-      {
-        admin: {
-          description: {
-            en: "Overlay opacity (0-100)",
-            es: "Opacidad del overlay (0-100)",
-          },
-        },
-        defaultValue: 40,
-        label: { en: "Opacity", es: "Opacidad" },
-        max: 100,
-        min: 0,
-        name: "opacity",
-        type: "number",
-      },
-    ],
-    label: { en: "Overlay", es: "Overlay" },
-    type: "group",
-  },
 ];
