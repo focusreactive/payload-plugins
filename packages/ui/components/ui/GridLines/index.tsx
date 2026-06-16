@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import type { BackdropTone } from "../../../utils";
 import { cn } from "../../../utils";
 
-const DOT_SPACING_PX = 34;
+const DOT_SPACING_PX = 50;
 const POINTER_FALLOFF_RADIUS_PX = 160;
 const POINTER_SMOOTHING = 0.16;
 const BRIGHTEN_SPEED = 0.18;
@@ -43,7 +43,7 @@ export function GridLines({ tone = "dark", className }: GridLinesProps) {
     const pointer = { active: false, smoothedX: 0, smoothedY: 0, x: 0, y: 0 };
 
     const draw = () => {
-      const { width, height } = parent.getBoundingClientRect();
+      const { width, height } = canvas.getBoundingClientRect();
       ctx.clearRect(0, 0, width, height);
       ctx.lineWidth = 1;
       for (let row = 0; row < rows; row++) {
@@ -103,7 +103,7 @@ export function GridLines({ tone = "dark", className }: GridLinesProps) {
     };
 
     const handleMove = (event: PointerEvent) => {
-      const rect = parent.getBoundingClientRect();
+      const rect = canvas.getBoundingClientRect();
       pointer.x = event.clientX - rect.left;
       pointer.y = event.clientY - rect.top;
       pointer.active = true;
@@ -117,7 +117,7 @@ export function GridLines({ tone = "dark", className }: GridLinesProps) {
 
     const resize = () => {
       const devicePixelRatio = window.devicePixelRatio || 1;
-      const { width, height } = parent.getBoundingClientRect();
+      const { width, height } = canvas.getBoundingClientRect();
       canvas.width = width * devicePixelRatio;
       canvas.height = height * devicePixelRatio;
       ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
@@ -128,7 +128,7 @@ export function GridLines({ tone = "dark", className }: GridLinesProps) {
     };
 
     const observer = new ResizeObserver(resize);
-    observer.observe(parent);
+    observer.observe(canvas);
     resize();
 
     if (!reduceMotion) {
