@@ -744,7 +744,7 @@ export interface Footer {
  * via the `definition` "HeroBlock".
  */
 export interface HeroBlock {
-  variant: 'media-background' | 'showcase' | 'centered';
+  variant: 'showcase' | 'centered';
   badge?: string | null;
   title?: string | null;
   richText?: {
@@ -1503,7 +1503,7 @@ export interface Preset {
   preview?: (number | null) | Media;
   presetBlock: (
     | {
-        variant: 'media-background' | 'showcase' | 'centered';
+        variant: 'showcase' | 'centered';
         badge?: string | null;
         title?: string | null;
         richText?: {

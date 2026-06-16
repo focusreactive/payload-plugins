@@ -70,40 +70,25 @@ export function Hero({ variant, theme, badge, title, text, image, links }: IHero
     );
   }
 
-  if (variant === "showcase") {
-    return (
-      <>
-        <AbstractBackdrop variant="orbs" tone={backdropTone} />
-        <GridLines tone={backdropTone} />
-        <div className={cn("relative z-1 grid grid-cols-1 items-center gap-10 lg:gap-16", hasImage && "lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]")}>
-          <div className="flex max-w-[620px] flex-col gap-6">
-            <HeroBadge badge={badge} />
-            <DisplayHeading as="h1" size="display-1" text={title} />
-            <div className="text-lead max-w-[520px] text-muted-foreground">
-              <RichText {...text} />
-            </div>
-            <HeroActions links={links} className="mt-2" />
-          </div>
-          {hasImage && (
-            <div className="hidden lg:block">
-              <HeroImage image={image} />
-            </div>
-          )}
-        </div>
-      </>
-    );
-  }
-
   return (
-    <div className="relative z-1 flex min-h-[min(88vh,820px)] flex-col justify-center">
-      <div className="flex max-w-[620px] flex-col gap-6">
-        <HeroBadge badge={badge} />
-        <DisplayHeading as="h1" size="display-1" text={title} />
-        <div className="text-lead max-w-[520px] text-muted-foreground">
-          <RichText {...text} />
+    <>
+      <AbstractBackdrop variant="orbs" tone={backdropTone} />
+      <GridLines tone={backdropTone} />
+      <div className={cn("relative z-1 grid grid-cols-1 items-center gap-10 lg:gap-16", hasImage && "lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]")}>
+        <div className="flex max-w-[620px] flex-col gap-6">
+          <HeroBadge badge={badge} />
+          <DisplayHeading as="h1" size="display-1" text={title} />
+          <div className="text-lead max-w-[520px] text-muted-foreground">
+            <RichText {...text} />
+          </div>
+          <HeroActions links={links} className="mt-2" />
         </div>
-        <HeroActions links={links} className="mt-2" />
+        {hasImage && (
+          <div className="hidden lg:block">
+            <HeroImage image={image} />
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
 }

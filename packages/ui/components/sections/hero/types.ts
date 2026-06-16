@@ -2,7 +2,7 @@ import type { IImageProps } from "../../ui/image/types";
 import type { LinkProps } from "../../ui/link/types";
 import type { IRichTextProps } from "../../ui/richText/types";
 
-export type HeroVariant = "media-background" | "showcase" | "centered";
+export type HeroVariant = "showcase" | "centered";
 
 export type HeroTheme = "dark" | "dark-gray" | "light" | "light-gray" | null;
 

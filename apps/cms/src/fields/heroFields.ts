@@ -16,11 +16,10 @@ const defaultHeroLinkItem = (label: string) => ({
 
 export const heroFields: Field[] = [
   {
-    defaultValue: "media-background",
+    defaultValue: "showcase",
     label: { en: "Variant", es: "Variante" },
     name: "variant",
     options: [
-      { label: { en: "Media background", es: "Fondo multimedia" }, value: "media-background" },
       { label: { en: "Showcase window", es: "Ventana de producto" }, value: "showcase" },
       { label: { en: "Centered", es: "Centrado" }, value: "centered" },
     ],
