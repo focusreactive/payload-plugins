@@ -1,5 +1,6 @@
 import { cn, cva } from "../../../utils";
 import { Link } from "../../ui/link";
+import { ButtonVariant } from "../../ui/button/types";
 import { GlowCard } from "./GlowCard";
 import type { IDefaultCardProps } from "./types";
 
@@ -115,7 +116,7 @@ export default function DefaultCard({ image: _image, link, title, description, b
 
       {link?.href && (
         <div className="relative z-[1] mt-auto pt-2">
-          <Link {...link} className={linkVariants({ backgroundColor: bg })}>
+          <Link {...link} className={cn("relative z-[1]", (link.variant ?? ButtonVariant.Default) === ButtonVariant.Default && linkVariants({ backgroundColor: bg }))}>
             <span>{link.text ?? "Learn more"}</span>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-3.5 transition-transform group-hover:translate-x-0.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />

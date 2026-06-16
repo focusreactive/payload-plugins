@@ -19,7 +19,7 @@ export const buttonVariants = cva(
         [ButtonSize.Large]: "px-[30px] py-4 text-[1.02rem]",
       },
       variant: {
-        [ButtonVariant.Default]: "text-foreground hover:text-primary underline-offset-4 hover:underline",
+        [ButtonVariant.Default]: "p-0 text-foreground hover:text-primary",
         [ButtonVariant.Primary]: "rounded-pill font-semibold bg-secondary text-secondary-foreground hover:bg-secondary-hover",
         [ButtonVariant.Accent]: "rounded-pill font-semibold bg-accent text-accent-foreground hover:bg-accent-hover",
         [ButtonVariant.Secondary]: "rounded-pill font-semibold border border-foreground text-foreground hover:bg-foreground hover:text-background",

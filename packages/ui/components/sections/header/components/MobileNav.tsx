@@ -133,18 +133,20 @@ export function MobileNav({ navItems, actions }: MobileNavProps) {
             );
           })}
 
-          {actions.map((action, index) => {
-            const newTabProps = action.newTab ? { rel: "noopener noreferrer", target: "_blank" } : {};
+          <div className="mt-3 flex flex-row flex-wrap gap-2.5">
+            {actions.map((action, index) => {
+              const newTabProps = action.newTab ? { rel: "noopener noreferrer", target: "_blank" } : {};
 
-            return (
-              <Button key={`${action.label}-${index}`} asChild size={ButtonSize.Small} variant={action.variant} className="mt-3 self-start">
-                <NextLink href={action.href} onClick={close} {...newTabProps}>
-                  {action.label}
-                  {action.variant === ButtonVariant.Accent && <span aria-hidden>&rarr;</span>}
-                </NextLink>
-              </Button>
-            );
-          })}
+              return (
+                <Button key={`${action.label}-${index}`} asChild size={ButtonSize.Small} variant={action.variant}>
+                  <NextLink href={action.href} onClick={close} {...newTabProps}>
+                    {action.label}
+                    {action.variant === ButtonVariant.Accent && <span aria-hidden>&rarr;</span>}
+                  </NextLink>
+                </Button>
+              );
+            })}
+          </div>
         </nav>
       </div>
     </>
