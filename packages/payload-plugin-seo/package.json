@@ -20,7 +20,6 @@
     "url": "https://github.com/focusreactive/payload-plugins",
     "directory": "packages/payload-plugin-seo"
   },
-  "private": true,
   "publishConfig": {
     "access": "public"
   },
