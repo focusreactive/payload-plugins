@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-comments [1.8.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.8.0...@focus-reactive/payload-plugin-comments@1.8.1) (2026-06-16)
+
+
+### Bug Fixes
+
+* **comments:** use tsc instead of tsgo to fix release build ([8374edd](https://github.com/focusreactive/payload-plugins/commit/8374edda4c90cf280b80b8bd73103392a6305433))
+
 # @focus-reactive/payload-plugin-comments [1.8.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.7.0...@focus-reactive/payload-plugin-comments@1.8.0) (2026-05-25)
 
 
