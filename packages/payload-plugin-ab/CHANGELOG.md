@@ -1,3 +1,15 @@
+# @focus-reactive/payload-plugin-ab [2.8.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.7.0...@focus-reactive/payload-plugin-ab@2.8.0) (2026-06-17)
+
+
+### Bug Fixes
+
+* **ab:** clean up manifest and promote variants on control deletion ([90fd756](https://github.com/focusreactive/payload-plugins/commit/90fd7562d096b2865fec382b49acd761c32a6061))
+
+
+### Features
+
+* **ab:** group ab experiments collection into system ([7973d03](https://github.com/focusreactive/payload-plugins/commit/7973d03c9682e07d7729568950ccc32fa1823a2a))
+
 # @focus-reactive/payload-plugin-ab [2.7.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.6.0...@focus-reactive/payload-plugin-ab@2.7.0) (2026-06-04)
 
 
