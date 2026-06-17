@@ -138,6 +138,29 @@
         "vitest": "^4.1.8",
       },
     },
+    "apps/multi-tenancy-demo": {
+      "name": "multi-tenancy-demo",
+      "version": "1.0.0",
+      "dependencies": {
+        "@payloadcms/db-sqlite": "3.84.1",
+        "@payloadcms/next": "3.84.1",
+        "@payloadcms/plugin-multi-tenant": "3.84.1",
+        "@payloadcms/richtext-lexical": "3.84.1",
+        "@payloadcms/ui": "3.84.1",
+        "cross-env": "7.0.3",
+        "graphql": "16.8.1",
+        "next": "16.2.6",
+        "payload": "3.84.1",
+        "react": "19.2.1",
+        "react-dom": "19.2.1",
+      },
+      "devDependencies": {
+        "@types/node": "22.19.9",
+        "@types/react": "19.2.9",
+        "@types/react-dom": "19.2.3",
+        "typescript": "5.9.2",
+      },
+    },
     "packages/create-ideal-cms": {
       "name": "@focus-reactive/create-ideal-cms",
       "version": "1.0.0",
@@ -184,7 +207,7 @@
     },
     "packages/payload-plugin-analytics": {
       "name": "@focus-reactive/payload-plugin-analytics",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "dependencies": {
         "@google-analytics/data": "^5.2.2",
         "class-variance-authority": "0.7.1",
@@ -320,7 +343,7 @@
     },
     "packages/payload-plugin-seo": {
       "name": "@focus-reactive/payload-plugin-seo",
-      "version": "1.0.2",
+      "version": "1.1.0",
       "dependencies": {
         "@yoast/search-metadata-previews": "^3.0.0",
         "class-variance-authority": "0.7.1",
@@ -2905,6 +2928,8 @@
 
     "multi-semantic-release": ["multi-semantic-release@3.1.0", "", { "dependencies": { "@manypkg/get-packages": "^1.1.3", "blork": "^9.3.0", "cosmiconfig": "^7.0.1", "debug": "^4.4.3", "detect-indent": "^6.1.0", "detect-newline": "^3.1.0", "execa": "^4.1.0", "get-stream": "^6.0.1", "git-log-parser": "^1.2.1", "globby": "11.0.4", "lodash": "^4.17.21", "meow": "^8.1.2", "promise-events": "^0.2.4", "semantic-release": ">=19.0.5", "semver": "^7.5.2", "signale": "^1.4.0", "stream-buffers": "^3.0.3", "unixify": "^1.0.0" }, "bin": { "multi-semantic-release": "bin/cli.mjs" } }, "sha512-jffiIZM5rWGKla3Iy90fmNjycz5i5JtXY71o3YdNdMxEF/JKE5Dsnj3uQvUh3LU/jiLzrOcWVWyDK/s4kPb24A=="],
 
+    "multi-tenancy-demo": ["multi-tenancy-demo@workspace:apps/multi-tenancy-demo"],
+
     "mz": ["mz@2.7.0", "", { "dependencies": { "any-promise": "^1.0.0", "object-assign": "^4.0.1", "thenify-all": "^1.0.0" } }, "sha512-z81GNO7nnYMEhrGh9LeymoE4+Yr0Wn5McHIZMK5cfQCl+NDX08sCZgUc9/6MHni9IWuFLm1Z3HTCXu2z9fN62Q=="],
 
     "nanoid": ["nanoid@3.3.12", "", { "bin": { "nanoid": "bin/nanoid.cjs" } }, "sha512-ZB9RH/39qpq5Vu6Y+NmUaFhQR6pp+M2Xt76XBnEwDaGcVAqhlvxrl3B2bKS5D3NH3QR76v3aSrKaF/Kiy7lEtQ=="],
@@ -4492,6 +4517,8 @@
     "monaco-editor/marked": ["marked@14.0.0", "", { "bin": { "marked": "bin/marked.js" } }, "sha512-uIj4+faQ+MgHgwUW1l2PsPglZLOLOT1uErt06dAPtx2kjteLAkbsd/0FiYg/MGS+i7ZKLb7w2WClxHkzOOuryQ=="],
 
     "multi-semantic-release/execa": ["execa@4.1.0", "", { "dependencies": { "cross-spawn": "^7.0.0", "get-stream": "^5.0.0", "human-signals": "^1.1.1", "is-stream": "^2.0.0", "merge-stream": "^2.0.0", "npm-run-path": "^4.0.0", "onetime": "^5.1.0", "signal-exit": "^3.0.2", "strip-final-newline": "^2.0.0" } }, "sha512-j5W0//W7f8UxAn8hXVnwG8tLwdiUy4FJLcSupCg6maBYZDpyBvTApK7KyuI4bKj8KOh1r2YH+6ucuYtJv1bTZA=="],
+
+    "multi-tenancy-demo/@payloadcms/db-sqlite": ["@payloadcms/db-sqlite@3.84.1", "", { "dependencies": { "@libsql/client": "0.14.0", "@payloadcms/drizzle": "3.84.1", "console-table-printer": "2.12.1", "drizzle-kit": "0.31.7", "drizzle-orm": "0.45.2", "prompts": "2.4.2", "to-snake-case": "1.0.0", "uuid": "11.1.0" }, "peerDependencies": { "payload": "3.84.1" } }, "sha512-OJWXMaq4XvBeXwummIo6RcpPM4eCpksTw+l1XX9xYhGumyh/Jw1INkNQ3a6SoLncxJvPAq6pqiYVPBposcYI+Q=="],
 
     "next/@next/env": ["@next/env@16.2.6", "", {}, "sha512-gd8HoHN4ufj73WmR3JmVolrpJR47ILK6LouP5xElPglaVxir6e1a7VzvTvDWkOoPXT9rkkTzyCxBu4yeZfZwcw=="],
 

@@ -1,0 +1,93 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  color: #111;
+  background: #fafafa;
+}
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+h1 {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.tenant-list {
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tenant-card {
+  display: block;
+  padding: 1rem 1.25rem;
+  border: 1px solid #e2e2e2;
+  border-radius: 8px;
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+}
+
+.tenant-card:hover {
+  border-color: #999;
+}
+
+.tenant-card strong {
+  display: block;
+  font-size: 1.1rem;
+}
+
+.tenant-card span {
+  color: #888;
+  font-size: 0.875rem;
+}
+
+.page-card {
+  padding: 1.25rem;
+  border: 1px solid #e2e2e2;
+  border-radius: 8px;
+  background: #fff;
+  margin-bottom: 1rem;
+}
+
+.page-card h2 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.page-card p {
+  color: #333;
+  white-space: pre-wrap;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  color: #555;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.admin-link {
+  display: inline-block;
+  margin-top: 2rem;
+  color: #0066cc;
+}
