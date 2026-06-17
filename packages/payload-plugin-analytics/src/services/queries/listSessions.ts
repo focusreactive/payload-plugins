@@ -5,6 +5,7 @@ import { convertMetricToNumber, dateRangesFor, deriveMissing, leadActionFilter, 
 import { excludeDeletedSessions } from "../pageFilter/excludeDeletedSessions";
 import { mapGa4Error } from "../../endpoints/errorMapping";
 import { runQuery } from "../analyticsService/runQuery";
+import { TRAFFIC_EVENTS } from "../../constants/events";
 
 const DEFAULT_PAGE_SIZE = 50;
 
@@ -69,6 +70,66 @@ interface MergedSession {
   devices: Set<DeviceCategory>;
   countries: Set<string>;
   eventCount: number;
+}
+
+/**
+ * Resolve the landing (first) page_view ref per session to its current CMS path.
+ *
+ * The session-aggregated query cannot tell which of a multi-page session's refs
+ * is the LANDING ref, so we run a supplementary ordered event-level query and
+ * take the FIRST page_view row per session as its landing event.
+ *
+ * why: a failing landing-ref query must not blank the sessions list — on ANY
+ * error we return an empty Map and the caller falls back to the raw GA4
+ * landingPagePlusQueryString.
+ */
+async function resolveLandingPaths(propertyId: string, dateRange: ReturnType<typeof resolveDateRange>, pageFilter: PageFilterContext, sessionIds: string[]): Promise<Map<string, string>> {
+  try {
+    const request = {
+      dateRanges: dateRangesFor(dateRange),
+      metrics: [{ name: "eventCount" }],
+      dimensions: [{ name: "customEvent:fr_session_id" }, { name: pageFilter.pageRefDim }, { name: "dateHourMinute" }, { name: "customEvent:fr_event_seq" }],
+      dimensionFilter: {
+        andGroup: {
+          expressions: [
+            { filter: { fieldName: "eventName", stringFilter: { value: TRAFFIC_EVENTS.PAGE_VIEW } } },
+            { filter: { fieldName: "customEvent:fr_session_id", inListFilter: { values: sessionIds } } },
+          ],
+        },
+      },
+      orderBys: [{ dimension: { dimensionName: "customEvent:fr_session_id" } }, { dimension: { dimensionName: "dateHourMinute" } }, { dimension: { dimensionName: "customEvent:fr_event_seq" } }],
+    };
+
+    const report = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "sessionLandingRefs");
+    const rows = (report.rows ?? []) as Row[];
+
+    const landingRefBySession = new Map<string, string>();
+
+    for (const row of rows) {
+      const dv = row.dimensionValues ?? [];
+      const id = dv[0]?.value ?? "";
+      const ref = dv[1]?.value ?? "";
+
+      if (!id || !ref) continue;
+      // First row seen for a session (rows are ordered) is its landing event.
+      if (!landingRefBySession.has(id)) landingRefBySession.set(id, ref);
+    }
+
+    const landingRefs = Array.from(landingRefBySession.values());
+    const labels = await pageFilter.resolveLabels([...new Set(landingRefs)]);
+
+    const pathBySession = new Map<string, string>();
+
+    for (const [id, ref] of landingRefBySession) {
+      const path = labels.get(ref)?.path;
+
+      if (path) pathBySession.set(id, path);
+    }
+
+    return pathBySession;
+  } catch {
+    return new Map<string, string>();
+  }
 }
 
 export async function listSessions(propertyId: string, query: SessionsListQuery, pageFilter?: PageFilterContext | null): Promise<SessionsResponse> {
@@ -193,9 +254,19 @@ export async function listSessions(propertyId: string, query: SessionsListQuery,
       mergedSessions = mergedSessions.filter((m) => allowed.has(m.sessionId));
     }
 
+    let landingPathBySession = new Map<string, string>();
+
+    if (pageFilterActive && pageFilter) {
+      const sessionIds = mergedSessions.map((m) => m.sessionId);
+
+      if (sessionIds.length > 0) {
+        landingPathBySession = await resolveLandingPaths(propertyId, dateRange, pageFilter, sessionIds);
+      }
+    }
+
     const sessionsRows: SessionsRow[] = mergedSessions.map((m) => ({
       sessionId: m.sessionId,
-      landingPage: m.landingPage,
+      landingPage: landingPathBySession.get(m.sessionId) ?? m.landingPage,
       source: m.source,
       deviceCategory: Array.from(m.devices),
       country: Array.from(m.countries),
