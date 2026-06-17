@@ -1,7 +1,10 @@
 import type { Row, TopNQuery, TopPagesResponse, TopPagesRow } from "../../types/query";
+import type { PageFilterContext } from "../pageFilter/types";
 import { resolveDateRange } from "../../utils/date/resolveDateRange";
 import { resolveComparison } from "../../utils/date/resolveComparison";
 import { bucketByDateRange, convertMetricToNumber, dateRangesFor, withRowLimit } from "../../utils/ga4";
+import { DEFAULT_PAGE_DIMENSIONS } from "../../constants/page";
+import { withPageRefFilter } from "../../utils/ga4/withPageRefFilter";
 import { runQuery } from "../analyticsService/runQuery";
 
 const METRICS = [{ name: "screenPageViews" }, { name: "sessions" }, { name: "averageSessionDuration" }];
@@ -23,7 +26,7 @@ function sumPageViews(rows: TopPagesRow[]): number {
   return rows.reduce((sum, row) => sum + row.pageViews, 0);
 }
 
-export async function getTopPages(propertyId: string, query: TopNQuery): Promise<TopPagesResponse> {
+export async function getTopPages(propertyId: string, query: TopNQuery, pageFilter?: PageFilterContext | null): Promise<TopPagesResponse> {
   const dateRange = resolveDateRange(query.dateRange);
   const previousDateRange = query.comparison?.kind === "previous-period" ? resolveComparison(dateRange) : undefined;
   const dateRanges = dateRangesFor(dateRange, previousDateRange);
@@ -31,7 +34,9 @@ export async function getTopPages(propertyId: string, query: TopNQuery): Promise
   const dimensions = [{ name: "pagePath" }, { name: "pageTitle" }];
 
   const request = withRowLimit({ dateRanges, metrics: METRICS, dimensions }, query.limit);
-  const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "topPages");
+  const refs = pageFilter?.refs ?? [];
+  const filtered = withPageRefFilter(request, pageFilter?.pageRefDim ?? DEFAULT_PAGE_DIMENSIONS.pageRef, refs);
+  const raw = await runQuery.runReport(propertyId, filtered as Parameters<typeof runQuery.runReport>[1], "topPages");
   const rows = (raw.rows ?? []) as Row[];
 
   if (!previousDateRange) {

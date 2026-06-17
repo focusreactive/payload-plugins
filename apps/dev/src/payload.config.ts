@@ -106,11 +106,15 @@ export default buildConfig({
         },
       },
       leadActions: {
-        types: ["phone_click", "email_click", "directions_click", "whatsapp_click", "telegram_click", "website_click", "booking_click", "form_submit", "cta_pricing_click"],
+        types: ["phone_click", "email_click", "directions_click", "whatsapp_click", "telegram_click", "website_click", "booking_click", "form_submit", "cta_pricing_click", "hero_cta_click"],
         adminRegistry: "@/lead-actions-admin#default",
       },
       ab: {
         variantFields: { name: "title" },
+      },
+      pages: {
+        collections: ["pages"],
+        syntheticRefs: ["__home"],
       },
     }),
     seoPlugin({

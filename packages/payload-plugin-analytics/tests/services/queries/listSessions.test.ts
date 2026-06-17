@@ -230,6 +230,112 @@ describe("listSessions", () => {
     expect(row.startedAt).toBe("2026-05-10T16:00:00.000Z");
   });
 
+  const PAGE_FILTER = {
+    refs: ["page:1", "__home"],
+    pageRefDim: "customEvent:fr_page_ref",
+    contentLocaleDim: "customEvent:fr_content_locale",
+  };
+
+  it("appends the page-ref dimension and drops sessions touching a deleted ref when pageFilter is set", async () => {
+    const fixture = {
+      dimensionHeaders: [],
+      metricHeaders: [{ name: "eventCount", type: "TYPE_INTEGER" }],
+      rows: [
+        // Session A — touches only existing refs (kept).
+        {
+          dimensionValues: [{ value: "A" }, { value: "/" }, { value: "google" }, { value: "desktop" }, { value: "US" }, { value: "2026-05-10T16:00:00.000Z" }, { value: "page:1" }],
+          metricValues: [{ value: "1" }],
+        },
+        {
+          dimensionValues: [{ value: "A" }, { value: "/" }, { value: "google" }, { value: "desktop" }, { value: "US" }, { value: "2026-05-10T16:00:00.000Z" }, { value: "__home" }],
+          metricValues: [{ value: "1" }],
+        },
+        // Session B — touches a deleted ref (dropped).
+        {
+          dimensionValues: [{ value: "B" }, { value: "/gone" }, { value: "google" }, { value: "mobile" }, { value: "UK" }, { value: "2026-05-10T17:00:00.000Z" }, { value: "page:999" }],
+          metricValues: [{ value: "1" }],
+        },
+      ],
+      rowCount: 3,
+    };
+    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(fixture)) };
+    __setGa4ClientForTests(fake as never);
+    const res = await listSessions("12345", { dateRange: { preset: "last-7d" } }, PAGE_FILTER);
+
+    const { requests } = fake.batchRunReports.mock.calls[0][0];
+    expect(requests[0].dimensions).toEqual([
+      { name: "customEvent:fr_session_id" },
+      { name: "landingPagePlusQueryString" },
+      { name: "sessionSource" },
+      { name: "deviceCategory" },
+      { name: "country" },
+      { name: "customEvent:fr_session_start" },
+      { name: "customEvent:fr_page_ref" },
+    ]);
+    // Lead-sessions request is NOT given the page-ref dim.
+    expect(requests[1].dimensions).toEqual([{ name: "customEvent:fr_session_id" }]);
+
+    const ids = res.rows.map((r) => r.sessionId);
+    expect(ids).toContain("A");
+    expect(ids).not.toContain("B");
+  });
+
+  it("filtered path advances the cursor by RAW GA4 rows, not the displayed session count", async () => {
+    // One kept session (A) spans 2 ref-rows, so session-count (1) != row-count (2).
+    // limit=2 means GA4 returned a full page of 2 ROWS, and rowCount=4 signals more
+    // rows exist — the cursor must encode the GA4 ROW offset (2), not 1 (sessions).
+    const fixture = {
+      dimensionHeaders: [],
+      metricHeaders: [{ name: "eventCount", type: "TYPE_INTEGER" }],
+      rows: [
+        {
+          dimensionValues: [{ value: "A" }, { value: "/" }, { value: "google" }, { value: "desktop" }, { value: "US" }, { value: "2026-05-10T16:00:00.000Z" }, { value: "page:1" }],
+          metricValues: [{ value: "1" }],
+        },
+        {
+          dimensionValues: [{ value: "A" }, { value: "/" }, { value: "google" }, { value: "desktop" }, { value: "US" }, { value: "2026-05-10T16:00:00.000Z" }, { value: "__home" }],
+          metricValues: [{ value: "1" }],
+        },
+      ],
+      rowCount: 4,
+    };
+    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(fixture)) };
+    __setGa4ClientForTests(fake as never);
+    const res = await listSessions("12345", { dateRange: { preset: "last-7d" }, limit: 2 }, PAGE_FILTER);
+
+    // One merged session displayed, but the cursor advanced by 2 GA4 rows.
+    expect(res.rows.length).toBe(1);
+    expect(res.pagination.hasMore).toBe(true);
+    expect(res.pagination.cursor).not.toBeNull();
+    const decoded = JSON.parse(Buffer.from(res.pagination.cursor as string, "base64").toString("utf-8"));
+    expect(decoded.offset).toBe(2);
+  });
+
+  it("does NOT append the page-ref dimension and keeps all sessions when pageFilter is null", async () => {
+    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)) };
+    __setGa4ClientForTests(fake as never);
+    const res = await listSessions("12345", { dateRange: { preset: "last-7d" } }, null);
+    const { requests } = fake.batchRunReports.mock.calls[0][0];
+    expect(requests[0].dimensions).toEqual([
+      { name: "customEvent:fr_session_id" },
+      { name: "landingPagePlusQueryString" },
+      { name: "sessionSource" },
+      { name: "deviceCategory" },
+      { name: "country" },
+      { name: "customEvent:fr_session_start" },
+    ]);
+    expect(res.rows.length).toBe(2);
+  });
+
+  it("adds fr_page_ref to the catch missing-key candidates", async () => {
+    const err = new Error("3 INVALID_ARGUMENT: Field customEvent:fr_page_ref is unrecognized.");
+    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockRejectedValue(err) };
+    __setGa4ClientForTests(fake as never);
+    const res = await listSessions("12345", { dateRange: { preset: "last-7d" } }, PAGE_FILTER);
+    expect(res.setupRequired).toBe(true);
+    expect(res.missing).toEqual(["fr_page_ref"]);
+  });
+
   it("skips GA4 rows with empty fr_session_id (defensive guard)", async () => {
     const malformed = {
       dimensionHeaders: [],

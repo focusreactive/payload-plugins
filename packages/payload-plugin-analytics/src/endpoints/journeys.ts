@@ -1,6 +1,8 @@
 import type { Endpoint } from "payload";
 import { ANALYTICS_ENDPOINT_PATHS } from "../constants/endpoints";
 import { getJourneys } from "../services/queries/getJourneys";
+import { getResolvedPagesConfig } from "../config";
+import { buildPageFilterContext } from "../services/pageFilter/buildPageFilterContext";
 import { JourneysQuerySchema, formatZodIssues } from "./validateBody";
 import { mapGa4Error } from "./errorMapping";
 import { withAccess } from "./withAccess";
@@ -25,7 +27,8 @@ export function buildJourneysEndpoint(config: AnalyticsPluginConfig): Endpoint {
       }
 
       try {
-        const result = await getJourneys(config.ga4.propertyId, parsed.data);
+        const pageFilter = await buildPageFilterContext(req.payload, getResolvedPagesConfig());
+        const result = await getJourneys(config.ga4.propertyId, parsed.data, pageFilter);
 
         return Response.json(result);
       } catch (err) {

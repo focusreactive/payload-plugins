@@ -1,3 +1,4 @@
+import { TrackPage } from "@focus-reactive/payload-plugin-analytics/client";
 import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 import React from "react";
@@ -26,5 +27,10 @@ export default async function Page({ params }: Props) {
     notFound();
   }
 
-  return <PageClient initialData={page as any} serverURL={process.env.NEXT_PUBLIC_SERVER_URL ?? ""} />;
+  return (
+    <>
+      <TrackPage collection="pages" id={page.id} locale="en" />
+      <PageClient initialData={page as any} serverURL={process.env.NEXT_PUBLIC_SERVER_URL ?? ""} />
+    </>
+  );
 }

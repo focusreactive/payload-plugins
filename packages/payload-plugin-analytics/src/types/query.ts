@@ -1,4 +1,4 @@
-export type CustomRegistrationKey = "fr_session_id" | "fr_event_seq" | "fr_elapsed_ms" | "fr_session_start" | "fr_lead_type";
+export type CustomRegistrationKey = "fr_session_id" | "fr_event_seq" | "fr_elapsed_ms" | "fr_session_start" | "fr_lead_type" | "fr_page_ref" | "fr_content_locale";
 
 export interface SetupGate {
   setupRequired: true;

@@ -1,4 +1,6 @@
 import { PLUGIN_NAME } from "./constants";
+import { resolvePagesConfig } from './config/resolvePagesConfig';
+import type { ResolvedPagesConfig } from './config/resolvePagesConfig';
 import type { AnalyticsPluginConfig } from "./types/config";
 import type { BlockDefinition, BlockId, ResolvedLayout } from "./types/layout";
 
@@ -45,4 +47,8 @@ export function getResolvedBlockRegistry(): Record<BlockId, BlockDefinition> {
   }
 
   return registry;
+}
+
+export function getResolvedPagesConfig(): ResolvedPagesConfig | null {
+  return resolvePagesConfig(getPluginConfig().pages);
 }

@@ -1,6 +1,8 @@
 import type { Endpoint } from "payload";
 import { ANALYTICS_ENDPOINT_PATHS } from "../constants/endpoints";
 import { getTopCountries } from "../services/queries/getTopCountries";
+import { getResolvedPagesConfig } from "../config";
+import { buildPageFilterContext } from "../services/pageFilter/buildPageFilterContext";
 import { TopCountriesQuerySchema, formatZodIssues } from "./validateBody";
 import { mapGa4Error } from "./errorMapping";
 import { withAccess } from "./withAccess";
@@ -25,7 +27,8 @@ export function buildTopCountriesEndpoint(config: AnalyticsPluginConfig): Endpoi
       }
 
       try {
-        const result = await getTopCountries(config.ga4.propertyId, parsed.data);
+        const pageFilter = await buildPageFilterContext(req.payload, getResolvedPagesConfig());
+        const result = await getTopCountries(config.ga4.propertyId, parsed.data, pageFilter);
 
         return Response.json(result);
       } catch (err) {

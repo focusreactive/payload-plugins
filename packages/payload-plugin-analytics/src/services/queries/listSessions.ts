@@ -1,6 +1,8 @@
 import type { DeviceCategory, Row, SessionsListQuery, SessionsResponse, SessionsRow } from "../../types/query";
+import type { PageFilterContext } from "../pageFilter/types";
 import { resolveDateRange } from "../../utils/date/resolveDateRange";
 import { convertMetricToNumber, dateRangesFor, deriveMissing, leadActionFilter, withRowLimit } from "../../utils/ga4";
+import { excludeDeletedSessions } from "../pageFilter/excludeDeletedSessions";
 import { mapGa4Error } from "../../endpoints/errorMapping";
 import { runQuery } from "../analyticsService/runQuery";
 
@@ -69,10 +71,12 @@ interface MergedSession {
   eventCount: number;
 }
 
-export async function listSessions(propertyId: string, query: SessionsListQuery): Promise<SessionsResponse> {
+export async function listSessions(propertyId: string, query: SessionsListQuery, pageFilter?: PageFilterContext | null): Promise<SessionsResponse> {
   const dateRange = resolveDateRange(query.dateRange);
   const offset = decodeCursor(query.cursor);
   const limit = query.limit ?? DEFAULT_PAGE_SIZE;
+  const filterRefs = pageFilter?.refs ?? [];
+  const pageFilterActive = filterRefs.length > 0;
 
   const dimensions = [
     { name: "customEvent:fr_session_id" },
@@ -82,6 +86,13 @@ export async function listSessions(propertyId: string, query: SessionsListQuery)
     { name: "country" },
     { name: "customEvent:fr_session_start" },
   ];
+
+  let pageRefDimIndex = -1;
+
+  if (pageFilterActive && pageFilter) {
+    pageRefDimIndex = dimensions.length;
+    dimensions.push({ name: pageFilter.pageRefDim });
+  }
 
   let sessionsRequest: Record<string, unknown> = withRowLimit(
     {
@@ -130,6 +141,7 @@ export async function listSessions(propertyId: string, query: SessionsListQuery)
     }
 
     const merged = new Map<string, MergedSession>();
+    const refsBySession = new Map<string, Set<string>>();
 
     for (const row of rows) {
       const dv = row.dimensionValues ?? [];
@@ -141,6 +153,13 @@ export async function listSessions(propertyId: string, query: SessionsListQuery)
       const country = dv[4]?.value ?? "";
       const events = convertMetricToNumber(mv[0]?.value);
       const startedAt = dv[5]?.value ?? "";
+
+      if (pageFilterActive) {
+        const ref = dv[pageRefDimIndex]?.value ?? "";
+        const set = refsBySession.get(id) ?? new Set<string>();
+        set.add(ref);
+        refsBySession.set(id, set);
+      }
 
       const existing = merged.get(id);
       if (existing) {
@@ -167,18 +186,23 @@ export async function listSessions(propertyId: string, query: SessionsListQuery)
       }
     }
 
-    const sessionsRows: SessionsRow[] = Array.from(merged.values())
-      .slice(0, limit)
-      .map((m) => ({
-        sessionId: m.sessionId,
-        landingPage: m.landingPage,
-        source: m.source,
-        deviceCategory: Array.from(m.devices),
-        country: Array.from(m.countries),
-        startedAt: m.startedAt,
-        eventCount: m.eventCount,
-        hadLeadAction: leadSessionIds.has(m.sessionId),
-      }));
+    let mergedSessions = Array.from(merged.values());
+
+    if (pageFilterActive) {
+      const allowed = excludeDeletedSessions(refsBySession, new Set(filterRefs));
+      mergedSessions = mergedSessions.filter((m) => allowed.has(m.sessionId));
+    }
+
+    const sessionsRows: SessionsRow[] = mergedSessions.map((m) => ({
+      sessionId: m.sessionId,
+      landingPage: m.landingPage,
+      source: m.source,
+      deviceCategory: Array.from(m.devices),
+      country: Array.from(m.countries),
+      startedAt: m.startedAt,
+      eventCount: m.eventCount,
+      hadLeadAction: leadSessionIds.has(m.sessionId),
+    }));
 
     const totalRows = sessionsReport?.rowCount ?? rows.length;
     const nextOffset = offset + rows.length;
@@ -197,7 +221,7 @@ export async function listSessions(propertyId: string, query: SessionsListQuery)
     if (mapped.setupRequired) {
       return {
         setupRequired: true,
-        missing: deriveMissing({ message: mapped.message }, ["fr_session_id", "fr_session_start"]),
+        missing: deriveMissing({ message: mapped.message }, ["fr_session_id", "fr_session_start", "fr_page_ref"]),
         rows: [],
         pagination: { cursor: null, hasMore: false },
       };

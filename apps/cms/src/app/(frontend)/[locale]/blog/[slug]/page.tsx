@@ -1,4 +1,6 @@
+import { TrackPage } from "@focus-reactive/payload-plugin-analytics/client";
 import type { Metadata } from "next";
+import { draftMode } from "next/headers";
 import React from "react";
 
 import { generateMeta } from "@/core/lib/generateMeta";
@@ -31,9 +33,11 @@ export default async function Page({ params }: Args) {
   if (!post) {
     return <PayloadRedirects url={url} locale={locale} />;
   }
+  const { isEnabled: draft } = await draftMode();
 
   return (
     <>
+      <TrackPage collection="posts" id={post.id} locale={locale} enabled={!draft} />
       <Header data={siteSettings.header as HeaderType} />
       <main>
         <ArticleJsonLd post={post} siteName={siteSettings.siteName as string} locale={locale} />

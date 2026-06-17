@@ -1,6 +1,8 @@
 import type { Endpoint } from "payload";
 import { ANALYTICS_ENDPOINT_PATHS } from "../constants/endpoints";
 import { getTopSources } from "../services/queries/getTopSources";
+import { getResolvedPagesConfig } from "../config";
+import { buildPageFilterContext } from "../services/pageFilter/buildPageFilterContext";
 import { TopNQuerySchema, formatZodIssues } from "./validateBody";
 import { mapGa4Error } from "./errorMapping";
 import { withAccess } from "./withAccess";
@@ -25,7 +27,8 @@ export function buildTopSourcesEndpoint(config: AnalyticsPluginConfig): Endpoint
       }
 
       try {
-        const result = await getTopSources(config.ga4.propertyId, parsed.data);
+        const pageFilter = await buildPageFilterContext(req.payload, getResolvedPagesConfig());
+        const result = await getTopSources(config.ga4.propertyId, parsed.data, pageFilter);
 
         return Response.json(result);
       } catch (err) {

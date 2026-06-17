@@ -1,8 +1,11 @@
 import type { AnalyticsQuery, LeadActionsCurrent, LeadActionsResponse, Row } from "../../types/query";
+import type { PageFilterContext } from "../pageFilter/types";
 import { getPluginConfig } from "../../config";
 import { resolveDateRange } from "../../utils/date/resolveDateRange";
 import { resolveComparison } from "../../utils/date/resolveComparison";
 import { bucketByDateRange, convertMetricToNumber, dateRangesFor, deriveMissing, leadActionFilter } from "../../utils/ga4";
+import { DEFAULT_PAGE_DIMENSIONS } from "../../constants/page";
+import { withPageRefFilter } from "../../utils/ga4/withPageRefFilter";
 import { resolveLeadActionTypes } from "../../utils/leadActions/resolveLeadActionTypes";
 import { mapGa4Error } from "../../endpoints/errorMapping";
 import { runQuery } from "../analyticsService/runQuery";
@@ -48,23 +51,34 @@ function aggregate(eventRows: Row[], totalSessions: number, elapsedMsAvailable: 
   return current;
 }
 
-export async function getLeadActions(propertyId: string, query: AnalyticsQuery): Promise<LeadActionsResponse> {
+export async function getLeadActions(propertyId: string, query: AnalyticsQuery, pageFilter?: PageFilterContext | null): Promise<LeadActionsResponse> {
   const dateRange = resolveDateRange(query.dateRange);
   const previousDateRange = query.comparison?.kind === "previous-period" ? resolveComparison(dateRange) : undefined;
   const dateRanges = dateRangesFor(dateRange, previousDateRange);
   const types = resolveLeadActionTypes(getPluginConfig().leadActions?.types);
 
-  const eventsRequest = {
-    dateRanges,
-    metrics: [{ name: "eventCount" }, { name: "averageCustomEvent:fr_elapsed_ms" }],
-    dimensions: [{ name: "customEvent:fr_lead_type" }, { name: "pagePath" }],
-    dimensionFilter: leadActionFilter(types),
-  };
-  const sessionsRequest = {
-    dateRanges,
-    metrics: [{ name: "sessions" }],
-    dimensions: [],
-  };
+  const refs = pageFilter?.refs ?? [];
+  const pageRefDim = pageFilter?.pageRefDim ?? DEFAULT_PAGE_DIMENSIONS.pageRef;
+
+  const eventsRequest = withPageRefFilter(
+    {
+      dateRanges,
+      metrics: [{ name: "eventCount" }, { name: "averageCustomEvent:fr_elapsed_ms" }],
+      dimensions: [{ name: "customEvent:fr_lead_type" }, { name: "pagePath" }],
+      dimensionFilter: leadActionFilter(types),
+    },
+    pageRefDim,
+    refs
+  );
+  const sessionsRequest = withPageRefFilter(
+    {
+      dateRanges,
+      metrics: [{ name: "sessions" }],
+      dimensions: [],
+    },
+    pageRefDim,
+    refs
+  );
 
   let elapsedMsAvailable = true;
   let batch;

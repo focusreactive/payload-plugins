@@ -9,5 +9,9 @@ interface AnalyticsProviderClientProps {
 }
 
 export function AnalyticsProviderClient({ measurementId, children }: AnalyticsProviderClientProps) {
-  return <AnalyticsProvider provider={ga4Provider({ measurementId })}>{children}</AnalyticsProvider>;
+  return (
+    <AnalyticsProvider provider={ga4Provider({ measurementId })} trackRouteChanges={false}>
+      {children}
+    </AnalyticsProvider>
+  );
 }

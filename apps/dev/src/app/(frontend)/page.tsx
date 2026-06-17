@@ -1,10 +1,11 @@
+import { TrackPage } from "@focus-reactive/payload-plugin-analytics/client";
 import { headers as getHeaders } from "next/headers.js";
 import Image from "next/image";
 import { getPayload } from "payload";
-import React from "react";
 
 import config from "@/payload.config";
 import { AnalyticsDemo } from "./AnalyticsDemo";
+import { SYNTHETIC_REFS } from "./SYNTHETIC_REFS";
 import "./styles.css";
 
 export default async function HomePage() {
@@ -17,6 +18,7 @@ export default async function HomePage() {
 
   return (
     <div className="home">
+      <TrackPage pageRef={SYNTHETIC_REFS.home} locale="en" />
       <div className="content">
         <picture>
           <source srcSet="https://raw.githubusercontent.com/payloadcms/payload/main/packages/ui/src/assets/payload-favicon.svg" />

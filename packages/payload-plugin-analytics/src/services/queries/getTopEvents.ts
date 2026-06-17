@@ -1,7 +1,10 @@
 import type { Row, TopEventsResponse, TopEventsRow, TopNQuery } from "../../types/query";
+import type { PageFilterContext } from "../pageFilter/types";
 import { resolveDateRange } from "../../utils/date/resolveDateRange";
 import { resolveComparison } from "../../utils/date/resolveComparison";
 import { bucketByDateRange, convertMetricToNumber, dateRangesFor, withRowLimit } from "../../utils/ga4";
+import { DEFAULT_PAGE_DIMENSIONS } from "../../constants/page";
+import { withPageRefFilter } from "../../utils/ga4/withPageRefFilter";
 import { runQuery } from "../analyticsService/runQuery";
 
 const METRICS = [{ name: "eventCount" }, { name: "eventCountPerUser" }];
@@ -17,7 +20,7 @@ function convertRowToTopEventsRow(row: Row): TopEventsRow {
   };
 }
 
-export async function getTopEvents(propertyId: string, query: TopNQuery): Promise<TopEventsResponse> {
+export async function getTopEvents(propertyId: string, query: TopNQuery, pageFilter?: PageFilterContext | null): Promise<TopEventsResponse> {
   const dateRange = resolveDateRange(query.dateRange);
   const previousDateRange = query.comparison?.kind === "previous-period" ? resolveComparison(dateRange) : undefined;
   const dateRanges = dateRangesFor(dateRange, previousDateRange);
@@ -25,7 +28,9 @@ export async function getTopEvents(propertyId: string, query: TopNQuery): Promis
   const dimensions = [{ name: "eventName" }];
 
   const request = withRowLimit({ dateRanges, metrics: METRICS, dimensions }, query.limit);
-  const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "topEvents");
+  const refs = pageFilter?.refs ?? [];
+  const filtered = withPageRefFilter(request, pageFilter?.pageRefDim ?? DEFAULT_PAGE_DIMENSIONS.pageRef, refs);
+  const raw = await runQuery.runReport(propertyId, filtered as Parameters<typeof runQuery.runReport>[1], "topEvents");
   const rows = (raw.rows ?? []) as Row[];
 
   if (!previousDateRange) {

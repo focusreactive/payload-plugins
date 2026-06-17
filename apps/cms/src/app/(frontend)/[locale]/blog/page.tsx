@@ -1,7 +1,10 @@
+import { TrackPage } from "@focus-reactive/payload-plugin-analytics/client";
 import type { Metadata } from "next/types";
+import { draftMode } from "next/headers";
 import React, { Suspense } from "react";
 
 import { BLOG_CONFIG } from "@/core/config/blog";
+import { SYNTHETIC_REFS } from "@/core/lib/analytics/SYNTHETIC_REFS";
 import { I18N_CONFIG } from "@/core/config/i18n";
 import { generateMeta } from "@/core/lib/generateMeta";
 import type { Locale } from "@/core/types";
@@ -29,11 +32,13 @@ export const experimental_ppr = true;
 
 export default async function Page({ searchParams, params }: Props) {
   const { locale } = await params;
+  const { isEnabled: draft } = await draftMode();
 
   const siteSettings = await getSiteSettings({ locale });
 
   return (
     <>
+      <TrackPage pageRef={SYNTHETIC_REFS.blogIndex} locale={locale} enabled={!draft} />
       <Header data={siteSettings.header as HeaderType} />
       <main>
         <Suspense>

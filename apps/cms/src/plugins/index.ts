@@ -262,6 +262,10 @@ export const plugins: Plugin[] = [
     ab: {
       experimentsCollectionSlug: "ab-experiments",
     },
+    pages: {
+      collections: ["page", "posts"],
+      syntheticRefs: ["__home", "__blog-index", "__search"],
+    },
   }),
 
   visualEditingPlugin({

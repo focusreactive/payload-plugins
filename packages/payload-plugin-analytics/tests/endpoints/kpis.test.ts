@@ -1,11 +1,18 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildKpisEndpoint } from "../../src/endpoints/kpis";
 import { __setGa4ClientForTests } from "../../src/services/ga4DataClient";
+import { setPluginConfig } from "../../src/config";
 import { makePayloadRequest } from "../../__fixtures__/http/payloadRequest";
 import kpisCurrent from "../../__fixtures__/ga4/kpis.current.json";
 import type { AnalyticsPluginConfig } from "../../src/types/config";
 
 const cfg = { ga4: { propertyId: "12345", measurementId: "G-X", serviceAccount: { clientEmail: "x", privateKey: "y" } } } as AnalyticsPluginConfig;
+
+// The handler builds a PageFilterContext via getResolvedPagesConfig() → getPluginConfig();
+// seed a config with no `pages` so the resolved config is null (feature off, no filter).
+beforeEach(() => {
+  setPluginConfig(cfg);
+});
 
 function callHandler(ep: { handler: unknown }, req: unknown): Promise<Response> {
   // PayloadHandler signature accepts extra positional args (request, args). For tests we only need req.

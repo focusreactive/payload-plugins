@@ -1,7 +1,10 @@
+import { TrackPage } from "@focus-reactive/payload-plugin-analytics/client";
 import type { Metadata } from "next";
+import { draftMode } from "next/headers";
 import React from "react";
 
 import { RenderBlocks } from "@/blocks/RenderBlocks";
+import { SYNTHETIC_REFS } from "@/core/lib/analytics/SYNTHETIC_REFS";
 import { generateMeta } from "@/core/lib/generateMeta";
 import { generateNotFoundMeta } from "@/core/lib/generateNotFoundMeta";
 import { parseSlugToPath } from "@/core/lib/parseSlugToPath";
@@ -30,13 +33,17 @@ export default async function Page({ params }: Args) {
   }
 
   const page = await getPageBySlug(decodedSegments, locale);
+  const { isEnabled: draft } = await draftMode();
 
   if (!page) {
     return <PayloadRedirects url={url} locale={locale} />;
   }
 
+  const pageRef = decodedSegments[0] === "home" || decodedSegments.length === 0 ? SYNTHETIC_REFS.home : `page:${page.id}`;
+
   return (
     <>
+      <TrackPage pageRef={pageRef} locale={locale} enabled={!draft} />
       <Header data={page.header as HeaderType} />
       <main>
         <div>
