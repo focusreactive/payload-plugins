@@ -4,6 +4,7 @@ export { AnalyticsProvider } from "./AnalyticsProvider";
 export type { AnalyticsProviderProps } from "./AnalyticsProvider";
 export { useLeadActionTypes } from "./AnalyticsProvider/LeadActionTypesContext";
 export { Track } from "./Track";
+export { TrackPage } from "./Track/TrackPage";
 export { TrackLeadAction } from "./Track/TrackLeadAction";
 export type { TrackLeadActionProps } from "./Track/TrackLeadAction";
 export { useAnalytics } from "./hooks/useAnalytics";

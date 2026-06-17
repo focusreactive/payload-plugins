@@ -71,4 +71,15 @@ describe("mapGa4Error setupRequired derivation", () => {
     expect(m.setupRequired).toBe(true);
     expect(m.missingKey).toBe("fr_lead_type");
   });
+
+  it("surfaces GA4 detail from err.details when err.message is empty", () => {
+    const err = Object.assign(new Error("3 INVALID_ARGUMENT: "), {
+      details: "Field customEvent:fr_page_ref is not a valid dimension",
+    });
+    const m = mapGa4Error(err);
+    expect(m.status).toBe(400);
+    expect(m.message).toContain("Field customEvent:fr_page_ref is not a valid dimension");
+    expect(m.missingKey).toBe("fr_page_ref");
+    expect(m.setupRequired).toBe(true);
+  });
 });

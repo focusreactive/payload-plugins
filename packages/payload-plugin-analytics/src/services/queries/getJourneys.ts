@@ -1,7 +1,9 @@
 import type { JourneyResponse, JourneyRow, JourneyStep, JourneysQuery, Row } from "../../types/query";
+import type { PageFilterContext } from "../pageFilter/types";
 import { LEAD_ACTION_EVENT_NAME } from "../../constants/events";
 import { resolveDateRange } from "../../utils/date/resolveDateRange";
 import { dateRangesFor, deriveMissing, withRowLimit } from "../../utils/ga4";
+import { excludeDeletedSessions } from "../pageFilter/excludeDeletedSessions";
 import { mapGa4Error } from "../../endpoints/errorMapping";
 import { runQuery } from "../analyticsService/runQuery";
 
@@ -12,9 +14,10 @@ interface OrderedRow {
   dhm: string;
   eventSeq: number;
   leadType: string;
+  pageRef: string;
 }
 
-function parseRow(row: Row): OrderedRow {
+function parseRow(row: Row, pageRefDimIndex: number): OrderedRow {
   const dim = row.dimensionValues ?? [];
   const seqRaw = dim[4]?.value ?? "";
   const seq = Number.parseInt(seqRaw, 10);
@@ -26,10 +29,11 @@ function parseRow(row: Row): OrderedRow {
     dhm: dim[3]?.value ?? "",
     eventSeq: Number.isFinite(seq) ? seq : Number.MAX_SAFE_INTEGER,
     leadType: dim[5]?.value ?? "",
+    pageRef: pageRefDimIndex >= 0 ? (dim[pageRefDimIndex]?.value ?? "") : "",
   };
 }
 
-function sessionRowToJourneyStep(row: OrderedRow): JourneyStep {
+function sessionRowToJourneyStep(row: OrderedRow, labels: Map<string, { path: string }> | null): JourneyStep {
   if (row.eventName === LEAD_ACTION_EVENT_NAME && row.leadType) {
     return {
       kind: "leadAction",
@@ -38,7 +42,7 @@ function sessionRowToJourneyStep(row: OrderedRow): JourneyStep {
   }
   return {
     kind: "page",
-    value: row.pagePath,
+    value: labels?.get(row.pageRef)?.path ?? row.pagePath,
   };
 }
 
@@ -66,24 +70,35 @@ function groupBySession(rows: OrderedRow[]): Map<string, OrderedRow[]> {
   return rowsMap;
 }
 
-export async function getJourneys(propertyId: string, query: JourneysQuery): Promise<JourneyResponse> {
+export async function getJourneys(propertyId: string, query: JourneysQuery, pageFilter?: PageFilterContext | null): Promise<JourneyResponse> {
   const dateRange = resolveDateRange(query.dateRange);
   const limit = query.limit ?? 20;
   const maxSteps = query.maxSteps;
   const sampleLimit = query.sampleLimit ?? 50_000;
+  const filterRefs = pageFilter?.refs ?? [];
+  const pageFilterActive = filterRefs.length > 0;
+
+  const dimensions = [
+    { name: "customEvent:fr_session_id" },
+    { name: "eventName" },
+    { name: "pagePath" },
+    { name: "dateHourMinute" },
+    { name: "customEvent:fr_event_seq" },
+    { name: "customEvent:fr_lead_type" },
+  ];
+
+  let pageRefDimIndex = -1;
+
+  if (pageFilterActive && pageFilter) {
+    pageRefDimIndex = dimensions.length;
+    dimensions.push({ name: pageFilter.pageRefDim });
+  }
 
   const request = withRowLimit(
     {
       dateRanges: dateRangesFor(dateRange),
       metrics: [{ name: "eventCount" }],
-      dimensions: [
-        { name: "customEvent:fr_session_id" },
-        { name: "eventName" },
-        { name: "pagePath" },
-        { name: "dateHourMinute" },
-        { name: "customEvent:fr_event_seq" },
-        { name: "customEvent:fr_lead_type" },
-      ],
+      dimensions,
       orderBys: [{ dimension: { dimensionName: "customEvent:fr_session_id" } }, { dimension: { dimensionName: "dateHourMinute" } }, { dimension: { dimensionName: "customEvent:fr_event_seq" } }],
     },
     sampleLimit
@@ -97,7 +112,7 @@ export async function getJourneys(propertyId: string, query: JourneysQuery): Pro
     if (mapped.setupRequired) {
       return {
         setupRequired: true,
-        missing: deriveMissing({ message: mapped.message }, ["fr_session_id", "fr_event_seq", "fr_lead_type"]),
+        missing: deriveMissing({ message: mapped.message }, ["fr_session_id", "fr_event_seq", "fr_lead_type", "fr_page_ref"]),
         rows: [],
         sessionsConsidered: 0,
         truncated: false,
@@ -106,18 +121,44 @@ export async function getJourneys(propertyId: string, query: JourneysQuery): Pro
     throw err;
   }
 
-  const rows = ((raw.rows ?? []) as Row[]).map(parseRow);
+  const rows = ((raw.rows ?? []) as Row[]).map((row) => parseRow(row, pageRefDimIndex));
   const rowsMapBySession = groupBySession(rows);
+
+  let allowedSessions: Set<string> | null = null;
+  if (pageFilterActive) {
+    const refsBySession = new Map<string, Set<string>>();
+    for (const [sessionId, sessionRows] of rowsMapBySession) {
+      const refs = new Set<string>();
+      for (const row of sessionRows) refs.add(row.pageRef);
+      refsBySession.set(sessionId, refs);
+    }
+    allowedSessions = excludeDeletedSessions(refsBySession, new Set(filterRefs));
+  }
+
+  // Resolve page-step labels by ref across all allowed sessions, so differing historical
+  // pagePaths for the same ref collapse to one CMS-resolved path.
+  let labels: Map<string, { path: string }> | null = null;
+  if (pageFilterActive && pageFilter) {
+    const pageStepRefs = new Set<string>();
+    for (const [sessionId, sessionRows] of rowsMapBySession) {
+      if (allowedSessions && !allowedSessions.has(sessionId)) continue;
+      for (const row of sessionRows) {
+        if (row.eventName !== LEAD_ACTION_EVENT_NAME && row.pageRef) pageStepRefs.add(row.pageRef);
+      }
+    }
+    labels = await pageFilter.resolveLabels([...pageStepRefs]);
+  }
 
   const journeysMapByPath = new Map<string, { path: JourneyStep[]; count: number }>();
   let sessionsConsidered = 0;
 
-  for (const sessionRows of rowsMapBySession.values()) {
+  for (const [sessionId, sessionRows] of rowsMapBySession) {
+    if (allowedSessions && !allowedSessions.has(sessionId)) continue;
     if (!sessionRows.some((row) => row.eventName === LEAD_ACTION_EVENT_NAME)) continue;
 
     sessionsConsidered += 1;
 
-    const journeySteps = collapseJourneyStepDuplicates(sessionRows.map(sessionRowToJourneyStep));
+    const journeySteps = collapseJourneyStepDuplicates(sessionRows.map((row) => sessionRowToJourneyStep(row, labels)));
     const path = maxSteps === undefined ? journeySteps : journeySteps.slice(0, maxSteps);
     const pathKey = JSON.stringify(path);
     const existing = journeysMapByPath.get(pathKey);

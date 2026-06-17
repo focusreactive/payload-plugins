@@ -23,6 +23,29 @@ describe("getTopPages", () => {
     expect(res.total).toBe(res.rows.reduce((a, r) => a + r.pageViews, 0));
   });
 
+  it("groups by fr_page_ref and applies its inList filter when pageFilter has refs", async () => {
+    // Identity behavior: when pageFilter is set, the request groups by the ref dim ONLY
+    // (no pagePath/pageTitle) and existence is enforced by the ref inList filter.
+    const fake = { runReport: vi.fn().mockResolvedValue([topPages]), batchRunReports: vi.fn() };
+    __setGa4ClientForTests(fake as never);
+    await getTopPages(
+      "12345",
+      { dateRange: { preset: "last-7d" } },
+      { refs: ["page:1", "__home"], pageRefDim: "customEvent:fr_page_ref", contentLocaleDim: "customEvent:fr_content_locale", resolveLabels: async () => new Map() }
+    );
+    const arg = fake.runReport.mock.calls[0][0];
+    expect(arg.dimensions).toEqual([{ name: "customEvent:fr_page_ref" }]);
+    expect(arg.dimensionFilter).toEqual({ filter: { fieldName: "customEvent:fr_page_ref", inListFilter: { values: ["page:1", "__home"] } } });
+  });
+
+  it("adds no fr_page_ref filter when pageFilter is null", async () => {
+    const fake = { runReport: vi.fn().mockResolvedValue([topPages]), batchRunReports: vi.fn() };
+    __setGa4ClientForTests(fake as never);
+    await getTopPages("12345", { dateRange: { preset: "last-7d" } }, null);
+    const arg = fake.runReport.mock.calls[0][0];
+    expect(arg.dimensionFilter).toBeUndefined();
+  });
+
   it("comparison.rows is keyed on current rows; previous-only rows are dropped", async () => {
     const fixture = {
       rows: [

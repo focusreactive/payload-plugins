@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { pushEvent } from "../../../src/providers/ga4Provider/pushEvent";
 import { pushPageView } from "../../../src/providers/ga4Provider/pushPageView";
 import { __resetInMemoryStore } from "../../../src/client/session/store";
+import { setPageContext, clearPageContext } from "../../../src/client/pageContext/store";
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -77,5 +78,33 @@ describe("pushPageView", () => {
   it("no-ops when gtag is undefined", () => {
     delete window.gtag;
     expect(() => pushPageView("/x", "X", "https://x")).not.toThrow();
+  });
+});
+
+describe("pushEvent page-context stamping", () => {
+  beforeEach(() => {
+    clearPageContext();
+    (globalThis as { gtag?: unknown }).gtag = vi.fn();
+  });
+  afterEach(() => {
+    clearPageContext();
+    delete (globalThis as { gtag?: unknown }).gtag;
+  });
+
+  it("stamps page context onto a lead_action event", () => {
+    setPageContext({ pageRef: "posts:7", locale: "es" });
+    pushEvent("lead_action", { fr_lead_type: "phone_click" });
+    const gtag = (globalThis as { gtag: ReturnType<typeof vi.fn> }).gtag;
+    const params = gtag.mock.calls[0][2];
+    expect(params.fr_page_ref).toBe("posts:7");
+    expect(params.fr_content_locale).toBe("es");
+    expect(params.fr_lead_type).toBe("phone_click");
+  });
+
+  it("omits page params when context is unset", () => {
+    pushEvent("lead_action", { fr_lead_type: "phone_click" });
+    const gtag = (globalThis as { gtag: ReturnType<typeof vi.fn> }).gtag;
+    const params = gtag.mock.calls[0][2];
+    expect(params.fr_page_ref).toBeUndefined();
   });
 });

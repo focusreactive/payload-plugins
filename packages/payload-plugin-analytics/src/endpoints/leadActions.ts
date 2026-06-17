@@ -1,6 +1,8 @@
 import type { Endpoint } from "payload";
 import { ANALYTICS_ENDPOINT_PATHS } from "../constants/endpoints";
 import { getLeadActions } from "../services/queries/getLeadActions";
+import { getResolvedPagesConfig } from "../config";
+import { buildPageFilterContext } from "../services/pageFilter/buildPageFilterContext";
 import { AnalyticsQuerySchema, formatZodIssues } from "./validateBody";
 import { mapGa4Error } from "./errorMapping";
 import { withAccess } from "./withAccess";
@@ -25,7 +27,8 @@ export function buildLeadActionsEndpoint(config: AnalyticsPluginConfig): Endpoin
       }
 
       try {
-        const result = await getLeadActions(config.ga4.propertyId, parsed.data);
+        const pageFilter = await buildPageFilterContext(req, getResolvedPagesConfig());
+        const result = await getLeadActions(config.ga4.propertyId, parsed.data, pageFilter);
 
         return Response.json(result);
       } catch (err) {

@@ -7,6 +7,8 @@ const KEY_COPY: Record<CustomRegistrationKey, string> = {
   fr_elapsed_ms: "Register `fr_elapsed_ms` as a Standard custom metric (Milliseconds) in GA4 Admin.",
   fr_session_start: "Register `fr_session_start` as a custom dimension (event-scoped) in GA4 Admin.",
   fr_lead_type: "Register `fr_lead_type` as a custom dimension (event-scoped) in GA4 Admin to enable lead-action breakdowns.",
+  fr_page_ref: "Register `fr_page_ref` as a custom dimension (event-scoped) in GA4 Admin to scope analytics to existing pages.",
+  fr_content_locale: "Register `fr_content_locale` as a custom dimension (event-scoped) in GA4 Admin to enable per-locale page analytics.",
 };
 
 const SETUP_GUIDE_URL = "https://github.com/focusreactive/payload-plugins/blob/main/packages/payload-plugin-analytics/docs/setup-ga4.md#stage-3-custom-registrations";

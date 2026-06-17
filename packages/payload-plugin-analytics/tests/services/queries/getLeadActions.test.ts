@@ -114,6 +114,53 @@ describe("getLeadActions", () => {
     expect(res.current.avgTimeToAction).toBe(0);
   });
 
+  it("ANDs fr_page_ref inList into the events filter and filters the sessions request when pageFilter has refs", async () => {
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue([withMetric]),
+    };
+    __setGa4ClientForTests(fake as never);
+    const pageFilter = { refs: ["page:1", "__home"], pageRefDim: "customEvent:fr_page_ref", contentLocaleDim: "customEvent:fr_content_locale", resolveLabels: async () => new Map() };
+    await getLeadActions("12345", { dateRange: { preset: "last-7d" } }, pageFilter);
+    const requests = fake.batchRunReports.mock.calls[0][0].requests;
+    const pageRefInList = { filter: { fieldName: "customEvent:fr_page_ref", inListFilter: { values: ["page:1", "__home"] } } };
+
+    // events request: existing leadActionFilter ANDed with the page-ref inList
+    expect(requests[0].dimensionFilter.andGroup.expressions[requests[0].dimensionFilter.andGroup.expressions.length - 1]).toEqual(pageRefInList);
+
+    // sessions request (denominator): standalone page-ref inList
+    expect(requests[1].dimensionFilter).toEqual(pageRefInList);
+  });
+
+  it("filters the fallback events request and sessions request when pageFilter set and fr_elapsed_ms missing", async () => {
+    const err = new Error("3 INVALID_ARGUMENT: Field averageCustomEvent:fr_elapsed_ms is unrecognized.");
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockRejectedValueOnce(err).mockResolvedValueOnce([withoutMetric]),
+    };
+    __setGa4ClientForTests(fake as never);
+    const pageFilter = { refs: ["page:1", "__home"], pageRefDim: "customEvent:fr_page_ref", contentLocaleDim: "customEvent:fr_content_locale", resolveLabels: async () => new Map() };
+    await getLeadActions("12345", { dateRange: { preset: "last-7d" } }, pageFilter);
+    const retryRequests = fake.batchRunReports.mock.calls[1][0].requests;
+    const pageRefInList = { filter: { fieldName: "customEvent:fr_page_ref", inListFilter: { values: ["page:1", "__home"] } } };
+    expect(retryRequests[0].metrics).toEqual([{ name: "eventCount" }]);
+    expect(retryRequests[0].dimensionFilter.andGroup.expressions[retryRequests[0].dimensionFilter.andGroup.expressions.length - 1]).toEqual(pageRefInList);
+    expect(retryRequests[1].dimensionFilter).toEqual(pageRefInList);
+  });
+
+  it("leaves events filter as leadActionFilter only and sessions unfiltered when pageFilter is null", async () => {
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue([withMetric]),
+    };
+    __setGa4ClientForTests(fake as never);
+    await getLeadActions("12345", { dateRange: { preset: "last-7d" } }, null);
+    const requests = fake.batchRunReports.mock.calls[0][0].requests;
+    // events request still carries the lead-action filter, but no page-ref inList anywhere in it
+    expect(JSON.stringify(requests[0].dimensionFilter)).not.toContain("fr_page_ref");
+    expect(requests[1].dimensionFilter).toBeUndefined();
+  });
+
   it("does NOT retry on unrelated INVALID_ARGUMENT", async () => {
     const err = new Error("3 INVALID_ARGUMENT: bad date format");
     const fake = {

@@ -1,6 +1,8 @@
 import type { Endpoint, PayloadRequest } from "payload";
 import { ANALYTICS_ENDPOINT_PATHS } from "../constants/endpoints";
 import { getSessionDetail } from "../services/queries/getSessionDetail";
+import { getResolvedPagesConfig } from "../config";
+import { buildPageFilterContext } from "../services/pageFilter/buildPageFilterContext";
 import { AnalyticsQuerySchema, formatZodIssues } from "./validateBody";
 import { mapGa4Error } from "./errorMapping";
 import { withAccess } from "./withAccess";
@@ -41,7 +43,8 @@ export function buildSessionDetailEndpoint(config: AnalyticsPluginConfig): Endpo
       }
 
       try {
-        const result = await getSessionDetail(config.ga4.propertyId, sessionId, parsed.data);
+        const pageFilter = await buildPageFilterContext(req, getResolvedPagesConfig());
+        const result = await getSessionDetail(config.ga4.propertyId, sessionId, parsed.data, pageFilter);
 
         return Response.json(result);
       } catch (err) {

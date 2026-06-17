@@ -7,6 +7,8 @@ const SETUP_COPY: Record<CustomRegistrationKey, string> = {
   fr_event_seq: "Register `fr_event_seq` as a custom dimension to enable within-minute event ordering.",
   fr_session_start: "Register `fr_session_start` as an event-scoped custom dimension to populate session start time.",
   fr_lead_type: "Register `fr_lead_type` as an event-scoped custom dimension to track lead action types.",
+  fr_page_ref: "Register `fr_page_ref` as an event-scoped custom dimension to scope analytics to existing pages.",
+  fr_content_locale: "Register `fr_content_locale` as an event-scoped custom dimension to enable per-locale page analytics.",
 };
 
 const SETUP_GUIDE_URL = "https://github.com/focusreactive/payload-plugins/blob/main/packages/payload-plugin-analytics/docs/setup-ga4.md#stage-3-custom-registrations";

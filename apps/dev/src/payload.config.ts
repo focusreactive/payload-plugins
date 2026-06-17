@@ -106,21 +106,45 @@ export default buildConfig({
         },
       },
       leadActions: {
-        types: ["phone_click", "email_click", "directions_click", "whatsapp_click", "telegram_click", "website_click", "booking_click", "form_submit", "cta_pricing_click"],
+        types: ["phone_click", "email_click", "directions_click", "whatsapp_click", "telegram_click", "website_click", "booking_click", "form_submit", "cta_pricing_click", "hero_cta_click"],
         adminRegistry: "@/lead-actions-admin#default",
       },
       ab: {
         variantFields: { name: "title" },
       },
+      pages: {
+        collections: ["pages"],
+        syntheticRefs: ["__home"],
+        resolvePagePath: async (ref, req) => {
+          if (ref === "__home") return "/";
+
+          const [collection, id] = ref.split(":");
+          if (collection !== "pages" || !id) return "";
+
+          const doc = await req.payload.findByID({ collection: "pages", id, depth: 0, overrideAccess: true }).catch(() => null);
+          const slug = (doc as { slug?: string } | null)?.slug;
+
+          return slug ? `/${slug}` : "";
+        },
+      },
+      mocks: true,
     }),
     seoPlugin({
       collections: [
         {
           slug: "pages",
-          fields: { seoTitle: "seoTitle", metaDescription: "metaDescription", slug: "slug", content: "sections" },
+          fields: {
+            seoTitle: "seoTitle",
+            metaDescription: "metaDescription",
+            slug: "slug",
+            content: "sections",
+          },
         },
       ],
-      site: { name: "Dev Site", baseUrl: process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3000" },
+      site: {
+        name: "Dev Site",
+        baseUrl: process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3000",
+      },
       supportedLocales: ["en", "de", "fr", "es"],
     }),
   ],

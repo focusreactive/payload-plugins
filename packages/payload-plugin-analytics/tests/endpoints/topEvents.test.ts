@@ -1,11 +1,18 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildTopEventsEndpoint } from "../../src/endpoints/topEvents";
 import { __setGa4ClientForTests } from "../../src/services/ga4DataClient";
+import { setPluginConfig } from "../../src/config";
 import { makePayloadRequest } from "../../__fixtures__/http/payloadRequest";
 import topEvents from "../../__fixtures__/ga4/topEvents.json";
 import type { AnalyticsPluginConfig } from "../../src/types/config";
 
 const cfg = { ga4: { propertyId: "12345", measurementId: "G-X", serviceAccount: { clientEmail: "x", privateKey: "y" } } } as AnalyticsPluginConfig;
+
+// The handler builds a PageFilterContext via getResolvedPagesConfig() → getPluginConfig();
+// seed a config with no `pages` so the resolved config is null (feature off, no filter).
+beforeEach(() => {
+  setPluginConfig(cfg);
+});
 
 function callHandler(ep: { handler: unknown }, req: unknown): Promise<Response> {
   return (ep.handler as (r: unknown) => Promise<Response>)(req);

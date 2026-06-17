@@ -1,7 +1,10 @@
 import type { Row, TopCountriesQuery, TopCountriesResponse, TopCountriesRow } from "../../types/query";
+import type { PageFilterContext } from "../pageFilter/types";
 import { resolveDateRange } from "../../utils/date/resolveDateRange";
 import { resolveComparison } from "../../utils/date/resolveComparison";
 import { bucketByDateRange, convertMetricToNumber, dateRangesFor, withRowLimit } from "../../utils/ga4";
+import { DEFAULT_PAGE_DIMENSIONS } from "../../constants/page";
+import { withPageRefFilter } from "../../utils/ga4/withPageRefFilter";
 import { runQuery } from "../analyticsService/runQuery";
 
 const METRICS = [{ name: "sessions" }, { name: "totalUsers" }];
@@ -37,7 +40,7 @@ function dimensionsFor(dimension: "country" | "city") {
   return dimension === "city" ? [{ name: "city" }, { name: "country" }] : [{ name: "country" }];
 }
 
-export async function getTopCountries(propertyId: string, query: TopCountriesQuery): Promise<TopCountriesResponse> {
+export async function getTopCountries(propertyId: string, query: TopCountriesQuery, pageFilter?: PageFilterContext | null): Promise<TopCountriesResponse> {
   const dimension: "country" | "city" = query.dimension ?? "country";
   const dateRange = resolveDateRange(query.dateRange);
   const previousDateRange = query.comparison?.kind === "previous-period" ? resolveComparison(dateRange) : undefined;
@@ -46,7 +49,9 @@ export async function getTopCountries(propertyId: string, query: TopCountriesQue
   const dimensions = dimensionsFor(dimension);
 
   const request = withRowLimit({ dateRanges, metrics: METRICS, dimensions }, query.limit);
-  const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "topCountries");
+  const refs = pageFilter?.refs ?? [];
+  const filtered = withPageRefFilter(request, pageFilter?.pageRefDim ?? DEFAULT_PAGE_DIMENSIONS.pageRef, refs);
+  const raw = await runQuery.runReport(propertyId, filtered as Parameters<typeof runQuery.runReport>[1], "topCountries");
   const rows = (raw.rows ?? []) as Row[];
 
   if (!previousDateRange) {
