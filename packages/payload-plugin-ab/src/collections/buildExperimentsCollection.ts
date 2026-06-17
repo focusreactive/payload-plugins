@@ -5,6 +5,7 @@ export function buildExperimentsCollection(debug: boolean, slug: string): Collec
     slug,
     admin: {
       hidden: !debug,
+      group: "System",
       useAsTitle: "manifestKey",
       defaultColumns: ["manifestKey", "parentCollection", "locale", "startedAt"],
     },
