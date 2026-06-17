@@ -1,13 +1,13 @@
-import type { CollectionAfterDeleteHook } from "payload";
+import type { CollectionBeforeDeleteHook } from "payload";
 import { COMMENT_READS_COLLECTION_SLUG } from "../../constants";
 
-export const cascadeDeleteCommentReads: CollectionAfterDeleteHook = async ({ doc, req }) => {
-  if (!doc?.id) return;
+export const cascadeDeleteCommentReads: CollectionBeforeDeleteHook = async ({ id, req }) => {
+  if (!id) return;
 
   try {
     await req.payload.delete({
       collection: COMMENT_READS_COLLECTION_SLUG,
-      where: { comment: { equals: doc.id } },
+      where: { comment: { equals: id } },
       overrideAccess: true,
       req,
     });

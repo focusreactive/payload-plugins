@@ -25,12 +25,8 @@ export const baseCollection = (tenantConfig?: TenantPluginConfig): CollectionCon
     delete: isAuth,
   },
   hooks: {
-    beforeChange: [
-      setAuthorBeforeCreate,
-      setMentionSnapshotsBeforeChange,
-      ...(tenantConfig?.enabled ? [setTenantBeforeCreate] : []),
-    ],
-    afterDelete: [cascadeDeleteCommentReads],
+    beforeChange: [setAuthorBeforeCreate, setMentionSnapshotsBeforeChange, ...(tenantConfig?.enabled ? [setTenantBeforeCreate] : [])],
+    beforeDelete: [cascadeDeleteCommentReads],
   },
   timestamps: true,
   fields: [
@@ -141,19 +137,19 @@ export const baseCollection = (tenantConfig?: TenantPluginConfig): CollectionCon
         condition: (_data, siblingData) => siblingData?.status === "resolved",
       },
     },
-    ...(tenantConfig?.enabled ?
-      [
-        {
-          name: "tenant",
-          type: "relationship" as const,
-          relationTo: (tenantConfig.collectionSlug ?? "tenants") as CollectionSlug,
-          index: true,
-          label: "Tenant",
-          admin: {
-            position: "sidebar" as const,
+    ...(tenantConfig?.enabled
+      ? [
+          {
+            name: "tenant",
+            type: "relationship" as const,
+            relationTo: (tenantConfig.collectionSlug ?? "tenants") as CollectionSlug,
+            index: true,
+            label: "Tenant",
+            admin: {
+              position: "sidebar" as const,
+            },
           },
-        },
-      ]
-    : []),
+        ]
+      : []),
   ],
 });
