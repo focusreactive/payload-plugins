@@ -83,22 +83,27 @@ interface MergedSession {
  * error we return an empty Map and the caller falls back to the raw GA4
  * landingPagePlusQueryString.
  */
+const LANDING_REF_ROW_LIMIT = 50_000;
+
 async function resolveLandingPaths(propertyId: string, dateRange: ReturnType<typeof resolveDateRange>, pageFilter: PageFilterContext, sessionIds: string[]): Promise<Map<string, string>> {
   try {
-    const request = {
-      dateRanges: dateRangesFor(dateRange),
-      metrics: [{ name: "eventCount" }],
-      dimensions: [{ name: "customEvent:fr_session_id" }, { name: pageFilter.pageRefDim }, { name: "dateHourMinute" }, { name: "customEvent:fr_event_seq" }],
-      dimensionFilter: {
-        andGroup: {
-          expressions: [
-            { filter: { fieldName: "eventName", stringFilter: { value: TRAFFIC_EVENTS.PAGE_VIEW } } },
-            { filter: { fieldName: "customEvent:fr_session_id", inListFilter: { values: sessionIds } } },
-          ],
+    const request = withRowLimit(
+      {
+        dateRanges: dateRangesFor(dateRange),
+        metrics: [{ name: "eventCount" }],
+        dimensions: [{ name: "customEvent:fr_session_id" }, { name: pageFilter.pageRefDim }, { name: "dateHourMinute" }, { name: "customEvent:fr_event_seq" }],
+        dimensionFilter: {
+          andGroup: {
+            expressions: [
+              { filter: { fieldName: "eventName", stringFilter: { value: TRAFFIC_EVENTS.PAGE_VIEW } } },
+              { filter: { fieldName: "customEvent:fr_session_id", inListFilter: { values: sessionIds } } },
+            ],
+          },
         },
+        orderBys: [{ dimension: { dimensionName: "customEvent:fr_session_id" } }, { dimension: { dimensionName: "dateHourMinute" } }, { dimension: { dimensionName: "customEvent:fr_event_seq" } }],
       },
-      orderBys: [{ dimension: { dimensionName: "customEvent:fr_session_id" } }, { dimension: { dimensionName: "dateHourMinute" } }, { dimension: { dimensionName: "customEvent:fr_event_seq" } }],
-    };
+      LANDING_REF_ROW_LIMIT
+    );
 
     const report = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "sessionLandingRefs");
     const rows = (report.rows ?? []) as Row[];

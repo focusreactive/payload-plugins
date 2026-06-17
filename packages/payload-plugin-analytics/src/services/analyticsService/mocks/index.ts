@@ -6,6 +6,7 @@ import { topSourcesMock } from "./topSources";
 import { topDevicesMock } from "./topDevices";
 import { topCountriesMock } from "./topCountries";
 import { sessionsMock } from "./sessions";
+import { sessionLandingRefsMock } from "./sessionLandingRefs";
 import { sessionDetailMock } from "./sessionDetail";
 import { journeysMock } from "./journeys";
 import { leadActionsMock } from "./leadActions";
@@ -20,6 +21,7 @@ export const defaultMocks: AnalyticsMockMap = {
     topCountries: topCountriesMock,
     sessionDetail: sessionDetailMock,
     journeys: journeysMock,
+    sessionLandingRefs: sessionLandingRefsMock,
   },
   batchRunReports: {
     leadActions: leadActionsMock,
