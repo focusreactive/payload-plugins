@@ -22,7 +22,7 @@ export function TopEventsBlock({ dateRange, comparison, className }: BlockCompon
         loading={isLoading}
         error={error ?? undefined}
         columns={[
-          { key: "eventName", header: "Event", font: "mono", render: (r) => r.eventName },
+          { key: "eventName", header: "Event", font: "mono", truncate: true, render: (r) => <span className="block truncate">{r.eventName}</span> },
           {
             key: "eventCount",
             header: "Count",

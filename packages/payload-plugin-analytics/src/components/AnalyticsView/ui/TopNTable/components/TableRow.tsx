@@ -17,7 +17,8 @@ export function TableRow<Row>({ row, columns }: TableRowProps<Row>) {
             "p-2 border-b border-(--theme-elevation-100)",
             col.align === "right" && "text-right tabular-nums",
             col.font === "mono" && "font-mono text-xs",
-            col.muted && "text-(--theme-elevation-500)"
+            col.muted && "text-(--theme-elevation-500)",
+            col.truncate && "max-w-0 overflow-hidden"
           )}
         >
           {renderCell(col, row)}

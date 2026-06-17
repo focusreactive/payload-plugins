@@ -25,12 +25,13 @@ export function TopSourcesBlock({ dateRange, comparison, className }: BlockCompo
           {
             key: "source",
             header: "Source / medium",
+            truncate: true,
             render: (r) => (
               <div className="flex flex-col min-w-0">
                 <span className="truncate">
                   {r.source} / {r.medium}
                 </span>
-                <span className="text-[var(--theme-elevation-500)] text-[11px]">{r.channel}</span>
+                <span className="text-[var(--theme-elevation-500)] text-[11px] truncate">{r.channel}</span>
               </div>
             ),
           },

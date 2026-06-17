@@ -6,6 +6,7 @@ export interface TopNTableColumn<Row> {
   align?: "left" | "right";
   font?: "body" | "mono";
   muted?: boolean;
+  truncate?: boolean;
   render?: (row: Row) => ReactNode;
   value?: (row: Row) => number;
   prevValue?: (row: Row) => number | null;
