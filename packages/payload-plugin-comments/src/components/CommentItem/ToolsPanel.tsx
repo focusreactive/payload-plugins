@@ -2,6 +2,7 @@ import { CircleCheck, Trash2, Undo2 } from "lucide-react";
 import { ConfirmationModal, toast, useModal, useTranslation } from "@payloadcms/ui";
 import { IconButton } from "../IconButton";
 import { useCommentsFilter } from "../../providers/CommentsFilterProvider";
+import { DELETE_MODAL_SLUG_PREFIX } from "../../constants";
 
 interface Props {
   commentId: string | number;
@@ -12,7 +13,7 @@ interface Props {
 }
 
 export function ToolsPanel({ commentId, isResolved, canDelete, onDelete, onResolve }: Props) {
-  const DELETE_MODAL_SLUG = `comments-delete-${commentId}`;
+  const deleteModalSlug = `${DELETE_MODAL_SLUG_PREFIX}${commentId}`;
 
   const { t } = useTranslation();
   const { openModal } = useModal();
@@ -29,23 +30,20 @@ export function ToolsPanel({ commentId, isResolved, canDelete, onDelete, onResol
               toast.success(t("comments:commentResolved" as never) ?? "Comment resolved");
             }
           }}
-          title={
-            isResolved ? (t("comments:reopen" as never) ?? "Reopen") : (t("comments:resolve" as never) ?? "Resolve")
-          }>
-          {isResolved ?
-            <Undo2 size={16} />
-          : <CircleCheck size={16} />}
+          title={isResolved ? (t("comments:reopen" as never) ?? "Reopen") : (t("comments:resolve" as never) ?? "Resolve")}
+        >
+          {isResolved ? <Undo2 size={16} /> : <CircleCheck size={16} />}
         </IconButton>
 
         {canDelete && (
-          <IconButton onClick={() => openModal(DELETE_MODAL_SLUG)} title={t("comments:delete" as never) ?? "Delete"}>
+          <IconButton onClick={() => openModal(deleteModalSlug)} title={t("comments:delete" as never) ?? "Delete"}>
             <Trash2 size={16} />
           </IconButton>
         )}
       </div>
 
       <ConfirmationModal
-        modalSlug={DELETE_MODAL_SLUG}
+        modalSlug={deleteModalSlug}
         heading={t("comments:deleteComment:heading" as never)}
         body={t("comments:deleteComment:body" as never)}
         confirmingLabel={t("comments:deleteComment:confirming" as never)}
