@@ -14,6 +14,9 @@ export function DensityGauge({ bands, markerPct, markerLabel, markerStatus, labe
   const halfLabel = dims.label / 2;
   const labelAlign = dims.label === 0 ? "-translate-x-1/2" : markerPx < halfLabel ? "translate-x-0" : markerPx > dims.bar - halfLabel ? "-translate-x-full" : "-translate-x-1/2";
 
+  const firstVisibleBand = bands.findIndex((band) => band.endPct > band.startPct);
+  const lastVisibleBand = bands.reduce((acc, band, i) => (band.endPct > band.startPct ? i : acc), -1);
+
   useLayoutEffect(() => {
     const bar = barRef.current;
     const label = labelRef.current;
@@ -37,7 +40,7 @@ export function DensityGauge({ bands, markerPct, markerLabel, markerStatus, labe
         {bands.map((band, i) => (
           <i
             key={`${band.status}-${i}`}
-            className={cn("absolute inset-y-0", statusVar({ status: band.status }), i === 0 && "rounded-l-[3px]", i === bands.length - 1 && "rounded-r-[3px]")}
+            className={cn("absolute inset-y-0", statusVar({ status: band.status }), i === firstVisibleBand && "rounded-l-[3px]", i === lastVisibleBand && "rounded-r-[3px]")}
             style={{
               left: `${band.startPct}%`,
               width: `${band.endPct - band.startPct}%`,

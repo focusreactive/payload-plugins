@@ -22,8 +22,8 @@ export const GAUGE_SPECS: Partial<Record<CheckId, GaugeSpec>> = {
     statusSource: "yoast",
     axisMin: 0,
     axisMax: 180,
-    thresholds: [120, 156],
-    scores: [6, 9, 6],
+    thresholds: [0, 120, 156],
+    scores: [3, 6, 9, 6],
     unit: "chars",
   },
   titleWidth: {
