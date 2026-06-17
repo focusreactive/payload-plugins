@@ -30,6 +30,7 @@
         "@focus-reactive/payload-plugin-comments": "workspace:*",
         "@focus-reactive/payload-plugin-presets": "workspace:*",
         "@focus-reactive/payload-plugin-scheduling": "workspace:*",
+        "@focus-reactive/payload-plugin-seo": "workspace:*",
         "@focus-reactive/payload-plugin-translator": "workspace:*",
         "@fr-private/payload-plugin-visual-editing": "^1.0.1",
         "@payloadcms/db-postgres": "3.84.1",
@@ -183,7 +184,7 @@
     },
     "packages/payload-plugin-analytics": {
       "name": "@focus-reactive/payload-plugin-analytics",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "dependencies": {
         "@google-analytics/data": "^5.2.2",
         "class-variance-authority": "0.7.1",
@@ -239,7 +240,7 @@
     },
     "packages/payload-plugin-comments": {
       "name": "@focus-reactive/payload-plugin-comments",
-      "version": "1.8.0",
+      "version": "1.8.1",
       "dependencies": {
         "@radix-ui/react-dropdown-menu": "^2.1.16",
         "@tanstack/react-query": "5.0.0",
@@ -319,7 +320,7 @@
     },
     "packages/payload-plugin-seo": {
       "name": "@focus-reactive/payload-plugin-seo",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "dependencies": {
         "@yoast/search-metadata-previews": "^3.0.0",
         "class-variance-authority": "0.7.1",

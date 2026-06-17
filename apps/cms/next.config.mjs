@@ -22,6 +22,7 @@ const nextConfig = {
     return webpackConfig;
   },
   reactCompiler: true,
+  transpilePackages: ["@yoast/search-metadata-previews", "@yoast/components"],
   experimental: {
     inlineCss: true,
   },

@@ -3,6 +3,7 @@ import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
+import { seoPlugin as seoAnalysisPlugin } from "@focus-reactive/payload-plugin-seo";
 import { translatorPlugin, createOpenAIProvider, createSyncRunner } from "@focus-reactive/payload-plugin-translator";
 import { visualEditingPlugin } from "@fr-private/payload-plugin-visual-editing";
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
@@ -22,6 +23,7 @@ import { abAdapter } from "@/core/lib/abTesting/abAdapter";
 import { buildVariantData } from "@/core/lib/abTesting/buildVariantData";
 import type { ABVariantData } from "@/core/lib/abTesting/types";
 import { superAdmin, or, authenticated, user } from "@/core/lib/access";
+import { getServerSideURL } from "@/core/lib/getURL";
 import { shouldIncludeLocalePrefix } from "@/core/lib/localePrefix";
 import { validateRedirectPath } from "@/core/lib/redirectUrl";
 import { isDev } from "@/core/utils/isDev";
@@ -137,6 +139,33 @@ export const plugins: Plugin[] = [
     redirectTypes: ["307", "308"],
   }),
   seoPlugin,
+  seoAnalysisPlugin({
+    collections: [
+      {
+        slug: "page",
+        fields: {
+          seoTitle: "meta.title",
+          metaDescription: "meta.description",
+          slug: "slug",
+          content: "blocks",
+        },
+      },
+      {
+        slug: "posts",
+        fields: {
+          seoTitle: "meta.title",
+          metaDescription: "meta.description",
+          slug: "slug",
+          content: "content",
+        },
+      },
+    ],
+    site: {
+      baseUrl: getServerSideURL(),
+      faviconUrl: "/favicon.ico",
+    },
+    supportedLocales: I18N_CONFIG.locales.map((locale) => locale.code),
+  }),
 
   nestedDocsPlugin({
     collections: ["page"],

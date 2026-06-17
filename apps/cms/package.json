@@ -31,6 +31,7 @@
     "@focus-reactive/payload-plugin-comments": "workspace:*",
     "@focus-reactive/payload-plugin-presets": "workspace:*",
     "@focus-reactive/payload-plugin-scheduling": "workspace:*",
+    "@focus-reactive/payload-plugin-seo": "workspace:*",
     "@focus-reactive/payload-plugin-translator": "workspace:*",
     "@fr-private/payload-plugin-visual-editing": "^1.0.1",
     "@payloadcms/db-postgres": "3.84.1",
