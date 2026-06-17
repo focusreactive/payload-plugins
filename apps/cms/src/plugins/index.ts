@@ -8,7 +8,7 @@ import { visualEditingPlugin } from "@fr-private/payload-plugin-visual-editing";
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
 import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
-import type { Field, Plugin } from "payload";
+import type { Field, PayloadRequest, Plugin } from "payload";
 
 import { Authors } from "@/collections/Authors";
 import { Categories } from "@/collections/Categories";
@@ -17,6 +17,7 @@ import { Header } from "@/collections/Header/config";
 import { Page as PageCollection } from "@/collections/Page/Page";
 import { Posts } from "@/collections/Posts";
 import { Testimonials } from "@/collections/Testimonials";
+import { CUSTOM_PAGES_CONFIG } from "@/core/config/customPages";
 import { I18N_CONFIG } from "@/core/config/i18n";
 import { abAdapter } from "@/core/lib/abTesting/abAdapter";
 import { buildVariantData } from "@/core/lib/abTesting/buildVariantData";
@@ -25,12 +26,67 @@ import { superAdmin, or, authenticated, user } from "@/core/lib/access";
 import { shouldIncludeLocalePrefix } from "@/core/lib/localePrefix";
 import { validateRedirectPath } from "@/core/lib/redirectUrl";
 import { isDev } from "@/core/utils/isDev";
+import { buildUrl } from "@/core/utils/path/buildUrl";
 import { normalizeRedirectFields } from "@/hooks/normalizeRedirectFields";
 import { revalidateRedirects } from "@/hooks/revalidateRedirects";
 import type { Page } from "@/payload-types";
 
 import { mcpPluginConfig } from "./mcp";
 import seoPlugin from "./seoPlugin";
+
+const resolveAnalyticsPagePath = async (ref: string, req: PayloadRequest): Promise<string> => {
+  const { defaultLocale } = I18N_CONFIG;
+
+  if (ref === "__home") return "/";
+  if (ref === "__blog-index") return CUSTOM_PAGES_CONFIG.blog.resolver(defaultLocale);
+  if (ref === "__search") return CUSTOM_PAGES_CONFIG.search.resolver(defaultLocale);
+
+  const idx = ref.indexOf(":");
+  if (idx <= 0) return "";
+
+  const collection = ref.slice(0, idx);
+  const id = ref.slice(idx + 1);
+
+  if (collection === "page") {
+    const doc = await req.payload
+      .findByID({
+        collection: "page",
+        id,
+        depth: 0,
+        overrideAccess: true,
+      })
+      .catch(() => null);
+
+    return (
+      buildUrl({
+        collection: "page",
+        breadcrumbs: doc?.breadcrumbs,
+        absolute: false,
+        locale: defaultLocale,
+      }) || "/"
+    );
+  }
+
+  if (collection === "posts") {
+    const doc = await req.payload
+      .findByID({
+        collection: "posts",
+        id,
+        depth: 0,
+        overrideAccess: true,
+      })
+      .catch(() => null);
+
+    return buildUrl({
+      collection: "posts",
+      slug: doc?.slug,
+      absolute: false,
+      locale: defaultLocale,
+    });
+  }
+
+  return "";
+};
 
 export const plugins: Plugin[] = [
   vercelBlobStorage({
@@ -265,6 +321,7 @@ export const plugins: Plugin[] = [
     pages: {
       collections: ["page", "posts"],
       syntheticRefs: ["__home", "__blog-index", "__search"],
+      resolvePagePath: resolveAnalyticsPagePath,
     },
   }),
 
