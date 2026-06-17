@@ -1,3 +1,17 @@
+# @focus-reactive/payload-plugin-analytics [1.1.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.0.3...@focus-reactive/payload-plugin-analytics@1.1.0) (2026-06-17)
+
+
+### Bug Fixes
+
+* **analytics:** resolve sessions landing page to current CMS path ([3790437](https://github.com/focusreactive/payload-plugins/commit/3790437b02e111e200b394220a46cbe17c2ec6b6))
+
+
+### Features
+
+* **analytics:** resolve landing paths and scope mocks to page_ref ([922c829](https://github.com/focusreactive/payload-plugins/commit/922c8295a064325fd8b1f203e556b27e02a506d7))
+* **analytics:** resolve page titles and paths for page_ref labels ([8cd86a7](https://github.com/focusreactive/payload-plugins/commit/8cd86a74f40321839d466e60048162a279283260))
+* **analytics:** scope all views to existing pages via page_ref identity ([21d04be](https://github.com/focusreactive/payload-plugins/commit/21d04be1cf9168bcf28a5e111fc26162d9597129))
+
 ## @focus-reactive/payload-plugin-analytics [1.0.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.0.2...@focus-reactive/payload-plugin-analytics@1.0.3) (2026-06-17)
 
 
