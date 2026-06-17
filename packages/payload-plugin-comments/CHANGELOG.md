@@ -1,3 +1,16 @@
+# @focus-reactive/payload-plugin-comments [1.9.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.8.1...@focus-reactive/payload-plugin-comments@1.9.0) (2026-06-17)
+
+
+### Bug Fixes
+
+* **comments:** allow deleting comments that have been read ([a1162c5](https://github.com/focusreactive/payload-plugins/commit/a1162c53aecced227324c492309fc3d32389ba1e))
+* **comments:** keep page scroll locked after delete confirm modal closes ([0bb62b3](https://github.com/focusreactive/payload-plugins/commit/0bb62b3243b40c230893313d450ff0564e4be9a9))
+
+
+### Features
+
+* **comments:** improve mention dropdown positioning, dismissal, and styling ([e38b738](https://github.com/focusreactive/payload-plugins/commit/e38b7388c26b738378755df0a2b77d208b49d196))
+
 ## @focus-reactive/payload-plugin-comments [1.8.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.8.0...@focus-reactive/payload-plugin-comments@1.8.1) (2026-06-16)
 
 
