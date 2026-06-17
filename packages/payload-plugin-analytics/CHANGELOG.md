@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-analytics [1.0.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.0.2...@focus-reactive/payload-plugin-analytics@1.0.3) (2026-06-17)
+
+
+### Bug Fixes
+
+* **analytics:** truncate long text in table rows ([5726e30](https://github.com/focusreactive/payload-plugins/commit/5726e3076ae341c695ba7fb86f1c2899a02949e1))
+
 ## @focus-reactive/payload-plugin-analytics [1.0.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.0.1...@focus-reactive/payload-plugin-analytics@1.0.2) (2026-06-16)
 
 
