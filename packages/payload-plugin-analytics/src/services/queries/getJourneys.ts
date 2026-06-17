@@ -33,7 +33,7 @@ function parseRow(row: Row, pageRefDimIndex: number): OrderedRow {
   };
 }
 
-function sessionRowToJourneyStep(row: OrderedRow): JourneyStep {
+function sessionRowToJourneyStep(row: OrderedRow, labels: Map<string, { path: string }> | null): JourneyStep {
   if (row.eventName === LEAD_ACTION_EVENT_NAME && row.leadType) {
     return {
       kind: "leadAction",
@@ -42,7 +42,7 @@ function sessionRowToJourneyStep(row: OrderedRow): JourneyStep {
   }
   return {
     kind: "page",
-    value: row.pagePath,
+    value: labels?.get(row.pageRef)?.path ?? row.pagePath,
   };
 }
 
@@ -135,6 +135,20 @@ export async function getJourneys(propertyId: string, query: JourneysQuery, page
     allowedSessions = excludeDeletedSessions(refsBySession, new Set(filterRefs));
   }
 
+  // Resolve page-step labels by ref across all allowed sessions, so differing historical
+  // pagePaths for the same ref collapse to one CMS-resolved path.
+  let labels: Map<string, { path: string }> | null = null;
+  if (pageFilterActive && pageFilter) {
+    const pageStepRefs = new Set<string>();
+    for (const [sessionId, sessionRows] of rowsMapBySession) {
+      if (allowedSessions && !allowedSessions.has(sessionId)) continue;
+      for (const row of sessionRows) {
+        if (row.eventName !== LEAD_ACTION_EVENT_NAME && row.pageRef) pageStepRefs.add(row.pageRef);
+      }
+    }
+    labels = await pageFilter.resolveLabels([...pageStepRefs]);
+  }
+
   const journeysMapByPath = new Map<string, { path: JourneyStep[]; count: number }>();
   let sessionsConsidered = 0;
 
@@ -144,7 +158,7 @@ export async function getJourneys(propertyId: string, query: JourneysQuery, page
 
     sessionsConsidered += 1;
 
-    const journeySteps = collapseJourneyStepDuplicates(sessionRows.map(sessionRowToJourneyStep));
+    const journeySteps = collapseJourneyStepDuplicates(sessionRows.map((row) => sessionRowToJourneyStep(row, labels)));
     const path = maxSteps === undefined ? journeySteps : journeySteps.slice(0, maxSteps);
     const pathKey = JSON.stringify(path);
     const existing = journeysMapByPath.get(pathKey);

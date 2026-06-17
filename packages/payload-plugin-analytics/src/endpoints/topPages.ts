@@ -27,7 +27,7 @@ export function buildTopPagesEndpoint(config: AnalyticsPluginConfig): Endpoint {
       }
 
       try {
-        const pageFilter = await buildPageFilterContext(req.payload, getResolvedPagesConfig());
+        const pageFilter = await buildPageFilterContext(req, getResolvedPagesConfig());
         const result = await getTopPages(config.ga4.propertyId, parsed.data, pageFilter);
 
         return Response.json(result);

@@ -120,7 +120,7 @@ describe("getLeadActions", () => {
       batchRunReports: vi.fn().mockResolvedValue([withMetric]),
     };
     __setGa4ClientForTests(fake as never);
-    const pageFilter = { refs: ["page:1", "__home"], pageRefDim: "customEvent:fr_page_ref", contentLocaleDim: "customEvent:fr_content_locale" };
+    const pageFilter = { refs: ["page:1", "__home"], pageRefDim: "customEvent:fr_page_ref", contentLocaleDim: "customEvent:fr_content_locale", resolveLabels: async () => new Map() };
     await getLeadActions("12345", { dateRange: { preset: "last-7d" } }, pageFilter);
     const requests = fake.batchRunReports.mock.calls[0][0].requests;
     const pageRefInList = { filter: { fieldName: "customEvent:fr_page_ref", inListFilter: { values: ["page:1", "__home"] } } };
@@ -139,7 +139,7 @@ describe("getLeadActions", () => {
       batchRunReports: vi.fn().mockRejectedValueOnce(err).mockResolvedValueOnce([withoutMetric]),
     };
     __setGa4ClientForTests(fake as never);
-    const pageFilter = { refs: ["page:1", "__home"], pageRefDim: "customEvent:fr_page_ref", contentLocaleDim: "customEvent:fr_content_locale" };
+    const pageFilter = { refs: ["page:1", "__home"], pageRefDim: "customEvent:fr_page_ref", contentLocaleDim: "customEvent:fr_content_locale", resolveLabels: async () => new Map() };
     await getLeadActions("12345", { dateRange: { preset: "last-7d" } }, pageFilter);
     const retryRequests = fake.batchRunReports.mock.calls[1][0].requests;
     const pageRefInList = { filter: { fieldName: "customEvent:fr_page_ref", inListFilter: { values: ["page:1", "__home"] } } };

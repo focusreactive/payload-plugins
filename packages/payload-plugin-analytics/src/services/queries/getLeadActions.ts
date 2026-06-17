@@ -14,7 +14,12 @@ function buildEmptyCurrent(): LeadActionsCurrent {
   return { totals: {}, conversionRate: {}, perPage: [], avgTimeToAction: 0 };
 }
 
-function aggregate(eventRows: Row[], totalSessions: number, elapsedMsAvailable: boolean): LeadActionsCurrent {
+interface AggregateResult {
+  current: LeadActionsCurrent;
+  perPageByKey: Map<string, Record<string, number>>;
+}
+
+function aggregate(eventRows: Row[], totalSessions: number, elapsedMsAvailable: boolean): AggregateResult {
   const current = buildEmptyCurrent();
   const countsByPage = new Map<string, Record<string, number>>();
 
@@ -26,7 +31,7 @@ function aggregate(eventRows: Row[], totalSessions: number, elapsedMsAvailable: 
     const metricValues = row.metricValues ?? [];
 
     const leadType = dimensionValues[0]?.value;
-    const pagePath = dimensionValues[1]?.value ?? "";
+    const pageKey = dimensionValues[1]?.value ?? "";
     const eventCount = convertMetricToNumber(metricValues[0]?.value);
     const avgElapsedMs = elapsedMsAvailable ? convertMetricToNumber(metricValues[1]?.value) : 0;
 
@@ -36,9 +41,9 @@ function aggregate(eventRows: Row[], totalSessions: number, elapsedMsAvailable: 
     totalEventCount += eventCount;
     weightedSum += avgElapsedMs * eventCount;
 
-    const pageCounts = countsByPage.get(pagePath) ?? {};
+    const pageCounts = countsByPage.get(pageKey) ?? {};
     pageCounts[leadType] = (pageCounts[leadType] ?? 0) + eventCount;
-    countsByPage.set(pagePath, pageCounts);
+    countsByPage.set(pageKey, pageCounts);
   }
 
   for (const [leadType, total] of Object.entries(current.totals)) {
@@ -46,7 +51,18 @@ function aggregate(eventRows: Row[], totalSessions: number, elapsedMsAvailable: 
   }
 
   current.avgTimeToAction = !elapsedMsAvailable ? null : totalEventCount > 0 ? weightedSum / totalEventCount / 1000 : 0;
-  current.perPage = Array.from(countsByPage.entries()).map(([pagePath, counts]) => ({ pagePath, counts }));
+
+  return { current, perPageByKey: countsByPage };
+}
+
+async function fillPerPage(result: AggregateResult, pageFilter?: PageFilterContext | null): Promise<LeadActionsCurrent> {
+  const { current, perPageByKey } = result;
+  const labels = pageFilter ? await pageFilter.resolveLabels([...perPageByKey.keys()]) : null;
+
+  current.perPage = Array.from(perPageByKey.entries()).map(([key, counts]) => ({
+    pagePath: labels?.get(key)?.path ?? key,
+    counts,
+  }));
 
   return current;
 }
@@ -58,13 +74,15 @@ export async function getLeadActions(propertyId: string, query: AnalyticsQuery, 
   const types = resolveLeadActionTypes(getPluginConfig().leadActions?.types);
 
   const refs = pageFilter?.refs ?? [];
+  const pageFilterActive = Boolean(pageFilter) && refs.length > 0;
   const pageRefDim = pageFilter?.pageRefDim ?? DEFAULT_PAGE_DIMENSIONS.pageRef;
+  const pageDimension = pageFilterActive ? pageRefDim : "pagePath";
 
   const eventsRequest = withPageRefFilter(
     {
       dateRanges,
       metrics: [{ name: "eventCount" }, { name: "averageCustomEvent:fr_elapsed_ms" }],
-      dimensions: [{ name: "customEvent:fr_lead_type" }, { name: "pagePath" }],
+      dimensions: [{ name: "customEvent:fr_lead_type" }, { name: pageDimension }],
       dimensionFilter: leadActionFilter(types),
     },
     pageRefDim,
@@ -111,9 +129,13 @@ export async function getLeadActions(propertyId: string, query: AnalyticsQuery, 
 
   let response: LeadActionsResponse;
 
+  const filterForLabels = pageFilterActive ? pageFilter : null;
+
   if (!previousDateRange) {
     const totalSessions = convertMetricToNumber(sessionsRows[0]?.metricValues?.[0]?.value);
-    response = { current: aggregate(eventsRows, totalSessions, elapsedMsAvailable) };
+    response = {
+      current: await fillPerPage(aggregate(eventsRows, totalSessions, elapsedMsAvailable), filterForLabels),
+    };
   } else {
     const eventsBuckets = bucketByDateRange(eventsRows, ["current", "previous"]);
     const sessionsBuckets = bucketByDateRange(sessionsRows, ["current", "previous"]);
@@ -121,8 +143,8 @@ export async function getLeadActions(propertyId: string, query: AnalyticsQuery, 
     const previousSessions = convertMetricToNumber(sessionsBuckets.previous[0]?.metricValues?.[0]?.value);
 
     response = {
-      current: aggregate(eventsBuckets.current, currentSessions, elapsedMsAvailable),
-      comparison: aggregate(eventsBuckets.previous, previousSessions, elapsedMsAvailable),
+      current: await fillPerPage(aggregate(eventsBuckets.current, currentSessions, elapsedMsAvailable), filterForLabels),
+      comparison: await fillPerPage(aggregate(eventsBuckets.previous, previousSessions, elapsedMsAvailable), filterForLabels),
     };
   }
 

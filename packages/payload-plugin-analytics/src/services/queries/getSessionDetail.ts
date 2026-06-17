@@ -12,17 +12,21 @@ function convertDateHourMinuteToIso(value: string | null | undefined): string {
   return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}T${value.slice(8, 10)}:${value.slice(10, 12)}:00.000Z`;
 }
 
-function convertRowToSessionDetailEvent(row: Row): SessionDetailEvent {
+function convertRowToSessionDetailEvent(row: Row, pageRefIndex: number, labels: Map<string, { path: string }> | null): SessionDetailEvent {
   const dimensionValues = row.dimensionValues ?? [];
   const leadType = dimensionValues[4]?.value ?? "";
   const params: Record<string, unknown> = {};
 
   if (leadType) params[FR_LEAD_TYPE_PARAM] = leadType;
 
+  const rawPagePath = dimensionValues[1]?.value ?? undefined;
+  const rowRef = pageRefIndex >= 0 ? (dimensionValues[pageRefIndex]?.value ?? "") : "";
+  const pagePath = labels?.get(rowRef)?.path ?? rawPagePath;
+
   return {
     timestamp: convertDateHourMinuteToIso(dimensionValues[2]?.value),
     eventName: dimensionValues[0]?.value ?? "",
-    pagePath: dimensionValues[1]?.value ?? undefined,
+    pagePath,
     params,
   };
 }
@@ -49,6 +53,16 @@ function buildRequest(sessionId: string, dateRange: ReturnType<typeof resolveDat
   };
 
   return { request, pageRefIndex };
+}
+
+async function resolveRowLabels(rows: Row[], pageRefIndex: number, pageFilter: PageFilterContext): Promise<Map<string, { path: string }>> {
+  const refs = new Set<string>();
+  for (const row of rows) {
+    const ref = pageRefIndex >= 0 ? (row.dimensionValues?.[pageRefIndex]?.value ?? "") : "";
+    if (ref) refs.add(ref);
+  }
+
+  return pageFilter.resolveLabels([...refs]);
 }
 
 function sessionRefsAllExisting(rows: Row[], pageRefIndex: number, existing: Set<string>): boolean {
@@ -79,7 +93,9 @@ export async function getSessionDetail(propertyId: string, sessionId: string, qu
       return { sessionId, events: [] };
     }
 
-    return { sessionId, events: rows.map(convertRowToSessionDetailEvent) };
+    const labels = pageFilterActive && pageFilter ? await resolveRowLabels(rows, pageRefIndex, pageFilter) : null;
+
+    return { sessionId, events: rows.map((row) => convertRowToSessionDetailEvent(row, pageRefIndex, labels)) };
   } catch (err) {
     const mapped = mapGa4Error(err);
 
@@ -97,7 +113,9 @@ export async function getSessionDetail(propertyId: string, sessionId: string, qu
           return { sessionId, events: [], missing };
         }
 
-        return { sessionId, events: rows.map(convertRowToSessionDetailEvent), missing };
+        const labels = pageFilterActive && pageFilter ? await resolveRowLabels(rows, pageRefIndex, pageFilter) : null;
+
+        return { sessionId, events: rows.map((row) => convertRowToSessionDetailEvent(row, pageRefIndex, labels)), missing };
       } catch {
         // why: if the lead-type-less retry also fails, intentionally fall through
         // to the setupRequired return below rather than rethrowing.

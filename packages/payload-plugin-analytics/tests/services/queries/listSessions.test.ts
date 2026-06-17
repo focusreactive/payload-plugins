@@ -234,6 +234,7 @@ describe("listSessions", () => {
     refs: ["page:1", "__home"],
     pageRefDim: "customEvent:fr_page_ref",
     contentLocaleDim: "customEvent:fr_content_locale",
+    resolveLabels: async () => new Map(),
   };
 
   it("appends the page-ref dimension and drops sessions touching a deleted ref when pageFilter is set", async () => {

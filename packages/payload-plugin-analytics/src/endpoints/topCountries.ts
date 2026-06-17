@@ -27,7 +27,7 @@ export function buildTopCountriesEndpoint(config: AnalyticsPluginConfig): Endpoi
       }
 
       try {
-        const pageFilter = await buildPageFilterContext(req.payload, getResolvedPagesConfig());
+        const pageFilter = await buildPageFilterContext(req, getResolvedPagesConfig());
         const result = await getTopCountries(config.ga4.propertyId, parsed.data, pageFilter);
 
         return Response.json(result);

@@ -27,7 +27,7 @@ export function buildLeadActionsEndpoint(config: AnalyticsPluginConfig): Endpoin
       }
 
       try {
-        const pageFilter = await buildPageFilterContext(req.payload, getResolvedPagesConfig());
+        const pageFilter = await buildPageFilterContext(req, getResolvedPagesConfig());
         const result = await getLeadActions(config.ga4.propertyId, parsed.data, pageFilter);
 
         return Response.json(result);

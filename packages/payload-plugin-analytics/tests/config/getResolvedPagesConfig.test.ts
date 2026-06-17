@@ -13,6 +13,6 @@ describe("getResolvedPagesConfig", () => {
       ga4: { propertyId: "1", measurementId: "G-X", serviceAccount: { clientEmail: "", privateKey: "" } },
       pages: { collections: ["page"] },
     });
-    expect(getResolvedPagesConfig()?.collections).toEqual([{ slug: "page", publishedOnly: true }]);
+    expect(getResolvedPagesConfig()?.collections).toEqual([{ slug: "page", publishedOnly: true, titleField: "title" }]);
   });
 });

@@ -104,6 +104,7 @@ describe("getJourneys", () => {
     refs: ["page:1", "__home"],
     pageRefDim: "customEvent:fr_page_ref",
     contentLocaleDim: "customEvent:fr_content_locale",
+    resolveLabels: async () => new Map(),
   };
 
   // Two converting sessions: S1 touches only existing refs (kept), S2 touches a deleted ref (dropped).

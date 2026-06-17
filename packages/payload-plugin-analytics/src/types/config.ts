@@ -79,6 +79,8 @@ export interface PagesCollectionConfig {
   slug: string;
   /** Enumerate only published docs (where _status = 'published'). Default true. */
   publishedOnly?: boolean;
+  /** Doc field used as the display title (read at the default locale). Default "title". */
+  titleField?: string;
 }
 
 export interface PagesAnalyticsConfig {
@@ -91,4 +93,6 @@ export interface PagesAnalyticsConfig {
     pageRef?: string;
     contentLocale?: string;
   };
+  /** Resolve a display path for a page ref ("collection:id" or a synthetic ref like "__home"). */
+  resolvePagePath?: (ref: string, req: PayloadRequest) => string | Promise<string>;
 }

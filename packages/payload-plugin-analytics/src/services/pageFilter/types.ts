@@ -1,3 +1,5 @@
+import type { PageLabel } from "./resolvePageLabels";
+
 export interface PageFilterContext {
   /** Currently-existing refs ("collection:id" + synthetic). */
   refs: string[];
@@ -5,4 +7,6 @@ export interface PageFilterContext {
   pageRefDim: string;
   /** GA4 dimension api name for content locale. */
   contentLocaleDim: string;
+  /** Resolve display labels (path + title) for the given refs. */
+  resolveLabels: (refs: string[]) => Promise<Map<string, PageLabel>>;
 }

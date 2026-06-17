@@ -10,8 +10,8 @@ describe("resolvePagesConfig", () => {
   it("normalizes string collections to { slug, publishedOnly:true }", () => {
     const r = resolvePagesConfig({ collections: ["page", "posts"] });
     expect(r?.collections).toEqual([
-      { slug: "page", publishedOnly: true },
-      { slug: "posts", publishedOnly: true },
+      { slug: "page", publishedOnly: true, titleField: "title" },
+      { slug: "posts", publishedOnly: true, titleField: "title" },
     ]);
   });
 
@@ -21,8 +21,8 @@ describe("resolvePagesConfig", () => {
       syntheticRefs: ["__home"],
     });
     expect(r?.collections).toEqual([
-      { slug: "page", publishedOnly: true },
-      { slug: "events", publishedOnly: false },
+      { slug: "page", publishedOnly: true, titleField: "title" },
+      { slug: "events", publishedOnly: false, titleField: "title" },
     ]);
     expect(r?.syntheticRefs).toEqual(["__home"]);
     expect(r?.dimensions).toEqual({
