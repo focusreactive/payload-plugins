@@ -7,6 +7,15 @@ import { embedSectionTab } from "@/fields/section/embedSectionTab";
 const fields: Field[] = [
   {
     admin: {
+      components: {
+        Field: "@/core/ui/components/CopyAiPromptButton#CopyAiPromptButton",
+      },
+    },
+    name: "copyAiPrompt",
+    type: "ui",
+  },
+  {
+    admin: {
       description: {
         en: "Raw HTML rendered as-is on the page. Use for embeds and one-off markup.",
         es: "HTML sin procesar que se renderiza tal cual en la página. Úsalo para embeds y marcado puntual.",
