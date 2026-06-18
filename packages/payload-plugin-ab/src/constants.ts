@@ -5,6 +5,8 @@ export const DEFAULT_SLUG_FIELD = "slug";
 
 export const AB_EXPERIMENTS_SLUG = "ab-experiments";
 
+export const PLUGIN_NAME = "payload-plugin-ab";
+
 export const AB_DIMENSION_PARAMS = {
   experiment: "fr_ab_experiment",
   variant: "fr_ab_variant",
