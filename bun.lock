@@ -288,6 +288,7 @@
         "tailwindcss": "4.2.1",
         "tsup": "8.0.0",
         "typescript": "5.7.3",
+        "vitest": "^2.1.8",
       },
       "peerDependencies": {
         "@payloadcms/plugin-multi-tenant": "^3.0.0",
@@ -306,7 +307,7 @@
     },
     "packages/payload-plugin-presets": {
       "name": "@focus-reactive/payload-plugin-presets",
-      "version": "0.11.0",
+      "version": "0.11.1",
       "dependencies": {
         "@radix-ui/react-popover": "1.1.15",
       },
@@ -338,6 +339,7 @@
         "payload": "3.79.0",
         "tsup": "8.0.0",
         "typescript": "5.0.2",
+        "vitest": "^2.1.8",
       },
       "peerDependencies": {
         "payload": "^3.0.0",
@@ -345,7 +347,7 @@
     },
     "packages/payload-plugin-seo": {
       "name": "@focus-reactive/payload-plugin-seo",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "dependencies": {
         "@yoast/search-metadata-previews": "^3.0.0",
         "class-variance-authority": "0.7.1",

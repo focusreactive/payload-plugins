@@ -55,7 +55,9 @@
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
     "format": "ultracite fix",
-    "format:check": "ultracite fix"
+    "format:check": "ultracite fix",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.16",
@@ -100,6 +102,7 @@
     "@payloadcms/plugin-multi-tenant": "3.79.0",
     "tailwindcss": "4.2.1",
     "tsup": "8.0.0",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "vitest": "^2.1.8"
   }
 }
