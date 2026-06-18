@@ -1,9 +1,9 @@
 "use client";
 
 import { Button, useModal } from "@payloadcms/ui";
-import { cva } from "class-variance-authority";
 import { Gauge } from "lucide-react";
 import { useCallback, useState } from "react";
+import { ScoreBadge } from "./ScoreBadge";
 import { SeoDrawer } from "../SeoDrawer";
 import { isKeyphrasePending } from "../SeoDrawer/keyphrasePending";
 import { useAnalysis } from "../SeoDrawer/useAnalysis";
@@ -18,16 +18,6 @@ export interface SeoButtonProps {
 }
 
 const DRAWER_SLUG = "seo-analytics-drawer";
-
-const dotVariants = cva("absolute -top-[2px] -right-[2px] w-[8px] h-[8px] rounded-full border-[1.5px] border-[var(--theme-bg)] pointer-events-none", {
-  variants: {
-    status: {
-      good: "bg-seo-good",
-      warn: "bg-seo-warn",
-      bad: "bg-seo-bad",
-    },
-  },
-});
 
 export function SeoButtonInner({ collectionSlug, fields, site, supportedLocales }: SeoButtonProps) {
   const { openModal } = useModal();
@@ -46,7 +36,7 @@ export function SeoButtonInner({ collectionSlug, fields, site, supportedLocales 
   });
 
   const keyphrasePending = isKeyphrasePending(keyphrase, analyzedKeyphrase);
-  const status = result?.overall.status ?? null;
+  const overall = result?.overall ?? null;
 
   const open = useCallback(() => {
     invalidateMedia();
@@ -68,7 +58,7 @@ export function SeoButtonInner({ collectionSlug, fields, site, supportedLocales 
         size="small"
         tooltip="SEO Analytics"
       />
-      {status && <span aria-hidden="true" className={dotVariants({ status })} />}
+      {overall && <ScoreBadge score={overall.seoScore} status={overall.status} />}
 
       <SeoDrawer
         analyzeNow={analyzeNow}
