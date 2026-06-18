@@ -6,13 +6,16 @@ import { overrideAdmin } from "./utils/config/overrideAdmin";
 import { mergeTranslations } from "./utils/config/mergeTranslations";
 import { en } from "./translations/en";
 
+const PREFIX = `[${PLUGIN_NAME}]`;
+
 export const seoPlugin =
   (config: SeoPluginConfig): Plugin =>
   (incomingConfig: Config): Config => {
     if (config.disabled) return incomingConfig;
 
     if (!config.collections?.length) {
-      throw new Error(`[${PLUGIN_NAME}] config.collections must list at least one collection slug`);
+      console.warn(`${PREFIX} Disabled: config.collections must list at least one collection slug. Plugin not registered.`);
+      return incomingConfig;
     }
 
     setPluginConfig(config);
