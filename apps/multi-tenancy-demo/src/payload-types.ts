@@ -173,9 +173,18 @@ export interface Page {
   id: number;
   tenant?: (number | null) | Tenant;
   title: string;
+  /**
+   * URL segment for /<tenant>/<slug>. Unique within a tenant, not globally.
+   */
+  slug: string;
+  /**
+   * Short hero subtitle shown under the page title.
+   */
+  tagline?: string | null;
   content?: string | null;
   updatedAt: string;
   createdAt: string;
+  _status?: ("draft" | "published") | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -301,9 +310,12 @@ export interface TenantsSelect<T extends boolean = true> {
 export interface PagesSelect<T extends boolean = true> {
   tenant?: T;
   title?: T;
+  slug?: T;
+  tagline?: T;
   content?: T;
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

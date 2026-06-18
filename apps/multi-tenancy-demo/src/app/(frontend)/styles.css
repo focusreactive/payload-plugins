@@ -1,93 +1,340 @@
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+:root {
+  --radius: 14px;
+  --maxw: 880px;
+}
+
+html,
 body {
-  font-family: system-ui, -apple-system, sans-serif;
-  line-height: 1.5;
-  color: #111;
-  background: #fafafa;
+  min-height: 100%;
 }
 
-main {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 3rem 1.5rem;
+body {
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  line-height: 1.55;
 }
 
-h1 {
-  font-size: 1.75rem;
-  margin-bottom: 0.5rem;
-}
-
-.subtitle {
-  color: #666;
-  margin-bottom: 2rem;
-}
-
-.tenant-list {
-  list-style: none;
-  display: grid;
-  gap: 0.75rem;
-}
-
-.tenant-card {
-  display: block;
-  padding: 1rem 1.25rem;
-  border: 1px solid #e2e2e2;
-  border-radius: 8px;
-  background: #fff;
-  text-decoration: none;
+a {
   color: inherit;
 }
 
-.tenant-card:hover {
-  border-color: #999;
+code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 0.85em;
 }
 
-.tenant-card strong {
-  display: block;
-  font-size: 1.1rem;
+/* ---- themed shell ------------------------------------------------------- */
+/* Custom properties (--bg, --accent, …) are injected per tenant via inline
+   style on .site by SiteChrome. Everything below reads them. */
+.site {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
 }
 
-.tenant-card span {
-  color: #888;
-  font-size: 0.875rem;
+.site-header,
+.site-footer,
+.site-main {
+  width: 100%;
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding-inline: 1.5rem;
 }
 
-.page-card {
-  padding: 1.25rem;
-  border: 1px solid #e2e2e2;
-  border-radius: 8px;
-  background: #fff;
-  margin-bottom: 1rem;
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 1.1rem;
+  border-bottom: 1px solid var(--border);
 }
 
-.page-card h2 {
-  font-size: 1.2rem;
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 650;
+  font-size: 1.05rem;
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.brand-mark,
+.tenant-card-mark {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 9px;
+  background: var(--logo-bg);
+  color: var(--logo-fg);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.brand-logo {
+  width: 1.6rem;
+  height: 1.6rem;
+  object-fit: contain;
+}
+
+.tenant-card-logo {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
   margin-bottom: 0.5rem;
 }
 
-.page-card p {
-  color: #333;
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.1rem;
+  font-size: 0.9rem;
+}
+
+.site-nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.site-nav a:hover {
+  color: var(--fg);
+}
+
+.site-main {
+  flex: 1;
+  padding-block: 1.5rem 3rem;
+}
+
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-block: 1.4rem;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.site-footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* ---- hero --------------------------------------------------------------- */
+.hero {
+  padding: 0.5rem 0 1.75rem;
+}
+
+.hero-title {
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 720;
+  margin-bottom: 0.6rem;
+}
+
+.hero-title.gradient {
+  background: linear-gradient(115deg, var(--accent), var(--accent-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  width: fit-content;
+}
+
+.hero-tagline {
+  font-size: 1.15rem;
+  color: var(--muted);
+  max-width: 38ch;
+}
+
+/* ---- section headings --------------------------------------------------- */
+.section-title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin: 2.25rem 0 1rem;
+}
+
+.empty {
+  color: var(--muted);
+}
+
+/* ---- tenant picker (home) ---------------------------------------------- */
+.tenant-grid,
+.page-grid {
+  list-style: none;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.tenant-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  height: 100%;
+  padding: 1.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--fg);
+  text-decoration: none;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.tenant-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 8%);
+}
+
+.tenant-card-mark {
+  margin-bottom: 0.5rem;
+}
+
+.tenant-card strong {
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+}
+
+.tenant-card-blurb {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.tenant-card-slug {
+  margin-top: 0.4rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+/* ---- page cards (tenant landing) --------------------------------------- */
+.page-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  height: 100%;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-decoration: none;
+  transition:
+    border-color 0.12s ease,
+    transform 0.12s ease;
+}
+
+.page-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.page-card strong {
+  font-size: 1.1rem;
+}
+
+.page-card span {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.page-card code {
+  margin-top: 0.3rem;
+  color: var(--accent);
+}
+
+/* ---- isolation demo ----------------------------------------------------- */
+.isolation {
+  margin-top: 1rem;
+  padding: 1.4rem 1.5rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.isolation-note {
+  color: var(--muted);
+  font-size: 0.95rem;
+  max-width: 60ch;
+}
+
+.isolation-list {
+  list-style: none;
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.isolation-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+}
+
+.isolation-list a {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.isolation-list a:hover {
+  text-decoration: underline;
+}
+
+.isolation-tag {
+  font-size: 0.75rem;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+}
+
+/* ---- content page ------------------------------------------------------- */
+.content {
+  max-width: 62ch;
+  font-size: 1.08rem;
+}
+
+.content p {
   white-space: pre-wrap;
 }
 
 .back-link {
   display: inline-block;
-  margin-bottom: 1.5rem;
-  color: #555;
+  margin-bottom: 1.25rem;
+  color: var(--muted);
+  font-size: 0.9rem;
   text-decoration: none;
 }
 
 .back-link:hover {
-  text-decoration: underline;
-}
-
-.admin-link {
-  display: inline-block;
-  margin-top: 2rem;
-  color: #0066cc;
+  color: var(--fg);
 }
