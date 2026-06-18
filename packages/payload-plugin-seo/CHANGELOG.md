@@ -1,3 +1,11 @@
+# @focus-reactive/payload-plugin-seo [1.2.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.1.0...@focus-reactive/payload-plugin-seo@1.2.0) (2026-06-18)
+
+
+### Features
+
+* **seo:** extract heading outline into the vitals result ([3d6b5f5](https://github.com/focusreactive/payload-plugins/commit/3d6b5f57245478643c720c4f4b9b0a1fe7e998b1))
+* **seo:** render headings section in content vitals tab ([fefaeac](https://github.com/focusreactive/payload-plugins/commit/fefaeacbe4697f24b8e5ddb71ae494af324d6eee))
+
 # @focus-reactive/payload-plugin-seo [1.1.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.0.2...@focus-reactive/payload-plugin-seo@1.1.0) (2026-06-18)
 
 
