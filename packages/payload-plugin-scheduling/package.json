@@ -37,7 +37,9 @@
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
     "format": "ultracite fix",
-    "format:check": "ultracite fix"
+    "format:check": "ultracite fix",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "peerDependencies": {
     "payload": "^3.0.0"
@@ -46,6 +48,7 @@
     "@types/node": "22.19.9",
     "payload": "3.79.0",
     "tsup": "8.0.0",
-    "typescript": "5.0.2"
+    "typescript": "5.0.2",
+    "vitest": "^2.1.8"
   }
 }
