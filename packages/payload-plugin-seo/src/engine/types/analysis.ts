@@ -29,6 +29,26 @@ export interface ProminentWord {
   isKeyphrase: boolean;
 }
 
+export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
+
+export interface HeadingNode {
+  id: string;
+  level: HeadingLevel;
+  text: string;
+  children: HeadingNode[];
+}
+
+export interface HeadingLevelCount {
+  level: HeadingLevel;
+  count: number;
+}
+
+export interface HeadingStructure {
+  total: number;
+  levels: HeadingLevelCount[];
+  tree: HeadingNode[];
+}
+
 export interface VitalsResult {
   words: number;
   sentences: number;
@@ -37,6 +57,7 @@ export interface VitalsResult {
   videos: number;
   readingTimeMinutes: number;
   prominentWords: ProminentWord[];
+  headings: HeadingStructure;
 }
 
 export interface SerpResult {
