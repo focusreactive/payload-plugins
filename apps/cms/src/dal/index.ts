@@ -15,6 +15,8 @@ export { getPostBySlug } from "./getPostBySlug";
 export { getPosts } from "./getPosts";
 export type { GetPostsOptions } from "./getPosts";
 export { getRelatedPosts } from "./getRelatedPosts";
+export { searchPosts } from "./searchPosts";
+export type { SearchPostsOptions } from "./searchPosts";
 
 // Documents (generic)
 export { getCachedDocument, getCachedDocumentByID } from "./getDocument";
