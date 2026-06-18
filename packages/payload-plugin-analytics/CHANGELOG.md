@@ -1,3 +1,5 @@
+## @focus-reactive/payload-plugin-analytics [1.1.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.1.1...@focus-reactive/payload-plugin-analytics@1.1.2) (2026-06-18)
+
 ## @focus-reactive/payload-plugin-analytics [1.1.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.1.0...@focus-reactive/payload-plugin-analytics@1.1.1) (2026-06-18)
 
 
