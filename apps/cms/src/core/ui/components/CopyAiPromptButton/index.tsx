@@ -13,9 +13,19 @@ const AI_PROMPT = `You are generating a single, self-contained block of HTML + C
 IMPORTANT: Do NOT use Tailwind. Tailwind on this site is precompiled, so arbitrary Tailwind utility classes will NOT work in this injected fragment. You MUST write all styles as plain CSS inside a <style> tag — use regular class names and a single <style> tag containing the CSS rules. No Tailwind classes anywhere.
 
 OUTPUT
-- Return ONE HTML fragment: first the markup, then a single <style> tag at the end containing all your CSS. Nothing else — no <html>, <head>, <body>, <script>, external CSS/JS, markdown fences, or commentary.
-- Scope every CSS selector under one unique wrapper class (e.g. .rawhtml-xyz) so the styles cannot leak into the rest of the page. Wrap your whole markup in that class.
+- Return ONE HTML fragment: first the markup, then a single <style> tag at the end containing all your CSS. Nothing else — no <html>, <head>, <body>, external CSS/JS files, markdown fences, or commentary.
+- The fragment must have exactly ONE root element, and it MUST be a <div>. Do NOT use <section>, <main>, <article>, <header>, or <footer> as the root — this fragment is already rendered inside a <section> landmark, so a second one would nest landmarks. (You may use semantic tags like <article>/<header> for inner content, just not as the root.)
+- Give that single root <div> one unique class (e.g. <div class="rawhtml-xyz">) and scope EVERY CSS selector under it (e.g. .rawhtml-xyz .title { ... }) so the styles cannot leak into the rest of the page.
 - Make it responsive (mobile-first) and accessible (semantic tags, alt text, aria where needed).
+
+SCRIPTS — allowed ONLY for visual polish, never for logic. You MAY include a single small inline <script> AND ONLY to drive purely cosmetic animations and effects (e.g. scroll/intersection-observer reveals, hover motion, simple auto-rotating carousels, count-up numbers). Keep it tiny, self-contained, and scope all DOM queries to your root wrapper class.
+- The content MUST be fully visible and usable WITHOUT JavaScript. A script may only enhance appearance — it must never gate visibility or be required to read the content (the script does not always run, e.g. on client-side navigation).
+
+FORBIDDEN — never include any of the following. If a brief seems to require them, render static placeholder markup instead and do the visual part only:
+- Any real logic or data handling in scripts: NO network or API calls of any kind (fetch, XMLHttpRequest, WebSocket, sendBeacon, EventSource), NO reading or writing cookies, localStorage, sessionStorage, or IndexedDB, NO forms that submit or post data, NO reading user input/PII, NO tracking or analytics, NO navigation/redirects, NO eval / new Function / dynamic <script> injection, NO loading external scripts, styles, fonts, or <iframe>s, NO timers that mutate data.
+- Tailwind or any utility-class framework; hard-coded hex colors instead of the theme tokens.
+- Outer max-width, background, theme, or outer margins / section padding on the root (the section owns all of that).
+- <html>/<head>/<body>, external CSS/JS files, markdown fences, or commentary.
 
 THEME TOKENS — the surrounding section exposes our design system as live CSS custom properties. Reference them with var(...); never hard-code hex colors. They adapt automatically to the section's light/dark theme, so the same fragment looks correct in every zone:
 - Surfaces/text: var(--color-background), var(--color-foreground), var(--color-surface), var(--color-surface-muted), var(--color-card), var(--color-card-foreground), var(--color-muted), var(--color-muted-foreground)
@@ -34,9 +44,10 @@ TYPOGRAPHY SCALE — match these sizes so headings/body align with the rest of t
 - Small: 0.9375rem, line-height 1.55
 - Eyebrow/kicker: font-mono, 0.72rem, letter-spacing 0.16em, text-transform uppercase
 
-SPACING & LAYOUT
-- Match the site's generous rhythm: keep comfortable spacing between elements and inside cards.
-- Do NOT set an outer max-width or vertical section padding — the section container already handles width, padding, and theming. Just lay out the content inside it.
+SPACING & LAYOUT — this fragment is dropped inside a section that the CMS already controls. The section sets the theme (light/dark), the max content width and horizontal padding, the vertical section padding (top/bottom), and any background. Treat your fragment as pure inner content:
+- The root element must be full width (width: 100%). Do NOT add an outer max-width, do NOT center the whole fragment, and do NOT add a background color or set a theme — the section owns all of that.
+- Do NOT add outer margins or top/bottom section padding. No margin/padding on the root that pushes it away from the section edges — the section's padding is the only outer spacing, and it is editor-controlled like every other section.
+- DO use comfortable internal spacing between your own elements and inside cards to match the site's generous rhythm. Just keep all spacing internal.
 
 Now generate the section for this brief: [describe the section you want here].`;
 
