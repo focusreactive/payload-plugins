@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-analytics [1.1.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.1.0...@focus-reactive/payload-plugin-analytics@1.1.1) (2026-06-18)
+
+
+### Bug Fixes
+
+* add button with AI prompt, make analytics token optional ([2ef2ff9](https://github.com/focusreactive/payload-plugins/commit/2ef2ff9390850bcde8c2bbbacb4caf388d61b944))
+
 # @focus-reactive/payload-plugin-analytics [1.1.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.0.3...@focus-reactive/payload-plugin-analytics@1.1.0) (2026-06-17)
 
 
