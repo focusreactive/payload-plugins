@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-ab [2.9.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.8.0...@focus-reactive/payload-plugin-ab@2.9.0) (2026-06-18)
+
+
+### Features
+
+* **ab:** validate storage/collections options and Vercel Edge adapter config ([1c3a659](https://github.com/focusreactive/payload-plugins/commit/1c3a659222fd72d1e72b6a9442b2903af8b46a8e))
+
 # @focus-reactive/payload-plugin-ab [2.8.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.7.0...@focus-reactive/payload-plugin-ab@2.8.0) (2026-06-17)
 
 
