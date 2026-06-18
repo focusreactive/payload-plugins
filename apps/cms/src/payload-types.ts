@@ -375,6 +375,7 @@ export interface Page {
     | CtaBandBlock
     | NewsletterBlock
     | StatsBlock
+    | RawHtmlBlock
   )[];
   meta?: {
     title?: string | null;
@@ -1351,6 +1352,36 @@ export interface StatsBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "RawHtmlBlock".
+ */
+export interface RawHtmlBlock {
+  /**
+   * Raw HTML rendered as-is on the page. Use for embeds and one-off markup.
+   */
+  html: string;
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'rawHtml';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "document-embeddings".
  */
 export interface DocumentEmbedding {
@@ -1961,6 +1992,32 @@ export interface Preset {
         id?: string | null;
         blockName?: string | null;
         blockType: 'stats';
+      }
+    | {
+        /**
+         * Raw HTML rendered as-is on the page. Use for embeds and one-off markup.
+         */
+        html: string;
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'rawHtml';
       }
   )[];
   updatedAt: string;
@@ -2605,6 +2662,7 @@ export interface PageSelect<T extends boolean = true> {
         ctaBand?: T | CtaBandBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
         stats?: T | StatsBlockSelect<T>;
+        rawHtml?: T | RawHtmlBlockSelect<T>;
       };
   meta?:
     | T
@@ -3045,6 +3103,30 @@ export interface StatsBlockSelect<T extends boolean = true> {
         label?: T;
         id?: T;
       };
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "RawHtmlBlock_select".
+ */
+export interface RawHtmlBlockSelect<T extends boolean = true> {
+  html?: T;
   section?:
     | T
     | {
@@ -3712,6 +3794,28 @@ export interface PresetsSelect<T extends boolean = true> {
                     label?: T;
                     id?: T;
                   };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        rawHtml?:
+          | T
+          | {
+              html?: T;
               section?:
                 | T
                 | {

@@ -10,6 +10,7 @@ import { StatsBlock } from "@/blocks/Stats/config";
 import { FaqBlock } from "@/blocks/Faq/config";
 import { HeroBlock } from "@/blocks/Hero/config";
 import { LogosBlock } from "@/blocks/Logos/config";
+import { RawHtmlBlock } from "@/blocks/RawHtml/config";
 import { TestimonialsListBlock } from "@/blocks/TestimonialsList/config";
 import { generateSeoFields } from "@/core/lib/seoFields";
 
@@ -52,7 +53,7 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
               admin: {
                 initCollapsed: false,
               },
-              blocks: [HeroBlock, ContentBlock, FaqBlock, TestimonialsListBlock, CardsGridBlock, CarouselBlock, LogosBlock, ChartBlock, CtaBandBlock, NewsletterBlock, StatsBlock],
+              blocks: [HeroBlock, ContentBlock, FaqBlock, TestimonialsListBlock, CardsGridBlock, CarouselBlock, LogosBlock, ChartBlock, CtaBandBlock, NewsletterBlock, StatsBlock, RawHtmlBlock],
               localized: true,
               name: "blocks",
               required: true,

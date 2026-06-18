@@ -1,0 +1,44 @@
+{
+  "name": "multi-tenancy-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal Payload + Next.js demo of @payloadcms/plugin-multi-tenant",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build",
+    "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev --port 4041",
+    "devsafe": "rm -rf .next && cross-env NODE_OPTIONS=--no-deprecation next dev --port 4041",
+    "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
+    "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
+    "lint": "ultracite check",
+    "check-types": "tsgo --noEmit",
+    "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
+    "seed": "cross-env NODE_OPTIONS=--no-deprecation payload run src/seed.ts",
+    "start": "cross-env NODE_OPTIONS=--no-deprecation next start"
+  },
+  "dependencies": {
+    "@fr-private/payload-plugin-visual-editing": "^1.0.2",
+    "@payloadcms/db-sqlite": "3.84.1",
+    "@payloadcms/live-preview-react": "3.84.1",
+    "@payloadcms/next": "3.84.1",
+    "@payloadcms/plugin-multi-tenant": "3.84.1",
+    "@payloadcms/richtext-lexical": "3.84.1",
+    "@payloadcms/ui": "3.84.1",
+    "cross-env": "7.0.3",
+    "graphql": "16.8.1",
+    "next": "16.2.6",
+    "payload": "3.84.1",
+    "react": "19.2.1",
+    "react-dom": "19.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.9",
+    "@types/react": "19.2.9",
+    "@types/react-dom": "19.2.3",
+    "typescript": "5.9.2"
+  },
+  "engines": {
+    "node": "^18.20.2 || >=20.9.0"
+  }
+}

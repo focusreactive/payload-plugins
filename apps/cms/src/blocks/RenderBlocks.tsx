@@ -12,6 +12,7 @@ import { StatsBlockComponent } from "./Stats/Component";
 import { FaqBlockComponent } from "./Faq/Component";
 import { HeroBlockComponent } from "./Hero/Component";
 import { LogosBlockComponent } from "./Logos/Component";
+import { RawHtmlBlockComponent } from "./RawHtml/Component";
 import { TestimonialsListBlockComponent } from "./TestimonialsList/Component";
 
 const blockComponents = {
@@ -25,6 +26,7 @@ const blockComponents = {
   faq: FaqBlockComponent,
   hero: HeroBlockComponent,
   logos: LogosBlockComponent,
+  rawHtml: RawHtmlBlockComponent,
   testimonialsList: TestimonialsListBlockComponent,
 };
 
