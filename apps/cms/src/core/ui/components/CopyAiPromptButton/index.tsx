@@ -4,9 +4,52 @@ import { Button } from "@payloadcms/ui";
 import { useState } from "react";
 
 /**
+ * Design-system values resolved from `packages/tailwind-config/base.css`
+ * (the default / light theme — Tier 1 primitives substituted into the Tier 2
+ * semantic roles). Keep these in sync with that file — it is the source of truth.
+ *
+ * We inline LITERAL values into the prompt rather than `var(--token)` references
+ * on purpose: the generated fragment is often previewed standalone (e.g. inside a
+ * cloud AI chat) where our CSS custom properties don't exist, so `var(...)` would
+ * render with no color/font and you'd never see a real preview. Literal values
+ * render correctly anywhere.
+ */
+const THEME = {
+  colors: {
+    background: "#eef2f3",
+    foreground: "#0a1314",
+    surface: "#ffffff",
+    surfaceMuted: "#dde6e7",
+    card: "#ffffff",
+    cardForeground: "#0a1314",
+    muted: "#dde6e7",
+    mutedForeground: "#5a6a6b",
+    primary: "#0d9488",
+    primaryForeground: "#ffffff",
+    primaryHover: "#0a7268",
+    secondary: "#0a1314",
+    secondaryForeground: "#ffffff",
+    accent: "#d8ff3a",
+    accentForeground: "#0a1314",
+    border: "rgba(10, 19, 20, 0.12)",
+    borderStrong: "rgba(10, 19, 20, 0.22)",
+    ring: "#0d9488",
+  },
+  fonts: {
+    display: "'Newsreader', Georgia, 'Times New Roman', serif",
+    sans: "'Archivo', system-ui, -apple-system, sans-serif",
+    mono: "'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace",
+  },
+  radii: { sm: "8px", md: "16px", lg: "28px", pill: "999px" },
+} as const;
+
+const c = THEME.colors;
+const f = THEME.fonts;
+const r = THEME.radii;
+
+/**
  * Prompt handed to an AI assistant so it generates markup that matches this
- * project's design system. Keep the tokens below in sync with
- * `packages/tailwind-config/base.css` — they are the source of truth.
+ * project's design system.
  */
 const AI_PROMPT = `You are generating a single, self-contained block of HTML + CSS to paste into a "Raw HTML" page section of our website. The fragment is injected with dangerouslySetInnerHTML inside a themed section container.
 
@@ -23,16 +66,16 @@ SCRIPTS — allowed ONLY for visual polish, never for logic. You MAY include a s
 
 FORBIDDEN — never include any of the following. If a brief seems to require them, render static placeholder markup instead and do the visual part only:
 - Any real logic or data handling in scripts: NO network or API calls of any kind (fetch, XMLHttpRequest, WebSocket, sendBeacon, EventSource), NO reading or writing cookies, localStorage, sessionStorage, or IndexedDB, NO forms that submit or post data, NO reading user input/PII, NO tracking or analytics, NO navigation/redirects, NO eval / new Function / dynamic <script> injection, NO loading external scripts, styles, fonts, or <iframe>s, NO timers that mutate data.
-- Tailwind or any utility-class framework; hard-coded hex colors instead of the theme tokens.
+- Tailwind or any utility-class framework; CSS var(--token) references — use the literal values listed under THEME VALUES, not variables.
 - Outer max-width, background, theme, or outer margins / section padding on the root (the section owns all of that).
 - <html>/<head>/<body>, external CSS/JS files, markdown fences, or commentary.
 
-THEME TOKENS — the surrounding section exposes our design system as live CSS custom properties. Reference them with var(...); never hard-code hex colors. They adapt automatically to the section's light/dark theme, so the same fragment looks correct in every zone:
-- Surfaces/text: var(--color-background), var(--color-foreground), var(--color-surface), var(--color-surface-muted), var(--color-card), var(--color-card-foreground), var(--color-muted), var(--color-muted-foreground)
-- Brand/actions: var(--color-primary), var(--color-primary-foreground), var(--color-primary-hover), var(--color-secondary), var(--color-secondary-foreground), var(--color-accent), var(--color-accent-foreground)
-- Borders/rings: var(--color-border), var(--color-border-strong), var(--color-ring)
-- Fonts: var(--font-display) (serif headings), var(--font-sans) (body), var(--font-mono) (code/labels)
-- Radii: var(--radius-sm) 8px, var(--radius-md) 16px, var(--radius-lg) 28px, var(--radius-pill) 999px
+THEME VALUES — use these EXACT literal values directly in your CSS. Do NOT use CSS var(...) references and do NOT invent other colors — write these real values so the section renders correctly even when previewed on its own. These are our design-system colors; stick to them:
+- Surfaces/text: background ${c.background}, foreground/text ${c.foreground}, surface ${c.surface}, surface-muted ${c.surfaceMuted}, card ${c.card}, card text ${c.cardForeground}, muted ${c.muted}, muted text ${c.mutedForeground}
+- Brand/actions: primary ${c.primary}, text-on-primary ${c.primaryForeground}, primary hover ${c.primaryHover}, secondary ${c.secondary}, text-on-secondary ${c.secondaryForeground}, accent ${c.accent}, text-on-accent ${c.accentForeground}
+- Borders/rings: border ${c.border}, border-strong ${c.borderStrong}, focus ring ${c.ring}
+- Fonts: headings/display → ${f.display}; body → ${f.sans}; code/labels/eyebrow → ${f.mono}
+- Radii: small ${r.sm}, medium ${r.md}, large ${r.lg}, pill ${r.pill}
 
 TYPOGRAPHY SCALE — match these sizes so headings/body align with the rest of the site:
 - Display 1: font-display, clamp(2.8rem, 7vw, 5.4rem), line-height 0.98, letter-spacing -0.02em
