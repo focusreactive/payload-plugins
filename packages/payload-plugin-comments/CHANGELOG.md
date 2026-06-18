@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-comments [1.10.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.9.0...@focus-reactive/payload-plugin-comments@1.10.0) (2026-06-18)
+
+
+### Features
+
+* **comments:** disable mention emails with a warning when RESEND env is unset ([67a3501](https://github.com/focusreactive/payload-plugins/commit/67a35017a3b8c714ba17a2ad5147109448f26c87))
+
 # @focus-reactive/payload-plugin-comments [1.9.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.8.1...@focus-reactive/payload-plugin-comments@1.9.0) (2026-06-17)
 
 
