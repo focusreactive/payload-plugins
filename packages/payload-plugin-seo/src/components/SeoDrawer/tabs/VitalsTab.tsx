@@ -5,6 +5,7 @@ import { cn, ROW_SEPARATOR } from "../../../utils/style";
 import { KpiCard } from "../../../ui/KpiCard";
 import { SectionCard } from "../../../ui/SectionCard";
 import { Pill } from "../../../ui/Pill";
+import { HeadingsSection } from "../components/HeadingsSection";
 
 export interface VitalsTabProps {
   data: VitalsResult;
@@ -25,6 +26,8 @@ export function VitalsTab({ data, onRequestKeyphrase }: VitalsTabProps) {
         <KpiCard label="Videos" value={data.videos} />
         <KpiCard label="Reading time" value={data.readingTimeMinutes} suffix="min" />
       </div>
+
+      <HeadingsSection data={data.headings} />
 
       <SectionCard title="Prominent words" widget={<Pill variant="neutral">{data.prominentWords.length}</Pill>}>
         {data.prominentWords.map((w) => (

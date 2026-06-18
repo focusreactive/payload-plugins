@@ -4,16 +4,16 @@ import type { HeadingLevel } from "../../../types/analysis";
 import type { FlatHeading } from "./heading-tree";
 
 interface PaperLike {
-  getText: () => string;
+  getText?: () => string;
 }
 
-const GLOBAL_HEADING_RE = /<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>/gi;
-const SINGLE_HEADING_RE = /^<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>$/i;
+const GLOBAL_HEADING_RE = /<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>/giu;
+const SINGLE_HEADING_RE = /^<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>$/iu;
 
 function toText(inner: string): string {
   return inner
-    .replace(/<[^>]*>/g, "")
-    .replace(/\s+/g, " ")
+    .replace(/<[^>]*>/gu, "")
+    .replace(/\s+/gu, " ")
     .trim();
 }
 
@@ -60,5 +60,7 @@ export function extractHeadings(researcher: YoastResearcher, paper: PaperLike): 
   const researched = fromResearch(researcher);
   if (researched && researched.length > 0) return researched;
 
-  return fromHtml(paper.getText());
+  const html = typeof paper.getText === "function" ? paper.getText() : "";
+
+  return fromHtml(html);
 }

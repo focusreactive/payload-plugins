@@ -19,11 +19,14 @@ export function buildHeadingTree(flat: FlatHeading[]): HeadingStructure {
   const stack: HeadingNode[] = [];
 
   for (const heading of flat) {
-    while (stack.length > 0 && stack.at(-1)!.level >= heading.level) {
+    let top = stack.at(-1);
+
+    while (top && top.level >= heading.level) {
       stack.pop();
+      top = stack.at(-1);
     }
 
-    const parent = stack.at(-1);
+    const parent = top;
     const id = parent ? `${parent.id}.${parent.children.length}` : `${roots.length}`;
 
     const node: HeadingNode = {
