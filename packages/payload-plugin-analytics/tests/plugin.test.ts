@@ -29,22 +29,24 @@ describe("analyticsPlugin", () => {
     expect(out).toBe(incoming);
   });
 
-  it("throws on invalid measurementId regex", () => {
-    expect(() =>
-      analyticsPlugin({
-        ...validConfig,
-        ga4: { ...validConfig.ga4, measurementId: "invalid" },
-      })(incoming)
-    ).toThrow(/measurementId must match/u);
+  it("warns and disables on invalid measurementId regex", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const out = analyticsPlugin({
+      ...validConfig,
+      ga4: { ...validConfig.ga4, measurementId: "invalid" },
+    })(incoming);
+    expect(out).toBe(incoming);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("not a valid GA4 ID"));
   });
 
-  it("throws on missing propertyId", () => {
-    expect(() =>
-      analyticsPlugin({
-        ...validConfig,
-        ga4: { ...validConfig.ga4, propertyId: "" },
-      })(incoming)
-    ).toThrow(/propertyId is required/u);
+  it("warns and disables on missing propertyId", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const out = analyticsPlugin({
+      ...validConfig,
+      ga4: { ...validConfig.ga4, propertyId: "" },
+    })(incoming);
+    expect(out).toBe(incoming);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("propertyId is missing"));
   });
 
   it("warns on missing serviceAccount fields but does not throw", () => {
@@ -56,8 +58,11 @@ describe("analyticsPlugin", () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("serviceAccount"));
   });
 
-  it("throws when ga4 is missing entirely (and disabled is not set)", () => {
-    expect(() => analyticsPlugin({} as AnalyticsPluginConfig)(incoming)).toThrow(/ga4 is required/u);
+  it("warns and disables when ga4 is missing entirely (and disabled is not set)", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const out = analyticsPlugin({} as AnalyticsPluginConfig)(incoming);
+    expect(out).toBe(incoming);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("ga4 config is missing"));
   });
 });
 
