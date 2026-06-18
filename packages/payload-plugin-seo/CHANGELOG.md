@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-seo [1.3.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.2.0...@focus-reactive/payload-plugin-seo@1.3.0) (2026-06-18)
+
+
+### Features
+
+* **seo:** warn and disable instead of throwing on empty collections ([86e9084](https://github.com/focusreactive/payload-plugins/commit/86e90842ab56e2cee428caa2271188847294d5cc))
+
 # @focus-reactive/payload-plugin-seo [1.2.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.1.0...@focus-reactive/payload-plugin-seo@1.2.0) (2026-06-18)
 
 
