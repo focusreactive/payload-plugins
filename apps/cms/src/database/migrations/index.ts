@@ -23,6 +23,7 @@ import * as migration_20260616_181257_update_post_cta_headings from './20260616_
 import * as migration_20260616_182705_remove_links_and_text_blocks from './20260616_182705_remove_links_and_text_blocks';
 import * as migration_20260617_104920_add_raw_html_block from './20260617_104920_add_raw_html_block';
 import * as migration_20260618_200838_add_section_visibility_to_blocks from './20260618_200838_add_section_visibility_to_blocks';
+import * as migration_20260619_011448_add_pgvector_embedding_column from './20260619_011448_add_pgvector_embedding_column';
 
 export const migrations = [
   {
@@ -149,5 +150,10 @@ export const migrations = [
     up: migration_20260618_200838_add_section_visibility_to_blocks.up,
     down: migration_20260618_200838_add_section_visibility_to_blocks.down,
     name: '20260618_200838_add_section_visibility_to_blocks'
+  },
+  {
+    up: migration_20260619_011448_add_pgvector_embedding_column.up,
+    down: migration_20260619_011448_add_pgvector_embedding_column.down,
+    name: '20260619_011448_add_pgvector_embedding_column'
   },
 ];
