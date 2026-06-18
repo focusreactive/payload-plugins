@@ -2,14 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import {
-  PopupList,
-  useForm,
-  useTranslation,
-  toast,
-  useAuth,
-  useDocumentDrawer,
-} from "@payloadcms/ui";
+import { PopupList, useForm, useTranslation, toast, useAuth, useDocumentDrawer } from "@payloadcms/ui";
 import { usePresetsConfig } from "../../usePresetsConfig.js";
 import { useOpenDrawer } from "../../blocksDrawer/OpenDrawerContext.js";
 import { Data } from "payload";
@@ -21,10 +14,7 @@ interface SaveAsPresetCoreProps {
   rowIndex: number;
 }
 
-export function SaveAsPresetCore({
-  presetBlockData,
-  rowIndex,
-}: SaveAsPresetCoreProps) {
+export function SaveAsPresetCore({ presetBlockData, rowIndex }: SaveAsPresetCoreProps) {
   const { blockType: presetType } = presetBlockData;
   const { slug, excludeKeys } = usePresetsConfig();
   const openPresetsDrawer = useOpenDrawer();
@@ -36,19 +26,14 @@ export function SaveAsPresetCore({
 
   const { user } = useAuth();
   const { getData } = useForm();
-  const tenantId =
-    getData()?.tenant ?? user?.tenant?.id ?? user?.tenant ?? null;
+  const tenantId = getData()?.tenant ?? user?.tenant?.id ?? user?.tenant ?? null;
 
   const { t } = useTranslation();
 
   const anchorRef = useRef<HTMLDivElement>(null);
   const suppressNextActionsButtonClickRef = useRef(false);
-  const interceptAddBelowRef = useRef<((event: MouseEvent) => void) | null>(
-    null,
-  );
-  const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(
-    null,
-  );
+  const interceptAddBelowRef = useRef<((event: MouseEvent) => void) | null>(null);
+  const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!presetType) return;
@@ -61,9 +46,7 @@ export function SaveAsPresetCore({
       const clickedButton = target.closest?.(".array-actions__button");
       if (!clickedButton) return;
 
-      const nearestRow = clickedButton.closest(
-        ".blocks-field__row, .array-field__row",
-      );
+      const nearestRow = clickedButton.closest(".blocks-field__row, .array-field__row");
       if (nearestRow !== row) return;
 
       if (suppressNextActionsButtonClickRef.current) {
@@ -73,11 +56,7 @@ export function SaveAsPresetCore({
 
       setTimeout(() => {
         if (interceptAddBelowRef.current) {
-          document.removeEventListener(
-            "click",
-            interceptAddBelowRef.current,
-            true,
-          );
+          document.removeEventListener("click", interceptAddBelowRef.current, true);
         }
 
         const interceptAddBelow = (event: MouseEvent) => {
@@ -91,9 +70,7 @@ export function SaveAsPresetCore({
           event.preventDefault();
           event.stopPropagation();
 
-          const actionsButton = row.querySelector<HTMLButtonElement>(
-            ".array-actions__button",
-          );
+          const actionsButton = row.querySelector<HTMLButtonElement>(".array-actions__button");
 
           if (actionsButton) {
             suppressNextActionsButtonClickRef.current = true;
@@ -106,14 +83,10 @@ export function SaveAsPresetCore({
         interceptAddBelowRef.current = interceptAddBelow;
         document.addEventListener("click", interceptAddBelow, true);
 
-        const list = document.body.querySelector(
-          ".popup__content .popup-button-list",
-        );
+        const list = document.body.querySelector(".popup__content .popup-button-list");
 
         if (list) {
-          const existing = list.querySelector(
-            "[data-save-as-preset-container]",
-          ) as HTMLDivElement | null;
+          const existing = list.querySelector("[data-save-as-preset-container]") as HTMLDivElement | null;
           if (existing) {
             setPortalContainer(existing);
           } else {
@@ -132,20 +105,13 @@ export function SaveAsPresetCore({
       row.removeEventListener("click", handleClick);
 
       if (interceptAddBelowRef.current) {
-        document.removeEventListener(
-          "click",
-          interceptAddBelowRef.current,
-          true,
-        );
+        document.removeEventListener("click", interceptAddBelowRef.current, true);
         interceptAddBelowRef.current = null;
       }
     };
   }, [openPresetsDrawer, presetType, rowIndex]);
 
-  const blockContent = cleanPresetData(
-    presetBlockData ?? {},
-    excludeSet,
-  ) as Record<string, unknown>;
+  const blockContent = cleanPresetData(presetBlockData ?? {}, excludeSet) as Record<string, unknown>;
 
   const data = presetType
     ? ({
@@ -163,15 +129,12 @@ export function SaveAsPresetCore({
         portalContainer &&
         createPortal(
           <div>
-            <PopupList.Button
-              className="popup-button-list__button array-actions__action"
-              onClick={openDrawer}
-            >
+            <PopupList.Button className="popup-button-list__button array-actions__action" onClick={openDrawer}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="17"
                 height="17"
-                viewBox="0 0 24 24"
+                viewBox="0 0 20 20"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1"
@@ -179,15 +142,15 @@ export function SaveAsPresetCore({
                 strokeLinejoin="round"
                 className="icon"
               >
-                <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
-                <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" />
-                <path d="M7 3v4a1 1 0 0 0 1 1h7" />
+                <path d="M12.667 2.5a1.667 1.667 0 0 1 1.167.5l3.167 3.167a1.667 1.667 0 0 1 .5 1.167V15.833a1.667 1.667 0 0 1-1.667 1.667H4.167a1.667 1.667 0 0 1-1.667-1.667V4.167a1.667 1.667 0 0 1 1.667-1.667z" />
+                <path d="M14.167 17.5v-5.833a.833 .833 0 0 0-.833-.833H6.667a.833 .833 0 0 0-.833.833v5.833" />
+                <path d="M5.833 2.5v3.333a.833 .833 0 0 0 .833.833h5.833" />
               </svg>
 
               {t("presetsPlugin:presetActions:saveButton" as never)}
             </PopupList.Button>
           </div>,
-          portalContainer,
+          portalContainer
         )}
 
       <DocumentDrawer
@@ -198,7 +161,7 @@ export function SaveAsPresetCore({
           toast.success(
             t("presetsPlugin:presetActions:successSaved" as never, {
               name: document.name,
-            }),
+            })
           );
           closeDrawer();
         }}
