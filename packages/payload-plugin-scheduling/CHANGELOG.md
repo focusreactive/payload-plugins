@@ -1,3 +1,15 @@
+# @focus-reactive/payload-plugin-scheduling [1.3.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-scheduling@1.2.0...@focus-reactive/payload-plugin-scheduling@1.3.0) (2026-06-18)
+
+
+### Features
+
+* **scheduling:** validate required secret and warn-disable when unset ([27b54ae](https://github.com/focusreactive/payload-plugins/commit/27b54aef083a4d6f74e3e85c9cca930c43a1ca56))
+
+
+### Reverts
+
+* **format:** undo ultracite mass reformat on existing plugins ([d608685](https://github.com/focusreactive/payload-plugins/commit/d6086859295f006db109fa07acf2020652713a39)), closes [#12](https://github.com/focusreactive/payload-plugins/issues/12)
+
 # @focus-reactive/payload-plugin-scheduling [1.2.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-scheduling@1.1.0...@focus-reactive/payload-plugin-scheduling@1.2.0) (2026-04-30)
 
 
