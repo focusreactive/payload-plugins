@@ -2,6 +2,8 @@ import React, { Fragment } from "react";
 
 import type { Page } from "@/payload-types";
 
+import { filterHiddenBlocks } from "@/fields/section/filterHiddenBlocks";
+
 import { CardsGridBlockComponent } from "./CardsGrid/Component";
 import { CarouselBlockComponent } from "./Carousel/Component";
 import { ChartBlockComponent } from "./Chart/Component";
@@ -35,12 +37,13 @@ export const RenderBlocks: React.FC<{
 }> = (props) => {
   const { blocks } = props;
 
-  const hasBlocks = blocks && Array.isArray(blocks) && blocks.length > 0;
+  const visibleBlocks = filterHiddenBlocks(blocks);
+  const hasBlocks = visibleBlocks.length > 0;
 
   if (hasBlocks) {
     return (
       <Fragment>
-        {blocks.map((block, index) => {
+        {visibleBlocks.map((block, index) => {
           const { blockType } = block;
 
           if (blockType && blockType in blockComponents) {

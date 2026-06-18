@@ -2,7 +2,7 @@ import type { Block, Field } from "payload";
 
 import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
 import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
-import { embedSectionTab } from "@/fields/section/embedSectionTab";
+import { injectSection } from "@/fields/section/injectSection";
 
 const fields: Field[] = [
   {
@@ -33,7 +33,7 @@ const fields: Field[] = [
   },
 ];
 
-export const RawHtmlBlock: Block = {
+export const RawHtmlBlock: Block = injectSection({
   slug: "rawHtml",
   interfaceName: "RawHtmlBlock",
   ...getBlockPreviewImage("Raw HTML"),
@@ -41,5 +41,5 @@ export const RawHtmlBlock: Block = {
     plural: { en: "Raw HTML", es: "HTML sin procesar" },
     singular: { en: "Raw HTML", es: "HTML sin procesar" },
   },
-  fields: embedSectionTab(fields),
-};
+  fields,
+});

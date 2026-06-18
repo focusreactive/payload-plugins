@@ -7,7 +7,7 @@ import { createLocalizedRichText } from "@/core/lib/createLocalizedDefault";
 import { generateRichText } from "@/core/lib/generateRichText";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/fields/link";
-import { embedSectionTab } from "@/fields/section/embedSectionTab";
+import { injectSection } from "@/fields/section/injectSection";
 import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
 
 const fields: Field[] = [
@@ -75,7 +75,7 @@ const fields: Field[] = [
   },
 ];
 
-export const ContentBlock: Block = {
+export const ContentBlock: Block = injectSection({
   slug: "content",
   interfaceName: "ContentBlock",
   ...getBlockPreviewImage("Content Section"),
@@ -89,5 +89,5 @@ export const ContentBlock: Block = {
       es: "Sección de Contenido",
     },
   },
-  fields: embedSectionTab(fields),
-};
+  fields,
+});

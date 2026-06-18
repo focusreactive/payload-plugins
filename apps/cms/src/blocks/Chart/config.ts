@@ -2,7 +2,7 @@ import type { Block, Field } from "payload";
 
 import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
 import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
-import { embedSectionTab } from "@/fields/section/embedSectionTab";
+import { injectSection } from "@/fields/section/injectSection";
 import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
 
 const fields: Field[] = [
@@ -71,7 +71,7 @@ const fields: Field[] = [
   },
 ];
 
-export const ChartBlock: Block = {
+export const ChartBlock: Block = injectSection({
   slug: "chart",
   interfaceName: "ChartBlock",
   ...getBlockPreviewImage("Chart"),
@@ -79,5 +79,5 @@ export const ChartBlock: Block = {
     plural: { en: "Charts", es: "Gráficos" },
     singular: { en: "Chart", es: "Gráfico" },
   },
-  fields: embedSectionTab(fields),
-};
+  fields,
+});

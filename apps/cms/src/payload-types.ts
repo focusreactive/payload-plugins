@@ -805,6 +805,7 @@ export interface HeroBlock {
       opacity?: number | null;
     };
   };
+  _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'hero';
@@ -877,6 +878,7 @@ export interface ContentBlock {
       opacity?: number | null;
     };
   };
+  _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'content';
@@ -928,6 +930,7 @@ export interface FaqBlock {
       opacity?: number | null;
     };
   };
+  _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'faq';
@@ -972,6 +975,7 @@ export interface TestimonialsListBlock {
       opacity?: number | null;
     };
   };
+  _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'testimonialsList';
@@ -1079,6 +1083,7 @@ export interface CardsGridBlock {
       opacity?: number | null;
     };
   };
+  _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'cardsGrid';
@@ -1134,6 +1139,7 @@ export interface CarouselBlock {
       opacity?: number | null;
     };
   };
+  _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'carousel';
@@ -1185,6 +1191,7 @@ export interface LogosBlock {
       opacity?: number | null;
     };
   };
+  _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'logos';
@@ -1231,6 +1238,7 @@ export interface ChartBlock {
       opacity?: number | null;
     };
   };
+  _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'chart';
@@ -1284,6 +1292,7 @@ export interface CtaBandBlock {
       opacity?: number | null;
     };
   };
+  _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'ctaBand';
@@ -1315,6 +1324,7 @@ export interface NewsletterBlock {
       opacity?: number | null;
     };
   };
+  _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'newsletter';
@@ -1346,6 +1356,7 @@ export interface StatsBlock {
       opacity?: number | null;
     };
   };
+  _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'stats';
@@ -1376,6 +1387,7 @@ export interface RawHtmlBlock {
       opacity?: number | null;
     };
   };
+  _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'rawHtml';
@@ -1503,6 +1515,7 @@ export interface Preset {
             opacity?: number | null;
           };
         };
+        _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'hero';
@@ -1571,6 +1584,7 @@ export interface Preset {
             opacity?: number | null;
           };
         };
+        _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'content';
@@ -1618,6 +1632,7 @@ export interface Preset {
             opacity?: number | null;
           };
         };
+        _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'faq';
@@ -1658,6 +1673,7 @@ export interface Preset {
             opacity?: number | null;
           };
         };
+        _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'testimonialsList';
@@ -1746,6 +1762,7 @@ export interface Preset {
             opacity?: number | null;
           };
         };
+        _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'cardsGrid';
@@ -1797,6 +1814,7 @@ export interface Preset {
             opacity?: number | null;
           };
         };
+        _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'carousel';
@@ -1844,6 +1862,7 @@ export interface Preset {
             opacity?: number | null;
           };
         };
+        _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'logos';
@@ -1886,6 +1905,7 @@ export interface Preset {
             opacity?: number | null;
           };
         };
+        _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'chart';
@@ -1935,6 +1955,7 @@ export interface Preset {
             opacity?: number | null;
           };
         };
+        _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'ctaBand';
@@ -1962,6 +1983,7 @@ export interface Preset {
             opacity?: number | null;
           };
         };
+        _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'newsletter';
@@ -1989,6 +2011,7 @@ export interface Preset {
             opacity?: number | null;
           };
         };
+        _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'stats';
@@ -2015,6 +2038,7 @@ export interface Preset {
             opacity?: number | null;
           };
         };
+        _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'rawHtml';
@@ -2732,6 +2756,7 @@ export interface HeroBlockSelect<T extends boolean = true> {
               opacity?: T;
             };
       };
+  _hidden?: T;
   id?: T;
   blockName?: T;
 }
@@ -2773,6 +2798,7 @@ export interface ContentBlockSelect<T extends boolean = true> {
               opacity?: T;
             };
       };
+  _hidden?: T;
   id?: T;
   blockName?: T;
 }
@@ -2806,6 +2832,7 @@ export interface FaqBlockSelect<T extends boolean = true> {
               opacity?: T;
             };
       };
+  _hidden?: T;
   id?: T;
   blockName?: T;
 }
@@ -2841,6 +2868,7 @@ export interface TestimonialsListBlockSelect<T extends boolean = true> {
               opacity?: T;
             };
       };
+  _hidden?: T;
   id?: T;
   blockName?: T;
 }
@@ -2896,6 +2924,7 @@ export interface CardsGridBlockSelect<T extends boolean = true> {
               opacity?: T;
             };
       };
+  _hidden?: T;
   id?: T;
   blockName?: T;
 }
@@ -2935,6 +2964,7 @@ export interface CarouselBlockSelect<T extends boolean = true> {
               opacity?: T;
             };
       };
+  _hidden?: T;
   id?: T;
   blockName?: T;
 }
@@ -2981,6 +3011,7 @@ export interface LogosBlockSelect<T extends boolean = true> {
               opacity?: T;
             };
       };
+  _hidden?: T;
   id?: T;
   blockName?: T;
 }
@@ -3022,6 +3053,7 @@ export interface ChartBlockSelect<T extends boolean = true> {
               opacity?: T;
             };
       };
+  _hidden?: T;
   id?: T;
   blockName?: T;
 }
@@ -3060,6 +3092,7 @@ export interface CtaBandBlockSelect<T extends boolean = true> {
               opacity?: T;
             };
       };
+  _hidden?: T;
   id?: T;
   blockName?: T;
 }
@@ -3088,6 +3121,7 @@ export interface NewsletterBlockSelect<T extends boolean = true> {
               opacity?: T;
             };
       };
+  _hidden?: T;
   id?: T;
   blockName?: T;
 }
@@ -3118,6 +3152,7 @@ export interface StatsBlockSelect<T extends boolean = true> {
               opacity?: T;
             };
       };
+  _hidden?: T;
   id?: T;
   blockName?: T;
 }
@@ -3142,6 +3177,7 @@ export interface RawHtmlBlockSelect<T extends boolean = true> {
               opacity?: T;
             };
       };
+  _hidden?: T;
   id?: T;
   blockName?: T;
 }
@@ -3443,6 +3479,7 @@ export interface PresetsSelect<T extends boolean = true> {
                           opacity?: T;
                         };
                   };
+              _hidden?: T;
               id?: T;
               blockName?: T;
             };
@@ -3482,6 +3519,7 @@ export interface PresetsSelect<T extends boolean = true> {
                           opacity?: T;
                         };
                   };
+              _hidden?: T;
               id?: T;
               blockName?: T;
             };
@@ -3513,6 +3551,7 @@ export interface PresetsSelect<T extends boolean = true> {
                           opacity?: T;
                         };
                   };
+              _hidden?: T;
               id?: T;
               blockName?: T;
             };
@@ -3546,6 +3585,7 @@ export interface PresetsSelect<T extends boolean = true> {
                           opacity?: T;
                         };
                   };
+              _hidden?: T;
               id?: T;
               blockName?: T;
             };
@@ -3599,6 +3639,7 @@ export interface PresetsSelect<T extends boolean = true> {
                           opacity?: T;
                         };
                   };
+              _hidden?: T;
               id?: T;
               blockName?: T;
             };
@@ -3636,6 +3677,7 @@ export interface PresetsSelect<T extends boolean = true> {
                           opacity?: T;
                         };
                   };
+              _hidden?: T;
               id?: T;
               blockName?: T;
             };
@@ -3680,6 +3722,7 @@ export interface PresetsSelect<T extends boolean = true> {
                           opacity?: T;
                         };
                   };
+              _hidden?: T;
               id?: T;
               blockName?: T;
             };
@@ -3719,6 +3762,7 @@ export interface PresetsSelect<T extends boolean = true> {
                           opacity?: T;
                         };
                   };
+              _hidden?: T;
               id?: T;
               blockName?: T;
             };
@@ -3755,6 +3799,7 @@ export interface PresetsSelect<T extends boolean = true> {
                           opacity?: T;
                         };
                   };
+              _hidden?: T;
               id?: T;
               blockName?: T;
             };
@@ -3781,6 +3826,7 @@ export interface PresetsSelect<T extends boolean = true> {
                           opacity?: T;
                         };
                   };
+              _hidden?: T;
               id?: T;
               blockName?: T;
             };
@@ -3809,6 +3855,7 @@ export interface PresetsSelect<T extends boolean = true> {
                           opacity?: T;
                         };
                   };
+              _hidden?: T;
               id?: T;
               blockName?: T;
             };
@@ -3831,6 +3878,7 @@ export interface PresetsSelect<T extends boolean = true> {
                           opacity?: T;
                         };
                   };
+              _hidden?: T;
               id?: T;
               blockName?: T;
             };

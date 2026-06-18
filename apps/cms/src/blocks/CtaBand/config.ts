@@ -1,7 +1,7 @@
 import type { Block, Field, GroupField } from "payload";
 
 import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
-import { embedSectionTab } from "@/fields/section/embedSectionTab";
+import { injectSection } from "@/fields/section/injectSection";
 import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
 import { link } from "@/fields/link";
 
@@ -26,7 +26,7 @@ const fields: Field[] = [
   },
 ];
 
-export const CtaBandBlock: Block = {
+export const CtaBandBlock: Block = injectSection({
   slug: "ctaBand",
   interfaceName: "CtaBandBlock",
   ...getBlockPreviewImage("CTA Band"),
@@ -34,5 +34,5 @@ export const CtaBandBlock: Block = {
     plural: { en: "CTA Bands", es: "Bandas CTA" },
     singular: { en: "CTA Band", es: "Banda CTA" },
   },
-  fields: embedSectionTab(fields),
-};
+  fields,
+});

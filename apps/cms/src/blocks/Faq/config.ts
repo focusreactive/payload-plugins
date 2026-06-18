@@ -5,7 +5,7 @@ import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
 import { createLocalizedDefault, createLocalizedRichText, createRichTextState } from "@/core/lib/createLocalizedDefault";
 import { generateRichText } from "@/core/lib/generateRichText";
 import type { Locale } from "@/core/types";
-import { embedSectionTab } from "@/fields/section/embedSectionTab";
+import { injectSection } from "@/fields/section/injectSection";
 import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
 
 function buildFaqItems(locale: Locale) {
@@ -49,7 +49,7 @@ const fields: Field[] = [
   },
 ];
 
-export const FaqBlock: Block = {
+export const FaqBlock: Block = injectSection({
   slug: "faq",
   interfaceName: "FaqBlock",
   ...getBlockPreviewImage("FAQ Section"),
@@ -57,5 +57,5 @@ export const FaqBlock: Block = {
     plural: { en: "FAQ Sections", es: "Secciones de FAQ" },
     singular: { en: "FAQ Section", es: "Sección de FAQ" },
   },
-  fields: embedSectionTab(fields),
-};
+  fields,
+});

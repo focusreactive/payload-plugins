@@ -1,10 +1,10 @@
 import type { Block } from "payload";
 
 import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
-import { embedSectionTab } from "@/fields/section/embedSectionTab";
+import { injectSection } from "@/fields/section/injectSection";
 import { testimonialsListFields } from "@/fields/testimonialsListFields";
 
-export const TestimonialsListBlock: Block = {
+export const TestimonialsListBlock: Block = injectSection({
   slug: "testimonialsList",
   interfaceName: "TestimonialsListBlock",
   ...getBlockPreviewImage("Testimonials"),
@@ -12,5 +12,5 @@ export const TestimonialsListBlock: Block = {
     plural: { en: "Testimonials", es: "Testimonios" },
     singular: { en: "Testimonials", es: "Testimonios" },
   },
-  fields: embedSectionTab([...testimonialsListFields]),
-};
+  fields: [...testimonialsListFields],
+});

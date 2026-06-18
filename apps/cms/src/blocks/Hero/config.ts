@@ -2,9 +2,9 @@ import type { Block } from "payload";
 
 import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
 import { heroFields } from "@/fields/heroFields";
-import { embedSectionTab } from "@/fields/section/embedSectionTab";
+import { injectSection } from "@/fields/section/injectSection";
 
-export const HeroBlock: Block = {
+export const HeroBlock: Block = injectSection({
   slug: "hero",
   interfaceName: "HeroBlock",
   ...getBlockPreviewImage("Hero"),
@@ -12,5 +12,5 @@ export const HeroBlock: Block = {
     plural: { en: "Heroes", es: "Héroes" },
     singular: { en: "Hero", es: "Hero" },
   },
-  fields: embedSectionTab([...heroFields]),
-};
+  fields: [...heroFields],
+});

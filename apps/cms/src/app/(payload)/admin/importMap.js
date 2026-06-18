@@ -24,7 +24,7 @@ import { FixedToolbarFeatureClient as FixedToolbarFeatureClient_e70f5e05f09f93e0
 import { FolderTableCell as FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { FolderField as FolderField_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { RowLabel as RowLabel_e82054cbfea0bb801c8062fddecc03a2 } from '@/core/ui/components/RowLabel'
-import { BlockLabelWithPresets as BlockLabelWithPresets_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
+import { BlockLabelServerWrapper as BlockLabelServerWrapper_ad8f8fdcc54c2df5d561bf1e2721dc58 } from '@focus-reactive/payload-plugin-presets/rsc'
 import { CopyAiPromptButton as CopyAiPromptButton_8eae3508993fc390856ace1dee04984d } from '@/core/ui/components/CopyAiPromptButton'
 import { BlocksFieldWithPresets as BlocksFieldWithPresets_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { OverviewComponent as OverviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
@@ -54,6 +54,7 @@ import { default as default_5668654bc04fc84f784cb30b290f6f3d } from '@focus-reac
 import { VisualEditingBridgeProvider as VisualEditingBridgeProvider_673e524fc3ed2dc6764c4e182a583baf } from '@fr-private/payload-plugin-visual-editing/admin'
 import { default as default_7772b5ceb4db588e7e8d7d6ad669ce76 } from '@focus-reactive/payload-plugin-analytics/components/AnalyticsView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
+import { SectionVisibilityLabel as SectionVisibilityLabel_c3184946b1da62be43daccb6658b32f3 } from '@/fields/section/SectionVisibilityLabel'
 
 /** @type import('payload').ImportMap */
 export const importMap = {
@@ -83,7 +84,7 @@ export const importMap = {
   "@payloadcms/next/rsc#FolderTableCell": FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@payloadcms/next/rsc#FolderField": FolderField_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@/core/ui/components/RowLabel#RowLabel": RowLabel_e82054cbfea0bb801c8062fddecc03a2,
-  "@focus-reactive/payload-plugin-presets/client#BlockLabelWithPresets": BlockLabelWithPresets_f0a4a6f21f15d606fa328a5e35f17d11,
+  "@focus-reactive/payload-plugin-presets/rsc#BlockLabelServerWrapper": BlockLabelServerWrapper_ad8f8fdcc54c2df5d561bf1e2721dc58,
   "@/core/ui/components/CopyAiPromptButton#CopyAiPromptButton": CopyAiPromptButton_8eae3508993fc390856ace1dee04984d,
   "@focus-reactive/payload-plugin-presets/client#BlocksFieldWithPresets": BlocksFieldWithPresets_f0a4a6f21f15d606fa328a5e35f17d11,
   "@payloadcms/plugin-seo/client#OverviewComponent": OverviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
@@ -112,5 +113,6 @@ export const importMap = {
   "@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider#default": default_5668654bc04fc84f784cb30b290f6f3d,
   "@fr-private/payload-plugin-visual-editing/admin#VisualEditingBridgeProvider": VisualEditingBridgeProvider_673e524fc3ed2dc6764c4e182a583baf,
   "@focus-reactive/payload-plugin-analytics/components/AnalyticsView#default": default_7772b5ceb4db588e7e8d7d6ad669ce76,
-  "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
+  "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1,
+  "@/fields/section/SectionVisibilityLabel#SectionVisibilityLabel": SectionVisibilityLabel_c3184946b1da62be43daccb6658b32f3
 }

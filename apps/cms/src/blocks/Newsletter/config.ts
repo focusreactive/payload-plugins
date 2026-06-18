@@ -2,7 +2,7 @@ import type { Block, Field } from "payload";
 
 import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
 import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
-import { embedSectionTab } from "@/fields/section/embedSectionTab";
+import { injectSection } from "@/fields/section/injectSection";
 
 const fields: Field[] = [
   {
@@ -59,7 +59,7 @@ const fields: Field[] = [
   },
 ];
 
-export const NewsletterBlock: Block = {
+export const NewsletterBlock: Block = injectSection({
   slug: "newsletter",
   interfaceName: "NewsletterBlock",
   ...getBlockPreviewImage("Newsletter"),
@@ -67,5 +67,5 @@ export const NewsletterBlock: Block = {
     plural: { en: "Newsletters", es: "Boletines" },
     singular: { en: "Newsletter", es: "Boletín" },
   },
-  fields: embedSectionTab(fields),
-};
+  fields,
+});

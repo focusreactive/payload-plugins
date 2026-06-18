@@ -3,7 +3,7 @@ import type { Block, Field } from "payload";
 import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
 import { generateRichText } from "@/core/lib/generateRichText";
 import { imageField } from "@/fields/imageField";
-import { embedSectionTab } from "@/fields/section/embedSectionTab";
+import { injectSection } from "@/fields/section/injectSection";
 import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
 
 const fields: Field[] = [
@@ -42,7 +42,7 @@ const fields: Field[] = [
   },
 ];
 
-export const CarouselBlock: Block = {
+export const CarouselBlock: Block = injectSection({
   slug: "carousel",
   interfaceName: "CarouselBlock",
   ...getBlockPreviewImage("Carousel"),
@@ -50,5 +50,5 @@ export const CarouselBlock: Block = {
     plural: { en: "Carousels", es: "Carruseles" },
     singular: { en: "Carousel", es: "Carrusel" },
   },
-  fields: embedSectionTab(fields),
-};
+  fields,
+});
