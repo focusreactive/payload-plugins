@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-presets [0.11.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.11.0...@focus-reactive/payload-plugin-presets@0.11.1) (2026-06-18)
+
+
+### Bug Fixes
+
+* **presets:** align save-as-preset icon stroke and viewbox with payload icons ([56f9ede](https://github.com/focusreactive/payload-plugins/commit/56f9ede4f1168ec49e6baae0a12dcdb139d04213))
+
 # @focus-reactive/payload-plugin-presets [0.11.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.10.9...@focus-reactive/payload-plugin-presets@0.11.0) (2026-05-25)
 
 
