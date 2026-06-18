@@ -16,20 +16,24 @@ export const analyticsPlugin =
     if (config.disabled) return incomingConfig;
 
     if (!config.ga4) {
-      throw new Error(`[${PLUGIN_NAME}] config.ga4 is required`);
+      console.warn(`[${PLUGIN_NAME}] config.ga4 is missing — plugin disabled`);
+      return incomingConfig;
     }
 
     if (!MEASUREMENT_ID_RE.test(config.ga4.measurementId ?? "")) {
-      throw new Error(`[${PLUGIN_NAME}] ga4.measurementId must match ${MEASUREMENT_ID_RE} (got "${config.ga4.measurementId}")`);
+      console.warn(`[${PLUGIN_NAME}] ga4.measurementId must match ${MEASUREMENT_ID_RE} (got "${config.ga4.measurementId}") — plugin disabled`);
+      return incomingConfig;
     }
 
     if (!config.ga4.propertyId) {
-      throw new Error(`[${PLUGIN_NAME}] ga4.propertyId is required`);
+      console.warn(`[${PLUGIN_NAME}] ga4.propertyId is missing — plugin disabled`);
+      return incomingConfig;
     }
 
     const serviceAccount = config.ga4.serviceAccount;
     if (!serviceAccount?.clientEmail || !serviceAccount?.privateKey) {
-      console.warn(`[${PLUGIN_NAME}] ga4.serviceAccount.{ clientEmail, privateKey } missing`);
+      console.warn(`[${PLUGIN_NAME}] ga4.serviceAccount.{ clientEmail, privateKey } missing — plugin disabled`);
+      return incomingConfig;
     }
 
     setPluginConfig(config);
