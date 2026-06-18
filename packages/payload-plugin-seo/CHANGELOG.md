@@ -1,3 +1,12 @@
+# @focus-reactive/payload-plugin-seo [1.1.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.0.2...@focus-reactive/payload-plugin-seo@1.1.0) (2026-06-18)
+
+
+### Features
+
+* **seo:** add isExistingDocument gate predicate ([08d1ca4](https://github.com/focusreactive/payload-plugins/commit/08d1ca4e96acd5b51e82bd0c6c5ec7f54f2b6b14))
+* **seo:** auto-run analysis on saved docs, hide button on create view ([e7c8c14](https://github.com/focusreactive/payload-plugins/commit/e7c8c14057f20a6871049676add4be1a20de3508))
+* **seo:** show score badge on doc button instead of status dot ([4a91c85](https://github.com/focusreactive/payload-plugins/commit/4a91c857899828c981cfb993bb85af4d80659aad))
+
 ## @focus-reactive/payload-plugin-seo [1.0.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.0.1...@focus-reactive/payload-plugin-seo@1.0.2) (2026-06-17)
 
 
