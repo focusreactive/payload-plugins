@@ -1,6 +1,6 @@
-import { Logos } from "@/components/ui";
-import { AlignVariant } from "@/components/ui/sections/logos/types";
-import type { ILogoItem } from "@/components/ui/sections/logos/types";
+import { Logos } from "./ui";
+import { AlignVariant } from "./ui/types";
+import type { ILogoItem } from "./ui/types";
 import React from "react";
 
 import { resolveLocale } from "@/core/lib/resolveLocale";

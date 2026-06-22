@@ -1,4 +1,4 @@
-import { Hero } from "@/components/ui";
+import { Hero } from "./ui";
 import { ButtonSize } from "@/components/ui/primitives/button/types";
 import React from "react";
 

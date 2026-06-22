@@ -1,5 +1,6 @@
-import { Carousel, SectionHeader } from "@/components/ui";
-import type { ICarouselCardProps } from "@/components/ui/sections/carousel/types";
+import { SectionHeader } from "@/components/ui";
+import { Carousel } from "./ui";
+import type { ICarouselCardProps } from "./ui/types";
 import React from "react";
 
 import { SectionContainer } from "@/core/ui";

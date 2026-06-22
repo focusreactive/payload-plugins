@@ -1,4 +1,4 @@
-import { Stats } from "@/components/ui";
+import { Stats } from "./ui";
 import { SectionContainer } from "@/core/ui";
 import type { StatsBlock } from "@/payload-types";
 

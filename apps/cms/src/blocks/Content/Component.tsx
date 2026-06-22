@@ -1,4 +1,5 @@
-import { ButtonSize, ContentSection } from "@/components/ui";
+import { ButtonSize } from "@/components/ui";
+import { ContentSection } from "./ui";
 
 import { CMSLink, Media, RichText, SectionContainer } from "@/core/ui";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
