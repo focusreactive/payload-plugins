@@ -2,12 +2,7 @@ import type { CollectionConfig, GlobalConfig, SchedulePublish } from "payload";
 
 type Versions = CollectionConfig["versions"] | GlobalConfig["versions"];
 
-export function injectSchedulePublishToVersions(
-  versions: Versions,
-  schedulePublish?: SchedulePublish,
-): Versions {
-  const schedulePublishValue = schedulePublish ?? true;
-
+export function injectSchedulePublishToVersions(versions: Versions, schedulePublishValue: SchedulePublish = true): Versions {
   if (!versions || versions === true) {
     return {
       drafts: { schedulePublish: schedulePublishValue },

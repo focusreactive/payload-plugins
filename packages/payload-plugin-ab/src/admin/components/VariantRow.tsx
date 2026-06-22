@@ -13,15 +13,7 @@ interface VariantRowProps {
   onSaved: () => void;
 }
 
-export function VariantRow({
-  variant,
-  collectionSlug,
-  maxPercentage,
-  onPercentageChange,
-  onPercentageBlur,
-  onDelete,
-  onSaved,
-}: VariantRowProps) {
+export function VariantRow({ variant, collectionSlug, maxPercentage, onPercentageChange, onPercentageBlur, onDelete, onSaved }: VariantRowProps) {
   const [DocumentDrawer, , { openDrawer, closeDrawer }] = useDocumentDrawer({
     collectionSlug,
     id: variant.id,
@@ -43,10 +35,9 @@ export function VariantRow({
         borderRadius: 4,
         marginBottom: 6,
         background: "var(--theme-elevation-50)",
-      }}>
-      <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: "var(--theme-elevation-800)" }}>
-        {variant.title}
-      </span>
+      }}
+    >
+      <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: "var(--theme-elevation-800)" }}>{variant.title}</span>
 
       <div className="ab-percent-input-wrapper">
         <input
@@ -66,11 +57,7 @@ export function VariantRow({
         <EditIcon />
       </button>
 
-      <button
-        type="button"
-        onClick={onDelete}
-        className="ab-variant-icon-btn ab-variant-icon-btn--danger"
-        title="Remove variant">
+      <button type="button" onClick={onDelete} className="ab-variant-icon-btn ab-variant-icon-btn--danger" title="Remove variant">
         <TrashIcon />
       </button>
 

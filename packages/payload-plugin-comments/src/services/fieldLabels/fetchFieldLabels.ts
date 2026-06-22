@@ -20,10 +20,7 @@ type BaseGlobals = Record<string, { config: { fields: Field[] } }>;
 
 type BaseDocumentData = Record<string, unknown>;
 
-export async function fetchFieldLabels(
-  comments: Comment[],
-  options?: BaseServiceOptions,
-): Promise<GlobalFieldLabelRegistry> {
+export async function fetchFieldLabels(comments: Comment[], options?: BaseServiceOptions): Promise<GlobalFieldLabelRegistry> {
   const registry: GlobalFieldLabelRegistry = {};
 
   const payload = await extractPayload(options?.payload);

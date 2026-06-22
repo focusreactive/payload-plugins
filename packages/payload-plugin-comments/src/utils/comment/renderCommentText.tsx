@@ -22,14 +22,7 @@ interface Props {
   mentionDeletedSuffix?: string;
 }
 
-export function renderCommentText({
-  text,
-  mentions,
-  currentUserId,
-  usernameFieldPath,
-  fallbackDeletedUsername,
-  mentionDeletedSuffix,
-}: Props): ReactNode {
+export function renderCommentText({ text, mentions, currentUserId, usernameFieldPath, fallbackDeletedUsername, mentionDeletedSuffix }: Props): ReactNode {
   const mentionMap: Record<number, MentionRecord> = {};
 
   if (Array.isArray(mentions)) {
@@ -58,20 +51,9 @@ export function renderCommentText({
           const user = record?.user ?? null;
           const isSelf = isSelfMention(currentUserId, userId);
           const isDeleted = !user;
-          const name =
-            user ?
-              resolveUsername(user, usernameFieldPath, fallbackDeleted)
-            : (record?.displayNameSnapshot ?? fallbackDeleted);
+          const name = user ? resolveUsername(user, usernameFieldPath, fallbackDeleted) : (record?.displayNameSnapshot ?? fallbackDeleted);
 
-          return (
-            <MentionLabel
-              key={i}
-              name={name}
-              isSelf={isSelf}
-              isDeleted={isDeleted}
-              deletedSuffix={mentionDeletedSuffix}
-            />
-          );
+          return <MentionLabel key={i} name={name} isSelf={isSelf} isDeleted={isDeleted} deletedSuffix={mentionDeletedSuffix} />;
         }
 
         return <span key={i}>{part}</span>;

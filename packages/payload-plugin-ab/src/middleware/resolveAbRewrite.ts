@@ -28,7 +28,7 @@ export function createResolveAbRewrite<TVariantData extends object>(config: Reso
     /** The manifest key to look up — typically the internal rewrite path. */
     manifestKey: string,
     /** Path to rewrite to when no variant is selected ('original' bucket). */
-    originalRewritePath: string,
+    originalRewritePath: string
   ): Promise<NextResponse | null> {
     let variants: TVariantData[] | null = null;
 
@@ -50,10 +50,7 @@ export function createResolveAbRewrite<TVariantData extends object>(config: Reso
 
     let bucket = existingBucket;
     if (!bucket) {
-      bucket =
-        getPassPercentage ?
-          pickWeightedBucket(variants, getBucket, getPassPercentage)
-        : pickUniformBucket(variants, getBucket);
+      bucket = getPassPercentage ? pickWeightedBucket(variants, getBucket, getPassPercentage) : pickUniformBucket(variants, getBucket);
     }
 
     const setAbCookies = (res: NextResponse, assignedBucket: string, isNewAssignment: boolean) => {

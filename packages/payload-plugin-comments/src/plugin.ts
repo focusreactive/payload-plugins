@@ -27,10 +27,7 @@ export const commentsPlugin =
     const allCollectionSlugs = (incomingConfig.collections ?? []).map((c) => c.slug);
 
     const normalizedCollections = normalizeCollections(collectionEntries);
-    const documentTitleFields =
-      normalizedCollections ?
-        Object.fromEntries([...normalizedCollections.entries()].map(([k, v]) => [k, v.titleField]))
-      : {};
+    const documentTitleFields = normalizedCollections ? Object.fromEntries([...normalizedCollections.entries()].map(([k, v]) => [k, v.titleField])) : {};
 
     const userTranslations = config.translations ?? {};
     const incomingConfigTranslations = (incomingConfig.i18n?.translations as Record<string, object> | undefined) ?? {};
@@ -47,14 +44,8 @@ export const commentsPlugin =
         ...incomingConfig.admin,
         components: {
           ...incomingConfig.admin?.components,
-          providers: [
-            ...(incomingConfig.admin?.components?.providers ?? []),
-            getComponentPath("providers/CommentsProviderWrapper", "CommentsProviderWrapper"),
-          ],
-          actions: [
-            ...(incomingConfig.admin?.components?.actions ?? []),
-            getComponentPath("components/CommentsHeaderButton", "CommentsHeaderButton"),
-          ],
+          providers: [...(incomingConfig.admin?.components?.providers ?? []), getComponentPath("providers/CommentsProviderWrapper", "CommentsProviderWrapper")],
+          actions: [...(incomingConfig.admin?.components?.actions ?? []), getComponentPath("components/CommentsHeaderButton", "CommentsHeaderButton")],
         },
         custom: {
           ...incomingConfig.admin?.custom,

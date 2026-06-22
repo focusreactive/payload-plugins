@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 
 interface UnreadMentionsContextValue {
   markedReadIds: ReadonlySet<number>;
@@ -30,10 +31,7 @@ export function UnreadMentionsProvider({ children }: Props) {
     });
   }, []);
 
-  const value = useMemo(
-    () => ({ markedReadIds, isMarkedRead, rememberRead }),
-    [markedReadIds, isMarkedRead, rememberRead],
-  );
+  const value = useMemo(() => ({ markedReadIds, isMarkedRead, rememberRead }), [markedReadIds, isMarkedRead, rememberRead]);
 
   return <UnreadMentionsContext.Provider value={value}>{children}</UnreadMentionsContext.Provider>;
 }

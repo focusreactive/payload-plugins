@@ -21,8 +21,9 @@ export function UnreadBadge({ count, className }: Props) {
         "absolute -top-1 -right-1 min-w-[14px] h-[14px] px-[3px] rounded-full",
         "bg-red-600 text-white text-[9px] font-semibold leading-[14px] text-center",
         "pointer-events-none select-none",
-        className,
-      )}>
+        className
+      )}
+    >
       {display}
     </span>
   );

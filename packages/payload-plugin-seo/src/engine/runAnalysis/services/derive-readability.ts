@@ -1,10 +1,10 @@
 import type { Paper } from "yoastseo";
 import { ContentAssessor } from "yoastseo";
 import { runAssessor } from "../../assessorAdapter";
-import { getRecommendation } from '../../recommendations';
-import type { RecoContext } from '../../recommendations';
-import { getResearch, makeResearcher } from '../../researcherAdapter';
-import type { YoastResearcher } from '../../researcherAdapter';
+import { getRecommendation } from "../../recommendations";
+import type { RecoContext } from "../../recommendations";
+import { getResearch, makeResearcher } from "../../researcherAdapter";
+import type { YoastResearcher } from "../../researcherAdapter";
 import { fleschToStatus } from "../../scoreStatus";
 import type { CategoryResult, CheckResult } from "../../types/analysis";
 import { enrich } from "../utils/enrich";

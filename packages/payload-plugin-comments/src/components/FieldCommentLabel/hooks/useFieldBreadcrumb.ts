@@ -50,21 +50,13 @@ function buildBreadcrumb(positionPath: string, leafLabel: string, schemaFields: 
   return parts.join(" > ");
 }
 
-export function useFieldBreadcrumb(
-  positionPath: string | undefined,
-  leafLabel: string | null | undefined,
-  collectionSlug: string | null | undefined,
-  globalSlug: string | null,
-) {
+export function useFieldBreadcrumb(positionPath: string | undefined, leafLabel: string | null | undefined, collectionSlug: string | null | undefined, globalSlug: string | null) {
   const { config } = useConfig();
 
   if (!positionPath || !leafLabel) return leafLabel ?? positionPath ?? "";
   if (!positionPath.includes(".")) return leafLabel;
 
-  const schemaFields =
-    collectionSlug ?
-      (config.collections.find((c) => c.slug === collectionSlug)?.fields ?? [])
-    : (config.globals?.find((g) => g.slug === globalSlug)?.fields ?? []);
+  const schemaFields = collectionSlug ? (config.collections.find((c) => c.slug === collectionSlug)?.fields ?? []) : (config.globals?.find((g) => g.slug === globalSlug)?.fields ?? []);
 
   return buildBreadcrumb(positionPath, leafLabel, schemaFields as Field[]);
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { kpisMock } from "../../../../src/services/analyticsService/mocks/kpis";
-import { aggregateSessions } from '../../../../src/services/queries/kpiRecompute/aggregateSessions';
-import type { KpiSessionEventRow } from '../../../../src/services/queries/kpiRecompute/aggregateSessions';
+import { aggregateSessions } from "../../../../src/services/queries/kpiRecompute/aggregateSessions";
+import type { KpiSessionEventRow } from "../../../../src/services/queries/kpiRecompute/aggregateSessions";
 import { setActiveExistingRefs, __clearActiveExistingRefs } from "../../../../src/services/pageFilter/activeRefsHolder";
 import { MOCK_MISSING_REF } from "../../../../src/services/analyticsService/mocks/mockRefs";
 

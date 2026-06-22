@@ -79,15 +79,15 @@ node), so it uses a native `title` + `aria-label`. The unlabeled `Select` gets a
 
 ## Data flow (field React context + one server fetch)
 
-| Need                              | Source                                                                     |
-| --------------------------------- | -------------------------------------------------------------------------- |
-| current value (for undo) + path   | `useField()` → `{ value, path }` (path from field context)                |
-| write-back + form dirty           | `useFormFields()` dispatch + `useForm().setModified`                       |
-| target locale                     | `useLocale()` → `.code`                                                    |
-| collection slug + document id     | `useDocumentInfo()` → `{ collectionSlug, id }`                             |
-| available source locales          | `useLocaleOptions()` → `[{ value: code }]` (from `useConfig` localization) |
-| base path                         | `useTranslateKitConfig()` → `basePath`                                     |
-| the call                          | `useTranslateField()` mutation (below)                                     |
+| Need                            | Source                                                                     |
+| ------------------------------- | -------------------------------------------------------------------------- |
+| current value (for undo) + path | `useField()` → `{ value, path }` (path from field context)                 |
+| write-back + form dirty         | `useFormFields()` dispatch + `useForm().setModified`                       |
+| target locale                   | `useLocale()` → `.code`                                                    |
+| collection slug + document id   | `useDocumentInfo()` → `{ collectionSlug, id }`                             |
+| available source locales        | `useLocaleOptions()` → `[{ value: code }]` (from `useConfig` localization) |
+| base path                       | `useTranslateKitConfig()` → `basePath`                                     |
+| the call                        | `useTranslateField()` mutation (below)                                     |
 
 On **Translate**:
 
@@ -238,7 +238,7 @@ widgets ship untested). Following that convention:
 ## Fields inside blocks
 
 Supported for from-locale. A `blocks` field is polymorphic — which block (and thus which fields)
-sits at an index lives in the *data* (`blockType`), not the path. Since the control reads from a
+sits at an index lives in the _data_ (`blockType`), not the path. Since the control reads from a
 saved source locale, the handler hands the fetched document to `resolveFieldSubtree`, which passes
 it to {@link findFieldByPath}; at a `blocks` segment it reads `data[name][index].blockType` and
 resolves the block via `resolveBlockFields`. `findFieldByPath` is now data-aware (optional `data`

@@ -18,14 +18,7 @@ interface Props {
   filterGlobalSlug?: string;
 }
 
-export async function findAllComments({
-  enabledCollections,
-  enabledGlobals,
-  options,
-  docId,
-  filterCollectionSlug,
-  filterGlobalSlug,
-}: Props = {}): Promise<Response<Comment[]>> {
+export async function findAllComments({ enabledCollections, enabledGlobals, options, docId, filterCollectionSlug, filterGlobalSlug }: Props = {}): Promise<Response<Comment[]>> {
   try {
     const payload = await extractPayload(options?.payload);
     const tenantId = await getCurrentTenantId(payload);
@@ -49,20 +42,20 @@ export async function findAllComments({
 
       if (hasCollections || hasGlobals) {
         where.or = [
-          ...(hasCollections ?
-            [
-              {
-                collectionSlug: { in: enabledCollections },
-              },
-            ]
-          : []),
-          ...(hasGlobals ?
-            [
-              {
-                globalSlug: { in: enabledGlobals },
-              },
-            ]
-          : []),
+          ...(hasCollections
+            ? [
+                {
+                  collectionSlug: { in: enabledCollections },
+                },
+              ]
+            : []),
+          ...(hasGlobals
+            ? [
+                {
+                  globalSlug: { in: enabledGlobals },
+                },
+              ]
+            : []),
         ];
       }
     }

@@ -1,13 +1,10 @@
-import type { CollectionSlug, Payload } from 'payload'
+import type { CollectionSlug, Payload } from "payload";
 
 /**
  * Checks if collection is available for translation
  */
-export function isCollectionAvailable(
-  collectionSlug: string,
-  availableCollections: Set<CollectionSlug>,
-): CollectionSlug | null {
-  return availableCollections.has(collectionSlug) ? collectionSlug : null
+export function isCollectionAvailable(collectionSlug: string, availableCollections: Set<CollectionSlug>): CollectionSlug | null {
+  return availableCollections.has(collectionSlug) ? collectionSlug : null;
 }
 
 /**
@@ -19,6 +16,6 @@ export async function getAllCollectionIds(payload: Payload, collectionSlug: Coll
     pagination: false,
     depth: 0,
     select: { id: true },
-  })
-  return result.docs.map((doc) => String(doc.id))
+  });
+  return result.docs.map((doc) => String(doc.id));
 }

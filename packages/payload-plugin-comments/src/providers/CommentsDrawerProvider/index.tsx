@@ -1,7 +1,8 @@
 "use client";
 
 import { useDrawerSlug, useModal } from "@payloadcms/ui";
-import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { COMMENTS_DRAWER_BASE_SLUG } from "../../constants";
 
 interface PendingField {
@@ -54,10 +55,7 @@ export function CommentsDrawerProvider({ children }: Props) {
   }, [isOpen]);
 
   return (
-    <CommentsDrawerContext.Provider
-      value={{ slug, isOpen, scrollTargetPath, pendingField, open, setScrollTargetPath, openForField, clearPendingField }}>
-      {children}
-    </CommentsDrawerContext.Provider>
+    <CommentsDrawerContext.Provider value={{ slug, isOpen, scrollTargetPath, pendingField, open, setScrollTargetPath, openForField, clearPendingField }}>{children}</CommentsDrawerContext.Provider>
   );
 }
 

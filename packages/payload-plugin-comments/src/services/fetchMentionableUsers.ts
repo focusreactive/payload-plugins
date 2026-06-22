@@ -17,9 +17,8 @@ export async function fetchMentionableUsers(options?: BaseServiceOptions): Promi
 
     const tenantId = await getCurrentTenantId(payload);
 
-    const where: Where =
-      tenantId ?
-        {
+    const where: Where = tenantId
+      ? {
           or: [{ tenant: { equals: tenantId } }, { tenant: { exists: false } }],
         }
       : {};

@@ -1,1 +1,1 @@
-export * from './collection-utils'
+export * from "./collection-utils";

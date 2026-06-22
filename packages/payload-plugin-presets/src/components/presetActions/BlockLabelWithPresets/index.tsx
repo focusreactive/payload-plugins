@@ -1,21 +1,13 @@
 "use client";
 
-import {
-  Pill,
-  SectionTitle,
-  useRowLabel,
-  useTranslation,
-} from "@payloadcms/ui";
+import { Pill, SectionTitle, useRowLabel, useTranslation } from "@payloadcms/ui";
 import { SaveAsPresetCore } from "./SaveAsPresetCore";
 import { PresetBlockData } from "./types";
 import { useBlocksConfig } from "../../blocksDrawer/BlocksConfigContext.js";
 
 const baseClass = "blocks-field";
 
-function resolveLabel(
-  label: string | Record<string, string> | undefined,
-  language: string,
-) {
+function resolveLabel(label: string | Record<string, string> | undefined, language: string) {
   if (typeof label === "string") return label;
 
   if (label && typeof label === "object") {
@@ -36,23 +28,13 @@ export function BlockLabelWithPresets() {
 
   return (
     <>
-      <span className={`${baseClass}__block-number`}>
-        {String((rowNumber ?? 0) + 1).padStart(2, "0")}
-      </span>
+      <span className={`${baseClass}__block-number`}>{String((rowNumber ?? 0) + 1).padStart(2, "0")}</span>
 
-      <Pill
-        className={`${baseClass}__block-pill ${baseClass}__block-pill-${data.blockType}`}
-        pillStyle="white"
-        size="small"
-      >
-        {block?.labels?.singular
-          ? resolveLabel(block.labels.singular, i18n.language)
-          : data.blockType}
+      <Pill className={`${baseClass}__block-pill ${baseClass}__block-pill-${data.blockType}`} pillStyle="white" size="small">
+        {block?.labels?.singular ? resolveLabel(block.labels.singular, i18n.language) : data.blockType}
       </Pill>
 
-      {showBlockName && (
-        <SectionTitle path={`${path}.blockName`} readOnly={false} />
-      )}
+      {showBlockName && <SectionTitle path={`${path}.blockName`} readOnly={false} />}
 
       <SaveAsPresetCore presetBlockData={data} rowIndex={rowNumber ?? 0} />
     </>

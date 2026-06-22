@@ -255,9 +255,7 @@ Provide one when the built-in extractor can't reconstruct your content shape. It
 ```ts
 // payload.config.ts
 seoPlugin({
-  collections: [
-    { slug: "pages", extractContentPath: "@/seo/my-extractor#default" },
-  ],
+  collections: [{ slug: "pages", extractContentPath: "@/seo/my-extractor#default" }],
 });
 ```
 
@@ -293,14 +291,14 @@ This means image checks (alt text, keyphrase in alt, image count) work against t
 
 The drawer presents six tabs, all derived from a single in-browser Yoast analysis pass (a `Paper` analyzed by `SeoAssessor` with the language-appropriate `Researcher`):
 
-| Tab                   | What it checks                                                                 |
-| --------------------- | ------------------------------------------------------------------------------ |
-| **Keyphrase**         | Focus keyphrase usage — in title, slug, meta description, first paragraph, density, image alt, synonyms. Enter a keyphrase to unlock these checks. |
-| **On-page SEO**       | Title width, meta description presence/length, internal & outbound links, heading structure. |
-| **Readability**       | Sentence/paragraph length, transition words, passive voice, consecutive sentences. |
-| **Inclusive**         | Flags potentially exclusionary or non-inclusive language.                      |
-| **Content vitals**    | Word count, sentence/paragraph counts, image & video counts, reading time, prominent words. |
-| **Search result preview** | Live Google SERP preview (desktop + mobile) with keyphrase highlighting, built on `@yoast/search-metadata-previews`. |
+| Tab                       | What it checks                                                                                                                                     |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Keyphrase**             | Focus keyphrase usage — in title, slug, meta description, first paragraph, density, image alt, synonyms. Enter a keyphrase to unlock these checks. |
+| **On-page SEO**           | Title width, meta description presence/length, internal & outbound links, heading structure.                                                       |
+| **Readability**           | Sentence/paragraph length, transition words, passive voice, consecutive sentences.                                                                 |
+| **Inclusive**             | Flags potentially exclusionary or non-inclusive language.                                                                                          |
+| **Content vitals**        | Word count, sentence/paragraph counts, image & video counts, reading time, prominent words.                                                        |
+| **Search result preview** | Live Google SERP preview (desktop + mobile) with keyphrase highlighting, built on `@yoast/search-metadata-previews`.                               |
 
 **Without a keyphrase:** the drawer still runs and the On-page, Readability, Inclusive, Content vitals, and SERP tabs all populate. Only the keyphrase-specific assessments wait until you type a focus keyphrase and analysis runs.
 
@@ -323,10 +321,10 @@ The active locale is taken from the admin and normalized to Yoast's `xx_XX` form
 
 ## Exports Reference
 
-| Import path                                            | Exports                                                                                       |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| `@focus-reactive/payload-plugin-seo`                   | `seoPlugin`, and types `SeoPluginConfig`, `SeoCollectionConfig`, `SeoFieldPaths`, `SeoSiteConfig`, `ExtractorFn` |
-| `@focus-reactive/payload-plugin-seo/admin.css`         | Compiled admin styles for the drawer & button                                                 |
+| Import path                                               | Exports                                                                                                                                   |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `@focus-reactive/payload-plugin-seo`                      | `seoPlugin`, and types `SeoPluginConfig`, `SeoCollectionConfig`, `SeoFieldPaths`, `SeoSiteConfig`, `ExtractorFn`                          |
+| `@focus-reactive/payload-plugin-seo/admin.css`            | Compiled admin styles for the drawer & button                                                                                             |
 | `@focus-reactive/payload-plugin-seo/components/SeoButton` | `SeoButton` — the toolbar button component (wired automatically by the plugin via the importMap; you normally never import this directly) |
 
 ---

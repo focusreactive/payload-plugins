@@ -10,7 +10,7 @@ export async function recomputeManifestForParent<TVariantData extends object>(
   pluginConfig: AbTestingPluginConfig<TVariantData>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   req: any,
-  options?: { excludeId?: string | number },
+  options?: { excludeId?: string | number }
 ): Promise<void> {
   const { payload } = req;
   const locales = getLocales(payload);
@@ -31,11 +31,11 @@ export async function recomputeManifestForParent<TVariantData extends object>(
     if (!manifestKey) continue;
 
     const whereClause =
-      options?.excludeId !== undefined ?
-        {
-          and: [{ [AB_VARIANT_OF_FIELD]: { equals: parentId } }, { id: { not_equals: options.excludeId } }],
-        }
-      : { [AB_VARIANT_OF_FIELD]: { equals: parentId } };
+      options?.excludeId !== undefined
+        ? {
+            and: [{ [AB_VARIANT_OF_FIELD]: { equals: parentId } }, { id: { not_equals: options.excludeId } }],
+          }
+        : { [AB_VARIANT_OF_FIELD]: { equals: parentId } };
 
     const { docs: variantDocs } = await payload.find({
       collection: parentCollectionSlug as CollectionSlug,

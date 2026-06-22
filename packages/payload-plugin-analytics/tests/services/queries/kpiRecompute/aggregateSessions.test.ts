@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { aggregateSessions } from '../../../../src/services/queries/kpiRecompute/aggregateSessions';
-import type { KpiSessionEventRow } from '../../../../src/services/queries/kpiRecompute/aggregateSessions';
+import { aggregateSessions } from "../../../../src/services/queries/kpiRecompute/aggregateSessions";
+import type { KpiSessionEventRow } from "../../../../src/services/queries/kpiRecompute/aggregateSessions";
 
 const EXISTING = new Set(["page:1", "page:2", "__home"]);
 

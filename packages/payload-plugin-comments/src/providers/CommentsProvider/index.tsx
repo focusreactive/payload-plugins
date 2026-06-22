@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, type ReactNode, useCallback, useContext } from "react";
+import { createContext, useCallback, useContext } from "react";
+import type { ReactNode } from "react";
 import { useAuth, useConfig } from "@payloadcms/ui";
 import { usePathname } from "next/navigation";
 import type { EntityLabelsMap, Comment, CommentsPluginConfigStorage } from "../../types";
@@ -30,14 +31,7 @@ interface CommentsContextProps {
   collectionLabels: EntityLabelsMap;
   globalLabels: EntityLabelsMap;
   usernameFieldPath: string | undefined;
-  addComment: (
-    text: string,
-    fieldPath?: string | null,
-    documentId?: number,
-    collectionSlug?: string,
-    locale?: string | null,
-    globalSlugOverride?: string,
-  ) => Promise<MutationResult>;
+  addComment: (text: string, fieldPath?: string | null, documentId?: number, collectionSlug?: string, locale?: string | null, globalSlugOverride?: string) => Promise<MutationResult>;
   removeComment: (id: string | number) => Promise<MutationResult>;
   resolveComment: (id: string | number, resolved: boolean) => Promise<MutationResult>;
 }
@@ -58,28 +52,15 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
   const queryContext = toQueryContext(mode, collectionSlug, documentId, globalSlug);
 
   const pluginConfig = config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
-  const collectionLabels = getEntitiesLabels(
-    (config.collections ?? []) as unknown as EntityConfig[],
-    pluginConfig?.collections ?? [],
-  );
-  const globalLabels = getEntitiesLabels(
-    (config.globals ?? []) as unknown as EntityConfig[],
-    pluginConfig?.globals ?? [],
-  );
+  const collectionLabels = getEntitiesLabels((config.collections ?? []) as unknown as EntityConfig[], pluginConfig?.collections ?? []);
+  const globalLabels = getEntitiesLabels((config.globals ?? []) as unknown as EntityConfig[], pluginConfig?.globals ?? []);
 
   const addMutation = useAddCommentMutation();
   const deleteMutation = useDeleteCommentMutation();
   const resolveMutation = useResolveCommentMutation();
 
   const addComment = useCallback(
-    async (
-      text: string,
-      fieldPath?: string | null,
-      documentIdOverride?: number,
-      collectionSlugOverride?: string,
-      locale?: string | null,
-      globalSlugOverride?: string,
-    ): Promise<MutationResult> => {
+    async (text: string, fieldPath?: string | null, documentIdOverride?: number, collectionSlugOverride?: string, locale?: string | null, globalSlugOverride?: string): Promise<MutationResult> => {
       const resolvedGlobalSlug = globalSlugOverride ?? (mode === "global-document" ? globalSlug : null);
       const resolvedDocId = documentIdOverride ?? documentId;
       const resolvedSlug = collectionSlugOverride ?? collectionSlug;
@@ -118,7 +99,7 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
         };
       }
     },
-    [addMutation, mode, globalSlug, documentId, collectionSlug, queryContext, user],
+    [addMutation, mode, globalSlug, documentId, collectionSlug, queryContext, user]
   );
 
   const removeComment = useCallback(
@@ -143,7 +124,7 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
         };
       }
     },
-    [deleteMutation, queryContext],
+    [deleteMutation, queryContext]
   );
 
   const resolveComment = useCallback(
@@ -170,7 +151,7 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
         };
       }
     },
-    [resolveMutation, queryContext, user],
+    [resolveMutation, queryContext, user]
   );
 
   return (
@@ -187,7 +168,8 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
         addComment,
         removeComment,
         resolveComment,
-      }}>
+      }}
+    >
       {children}
     </CommentsContext.Provider>
   );

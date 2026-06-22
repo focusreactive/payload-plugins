@@ -1,13 +1,4 @@
-import type {
-  Access,
-  Block,
-  CollectionConfig,
-  CollectionSlug,
-  Config,
-  Field,
-  Plugin,
-  StaticLabel,
-} from "payload";
+import type { Access, Block, CollectionConfig, CollectionSlug, Config, Field, Plugin, StaticLabel } from "payload";
 
 import packageJson from "../package.json";
 
@@ -24,20 +15,11 @@ const DEFAULT_PACKAGE_NAME = packageJson.name;
  * @param componentPath - relative path within plugin (e.g. 'components/PresetAdminComponentPreview')
  * @param componentName - exported component name
  */
-export function getPluginComponentPath(
-  packageName: string | undefined,
-  componentPath: string,
-  componentName: string,
-  entry: "client" | "rsc" = "client",
-): string {
+export function getPluginComponentPath(packageName: string | undefined, componentPath: string, componentName: string, entry: "client" | "rsc" = "client"): string {
   const resolvedName = packageName ?? DEFAULT_PACKAGE_NAME;
 
   // If it looks like a local path (@/ or ./ or ../), use full component path
-  if (
-    resolvedName.startsWith("@/") ||
-    resolvedName.startsWith("./") ||
-    resolvedName.startsWith("../")
-  ) {
+  if (resolvedName.startsWith("@/") || resolvedName.startsWith("./") || resolvedName.startsWith("../")) {
     return `${resolvedName}/${componentPath}#${componentName}`;
   }
 
@@ -103,10 +85,7 @@ export interface PresetsPluginConfig {
   };
 }
 
-const createPresetsCollection = (
-  config: PresetsPluginConfig | undefined,
-  resolvedPresetTypes: ResolvedPresetType[],
-): CollectionConfig<"presets"> => {
+const createPresetsCollection = (config: PresetsPluginConfig | undefined, resolvedPresetTypes: ResolvedPresetType[]): CollectionConfig<"presets"> => {
   const {
     overrides = {},
     slug = "presets",
@@ -118,17 +97,9 @@ const createPresetsCollection = (
     mediaCollection = "media",
   } = config ?? {};
 
-  const previewFieldPath = getPluginComponentPath(
-    packageName,
-    "components/PresetAdminComponentPreview",
-    "PresetAdminComponentPreview",
-  );
+  const previewFieldPath = getPluginComponentPath(packageName, "components/PresetAdminComponentPreview", "PresetAdminComponentPreview");
 
-  const previewCellPath = getPluginComponentPath(
-    packageName,
-    "components/PresetAdminComponentCellWrapper",
-    "PresetAdminComponentCellWrapper",
-  );
+  const previewCellPath = getPluginComponentPath(packageName, "components/PresetAdminComponentCellWrapper", "PresetAdminComponentCellWrapper");
 
   const defaultFields: Field[] = [
     {
@@ -180,9 +151,7 @@ const createPresetsCollection = (
     },
   ];
 
-  const finalFields = overrides.fields
-    ? overrides.fields(defaultFields)
-    : defaultFields;
+  const finalFields = overrides.fields ? overrides.fields(defaultFields) : defaultFields;
 
   return {
     slug,
@@ -206,28 +175,15 @@ const createPresetsCollection = (
 };
 
 function getBlocksFieldWithPresetsPath(packageName?: string): string {
-  return getPluginComponentPath(
-    packageName,
-    "components/blocksDrawer/BlocksFieldWithPresets",
-    "BlocksFieldWithPresets",
-  );
+  return getPluginComponentPath(packageName, "components/blocksDrawer/BlocksFieldWithPresets", "BlocksFieldWithPresets");
 }
 
-export function getBlockAdminComponents(
-  block: Block,
-  packageName?: string,
-  userLabels?: unknown[],
-): NonNullable<Block["admin"]>["components"] {
+export function getBlockAdminComponents(block: Block, packageName?: string, userLabels?: unknown[]): NonNullable<Block["admin"]>["components"] {
   const userLabel = block.admin?.components?.Label;
 
   if (userLabel) {
     userLabels?.push(userLabel);
-    const wrapperPath = getPluginComponentPath(
-      packageName,
-      "components/presetActions/BlockLabelServerWrapper",
-      "BlockLabelServerWrapper",
-      "rsc",
-    );
+    const wrapperPath = getPluginComponentPath(packageName, "components/presetActions/BlockLabelServerWrapper", "BlockLabelServerWrapper", "rsc");
     const [path, exportName] = wrapperPath.split("#");
     return {
       Label: {
@@ -239,11 +195,7 @@ export function getBlockAdminComponents(
   }
 
   return {
-    Label: getPluginComponentPath(
-      packageName,
-      "components/presetActions/BlockLabelWithPresets",
-      "BlockLabelWithPresets",
-    ),
+    Label: getPluginComponentPath(packageName, "components/presetActions/BlockLabelWithPresets", "BlockLabelWithPresets"),
   };
 }
 
@@ -255,26 +207,15 @@ function resolveBlockLabel(block: Block): StaticLabel {
   return singular;
 }
 
-function fieldIsBlockType(
-  field: Field,
-): field is Extract<Field, { type: "blocks" }> {
+function fieldIsBlockType(field: Field): field is Extract<Field, { type: "blocks" }> {
   return field.type === "blocks";
 }
 
-function fieldHasSubFields(
-  field: Field,
-): field is Extract<Field, { fields: Field[] }> {
-  return (
-    "fields" in field && Array.isArray((field as { fields?: unknown }).fields)
-  );
+function fieldHasSubFields(field: Field): field is Extract<Field, { fields: Field[] }> {
+  return "fields" in field && Array.isArray((field as { fields?: unknown }).fields);
 }
 
-function transformFields(
-  fields: Field[],
-  blockMap: Map<string, Block>,
-  packageName: string | undefined,
-  userLabels: unknown[],
-): Field[] {
+function transformFields(fields: Field[], blockMap: Map<string, Block>, packageName: string | undefined, userLabels: unknown[]): Field[] {
   return fields.map((field) => {
     if (fieldIsBlockType(field)) {
       const transformedBlocks = field.blocks.map((block) => {
@@ -291,12 +232,7 @@ function transformFields(
               ...getBlockAdminComponents(block, packageName, userLabels),
             },
           },
-          fields: transformFields(
-            block.fields,
-            blockMap,
-            packageName,
-            userLabels,
-          ),
+          fields: transformFields(block.fields, blockMap, packageName, userLabels),
         };
       });
 
@@ -320,12 +256,7 @@ function transformFields(
         ...tabsField,
         tabs: tabsField.tabs.map((tab) => ({
           ...tab,
-          fields: transformFields(
-            tab.fields,
-            blockMap,
-            packageName,
-            userLabels,
-          ),
+          fields: transformFields(tab.fields, blockMap, packageName, userLabels),
         })),
       };
     }
@@ -333,12 +264,7 @@ function transformFields(
     if (fieldHasSubFields(field)) {
       return {
         ...field,
-        fields: transformFields(
-          (field as { fields: Field[] }).fields,
-          blockMap,
-          packageName,
-          userLabels,
-        ),
+        fields: transformFields((field as { fields: Field[] }).fields, blockMap, packageName, userLabels),
       };
     }
 
@@ -346,10 +272,7 @@ function transformFields(
   });
 }
 
-function buildEffectivePresetTypes(
-  blockMap: Map<string, Block>,
-  overrides: PresetType[],
-): ResolvedPresetType[] {
+function buildEffectivePresetTypes(blockMap: Map<string, Block>, overrides: PresetType[]): ResolvedPresetType[] {
   const overrideMap = new Map(overrides.map((o) => [o.slug, o]));
 
   return Array.from(blockMap.values()).map((block) => ({
@@ -407,8 +330,7 @@ const pluginTranslations = {
         heading: "Guardar como preset",
         presetName: "Nombre del preset",
         setAsPresetAfterSave: "Usar como preset después de guardar",
-        replaceBlockWithPreset:
-          "Reemplazar este bloque por el preset tras guardar",
+        replaceBlockWithPreset: "Reemplazar este bloque por el preset tras guardar",
         save: "Guardar",
         cancel: "Cancelar",
         saveButton: "Guardar como preset",
@@ -448,13 +370,7 @@ const pluginTranslations = {
 export const presetsPlugin =
   (config?: PresetsPluginConfig): Plugin =>
   (incomingConfig: Config): Config => {
-    const {
-      enabled = true,
-      slug = "presets",
-      presetTypes = [],
-      mediaCollection = "media",
-      packageName,
-    } = config ?? {};
+    const { enabled = true, slug = "presets", presetTypes = [], mediaCollection = "media", packageName } = config ?? {};
 
     if (!enabled) {
       return incomingConfig;
@@ -463,25 +379,17 @@ export const presetsPlugin =
     const blockMap = new Map<string, Block>();
     const userLabels: unknown[] = [];
 
-    const transformedCollections = (incomingConfig.collections || []).map(
-      (collection) => ({
-        ...collection,
-        fields: transformFields(
-          collection.fields,
-          blockMap,
-          packageName,
-          userLabels,
-        ),
-      }),
-    );
+    const transformedCollections = (incomingConfig.collections || []).map((collection) => ({
+      ...collection,
+      fields: transformFields(collection.fields, blockMap, packageName, userLabels),
+    }));
 
     const transformedGlobals = (incomingConfig.globals || []).map((global) => ({
       ...global,
       fields: transformFields(global.fields, blockMap, packageName, userLabels),
     }));
 
-    const userLabelDeps: Record<string, { path: string; type: "component" }> =
-      {};
+    const userLabelDeps: Record<string, { path: string; type: "component" }> = {};
     for (const label of userLabels) {
       if (typeof label === "string") {
         userLabelDeps[`presetsUserLabel:${label}`] = {
@@ -491,9 +399,7 @@ export const presetsPlugin =
       } else if (label && typeof label === "object") {
         const obj = label as { path?: string; exportName?: string };
         if (obj.path) {
-          const key = obj.exportName
-            ? `${obj.path}#${obj.exportName}`
-            : obj.path;
+          const key = obj.exportName ? `${obj.path}#${obj.exportName}` : obj.path;
           userLabelDeps[`presetsUserLabel:${key}`] = {
             path: key,
             type: "component",
@@ -502,15 +408,9 @@ export const presetsPlugin =
       }
     }
 
-    const effectivePresetTypes = buildEffectivePresetTypes(
-      blockMap,
-      presetTypes,
-    );
+    const effectivePresetTypes = buildEffectivePresetTypes(blockMap, presetTypes);
 
-    const presetsCollection = createPresetsCollection(
-      config,
-      effectivePresetTypes,
-    );
+    const presetsCollection = createPresetsCollection(config, effectivePresetTypes);
 
     const clientConfig: PresetsPluginClientConfig = {
       slug: slug as CollectionSlug,
@@ -520,9 +420,7 @@ export const presetsPlugin =
     };
 
     // Merge translations with English fallback for unsupported languages
-    const incomingTranslations = incomingConfig.i18n?.translations as
-      | Record<string, object>
-      | undefined;
+    const incomingTranslations = incomingConfig.i18n?.translations as Record<string, object> | undefined;
     const mergedTranslations: Record<string, object> = {
       ...incomingTranslations,
     };

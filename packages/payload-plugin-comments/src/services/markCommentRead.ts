@@ -17,10 +17,7 @@ function extractRelationId(value: number | { id: number } | null | undefined): n
   return null;
 }
 
-export async function markCommentRead({
-  commentId,
-  payload: payloadProp,
-}: Props): Promise<Response<{ alreadyRead: boolean }>> {
+export async function markCommentRead({ commentId, payload: payloadProp }: Props): Promise<Response<{ alreadyRead: boolean }>> {
   try {
     const payload = await extractPayload(payloadProp);
     const { user } = await payload.auth({ headers: await headers() });

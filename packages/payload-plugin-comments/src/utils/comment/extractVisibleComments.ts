@@ -15,9 +15,7 @@ export function extractVisibleComments({ comments, mode, collectionSlug, documen
   const localeFilteredComments = filterCommentsByLocale(comments, currentLocale);
 
   if (mode === "document" && collectionSlug && documentId) {
-    return localeFilteredComments.filter(
-      ({ collectionSlug: slug, documentId: id }) => slug === collectionSlug && id === documentId,
-    );
+    return localeFilteredComments.filter(({ collectionSlug: slug, documentId: id }) => slug === collectionSlug && id === documentId);
   }
 
   if (mode === "global-document" && globalSlug) {

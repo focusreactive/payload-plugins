@@ -45,11 +45,7 @@ export async function countUnreadMentions({
     const tenantId = await getCurrentTenantId(payload);
 
     const where: WhereWithRequiredAnd = {
-      and: [
-        { "mentions.user": { equals: user.id } },
-        { author: { not_equals: user.id } },
-        { isResolved: { equals: false } },
-      ],
+      and: [{ "mentions.user": { equals: user.id } }, { author: { not_equals: user.id } }, { isResolved: { equals: false } }],
     };
 
     if (mode === "document" && collectionSlug && documentId) {
@@ -59,7 +55,7 @@ export async function countUnreadMentions({
         },
         {
           documentId: { equals: documentId },
-        },
+        }
       );
     } else if (mode === "global-document" && globalSlug) {
       where.and.push({ globalSlug: { equals: globalSlug } });
@@ -69,10 +65,7 @@ export async function countUnreadMentions({
 
       if (hasCollections || hasGlobals) {
         where.and.push({
-          or: [
-            ...(hasCollections ? [{ collectionSlug: { in: collections } }] : []),
-            ...(hasGlobals ? [{ globalSlug: { in: globals } }] : []),
-          ],
+          or: [...(hasCollections ? [{ collectionSlug: { in: collections } }] : []), ...(hasGlobals ? [{ globalSlug: { in: globals } }] : [])],
         });
       }
     }

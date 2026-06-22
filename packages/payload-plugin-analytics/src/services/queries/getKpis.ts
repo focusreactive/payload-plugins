@@ -4,8 +4,8 @@ import { resolveDateRange } from "../../utils/date/resolveDateRange";
 import { resolveComparison } from "../../utils/date/resolveComparison";
 import { dateRangesFor, bucketByDateRange, convertMetricToNumber, computeWeightedValuesAverage, dim, isoFromGa4Date } from "../../utils/ga4";
 import { runQuery } from "../analyticsService/runQuery";
-import { aggregateSessions } from './kpiRecompute/aggregateSessions';
-import type { KpiSessionEventRow } from './kpiRecompute/aggregateSessions';
+import { aggregateSessions } from "./kpiRecompute/aggregateSessions";
+import type { KpiSessionEventRow } from "./kpiRecompute/aggregateSessions";
 
 const METRICS = [{ name: "sessions" }, { name: "totalUsers" }, { name: "screenPageViews" }, { name: "bounceRate" }, { name: "averageSessionDuration" }];
 

@@ -32,11 +32,7 @@ export const CommentsPanel = ({ className }: Props) => {
   useScrollToTargetFieldGroup();
 
   if (isLoading && allComments.length === 0) {
-    return (
-      <div className={cn(className, "text-(--theme-elevation-450) text-[13px] text-center py-6 m-0")}>
-        {t("comments:loadingComments" as never)}
-      </div>
-    );
+    return <div className={cn(className, "text-(--theme-elevation-450) text-[13px] text-center py-6 m-0")}>{t("comments:loadingComments" as never)}</div>;
   }
 
   if (mode === "document") {

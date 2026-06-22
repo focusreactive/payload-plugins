@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, type ReactNode, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import type { CommentsFilters } from "../../types/filters";
 
 interface CommentsFilterContextProps {
@@ -27,11 +28,7 @@ export function CommentsFilterProvider({ children }: Props) {
 
   const isAnyFilterActive = useMemo(() => filters.showResolved || filters.onlyMyThreads, [filters]);
 
-  return (
-    <CommentsFilterContext.Provider value={{ filters, isAnyFilterActive, setFilter }}>
-      {children}
-    </CommentsFilterContext.Provider>
-  );
+  return <CommentsFilterContext.Provider value={{ filters, isAnyFilterActive, setFilter }}>{children}</CommentsFilterContext.Provider>;
 }
 
 export function useCommentsFilter() {

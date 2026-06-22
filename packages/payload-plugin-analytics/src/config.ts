@@ -1,6 +1,6 @@
 import { PLUGIN_NAME } from "./constants";
-import { resolvePagesConfig } from './config/resolvePagesConfig';
-import type { ResolvedPagesConfig } from './config/resolvePagesConfig';
+import { resolvePagesConfig } from "./config/resolvePagesConfig";
+import type { ResolvedPagesConfig } from "./config/resolvePagesConfig";
 import type { AnalyticsPluginConfig } from "./types/config";
 import type { BlockDefinition, BlockId, ResolvedLayout } from "./types/layout";
 

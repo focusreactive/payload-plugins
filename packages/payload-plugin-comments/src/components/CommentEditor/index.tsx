@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useImperativeHandle, type RefObject, startTransition } from "react";
+import { useState, useRef, useImperativeHandle, startTransition } from "react";
+import type { RefObject } from "react";
 import { useAuth, useLocale, useTranslation } from "@payloadcms/ui";
 import { useComments } from "../../providers/CommentsProvider";
 import { useMentionableUsersQuery } from "../../api/queries/useMentionableUsersQuery";
@@ -105,11 +106,7 @@ export function CommentEditor({
         atRange.setEnd(node, offset);
         setTriggerRange(atRange.cloneRange());
         setMentionQuery(query);
-        setFilteredUsers(
-          users.filter((u) =>
-            resolveUsername(u, usernameFieldPath, unknownLabel).toLowerCase().includes(query.toLowerCase()),
-          ),
-        );
+        setFilteredUsers(users.filter((u) => resolveUsername(u, usernameFieldPath, unknownLabel).toLowerCase().includes(query.toLowerCase())));
         setSelectedIndex(0);
 
         return;
@@ -136,12 +133,7 @@ export function CommentEditor({
     const mentionLabelContainer = document.createElement("span");
     const mentionLabelContainerRoot = createRoot(mentionLabelContainer);
 
-    mentionLabelContainerRoot.render(
-      <MentionLabel
-        name={resolveUsername(user, usernameFieldPath, unknownLabel)}
-        isSelf={isSelfMention(currentUserId, userId)}
-      />,
-    );
+    mentionLabelContainerRoot.render(<MentionLabel name={resolveUsername(user, usernameFieldPath, unknownLabel)} isSelf={isSelfMention(currentUserId, userId)} />);
 
     mentionLabelContainer.contentEditable = "false";
     mentionLabelContainer.dataset.mentionId = String(userId);
@@ -283,9 +275,7 @@ export function CommentEditor({
       <div className="flex gap-2.5 items-start">
         <Avatar className="shrink-0" user={user} usernameFieldPath={usernameFieldPath} fallbackName={unknownLabel} />
 
-        <div
-          ref={editorWrapperRef}
-          className="relative flex-1 min-w-0 group px-2.5 py-2 rounded-md border border-transparent focus-within:border-(--theme-elevation-150) bg-transparent">
+        <div ref={editorWrapperRef} className="relative flex-1 min-w-0 group px-2.5 py-2 rounded-md border border-transparent focus-within:border-(--theme-elevation-150) bg-transparent">
           <div className="relative">
             <div
               className={`
@@ -320,11 +310,7 @@ export function CommentEditor({
             />
           )}
 
-          <ActionPanel
-            className="hidden group-focus-within:flex"
-            onMention={() => insertAt()}
-            onAddComment={handleAddComment}
-          />
+          <ActionPanel className="hidden group-focus-within:flex" onMention={() => insertAt()} onAddComment={handleAddComment} />
         </div>
       </div>
     </div>

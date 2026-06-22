@@ -20,11 +20,7 @@ export function CommentsHeaderButton() {
 
   return (
     <>
-      <IconButton
-        variant="neutralSecondary"
-        onClick={() => open()}
-        title={t("comments:openCommentsAria" as never)}
-        className="relative">
+      <IconButton variant="neutralSecondary" onClick={() => open()} title={t("comments:openCommentsAria" as never)} className="relative">
         <Bell size={16} />
 
         {count > 0 && <UnreadBadge count={count} />}

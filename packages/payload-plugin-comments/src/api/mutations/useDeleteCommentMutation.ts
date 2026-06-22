@@ -39,6 +39,6 @@ export function useDeleteCommentMutation() {
         queryClient.invalidateQueries({ queryKey: getCommentsKey(context.ctx) });
       },
     },
-    queryClient,
+    queryClient
   );
 }

@@ -35,10 +35,7 @@ export function FieldCommentLabel({ field, path: fieldPath }: Props) {
 
   const as = resolveFieldLabelAs(field.type);
   const localized = field.type === "group" ? false : (field.localized ?? false);
-  const htmlFor =
-    fieldPath ?
-      `field-${fieldPath.replace(/\./g, "__")}${editDepth > 1 ? `-${editDepth}` : ""}${uuid ? `-${uuid}` : ""}`
-    : undefined;
+  const htmlFor = fieldPath ? `field-${fieldPath.replace(/\./g, "__")}${editDepth > 1 ? `-${editDepth}` : ""}${uuid ? `-${uuid}` : ""}` : undefined;
 
   const { t } = useTranslation();
   const { code: locale } = useLocale();
@@ -80,16 +77,7 @@ export function FieldCommentLabel({ field, path: fieldPath }: Props) {
 
   return (
     <div className="flex items-center gap-1.5 group">
-      <FieldLabel
-        htmlFor={htmlFor}
-        label={label as string | Record<string, string>}
-        required={required}
-        path={fieldPath}
-        as={as}
-        hideLocale={false}
-        localized={localized}
-        unstyled={false}
-      />
+      <FieldLabel htmlFor={htmlFor} label={label as string | Record<string, string>} required={required} path={fieldPath} as={as} hideLocale={false} localized={localized} unstyled={false} />
 
       {fieldPath && (mode === "document" || mode === "global-document") && (
         <div className="relative flex items-center">
@@ -98,7 +86,8 @@ export function FieldCommentLabel({ field, path: fieldPath }: Props) {
               className="w-auto px-1 gap-1 text-[12px] font-semibold leading-none [&_svg]:opacity-100"
               size="sm"
               title={t("comments:openComments" as never, { count: openCommentsCount })}
-              onClick={handleOpenDrawer}>
+              onClick={handleOpenDrawer}
+            >
               <MessageSquareIcon size={14} />
 
               {openCommentsCount}
@@ -106,12 +95,11 @@ export function FieldCommentLabel({ field, path: fieldPath }: Props) {
           )}
           {!openCommentsCount && (
             <IconButton
-              className={
-                "opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity [&_svg]:opacity-100"
-              }
+              className={"opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity [&_svg]:opacity-100"}
               size="sm"
               title={t("comments:add" as never)}
-              onClick={handleOpenDrawer}>
+              onClick={handleOpenDrawer}
+            >
               <MessageSquarePlus size={14} />
             </IconButton>
           )}

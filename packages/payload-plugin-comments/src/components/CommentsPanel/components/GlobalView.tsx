@@ -28,32 +28,20 @@ export function GlobalView({ comments, userId, className }: Props) {
 
   return (
     <div className={className}>
-      {groupedComments.length === 0 && (
-        <div className="text-(--theme-elevation-450) text-[13px] text-center py-6 m-0">
-          {t(`comments:${resolveEmptyCommentsMessageKey(filters)}` as never)}
-        </div>
-      )}
+      {groupedComments.length === 0 && <div className="text-(--theme-elevation-450) text-[13px] text-center py-6 m-0">{t(`comments:${resolveEmptyCommentsMessageKey(filters)}` as never)}</div>}
 
       {groupedComments.map((entry) => {
         if (entry.type === "collection") {
           const { slug, docs } = entry;
 
           return (
-            <CollapsibleGroup
-              key={slug}
-              groupKey={slug}
-              label={resolveEntityLabel(collectionLabels[slug], locale, slug)}
-              level="collection">
+            <CollapsibleGroup key={slug} groupKey={slug} label={resolveEntityLabel(collectionLabels[slug], locale, slug)} level="collection">
               {[...docs.entries()].map(([docId, fields]) => {
                 const title = documentTitles[slug]?.[String(docId)] ?? String(docId);
                 const documentId = Number(docId);
 
                 return (
-                  <CollapsibleGroup
-                    key={docId}
-                    groupKey={createCollapsibleGroupKey({ collectionSlug: slug, documentId })}
-                    label={title}
-                    level="document">
+                  <CollapsibleGroup key={docId} groupKey={createCollapsibleGroupKey({ collectionSlug: slug, documentId })} label={title} level="document">
                     <FieldGroupSection fields={fields} userId={userId} collectionSlug={slug} documentId={documentId} />
                   </CollapsibleGroup>
                 );
@@ -65,11 +53,7 @@ export function GlobalView({ comments, userId, className }: Props) {
         const { slug, fields } = entry;
 
         return (
-          <CollapsibleGroup
-            key={slug}
-            groupKey={slug}
-            label={resolveEntityLabel(globalLabels[slug], locale, slug)}
-            level="collection">
+          <CollapsibleGroup key={slug} groupKey={slug} label={resolveEntityLabel(globalLabels[slug], locale, slug)} level="collection">
             <FieldGroupSection fields={fields} userId={userId} globalSlug={slug} />
           </CollapsibleGroup>
         );

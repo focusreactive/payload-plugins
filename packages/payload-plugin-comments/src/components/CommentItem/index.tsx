@@ -37,8 +37,7 @@ export function CommentItem({ comment, currentUserId }: Props) {
   const authorName = resolveUsername(narrowedAuthor, usernameFieldPath, unknownLabel);
 
   const isResolved = comment.isResolved ?? false;
-  const authorId =
-    comment.author && typeof comment.author === "object" && "id" in comment.author ? comment.author.id : null;
+  const authorId = comment.author && typeof comment.author === "object" && "id" in comment.author ? comment.author.id : null;
   const canDelete = currentUserId !== null && authorId === currentUserId;
 
   const renderedText = renderCommentText({
@@ -73,24 +72,19 @@ export function CommentItem({ comment, currentUserId }: Props) {
           <div className="flex items-center gap-2 mb-1">
             <span className="font-semibold text-[13px] text-(--theme-text) truncate">{authorName}</span>
 
-            {isResolved && (
-              <CircleCheck size={14} className="text-green-500 shrink-0" aria-label={t("comments:resolved" as never)} />
-            )}
+            {isResolved && <CircleCheck size={14} className="text-green-500 shrink-0" aria-label={t("comments:resolved" as never)} />}
 
             <span className="text-[11px] text-(--theme-elevation-450) shrink-0">{createdAtRelativeDate}</span>
-            <span
-              className={cn(
-                "block aspect-square w-2 bg-red-600 rounded-full opacity-0 transition-opacity duration-300 ease-in-out",
-                isUnread && "opacity-100",
-              )}></span>
+            <span className={cn("block aspect-square w-2 bg-red-600 rounded-full opacity-0 transition-opacity duration-300 ease-in-out", isUnread && "opacity-100")}></span>
           </div>
 
           <p
             ref={contentRef}
             className={cn(
               "relative m-0 text-[13px] text-(--theme-text) leading-normal whitespace-pre-wrap wrap-break-word transition-opacity motion-reduce:transition-none",
-              isResolved && "opacity-60",
-            )}>
+              isResolved && "opacity-60"
+            )}
+          >
             {isResolved && (
               <del style={{ textDecoration: "none" }} dateTime={comment.resolvedAt ?? undefined}>
                 {renderedText}
@@ -103,13 +97,7 @@ export function CommentItem({ comment, currentUserId }: Props) {
         </div>
       </div>
 
-      <ToolsPanel
-        commentId={comment.id}
-        isResolved={isResolved}
-        canDelete={canDelete}
-        onDelete={handleDelete}
-        onResolve={handleToggleResolve}
-      />
+      <ToolsPanel commentId={comment.id} isResolved={isResolved} canDelete={canDelete} onDelete={handleDelete} onResolve={handleToggleResolve} />
     </div>
   );
 }

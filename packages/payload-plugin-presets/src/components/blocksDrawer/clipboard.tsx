@@ -17,10 +17,7 @@ interface ReduceFormStateByPathArgs {
   path: string;
 }
 
-export function reduceFormStateByPath({
-  formState,
-  path,
-}: ReduceFormStateByPathArgs) {
+export function reduceFormStateByPath({ formState, path }: ReduceFormStateByPathArgs) {
   const filteredState: FormState = {};
 
   for (const key in formState) {
@@ -28,11 +25,7 @@ export function reduceFormStateByPath({
       continue;
     }
 
-    const {
-      customComponents: _customComponents,
-      validate: _validate,
-      ...field
-    } = formState[key];
+    const { customComponents: _customComponents, validate: _validate, ...field } = formState[key];
 
     if (Array.isArray(field.rows)) {
       field.rows = field.rows.map((row) => {
@@ -40,8 +33,7 @@ export function reduceFormStateByPath({
           return row;
         }
 
-        const { customComponents: _rowCustomComponents, ...serializableRow } =
-          row;
+        const { customComponents: _rowCustomComponents, ...serializableRow } = row;
 
         return serializableRow;
       });
@@ -61,13 +53,7 @@ interface MergeBlocksFormStateArgs {
   state: FormState;
 }
 
-export function hydrateBlocksFieldCustomComponents({
-  blocks,
-  currentFieldState,
-  existingFieldComponent,
-  path,
-  state,
-}: MergeBlocksFormStateArgs) {
+export function hydrateBlocksFieldCustomComponents({ blocks, currentFieldState, existingFieldComponent, path, state }: MergeBlocksFormStateArgs) {
   const nextState = { ...state };
   const fieldState = nextState[path];
 
@@ -91,9 +77,7 @@ export function hydrateBlocksFieldCustomComponents({
 
       const blockType = row.blockType;
       const hasMatchingBlock = blocks.some((block) => {
-        return typeof block === "string"
-          ? block === blockType
-          : block.slug === blockType;
+        return typeof block === "string" ? block === blockType : block.slug === blockType;
       });
 
       if (!hasMatchingBlock) {
@@ -123,14 +107,7 @@ function readClipboardPayload() {
 
     const parsedValue = JSON.parse(rawValue) as ClipboardPayload;
 
-    if (
-      !parsedValue ||
-      typeof parsedValue !== "object" ||
-      typeof parsedValue.path !== "string" ||
-      typeof parsedValue.type !== "string" ||
-      !parsedValue.data ||
-      typeof parsedValue.data !== "object"
-    ) {
+    if (!parsedValue || typeof parsedValue !== "object" || typeof parsedValue.path !== "string" || typeof parsedValue.type !== "string" || !parsedValue.data || typeof parsedValue.data !== "object") {
       return null;
     }
 
@@ -149,11 +126,7 @@ type BlocksClipboardArgs = {
   type: string;
 };
 
-export function copyBlocksFieldToClipboard({
-  formState,
-  path,
-  type,
-}: Pick<BlocksClipboardArgs, "formState" | "path" | "type">) {
+export function copyBlocksFieldToClipboard({ formState, path, type }: Pick<BlocksClipboardArgs, "formState" | "path" | "type">) {
   const payload: ClipboardPayload = {
     data: reduceFormStateByPath({ formState, path }),
     path,
@@ -163,14 +136,7 @@ export function copyBlocksFieldToClipboard({
   localStorage.setItem(LOCAL_STORAGE_CLIPBOARD_KEY, JSON.stringify(payload));
 }
 
-export function pasteBlocksFieldFromClipboard({
-  blocks,
-  currentFieldState,
-  existingFieldComponent,
-  formState,
-  path,
-  type,
-}: BlocksClipboardArgs) {
+export function pasteBlocksFieldFromClipboard({ blocks, currentFieldState, existingFieldComponent, formState, path, type }: BlocksClipboardArgs) {
   const clipboardPayload = readClipboardPayload();
 
   if (!clipboardPayload || clipboardPayload.type !== type) {

@@ -12,12 +12,12 @@ truth for it.
 
 ## The four call sites
 
-| File | Data trees | Output mode | Site-specific rules |
-| --- | --- | --- | --- |
-| `server/features/translate-field/resolveFieldSubtree.ts` *(new, uncommitted)* | 0 — navigates a `path` | locate one node, early-exit | statuses `inside-blocks` / `not-translatable` / `not-found`; drops numeric path segments |
-| `server/shared/utils/filterLocalizedFields.ts` | 1 (`data`) | build a new pruned tree | keeps `id` on array items, `blockType`+`id` on blocks; drops empty containers; keeps only `isTranslatableField && isLocalizedField` leaves |
-| `server/modules/translation-pipeline/stages/data-reconciler/DataReconciler.ts` | 2 (`source`, `target`) | build a new merged tree | **strips** `id` (Postgres rejects it), keeps `blockType`; emits **all** fields; target-priority merge at leaves |
-| `server/modules/translation-pipeline/stages/field-collector/FieldChunkCollector.ts` | 3 (`filtered`, `source`, `target`) | flat `FieldChunk[]` + mutates `data` | tracks `path: string[]` incl. array indices; leaf kept if translatable && localized && `!excluded` && `strategy.shouldTranslate` |
+| File                                                                                | Data trees                         | Output mode                          | Site-specific rules                                                                                                                        |
+| ----------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `server/features/translate-field/resolveFieldSubtree.ts` _(new, uncommitted)_       | 0 — navigates a `path`             | locate one node, early-exit          | statuses `inside-blocks` / `not-translatable` / `not-found`; drops numeric path segments                                                   |
+| `server/shared/utils/filterLocalizedFields.ts`                                      | 1 (`data`)                         | build a new pruned tree              | keeps `id` on array items, `blockType`+`id` on blocks; drops empty containers; keeps only `isTranslatableField && isLocalizedField` leaves |
+| `server/modules/translation-pipeline/stages/data-reconciler/DataReconciler.ts`      | 2 (`source`, `target`)             | build a new merged tree              | **strips** `id` (Postgres rejects it), keeps `blockType`; emits **all** fields; target-priority merge at leaves                            |
+| `server/modules/translation-pipeline/stages/field-collector/FieldChunkCollector.ts` | 3 (`filtered`, `source`, `target`) | flat `FieldChunk[]` + mutates `data` | tracks `path: string[]` incl. array indices; leaf kept if translatable && localized && `!excluded` && `strategy.shouldTranslate`           |
 
 ### What is identical across all four (the duplication)
 
@@ -36,8 +36,8 @@ The structural dispatch, in this exact order:
 
 Every site already correctly imports the predicates from `payload/shared`
 (`fieldAffectsData`, `fieldIsArrayType/BlockType/GroupType`, `tabHasName`). We are **not**
-re-implementing predicates — we are re-implementing the *control flow that strings them
-together*.
+re-implementing predicates — we are re-implementing the _control flow that strings them
+together_.
 
 ### What genuinely differs (must stay caller-controlled)
 
@@ -68,26 +68,25 @@ The non-negotiable shared piece. One function encodes the dispatch order above:
 ```ts
 // server/shared/field-structure/classifyField.ts
 export type FieldStructure =
-  | { kind: 'tabs'; field: TabsField }
-  | { kind: 'transparent'; fields: Field[] }   // row / collapsible / unnamed presentational
-  | { kind: 'presentational' }                  // UI leaf — no data, no subfields
-  | { kind: 'group'; name: string; fields: Field[] }
-  | { kind: 'array'; name: string; fields: Field[] }
-  | { kind: 'blocks'; name: string; field: BlocksField }
-  | { kind: 'leaf'; field: FieldAffectingData; name: string }
+  | { kind: "tabs"; field: TabsField }
+  | { kind: "transparent"; fields: Field[] } // row / collapsible / unnamed presentational
+  | { kind: "presentational" } // UI leaf — no data, no subfields
+  | { kind: "group"; name: string; fields: Field[] }
+  | { kind: "array"; name: string; fields: Field[] }
+  | { kind: "blocks"; name: string; field: BlocksField }
+  | { kind: "leaf"; field: FieldAffectingData; name: string };
 
-export function classifyField(field: Field): FieldStructure
+export function classifyField(field: Field): FieldStructure;
 ```
 
 Plus two helpers that absorb the other two duplicated details:
 
 ```ts
 // Normalizes the named/unnamed + hasFields tab dance into a flat list.
-export function tabScopes(field: TabsField):
-  Array<{ named: true; name: string; fields: Field[] } | { named: false; fields: Field[] }>
+export function tabScopes(field: TabsField): Array<{ named: true; name: string; fields: Field[] } | { named: false; fields: Field[] }>;
 
 // The block-slug lookup, in one place. Returns null for unknown/!block items.
-export function resolveBlockFields(field: BlocksField, item: unknown): Field[] | null
+export function resolveBlockFields(field: BlocksField, item: unknown): Field[] | null;
 ```
 
 This kernel is the floor: **every option below builds on it.** It alone kills the
@@ -95,7 +94,7 @@ drift-prone duplication (a new container type, or a `tab.localized` rule, is the
 one-file change). Each call site keeps its own recursion but `switch`es on
 `classifyField` instead of re-deriving the dispatch.
 
-The question is how much *further* to go.
+The question is how much _further_ to go.
 
 ## Options for the traversal layer on top of the kernel
 
@@ -108,7 +107,7 @@ and uses `tabScopes` / `resolveBlockFields`.
   local (matches the codebase's hand-written, readable style); refactor one site at a time,
   behavior-preserving, under existing tests; zero new generic typing to fight.
 - **Cons:** the recursion boilerplate (the `for` loop + recurse calls) is still written 4×,
-  even if the *decisions* inside it are now centralized.
+  even if the _decisions_ inside it are now centralized.
 - **De-dup achieved:** the bug-prone ~80% (dispatch, tabs, block lookup). Leaves the benign
   ~20% (loop scaffolding).
 
@@ -120,12 +119,12 @@ reads data itself, it only asks the visitor to descend.
 
 ```ts
 interface WalkVisitor<Scope, R> {
-  enterObject(scope: Scope, name: string): Scope | null          // group / named tab
-  enterList(scope: Scope, s: FieldStructure): ListEntry<Scope>[] | null  // array / blocks
-  leaf(field: Field, scope: Scope, path: Path): R | undefined
-  assemble(node: ContainerNode<Scope>, children: ChildResult<R>[]): R | undefined
+  enterObject(scope: Scope, name: string): Scope | null; // group / named tab
+  enterList(scope: Scope, s: FieldStructure): ListEntry<Scope>[] | null; // array / blocks
+  leaf(field: Field, scope: Scope, path: Path): R | undefined;
+  assemble(node: ContainerNode<Scope>, children: ChildResult<R>[]): R | undefined;
 }
-function walkFields<Scope, R>(fields: Field[], root: Scope, v: WalkVisitor<Scope, R>): R
+function walkFields<Scope, R>(fields: Field[], root: Scope, v: WalkVisitor<Scope, R>): R;
 ```
 
 - Filter → `R = unknown`, `assemble` rebuilds objects/arrays (keeps id/blockType, drops empty).
@@ -148,7 +147,7 @@ existing `setByPath`/`getByPath` utils.
 - **Cons:** **build-tree sites lose container metadata** — `id` (array items) and `blockType`
   (blocks) are not schema fields, so a leaf-only stream can't reconstruct them; reconcile's
   "emit all fields, strip id, pass non-objects through" rule is unreachable. Fails 2 of 4.
-  Rejected as a *unifier* (still fine as an internal detail of one site).
+  Rejected as a _unifier_ (still fine as an internal detail of one site).
 
 ## Recommendation
 
@@ -157,7 +156,7 @@ Option A.** Rationale:
 
 1. It eliminates the genuinely dangerous duplication — the structural dispatch and block
    lookup — in one well-tested module, which is the actual source of drift risk.
-2. It keeps each site's *different* logic (arity, assembly, leaf rules) explicit and local,
+2. It keeps each site's _different_ logic (arity, assembly, leaf rules) explicit and local,
    matching how this codebase is written and keeping each refactor a small, behavior-
    preserving, independently-reviewable diff guarded by existing tests.
 3. It is **forward-compatible with Option B**: the visitor walker, if we later want to kill
@@ -182,13 +181,13 @@ from inline `field.blocks`** (original, un-sanitized schema).
 
 **Module layout** — one module, `server/shared/field-traversal/`:
 
-| File | Role |
-| --- | --- |
-| `types.ts` | the contract (`FieldStructure`, `WalkSignal`, `ChildCursor`, `ContainerInfo`, `ChildOutput`, `FieldWalker<Cursor, Out>`, `TabScope`) — pure types, erase to nothing |
-| `kernel.ts` | `classifyField` / `tabScopes` / `resolveBlockFields` — the shared structural dispatch |
-| `walkFields.ts` | the engine: DFS over the schema, drives `FieldWalker`, assembles containers bottom-up |
-| `index.ts` | barrel |
-| `*.test.ts` | behavioural specs (vitest) |
+| File            | Role                                                                                                                                                                |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `types.ts`      | the contract (`FieldStructure`, `WalkSignal`, `ChildCursor`, `ContainerInfo`, `ChildOutput`, `FieldWalker<Cursor, Out>`, `TabScope`) — pure types, erase to nothing |
+| `kernel.ts`     | `classifyField` / `tabScopes` / `resolveBlockFields` — the shared structural dispatch                                                                               |
+| `walkFields.ts` | the engine: DFS over the schema, drives `FieldWalker`, assembles containers bottom-up                                                                               |
+| `index.ts`      | barrel                                                                                                                                                              |
+| `*.test.ts`     | behavioural specs (vitest)                                                                                                                                          |
 
 Plus a package-level `tsconfig.check.json` (extends `tsconfig.json`, re-includes tests) wired
 into the `check-types` script — see "Type-safety" below.
@@ -199,7 +198,7 @@ its presentational members (`row`, `collapsible`, `ui`, `tabs`, unnamed `group`)
 is optional, so `field.name` widens to `string | undefined`. The contract therefore exposes:
 
 ```ts
-export type LeafField = Exclude<FieldAffectingData, ArrayField | BlocksField | NamedGroupField | TabAsField>
+export type LeafField = Exclude<FieldAffectingData, ArrayField | BlocksField | NamedGroupField | TabAsField>;
 ```
 
 The engine resolves the union via the `fieldAffectsData` guard inside `classifyField`, so
@@ -207,19 +206,19 @@ The engine resolves the union via the `fieldAffectsData` guard inside `classifyF
 
 **Why types in `.ts`, not a hand-authored `.d.ts`** (the question that prompted this):
 a `.d.ts` is the wrong tool here. (1) Our tests are **behavioural** (vitest imports and
-*calls* the module) — a `.d.ts` has no runtime, so the tests can't run. (2) Once the impl
+_calls_ the module) — a `.d.ts` has no runtime, so the tests can't run. (2) Once the impl
 `.ts` lands, the `.ts` shadows a same-named `.d.ts` and the build emits its own `.d.ts`
-from it anyway. `.d.ts` stays reserved for *ambient* declarations (`scss.d.ts`,
+from it anyway. `.d.ts` stays reserved for _ambient_ declarations (`scss.d.ts`,
 `vitest-env.d.ts`). The safe equivalent of "interface first" is `types.ts` (compiles to
 empty JS) + throwing stubs so the contract type-checks and the red tests import cleanly.
 
 **How the engine subsumes the shapes** (the cursor carries the data; the engine never reads it):
 
-| Caller | `Cursor` | `enterObject` / `enterList` | `leaf` | `combine` |
-| --- | --- | --- | --- | --- |
-| filter | `{ data }` | descend if value present, else `'skip'` | keep if localized | rebuild object/array, drop empty, keep `id`/`blockType` |
-| reconcile | `{ source, target }` | descend if `source` present | `target ?? source` | rebuild, **strip** `id`, keep `blockType` |
-| collector | `{ data, source, target, path }` | descend if value present | push chunk + mutate | no-op (`undefined`) |
+| Caller    | `Cursor`                         | `enterObject` / `enterList`             | `leaf`              | `combine`                                               |
+| --------- | -------------------------------- | --------------------------------------- | ------------------- | ------------------------------------------------------- |
+| filter    | `{ data }`                       | descend if value present, else `'skip'` | keep if localized   | rebuild object/array, drop empty, keep `id`/`blockType` |
+| reconcile | `{ source, target }`             | descend if `source` present             | `target ?? source`  | rebuild, **strip** `id`, keep `blockType`               |
+| collector | `{ data, source, target, path }` | descend if value present                | push chunk + mutate | no-op (`undefined`)                                     |
 
 **Navigation stays on the kernel.** `resolveFieldSubtree` is targeted descent with early-exit,
 not a full fold; it gets a small `findFieldByPath` built on `classifyField`, not `walkFields`.
@@ -245,13 +244,13 @@ break — added against the CURRENT (un-migrated) code and verified **green**, s
 real present behavior, not aspiration. This is the regression net: after each site delegates
 to `walkFields`/kernel, its suite must stay 100% green.
 
-| Site | Cases (before → after) | Gaps closed |
-| --- | --- | --- |
-| `resolveFieldSubtree` | 11 → 15 | path normalization (trim / empty / index-only segments), `group > array > leaf` |
-| `filterLocalizedFields` | 25 → 28 | empty blocks dropped, unknown `blockType` dropped, non-object array items dropped |
-| `DataReconciler` | 16 → 19 | non-object array items passed through, target array shorter than source, unknown `blockType` passed through verbatim (keeps `id`) |
-| `FieldChunkCollector` | 37 → 39 | non-object array items skipped, per-item source/target index fallback when arrays differ in length |
-| **Total** | **89 → 101** | |
+| Site                    | Cases (before → after) | Gaps closed                                                                                                                       |
+| ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `resolveFieldSubtree`   | 11 → 15                | path normalization (trim / empty / index-only segments), `group > array > leaf`                                                   |
+| `filterLocalizedFields` | 25 → 28                | empty blocks dropped, unknown `blockType` dropped, non-object array items dropped                                                 |
+| `DataReconciler`        | 16 → 19                | non-object array items passed through, target array shorter than source, unknown `blockType` passed through verbatim (keeps `id`) |
+| `FieldChunkCollector`   | 37 → 39                | non-object array items skipped, per-item source/target index fallback when arrays differ in length                                |
+| **Total**               | **89 → 101**           |                                                                                                                                   |
 
 Note a deliberately-locked asymmetry surfaced while writing these: on an **unknown
 `blockType`**, `filterLocalizedFields` and `FieldChunkCollector` **drop** the item, whereas
@@ -260,9 +259,9 @@ must preserve this per-site difference — the tests now enforce it.
 
 **Open migration caveat — `filterLocalizedFields` × named tabs.** A review of the engine
 surfaced that `filterLocalizedFields` flattens **all** tabs into the parent data scope: it does
-not check `tabHasName`, so a *named* tab's fields are read at the parent level rather than nested
+not check `tabHasName`, so a _named_ tab's fields are read at the parent level rather than nested
 under `data[tabName]`. `DataReconciler`, `FieldChunkCollector`, and the new engine instead treat a
-named tab as a data boundary. So migrating `filterLocalizedFields` onto `walkFields` would *change*
+named tab as a data boundary. So migrating `filterLocalizedFields` onto `walkFields` would _change_
 its named-tab behavior, and the current characterization tests do **not** cover named tabs for this
 site. Before migrating it: add a named-tab characterization test to pin today's (flat) behavior,
 then decide explicitly whether to preserve it or fix the divergence.

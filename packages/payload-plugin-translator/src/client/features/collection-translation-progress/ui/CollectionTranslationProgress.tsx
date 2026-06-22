@@ -1,25 +1,25 @@
-'use client'
+"use client";
 
-import { ShimmerEffect } from '@payloadcms/ui'
-import { TrashIcon } from '@payloadcms/ui/icons/Trash'
+import { ShimmerEffect } from "@payloadcms/ui";
+import { TrashIcon } from "@payloadcms/ui/icons/Trash";
 
-import type { GroupedCollectionTranslationStatus } from '../../../entities/translation'
-import { TranslationsApi } from '../../../entities/translation'
-import { LanguageTranslateIcon } from '../../../shared/lib/assets/icons/LanguageTranslateIcon'
-import Button from '../../../shared/ui/Button'
-import StatusIndicator from '../../../shared/ui/StatusIndicator'
-import Tooltip from '../../../shared/ui/Tooltip'
+import type { GroupedCollectionTranslationStatus } from "../../../entities/translation";
+import { TranslationsApi } from "../../../entities/translation";
+import { LanguageTranslateIcon } from "../../../shared/lib/assets/icons/LanguageTranslateIcon";
+import Button from "../../../shared/ui/Button";
+import StatusIndicator from "../../../shared/ui/StatusIndicator";
+import Tooltip from "../../../shared/ui/Tooltip";
 
-import styles from './styles.module.scss'
+import styles from "./styles.module.scss";
 
 type CollectionTranslationProgressProps = {
-  collection: string
-  data: GroupedCollectionTranslationStatus | undefined
-  isPending: boolean
-}
+  collection: string;
+  data: GroupedCollectionTranslationStatus | undefined;
+  isPending: boolean;
+};
 
 export function CollectionTranslationProgress({ collection, data, isPending }: CollectionTranslationProgressProps) {
-  const cancelPendingTranslations = TranslationsApi.useCancelCollectionTranslations()
+  const cancelPendingTranslations = TranslationsApi.useCancelCollectionTranslations();
 
   return (
     <div className={styles.container}>
@@ -34,34 +34,22 @@ export function CollectionTranslationProgress({ collection, data, isPending }: C
 
       {data && (
         <>
-          <StatusIndicator className={styles['status-indicator']} title="Completed" key="completed" $color="green">
+          <StatusIndicator className={styles["status-indicator"]} title="Completed" key="completed" $color="green">
             <LanguageTranslateIcon />
             <b>{data.completed.length}</b>
           </StatusIndicator>
 
-          <StatusIndicator className={styles['status-indicator']} title="Failed" key="failed" $color="red">
+          <StatusIndicator className={styles["status-indicator"]} title="Failed" key="failed" $color="red">
             <LanguageTranslateIcon />
             <b>{data.failed.length}</b>
           </StatusIndicator>
 
-          <StatusIndicator
-            className={styles['status-indicator']}
-            title="In progress"
-            $animated={data.running.length > 0}
-            key="running"
-            $color="blue"
-          >
+          <StatusIndicator className={styles["status-indicator"]} title="In progress" $animated={data.running.length > 0} key="running" $color="blue">
             <LanguageTranslateIcon />
             <b>{data.running.length}</b>
           </StatusIndicator>
 
-          <StatusIndicator
-            className={styles['status-indicator']}
-            title="Pending"
-            $animated={data.pending.length > 0}
-            key="pending"
-            $color="gray"
-          >
+          <StatusIndicator className={styles["status-indicator"]} title="Pending" $animated={data.pending.length > 0} key="pending" $color="gray">
             <LanguageTranslateIcon />
             <b>{data.pending.length}</b>
             <Tooltip sideOffset={12} side="bottom" content="Cancel translations">
@@ -82,5 +70,5 @@ export function CollectionTranslationProgress({ collection, data, isPending }: C
         </>
       )}
     </div>
-  )
+  );
 }

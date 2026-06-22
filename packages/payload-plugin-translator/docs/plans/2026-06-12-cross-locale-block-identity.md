@@ -10,7 +10,7 @@ A `blocks` (or `array`) field can be declared **`localized: true`**. Payload the
 **independent array per locale**: the locales can have a different order, a different count, even
 different block types. There is no built-in identifier that links "this `fr` block" to "that `en`
 block" — localized arrays/blocks are independent partitions by design, and you cannot store a
-shared (non-localized) correlation key *inside* a localized field, because the whole subtree is
+shared (non-localized) correlation key _inside_ a localized field, because the whole subtree is
 locale-partitioned.
 
 This breaks every attempt to translate **between** locales, because translation needs to know
@@ -23,7 +23,7 @@ document-level pipeline, one in the field level:
   source block was merged with an unrelated target block: values from one block leaked into
   another, and `blockType` came from source while values came from a different block. This is the
   "blocks don't line up across locales" bug.
-- **Document level — `FieldChunkCollector`** decides *what gets sent to the translator*. It paired
+- **Document level — `FieldChunkCollector`** decides _what gets sent to the translator_. It paired
   `target` by position too, feeding the wrong element's value into `strategy.shouldTranslate`.
   Under `skip_existing` with reordered blocks that meant **silently skipping** a block that had no
   translation (a different, populated block sat at its index) or **re-translating** one that was
@@ -38,13 +38,13 @@ Same root cause, three sites.
 
 ## Why no signal can auto-match independent localized blocks
 
-| Candidate | Why it fails |
-| --- | --- |
-| **Position / index** | The premise is that the locales were reordered. |
-| **Block `id`** | For a *localized* field the per-locale rows get independent ids; they don't correspond. (For a *non-localized* field there is one shared row → the id **is** a stable cross-locale key — see below.) |
-| **Block type** | Ambiguous: three `Copy` blocks → which maps to which? |
-| **"Same path has a field"** | Coincidence; different block types can share a field name at the same path and get silently overwritten. |
-| **Content similarity** | Circular for translation: the target value is either empty (nothing to compare) or already in another language (nothing to find). |
+| Candidate                   | Why it fails                                                                                                                                                                                         |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Position / index**        | The premise is that the locales were reordered.                                                                                                                                                      |
+| **Block `id`**              | For a _localized_ field the per-locale rows get independent ids; they don't correspond. (For a _non-localized_ field there is one shared row → the id **is** a stable cross-locale key — see below.) |
+| **Block type**              | Ambiguous: three `Copy` blocks → which maps to which?                                                                                                                                                |
+| **"Same path has a field"** | Coincidence; different block types can share a field name at the same path and get silently overwritten.                                                                                             |
+| **Content similarity**      | Circular for translation: the target value is either empty (nothing to compare) or already in another language (nothing to find).                                                                    |
 
 Conclusion: **independent localized blocks cannot be auto-matched reliably.** The honest product
 move is to constrain to the regime where identity is well-defined, and to refuse rather than
@@ -61,7 +61,7 @@ The recommended (and only fully-correct) shape is a **non-localized** `blocks`/`
 - Only leaf **values** differ per locale.
 - Identity = position = shared `id`; matching is exact for both the reconciler and the field level.
 - The user's "reorder per locale" scenario is impossible by construction — reordering is global,
-  which is correct for *translation* (translating should not restructure the page).
+  which is correct for _translation_ (translating should not restructure the page).
 
 If different layouts per locale are genuinely required, that is authoring, not translation, and
 "pull a translation from another locale" is not a well-defined operation for those blocks.
@@ -83,14 +83,14 @@ change.
   the `id` to match the target with is read off that source element. So `shouldTranslate` now sees
   the correct target value even when the target locale is reordered.
 
-| Field shape | Source/target ids | Behaviour |
-| --- | --- | --- |
-| Non-localized blocks/array (leaves localized) | Shared (same row across locales) | id-match == old positional match → **unchanged**, and now robust to any ordering. |
-| Localized blocks/array, reordered, ids preserved (e.g. fallback-seeded) | Correspond | Correct element paired regardless of order (was the bug). |
-| Localized blocks/array, independently authored | Diverge | No match → mirror source instead of grafting a different block's values (was silent corruption / wrong skip decision). |
-| Same id, different `blockType` | — | Not the same block → no merge → source fills. |
+| Field shape                                                             | Source/target ids                | Behaviour                                                                                                              |
+| ----------------------------------------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Non-localized blocks/array (leaves localized)                           | Shared (same row across locales) | id-match == old positional match → **unchanged**, and now robust to any ordering.                                      |
+| Localized blocks/array, reordered, ids preserved (e.g. fallback-seeded) | Correspond                       | Correct element paired regardless of order (was the bug).                                                              |
+| Localized blocks/array, independently authored                          | Diverge                          | No match → mirror source instead of grafting a different block's values (was silent corruption / wrong skip decision). |
+| Same id, different `blockType`                                          | —                                | Not the same block → no merge → source fills.                                                                          |
 
-**Honest limit:** this removes the *corruption / wrong skip*, but it does not make `skip_existing`
+**Honest limit:** this removes the _corruption / wrong skip_, but it does not make `skip_existing`
 preserve per-block target edits for genuinely-independent localized blocks — there is no identity to
 preserve them by, and the reconciler strips `id` on output (Postgres rejects it on update) so a
 re-translated target gets fresh ids anyway. For independent localized blocks, re-translation

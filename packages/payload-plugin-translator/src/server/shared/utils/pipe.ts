@@ -4,4 +4,4 @@
 export const pipe =
   <T>(...fns: Array<(x: T) => T>) =>
   (x: T): T =>
-    fns.reduce((acc, fn) => fn(acc), x)
+    fns.reduce((acc, fn) => fn(acc), x);

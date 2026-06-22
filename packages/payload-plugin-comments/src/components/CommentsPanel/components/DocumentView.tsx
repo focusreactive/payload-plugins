@@ -18,12 +18,7 @@ export function DocumentView({ comments, userId, className }: Props) {
 
   return (
     <div className={className}>
-      <FieldGroupSection
-        fields={fields}
-        userId={userId}
-        collectionSlug={collectionSlug ?? undefined}
-        documentId={documentId ?? undefined}
-      />
+      <FieldGroupSection fields={fields} userId={userId} collectionSlug={collectionSlug ?? undefined} documentId={documentId ?? undefined} />
     </div>
   );
 }

@@ -52,7 +52,7 @@ export const baseReadsCollection = (tenantConfig?: TenantPluginConfig): Collecti
           {
             name: "tenant",
             type: "relationship" as const,
-            relationTo: (tenantConfig.collectionSlug ?? "tenants"),
+            relationTo: tenantConfig.collectionSlug ?? "tenants",
             index: true,
             label: "Tenant",
             admin: { position: "sidebar" as const },

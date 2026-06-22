@@ -2,11 +2,7 @@ import type { ArrayField, BlocksField, CollapsibleField, Field, GroupField, RowF
 import type { FieldLabelSegment } from "../../../types";
 import { findFieldByName, getLabelString } from "./schemaUtils";
 
-export function resolveFieldPath(
-  segments: string[],
-  schemaFields: Field[],
-  docData: Record<string, unknown> | null,
-): FieldLabelSegment[] {
+export function resolveFieldPath(segments: string[], schemaFields: Field[], docData: Record<string, unknown> | null): FieldLabelSegment[] {
   const result: FieldLabelSegment[] = [];
   let currentFields: Field[] = schemaFields;
   let currentData: unknown = docData;

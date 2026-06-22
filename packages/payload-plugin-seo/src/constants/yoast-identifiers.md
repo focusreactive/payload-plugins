@@ -51,13 +51,13 @@ whitelist	score=3	Avoid using whitelist as it is potentially harmful. Consider u
 
 From yoast's own interpreter `build/scoring/interpreters/scoreToRating.js` (the source of truth, not the sample above):
 
-| Raw score        | Yoast rating | Our `Status` (D-spec) |
-| ---------------- | ------------ | --------------------- |
-| `-1`             | `error`      | treat as `bad`        |
-| `0`              | `feedback`   | treat as `bad` (no data / N/A) |
-| `<= 4` (incl. negatives like -10/-20, and 1, 3, 4) | `bad` | `bad` |
-| `> 4 && <= 7` (5, 6, 7) | `ok`  | `warn` |
-| `> 7` (8, 9)     | `good`       | `good`                |
+| Raw score                                          | Yoast rating | Our `Status` (D-spec)          |
+| -------------------------------------------------- | ------------ | ------------------------------ |
+| `-1`                                               | `error`      | treat as `bad`                 |
+| `0`                                                | `feedback`   | treat as `bad` (no data / N/A) |
+| `<= 4` (incl. negatives like -10/-20, and 1, 3, 4) | `bad`        | `bad`                          |
+| `> 4 && <= 7` (5, 6, 7)                            | `ok`         | `warn`                         |
+| `> 7` (8, 9)                                       | `good`       | `good`                         |
 
 ```js
 // scoreToRating(score):
@@ -80,9 +80,9 @@ Corrected `scoreToStatus`:
 
 ```ts
 export function scoreToStatus(score: number): Status {
-  if (score > 7) return "good";          // 8, 9
+  if (score > 7) return "good"; // 8, 9
   if (score > 4 && score <= 7) return "warn"; // 5, 6, 7
-  return "bad";                           // <= 4, incl. 0 and negatives
+  return "bad"; // <= 4, incl. 0 and negatives
 }
 ```
 

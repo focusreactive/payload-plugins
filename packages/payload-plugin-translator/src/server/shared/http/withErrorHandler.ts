@@ -1,6 +1,6 @@
-import { APIError } from 'payload'
+import { APIError } from "payload";
 
-import { ServerResponse } from './ServerResponse'
+import { ServerResponse } from "./ServerResponse";
 
 /**
  * Wraps async handler with error handling.
@@ -9,17 +9,17 @@ import { ServerResponse } from './ServerResponse'
 export function withErrorHandler<T extends (...args: any[]) => Promise<Response>>(handler: T): T {
   return (async (...args: Parameters<T>) => {
     try {
-      return await handler(...args)
+      return await handler(...args);
     } catch (e) {
-      console.error('[TranslateKit] Handler error:', e)
+      console.error("[TranslateKit] Handler error:", e);
 
       if (e instanceof APIError) {
-        return ServerResponse.custom(e.message, e.status)
+        return ServerResponse.custom(e.message, e.status);
       }
       if (e instanceof Error) {
-        return ServerResponse.internalServerError(e.message)
+        return ServerResponse.internalServerError(e.message);
       }
-      return ServerResponse.internalServerError()
+      return ServerResponse.internalServerError();
     }
-  }) as T
+  }) as T;
 }

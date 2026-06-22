@@ -18,11 +18,7 @@ interface VariantsFieldProps {
   collectionSlug?: string; // injected via customComponents clientProps
 }
 
-export function VariantsField({
-  slugField = "slug",
-  titleField = "title",
-  collectionSlug: collectionSlugProp,
-}: VariantsFieldProps) {
+export function VariantsField({ slugField = "slug", titleField = "title", collectionSlug: collectionSlugProp }: VariantsFieldProps) {
   const { id, collectionSlug: docCollectionSlug } = useDocumentInfo();
   const slug = collectionSlugProp ?? docCollectionSlug;
 
@@ -49,7 +45,7 @@ export function VariantsField({
           title: doc[titleField] ?? doc[slugField] ?? doc.id,
           slug: doc[slugField],
           passPercentage: (doc[AB_PASS_PERCENTAGE_FIELD] as number) ?? 1,
-        })),
+        }))
       );
     } catch {
       // non-fatal
@@ -133,7 +129,7 @@ export function VariantsField({
         variants.map(async (v) => {
           const res = await fetch(`/api/${slug}/${v.id}`, { method: "DELETE" });
           return res.ok ? v.id : null;
-        }),
+        })
       );
       const deleted = new Set(results.filter(Boolean));
       const failed = variants.length - deleted.size;
@@ -151,8 +147,7 @@ export function VariantsField({
     }
   };
 
-  const sumOthers = (excludeId: string) =>
-    variants.filter((v) => v.id !== excludeId).reduce((s, v) => s + (v.passPercentage ?? 0), 0);
+  const sumOthers = (excludeId: string) => variants.filter((v) => v.id !== excludeId).reduce((s, v) => s + (v.passPercentage ?? 0), 0);
 
   const handlePercentageChange = (variantId: string, rawStr: string) => {
     if (rawStr === "") {
@@ -190,7 +185,8 @@ export function VariantsField({
           opacity: actionLoading ? 0.5 : 1,
           pointerEvents: actionLoading ? "none" : "auto",
           transition: "opacity 0.15s",
-        }}>
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
           <label className="field-label" style={{ paddingBottom: 0, marginRight: 0 }}>
             Variants
@@ -201,12 +197,13 @@ export function VariantsField({
                 marginLeft: "auto",
                 fontSize: 12,
                 color: "var(--theme-elevation-500)",
-              }}>
+              }}
+            >
               Original: {Math.max(0, originalPercent)}% of traffic
             </span>
           )}
         </div>
-        {loading ?
+        {loading ? (
           <div
             style={{
               display: "flex",
@@ -216,7 +213,8 @@ export function VariantsField({
               border: "1px solid var(--theme-elevation-150)",
               borderRadius: 4,
               background: "var(--theme-elevation-50)",
-            }}>
+            }}
+          >
             <span
               style={{
                 width: 16,
@@ -229,7 +227,7 @@ export function VariantsField({
               }}
             />
           </div>
-        : variants.length === 0 ?
+        ) : variants.length === 0 ? (
           <div
             style={{
               display: "flex",
@@ -239,12 +237,14 @@ export function VariantsField({
               border: "1px solid var(--theme-elevation-150)",
               borderRadius: 4,
               background: "var(--theme-elevation-50)",
-            }}>
+            }}
+          >
             <Button onClick={handleAddVariant} buttonStyle="primary" size="medium">
               Add Variant
             </Button>
           </div>
-        : <>
+        ) : (
+          <>
             {variants.map((variant) => (
               <VariantRow
                 key={variant.id}
@@ -271,7 +271,7 @@ export function VariantsField({
               </div>
             </div>
           </>
-        }
+        )}
       </div>
 
       <style>{`

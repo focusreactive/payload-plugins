@@ -1,5 +1,5 @@
-import type { SerializedLexicalNode, SerializedTextNodeRef } from './types'
-import { hasChildren, isSerializedLexicalTextNode } from './guards'
+import type { SerializedLexicalNode, SerializedTextNodeRef } from "./types";
+import { hasChildren, isSerializedLexicalTextNode } from "./guards";
 
 /**
  * Recursively collects text node references from serialized Lexical JSON.
@@ -7,14 +7,14 @@ import { hasChildren, isSerializedLexicalTextNode } from './guards'
 function collectTextNodesRecursive(node: SerializedLexicalNode, refs: SerializedTextNodeRef[]): void {
   if (isSerializedLexicalTextNode(node)) {
     if (node.text.trim().length > 0) {
-      refs.push({ node })
+      refs.push({ node });
     }
-    return
+    return;
   }
 
   if (hasChildren(node)) {
     for (const child of node.children) {
-      collectTextNodesRecursive(child, refs)
+      collectTextNodesRecursive(child, refs);
     }
   }
 }
@@ -27,7 +27,7 @@ function collectTextNodesRecursive(node: SerializedLexicalNode, refs: Serialized
  * @returns Array of references to text nodes for mutation
  */
 export function collectSerializedLexicalTextNodes(node: SerializedLexicalNode): SerializedTextNodeRef[] {
-  const refs: SerializedTextNodeRef[] = []
-  collectTextNodesRecursive(node, refs)
-  return refs
+  const refs: SerializedTextNodeRef[] = [];
+  collectTextNodesRecursive(node, refs);
+  return refs;
 }

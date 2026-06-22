@@ -26,8 +26,7 @@ export function useAddCommentMutation() {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       mutationFn: ({ ctx: _ctx, currentUser: _user, ...data }: AddCommentVariables) => createComment(data),
       onMutate: async (variables) => {
-        const { ctx, text, fieldPath, documentId, collectionSlug, globalSlug, locale, mentionIds, currentUser } =
-          variables;
+        const { ctx, text, fieldPath, documentId, collectionSlug, globalSlug, locale, mentionIds, currentUser } = variables;
 
         const key = getCommentsKey(ctx);
 
@@ -72,6 +71,6 @@ export function useAddCommentMutation() {
         queryClient.invalidateQueries({ queryKey: getDocumentTitlesKey(ctx) });
       },
     },
-    queryClient,
+    queryClient
   );
 }

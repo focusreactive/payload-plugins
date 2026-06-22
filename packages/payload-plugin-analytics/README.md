@@ -464,7 +464,8 @@ function ContactForm() {
     <form
       onSubmit={() => {
         trackLeadAction("form_submit", { form: "contact" });
-      }}>
+      }}
+    >
       {/* ... */}
     </form>
   );
@@ -664,17 +665,7 @@ interface BlockComponentProps<TData = unknown> {
 To match the built-in look, import the dashboard's UI primitives and query hooks from the `/client/blocks` entry:
 
 ```tsx
-import {
-  DataCard,
-  KpiCard,
-  BarList,
-  TopNTable,
-  DonutChart,
-  TrendChart,
-  SkeletonBlock,
-  ErrorTile,
-  useCustomBlockQuery,
-} from "@focus-reactive/payload-plugin-analytics/client/blocks";
+import { DataCard, KpiCard, BarList, TopNTable, DonutChart, TrendChart, SkeletonBlock, ErrorTile, useCustomBlockQuery } from "@focus-reactive/payload-plugin-analytics/client/blocks";
 ```
 
 ### Access control

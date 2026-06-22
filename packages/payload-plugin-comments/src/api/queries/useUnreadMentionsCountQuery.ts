@@ -33,6 +33,6 @@ export function useUnreadMentionsCountQuery({ mode, collectionSlug, documentId, 
       refetchIntervalInBackground: false,
       refetchOnWindowFocus: true,
     },
-    queryClient,
+    queryClient
   );
 }

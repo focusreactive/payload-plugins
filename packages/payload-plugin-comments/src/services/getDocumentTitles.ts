@@ -17,11 +17,7 @@ function buildDocumentTitlesFromDocs(docs: BaseDocument[], titleField: string): 
   return result;
 }
 
-export async function getDocumentTitles(
-  comments: Comment[],
-  documentTitleFields: Record<string, string>,
-  options?: BaseServiceOptions,
-): Promise<Response<DocumentTitles>> {
+export async function getDocumentTitles(comments: Comment[], documentTitleFields: Record<string, string>, options?: BaseServiceOptions): Promise<Response<DocumentTitles>> {
   try {
     const payload = await extractPayload(options?.payload);
 
@@ -61,7 +57,7 @@ export async function getDocumentTitles(
         } catch {
           documentTitles[slug] = Object.fromEntries([...ids].map((id) => [String(id), String(id)]));
         }
-      }),
+      })
     );
 
     return {

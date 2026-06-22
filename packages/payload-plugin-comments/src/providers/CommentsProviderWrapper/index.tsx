@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useConfig } from "@payloadcms/ui";
 import { CommentsDrawerProvider } from "../CommentsDrawerProvider";
 import { CommentsFilterProvider } from "../CommentsFilterProvider";

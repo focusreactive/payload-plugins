@@ -1,4 +1,5 @@
-import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { RefObject } from "react";
 import { clamp } from "./clamp";
 import { measureLineRects } from "./measureLineRects";
 
@@ -92,8 +93,7 @@ export function useStrikethroughAnimation(isResolved: boolean, contentRect: RefO
     const isFirstRun = !mountedRef.current;
     mountedRef.current = true;
 
-    const prefersReducedMotion =
-      typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const prefersReducedMotion = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     if (isResolved && !measuredRef.current) {
       measureLines();

@@ -13,6 +13,7 @@
 ### Task 1: Install semantic-release plugins
 
 **Files:**
+
 - Modify: `package.json` (devDependencies)
 
 **Step 1: Install all plugins**
@@ -47,6 +48,7 @@ git commit -m "chore: install semantic-release and plugins"
 ### Task 2: Create `.releaserc.json`
 
 **Files:**
+
 - Create: `.releaserc.json`
 
 **Step 1: Create the config**
@@ -57,20 +59,27 @@ git commit -m "chore: install semantic-release and plugins"
   "plugins": [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
-    ["@semantic-release/changelog", {
-      "changelogFile": "CHANGELOG.md"
-    }],
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md"
+      }
+    ],
     "@semantic-release/npm",
-    ["@semantic-release/git", {
-      "assets": ["CHANGELOG.md", "package.json"],
-      "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
-    }],
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["CHANGELOG.md", "package.json"],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ],
     "@semantic-release/github"
   ]
 }
 ```
 
 Key notes:
+
 - Plugin **order matters** — changelog must come before npm, git must come after npm
 - `[skip ci]` in the commit message prevents the release commit from re-triggering the workflow
 - `assets` tells `@semantic-release/git` which files to commit back
@@ -95,6 +104,7 @@ git commit -m "chore: add semantic-release config"
 ### Task 3: Create GitHub Actions release workflow
 
 **Files:**
+
 - Create: `.github/workflows/release.yml`
 
 **Step 1: Create the workflow directory**
@@ -155,6 +165,7 @@ jobs:
 ```
 
 Key notes:
+
 - `fetch-depth: 0` — required so semantic-release can read full git history to find the last release tag
 - `persist-credentials: false` — required so `@semantic-release/git` can push back using the `GITHUB_TOKEN` with write permissions
 - `permissions: contents: write` — required for the git push back and GitHub Release creation
@@ -186,6 +197,7 @@ npx semantic-release --dry-run
 ```
 
 Expected output includes something like:
+
 ```
 [semantic-release] › … Running semantic-release version X.Y.Z
 [semantic-release] › ✔  Allowed to push to the "main" branch
@@ -194,9 +206,11 @@ Expected output includes something like:
 ```
 
 If no commits trigger a release (e.g., only `chore:` commits since last tag), you'll see:
+
 ```
 [semantic-release] › ℹ  There are no relevant changes, so no new version is released.
 ```
+
 That's fine — it means the config is working correctly.
 
 **Step 3: If errors appear, common fixes**
@@ -224,6 +238,7 @@ The `Release` workflow should appear. If commits since the last tag include `fix
 **Step 3: Verify release artifacts**
 
 After a successful run:
+
 - npm: `https://www.npmjs.com/package/@focus-reactive/payload-plugin-ab`
 - GitHub Release: `https://github.com/focusreactive/payload-plugin-ab/releases`
 - `CHANGELOG.md` committed to `main`
@@ -233,9 +248,9 @@ After a successful run:
 
 ## Commit message reference (conventional commits)
 
-| Commit | Version bump | Example |
-|---|---|---|
-| `fix: something` | patch (1.0.x) | `fix: cookie scope bug` |
-| `feat: something` | minor (1.x.0) | `feat: add new adapter` |
+| Commit                                             | Version bump  | Example                 |
+| -------------------------------------------------- | ------------- | ----------------------- |
+| `fix: something`                                   | patch (1.0.x) | `fix: cookie scope bug` |
+| `feat: something`                                  | minor (1.x.0) | `feat: add new adapter` |
 | `feat!: something` or `BREAKING CHANGE:` in footer | major (x.0.0) | `feat!: remove old API` |
-| `chore:`, `docs:`, `refactor:` | no release | — |
+| `chore:`, `docs:`, `refactor:`                     | no release    | —                       |

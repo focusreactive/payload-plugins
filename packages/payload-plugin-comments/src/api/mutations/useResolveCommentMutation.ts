@@ -28,15 +28,15 @@ export function useResolveCommentMutation() {
 
         queryClient.setQueryData<Comment[]>(key, (prev = []) =>
           prev.map((c) =>
-            c.id === commentId ?
-              {
-                ...c,
-                isResolved: resolved,
-                resolvedAt: resolved ? new Date().toISOString() : null,
-                resolvedBy: resolved ? currentUser : null,
-              }
-            : c,
-          ),
+            c.id === commentId
+              ? {
+                  ...c,
+                  isResolved: resolved,
+                  resolvedAt: resolved ? new Date().toISOString() : null,
+                  resolvedBy: resolved ? currentUser : null,
+                }
+              : c
+          )
         );
 
         return { snapshot, ctx };
@@ -52,6 +52,6 @@ export function useResolveCommentMutation() {
         void queryClient.invalidateQueries({ queryKey: getCommentsKey(context.ctx) });
       },
     },
-    queryClient,
+    queryClient
   );
 }
