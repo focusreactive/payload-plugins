@@ -28,7 +28,7 @@ Next.js 16 + React 19 with Payload CMS 3.84, PostgreSQL, Tailwind CSS 4, next-in
 
 ## Architecture
 
-Two ideas govern placement: **content + UI you build with lives at `src/` root** (the Payload nouns and the UI kit); **everything that supports it lives in `src/lib/`**. A folder is earned by 2+ tightly-related files — anything smaller is a flat file in `lib/utils/`; plugin app-side wiring groups by plugin under `lib/plugins/<name>/`.
+Two ideas govern placement: **content + UI you build with lives at `src/` root** (the Payload nouns and the UI kit); **everything that supports it lives in `src/lib/`**. A folder is earned by 2+ tightly-related files — anything smaller is a flat file in `lib/utils/`; plugin app-side wiring groups by plugin under `lib/plugins/<name>/`. See [ADR-0001](../../docs/adr/0001-flatten-src-into-lib.md) for the rationale.
 
 ```
 src/
