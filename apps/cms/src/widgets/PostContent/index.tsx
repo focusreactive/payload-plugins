@@ -1,5 +1,6 @@
 import type { Locale } from "@/core/types";
-import { PostHero, RichText } from "@/core/ui";
+import { PostHero } from "@/components/PostHero";
+import { RichText } from "@/components/shared";
 import { getRelatedPosts } from "@/dal/getRelatedPosts";
 import type { Post } from "@/payload-types";
 

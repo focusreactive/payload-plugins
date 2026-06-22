@@ -1,6 +1,6 @@
 "use client";
 import { BLOG_CONFIG } from "@/core/config/blog";
-import { ErrorBoundary } from "@/core/ui";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function PostError({
   error,

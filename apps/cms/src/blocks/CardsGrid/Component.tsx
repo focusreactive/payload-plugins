@@ -1,5 +1,6 @@
-import { CardsGrid, SectionHeader } from "@repo/ui";
-import type { IDefaultCardProps } from "@repo/ui/components/sections/cardsGrid/types";
+import { SectionHeader } from "@/components/SectionHeader";
+import { CardsGrid } from "./ui";
+import type { IDefaultCardProps } from "./ui/types";
 import {
   Activity,
   BarChart3,
@@ -25,7 +26,7 @@ import {
 import React from "react";
 
 import { resolveLocale } from "@/core/lib/resolveLocale";
-import { SectionContainer } from "@/core/ui";
+import { SectionContainer } from "@/components/shared";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";

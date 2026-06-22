@@ -1,7 +1,7 @@
-import { NewsletterSection } from "@repo/ui";
+import { NewsletterSection } from "@/components/newsletter";
 import { getTranslations } from "next-intl/server";
 
-import { SectionContainer } from "@/core/ui";
+import { SectionContainer } from "@/components/shared";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 
 export async function NewsletterBand() {

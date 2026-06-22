@@ -1,4 +1,4 @@
-import { SectionContainer } from "@/core/ui";
+import { SectionContainer } from "@/components/shared";
 import type { RawHtmlBlock as RawHtmlBlockProps } from "@/payload-types";
 
 export const RawHtmlBlockComponent: React.FC<RawHtmlBlockProps> = ({ html, section, id }) => (

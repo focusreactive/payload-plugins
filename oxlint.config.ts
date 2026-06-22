@@ -222,22 +222,51 @@ export default defineConfig({
     // Unused vars allowed when prefixed with `_`; flag otherwise.
     "no-unused-vars": "warn",
   },
-
-  // Architectural import boundaries (ported from the former
-  // packages/payload-plugin-analytics/eslint.config.js).
-  //
-  // oxlint applies overrides in order; for a matching file the LAST override
-  // that sets a rule wins (eslint flat-config semantics — `no-restricted-imports`
-  // options replace, they do not merge). Each region below therefore restates
-  // every restriction that applies to it, ordered broad → specific.
-  //
-  // NOTE: the original ESLint config layered three separate
-  // `no-restricted-imports` blocks over overlapping globs. Under "last wins",
-  // the GA4-isolation block was silently shadowed by the test-seam block and
-  // never actually enforced. This port restores the intended behaviour — all
-  // three boundaries now hold simultaneously (verified to have zero existing
-  // violations in the codebase).
   overrides: [
+    {
+      // Presentational boundary (apps/cms): each block's and collection's
+      // colocated ui/ folder is the presentational section — props in, JSX
+      // out. Data/Payload access belongs in the controller (Component.tsx),
+      // never in the ui/ section.
+      files: ["apps/cms/src/blocks/*/ui/**", "apps/cms/src/collections/*/ui/**"],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            patterns: [
+              {
+                group: [
+                  "@/payload-types",
+                  "@/dal",
+                  "@/dal/*",
+                  "@/lib/adapters",
+                  "@/lib/adapters/*",
+                  "payload",
+                  "@payloadcms/*",
+                ],
+                message:
+                  "A colocated ui/ section must stay Payload-agnostic. Move data/Payload access into the block's Component.tsx and pass plain props into the section.",
+              },
+            ],
+          },
+        ],
+      },
+    },
+
+    // Architectural import boundaries (ported from the former
+    // packages/payload-plugin-analytics/eslint.config.js).
+    //
+    // oxlint applies overrides in order; for a matching file the LAST override
+    // that sets a rule wins (eslint flat-config semantics — `no-restricted-imports`
+    // options replace, they do not merge). Each region below therefore restates
+    // every restriction that applies to it, ordered broad → specific.
+    //
+    // NOTE: the original ESLint config layered three separate
+    // `no-restricted-imports` blocks over overlapping globs. Under "last wins",
+    // the GA4-isolation block was silently shadowed by the test-seam block and
+    // never actually enforced. This port restores the intended behaviour — all
+    // three boundaries now hold simultaneously (verified to have zero existing
+    // violations in the codebase).
     // (1) All analytics source: GA4 SDK is server-internal; the GA4 test seam
     //     must not be imported outside *.test files.
     {

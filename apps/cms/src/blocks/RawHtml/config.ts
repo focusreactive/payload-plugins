@@ -8,7 +8,7 @@ const fields: Field[] = [
   {
     admin: {
       components: {
-        Field: "@/core/ui/components/CopyAiPromptButton#CopyAiPromptButton",
+        Field: "@/components/admin/CopyAiPromptButton#CopyAiPromptButton",
       },
     },
     name: "copyAiPrompt",

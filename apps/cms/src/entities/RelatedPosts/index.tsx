@@ -1,6 +1,6 @@
 import React from "react";
 
-import { cn } from "@/core/lib/utils";
+import { cn } from "@/components/utils";
 import type { Post } from "@/payload-types";
 
 import { BlogPostsGrid } from "../BlogPostsGrid";

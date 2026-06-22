@@ -27,10 +27,10 @@ const baseDir = path.dirname(fileURLToPath(import.meta.url));
 export default buildConfig({
   admin: {
     components: {
-      afterLogin: ["/core/ui/components/Admin/SSOButtons"],
+      afterLogin: ["/components/admin/SSOButtons"],
       graphics: {
-        Icon: "/core/ui/components/Admin/Icon",
-        Logo: "/core/ui/components/Admin/Logo",
+        Icon: "/components/admin/Icon",
+        Logo: "/components/admin/Logo",
       },
       providers: ["/providers/BeforeOpenDrawerWrapper"],
     },

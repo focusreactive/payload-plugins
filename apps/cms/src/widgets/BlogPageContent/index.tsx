@@ -1,9 +1,11 @@
-import { DisplayHeading, Eyebrow } from "@repo/ui";
+import { DisplayHeading } from "@/components/DisplayHeading";
+import { Eyebrow } from "@/components/Eyebrow";
 import { getTranslations } from "next-intl/server";
 
 import { BLOG_CONFIG } from "@/core/config/blog";
 import type { Locale } from "@/core/types";
-import { EmptyState, Pagination } from "@/core/ui";
+import { EmptyState } from "@/components/EmptyState";
+import { Pagination } from "@/components/Pagination";
 
 import { BlogFilterProvider } from "./components/BlogFilterProvider";
 import { DimWhilePending } from "./components/DimWhilePending";

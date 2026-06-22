@@ -1,9 +1,9 @@
-import { Hero } from "@repo/ui";
-import { ButtonSize } from "@repo/ui/components/ui/button/types";
+import { Hero } from "./ui";
+import { ButtonSize } from "@/components/button/types";
 import React from "react";
 
 import { resolveLocale } from "@/core/lib/resolveLocale";
-import { SectionContainer } from "@/core/ui";
+import { SectionContainer } from "@/components/shared";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import { prepareRichTextProps } from "@/lib/adapters/prepareRichTextProps";

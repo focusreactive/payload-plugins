@@ -1,7 +1,7 @@
 import { StarIcon } from "lucide-react";
 import React from "react";
 
-import { Media } from "@/core/ui";
+import { Media } from "@/components/shared";
 import type { Media as MediaType, Testimonial } from "@/payload-types";
 
 const StarRow: React.FC<{ rating: number | null | undefined }> = ({ rating }) => {

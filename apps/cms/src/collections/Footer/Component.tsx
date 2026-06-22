@@ -1,9 +1,5 @@
-import { Footer as SharedFooter } from "@repo/ui";
-import type {
-  FooterLink,
-  FooterLinkGroup,
-  IFooterProps,
-} from "@repo/ui/components/sections/footer/types";
+import { Footer as SharedFooter } from "./ui";
+import type { FooterLink, FooterLinkGroup, IFooterProps } from "./ui/types";
 import React from "react";
 
 import { resolveLocale } from "@/core/lib/resolveLocale";

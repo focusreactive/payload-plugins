@@ -33,8 +33,12 @@ src/
 ├── app/(frontend)/[locale]/   # Public, locale-prefixed routes
 ├── app/(payload)/             # Admin panel + REST/custom API
 ├── auth/                      # OIDC SSO
-├── blocks/                    # Page builder blocks (Hero, Content, Faq, …)
-├── collections/               # Payload collection configs
+├── blocks/                    # Page builder blocks — each: config.ts + Component.tsx (controller) + ui/ (presentational)
+├── collections/               # Payload collection configs (Header/Footer also hold a Component.tsx + ui/)
+├── components/                # See components/README.md
+│   ├── shared/                #   building blocks: CMSLink, Media, RichText, SectionContainer, Container, Link
+│   ├── admin/                 #   Payload admin-panel UI: RowLabel, CopyAiPromptButton, Icon, Logo, SSOButtons
+│   └── <Component>/           #   every other reusable component, flat (Button, Card, SectionHeader, …)
 ├── core/
 │   ├── config/                # i18n, blog, customPages
 │   ├── lib/access/            # Access control helpers
@@ -90,7 +94,7 @@ Locales live in `src/core/config/i18n.ts` (`en`, `es`). URLs always include the 
 
 ### Blocks & Presets
 
-Each block lives in `src/blocks/<BlockName>/config.ts`, supports presets and A/B-experiment fields, and uses `getBlockPreviewImage('BlockName')` for the admin preview thumbnail.
+Each block lives in `src/blocks/<BlockName>/`: `config.ts` (Payload block config; supports presets and A/B-experiment fields, and uses `getBlockPreviewImage('BlockName')` for the admin preview thumbnail), `Component.tsx` (the **controller** — Payload-aware, maps block data to props), and `ui/` (the **presentational** section — props in → JSX out, no Payload). Shared building blocks live in `@/components/shared` (and standalone components at `@/components/<Name>`); admin-panel UI in `@/components/admin`. See `src/components/README.md` for the full layout + the lint-enforced `ui/` boundary.
 
 ### A/B Testing
 

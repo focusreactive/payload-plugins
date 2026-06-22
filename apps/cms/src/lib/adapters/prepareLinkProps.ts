@@ -1,5 +1,5 @@
-import { ButtonVariant } from "@repo/ui/components/ui/button/types";
-import type { LinkProps } from "@repo/ui/components/ui/link/types";
+import { ButtonVariant } from "@/components/button/types";
+import type { LinkProps } from "@/components/link/types";
 
 import { CUSTOM_PAGES_CONFIG } from "@/core/config/customPages";
 import type { CustomPageKey } from "@/core/config/customPages";
