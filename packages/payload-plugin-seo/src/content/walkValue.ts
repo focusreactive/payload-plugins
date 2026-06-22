@@ -1,4 +1,7 @@
-export type ContentFragment = { kind: "text"; value: string } | { kind: "lexical"; value: { root?: unknown } } | { kind: "html"; value: string };
+export type ContentFragment =
+  | { kind: "text"; value: string }
+  | { kind: "lexical"; value: { root?: unknown } }
+  | { kind: "html"; value: string };
 
 const SKIP_KEYS = new Set(["id", "blockType", "blockName", "_template", "order"]);
 
@@ -11,7 +14,11 @@ function nonEmptyString(v: unknown): string | undefined {
 }
 
 function escapeAttr(s: string): string {
-  return s.replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;").replace(/"/gu, "&quot;");
+  return s
+    .replace(/&/gu, "&amp;")
+    .replace(/</gu, "&lt;")
+    .replace(/>/gu, "&gt;")
+    .replace(/"/gu, "&quot;");
 }
 
 function escapeText(s: string): string {

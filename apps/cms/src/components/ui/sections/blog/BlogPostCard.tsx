@@ -1,7 +1,14 @@
 import { cn } from "@/components/ui/utils";
 import type { BlogPostCardProps } from "./types";
 
-export function BlogPostCard({ title, excerpt, category, readTime, image, className }: BlogPostCardProps) {
+export function BlogPostCard({
+  title,
+  excerpt,
+  category,
+  readTime,
+  image,
+  className,
+}: BlogPostCardProps) {
   return (
     <article className={cn("group flex flex-col gap-4", className)}>
       <div
@@ -22,7 +29,9 @@ export function BlogPostCard({ title, excerpt, category, readTime, image, classN
         </div>
       )}
 
-      <h3 className="text-h-card text-foreground transition-colors duration-150 group-hover:text-primary motion-reduce:transition-none">{title}</h3>
+      <h3 className="text-h-card text-foreground transition-colors duration-150 group-hover:text-primary motion-reduce:transition-none">
+        {title}
+      </h3>
 
       {excerpt && <p className="text-muted-foreground text-[0.98rem] leading-[1.6]">{excerpt}</p>}
     </article>

@@ -13,7 +13,13 @@ export interface FilterBarProps {
   onComparisonChange: (next: Comparison) => void;
 }
 
-export function FilterBar({ className, dateRange, onDateRangeChange, comparison, onComparisonChange }: FilterBarProps) {
+export function FilterBar({
+  className,
+  dateRange,
+  onDateRangeChange,
+  comparison,
+  onComparisonChange,
+}: FilterBarProps) {
   return (
     <div className={cn("flex gap-2 items-center", className)}>
       <DateRangeDropdown value={dateRange} onChange={onDateRangeChange} />

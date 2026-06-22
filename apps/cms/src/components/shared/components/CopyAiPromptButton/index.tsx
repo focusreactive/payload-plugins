@@ -109,11 +109,18 @@ export const CopyAiPromptButton: React.FC = () => {
 
   return (
     <div className="field-type">
-      <Button buttonStyle="primary" extraButtonProps={{ style: { width: "100%" } }} margin={false} onClick={handleCopy} type="button">
+      <Button
+        buttonStyle="primary"
+        extraButtonProps={{ style: { width: "100%" } }}
+        margin={false}
+        onClick={handleCopy}
+        type="button"
+      >
         {copied ? "Copied ✓" : "Copy AI Prompt"}
       </Button>
       <p className="field-description" style={{ marginTop: "0.5rem" }}>
-        Copy this prompt and paste it into an AI agent, then describe the section you want. The agent will follow this site's theme, typography, and spacing. Paste the result below.
+        Copy this prompt and paste it into an AI agent, then describe the section you want. The
+        agent will follow this site's theme, typography, and spacing. Paste the result below.
       </p>
     </div>
   );

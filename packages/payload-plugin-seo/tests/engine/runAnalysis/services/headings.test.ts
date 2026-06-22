@@ -3,14 +3,20 @@ import { extractHeadings } from "../../../../src/engine/runAnalysis/services/der
 import type { YoastResearcher } from "../../../../src/engine/researcherAdapter";
 
 function researcherWith(entries: unknown): YoastResearcher {
-  return { getResearch: (name: string) => (name === "getSubheadingTextLengths" ? entries : undefined) };
+  return {
+    getResearch: (name: string) => (name === "getSubheadingTextLengths" ? entries : undefined),
+  };
 }
 const noResearch: YoastResearcher = { getResearch: () => undefined };
 const paperWith = (text: string) => ({ getText: () => text });
 
 describe("extractHeadings", () => {
   it("parses level + text from the research entries, in order", () => {
-    const r = researcherWith([{ subheading: "" }, { subheading: "<h1>Title</h1>" }, { subheading: '<h2 class="x">Section</h2>' }]);
+    const r = researcherWith([
+      { subheading: "" },
+      { subheading: "<h1>Title</h1>" },
+      { subheading: '<h2 class="x">Section</h2>' },
+    ]);
     expect(extractHeadings(r, paperWith(""))).toEqual([
       { level: 1, text: "Title" },
       { level: 2, text: "Section" },

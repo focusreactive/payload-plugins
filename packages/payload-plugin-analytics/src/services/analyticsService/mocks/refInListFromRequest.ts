@@ -15,6 +15,9 @@ function find(expr: Expr | undefined, dim: string): string[] | null {
   return null;
 }
 
-export function refInListFromRequest(request: { dimensionFilter?: Expr }, pageRefDim: string): string[] | null {
+export function refInListFromRequest(
+  request: { dimensionFilter?: Expr },
+  pageRefDim: string
+): string[] | null {
   return find(request.dimensionFilter, pageRefDim);
 }

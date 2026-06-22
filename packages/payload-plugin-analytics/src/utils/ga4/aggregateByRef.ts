@@ -1,6 +1,10 @@
 import type { Row } from "../../types/query";
 
-export function aggregateByRef(rows: Row[], refIndex: number, metricArity: number): Map<string, number[]> {
+export function aggregateByRef(
+  rows: Row[],
+  refIndex: number,
+  metricArity: number
+): Map<string, number[]> {
   const out = new Map<string, number[]>();
 
   for (const row of rows) {

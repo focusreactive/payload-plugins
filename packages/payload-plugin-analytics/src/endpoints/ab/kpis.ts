@@ -20,7 +20,8 @@ export function buildAbKpisEndpoint(config: AnalyticsPluginConfig): Endpoint {
       }
 
       const parsed = AnalyticsQuerySchema.safeParse(body);
-      if (!parsed.success) return Response.json({ error: formatZodIssues(parsed.error.issues) }, { status: 400 });
+      if (!parsed.success)
+        return Response.json({ error: formatZodIssues(parsed.error.issues) }, { status: 400 });
 
       try {
         const { kpis } = await getAbOverview(parsed.data, req);

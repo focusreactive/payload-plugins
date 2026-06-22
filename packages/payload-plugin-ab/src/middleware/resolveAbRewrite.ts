@@ -10,8 +10,16 @@ const DEFAULT_BUCKET_COOKIE_PREFIX = "payload_ab_bucket";
 const DEFAULT_VISITOR_MAX_AGE = 60 * 60 * 24 * 365;
 const DEFAULT_EXP_MAX_AGE = 60 * 60 * 24 * 90;
 
-export function createResolveAbRewrite<TVariantData extends object>(config: ResolveAbRewriteConfig<TVariantData>) {
-  const { storage, getBucket, getRewritePath, getPassPercentage, cookies: cookieConfig = {} } = config;
+export function createResolveAbRewrite<TVariantData extends object>(
+  config: ResolveAbRewriteConfig<TVariantData>
+) {
+  const {
+    storage,
+    getBucket,
+    getRewritePath,
+    getPassPercentage,
+    cookies: cookieConfig = {},
+  } = config;
 
   const {
     bucketCookiePrefix = DEFAULT_BUCKET_COOKIE_PREFIX,
@@ -28,7 +36,7 @@ export function createResolveAbRewrite<TVariantData extends object>(config: Reso
     /** The manifest key to look up — typically the internal rewrite path. */
     manifestKey: string,
     /** Path to rewrite to when no variant is selected ('original' bucket). */
-    originalRewritePath: string,
+    originalRewritePath: string
   ): Promise<NextResponse | null> {
     let variants: TVariantData[] | null = null;
 
@@ -50,9 +58,8 @@ export function createResolveAbRewrite<TVariantData extends object>(config: Reso
 
     let bucket = existingBucket;
     if (!bucket) {
-      bucket =
-        getPassPercentage ?
-          pickWeightedBucket(variants, getBucket, getPassPercentage)
+      bucket = getPassPercentage
+        ? pickWeightedBucket(variants, getBucket, getPassPercentage)
         : pickUniformBucket(variants, getBucket);
     }
 

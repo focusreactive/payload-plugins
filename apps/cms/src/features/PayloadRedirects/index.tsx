@@ -45,7 +45,12 @@ export const PayloadRedirects: React.FC<Props> = async ({ disableNotFound, url, 
           collection: "page",
           locale,
         });
-      } else if (collection === BLOG_CONFIG.collection && document && "slug" in document && document.slug) {
+      } else if (
+        collection === BLOG_CONFIG.collection &&
+        document &&
+        "slug" in document &&
+        document.slug
+      ) {
         redirectUrl = buildUrl({
           collection: "posts",
           locale,

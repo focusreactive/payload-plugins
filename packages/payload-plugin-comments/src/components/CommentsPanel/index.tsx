@@ -33,7 +33,9 @@ export const CommentsPanel = ({ className }: Props) => {
 
   if (isLoading && allComments.length === 0) {
     return (
-      <div className={cn(className, "text-(--theme-elevation-450) text-[13px] text-center py-6 m-0")}>
+      <div
+        className={cn(className, "text-(--theme-elevation-450) text-[13px] text-center py-6 m-0")}
+      >
         {t("comments:loadingComments" as never)}
       </div>
     );
@@ -44,7 +46,9 @@ export const CommentsPanel = ({ className }: Props) => {
   }
 
   if (mode === "global-document") {
-    return <GlobalDocumentView comments={visibleComments} userId={userId} className={cn(className)} />;
+    return (
+      <GlobalDocumentView comments={visibleComments} userId={userId} className={cn(className)} />
+    );
   }
 
   return <GlobalView comments={visibleComments} userId={userId} className={cn(className)} />;

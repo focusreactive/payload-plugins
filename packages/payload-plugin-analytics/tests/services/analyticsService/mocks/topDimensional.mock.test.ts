@@ -3,10 +3,15 @@ import { topSourcesMock } from "../../../../src/services/analyticsService/mocks/
 import { topDevicesMock } from "../../../../src/services/analyticsService/mocks/topDevices";
 import { topCountriesMock } from "../../../../src/services/analyticsService/mocks/topCountries";
 import { topEventsMock } from "../../../../src/services/analyticsService/mocks/topEvents";
-import { setActiveExistingRefs, __clearActiveExistingRefs } from "../../../../src/services/pageFilter/activeRefsHolder";
+import {
+  setActiveExistingRefs,
+  __clearActiveExistingRefs,
+} from "../../../../src/services/pageFilter/activeRefsHolder";
 
 const DIM = "customEvent:fr_page_ref";
-const filtered = { dimensionFilter: { filter: { fieldName: DIM, inListFilter: { values: ["pages:1"] } } } };
+const filtered = {
+  dimensionFilter: { filter: { fieldName: DIM, inListFilter: { values: ["pages:1"] } } },
+};
 
 type Res = { rows: Array<{ metricValues: Array<{ value: string }> }> };
 

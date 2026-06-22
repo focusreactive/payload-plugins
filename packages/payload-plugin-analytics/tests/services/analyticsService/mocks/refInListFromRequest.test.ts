@@ -6,7 +6,11 @@ const DIM = "customEvent:fr_page_ref";
 
 describe("refInListFromRequest", () => {
   it("reads a standalone inList filter", () => {
-    const req = { dimensionFilter: { filter: { fieldName: DIM, inListFilter: { values: ["pages:1", "__home"] } } } };
+    const req = {
+      dimensionFilter: {
+        filter: { fieldName: DIM, inListFilter: { values: ["pages:1", "__home"] } },
+      },
+    };
     expect(refInListFromRequest(req, DIM)).toEqual(["pages:1", "__home"]);
   });
 
@@ -14,7 +18,10 @@ describe("refInListFromRequest", () => {
     const req = {
       dimensionFilter: {
         andGroup: {
-          expressions: [{ filter: { fieldName: "eventName", stringFilter: { value: "lead_action" } } }, { filter: { fieldName: DIM, inListFilter: { values: ["pages:2"] } } }],
+          expressions: [
+            { filter: { fieldName: "eventName", stringFilter: { value: "lead_action" } } },
+            { filter: { fieldName: DIM, inListFilter: { values: ["pages:2"] } } },
+          ],
         },
       },
     };
@@ -22,7 +29,12 @@ describe("refInListFromRequest", () => {
   });
 
   it("returns null when no fr_page_ref inList is present", () => {
-    expect(refInListFromRequest({ dimensionFilter: { filter: { fieldName: "eventName", stringFilter: { value: "x" } } } }, DIM)).toBeNull();
+    expect(
+      refInListFromRequest(
+        { dimensionFilter: { filter: { fieldName: "eventName", stringFilter: { value: "x" } } } },
+        DIM
+      )
+    ).toBeNull();
     expect(refInListFromRequest({}, DIM)).toBeNull();
   });
 });

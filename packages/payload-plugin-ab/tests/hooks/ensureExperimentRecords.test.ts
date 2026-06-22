@@ -15,18 +15,27 @@ const pluginConfig = {
   experimentsCollectionSlug: "ab-experiments",
 } as AbTestingPluginConfig;
 
-function makeReq(opts: { parentDoc: Record<string, unknown>; variantCount: number; existingRows?: Array<{ manifestKey: string }>; localization?: string[] }) {
+function makeReq(opts: {
+  parentDoc: Record<string, unknown>;
+  variantCount: number;
+  existingRows?: Array<{ manifestKey: string }>;
+  localization?: string[];
+}) {
   const created: Array<Record<string, unknown>> = [];
   const payload = {
     config: {
-      localization: opts.localization ? { locales: opts.localization.map((code) => ({ code })) } : false,
+      localization: opts.localization
+        ? { locales: opts.localization.map((code) => ({ code })) }
+        : false,
     },
     findByID: vi.fn().mockResolvedValue(opts.parentDoc),
     find: vi.fn().mockImplementation(({ collection }: { collection: string }) => {
       if (collection === "ab-experiments") {
         return Promise.resolve({ docs: opts.existingRows ?? [] });
       }
-      return Promise.resolve({ docs: Array.from({ length: opts.variantCount }, (_, i) => ({ id: `v${i}` })) });
+      return Promise.resolve({
+        docs: Array.from({ length: opts.variantCount }, (_, i) => ({ id: `v${i}` })),
+      });
     }),
     create: vi.fn().mockImplementation(({ data }: { data: Record<string, unknown> }) => {
       created.push(data);
@@ -41,7 +50,12 @@ describe("ensureExperimentRecords", () => {
     const { req, created } = makeReq({ parentDoc: { id: "p1", slug: "about" }, variantCount: 1 });
     await ensureExperimentRecords("p1", "pages", abConfig, pluginConfig, req as never);
     expect(created).toHaveLength(1);
-    expect(created[0]).toMatchObject({ manifestKey: "/about", parentDocId: "p1", parentCollection: "pages", locale: null });
+    expect(created[0]).toMatchObject({
+      manifestKey: "/about",
+      parentDocId: "p1",
+      parentCollection: "pages",
+      locale: null,
+    });
     expect(typeof created[0].startedAt).toBe("string");
   });
 
@@ -79,7 +93,10 @@ describe("ensureExperimentRecords", () => {
   });
 
   it("creates nothing when the parent document cannot be found", async () => {
-    const { req, created, payload } = makeReq({ parentDoc: { id: "p1", slug: "about" }, variantCount: 1 });
+    const { req, created, payload } = makeReq({
+      parentDoc: { id: "p1", slug: "about" },
+      variantCount: 1,
+    });
     payload.findByID = vi.fn().mockResolvedValue(null);
     await ensureExperimentRecords("p1", "pages", abConfig, pluginConfig, req as never);
     expect(created).toHaveLength(0);

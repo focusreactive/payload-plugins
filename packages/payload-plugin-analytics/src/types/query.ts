@@ -1,4 +1,11 @@
-export type CustomRegistrationKey = "fr_session_id" | "fr_event_seq" | "fr_elapsed_ms" | "fr_session_start" | "fr_lead_type" | "fr_page_ref" | "fr_content_locale";
+export type CustomRegistrationKey =
+  | "fr_session_id"
+  | "fr_event_seq"
+  | "fr_elapsed_ms"
+  | "fr_session_start"
+  | "fr_lead_type"
+  | "fr_page_ref"
+  | "fr_content_locale";
 
 export interface SetupGate {
   setupRequired: true;
@@ -6,7 +13,13 @@ export interface SetupGate {
 }
 
 // Inputs
-export type DateRangePreset = "today" | "yesterday" | "last-7d" | "last-14d" | "last-30d" | "last-90d";
+export type DateRangePreset =
+  | "today"
+  | "yesterday"
+  | "last-7d"
+  | "last-14d"
+  | "last-30d"
+  | "last-90d";
 
 export type DateRange = { preset: DateRangePreset } | { from: string; to: string };
 

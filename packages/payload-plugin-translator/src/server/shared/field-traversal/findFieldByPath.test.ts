@@ -17,7 +17,11 @@ const schema: Field[] = [
     ],
   }),
   f({ type: "row", fields: [f({ name: "col", type: "text" })] }),
-  f({ name: "layout", type: "blocks", blocks: [{ slug: "hero", fields: [f({ name: "headline", type: "text" })] }] }),
+  f({
+    name: "layout",
+    type: "blocks",
+    blocks: [{ slug: "hero", fields: [f({ name: "headline", type: "text" })] }],
+  }),
 ];
 
 describe("findFieldByPath", () => {
@@ -79,14 +83,39 @@ describe("findFieldByPath — deeply nested schemas", () => {
     f({
       name: "a",
       type: "group",
-      fields: [f({ name: "b", type: "group", fields: [f({ name: "c", type: "array", fields: [f({ name: "leaf", type: "text" })] })] })],
+      fields: [
+        f({
+          name: "b",
+          type: "group",
+          fields: [f({ name: "c", type: "array", fields: [f({ name: "leaf", type: "text" })] })],
+        }),
+      ],
     }),
-    f({ name: "arr", type: "array", fields: [f({ name: "g", type: "group", fields: [f({ name: "deep", type: "text" })] })] }),
+    f({
+      name: "arr",
+      type: "array",
+      fields: [f({ name: "g", type: "group", fields: [f({ name: "deep", type: "text" })] })],
+    }),
     f({
       type: "tabs",
-      tabs: [{ name: "tab1", fields: [f({ name: "tg", type: "group", fields: [f({ name: "tleaf", type: "text" })] })] }],
+      tabs: [
+        {
+          name: "tab1",
+          fields: [f({ name: "tg", type: "group", fields: [f({ name: "tleaf", type: "text" })] })],
+        },
+      ],
     }),
-    f({ name: "withBlocks", type: "group", fields: [f({ name: "bl", type: "blocks", blocks: [{ slug: "x", fields: [f({ name: "y", type: "text" })] }] })] }),
+    f({
+      name: "withBlocks",
+      type: "group",
+      fields: [
+        f({
+          name: "bl",
+          type: "blocks",
+          blocks: [{ slug: "x", fields: [f({ name: "y", type: "text" })] }],
+        }),
+      ],
+    }),
   ];
 
   it("resolves a leaf through group → group → array (indices dropped)", () => {
@@ -132,7 +161,10 @@ describe("findFieldByPath — data-aware block resolution", () => {
   });
 
   it("returns `inside-blocks` when the element's blockType matches no defined block", () => {
-    expect(findFieldByPath(schema, ["layout", "0", "headline"], { layout: [{ blockType: "nope" }] }).status).toBe("inside-blocks");
+    expect(
+      findFieldByPath(schema, ["layout", "0", "headline"], { layout: [{ blockType: "nope" }] })
+        .status
+    ).toBe("inside-blocks");
   });
 
   it("returns `inside-blocks` for a block path with an index but no data", () => {
@@ -140,28 +172,59 @@ describe("findFieldByPath — data-aware block resolution", () => {
   });
 
   it("threads array element data so a downstream lookup resolves", () => {
-    expect(findFieldByPath(schema, ["items", "0", "label"], { items: [{ label: "x" }] }).status).toBe("leaf");
+    expect(
+      findFieldByPath(schema, ["items", "0", "label"], { items: [{ label: "x" }] }).status
+    ).toBe("leaf");
   });
 });
 
 describe("findFieldByPath — localized list ancestor", () => {
   const withLocalized: Field[] = [
-    f({ name: "locArr", type: "array", localized: true, fields: [f({ name: "label", type: "text" })] }),
+    f({
+      name: "locArr",
+      type: "array",
+      localized: true,
+      fields: [f({ name: "label", type: "text" })],
+    }),
     f({ name: "plainArr", type: "array", fields: [f({ name: "label", type: "text" })] }),
-    f({ name: "locBlocks", type: "blocks", localized: true, blocks: [{ slug: "hero", fields: [f({ name: "headline", type: "text" })] }] }),
+    f({
+      name: "locBlocks",
+      type: "blocks",
+      localized: true,
+      blocks: [{ slug: "hero", fields: [f({ name: "headline", type: "text" })] }],
+    }),
     // non-localized array wrapping a localized array — the guard must fire for the inner one.
-    f({ name: "outer", type: "array", fields: [f({ name: "inner", type: "array", localized: true, fields: [f({ name: "deep", type: "text" })] })] }),
+    f({
+      name: "outer",
+      type: "array",
+      fields: [
+        f({
+          name: "inner",
+          type: "array",
+          localized: true,
+          fields: [f({ name: "deep", type: "text" })],
+        }),
+      ],
+    }),
   ];
 
   it("returns `localized-list-ancestor` when descending THROUGH a localized array (with or without an index)", () => {
-    expect(findFieldByPath(withLocalized, ["locArr", "label"]).status).toBe("localized-list-ancestor");
-    expect(findFieldByPath(withLocalized, ["locArr", "0", "label"]).status).toBe("localized-list-ancestor");
+    expect(findFieldByPath(withLocalized, ["locArr", "label"]).status).toBe(
+      "localized-list-ancestor"
+    );
+    expect(findFieldByPath(withLocalized, ["locArr", "0", "label"]).status).toBe(
+      "localized-list-ancestor"
+    );
   });
 
   it("returns `localized-list-ancestor` when descending THROUGH a localized blocks field", () => {
     const doc = { locBlocks: [{ blockType: "hero", headline: "Hi" }] };
-    expect(findFieldByPath(withLocalized, ["locBlocks", "0", "headline"], doc).status).toBe("localized-list-ancestor");
-    expect(findFieldByPath(withLocalized, ["locBlocks", "headline"]).status).toBe("localized-list-ancestor");
+    expect(findFieldByPath(withLocalized, ["locBlocks", "0", "headline"], doc).status).toBe(
+      "localized-list-ancestor"
+    );
+    expect(findFieldByPath(withLocalized, ["locBlocks", "headline"]).status).toBe(
+      "localized-list-ancestor"
+    );
   });
 
   it("still returns `container` when the path ENDS on a localized list (not descending through it)", () => {
@@ -174,6 +237,8 @@ describe("findFieldByPath — localized list ancestor", () => {
   });
 
   it("fires for a localized list nested below a non-localized one", () => {
-    expect(findFieldByPath(withLocalized, ["outer", "0", "inner", "deep"]).status).toBe("localized-list-ancestor");
+    expect(findFieldByPath(withLocalized, ["outer", "0", "inner", "deep"]).status).toBe(
+      "localized-list-ancestor"
+    );
   });
 });

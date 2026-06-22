@@ -2,7 +2,13 @@
 import { BLOG_CONFIG } from "@/core/config/blog";
 import { ErrorBoundary } from "@/components/shared";
 
-export default function PostError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function PostError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   return (
     <ErrorBoundary
       error={error}

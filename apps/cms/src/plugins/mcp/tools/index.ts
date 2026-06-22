@@ -8,7 +8,14 @@ import { createGetDocumentTool } from "./getDocument";
 import { createGetFieldTool } from "./getField";
 import { createGetGlobalDocumentTool } from "./getGlobalDocument";
 
-export const SKIP_KEYS = new Set(["blockType", "blockName", "url", "locale", "createdAt", "updatedAt"]);
+export const SKIP_KEYS = new Set([
+  "blockType",
+  "blockName",
+  "url",
+  "locale",
+  "createdAt",
+  "updatedAt",
+]);
 
 export interface CollectionToolConfig {
   tableFields: string[];

@@ -15,7 +15,11 @@ function revalidatePostTags(slug: string, locale: Locale, payload: Payload) {
   revalidateTag(cacheTag({ locale, type: "postsList" }), "max");
 }
 
-export const revalidatePost: CollectionAfterChangeHook<Post> = async ({ doc, previousDoc, req }) => {
+export const revalidatePost: CollectionAfterChangeHook<Post> = async ({
+  doc,
+  previousDoc,
+  req,
+}) => {
   const { payload, context } = req;
 
   if (!context.disableRevalidate) {

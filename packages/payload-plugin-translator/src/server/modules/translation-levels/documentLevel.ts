@@ -24,7 +24,10 @@ export function documentLevel(): TranslationLevel {
   return {
     extend(ctx) {
       useDocTranslationApi(ctx);
-      ctx.addCollectionComponent("beforeDocumentControls", (collection) => new TranslateDocumentExport(collection, ctx.access));
+      ctx.addCollectionComponent(
+        "beforeDocumentControls",
+        (collection) => new TranslateDocumentExport(collection, ctx.access)
+      );
     },
   };
 }

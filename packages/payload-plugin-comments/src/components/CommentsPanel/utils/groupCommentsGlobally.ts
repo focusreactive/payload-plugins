@@ -69,7 +69,9 @@ export function groupCommentsGlobally(comments: Comment[]): EntityCommentsEntry[
     const oldestInFields = (fields: Map<FieldPath, Comment[]>) =>
       Math.min(...[...fields.values()].flat().map(extractCommentCreatedAtTime));
 
-    const sortedDocs = new Map([...docs.entries()].sort(([, a], [, b]) => oldestInFields(a) - oldestInFields(b)));
+    const sortedDocs = new Map(
+      [...docs.entries()].sort(([, a], [, b]) => oldestInFields(a) - oldestInFields(b))
+    );
 
     collections.set(slug, sortedDocs);
   }
@@ -80,7 +82,11 @@ export function groupCommentsGlobally(comments: Comment[]): EntityCommentsEntry[
   }
 
   const oldestInCollectionDocs = (docs: CollectionCommentsMapByDoc) =>
-    Math.min(...[...docs.values()].flatMap((fields) => [...fields.values()].flat()).map(extractCommentCreatedAtTime));
+    Math.min(
+      ...[...docs.values()]
+        .flatMap((fields) => [...fields.values()].flat())
+        .map(extractCommentCreatedAtTime)
+    );
 
   const oldestInGlobalFields = (fields: Map<FieldPath, Comment[]>) =>
     Math.min(...[...fields.values()].flat().map(extractCommentCreatedAtTime));

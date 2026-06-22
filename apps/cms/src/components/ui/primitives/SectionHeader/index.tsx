@@ -17,13 +17,26 @@ export interface SectionHeaderProps {
   className?: string;
 }
 
-export function SectionHeader({ eyebrow, title, subtitle, align = "left", size = "display-2", className }: SectionHeaderProps) {
+export function SectionHeader({
+  eyebrow,
+  title,
+  subtitle,
+  align = "left",
+  size = "display-2",
+  className,
+}: SectionHeaderProps) {
   if (!(eyebrow?.text || title || subtitle)) {
     return null;
   }
 
   return (
-    <div className={cn("flex max-w-[720px] flex-col gap-5", align === "center" && "mx-auto items-center text-center", className)}>
+    <div
+      className={cn(
+        "flex max-w-[720px] flex-col gap-5",
+        align === "center" && "mx-auto items-center text-center",
+        className
+      )}
+    >
       {eyebrow?.text && (
         <Eyebrow prefix="dot" tone={eyebrow.variant ?? "accent"}>
           {eyebrow.text}

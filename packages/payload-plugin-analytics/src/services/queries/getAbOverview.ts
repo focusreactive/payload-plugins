@@ -39,7 +39,10 @@ function median(xs: number[]): number {
   return s.length % 2 ? s[mid]! : (s[mid - 1]! + s[mid]!) / 2;
 }
 
-export async function getAbOverview(query: { dateRange: AbExperimentQuery["dateRange"] }, req: PayloadRequest): Promise<AbOverviewResult> {
+export async function getAbOverview(
+  query: { dateRange: AbExperimentQuery["dateRange"] },
+  req: PayloadRequest
+): Promise<AbOverviewResult> {
   const pluginConfig = getPluginConfig();
   const ab = resolveAbConfig(pluginConfig.ab);
   if (!ab) throw new Error("A/B integration not configured");
@@ -69,7 +72,12 @@ export async function getAbOverview(query: { dateRange: AbExperimentQuery["dateR
   const exposureReq = {
     dateRanges,
     metrics: [{ name: "eventCount" }],
-    dimensions: [{ name: `customEvent:${D.experiment}` }, { name: `customEvent:${D.variant}` }, { name: "customEvent:fr_session_id" }, { name: `customEvent:${D.visitorId}` }],
+    dimensions: [
+      { name: `customEvent:${D.experiment}` },
+      { name: `customEvent:${D.variant}` },
+      { name: "customEvent:fr_session_id" },
+      { name: `customEvent:${D.visitorId}` },
+    ],
     dimensionFilter: inExperiments,
     limit: 250_000,
   };
@@ -77,9 +85,15 @@ export async function getAbOverview(query: { dateRange: AbExperimentQuery["dateR
   const convByBucketReq = {
     dateRanges,
     metrics: [{ name: "eventCount" }],
-    dimensions: [{ name: `customEvent:${D.experiment}` }, { name: `customEvent:${D.variant}` }, { name: "customEvent:fr_session_id" }],
+    dimensions: [
+      { name: `customEvent:${D.experiment}` },
+      { name: `customEvent:${D.variant}` },
+      { name: "customEvent:fr_session_id" },
+    ],
     dimensionFilter: {
-      andGroup: { expressions: [inExperiments, convertingFilter(D.experiment, "").andGroup!.expressions![1]!] },
+      andGroup: {
+        expressions: [inExperiments, convertingFilter(D.experiment, "").andGroup!.expressions![1]!],
+      },
     },
     limit: 250_000,
   };
@@ -89,12 +103,18 @@ export async function getAbOverview(query: { dateRange: AbExperimentQuery["dateR
     metrics: [{ name: "eventCount" }],
     dimensions: [{ name: `customEvent:${D.experiment}` }, { name: "pagePath" }],
     dimensionFilter: {
-      andGroup: { expressions: [inExperiments, convertingFilter(D.experiment, "").andGroup!.expressions![1]!] },
+      andGroup: {
+        expressions: [inExperiments, convertingFilter(D.experiment, "").andGroup!.expressions![1]!],
+      },
     },
     limit: 100_000,
   };
 
-  const batch = await runQuery.batchRunReports(pluginConfig.ga4.propertyId, [exposureReq, convByBucketReq, convByPageReq] as never, "abOverview");
+  const batch = await runQuery.batchRunReports(
+    pluginConfig.ga4.propertyId,
+    [exposureReq, convByBucketReq, convByPageReq] as never,
+    "abOverview"
+  );
   const [expReport, convBucketReport, convPageReport] = batch.reports ?? [];
 
   // group exposure: experiment -> bucket -> {sessions:Set, visitors:Set}
@@ -137,10 +157,18 @@ export async function getAbOverview(query: { dateRange: AbExperimentQuery["dateR
   for (const rec of records) {
     const byB = exp.get(rec.manifestKey) ?? new Map();
     const convB = conv.get(rec.manifestKey) ?? new Map();
-    const meta = await getExperimentBucketMeta(rec.parentCollection, rec.parentDocId, rec.locale ?? undefined, ab, req);
+    const meta = await getExperimentBucketMeta(
+      rec.parentCollection,
+      rec.parentDocId,
+      rec.locale ?? undefined,
+      ab,
+      req
+    );
 
     const bucketNames = new Set<string>([...byB.keys(), ...convB.keys(), ...Object.keys(meta)]);
-    const orderedBuckets = [...bucketNames].sort((a, b) => (a === AB_CONTROL_BUCKET ? -1 : b === AB_CONTROL_BUCKET ? 1 : a.localeCompare(b)));
+    const orderedBuckets = [...bucketNames].sort((a, b) =>
+      a === AB_CONTROL_BUCKET ? -1 : b === AB_CONTROL_BUCKET ? 1 : a.localeCompare(b)
+    );
 
     const sessionSet = new Set<string>();
     const visitorSet = new Set<string>();
@@ -160,7 +188,10 @@ export async function getAbOverview(query: { dateRange: AbExperimentQuery["dateR
     const observed = orderedBuckets.map((b) => byB.get(b)?.s.size ?? 0);
     const shares = orderedBuckets.map((b) => meta[b]?.configuredShare ?? 0);
     const shareTotal = shares.reduce((a, b) => a + b, 0);
-    const normShares = shareTotal > 0 ? shares.map((s) => s / shareTotal) : orderedBuckets.map(() => 1 / orderedBuckets.length);
+    const normShares =
+      shareTotal > 0
+        ? shares.map((s) => s / shareTotal)
+        : orderedBuckets.map(() => 1 / orderedBuckets.length);
     const srm = sampleRatioMismatchCheck(observed, normShares, ab.stats.srmThreshold);
     if (!srm.passed) needingAttention += 1;
 
@@ -176,7 +207,12 @@ export async function getAbOverview(query: { dateRange: AbExperimentQuery["dateR
       if (b === control) continue;
 
       const variantSessions = byB.get(b)?.s.size ?? 0;
-      const t = twoProportionZTest(convB.get(b)?.size ?? 0, variantSessions, controlConversions, controlSessions);
+      const t = twoProportionZTest(
+        convB.get(b)?.size ?? 0,
+        variantSessions,
+        controlConversions,
+        controlSessions
+      );
 
       candidates.push({
         bucket: b,
@@ -192,7 +228,10 @@ export async function getAbOverview(query: { dateRange: AbExperimentQuery["dateR
       }
     }
 
-    const { winnerBucket } = pickWinner(candidates, { alpha: ab.stats.alpha, sessionFloor: ab.winRate.sessionFloor });
+    const { winnerBucket } = pickWinner(candidates, {
+      alpha: ab.stats.alpha,
+      sessionFloor: ab.winRate.sessionFloor,
+    });
     const controlRate = controlSessions > 0 ? controlConversions / controlSessions : 0;
     const minBucketSessions = observed.length ? Math.min(...observed) : 0;
     const qualified = isQualified(
@@ -206,7 +245,13 @@ export async function getAbOverview(query: { dateRange: AbExperimentQuery["dateR
     );
     portfolioExps.push({ qualified, hasWinner: winnerBucket != null });
 
-    const outcome: AbExperimentListRow["outcome"] = !srm.passed ? "srm" : winnerBucket != null ? "winner" : qualified ? "no_effect" : "collecting";
+    const outcome: AbExperimentListRow["outcome"] = !srm.passed
+      ? "srm"
+      : winnerBucket != null
+        ? "winner"
+        : qualified
+          ? "no_effect"
+          : "collecting";
 
     rows.push({
       manifestKey: rec.manifestKey,
@@ -227,7 +272,9 @@ export async function getAbOverview(query: { dateRange: AbExperimentQuery["dateR
 
   rows.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
 
-  const ages = records.map((r) => Math.max(1, Math.round((Date.now() - new Date(r.startedAt).getTime()) / 86_400_000)));
+  const ages = records.map((r) =>
+    Math.max(1, Math.round((Date.now() - new Date(r.startedAt).getTime()) / 86_400_000))
+  );
 
   return {
     kpis: {

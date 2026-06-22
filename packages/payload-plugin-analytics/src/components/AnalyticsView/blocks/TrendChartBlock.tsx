@@ -40,12 +40,19 @@ export function TrendChartBlock({ dateRange, comparison, className }: BlockCompo
           </span>
           {showCompare && (
             <span className="inline-flex items-center gap-1.5">
-              <span className="w-4 h-0 border-t-2 border-dashed border-[var(--theme-elevation-500)]" /> Previous period
+              <span className="w-4 h-0 border-t-2 border-dashed border-[var(--theme-elevation-500)]" />{" "}
+              Previous period
             </span>
           )}
         </div>
       </div>
-      <TrendChart series={data?.series ?? []} comparisonSeries={showCompare ? data?.comparisonSeries : undefined} metric={metric} loading={isLoading} error={error ?? undefined} />
+      <TrendChart
+        series={data?.series ?? []}
+        comparisonSeries={showCompare ? data?.comparisonSeries : undefined}
+        metric={metric}
+        loading={isLoading}
+        error={error ?? undefined}
+      />
     </DataCard>
   );
 }

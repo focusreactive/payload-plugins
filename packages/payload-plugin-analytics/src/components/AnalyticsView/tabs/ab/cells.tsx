@@ -29,7 +29,9 @@ export function LiftCell({ lift, big }: { lift: BestLift; big?: boolean }) {
   const tone: LiftTone = !lift.significant ? "is-ns" : lift.relativeLift >= 0 ? "is-up" : "is-down";
   const Arrow = lift.relativeLift >= 0 ? ArrowUp : ArrowDown;
   const value = lift.relativeLift * 100;
-  const title = lift.significant ? `Significant · p = ${lift.pValue != null ? formatPValue(lift.pValue) : "—"}` : `Not yet significant · p = ${lift.pValue != null ? formatPValue(lift.pValue) : "—"}`;
+  const title = lift.significant
+    ? `Significant · p = ${lift.pValue != null ? formatPValue(lift.pValue) : "—"}`
+    : `Not yet significant · p = ${lift.pValue != null ? formatPValue(lift.pValue) : "—"}`;
 
   return (
     <span className={abLiftClass(tone, big)} title={title}>
@@ -42,7 +44,12 @@ export function LiftCell({ lift, big }: { lift: BestLift; big?: boolean }) {
 export interface SrmInfo {
   passed: boolean;
   pValue: number;
-  buckets: Array<{ bucket: string; name: string | null; observedShare: number; configuredShare: number | null }>;
+  buckets: Array<{
+    bucket: string;
+    name: string | null;
+    observedShare: number;
+    configuredShare: number | null;
+  }>;
 }
 
 export function SrmDot({ srm }: { srm: SrmInfo }) {
@@ -51,19 +58,38 @@ export function SrmDot({ srm }: { srm: SrmInfo }) {
       <span
         className={cn(
           "h-[9px] w-[9px] rounded-full",
-          srm.passed ? "bg-(--theme-success-500) shadow-[0_0_0_3px_var(--theme-success-100)]" : "bg-(--theme-error-500) shadow-[0_0_0_3px_var(--theme-error-50)]"
+          srm.passed
+            ? "bg-(--theme-success-500) shadow-[0_0_0_3px_var(--theme-success-100)]"
+            : "bg-(--theme-error-500) shadow-[0_0_0_3px_var(--theme-error-50)]"
         )}
       />
     </span>
   );
 }
 
-export function BucketName({ bucket, name, index }: { bucket: string; name: string | null; index: number }) {
+export function BucketName({
+  bucket,
+  name,
+  index,
+}: {
+  bucket: string;
+  name: string | null;
+  index: number;
+}) {
   return (
     <span className="inline-flex min-w-0 items-center gap-[7px]">
-      <span className="h-[9px] w-[9px] shrink-0 rounded-[3px]" style={{ background: getBucketColor(index) }} />
-      <span className="font-medium text-(--theme-elevation-900)">{getBucketLabel(bucket, name)}</span>
-      {bucket !== AB_CONTROL_BUCKET && <span className="font-[family-name:var(--font-mono)] text-[10.5px] text-(--theme-elevation-400)">{bucket}</span>}
+      <span
+        className="h-[9px] w-[9px] shrink-0 rounded-[3px]"
+        style={{ background: getBucketColor(index) }}
+      />
+      <span className="font-medium text-(--theme-elevation-900)">
+        {getBucketLabel(bucket, name)}
+      </span>
+      {bucket !== AB_CONTROL_BUCKET && (
+        <span className="font-[family-name:var(--font-mono)] text-[10.5px] text-(--theme-elevation-400)">
+          {bucket}
+        </span>
+      )}
     </span>
   );
 }

@@ -18,6 +18,8 @@ export function pushPageView(path: string, title: string, location: string): voi
     [SESSION_PARAM_KEYS.eventSeq]: ctx.eventSeq,
     [SESSION_PARAM_KEYS.elapsedMs]: ctx.elapsedMs,
     [SESSION_PARAM_KEYS.sessionStart]: ctx.startedAtIso,
-    ...(page ? { [PAGE_PARAM_KEYS.pageRef]: page.pageRef, [PAGE_PARAM_KEYS.contentLocale]: page.locale } : {}),
+    ...(page
+      ? { [PAGE_PARAM_KEYS.pageRef]: page.pageRef, [PAGE_PARAM_KEYS.contentLocale]: page.locale }
+      : {}),
   });
 }

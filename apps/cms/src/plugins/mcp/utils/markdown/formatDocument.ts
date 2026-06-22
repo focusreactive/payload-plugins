@@ -14,7 +14,19 @@ interface Props {
   summarizeComplexValues?: boolean;
 }
 
-export function formatDocument({ id, title, titleIsId, url, adminUrl, extractedDoc, collectionSlug, fieldLabels, blockLabels, fieldRelationTo, summarizeComplexValues = true }: Props) {
+export function formatDocument({
+  id,
+  title,
+  titleIsId,
+  url,
+  adminUrl,
+  extractedDoc,
+  collectionSlug,
+  fieldLabels,
+  blockLabels,
+  fieldRelationTo,
+  summarizeComplexValues = true,
+}: Props) {
   const titleLine = titleIsId ? `# ${title}` : id ? `# ${title} | ${id}` : `# ${title}`;
   const urlLine = `${[adminUrl, url].filter(Boolean).join(" | ")}\n`;
   const fieldsTitleLine = `## Fields:`;

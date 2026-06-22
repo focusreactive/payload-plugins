@@ -1,6 +1,9 @@
 import type { Row } from "../../types";
 
-export function bucketByDateRange<Key extends string>(rows: Row[] | null | undefined, keys: readonly Key[]): Record<Key, Row[]> {
+export function bucketByDateRange<Key extends string>(
+  rows: Row[] | null | undefined,
+  keys: readonly Key[]
+): Record<Key, Row[]> {
   const buckets = Object.fromEntries(keys.map((key) => [key, [] as Row[]])) as Record<Key, Row[]>;
 
   if (!rows) return buckets;

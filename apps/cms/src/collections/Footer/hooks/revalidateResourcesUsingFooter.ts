@@ -5,7 +5,10 @@ import { revalidatePageCache } from "@/core/lib/revalidatePageCache";
 import { revalidateGlobalTags } from "@/dal/getGlobals";
 import type { Footer } from "@/payload-types";
 
-export const revalidateResourcesUsingFooter: CollectionAfterChangeHook<Footer> = async ({ doc, req }) => {
+export const revalidateResourcesUsingFooter: CollectionAfterChangeHook<Footer> = async ({
+  doc,
+  req,
+}) => {
   const { payload, context } = req;
 
   if (!context.disableRevalidate) {
@@ -16,7 +19,8 @@ export const revalidateResourcesUsingFooter: CollectionAfterChangeHook<Footer> =
       slug: "site-settings",
     });
 
-    const footerId = typeof siteSettings?.footer === "object" ? siteSettings.footer?.id : siteSettings?.footer;
+    const footerId =
+      typeof siteSettings?.footer === "object" ? siteSettings.footer?.id : siteSettings?.footer;
     if (footerId === doc.id) {
       revalidateGlobalTags({ collection: "site-settings", locale });
       payload.logger?.info?.(`Revalidated site-settings for locale: ${locale}`);

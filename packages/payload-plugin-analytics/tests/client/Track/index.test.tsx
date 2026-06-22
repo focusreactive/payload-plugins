@@ -121,13 +121,15 @@ describe("<Track>", () => {
 
   it("forwardRef child receives the ref through cloneElement", () => {
     const provider = makeProvider();
-    const Btn = forwardRef<HTMLButtonElement, { onClick?: (e: React.MouseEvent) => void }>(function Btn(props, ref) {
-      return (
-        <button ref={ref} {...props}>
-          forwarded
-        </button>
-      );
-    });
+    const Btn = forwardRef<HTMLButtonElement, { onClick?: (e: React.MouseEvent) => void }>(
+      function Btn(props, ref) {
+        return (
+          <button ref={ref} {...props}>
+            forwarded
+          </button>
+        );
+      }
+    );
     const ref = { current: null as HTMLButtonElement | null };
     renderWithProvider(
       <Track on="click" event="x">

@@ -21,6 +21,10 @@ export const topDevicesMock: RunReportMockFn = (request) => {
     })
   );
   const allowedList = refInListFromRequest(request as never, PAGE_REF_DIM);
-  const out = filterAndReaggregate(tagged, { refIndex: 3, keepDimIndices: [0, 1, 2], allowed: allowedList ? new Set(allowedList) : null });
+  const out = filterAndReaggregate(tagged, {
+    refIndex: 3,
+    keepDimIndices: [0, 1, 2],
+    allowed: allowedList ? new Set(allowedList) : null,
+  });
   return response(out) as never;
 };

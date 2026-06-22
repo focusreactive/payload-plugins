@@ -1,1 +1,1 @@
-export { CollectionTranslationFormModel } from './model'
+export { CollectionTranslationFormModel } from "./model";

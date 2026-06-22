@@ -1,1 +1,1 @@
-export { DocumentTranslationProgressFailed } from './ui/DocumentTranslationProgressFailed'
+export { DocumentTranslationProgressFailed } from "./ui/DocumentTranslationProgressFailed";

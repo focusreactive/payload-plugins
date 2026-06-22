@@ -18,7 +18,14 @@ export const Card: React.FC<{
   title?: string;
   readMoreLabel?: string;
 }> = (props) => {
-  const { className, doc, basePath = BLOG_CONFIG.basePath, showCategories, title: titleFromProps, readMoreLabel } = props;
+  const {
+    className,
+    doc,
+    basePath = BLOG_CONFIG.basePath,
+    showCategories,
+    title: titleFromProps,
+    readMoreLabel,
+  } = props;
 
   const { slug, categories, excerpt, title, heroImage } = doc || {};
 
@@ -28,11 +35,23 @@ export const Card: React.FC<{
 
   return (
     <Link className="not-prose" href={href}>
-      <article className={cn("border border-border rounded-lg overflow-hidden bg-card hover:cursor-pointer", className)}>
+      <article
+        className={cn(
+          "border border-border rounded-lg overflow-hidden bg-card hover:cursor-pointer",
+          className
+        )}
+      >
         <div className="relative w-full">
           {!heroImage && (
             <div className="relative w-full aspect-[4/3]">
-              <NextImage src="/empty-placeholder.jpg" alt={`${titleToUse} - Placeholder image`} fill className="object-cover" quality={85} sizes="33vw" />
+              <NextImage
+                src="/empty-placeholder.jpg"
+                alt={`${titleToUse} - Placeholder image`}
+                fill
+                className="object-cover"
+                quality={85}
+                sizes="33vw"
+              />
             </div>
           )}
           {heroImage && typeof heroImage !== "number" && (
@@ -56,7 +75,10 @@ export const Card: React.FC<{
                   const categoryTitle = category.title || "Untitled category";
 
                   return (
-                    <span key={index} className="text-xs font-medium uppercase tracking-wide px-2 py-1 rounded-full bg-muted text-muted-foreground">
+                    <span
+                      key={index}
+                      className="text-xs font-medium uppercase tracking-wide px-2 py-1 rounded-full bg-muted text-muted-foreground"
+                    >
                       {categoryTitle}
                     </span>
                   );

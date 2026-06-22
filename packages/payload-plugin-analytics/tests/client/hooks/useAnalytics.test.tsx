@@ -6,7 +6,9 @@ import type { AnalyticsProvider } from "../../../src/types/provider";
 
 describe("useAnalytics", () => {
   it("throws when called outside <AnalyticsProvider>", () => {
-    expect(() => renderHook(() => useAnalytics())).toThrow(/useAnalytics must be used inside <AnalyticsProvider>/u);
+    expect(() => renderHook(() => useAnalytics())).toThrow(
+      /useAnalytics must be used inside <AnalyticsProvider>/u
+    );
   });
 });
 
@@ -53,6 +55,8 @@ describe("useAnalytics.trackLeadAction", () => {
     );
 
     api!.trackLeadAction("phone_click");
-    expect(provider.trackEvent).toHaveBeenCalledWith("lead_action", { fr_lead_type: "phone_click" });
+    expect(provider.trackEvent).toHaveBeenCalledWith("lead_action", {
+      fr_lead_type: "phone_click",
+    });
   });
 });

@@ -1,1 +1,1 @@
-export { CompletedTranslationStatus } from './CompletedTranslationStatus'
+export { CompletedTranslationStatus } from "./CompletedTranslationStatus";

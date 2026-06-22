@@ -19,13 +19,19 @@ export function useDocumentTitlesQuery(ctx: QueryContext) {
   const { code: locale } = useLocale();
   const { config } = useConfig();
 
-  const pluginConfig = config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
+  const pluginConfig = config.admin?.custom?.commentsPlugin as
+    | CommentsPluginConfigStorage
+    | undefined;
 
   return useQuery(
     {
       queryKey: getDocumentTitlesKey(ctx),
       queryFn: async () => {
-        const res = await getDocumentTitles(comments ?? [], pluginConfig?.documentTitleFields ?? {}, { locale });
+        const res = await getDocumentTitles(
+          comments ?? [],
+          pluginConfig?.documentTitleFields ?? {},
+          { locale }
+        );
 
         if (!res.success) throw new Error(res.error);
 
@@ -36,6 +42,6 @@ export function useDocumentTitlesQuery(ctx: QueryContext) {
       refetchInterval: isOpen ? REFETCH_INTERVAL : false,
       refetchIntervalInBackground: false,
     },
-    queryClient,
+    queryClient
   );
 }

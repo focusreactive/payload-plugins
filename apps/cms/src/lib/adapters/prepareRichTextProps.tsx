@@ -5,7 +5,11 @@ import React from "react";
 
 import { RichText } from "@/components/shared";
 
-export function prepareRichTextProps(content: SerializedEditorState | null | undefined, align: AlignVariant = AlignVariant.Left, removeInnerMargins = false): IRichTextProps {
+export function prepareRichTextProps(
+  content: SerializedEditorState | null | undefined,
+  align: AlignVariant = AlignVariant.Left,
+  removeInnerMargins = false
+): IRichTextProps {
   return {
     alignVariant: align,
     removeInnerMargins,

@@ -29,7 +29,15 @@ function NavButton({ direction, onClick }: NavButtonProps) {
         "active:scale-[0.93]"
       )}
     >
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden className={cn("size-[18px]", direction === "next" && "rotate-180")}>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        aria-hidden
+        className={cn("size-[18px]", direction === "next" && "rotate-180")}
+      >
         <path strokeLinecap="round" strokeLinejoin="round" d="m15 18-6-6 6-6" />
       </svg>
     </button>
@@ -72,7 +80,13 @@ function SlideContent({ slide, index }: SlideContentProps) {
     <div className="grid min-h-[420px] grid-cols-1 md:grid-cols-[1.1fr_0.9fr]">
       <div className="relative overflow-hidden rounded-t-lg md:rounded-l-lg md:rounded-tr-none">
         {image?.src ? (
-          <Image {...image} fit="cover" quality={85} sizes="(max-width: 768px) 100vw, (max-width: 1280px) 60vw, 700px" priority={index === 0} />
+          <Image
+            {...image}
+            fit="cover"
+            quality={85}
+            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 60vw, 700px"
+            priority={index === 0}
+          />
         ) : (
           <div className="h-full min-h-[260px] w-full bg-surface-muted md:min-h-0" />
         )}
@@ -117,7 +131,8 @@ export function Carousel({ slides, effect }: ICarouselProps) {
     if (count <= 1) return;
     if (isHovering || isFocused) return;
 
-    const mq = typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+    const mq =
+      typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
     if (mq?.matches) return;
 
     const id = setInterval(() => {
@@ -156,7 +171,11 @@ export function Carousel({ slides, effect }: ICarouselProps) {
       aria-roledescription="carousel"
       aria-label="Product tour"
     >
-      <div className="relative grid overflow-hidden rounded-lg border border-border" aria-live="polite" aria-atomic="true">
+      <div
+        className="relative grid overflow-hidden rounded-lg border border-border"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         {slides.map((slide, i) => {
           const isActive = i === current;
           const offsetPct = `${(i - current) * 100}%`;
@@ -173,8 +192,14 @@ export function Carousel({ slides, effect }: ICarouselProps) {
               }}
               className={cn(
                 isFade
-                  ? cn("transition-opacity duration-[600ms] ease-out", isActive ? "opacity-100" : "pointer-events-none opacity-0")
-                  : cn("transition-[transform] duration-[600ms] ease-out", !isActive && "pointer-events-none")
+                  ? cn(
+                      "transition-opacity duration-[600ms] ease-out",
+                      isActive ? "opacity-100" : "pointer-events-none opacity-0"
+                    )
+                  : cn(
+                      "transition-[transform] duration-[600ms] ease-out",
+                      !isActive && "pointer-events-none"
+                    )
               )}
             >
               <SlideContent slide={slide} index={i} />

@@ -20,7 +20,14 @@ interface RunSemanticSearchParams {
   scoreThreshold?: number;
 }
 
-export async function runSemanticSearch({ pool, embedding, locale, limit = 20, maxPerCollection = 5, scoreThreshold = 0.75 }: RunSemanticSearchParams): Promise<SearchRawItem[]> {
+export async function runSemanticSearch({
+  pool,
+  embedding,
+  locale,
+  limit = 20,
+  maxPerCollection = 5,
+  scoreThreshold = 0.75,
+}: RunSemanticSearchParams): Promise<SearchRawItem[]> {
   const vectorStr = `[${embedding.join(",")}]`;
 
   const { rows } = await pool.query<DbRow>(

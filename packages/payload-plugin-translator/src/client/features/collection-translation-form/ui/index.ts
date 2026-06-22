@@ -1,1 +1,1 @@
-export { CollectionTranslationForm } from './CollectionTranslationForm'
+export { CollectionTranslationForm } from "./CollectionTranslationForm";

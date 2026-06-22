@@ -13,7 +13,8 @@ export class RunTranslationHandler {
 
   async handle(req: PayloadRequest): Promise<Response> {
     const validationResult = RunInputSchema.safeParse(req.routeParams);
-    if (validationResult.error) return ServerResponse.validationError(validationResult.error.issues);
+    if (validationResult.error)
+      return ServerResponse.validationError(validationResult.error.issues);
 
     const { id } = validationResult.data;
     const runner = this.taskRunnerFactory.create(req.payload);

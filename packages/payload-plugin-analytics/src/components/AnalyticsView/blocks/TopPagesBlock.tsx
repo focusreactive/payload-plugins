@@ -28,10 +28,15 @@ export function TopPagesBlock({ dateRange, comparison, className }: BlockCompone
             truncate: true,
             render: (r) => (
               <div className="flex flex-col min-w-0">
-                <span className="font-[family-name:var(--font-mono)] truncate text-xs" title={r.pagePath}>
+                <span
+                  className="font-[family-name:var(--font-mono)] truncate text-xs"
+                  title={r.pagePath}
+                >
                   {r.pagePath}
                 </span>
-                <span className="text-[var(--theme-elevation-500)] text-[11px] truncate">{r.pageTitle}</span>
+                <span className="text-[var(--theme-elevation-500)] text-[11px] truncate">
+                  {r.pageTitle}
+                </span>
               </div>
             ),
           },

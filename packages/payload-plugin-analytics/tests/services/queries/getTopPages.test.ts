@@ -10,7 +10,13 @@ describe("getTopPages", () => {
     await getTopPages("12345", { dateRange: { preset: "last-7d" }, limit: 5 });
     const arg = fake.runReport.mock.calls[0][0];
     expect(arg.dimensions).toEqual([{ name: "pagePath" }, { name: "pageTitle" }]);
-    expect(arg.metrics).toEqual(expect.arrayContaining([{ name: "screenPageViews" }, { name: "sessions" }, { name: "averageSessionDuration" }]));
+    expect(arg.metrics).toEqual(
+      expect.arrayContaining([
+        { name: "screenPageViews" },
+        { name: "sessions" },
+        { name: "averageSessionDuration" },
+      ])
+    );
     expect(arg.limit).toBe(5);
   });
 
@@ -31,11 +37,21 @@ describe("getTopPages", () => {
     await getTopPages(
       "12345",
       { dateRange: { preset: "last-7d" } },
-      { refs: ["page:1", "__home"], pageRefDim: "customEvent:fr_page_ref", contentLocaleDim: "customEvent:fr_content_locale", resolveLabels: async () => new Map() }
+      {
+        refs: ["page:1", "__home"],
+        pageRefDim: "customEvent:fr_page_ref",
+        contentLocaleDim: "customEvent:fr_content_locale",
+        resolveLabels: async () => new Map(),
+      }
     );
     const arg = fake.runReport.mock.calls[0][0];
     expect(arg.dimensions).toEqual([{ name: "customEvent:fr_page_ref" }]);
-    expect(arg.dimensionFilter).toEqual({ filter: { fieldName: "customEvent:fr_page_ref", inListFilter: { values: ["page:1", "__home"] } } });
+    expect(arg.dimensionFilter).toEqual({
+      filter: {
+        fieldName: "customEvent:fr_page_ref",
+        inListFilter: { values: ["page:1", "__home"] },
+      },
+    });
   });
 
   it("adds no fr_page_ref filter when pageFilter is null", async () => {
@@ -49,14 +65,26 @@ describe("getTopPages", () => {
   it("comparison.rows is keyed on current rows; previous-only rows are dropped", async () => {
     const fixture = {
       rows: [
-        { dimensionValues: [{ value: "/a" }, { value: "A" }, { value: "current" }], metricValues: [{ value: "100" }, { value: "50" }, { value: "30" }] },
-        { dimensionValues: [{ value: "/a" }, { value: "A" }, { value: "previous" }], metricValues: [{ value: "80" }, { value: "40" }, { value: "28" }] },
-        { dimensionValues: [{ value: "/b" }, { value: "B" }, { value: "previous" }], metricValues: [{ value: "60" }, { value: "30" }, { value: "25" }] },
+        {
+          dimensionValues: [{ value: "/a" }, { value: "A" }, { value: "current" }],
+          metricValues: [{ value: "100" }, { value: "50" }, { value: "30" }],
+        },
+        {
+          dimensionValues: [{ value: "/a" }, { value: "A" }, { value: "previous" }],
+          metricValues: [{ value: "80" }, { value: "40" }, { value: "28" }],
+        },
+        {
+          dimensionValues: [{ value: "/b" }, { value: "B" }, { value: "previous" }],
+          metricValues: [{ value: "60" }, { value: "30" }, { value: "25" }],
+        },
       ],
     };
     const fake = { runReport: vi.fn().mockResolvedValue([fixture]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    const res = await getTopPages("12345", { dateRange: { preset: "last-7d" }, comparison: { kind: "previous-period" } });
+    const res = await getTopPages("12345", {
+      dateRange: { preset: "last-7d" },
+      comparison: { kind: "previous-period" },
+    });
     expect(res.rows.map((r) => r.pagePath)).toEqual(["/a"]);
     expect(res.comparison?.rows.map((r) => r.pagePath)).toEqual(["/a"]);
   });

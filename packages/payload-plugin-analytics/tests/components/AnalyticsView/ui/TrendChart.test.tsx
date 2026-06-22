@@ -6,12 +6,40 @@ import { TrendChart } from "../../../../src/components/AnalyticsView/ui/TrendCha
 vi.mock("next/dynamic", () => ({ default: mockNextDynamic }));
 
 const series = [
-  { date: "2026-05-01", sessions: 100, users: 80, pageViews: 300, bounceRate: 0.4, avgSessionDuration: 120 },
-  { date: "2026-05-02", sessions: 120, users: 90, pageViews: 350, bounceRate: 0.35, avgSessionDuration: 140 },
+  {
+    date: "2026-05-01",
+    sessions: 100,
+    users: 80,
+    pageViews: 300,
+    bounceRate: 0.4,
+    avgSessionDuration: 120,
+  },
+  {
+    date: "2026-05-02",
+    sessions: 120,
+    users: 90,
+    pageViews: 350,
+    bounceRate: 0.35,
+    avgSessionDuration: 140,
+  },
 ];
 const prev = [
-  { date: "2026-04-01", sessions: 80, users: 70, pageViews: 250, bounceRate: 0.45, avgSessionDuration: 110 },
-  { date: "2026-04-02", sessions: 90, users: 75, pageViews: 280, bounceRate: 0.42, avgSessionDuration: 115 },
+  {
+    date: "2026-04-01",
+    sessions: 80,
+    users: 70,
+    pageViews: 250,
+    bounceRate: 0.45,
+    avgSessionDuration: 110,
+  },
+  {
+    date: "2026-04-02",
+    sessions: 90,
+    users: 75,
+    pageViews: 280,
+    bounceRate: 0.42,
+    avgSessionDuration: 115,
+  },
 ];
 
 describe("TrendChart", () => {

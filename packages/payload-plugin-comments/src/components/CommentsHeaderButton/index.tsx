@@ -14,7 +14,13 @@ export function CommentsHeaderButton() {
   const { t } = useTranslation();
   const { mode, collectionSlug, documentId, globalSlug } = useComments();
   const { code: locale } = useLocale();
-  const { data } = useUnreadMentionsCountQuery({ mode, collectionSlug, documentId, globalSlug, locale });
+  const { data } = useUnreadMentionsCountQuery({
+    mode,
+    collectionSlug,
+    documentId,
+    globalSlug,
+    locale,
+  });
 
   const count = data?.count ?? 0;
 
@@ -24,7 +30,8 @@ export function CommentsHeaderButton() {
         variant="neutralSecondary"
         onClick={() => open()}
         title={t("comments:openCommentsAria" as never)}
-        className="relative">
+        className="relative"
+      >
         <Bell size={16} />
 
         {count > 0 && <UnreadBadge count={count} />}

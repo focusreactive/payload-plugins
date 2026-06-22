@@ -14,6 +14,8 @@ export function response(rows: MockRow[]): { rows: MockRow[]; rowCount: number }
   return { rows, rowCount: rows.length };
 }
 
-export function batch(reports: ReturnType<typeof response>[]): { reports: ReturnType<typeof response>[] } {
+export function batch(reports: ReturnType<typeof response>[]): {
+  reports: ReturnType<typeof response>[];
+} {
   return { reports };
 }

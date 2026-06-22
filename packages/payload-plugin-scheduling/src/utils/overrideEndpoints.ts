@@ -5,7 +5,7 @@ import { RUN_ENDPOINT } from "../constants";
 export function overrideEndpoints(
   configEndpoints: Endpoint[] | undefined,
   secret: string,
-  queue: string,
+  queue: string
 ): Endpoint[] {
   return [
     ...(configEndpoints ?? []),

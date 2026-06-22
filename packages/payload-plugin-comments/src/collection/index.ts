@@ -25,7 +25,11 @@ export const baseCollection = (tenantConfig?: TenantPluginConfig): CollectionCon
     delete: isAuth,
   },
   hooks: {
-    beforeChange: [setAuthorBeforeCreate, setMentionSnapshotsBeforeChange, ...(tenantConfig?.enabled ? [setTenantBeforeCreate] : [])],
+    beforeChange: [
+      setAuthorBeforeCreate,
+      setMentionSnapshotsBeforeChange,
+      ...(tenantConfig?.enabled ? [setTenantBeforeCreate] : []),
+    ],
     beforeDelete: [cascadeDeleteCommentReads],
   },
   timestamps: true,
@@ -45,7 +49,8 @@ export const baseCollection = (tenantConfig?: TenantPluginConfig): CollectionCon
       type: "text",
       index: true,
       admin: {
-        description: "Slug of the Payload global being commented on. Null = collection document comment.",
+        description:
+          "Slug of the Payload global being commented on. Null = collection document comment.",
       },
     },
     {
@@ -62,7 +67,8 @@ export const baseCollection = (tenantConfig?: TenantPluginConfig): CollectionCon
       required: false,
       index: true,
       admin: {
-        description: "Locale for field-level comments. Null = document-level (shown in all locales).",
+        description:
+          "Locale for field-level comments. Null = document-level (shown in all locales).",
       },
     },
     {

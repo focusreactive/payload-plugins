@@ -19,8 +19,13 @@ export async function PostsGrid({ posts }: PostsGridProps) {
   return (
     <div className="grid grid-cols-1 gap-[22px] min-[621px]:grid-cols-2 min-[981px]:grid-cols-3">
       {posts.map((post) => {
-        const heroImage = typeof post.heroImage === "object" && post.heroImage !== null ? post.heroImage : undefined;
-        const category = post.categories?.find((entry): entry is Category => typeof entry === "object" && entry !== null);
+        const heroImage =
+          typeof post.heroImage === "object" && post.heroImage !== null
+            ? post.heroImage
+            : undefined;
+        const category = post.categories?.find(
+          (entry): entry is Category => typeof entry === "object" && entry !== null
+        );
 
         return (
           <Link key={post.slug} href={`${BLOG_CONFIG.basePath}/${post.slug}`} className="block">

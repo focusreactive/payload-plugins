@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { aggregateSessions } from '../../../../src/services/queries/kpiRecompute/aggregateSessions';
-import type { KpiSessionEventRow } from '../../../../src/services/queries/kpiRecompute/aggregateSessions';
+import { aggregateSessions } from "../../../../src/services/queries/kpiRecompute/aggregateSessions";
+import type { KpiSessionEventRow } from "../../../../src/services/queries/kpiRecompute/aggregateSessions";
 
 const EXISTING = new Set(["page:1", "page:2", "__home"]);
 
@@ -17,7 +17,13 @@ function row(partial: Partial<KpiSessionEventRow> & { sessionId: string }): KpiS
 describe("aggregateSessions", () => {
   it("returns all-zero current + empty series for empty input", () => {
     const { current, series } = aggregateSessions([], EXISTING);
-    expect(current).toEqual({ sessions: 0, users: 0, pageViews: 0, bounceRate: 0, avgSessionDuration: 0 });
+    expect(current).toEqual({
+      sessions: 0,
+      users: 0,
+      pageViews: 0,
+      bounceRate: 0,
+      avgSessionDuration: 0,
+    });
     expect(series).toEqual([]);
   });
 
@@ -50,13 +56,18 @@ describe("aggregateSessions", () => {
   });
 
   it("treats a single-event (single-minute) session as zero duration", () => {
-    const rows: KpiSessionEventRow[] = [row({ sessionId: "s1", pageRef: "page:1", dhm: "202606171430" })];
+    const rows: KpiSessionEventRow[] = [
+      row({ sessionId: "s1", pageRef: "page:1", dhm: "202606171430" }),
+    ];
     const { current } = aggregateSessions(rows, EXISTING);
     expect(current.avgSessionDuration).toBe(0);
   });
 
   it("treats a session with missing/invalid dhm as zero duration", () => {
-    const rows: KpiSessionEventRow[] = [row({ sessionId: "s1", pageRef: "page:1", dhm: "" }), row({ sessionId: "s1", pageRef: "page:1", dhm: "bad" })];
+    const rows: KpiSessionEventRow[] = [
+      row({ sessionId: "s1", pageRef: "page:1", dhm: "" }),
+      row({ sessionId: "s1", pageRef: "page:1", dhm: "bad" }),
+    ];
     const { current } = aggregateSessions(rows, EXISTING);
     expect(current.avgSessionDuration).toBe(0);
   });
@@ -99,7 +110,10 @@ describe("aggregateSessions", () => {
   });
 
   it("reports users equal to sessions (documented approximation)", () => {
-    const rows: KpiSessionEventRow[] = [row({ sessionId: "s1", pageRef: "page:1" }), row({ sessionId: "s2", pageRef: "page:2" })];
+    const rows: KpiSessionEventRow[] = [
+      row({ sessionId: "s1", pageRef: "page:1" }),
+      row({ sessionId: "s2", pageRef: "page:2" }),
+    ];
     const { current } = aggregateSessions(rows, EXISTING);
     expect(current.users).toBe(current.sessions);
     expect(current.users).toBe(2);
@@ -109,8 +123,20 @@ describe("aggregateSessions", () => {
     const rows: KpiSessionEventRow[] = [
       // s1 first seen 0504, also has a later 0506 engagement row → assigned to 0504.
       // Single page_view → bounce. dhm span 14:30 → 14:32 (across days) = larger; assert below.
-      row({ sessionId: "s1", date: "20260504", pageRef: "page:1", eventName: "page_view", dhm: "202605041430" }),
-      row({ sessionId: "s1", date: "20260506", pageRef: "page:1", eventName: "scroll", dhm: "202605041432" }),
+      row({
+        sessionId: "s1",
+        date: "20260504",
+        pageRef: "page:1",
+        eventName: "page_view",
+        dhm: "202605041430",
+      }),
+      row({
+        sessionId: "s1",
+        date: "20260506",
+        pageRef: "page:1",
+        eventName: "scroll",
+        dhm: "202605041432",
+      }),
       // s2 on 0505 — two page_views → not a bounce.
       row({ sessionId: "s2", date: "20260505", pageRef: "page:2", eventName: "page_view" }),
       row({ sessionId: "s2", date: "20260505", pageRef: "page:2", eventName: "page_view" }),
@@ -130,7 +156,10 @@ describe("aggregateSessions", () => {
   });
 
   it("drops a session whose only ref is empty (untracked hit)", () => {
-    const rows: KpiSessionEventRow[] = [row({ sessionId: "s1", pageRef: "" }), row({ sessionId: "s2", pageRef: "page:1" })];
+    const rows: KpiSessionEventRow[] = [
+      row({ sessionId: "s1", pageRef: "" }),
+      row({ sessionId: "s2", pageRef: "page:1" }),
+    ];
     const { current } = aggregateSessions(rows, EXISTING);
     expect(current.sessions).toBe(1);
   });

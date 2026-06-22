@@ -43,7 +43,8 @@ export function GlobalView({ comments, userId, className }: Props) {
               key={slug}
               groupKey={slug}
               label={resolveEntityLabel(collectionLabels[slug], locale, slug)}
-              level="collection">
+              level="collection"
+            >
               {[...docs.entries()].map(([docId, fields]) => {
                 const title = documentTitles[slug]?.[String(docId)] ?? String(docId);
                 const documentId = Number(docId);
@@ -53,8 +54,14 @@ export function GlobalView({ comments, userId, className }: Props) {
                     key={docId}
                     groupKey={createCollapsibleGroupKey({ collectionSlug: slug, documentId })}
                     label={title}
-                    level="document">
-                    <FieldGroupSection fields={fields} userId={userId} collectionSlug={slug} documentId={documentId} />
+                    level="document"
+                  >
+                    <FieldGroupSection
+                      fields={fields}
+                      userId={userId}
+                      collectionSlug={slug}
+                      documentId={documentId}
+                    />
                   </CollapsibleGroup>
                 );
               })}
@@ -69,7 +76,8 @@ export function GlobalView({ comments, userId, className }: Props) {
             key={slug}
             groupKey={slug}
             label={resolveEntityLabel(globalLabels[slug], locale, slug)}
-            level="collection">
+            level="collection"
+          >
             <FieldGroupSection fields={fields} userId={userId} globalSlug={slug} />
           </CollapsibleGroup>
         );

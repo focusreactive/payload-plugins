@@ -25,7 +25,9 @@ export const HorizontalSelect = ({ className, ...props }: SwitchProps) => (
         {option.label}
 
         {option.extraInfo && (
-          <span className="absolute -right-2.5 -top-1.5 m-0 rotate-6 rounded-full border border-blue-200 bg-blue-100 px-1.5 py-0.5 text-[11px] leading-none text-blue-700">{option.extraInfo}</span>
+          <span className="absolute -right-2.5 -top-1.5 m-0 rotate-6 rounded-full border border-blue-200 bg-blue-100 px-1.5 py-0.5 text-[11px] leading-none text-blue-700">
+            {option.extraInfo}
+          </span>
         )}
       </button>
     ))}

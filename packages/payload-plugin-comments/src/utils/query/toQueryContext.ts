@@ -4,7 +4,7 @@ export function toQueryContext(
   mode: "document" | "global-document" | "global",
   collectionSlug: string | null | undefined,
   documentId: number | null | undefined,
-  globalSlug: string | null,
+  globalSlug: string | null
 ): QueryContext {
   if (mode === "document" && collectionSlug && documentId) {
     return {

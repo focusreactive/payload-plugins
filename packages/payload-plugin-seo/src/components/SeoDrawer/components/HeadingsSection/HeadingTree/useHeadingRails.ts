@@ -36,7 +36,12 @@ interface UseHeadingRailsResult {
   rails: RailGeometry | null;
 }
 
-export function useHeadingRails({ node, isOpen, collapsed, onBadgeMount }: UseHeadingRailsParams): UseHeadingRailsResult {
+export function useHeadingRails({
+  node,
+  isOpen,
+  collapsed,
+  onBadgeMount,
+}: UseHeadingRailsParams): UseHeadingRailsResult {
   const containerRef = useRef<HTMLDivElement>(null);
   const badgeRef = useRef<HTMLSpanElement | null>(null);
   const childBadges = useRef(new Map<string, HTMLSpanElement>());

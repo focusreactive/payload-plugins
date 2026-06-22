@@ -34,7 +34,9 @@ const sizes = {
 type SelectOptionProps = ComponentPropsWithoutRef<"option">;
 type SelectEmptyOptionProps = Omit<SelectOptionProps, "value" | "disabled" | "hidden">;
 
-const SelectOption = ({ children, ...props }: SelectOptionProps) => <option {...props}>{children}</option>;
+const SelectOption = ({ children, ...props }: SelectOptionProps) => (
+  <option {...props}>{children}</option>
+);
 
 const SelectEmptyOption = ({ children, ...props }: SelectEmptyOptionProps) => (
   <option value="" {...props}>
@@ -43,7 +45,16 @@ const SelectEmptyOption = ({ children, ...props }: SelectEmptyOptionProps) => (
 );
 
 const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
-  { children, className = "", hasError = false, $size = "lg", $fullWidth = true, style, "aria-invalid": ariaInvalid, ...props },
+  {
+    children,
+    className = "",
+    hasError = false,
+    $size = "lg",
+    $fullWidth = true,
+    style,
+    "aria-invalid": ariaInvalid,
+    ...props
+  },
   ref
 ) {
   const _style: CSSProperties = {
@@ -64,7 +75,13 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
   );
 
   return (
-    <select ref={ref} className={selectClassName} style={_style} aria-invalid={ariaInvalid ?? hasError} {...props}>
+    <select
+      ref={ref}
+      className={selectClassName}
+      style={_style}
+      aria-invalid={ariaInvalid ?? hasError}
+      {...props}
+    >
       {children}
     </select>
   );

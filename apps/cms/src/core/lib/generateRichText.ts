@@ -125,7 +125,9 @@ export function generateRichText(preset: RichTextPreset = "default", options?: O
         }
       }
 
-      const blockFeatures = options?.blocks?.length ? [BlocksFeature({ blocks: options.blocks })] : [];
+      const blockFeatures = options?.blocks?.length
+        ? [BlocksFeature({ blocks: options.blocks })]
+        : [];
 
       return [...defaultFeatures, ...blockFeatures];
     },

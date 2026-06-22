@@ -94,7 +94,11 @@ async function generateSitemap(): Promise<Sitemap> {
         posts.forEach((post) => {
           sitemap.push({
             changeFrequency: "monthly",
-            lastModified: post.publishedAt ? new Date(post.publishedAt) : post.updatedAt ? new Date(post.updatedAt) : new Date(),
+            lastModified: post.publishedAt
+              ? new Date(post.publishedAt)
+              : post.updatedAt
+                ? new Date(post.updatedAt)
+                : new Date(),
             priority: 0.7,
             url: buildUrl({
               collection: "posts",
@@ -120,10 +124,14 @@ async function generateSitemap(): Promise<Sitemap> {
   }
 }
 
-const getCachedSitemap = unstable_cache(async () => generateSitemap(), [cacheTag({ type: "sitemap" })], {
-  revalidate: false,
-  tags: [cacheTag({ type: "sitemap" })],
-});
+const getCachedSitemap = unstable_cache(
+  async () => generateSitemap(),
+  [cacheTag({ type: "sitemap" })],
+  {
+    revalidate: false,
+    tags: [cacheTag({ type: "sitemap" })],
+  }
+);
 
 export default async function sitemap(): Promise<Sitemap> {
   return getCachedSitemap();

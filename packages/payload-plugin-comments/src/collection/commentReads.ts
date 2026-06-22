@@ -23,7 +23,10 @@ export const baseReadsCollection = (tenantConfig?: TenantPluginConfig): Collecti
     delete: isAuth,
   },
   hooks: {
-    beforeChange: [setUserBeforeCreate, ...(tenantConfig?.enabled ? [setTenantOnReadBeforeCreate] : [])],
+    beforeChange: [
+      setUserBeforeCreate,
+      ...(tenantConfig?.enabled ? [setTenantOnReadBeforeCreate] : []),
+    ],
   },
   timestamps: true,
   fields: [
@@ -52,7 +55,7 @@ export const baseReadsCollection = (tenantConfig?: TenantPluginConfig): Collecti
           {
             name: "tenant",
             type: "relationship" as const,
-            relationTo: (tenantConfig.collectionSlug ?? "tenants"),
+            relationTo: tenantConfig.collectionSlug ?? "tenants",
             index: true,
             label: "Tenant",
             admin: { position: "sidebar" as const },

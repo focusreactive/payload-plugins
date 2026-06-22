@@ -23,7 +23,12 @@ describe("createGetCollectionStatusRoute (contract)", () => {
   });
 
   it("honors a custom basePath", () => {
-    const endpoint = createGetCollectionStatusRoute(config, { create: vi.fn() }, undefined, "/i18n");
+    const endpoint = createGetCollectionStatusRoute(
+      config,
+      { create: vi.fn() },
+      undefined,
+      "/i18n"
+    );
     expect(endpoint.path).toBe("/i18n/collection/:collection_slug");
   });
 

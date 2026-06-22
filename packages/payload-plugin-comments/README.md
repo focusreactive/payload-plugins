@@ -541,9 +541,9 @@ Run these from the project root with `pnpm`:
 | ------------------- | -------------------------------------------------------------- |
 | `pnpm build`        | Build the plugin to `dist/` (tsup + Tailwind CSS minification) |
 | `pnpm dev`          | Build in watch mode — rebuilds on file changes                 |
-| `pnpm lint`         | Run ESLint on `src/`                                           |
-| `pnpm lint:fix`     | Run ESLint with auto-fix                                       |
-| `pnpm format`       | Format `src/` with Prettier                                    |
+| `pnpm lint`         | Lint + check formatting (Ultracite: oxlint + oxfmt)           |
+| `pnpm lint:fix`     | Lint + fix, including formatting (Ultracite)                  |
+| `pnpm format`       | Format files (Ultracite: oxfmt)                               |
 | `pnpm format:check` | Check formatting without writing                               |
 
 ---

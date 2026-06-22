@@ -13,11 +13,7 @@ import {
   useLocale,
   useFormFields,
 } from "@payloadcms/ui";
-import type {
-  BlocksFieldClient,
-  FormState,
-  SanitizedFieldPermissions,
-} from "payload";
+import type { BlocksFieldClient, FormState, SanitizedFieldPermissions } from "payload";
 import { usePresetsConfig } from "../usePresetsConfig.js";
 import { buildSubFieldStateFromPreset } from "../utils.js";
 import { BlockSelectorWithPresets } from "./BlockSelectorWithPresets.js";
@@ -29,8 +25,7 @@ import { hydrateBlocksFieldCustomComponents } from "./clipboard.js";
 import "./BlocksFieldWithPresets.scss";
 
 type BlocksFieldWithPresetsProps = {
-  field: Omit<BlocksFieldClient, "type"> &
-    Partial<Pick<BlocksFieldClient, "type">>;
+  field: Omit<BlocksFieldClient, "type"> & Partial<Pick<BlocksFieldClient, "type">>;
   path: string;
   schemaPath: string;
   indexPath: string;
@@ -40,9 +35,7 @@ type BlocksFieldWithPresetsProps = {
   readOnly: boolean;
 };
 
-export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
-  props,
-) => {
+export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (props) => {
   const { field, path, schemaPath, readOnly } = props;
   const blocks = field.blocks;
 
@@ -60,14 +53,11 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
   const { getData, getDataByPath, addFieldRow, replaceState, getFields } = form;
   const currentFieldState = useFormFields(([fields]) => fields?.[path]);
 
-  const existingFieldComponentRef = useRef<ReactNode>(
-    currentFieldState?.customComponents?.Field,
-  );
+  const existingFieldComponentRef = useRef<ReactNode>(currentFieldState?.customComponents?.Field);
 
   useEffect(() => {
     if (currentFieldState?.customComponents?.Field) {
-      existingFieldComponentRef.current =
-        currentFieldState.customComponents.Field;
+      existingFieldComponentRef.current = currentFieldState.customComponents.Field;
     }
   }, [currentFieldState?.customComponents]);
 
@@ -101,7 +91,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
 
       replaceState(nextState);
     },
-    [blocks, currentFieldState, path, replaceState, getFields],
+    [blocks, currentFieldState, path, replaceState, getFields]
   );
 
   form.replaceState = wrappedReplaceState;
@@ -123,10 +113,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
       const presetData = presetBlocks?.[0];
 
       if (presetData) {
-        const subFieldState = buildSubFieldStateFromPreset(
-          presetData,
-          excludeKeys,
-        );
+        const subFieldState = buildSubFieldStateFromPreset(presetData, excludeKeys);
 
         addFieldRow({
           path,
@@ -140,7 +127,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (
           t("presetsPlugin:blocksDrawer:successAddedWithPreset" as never, {
             blockType,
             name: preset.name,
-          }),
+          })
         );
       } else {
         addFieldRow({ path, rowIndex: targetRowIndex, schemaPath, blockType });

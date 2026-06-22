@@ -82,7 +82,11 @@ async function initGit(targetDir: string): Promise<void> {
   try {
     await runCommand("git", ["init", "-q", "-b", "main"], targetDir);
     await runCommand("git", ["add", "."], targetDir);
-    await runCommand("git", ["commit", "-q", "--no-gpg-sign", "-m", "chore: bootstrap with create-ideal-cms"], targetDir);
+    await runCommand(
+      "git",
+      ["commit", "-q", "--no-gpg-sign", "-m", "chore: bootstrap with create-ideal-cms"],
+      targetDir
+    );
   } catch (err) {
     log.warn(`git init skipped: ${(err as Error).message}`);
   }
@@ -91,7 +95,13 @@ async function initGit(targetDir: string): Promise<void> {
 function printNextSteps(answers: Answers, migrationRan: boolean): void {
   const pm = answers.packageManager;
   const run = pm === "skip" ? "bun" : pm;
-  const lines = [pc.green(`✓ Created ${pc.bold(answers.projectName)}`), pc.dim(`  at ${answers.targetDir}`), "", pc.bold("Next steps:"), `  cd ${answers.targetDir}`];
+  const lines = [
+    pc.green(`✓ Created ${pc.bold(answers.projectName)}`),
+    pc.dim(`  at ${answers.targetDir}`),
+    "",
+    pc.bold("Next steps:"),
+    `  cd ${answers.targetDir}`,
+  ];
   if (pm === "skip") lines.push(`  ${run} install`);
   if (!migrationRan) {
     lines.push(`  ${run} --cwd apps/cms run payload migrate:create init`);
@@ -104,7 +114,9 @@ function printNextSteps(answers: Answers, migrationRan: boolean): void {
 }
 
 function describeSource(answers: Answers): string {
-  return answers.source.kind === "local" ? `local checkout at ${answers.source.path}` : `focusreactive/payload-plugins#${answers.source.ref}`;
+  return answers.source.kind === "local"
+    ? `local checkout at ${answers.source.path}`
+    : `focusreactive/payload-plugins#${answers.source.ref}`;
 }
 
 async function main(): Promise<void> {
@@ -157,7 +169,9 @@ async function main(): Promise<void> {
       await runInitialMigration(answers.targetDir, answers.packageManager);
       migrationRan = true;
     } catch (err) {
-      log.warn(`Initial migration failed: ${(err as Error).message}\nFix DATABASE_URL in apps/cms/.env and re-run \`payload migrate:create init && payload migrate\` from apps/cms/.`);
+      log.warn(
+        `Initial migration failed: ${(err as Error).message}\nFix DATABASE_URL in apps/cms/.env and re-run \`payload migrate:create init && payload migrate\` from apps/cms/.`
+      );
     }
   }
 

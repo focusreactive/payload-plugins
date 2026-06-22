@@ -35,7 +35,9 @@ const jsxConverters: JSXConvertersFunction<NodeTypes> = ({ defaultConverters }) 
   ...LinkJSXConverter({ internalDocToHref }),
   blocks: {
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    cardsGridInline: ({ node }: { node: any }) => <CardsGridInlineComponent {...(node.fields as any)} />,
+    cardsGridInline: ({ node }: { node: any }) => (
+      <CardsGridInlineComponent {...(node.fields as any)} />
+    ),
     logosInline: ({ node }: { node: any }) => <LogosInlineComponent {...(node.fields as any)} />,
     codeInline: ({ node }: { node: any }) => <CodeInlineComponent {...(node.fields as any)} />,
     /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -52,14 +54,24 @@ const jsxConverters: JSXConvertersFunction<NodeTypes> = ({ defaultConverters }) 
   },
 });
 
-export const RichText = ({ content, className }: { content: SerializedEditorState; className?: string }) => {
+export const RichText = ({
+  content,
+  className,
+}: {
+  content: SerializedEditorState;
+  className?: string;
+}) => {
   if (!content) {
     return null;
   }
 
   return (
     <div {...withVisualEditingPath(content)}>
-      <RichTextReact className={cn("prose prose-sm sm:prose-base md:prose-lg max-w-full", className)} converters={jsxConverters} data={content} />
+      <RichTextReact
+        className={cn("prose prose-sm sm:prose-base md:prose-lg max-w-full", className)}
+        converters={jsxConverters}
+        data={content}
+      />
     </div>
   );
 };

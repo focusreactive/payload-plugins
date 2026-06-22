@@ -121,7 +121,13 @@ export const Footer: CollectionConfig<"footer"> = {
         ],
       }),
       fields: [
-        { label: { en: "Group label", es: "Etiqueta del grupo" }, localized: true, name: "label", required: true, type: "text" },
+        {
+          label: { en: "Group label", es: "Etiqueta del grupo" },
+          localized: true,
+          name: "label",
+          required: true,
+          type: "text",
+        },
         {
           fields: [link({ appearances: false })],
           minRows: 1,
@@ -156,7 +162,7 @@ export const Footer: CollectionConfig<"footer"> = {
         es: "© 2026 Cadence Labs, Inc.",
       }),
       localized: true,
-      name: "copywriteText",
+      name: "copyrightText",
       type: "text",
     },
   ],

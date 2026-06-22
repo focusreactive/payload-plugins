@@ -96,7 +96,10 @@ describe("CancelByCollectionHandler", () => {
     });
 
     it("returns 204 when all tasks are already completed", async () => {
-      const tasks = [createMockTask({ id: "task-1", status: "completed" }), createMockTask({ id: "task-2", status: "failed" })];
+      const tasks = [
+        createMockTask({ id: "task-1", status: "completed" }),
+        createMockTask({ id: "task-2", status: "failed" }),
+      ];
       (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue(tasks);
 
       const req = createMockRequest({ collection_slug: "posts" });
@@ -107,7 +110,10 @@ describe("CancelByCollectionHandler", () => {
     });
 
     it("returns 204 when all tasks are running (not pending)", async () => {
-      const tasks = [createMockTask({ id: "task-1", status: "running" }), createMockTask({ id: "task-2", status: "running" })];
+      const tasks = [
+        createMockTask({ id: "task-1", status: "running" }),
+        createMockTask({ id: "task-2", status: "running" }),
+      ];
       (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue(tasks);
 
       const req = createMockRequest({ collection_slug: "posts" });

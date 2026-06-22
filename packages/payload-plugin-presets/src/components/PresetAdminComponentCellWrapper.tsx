@@ -16,9 +16,7 @@ export function PresetAdminComponentCellWrapper(props: CellProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   const mediaId =
-    typeof cellData === "number" || typeof cellData === "string"
-      ? cellData
-      : cellData?.id;
+    typeof cellData === "number" || typeof cellData === "string" ? cellData : cellData?.id;
 
   useEffect(() => {
     if (!mediaId) {
@@ -50,7 +48,5 @@ export function PresetAdminComponentCellWrapper(props: CellProps) {
     return () => controller.abort();
   }, [mediaId, cellData, mediaCollection]);
 
-  return (
-    <PresetAdminComponentCell media={media} isLoading={isLoading} size="sm" />
-  );
+  return <PresetAdminComponentCell media={media} isLoading={isLoading} size="sm" />;
 }

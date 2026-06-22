@@ -32,7 +32,14 @@ export function LeadActionsByTypeBlock({ dateRange, comparison, className }: Blo
       {data?.missing?.includes("fr_lead_type") ? (
         <SetupRequiredCard missingKeys={["fr_lead_type"]} />
       ) : (
-        <BarList rows={rows} getIcon={(r) => resolveIcon(r.kind)} initialVisible={5} format={formatNumber} loading={isLoading} error={error ?? undefined} />
+        <BarList
+          rows={rows}
+          getIcon={(r) => resolveIcon(r.kind)}
+          initialVisible={5}
+          format={formatNumber}
+          loading={isLoading}
+          error={error ?? undefined}
+        />
       )}
     </DataCard>
   );

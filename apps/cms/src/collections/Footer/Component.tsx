@@ -13,7 +13,10 @@ interface Props {
 
 type PayloadLink = NonNullable<NonNullable<FooterType["legalLinks"]>[number]["link"]>;
 
-function resolveFooterLink(link: PayloadLink | null | undefined, locale: string): FooterLink | undefined {
+function resolveFooterLink(
+  link: PayloadLink | null | undefined,
+  locale: string
+): FooterLink | undefined {
   if (!link) {
     return undefined;
   }
@@ -59,7 +62,7 @@ export async function Footer({ data }: Props) {
       label: data.name ?? "",
       logo: logo ? prepareImageProps({ image: logo }) : null,
     },
-    copywriteText: data.copywriteText ?? undefined,
+    copywriteText: data.copyrightText ?? undefined,
     description: data.description ?? undefined,
     legalLinks,
     linkGroups,

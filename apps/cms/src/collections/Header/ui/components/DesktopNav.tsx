@@ -26,7 +26,12 @@ export function DesktopNav({ navItems }: DesktopNavProps) {
             return (
               <NavigationMenu.Item key={`${item.label}-${index}`}>
                 <NavigationMenu.Link active={item.active} asChild>
-                  <NextLink href={item.href} className={cn(itemLinkClassName, item.active && activeItemClassName)} aria-current={item.active ? "page" : undefined} {...newTabProps}>
+                  <NextLink
+                    href={item.href}
+                    className={cn(itemLinkClassName, item.active && activeItemClassName)}
+                    aria-current={item.active ? "page" : undefined}
+                    {...newTabProps}
+                  >
                     {item.label}
                   </NextLink>
                 </NavigationMenu.Link>
@@ -36,7 +41,14 @@ export function DesktopNav({ navItems }: DesktopNavProps) {
 
           return (
             <NavigationMenu.Item key={`${item.label}-${index}`} className="relative">
-              <NavigationMenu.Trigger className={cn("group", itemLinkClassName, "gap-1.5 data-[state=open]:bg-surface-muted data-[state=open]:text-foreground", item.active && activeItemClassName)}>
+              <NavigationMenu.Trigger
+                className={cn(
+                  "group",
+                  itemLinkClassName,
+                  "gap-1.5 data-[state=open]:bg-surface-muted data-[state=open]:text-foreground",
+                  item.active && activeItemClassName
+                )}
+              >
                 {item.label}
                 <Chevron className="transition-transform duration-200 ease-out group-data-[state=open]:rotate-180 motion-reduce:transition-none" />
               </NavigationMenu.Trigger>

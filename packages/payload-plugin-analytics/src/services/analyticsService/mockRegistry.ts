@@ -4,9 +4,13 @@ type IRunReportRequest = protos.google.analytics.data.v1beta.IRunReportRequest;
 type IRunReportResponse = protos.google.analytics.data.v1beta.IRunReportResponse;
 type IBatchRunReportsResponse = protos.google.analytics.data.v1beta.IBatchRunReportsResponse;
 
-export type RunReportMockFn = (request: IRunReportRequest) => IRunReportResponse | Promise<IRunReportResponse>;
+export type RunReportMockFn = (
+  request: IRunReportRequest
+) => IRunReportResponse | Promise<IRunReportResponse>;
 
-export type BatchRunReportsMockFn = (requests: IRunReportRequest[]) => IBatchRunReportsResponse | Promise<IBatchRunReportsResponse>;
+export type BatchRunReportsMockFn = (
+  requests: IRunReportRequest[]
+) => IBatchRunReportsResponse | Promise<IBatchRunReportsResponse>;
 
 export interface AnalyticsMockMap {
   runReport?: Record<string, RunReportMockFn>;

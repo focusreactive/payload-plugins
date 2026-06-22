@@ -7,7 +7,10 @@ import type { BaseDocument, McpTool } from "../../types";
 import type { McpToolsRegistry } from "../index";
 import { buildDocumentsContent } from "./buildDocumentsContent";
 
-export function createGetAllDocumentsTool(registry: McpToolsRegistry, knownCollections: Set<CollectionSlug>): McpTool {
+export function createGetAllDocumentsTool(
+  registry: McpToolsRegistry,
+  knownCollections: Set<CollectionSlug>
+): McpTool {
   const knownSlugs = [...knownCollections].join(", ");
 
   return {
@@ -86,9 +89,17 @@ export function createGetAllDocumentsTool(registry: McpToolsRegistry, knownColle
     parameters: {
       collectionSlug: z.string().describe(`The collection slug. One of: ${knownSlugs}`),
       limit: z.number().optional().describe("Max documents to return (default 10)"),
-      locale: z.string().optional().describe('Locale code, e.g. "en" or "es". Omit to use the default locale.'),
+      locale: z
+        .string()
+        .optional()
+        .describe('Locale code, e.g. "en" or "es". Omit to use the default locale.'),
       page: z.number().optional().describe("Page number for pagination"),
-      where: z.string().optional().describe('Payload where clause as a JSON string, e.g. \'{"_status":{"equals":"published"}}\''),
+      where: z
+        .string()
+        .optional()
+        .describe(
+          'Payload where clause as a JSON string, e.g. \'{"_status":{"equals":"published"}}\''
+        ),
     },
   };
 }

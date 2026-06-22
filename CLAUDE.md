@@ -113,5 +113,5 @@ Releases are fully automated via **multi-semantic-release** + **semantic-release
 ## Gotchas
 
 - Git remote is `focusreactive/payload-plugins` (no hyphen). Package `repository.url` must match exactly or semantic-release will fail with a 128 git error.
-- `apps/dev` and internal packages (`eslint-config`, `typescript-config`) are skipped via `--ignore-private-packages`.
+- `apps/dev` and internal packages (`ui`, `tailwind-config`, `typescript-config`) are skipped via `--ignore-private-packages`.
 - Do not manually bump versions in `package.json` — semantic-release owns version fields.

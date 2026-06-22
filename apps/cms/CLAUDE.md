@@ -8,7 +8,7 @@ Guidance for Claude Code (and other AI agents) working in this Payload + Next.js
 bun run dev                    # Dev server (Turbopack, port 3333)
 bun run devsafe                # Dev with .next cache cleared
 bun run build                  # Production build (8GB memory limit)
-bun run lint                   # ESLint
+bun run lint                   # Lint + format check (Ultracite: oxlint + oxfmt)
 bun run check-types            # tsc --noEmit
 bun run test:int               # Vitest integration tests
 bun run test:e2e               # Playwright E2E tests (Chromium)

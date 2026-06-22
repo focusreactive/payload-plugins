@@ -5,7 +5,14 @@ import { abTestingPlugin } from "@focus-reactive/payload-plugin-ab";
 import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
-import { translatorPlugin, createOpenAIProvider, createPayloadJobsRunner, documentLevel, collectionLevel, fieldLevel } from "@focus-reactive/payload-plugin-translator";
+import {
+  translatorPlugin,
+  createOpenAIProvider,
+  createPayloadJobsRunner,
+  documentLevel,
+  collectionLevel,
+  fieldLevel,
+} from "@focus-reactive/payload-plugin-translator";
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { seoPlugin } from "@focus-reactive/payload-plugin-seo";
 import { sqliteAdapter } from "@payloadcms/db-sqlite";
@@ -106,7 +113,18 @@ export default buildConfig({
         },
       },
       leadActions: {
-        types: ["phone_click", "email_click", "directions_click", "whatsapp_click", "telegram_click", "website_click", "booking_click", "form_submit", "cta_pricing_click", "hero_cta_click"],
+        types: [
+          "phone_click",
+          "email_click",
+          "directions_click",
+          "whatsapp_click",
+          "telegram_click",
+          "website_click",
+          "booking_click",
+          "form_submit",
+          "cta_pricing_click",
+          "hero_cta_click",
+        ],
         adminRegistry: "@/lead-actions-admin#default",
       },
       ab: {
@@ -121,7 +139,9 @@ export default buildConfig({
           const [collection, id] = ref.split(":");
           if (collection !== "pages" || !id) return "";
 
-          const doc = await req.payload.findByID({ collection: "pages", id, depth: 0, overrideAccess: true }).catch(() => null);
+          const doc = await req.payload
+            .findByID({ collection: "pages", id, depth: 0, overrideAccess: true })
+            .catch(() => null);
           const slug = (doc as { slug?: string } | null)?.slug;
 
           return slug ? `/${slug}` : "";

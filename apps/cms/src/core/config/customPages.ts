@@ -17,7 +17,10 @@ export const CUSTOM_PAGES_CONFIG: Record<CustomPageKey, CustomPageEntry> = {
       en: "Blog",
       es: "Blog",
     },
-    resolver: (locale) => (shouldIncludeLocalePrefix(locale) ? `/${locale}${BLOG_CONFIG.basePath}` : BLOG_CONFIG.basePath),
+    resolver: (locale) =>
+      shouldIncludeLocalePrefix(locale)
+        ? `/${locale}${BLOG_CONFIG.basePath}`
+        : BLOG_CONFIG.basePath,
   },
   search: {
     label: {

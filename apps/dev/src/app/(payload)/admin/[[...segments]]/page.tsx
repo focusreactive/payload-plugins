@@ -13,8 +13,10 @@ interface Args {
   searchParams: Promise<Record<string, string | string[]>>;
 }
 
-export const generateMetadata = ({ params, searchParams }: Args): Promise<Metadata> => generatePageMetadata({ config, params, searchParams });
+export const generateMetadata = ({ params, searchParams }: Args): Promise<Metadata> =>
+  generatePageMetadata({ config, params, searchParams });
 
-const Page = ({ params, searchParams }: Args) => RootPage({ config, importMap, params, searchParams });
+const Page = ({ params, searchParams }: Args) =>
+  RootPage({ config, importMap, params, searchParams });
 
 export default Page;

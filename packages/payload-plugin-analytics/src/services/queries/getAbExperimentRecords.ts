@@ -18,7 +18,10 @@ function toRecord(doc: Record<string, unknown>): AbExperimentRecord {
   };
 }
 
-export async function getAbExperimentRecords(experimentsSlug: string, req: PayloadRequest): Promise<AbExperimentRecord[]> {
+export async function getAbExperimentRecords(
+  experimentsSlug: string,
+  req: PayloadRequest
+): Promise<AbExperimentRecord[]> {
   const { docs } = await req.payload.find({
     collection: experimentsSlug as CollectionSlug,
     depth: 0,
@@ -30,7 +33,11 @@ export async function getAbExperimentRecords(experimentsSlug: string, req: Paylo
   return (docs as Array<Record<string, unknown>>).map(toRecord);
 }
 
-export async function getAbExperimentRecordByKey(experimentsSlug: string, manifestKey: string, req: PayloadRequest): Promise<AbExperimentRecord | null> {
+export async function getAbExperimentRecordByKey(
+  experimentsSlug: string,
+  manifestKey: string,
+  req: PayloadRequest
+): Promise<AbExperimentRecord | null> {
   const { docs } = await req.payload.find({
     collection: experimentsSlug as CollectionSlug,
     where: { manifestKey: { equals: manifestKey } },

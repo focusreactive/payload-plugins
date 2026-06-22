@@ -9,7 +9,9 @@ describe("DateRangeDropdown", () => {
   });
 
   it("renders a custom-range label when value is from/to", () => {
-    render(<DateRangeDropdown value={{ from: "2026-04-01", to: "2026-04-30" }} onChange={() => {}} />);
+    render(
+      <DateRangeDropdown value={{ from: "2026-04-01", to: "2026-04-30" }} onChange={() => {}} />
+    );
     expect(screen.getByText(/Apr 1.*Apr 30/u)).toBeInTheDocument();
   });
 

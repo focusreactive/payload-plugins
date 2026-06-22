@@ -9,7 +9,14 @@ const r = (dims: string[], metrics: string[] = ["1"]) => ({
 });
 
 beforeEach(() => {
-  setPluginConfig({ ga4: { propertyId: "1", measurementId: "G-X", serviceAccount: { clientEmail: "x", privateKey: "y" } }, ab: {} } as never);
+  setPluginConfig({
+    ga4: {
+      propertyId: "1",
+      measurementId: "G-X",
+      serviceAccount: { clientEmail: "x", privateKey: "y" },
+    },
+    ab: {},
+  } as never);
 });
 afterEach(() => vi.restoreAllMocks());
 
@@ -19,7 +26,15 @@ function makeReq() {
       find: vi.fn().mockImplementation(({ collection }: { collection: string }) => {
         if (collection === "ab-experiments") {
           return Promise.resolve({
-            docs: [{ manifestKey: "/p", parentDocId: "p1", parentCollection: "pages", locale: null, startedAt: new Date(Date.now() - 10 * 86400000).toISOString() }],
+            docs: [
+              {
+                manifestKey: "/p",
+                parentDocId: "p1",
+                parentCollection: "pages",
+                locale: null,
+                startedAt: new Date(Date.now() - 10 * 86400000).toISOString(),
+              },
+            ],
           });
         }
         return Promise.resolve({ docs: [{ slug: "p--b", _abPassPercentage: 50, title: "B" }] });
@@ -31,12 +46,23 @@ function makeReq() {
 describe("getAbOverview", () => {
   it("computes KPIs and one table row", async () => {
     // exposure dims [experiment, variant, sessionId, visitorId]
-    const exposure = { rows: [r(["/p", "original", "s1", "v1"]), r(["/p", "original", "s2", "v2"]), r(["/p", "p--b", "s3", "v3"])] };
+    const exposure = {
+      rows: [
+        r(["/p", "original", "s1", "v1"]),
+        r(["/p", "original", "s2", "v2"]),
+        r(["/p", "p--b", "s3", "v3"]),
+      ],
+    };
     // converting-by-bucket dims [experiment, variant, sessionId]
     const convByBucket = { rows: [r(["/p", "original", "s1"]), r(["/p", "p--b", "s3"])] };
     // lead-conv-by-page dims [experiment, pagePath], metric eventCount
     const convByPage = { rows: [r(["/p", "/p"], ["12"]), r(["/p", "/other"], ["3"])] };
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue([{ reports: [exposure, convByBucket, convByPage] }]) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi
+        .fn()
+        .mockResolvedValue([{ reports: [exposure, convByBucket, convByPage] }]),
+    };
     __setGa4ClientForTests(fake as never);
 
     const out = await getAbOverview({ dateRange: { preset: "last-30d" } }, makeReq() as never);

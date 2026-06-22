@@ -22,7 +22,15 @@ export interface RunPostSemanticSearchResult {
   total: number;
 }
 
-export async function runPostSemanticSearch({ pool, embedding, locale, category, limit, offset, scoreThreshold = 0.75 }: RunPostSemanticSearchParams): Promise<RunPostSemanticSearchResult> {
+export async function runPostSemanticSearch({
+  pool,
+  embedding,
+  locale,
+  category,
+  limit,
+  offset,
+  scoreThreshold = 0.75,
+}: RunPostSemanticSearchParams): Promise<RunPostSemanticSearchResult> {
   const vectorStr = `[${embedding.join(",")}]`;
 
   const { rows } = await pool.query<DbRow>(

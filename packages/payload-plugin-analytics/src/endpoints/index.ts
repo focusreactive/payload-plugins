@@ -20,7 +20,10 @@ import { buildAbExperimentOutcomeEndpoint } from "./ab/experimentOutcome";
 import { buildAbExperimentTimeSeriesEndpoint } from "./ab/experimentTimeSeries";
 import { buildAbExperimentLeadBreakdownEndpoint } from "./ab/experimentLeadBreakdown";
 
-export function buildEndpoints(config: AnalyticsPluginConfig, registry: Record<BlockId, BlockDefinition> = {}): Endpoint[] {
+export function buildEndpoints(
+  config: AnalyticsPluginConfig,
+  registry: Record<BlockId, BlockDefinition> = {}
+): Endpoint[] {
   const customBlockEndpoints: Endpoint[] = [];
 
   for (const [blockId, def] of Object.entries(registry)) {

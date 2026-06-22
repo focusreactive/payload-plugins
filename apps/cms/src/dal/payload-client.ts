@@ -11,4 +11,6 @@ import { cache } from "react";
  * request share the same Payload instance. Never call `getPayload` directly
  * outside this module — go through the DAL.
  */
-export const getPayloadClient = cache(async (): Promise<Payload> => getPayload({ config: configPromise }));
+export const getPayloadClient = cache(
+  async (): Promise<Payload> => getPayload({ config: configPromise })
+);

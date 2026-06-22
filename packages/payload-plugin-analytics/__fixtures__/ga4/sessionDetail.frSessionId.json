@@ -1,17 +1,41 @@
 {
-  "dimensionHeaders": [{ "name": "eventName" }, { "name": "pagePath" }, { "name": "dateHourMinute" }, { "name": "customEvent:fr_event_seq" }, { "name": "customEvent:fr_lead_type" }],
+  "dimensionHeaders": [
+    { "name": "eventName" },
+    { "name": "pagePath" },
+    { "name": "dateHourMinute" },
+    { "name": "customEvent:fr_event_seq" },
+    { "name": "customEvent:fr_lead_type" }
+  ],
   "metricHeaders": [{ "name": "eventCount", "type": "TYPE_INTEGER" }],
   "rows": [
     {
-      "dimensionValues": [{ "value": "page_view" }, { "value": "/" }, { "value": "202605101430" }, { "value": "1" }, { "value": "" }],
+      "dimensionValues": [
+        { "value": "page_view" },
+        { "value": "/" },
+        { "value": "202605101430" },
+        { "value": "1" },
+        { "value": "" }
+      ],
       "metricValues": [{ "value": "1" }]
     },
     {
-      "dimensionValues": [{ "value": "scroll" }, { "value": "/" }, { "value": "202605101430" }, { "value": "2" }, { "value": "" }],
+      "dimensionValues": [
+        { "value": "scroll" },
+        { "value": "/" },
+        { "value": "202605101430" },
+        { "value": "2" },
+        { "value": "" }
+      ],
       "metricValues": [{ "value": "1" }]
     },
     {
-      "dimensionValues": [{ "value": "lead_action" }, { "value": "/" }, { "value": "202605101430" }, { "value": "3" }, { "value": "phone_click" }],
+      "dimensionValues": [
+        { "value": "lead_action" },
+        { "value": "/" },
+        { "value": "202605101430" },
+        { "value": "3" },
+        { "value": "phone_click" }
+      ],
       "metricValues": [{ "value": "1" }]
     }
   ],

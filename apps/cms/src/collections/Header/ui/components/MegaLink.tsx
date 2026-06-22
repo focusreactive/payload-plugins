@@ -16,11 +16,24 @@ export function MegaLink({ link }: MegaLinkProps) {
       <NextLink
         href={link.href}
         aria-current={link.active ? "page" : undefined}
-        className={cn("flex flex-col gap-[3px] rounded-sm px-[13px] py-[11px] transition-colors duration-150 hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:outline-none")}
+        className={cn(
+          "flex flex-col gap-[3px] rounded-sm px-[13px] py-[11px] transition-colors duration-150 hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:outline-none"
+        )}
         {...newTabProps}
       >
-        <span className={cn("text-[0.92rem] font-semibold", link.active ? "text-primary" : "text-foreground")}>{link.label}</span>
-        {link.description && <span className="text-[0.8rem] leading-[1.4] text-muted-foreground">{link.description}</span>}
+        <span
+          className={cn(
+            "text-[0.92rem] font-semibold",
+            link.active ? "text-primary" : "text-foreground"
+          )}
+        >
+          {link.label}
+        </span>
+        {link.description && (
+          <span className="text-[0.8rem] leading-[1.4] text-muted-foreground">
+            {link.description}
+          </span>
+        )}
       </NextLink>
     </NavigationMenu.Link>
   );

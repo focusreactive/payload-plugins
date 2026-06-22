@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, type ReactNode, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import type { CommentsFilters } from "../../types/filters";
 
 interface CommentsFilterContextProps {

@@ -10,7 +10,12 @@ import { EnqueueTranslationHandler } from "./handler";
 /**
  * Creates the enqueue translation endpoint
  */
-export function createEnqueueRoute(taskRunnerFactory: TaskRunnerFactory, config: EnqueueConfig, access?: AccessGuard, basePath = "/translate"): Endpoint {
+export function createEnqueueRoute(
+  taskRunnerFactory: TaskRunnerFactory,
+  config: EnqueueConfig,
+  access?: AccessGuard,
+  basePath = "/translate"
+): Endpoint {
   const handler = new EnqueueTranslationHandler(config, taskRunnerFactory);
 
   return {

@@ -14,13 +14,18 @@ export const seoPlugin =
     if (config.disabled) return incomingConfig;
 
     if (!config.collections?.length) {
-      console.warn(`${PREFIX} Disabled: config.collections must list at least one collection slug. Plugin not registered.`);
+      console.warn(
+        `${PREFIX} Disabled: config.collections must list at least one collection slug. Plugin not registered.`
+      );
       return incomingConfig;
     }
 
     setPluginConfig(config);
 
-    const merged = mergeTranslations((incomingConfig.i18n?.translations as never) ?? {}, mergeTranslations(en, config.translations ?? {}));
+    const merged = mergeTranslations(
+      (incomingConfig.i18n?.translations as never) ?? {},
+      mergeTranslations(en, config.translations ?? {})
+    );
 
     const withTranslations: Config = {
       ...incomingConfig,

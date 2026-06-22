@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useImperativeHandle, type RefObject, startTransition } from "react";
+import { useState, useRef, useImperativeHandle, startTransition } from "react";
+import type { RefObject } from "react";
 import { useAuth, useLocale, useTranslation } from "@payloadcms/ui";
 import { useComments } from "../../providers/CommentsProvider";
 import { useMentionableUsersQuery } from "../../api/queries/useMentionableUsersQuery";
@@ -107,8 +108,10 @@ export function CommentEditor({
         setMentionQuery(query);
         setFilteredUsers(
           users.filter((u) =>
-            resolveUsername(u, usernameFieldPath, unknownLabel).toLowerCase().includes(query.toLowerCase()),
-          ),
+            resolveUsername(u, usernameFieldPath, unknownLabel)
+              .toLowerCase()
+              .includes(query.toLowerCase())
+          )
         );
         setSelectedIndex(0);
 
@@ -140,7 +143,7 @@ export function CommentEditor({
       <MentionLabel
         name={resolveUsername(user, usernameFieldPath, unknownLabel)}
         isSelf={isSelfMention(currentUserId, userId)}
-      />,
+      />
     );
 
     mentionLabelContainer.contentEditable = "false";
@@ -227,7 +230,14 @@ export function CommentEditor({
     clearEditor();
 
     startTransition(async () => {
-      const res = await addComment(serialized, fieldPath, documentId, collectionSlug, locale, globalSlug);
+      const res = await addComment(
+        serialized,
+        fieldPath,
+        documentId,
+        collectionSlug,
+        locale,
+        globalSlug
+      );
 
       if (res.success) {
         onSuccessAddComment?.();
@@ -281,11 +291,17 @@ export function CommentEditor({
   return (
     <div className="relative">
       <div className="flex gap-2.5 items-start">
-        <Avatar className="shrink-0" user={user} usernameFieldPath={usernameFieldPath} fallbackName={unknownLabel} />
+        <Avatar
+          className="shrink-0"
+          user={user}
+          usernameFieldPath={usernameFieldPath}
+          fallbackName={unknownLabel}
+        />
 
         <div
           ref={editorWrapperRef}
-          className="relative flex-1 min-w-0 group px-2.5 py-2 rounded-md border border-transparent focus-within:border-(--theme-elevation-150) bg-transparent">
+          className="relative flex-1 min-w-0 group px-2.5 py-2 rounded-md border border-transparent focus-within:border-(--theme-elevation-150) bg-transparent"
+        >
           <div className="relative">
             <div
               className={`

@@ -36,7 +36,15 @@ export function RenderBlocks({ blocks }: Props) {
     <>
       {visibleBlocks.map((block, i) => {
         if (block.blockType === "hero") {
-          return <HeroSection cta={block.cta} description={block.description} image={block.image} key={i} title={block.title} />;
+          return (
+            <HeroSection
+              cta={block.cta}
+              description={block.description}
+              image={block.image}
+              key={i}
+              title={block.title}
+            />
+          );
         }
         if (block.blockType === "content") {
           return <ContentSection content={block.content} image={block.image} key={i} />;

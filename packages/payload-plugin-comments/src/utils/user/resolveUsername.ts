@@ -6,7 +6,7 @@ import { getValueByPath } from "../general/getValueByPath";
 export function resolveUsername(
   user: User | ClientUser | null | undefined,
   usernameFieldPath: string = USERNAME_DEFAULT_FIELD_PATH,
-  fallbackLabel: string,
+  fallbackLabel: string
 ) {
   if (!user) return fallbackLabel;
 

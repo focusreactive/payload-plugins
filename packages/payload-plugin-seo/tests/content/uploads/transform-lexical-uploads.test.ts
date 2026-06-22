@@ -11,7 +11,10 @@ const uploadNode = (value: unknown) => ({ type: "upload", relationTo: "media", v
 describe("transformLexicalUploads", () => {
   it("replaces upload node values when the transform returns a doc", () => {
     const doc = { id: 7, url: "/m/a.jpg", mimeType: "image/jpeg", alt: "A" };
-    const input = lexical([{ type: "paragraph", children: [{ type: "text", text: "hi" }] }, uploadNode(7)]);
+    const input = lexical([
+      { type: "paragraph", children: [{ type: "text", text: "hi" }] },
+      uploadNode(7),
+    ]);
 
     const out = transformLexicalUploads(input, () => doc);
 

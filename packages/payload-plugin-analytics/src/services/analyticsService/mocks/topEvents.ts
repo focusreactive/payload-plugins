@@ -18,6 +18,10 @@ export const topEventsMock: RunReportMockFn = (request) => {
     })
   );
   const allowedList = refInListFromRequest(request as never, PAGE_REF_DIM);
-  const out = filterAndReaggregate(tagged, { refIndex: 1, keepDimIndices: [0], allowed: allowedList ? new Set(allowedList) : null });
+  const out = filterAndReaggregate(tagged, {
+    refIndex: 1,
+    keepDimIndices: [0],
+    allowed: allowedList ? new Set(allowedList) : null,
+  });
   return response(out) as never;
 };

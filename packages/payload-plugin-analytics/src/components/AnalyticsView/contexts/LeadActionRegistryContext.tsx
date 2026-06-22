@@ -23,8 +23,14 @@ export interface LeadActionRegistryProviderProps {
   children: ReactNode;
 }
 
-export function LeadActionRegistryProvider({ registry, children }: LeadActionRegistryProviderProps) {
-  const merged = useMemo<LeadActionRegistry>(() => ({ ...BUILT_IN_LEAD_ACTION_REGISTRY, ...registry }), [registry]);
+export function LeadActionRegistryProvider({
+  registry,
+  children,
+}: LeadActionRegistryProviderProps) {
+  const merged = useMemo<LeadActionRegistry>(
+    () => ({ ...BUILT_IN_LEAD_ACTION_REGISTRY, ...registry }),
+    [registry]
+  );
 
   const api = useMemo<LeadActionRegistryApi>(
     () => ({
@@ -35,7 +41,9 @@ export function LeadActionRegistryProvider({ registry, children }: LeadActionReg
     [merged]
   );
 
-  return <LeadActionRegistryContext.Provider value={api}>{children}</LeadActionRegistryContext.Provider>;
+  return (
+    <LeadActionRegistryContext.Provider value={api}>{children}</LeadActionRegistryContext.Provider>
+  );
 }
 
 export function useLeadActionRegistry(): LeadActionRegistryApi {
@@ -46,7 +54,8 @@ export function useLeadActionRegistry(): LeadActionRegistryApi {
   return {
     resolveLabel: (type) => BUILT_IN_LEAD_ACTION_REGISTRY[type]?.label ?? humanizeType(type),
     resolveIcon: (type) => BUILT_IN_LEAD_ACTION_REGISTRY[type]?.icon ?? FALLBACK_ICON,
-    resolveEntry: (type) => BUILT_IN_LEAD_ACTION_REGISTRY[type] ?? { icon: FALLBACK_ICON, label: humanizeType(type) },
+    resolveEntry: (type) =>
+      BUILT_IN_LEAD_ACTION_REGISTRY[type] ?? { icon: FALLBACK_ICON, label: humanizeType(type) },
   };
 }
 

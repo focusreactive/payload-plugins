@@ -6,7 +6,9 @@ import type { TaskRunnerFactory, TaskRunner } from "../../modules/task-runner";
 
 // Mock collection-utils
 vi.mock("../_lib/collection-utils", () => ({
-  isCollectionAvailable: vi.fn((slug: string, available: Set<string>) => (available.has(slug) ? slug : null)),
+  isCollectionAvailable: vi.fn((slug: string, available: Set<string>) =>
+    available.has(slug) ? slug : null
+  ),
   getAllCollectionIds: vi.fn().mockResolvedValue(["doc-1", "doc-2", "doc-3"]),
 }));
 

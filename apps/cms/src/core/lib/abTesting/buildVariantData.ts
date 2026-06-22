@@ -3,7 +3,10 @@ import type { Page } from "@/payload-types";
 
 import type { ABVariantData } from "./types";
 
-export function buildVariantData(doc: Page & { _abPassPercentage?: number }, locale: string | undefined): ABVariantData {
+export function buildVariantData(
+  doc: Page & { _abPassPercentage?: number },
+  locale: string | undefined
+): ABVariantData {
   const breadcrumbs = doc.breadcrumbs ?? [];
   const lastUrl = breadcrumbs.at(-1)?.url ?? "";
   const restPath = !lastUrl || lastUrl === "/home" ? "" : lastUrl;

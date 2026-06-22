@@ -2,7 +2,11 @@ import type { Block, Field } from "payload";
 
 import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
 import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
-import { createLocalizedDefault, createLocalizedRichText, createRichTextState } from "@/core/lib/createLocalizedDefault";
+import {
+  createLocalizedDefault,
+  createLocalizedRichText,
+  createRichTextState,
+} from "@/core/lib/createLocalizedDefault";
 import { generateRichText } from "@/core/lib/generateRichText";
 import type { Locale } from "@/core/types";
 import { injectSection } from "@/fields/section/injectSection";

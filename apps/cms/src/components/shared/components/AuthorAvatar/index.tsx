@@ -4,17 +4,20 @@ import NextImage from "next/image";
 
 import type { Author } from "@/payload-types";
 
-const fallbackVariants = cva("grid flex-none place-items-center rounded-pill bg-primary-soft font-semibold text-primary", {
-  defaultVariants: {
-    size: "md",
-  },
-  variants: {
-    size: {
-      md: "size-10",
-      sm: "size-[34px] text-[0.9rem]",
+const fallbackVariants = cva(
+  "grid flex-none place-items-center rounded-pill bg-primary-soft font-semibold text-primary",
+  {
+    defaultVariants: {
+      size: "md",
     },
-  },
-});
+    variants: {
+      size: {
+        md: "size-10",
+        sm: "size-[34px] text-[0.9rem]",
+      },
+    },
+  }
+);
 
 const imageVariants = cva("relative flex-none overflow-hidden rounded-pill", {
   defaultVariants: {
@@ -39,12 +42,20 @@ interface AuthorAvatarProps {
 }
 
 export function AuthorAvatar({ author, size }: AuthorAvatarProps) {
-  const avatar = typeof author.avatar === "object" && author.avatar !== null ? author.avatar : undefined;
+  const avatar =
+    typeof author.avatar === "object" && author.avatar !== null ? author.avatar : undefined;
 
   if (avatar?.url) {
     return (
       <span className={imageVariants({ size })}>
-        <NextImage src={avatar.url} alt="" fill className="object-cover" quality={85} sizes={imageSizes[size]} />
+        <NextImage
+          src={avatar.url}
+          alt=""
+          fill
+          className="object-cover"
+          quality={85}
+          sizes={imageSizes[size]}
+        />
       </span>
     );
   }

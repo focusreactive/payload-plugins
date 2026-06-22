@@ -6,10 +6,8 @@
 /* ──────────────── Tier 1: primitives ──────────────── */
 @theme {
   --font-display: var(--font-newsreader, "Times New Roman"), Georgia, serif;
-  --font-sans: var(--font-archivo, ui-sans-serif), system-ui, -apple-system,
-    sans-serif;
-  --font-mono: var(--font-ibm-plex-mono, ui-monospace), "SF Mono", Menlo,
-    monospace;
+  --font-sans: var(--font-archivo, ui-sans-serif), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono, ui-monospace), "SF Mono", Menlo, monospace;
 
   --color-white: #ffffff;
   --color-slate-50: #eef2f3;
@@ -80,11 +78,7 @@
 
   --color-secondary: var(--color-ink-950);
   --color-secondary-foreground: var(--color-white);
-  --color-secondary-hover: color-mix(
-    in srgb,
-    var(--color-secondary) 80%,
-    var(--color-background)
-  );
+  --color-secondary-hover: color-mix(in srgb, var(--color-secondary) 80%, var(--color-background));
 
   --color-muted: var(--color-slate-100);
   --color-muted-foreground: var(--color-slate-500);
@@ -225,13 +219,7 @@
 
 /* ──────────────── Custom utility ──────────────── */
 @utility mask-shadow-y {
-  mask-image: linear-gradient(
-    90deg,
-    transparent,
-    #fff 10%,
-    #fff 90%,
-    transparent
-  );
+  mask-image: linear-gradient(90deg, transparent, #fff 10%, #fff 90%, transparent);
 }
 
 /* ──────────────── Backdrop float keyframes (AbstractBackdrop) ──────────────── */

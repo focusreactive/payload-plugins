@@ -24,14 +24,27 @@ interface Props {
   buildUrl?: (doc: BaseDocument, locale?: Locale) => string | null;
 }
 
-export function buildDocumentsContent({ docs, totalDocs, page, limit, collection, titleField, tableFields, locale, payload, buildUrl }: Props): ContentBlock[] {
+export function buildDocumentsContent({
+  docs,
+  totalDocs,
+  page,
+  limit,
+  collection,
+  titleField,
+  tableFields,
+  locale,
+  payload,
+  buildUrl,
+}: Props): ContentBlock[] {
   const { fieldLabels, blockLabels, fieldRelationTo } = buildLabelMaps(collection, payload);
   const titleIsId = titleField === "id" || !titleField;
 
   const formattedDocs = docs.map((doc) => {
     const raw = doc as BaseDocument;
 
-    const adminUrl = raw.id ? `${getServerSideURL()}/admin/collections/${collection}/${raw.id}${locale ? `?locale=${locale}` : ""}` : "";
+    const adminUrl = raw.id
+      ? `${getServerSideURL()}/admin/collections/${collection}/${raw.id}${locale ? `?locale=${locale}` : ""}`
+      : "";
     const url = buildUrl ? (buildUrl(raw, locale) ?? "") : undefined;
 
     return formatDocument({
@@ -60,7 +73,12 @@ export function buildDocumentsContent({ docs, totalDocs, page, limit, collection
   return [{ text: PRE_FORMATTED_CONTENT_INSTRUCTION + body, type: "text" }];
 }
 
-function shouldIncludeSummaryField(payload: Payload, collection: CollectionSlug, fieldName: string, value: unknown) {
+function shouldIncludeSummaryField(
+  payload: Payload,
+  collection: CollectionSlug,
+  fieldName: string,
+  value: unknown
+) {
   if (!isScalar(value)) {
     return false;
   }
@@ -73,7 +91,13 @@ function shouldIncludeSummaryField(payload: Payload, collection: CollectionSlug,
   return true;
 }
 
-function buildSummaryFields(payload: Payload, collection: CollectionSlug, doc: BaseDocument, tableFields: string[], titleField?: string) {
+function buildSummaryFields(
+  payload: Payload,
+  collection: CollectionSlug,
+  doc: BaseDocument,
+  tableFields: string[],
+  titleField?: string
+) {
   const summary: Record<string, unknown> = {};
 
   for (const fieldName of tableFields) {

@@ -115,9 +115,22 @@ export const uploadImage = {
     images: z
       .array(
         z.object({
-          alt: z.string().describe("Concise description of the image content. Derive from what is visible — never copy the filename."),
-          filename: z.string().optional().describe("Override for the stored filename including extension. Auto-derived from source if omitted."),
-          source: z.string().describe("Absolute local file path (development only) or http(s):// URL of the image to upload."),
+          alt: z
+            .string()
+            .describe(
+              "Concise description of the image content. Derive from what is visible — never copy the filename."
+            ),
+          filename: z
+            .string()
+            .optional()
+            .describe(
+              "Override for the stored filename including extension. Auto-derived from source if omitted."
+            ),
+          source: z
+            .string()
+            .describe(
+              "Absolute local file path (development only) or http(s):// URL of the image to upload."
+            ),
         })
       )
       .min(1)

@@ -2,7 +2,10 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import * as mocksGate from "../../../src/services/analyticsService/mocksGate";
 import { runQuery } from "../../../src/services/analyticsService/runQuery";
 import { __setGa4ClientForTests } from "../../../src/services/ga4DataClient";
-import { registerAnalyticsMocks, clearAnalyticsMocks } from "../../../src/services/analyticsService/mockRegistry";
+import {
+  registerAnalyticsMocks,
+  clearAnalyticsMocks,
+} from "../../../src/services/analyticsService/mockRegistry";
 
 describe("runQuery — pass-through", () => {
   beforeEach(() => clearAnalyticsMocks());
@@ -14,7 +17,9 @@ describe("runQuery — pass-through", () => {
     };
     __setGa4ClientForTests(fake as never);
 
-    await runQuery.runReport("12345", { dateRanges: [{ startDate: "2026-05-10", endDate: "2026-05-10" }] });
+    await runQuery.runReport("12345", {
+      dateRanges: [{ startDate: "2026-05-10", endDate: "2026-05-10" }],
+    });
     expect(fake.runReport).toHaveBeenCalledWith(
       expect.objectContaining({
         property: "properties/12345",
@@ -30,7 +35,9 @@ describe("runQuery — pass-through", () => {
     };
     __setGa4ClientForTests(fake as never);
 
-    await runQuery.batchRunReports("12345", [{ dateRanges: [{ startDate: "2026-05-10", endDate: "2026-05-10" }] }]);
+    await runQuery.batchRunReports("12345", [
+      { dateRanges: [{ startDate: "2026-05-10", endDate: "2026-05-10" }] },
+    ]);
     expect(fake.batchRunReports).toHaveBeenCalledWith(
       expect.objectContaining({
         property: "properties/12345",
@@ -58,7 +65,10 @@ describe("runQuery — mock gate disabled", () => {
   });
 
   it("batchRunReports calls real client even when mockKey hits a registered mock", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue([{ reports: [] }]) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue([{ reports: [] }]),
+    };
     __setGa4ClientForTests(fake as never);
     const mockFn = vi.fn();
     registerAnalyticsMocks({ batchRunReports: { leadActions: mockFn } });
@@ -115,7 +125,10 @@ describe("runQuery — mock gate enabled", () => {
   });
 
   it("batchRunReports falls through to real client when mockKey misses", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue([{ reports: [] }]) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue([{ reports: [] }]),
+    };
     __setGa4ClientForTests(fake as never);
 
     await runQuery.batchRunReports("12345", [{ dateRanges: [] }], "doesNotExist");

@@ -1,4 +1,9 @@
-import type { AnalyticsQuery, Row, SessionDetailEvent, SessionDetailResponse } from "../../types/query";
+import type {
+  AnalyticsQuery,
+  Row,
+  SessionDetailEvent,
+  SessionDetailResponse,
+} from "../../types/query";
 import type { PageFilterContext } from "../pageFilter/types";
 import { FR_LEAD_TYPE_PARAM } from "../../constants/events";
 import { resolveDateRange } from "../../utils/date/resolveDateRange";
@@ -12,7 +17,11 @@ function convertDateHourMinuteToIso(value: string | null | undefined): string {
   return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}T${value.slice(8, 10)}:${value.slice(10, 12)}:00.000Z`;
 }
 
-function convertRowToSessionDetailEvent(row: Row, pageRefIndex: number, labels: Map<string, { path: string }> | null): SessionDetailEvent {
+function convertRowToSessionDetailEvent(
+  row: Row,
+  pageRefIndex: number,
+  labels: Map<string, { path: string }> | null
+): SessionDetailEvent {
   const dimensionValues = row.dimensionValues ?? [];
   const leadType = dimensionValues[4]?.value ?? "";
   const params: Record<string, unknown> = {};
@@ -31,8 +40,18 @@ function convertRowToSessionDetailEvent(row: Row, pageRefIndex: number, labels: 
   };
 }
 
-function buildRequest(sessionId: string, dateRange: ReturnType<typeof resolveDateRange>, includeLeadType: boolean, pageRefDim?: string) {
-  const dimensions: Array<{ name: string }> = [{ name: "eventName" }, { name: "pagePath" }, { name: "dateHourMinute" }, { name: "customEvent:fr_event_seq" }];
+function buildRequest(
+  sessionId: string,
+  dateRange: ReturnType<typeof resolveDateRange>,
+  includeLeadType: boolean,
+  pageRefDim?: string
+) {
+  const dimensions: Array<{ name: string }> = [
+    { name: "eventName" },
+    { name: "pagePath" },
+    { name: "dateHourMinute" },
+    { name: "customEvent:fr_event_seq" },
+  ];
 
   if (includeLeadType) dimensions.push({ name: "customEvent:fr_lead_type" });
 
@@ -49,13 +68,20 @@ function buildRequest(sessionId: string, dateRange: ReturnType<typeof resolveDat
     dimensionFilter: {
       filter: { fieldName: "customEvent:fr_session_id", stringFilter: { value: sessionId } },
     },
-    orderBys: [{ dimension: { dimensionName: "dateHourMinute" } }, { dimension: { dimensionName: "customEvent:fr_event_seq" } }],
+    orderBys: [
+      { dimension: { dimensionName: "dateHourMinute" } },
+      { dimension: { dimensionName: "customEvent:fr_event_seq" } },
+    ],
   };
 
   return { request, pageRefIndex };
 }
 
-async function resolveRowLabels(rows: Row[], pageRefIndex: number, pageFilter: PageFilterContext): Promise<Map<string, { path: string }>> {
+async function resolveRowLabels(
+  rows: Row[],
+  pageRefIndex: number,
+  pageFilter: PageFilterContext
+): Promise<Map<string, { path: string }>> {
   const refs = new Set<string>();
   for (const row of rows) {
     const ref = pageRefIndex >= 0 ? (row.dimensionValues?.[pageRefIndex]?.value ?? "") : "";
@@ -77,7 +103,12 @@ function sessionRefsAllExisting(rows: Row[], pageRefIndex: number, existing: Set
   return true;
 }
 
-export async function getSessionDetail(propertyId: string, sessionId: string, query: AnalyticsQuery, pageFilter?: PageFilterContext | null): Promise<SessionDetailResponse> {
+export async function getSessionDetail(
+  propertyId: string,
+  sessionId: string,
+  query: AnalyticsQuery,
+  pageFilter?: PageFilterContext | null
+): Promise<SessionDetailResponse> {
   const dateRange = resolveDateRange(query.dateRange);
   const filterRefs = pageFilter?.refs ?? [];
   const pageFilterActive = filterRefs.length > 0;
@@ -86,36 +117,67 @@ export async function getSessionDetail(propertyId: string, sessionId: string, qu
 
   try {
     const { request, pageRefIndex } = buildRequest(sessionId, dateRange, true, pageRefDim);
-    const raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "sessionDetail");
+    const raw = await runQuery.runReport(
+      propertyId,
+      request as Parameters<typeof runQuery.runReport>[1],
+      "sessionDetail"
+    );
     const rows = (raw.rows ?? []) as Row[];
 
     if (pageFilterActive && !sessionRefsAllExisting(rows, pageRefIndex, existingRefs)) {
       return { sessionId, events: [] };
     }
 
-    const labels = pageFilterActive && pageFilter ? await resolveRowLabels(rows, pageRefIndex, pageFilter) : null;
+    const labels =
+      pageFilterActive && pageFilter
+        ? await resolveRowLabels(rows, pageRefIndex, pageFilter)
+        : null;
 
-    return { sessionId, events: rows.map((row) => convertRowToSessionDetailEvent(row, pageRefIndex, labels)) };
+    return {
+      sessionId,
+      events: rows.map((row) => convertRowToSessionDetailEvent(row, pageRefIndex, labels)),
+    };
   } catch (err) {
     const mapped = mapGa4Error(err);
 
     if (!mapped.setupRequired) throw err;
 
-    const missing = deriveMissing({ message: mapped.message }, ["fr_session_id", "fr_event_seq", "fr_lead_type", "fr_page_ref"]);
+    const missing = deriveMissing({ message: mapped.message }, [
+      "fr_session_id",
+      "fr_event_seq",
+      "fr_lead_type",
+      "fr_page_ref",
+    ]);
 
     if (missing.length === 1 && missing[0] === "fr_lead_type") {
       try {
-        const { request: fallbackRequest, pageRefIndex } = buildRequest(sessionId, dateRange, false, pageRefDim);
-        const raw = await runQuery.runReport(propertyId, fallbackRequest as Parameters<typeof runQuery.runReport>[1], "sessionDetail");
+        const { request: fallbackRequest, pageRefIndex } = buildRequest(
+          sessionId,
+          dateRange,
+          false,
+          pageRefDim
+        );
+        const raw = await runQuery.runReport(
+          propertyId,
+          fallbackRequest as Parameters<typeof runQuery.runReport>[1],
+          "sessionDetail"
+        );
         const rows = (raw.rows ?? []) as Row[];
 
         if (pageFilterActive && !sessionRefsAllExisting(rows, pageRefIndex, existingRefs)) {
           return { sessionId, events: [], missing };
         }
 
-        const labels = pageFilterActive && pageFilter ? await resolveRowLabels(rows, pageRefIndex, pageFilter) : null;
+        const labels =
+          pageFilterActive && pageFilter
+            ? await resolveRowLabels(rows, pageRefIndex, pageFilter)
+            : null;
 
-        return { sessionId, events: rows.map((row) => convertRowToSessionDetailEvent(row, pageRefIndex, labels)), missing };
+        return {
+          sessionId,
+          events: rows.map((row) => convertRowToSessionDetailEvent(row, pageRefIndex, labels)),
+          missing,
+        };
       } catch {
         // why: if the lead-type-less retry also fails, intentionally fall through
         // to the setupRequired return below rather than rethrowing.

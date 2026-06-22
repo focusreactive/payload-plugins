@@ -50,7 +50,11 @@ const GENERIC: Record<Status, string> = {
   bad: "This check needs improvement.",
 };
 
-export function getRecommendation(id: string, status: Status, ctx: RecoContext): string | undefined {
+export function getRecommendation(
+  id: string,
+  status: Status,
+  ctx: RecoContext
+): string | undefined {
   if (status === "good") return undefined;
 
   const builder = MAP[id]?.[status];

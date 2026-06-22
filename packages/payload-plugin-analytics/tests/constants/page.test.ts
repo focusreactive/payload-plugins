@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { PAGE_PARAM_KEYS, SYNTHETIC_REF_PREFIX, DEFAULT_PAGE_DIMENSIONS } from "../../src/constants/page";
+import {
+  PAGE_PARAM_KEYS,
+  SYNTHETIC_REF_PREFIX,
+  DEFAULT_PAGE_DIMENSIONS,
+} from "../../src/constants/page";
 
 describe("page constants", () => {
   it("exposes stable gtag param keys", () => {

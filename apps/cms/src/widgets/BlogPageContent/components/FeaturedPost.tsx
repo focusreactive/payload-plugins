@@ -21,15 +21,38 @@ interface FeaturedPostProps {
 export async function FeaturedPost({ post, readMoreLabel, locale, className }: FeaturedPostProps) {
   const t = await getTranslations("blog");
 
-  const category = post.categories?.find((entry): entry is Category => typeof entry === "object" && entry !== null);
-  const author = post.authors?.find((entry): entry is Author => typeof entry === "object" && entry !== null);
-  const heroImage = typeof post.heroImage === "object" && post.heroImage !== null ? post.heroImage : undefined;
-  const publishedDate = post.publishedAt ? new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric" }).format(new Date(post.publishedAt)) : null;
+  const category = post.categories?.find(
+    (entry): entry is Category => typeof entry === "object" && entry !== null
+  );
+  const author = post.authors?.find(
+    (entry): entry is Author => typeof entry === "object" && entry !== null
+  );
+  const heroImage =
+    typeof post.heroImage === "object" && post.heroImage !== null ? post.heroImage : undefined;
+  const publishedDate = post.publishedAt
+    ? new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric" }).format(
+        new Date(post.publishedAt)
+      )
+    : null;
 
   return (
-    <Link href={`${BLOG_CONFIG.basePath}/${post.slug}`} className={cn("group grid grid-cols-1 items-center gap-[clamp(28px,5vw,64px)] min-[861px]:grid-cols-[1.15fr_0.85fr]", className)}>
+    <Link
+      href={`${BLOG_CONFIG.basePath}/${post.slug}`}
+      className={cn(
+        "group grid grid-cols-1 items-center gap-[clamp(28px,5vw,64px)] min-[861px]:grid-cols-[1.15fr_0.85fr]",
+        className
+      )}
+    >
       <div className="relative aspect-[16/11] w-full overflow-hidden rounded-lg bg-surface-muted">
-        <NextImage src={heroImage?.url ?? "/empty-placeholder.jpg"} alt={heroImage?.alt ?? ""} fill priority className="object-cover" quality={85} sizes="(max-width: 860px) 100vw, 60vw" />
+        <NextImage
+          src={heroImage?.url ?? "/empty-placeholder.jpg"}
+          alt={heroImage?.alt ?? ""}
+          fill
+          priority
+          className="object-cover"
+          quality={85}
+          sizes="(max-width: 860px) 100vw, 60vw"
+        />
       </div>
 
       <div className="flex flex-col gap-[18px]">
@@ -40,10 +63,14 @@ export async function FeaturedPost({ post, readMoreLabel, locale, className }: F
               <span aria-hidden className="inline-block size-1 rounded-pill bg-border-strong" />
             </>
           )}
-          <span className="whitespace-nowrap">{t("readTimeLong", { minutes: readingTimeMinutes(post.content) })}</span>
+          <span className="whitespace-nowrap">
+            {t("readTimeLong", { minutes: readingTimeMinutes(post.content) })}
+          </span>
         </div>
 
-        <h2 className="text-balance text-h-section text-foreground transition-colors group-hover:text-primary motion-reduce:transition-none">{post.title}</h2>
+        <h2 className="text-balance text-h-section text-foreground transition-colors group-hover:text-primary motion-reduce:transition-none">
+          {post.title}
+        </h2>
 
         {post.excerpt && <p className="text-body-lg text-muted-foreground">{post.excerpt}</p>}
 
@@ -53,7 +80,10 @@ export async function FeaturedPost({ post, readMoreLabel, locale, className }: F
             <div>
               {author && <div className="text-[0.95rem] font-semibold">{author.name}</div>}
               {publishedDate && (
-                <time dateTime={post.publishedAt ?? undefined} className="text-[0.82rem] text-muted-foreground">
+                <time
+                  dateTime={post.publishedAt ?? undefined}
+                  className="text-[0.82rem] text-muted-foreground"
+                >
                   {publishedDate}
                 </time>
               )}

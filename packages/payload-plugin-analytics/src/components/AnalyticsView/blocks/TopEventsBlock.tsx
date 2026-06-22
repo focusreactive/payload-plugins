@@ -22,7 +22,13 @@ export function TopEventsBlock({ dateRange, comparison, className }: BlockCompon
         loading={isLoading}
         error={error ?? undefined}
         columns={[
-          { key: "eventName", header: "Event", font: "mono", truncate: true, render: (r) => <span className="block truncate">{r.eventName}</span> },
+          {
+            key: "eventName",
+            header: "Event",
+            font: "mono",
+            truncate: true,
+            render: (r) => <span className="block truncate">{r.eventName}</span>,
+          },
           {
             key: "eventCount",
             header: "Count",
@@ -36,7 +42,9 @@ export function TopEventsBlock({ dateRange, comparison, className }: BlockCompon
             header: "Count per user",
             align: "right",
             value: (r) => r.eventCountPerUser,
-            prevValue: showCompare ? (r) => prev.get(r.eventName)?.eventCountPerUser ?? null : undefined,
+            prevValue: showCompare
+              ? (r) => prev.get(r.eventName)?.eventCountPerUser ?? null
+              : undefined,
             format: (n) => n.toFixed(2),
           },
         ]}

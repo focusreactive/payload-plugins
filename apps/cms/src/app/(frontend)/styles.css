@@ -124,7 +124,8 @@ body {
 }
 
 .testimonials-carousel-group {
-  animation: testimonials-carousel-scrolling var(--testimonials-carousel-duration, 60s) linear infinite;
+  animation: testimonials-carousel-scrolling var(--testimonials-carousel-duration, 60s) linear
+    infinite;
 }
 
 .testimonials-carousel:hover .testimonials-carousel-group,

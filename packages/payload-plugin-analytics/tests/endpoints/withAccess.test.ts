@@ -3,7 +3,13 @@ import { withAccess } from "../../src/endpoints/withAccess";
 import { makePayloadRequest } from "../../__fixtures__/http/payloadRequest";
 import type { AnalyticsPluginConfig } from "../../src/types/config";
 
-const cfg = { ga4: { propertyId: "1", measurementId: "G-X", serviceAccount: { clientEmail: "x", privateKey: "y" } } } as AnalyticsPluginConfig;
+const cfg = {
+  ga4: {
+    propertyId: "1",
+    measurementId: "G-X",
+    serviceAccount: { clientEmail: "x", privateKey: "y" },
+  },
+} as AnalyticsPluginConfig;
 
 describe("withAccess", () => {
   it("returns 403 when default access denies (no user)", async () => {

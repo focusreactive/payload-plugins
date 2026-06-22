@@ -21,7 +21,12 @@ async function getGlobal(slug: GlobalSlug, depth = 0, locale?: Locale, draft?: b
   return await payload.findGlobal({ depth, draft, locale, slug });
 }
 
-export const getCachedGlobal = (collection: GlobalSlug, depth: number = 2, locale?: Locale, draft?: boolean) => {
+export const getCachedGlobal = (
+  collection: GlobalSlug,
+  depth: number = 2,
+  locale?: Locale,
+  draft?: boolean
+) => {
   if (draft) {
     return async () => {
       const resolvedLocale = locale ? await resolveLocale(locale) : undefined;

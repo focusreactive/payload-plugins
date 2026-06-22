@@ -23,11 +23,10 @@ function EditPresetButton({
   onDrawerOpenChange?: (isOpen: boolean) => void;
 }) {
   const { slug } = usePresetsConfig();
-  const [DocumentDrawer, , { openDrawer, closeDrawer, isDrawerOpen }] =
-    useDocumentDrawer({
-      collectionSlug: slug,
-      id: presetId,
-    });
+  const [DocumentDrawer, , { openDrawer, closeDrawer, isDrawerOpen }] = useDocumentDrawer({
+    collectionSlug: slug,
+    id: presetId,
+  });
 
   useEffect(() => {
     onDrawerOpenChange?.(isDrawerOpen);
@@ -91,8 +90,7 @@ export function PresetItem({
   const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
   const suppressNextFocus = useRef(false);
 
-  const isOpen =
-    (isHovered || isKeyboardFocused) && !isScrolling && !isEditDrawerOpen;
+  const isOpen = (isHovered || isKeyboardFocused) && !isScrolling && !isEditDrawerOpen;
 
   const mediaId = typeof preview === "number" ? preview : preview?.id;
   const mediaUrl = media?.url;
@@ -163,18 +161,12 @@ export function PresetItem({
           tabIndex={tabIndex}
         >
           <div className="preset-item__thumbnail">
-            <PresetAdminComponentCell
-              media={media}
-              isLoading={isLoading}
-              size="md"
-            />
+            <PresetAdminComponentCell media={media} isLoading={isLoading} size="md" />
           </div>
 
           <div className="preset-item__content">
             <div className="preset-item__label">
-              {preset
-                ? preset.name
-                : `${t("presetsPlugin:blocksDrawer:empty" as never)} ${label}`}
+              {preset ? preset.name : `${t("presetsPlugin:blocksDrawer:empty" as never)} ${label}`}
             </div>
 
             <div className="preset-item__actions">

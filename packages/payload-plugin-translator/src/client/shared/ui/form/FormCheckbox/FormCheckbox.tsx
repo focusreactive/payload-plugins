@@ -1,28 +1,28 @@
-import type { ReactElement } from 'react'
-import { useId } from 'react'
-import { useController } from 'react-hook-form'
+import type { ReactElement } from "react";
+import { useId } from "react";
+import { useController } from "react-hook-form";
 
-import { Checkbox } from '../../Checkbox'
-import Description from '../../Description'
+import { Checkbox } from "../../Checkbox";
+import Description from "../../Description";
 
-import styles from './styles.module.scss'
+import styles from "./styles.module.scss";
 
 type FormCheckboxProps = {
-  name: string
-  label: string | ReactElement
-  description?: string
-  disabled?: boolean
-  className?: string
-}
+  name: string;
+  label: string | ReactElement;
+  description?: string;
+  disabled?: boolean;
+  className?: string;
+};
 
 export function FormCheckbox({ name, label, description, disabled, className }: FormCheckboxProps) {
-  const formControl = useController({ name })
-  const errorId = useId()
-  const descriptionId = useId()
-  const inputId = useId()
+  const formControl = useController({ name });
+  const errorId = useId();
+  const descriptionId = useId();
+  const inputId = useId();
 
   return (
-    <div className={`${styles.container} ${className ?? ''}`}>
+    <div className={`${styles.container} ${className ?? ""}`}>
       <label className={styles.label} htmlFor={inputId}>
         <Checkbox
           id={inputId}
@@ -49,5 +49,5 @@ export function FormCheckbox({ name, label, description, disabled, className }: 
       )}
       {description && <Description id={descriptionId}>{description}</Description>}
     </div>
-  )
+  );
 }

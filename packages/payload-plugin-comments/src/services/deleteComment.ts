@@ -6,7 +6,10 @@ import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
 import type { BaseServiceOptions, Response, Comment } from "../types";
 import { extractPayload } from "../utils/payload/extractPayload";
 
-export async function deleteComment(id: number | string, options?: BaseServiceOptions): Promise<Response<Comment>> {
+export async function deleteComment(
+  id: number | string,
+  options?: BaseServiceOptions
+): Promise<Response<Comment>> {
   try {
     const payload = await extractPayload(options?.payload);
     const { user } = await payload.auth({ headers: await headers() });

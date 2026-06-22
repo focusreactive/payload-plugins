@@ -27,8 +27,12 @@ describe("useKpisQuery", () => {
   it("retries twice on 500 then succeeds on the 3rd attempt (production defaults)", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(new Response("oops", { status: 500, statusText: "Internal Server Error" }))
-      .mockResolvedValueOnce(new Response("oops", { status: 500, statusText: "Internal Server Error" }))
+      .mockResolvedValueOnce(
+        new Response("oops", { status: 500, statusText: "Internal Server Error" })
+      )
+      .mockResolvedValueOnce(
+        new Response("oops", { status: 500, statusText: "Internal Server Error" })
+      )
       .mockResolvedValueOnce(jsonResponse(kpisFixture));
     vi.stubGlobal("fetch", fetchMock);
     const client = createTestQueryClient({ productionDefaults: true });
@@ -39,7 +43,11 @@ describe("useKpisQuery", () => {
   }, 15_000);
 
   it("does NOT retry on 403", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ error: "Forbidden" }, { status: 403, statusText: "Forbidden" }));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        jsonResponse({ error: "Forbidden" }, { status: 403, statusText: "Forbidden" })
+      );
     vi.stubGlobal("fetch", fetchMock);
     const client = createTestQueryClient({ productionDefaults: true });
     const { Wrapper } = createWrapper(client);

@@ -9,5 +9,7 @@ export function highlightKeyphrase(text: string, keyphrase: string): ReactNode[]
 
   const segments = text.split(new RegExp(`(${escapeRegex(keyphrase)})`, "gi"));
 
-  return segments.map((segment, index) => (index % 2 === 1 ? <strong key={index}>{segment}</strong> : segment));
+  return segments.map((segment, index) =>
+    index % 2 === 1 ? <strong key={index}>{segment}</strong> : segment
+  );
 }

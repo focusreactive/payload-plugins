@@ -5,9 +5,20 @@ import { formatCompactNumber, formatNumber } from "../numberFormatters";
 import { Metric } from "./Metric";
 import type { DonutSlice } from "./DonutChart";
 
-const COLORS = ["var(--theme-elevation-800)", "var(--theme-elevation-500)", "var(--theme-elevation-300)", "var(--theme-elevation-200)"];
+const COLORS = [
+  "var(--theme-elevation-800)",
+  "var(--theme-elevation-500)",
+  "var(--theme-elevation-300)",
+  "var(--theme-elevation-200)",
+];
 
-export function DonutChartInner({ data, centerCaption }: { data: DonutSlice[]; centerCaption: string }) {
+export function DonutChartInner({
+  data,
+  centerCaption,
+}: {
+  data: DonutSlice[];
+  centerCaption: string;
+}) {
   const total = data.reduce((a, d) => a + d.value, 0);
   const hasPrev = data.some((d) => d.prev != null);
 
@@ -16,7 +27,14 @@ export function DonutChartInner({ data, centerCaption }: { data: DonutSlice[]; c
       <div className="relative w-[168px] h-[168px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
-            <Pie data={data} dataKey="value" innerRadius={50} outerRadius={72} stroke="none" isAnimationActive={false}>
+            <Pie
+              data={data}
+              dataKey="value"
+              innerRadius={50}
+              outerRadius={72}
+              stroke="none"
+              isAnimationActive={false}
+            >
               {data.map((_, i) => (
                 <Cell key={i} fill={COLORS[i % COLORS.length]!} />
               ))}
@@ -25,8 +43,12 @@ export function DonutChartInner({ data, centerCaption }: { data: DonutSlice[]; c
         </ResponsiveContainer>
 
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-lg font-semibold text-[var(--theme-elevation-1000)]">{formatCompactNumber(total)}</span>
-          <span className="text-[9px] tracking-widest text-[var(--theme-elevation-500)] font-medium">{centerCaption}</span>
+          <span className="text-lg font-semibold text-[var(--theme-elevation-1000)]">
+            {formatCompactNumber(total)}
+          </span>
+          <span className="text-[9px] tracking-widest text-[var(--theme-elevation-500)] font-medium">
+            {centerCaption}
+          </span>
         </div>
       </div>
 
@@ -36,13 +58,27 @@ export function DonutChartInner({ data, centerCaption }: { data: DonutSlice[]; c
 
           return (
             <div key={label} className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: COLORS[i % COLORS.length] }} />
+              <span
+                className="w-2.5 h-2.5 rounded-sm"
+                style={{ background: COLORS[i % COLORS.length] }}
+              />
               {Icon && <Icon size={12} className="text-[var(--theme-elevation-700)]" />}
               <span>{label}</span>
 
-              {hasPrev ? <Metric value={value} prevValue={prev ?? null} format={formatNumber} mode="inline" /> : <span className="font-semibold tabular-nums">{formatNumber(value)}</span>}
+              {hasPrev ? (
+                <Metric
+                  value={value}
+                  prevValue={prev ?? null}
+                  format={formatNumber}
+                  mode="inline"
+                />
+              ) : (
+                <span className="font-semibold tabular-nums">{formatNumber(value)}</span>
+              )}
 
-              <span className="text-[var(--theme-elevation-500)] text-[11px]">{percent.toFixed(1)}%</span>
+              <span className="text-[var(--theme-elevation-500)] text-[11px]">
+                {percent.toFixed(1)}%
+              </span>
             </div>
           );
         })}

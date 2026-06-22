@@ -25,7 +25,12 @@ export function Logos({ items, alignVariant, label }: ILogosProps) {
         {items.map((item, i) => (
           <div
             key={i}
-            className={cn("h-6 opacity-60 grayscale transition-[opacity,filter]", "motion-safe:duration-200 motion-safe:[transition-timing-function:var(--ease-out)]", "hover:opacity-100", "sm:h-10")}
+            className={cn(
+              "h-6 opacity-60 grayscale transition-[opacity,filter]",
+              "motion-safe:duration-200 motion-safe:[transition-timing-function:var(--ease-out)]",
+              "hover:opacity-100",
+              "sm:h-10"
+            )}
           >
             <LogoItem {...item} />
           </div>

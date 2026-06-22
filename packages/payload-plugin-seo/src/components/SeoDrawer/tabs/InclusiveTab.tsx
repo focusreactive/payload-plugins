@@ -32,11 +32,16 @@ export function InclusiveTab({ data }: { data: AnalysisResult["inclusive"] }) {
                 <Pill variant="bad">{cat.flags.length}</Pill>
               </div>
               {cat.flags.map((f, i) => (
-                <div className="flex items-center gap-[9px] py-[6px] text-[12px]" key={`${f.term}-${i}`}>
+                <div
+                  className="flex items-center gap-[9px] py-[6px] text-[12px]"
+                  key={`${f.term}-${i}`}
+                >
                   <span className="text-seo-bad font-medium whitespace-nowrap">{f.term}</span>
                   <span className="text-neutral-300">›</span>
                   <span className="text-seo-good font-medium flex-1">{f.suggestion}</span>
-                  <span className="text-neutral-500 font-mono text-[10.5px] whitespace-nowrap">{f.location}</span>
+                  <span className="text-neutral-500 font-mono text-[10.5px] whitespace-nowrap">
+                    {f.location}
+                  </span>
                 </div>
               ))}
             </div>
@@ -45,10 +50,16 @@ export function InclusiveTab({ data }: { data: AnalysisResult["inclusive"] }) {
       )}
 
       {data.cleanCategories.length > 0 && (
-        <SectionCard title="No issues found" widget={<Pill variant="neutral">{data.cleanCategories.length}</Pill>}>
+        <SectionCard
+          title="No issues found"
+          widget={<Pill variant="neutral">{data.cleanCategories.length}</Pill>}
+        >
           <div className="flex gap-[8px] flex-wrap px-[15px] py-[13px]">
             {data.cleanCategories.map((n) => (
-              <span className="inline-flex items-center gap-[6px] text-[11.5px] text-seo-good bg-seo-good-100 border border-seo-good-200 rounded-[20px] px-[11px] py-[4px] font-medium" key={n}>
+              <span
+                className="inline-flex items-center gap-[6px] text-[11.5px] text-seo-good bg-seo-good-100 border border-seo-good-200 rounded-[20px] px-[11px] py-[4px] font-medium"
+                key={n}
+              >
                 ✓ {n}
               </span>
             ))}

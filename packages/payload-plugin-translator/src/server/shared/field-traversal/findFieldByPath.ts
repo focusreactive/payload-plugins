@@ -20,12 +20,18 @@ import type { LeafField } from "./types";
  *
  * @public
  */
-export type FieldPathResult = { status: "leaf"; field: LeafField } | { status: "container" } | { status: "inside-blocks" } | { status: "localized-list-ancestor" } | { status: "not-found" };
+export type FieldPathResult =
+  | { status: "leaf"; field: LeafField }
+  | { status: "container" }
+  | { status: "inside-blocks" }
+  | { status: "localized-list-ancestor" }
+  | { status: "not-found" };
 
 const isIndexSegment = (segment: string): boolean => /^\d+$/u.test(segment);
 
 /** Safely read `key` off an object/array; `undefined` for non-objects (arrays index by string key). */
-const childData = (data: unknown, key: string): unknown => (data != null && typeof data === "object" ? (data as Record<string, unknown>)[key] : undefined);
+const childData = (data: unknown, key: string): unknown =>
+  data != null && typeof data === "object" ? (data as Record<string, unknown>)[key] : undefined;
 
 /**
  * Navigate a field schema by a path of segment NAMES, descending one matching branch at a time
@@ -50,7 +56,11 @@ const childData = (data: unknown, key: string): unknown => (data != null && type
  * @returns A {@link FieldPathResult}.
  * @public
  */
-export function findFieldByPath(fields: Field[], segments: string[], data?: unknown): FieldPathResult {
+export function findFieldByPath(
+  fields: Field[],
+  segments: string[],
+  data?: unknown
+): FieldPathResult {
   const [head, ...rest] = segments;
   if (head === undefined) return { status: "not-found" };
 
@@ -62,7 +72,9 @@ export function findFieldByPath(fields: Field[], segments: string[], data?: unkn
         for (const scope of tabScopes(structure.field)) {
           if (scope.named) {
             if (scope.tab.name === head) {
-              return rest.length === 0 ? { status: "container" } : findFieldByPath(scope.tab.fields, rest, childData(data, head));
+              return rest.length === 0
+                ? { status: "container" }
+                : findFieldByPath(scope.tab.fields, rest, childData(data, head));
             }
           } else {
             const found = findFieldByPath(scope.fields, segments, data); // unnamed tab → same path + data scope
@@ -80,7 +92,9 @@ export function findFieldByPath(fields: Field[], segments: string[], data?: unkn
         break;
       case "group": {
         if (structure.name !== head) break;
-        return rest.length === 0 ? { status: "container" } : findFieldByPath(structure.fields, rest, childData(data, head));
+        return rest.length === 0
+          ? { status: "container" }
+          : findFieldByPath(structure.fields, rest, childData(data, head));
       }
       case "array": {
         if (structure.name !== head) break;
@@ -91,7 +105,9 @@ export function findFieldByPath(fields: Field[], segments: string[], data?: unkn
         // A numeric segment selects the data element; the schema is shared across elements.
         const [next, ...tail] = rest;
         if (isIndexSegment(next)) {
-          return tail.length === 0 ? { status: "container" } : findFieldByPath(structure.fields, tail, childData(childData(data, head), next));
+          return tail.length === 0
+            ? { status: "container" }
+            : findFieldByPath(structure.fields, tail, childData(childData(data, head), next));
         }
         return findFieldByPath(structure.fields, rest, childData(data, head));
       }
@@ -107,11 +123,15 @@ export function findFieldByPath(fields: Field[], segments: string[], data?: unkn
         const item = childData(childData(data, head), next);
         const blockFields = resolveBlockFields(structure.field, item);
         if (!blockFields) return { status: "inside-blocks" };
-        return tail.length === 0 ? { status: "container" } : findFieldByPath(blockFields, tail, item);
+        return tail.length === 0
+          ? { status: "container" }
+          : findFieldByPath(blockFields, tail, item);
       }
       case "leaf": {
         if (structure.name !== head) break;
-        return rest.length === 0 ? { status: "leaf", field: structure.field } : { status: "not-found" };
+        return rest.length === 0
+          ? { status: "leaf", field: structure.field }
+          : { status: "not-found" };
       }
       default: {
         // Exhaustiveness guard: a new FieldStructure kind would error here at compile time.

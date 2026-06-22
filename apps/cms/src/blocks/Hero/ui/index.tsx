@@ -74,7 +74,12 @@ export function Hero({ variant, theme, badge, title, text, image, links }: IHero
     <>
       <AbstractBackdrop variant="orbs" tone={backdropTone} />
       <GridLines tone={backdropTone} />
-      <div className={cn("relative z-1 grid grid-cols-1 items-center gap-10 lg:gap-16", hasImage && "lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]")}>
+      <div
+        className={cn(
+          "relative z-1 grid grid-cols-1 items-center gap-10 lg:gap-16",
+          hasImage && "lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]"
+        )}
+      >
         <div className="flex max-w-[620px] flex-col gap-6">
           <HeroBadge badge={badge} />
           <DisplayHeading as="h1" size="display-1" text={title} />

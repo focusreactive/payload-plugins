@@ -66,7 +66,10 @@ export class SyncTaskRunner implements TaskRunner {
     return { success: false, error: "not_found" };
   }
 
-  async findByCollection(collectionSlug: CollectionSlug, documentIds?: Array<string | number>): Promise<Task[]> {
+  async findByCollection(
+    collectionSlug: CollectionSlug,
+    documentIds?: Array<string | number>
+  ): Promise<Task[]> {
     const results: Task[] = [];
     const wanted = documentIds ? new Set(documentIds.map(String)) : undefined;
 

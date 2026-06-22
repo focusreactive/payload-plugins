@@ -8,7 +8,13 @@ interface Props {
   fieldPath: string;
 }
 
-export function resolveFieldLabel({ registry, collectionSlug, documentId, globalSlug, fieldPath }: Props) {
+export function resolveFieldLabel({
+  registry,
+  collectionSlug,
+  documentId,
+  globalSlug,
+  fieldPath,
+}: Props) {
   const segments = registry[collectionSlug ?? globalSlug ?? ""]?.[documentId ?? 0]?.[fieldPath];
 
   if (!segments) return fieldPath;

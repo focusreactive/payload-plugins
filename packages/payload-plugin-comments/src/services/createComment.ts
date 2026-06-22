@@ -46,9 +46,8 @@ export async function createComment({
 
     const mentions = mentionIds.map((id) => ({ user: id }));
 
-    const data =
-      globalSlug ?
-        {
+    const data = globalSlug
+      ? {
           globalSlug,
           documentId: null,
           collectionSlug: null,

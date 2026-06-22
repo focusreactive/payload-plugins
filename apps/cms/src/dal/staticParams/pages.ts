@@ -40,7 +40,10 @@ export async function getMainSitePageStaticParams(): Promise<PageStaticParams> {
     });
 
     for (const page of pages.docs) {
-      const slug = (page?.breadcrumbs?.length ? page.breadcrumbs?.at(-1)?.url?.split("/")?.filter(Boolean) : page?.slug?.split("/")) ?? [];
+      const slug =
+        (page?.breadcrumbs?.length
+          ? page.breadcrumbs?.at(-1)?.url?.split("/")?.filter(Boolean)
+          : page?.slug?.split("/")) ?? [];
 
       if (isHomeSlug(slug)) {
         continue;

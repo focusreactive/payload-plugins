@@ -2,7 +2,12 @@ import { cn } from "@/components/ui/utils";
 import { AlignVariant } from "./types";
 import type { IRichTextProps } from "./types";
 
-export function RichText({ className, richText, removeInnerMargins, alignVariant }: IRichTextProps) {
+export function RichText({
+  className,
+  richText,
+  removeInnerMargins,
+  alignVariant,
+}: IRichTextProps) {
   return (
     <div
       className={cn(

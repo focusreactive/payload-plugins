@@ -33,7 +33,10 @@ describe("getLeadActions", () => {
     __setGa4ClientForTests(fake as never);
     await getLeadActions("12345", { dateRange: { preset: "last-7d" } });
     const requests = fake.batchRunReports.mock.calls[0][0].requests;
-    expect(requests[0].dimensions).toEqual([{ name: "customEvent:fr_lead_type" }, { name: "pagePath" }]);
+    expect(requests[0].dimensions).toEqual([
+      { name: "customEvent:fr_lead_type" },
+      { name: "pagePath" },
+    ]);
   });
 
   it("requests averageCustomEvent:fr_elapsed_ms as the second metric", async () => {
@@ -44,7 +47,10 @@ describe("getLeadActions", () => {
     __setGa4ClientForTests(fake as never);
     await getLeadActions("12345", { dateRange: { preset: "last-7d" } });
     const requests = fake.batchRunReports.mock.calls[0][0].requests;
-    expect(requests[0].metrics).toEqual([{ name: "eventCount" }, { name: "averageCustomEvent:fr_elapsed_ms" }]);
+    expect(requests[0].metrics).toEqual([
+      { name: "eventCount" },
+      { name: "averageCustomEvent:fr_elapsed_ms" },
+    ]);
   });
 
   it("computes count-weighted mean in seconds", async () => {
@@ -84,7 +90,9 @@ describe("getLeadActions", () => {
   });
 
   it("retries without the metric on INVALID_ARGUMENT for averageCustomEvent:fr_elapsed_ms", async () => {
-    const err = new Error("3 INVALID_ARGUMENT: Field averageCustomEvent:fr_elapsed_ms is unrecognized.");
+    const err = new Error(
+      "3 INVALID_ARGUMENT: Field averageCustomEvent:fr_elapsed_ms is unrecognized."
+    );
     const fake = {
       runReport: vi.fn(),
       batchRunReports: vi.fn().mockRejectedValueOnce(err).mockResolvedValueOnce([withoutMetric]),
@@ -120,31 +128,61 @@ describe("getLeadActions", () => {
       batchRunReports: vi.fn().mockResolvedValue([withMetric]),
     };
     __setGa4ClientForTests(fake as never);
-    const pageFilter = { refs: ["page:1", "__home"], pageRefDim: "customEvent:fr_page_ref", contentLocaleDim: "customEvent:fr_content_locale", resolveLabels: async () => new Map() };
+    const pageFilter = {
+      refs: ["page:1", "__home"],
+      pageRefDim: "customEvent:fr_page_ref",
+      contentLocaleDim: "customEvent:fr_content_locale",
+      resolveLabels: async () => new Map(),
+    };
     await getLeadActions("12345", { dateRange: { preset: "last-7d" } }, pageFilter);
     const requests = fake.batchRunReports.mock.calls[0][0].requests;
-    const pageRefInList = { filter: { fieldName: "customEvent:fr_page_ref", inListFilter: { values: ["page:1", "__home"] } } };
+    const pageRefInList = {
+      filter: {
+        fieldName: "customEvent:fr_page_ref",
+        inListFilter: { values: ["page:1", "__home"] },
+      },
+    };
 
     // events request: existing leadActionFilter ANDed with the page-ref inList
-    expect(requests[0].dimensionFilter.andGroup.expressions[requests[0].dimensionFilter.andGroup.expressions.length - 1]).toEqual(pageRefInList);
+    expect(
+      requests[0].dimensionFilter.andGroup.expressions[
+        requests[0].dimensionFilter.andGroup.expressions.length - 1
+      ]
+    ).toEqual(pageRefInList);
 
     // sessions request (denominator): standalone page-ref inList
     expect(requests[1].dimensionFilter).toEqual(pageRefInList);
   });
 
   it("filters the fallback events request and sessions request when pageFilter set and fr_elapsed_ms missing", async () => {
-    const err = new Error("3 INVALID_ARGUMENT: Field averageCustomEvent:fr_elapsed_ms is unrecognized.");
+    const err = new Error(
+      "3 INVALID_ARGUMENT: Field averageCustomEvent:fr_elapsed_ms is unrecognized."
+    );
     const fake = {
       runReport: vi.fn(),
       batchRunReports: vi.fn().mockRejectedValueOnce(err).mockResolvedValueOnce([withoutMetric]),
     };
     __setGa4ClientForTests(fake as never);
-    const pageFilter = { refs: ["page:1", "__home"], pageRefDim: "customEvent:fr_page_ref", contentLocaleDim: "customEvent:fr_content_locale", resolveLabels: async () => new Map() };
+    const pageFilter = {
+      refs: ["page:1", "__home"],
+      pageRefDim: "customEvent:fr_page_ref",
+      contentLocaleDim: "customEvent:fr_content_locale",
+      resolveLabels: async () => new Map(),
+    };
     await getLeadActions("12345", { dateRange: { preset: "last-7d" } }, pageFilter);
     const retryRequests = fake.batchRunReports.mock.calls[1][0].requests;
-    const pageRefInList = { filter: { fieldName: "customEvent:fr_page_ref", inListFilter: { values: ["page:1", "__home"] } } };
+    const pageRefInList = {
+      filter: {
+        fieldName: "customEvent:fr_page_ref",
+        inListFilter: { values: ["page:1", "__home"] },
+      },
+    };
     expect(retryRequests[0].metrics).toEqual([{ name: "eventCount" }]);
-    expect(retryRequests[0].dimensionFilter.andGroup.expressions[retryRequests[0].dimensionFilter.andGroup.expressions.length - 1]).toEqual(pageRefInList);
+    expect(
+      retryRequests[0].dimensionFilter.andGroup.expressions[
+        retryRequests[0].dimensionFilter.andGroup.expressions.length - 1
+      ]
+    ).toEqual(pageRefInList);
     expect(retryRequests[1].dimensionFilter).toEqual(pageRefInList);
   });
 

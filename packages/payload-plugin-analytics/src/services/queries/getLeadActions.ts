@@ -1,9 +1,20 @@
-import type { AnalyticsQuery, LeadActionsCurrent, LeadActionsResponse, Row } from "../../types/query";
+import type {
+  AnalyticsQuery,
+  LeadActionsCurrent,
+  LeadActionsResponse,
+  Row,
+} from "../../types/query";
 import type { PageFilterContext } from "../pageFilter/types";
 import { getPluginConfig } from "../../config";
 import { resolveDateRange } from "../../utils/date/resolveDateRange";
 import { resolveComparison } from "../../utils/date/resolveComparison";
-import { bucketByDateRange, convertMetricToNumber, dateRangesFor, deriveMissing, leadActionFilter } from "../../utils/ga4";
+import {
+  bucketByDateRange,
+  convertMetricToNumber,
+  dateRangesFor,
+  deriveMissing,
+  leadActionFilter,
+} from "../../utils/ga4";
 import { DEFAULT_PAGE_DIMENSIONS } from "../../constants/page";
 import { withPageRefFilter } from "../../utils/ga4/withPageRefFilter";
 import { resolveLeadActionTypes } from "../../utils/leadActions/resolveLeadActionTypes";
@@ -19,7 +30,11 @@ interface AggregateResult {
   perPageByKey: Map<string, Record<string, number>>;
 }
 
-function aggregate(eventRows: Row[], totalSessions: number, elapsedMsAvailable: boolean): AggregateResult {
+function aggregate(
+  eventRows: Row[],
+  totalSessions: number,
+  elapsedMsAvailable: boolean
+): AggregateResult {
   const current = buildEmptyCurrent();
   const countsByPage = new Map<string, Record<string, number>>();
 
@@ -50,12 +65,19 @@ function aggregate(eventRows: Row[], totalSessions: number, elapsedMsAvailable: 
     current.conversionRate[leadType] = totalSessions > 0 ? total / totalSessions : 0;
   }
 
-  current.avgTimeToAction = !elapsedMsAvailable ? null : totalEventCount > 0 ? weightedSum / totalEventCount / 1000 : 0;
+  current.avgTimeToAction = !elapsedMsAvailable
+    ? null
+    : totalEventCount > 0
+      ? weightedSum / totalEventCount / 1000
+      : 0;
 
   return { current, perPageByKey: countsByPage };
 }
 
-async function fillPerPage(result: AggregateResult, pageFilter?: PageFilterContext | null): Promise<LeadActionsCurrent> {
+async function fillPerPage(
+  result: AggregateResult,
+  pageFilter?: PageFilterContext | null
+): Promise<LeadActionsCurrent> {
   const { current, perPageByKey } = result;
   const labels = pageFilter ? await pageFilter.resolveLabels([...perPageByKey.keys()]) : null;
 
@@ -67,9 +89,14 @@ async function fillPerPage(result: AggregateResult, pageFilter?: PageFilterConte
   return current;
 }
 
-export async function getLeadActions(propertyId: string, query: AnalyticsQuery, pageFilter?: PageFilterContext | null): Promise<LeadActionsResponse> {
+export async function getLeadActions(
+  propertyId: string,
+  query: AnalyticsQuery,
+  pageFilter?: PageFilterContext | null
+): Promise<LeadActionsResponse> {
   const dateRange = resolveDateRange(query.dateRange);
-  const previousDateRange = query.comparison?.kind === "previous-period" ? resolveComparison(dateRange) : undefined;
+  const previousDateRange =
+    query.comparison?.kind === "previous-period" ? resolveComparison(dateRange) : undefined;
   const dateRanges = dateRangesFor(dateRange, previousDateRange);
   const types = resolveLeadActionTypes(getPluginConfig().leadActions?.types);
 
@@ -102,10 +129,16 @@ export async function getLeadActions(propertyId: string, query: AnalyticsQuery, 
   let batch;
 
   try {
-    batch = await runQuery.batchRunReports(propertyId, [eventsRequest, sessionsRequest] as Parameters<typeof runQuery.batchRunReports>[1], "leadActions");
+    batch = await runQuery.batchRunReports(
+      propertyId,
+      [eventsRequest, sessionsRequest] as Parameters<typeof runQuery.batchRunReports>[1],
+      "leadActions"
+    );
   } catch (err) {
     const mapped = mapGa4Error(err);
-    const missing = mapped.setupRequired ? deriveMissing({ message: mapped.message }, ["fr_elapsed_ms", "fr_lead_type"]) : [];
+    const missing = mapped.setupRequired
+      ? deriveMissing({ message: mapped.message }, ["fr_elapsed_ms", "fr_lead_type"])
+      : [];
 
     if (missing.includes("fr_lead_type")) {
       return {
@@ -117,7 +150,11 @@ export async function getLeadActions(propertyId: string, query: AnalyticsQuery, 
     if (missing.includes("fr_elapsed_ms")) {
       elapsedMsAvailable = false;
       const fallbackEventsRequest = { ...eventsRequest, metrics: [{ name: "eventCount" }] };
-      batch = await runQuery.batchRunReports(propertyId, [fallbackEventsRequest, sessionsRequest] as Parameters<typeof runQuery.batchRunReports>[1], "leadActions");
+      batch = await runQuery.batchRunReports(
+        propertyId,
+        [fallbackEventsRequest, sessionsRequest] as Parameters<typeof runQuery.batchRunReports>[1],
+        "leadActions"
+      );
     } else {
       throw err;
     }
@@ -134,17 +171,30 @@ export async function getLeadActions(propertyId: string, query: AnalyticsQuery, 
   if (!previousDateRange) {
     const totalSessions = convertMetricToNumber(sessionsRows[0]?.metricValues?.[0]?.value);
     response = {
-      current: await fillPerPage(aggregate(eventsRows, totalSessions, elapsedMsAvailable), filterForLabels),
+      current: await fillPerPage(
+        aggregate(eventsRows, totalSessions, elapsedMsAvailable),
+        filterForLabels
+      ),
     };
   } else {
     const eventsBuckets = bucketByDateRange(eventsRows, ["current", "previous"]);
     const sessionsBuckets = bucketByDateRange(sessionsRows, ["current", "previous"]);
-    const currentSessions = convertMetricToNumber(sessionsBuckets.current[0]?.metricValues?.[0]?.value);
-    const previousSessions = convertMetricToNumber(sessionsBuckets.previous[0]?.metricValues?.[0]?.value);
+    const currentSessions = convertMetricToNumber(
+      sessionsBuckets.current[0]?.metricValues?.[0]?.value
+    );
+    const previousSessions = convertMetricToNumber(
+      sessionsBuckets.previous[0]?.metricValues?.[0]?.value
+    );
 
     response = {
-      current: await fillPerPage(aggregate(eventsBuckets.current, currentSessions, elapsedMsAvailable), filterForLabels),
-      comparison: await fillPerPage(aggregate(eventsBuckets.previous, previousSessions, elapsedMsAvailable), filterForLabels),
+      current: await fillPerPage(
+        aggregate(eventsBuckets.current, currentSessions, elapsedMsAvailable),
+        filterForLabels
+      ),
+      comparison: await fillPerPage(
+        aggregate(eventsBuckets.previous, previousSessions, elapsedMsAvailable),
+        filterForLabels
+      ),
     };
   }
 

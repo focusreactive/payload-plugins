@@ -44,7 +44,12 @@ export function buildSessionDetailEndpoint(config: AnalyticsPluginConfig): Endpo
 
       try {
         const pageFilter = await buildPageFilterContext(req, getResolvedPagesConfig());
-        const result = await getSessionDetail(config.ga4.propertyId, sessionId, parsed.data, pageFilter);
+        const result = await getSessionDetail(
+          config.ga4.propertyId,
+          sessionId,
+          parsed.data,
+          pageFilter
+        );
 
         return Response.json(result);
       } catch (err) {

@@ -15,7 +15,14 @@ export function TabsNav({ active, onChange }: TabsNavProps) {
   return (
     <nav role="tablist" className="flex gap-[20px] border-b border-neutral-200 overflow-x-auto">
       {TABS.map(({ key, label, icon: Icon }) => (
-        <button key={key} type="button" role="tab" aria-selected={active === key} className={tabVariants({ active: active === key })} onClick={() => onChange(key)}>
+        <button
+          key={key}
+          type="button"
+          role="tab"
+          aria-selected={active === key}
+          className={tabVariants({ active: active === key })}
+          onClick={() => onChange(key)}
+        >
           <Icon size={14} aria-hidden="true" />
           <span>{label}</span>
         </button>

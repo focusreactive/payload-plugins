@@ -1,9 +1,6 @@
 import type { JobsConfig } from "payload";
 
-export function overrideJobs(
-  jobsConfig: JobsConfig | undefined,
-  queue: string,
-): JobsConfig {
+export function overrideJobs(jobsConfig: JobsConfig | undefined, queue: string): JobsConfig {
   const existingJobsCollectionOverrides = jobsConfig?.jobsCollectionOverrides;
 
   return {

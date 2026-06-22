@@ -36,7 +36,15 @@ const ICON_MAP: Record<CardIcon, React.ReactElement> = {
   zap: <Zap size={22} strokeWidth={1.8} />,
 };
 
-export async function CardsGridBlockComponent({ eyebrow, heading, description, items, columns, section, id }: CardsGridBlock) {
+export async function CardsGridBlockComponent({
+  eyebrow,
+  heading,
+  description,
+  items,
+  columns,
+  section,
+  id,
+}: CardsGridBlock) {
   const locale = await resolveLocale();
 
   const cards: IDefaultCardProps[] = (items ?? []).map((item) => {

@@ -14,7 +14,8 @@ interface MobileNavProps {
   actions: HeaderAction[];
 }
 
-const panelLinkClassName = "border-b border-border px-1 py-3 text-[1.05rem] text-foreground transition-colors duration-150 hover:text-primary";
+const panelLinkClassName =
+  "border-b border-border px-1 py-3 text-[1.05rem] text-foreground transition-colors duration-150 hover:text-primary";
 
 export function MobileNav({ navItems, actions }: MobileNavProps) {
   const [open, setOpen] = useState(false);
@@ -47,7 +48,15 @@ export function MobileNav({ navItems, actions }: MobileNavProps) {
         onClick={() => setOpen((value) => !value)}
         className="inline-flex items-center justify-center rounded-sm p-1 text-foreground transition-colors duration-150 hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-[860px]:hidden"
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden
+        >
           <path d="M3 6h18M3 12h18M3 18h18" />
         </svg>
       </button>
@@ -64,7 +73,9 @@ export function MobileNav({ navItems, actions }: MobileNavProps) {
             const itemKey = `${item.label}-${index}`;
 
             if (item.kind === "link") {
-              const newTabProps = item.newTab ? { rel: "noopener noreferrer", target: "_blank" } : {};
+              const newTabProps = item.newTab
+                ? { rel: "noopener noreferrer", target: "_blank" }
+                : {};
 
               return (
                 <NextLink
@@ -94,7 +105,12 @@ export function MobileNav({ navItems, actions }: MobileNavProps) {
                   )}
                 >
                   {item.label}
-                  <Chevron className={cn("transition-transform duration-200 ease-out motion-reduce:transition-none", isExpanded && "rotate-180")} />
+                  <Chevron
+                    className={cn(
+                      "transition-transform duration-200 ease-out motion-reduce:transition-none",
+                      isExpanded && "rotate-180"
+                    )}
+                  />
                 </button>
                 {isExpanded && (
                   <div className="flex flex-col gap-0.5 pb-2 pl-3">
@@ -103,13 +119,17 @@ export function MobileNav({ navItems, actions }: MobileNavProps) {
                         href={item.featured.link.href}
                         onClick={close}
                         className="py-2 text-[0.95rem] font-semibold text-foreground hover:text-primary"
-                        {...(item.featured.link.newTab ? { rel: "noopener noreferrer", target: "_blank" } : {})}
+                        {...(item.featured.link.newTab
+                          ? { rel: "noopener noreferrer", target: "_blank" }
+                          : {})}
                       >
                         {item.featured.link.label}
                       </NextLink>
                     )}
                     {item.links.map((link, linkIndex) => {
-                      const linkNewTabProps = link.newTab ? { rel: "noopener noreferrer", target: "_blank" } : {};
+                      const linkNewTabProps = link.newTab
+                        ? { rel: "noopener noreferrer", target: "_blank" }
+                        : {};
 
                       return (
                         <NextLink
@@ -135,10 +155,17 @@ export function MobileNav({ navItems, actions }: MobileNavProps) {
 
           <div className="mt-3 flex flex-row flex-wrap gap-2.5">
             {actions.map((action, index) => {
-              const newTabProps = action.newTab ? { rel: "noopener noreferrer", target: "_blank" } : {};
+              const newTabProps = action.newTab
+                ? { rel: "noopener noreferrer", target: "_blank" }
+                : {};
 
               return (
-                <Button key={`${action.label}-${index}`} asChild size={ButtonSize.Small} variant={action.variant}>
+                <Button
+                  key={`${action.label}-${index}`}
+                  asChild
+                  size={ButtonSize.Small}
+                  variant={action.variant}
+                >
                   <NextLink href={action.href} onClick={close} {...newTabProps}>
                     {action.label}
                     {action.variant === ButtonVariant.Accent && <span aria-hidden>&rarr;</span>}

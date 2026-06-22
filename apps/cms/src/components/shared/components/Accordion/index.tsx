@@ -32,10 +32,20 @@ export function Accordion({ items, className, defaultOpenId = null }: AccordionP
               aria-expanded={isOpen}
               aria-controls={`accordion-panel-${item.id}`}
             >
-              <span className="font-display text-[1.3rem] font-semibold leading-tight tracking-tight text-foreground transition-colors [button:hover_>_&]:text-primary">{item.trigger}</span>
-              <span aria-hidden="true" className="relative flex size-6 shrink-0 items-center justify-center">
+              <span className="font-display text-[1.3rem] font-semibold leading-tight tracking-tight text-foreground transition-colors [button:hover_>_&]:text-primary">
+                {item.trigger}
+              </span>
+              <span
+                aria-hidden="true"
+                className="relative flex size-6 shrink-0 items-center justify-center"
+              >
                 <span className="absolute h-0.5 w-[18px] rounded-sm bg-primary transition-transform duration-[280ms] ease-out" />
-                <span className={cn("absolute h-[18px] w-0.5 rounded-sm bg-primary transition-transform duration-[280ms] ease-out", isOpen && "scale-y-0")} />
+                <span
+                  className={cn(
+                    "absolute h-[18px] w-0.5 rounded-sm bg-primary transition-transform duration-[280ms] ease-out",
+                    isOpen && "scale-y-0"
+                  )}
+                />
               </span>
             </button>
             <div
@@ -43,10 +53,15 @@ export function Accordion({ items, className, defaultOpenId = null }: AccordionP
               role="region"
               aria-labelledby={`accordion-trigger-${item.id}`}
               inert={isOpen ? undefined : true}
-              className={cn("grid transition-[grid-template-rows,opacity] duration-[320ms] ease-out", isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}
+              className={cn(
+                "grid transition-[grid-template-rows,opacity] duration-[320ms] ease-out",
+                isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+              )}
             >
               <div className="min-h-0 overflow-hidden">
-                <div className="pb-6 pr-12 text-[0.98rem] leading-relaxed text-muted-foreground">{item.content}</div>
+                <div className="pb-6 pr-12 text-[0.98rem] leading-relaxed text-muted-foreground">
+                  {item.content}
+                </div>
               </div>
             </div>
           </div>

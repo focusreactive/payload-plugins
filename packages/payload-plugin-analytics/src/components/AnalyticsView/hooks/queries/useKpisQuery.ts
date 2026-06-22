@@ -9,6 +9,7 @@ import { analyticsKeys } from "./keys";
 export function useKpisQuery(query: AnalyticsQuery) {
   return useQuery({
     queryKey: analyticsKeys.kpis(query),
-    queryFn: ({ signal }) => analyticsFetch<AnalyticsQuery, KpiResponse>(ANALYTICS_ENDPOINT_PATHS.kpis, query, { signal }),
+    queryFn: ({ signal }) =>
+      analyticsFetch<AnalyticsQuery, KpiResponse>(ANALYTICS_ENDPOINT_PATHS.kpis, query, { signal }),
   });
 }

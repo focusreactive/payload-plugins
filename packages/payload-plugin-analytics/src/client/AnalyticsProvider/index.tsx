@@ -20,12 +20,20 @@ export interface AnalyticsProviderProps {
   children: ReactNode;
 }
 
-export function AnalyticsProvider({ provider, leadActionTypes, autoTrackLeadActions, trackRouteChanges = true, children }: AnalyticsProviderProps) {
+export function AnalyticsProvider({
+  provider,
+  leadActionTypes,
+  autoTrackLeadActions,
+  trackRouteChanges = true,
+  children,
+}: AnalyticsProviderProps) {
   const parentCtx = useContext(AnalyticsContext);
 
   useEffect(() => {
     if (parentCtx && process.env.NODE_ENV !== "production") {
-      console.warn(`[${PLUGIN_NAME}] Nested <AnalyticsProvider> detected — duplicate page_view events will fire.`);
+      console.warn(
+        `[${PLUGIN_NAME}] Nested <AnalyticsProvider> detected — duplicate page_view events will fire.`
+      );
     }
   }, [parentCtx]);
 

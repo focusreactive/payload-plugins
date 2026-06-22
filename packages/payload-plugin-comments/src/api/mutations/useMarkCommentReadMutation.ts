@@ -27,7 +27,7 @@ export function useMarkCommentReadMutation() {
 
         await queryClient.cancelQueries({ queryKey: UNREAD_COUNT_KEY_PREFIX });
         queryClient.setQueriesData<CountCache>({ queryKey: UNREAD_COUNT_KEY_PREFIX }, (prev) =>
-          prev ? { count: Math.max(0, prev.count - 1) } : prev,
+          prev ? { count: Math.max(0, prev.count - 1) } : prev
         );
       },
       onError: () => {
@@ -37,6 +37,6 @@ export function useMarkCommentReadMutation() {
         queryClient.invalidateQueries({ queryKey: UNREAD_COUNT_KEY_PREFIX });
       },
     },
-    queryClient,
+    queryClient
   );
 }

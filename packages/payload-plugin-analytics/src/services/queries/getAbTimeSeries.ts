@@ -8,14 +8,21 @@ import { AB_CONTROL_BUCKET } from "../../constants/ab";
 import { aggregateDailyByBucket, experimentFilter, convertingFilter } from "../../utils/ga4/ab";
 import { twoProportionZTest } from "../abStatistics/twoProportionZTest";
 
-export async function getAbTimeSeries(manifestKey: string, query: { dateRange: AbExperimentQuery["dateRange"] }): Promise<AbTimeSeriesResponse> {
+export async function getAbTimeSeries(
+  manifestKey: string,
+  query: { dateRange: AbExperimentQuery["dateRange"] }
+): Promise<AbTimeSeriesResponse> {
   const pluginConfig = getPluginConfig();
   const ab = resolveAbConfig(pluginConfig.ab);
   if (!ab) throw new Error("A/B integration not configured");
 
   const dateRanges = dateRangesFor(resolveDateRange(query.dateRange));
   const D = ab.dimensions;
-  const dailyDims = [{ name: "date" }, { name: `customEvent:${D.variant}` }, { name: "customEvent:fr_session_id" }];
+  const dailyDims = [
+    { name: "date" },
+    { name: `customEvent:${D.variant}` },
+    { name: "customEvent:fr_session_id" },
+  ];
 
   const sessionsRequest = {
     dateRanges,
@@ -33,7 +40,11 @@ export async function getAbTimeSeries(manifestKey: string, query: { dateRange: A
     limit: 250_000,
   };
 
-  const batch = await runQuery.batchRunReports(pluginConfig.ga4.propertyId, [sessionsRequest, convertingRequest] as never, "abTimeSeries");
+  const batch = await runQuery.batchRunReports(
+    pluginConfig.ga4.propertyId,
+    [sessionsRequest, convertingRequest] as never,
+    "abTimeSeries"
+  );
   const [sessionsReport, convertingReport] = batch.reports ?? [];
 
   const dailySessions = aggregateDailyByBucket((sessionsReport?.rows ?? []) as never);
@@ -49,7 +60,9 @@ export async function getAbTimeSeries(manifestKey: string, query: { dateRange: A
   const dates = [...allDates].sort();
 
   const series: AbTimeSeriesSeries[] = [...buckets]
-    .sort((a, b) => (a === AB_CONTROL_BUCKET ? -1 : b === AB_CONTROL_BUCKET ? 1 : a.localeCompare(b)))
+    .sort((a, b) =>
+      a === AB_CONTROL_BUCKET ? -1 : b === AB_CONTROL_BUCKET ? 1 : a.localeCompare(b)
+    )
     .map((bucket) => {
       let cumulativeSessions = 0;
       let cumulativeConvertingSessions = 0;
@@ -76,7 +89,12 @@ export async function getAbTimeSeries(manifestKey: string, query: { dateRange: A
       const vd = s.days[i]!;
 
       if (vd.cumulativeSessions > 50 && cd.cumulativeSessions > 50) {
-        const t = twoProportionZTest(vd.cumulativeConvertingSessions, vd.cumulativeSessions, cd.cumulativeConvertingSessions, cd.cumulativeSessions);
+        const t = twoProportionZTest(
+          vd.cumulativeConvertingSessions,
+          vd.cumulativeSessions,
+          cd.cumulativeConvertingSessions,
+          cd.cumulativeSessions
+        );
 
         if (t.pValue < ab.stats.alpha) {
           found = vd.date;

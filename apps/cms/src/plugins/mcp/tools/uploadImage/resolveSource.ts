@@ -3,7 +3,10 @@ import path from "node:path";
 
 import { detectMimeType } from "./detectMimeType";
 
-export async function resolveSource(source: string, filenameOverride?: string): Promise<{ buffer: Buffer; mimeType: string; filename: string }> {
+export async function resolveSource(
+  source: string,
+  filenameOverride?: string
+): Promise<{ buffer: Buffer; mimeType: string; filename: string }> {
   const isUrl = source.startsWith("http://") || source.startsWith("https://");
 
   if (isUrl) {
@@ -18,7 +21,8 @@ export async function resolveSource(source: string, filenameOverride?: string): 
 
     const detectedMimeType = detectMimeType(buffer);
     const basename = path.basename(new URL(source).pathname);
-    const filename = filenameOverride ?? (basename || `upload-${Date.now()}.${detectedMimeType.ext}`);
+    const filename =
+      filenameOverride ?? (basename || `upload-${Date.now()}.${detectedMimeType.ext}`);
 
     return {
       buffer,
@@ -31,7 +35,10 @@ export async function resolveSource(source: string, filenameOverride?: string): 
   try {
     buffer = await readFile(source);
   } catch (error) {
-    throw new Error(`Failed to read local file "${source}": ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+    throw new Error(
+      `Failed to read local file "${source}": ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error }
+    );
   }
 
   const detectedMimeType = detectMimeType(buffer);

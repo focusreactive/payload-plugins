@@ -10,7 +10,12 @@ describe("getJourneys", () => {
   it("requests the documented dim list, ordering, and default sampleLimit", async () => {
     const fake = { runReport: vi.fn().mockResolvedValue([basic]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    await getJourneys("12345", { dateRange: { preset: "last-7d" }, limit: 20, maxSteps: 8, sampleLimit: 50_000 });
+    await getJourneys("12345", {
+      dateRange: { preset: "last-7d" },
+      limit: 20,
+      maxSteps: 8,
+      sampleLimit: 50_000,
+    });
     const arg = fake.runReport.mock.calls[0][0];
     expect(arg.dimensions).toEqual([
       { name: "customEvent:fr_session_id" },
@@ -31,7 +36,12 @@ describe("getJourneys", () => {
   it("groups by session, drops sessions with no lead action, fingerprints chains, returns top-N counts", async () => {
     const fake = { runReport: vi.fn().mockResolvedValue([basic]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    const res = await getJourneys("12345", { dateRange: { preset: "last-7d" }, limit: 20, maxSteps: 8, sampleLimit: 50_000 });
+    const res = await getJourneys("12345", {
+      dateRange: { preset: "last-7d" },
+      limit: 20,
+      maxSteps: 8,
+      sampleLimit: 50_000,
+    });
     expect(res.sessionsConsidered).toBe(2);
     expect(res.rows).toHaveLength(1);
     expect(res.rows[0].count).toBe(2);
@@ -46,7 +56,12 @@ describe("getJourneys", () => {
   it("collapses consecutive duplicate page steps", async () => {
     const fake = { runReport: vi.fn().mockResolvedValue([basic]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    const res = await getJourneys("12345", { dateRange: { preset: "last-7d" }, limit: 20, maxSteps: 8, sampleLimit: 50_000 });
+    const res = await getJourneys("12345", {
+      dateRange: { preset: "last-7d" },
+      limit: 20,
+      maxSteps: 8,
+      sampleLimit: 50_000,
+    });
     // S1 had two consecutive page_view on "/" — collapsed.
     expect(res.rows[0].path.filter((s) => s.kind === "page" && s.value === "/").length).toBe(1);
   });
@@ -54,14 +69,24 @@ describe("getJourneys", () => {
   it("caps chain length at maxSteps", async () => {
     const fake = { runReport: vi.fn().mockResolvedValue([basic]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    const res = await getJourneys("12345", { dateRange: { preset: "last-7d" }, limit: 20, maxSteps: 2, sampleLimit: 50_000 });
+    const res = await getJourneys("12345", {
+      dateRange: { preset: "last-7d" },
+      limit: 20,
+      maxSteps: 2,
+      sampleLimit: 50_000,
+    });
     expect(res.rows[0].path.length).toBeLessThanOrEqual(2);
   });
 
   it("sets truncated=true when rowCount exceeds sampleLimit", async () => {
     const fake = { runReport: vi.fn().mockResolvedValue([truncated]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    const res = await getJourneys("12345", { dateRange: { preset: "last-7d" }, limit: 20, maxSteps: 8, sampleLimit: 1000 });
+    const res = await getJourneys("12345", {
+      dateRange: { preset: "last-7d" },
+      limit: 20,
+      maxSteps: 8,
+      sampleLimit: 1000,
+    });
     expect(res.truncated).toBe(true);
   });
 
@@ -69,7 +94,12 @@ describe("getJourneys", () => {
     const err = new Error("3 INVALID_ARGUMENT: Field customEvent:fr_session_id is unrecognized.");
     const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    const res = await getJourneys("12345", { dateRange: { preset: "last-7d" }, limit: 20, maxSteps: 8, sampleLimit: 50_000 });
+    const res = await getJourneys("12345", {
+      dateRange: { preset: "last-7d" },
+      limit: 20,
+      maxSteps: 8,
+      sampleLimit: 50_000,
+    });
     expect(res.setupRequired).toBe(true);
     expect(res.missing).toEqual(["fr_session_id"]);
     expect(res.rows).toEqual([]);
@@ -81,7 +111,12 @@ describe("getJourneys", () => {
     const err = new Error("3 INVALID_ARGUMENT: Field customEvent:fr_event_seq is unrecognized.");
     const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    const res = await getJourneys("12345", { dateRange: { preset: "last-7d" }, limit: 20, maxSteps: 8, sampleLimit: 50_000 });
+    const res = await getJourneys("12345", {
+      dateRange: { preset: "last-7d" },
+      limit: 20,
+      maxSteps: 8,
+      sampleLimit: 50_000,
+    });
     expect(res.missing).toEqual(["fr_event_seq"]);
   });
 
@@ -89,7 +124,12 @@ describe("getJourneys", () => {
     const err = new Error("3 INVALID_ARGUMENT: Field customEvent:fr_lead_type is unrecognized.");
     const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    const res = await getJourneys("12345", { dateRange: { preset: "last-7d" }, limit: 20, maxSteps: 8, sampleLimit: 50_000 });
+    const res = await getJourneys("12345", {
+      dateRange: { preset: "last-7d" },
+      limit: 20,
+      maxSteps: 8,
+      sampleLimit: 50_000,
+    });
     expect(res.missing).toEqual(["fr_lead_type"]);
   });
 
@@ -97,7 +137,14 @@ describe("getJourneys", () => {
     const err = new Error("3 INVALID_ARGUMENT: bad date format");
     const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    await expect(getJourneys("12345", { dateRange: { preset: "last-7d" }, limit: 20, maxSteps: 8, sampleLimit: 50_000 })).rejects.toBe(err);
+    await expect(
+      getJourneys("12345", {
+        dateRange: { preset: "last-7d" },
+        limit: 20,
+        maxSteps: 8,
+        sampleLimit: 50_000,
+      })
+    ).rejects.toBe(err);
   });
 
   const PAGE_FILTER = {
@@ -113,19 +160,51 @@ describe("getJourneys", () => {
     metricHeaders: [{ name: "eventCount", type: "TYPE_INTEGER" }],
     rows: [
       {
-        dimensionValues: [{ value: "S1" }, { value: "page_view" }, { value: "/" }, { value: "202605101430" }, { value: "1" }, { value: "" }, { value: "__home" }],
+        dimensionValues: [
+          { value: "S1" },
+          { value: "page_view" },
+          { value: "/" },
+          { value: "202605101430" },
+          { value: "1" },
+          { value: "" },
+          { value: "__home" },
+        ],
         metricValues: [{ value: "1" }],
       },
       {
-        dimensionValues: [{ value: "S1" }, { value: "lead_action" }, { value: "/" }, { value: "202605101430" }, { value: "2" }, { value: "phone_click" }, { value: "__home" }],
+        dimensionValues: [
+          { value: "S1" },
+          { value: "lead_action" },
+          { value: "/" },
+          { value: "202605101430" },
+          { value: "2" },
+          { value: "phone_click" },
+          { value: "__home" },
+        ],
         metricValues: [{ value: "1" }],
       },
       {
-        dimensionValues: [{ value: "S2" }, { value: "page_view" }, { value: "/gone" }, { value: "202605101500" }, { value: "1" }, { value: "" }, { value: "page:999" }],
+        dimensionValues: [
+          { value: "S2" },
+          { value: "page_view" },
+          { value: "/gone" },
+          { value: "202605101500" },
+          { value: "1" },
+          { value: "" },
+          { value: "page:999" },
+        ],
         metricValues: [{ value: "1" }],
       },
       {
-        dimensionValues: [{ value: "S2" }, { value: "lead_action" }, { value: "/gone" }, { value: "202605101500" }, { value: "2" }, { value: "email_click" }, { value: "page:999" }],
+        dimensionValues: [
+          { value: "S2" },
+          { value: "lead_action" },
+          { value: "/gone" },
+          { value: "202605101500" },
+          { value: "2" },
+          { value: "email_click" },
+          { value: "page:999" },
+        ],
         metricValues: [{ value: "1" }],
       },
     ],
@@ -133,9 +212,16 @@ describe("getJourneys", () => {
   };
 
   it("appends the page-ref dim and excludes a session that touched a deleted ref when pageFilter is set", async () => {
-    const fake = { runReport: vi.fn().mockResolvedValue([PAGE_FILTER_FIXTURE]), batchRunReports: vi.fn() };
+    const fake = {
+      runReport: vi.fn().mockResolvedValue([PAGE_FILTER_FIXTURE]),
+      batchRunReports: vi.fn(),
+    };
     __setGa4ClientForTests(fake as never);
-    const res = await getJourneys("12345", { dateRange: { preset: "last-7d" }, limit: 20, sampleLimit: 50_000 }, PAGE_FILTER);
+    const res = await getJourneys(
+      "12345",
+      { dateRange: { preset: "last-7d" }, limit: 20, sampleLimit: 50_000 },
+      PAGE_FILTER
+    );
 
     const arg = fake.runReport.mock.calls[0][0];
     expect(arg.dimensions).toEqual([
@@ -160,7 +246,11 @@ describe("getJourneys", () => {
   it("does NOT append the page-ref dim and counts all sessions when pageFilter is null", async () => {
     const fake = { runReport: vi.fn().mockResolvedValue([basic]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    const res = await getJourneys("12345", { dateRange: { preset: "last-7d" }, limit: 20, maxSteps: 8, sampleLimit: 50_000 }, null);
+    const res = await getJourneys(
+      "12345",
+      { dateRange: { preset: "last-7d" }, limit: 20, maxSteps: 8, sampleLimit: 50_000 },
+      null
+    );
     const arg = fake.runReport.mock.calls[0][0];
     expect(arg.dimensions).toEqual([
       { name: "customEvent:fr_session_id" },
@@ -177,7 +267,11 @@ describe("getJourneys", () => {
     const err = new Error("3 INVALID_ARGUMENT: Field customEvent:fr_page_ref is unrecognized.");
     const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    const res = await getJourneys("12345", { dateRange: { preset: "last-7d" }, limit: 20, sampleLimit: 50_000 }, PAGE_FILTER);
+    const res = await getJourneys(
+      "12345",
+      { dateRange: { preset: "last-7d" }, limit: 20, sampleLimit: 50_000 },
+      PAGE_FILTER
+    );
     expect(res.setupRequired).toBe(true);
     expect(res.missing).toEqual(["fr_page_ref"]);
   });

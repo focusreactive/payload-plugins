@@ -10,11 +10,7 @@ import {
   useAuth,
 } from "@payloadcms/ui";
 import type { Data, FormState } from "payload";
-import {
-  getParentPath,
-  getPresetTypeFromPath,
-  buildSubFieldStateFromPreset,
-} from "../utils.js";
+import { getParentPath, getPresetTypeFromPath, buildSubFieldStateFromPreset } from "../utils.js";
 import { usePresetsConfig } from "../usePresetsConfig.js";
 
 import "./index.scss";
@@ -29,8 +25,7 @@ export function ApplyPresetButton() {
   const { t } = useTranslation();
 
   const presetTypeFromPath = getPresetTypeFromPath(parentPath, presetTypes);
-  const blockData =
-    getDataByPath<{ blockType?: string } | null>(parentPath) ?? null;
+  const blockData = getDataByPath<{ blockType?: string } | null>(parentPath) ?? null;
   const presetType = presetTypeFromPath ?? blockData?.blockType;
 
   const fullData = getData() as { tenant?: number } | null;
@@ -57,11 +52,7 @@ export function ApplyPresetButton() {
       | undefined;
     const presetBlockItem = presetBlocks?.[0];
 
-    if (
-      !preset ||
-      !presetBlockItem ||
-      presetBlockItem.blockType !== presetType
-    ) {
+    if (!preset || !presetBlockItem || presetBlockItem.blockType !== presetType) {
       toast.error(t("presetsPlugin:applyPreset:errorInvalidPreset" as never));
       return;
     }
@@ -70,15 +61,9 @@ export function ApplyPresetButton() {
     const rowIndex = Number(pathParts.pop());
     const arrayPath = pathParts.join(".");
 
-    const baseState = buildSubFieldStateFromPreset(
-      presetBlockItem,
-      excludeKeys,
-    );
+    const baseState = buildSubFieldStateFromPreset(presetBlockItem, excludeKeys);
     const subFieldState = Object.fromEntries(
-      Object.entries(baseState).map(([key, entry]) => [
-        key,
-        { ...entry, isModified: true },
-      ]),
+      Object.entries(baseState).map(([key, entry]) => [key, { ...entry, isModified: true }])
     );
 
     try {
@@ -103,7 +88,7 @@ export function ApplyPresetButton() {
       toast.success(
         t("presetsPlugin:applyPreset:successApplied" as never, {
           name: preset.name,
-        }),
+        })
       );
       closeDrawer();
     } catch (err) {
@@ -121,11 +106,7 @@ export function ApplyPresetButton() {
       <Button buttonStyle="secondary" size="large" onClick={handleOpenDrawer}>
         {t("presetsPlugin:applyPreset:applyButton" as never)}
       </Button>
-      <ListDrawer
-        onSelect={handleSelect}
-        allowCreate={true}
-        enableRowSelections={false}
-      />
+      <ListDrawer onSelect={handleSelect} allowCreate={true} enableRowSelections={false} />
     </>
   );
 }

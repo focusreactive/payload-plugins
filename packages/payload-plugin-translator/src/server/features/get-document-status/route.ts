@@ -10,7 +10,12 @@ import { GetDocumentStatusHandler } from "./handler";
 /**
  * Creates the get document status endpoint
  */
-export function createGetDocumentStatusRoute(config: GetDocumentStatusConfig, taskRunnerFactory: TaskRunnerFactory, access?: AccessGuard, basePath = "/translate"): Endpoint {
+export function createGetDocumentStatusRoute(
+  config: GetDocumentStatusConfig,
+  taskRunnerFactory: TaskRunnerFactory,
+  access?: AccessGuard,
+  basePath = "/translate"
+): Endpoint {
   const handler = new GetDocumentStatusHandler(config, taskRunnerFactory);
 
   return {

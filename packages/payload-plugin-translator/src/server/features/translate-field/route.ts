@@ -15,7 +15,12 @@ export type CreateFieldRouteArgs = FieldTranslationConfig & {
  * Creates the synchronous field-translation endpoint: `POST {basePath}/field`.
  * Wired with the same access + error-envelope plumbing as the document routes.
  */
-export function createFieldRoute({ schemaMap, translationProvider, access, basePath = "/translate" }: CreateFieldRouteArgs): Endpoint {
+export function createFieldRoute({
+  schemaMap,
+  translationProvider,
+  access,
+  basePath = "/translate",
+}: CreateFieldRouteArgs): Endpoint {
   const handler = new TranslateFieldHandler({ schemaMap, translationProvider });
 
   return {

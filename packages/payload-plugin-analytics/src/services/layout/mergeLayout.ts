@@ -13,12 +13,19 @@ import type {
   TabLayoutConfigInput,
 } from "../../types/layout";
 
-function mergeBlockPlacement(user: BlockPlacementInput | undefined, base: BlockPlacement): BlockPlacement {
+function mergeBlockPlacement(
+  user: BlockPlacementInput | undefined,
+  base: BlockPlacement
+): BlockPlacement {
   if (!user) return base;
   return {
     order: user.order ?? base.order,
     colSpan: user.colSpan ?? base.colSpan,
-    ...(user.enabled !== undefined ? { enabled: user.enabled } : base.enabled !== undefined ? { enabled: base.enabled } : {}),
+    ...(user.enabled !== undefined
+      ? { enabled: user.enabled }
+      : base.enabled !== undefined
+        ? { enabled: base.enabled }
+        : {}),
   };
 }
 
@@ -33,7 +40,9 @@ function mergeRow(user: RowConfigInput | undefined, base: RowConfig): RowConfig 
         mergedBlocks[id] = mergeBlockPlacement(override, baseBlock);
       } else if (override) {
         if (override.order === undefined || override.colSpan === undefined) {
-          throw new Error(`[payload-plugin-analytics] Block "${id}" added to row but is missing required fields { order, colSpan }`);
+          throw new Error(
+            `[payload-plugin-analytics] Block "${id}" added to row but is missing required fields { order, colSpan }`
+          );
         }
         mergedBlocks[id] = {
           order: override.order,
@@ -48,11 +57,18 @@ function mergeRow(user: RowConfigInput | undefined, base: RowConfig): RowConfig 
     order: user.order ?? base.order,
     columns: user.columns ?? base.columns,
     blocks: mergedBlocks,
-    ...(user.enabled !== undefined ? { enabled: user.enabled } : base.enabled !== undefined ? { enabled: base.enabled } : {}),
+    ...(user.enabled !== undefined
+      ? { enabled: user.enabled }
+      : base.enabled !== undefined
+        ? { enabled: base.enabled }
+        : {}),
   };
 }
 
-function mergeTab(user: TabLayoutConfigInput | undefined, base: TabLayoutConfig | undefined): TabLayoutConfig {
+function mergeTab(
+  user: TabLayoutConfigInput | undefined,
+  base: TabLayoutConfig | undefined
+): TabLayoutConfig {
   const baseRows = base?.rows ?? {};
   const mergedRows: Record<RowId, RowConfig> = { ...baseRows };
 
@@ -63,12 +79,16 @@ function mergeTab(user: TabLayoutConfigInput | undefined, base: TabLayoutConfig 
         mergedRows[rowId] = mergeRow(override, baseRow);
       } else if (override) {
         if (override.order === undefined || override.columns === undefined) {
-          throw new Error(`[payload-plugin-analytics] Row "${rowId}" added by user but is missing required fields { order, columns }`);
+          throw new Error(
+            `[payload-plugin-analytics] Row "${rowId}" added by user but is missing required fields { order, columns }`
+          );
         }
         const blocks: Record<BlockId, BlockPlacement> = {};
         for (const [bid, bp] of Object.entries(override.blocks ?? {})) {
           if (bp?.order === undefined || bp?.colSpan === undefined) {
-            throw new Error(`[payload-plugin-analytics] Block "${bid}" in user row "${rowId}" is missing { order, colSpan }`);
+            throw new Error(
+              `[payload-plugin-analytics] Block "${bid}" in user row "${rowId}" is missing { order, colSpan }`
+            );
           }
           blocks[bid] = {
             order: bp.order,
@@ -89,11 +109,17 @@ function mergeTab(user: TabLayoutConfigInput | undefined, base: TabLayoutConfig 
   return { rows: mergedRows };
 }
 
-export function mergeLayout(user: AnalyticsLayoutConfigInput | undefined, defaults: AnalyticsLayoutConfig): AnalyticsLayoutConfig {
+export function mergeLayout(
+  user: AnalyticsLayoutConfigInput | undefined,
+  defaults: AnalyticsLayoutConfig
+): AnalyticsLayoutConfig {
   if (!user) return defaults;
 
   const mergedTabs: Partial<Record<TabId, TabLayoutConfig>> = { ...defaults.tabs };
-  const allTabIds = new Set<TabId>([...(Object.keys(defaults.tabs) as TabId[]), ...(Object.keys(user.tabs ?? {}) as TabId[])]);
+  const allTabIds = new Set<TabId>([
+    ...(Object.keys(defaults.tabs) as TabId[]),
+    ...(Object.keys(user.tabs ?? {}) as TabId[]),
+  ]);
 
   for (const tabId of allTabIds) {
     mergedTabs[tabId] = mergeTab(user.tabs?.[tabId], defaults.tabs[tabId]);
@@ -105,7 +131,10 @@ export function mergeLayout(user: AnalyticsLayoutConfigInput | undefined, defaul
   };
 }
 
-export function mergeBlockRegistry(user: Record<BlockId, Partial<BlockDefinition>> | undefined, defaults: Record<BlockId, BlockDefinition>): Record<BlockId, BlockDefinition> {
+export function mergeBlockRegistry(
+  user: Record<BlockId, Partial<BlockDefinition>> | undefined,
+  defaults: Record<BlockId, BlockDefinition>
+): Record<BlockId, BlockDefinition> {
   if (!user) return defaults;
 
   const merged: Record<BlockId, BlockDefinition> = { ...defaults };
@@ -118,7 +147,9 @@ export function mergeBlockRegistry(user: Record<BlockId, Partial<BlockDefinition
       };
     } else {
       if (!override.component) {
-        throw new Error(`[payload-plugin-analytics] Block "${id}" is missing required field { component }`);
+        throw new Error(
+          `[payload-plugin-analytics] Block "${id}" is missing required field { component }`
+        );
       }
       merged[id] = { component: override.component, fetch: override.fetch };
     }

@@ -23,7 +23,8 @@ export function buildAbExperimentHeaderEndpoint(config: AnalyticsPluginConfig): 
       }
 
       const parsed = AbExperimentQuerySchema.safeParse(body);
-      if (!parsed.success) return Response.json({ error: formatZodIssues(parsed.error.issues) }, { status: 400 });
+      if (!parsed.success)
+        return Response.json({ error: formatZodIssues(parsed.error.issues) }, { status: 400 });
 
       const ab = resolveAbConfig(getPluginConfig().ab)!;
 

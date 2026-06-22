@@ -21,7 +21,9 @@ function splitSentences(text: string): string[] {
 function sentenceLengthPct(text: string): { pct: number } | undefined {
   const sentences = splitSentences(text);
   if (!sentences.length) return undefined;
-  const long = sentences.filter((s) => s.split(/\s+/u).filter(Boolean).length > MAX_SENTENCE_WORDS).length;
+  const long = sentences.filter(
+    (s) => s.split(/\s+/u).filter(Boolean).length > MAX_SENTENCE_WORDS
+  ).length;
   return { pct: Math.round((long / sentences.length) * 100) };
 }
 
@@ -43,7 +45,11 @@ function snippet(text: string): string {
   return t.length > SNIPPET_MAX ? `${t.slice(0, SNIPPET_MAX - 1)}…` : t;
 }
 
-export function extractCheckData(id: string, paper: PaperLike, researcher: YoastResearcher): Record<string, unknown> | undefined {
+export function extractCheckData(
+  id: string,
+  paper: PaperLike,
+  researcher: YoastResearcher
+): Record<string, unknown> | undefined {
   switch (id) {
     case "keyphraseDensity": {
       const r = getResearch<{ density: number }>(researcher, "getKeyphraseDensity");
@@ -69,7 +75,9 @@ export function extractCheckData(id: string, paper: PaperLike, researcher: Yoast
         internalDofollow: number;
       }>(researcher, "getLinkStatistics");
       if (!s) return undefined;
-      return id === "externalLinks" ? { total: s.externalTotal, follow: s.externalDofollow } : { total: s.internalTotal, follow: s.internalDofollow };
+      return id === "externalLinks"
+        ? { total: s.externalTotal, follow: s.externalDofollow }
+        : { total: s.internalTotal, follow: s.internalDofollow };
     }
     case "metaDescriptionLength": {
       const chars = getResearch<number>(researcher, "metaDescriptionLength");
@@ -105,7 +113,10 @@ export function extractCheckData(id: string, paper: PaperLike, researcher: Yoast
       return positions.length ? { positions } : undefined;
     }
     case "textParagraphTooLong": {
-      const ps = getResearch<{ paragraph: { innerText: () => string }; paragraphLength: number }[]>(researcher, "getParagraphLength");
+      const ps = getResearch<{ paragraph: { innerText: () => string }; paragraphLength: number }[]>(
+        researcher,
+        "getParagraphLength"
+      );
       if (!ps) return undefined;
       const long = ps.filter((p) => p.paragraphLength > MAX_PARAGRAPH_WORDS);
       if (!long.length) return undefined;
@@ -122,7 +133,10 @@ export function extractCheckData(id: string, paper: PaperLike, researcher: Yoast
       return typeof r?.keyphraseLength === "number" ? { words: r.keyphraseLength } : undefined;
     }
     case "subheadingsKeyword": {
-      const r = getResearch<{ count: number; matches: number }>(researcher, "matchKeywordInSubheadings");
+      const r = getResearch<{ count: number; matches: number }>(
+        researcher,
+        "matchKeywordInSubheadings"
+      );
       return r && r.count > 0 ? { matched: r.matches, total: r.count } : undefined;
     }
     case "textCompetingLinks": {
@@ -140,7 +154,10 @@ export function extractCheckData(id: string, paper: PaperLike, researcher: Yoast
       };
     }
     case "passiveVoice": {
-      const r = getResearch<{ total: number; passives: string[] }>(researcher, "getPassiveVoiceResult");
+      const r = getResearch<{ total: number; passives: string[] }>(
+        researcher,
+        "getPassiveVoiceResult"
+      );
       if (!r || !r.total) return undefined;
       return { pct: Math.round((r.passives.length / r.total) * 100) };
     }
@@ -155,7 +172,10 @@ export function extractCheckData(id: string, paper: PaperLike, researcher: Yoast
         : undefined;
     }
     case "subheadingsTooLong": {
-      const r = getResearch<{ subheading: string; text: string; countLength: number }[]>(researcher, "getSubheadingTextLengths");
+      const r = getResearch<{ subheading: string; text: string; countLength: number }[]>(
+        researcher,
+        "getSubheadingTextLengths"
+      );
       if (!Array.isArray(r)) return undefined;
       const long = r.filter((s) => s.countLength > 300);
       return long.length

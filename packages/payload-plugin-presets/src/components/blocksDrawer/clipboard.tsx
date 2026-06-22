@@ -17,10 +17,7 @@ interface ReduceFormStateByPathArgs {
   path: string;
 }
 
-export function reduceFormStateByPath({
-  formState,
-  path,
-}: ReduceFormStateByPathArgs) {
+export function reduceFormStateByPath({ formState, path }: ReduceFormStateByPathArgs) {
   const filteredState: FormState = {};
 
   for (const key in formState) {
@@ -28,11 +25,7 @@ export function reduceFormStateByPath({
       continue;
     }
 
-    const {
-      customComponents: _customComponents,
-      validate: _validate,
-      ...field
-    } = formState[key];
+    const { customComponents: _customComponents, validate: _validate, ...field } = formState[key];
 
     if (Array.isArray(field.rows)) {
       field.rows = field.rows.map((row) => {
@@ -40,8 +33,7 @@ export function reduceFormStateByPath({
           return row;
         }
 
-        const { customComponents: _rowCustomComponents, ...serializableRow } =
-          row;
+        const { customComponents: _rowCustomComponents, ...serializableRow } = row;
 
         return serializableRow;
       });
@@ -91,9 +83,7 @@ export function hydrateBlocksFieldCustomComponents({
 
       const blockType = row.blockType;
       const hasMatchingBlock = blocks.some((block) => {
-        return typeof block === "string"
-          ? block === blockType
-          : block.slug === blockType;
+        return typeof block === "string" ? block === blockType : block.slug === blockType;
       });
 
       if (!hasMatchingBlock) {

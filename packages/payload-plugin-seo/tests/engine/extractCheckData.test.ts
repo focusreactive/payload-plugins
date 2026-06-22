@@ -20,8 +20,15 @@ function makePaper(over: Partial<Record<keyof PaperLike, () => string>> = {}): P
 describe("extractCheckData", () => {
   // Task 1: keyphraseDensity + unknown id
   it("maps keyphraseDensity to densityPct, textLength and count", () => {
-    const r = makeResearcher({ getKeyphraseDensity: { density: 1.8, textLength: 250 }, getKeyphraseCount: { count: 5 } });
-    expect(extractCheckData("keyphraseDensity", makePaper(), r)).toEqual({ densityPct: 1.8, textLength: 250, count: 5 });
+    const r = makeResearcher({
+      getKeyphraseDensity: { density: 1.8, textLength: 250 },
+      getKeyphraseCount: { count: 5 },
+    });
+    expect(extractCheckData("keyphraseDensity", makePaper(), r)).toEqual({
+      densityPct: 1.8,
+      textLength: 250,
+      count: 5,
+    });
   });
 
   it("returns undefined for an unknown id", () => {
@@ -30,20 +37,32 @@ describe("extractCheckData", () => {
 
   // Task 2: imageKeyphrase + externalLinks / internalLinks
   it("maps altTagCount to total + matched images", () => {
-    const r = makeResearcher({ altTagCount: { noAlt: 1, withAlt: 2, withAltKeyword: 3, withAltNonKeyword: 4 } });
+    const r = makeResearcher({
+      altTagCount: { noAlt: 1, withAlt: 2, withAltKeyword: 3, withAltNonKeyword: 4 },
+    });
     expect(extractCheckData("imageKeyphrase", makePaper(), r)).toEqual({ total: 10, matched: 3 });
   });
 
   it("maps getLinkStatistics to external follow/total", () => {
     const r = makeResearcher({
-      getLinkStatistics: { externalTotal: 5, externalDofollow: 3, internalTotal: 8, internalDofollow: 6 },
+      getLinkStatistics: {
+        externalTotal: 5,
+        externalDofollow: 3,
+        internalTotal: 8,
+        internalDofollow: 6,
+      },
     });
     expect(extractCheckData("externalLinks", makePaper(), r)).toEqual({ total: 5, follow: 3 });
   });
 
   it("maps getLinkStatistics to internal follow/total", () => {
     const r = makeResearcher({
-      getLinkStatistics: { externalTotal: 5, externalDofollow: 3, internalTotal: 8, internalDofollow: 6 },
+      getLinkStatistics: {
+        externalTotal: 5,
+        externalDofollow: 3,
+        internalTotal: 8,
+        internalDofollow: 6,
+      },
     });
     expect(extractCheckData("internalLinks", makePaper(), r)).toEqual({ total: 8, follow: 6 });
   });
@@ -85,7 +104,9 @@ describe("extractCheckData", () => {
   });
 
   it("derives transition-word percentage", () => {
-    const r = makeResearcher({ findTransitionWords: { totalSentences: 8, transitionWordSentences: 2 } });
+    const r = makeResearcher({
+      findTransitionWords: { totalSentences: 8, transitionWordSentences: 2 },
+    });
     expect(extractCheckData("textTransitionWords", makePaper(), r)).toEqual({ pct: 25 });
   });
 
@@ -99,7 +120,9 @@ describe("extractCheckData", () => {
   it("emits a real { pct: 0 } for textSentenceLength when no sentence exceeds 20 words", () => {
     // Default makePaper text: "Running shoes are great." (4 words) + "Buy running shoes today." (4 words)
     // Neither exceeds MAX_SENTENCE_WORDS=20, so pct must be 0 — not undefined.
-    expect(extractCheckData("textSentenceLength", makePaper(), makeResearcher({}))).toEqual({ pct: 0 });
+    expect(extractCheckData("textSentenceLength", makePaper(), makeResearcher({}))).toEqual({
+      pct: 0,
+    });
   });
 
   it("returns undefined for textParagraphTooLong when getParagraphLength returns an empty array", () => {
@@ -116,11 +139,16 @@ describe("extractCheckData", () => {
       getText: () => "<p>Running shoes rock. Nothing here. Buy running shoes now. The end.</p>",
       getKeyword: () => "running shoes",
     });
-    expect(extractCheckData("keyphraseDistribution", paper, makeResearcher({}))).toEqual({ positions: [13, 63] });
+    expect(extractCheckData("keyphraseDistribution", paper, makeResearcher({}))).toEqual({
+      positions: [13, 63],
+    });
   });
 
   it("returns undefined distribution when the keyphrase never appears", () => {
-    const paper = makePaper({ getText: () => "<p>Nothing relevant here at all.</p>", getKeyword: () => "running shoes" });
+    const paper = makePaper({
+      getText: () => "<p>Nothing relevant here at all.</p>",
+      getKeyword: () => "running shoes",
+    });
     expect(extractCheckData("keyphraseDistribution", paper, makeResearcher({}))).toBeUndefined();
   });
 
@@ -128,16 +156,29 @@ describe("extractCheckData", () => {
     const r = makeResearcher({
       getParagraphLength: [
         { paragraph: { innerText: () => "A short paragraph." }, paragraphLength: 3 },
-        { paragraph: { innerText: () => "This paragraph is far too long and rambles on well past the recommended limit." }, paragraphLength: 210 },
+        {
+          paragraph: {
+            innerText: () =>
+              "This paragraph is far too long and rambles on well past the recommended limit.",
+          },
+          paragraphLength: 210,
+        },
       ],
     });
     expect(extractCheckData("textParagraphTooLong", makePaper(), r)).toEqual({
-      paragraphs: [{ left: "This paragraph is far too long and rambles on well past the rec…", right: "210 words" }],
+      paragraphs: [
+        {
+          left: "This paragraph is far too long and rambles on well past the rec…",
+          right: "210 words",
+        },
+      ],
     });
   });
 
   it("returns undefined when no paragraph is over-long", () => {
-    const r = makeResearcher({ getParagraphLength: [{ paragraph: { innerText: () => "Short." }, paragraphLength: 1 }] });
+    const r = makeResearcher({
+      getParagraphLength: [{ paragraph: { innerText: () => "Short." }, paragraphLength: 1 }],
+    });
     expect(extractCheckData("textParagraphTooLong", makePaper(), r)).toBeUndefined();
   });
 
@@ -148,15 +189,25 @@ describe("extractCheckData", () => {
   });
 
   it("maps matchKeywordInSubheadings to matched/total", () => {
-    const r = makeResearcher({ matchKeywordInSubheadings: { count: 4, matches: 1, percentReflectingTopic: 25 } });
-    expect(extractCheckData("subheadingsKeyword", makePaper(), r)).toEqual({ matched: 1, total: 4 });
+    const r = makeResearcher({
+      matchKeywordInSubheadings: { count: 4, matches: 1, percentReflectingTopic: 25 },
+    });
+    expect(extractCheckData("subheadingsKeyword", makePaper(), r)).toEqual({
+      matched: 1,
+      total: 4,
+    });
   });
 
   it("emits a real { matched: 0, total: 0 } for subheadingsKeyword when there are no subheadings", () => {
     // count 0 means the research ran but found no H2/H3 — distinct from research missing.
     // Emit data so the proportion bar renders (parity with imageKeyphrase) instead of degrading to presence.
-    const r = makeResearcher({ matchKeywordInSubheadings: { count: 0, matches: 0, percentReflectingTopic: 0 } });
-    expect(extractCheckData("subheadingsKeyword", makePaper(), r)).toEqual({ matched: 0, total: 0 });
+    const r = makeResearcher({
+      matchKeywordInSubheadings: { count: 0, matches: 0, percentReflectingTopic: 0 },
+    });
+    expect(extractCheckData("subheadingsKeyword", makePaper(), r)).toEqual({
+      matched: 0,
+      total: 0,
+    });
   });
 
   it("returns undefined for subheadingsKeyword when the research is missing", () => {
@@ -167,7 +218,10 @@ describe("extractCheckData", () => {
     const r = makeResearcher({
       getAnchorsWithKeyphrase: {
         anchorsWithKeyphraseCount: 2,
-        anchorsWithKeyphrase: [{ innerText: () => "running shoes" }, { innerText: () => "best running shoes guide" }],
+        anchorsWithKeyphrase: [
+          { innerText: () => "running shoes" },
+          { innerText: () => "best running shoes guide" },
+        ],
       },
     });
     expect(extractCheckData("textCompetingLinks", makePaper(), r)).toEqual({
@@ -179,7 +233,9 @@ describe("extractCheckData", () => {
   });
 
   it("returns undefined competing links when count is zero", () => {
-    const r = makeResearcher({ getAnchorsWithKeyphrase: { anchorsWithKeyphraseCount: 0, anchorsWithKeyphrase: [] } });
+    const r = makeResearcher({
+      getAnchorsWithKeyphrase: { anchorsWithKeyphraseCount: 0, anchorsWithKeyphrase: [] },
+    });
     expect(extractCheckData("textCompetingLinks", makePaper(), r)).toBeUndefined();
   });
 
@@ -219,7 +275,11 @@ describe("extractCheckData", () => {
       getSubheadingTextLengths: [
         { subheading: "Intro", text: "short", countLength: 120 },
         { subheading: "Body", text: "long...", countLength: 410 },
-        { subheading: "", text: "preamble before first heading that is very long", countLength: 350 },
+        {
+          subheading: "",
+          text: "preamble before first heading that is very long",
+          countLength: 350,
+        },
       ],
     });
     expect(extractCheckData("subheadingsTooLong", makePaper(), r)).toEqual({
@@ -231,11 +291,15 @@ describe("extractCheckData", () => {
   });
 
   it("returns undefined subheadingsTooLong when all sections are within range", () => {
-    const r = makeResearcher({ getSubheadingTextLengths: [{ subheading: "Intro", text: "ok", countLength: 120 }] });
+    const r = makeResearcher({
+      getSubheadingTextLengths: [{ subheading: "Intro", text: "ok", countLength: 120 }],
+    });
     expect(extractCheckData("subheadingsTooLong", makePaper(), r)).toBeUndefined();
   });
 
   it("maps imageCount to a count", () => {
-    expect(extractCheckData("images", makePaper(), makeResearcher({ imageCount: 3 }))).toEqual({ count: 3 });
+    expect(extractCheckData("images", makePaper(), makeResearcher({ imageCount: 3 }))).toEqual({
+      count: 3,
+    });
   });
 });

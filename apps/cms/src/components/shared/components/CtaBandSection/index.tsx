@@ -32,7 +32,13 @@ interface CtaBandSectionProps {
   theme?: string | null;
 }
 
-export function CtaBandSection({ eyebrow, heading, description, actions, theme }: CtaBandSectionProps) {
+export function CtaBandSection({
+  eyebrow,
+  heading,
+  description,
+  actions,
+  theme,
+}: CtaBandSectionProps) {
   const header = prepareSectionHeaderProps({ eyebrow, description, heading });
 
   return (

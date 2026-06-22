@@ -30,13 +30,20 @@ export function ToolsPanel({ commentId, isResolved, canDelete, onDelete, onResol
               toast.success(t("comments:commentResolved" as never) ?? "Comment resolved");
             }
           }}
-          title={isResolved ? (t("comments:reopen" as never) ?? "Reopen") : (t("comments:resolve" as never) ?? "Resolve")}
+          title={
+            isResolved
+              ? (t("comments:reopen" as never) ?? "Reopen")
+              : (t("comments:resolve" as never) ?? "Resolve")
+          }
         >
           {isResolved ? <Undo2 size={16} /> : <CircleCheck size={16} />}
         </IconButton>
 
         {canDelete && (
-          <IconButton onClick={() => openModal(deleteModalSlug)} title={t("comments:delete" as never) ?? "Delete"}>
+          <IconButton
+            onClick={() => openModal(deleteModalSlug)}
+            title={t("comments:delete" as never) ?? "Delete"}
+          >
             <Trash2 size={16} />
           </IconButton>
         )}
