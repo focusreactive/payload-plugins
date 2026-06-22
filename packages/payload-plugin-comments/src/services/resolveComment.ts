@@ -6,7 +6,11 @@ import { DEFAULT_COLLECTION_SLUG } from "../constants";
 import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
 import { extractPayload } from "../utils/payload/extractPayload";
 
-export async function resolveComment(id: number | string, resolved: boolean, options?: BaseServiceOptions): Promise<Response<Comment>> {
+export async function resolveComment(
+  id: number | string,
+  resolved: boolean,
+  options?: BaseServiceOptions
+): Promise<Response<Comment>> {
   try {
     const payload = await extractPayload(options?.payload);
     const { user } = await payload.auth({ headers: await headers() });

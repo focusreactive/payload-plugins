@@ -27,7 +27,11 @@ const collectionPaths: Record<string, string> = {
 };
 
 interface Props {
-  appearance?: VariantProps<typeof linkVariants>["appearance"] | ButtonProps["variant"] | LinkAppearances | null;
+  appearance?:
+    | VariantProps<typeof linkVariants>["appearance"]
+    | ButtonProps["variant"]
+    | LinkAppearances
+    | null;
   children?: React.ReactNode;
   className?: string;
   label?: string | null;
@@ -58,9 +62,23 @@ function mapAppearanceToVariant(appearance: Props["appearance"]): ButtonProps["v
 }
 
 export const CMSLink: React.FC<Props> = (props) => {
-  const { type, appearance = "inline", children, className, label, newTab, onClick, reference, size, url } = props;
+  const {
+    type,
+    appearance = "inline",
+    children,
+    className,
+    label,
+    newTab,
+    onClick,
+    reference,
+    size,
+    url,
+  } = props;
 
-  const href = type === "reference" && typeof reference?.value === "object" && reference.value.slug ? `${collectionPaths[reference.relationTo]}/${reference.value.slug}` : url;
+  const href =
+    type === "reference" && typeof reference?.value === "object" && reference.value.slug
+      ? `${collectionPaths[reference.relationTo]}/${reference.value.slug}`
+      : url;
 
   if (!href) {
     return null;
@@ -75,7 +93,12 @@ export const CMSLink: React.FC<Props> = (props) => {
   /* Ensure we don't break any styles set by richText */
   if (isInline) {
     return (
-      <Link className={cn(linkVariants({ appearance: "inline" }), className)} href={hrefToUse} onClick={onClick} {...newTabProps}>
+      <Link
+        className={cn(linkVariants({ appearance: "inline" }), className)}
+        href={hrefToUse}
+        onClick={onClick}
+        {...newTabProps}
+      >
         {label}
         {children}
       </Link>

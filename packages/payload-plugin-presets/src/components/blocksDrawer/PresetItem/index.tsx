@@ -69,7 +69,16 @@ interface Props {
   isScrolling?: boolean;
 }
 
-export function PresetItem({ preset, mediaCollection, label, onSelect, onDeleteRequest, onPresetUpdate, tabIndex, isScrolling }: Props) {
+export function PresetItem({
+  preset,
+  mediaCollection,
+  label,
+  onSelect,
+  onDeleteRequest,
+  onPresetUpdate,
+  tabIndex,
+  isScrolling,
+}: Props) {
   const { preview } = preset ?? {};
 
   const { t } = useTranslation();
@@ -156,7 +165,9 @@ export function PresetItem({ preset, mediaCollection, label, onSelect, onDeleteR
           </div>
 
           <div className="preset-item__content">
-            <div className="preset-item__label">{preset ? preset.name : `${t("presetsPlugin:blocksDrawer:empty" as never)} ${label}`}</div>
+            <div className="preset-item__label">
+              {preset ? preset.name : `${t("presetsPlugin:blocksDrawer:empty" as never)} ${label}`}
+            </div>
 
             <div className="preset-item__actions">
               {preset?.id && (
@@ -174,7 +185,11 @@ export function PresetItem({ preset, mediaCollection, label, onSelect, onDeleteR
                 />
               )}
               {preset?.name && (
-                <button className="preset-action remove-preset" type="button" onClick={handleRemoveButtonClick}>
+                <button
+                  className="preset-action remove-preset"
+                  type="button"
+                  onClick={handleRemoveButtonClick}
+                >
                   <TrashIcon className="remove-preset__icon" />
                 </button>
               )}
@@ -195,7 +210,12 @@ export function PresetItem({ preset, mediaCollection, label, onSelect, onDeleteR
             onOpenAutoFocus={(e) => e.preventDefault()}
             onCloseAutoFocus={(e) => e.preventDefault()}
           >
-            <PresetAdminComponentCell imageClassName="preset-preview-cell__popup-image" media={media} isLoading={false} size="lg" />
+            <PresetAdminComponentCell
+              imageClassName="preset-preview-cell__popup-image"
+              media={media}
+              isLoading={false}
+              size="lg"
+            />
           </Popover.Content>
         </Popover.Portal>
       )}

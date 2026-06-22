@@ -130,11 +130,29 @@ export const Posts: CollectionConfig<"posts"> = {
                 },
               },
               fields: [
-                { label: { en: "Heading", es: "Encabezado" }, localized: true, name: "heading", type: "text" },
+                {
+                  label: { en: "Heading", es: "Encabezado" },
+                  localized: true,
+                  name: "heading",
+                  type: "text",
+                },
                 {
                   fields: [
-                    { label: { en: "Question", es: "Pregunta" }, localized: true, name: "question", required: true, type: "text" },
-                    { editor: generateRichText(), label: { en: "Answer", es: "Respuesta" }, localized: true, name: "answer", required: true, type: "richText" },
+                    {
+                      label: { en: "Question", es: "Pregunta" },
+                      localized: true,
+                      name: "question",
+                      required: true,
+                      type: "text",
+                    },
+                    {
+                      editor: generateRichText(),
+                      label: { en: "Answer", es: "Respuesta" },
+                      localized: true,
+                      name: "answer",
+                      required: true,
+                      type: "richText",
+                    },
                   ],
                   localized: true,
                   name: "items",
@@ -156,11 +174,28 @@ export const Posts: CollectionConfig<"posts"> = {
                 {
                   type: "row",
                   fields: [
-                    { admin: { width: "40%" }, label: { en: "Eyebrow", es: "Antetítulo" }, localized: true, name: "eyebrow", type: "text" },
-                    { admin: { width: "60%" }, label: { en: "Heading", es: "Encabezado" }, localized: true, name: "heading", type: "text" },
+                    {
+                      admin: { width: "40%" },
+                      label: { en: "Eyebrow", es: "Antetítulo" },
+                      localized: true,
+                      name: "eyebrow",
+                      type: "text",
+                    },
+                    {
+                      admin: { width: "60%" },
+                      label: { en: "Heading", es: "Encabezado" },
+                      localized: true,
+                      name: "heading",
+                      type: "text",
+                    },
                   ],
                 },
-                { label: { en: "Description", es: "Descripción" }, localized: true, name: "description", type: "textarea" },
+                {
+                  label: { en: "Description", es: "Descripción" },
+                  localized: true,
+                  name: "description",
+                  type: "textarea",
+                },
                 {
                   fields: (link() as GroupField).fields,
                   label: { en: "Actions", es: "Acciones" },

@@ -15,10 +15,17 @@ const TranslateKitConfigContext = createContext<TranslateKitConfig>(defaultConfi
 
 export type TranslateKitConfigProviderProps = PropsWithChildren<Partial<TranslateKitConfig>>;
 
-export function TranslateKitConfigProvider({ basePath = defaultConfig.basePath, children }: TranslateKitConfigProviderProps) {
+export function TranslateKitConfigProvider({
+  basePath = defaultConfig.basePath,
+  children,
+}: TranslateKitConfigProviderProps) {
   const value = useMemo(() => ({ basePath }), [basePath]);
 
-  return <TranslateKitConfigContext.Provider value={value}>{children}</TranslateKitConfigContext.Provider>;
+  return (
+    <TranslateKitConfigContext.Provider value={value}>
+      {children}
+    </TranslateKitConfigContext.Provider>
+  );
 }
 
 export function useTranslateKitConfig(): TranslateKitConfig {

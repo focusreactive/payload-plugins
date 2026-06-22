@@ -8,7 +8,9 @@ describe("withPageRefFilter", () => {
   it("adds a standalone inList filter when the request has none", () => {
     const req = { metrics: [{ name: "sessions" }], dimensions: [{ name: "sessionSource" }] };
     const out = withPageRefFilter(req, "customEvent:fr_page_ref", REFS);
-    expect(out.dimensionFilter).toEqual({ filter: { fieldName: "customEvent:fr_page_ref", inListFilter: { values: REFS } } });
+    expect(out.dimensionFilter).toEqual({
+      filter: { fieldName: "customEvent:fr_page_ref", inListFilter: { values: REFS } },
+    });
   });
 
   it("ANDs the inList with an existing dimensionFilter", () => {
@@ -17,7 +19,10 @@ describe("withPageRefFilter", () => {
     const out = withPageRefFilter(req, "customEvent:fr_page_ref", REFS);
     expect(out.dimensionFilter).toEqual({
       andGroup: {
-        expressions: [existing, { filter: { fieldName: "customEvent:fr_page_ref", inListFilter: { values: REFS } } }],
+        expressions: [
+          existing,
+          { filter: { fieldName: "customEvent:fr_page_ref", inListFilter: { values: REFS } } },
+        ],
       },
     });
   });

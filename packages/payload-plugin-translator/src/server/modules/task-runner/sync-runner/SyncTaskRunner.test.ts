@@ -81,7 +81,11 @@ describe("SyncTaskRunner", () => {
     });
 
     it("processes multiple inputs sequentially", async () => {
-      const inputs = [createInput({ collectionId: "doc-1" }), createInput({ collectionId: "doc-2" }), createInput({ collectionId: "doc-3" })];
+      const inputs = [
+        createInput({ collectionId: "doc-1" }),
+        createInput({ collectionId: "doc-2" }),
+        createInput({ collectionId: "doc-3" }),
+      ];
 
       await runner.enqueue(inputs);
 
@@ -92,7 +96,10 @@ describe("SyncTaskRunner", () => {
     });
 
     it("creates task with unique id", async () => {
-      const inputs = [createInput({ collectionId: "doc-1" }), createInput({ collectionId: "doc-2" })];
+      const inputs = [
+        createInput({ collectionId: "doc-1" }),
+        createInput({ collectionId: "doc-2" }),
+      ];
 
       await runner.enqueue(inputs);
 
@@ -156,9 +163,16 @@ describe("SyncTaskRunner", () => {
     });
 
     it("filters by documentIds when provided", async () => {
-      await runner.enqueue([createInput({ collectionId: "doc-1" }), createInput({ collectionId: "doc-2" }), createInput({ collectionId: "doc-3" })]);
+      await runner.enqueue([
+        createInput({ collectionId: "doc-1" }),
+        createInput({ collectionId: "doc-2" }),
+        createInput({ collectionId: "doc-3" }),
+      ]);
 
-      const filteredTasks = await runner.findByCollection("posts" as CollectionSlug, ["doc-1", "doc-3"]);
+      const filteredTasks = await runner.findByCollection("posts" as CollectionSlug, [
+        "doc-1",
+        "doc-3",
+      ]);
       expect(filteredTasks).toHaveLength(2);
       expect(filteredTasks.map((t) => t.input.collectionId).sort()).toEqual(["doc-1", "doc-3"]);
     });

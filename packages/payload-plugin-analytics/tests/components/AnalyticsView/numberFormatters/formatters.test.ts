@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { formatCompactNumber, formatNumber, formatPercentage, formatDuration, formatShortDate } from "../../../../src/components/AnalyticsView/numberFormatters";
+import {
+  formatCompactNumber,
+  formatNumber,
+  formatPercentage,
+  formatDuration,
+  formatShortDate,
+} from "../../../../src/components/AnalyticsView/numberFormatters";
 
 describe("formatters", () => {
   it("formatCompactNumber: thousands/millions abbreviation", () => {

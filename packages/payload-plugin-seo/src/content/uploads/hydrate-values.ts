@@ -8,7 +8,12 @@ function isRenderable(doc: ResolvedUploadDoc): boolean {
   return typeof doc.url === "string" && typeof doc.mimeType === "string";
 }
 
-export function hydrateUploadValues(values: Record<string, unknown>, fields: ClientField[], ctx: UploadWalkContext, resolved: Map<string, ResolvedUploadDoc>): Record<string, unknown> {
+export function hydrateUploadValues(
+  values: Record<string, unknown>,
+  fields: ClientField[],
+  ctx: UploadWalkContext,
+  resolved: Map<string, ResolvedUploadDoc>
+): Record<string, unknown> {
   return transformUploadValues(values, fields, ctx, (ref) => {
     const doc = resolved.get(uploadKey(ref));
 

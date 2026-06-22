@@ -19,7 +19,10 @@ function batchWith(sessionsReport: unknown, leadReport: unknown = EMPTY_LEAD_REP
 
 describe("listSessions", () => {
   it("requests customEvent:fr_session_id as the primary dim", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)),
+    };
     __setGa4ClientForTests(fake as never);
     await listSessions("12345", { dateRange: { preset: "last-7d" } });
     const { requests } = fake.batchRunReports.mock.calls[0][0];
@@ -34,15 +37,23 @@ describe("listSessions", () => {
   });
 
   it("orders by customEvent:fr_session_start desc", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)),
+    };
     __setGa4ClientForTests(fake as never);
     await listSessions("12345", { dateRange: { preset: "last-7d" } });
     const { requests } = fake.batchRunReports.mock.calls[0][0];
-    expect(requests[0].orderBys).toEqual([{ dimension: { dimensionName: "customEvent:fr_session_start" }, desc: true }]);
+    expect(requests[0].orderBys).toEqual([
+      { dimension: { dimensionName: "customEvent:fr_session_start" }, desc: true },
+    ]);
   });
 
   it("returns the real fr_session_id string as sessionId (no synthetic encoding)", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)),
+    };
     __setGa4ClientForTests(fake as never);
     const res = await listSessions("12345", { dateRange: { preset: "last-7d" } });
     expect(res.rows[0].sessionId).toBe("11111111-2222-4333-8444-555555555555");
@@ -55,7 +66,10 @@ describe("listSessions", () => {
       rows: [sessions.rows[0]],
       rowCount: 2,
     };
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(oneRowFixture)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(oneRowFixture)),
+    };
     __setGa4ClientForTests(fake as never);
     const res = await listSessions("12345", { dateRange: { preset: "last-7d" }, limit: 1 });
     expect(res.rows.length).toBe(1);
@@ -82,7 +96,10 @@ describe("listSessions", () => {
   });
 
   it("hadLeadAction=true adds the leadAction inListFilter", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)),
+    };
     __setGa4ClientForTests(fake as never);
     await listSessions("12345", { dateRange: { preset: "last-7d" }, hadLeadAction: true });
     const { requests } = fake.batchRunReports.mock.calls[0][0];
@@ -90,7 +107,10 @@ describe("listSessions", () => {
   });
 
   it("source filter is applied as a stringFilter on sessionSource", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)),
+    };
     __setGa4ClientForTests(fake as never);
     await listSessions("12345", { dateRange: { preset: "last-7d" }, source: "google" });
     const { requests } = fake.batchRunReports.mock.calls[0][0];
@@ -101,7 +121,10 @@ describe("listSessions", () => {
   });
 
   it("device filter is applied as a stringFilter on deviceCategory", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)),
+    };
     __setGa4ClientForTests(fake as never);
     await listSessions("12345", { dateRange: { preset: "last-7d" }, device: "mobile" });
     const { requests } = fake.batchRunReports.mock.calls[0][0];
@@ -111,7 +134,10 @@ describe("listSessions", () => {
   });
 
   it("country filter is applied as a stringFilter on country", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)),
+    };
     __setGa4ClientForTests(fake as never);
     await listSessions("12345", { dateRange: { preset: "last-7d" }, country: "US" });
     const { requests } = fake.batchRunReports.mock.calls[0][0];
@@ -121,9 +147,16 @@ describe("listSessions", () => {
   });
 
   it("combines hadLeadAction with source under andGroup", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)),
+    };
     __setGa4ClientForTests(fake as never);
-    await listSessions("12345", { dateRange: { preset: "last-7d" }, hadLeadAction: true, source: "google" });
+    await listSessions("12345", {
+      dateRange: { preset: "last-7d" },
+      hadLeadAction: true,
+      source: "google",
+    });
     const { requests } = fake.batchRunReports.mock.calls[0][0];
     expect(requests[0].dimensionFilter.andGroup).toBeDefined();
     expect(Array.isArray(requests[0].dimensionFilter.andGroup.expressions)).toBe(true);
@@ -131,7 +164,10 @@ describe("listSessions", () => {
   });
 
   it("always applies the (not set) exclusion filter for the two custom dims", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)),
+    };
     __setGa4ClientForTests(fake as never);
     await listSessions("12345", { dateRange: { preset: "last-7d" } });
     const { requests } = fake.batchRunReports.mock.calls[0][0];
@@ -144,7 +180,10 @@ describe("listSessions", () => {
   });
 
   it("issues a parallel lead-action session-id query with leadActionFilter", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)),
+    };
     __setGa4ClientForTests(fake as never);
     await listSessions("12345", { dateRange: { preset: "last-7d" } });
     const { requests } = fake.batchRunReports.mock.calls[0][0];
@@ -167,22 +206,38 @@ describe("listSessions", () => {
       ],
       rowCount: 1,
     };
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions, leadReport)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions, leadReport)),
+    };
     __setGa4ClientForTests(fake as never);
     const res = await listSessions("12345", { dateRange: { preset: "last-7d" } });
-    expect(res.rows.find((r) => r.sessionId === "11111111-2222-4333-8444-555555555555")?.hadLeadAction).toBe(true);
-    expect(res.rows.find((r) => r.sessionId === "66666666-7777-4888-8999-aaaaaaaaaaaa")?.hadLeadAction).toBe(false);
+    expect(
+      res.rows.find((r) => r.sessionId === "11111111-2222-4333-8444-555555555555")?.hadLeadAction
+    ).toBe(true);
+    expect(
+      res.rows.find((r) => r.sessionId === "66666666-7777-4888-8999-aaaaaaaaaaaa")?.hadLeadAction
+    ).toBe(false);
   });
 
   it("does NOT take hadLeadAction from query.hadLeadAction — only from the lead-action report", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions, EMPTY_LEAD_REPORT)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions, EMPTY_LEAD_REPORT)),
+    };
     __setGa4ClientForTests(fake as never);
-    const res = await listSessions("12345", { dateRange: { preset: "last-7d" }, hadLeadAction: true });
+    const res = await listSessions("12345", {
+      dateRange: { preset: "last-7d" },
+      hadLeadAction: true,
+    });
     expect(res.rows.every((r) => r.hadLeadAction === false)).toBe(true);
   });
 
   it("merges duplicate rows for one session into arrays for device + country", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(merged)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(merged)),
+    };
     __setGa4ClientForTests(fake as never);
     const res = await listSessions("12345", { dateRange: { preset: "last-7d" } });
     expect(res.rows.length).toBe(1);
@@ -195,7 +250,9 @@ describe("listSessions", () => {
   });
 
   it("returns setupRequired + missing when GA4 errors on customEvent:fr_session_start", async () => {
-    const err = new Error("3 INVALID_ARGUMENT: Field customEvent:fr_session_start is unrecognized.");
+    const err = new Error(
+      "3 INVALID_ARGUMENT: Field customEvent:fr_session_start is unrecognized."
+    );
     const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockRejectedValue(err) };
     __setGa4ClientForTests(fake as never);
     const res = await listSessions("12345", { dateRange: { preset: "last-7d" } });
@@ -210,17 +267,34 @@ describe("listSessions", () => {
       metricHeaders: merged.metricHeaders,
       rows: [
         {
-          dimensionValues: [{ value: "bbbbbbbb-2222-4333-8444-555555555555" }, { value: "/" }, { value: "google" }, { value: "desktop" }, { value: "US" }, { value: "2026-05-10T16:00:05.000Z" }],
+          dimensionValues: [
+            { value: "bbbbbbbb-2222-4333-8444-555555555555" },
+            { value: "/" },
+            { value: "google" },
+            { value: "desktop" },
+            { value: "US" },
+            { value: "2026-05-10T16:00:05.000Z" },
+          ],
           metricValues: [{ value: "2" }],
         },
         {
-          dimensionValues: [{ value: "bbbbbbbb-2222-4333-8444-555555555555" }, { value: "/" }, { value: "google" }, { value: "mobile" }, { value: "US" }, { value: "2026-05-10T16:00:00.000Z" }],
+          dimensionValues: [
+            { value: "bbbbbbbb-2222-4333-8444-555555555555" },
+            { value: "/" },
+            { value: "google" },
+            { value: "mobile" },
+            { value: "US" },
+            { value: "2026-05-10T16:00:00.000Z" },
+          ],
           metricValues: [{ value: "3" }],
         },
       ],
       rowCount: 2,
     };
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(fixture)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(fixture)),
+    };
     __setGa4ClientForTests(fake as never);
     const res = await listSessions("12345", { dateRange: { preset: "last-7d" } });
     expect(res.rows.length).toBe(1);
@@ -244,22 +318,49 @@ describe("listSessions", () => {
       rows: [
         // Session A — touches only existing refs (kept).
         {
-          dimensionValues: [{ value: "A" }, { value: "/" }, { value: "google" }, { value: "desktop" }, { value: "US" }, { value: "2026-05-10T16:00:00.000Z" }, { value: "page:1" }],
+          dimensionValues: [
+            { value: "A" },
+            { value: "/" },
+            { value: "google" },
+            { value: "desktop" },
+            { value: "US" },
+            { value: "2026-05-10T16:00:00.000Z" },
+            { value: "page:1" },
+          ],
           metricValues: [{ value: "1" }],
         },
         {
-          dimensionValues: [{ value: "A" }, { value: "/" }, { value: "google" }, { value: "desktop" }, { value: "US" }, { value: "2026-05-10T16:00:00.000Z" }, { value: "__home" }],
+          dimensionValues: [
+            { value: "A" },
+            { value: "/" },
+            { value: "google" },
+            { value: "desktop" },
+            { value: "US" },
+            { value: "2026-05-10T16:00:00.000Z" },
+            { value: "__home" },
+          ],
           metricValues: [{ value: "1" }],
         },
         // Session B — touches a deleted ref (dropped).
         {
-          dimensionValues: [{ value: "B" }, { value: "/gone" }, { value: "google" }, { value: "mobile" }, { value: "UK" }, { value: "2026-05-10T17:00:00.000Z" }, { value: "page:999" }],
+          dimensionValues: [
+            { value: "B" },
+            { value: "/gone" },
+            { value: "google" },
+            { value: "mobile" },
+            { value: "UK" },
+            { value: "2026-05-10T17:00:00.000Z" },
+            { value: "page:999" },
+          ],
           metricValues: [{ value: "1" }],
         },
       ],
       rowCount: 3,
     };
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(fixture)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(fixture)),
+    };
     __setGa4ClientForTests(fake as never);
     const res = await listSessions("12345", { dateRange: { preset: "last-7d" } }, PAGE_FILTER);
 
@@ -290,30 +391,58 @@ describe("listSessions", () => {
       metricHeaders: [{ name: "eventCount", type: "TYPE_INTEGER" }],
       rows: [
         {
-          dimensionValues: [{ value: "A" }, { value: "/" }, { value: "google" }, { value: "desktop" }, { value: "US" }, { value: "2026-05-10T16:00:00.000Z" }, { value: "page:1" }],
+          dimensionValues: [
+            { value: "A" },
+            { value: "/" },
+            { value: "google" },
+            { value: "desktop" },
+            { value: "US" },
+            { value: "2026-05-10T16:00:00.000Z" },
+            { value: "page:1" },
+          ],
           metricValues: [{ value: "1" }],
         },
         {
-          dimensionValues: [{ value: "A" }, { value: "/" }, { value: "google" }, { value: "desktop" }, { value: "US" }, { value: "2026-05-10T16:00:00.000Z" }, { value: "__home" }],
+          dimensionValues: [
+            { value: "A" },
+            { value: "/" },
+            { value: "google" },
+            { value: "desktop" },
+            { value: "US" },
+            { value: "2026-05-10T16:00:00.000Z" },
+            { value: "__home" },
+          ],
           metricValues: [{ value: "1" }],
         },
       ],
       rowCount: 4,
     };
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(fixture)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(fixture)),
+    };
     __setGa4ClientForTests(fake as never);
-    const res = await listSessions("12345", { dateRange: { preset: "last-7d" }, limit: 2 }, PAGE_FILTER);
+    const res = await listSessions(
+      "12345",
+      { dateRange: { preset: "last-7d" }, limit: 2 },
+      PAGE_FILTER
+    );
 
     // One merged session displayed, but the cursor advanced by 2 GA4 rows.
     expect(res.rows.length).toBe(1);
     expect(res.pagination.hasMore).toBe(true);
     expect(res.pagination.cursor).not.toBeNull();
-    const decoded = JSON.parse(Buffer.from(res.pagination.cursor as string, "base64").toString("utf-8"));
+    const decoded = JSON.parse(
+      Buffer.from(res.pagination.cursor as string, "base64").toString("utf-8")
+    );
     expect(decoded.offset).toBe(2);
   });
 
   it("does NOT append the page-ref dimension and keeps all sessions when pageFilter is null", async () => {
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(sessions)),
+    };
     __setGa4ClientForTests(fake as never);
     const res = await listSessions("12345", { dateRange: { preset: "last-7d" } }, null);
     const { requests } = fake.batchRunReports.mock.calls[0][0];
@@ -343,13 +472,23 @@ describe("listSessions", () => {
       metricHeaders: [{ name: "eventCount", type: "TYPE_INTEGER" }],
       rows: [
         {
-          dimensionValues: [{ value: "" }, { value: "/" }, { value: "google" }, { value: "desktop" }, { value: "US" }, { value: "2026-05-10T16:00:00.000Z" }],
+          dimensionValues: [
+            { value: "" },
+            { value: "/" },
+            { value: "google" },
+            { value: "desktop" },
+            { value: "US" },
+            { value: "2026-05-10T16:00:00.000Z" },
+          ],
           metricValues: [{ value: "1" }],
         },
       ],
       rowCount: 1,
     };
-    const fake = { runReport: vi.fn(), batchRunReports: vi.fn().mockResolvedValue(batchWith(malformed)) };
+    const fake = {
+      runReport: vi.fn(),
+      batchRunReports: vi.fn().mockResolvedValue(batchWith(malformed)),
+    };
     __setGa4ClientForTests(fake as never);
     const res = await listSessions("12345", { dateRange: { preset: "last-7d" } });
     expect(res.rows).toEqual([]);

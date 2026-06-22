@@ -16,7 +16,13 @@ type FailedTranslationStatusProps = {
   onRetry: () => void;
 };
 
-export function FailedTranslationStatus({ onRetry, message, isLoading, sourceLocale, targetLocale }: FailedTranslationStatusProps) {
+export function FailedTranslationStatus({
+  onRetry,
+  message,
+  isLoading,
+  sourceLocale,
+  targetLocale,
+}: FailedTranslationStatusProps) {
   return (
     <StatusIndicator $color="red" title="Failed">
       <Tooltip sideOffset={12} side="bottom" content={message}>
@@ -27,7 +33,16 @@ export function FailedTranslationStatus({ onRetry, message, isLoading, sourceLoc
       <TranslationDirection sourceLocale={sourceLocale} targetLocale={targetLocale} />
       <Divider className={styles.divider} $orientation="vertical" $size="sm" />
       <Tooltip side="bottom" sideOffset={12} content="Retry">
-        <Button $variant="light" $size="sm" $isIconButton aria-label="Retry failed translation" type="button" onClick={onRetry} disabled={isLoading} $isLoading={isLoading}>
+        <Button
+          $variant="light"
+          $size="sm"
+          $isIconButton
+          aria-label="Retry failed translation"
+          type="button"
+          onClick={onRetry}
+          disabled={isLoading}
+          $isLoading={isLoading}
+        >
           <ReloadIcon />
         </Button>
       </Tooltip>

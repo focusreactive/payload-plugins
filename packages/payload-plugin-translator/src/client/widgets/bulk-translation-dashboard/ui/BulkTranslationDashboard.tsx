@@ -5,7 +5,10 @@ import { SelectAllStatus } from "@payloadcms/ui/providers/Selection";
 import { useEffect, useMemo } from "react";
 
 import { TranslationsApi } from "../../../entities/translation";
-import { CollectionTranslationForm, FORM_FIELDS } from "../../../features/collection-translation-form";
+import {
+  CollectionTranslationForm,
+  FORM_FIELDS,
+} from "../../../features/collection-translation-form";
 import type { FormValues } from "../../../features/collection-translation-form";
 import { CollectionTranslationFormModel } from "../../../features/collection-translation-form/index.client";
 import CollectionTranslationPopup from "../../../features/collection-translation-popup";
@@ -47,7 +50,9 @@ export default function BulkTranslationDashboard({ hasDrafts }: BulkTranslationD
   const selectAll = documentsSelection.selectAll === SelectAllStatus.AllAvailable;
   const selectedCount = selectAll ? documentsSelection.totalDocs : documentsSelection.count;
 
-  const translationInProgress = !!(collectionTranslationApi.data?.pending.length || collectionTranslationApi.data?.running.length);
+  const translationInProgress = !!(
+    collectionTranslationApi.data?.pending.length || collectionTranslationApi.data?.running.length
+  );
 
   const handleSubmit = async (formData: FormValues) => {
     try {
@@ -62,11 +67,26 @@ export default function BulkTranslationDashboard({ hasDrafts }: BulkTranslationD
   };
 
   return (
-    <CollectionTranslationPopup translationInProgress={translationInProgress} selectedCount={selectedCount}>
+    <CollectionTranslationPopup
+      translationInProgress={translationInProgress}
+      selectedCount={selectedCount}
+    >
       <h3>Bulk Translation Dashboard</h3>
-      <p>Translate multiple documents at once using AI. Select the records you want to translate on the collection dashboard, then configure your translation settings here.</p>
-      <CollectionTranslationForm form={form} onSubmit={handleSubmit} selectedCount={selectedCount} hasDrafts={hasDrafts} />
-      <CollectionTranslationProgress collection={collection} data={collectionTranslationApi.data} isPending={collectionTranslationApi.isPending} />
+      <p>
+        Translate multiple documents at once using AI. Select the records you want to translate on
+        the collection dashboard, then configure your translation settings here.
+      </p>
+      <CollectionTranslationForm
+        form={form}
+        onSubmit={handleSubmit}
+        selectedCount={selectedCount}
+        hasDrafts={hasDrafts}
+      />
+      <CollectionTranslationProgress
+        collection={collection}
+        data={collectionTranslationApi.data}
+        isPending={collectionTranslationApi.isPending}
+      />
     </CollectionTranslationPopup>
   );
 }

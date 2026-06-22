@@ -18,7 +18,11 @@ type CollectionTranslationProgressProps = {
   isPending: boolean;
 };
 
-export function CollectionTranslationProgress({ collection, data, isPending }: CollectionTranslationProgressProps) {
+export function CollectionTranslationProgress({
+  collection,
+  data,
+  isPending,
+}: CollectionTranslationProgressProps) {
   const cancelPendingTranslations = TranslationsApi.useCancelCollectionTranslations();
 
   return (
@@ -34,22 +38,44 @@ export function CollectionTranslationProgress({ collection, data, isPending }: C
 
       {data && (
         <>
-          <StatusIndicator className={styles["status-indicator"]} title="Completed" key="completed" $color="green">
+          <StatusIndicator
+            className={styles["status-indicator"]}
+            title="Completed"
+            key="completed"
+            $color="green"
+          >
             <LanguageTranslateIcon />
             <b>{data.completed.length}</b>
           </StatusIndicator>
 
-          <StatusIndicator className={styles["status-indicator"]} title="Failed" key="failed" $color="red">
+          <StatusIndicator
+            className={styles["status-indicator"]}
+            title="Failed"
+            key="failed"
+            $color="red"
+          >
             <LanguageTranslateIcon />
             <b>{data.failed.length}</b>
           </StatusIndicator>
 
-          <StatusIndicator className={styles["status-indicator"]} title="In progress" $animated={data.running.length > 0} key="running" $color="blue">
+          <StatusIndicator
+            className={styles["status-indicator"]}
+            title="In progress"
+            $animated={data.running.length > 0}
+            key="running"
+            $color="blue"
+          >
             <LanguageTranslateIcon />
             <b>{data.running.length}</b>
           </StatusIndicator>
 
-          <StatusIndicator className={styles["status-indicator"]} title="Pending" $animated={data.pending.length > 0} key="pending" $color="gray">
+          <StatusIndicator
+            className={styles["status-indicator"]}
+            title="Pending"
+            $animated={data.pending.length > 0}
+            key="pending"
+            $color="gray"
+          >
             <LanguageTranslateIcon />
             <b>{data.pending.length}</b>
             <Tooltip sideOffset={12} side="bottom" content="Cancel translations">

@@ -9,7 +9,10 @@ import { hasChildren } from "./guards";
  * @param visitor - Callback for each node. Return false to stop traversal.
  * @returns false if traversal was stopped early, true otherwise
  */
-export function traverseLexicalTree(node: SerializedLexicalNode, visitor: (node: SerializedLexicalNode) => boolean | void): boolean {
+export function traverseLexicalTree(
+  node: SerializedLexicalNode,
+  visitor: (node: SerializedLexicalNode) => boolean | void
+): boolean {
   if (visitor(node) === false) return false;
 
   if (hasChildren(node)) {

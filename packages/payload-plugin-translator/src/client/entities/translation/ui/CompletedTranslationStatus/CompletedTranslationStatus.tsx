@@ -12,7 +12,11 @@ type CompletedTranslationStatusProps = {
   targetLocale: string;
 };
 
-export function CompletedTranslationStatus({ completed_at, sourceLocale, targetLocale }: CompletedTranslationStatusProps) {
+export function CompletedTranslationStatus({
+  completed_at,
+  sourceLocale,
+  targetLocale,
+}: CompletedTranslationStatusProps) {
   return (
     <StatusIndicator className={styles.indicator} $color="green" title="Completed">
       <Tooltip

@@ -41,7 +41,12 @@ export type DocumentTranslationCompleted = {
   input: InputData;
 };
 
-export type DocumentTranslation = DocumentTranslationCompleted | DocumentTranslationRunning | DocumentTranslationFailed | DocumentTranslationPending | null;
+export type DocumentTranslation =
+  | DocumentTranslationCompleted
+  | DocumentTranslationRunning
+  | DocumentTranslationFailed
+  | DocumentTranslationPending
+  | null;
 
 export type CollectionTranslationStatusItem = { id: string; status: DocumentTranslationStatus };
 
@@ -49,4 +54,7 @@ export type CollectionTranslationStatus = {
   docs: Array<CollectionTranslationStatusItem>;
 };
 
-export type GroupedCollectionTranslationStatus = Record<DocumentTranslationStatus, CollectionTranslationStatusItem[]>;
+export type GroupedCollectionTranslationStatus = Record<
+  DocumentTranslationStatus,
+  CollectionTranslationStatusItem[]
+>;

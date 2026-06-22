@@ -1,6 +1,14 @@
 "use client";
 
-import { toast, useConfig, useDocumentInfo, useField, useForm, useFormFields, useLocale } from "@payloadcms/ui";
+import {
+  toast,
+  useConfig,
+  useDocumentInfo,
+  useField,
+  useForm,
+  useFormFields,
+  useLocale,
+} from "@payloadcms/ui";
 import { useState } from "react";
 
 import { useTranslateField } from "../../../entities/translation/api/mutations/useTranslateField";
@@ -54,7 +62,9 @@ const TranslateFieldControl = () => {
   const defaultLocale = config.localization ? config.localization.defaultLocale : undefined;
 
   const [isOpen, popup] = useToggle();
-  const [sourceLng, setSourceLng] = useState(() => (defaultLocale && defaultLocale !== locale.code ? defaultLocale : ""));
+  const [sourceLng, setSourceLng] = useState(() =>
+    defaultLocale && defaultLocale !== locale.code ? defaultLocale : ""
+  );
   // `null` = no undo available; an object wraps the value so a legitimately `undefined` field value
   // (a real pre-translation state) stays distinguishable from "nothing to undo".
   const [undo, setUndo] = useState<{ value: unknown } | null>(null);
@@ -122,7 +132,15 @@ const TranslateFieldControl = () => {
       $trigger={
         <div className={styles.trigger}>
           <Tooltip content="Translate field">
-            <Button type="button" $variant="light" $size="sm" $isIconButton $isLoading={isPending && !isOpen} aria-label="Translate field" onClick={popup.setTrue}>
+            <Button
+              type="button"
+              $variant="light"
+              $size="sm"
+              $isIconButton
+              $isLoading={isPending && !isOpen}
+              aria-label="Translate field"
+              onClick={popup.setTrue}
+            >
               <LanguageTranslateIcon />
             </Button>
           </Tooltip>
@@ -133,8 +151,19 @@ const TranslateFieldControl = () => {
         <div className={styles.row}>
           {/* The from → to pair as one labeled unit, so a screen reader announces the direction
               together (mirrors the TranslationDirection entity used at the doc/collection level). */}
-          <div aria-label={`Translation direction: from ${sourceLng || "a source locale"} into ${locale.code}`} className={styles.direction} role="group">
-            <Select $fullWidth={false} $size="sm" aria-label="Source locale" value={sourceLng} onChange={(event) => setSourceLng(event.target.value)} disabled={isPending}>
+          <div
+            aria-label={`Translation direction: from ${sourceLng || "a source locale"} into ${locale.code}`}
+            className={styles.direction}
+            role="group"
+          >
+            <Select
+              $fullWidth={false}
+              $size="sm"
+              aria-label="Source locale"
+              value={sourceLng}
+              onChange={(event) => setSourceLng(event.target.value)}
+              disabled={isPending}
+            >
               {sourceLng === "" && (
                 <Select.SelectOption value="" disabled>
                   —
@@ -150,7 +179,10 @@ const TranslateFieldControl = () => {
             <span aria-hidden="true" className={styles.arrow}>
               →
             </span>
-            <span aria-label={`Target locale: ${locale.code} (the locale you're editing)`} className={styles.current}>
+            <span
+              aria-label={`Target locale: ${locale.code} (the locale you're editing)`}
+              className={styles.current}
+            >
               {locale.code.toLowerCase()}
             </span>
           </div>
@@ -172,7 +204,15 @@ const TranslateFieldControl = () => {
 
           {undo && (
             <Tooltip content="Undo translation">
-              <Button type="button" $variant="light" $size="sm" $isIconButton aria-label="Undo translation" disabled={isPending} onClick={handleUndo}>
+              <Button
+                type="button"
+                $variant="light"
+                $size="sm"
+                $isIconButton
+                aria-label="Undo translation"
+                disabled={isPending}
+                onClick={handleUndo}
+              >
                 <ReloadIcon />
               </Button>
             </Tooltip>

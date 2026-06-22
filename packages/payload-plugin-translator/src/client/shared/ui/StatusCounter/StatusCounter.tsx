@@ -27,13 +27,24 @@ const statusLabelMap = {
   failed: "Ошибки",
 };
 
-export default function StatusCounter({ status, count, label, animated = false, size = "medium", className }: StatusCounterProps) {
+export default function StatusCounter({
+  status,
+  count,
+  label,
+  animated = false,
+  size = "medium",
+  className,
+}: StatusCounterProps) {
   const displayLabel = label || statusLabelMap[status];
   const color = statusColorMap[status];
 
   return (
     <div className={classNames(styles.container, styles[size], className)}>
-      <StatusIndicator $color={color} $animated={animated && status === "running"} className={styles.indicator} />
+      <StatusIndicator
+        $color={color}
+        $animated={animated && status === "running"}
+        className={styles.indicator}
+      />
       <div className={styles.content}>
         <span className={styles.count}>{count}</span>
         <span className={styles.label}>{displayLabel}</span>

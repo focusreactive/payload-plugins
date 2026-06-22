@@ -63,7 +63,9 @@
   .pa-analytics-view kbd,
   .pa-analytics-view samp,
   .pa-analytics-view pre {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+      monospace;
     font-size: 1em;
   }
 

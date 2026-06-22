@@ -9,7 +9,12 @@ export function isQualified(input: QualifyInput, opts: QualifyOpts) {
   if (!input.srmPassed) return false;
   if (input.minBucketSessions < opts.sessionFloor) return false;
 
-  const detectableEffect = minimumDetectableEffect(input.controlRate, input.minBucketSessions, opts.alpha, opts.power);
+  const detectableEffect = minimumDetectableEffect(
+    input.controlRate,
+    input.minBucketSessions,
+    opts.alpha,
+    opts.power
+  );
 
   if (!detectableEffect) return false;
 

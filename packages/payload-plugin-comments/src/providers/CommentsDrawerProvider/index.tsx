@@ -55,7 +55,20 @@ export function CommentsDrawerProvider({ children }: Props) {
   }, [isOpen]);
 
   return (
-    <CommentsDrawerContext.Provider value={{ slug, isOpen, scrollTargetPath, pendingField, open, setScrollTargetPath, openForField, clearPendingField }}>{children}</CommentsDrawerContext.Provider>
+    <CommentsDrawerContext.Provider
+      value={{
+        slug,
+        isOpen,
+        scrollTargetPath,
+        pendingField,
+        open,
+        setScrollTargetPath,
+        openForField,
+        clearPendingField,
+      }}
+    >
+      {children}
+    </CommentsDrawerContext.Provider>
   );
 }
 

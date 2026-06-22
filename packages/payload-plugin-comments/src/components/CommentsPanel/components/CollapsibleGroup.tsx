@@ -51,7 +51,14 @@ const collapsibleGroupVariants = {
   }),
 };
 
-export function CollapsibleGroup({ groupKey, fieldPath, label, children, level, ref }: CollapsibleGroupProps) {
+export function CollapsibleGroup({
+  groupKey,
+  fieldPath,
+  label,
+  children,
+  level,
+  ref,
+}: CollapsibleGroupProps) {
   const [isCollapsed, toggle, open] = useCollapseState(groupKey);
 
   useImperativeHandle(ref, () => ({
@@ -71,10 +78,17 @@ export function CollapsibleGroup({ groupKey, fieldPath, label, children, level, 
       >
         <span className={collapsibleGroupVariants.label({ level })}>{label}</span>
 
-        <ChevronDown className={cn("shrink-0 w-4 h-4 text-(--theme-elevation-450) transition-transform duration-150", isCollapsed && "-rotate-90")} />
+        <ChevronDown
+          className={cn(
+            "shrink-0 w-4 h-4 text-(--theme-elevation-450) transition-transform duration-150",
+            isCollapsed && "-rotate-90"
+          )}
+        />
       </div>
 
-      {!isCollapsed && <div className={collapsibleGroupVariants.childWrapper({ level })}>{children}</div>}
+      {!isCollapsed && (
+        <div className={collapsibleGroupVariants.childWrapper({ level })}>{children}</div>
+      )}
     </div>
   );
 }

@@ -9,7 +9,10 @@ const SESSION_ID = "11111111-2222-4333-8444-555555555555";
 
 describe("getSessionDetail", () => {
   it("queries with exact stringFilter on customEvent:fr_session_id", async () => {
-    const fake = { runReport: vi.fn().mockResolvedValue([sessionDetail]), batchRunReports: vi.fn() };
+    const fake = {
+      runReport: vi.fn().mockResolvedValue([sessionDetail]),
+      batchRunReports: vi.fn(),
+    };
     __setGa4ClientForTests(fake as never);
     await getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } });
     const arg = fake.runReport.mock.calls[0][0];
@@ -19,23 +22,41 @@ describe("getSessionDetail", () => {
   });
 
   it("requests eventName, pagePath, dateHourMinute, fr_event_seq, fr_lead_type dims", async () => {
-    const fake = { runReport: vi.fn().mockResolvedValue([sessionDetail]), batchRunReports: vi.fn() };
+    const fake = {
+      runReport: vi.fn().mockResolvedValue([sessionDetail]),
+      batchRunReports: vi.fn(),
+    };
     __setGa4ClientForTests(fake as never);
     await getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } });
     const arg = fake.runReport.mock.calls[0][0];
-    expect(arg.dimensions).toEqual([{ name: "eventName" }, { name: "pagePath" }, { name: "dateHourMinute" }, { name: "customEvent:fr_event_seq" }, { name: "customEvent:fr_lead_type" }]);
+    expect(arg.dimensions).toEqual([
+      { name: "eventName" },
+      { name: "pagePath" },
+      { name: "dateHourMinute" },
+      { name: "customEvent:fr_event_seq" },
+      { name: "customEvent:fr_lead_type" },
+    ]);
   });
 
   it("orders by dateHourMinute, then customEvent:fr_event_seq (tiebreaker)", async () => {
-    const fake = { runReport: vi.fn().mockResolvedValue([sessionDetail]), batchRunReports: vi.fn() };
+    const fake = {
+      runReport: vi.fn().mockResolvedValue([sessionDetail]),
+      batchRunReports: vi.fn(),
+    };
     __setGa4ClientForTests(fake as never);
     await getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } });
     const arg = fake.runReport.mock.calls[0][0];
-    expect(arg.orderBys).toEqual([{ dimension: { dimensionName: "dateHourMinute" } }, { dimension: { dimensionName: "customEvent:fr_event_seq" } }]);
+    expect(arg.orderBys).toEqual([
+      { dimension: { dimensionName: "dateHourMinute" } },
+      { dimension: { dimensionName: "customEvent:fr_event_seq" } },
+    ]);
   });
 
   it("maps rows to SessionDetailEvent[] with eventName + pagePath + timestamp", async () => {
-    const fake = { runReport: vi.fn().mockResolvedValue([sessionDetail]), batchRunReports: vi.fn() };
+    const fake = {
+      runReport: vi.fn().mockResolvedValue([sessionDetail]),
+      batchRunReports: vi.fn(),
+    };
     __setGa4ClientForTests(fake as never);
     const res = await getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } });
     expect(res.sessionId).toBe(SESSION_ID);
@@ -47,7 +68,10 @@ describe("getSessionDetail", () => {
   });
 
   it("surfaces fr_lead_type on lead_action events as params.fr_lead_type", async () => {
-    const fake = { runReport: vi.fn().mockResolvedValue([sessionDetail]), batchRunReports: vi.fn() };
+    const fake = {
+      runReport: vi.fn().mockResolvedValue([sessionDetail]),
+      batchRunReports: vi.fn(),
+    };
     __setGa4ClientForTests(fake as never);
     const res = await getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } });
     expect(res.events[2].params).toEqual({ fr_lead_type: "phone_click" });
@@ -90,7 +114,12 @@ describe("getSessionDetail", () => {
 
     expect(runReport).toHaveBeenCalledTimes(2);
     const retryDims = runReport.mock.calls[1][0].dimensions;
-    expect(retryDims).toEqual([{ name: "eventName" }, { name: "pagePath" }, { name: "dateHourMinute" }, { name: "customEvent:fr_event_seq" }]);
+    expect(retryDims).toEqual([
+      { name: "eventName" },
+      { name: "pagePath" },
+      { name: "dateHourMinute" },
+      { name: "customEvent:fr_event_seq" },
+    ]);
     expect(res.setupRequired).toBeUndefined();
     expect(res.missing).toEqual(["fr_lead_type"]);
     expect(res.events).toHaveLength(3);
@@ -101,7 +130,9 @@ describe("getSessionDetail", () => {
     const err = new Error("3 INVALID_ARGUMENT: bad date format");
     const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    await expect(getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } })).rejects.toBe(err);
+    await expect(
+      getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } })
+    ).rejects.toBe(err);
   });
 
   const PAGE_FILTER = {
@@ -116,18 +147,56 @@ describe("getSessionDetail", () => {
       dimensionHeaders: [],
       metricHeaders: [{ name: "eventCount", type: "TYPE_INTEGER" }],
       rows: [
-        { dimensionValues: [{ value: "page_view" }, { value: "/" }, { value: "202605101430" }, { value: "1" }, { value: "" }, { value: ref }], metricValues: [{ value: "1" }] },
-        { dimensionValues: [{ value: "scroll" }, { value: "/" }, { value: "202605101430" }, { value: "2" }, { value: "" }, { value: ref }], metricValues: [{ value: "1" }] },
-        { dimensionValues: [{ value: "lead_action" }, { value: "/" }, { value: "202605101430" }, { value: "3" }, { value: "phone_click" }, { value: ref }], metricValues: [{ value: "1" }] },
+        {
+          dimensionValues: [
+            { value: "page_view" },
+            { value: "/" },
+            { value: "202605101430" },
+            { value: "1" },
+            { value: "" },
+            { value: ref },
+          ],
+          metricValues: [{ value: "1" }],
+        },
+        {
+          dimensionValues: [
+            { value: "scroll" },
+            { value: "/" },
+            { value: "202605101430" },
+            { value: "2" },
+            { value: "" },
+            { value: ref },
+          ],
+          metricValues: [{ value: "1" }],
+        },
+        {
+          dimensionValues: [
+            { value: "lead_action" },
+            { value: "/" },
+            { value: "202605101430" },
+            { value: "3" },
+            { value: "phone_click" },
+            { value: ref },
+          ],
+          metricValues: [{ value: "1" }],
+        },
       ],
       rowCount: 3,
     };
   }
 
   it("appends the page-ref dim and returns events for a clean session when pageFilter is set", async () => {
-    const fake = { runReport: vi.fn().mockResolvedValue([detailFixture("__home")]), batchRunReports: vi.fn() };
+    const fake = {
+      runReport: vi.fn().mockResolvedValue([detailFixture("__home")]),
+      batchRunReports: vi.fn(),
+    };
     __setGa4ClientForTests(fake as never);
-    const res = await getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } }, PAGE_FILTER);
+    const res = await getSessionDetail(
+      "12345",
+      SESSION_ID,
+      { dateRange: { preset: "last-7d" } },
+      PAGE_FILTER
+    );
 
     const arg = fake.runReport.mock.calls[0][0];
     expect(arg.dimensions).toEqual([
@@ -143,9 +212,17 @@ describe("getSessionDetail", () => {
   });
 
   it("returns empty events when the session touched a deleted ref", async () => {
-    const fake = { runReport: vi.fn().mockResolvedValue([detailFixture("page:999")]), batchRunReports: vi.fn() };
+    const fake = {
+      runReport: vi.fn().mockResolvedValue([detailFixture("page:999")]),
+      batchRunReports: vi.fn(),
+    };
     __setGa4ClientForTests(fake as never);
-    const res = await getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } }, PAGE_FILTER);
+    const res = await getSessionDetail(
+      "12345",
+      SESSION_ID,
+      { dateRange: { preset: "last-7d" } },
+      PAGE_FILTER
+    );
     expect(res.sessionId).toBe(SESSION_ID);
     expect(res.events).toEqual([]);
   });
@@ -155,9 +232,36 @@ describe("getSessionDetail", () => {
       dimensionHeaders: [],
       metricHeaders: [{ name: "eventCount", type: "TYPE_INTEGER" }],
       rows: [
-        { dimensionValues: [{ value: "page_view" }, { value: "/" }, { value: "202605101430" }, { value: "1" }, { value: ref }], metricValues: [{ value: "1" }] },
-        { dimensionValues: [{ value: "scroll" }, { value: "/" }, { value: "202605101430" }, { value: "2" }, { value: ref }], metricValues: [{ value: "1" }] },
-        { dimensionValues: [{ value: "lead_action" }, { value: "/" }, { value: "202605101430" }, { value: "3" }, { value: ref }], metricValues: [{ value: "1" }] },
+        {
+          dimensionValues: [
+            { value: "page_view" },
+            { value: "/" },
+            { value: "202605101430" },
+            { value: "1" },
+            { value: ref },
+          ],
+          metricValues: [{ value: "1" }],
+        },
+        {
+          dimensionValues: [
+            { value: "scroll" },
+            { value: "/" },
+            { value: "202605101430" },
+            { value: "2" },
+            { value: ref },
+          ],
+          metricValues: [{ value: "1" }],
+        },
+        {
+          dimensionValues: [
+            { value: "lead_action" },
+            { value: "/" },
+            { value: "202605101430" },
+            { value: "3" },
+            { value: ref },
+          ],
+          metricValues: [{ value: "1" }],
+        },
       ],
       rowCount: 3,
     };
@@ -175,22 +279,47 @@ describe("getSessionDetail", () => {
     const fake = { runReport, batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
 
-    const res = await getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } }, PAGE_FILTER);
+    const res = await getSessionDetail(
+      "12345",
+      SESSION_ID,
+      { dateRange: { preset: "last-7d" } },
+      PAGE_FILTER
+    );
 
     expect(runReport).toHaveBeenCalledTimes(2);
     const retryDims = runReport.mock.calls[1][0].dimensions;
-    expect(retryDims).toEqual([{ name: "eventName" }, { name: "pagePath" }, { name: "dateHourMinute" }, { name: "customEvent:fr_event_seq" }, { name: "customEvent:fr_page_ref" }]);
+    expect(retryDims).toEqual([
+      { name: "eventName" },
+      { name: "pagePath" },
+      { name: "dateHourMinute" },
+      { name: "customEvent:fr_event_seq" },
+      { name: "customEvent:fr_page_ref" },
+    ]);
     expect(res.setupRequired).toBeUndefined();
     expect(res.missing).toEqual(["fr_lead_type"]);
     expect(res.events).toEqual([]);
   });
 
   it("does NOT append the page-ref dim and returns full events when pageFilter is null", async () => {
-    const fake = { runReport: vi.fn().mockResolvedValue([sessionDetail]), batchRunReports: vi.fn() };
+    const fake = {
+      runReport: vi.fn().mockResolvedValue([sessionDetail]),
+      batchRunReports: vi.fn(),
+    };
     __setGa4ClientForTests(fake as never);
-    const res = await getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } }, null);
+    const res = await getSessionDetail(
+      "12345",
+      SESSION_ID,
+      { dateRange: { preset: "last-7d" } },
+      null
+    );
     const arg = fake.runReport.mock.calls[0][0];
-    expect(arg.dimensions).toEqual([{ name: "eventName" }, { name: "pagePath" }, { name: "dateHourMinute" }, { name: "customEvent:fr_event_seq" }, { name: "customEvent:fr_lead_type" }]);
+    expect(arg.dimensions).toEqual([
+      { name: "eventName" },
+      { name: "pagePath" },
+      { name: "dateHourMinute" },
+      { name: "customEvent:fr_event_seq" },
+      { name: "customEvent:fr_lead_type" },
+    ]);
     expect(res.events).toHaveLength(3);
   });
 });

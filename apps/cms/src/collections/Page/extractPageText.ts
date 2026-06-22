@@ -17,7 +17,12 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
       return extractHeroText(block);
     }
     case "content": {
-      return joinText([block.eyebrow, block.heading, block.description, extractLexicalText(block.content)]);
+      return joinText([
+        block.eyebrow,
+        block.heading,
+        block.description,
+        extractLexicalText(block.content),
+      ]);
     }
     case "chart": {
       return extractChartText(block);

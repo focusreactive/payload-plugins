@@ -1,5 +1,11 @@
 import type { BlocksField, Field, TabsField } from "payload";
-import { fieldAffectsData, fieldIsArrayType, fieldIsBlockType, fieldIsGroupType, tabHasName } from "payload/shared";
+import {
+  fieldAffectsData,
+  fieldIsArrayType,
+  fieldIsBlockType,
+  fieldIsGroupType,
+  tabHasName,
+} from "payload/shared";
 
 import { hasFields, isBlockItem, isTabsField } from "../guards";
 import { isObject } from "../utils";
@@ -50,7 +56,9 @@ export function classifyField(field: Field): FieldStructure {
   }
 
   if (!fieldAffectsData(field)) {
-    return hasFields(field) ? { kind: "transparent", fields: field.fields } : { kind: "presentational" };
+    return hasFields(field)
+      ? { kind: "transparent", fields: field.fields }
+      : { kind: "presentational" };
   }
 
   if (fieldIsGroupType(field)) {
@@ -146,9 +154,18 @@ export function resolveBlockFields(field: BlocksField, item: unknown): Field[] |
  * @returns The matched element, or `{}` when there is no counterpart (or `refItem` carries no `id`).
  * @public
  */
-export function matchElementById(arr: unknown[], refItem: Record<string, unknown>, isBlocks: boolean): Record<string, unknown> {
+export function matchElementById(
+  arr: unknown[],
+  refItem: Record<string, unknown>,
+  isBlocks: boolean
+): Record<string, unknown> {
   const id = refItem.id;
   if (id === undefined || id === null) return {};
-  const match = arr.find((candidate) => isObject(candidate) && candidate.id === id && (!isBlocks || candidate.blockType === refItem.blockType));
+  const match = arr.find(
+    (candidate) =>
+      isObject(candidate) &&
+      candidate.id === id &&
+      (!isBlocks || candidate.blockType === refItem.blockType)
+  );
   return isObject(match) ? match : {};
 }

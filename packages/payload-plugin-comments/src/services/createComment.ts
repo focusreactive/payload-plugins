@@ -16,7 +16,16 @@ interface Props extends BaseServiceOptions {
   mentionIds?: number[];
 }
 
-export async function createComment({ documentId, collectionSlug, globalSlug, text, fieldPath = null, mentionIds = [], locale = null, payload: payloadProp }: Props): Promise<Response<Comment>> {
+export async function createComment({
+  documentId,
+  collectionSlug,
+  globalSlug,
+  text,
+  fieldPath = null,
+  mentionIds = [],
+  locale = null,
+  payload: payloadProp,
+}: Props): Promise<Response<Comment>> {
   try {
     const payload = await extractPayload(payloadProp);
     const { user } = await payload.auth({ headers: await headers() });

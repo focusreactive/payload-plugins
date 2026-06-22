@@ -87,8 +87,9 @@ export default async function TenantPage({ params }: Props) {
       <section className="isolation">
         <h2 className="section-title">Tenant isolation</h2>
         <p className="isolation-note">
-          These slugs belong to other tenants. They&apos;re valid pages there, but requesting them under <code>/{tenant.slug}</code> returns a <strong>404</strong> — the plugin scopes every query to
-          the active tenant.
+          These slugs belong to other tenants. They&apos;re valid pages there, but requesting them
+          under <code>/{tenant.slug}</code> returns a <strong>404</strong> — the plugin scopes every
+          query to the active tenant.
         </p>
         {foreignOnly.length === 0 ? (
           <p className="empty">No foreign-only slugs to try.</p>

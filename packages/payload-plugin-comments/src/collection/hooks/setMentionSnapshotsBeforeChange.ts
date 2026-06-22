@@ -10,19 +10,31 @@ const extractUserId = (mention: CommentMention): number | null => {
   return null;
 };
 
-export const setMentionSnapshotsBeforeChange: CollectionBeforeChangeHook = async ({ data, originalDoc, req }) => {
+export const setMentionSnapshotsBeforeChange: CollectionBeforeChangeHook = async ({
+  data,
+  originalDoc,
+  req,
+}) => {
   const mentions = Array.isArray(data?.mentions) ? (data.mentions as CommentMention[]) : [];
   if (mentions.length === 0) return data;
 
-  const pluginConfig = req.payload.config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
+  const pluginConfig = req.payload.config.admin?.custom?.commentsPlugin as
+    | CommentsPluginConfigStorage
+    | undefined;
   const usernameFieldPath = pluginConfig?.usernameFieldPath ?? USERNAME_DEFAULT_FIELD_PATH;
 
-  const previousById = new Map<number, { userIdSnapshot?: number | null; displayNameSnapshot?: string | null }>();
+  const previousById = new Map<
+    number,
+    { userIdSnapshot?: number | null; displayNameSnapshot?: string | null }
+  >();
   if (Array.isArray(originalDoc?.mentions)) {
     for (const m of originalDoc.mentions as CommentMention[]) {
       const uid = extractUserId(m);
       if (uid != null) {
-        previousById.set(uid, { userIdSnapshot: m.userIdSnapshot, displayNameSnapshot: m.displayNameSnapshot });
+        previousById.set(uid, {
+          userIdSnapshot: m.userIdSnapshot,
+          displayNameSnapshot: m.displayNameSnapshot,
+        });
       }
     }
   }
@@ -62,7 +74,11 @@ export const setMentionSnapshotsBeforeChange: CollectionBeforeChangeHook = async
 
     const prev = previousById.get(uid);
     if (prev?.displayNameSnapshot != null) {
-      return { ...m, userIdSnapshot: prev.userIdSnapshot ?? uid, displayNameSnapshot: prev.displayNameSnapshot };
+      return {
+        ...m,
+        userIdSnapshot: prev.userIdSnapshot ?? uid,
+        displayNameSnapshot: prev.displayNameSnapshot,
+      };
     }
 
     const user = userMap[uid];

@@ -5,7 +5,10 @@ import { extractPayload } from "../utils/payload/extractPayload";
 import { getDefaultErrorMessage } from "../utils/error/getDefaultErrorMessage";
 import type { Response, Comment, BaseDocument, DocumentTitles, BaseServiceOptions } from "../types";
 
-function buildDocumentTitlesFromDocs(docs: BaseDocument[], titleField: string): Record<string, string> {
+function buildDocumentTitlesFromDocs(
+  docs: BaseDocument[],
+  titleField: string
+): Record<string, string> {
   const result: Record<string, string> = {};
 
   for (const doc of docs) {
@@ -17,7 +20,11 @@ function buildDocumentTitlesFromDocs(docs: BaseDocument[], titleField: string): 
   return result;
 }
 
-export async function getDocumentTitles(comments: Comment[], documentTitleFields: Record<string, string>, options?: BaseServiceOptions): Promise<Response<DocumentTitles>> {
+export async function getDocumentTitles(
+  comments: Comment[],
+  documentTitleFields: Record<string, string>,
+  options?: BaseServiceOptions
+): Promise<Response<DocumentTitles>> {
   try {
     const payload = await extractPayload(options?.payload);
 
@@ -53,7 +60,10 @@ export async function getDocumentTitles(comments: Comment[], documentTitleFields
             locale: options?.locale,
           });
 
-          documentTitles[slug] = buildDocumentTitlesFromDocs(docs as unknown as BaseDocument[], titleField);
+          documentTitles[slug] = buildDocumentTitlesFromDocs(
+            docs as unknown as BaseDocument[],
+            titleField
+          );
         } catch {
           documentTitles[slug] = Object.fromEntries([...ids].map((id) => [String(id), String(id)]));
         }

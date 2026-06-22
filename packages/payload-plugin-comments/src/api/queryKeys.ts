@@ -2,23 +2,39 @@ import type { Mode, QueryContext } from "../types";
 
 export const QUERY_KEYS = {
   comments: {
-    doc: (collectionSlug: string, docId: string) => ["comments", "doc", collectionSlug, docId] as const,
+    doc: (collectionSlug: string, docId: string) =>
+      ["comments", "doc", collectionSlug, docId] as const,
     globalDoc: (globalSlug: string) => ["comments", "global-doc", globalSlug] as const,
     global: () => ["comments", "global"] as const,
   },
   fieldLabels: {
-    doc: (collectionSlug: string, docId: string) => ["field-labels", "doc", collectionSlug, docId] as const,
+    doc: (collectionSlug: string, docId: string) =>
+      ["field-labels", "doc", collectionSlug, docId] as const,
     globalDoc: (globalSlug: string) => ["field-labels", "global-doc", globalSlug] as const,
     global: () => ["field-labels", "global"] as const,
   },
   documentTitles: {
-    doc: (collectionSlug: string, docId: string) => ["document-titles", "doc", collectionSlug, docId] as const,
+    doc: (collectionSlug: string, docId: string) =>
+      ["document-titles", "doc", collectionSlug, docId] as const,
     globalDoc: (globalSlug: string) => ["document-titles", "global-doc", globalSlug] as const,
     global: () => ["document-titles", "global"] as const,
   },
   mentionableUsers: () => ["mentionable-users"] as const,
-  unreadMentionsCount: (mode: Mode, collectionSlug: string | null | undefined, documentId: number | null | undefined, globalSlug: string | null, locale: string | null | undefined) =>
-    ["unread-mentions-count", mode, collectionSlug ?? null, documentId ?? null, globalSlug, locale ?? null] as const,
+  unreadMentionsCount: (
+    mode: Mode,
+    collectionSlug: string | null | undefined,
+    documentId: number | null | undefined,
+    globalSlug: string | null,
+    locale: string | null | undefined
+  ) =>
+    [
+      "unread-mentions-count",
+      mode,
+      collectionSlug ?? null,
+      documentId ?? null,
+      globalSlug,
+      locale ?? null,
+    ] as const,
 };
 
 export function getCommentsKey(ctx: QueryContext) {

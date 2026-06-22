@@ -15,13 +15,17 @@ describe("SkipExistingStrategy", () => {
       });
 
       it("returns false for undefined", () => {
-        expect(strategy.shouldTranslate({ sourceValue: undefined, targetValue: undefined })).toBe(false);
+        expect(strategy.shouldTranslate({ sourceValue: undefined, targetValue: undefined })).toBe(
+          false
+        );
       });
     });
 
     describe("when sourceValue is non-empty and targetValue is empty", () => {
       it("returns true when targetValue is undefined", () => {
-        expect(strategy.shouldTranslate({ sourceValue: "hello", targetValue: undefined })).toBe(true);
+        expect(strategy.shouldTranslate({ sourceValue: "hello", targetValue: undefined })).toBe(
+          true
+        );
       });
 
       it("returns true when targetValue is null", () => {
@@ -39,11 +43,15 @@ describe("SkipExistingStrategy", () => {
 
     describe("when sourceValue is non-empty and targetValue exists", () => {
       it("returns false when targetValue is non-empty string", () => {
-        expect(strategy.shouldTranslate({ sourceValue: "hello", targetValue: "existing" })).toBe(false);
+        expect(strategy.shouldTranslate({ sourceValue: "hello", targetValue: "existing" })).toBe(
+          false
+        );
       });
 
       it("returns false when targetValue is non-empty object", () => {
-        expect(strategy.shouldTranslate({ sourceValue: "hello", targetValue: { key: "value" } })).toBe(false);
+        expect(
+          strategy.shouldTranslate({ sourceValue: "hello", targetValue: { key: "value" } })
+        ).toBe(false);
       });
     });
 
@@ -80,11 +88,15 @@ describe("SkipExistingStrategy", () => {
       };
 
       it("returns true when targetValue is empty Lexical root", () => {
-        expect(strategy.shouldTranslate({ sourceValue: "hello", targetValue: emptyLexicalRoot })).toBe(true);
+        expect(
+          strategy.shouldTranslate({ sourceValue: "hello", targetValue: emptyLexicalRoot })
+        ).toBe(true);
       });
 
       it("returns false when targetValue is non-empty Lexical root", () => {
-        expect(strategy.shouldTranslate({ sourceValue: "hello", targetValue: nonEmptyLexicalRoot })).toBe(false);
+        expect(
+          strategy.shouldTranslate({ sourceValue: "hello", targetValue: nonEmptyLexicalRoot })
+        ).toBe(false);
       });
     });
   });

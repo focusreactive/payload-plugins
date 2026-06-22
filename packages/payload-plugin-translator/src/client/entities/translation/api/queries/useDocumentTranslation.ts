@@ -30,17 +30,22 @@ export function useDocumentTranslation({ collection, id }: Props, options?: Opti
     queryKey: getDocumentTranslationQueryKey({ collection, id }),
     queryFn: async ({ signal }) => {
       return handleNextApiError(async () => {
-        const response = await ofetch<{ data: DocumentTranslation }>(`/api${basePath}/document/${collection}/${id}`, {
-          method: "get",
-          signal,
-        });
+        const response = await ofetch<{ data: DocumentTranslation }>(
+          `/api${basePath}/document/${collection}/${id}`,
+          {
+            method: "get",
+            signal,
+          }
+        );
 
         return response.data;
       });
     },
     enabled: options?.enabled,
     refetchInterval: (query) => {
-      return query.state.data?.status === "failed" || query.state.data?.status === "completed" ? false : POLLING_INTERVAL_MILLISECONDS;
+      return query.state.data?.status === "failed" || query.state.data?.status === "completed"
+        ? false
+        : POLLING_INTERVAL_MILLISECONDS;
     },
   });
 

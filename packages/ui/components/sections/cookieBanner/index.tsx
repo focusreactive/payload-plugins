@@ -27,7 +27,10 @@ export function CookieBanner() {
   return (
     <>
       <div className="fixed inset-x-0 bottom-0 z-[60] space-y-5 bg-black p-10 text-white">
-        <p>We use cookies to improve your experience. By using our site, you agree to our use of cookies.</p>
+        <p>
+          We use cookies to improve your experience. By using our site, you agree to our use of
+          cookies.
+        </p>
         <Button variant={"primary" as ButtonVariantProps["variant"]} onClick={handleAccept}>
           Accept
         </Button>

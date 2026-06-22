@@ -22,7 +22,9 @@ describe("seoPlugin config validation", () => {
 
   it("does NOT warn when disabled flag is set (silent opt-out)", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const result = seoPlugin({ disabled: true, collections: [] } as unknown as SeoPluginConfig)(incoming);
+    const result = seoPlugin({ disabled: true, collections: [] } as unknown as SeoPluginConfig)(
+      incoming
+    );
     expect(result).toBe(incoming);
     expect(warn).not.toHaveBeenCalled();
   });

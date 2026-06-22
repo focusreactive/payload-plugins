@@ -14,7 +14,9 @@ export function useCommentsQuery(ctx: QueryContext) {
   const queryClient = useCommentsQueryClient();
   const { isOpen } = useCommentsDrawer();
   const { config } = useConfig();
-  const pluginConfig = config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
+  const pluginConfig = config.admin?.custom?.commentsPlugin as
+    | CommentsPluginConfigStorage
+    | undefined;
 
   return useQuery(
     {

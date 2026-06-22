@@ -15,7 +15,13 @@ const aspectRatioOptions = [
   { label: { en: "Auto", es: "Auto" }, value: "auto" },
 ];
 
-export function imageField(name = "image", { withDefaultMedia = false, required = true }: { withDefaultMedia?: boolean; required?: boolean } = {}): GroupField {
+export function imageField(
+  name = "image",
+  {
+    withDefaultMedia = false,
+    required = true,
+  }: { withDefaultMedia?: boolean; required?: boolean } = {}
+): GroupField {
   return {
     fields: [
       {

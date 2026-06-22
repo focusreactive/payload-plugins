@@ -23,7 +23,13 @@ interface Props {
   globalSlug?: string;
 }
 
-export function FieldGroupSection({ fields, userId, collectionSlug, documentId, globalSlug }: Props) {
+export function FieldGroupSection({
+  fields,
+  userId,
+  collectionSlug,
+  documentId,
+  globalSlug,
+}: Props) {
   const { t } = useTranslation();
   const { queryContext } = useComments();
   const { data: fieldLabelRegistry = {} } = useFieldLabelsQuery(queryContext);
@@ -32,9 +38,16 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
   const pendingFieldCollapsibleGroup = useRef<CollapsibleGroupHandle | null>(null);
 
   const generalComments = fields.get(null) ?? [];
-  const fieldEntries = [...fields.entries()].filter((entry): entry is [string, Comment[]] => entry[0] !== null);
+  const fieldEntries = [...fields.entries()].filter(
+    (entry): entry is [string, Comment[]] => entry[0] !== null
+  );
 
-  const allEntries: [string, Comment[]][] = [...fieldEntries, ...(pendingField && !fields.has(pendingField.path) ? [[pendingField.path, []] as [string, Comment[]]] : [])];
+  const allEntries: [string, Comment[]][] = [
+    ...fieldEntries,
+    ...(pendingField && !fields.has(pendingField.path)
+      ? [[pendingField.path, []] as [string, Comment[]]]
+      : []),
+  ];
 
   useEffect(() => {
     if (!pendingField) return;
@@ -48,13 +61,27 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
 
   return (
     <>
-      <CollapsibleGroup groupKey={createCollapsibleGroupKey({ collectionSlug, documentId, globalSlug, fieldPath: null })} label={t("comments:general" as never)} level="field">
+      <CollapsibleGroup
+        groupKey={createCollapsibleGroupKey({
+          collectionSlug,
+          documentId,
+          globalSlug,
+          fieldPath: null,
+        })}
+        label={t("comments:general" as never)}
+        level="field"
+      >
         <div className="flex flex-col gap-3">
           {generalComments.map((comment) => (
             <CommentItem key={comment.id} comment={comment} currentUserId={userId} />
           ))}
 
-          <CommentEditor fieldPath={null} collectionSlug={collectionSlug} documentId={documentId} globalSlug={globalSlug} />
+          <CommentEditor
+            fieldPath={null}
+            collectionSlug={collectionSlug}
+            documentId={documentId}
+            globalSlug={globalSlug}
+          />
         </div>
       </CollapsibleGroup>
 
@@ -66,8 +93,23 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
             key={fieldPath}
             fieldPath={fieldPath}
             ref={isPending ? pendingFieldCollapsibleGroup : undefined}
-            groupKey={createCollapsibleGroupKey({ collectionSlug, documentId, globalSlug, fieldPath })}
-            label={isPending ? pendingField.label : resolveFieldLabel({ registry: fieldLabelRegistry, collectionSlug, documentId, globalSlug, fieldPath })}
+            groupKey={createCollapsibleGroupKey({
+              collectionSlug,
+              documentId,
+              globalSlug,
+              fieldPath,
+            })}
+            label={
+              isPending
+                ? pendingField.label
+                : resolveFieldLabel({
+                    registry: fieldLabelRegistry,
+                    collectionSlug,
+                    documentId,
+                    globalSlug,
+                    fieldPath,
+                  })
+            }
             level="field"
           >
             <div className="flex flex-col gap-3">
@@ -75,7 +117,13 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
                 <CommentItem key={comment.id} comment={comment} currentUserId={userId} />
               ))}
 
-              <CommentEditor ref={isPending ? editorRef : undefined} fieldPath={fieldPath} collectionSlug={collectionSlug} documentId={documentId} globalSlug={globalSlug} />
+              <CommentEditor
+                ref={isPending ? editorRef : undefined}
+                fieldPath={fieldPath}
+                collectionSlug={collectionSlug}
+                documentId={documentId}
+                globalSlug={globalSlug}
+              />
             </div>
           </CollapsibleGroup>
         );

@@ -28,7 +28,14 @@ export interface UseAnalyticsParamsResult {
 
 const VALID_TABS = new Set<AnalyticsTab>(["overview", "lead-actions", "sessions", "ab"]);
 const VALID_DEVICES = new Set<DeviceCategory>(["desktop", "mobile", "tablet", "other"]);
-const VALID_PRESETS = new Set(["today", "yesterday", "last-7d", "last-14d", "last-30d", "last-90d"]);
+const VALID_PRESETS = new Set([
+  "today",
+  "yesterday",
+  "last-7d",
+  "last-14d",
+  "last-30d",
+  "last-90d",
+]);
 
 export function useAnalyticsParams(): UseAnalyticsParamsResult {
   const router = useRouter();
@@ -146,7 +153,11 @@ export function useAnalyticsParams(): UseAnalyticsParamsResult {
   const setSessions = useCallback(
     (filters: Partial<SessionsFilters>) => {
       writeParams({
-        hadLead: filters.hadLeadAction ? "true" : filters.hadLeadAction === false ? null : undefined,
+        hadLead: filters.hadLeadAction
+          ? "true"
+          : filters.hadLeadAction === false
+            ? null
+            : undefined,
         src: filters.source ?? undefined,
         dev: filters.device ?? undefined,
         cnt: filters.country ?? undefined,

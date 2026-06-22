@@ -32,7 +32,18 @@ const sizes = {
 };
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { className = "", children, $fullWidth, style, $startContent, $variant, $isLoading, $size = "md", $isIconButton, ...props },
+  {
+    className = "",
+    children,
+    $fullWidth,
+    style,
+    $startContent,
+    $variant,
+    $isLoading,
+    $size = "md",
+    $isIconButton,
+    ...props
+  },
   ref
 ) {
   const _style = {
@@ -46,11 +57,18 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   const buttonClassName =
     $variant === "unstyled"
       ? classNames(styles["unstyled"], className, $isIconButton && styles["icon-button"])
-      : classNames(styles["button"], className, $variant ? styles[$variant] : undefined, $isIconButton && styles["icon-button"]);
+      : classNames(
+          styles["button"],
+          className,
+          $variant ? styles[$variant] : undefined,
+          $isIconButton && styles["icon-button"]
+        );
 
   return (
     <button {...props} style={_style} ref={ref} className={buttonClassName}>
-      {!$isLoading && $startContent && <div className={styles["start-content"]}>{$startContent}</div>}
+      {!$isLoading && $startContent && (
+        <div className={styles["start-content"]}>{$startContent}</div>
+      )}
       {$isLoading ? <Loading size={$isIconButton ? "small" : "medium"} /> : children}
     </button>
   );

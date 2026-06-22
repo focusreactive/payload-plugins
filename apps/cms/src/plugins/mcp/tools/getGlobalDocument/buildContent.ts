@@ -25,7 +25,12 @@ function resolveGlobalTitle(doc: BaseDocument, titleField: string | undefined, s
   if (titleField) {
     const result = resolvePath(doc, titleField);
 
-    if (!("error" in result) && result.value !== null && result.value !== undefined && typeof result.value !== "object") {
+    if (
+      !("error" in result) &&
+      result.value !== null &&
+      result.value !== undefined &&
+      typeof result.value !== "object"
+    ) {
       return String(result.value);
     }
   }
@@ -33,7 +38,16 @@ function resolveGlobalTitle(doc: BaseDocument, titleField: string | undefined, s
   return String(slug);
 }
 
-export function buildContent({ doc, skipKeys, slug, titleField, payload, full, raw, locale }: Props): ContentBlock[] {
+export function buildContent({
+  doc,
+  skipKeys,
+  slug,
+  titleField,
+  payload,
+  full,
+  raw,
+  locale,
+}: Props): ContentBlock[] {
   if (raw) {
     return [{ text: JSON.stringify(doc, null, 2), type: "text" }];
   }

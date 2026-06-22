@@ -15,7 +15,9 @@ describe("getByPath", () => {
   });
 
   it("gets nested property in array", () => {
-    expect(getByPath({ items: [{ name: "first" }, { name: "second" }] }, "items.1.name")).toBe("second");
+    expect(getByPath({ items: [{ name: "first" }, { name: "second" }] }, "items.1.name")).toBe(
+      "second"
+    );
   });
 
   it("returns undefined for missing path", () => {

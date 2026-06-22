@@ -43,7 +43,9 @@ function enrichMessage(err: unknown): string {
   if (!err || typeof err !== "object") return base;
 
   const carriers = err as Record<string, unknown>;
-  const detailStrings = [carriers.details, carriers.statusDetails, carriers.metadata].map(detailToString).filter(Boolean);
+  const detailStrings = [carriers.details, carriers.statusDetails, carriers.metadata]
+    .map(detailToString)
+    .filter(Boolean);
 
   if (detailStrings.length === 0) return base;
 

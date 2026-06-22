@@ -1,5 +1,9 @@
 import { Footer as SharedFooter } from "@repo/ui";
-import type { FooterLink, FooterLinkGroup, IFooterProps } from "@repo/ui/components/sections/footer/types";
+import type {
+  FooterLink,
+  FooterLinkGroup,
+  IFooterProps,
+} from "@repo/ui/components/sections/footer/types";
 import React from "react";
 
 import { resolveLocale } from "@/core/lib/resolveLocale";
@@ -13,7 +17,10 @@ interface Props {
 
 type PayloadLink = NonNullable<NonNullable<FooterType["legalLinks"]>[number]["link"]>;
 
-function resolveFooterLink(link: PayloadLink | null | undefined, locale: string): FooterLink | undefined {
+function resolveFooterLink(
+  link: PayloadLink | null | undefined,
+  locale: string
+): FooterLink | undefined {
   if (!link) {
     return undefined;
   }

@@ -17,12 +17,26 @@ type PopupProps = PropsWithChildren<{
   onOpenAutoFocus?: (event: Event) => void;
 }>;
 
-function Popup({ open, children, onOpenChange, $trigger, $align, $side, onOpenAutoFocus }: PopupProps) {
+function Popup({
+  open,
+  children,
+  onOpenChange,
+  $trigger,
+  $align,
+  $side,
+  onOpenAutoFocus,
+}: PopupProps) {
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
       <Popover.Trigger asChild>{$trigger}</Popover.Trigger>
       <Popover.Portal>
-        <Popover.Content sideOffset={8} side={$side} align={$align} className={style.popover} onOpenAutoFocus={onOpenAutoFocus}>
+        <Popover.Content
+          sideOffset={8}
+          side={$side}
+          align={$align}
+          className={style.popover}
+          onOpenAutoFocus={onOpenAutoFocus}
+        >
           {children}
         </Popover.Content>
       </Popover.Portal>

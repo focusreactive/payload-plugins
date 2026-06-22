@@ -10,8 +10,16 @@ const f = (config: Record<string, unknown>): Field => config as unknown as Field
 const schema: Field[] = [
   f({ name: "title", type: "text", localized: true }),
   f({ name: "count", type: "number" }),
-  f({ name: "hero", type: "group", fields: [f({ name: "heading", type: "text", localized: true })] }),
-  f({ name: "items", type: "array", fields: [f({ name: "label", type: "text", localized: true })] }),
+  f({
+    name: "hero",
+    type: "group",
+    fields: [f({ name: "heading", type: "text", localized: true })],
+  }),
+  f({
+    name: "items",
+    type: "array",
+    fields: [f({ name: "label", type: "text", localized: true })],
+  }),
   f({
     type: "tabs",
     tabs: [
@@ -20,7 +28,11 @@ const schema: Field[] = [
     ],
   }),
   f({ type: "row", fields: [f({ name: "col", type: "text", localized: true })] }),
-  f({ name: "layout", type: "blocks", blocks: [{ slug: "hero", fields: [f({ name: "headline", type: "text", localized: true })] }] }),
+  f({
+    name: "layout",
+    type: "blocks",
+    blocks: [{ slug: "hero", fields: [f({ name: "headline", type: "text", localized: true })] }],
+  }),
 ];
 
 describe("resolveFieldSubtree", () => {
@@ -128,7 +140,13 @@ describe("resolveFieldSubtree", () => {
 
   it("resolves a leaf through group > array (drops the index mid-path)", () => {
     const cell = f({ name: "cell", type: "text", localized: true });
-    const nested: Field[] = [f({ name: "sect", type: "group", fields: [f({ name: "rows", type: "array", fields: [cell] })] })];
+    const nested: Field[] = [
+      f({
+        name: "sect",
+        type: "group",
+        fields: [f({ name: "rows", type: "array", fields: [cell] })],
+      }),
+    ];
     const byIndex = resolveFieldSubtree(nested, "sect.rows.0.cell", "A");
     const byName = resolveFieldSubtree(nested, "sect.rows.cell", "A");
     expect(byName).toEqual(byIndex);
@@ -148,12 +166,30 @@ describe("resolveFieldSubtree", () => {
 
   it("returns localized-list-ancestor when the path descends through a localized array/blocks field", () => {
     const localized: Field[] = [
-      f({ name: "locItems", type: "array", localized: true, fields: [f({ name: "label", type: "text", localized: true })] }),
-      f({ name: "locLayout", type: "blocks", localized: true, blocks: [{ slug: "hero", fields: [f({ name: "headline", type: "text", localized: true })] }] }),
+      f({
+        name: "locItems",
+        type: "array",
+        localized: true,
+        fields: [f({ name: "label", type: "text", localized: true })],
+      }),
+      f({
+        name: "locLayout",
+        type: "blocks",
+        localized: true,
+        blocks: [
+          { slug: "hero", fields: [f({ name: "headline", type: "text", localized: true })] },
+        ],
+      }),
     ];
-    expect(resolveFieldSubtree(localized, "locItems.0.label", "A").status).toBe("localized-list-ancestor");
-    expect(resolveFieldSubtree(localized, "locItems.label", "A").status).toBe("localized-list-ancestor");
+    expect(resolveFieldSubtree(localized, "locItems.0.label", "A").status).toBe(
+      "localized-list-ancestor"
+    );
+    expect(resolveFieldSubtree(localized, "locItems.label", "A").status).toBe(
+      "localized-list-ancestor"
+    );
     const doc = { locLayout: [{ blockType: "hero", headline: "Hi" }] };
-    expect(resolveFieldSubtree(localized, "locLayout.0.headline", "Hi", doc).status).toBe("localized-list-ancestor");
+    expect(resolveFieldSubtree(localized, "locLayout.0.headline", "Hi", doc).status).toBe(
+      "localized-list-ancestor"
+    );
   });
 });

@@ -1,5 +1,8 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { analyticsFetch, AnalyticsHttpError } from "../../../../../src/components/AnalyticsView/hooks/queries/client";
+import {
+  analyticsFetch,
+  AnalyticsHttpError,
+} from "../../../../../src/components/AnalyticsView/hooks/queries/client";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -36,7 +39,14 @@ describe("analyticsFetch", () => {
   });
 
   it("throws AnalyticsHttpError with body.error on 4xx JSON responses", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ error: "Forbidden" }, { status: 403, statusText: "Forbidden" })));
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          jsonResponse({ error: "Forbidden" }, { status: 403, statusText: "Forbidden" })
+        )
+    );
     await expect(analyticsFetch("/analytics/kpis", {})).rejects.toMatchObject({
       name: "AnalyticsHttpError",
       status: 403,
@@ -45,7 +55,14 @@ describe("analyticsFetch", () => {
   });
 
   it("throws AnalyticsHttpError with statusText on 5xx non-JSON responses", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("oops", { status: 500, statusText: "Internal Server Error" })));
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response("oops", { status: 500, statusText: "Internal Server Error" })
+        )
+    );
     await expect(analyticsFetch("/analytics/kpis", {})).rejects.toMatchObject({
       name: "AnalyticsHttpError",
       status: 500,

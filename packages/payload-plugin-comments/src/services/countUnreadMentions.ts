@@ -38,14 +38,20 @@ export async function countUnreadMentions({
 
     if (!user) return { success: true, data: { count: 0 } };
 
-    const pluginConfig = payload.config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
+    const pluginConfig = payload.config.admin?.custom?.commentsPlugin as
+      | CommentsPluginConfigStorage
+      | undefined;
     const collections = enabledCollections ?? pluginConfig?.collections ?? [];
     const globals = enabledGlobals ?? pluginConfig?.globals ?? [];
 
     const tenantId = await getCurrentTenantId(payload);
 
     const where: WhereWithRequiredAnd = {
-      and: [{ "mentions.user": { equals: user.id } }, { author: { not_equals: user.id } }, { isResolved: { equals: false } }],
+      and: [
+        { "mentions.user": { equals: user.id } },
+        { author: { not_equals: user.id } },
+        { isResolved: { equals: false } },
+      ],
     };
 
     if (mode === "document" && collectionSlug && documentId) {
@@ -65,7 +71,10 @@ export async function countUnreadMentions({
 
       if (hasCollections || hasGlobals) {
         where.and.push({
-          or: [...(hasCollections ? [{ collectionSlug: { in: collections } }] : []), ...(hasGlobals ? [{ globalSlug: { in: globals } }] : [])],
+          or: [
+            ...(hasCollections ? [{ collectionSlug: { in: collections } }] : []),
+            ...(hasGlobals ? [{ globalSlug: { in: globals } }] : []),
+          ],
         });
       }
     }

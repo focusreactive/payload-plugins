@@ -11,9 +11,25 @@ type DividerProps = {
   style?: React.CSSProperties;
 };
 
-const Divider = React.forwardRef<HTMLHRElement, DividerProps>(function Divider({ $orientation = "horizontal", $size = "md", $color = "medium", className, style, ...props }, ref) {
+const Divider = React.forwardRef<HTMLHRElement, DividerProps>(function Divider(
+  { $orientation = "horizontal", $size = "md", $color = "medium", className, style, ...props },
+  ref
+) {
   return (
-    <hr ref={ref} className={classNames(styles.divider, styles[$orientation], styles[$size], styles[$color], className)} style={style} role="separator" aria-orientation={$orientation} {...props} />
+    <hr
+      ref={ref}
+      className={classNames(
+        styles.divider,
+        styles[$orientation],
+        styles[$size],
+        styles[$color],
+        className
+      )}
+      style={style}
+      role="separator"
+      aria-orientation={$orientation}
+      {...props}
+    />
   );
 });
 

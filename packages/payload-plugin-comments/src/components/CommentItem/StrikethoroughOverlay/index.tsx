@@ -7,7 +7,10 @@ interface Props {
 }
 
 export function StrikethoroughOverlay({ isResolved, contentRef }: Props) {
-  const { lineRects, lineContentRect, getLineByIndexRef } = useStrikethroughAnimation(isResolved, contentRef);
+  const { lineRects, lineContentRect, getLineByIndexRef } = useStrikethroughAnimation(
+    isResolved,
+    contentRef
+  );
 
   if (!lineRects.length || !lineContentRect) return null;
 

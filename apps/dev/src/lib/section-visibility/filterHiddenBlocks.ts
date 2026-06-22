@@ -3,7 +3,9 @@ export interface MaybeHiddenBlock {
   [key: string]: unknown;
 }
 
-export function filterHiddenBlocks<T extends MaybeHiddenBlock>(blocks: T[] | null | undefined): T[] {
+export function filterHiddenBlocks<T extends MaybeHiddenBlock>(
+  blocks: T[] | null | undefined
+): T[] {
   if (!blocks) {
     return [];
   }

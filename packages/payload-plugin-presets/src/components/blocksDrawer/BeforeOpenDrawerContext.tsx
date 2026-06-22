@@ -33,7 +33,11 @@ export const BeforeOpenDrawerProvider: React.FC<{
   beforeOpenDrawer: BeforeOpenDrawerFn;
   children: React.ReactNode;
 }> = ({ beforeOpenDrawer, children }) => {
-  return <BeforeOpenDrawerContext.Provider value={{ beforeOpenDrawer }}>{children}</BeforeOpenDrawerContext.Provider>;
+  return (
+    <BeforeOpenDrawerContext.Provider value={{ beforeOpenDrawer }}>
+      {children}
+    </BeforeOpenDrawerContext.Provider>
+  );
 };
 
 export function useBeforeOpenDrawer(): BeforeOpenDrawerFn | undefined {

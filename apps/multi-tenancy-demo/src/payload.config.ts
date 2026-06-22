@@ -42,7 +42,11 @@ export default buildConfig({
         const tenantId = typeof tenantRef === "object" && tenantRef ? tenantRef.id : tenantRef;
         let tenantSlug = "";
         if (tenantId) {
-          const tenant = await req.payload.findByID({ collection: "tenants", id: tenantId, depth: 0 });
+          const tenant = await req.payload.findByID({
+            collection: "tenants",
+            id: tenantId,
+            depth: 0,
+          });
           tenantSlug = (tenant?.slug as string) ?? "";
         }
         const previewPath = `/${tenantSlug}/${(data?.slug as string) ?? ""}`;

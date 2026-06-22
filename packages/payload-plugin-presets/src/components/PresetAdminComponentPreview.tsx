@@ -63,7 +63,14 @@ export const PresetAdminComponentPreview: React.FC = () => {
           }}
         />
       ) : (
-        <Image alt={media.alt || t("presetsPlugin:blocksDrawer:presetPreview" as never)} src={media?.url} className="preset-admin-preview__image" width={400} height={300} unoptimized />
+        <Image
+          alt={media.alt || t("presetsPlugin:blocksDrawer:presetPreview" as never)}
+          src={media?.url}
+          className="preset-admin-preview__image"
+          width={400}
+          height={300}
+          unoptimized
+        />
       )}
     </div>
   );

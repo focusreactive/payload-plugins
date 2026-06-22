@@ -8,7 +8,9 @@ type DocumentTranslationProgressPendingProps = {
   data: DocumentTranslationPending;
 };
 
-export function DocumentTranslationProgressPending({ data }: DocumentTranslationProgressPendingProps) {
+export function DocumentTranslationProgressPending({
+  data,
+}: DocumentTranslationProgressPendingProps) {
   const cancelDocumentTranslationApi = TranslationsApi.useCancelDocumentTranslation();
   const runQueuedTranslationApi = TranslationsApi.useRunDocumentTranslation();
 

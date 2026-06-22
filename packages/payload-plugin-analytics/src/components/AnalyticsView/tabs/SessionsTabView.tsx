@@ -10,7 +10,12 @@ import { SessionDrawer } from "./SessionDrawer";
 import { getDeviceIcon } from "../icons";
 import { cn } from "../../../utils/style";
 import { formatNumber } from "../numberFormatters";
-import type { CustomRegistrationKey, DeviceCategory, SessionDetailResponse, SessionsRow } from "../../../types/query";
+import type {
+  CustomRegistrationKey,
+  DeviceCategory,
+  SessionDetailResponse,
+  SessionsRow,
+} from "../../../types/query";
 import type { SessionsFilters as Filters } from "../hooks/useAnalyticsParams";
 
 export interface SessionsTabViewProps {
@@ -58,7 +63,12 @@ export function SessionsTabView({
 
   return (
     <div>
-      <SessionsFilters filters={filters} onChange={onFiltersChange} sourceOptions={sourceOptions} countryOptions={countryOptions} />
+      <SessionsFilters
+        filters={filters}
+        onChange={onFiltersChange}
+        sourceOptions={sourceOptions}
+        countryOptions={countryOptions}
+      />
 
       {setupRequired ? (
         <SetupRequiredCard missingKeys={missing ?? ["fr_session_id"]} />
@@ -110,24 +120,37 @@ export function SessionsTabView({
 
               <tbody>
                 {typedRows.map((s) => {
-                  const devices = s.deviceCategory.length > 0 ? Array.from(new Set(s.deviceCategory)) : ["other" as const];
+                  const devices =
+                    s.deviceCategory.length > 0
+                      ? Array.from(new Set(s.deviceCategory))
+                      : ["other" as const];
                   const isSelected = openId === s.sessionId;
 
                   return (
                     <tr
                       key={s.sessionId}
                       onClick={() => onOpenRow(s.sessionId)}
-                      className={cn("cursor-pointer hover:bg-[var(--theme-elevation-50)] text-[12.5px]", isSelected && "bg-[var(--theme-elevation-100)]")}
+                      className={cn(
+                        "cursor-pointer hover:bg-[var(--theme-elevation-50)] text-[12.5px]",
+                        isSelected && "bg-[var(--theme-elevation-100)]"
+                      )}
                     >
                       <td className="max-w-[80px] p-3 border-b border-[var(--theme-elevation-100)] font-[family-name:var(--font-mono)] text-[11.5px]">
                         {s.startedAt.length > 5 ? s.startedAt.slice(11, 16) : s.startedAt}
                       </td>
 
-                      <td className="w-full max-w-[200px] p-3 border-b border-[var(--theme-elevation-100)] font-[family-name:var(--font-mono)] text-[11.5px] truncate">{s.landingPage}</td>
+                      <td className="w-full max-w-[200px] p-3 border-b border-[var(--theme-elevation-100)] font-[family-name:var(--font-mono)] text-[11.5px] truncate">
+                        {s.landingPage}
+                      </td>
 
-                      <td className="max-w-[100px] p-3 border-b border-[var(--theme-elevation-100)]">{s.source}</td>
+                      <td className="max-w-[100px] p-3 border-b border-[var(--theme-elevation-100)]">
+                        {s.source}
+                      </td>
 
-                      <td className="max-w-[100px] p-3 border-b border-[var(--theme-elevation-100)]" title={s.deviceCategory.join(", ")}>
+                      <td
+                        className="max-w-[100px] p-3 border-b border-[var(--theme-elevation-100)]"
+                        title={s.deviceCategory.join(", ")}
+                      >
                         <span className="inline-flex items-center gap-1">
                           {devices.map((d) => {
                             const Device = getDeviceIcon(d);
@@ -136,12 +159,20 @@ export function SessionsTabView({
                         </span>
                       </td>
 
-                      <td className="max-w-[200px] p-3 border-b border-[var(--theme-elevation-100)] font-[family-name:var(--font-mono)] text-[11.5px] truncate">{s.country.join(", ")}</td>
+                      <td className="max-w-[200px] p-3 border-b border-[var(--theme-elevation-100)] font-[family-name:var(--font-mono)] text-[11.5px] truncate">
+                        {s.country.join(", ")}
+                      </td>
 
-                      <td className="p-3 border-b border-[var(--theme-elevation-100)] text-right tabular-nums">{s.eventCount}</td>
+                      <td className="p-3 border-b border-[var(--theme-elevation-100)] text-right tabular-nums">
+                        {s.eventCount}
+                      </td>
 
                       <td className="p-3 border-b border-[var(--theme-elevation-100)]">
-                        {s.hadLeadAction ? <span className="text-[var(--theme-success-700)] text-[11px]">Yes</span> : <span className="text-[var(--theme-elevation-300)]">—</span>}
+                        {s.hadLeadAction ? (
+                          <span className="text-[var(--theme-success-700)] text-[11px]">Yes</span>
+                        ) : (
+                          <span className="text-[var(--theme-elevation-300)]">—</span>
+                        )}
                       </td>
 
                       <td className="p-3 border-b border-[var(--theme-elevation-100)] text-[var(--theme-elevation-300)]">

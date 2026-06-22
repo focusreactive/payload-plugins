@@ -60,12 +60,22 @@ const TranslateDocument = ({ hasDrafts }: TranslateDocumentProps) => {
         {({ close }) => (
           <>
             <h4>Document Translation</h4>
-            <DocumentTranslationForm form={form} onSubmit={(data) => handleSubmit(data, close)} hasDrafts={hasDrafts} />
+            <DocumentTranslationForm
+              form={form}
+              onSubmit={(data) => handleSubmit(data, close)}
+              hasDrafts={hasDrafts}
+            />
           </>
         )}
       </OpenDocumentTranslationPopup>
 
-      {data?.status === "completed" && <CompletedTranslationStatus sourceLocale={data.input.source_lng} targetLocale={data.input.target_lng} completed_at={data.completed_at} />}
+      {data?.status === "completed" && (
+        <CompletedTranslationStatus
+          sourceLocale={data.input.source_lng}
+          targetLocale={data.input.target_lng}
+          completed_at={data.completed_at}
+        />
+      )}
       {data?.status === "failed" && <DocumentTranslationProgressFailed data={data} />}
       {data?.status === "running" && <DocumentTranslationProgressRunning data={data} />}
       {data?.status === "pending" && <DocumentTranslationProgressPending data={data} />}

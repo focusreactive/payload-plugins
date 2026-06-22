@@ -1,6 +1,9 @@
 import type { FieldChunk, RichTextChunk } from "../../types";
 import type { SerializedLexicalRoot } from "../../../../shared/lexical";
-import { isSerializedLexicalRoot, collectSerializedLexicalTextNodes } from "../../../../shared/lexical";
+import {
+  isSerializedLexicalRoot,
+  collectSerializedLexicalTextNodes,
+} from "../../../../shared/lexical";
 import type { ExpansionResult, TextExpander } from "./TextExpander.interface";
 
 /**

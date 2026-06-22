@@ -13,7 +13,8 @@ export async function GET(request: Request) {
   if (!config) {
     return NextResponse.json(
       {
-        error: "OIDC not configured. Set OIDC_ISSUER, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET in environment variables.",
+        error:
+          "OIDC not configured. Set OIDC_ISSUER, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET in environment variables.",
       },
       { status: 500 }
     );
@@ -63,6 +64,9 @@ export async function GET(request: Request) {
     return response;
   } catch (error) {
     console.error("OIDC start error:", error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : "OIDC start failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "OIDC start failed" },
+      { status: 500 }
+    );
   }
 }

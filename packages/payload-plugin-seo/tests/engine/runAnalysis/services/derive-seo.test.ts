@@ -36,7 +36,8 @@ function makeInput(keyphrase: string): AnalysisInput {
   return {
     title: "Best Running Shoes for Every Runner",
     slug: "running-shoes",
-    description: "Discover the best running shoes for every type of runner. Expert picks, comparisons, and buying guides to help you find your perfect pair of running shoes.",
+    description:
+      "Discover the best running shoes for every type of runner. Expert picks, comparisons, and buying guides to help you find your perfect pair of running shoes.",
     contentHtml,
     keyphrase,
     locale: "en_US",

@@ -8,10 +8,14 @@ const postcssCli = createRequire(import.meta.url).resolve("postcss-cli");
 
 const compileCss = () =>
   new Promise<void>((resolve, reject) => {
-    const child = spawn("node", [postcssCli, "src/admin.css", "-o", "dist/admin.css", "--use", "@tailwindcss/postcss"], {
-      stdio: "inherit",
-      shell: false,
-    });
+    const child = spawn(
+      "node",
+      [postcssCli, "src/admin.css", "-o", "dist/admin.css", "--use", "@tailwindcss/postcss"],
+      {
+        stdio: "inherit",
+        shell: false,
+      }
+    );
 
     child.on("exit", (code) => {
       if (code !== 0) {

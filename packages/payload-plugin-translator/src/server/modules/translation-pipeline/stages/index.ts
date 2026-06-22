@@ -1,6 +1,11 @@
 export { DataReconciler, DataReconcilerStage } from "./data-reconciler";
 export { FieldChunkCollector, FieldChunkCollectorStage } from "./field-collector";
-export { TextChunkExpander, PlainTextExpander, RichTextExpander, TextChunkExpanderStage } from "./text-expander";
+export {
+  TextChunkExpander,
+  PlainTextExpander,
+  RichTextExpander,
+  TextChunkExpanderStage,
+} from "./text-expander";
 export type { TextExpansionResult, TextExpander, ExpansionResult } from "./text-expander";
 export { TranslationStage } from "./translation";
 export { TranslationMutator, TranslationMutatorStage } from "./translation-applicator";

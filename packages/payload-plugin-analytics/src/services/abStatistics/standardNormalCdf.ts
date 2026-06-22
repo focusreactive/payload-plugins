@@ -15,5 +15,11 @@ export function standardNormalCdf(x: number): number {
 
   const t = 1 / (1 + tSubstitutionScale * x);
 
-  return 1 - pdfNormalizer * Math.exp((-x * x) / 2) * t * (t * (t * (t * (t * polyCoeff5 + polyCoeff4) + polyCoeff3) + polyCoeff2) + polyCoeff1);
+  return (
+    1 -
+    pdfNormalizer *
+      Math.exp((-x * x) / 2) *
+      t *
+      (t * (t * (t * (t * polyCoeff5 + polyCoeff4) + polyCoeff3) + polyCoeff2) + polyCoeff1)
+  );
 }

@@ -16,7 +16,14 @@ type TranslationStatusProps = {
   createdAt: string;
 };
 
-export function RunningTranslationStatus({ onCancel, isLoading, disabled, sourceLocale, targetLocale, createdAt }: TranslationStatusProps) {
+export function RunningTranslationStatus({
+  onCancel,
+  isLoading,
+  disabled,
+  sourceLocale,
+  targetLocale,
+  createdAt,
+}: TranslationStatusProps) {
   return (
     <StatusIndicator $animated $color="blue" title="In Progress">
       <Tooltip
@@ -42,7 +49,16 @@ export function RunningTranslationStatus({ onCancel, isLoading, disabled, source
       <TranslationDirection sourceLocale={sourceLocale} targetLocale={targetLocale} />
       <Divider $size="sm" $orientation="vertical" />
       <Tooltip sideOffset={12} side="bottom" content="Cancel">
-        <Button $variant="light" $size="sm" $isIconButton aria-label="Cancel" type="button" onClick={onCancel} disabled={isLoading || disabled} $isLoading={isLoading}>
+        <Button
+          $variant="light"
+          $size="sm"
+          $isIconButton
+          aria-label="Cancel"
+          type="button"
+          onClick={onCancel}
+          disabled={isLoading || disabled}
+          $isLoading={isLoading}
+        >
           <TrashIcon />
         </Button>
       </Tooltip>

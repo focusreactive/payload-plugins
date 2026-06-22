@@ -32,7 +32,12 @@ export function FormCheckbox({ name, label, description, disabled, className }: 
           checked={formControl.field.value ?? false}
           onChange={formControl.field.onChange}
           onBlur={formControl.field.onBlur}
-          disabled={formControl.field.disabled || formControl.formState.disabled || formControl.formState.isSubmitting || disabled}
+          disabled={
+            formControl.field.disabled ||
+            formControl.formState.disabled ||
+            formControl.formState.isSubmitting ||
+            disabled
+          }
           aria-describedby={`${errorId} ${descriptionId}`}
         />
         <span className={styles.label__text}>{label}</span>

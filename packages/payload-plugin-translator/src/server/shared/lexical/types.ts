@@ -2,7 +2,11 @@
  * Re-exports serialized Lexical types from 'lexical' package.
  * These types represent the JSON structure stored in the database.
  */
-import type { SerializedLexicalNode, SerializedTextNode, SerializedRootNode } from "@payloadcms/richtext-lexical/lexical";
+import type {
+  SerializedLexicalNode,
+  SerializedTextNode,
+  SerializedRootNode,
+} from "@payloadcms/richtext-lexical/lexical";
 
 export type { SerializedLexicalNode, SerializedTextNode, SerializedRootNode };
 

@@ -18,7 +18,15 @@ type TranslationStatusProps = {
   createdAt: string;
 };
 
-export function PendingTranslationStatus({ onCancel, onRun, isLoading, disabled, sourceLocale, targetLocale, createdAt }: TranslationStatusProps) {
+export function PendingTranslationStatus({
+  onCancel,
+  onRun,
+  isLoading,
+  disabled,
+  sourceLocale,
+  targetLocale,
+  createdAt,
+}: TranslationStatusProps) {
   return (
     <StatusIndicator $color="gray" $animated title="Pending">
       <Tooltip
@@ -44,12 +52,30 @@ export function PendingTranslationStatus({ onCancel, onRun, isLoading, disabled,
       <TranslationDirection sourceLocale={sourceLocale} targetLocale={targetLocale} />
       <Divider $size="sm" $orientation="vertical" />
       <Tooltip sideOffset={12} side="bottom" content="Cancel">
-        <Button $variant="light" $size="sm" $isIconButton aria-label="Cancel" type="button" onClick={onCancel} disabled={isLoading || disabled} $isLoading={isLoading}>
+        <Button
+          $variant="light"
+          $size="sm"
+          $isIconButton
+          aria-label="Cancel"
+          type="button"
+          onClick={onCancel}
+          disabled={isLoading || disabled}
+          $isLoading={isLoading}
+        >
           <TrashIcon />
         </Button>
       </Tooltip>
       <Tooltip sideOffset={12} side="bottom" content="Run queued translation">
-        <Button $variant="light" $size="sm" $isIconButton aria-label="Run queued translation" type="button" onClick={onRun} disabled={isLoading || disabled} $isLoading={isLoading}>
+        <Button
+          $variant="light"
+          $size="sm"
+          $isIconButton
+          aria-label="Run queued translation"
+          type="button"
+          onClick={onRun}
+          disabled={isLoading || disabled}
+          $isLoading={isLoading}
+        >
           <ReloadIcon />
         </Button>
       </Tooltip>

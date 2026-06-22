@@ -5,7 +5,9 @@ import { fetchManifest } from "./api/fetchManifest";
 import { readManifest } from "./api/readManifest";
 import { createGlobal } from "./utils/createGlobal";
 
-export function payloadGlobalAdapter<TVariantData extends object>(config?: PayloadGlobalAdapterConfig): StorageAdapter<TVariantData> {
+export function payloadGlobalAdapter<TVariantData extends object>(
+  config?: PayloadGlobalAdapterConfig
+): StorageAdapter<TVariantData> {
   const slug = config?.globalSlug ?? "_abManifest";
 
   return {

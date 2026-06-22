@@ -7,7 +7,9 @@ export function overrideJobs(jobsConfig: JobsConfig | undefined, queue: string):
     ...jobsConfig,
     runHooks: true,
     jobsCollectionOverrides: ({ defaultJobsCollection }) => {
-      const baseJobsCollection = existingJobsCollectionOverrides ? existingJobsCollectionOverrides({ defaultJobsCollection }) : defaultJobsCollection;
+      const baseJobsCollection = existingJobsCollectionOverrides
+        ? existingJobsCollectionOverrides({ defaultJobsCollection })
+        : defaultJobsCollection;
 
       return {
         ...baseJobsCollection,

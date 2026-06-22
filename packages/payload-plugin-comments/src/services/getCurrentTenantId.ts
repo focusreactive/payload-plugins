@@ -6,7 +6,9 @@ import { getTenantFromCookie } from "@payloadcms/plugin-multi-tenant/utilities";
 import type { CommentsPluginConfigStorage } from "../types";
 
 export async function getCurrentTenantId(payload: Payload) {
-  const pluginConfig = payload.config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
+  const pluginConfig = payload.config.admin?.custom?.commentsPlugin as
+    | CommentsPluginConfigStorage
+    | undefined;
 
   const tenantConfig = pluginConfig?.tenant;
 

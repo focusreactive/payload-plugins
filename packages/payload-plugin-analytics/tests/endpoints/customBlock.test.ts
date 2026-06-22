@@ -21,7 +21,10 @@ function callHandler(ep: { handler: unknown }, req: unknown): Promise<Response> 
 
 describe("buildCustomBlockEndpoint", () => {
   it("invokes the block fetch with dateRange + comparison + ga4 + req and returns the result", async () => {
-    __setGa4ClientForTests({ runReport: vi.fn().mockResolvedValue([{}, null, null]), batchRunReports: vi.fn() });
+    __setGa4ClientForTests({
+      runReport: vi.fn().mockResolvedValue([{}, null, null]),
+      batchRunReports: vi.fn(),
+    });
 
     const fetchFn = vi.fn().mockResolvedValue({ value: 42 });
     const def: BlockDefinition = { component: "x", fetch: fetchFn };

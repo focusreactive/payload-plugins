@@ -9,6 +9,11 @@ import { analyticsKeys } from "./keys";
 export function useLeadActionsQuery(query: AnalyticsQuery) {
   return useQuery({
     queryKey: analyticsKeys.leadActions(query),
-    queryFn: ({ signal }) => analyticsFetch<AnalyticsQuery, LeadActionsResponse>(ANALYTICS_ENDPOINT_PATHS.leadActions, query, { signal }),
+    queryFn: ({ signal }) =>
+      analyticsFetch<AnalyticsQuery, LeadActionsResponse>(
+        ANALYTICS_ENDPOINT_PATHS.leadActions,
+        query,
+        { signal }
+      ),
   });
 }

@@ -11,8 +11,28 @@ type FormSelectProps = {
   className?: string;
 };
 
-export default function FormSelectLocale({ name, required, label, description, disabled, size, className }: FormSelectProps) {
+export default function FormSelectLocale({
+  name,
+  required,
+  label,
+  description,
+  disabled,
+  size,
+  className,
+}: FormSelectProps) {
   const localeOptions = useLocaleOptions();
 
-  return <FormSelect placeholder="-" size={size} className={className} description={description} label={label} required={required} name={name} options={localeOptions} disabled={disabled} />;
+  return (
+    <FormSelect
+      placeholder="-"
+      size={size}
+      className={className}
+      description={description}
+      label={label}
+      required={required}
+      name={name}
+      options={localeOptions}
+      disabled={disabled}
+    />
+  );
 }

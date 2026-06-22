@@ -53,7 +53,8 @@ const contentHtml = `
 const input: AnalysisInput = {
   title: "Best Running Shoes for Every Runner",
   slug: "running-shoes",
-  description: "Discover the best running shoes for every type of runner. Expert picks, comparisons, and buying guides to help you find your perfect pair of running shoes.",
+  description:
+    "Discover the best running shoes for every type of runner. Expert picks, comparisons, and buying guides to help you find your perfect pair of running shoes.",
   contentHtml,
   keyphrase: "running shoes",
   locale: "en_US",
@@ -74,7 +75,11 @@ describe("runAnalysis integration (real yoastseo — no mocks)", () => {
   it("populates data for visualization-bearing checks", () => {
     const result = runAnalysis(input);
 
-    const allChecks: CheckResult[] = [...result.keyphrase.checks, ...result.onPage.checks, ...result.readability.checks];
+    const allChecks: CheckResult[] = [
+      ...result.keyphrase.checks,
+      ...result.onPage.checks,
+      ...result.readability.checks,
+    ];
 
     // Build id -> data map and log it
     const dataMap: Record<string, Record<string, unknown> | undefined> = {};
@@ -95,13 +100,20 @@ describe("runAnalysis integration (real yoastseo — no mocks)", () => {
     // keyphraseDensity
     if (checkIds.has("keyphraseDensity")) {
       expect(dataMap["keyphraseDensity"], "keyphraseDensity.data must be defined").toBeDefined();
-      expect(typeof (dataMap["keyphraseDensity"] as Record<string, unknown>)?.densityPct).toBe("number");
+      expect(typeof (dataMap["keyphraseDensity"] as Record<string, unknown>)?.densityPct).toBe(
+        "number"
+      );
     }
 
     // metaDescriptionLength — uses our own heuristic via paper.getDescription()
     if (checkIds.has("metaDescriptionLength")) {
-      expect(dataMap["metaDescriptionLength"], "metaDescriptionLength.data must be defined").toBeDefined();
-      expect(typeof (dataMap["metaDescriptionLength"] as Record<string, unknown>)?.chars).toBe("number");
+      expect(
+        dataMap["metaDescriptionLength"],
+        "metaDescriptionLength.data must be defined"
+      ).toBeDefined();
+      expect(typeof (dataMap["metaDescriptionLength"] as Record<string, unknown>)?.chars).toBe(
+        "number"
+      );
     }
 
     // titleWidth — our own heuristic (character count * px/char), not yoastseo research
@@ -119,10 +131,14 @@ describe("runAnalysis integration (real yoastseo — no mocks)", () => {
     }
 
     if (checkIds.has("keyphraseDistribution")) {
-      expect(Array.isArray((dataMap["keyphraseDistribution"] as Record<string, unknown>)?.positions)).toBe(true);
+      expect(
+        Array.isArray((dataMap["keyphraseDistribution"] as Record<string, unknown>)?.positions)
+      ).toBe(true);
     }
     if (checkIds.has("fleschReadingEase")) {
-      expect(typeof (dataMap["fleschReadingEase"] as Record<string, unknown>)?.score).toBe("number");
+      expect(typeof (dataMap["fleschReadingEase"] as Record<string, unknown>)?.score).toBe(
+        "number"
+      );
     }
 
     // ── Soft assertions: present check ids with expected data must not be undefined ──
@@ -162,6 +178,9 @@ describe("runAnalysis integration (real yoastseo — no mocks)", () => {
     console.log("Silent failures (present but data=undefined):", silentFailures);
 
     // Fail if any present check that we expect data for returned undefined
-    expect(silentFailures, `Silent-failure bug: these checks are emitted by yoastseo assessor but extractCheckData returned undefined: ${silentFailures.join(", ")}`).toEqual([]);
+    expect(
+      silentFailures,
+      `Silent-failure bug: these checks are emitted by yoastseo assessor but extractCheckData returned undefined: ${silentFailures.join(", ")}`
+    ).toEqual([]);
   });
 });

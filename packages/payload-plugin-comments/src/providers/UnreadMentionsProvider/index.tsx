@@ -18,7 +18,10 @@ interface Props {
 export function UnreadMentionsProvider({ children }: Props) {
   const [markedReadIds, setMarkedReadIds] = useState<ReadonlySet<number>>(() => new Set<number>());
 
-  const isMarkedRead = useCallback((commentId: number) => markedReadIds.has(commentId), [markedReadIds]);
+  const isMarkedRead = useCallback(
+    (commentId: number) => markedReadIds.has(commentId),
+    [markedReadIds]
+  );
 
   const rememberRead = useCallback((commentId: number) => {
     setMarkedReadIds((prev) => {
@@ -31,7 +34,10 @@ export function UnreadMentionsProvider({ children }: Props) {
     });
   }, []);
 
-  const value = useMemo(() => ({ markedReadIds, isMarkedRead, rememberRead }), [markedReadIds, isMarkedRead, rememberRead]);
+  const value = useMemo(
+    () => ({ markedReadIds, isMarkedRead, rememberRead }),
+    [markedReadIds, isMarkedRead, rememberRead]
+  );
 
   return <UnreadMentionsContext.Provider value={value}>{children}</UnreadMentionsContext.Provider>;
 }

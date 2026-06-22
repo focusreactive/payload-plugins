@@ -645,7 +645,13 @@ describe("FieldChunkCollector", () => {
       const sourceData = { title: "Hello" };
       const targetData = { title: "Existing" };
 
-      const collector = new FieldChunkCollector(schema, filteredData, sourceData, targetData, skipExistingStrategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        filteredData,
+        sourceData,
+        targetData,
+        skipExistingStrategy
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(0);
@@ -657,7 +663,13 @@ describe("FieldChunkCollector", () => {
       const sourceData = { title: "Hello" };
       const targetData = { title: "" };
 
-      const collector = new FieldChunkCollector(schema, filteredData, sourceData, targetData, skipExistingStrategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        filteredData,
+        sourceData,
+        targetData,
+        skipExistingStrategy
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -673,7 +685,13 @@ describe("FieldChunkCollector", () => {
       const sourceData = { title: "Hello", description: "World" };
       const targetData = { title: "Existing", description: "" };
 
-      const collector = new FieldChunkCollector(schema, filteredData, sourceData, targetData, skipExistingStrategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        filteredData,
+        sourceData,
+        targetData,
+        skipExistingStrategy
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -686,7 +704,13 @@ describe("FieldChunkCollector", () => {
       const sourceData = { title: "Hello" };
       const targetData = { title: "Existing" };
 
-      const collector = new FieldChunkCollector(schema, filteredData, sourceData, targetData, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        filteredData,
+        sourceData,
+        targetData,
+        strategy
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -719,7 +743,13 @@ describe("FieldChunkCollector", () => {
         ],
       };
 
-      const collector = new FieldChunkCollector(schema, filteredData, sourceData, targetData, skipExistingStrategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        filteredData,
+        sourceData,
+        targetData,
+        skipExistingStrategy
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -741,7 +771,13 @@ describe("FieldChunkCollector", () => {
       const sourceData = { meta: { title: "Hello", description: "World" } };
       const targetData = { meta: { title: "Translated", description: "" } };
 
-      const collector = new FieldChunkCollector(schema, filteredData, sourceData, targetData, skipExistingStrategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        filteredData,
+        sourceData,
+        targetData,
+        skipExistingStrategy
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -780,7 +816,13 @@ describe("FieldChunkCollector", () => {
         ],
       };
 
-      const collector = new FieldChunkCollector(schema, filteredData, sourceData, targetData, skipExistingStrategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        filteredData,
+        sourceData,
+        targetData,
+        skipExistingStrategy
+      );
       const chunks = collector.collect();
 
       expect(chunks).toHaveLength(1);
@@ -819,7 +861,13 @@ describe("FieldChunkCollector", () => {
         ],
       };
 
-      const collector = new FieldChunkCollector(schema, filteredData, sourceData, targetData, skipExistingStrategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        filteredData,
+        sourceData,
+        targetData,
+        skipExistingStrategy
+      );
       const chunks = collector.collect();
 
       // Only id-2's content (source index 1) is collected; id-1 is skipped (its target is non-empty).
@@ -837,7 +885,13 @@ describe("FieldChunkCollector", () => {
       const sourceData = { title: "Source value" };
       const targetData = { title: "Target value" };
 
-      const collector = new FieldChunkCollector(schema, filteredData, sourceData, targetData, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        filteredData,
+        sourceData,
+        targetData,
+        strategy
+      );
       collector.collect();
 
       expect(filteredData.title).toBe("Source value");
@@ -849,7 +903,13 @@ describe("FieldChunkCollector", () => {
       const sourceData = { title: "Hello" };
       const targetData = { title: "Existing" };
 
-      const collector = new FieldChunkCollector(schema, filteredData, sourceData, targetData, skipExistingStrategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        filteredData,
+        sourceData,
+        targetData,
+        skipExistingStrategy
+      );
       collector.collect();
 
       expect(filteredData.title).toBe("Existing");
@@ -867,7 +927,13 @@ describe("FieldChunkCollector", () => {
       const sourceData = { meta: { title: "Source" } };
       const targetData = { meta: { title: "Target" } };
 
-      const collector = new FieldChunkCollector(schema, filteredData, sourceData, targetData, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        filteredData,
+        sourceData,
+        targetData,
+        strategy
+      );
       collector.collect();
 
       expect(filteredData.meta.title).toBe("Source");
@@ -885,7 +951,13 @@ describe("FieldChunkCollector", () => {
       const sourceData = { items: [{ id: "1", label: "Source" }] };
       const targetData = { items: [{ id: "1", label: "Target" }] };
 
-      const collector = new FieldChunkCollector(schema, filteredData, sourceData, targetData, strategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        filteredData,
+        sourceData,
+        targetData,
+        strategy
+      );
       collector.collect();
 
       expect(filteredData.items[0].label).toBe("Source");
@@ -894,7 +966,13 @@ describe("FieldChunkCollector", () => {
 
   describe("array edge cases", () => {
     it("skips non-object items in arrays (no chunk, no crash)", () => {
-      const schema: Field[] = [{ name: "items", type: "array", fields: [{ name: "label", type: "text", localized: true }] }];
+      const schema: Field[] = [
+        {
+          name: "items",
+          type: "array",
+          fields: [{ name: "label", type: "text", localized: true }],
+        },
+      ];
       const data = { items: [{ id: "1", label: "A" }, "garbage", null] };
 
       const collector = new FieldChunkCollector(schema, data, data, {}, strategy);
@@ -905,7 +983,13 @@ describe("FieldChunkCollector", () => {
     });
 
     it("falls back to empty source/target per item when the target array is shorter (SkipExisting)", () => {
-      const schema: Field[] = [{ name: "items", type: "array", fields: [{ name: "label", type: "text", localized: true }] }];
+      const schema: Field[] = [
+        {
+          name: "items",
+          type: "array",
+          fields: [{ name: "label", type: "text", localized: true }],
+        },
+      ];
       const filteredData = {
         items: [
           { id: "1", label: "A" },
@@ -914,7 +998,13 @@ describe("FieldChunkCollector", () => {
       };
       const targetData = { items: [{ id: "1", label: "T" }] };
 
-      const collector = new FieldChunkCollector(schema, filteredData, filteredData, targetData, skipExistingStrategy);
+      const collector = new FieldChunkCollector(
+        schema,
+        filteredData,
+        filteredData,
+        targetData,
+        skipExistingStrategy
+      );
       const chunks = collector.collect();
 
       // item 0 has an existing target → skipped; item 1's target falls back to {} → collected
@@ -926,7 +1016,12 @@ describe("FieldChunkCollector", () => {
   describe("excluded fields", () => {
     it("skips fields excluded via custom.translateKit.exclude", () => {
       const schema: Field[] = [
-        { name: "title", type: "text", localized: true, custom: { translateKit: { exclude: true } } },
+        {
+          name: "title",
+          type: "text",
+          localized: true,
+          custom: { translateKit: { exclude: true } },
+        },
         { name: "subtitle", type: "text", localized: true },
       ];
       const data = { title: "Hello", subtitle: "World" };

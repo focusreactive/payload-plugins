@@ -13,7 +13,15 @@ interface VariantRowProps {
   onSaved: () => void;
 }
 
-export function VariantRow({ variant, collectionSlug, maxPercentage, onPercentageChange, onPercentageBlur, onDelete, onSaved }: VariantRowProps) {
+export function VariantRow({
+  variant,
+  collectionSlug,
+  maxPercentage,
+  onPercentageChange,
+  onPercentageBlur,
+  onDelete,
+  onSaved,
+}: VariantRowProps) {
   const [DocumentDrawer, , { openDrawer, closeDrawer }] = useDocumentDrawer({
     collectionSlug,
     id: variant.id,
@@ -37,7 +45,9 @@ export function VariantRow({ variant, collectionSlug, maxPercentage, onPercentag
         background: "var(--theme-elevation-50)",
       }}
     >
-      <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: "var(--theme-elevation-800)" }}>{variant.title}</span>
+      <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: "var(--theme-elevation-800)" }}>
+        {variant.title}
+      </span>
 
       <div className="ab-percent-input-wrapper">
         <input
@@ -53,11 +63,21 @@ export function VariantRow({ variant, collectionSlug, maxPercentage, onPercentag
         <span className="ab-percent-suffix">%</span>
       </div>
 
-      <button type="button" onClick={openDrawer} className="ab-variant-icon-btn" title="Edit variant">
+      <button
+        type="button"
+        onClick={openDrawer}
+        className="ab-variant-icon-btn"
+        title="Edit variant"
+      >
         <EditIcon />
       </button>
 
-      <button type="button" onClick={onDelete} className="ab-variant-icon-btn ab-variant-icon-btn--danger" title="Remove variant">
+      <button
+        type="button"
+        onClick={onDelete}
+        className="ab-variant-icon-btn ab-variant-icon-btn--danger"
+        title="Remove variant"
+      >
         <TrashIcon />
       </button>
 

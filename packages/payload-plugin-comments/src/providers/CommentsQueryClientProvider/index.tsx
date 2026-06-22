@@ -21,7 +21,11 @@ export function CommentsQueryClientProvider({ children }: Props) {
       })
   );
 
-  return <CommentsQueryClientContext.Provider value={queryClient}>{children}</CommentsQueryClientContext.Provider>;
+  return (
+    <CommentsQueryClientContext.Provider value={queryClient}>
+      {children}
+    </CommentsQueryClientContext.Provider>
+  );
 }
 
 export function useCommentsQueryClient(): QueryClient {

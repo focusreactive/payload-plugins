@@ -53,7 +53,12 @@ export type { FieldTranslationConfig as TranslateKitFieldConfig };
  * withFieldTranslation({ name: 'sku', type: 'text', localized: true }, { exclude: true })
  * ```
  */
-export function withFieldTranslation<T extends Field>(field: T, ...rest: T extends FieldControlCandidate ? [config?: { exclude?: boolean }] : [config: { exclude: true }]): T;
+export function withFieldTranslation<T extends Field>(
+  field: T,
+  ...rest: T extends FieldControlCandidate
+    ? [config?: { exclude?: boolean }]
+    : [config: { exclude: true }]
+): T;
 export function withFieldTranslation(field: Field, config?: { exclude?: boolean }): Field {
   const configured = {
     ...field,
@@ -65,7 +70,9 @@ export function withFieldTranslation(field: Field, config?: { exclude?: boolean 
 
   // No `exclude` = control intent: position the control via the active positioner.
   // `exclude: true` = no control (the field is left out of translation entirely).
-  return config?.exclude ? configured : activeFieldControlPositioner(configured, new TranslateFieldControlExport());
+  return config?.exclude
+    ? configured
+    : activeFieldControlPositioner(configured, new TranslateFieldControlExport());
 }
 
 /**

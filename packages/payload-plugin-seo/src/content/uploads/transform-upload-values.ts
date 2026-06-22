@@ -17,7 +17,12 @@ function isId(v: unknown): v is string | number {
   return typeof v === "string" || typeof v === "number";
 }
 
-function transformRelationValue(value: unknown, relationTo: string | string[], ctx: UploadWalkContext, transform: UploadTransform): unknown {
+function transformRelationValue(
+  value: unknown,
+  relationTo: string | string[],
+  ctx: UploadWalkContext,
+  transform: UploadTransform
+): unknown {
   if (Array.isArray(value)) {
     return value.map((item) => transformRelationValue(item, relationTo, ctx, transform));
   }
@@ -29,7 +34,12 @@ function transformRelationValue(value: unknown, relationTo: string | string[], c
     return replaced === undefined ? value : replaced;
   }
 
-  if (isRecord(value) && typeof value.relationTo === "string" && isId(value.value) && ctx.isUploadCollection(value.relationTo)) {
+  if (
+    isRecord(value) &&
+    typeof value.relationTo === "string" &&
+    isId(value.value) &&
+    ctx.isUploadCollection(value.relationTo)
+  ) {
     const replaced = transform({
       collection: value.relationTo,
       id: value.value,
@@ -41,16 +51,27 @@ function transformRelationValue(value: unknown, relationTo: string | string[], c
   return value;
 }
 
-function blockDef(field: { blocks?: ClientBlock[]; blockReferences?: (ClientBlock | string)[] }, slug: string, ctx: UploadWalkContext): ClientBlock | undefined {
+function blockDef(
+  field: { blocks?: ClientBlock[]; blockReferences?: (ClientBlock | string)[] },
+  slug: string,
+  ctx: UploadWalkContext
+): ClientBlock | undefined {
   const inline = field.blocks?.find((b) => b.slug === slug);
   if (inline) return inline;
-  const ref = field.blockReferences?.find((r) => (typeof r === "string" ? r === slug : r.slug === slug));
+  const ref = field.blockReferences?.find((r) =>
+    typeof r === "string" ? r === slug : r.slug === slug
+  );
   if (ref) return typeof ref === "string" ? ctx.blocksBySlug[ref] : ref;
 
   return ctx.blocksBySlug[slug];
 }
 
-export function transformUploadValues(values: Values, fields: ClientField[], ctx: UploadWalkContext, transform: UploadTransform): Values {
+export function transformUploadValues(
+  values: Values,
+  fields: ClientField[],
+  ctx: UploadWalkContext,
+  transform: UploadTransform
+): Values {
   const out: Values = { ...values };
 
   for (const f of fields) {
@@ -58,7 +79,8 @@ export function transformUploadValues(values: Values, fields: ClientField[], ctx
       case "upload":
       case "relationship": {
         const v = out[f.name];
-        if (v !== undefined && v !== null) out[f.name] = transformRelationValue(v, f.relationTo, ctx, transform);
+        if (v !== undefined && v !== null)
+          out[f.name] = transformRelationValue(v, f.relationTo, ctx, transform);
         break;
       }
       case "richText": {
@@ -69,7 +91,9 @@ export function transformUploadValues(values: Values, fields: ClientField[], ctx
       case "array": {
         const v = out[f.name];
         if (Array.isArray(v)) {
-          out[f.name] = v.map((item) => (isRecord(item) ? transformUploadValues(item, f.fields, ctx, transform) : item));
+          out[f.name] = v.map((item) =>
+            isRecord(item) ? transformUploadValues(item, f.fields, ctx, transform) : item
+          );
         }
         break;
       }

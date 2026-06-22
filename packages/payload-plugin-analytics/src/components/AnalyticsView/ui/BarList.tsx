@@ -25,7 +25,16 @@ export interface BarListProps<R extends BarListRow = BarListRow> extends BlockSt
   invertDelta?: boolean;
 }
 
-export function BarList<R extends BarListRow>({ rows, initialVisible = 5, getIcon, loading, error, onRetry, format = formatNumber, invertDelta }: BarListProps<R>) {
+export function BarList<R extends BarListRow>({
+  rows,
+  initialVisible = 5,
+  getIcon,
+  loading,
+  error,
+  onRetry,
+  format = formatNumber,
+  invertDelta,
+}: BarListProps<R>) {
   const [expanded, setExpanded] = useState(false);
 
   if (loading) return <SkeletonBlock shape="table" rows={initialVisible} />;
@@ -48,12 +57,17 @@ export function BarList<R extends BarListRow>({ rows, initialVisible = 5, getIco
           const widthPrev = max === 0 || prev == null ? 0 : (prev / max) * 100;
 
           return (
-            <div key={i} className="grid grid-cols-[minmax(160px,1fr)_minmax(140px,2fr)_120px_50px] gap-3 items-center">
+            <div
+              key={i}
+              className="grid grid-cols-[minmax(160px,1fr)_minmax(140px,2fr)_120px_50px] gap-3 items-center"
+            >
               <div className="flex items-center gap-2 min-w-0">
                 {Icon && <Icon size={13} className="text-[var(--theme-elevation-500)] shrink-0" />}
                 <div className="min-w-0">
                   <div className="truncate">{label}</div>
-                  {sub && <div className="text-[var(--theme-elevation-500)] text-[11px]">{sub}</div>}
+                  {sub && (
+                    <div className="text-[var(--theme-elevation-500)] text-[11px]">{sub}</div>
+                  )}
                 </div>
               </div>
 
@@ -82,12 +96,20 @@ export function BarList<R extends BarListRow>({ rows, initialVisible = 5, getIco
 
               <div className="text-right">
                 {hasPrev ? (
-                  <Metric value={value} prevValue={prev ?? null} format={format} invertDelta={invertDelta} mode="inline" />
+                  <Metric
+                    value={value}
+                    prevValue={prev ?? null}
+                    format={format}
+                    invertDelta={invertDelta}
+                    mode="inline"
+                  />
                 ) : (
                   <span className="tabular-nums text-[12.5px]">{format(value)}</span>
                 )}
               </div>
-              <div className="text-right text-[var(--theme-elevation-500)] text-[11px]">{percent.toFixed(1)}%</div>
+              <div className="text-right text-[var(--theme-elevation-500)] text-[11px]">
+                {percent.toFixed(1)}%
+              </div>
             </div>
           );
         })}
@@ -97,7 +119,9 @@ export function BarList<R extends BarListRow>({ rows, initialVisible = 5, getIco
         <button
           type="button"
           onClick={() => setExpanded((e) => !e)}
-          className={cn("mt-2.5 inline-flex items-center gap-1 text-[11px] text-[var(--theme-elevation-500)] hover:text-[var(--theme-elevation-1000)]")}
+          className={cn(
+            "mt-2.5 inline-flex items-center gap-1 text-[11px] text-[var(--theme-elevation-500)] hover:text-[var(--theme-elevation-1000)]"
+          )}
         >
           {expanded ? "Show less" : `+${rows.length - initialVisible} more`}
           <ChevronRight size={11} />

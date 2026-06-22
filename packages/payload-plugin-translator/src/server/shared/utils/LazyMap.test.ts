@@ -7,7 +7,11 @@ type TestEntry = {
   updatedAt: number;
 };
 
-const createEntry = (id: string, status: TestEntry["status"] = "completed", updatedAt: number = Date.now()): TestEntry => ({
+const createEntry = (
+  id: string,
+  status: TestEntry["status"] = "completed",
+  updatedAt: number = Date.now()
+): TestEntry => ({
   id,
   status,
   updatedAt,

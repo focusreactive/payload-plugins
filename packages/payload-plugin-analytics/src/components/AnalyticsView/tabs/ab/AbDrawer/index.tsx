@@ -1,13 +1,32 @@
 "use client";
 
 import { useEffect } from "react";
-import { X, Split, Zap, TrendingUp, BarChart3, CheckCircle2, AlertOctagon, Trophy, Minus, Hourglass, CircleDot } from "lucide-react";
+import {
+  X,
+  Split,
+  Zap,
+  TrendingUp,
+  BarChart3,
+  CheckCircle2,
+  AlertOctagon,
+  Trophy,
+  Minus,
+  Hourglass,
+  CircleDot,
+} from "lucide-react";
 import { DataCard } from "../../../ui/DataCard";
 import { useLeadActionRegistry } from "../../../contexts/LeadActionRegistryContext";
 import { cn } from "../../../../../utils/style";
 import { AbMultiLineChart } from "../AbMultiLineChart";
 import { BucketName, abLiftClass } from "../cells";
-import { getBucketColor, getBucketLabel, formatDayShort, formatPercent, formatPValue, formatSignedPercent } from "../format";
+import {
+  getBucketColor,
+  getBucketLabel,
+  formatDayShort,
+  formatPercent,
+  formatPValue,
+  formatSignedPercent,
+} from "../format";
 import {
   useAbExperimentHeaderQuery,
   useAbExperimentExposureQuery,
@@ -16,7 +35,13 @@ import {
   useAbExperimentLeadBreakdownQuery,
 } from "../../../hooks/queries/useAbQueries";
 import type { AnalyticsQuery } from "../../../../../types/query";
-import { Tooltip, TooltipTitle, TooltipText, TooltipLegend, TooltipLegendRow } from "../../../ui/Tooltip";
+import {
+  Tooltip,
+  TooltipTitle,
+  TooltipText,
+  TooltipLegend,
+  TooltipLegendRow,
+} from "../../../ui/Tooltip";
 import { indBoxVariants, indPillVariants, PANEL_TBL } from "./variants";
 import type { IndTone } from "./variants";
 
@@ -67,8 +92,14 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
         <div className="px-5 py-4 border-b border-(--theme-border-color) flex flex-col gap-2.5">
           <div className="flex items-center">
             <div className="flex flex-col gap-0.5">
-              {h?.parentTitle && <span className="text-[17px] font-semibold tracking-[-0.01em] text-(--theme-elevation-1000)">{h.parentTitle}</span>}
-              <span className="font-[family-name:var(--font-mono)] text-[12.5px] text-(--theme-elevation-500)">{manifestKey}</span>
+              {h?.parentTitle && (
+                <span className="text-[17px] font-semibold tracking-[-0.01em] text-(--theme-elevation-1000)">
+                  {h.parentTitle}
+                </span>
+              )}
+              <span className="font-[family-name:var(--font-mono)] text-[12.5px] text-(--theme-elevation-500)">
+                {manifestKey}
+              </span>
             </div>
             <button
               type="button"
@@ -88,19 +119,36 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
               content={
                 <>
                   <TooltipTitle>Sample Ratio Mismatch</TooltipTitle>
-                  <TooltipText>Chi-square test that the observed traffic split matches the configured split. A mismatch points to a bucketing or tracking bug that invalidates results.</TooltipText>
+                  <TooltipText>
+                    Chi-square test that the observed traffic split matches the configured split. A
+                    mismatch points to a bucketing or tracking bug that invalidates results.
+                  </TooltipText>
                   <TooltipLegend>
-                    <TooltipLegendRow color="var(--theme-success-500)">Healthy — p ≥ 0.001</TooltipLegendRow>
-                    <TooltipLegendRow color="var(--theme-error-500)">Mismatch — p &lt; 0.001</TooltipLegendRow>
+                    <TooltipLegendRow color="var(--theme-success-500)">
+                      Healthy — p ≥ 0.001
+                    </TooltipLegendRow>
+                    <TooltipLegendRow color="var(--theme-error-500)">
+                      Mismatch — p &lt; 0.001
+                    </TooltipLegendRow>
                   </TooltipLegend>
                 </>
               }
             >
-              {!exp ? <Minus size={18} /> : exp.srmPassed ? <CheckCircle2 size={18} /> : <AlertOctagon size={18} />}
+              {!exp ? (
+                <Minus size={18} />
+              ) : exp.srmPassed ? (
+                <CheckCircle2 size={18} />
+              ) : (
+                <AlertOctagon size={18} />
+              )}
               <span className="flex min-w-0 flex-col gap-[3px]">
                 <span className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-(--theme-elevation-500)">Sample ratio Mismatch</span>
-                  <span className={cn(indPillVariants({ tone: srmTone }))}>{!exp ? "—" : exp.srmPassed ? "Healthy" : "Mismatch"}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-(--theme-elevation-500)">
+                    Sample ratio Mismatch
+                  </span>
+                  <span className={cn(indPillVariants({ tone: srmTone }))}>
+                    {!exp ? "—" : exp.srmPassed ? "Healthy" : "Mismatch"}
+                  </span>
                 </span>
                 <span className="font-[family-name:var(--font-mono)] text-[14px] font-semibold tracking-[-0.01em] tabular-nums text-(--theme-elevation-1000)">
                   {exp ? `${exp.srmPValue < 0.001 ? "< 0.001" : exp.srmPValue.toFixed(3)}` : "—"}
@@ -114,20 +162,36 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                 <>
                   <TooltipTitle>Minimum Detectable Effect</TooltipTitle>
                   <TooltipText>
-                    Smallest relative lift this test can detect at the current sample size (α 0.05, power 0.80). Collect more sessions before trusting a "no effect" reading while underpowered.
+                    Smallest relative lift this test can detect at the current sample size (α 0.05,
+                    power 0.80). Collect more sessions before trusting a "no effect" reading while
+                    underpowered.
                   </TooltipText>
                   <TooltipLegend>
-                    <TooltipLegendRow color="var(--theme-success-500)">Detectable — MDE ≤ {ceilPct}% (the qualification ceiling)</TooltipLegendRow>
-                    <TooltipLegendRow color="var(--theme-warning-500)">Underpowered — MDE &gt; {ceilPct}%</TooltipLegendRow>
+                    <TooltipLegendRow color="var(--theme-success-500)">
+                      Detectable — MDE ≤ {ceilPct}% (the qualification ceiling)
+                    </TooltipLegendRow>
+                    <TooltipLegendRow color="var(--theme-warning-500)">
+                      Underpowered — MDE &gt; {ceilPct}%
+                    </TooltipLegendRow>
                   </TooltipLegend>
                 </>
               }
             >
-              {!mdeKnown ? <Minus size={18} /> : mdePowered ? <CheckCircle2 size={18} /> : <Hourglass size={18} />}
+              {!mdeKnown ? (
+                <Minus size={18} />
+              ) : mdePowered ? (
+                <CheckCircle2 size={18} />
+              ) : (
+                <Hourglass size={18} />
+              )}
               <span className="flex min-w-0 flex-col gap-[3px]">
                 <span className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-(--theme-elevation-500)">Minimum Detectable Effect</span>
-                  <span className={cn(indPillVariants({ tone: mdeTone }))}>{!mdeKnown ? "No data" : mdePowered ? "Detectable" : "Underpowered"}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-(--theme-elevation-500)">
+                    Minimum Detectable Effect
+                  </span>
+                  <span className={cn(indPillVariants({ tone: mdeTone }))}>
+                    {!mdeKnown ? "No data" : mdePowered ? "Detectable" : "Underpowered"}
+                  </span>
                 </span>
                 <span className="font-[family-name:var(--font-mono)] text-[14px] font-semibold tracking-[-0.01em] tabular-nums text-(--theme-elevation-1000)">
                   {mdeKnown ? `${(h!.mdeRelative! * 100).toFixed(1)}%` : "—"}
@@ -138,16 +202,28 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
 
           <div className="mt-2 grid grid-cols-3 gap-0 overflow-hidden rounded-(--style-radius-m) border border-(--theme-border-color) max-[760px]:grid-cols-2">
             <div className="flex flex-col gap-[3px] border-r border-(--theme-border-color) px-3 py-2.5 last:border-r-0 max-[760px]:[&:nth-child(2)]:border-r-0">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--theme-elevation-500)">Variants</span>
-              <span className="text-[12.5px] font-medium text-(--theme-elevation-900)">{h ? `${h.variantCount} variant${h.variantCount === 1 ? "" : "s"}` : "—"}</span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--theme-elevation-500)">
+                Variants
+              </span>
+              <span className="text-[12.5px] font-medium text-(--theme-elevation-900)">
+                {h ? `${h.variantCount} variant${h.variantCount === 1 ? "" : "s"}` : "—"}
+              </span>
             </div>
             <div className="flex flex-col gap-[3px] border-r border-(--theme-border-color) px-3 py-2.5 last:border-r-0 max-[760px]:[&:nth-child(2)]:border-r-0">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--theme-elevation-500)">Started</span>
-              <span className="text-[12.5px] font-medium text-(--theme-elevation-900)">{h?.startedAt ? formatDayShort(h.startedAt) : "—"}</span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--theme-elevation-500)">
+                Started
+              </span>
+              <span className="text-[12.5px] font-medium text-(--theme-elevation-900)">
+                {h?.startedAt ? formatDayShort(h.startedAt) : "—"}
+              </span>
             </div>
             <div className="flex flex-col gap-[3px] border-r border-(--theme-border-color) px-3 py-2.5 last:border-r-0 max-[760px]:[&:nth-child(2)]:border-r-0">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--theme-elevation-500)">Days running</span>
-              <span className="text-[12.5px] font-medium text-(--theme-elevation-900)">{h?.daysRunning != null ? `${h.daysRunning} days` : "—"}</span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--theme-elevation-500)">
+                Days running
+              </span>
+              <span className="text-[12.5px] font-medium text-(--theme-elevation-900)">
+                {h?.daysRunning != null ? `${h.daysRunning} days` : "—"}
+              </span>
             </div>
           </div>
         </div>
@@ -194,7 +270,11 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                       <td className="num">{b.visitors.toLocaleString()}</td>
                       <td className="num">{b.sessions.toLocaleString()}</td>
                       <td className="num">{(obs * 100).toFixed(1)}%</td>
-                      <td className="num text-(--theme-elevation-500)">{b.configuredShare != null ? `${(b.configuredShare * 100).toFixed(0)}%` : "—"}</td>
+                      <td className="num text-(--theme-elevation-500)">
+                        {b.configuredShare != null
+                          ? `${(b.configuredShare * 100).toFixed(0)}%`
+                          : "—"}
+                      </td>
                     </tr>
                   );
                 })}
@@ -204,8 +284,13 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
 
           {/* Panel 2 — Primary outcome */}
           {(() => {
-            const winnerRow = out?.winnerBucket ? out.rows.find((r) => r.bucket === out.winnerBucket) : undefined;
-            const leaderRow = !out?.winnerBucket && out?.leaderBucket ? out.rows.find((r) => r.bucket === out.leaderBucket) : undefined;
+            const winnerRow = out?.winnerBucket
+              ? out.rows.find((r) => r.bucket === out.winnerBucket)
+              : undefined;
+            const leaderRow =
+              !out?.winnerBucket && out?.leaderBucket
+                ? out.rows.find((r) => r.bucket === out.leaderBucket)
+                : undefined;
             return (
               <DataCard
                 title="Lead conversion"
@@ -213,11 +298,13 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                 action={
                   winnerRow ? (
                     <span className="inline-flex items-center gap-[5px] whitespace-nowrap rounded-full border border-(--theme-success-200) bg-(--theme-success-50) px-2.5 py-[3px] text-[11px] font-semibold text-(--theme-success-700) dark:text-(--theme-success-500)">
-                      <Trophy size={12} /> Winner · {getBucketLabel(winnerRow.bucket, winnerRow.name)}
+                      <Trophy size={12} /> Winner ·{" "}
+                      {getBucketLabel(winnerRow.bucket, winnerRow.name)}
                     </span>
                   ) : leaderRow ? (
                     <span className="inline-flex items-center gap-[5px] whitespace-nowrap rounded-full border border-(--theme-border-color) bg-(--theme-elevation-50) px-2.5 py-[3px] text-[11px] font-semibold text-[var(--theme-elevation-600,var(--theme-elevation-500))]">
-                      <CircleDot size={11} /> Leader · {getBucketLabel(leaderRow.bucket, leaderRow.name)} (provisional)
+                      <CircleDot size={11} /> Leader ·{" "}
+                      {getBucketLabel(leaderRow.bucket, leaderRow.name)} (provisional)
                     </span>
                   ) : undefined
                 }
@@ -237,17 +324,31 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                           content={
                             <>
                               <TooltipTitle>Confidence</TooltipTitle>
-                              <TooltipText>How likely this variant truly beats the original, based on the conversions seen so far.</TooltipText>
-                              <TooltipText>Φ(z) = 1 − one-sided p-value of a two-proportion z-test versus the control (normal approximation).</TooltipText>
+                              <TooltipText>
+                                How likely this variant truly beats the original, based on the
+                                conversions seen so far.
+                              </TooltipText>
+                              <TooltipText>
+                                Φ(z) = 1 − one-sided p-value of a two-proportion z-test versus the
+                                control (normal approximation).
+                              </TooltipText>
                               <TooltipLegend>
-                                <TooltipLegendRow color="var(--theme-success-500)">≥ 97.5% — significant winner</TooltipLegendRow>
-                                <TooltipLegendRow color="var(--theme-elevation-400)">~ 50% — no real difference</TooltipLegendRow>
-                                <TooltipLegendRow color="var(--theme-error-500)">&lt; 50% — worse than the original</TooltipLegendRow>
+                                <TooltipLegendRow color="var(--theme-success-500)">
+                                  ≥ 97.5% — significant winner
+                                </TooltipLegendRow>
+                                <TooltipLegendRow color="var(--theme-elevation-400)">
+                                  ~ 50% — no real difference
+                                </TooltipLegendRow>
+                                <TooltipLegendRow color="var(--theme-error-500)">
+                                  &lt; 50% — worse than the original
+                                </TooltipLegendRow>
                               </TooltipLegend>
                             </>
                           }
                         >
-                          <span className="underline decoration-dotted decoration-(--theme-elevation-300) underline-offset-2">Confidence</span>
+                          <span className="underline decoration-dotted decoration-(--theme-elevation-300) underline-offset-2">
+                            Confidence
+                          </span>
                         </Tooltip>
                       </th>
                       <th>
@@ -259,20 +360,30 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                             <>
                               <TooltipTitle>Significance</TooltipTitle>
                               <TooltipText>
-                                Whether you can trust this difference — or whether it could just be random noise. A "significant" result is large enough that chance is an unlikely explanation.
+                                Whether you can trust this difference — or whether it could just be
+                                random noise. A "significant" result is large enough that chance is
+                                an unlikely explanation.
                               </TooltipText>
                               <TooltipText>
-                                Based on a two-proportion z-test: it compares the conversion rates of two independent groups (variant vs. control) and tests the null hypothesis that they are equal.
-                                When p &lt; α (default = 0.05) the null is rejected — the difference is significant, not chance.
+                                Based on a two-proportion z-test: it compares the conversion rates
+                                of two independent groups (variant vs. control) and tests the null
+                                hypothesis that they are equal. When p &lt; α (default = 0.05) the
+                                null is rejected — the difference is significant, not chance.
                               </TooltipText>
                               <TooltipLegend>
-                                <TooltipLegendRow color="var(--theme-elevation-700)">Significant — p &lt; α, the difference is real</TooltipLegendRow>
-                                <TooltipLegendRow color="var(--theme-elevation-400)">Not significant — p ≥ α, could be noise</TooltipLegendRow>
+                                <TooltipLegendRow color="var(--theme-elevation-700)">
+                                  Significant — p &lt; α, the difference is real
+                                </TooltipLegendRow>
+                                <TooltipLegendRow color="var(--theme-elevation-400)">
+                                  Not significant — p ≥ α, could be noise
+                                </TooltipLegendRow>
                               </TooltipLegend>
                             </>
                           }
                         >
-                          <span className="underline decoration-dotted decoration-(--theme-elevation-300) underline-offset-2">Significance</span>
+                          <span className="underline decoration-dotted decoration-(--theme-elevation-300) underline-offset-2">
+                            Significance
+                          </span>
                         </Tooltip>
                       </th>
                     </tr>
@@ -284,14 +395,22 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                       const isSig = r.verdict === "winner" || r.verdict === "loser";
 
                       return (
-                        <tr key={r.bucket} className={cn(isWinner && "bg-(--theme-success-50)", isLeader && "bg-(--theme-elevation-50)")}>
+                        <tr
+                          key={r.bucket}
+                          className={cn(
+                            isWinner && "bg-(--theme-success-50)",
+                            isLeader && "bg-(--theme-elevation-50)"
+                          )}
+                        >
                           <td>
                             <BucketName bucket={r.bucket} name={r.name} index={i} />
                           </td>
                           <td className="num">
                             <div className="flex flex-col items-end gap-px">
                               <span>{r.convertingSessions.toLocaleString()}</span>
-                              <span className="text-[10.5px] font-[family-name:var(--font-mono)] text-(--theme-elevation-500)">{r.rawConversions} events</span>
+                              <span className="text-[10.5px] font-[family-name:var(--font-mono)] text-(--theme-elevation-500)">
+                                {r.rawConversions} events
+                              </span>
                             </div>
                           </td>
                           <td className="num">
@@ -300,8 +419,22 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                           <td className="num">
                             {r.relativeLift != null ? (
                               <div className="flex flex-col items-end gap-px">
-                                <span className={abLiftClass(r.verdict === "winner" ? "is-up" : r.verdict === "loser" ? "is-down" : "is-ns")}>{formatSignedPercent(r.relativeLift)}</span>
-                                <span className="text-[10.5px] font-mono text-(--theme-elevation-500)">{r.absoluteLift != null ? formatSignedPercent(r.absoluteLift, 2) : ""}</span>
+                                <span
+                                  className={abLiftClass(
+                                    r.verdict === "winner"
+                                      ? "is-up"
+                                      : r.verdict === "loser"
+                                        ? "is-down"
+                                        : "is-ns"
+                                  )}
+                                >
+                                  {formatSignedPercent(r.relativeLift)}
+                                </span>
+                                <span className="text-[10.5px] font-mono text-(--theme-elevation-500)">
+                                  {r.absoluteLift != null
+                                    ? formatSignedPercent(r.absoluteLift, 2)
+                                    : ""}
+                                </span>
                               </div>
                             ) : (
                               <span className="text-(--theme-elevation-500)">—</span>
@@ -309,7 +442,10 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                           </td>
                           <td className="num">
                             {r.confidence != null ? (
-                              <span className="cursor-help font-semibold tabular-nums text-(--theme-elevation-900)" title="Probability this variant beats the original — Φ(z).">
+                              <span
+                                className="cursor-help font-semibold tabular-nums text-(--theme-elevation-900)"
+                                title="Probability this variant beats the original — Φ(z)."
+                              >
                                 {(r.confidence * 100).toFixed(1)}%
                               </span>
                             ) : (
@@ -319,7 +455,14 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                           <td>
                             {r.verdict ? (
                               <div className="flex flex-col items-start gap-1">
-                                <span className={cn("text-[12px]", isSig ? "font-semibold text-(--theme-elevation-900)" : "font-medium text-(--theme-elevation-500)")}>
+                                <span
+                                  className={cn(
+                                    "text-[12px]",
+                                    isSig
+                                      ? "font-semibold text-(--theme-elevation-900)"
+                                      : "font-medium text-(--theme-elevation-500)"
+                                  )}
+                                >
                                   {isSig ? "Significant" : "Not significant"}
                                 </span>
                                 {r.pValue != null &&
@@ -328,7 +471,9 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                                       p {formatPValue(r.pValue)}
                                     </span>
                                   ) : (
-                                    <span className="font-[family-name:var(--font-mono)] text-[10.5px] text-(--theme-elevation-500)">p {formatPValue(r.pValue)}</span>
+                                    <span className="font-[family-name:var(--font-mono)] text-[10.5px] text-(--theme-elevation-500)">
+                                      p {formatPValue(r.pValue)}
+                                    </span>
                                   ))}
                               </div>
                             ) : (
@@ -344,14 +489,24 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                   <div className="mt-2.5 flex items-start gap-[7px] border-t border-(--theme-border-color) pt-[11px] text-[11.5px] leading-[1.5] text-[var(--theme-elevation-600,var(--theme-elevation-500))] [&>svg]:mt-0.5 [&>svg]:shrink-0 [&>svg]:text-(--theme-elevation-500) [&_b]:font-semibold [&_b]:text-(--theme-elevation-1000)">
                     {winnerRow ? (
                       <>
-                        <Trophy size={12} /> <b>{getBucketLabel(winnerRow.bucket, winnerRow.name)}</b> is the crowned winner — highest confidence (
-                        {winnerRow.confidence != null ? `${(winnerRow.confidence * 100).toFixed(1)}%` : "—"}) among variants clearing p &lt; {out.alpha} with positive lift and ≥ {out.sessionFloor}{" "}
-                        sessions per bucket.
+                        <Trophy size={12} />{" "}
+                        <b>{getBucketLabel(winnerRow.bucket, winnerRow.name)}</b> is the crowned
+                        winner — highest confidence (
+                        {winnerRow.confidence != null
+                          ? `${(winnerRow.confidence * 100).toFixed(1)}%`
+                          : "—"}
+                        ) among variants clearing p &lt; {out.alpha} with positive lift and ≥{" "}
+                        {out.sessionFloor} sessions per bucket.
                       </>
                     ) : leaderRow ? (
                       <>
-                        <CircleDot size={11} /> No variant has reached significance. <b>{getBucketLabel(leaderRow.bucket, leaderRow.name)}</b> leads provisionally at{" "}
-                        {leaderRow.confidence != null ? `${(leaderRow.confidence * 100).toFixed(1)}%` : "—"} confidence — keep collecting before acting.
+                        <CircleDot size={11} /> No variant has reached significance.{" "}
+                        <b>{getBucketLabel(leaderRow.bucket, leaderRow.name)}</b> leads
+                        provisionally at{" "}
+                        {leaderRow.confidence != null
+                          ? `${(leaderRow.confidence * 100).toFixed(1)}%`
+                          : "—"}{" "}
+                        confidence — keep collecting before acting.
                       </>
                     ) : (
                       <>
@@ -371,15 +526,25 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
             action={
               <div className="flex flex-wrap gap-3">
                 {(timeSeries.data?.series ?? []).map((s, i) => (
-                  <span key={s.bucket} className="inline-flex items-center gap-[5px] text-[11px] text-[var(--theme-elevation-600,var(--theme-elevation-500))]">
-                    <span className="h-[3px] w-3.5 rounded-[2px]" style={{ background: getBucketColor(i) }} />
+                  <span
+                    key={s.bucket}
+                    className="inline-flex items-center gap-[5px] text-[11px] text-[var(--theme-elevation-600,var(--theme-elevation-500))]"
+                  >
+                    <span
+                      className="h-[3px] w-3.5 rounded-[2px]"
+                      style={{ background: getBucketColor(i) }}
+                    />
                     {getBucketLabel(s.bucket, s.name)}
                   </span>
                 ))}
               </div>
             }
           >
-            {timeSeries.data ? <AbMultiLineChart data={timeSeries.data} /> : <div className="relative h-[240px]" />}
+            {timeSeries.data ? (
+              <AbMultiLineChart data={timeSeries.data} />
+            ) : (
+              <div className="relative h-[240px]" />
+            )}
           </DataCard>
 
           {/* Panel 4 — Lead-action breakdown */}
@@ -392,7 +557,10 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
                     {lb.buckets.map((b, i) => (
                       <th key={b.bucket} className="num">
                         <span className="inline-flex items-center justify-end gap-[5px]">
-                          <span className="h-[9px] w-[9px] shrink-0 rounded-[3px]" style={{ background: getBucketColor(i) }} />
+                          <span
+                            className="h-[9px] w-[9px] shrink-0 rounded-[3px]"
+                            style={{ background: getBucketColor(i) }}
+                          />
                           {getBucketLabel(b.bucket, b.name)}
                         </span>
                       </th>

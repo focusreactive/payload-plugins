@@ -4,14 +4,19 @@ import type { Field, RichTextField, TextField } from "payload";
 import { withFieldTranslation } from "./field-config";
 import { TranslateFieldControlExport } from "./client/widgets/translate-field-control";
 
-const textField = (overrides: Record<string, unknown> = {}): TextField => ({ name: "title", type: "text", ...overrides }) as unknown as TextField;
-const richTextField = (overrides: Record<string, unknown> = {}): RichTextField => ({ name: "content", type: "richText", ...overrides }) as unknown as RichTextField;
+const textField = (overrides: Record<string, unknown> = {}): TextField =>
+  ({ name: "title", type: "text", ...overrides }) as unknown as TextField;
+const richTextField = (overrides: Record<string, unknown> = {}): RichTextField =>
+  ({ name: "content", type: "richText", ...overrides }) as unknown as RichTextField;
 
 // Read helpers — the config is stamped under field.custom.translateKit; the control is
 // positioned by appending to field.admin.components.beforeInput (the default positioner).
 const kit = (field: Field) => (field.custom as Record<string, unknown>).translateKit;
-const beforeInput = (field: Field) => (field.admin as { components?: { beforeInput?: unknown[] } } | undefined)?.components?.beforeInput;
-const control = (field: Field) => beforeInput(field)?.[0] as TranslateFieldControlExport | undefined;
+const beforeInput = (field: Field) =>
+  (field.admin as { components?: { beforeInput?: unknown[] } } | undefined)?.components
+    ?.beforeInput;
+const control = (field: Field) =>
+  beforeInput(field)?.[0] as TranslateFieldControlExport | undefined;
 
 describe("withFieldTranslation", () => {
   it("plain wrap = control: stamps an empty config and positions the control", () => {

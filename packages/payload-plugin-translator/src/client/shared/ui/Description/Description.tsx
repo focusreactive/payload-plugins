@@ -7,11 +7,23 @@ type DescriptionProps = ComponentPropsWithoutRef<"div"> & {
   variant?: "default" | "error";
 };
 
-export default function Description({ children, className = "", id, variant = "default", ...props }: DescriptionProps) {
+export default function Description({
+  children,
+  className = "",
+  id,
+  variant = "default",
+  ...props
+}: DescriptionProps) {
   const descriptionClassName = `${styles.description} ${styles[variant]} ${className}`;
 
   return (
-    <p id={id} className={descriptionClassName} role={variant === "error" ? "alert" : undefined} aria-live={variant === "error" ? "polite" : undefined} {...props}>
+    <p
+      id={id}
+      className={descriptionClassName}
+      role={variant === "error" ? "alert" : undefined}
+      aria-live={variant === "error" ? "polite" : undefined}
+      {...props}
+    >
       {children}
     </p>
   );

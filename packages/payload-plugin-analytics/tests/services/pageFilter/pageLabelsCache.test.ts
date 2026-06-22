@@ -1,6 +1,10 @@
 // tests/services/pageFilter/pageLabelsCache.test.ts
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { getCachedPageLabels, __clearPageLabelsCache, __setNowForTests } from "../../../src/services/pageFilter/pageLabelsCache";
+import {
+  getCachedPageLabels,
+  __clearPageLabelsCache,
+  __setNowForTests,
+} from "../../../src/services/pageFilter/pageLabelsCache";
 
 describe("pageLabelsCache", () => {
   beforeEach(() => {

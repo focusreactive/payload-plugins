@@ -1,7 +1,19 @@
-import type { DeviceCategory, Row, SessionsListQuery, SessionsResponse, SessionsRow } from "../../types/query";
+import type {
+  DeviceCategory,
+  Row,
+  SessionsListQuery,
+  SessionsResponse,
+  SessionsRow,
+} from "../../types/query";
 import type { PageFilterContext } from "../pageFilter/types";
 import { resolveDateRange } from "../../utils/date/resolveDateRange";
-import { convertMetricToNumber, dateRangesFor, deriveMissing, leadActionFilter, withRowLimit } from "../../utils/ga4";
+import {
+  convertMetricToNumber,
+  dateRangesFor,
+  deriveMissing,
+  leadActionFilter,
+  withRowLimit,
+} from "../../utils/ga4";
 import { excludeDeletedSessions } from "../pageFilter/excludeDeletedSessions";
 import { mapGa4Error } from "../../endpoints/errorMapping";
 import { runQuery } from "../analyticsService/runQuery";
@@ -85,27 +97,55 @@ interface MergedSession {
  */
 const LANDING_REF_ROW_LIMIT = 50_000;
 
-async function resolveLandingPaths(propertyId: string, dateRange: ReturnType<typeof resolveDateRange>, pageFilter: PageFilterContext, sessionIds: string[]): Promise<Map<string, string>> {
+async function resolveLandingPaths(
+  propertyId: string,
+  dateRange: ReturnType<typeof resolveDateRange>,
+  pageFilter: PageFilterContext,
+  sessionIds: string[]
+): Promise<Map<string, string>> {
   try {
     const request = withRowLimit(
       {
         dateRanges: dateRangesFor(dateRange),
         metrics: [{ name: "eventCount" }],
-        dimensions: [{ name: "customEvent:fr_session_id" }, { name: pageFilter.pageRefDim }, { name: "dateHourMinute" }, { name: "customEvent:fr_event_seq" }],
+        dimensions: [
+          { name: "customEvent:fr_session_id" },
+          { name: pageFilter.pageRefDim },
+          { name: "dateHourMinute" },
+          { name: "customEvent:fr_event_seq" },
+        ],
         dimensionFilter: {
           andGroup: {
             expressions: [
-              { filter: { fieldName: "eventName", stringFilter: { value: TRAFFIC_EVENTS.PAGE_VIEW } } },
-              { filter: { fieldName: "customEvent:fr_session_id", inListFilter: { values: sessionIds } } },
+              {
+                filter: {
+                  fieldName: "eventName",
+                  stringFilter: { value: TRAFFIC_EVENTS.PAGE_VIEW },
+                },
+              },
+              {
+                filter: {
+                  fieldName: "customEvent:fr_session_id",
+                  inListFilter: { values: sessionIds },
+                },
+              },
             ],
           },
         },
-        orderBys: [{ dimension: { dimensionName: "customEvent:fr_session_id" } }, { dimension: { dimensionName: "dateHourMinute" } }, { dimension: { dimensionName: "customEvent:fr_event_seq" } }],
+        orderBys: [
+          { dimension: { dimensionName: "customEvent:fr_session_id" } },
+          { dimension: { dimensionName: "dateHourMinute" } },
+          { dimension: { dimensionName: "customEvent:fr_event_seq" } },
+        ],
       },
       LANDING_REF_ROW_LIMIT
     );
 
-    const report = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "sessionLandingRefs");
+    const report = await runQuery.runReport(
+      propertyId,
+      request as Parameters<typeof runQuery.runReport>[1],
+      "sessionLandingRefs"
+    );
     const rows = (report.rows ?? []) as Row[];
 
     const landingRefBySession = new Map<string, string>();
@@ -137,7 +177,11 @@ async function resolveLandingPaths(propertyId: string, dateRange: ReturnType<typ
   }
 }
 
-export async function listSessions(propertyId: string, query: SessionsListQuery, pageFilter?: PageFilterContext | null): Promise<SessionsResponse> {
+export async function listSessions(
+  propertyId: string,
+  query: SessionsListQuery,
+  pageFilter?: PageFilterContext | null
+): Promise<SessionsResponse> {
   const dateRange = resolveDateRange(query.dateRange);
   const offset = decodeCursor(query.cursor);
   const limit = query.limit ?? DEFAULT_PAGE_SIZE;
@@ -171,7 +215,10 @@ export async function listSessions(propertyId: string, query: SessionsListQuery,
     limit
   );
 
-  const filters: DimensionFilter[] = [excludeNotSet("customEvent:fr_session_id"), excludeNotSet("customEvent:fr_session_start")];
+  const filters: DimensionFilter[] = [
+    excludeNotSet("customEvent:fr_session_id"),
+    excludeNotSet("customEvent:fr_session_start"),
+  ];
 
   if (query.hadLeadAction) filters.push(leadActionFilter() as DimensionFilter);
   if (query.source) filters.push(stringFilter("sessionSource", query.source));
@@ -188,11 +235,18 @@ export async function listSessions(propertyId: string, query: SessionsListQuery,
     dateRanges: dateRangesFor(dateRange),
     metrics: [{ name: "eventCount" }],
     dimensions: [{ name: "customEvent:fr_session_id" }],
-    dimensionFilter: combineFilters([excludeNotSet("customEvent:fr_session_id"), leadActionFilter() as DimensionFilter]),
+    dimensionFilter: combineFilters([
+      excludeNotSet("customEvent:fr_session_id"),
+      leadActionFilter() as DimensionFilter,
+    ]),
   };
 
   try {
-    const batch = await runQuery.batchRunReports(propertyId, [sessionsRequest, leadSessionsRequest] as Parameters<typeof runQuery.batchRunReports>[1], "sessions");
+    const batch = await runQuery.batchRunReports(
+      propertyId,
+      [sessionsRequest, leadSessionsRequest] as Parameters<typeof runQuery.batchRunReports>[1],
+      "sessions"
+    );
 
     const [sessionsReport, leadSessionsReport] = batch.reports ?? [];
     const rows = (sessionsReport?.rows ?? []) as Row[];
@@ -265,7 +319,12 @@ export async function listSessions(propertyId: string, query: SessionsListQuery,
       const sessionIds = mergedSessions.map((m) => m.sessionId);
 
       if (sessionIds.length > 0) {
-        landingPathBySession = await resolveLandingPaths(propertyId, dateRange, pageFilter, sessionIds);
+        landingPathBySession = await resolveLandingPaths(
+          propertyId,
+          dateRange,
+          pageFilter,
+          sessionIds
+        );
       }
     }
 
@@ -297,7 +356,11 @@ export async function listSessions(propertyId: string, query: SessionsListQuery,
     if (mapped.setupRequired) {
       return {
         setupRequired: true,
-        missing: deriveMissing({ message: mapped.message }, ["fr_session_id", "fr_session_start", "fr_page_ref"]),
+        missing: deriveMissing({ message: mapped.message }, [
+          "fr_session_id",
+          "fr_session_start",
+          "fr_page_ref",
+        ]),
         rows: [],
         pagination: { cursor: null, hasMore: false },
       };

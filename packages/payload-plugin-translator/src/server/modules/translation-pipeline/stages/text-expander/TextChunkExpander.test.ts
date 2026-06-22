@@ -5,7 +5,12 @@ import { TextChunkExpander } from "./TextChunkExpander";
 import { PlainTextExpander } from "./PlainTextExpander";
 import { RichTextExpander } from "./RichTextExpander";
 
-const createFieldChunk = (name: string, type: string, value: unknown, overrides: Partial<Field> = {}): { chunk: FieldChunk; data: Record<string, unknown> } => {
+const createFieldChunk = (
+  name: string,
+  type: string,
+  value: unknown,
+  overrides: Partial<Field> = {}
+): { chunk: FieldChunk; data: Record<string, unknown> } => {
   const data = { [name]: value };
   return {
     chunk: {
@@ -80,7 +85,8 @@ describe("PlainTextExpander", () => {
 });
 
 // Helper for creating Lexical nodes
-const createNode = (type: string, props?: Record<string, unknown>, children?: unknown[]) => ({ type, ...props, ...(children && { children }) }) as Record<string, unknown>;
+const createNode = (type: string, props?: Record<string, unknown>, children?: unknown[]) =>
+  ({ type, ...props, ...(children && { children }) }) as Record<string, unknown>;
 
 const wrapInRoot = (children: unknown[]) => ({ root: createNode("root", {}, children) });
 
@@ -168,13 +174,17 @@ describe("RichTextExpander", () => {
       }
 
       // Check mutation affected original value
-      expect((value.root.children[0] as { children: { text: string }[] }).children[0].text).toBe("Modified");
+      expect((value.root.children[0] as { children: { text: string }[] }).children[0].text).toBe(
+        "Modified"
+      );
     });
   });
 
   describe("complex structures", () => {
     it("expands heading with text", () => {
-      const value = wrapInRoot([createNode("heading", { tag: "h1" }, [createNode("text", { text: "Title" })])]);
+      const value = wrapInRoot([
+        createNode("heading", { tag: "h1" }, [createNode("text", { text: "Title" })]),
+      ]);
       const { chunk } = createFieldChunk("content", "richText", value);
 
       const result = expander.expand(chunk, value, 0);
@@ -203,7 +213,9 @@ describe("RichTextExpander", () => {
       const value = wrapInRoot([
         createNode("paragraph", {}, [
           createNode("text", { text: "Click " }),
-          createNode("link", { url: "https://example.com" }, [createNode("text", { text: "here" })]),
+          createNode("link", { url: "https://example.com" }, [
+            createNode("text", { text: "here" }),
+          ]),
           createNode("text", { text: " to continue" }),
         ]),
       ]);
@@ -218,7 +230,11 @@ describe("RichTextExpander", () => {
     });
 
     it("expands quote with nested paragraph", () => {
-      const value = wrapInRoot([createNode("quote", {}, [createNode("paragraph", {}, [createNode("text", { text: "Famous quote" })])])]);
+      const value = wrapInRoot([
+        createNode("quote", {}, [
+          createNode("paragraph", {}, [createNode("text", { text: "Famous quote" })]),
+        ]),
+      ]);
       const { chunk } = createFieldChunk("content", "richText", value);
 
       const result = expander.expand(chunk, value, 0);
@@ -292,7 +308,10 @@ describe("RichTextExpander", () => {
       const value = wrapInRoot([
         createNode("heading", { tag: "h1" }, [createNode("text", { text: "Title" })]),
         createNode("paragraph", {}, [createNode("text", { text: "Introduction text." })]),
-        createNode("list", { listType: "bullet" }, [createNode("listitem", {}, [createNode("text", { text: "Point one" })]), createNode("listitem", {}, [createNode("text", { text: "Point two" })])]),
+        createNode("list", { listType: "bullet" }, [
+          createNode("listitem", {}, [createNode("text", { text: "Point one" })]),
+          createNode("listitem", {}, [createNode("text", { text: "Point two" })]),
+        ]),
         createNode("paragraph", {}, [createNode("text", { text: "Conclusion." })]),
       ]);
       const { chunk } = createFieldChunk("content", "richText", value);
@@ -326,7 +345,13 @@ describe("RichTextExpander", () => {
     });
 
     it("skips linebreak nodes", () => {
-      const value = wrapInRoot([createNode("paragraph", {}, [createNode("text", { text: "Line one" }), createNode("linebreak", {}), createNode("text", { text: "Line two" })])]);
+      const value = wrapInRoot([
+        createNode("paragraph", {}, [
+          createNode("text", { text: "Line one" }),
+          createNode("linebreak", {}),
+          createNode("text", { text: "Line two" }),
+        ]),
+      ]);
       const { chunk } = createFieldChunk("content", "richText", value);
 
       const result = expander.expand(chunk, value, 0);
@@ -367,9 +392,15 @@ describe("RichTextExpander", () => {
       const value = wrapInRoot([
         createNode("heading", { tag: "h1" }, [createNode("text", { text: "Title" })]),
         createNode("upload", { relationTo: "media" }),
-        createNode("paragraph", {}, [createNode("text", { text: "Some " }), createNode("linebreak", {}), createNode("text", { text: "text" })]),
+        createNode("paragraph", {}, [
+          createNode("text", { text: "Some " }),
+          createNode("linebreak", {}),
+          createNode("text", { text: "text" }),
+        ]),
         createNode("horizontalrule", {}),
-        createNode("list", {}, [createNode("listitem", {}, [createNode("text", { text: "Item" })])]),
+        createNode("list", {}, [
+          createNode("listitem", {}, [createNode("text", { text: "Item" })]),
+        ]),
         createNode("relationship", { relationTo: "pages" }),
       ]);
       const { chunk } = createFieldChunk("content", "richText", value);
@@ -396,7 +427,12 @@ describe("TextChunkExpander", () => {
       const data2 = { description: "World" };
 
       const chunks: FieldChunk[] = [
-        { schema: { name: "title", type: "text" } as Field, dataRef: data1, key: "title", path: ["title"] },
+        {
+          schema: { name: "title", type: "text" } as Field,
+          dataRef: data1,
+          key: "title",
+          path: ["title"],
+        },
         {
           schema: { name: "description", type: "text" } as Field,
           dataRef: data2,
@@ -417,8 +453,16 @@ describe("TextChunkExpander", () => {
         root: {
           type: "root",
           children: [
-            { type: "paragraph", children: [{ type: "text", text: "First", version: 1 }], version: 1 },
-            { type: "paragraph", children: [{ type: "text", text: "Second", version: 1 }], version: 1 },
+            {
+              type: "paragraph",
+              children: [{ type: "text", text: "First", version: 1 }],
+              version: 1,
+            },
+            {
+              type: "paragraph",
+              children: [{ type: "text", text: "Second", version: 1 }],
+              version: 1,
+            },
           ],
           version: 1,
         },
@@ -428,8 +472,18 @@ describe("TextChunkExpander", () => {
       const data2 = { title: "Third" };
 
       const chunks: FieldChunk[] = [
-        { schema: { name: "content", type: "richText" } as Field, dataRef: data1, key: "content", path: ["content"] },
-        { schema: { name: "title", type: "text" } as Field, dataRef: data2, key: "title", path: ["title"] },
+        {
+          schema: { name: "content", type: "richText" } as Field,
+          dataRef: data1,
+          key: "content",
+          path: ["content"],
+        },
+        {
+          schema: { name: "title", type: "text" } as Field,
+          dataRef: data2,
+          key: "title",
+          path: ["title"],
+        },
       ];
 
       const expander = new TextChunkExpander(defaultExpanders);
@@ -441,7 +495,14 @@ describe("TextChunkExpander", () => {
 
     it("uses first matching expander", () => {
       const data = { title: "Hello" };
-      const chunks: FieldChunk[] = [{ schema: { name: "title", type: "text" } as Field, dataRef: data, key: "title", path: ["title"] }];
+      const chunks: FieldChunk[] = [
+        {
+          schema: { name: "title", type: "text" } as Field,
+          dataRef: data,
+          key: "title",
+          path: ["title"],
+        },
+      ];
 
       // RichTextExpander won't match, PlainTextExpander will
       const expander = new TextChunkExpander(defaultExpanders);
@@ -452,7 +513,14 @@ describe("TextChunkExpander", () => {
 
     it("skips chunks with no matching expander", () => {
       const data = { title: 123 }; // number, no expander matches
-      const chunks: FieldChunk[] = [{ schema: { name: "title", type: "text" } as Field, dataRef: data, key: "title", path: ["title"] }];
+      const chunks: FieldChunk[] = [
+        {
+          schema: { name: "title", type: "text" } as Field,
+          dataRef: data,
+          key: "title",
+          path: ["title"],
+        },
+      ];
 
       const expander = new TextChunkExpander(defaultExpanders);
       const result = expander.expand(chunks);

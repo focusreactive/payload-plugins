@@ -15,7 +15,13 @@ export interface GetPostsOptions {
   category?: string;
 }
 
-async function getPostsQuery(payload: Payload, page: number, limit: number, locale: Locale, category: string | undefined) {
+async function getPostsQuery(
+  payload: Payload,
+  page: number,
+  limit: number,
+  locale: Locale,
+  category: string | undefined
+) {
   return await payload.find({
     collection: BLOG_CONFIG.collection,
     depth: 2,
@@ -47,10 +53,21 @@ async function getPostsQuery(payload: Payload, page: number, limit: number, loca
   });
 }
 
-const getPostsCached = cache(async (payload: Payload, page: number, limit: number, locale: Locale, category: string | undefined) =>
-  unstable_cache(() => getPostsQuery(payload, page, limit, locale, category), [page.toString(), limit.toString(), locale, category ?? ""], {
-    tags: [cacheTag({ locale, type: "postsList" })],
-  })()
+const getPostsCached = cache(
+  async (
+    payload: Payload,
+    page: number,
+    limit: number,
+    locale: Locale,
+    category: string | undefined
+  ) =>
+    unstable_cache(
+      () => getPostsQuery(payload, page, limit, locale, category),
+      [page.toString(), limit.toString(), locale, category ?? ""],
+      {
+        tags: [cacheTag({ locale, type: "postsList" })],
+      }
+    )()
 );
 
 export const getPosts = async (payload: Payload, options: GetPostsOptions) => {

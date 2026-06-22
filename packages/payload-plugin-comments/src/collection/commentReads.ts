@@ -23,7 +23,10 @@ export const baseReadsCollection = (tenantConfig?: TenantPluginConfig): Collecti
     delete: isAuth,
   },
   hooks: {
-    beforeChange: [setUserBeforeCreate, ...(tenantConfig?.enabled ? [setTenantOnReadBeforeCreate] : [])],
+    beforeChange: [
+      setUserBeforeCreate,
+      ...(tenantConfig?.enabled ? [setTenantOnReadBeforeCreate] : []),
+    ],
   },
   timestamps: true,
   fields: [

@@ -31,7 +31,14 @@ interface CommentsContextProps {
   collectionLabels: EntityLabelsMap;
   globalLabels: EntityLabelsMap;
   usernameFieldPath: string | undefined;
-  addComment: (text: string, fieldPath?: string | null, documentId?: number, collectionSlug?: string, locale?: string | null, globalSlugOverride?: string) => Promise<MutationResult>;
+  addComment: (
+    text: string,
+    fieldPath?: string | null,
+    documentId?: number,
+    collectionSlug?: string,
+    locale?: string | null,
+    globalSlugOverride?: string
+  ) => Promise<MutationResult>;
   removeComment: (id: string | number) => Promise<MutationResult>;
   resolveComment: (id: string | number, resolved: boolean) => Promise<MutationResult>;
 }
@@ -51,17 +58,33 @@ export function CommentsProvider({ children, usernameFieldPath }: Props) {
   const { mode, collectionSlug, documentId, globalSlug } = defineModeByPathname(pathname);
   const queryContext = toQueryContext(mode, collectionSlug, documentId, globalSlug);
 
-  const pluginConfig = config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
-  const collectionLabels = getEntitiesLabels((config.collections ?? []) as unknown as EntityConfig[], pluginConfig?.collections ?? []);
-  const globalLabels = getEntitiesLabels((config.globals ?? []) as unknown as EntityConfig[], pluginConfig?.globals ?? []);
+  const pluginConfig = config.admin?.custom?.commentsPlugin as
+    | CommentsPluginConfigStorage
+    | undefined;
+  const collectionLabels = getEntitiesLabels(
+    (config.collections ?? []) as unknown as EntityConfig[],
+    pluginConfig?.collections ?? []
+  );
+  const globalLabels = getEntitiesLabels(
+    (config.globals ?? []) as unknown as EntityConfig[],
+    pluginConfig?.globals ?? []
+  );
 
   const addMutation = useAddCommentMutation();
   const deleteMutation = useDeleteCommentMutation();
   const resolveMutation = useResolveCommentMutation();
 
   const addComment = useCallback(
-    async (text: string, fieldPath?: string | null, documentIdOverride?: number, collectionSlugOverride?: string, locale?: string | null, globalSlugOverride?: string): Promise<MutationResult> => {
-      const resolvedGlobalSlug = globalSlugOverride ?? (mode === "global-document" ? globalSlug : null);
+    async (
+      text: string,
+      fieldPath?: string | null,
+      documentIdOverride?: number,
+      collectionSlugOverride?: string,
+      locale?: string | null,
+      globalSlugOverride?: string
+    ): Promise<MutationResult> => {
+      const resolvedGlobalSlug =
+        globalSlugOverride ?? (mode === "global-document" ? globalSlug : null);
       const resolvedDocId = documentIdOverride ?? documentId;
       const resolvedSlug = collectionSlugOverride ?? collectionSlug;
 

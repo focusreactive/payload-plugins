@@ -6,9 +6,17 @@ interface TranslationDirectionProps {
   className?: string;
 }
 
-export const TranslationDirection = ({ sourceLocale, targetLocale, className }: TranslationDirectionProps) => {
+export const TranslationDirection = ({
+  sourceLocale,
+  targetLocale,
+  className,
+}: TranslationDirectionProps) => {
   return (
-    <div className={`${styles.container} ${className || ""}`} role="group" aria-label={`Translation from ${sourceLocale} to ${targetLocale}`}>
+    <div
+      className={`${styles.container} ${className || ""}`}
+      role="group"
+      aria-label={`Translation from ${sourceLocale} to ${targetLocale}`}
+    >
       <span className={styles.locale} aria-label={`Source language: ${sourceLocale}`}>
         {sourceLocale.toLowerCase()}
       </span>

@@ -11,7 +11,12 @@ interface GetComponentConfigProps {
   serverProps?: Record<string, any>;
 }
 
-export function getComponentConfig({ componentPath, componentName, clientProps, serverProps }: GetComponentConfigProps) {
+export function getComponentConfig({
+  componentPath,
+  componentName,
+  clientProps,
+  serverProps,
+}: GetComponentConfigProps) {
   return {
     path: `${detectPluginBasePath()}/${componentPath}`,
     exportName: componentName,

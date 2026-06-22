@@ -40,7 +40,12 @@ interface Props {
   size?: PresetCellSize;
 }
 
-export function PresetAdminComponentCell({ imageClassName = "", media, isLoading, size = "sm" }: Props) {
+export function PresetAdminComponentCell({
+  imageClassName = "",
+  media,
+  isLoading,
+  size = "sm",
+}: Props) {
   const { t } = useTranslation();
   const { width, height, shimmerClass } = SIZE_MAP[size];
 

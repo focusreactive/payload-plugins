@@ -7,7 +7,9 @@ type DocumentTranslationProgressFailedProps = {
   data: DocumentTranslationFailed;
 };
 
-export function DocumentTranslationProgressFailed({ data }: DocumentTranslationProgressFailedProps) {
+export function DocumentTranslationProgressFailed({
+  data,
+}: DocumentTranslationProgressFailedProps) {
   const runQueuedTranslationApi = TranslationsApi.useRunDocumentTranslation();
 
   const handleRunDocumentTranslation = async () => {

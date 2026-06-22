@@ -1,12 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { collectSerializedLexicalTextNodes } from "./collectTextNodes";
 
-const createNode = (type: string, props?: Record<string, any>, children?: any[]) => ({ type, ...props, ...(children && { children }) }) as any;
+const createNode = (type: string, props?: Record<string, any>, children?: any[]) =>
+  ({ type, ...props, ...(children && { children }) }) as any;
 
 describe("collectSerializedLexicalTextNodes", () => {
   describe("text node collection", () => {
     it("collects text nodes with content", () => {
-      const root = createNode("root", {}, [createNode("paragraph", {}, [createNode("text", { text: "Hello" })])]);
+      const root = createNode("root", {}, [
+        createNode("paragraph", {}, [createNode("text", { text: "Hello" })]),
+      ]);
 
       const refs = collectSerializedLexicalTextNodes(root);
 
@@ -15,7 +18,12 @@ describe("collectSerializedLexicalTextNodes", () => {
     });
 
     it("collects multiple text nodes", () => {
-      const root = createNode("root", {}, [createNode("paragraph", {}, [createNode("text", { text: "Hello" }), createNode("text", { text: "World" })])]);
+      const root = createNode("root", {}, [
+        createNode("paragraph", {}, [
+          createNode("text", { text: "Hello" }),
+          createNode("text", { text: "World" }),
+        ]),
+      ]);
 
       const refs = collectSerializedLexicalTextNodes(root);
 
@@ -25,7 +33,10 @@ describe("collectSerializedLexicalTextNodes", () => {
     });
 
     it("collects text nodes from multiple paragraphs", () => {
-      const root = createNode("root", {}, [createNode("paragraph", {}, [createNode("text", { text: "First" })]), createNode("paragraph", {}, [createNode("text", { text: "Second" })])]);
+      const root = createNode("root", {}, [
+        createNode("paragraph", {}, [createNode("text", { text: "First" })]),
+        createNode("paragraph", {}, [createNode("text", { text: "Second" })]),
+      ]);
 
       const refs = collectSerializedLexicalTextNodes(root);
 
@@ -37,7 +48,9 @@ describe("collectSerializedLexicalTextNodes", () => {
 
   describe("empty text filtering", () => {
     it("skips empty text nodes", () => {
-      const root = createNode("root", {}, [createNode("paragraph", {}, [createNode("text", { text: "" })])]);
+      const root = createNode("root", {}, [
+        createNode("paragraph", {}, [createNode("text", { text: "" })]),
+      ]);
 
       const refs = collectSerializedLexicalTextNodes(root);
 
@@ -45,7 +58,9 @@ describe("collectSerializedLexicalTextNodes", () => {
     });
 
     it("skips whitespace-only text nodes", () => {
-      const root = createNode("root", {}, [createNode("paragraph", {}, [createNode("text", { text: "   \n\t  " })])]);
+      const root = createNode("root", {}, [
+        createNode("paragraph", {}, [createNode("text", { text: "   \n\t  " })]),
+      ]);
 
       const refs = collectSerializedLexicalTextNodes(root);
 
@@ -53,7 +68,9 @@ describe("collectSerializedLexicalTextNodes", () => {
     });
 
     it("collects text with leading/trailing whitespace", () => {
-      const root = createNode("root", {}, [createNode("paragraph", {}, [createNode("text", { text: "  content  " })])]);
+      const root = createNode("root", {}, [
+        createNode("paragraph", {}, [createNode("text", { text: "  content  " })]),
+      ]);
 
       const refs = collectSerializedLexicalTextNodes(root);
 
@@ -63,7 +80,12 @@ describe("collectSerializedLexicalTextNodes", () => {
 
     it("mixes empty and non-empty text nodes", () => {
       const root = createNode("root", {}, [
-        createNode("paragraph", {}, [createNode("text", { text: "" }), createNode("text", { text: "content" }), createNode("text", { text: "   " }), createNode("text", { text: "more" })]),
+        createNode("paragraph", {}, [
+          createNode("text", { text: "" }),
+          createNode("text", { text: "content" }),
+          createNode("text", { text: "   " }),
+          createNode("text", { text: "more" }),
+        ]),
       ]);
 
       const refs = collectSerializedLexicalTextNodes(root);
@@ -78,8 +100,12 @@ describe("collectSerializedLexicalTextNodes", () => {
     it("collects from deeply nested structures", () => {
       const root = createNode("root", {}, [
         createNode("list", {}, [
-          createNode("listitem", {}, [createNode("paragraph", {}, [createNode("text", { text: "Item 1" })])]),
-          createNode("listitem", {}, [createNode("paragraph", {}, [createNode("text", { text: "Item 2" })])]),
+          createNode("listitem", {}, [
+            createNode("paragraph", {}, [createNode("text", { text: "Item 1" })]),
+          ]),
+          createNode("listitem", {}, [
+            createNode("paragraph", {}, [createNode("text", { text: "Item 2" })]),
+          ]),
         ]),
       ]);
 
@@ -94,7 +120,9 @@ describe("collectSerializedLexicalTextNodes", () => {
       const root = createNode("root", {}, [
         createNode("paragraph", {}, [
           createNode("text", { text: "Click " }),
-          createNode("link", { url: "https://example.com" }, [createNode("text", { text: "here" })]),
+          createNode("link", { url: "https://example.com" }, [
+            createNode("text", { text: "here" }),
+          ]),
           createNode("text", { text: " to continue" }),
         ]),
       ]);
@@ -139,7 +167,9 @@ describe("collectSerializedLexicalTextNodes", () => {
     });
 
     it("returns empty array for paragraph without text nodes", () => {
-      const root = createNode("root", {}, [createNode("paragraph", {}, [createNode("upload", { relationTo: "media" })])]);
+      const root = createNode("root", {}, [
+        createNode("paragraph", {}, [createNode("upload", { relationTo: "media" })]),
+      ]);
 
       const refs = collectSerializedLexicalTextNodes(root);
 

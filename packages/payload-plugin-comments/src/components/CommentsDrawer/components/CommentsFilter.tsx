@@ -13,7 +13,11 @@ export function CommentsFilter() {
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
-        <IconButton title={t("comments:filterComments" as never)} variant={"neutral"} isActive={isAnyFilterActive}>
+        <IconButton
+          title={t("comments:filterComments" as never)}
+          variant={"neutral"}
+          isActive={isAnyFilterActive}
+        >
           <FilterIcon width={16} height={16} />
         </IconButton>
       </DropdownMenu.Trigger>
@@ -37,7 +41,9 @@ export function CommentsFilter() {
             <CheckIcon className="w-5 h-5" />
           </DropdownMenu.ItemIndicator>
 
-          <span className={filters.showResolved ? "" : "pl-7"}>{t("comments:showResolved" as never)}</span>
+          <span className={filters.showResolved ? "" : "pl-7"}>
+            {t("comments:showResolved" as never)}
+          </span>
         </DropdownMenu.CheckboxItem>
 
         <DropdownMenu.CheckboxItem
@@ -50,7 +56,9 @@ export function CommentsFilter() {
             <CheckIcon className="w-5 h-5" />
           </DropdownMenu.ItemIndicator>
 
-          <span className={filters.onlyMyThreads ? "" : "pl-7"}>{t("comments:onlyMyThreads" as never)}</span>
+          <span className={filters.onlyMyThreads ? "" : "pl-7"}>
+            {t("comments:onlyMyThreads" as never)}
+          </span>
         </DropdownMenu.CheckboxItem>
       </DropdownMenu.Content>
     </DropdownMenu.Root>

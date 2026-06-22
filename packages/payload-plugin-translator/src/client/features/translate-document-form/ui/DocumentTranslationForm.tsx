@@ -17,7 +17,11 @@ type DocumentTranslationFormProps = {
   hasDrafts?: boolean;
 };
 
-export function DocumentTranslationForm({ form, onSubmit, hasDrafts }: DocumentTranslationFormProps) {
+export function DocumentTranslationForm({
+  form,
+  onSubmit,
+  hasDrafts,
+}: DocumentTranslationFormProps) {
   return (
     <FormProvider {...form}>
       <fieldset className={styles.fieldset}>

@@ -76,7 +76,10 @@ function summarise(sessions: SessionAccumulator[]): KpiCurrent {
   };
 }
 
-export function aggregateSessions(rows: KpiSessionEventRow[], existing: Set<string>): { current: KpiCurrent; series: KpiSeriesPoint[] } {
+export function aggregateSessions(
+  rows: KpiSessionEventRow[],
+  existing: Set<string>
+): { current: KpiCurrent; series: KpiSeriesPoint[] } {
   const bySession = new Map<string, SessionAccumulator>();
 
   for (const row of rows) {

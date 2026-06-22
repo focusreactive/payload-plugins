@@ -8,7 +8,10 @@ import type { ResolvedPagesConfig } from "../../../src/config/resolvePagesConfig
 const cfg: ResolvedPagesConfig = {
   collections: [{ slug: "pages", publishedOnly: true, titleField: "title" }],
   syntheticRefs: ["__home"],
-  dimensions: { pageRef: "customEvent:fr_page_ref", contentLocale: "customEvent:fr_content_locale" },
+  dimensions: {
+    pageRef: "customEvent:fr_page_ref",
+    contentLocale: "customEvent:fr_content_locale",
+  },
   resolvePagePath: (ref) => (ref === "__home" ? "/" : `/p/${ref.split(":")[1]}`),
 };
 
@@ -21,7 +24,9 @@ describe("buildPageFilterContext.resolveLabels", () => {
   it("exposes resolveLabels that maps refs to {path,title}", async () => {
     const payload = {
       config: { localization: { defaultLocale: "en" } },
-      find: vi.fn(async ({ collection }: { collection: string }) => (collection === "pages" ? { docs: [{ id: 5, title: "Five" }] } : { docs: [] })),
+      find: vi.fn(async ({ collection }: { collection: string }) =>
+        collection === "pages" ? { docs: [{ id: 5, title: "Five" }] } : { docs: [] }
+      ),
     };
     const ctx = await buildPageFilterContext({ payload } as never, cfg);
     const labels = await ctx!.resolveLabels(["pages:5", "__home"]);

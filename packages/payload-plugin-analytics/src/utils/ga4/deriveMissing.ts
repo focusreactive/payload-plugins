@@ -14,7 +14,10 @@ export interface DerivableError {
   message: string;
 }
 
-export function deriveMissing(err: DerivableError, candidates: CustomRegistrationKey[]): CustomRegistrationKey[] {
+export function deriveMissing(
+  err: DerivableError,
+  candidates: CustomRegistrationKey[]
+): CustomRegistrationKey[] {
   for (const { key, regex } of CUSTOM_KEY_PATTERNS) {
     if (regex.test(err.message) && candidates.includes(key)) return [key];
   }

@@ -18,7 +18,10 @@ export function __clearPageLabelsCache(): void {
   cache.clear();
 }
 
-export async function getCachedPageLabels(key: string, loader: () => Promise<Map<string, PageLabel>>): Promise<Map<string, PageLabel>> {
+export async function getCachedPageLabels(
+  key: string,
+  loader: () => Promise<Map<string, PageLabel>>
+): Promise<Map<string, PageLabel>> {
   const now = nowFn();
   const hit = cache.get(key);
 

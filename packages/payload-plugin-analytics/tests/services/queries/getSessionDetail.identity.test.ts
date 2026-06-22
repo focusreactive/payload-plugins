@@ -25,10 +25,37 @@ function fixture() {
     dimensionHeaders: [],
     metricHeaders: [{ name: "eventCount", type: "TYPE_INTEGER" }],
     rows: [
-      { dimensionValues: [{ value: "page_view" }, { value: "/" }, { value: "202605101430" }, { value: "1" }, { value: "" }, { value: "__home" }], metricValues: [{ value: "1" }] },
-      { dimensionValues: [{ value: "page_view" }, { value: "/old-pricing" }, { value: "202605101431" }, { value: "2" }, { value: "" }, { value: "pages:1" }], metricValues: [{ value: "1" }] },
       {
-        dimensionValues: [{ value: "lead_action" }, { value: "/old-pricing" }, { value: "202605101431" }, { value: "3" }, { value: "phone_click" }, { value: "pages:1" }],
+        dimensionValues: [
+          { value: "page_view" },
+          { value: "/" },
+          { value: "202605101430" },
+          { value: "1" },
+          { value: "" },
+          { value: "__home" },
+        ],
+        metricValues: [{ value: "1" }],
+      },
+      {
+        dimensionValues: [
+          { value: "page_view" },
+          { value: "/old-pricing" },
+          { value: "202605101431" },
+          { value: "2" },
+          { value: "" },
+          { value: "pages:1" },
+        ],
+        metricValues: [{ value: "1" }],
+      },
+      {
+        dimensionValues: [
+          { value: "lead_action" },
+          { value: "/old-pricing" },
+          { value: "202605101431" },
+          { value: "3" },
+          { value: "phone_click" },
+          { value: "pages:1" },
+        ],
         metricValues: [{ value: "1" }],
       },
     ],
@@ -41,7 +68,12 @@ describe("getSessionDetail identity labels", () => {
     const fake = { runReport: vi.fn().mockResolvedValue([fixture()]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
 
-    const res = await getSessionDetail("12345", SESSION_ID, { dateRange: { preset: "last-7d" } }, pageFilter);
+    const res = await getSessionDetail(
+      "12345",
+      SESSION_ID,
+      { dateRange: { preset: "last-7d" } },
+      pageFilter
+    );
 
     expect(res.events).toHaveLength(3);
     expect(res.events.map((e) => e.pagePath)).toEqual(["/", "/why-pick-us", "/why-pick-us"]);

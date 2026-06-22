@@ -14,7 +14,9 @@ export function getPresetTypeFromPath(parentPath: string, validTypes: string[]) 
 
 function isLexicalState(obj: Record<string, unknown>) {
   const root = obj.root;
-  return typeof root === "object" && root !== null && (root as Record<string, unknown>).type === "root";
+  return (
+    typeof root === "object" && root !== null && (root as Record<string, unknown>).type === "root"
+  );
 }
 
 export function cleanPresetData(obj: unknown, excludeKeys: Set<string>): unknown {
@@ -40,7 +42,10 @@ export function cleanPresetData(obj: unknown, excludeKeys: Set<string>): unknown
   return cleaned;
 }
 
-export function buildSubFieldStateFromPreset(presetBlockItem: Record<string, unknown>, excludeKeys: string[]): Record<string, FieldState> {
+export function buildSubFieldStateFromPreset(
+  presetBlockItem: Record<string, unknown>,
+  excludeKeys: string[]
+): Record<string, FieldState> {
   const excludeSet = new Set(excludeKeys);
   const subFieldState: Record<string, FieldState> = {};
 

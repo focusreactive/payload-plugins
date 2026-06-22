@@ -36,7 +36,9 @@ export function isTabsField(field: Field): field is TabsField {
 /**
  * Type guard: Checks if value is a block item (has blockType property).
  */
-export function isBlockItem(value: unknown): value is Record<string, unknown> & { blockType: string } {
+export function isBlockItem(
+  value: unknown
+): value is Record<string, unknown> & { blockType: string } {
   return isObject(value) && "blockType" in value && typeof value.blockType === "string";
 }
 

@@ -1,6 +1,14 @@
 "use client";
 
-import { Button, useFieldPath, useForm, useTranslation, useListDrawer, toast, useAuth } from "@payloadcms/ui";
+import {
+  Button,
+  useFieldPath,
+  useForm,
+  useTranslation,
+  useListDrawer,
+  toast,
+  useAuth,
+} from "@payloadcms/ui";
 import type { Data, FormState } from "payload";
 import { getParentPath, getPresetTypeFromPath, buildSubFieldStateFromPreset } from "../utils.js";
 import { usePresetsConfig } from "../usePresetsConfig.js";
@@ -39,7 +47,9 @@ export function ApplyPresetButton() {
 
   const handleSelect = ({ doc }: { collectionSlug: string; doc: Data }) => {
     const preset = doc as Record<string, unknown>;
-    const presetBlocks = preset.presetBlock as Array<{ blockType: string; [key: string]: unknown }> | undefined;
+    const presetBlocks = preset.presetBlock as
+      | Array<{ blockType: string; [key: string]: unknown }>
+      | undefined;
     const presetBlockItem = presetBlocks?.[0];
 
     if (!preset || !presetBlockItem || presetBlockItem.blockType !== presetType) {
@@ -52,7 +62,9 @@ export function ApplyPresetButton() {
     const arrayPath = pathParts.join(".");
 
     const baseState = buildSubFieldStateFromPreset(presetBlockItem, excludeKeys);
-    const subFieldState = Object.fromEntries(Object.entries(baseState).map(([key, entry]) => [key, { ...entry, isModified: true }]));
+    const subFieldState = Object.fromEntries(
+      Object.entries(baseState).map(([key, entry]) => [key, { ...entry, isModified: true }])
+    );
 
     try {
       if (typeof replaceFieldRow === "function") {

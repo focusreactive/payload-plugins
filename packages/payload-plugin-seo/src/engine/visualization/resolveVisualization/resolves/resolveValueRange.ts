@@ -8,7 +8,10 @@ import { gaugeKeyByCheck } from "../constants";
 import { readNumber } from "../utils/readNumber";
 import { PRESENCE } from "./resolvePresence";
 
-export const resolveValueRange = (check: CheckResult, data: Record<string, unknown> | undefined): Visualization => {
+export const resolveValueRange = (
+  check: CheckResult,
+  data: Record<string, unknown> | undefined
+): Visualization => {
   const spec: GaugeSpec | undefined = GAUGE_SPECS[check.id as CheckId];
   const markerKey = gaugeKeyByCheck[check.id as CheckId];
 

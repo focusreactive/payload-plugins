@@ -53,13 +53,29 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
               admin: {
                 initCollapsed: false,
               },
-              blocks: [HeroBlock, ContentBlock, FaqBlock, TestimonialsListBlock, CardsGridBlock, CarouselBlock, LogosBlock, ChartBlock, CtaBandBlock, NewsletterBlock, StatsBlock, RawHtmlBlock],
+              blocks: [
+                HeroBlock,
+                ContentBlock,
+                FaqBlock,
+                TestimonialsListBlock,
+                CardsGridBlock,
+                CarouselBlock,
+                LogosBlock,
+                ChartBlock,
+                CtaBandBlock,
+                NewsletterBlock,
+                StatsBlock,
+                RawHtmlBlock,
+              ],
               localized: true,
               name: "blocks",
               required: true,
               type: "blocks",
               ...(withBlocksDefaultValue && {
-                defaultValue: () => ["hero", "content", "testimonialsList", "faq"].map((blockType) => ({ blockType })),
+                defaultValue: () =>
+                  ["hero", "content", "testimonialsList", "faq"].map((blockType) => ({
+                    blockType,
+                  })),
               }),
             },
           ],

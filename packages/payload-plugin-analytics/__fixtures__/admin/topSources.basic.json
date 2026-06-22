@@ -1,19 +1,85 @@
 {
   "rows": [
-    { "source": "google", "medium": "organic", "channel": "Organic Search", "sessions": 7204, "users": 5612 },
-    { "source": "(direct)", "medium": "(none)", "channel": "Direct", "sessions": 4380, "users": 3741 },
-    { "source": "linkedin.com", "medium": "referral", "channel": "Referral", "sessions": 2110, "users": 1804 },
-    { "source": "newsletter", "medium": "email", "channel": "Email", "sessions": 1620, "users": 1402 },
-    { "source": "twitter.com", "medium": "referral", "channel": "Referral", "sessions": 1240, "users": 1080 },
-    { "source": "facebook", "medium": "paid_social", "channel": "Paid Social", "sessions": 980, "users": 802 },
-    { "source": "github.com", "medium": "referral", "channel": "Referral", "sessions": 700, "users": 666 }
+    {
+      "source": "google",
+      "medium": "organic",
+      "channel": "Organic Search",
+      "sessions": 7204,
+      "users": 5612
+    },
+    {
+      "source": "(direct)",
+      "medium": "(none)",
+      "channel": "Direct",
+      "sessions": 4380,
+      "users": 3741
+    },
+    {
+      "source": "linkedin.com",
+      "medium": "referral",
+      "channel": "Referral",
+      "sessions": 2110,
+      "users": 1804
+    },
+    {
+      "source": "newsletter",
+      "medium": "email",
+      "channel": "Email",
+      "sessions": 1620,
+      "users": 1402
+    },
+    {
+      "source": "twitter.com",
+      "medium": "referral",
+      "channel": "Referral",
+      "sessions": 1240,
+      "users": 1080
+    },
+    {
+      "source": "facebook",
+      "medium": "paid_social",
+      "channel": "Paid Social",
+      "sessions": 980,
+      "users": 802
+    },
+    {
+      "source": "github.com",
+      "medium": "referral",
+      "channel": "Referral",
+      "sessions": 700,
+      "users": 666
+    }
   ],
   "comparison": {
     "rows": [
-      { "source": "google", "medium": "organic", "channel": "Organic Search", "sessions": 6420, "users": 5104 },
-      { "source": "(direct)", "medium": "(none)", "channel": "Direct", "sessions": 4012, "users": 3450 },
-      { "source": "linkedin.com", "medium": "referral", "channel": "Referral", "sessions": 1830, "users": 1604 },
-      { "source": "newsletter", "medium": "email", "channel": "Email", "sessions": 1410, "users": 1232 }
+      {
+        "source": "google",
+        "medium": "organic",
+        "channel": "Organic Search",
+        "sessions": 6420,
+        "users": 5104
+      },
+      {
+        "source": "(direct)",
+        "medium": "(none)",
+        "channel": "Direct",
+        "sessions": 4012,
+        "users": 3450
+      },
+      {
+        "source": "linkedin.com",
+        "medium": "referral",
+        "channel": "Referral",
+        "sessions": 1830,
+        "users": 1604
+      },
+      {
+        "source": "newsletter",
+        "medium": "email",
+        "channel": "Email",
+        "sessions": 1410,
+        "users": 1232
+      }
     ]
   }
 }

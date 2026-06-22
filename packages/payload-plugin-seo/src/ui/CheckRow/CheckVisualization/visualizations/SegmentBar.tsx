@@ -26,7 +26,10 @@ export function SegmentBar({ countLabel, filledPct, filledStatus, legend }: Segm
       )}
 
       <div className="flex h-[6px] rounded-[3px] overflow-hidden">
-        <i className={cn("block h-full", statusVar({ status: filledStatus }))} style={{ width: `${filledPct}%`, background: "var(--seo-c)" }} />
+        <i
+          className={cn("block h-full", statusVar({ status: filledStatus }))}
+          style={{ width: `${filledPct}%`, background: "var(--seo-c)" }}
+        />
         <i className="block h-full bg-neutral-150" style={{ width: `${100 - filledPct}%` }} />
       </div>
 

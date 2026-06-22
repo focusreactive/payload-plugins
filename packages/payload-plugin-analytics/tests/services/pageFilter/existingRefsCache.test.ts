@@ -1,6 +1,10 @@
 // tests/services/pageFilter/existingRefsCache.test.ts
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { getCachedExistingRefs, __clearExistingRefsCache, __setNowForTests } from "../../../src/services/pageFilter/existingRefsCache";
+import {
+  getCachedExistingRefs,
+  __clearExistingRefsCache,
+  __setNowForTests,
+} from "../../../src/services/pageFilter/existingRefsCache";
 
 describe("existingRefsCache", () => {
   beforeEach(() => {

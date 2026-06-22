@@ -24,7 +24,9 @@ export function useDeleteCommentMutation() {
         await queryClient.cancelQueries({ queryKey: key });
         const snapshot = queryClient.getQueryData<Comment[]>(key);
 
-        queryClient.setQueryData<Comment[]>(key, (prev = []) => prev.filter((c) => c.id !== commentId));
+        queryClient.setQueryData<Comment[]>(key, (prev = []) =>
+          prev.filter((c) => c.id !== commentId)
+        );
 
         return { snapshot, ctx };
       },

@@ -13,13 +13,25 @@ interface Coords {
   transform: string;
 }
 
-function computeCoords(rect: DOMRect, side: NonNullable<TooltipProps["side"]>, align: NonNullable<TooltipProps["align"]>, width: number): Coords {
-  let left = align === "start" ? rect.left : align === "end" ? rect.right - width : rect.left + rect.width / 2 - width / 2;
+function computeCoords(
+  rect: DOMRect,
+  side: NonNullable<TooltipProps["side"]>,
+  align: NonNullable<TooltipProps["align"]>,
+  width: number
+): Coords {
+  let left =
+    align === "start"
+      ? rect.left
+      : align === "end"
+        ? rect.right - width
+        : rect.left + rect.width / 2 - width / 2;
 
   const maxLeft = Math.max(GAP, window.innerWidth - width - GAP);
   left = Math.max(GAP, Math.min(left, maxLeft));
 
-  return side === "top" ? { top: rect.top - GAP, left, transform: "translateY(-100%)" } : { top: rect.bottom + GAP, left, transform: "none" };
+  return side === "top"
+    ? { top: rect.top - GAP, left, transform: "translateY(-100%)" }
+    : { top: rect.bottom + GAP, left, transform: "none" };
 }
 
 export interface TooltipProps {
@@ -31,7 +43,14 @@ export interface TooltipProps {
   className?: string;
 }
 
-export function Tooltip({ content, children, side = "bottom", align = "start", width = 290, className }: TooltipProps) {
+export function Tooltip({
+  content,
+  children,
+  side = "bottom",
+  align = "start",
+  width = 290,
+  className,
+}: TooltipProps) {
   const tooltipId = useId();
   const triggerRef = useRef<HTMLSpanElement>(null);
   const [coords, setCoords] = useState<Coords | null>(null);

@@ -21,7 +21,8 @@ export interface IdTokenPayload {
 
 export function claimsFromIdTokenPayload(payload: IdTokenPayload): OIDCUserClaims {
   const email = payload.email ?? (Array.isArray(payload.emails) ? payload.emails[0] : null);
-  const emailStr = typeof email === "string" ? email : ((email as { value?: string })?.value ?? null);
+  const emailStr =
+    typeof email === "string" ? email : ((email as { value?: string })?.value ?? null);
   return {
     email: emailStr,
     name: payload.name ?? payload.preferred_username ?? null,
@@ -32,7 +33,9 @@ export function claimsFromIdTokenPayload(payload: IdTokenPayload): OIDCUserClaim
 }
 
 export function claimsFromUserInfoResponse(body: Record<string, unknown>): OIDCUserClaims {
-  const email = body.email ?? (Array.isArray(body.emails) ? (body.emails[0] as { value?: string })?.value : null);
+  const email =
+    body.email ??
+    (Array.isArray(body.emails) ? (body.emails[0] as { value?: string })?.value : null);
   return {
     email: typeof email === "string" ? email : null,
     name: (body.name as string) ?? (body.preferred_username as string) ?? null,

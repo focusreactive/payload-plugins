@@ -33,7 +33,10 @@ export async function recomputeManifestForParent<TVariantData extends object>(
     const whereClause =
       options?.excludeId !== undefined
         ? {
-            and: [{ [AB_VARIANT_OF_FIELD]: { equals: parentId } }, { id: { not_equals: options.excludeId } }],
+            and: [
+              { [AB_VARIANT_OF_FIELD]: { equals: parentId } },
+              { id: { not_equals: options.excludeId } },
+            ],
           }
         : { [AB_VARIANT_OF_FIELD]: { equals: parentId } };
 

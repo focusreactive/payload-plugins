@@ -21,7 +21,9 @@ describe("TranslationMutator", () => {
   describe("apply with PlainTextChunks", () => {
     it("mutates dataRef with translation", () => {
       const data = { title: "Hello" };
-      const chunks: PlainTextChunk[] = [{ type: "plain", index: 0, text: "Hello", dataRef: data, key: "title" }];
+      const chunks: PlainTextChunk[] = [
+        { type: "plain", index: 0, text: "Hello", dataRef: data, key: "title" },
+      ];
       const translations = { 0: "Привет" };
 
       mutator.apply(chunks, translations);
@@ -46,7 +48,9 @@ describe("TranslationMutator", () => {
 
     it("skips chunks without translation", () => {
       const data = { title: "Hello" };
-      const chunks: PlainTextChunk[] = [{ type: "plain", index: 0, text: "Hello", dataRef: data, key: "title" }];
+      const chunks: PlainTextChunk[] = [
+        { type: "plain", index: 0, text: "Hello", dataRef: data, key: "title" },
+      ];
       const translations = {}; // No translation for index 0
 
       mutator.apply(chunks, translations);
@@ -58,7 +62,9 @@ describe("TranslationMutator", () => {
   describe("apply with RichTextChunks", () => {
     it("mutates nodeRef.text with translation", () => {
       const textNode = createTextNode("Hello");
-      const chunks: RichTextChunk[] = [{ type: "richText", index: 0, text: "Hello", nodeRef: textNode }];
+      const chunks: RichTextChunk[] = [
+        { type: "richText", index: 0, text: "Hello", nodeRef: textNode },
+      ];
       const translations = { 0: "Привет" };
 
       mutator.apply(chunks, translations);
@@ -125,7 +131,9 @@ describe("TranslationMutator", () => {
 
     it("handles empty translations", () => {
       const data = { title: "Hello" };
-      const chunks: PlainTextChunk[] = [{ type: "plain", index: 0, text: "Hello", dataRef: data, key: "title" }];
+      const chunks: PlainTextChunk[] = [
+        { type: "plain", index: 0, text: "Hello", dataRef: data, key: "title" },
+      ];
 
       mutator.apply(chunks, {});
 
@@ -134,7 +142,9 @@ describe("TranslationMutator", () => {
 
     it("preserves other properties in dataRef", () => {
       const data = { title: "Hello", slug: "hello", count: 42 };
-      const chunks: PlainTextChunk[] = [{ type: "plain", index: 0, text: "Hello", dataRef: data, key: "title" }];
+      const chunks: PlainTextChunk[] = [
+        { type: "plain", index: 0, text: "Hello", dataRef: data, key: "title" },
+      ];
       const translations = { 0: "Привет" };
 
       mutator.apply(chunks, translations);

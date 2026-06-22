@@ -14,7 +14,9 @@ const makeCtx = (): LevelContext => ({
   basePath: "/translate",
   access: undefined,
   taskRunnerFactory: { create: vi.fn() },
-  schemaMap: new Map([["posts" as CollectionSlug, [{ name: "title", type: "text" }] as Field[]]]) as CollectionSchemaMap,
+  schemaMap: new Map([
+    ["posts" as CollectionSlug, [{ name: "title", type: "text" }] as Field[]],
+  ]) as CollectionSchemaMap,
   translationProvider: { translate: vi.fn() },
   addEndpoints: vi.fn(),
   addCollectionComponent: vi.fn(),

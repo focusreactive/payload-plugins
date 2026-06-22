@@ -20,6 +20,8 @@ describe("aggregateByRef", () => {
   });
 
   it("ignores rows with an empty ref", () => {
-    expect(aggregateByRef([{ dimensionValues: [{ value: "" }], metricValues: [{ value: "9" }] }], 0, 1)).toEqual(new Map());
+    expect(
+      aggregateByRef([{ dimensionValues: [{ value: "" }], metricValues: [{ value: "9" }] }], 0, 1)
+    ).toEqual(new Map());
   });
 });

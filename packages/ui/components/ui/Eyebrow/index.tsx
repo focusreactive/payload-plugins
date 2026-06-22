@@ -24,10 +24,25 @@ const sizeMap = {
   md: "px-3.5 py-[7px] text-[0.72rem] font-semibold",
 };
 
-export function Eyebrow({ children, prefix = "none", tone = "primary", size = "md", className }: Props) {
+export function Eyebrow({
+  children,
+  prefix = "none",
+  tone = "primary",
+  size = "md",
+  className,
+}: Props) {
   return (
-    <span className={cn("inline-flex w-fit items-center gap-1.5 rounded-pill font-mono uppercase tracking-[0.16em] leading-none whitespace-nowrap", toneMap[tone], sizeMap[size], className)}>
-      {prefix === "dot" && <span aria-hidden className="inline-block size-1.5 rounded-pill bg-current" />}
+    <span
+      className={cn(
+        "inline-flex w-fit items-center gap-1.5 rounded-pill font-mono uppercase tracking-[0.16em] leading-none whitespace-nowrap",
+        toneMap[tone],
+        sizeMap[size],
+        className
+      )}
+    >
+      {prefix === "dot" && (
+        <span aria-hidden className="inline-block size-1.5 rounded-pill bg-current" />
+      )}
       {prefix === "dash" && <span aria-hidden>—</span>}
       <span>{children}</span>
     </span>

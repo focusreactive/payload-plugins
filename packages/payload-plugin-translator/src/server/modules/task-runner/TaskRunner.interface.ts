@@ -31,5 +31,8 @@ export interface TaskRunner {
   /**
    * Find tasks by collection and optionally filter by document IDs.
    */
-  findByCollection(collectionSlug: CollectionSlug, documentIds?: Array<string | number>): Promise<Task[]>;
+  findByCollection(
+    collectionSlug: CollectionSlug,
+    documentIds?: Array<string | number>
+  ): Promise<Task[]>;
 }

@@ -15,7 +15,13 @@ export class FieldChunkCollectorStage implements PipelineStage {
       throw new Error("FieldChunkCollectorStage requires filteredData from previous stage");
     }
 
-    const collector = new FieldChunkCollector(ctx.schema, ctx.filteredData, ctx.sourceData, ctx.targetData, this.strategy);
+    const collector = new FieldChunkCollector(
+      ctx.schema,
+      ctx.filteredData,
+      ctx.sourceData,
+      ctx.targetData,
+      this.strategy
+    );
     return {
       ...ctx,
       fieldChunks: collector.collect(),

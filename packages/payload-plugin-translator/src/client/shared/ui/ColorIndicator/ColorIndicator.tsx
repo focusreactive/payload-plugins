@@ -9,7 +9,12 @@ type ColorIndicatorProps = {
   className?: string;
 };
 
-export default function ColorIndicator({ $color, $animated, title, className }: ColorIndicatorProps) {
+export default function ColorIndicator({
+  $color,
+  $animated,
+  title,
+  className,
+}: ColorIndicatorProps) {
   return (
     <div
       title={title}

@@ -17,7 +17,10 @@ function extractRelationId(value: number | { id: number } | null | undefined): n
   return null;
 }
 
-export async function markCommentRead({ commentId, payload: payloadProp }: Props): Promise<Response<{ alreadyRead: boolean }>> {
+export async function markCommentRead({
+  commentId,
+  payload: payloadProp,
+}: Props): Promise<Response<{ alreadyRead: boolean }>> {
   try {
     const payload = await extractPayload(payloadProp);
     const { user } = await payload.auth({ headers: await headers() });
@@ -39,7 +42,10 @@ export async function markCommentRead({ commentId, payload: payloadProp }: Props
     }
 
     const tenantId = await getCurrentTenantId(payload);
-    if (tenantId && extractRelationId(comment.tenant as number | { id: number } | null) !== tenantId) {
+    if (
+      tenantId &&
+      extractRelationId(comment.tenant as number | { id: number } | null) !== tenantId
+    ) {
       return { success: false, error: "Forbidden" };
     }
 
@@ -58,7 +64,9 @@ export async function markCommentRead({ commentId, payload: payloadProp }: Props
     }
 
     const mentions = (comment.mentions ?? []) as CommentMention[];
-    const isMentioned = mentions.some((m) => extractRelationId(m.user as number | { id: number } | null) === user.id);
+    const isMentioned = mentions.some(
+      (m) => extractRelationId(m.user as number | { id: number } | null) === user.id
+    );
     if (!isMentioned) {
       return {
         success: false,

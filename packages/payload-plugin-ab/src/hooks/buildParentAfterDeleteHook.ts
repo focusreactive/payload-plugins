@@ -20,9 +20,16 @@ export function buildParentAfterDeleteHook<TVariantData extends object>(
       const parentId = resolveId(variantOfValue);
       if (!parentId) return;
 
-      await recomputeManifestForParent(parentId, parentCollectionSlug, abConfig, pluginConfig, req, {
-        excludeId: id,
-      });
+      await recomputeManifestForParent(
+        parentId,
+        parentCollectionSlug,
+        abConfig,
+        pluginConfig,
+        req,
+        {
+          excludeId: id,
+        }
+      );
       return;
     }
 

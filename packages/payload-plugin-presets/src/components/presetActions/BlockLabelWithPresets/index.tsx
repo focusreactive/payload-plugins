@@ -28,10 +28,18 @@ export function BlockLabelWithPresets() {
 
   return (
     <>
-      <span className={`${baseClass}__block-number`}>{String((rowNumber ?? 0) + 1).padStart(2, "0")}</span>
+      <span className={`${baseClass}__block-number`}>
+        {String((rowNumber ?? 0) + 1).padStart(2, "0")}
+      </span>
 
-      <Pill className={`${baseClass}__block-pill ${baseClass}__block-pill-${data.blockType}`} pillStyle="white" size="small">
-        {block?.labels?.singular ? resolveLabel(block.labels.singular, i18n.language) : data.blockType}
+      <Pill
+        className={`${baseClass}__block-pill ${baseClass}__block-pill-${data.blockType}`}
+        pillStyle="white"
+        size="small"
+      >
+        {block?.labels?.singular
+          ? resolveLabel(block.labels.singular, i18n.language)
+          : data.blockType}
       </Pill>
 
       {showBlockName && <SectionTitle path={`${path}.blockName`} readOnly={false} />}

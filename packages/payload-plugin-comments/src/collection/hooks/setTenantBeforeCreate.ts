@@ -1,10 +1,16 @@
 import type { CollectionBeforeChangeHook, CollectionSlug } from "payload";
 import type { CommentsPluginConfigStorage } from "../../types";
 
-export const setTenantBeforeCreate: CollectionBeforeChangeHook = async ({ data, req, operation }) => {
+export const setTenantBeforeCreate: CollectionBeforeChangeHook = async ({
+  data,
+  req,
+  operation,
+}) => {
   if (operation !== "create") return data;
 
-  const pluginConfig = req.payload.config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
+  const pluginConfig = req.payload.config.admin?.custom?.commentsPlugin as
+    | CommentsPluginConfigStorage
+    | undefined;
 
   const tenantConfig = pluginConfig?.tenant;
   if (!tenantConfig?.enabled) return data;

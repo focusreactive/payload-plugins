@@ -38,11 +38,18 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
   private readonly config: PayloadJobsRunnerConfig;
 
   constructor(options?: PayloadJobsRunnerOptions) {
-    const autoRun = options?.autoRun === false ? false : options?.autoRun ? { ...defaultAutoRun, ...options.autoRun } : defaultAutoRun;
+    const autoRun =
+      options?.autoRun === false
+        ? false
+        : options?.autoRun
+          ? { ...defaultAutoRun, ...options.autoRun }
+          : defaultAutoRun;
 
     const staleJobTimeoutMs = options?.staleJobTimeoutMs ?? defaultValues.staleJobTimeoutMs;
     if (!Number.isFinite(staleJobTimeoutMs) || staleJobTimeoutMs <= 0) {
-      throw new Error(`[payload-plugin-translator] staleJobTimeoutMs must be a positive finite number (got ${staleJobTimeoutMs})`);
+      throw new Error(
+        `[payload-plugin-translator] staleJobTimeoutMs must be a positive finite number (got ${staleJobTimeoutMs})`
+      );
     }
 
     this.config = {
@@ -167,7 +174,10 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
         if (Array.isArray(existingAutoRun)) {
           existingAutoRun.push(autoRunConfig);
         } else if (typeof existingAutoRun === "function") {
-          config.jobs.autoRun = async (payload: Payload) => [...(await existingAutoRun(payload)), autoRunConfig];
+          config.jobs.autoRun = async (payload: Payload) => [
+            ...(await existingAutoRun(payload)),
+            autoRunConfig,
+          ];
         } else {
           config.jobs.autoRun = [autoRunConfig];
         }

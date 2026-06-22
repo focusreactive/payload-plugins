@@ -24,7 +24,10 @@ export function getPluginConfig() {
   return config;
 }
 
-export function setResolvedLayout(layout: ResolvedLayout, registry: Record<BlockId, BlockDefinition>) {
+export function setResolvedLayout(
+  layout: ResolvedLayout,
+  registry: Record<BlockId, BlockDefinition>
+) {
   globalThis.__payloadPluginAnalyticsResolvedLayout = layout;
   globalThis.__payloadPluginAnalyticsResolvedRegistry = registry;
 }

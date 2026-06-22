@@ -32,7 +32,10 @@ describe("resolvePagesConfig", () => {
   });
 
   it("allows overriding dimension api names", () => {
-    const r = resolvePagesConfig({ collections: ["page"], dimensions: { pageRef: "customEvent:my_ref" } });
+    const r = resolvePagesConfig({
+      collections: ["page"],
+      dimensions: { pageRef: "customEvent:my_ref" },
+    });
     expect(r?.dimensions.pageRef).toBe("customEvent:my_ref");
     expect(r?.dimensions.contentLocale).toBe("customEvent:fr_content_locale");
   });

@@ -7,7 +7,9 @@ type DocumentTranslationProgressRunningProps = {
   data: DocumentTranslationRunning;
 };
 
-export function DocumentTranslationProgressRunning({ data }: DocumentTranslationProgressRunningProps) {
+export function DocumentTranslationProgressRunning({
+  data,
+}: DocumentTranslationProgressRunningProps) {
   const cancelDocumentTranslationApi = TranslationsApi.useCancelDocumentTranslation();
 
   const handleCancelDocumentTranslation = async () => {

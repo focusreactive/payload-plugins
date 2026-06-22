@@ -1,7 +1,10 @@
 import type { CollectionConfig } from "payload";
 import type { CommentsPluginConfig } from "../../types";
 
-export function overrideCommentsCollection(config: CollectionConfig, overrides: CommentsPluginConfig["overrides"]): CollectionConfig {
+export function overrideCommentsCollection(
+  config: CollectionConfig,
+  overrides: CommentsPluginConfig["overrides"]
+): CollectionConfig {
   const { access, admin, hooks, fields } = overrides ?? {};
 
   return {

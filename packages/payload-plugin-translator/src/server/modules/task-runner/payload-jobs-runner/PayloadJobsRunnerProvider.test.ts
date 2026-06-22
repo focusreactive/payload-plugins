@@ -10,7 +10,8 @@ const minimalContext: TaskRunnerContext = {
 
 // The config modifier only reads/writes `jobs` and `onInit`; build a minimal
 // stand-in rather than a full Payload Config (which requires db, secret, etc.).
-const makeConfig = (over: Record<string, unknown> = {}): Config => ({ jobs: {}, ...over }) as unknown as Config;
+const makeConfig = (over: Record<string, unknown> = {}): Config =>
+  ({ jobs: {}, ...over }) as unknown as Config;
 
 const makePayload = (overrides?: { update?: ReturnType<typeof vi.fn> }) => ({
   update: overrides?.update ?? vi.fn().mockResolvedValue({ docs: [] }),
@@ -59,15 +60,21 @@ describe("PayloadJobsRunnerProvider", () => {
 
   describe("construction — staleJobTimeoutMs validation", () => {
     it("throws on staleJobTimeoutMs = 0", () => {
-      expect(() => createPayloadJobsRunner({ staleJobTimeoutMs: 0 })).toThrow("[payload-plugin-translator] staleJobTimeoutMs must be a positive finite number");
+      expect(() => createPayloadJobsRunner({ staleJobTimeoutMs: 0 })).toThrow(
+        "[payload-plugin-translator] staleJobTimeoutMs must be a positive finite number"
+      );
     });
 
     it("throws on staleJobTimeoutMs = -1", () => {
-      expect(() => createPayloadJobsRunner({ staleJobTimeoutMs: -1 })).toThrow("[payload-plugin-translator] staleJobTimeoutMs must be a positive finite number");
+      expect(() => createPayloadJobsRunner({ staleJobTimeoutMs: -1 })).toThrow(
+        "[payload-plugin-translator] staleJobTimeoutMs must be a positive finite number"
+      );
     });
 
     it("throws on staleJobTimeoutMs = Infinity", () => {
-      expect(() => createPayloadJobsRunner({ staleJobTimeoutMs: Infinity })).toThrow("[payload-plugin-translator] staleJobTimeoutMs must be a positive finite number");
+      expect(() => createPayloadJobsRunner({ staleJobTimeoutMs: Infinity })).toThrow(
+        "[payload-plugin-translator] staleJobTimeoutMs must be a positive finite number"
+      );
     });
 
     it("does not throw with the default (300000)", () => {

@@ -18,7 +18,8 @@ export function useResolveCommentMutation() {
 
   return useMutation(
     {
-      mutationFn: ({ commentId, resolved }: ResolveCommentVariables) => resolveComment(commentId, resolved),
+      mutationFn: ({ commentId, resolved }: ResolveCommentVariables) =>
+        resolveComment(commentId, resolved),
       onMutate: async (variables) => {
         const { ctx, commentId, resolved, currentUser } = variables;
         const key = getCommentsKey(ctx);

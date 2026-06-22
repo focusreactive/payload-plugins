@@ -3,7 +3,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import * as Popover from "@radix-ui/react-popover";
-import { useTranslation, ShimmerEffect, ChevronIcon, ConfirmationModal, useModal } from "@payloadcms/ui";
+import {
+  useTranslation,
+  ShimmerEffect,
+  ChevronIcon,
+  ConfirmationModal,
+  useModal,
+} from "@payloadcms/ui";
 import type { ClientBlock } from "payload";
 import { usePresetsConfig } from "../usePresetsConfig.js";
 import { DefaultBlockImage } from "../shared/index.js";
@@ -18,7 +24,12 @@ type BlockSelectorWithPresetsProps = {
   locale?: string;
 };
 
-export const BlockSelectorWithPresets: React.FC<BlockSelectorWithPresetsProps> = ({ blocks, onSelect, tenantId, locale }) => {
+export const BlockSelectorWithPresets: React.FC<BlockSelectorWithPresetsProps> = ({
+  blocks,
+  onSelect,
+  tenantId,
+  locale,
+}) => {
   const { slug: presetsCollectionSlug, presetTypes } = usePresetsConfig();
   const { i18n, t } = useTranslation();
 
@@ -69,7 +80,9 @@ export const BlockSelectorWithPresets: React.FC<BlockSelectorWithPresetsProps> =
       const data = await response.json();
       const fetchedPresets: Preset[] = data.docs || [];
 
-      const filteredPresets = locale ? fetchedPresets.filter((preset) => Boolean(preset.name)) : fetchedPresets;
+      const filteredPresets = locale
+        ? fetchedPresets.filter((preset) => Boolean(preset.name))
+        : fetchedPresets;
 
       setPresetsCache(filteredPresets);
     } catch (error) {
@@ -135,8 +148,18 @@ export const BlockSelectorWithPresets: React.FC<BlockSelectorWithPresetsProps> =
   return (
     <>
       <div className="block-search">
-        <input className="block-search__input" placeholder={t("presetsPlugin:blocksDrawer:searchPlaceholder" as never)} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-        <svg className="icon icon--search" fill="none" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <input
+          className="block-search__input"
+          placeholder={t("presetsPlugin:blocksDrawer:searchPlaceholder" as never)}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <svg
+          className="icon icon--search"
+          fill="none"
+          viewBox="0 0 20 20"
+          xmlns="http://www.w3.org/2000/svg"
+        >
           <path
             className="stroke"
             d="M16 16L13.1333 13.1333M14.6667 9.33333C14.6667 12.2789 12.2789 14.6667 9.33333 14.6667C6.38781 14.6667 4 12.2789 4 9.33333C4 6.38781 6.38781 4 9.33333 4C12.2789 4 14.6667 6.38781 14.6667 9.33333Z"
@@ -148,7 +171,9 @@ export const BlockSelectorWithPresets: React.FC<BlockSelectorWithPresetsProps> =
       <div className="blocks-drawer__blocks-wrapper">
         {Object.entries(groupedBlocks).map(([group, groupBlocks]) => (
           <div key={group}>
-            {Object.keys(groupedBlocks).length > 1 && <p className="blocks-drawer__block-label">{group}</p>}
+            {Object.keys(groupedBlocks).length > 1 && (
+              <p className="blocks-drawer__block-label">{group}</p>
+            )}
             <ul className="blocks-drawer__blocks">
               {groupBlocks.map((block) => {
                 const hasPresets = presetTypes.includes(block.slug);
@@ -165,7 +190,9 @@ export const BlockSelectorWithPresets: React.FC<BlockSelectorWithPresetsProps> =
                       isActive={isActive}
                       isMobile={isMobile}
                       presets={blockPresets}
-                      onBlockClick={() => (hasPresets ? handleBlockClick(block) : onSelect(block.slug))}
+                      onBlockClick={() =>
+                        hasPresets ? handleBlockClick(block) : onSelect(block.slug)
+                      }
                       onPresetSelect={handlePresetSelect}
                       onClose={() => setActiveBlockSlug(null)}
                       onDelete={handleDeletePreset}
@@ -209,7 +236,19 @@ type BlockCardProps = {
   onPresetUpdate: () => void;
 };
 
-const BlockCard: React.FC<BlockCardProps> = ({ block, label, hasPresets, isActive, isMobile, presets, onBlockClick, onPresetSelect, onClose, onDelete, onPresetUpdate }) => {
+const BlockCard: React.FC<BlockCardProps> = ({
+  block,
+  label,
+  hasPresets,
+  isActive,
+  isMobile,
+  presets,
+  onBlockClick,
+  onPresetSelect,
+  onClose,
+  onDelete,
+  onPresetUpdate,
+}) => {
   const [deletingPreset, setDeletingPreset] = useState<Preset | null>(null);
   const { openModal } = useModal();
   const { slug: presetsCollectionSlug } = usePresetsConfig();
@@ -226,7 +265,12 @@ const BlockCard: React.FC<BlockCardProps> = ({ block, label, hasPresets, isActiv
 
   if (!hasPresets) {
     return (
-      <button className="thumbnail-card thumbnail-card--has-on-click thumbnail-card--align-label-center" title={label} type="button" onClick={onBlockClick}>
+      <button
+        className="thumbnail-card thumbnail-card--has-on-click thumbnail-card--align-label-center"
+        title={label}
+        type="button"
+        onClick={onBlockClick}
+      >
         <BlockThumbnail imageURL={block.imageURL} label={label} />
         <div className="thumbnail-card__label">{label}</div>
       </button>
@@ -256,7 +300,9 @@ const BlockCard: React.FC<BlockCardProps> = ({ block, label, hasPresets, isActiv
             <BlockThumbnail imageURL={block.imageURL} label={label} />
             <div className="thumbnail-card__label">
               {label} {presets.length > 0 ? `(${presets.length})` : ""}
-              <ChevronIcon className={`thumbnail-card__chevron ${isActive ? "thumbnail-card__chevron--open" : ""}`} />
+              <ChevronIcon
+                className={`thumbnail-card__chevron ${isActive ? "thumbnail-card__chevron--open" : ""}`}
+              />
             </div>
           </button>
         </Popover.Trigger>
@@ -307,7 +353,9 @@ const BlockCard: React.FC<BlockCardProps> = ({ block, label, hasPresets, isActiv
           confirmLabel={t("presetsPlugin:deletePreset:confirm" as never)}
           cancelLabel={t("presetsPlugin:deletePreset:cancel" as never)}
           onConfirm={async () => {
-            const res = await fetch(`/api/${presetsCollectionSlug}/${deletingPreset.id}`, { method: "DELETE" });
+            const res = await fetch(`/api/${presetsCollectionSlug}/${deletingPreset.id}`, {
+              method: "DELETE",
+            });
             if (res.ok) {
               onDelete(deletingPreset.id);
               setDeletingPreset(null);
@@ -349,8 +397,19 @@ type PresetsListProps = {
   listRef: React.RefObject<HTMLDivElement | null>;
 };
 
-const PresetsList: React.FC<PresetsListProps> = ({ blockSlug, label, presets, onSelect, onDeleteRequest, onClose, onPresetUpdate, listRef }) => {
-  const filteredPresets = presets.filter((preset) => preset.presetBlock?.[0]?.blockType === blockSlug);
+const PresetsList: React.FC<PresetsListProps> = ({
+  blockSlug,
+  label,
+  presets,
+  onSelect,
+  onDeleteRequest,
+  onClose,
+  onPresetUpdate,
+  listRef,
+}) => {
+  const filteredPresets = presets.filter(
+    (preset) => preset.presetBlock?.[0]?.blockType === blockSlug
+  );
   const { mediaCollection } = usePresetsConfig();
   const { t } = useTranslation();
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -362,7 +421,9 @@ const PresetsList: React.FC<PresetsListProps> = ({ blockSlug, label, presets, on
   const totalItems = 1 + filteredPresets.length;
 
   useEffect(() => {
-    itemsRef.current = Array.from(listRef.current?.querySelectorAll<HTMLElement>("button.preset-item") ?? []);
+    itemsRef.current = Array.from(
+      listRef.current?.querySelectorAll<HTMLElement>("button.preset-item") ?? []
+    );
   }, []);
 
   useEffect(() => {
@@ -430,9 +491,23 @@ const PresetsList: React.FC<PresetsListProps> = ({ blockSlug, label, presets, on
 
   return (
     <div className="blocks-drawer__presets-popup">
-      <div className="blocks-drawer__presets-popup-container" ref={listRef} role="listbox" aria-label={label} tabIndex={-1} onKeyDown={handleKeyDown}>
+      <div
+        className="blocks-drawer__presets-popup-container"
+        ref={listRef}
+        role="listbox"
+        aria-label={label}
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+      >
         {/* Empty option — no delete on the null preset */}
-        <PresetItem preset={null} mediaCollection={mediaCollection} label={label} onSelect={onSelect} tabIndex={focusedIndex === 0 ? 0 : -1} isScrolling={isScrolling} />
+        <PresetItem
+          preset={null}
+          mediaCollection={mediaCollection}
+          label={label}
+          onSelect={onSelect}
+          tabIndex={focusedIndex === 0 ? 0 : -1}
+          isScrolling={isScrolling}
+        />
 
         {/* Presets list */}
         {filteredPresets.length > 0 &&
@@ -450,7 +525,11 @@ const PresetsList: React.FC<PresetsListProps> = ({ blockSlug, label, presets, on
           ))}
 
         {/* No presets message */}
-        {filteredPresets.length === 0 && <div className="blocks-drawer__presets-empty">{t("presetsPlugin:blocksDrawer:noPresetsAvailable" as never)}</div>}
+        {filteredPresets.length === 0 && (
+          <div className="blocks-drawer__presets-empty">
+            {t("presetsPlugin:blocksDrawer:noPresetsAvailable" as never)}
+          </div>
+        )}
       </div>
     </div>
   );

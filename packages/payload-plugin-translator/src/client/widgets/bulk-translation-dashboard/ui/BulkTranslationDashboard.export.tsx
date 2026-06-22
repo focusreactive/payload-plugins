@@ -9,5 +9,7 @@ export class BulkDocumentTranslationDashboard implements RawPayloadComponentExpo
   constructor(readonly access: AccessGuard = new AnyAccessGuard()) {
     this.serverProps = { access };
   }
-  path = clientComponentPath("widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.server");
+  path = clientComponentPath(
+    "widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.server"
+  );
 }

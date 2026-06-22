@@ -5,7 +5,9 @@ import { OverwriteStrategy } from "./strategies/Overwrite.strategy";
 import { SkipExistingStrategy } from "./strategies/SkipExisting.strategy";
 import type { TranslationProvider } from "../translation-providers";
 
-const createMockProvider = (translationFn?: (textMap: Record<number, string>) => Record<number, string>): TranslationProvider => ({
+const createMockProvider = (
+  translationFn?: (textMap: Record<number, string>) => Record<number, string>
+): TranslationProvider => ({
   translate: vi.fn().mockImplementation(async (textMap: Record<number, string>) => {
     if (translationFn) return translationFn(textMap);
     // Default: prefix each value with "TR_"
@@ -172,7 +174,9 @@ describe("TranslationPipeline", () => {
 
       expect(result).not.toBeNull();
       // The richText structure should have translated text nodes
-      const content = result!.translatedData.content as { root: { children: { children: { text: string }[] }[] } };
+      const content = result!.translatedData.content as {
+        root: { children: { children: { text: string }[] }[] };
+      };
       expect(content.root.children[0].children[0].text).toBe("TR_Hello");
     });
   });
@@ -664,7 +668,10 @@ describe("TranslationPipeline", () => {
       });
 
       // Note: id is not included in result - Postgres rejects it on update
-      expect(result!.translatedData.items).toEqual([{ label: "Translated" }, { label: "TR_Second" }]);
+      expect(result!.translatedData.items).toEqual([
+        { label: "Translated" },
+        { label: "TR_Second" },
+      ]);
     });
 
     it("applies SkipExisting to nested group fields", async () => {

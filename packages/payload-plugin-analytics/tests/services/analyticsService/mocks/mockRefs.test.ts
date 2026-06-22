@@ -1,7 +1,13 @@
 // tests/services/analyticsService/mocks/mockRefs.test.ts
 import { describe, expect, it, beforeEach } from "vitest";
-import { pickMockRefs, MOCK_MISSING_REF } from "../../../../src/services/analyticsService/mocks/mockRefs";
-import { setActiveExistingRefs, __clearActiveExistingRefs } from "../../../../src/services/pageFilter/activeRefsHolder";
+import {
+  pickMockRefs,
+  MOCK_MISSING_REF,
+} from "../../../../src/services/analyticsService/mocks/mockRefs";
+import {
+  setActiveExistingRefs,
+  __clearActiveExistingRefs,
+} from "../../../../src/services/pageFilter/activeRefsHolder";
 
 describe("pickMockRefs", () => {
   beforeEach(() => __clearActiveExistingRefs());

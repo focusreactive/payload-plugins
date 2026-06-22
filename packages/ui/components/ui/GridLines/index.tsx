@@ -95,7 +95,8 @@ export function GridLines({ tone = "dark", className }: GridLinesProps) {
         }
       }
       draw();
-      rafId = pointer.active || maxBrightness > IDLE_BRIGHTNESS_EPSILON ? requestAnimationFrame(tick) : 0;
+      rafId =
+        pointer.active || maxBrightness > IDLE_BRIGHTNESS_EPSILON ? requestAnimationFrame(tick) : 0;
     };
 
     const startLoop = () => {
@@ -145,6 +146,13 @@ export function GridLines({ tone = "dark", className }: GridLinesProps) {
   }, [tone]);
 
   return (
-    <canvas ref={canvasRef} aria-hidden="true" className={cn("pointer-events-none absolute inset-0 size-full [mask-image:radial-gradient(ellipse_at_center,#fff_35%,transparent_78%)]", className)} />
+    <canvas
+      ref={canvasRef}
+      aria-hidden="true"
+      className={cn(
+        "pointer-events-none absolute inset-0 size-full [mask-image:radial-gradient(ellipse_at_center,#fff_35%,transparent_78%)]",
+        className
+      )}
+    />
   );
 }

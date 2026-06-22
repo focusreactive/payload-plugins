@@ -34,5 +34,7 @@ type FormCheckboxPublishProps = {
 };
 
 export function FormCheckboxPublish({ name, disabled, className }: FormCheckboxPublishProps) {
-  return <FormCheckbox name={name} label={PublishLabel} disabled={disabled} className={className} />;
+  return (
+    <FormCheckbox name={name} label={PublishLabel} disabled={disabled} className={className} />
+  );
 }

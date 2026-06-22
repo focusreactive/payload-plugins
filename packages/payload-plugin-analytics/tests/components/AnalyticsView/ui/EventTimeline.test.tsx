@@ -9,7 +9,12 @@ describe("EventTimeline", () => {
       <LeadActionRegistryProvider registry={{}}>
         <EventTimeline
           events={[
-            { timestamp: "14:32", eventName: "session_start", pagePath: "/", params: { source: "google" } },
+            {
+              timestamp: "14:32",
+              eventName: "session_start",
+              pagePath: "/",
+              params: { source: "google" },
+            },
             {
               timestamp: "14:36",
               eventName: "lead_action",

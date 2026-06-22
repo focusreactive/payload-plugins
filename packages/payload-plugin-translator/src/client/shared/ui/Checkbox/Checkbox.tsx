@@ -7,8 +7,18 @@ type CheckboxProps = Omit<ComponentPropsWithRef<"input">, "type"> & {
   hasError?: boolean;
 };
 
-const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox({ className = "", hasError, ...props }, ref) {
-  return <input ref={ref} type="checkbox" className={`${styles.checkbox} ${hasError ? styles["checkbox--error"] : ""} ${className}`} {...props} />;
+const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox(
+  { className = "", hasError, ...props },
+  ref
+) {
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      className={`${styles.checkbox} ${hasError ? styles["checkbox--error"] : ""} ${className}`}
+      {...props}
+    />
+  );
 });
 
 export default Checkbox;

@@ -1,7 +1,10 @@
 import { en } from "../../translations/en";
 import type { Translations } from "../../translations/types";
 
-export function mergeTranslations(incomingConfigTranslations: Record<string, object>, userTranslations: Translations) {
+export function mergeTranslations(
+  incomingConfigTranslations: Record<string, object>,
+  userTranslations: Translations
+) {
   const mergedTranslations: Record<string, object> = {
     ...incomingConfigTranslations,
     en: {

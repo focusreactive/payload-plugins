@@ -21,7 +21,9 @@ export function TopCountriesBlock({ dateRange, comparison, className }: BlockCom
     dimension: mode,
   });
   const showCompare = comparison.kind === "previous-period";
-  const prev = new Map((data?.comparison?.rows ?? []).map((r) => [mode === "city" ? r.city : r.country, r]));
+  const prev = new Map(
+    (data?.comparison?.rows ?? []).map((r) => [mode === "city" ? r.city : r.country, r])
+  );
 
   return (
     <DataCard
@@ -50,7 +52,11 @@ export function TopCountriesBlock({ dateRange, comparison, className }: BlockCom
                 value: sessions,
                 prev: showCompare ? (prevRow?.sessions ?? undefined) : undefined,
               }
-            : { label: country, value: sessions, prev: showCompare ? (prevRow?.sessions ?? undefined) : undefined };
+            : {
+                label: country,
+                value: sessions,
+                prev: showCompare ? (prevRow?.sessions ?? undefined) : undefined,
+              };
         })}
         initialVisible={6}
         loading={isLoading}

@@ -7,7 +7,12 @@ export function getValueByPath(obj: Object, path: string) {
   let current: unknown = obj;
 
   for (const segment of segments) {
-    if (current === null || current === undefined || typeof current !== "object" || Array.isArray(current)) {
+    if (
+      current === null ||
+      current === undefined ||
+      typeof current !== "object" ||
+      Array.isArray(current)
+    ) {
       return null;
     }
     current = (current as Object)[segment];

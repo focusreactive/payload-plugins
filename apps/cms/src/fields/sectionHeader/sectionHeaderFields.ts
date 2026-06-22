@@ -17,7 +17,9 @@ export function sectionHeaderFields(options: SectionHeaderFieldsOptions = {}): F
       type: "row",
       fields: [
         {
-          ...(options.eyebrowDefault ? { defaultValue: createLocalizedDefault(options.eyebrowDefault) } : {}),
+          ...(options.eyebrowDefault
+            ? { defaultValue: createLocalizedDefault(options.eyebrowDefault) }
+            : {}),
           admin: { width: "40%" },
           label: { en: "Eyebrow", es: "Antetítulo" },
           localized: true,
@@ -25,7 +27,9 @@ export function sectionHeaderFields(options: SectionHeaderFieldsOptions = {}): F
           type: "text",
         },
         {
-          ...(options.headingDefault ? { defaultValue: createLocalizedDefault(options.headingDefault) } : {}),
+          ...(options.headingDefault
+            ? { defaultValue: createLocalizedDefault(options.headingDefault) }
+            : {}),
           admin: {
             width: "60%",
             description: {
@@ -41,7 +45,9 @@ export function sectionHeaderFields(options: SectionHeaderFieldsOptions = {}): F
       ],
     },
     {
-      ...(options.descriptionDefault ? { defaultValue: createLocalizedDefault(options.descriptionDefault) } : {}),
+      ...(options.descriptionDefault
+        ? { defaultValue: createLocalizedDefault(options.descriptionDefault) }
+        : {}),
       label: { en: "Description", es: "Descripción" },
       localized: true,
       name: "description",

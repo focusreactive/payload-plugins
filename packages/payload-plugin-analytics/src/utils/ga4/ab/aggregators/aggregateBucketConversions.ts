@@ -23,14 +23,18 @@ export function aggregateBucketConversions(rows: Ga4Row[]): {
       (convSessions.get(bucket) ?? convSessions.set(bucket, new Set()).get(bucket)!).add(sid);
 
       if (leadType) {
-        const perLead = leadSessions.get(bucket) ?? leadSessions.set(bucket, new Map()).get(bucket)!;
+        const perLead =
+          leadSessions.get(bucket) ?? leadSessions.set(bucket, new Map()).get(bucket)!;
         (perLead.get(leadType) ?? perLead.set(leadType, new Set()).get(leadType)!).add(sid);
       }
     }
   }
   const byBucket: Record<string, { convertingSessions: number; rawConversions: number }> = {};
   for (const b of new Set([...convSessions.keys(), ...rawByBucket.keys()])) {
-    byBucket[b] = { convertingSessions: convSessions.get(b)?.size ?? 0, rawConversions: rawByBucket.get(b) ?? 0 };
+    byBucket[b] = {
+      convertingSessions: convSessions.get(b)?.size ?? 0,
+      rawConversions: rawByBucket.get(b) ?? 0,
+    };
   }
 
   const byBucketLead: Record<string, Record<string, number>> = {};

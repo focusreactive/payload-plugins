@@ -98,7 +98,11 @@ describe("GetCollectionStatusHandler", () => {
     });
 
     it("returns task statuses for all documents in collection", async () => {
-      const tasks = [createMockTask({ id: "task-1", status: "completed" }), createMockTask({ id: "task-2", status: "pending" }), createMockTask({ id: "task-3", status: "running" })];
+      const tasks = [
+        createMockTask({ id: "task-1", status: "completed" }),
+        createMockTask({ id: "task-2", status: "pending" }),
+        createMockTask({ id: "task-3", status: "running" }),
+      ];
       (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue(tasks);
 
       const req = createMockRequest({ collection_slug: "posts" });

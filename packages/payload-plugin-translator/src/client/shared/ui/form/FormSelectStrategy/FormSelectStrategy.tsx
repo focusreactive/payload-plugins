@@ -41,8 +41,26 @@ type FormSelectStrategyProps = {
   className?: string;
 };
 
-export function FormSelectStrategy({ name, required, description, disabled, size, className }: FormSelectStrategyProps) {
-  return <FormSelect size={size} className={className} description={description} label={StrategyLabel} required={required} name={name} options={[...STRATEGY_OPTIONS]} disabled={disabled} />;
+export function FormSelectStrategy({
+  name,
+  required,
+  description,
+  disabled,
+  size,
+  className,
+}: FormSelectStrategyProps) {
+  return (
+    <FormSelect
+      size={size}
+      className={className}
+      description={description}
+      label={StrategyLabel}
+      required={required}
+      name={name}
+      options={[...STRATEGY_OPTIONS]}
+      disabled={disabled}
+    />
+  );
 }
 
 export type TranslationStrategy = (typeof STRATEGY_OPTIONS)[number]["value"];

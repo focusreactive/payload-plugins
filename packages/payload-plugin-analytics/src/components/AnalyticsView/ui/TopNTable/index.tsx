@@ -15,7 +15,15 @@ interface TopNTableProps<Row> extends BlockStateProps {
   emptyMessage?: string;
 }
 
-export function TopNTable<Row extends object>({ rows, columns, initialVisible = 5, emptyMessage = "No data in this range.", loading, error, onRetry }: TopNTableProps<Row>) {
+export function TopNTable<Row extends object>({
+  rows,
+  columns,
+  initialVisible = 5,
+  emptyMessage = "No data in this range.",
+  loading,
+  error,
+  onRetry,
+}: TopNTableProps<Row>) {
   const [expanded, setExpanded] = useState(false);
 
   if (loading) return <SkeletonBlock shape="table" rows={initialVisible} />;
@@ -36,7 +44,13 @@ export function TopNTable<Row extends object>({ rows, columns, initialVisible = 
         </tbody>
       </table>
 
-      {rows.length > initialVisible && <ExpandButton expanded={expanded} total={rows.length} onToggle={() => setExpanded((e) => !e)} />}
+      {rows.length > initialVisible && (
+        <ExpandButton
+          expanded={expanded}
+          total={rows.length}
+          onToggle={() => setExpanded((e) => !e)}
+        />
+      )}
     </div>
   );
 }

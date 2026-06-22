@@ -9,6 +9,7 @@ import type { AnalyticsQuery } from "../../../../types/query";
 export function useCustomBlockQuery<TData>(blockId: string, query: AnalyticsQuery) {
   return useQuery<TData>({
     queryKey: analyticsKeys.customBlock(blockId, query),
-    queryFn: ({ signal }) => analyticsFetch<AnalyticsQuery, TData>(customBlockEndpointPath(blockId), query, { signal }),
+    queryFn: ({ signal }) =>
+      analyticsFetch<AnalyticsQuery, TData>(customBlockEndpointPath(blockId), query, { signal }),
   });
 }

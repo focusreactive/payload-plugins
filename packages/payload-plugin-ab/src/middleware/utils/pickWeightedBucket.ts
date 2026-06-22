@@ -1,6 +1,10 @@
 import { pickUniformBucket } from "./pickUniformBucket";
 
-export function pickWeightedBucket<T extends object>(variants: T[], getBucket: (v: T) => string, getPassPercentage: (v: T) => number) {
+export function pickWeightedBucket<T extends object>(
+  variants: T[],
+  getBucket: (v: T) => string,
+  getPassPercentage: (v: T) => number
+) {
   const totalVariantWeight = variants.reduce((sum, v) => sum + getPassPercentage(v), 0);
   const originalWeight = Math.max(0, 100 - totalVariantWeight);
   const total = totalVariantWeight + originalWeight;

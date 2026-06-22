@@ -2,7 +2,13 @@ import type { TranslationProvider } from "../translation-providers";
 import type { PipelineConfig, PipelineResult, PipelineContext, PipelineStage } from "./types";
 import type { TranslationStrategy } from "./strategies";
 import type { TextExpander } from "./stages";
-import { DataReconcilerStage, FieldChunkCollectorStage, TranslationStage, TextChunkExpanderStage, TranslationMutatorStage } from "./stages";
+import {
+  DataReconcilerStage,
+  FieldChunkCollectorStage,
+  TranslationStage,
+  TextChunkExpanderStage,
+  TranslationMutatorStage,
+} from "./stages";
 
 /**
  * Options for TranslationPipeline.

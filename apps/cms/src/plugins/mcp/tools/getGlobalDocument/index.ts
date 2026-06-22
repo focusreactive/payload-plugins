@@ -7,7 +7,12 @@ import type { BaseDocument, McpTool } from "../../types";
 import type { McpToolsRegistry } from "../index";
 import { buildContent } from "./buildContent";
 
-async function fetchGlobal(slug: GlobalSlug, req: PayloadRequest, locale?: Locale, full?: boolean): Promise<BaseDocument> {
+async function fetchGlobal(
+  slug: GlobalSlug,
+  req: PayloadRequest,
+  locale?: Locale,
+  full?: boolean
+): Promise<BaseDocument> {
   return req.payload.findGlobal({
     depth: full ? 2 : 1,
     locale,
@@ -17,7 +22,10 @@ async function fetchGlobal(slug: GlobalSlug, req: PayloadRequest, locale?: Local
   }) as Promise<BaseDocument>;
 }
 
-export function createGetGlobalDocumentTool(registry: McpToolsRegistry, baseSkipKeys: Set<string>): McpTool {
+export function createGetGlobalDocumentTool(
+  registry: McpToolsRegistry,
+  baseSkipKeys: Set<string>
+): McpTool {
   const knownSlugs = Object.keys(registry.globals).join(", ");
 
   return {
@@ -69,11 +77,16 @@ export function createGetGlobalDocumentTool(registry: McpToolsRegistry, baseSkip
           "Only pass full: true when the user explicitly asks to extract the entire global content. Expands all nested fields, arrays, rich text, and relations inline (uses depth 2). Produces a much larger response — omit by default."
         ),
       globalSlug: z.string().describe(`The global slug. One of: ${knownSlugs}`),
-      locale: z.string().optional().describe('Locale code, e.g. "en" or "es". Omit to use the default locale.'),
+      locale: z
+        .string()
+        .optional()
+        .describe('Locale code, e.g. "en" or "es". Omit to use the default locale.'),
       raw: z
         .boolean()
         .optional()
-        .describe("Return the raw JSON document instead of formatted Markdown. Use this when you need all field IDs, Lexical node structure, or any data you will pass back in an update call."),
+        .describe(
+          "Return the raw JSON document instead of formatted Markdown. Use this when you need all field IDs, Lexical node structure, or any data you will pass back in an update call."
+        ),
     },
   };
 }

@@ -39,7 +39,12 @@ const getAriaLive = (variant: AlertVariant) => {
 
 const Alert: React.FC<AlertProps> = ({ variant = "transparent", children, className }) => {
   return (
-    <div className={classNames(styles.alert, styles[`alert--${variant}`], className)} role={getRole(variant)} aria-live={getAriaLive(variant)} aria-atomic="true">
+    <div
+      className={classNames(styles.alert, styles[`alert--${variant}`], className)}
+      role={getRole(variant)}
+      aria-live={getAriaLive(variant)}
+      aria-atomic="true"
+    >
       {children}
     </div>
   );

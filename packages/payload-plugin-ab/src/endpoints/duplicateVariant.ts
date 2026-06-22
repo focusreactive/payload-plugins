@@ -59,7 +59,10 @@ export const duplicateVariantHandler: PayloadHandler = async (req) => {
       req,
     })) as Record<string, unknown>;
 
-    return Response.json({ id: newDoc.id, slug: newDoc[slugField], passPercentage: 1 }, { status: 201 });
+    return Response.json(
+      { id: newDoc.id, slug: newDoc[slugField], passPercentage: 1 },
+      { status: 201 }
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to create variant";
     return Response.json({ error: message }, { status: 500 });

@@ -1,6 +1,10 @@
 import OpenAI from "openai";
 
-import type { TranslationProvider, TranslationInput, TranslationOutput } from "./TranslationProvider.interface";
+import type {
+  TranslationProvider,
+  TranslationInput,
+  TranslationOutput,
+} from "./TranslationProvider.interface";
 import { isObject } from "../../shared";
 import type { ChatModel } from "openai/resources/index.mjs";
 
@@ -111,11 +115,19 @@ export class OpenAITranslationProvider implements TranslationProvider {
   constructor(config: OpenAIProviderConfig) {
     // `timeout`/`maxRetries` are passed through to the OpenAI SDK; `undefined` keeps the SDK
     // defaults (10 min timeout, 2 retries). A blocking translation job rarely wants the full 10 min.
-    this.openAiClient = new OpenAI({ apiKey: config.apiKey, timeout: config.timeout, maxRetries: config.maxRetries });
+    this.openAiClient = new OpenAI({
+      apiKey: config.apiKey,
+      timeout: config.timeout,
+      maxRetries: config.maxRetries,
+    });
     this.config = config;
   }
 
-  async translate(content: TranslationInput, souceLng: string, targetLng: string): Promise<TranslationOutput | null> {
+  async translate(
+    content: TranslationInput,
+    souceLng: string,
+    targetLng: string
+  ): Promise<TranslationOutput | null> {
     if (this.config.dryRun) {
       console.info("[DRY RUN] Translation simulation:", {
         content,
@@ -203,7 +215,10 @@ Maintain any special formatting, placeholders, or variables within the values if
     return 0;
   }
 
-  private async createMockTranslation(content: TranslationInput, transformer: DryRunTransformer): Promise<TranslationOutput | null> {
+  private async createMockTranslation(
+    content: TranslationInput,
+    transformer: DryRunTransformer
+  ): Promise<TranslationOutput | null> {
     try {
       const mockTranslation = await this.transformObjectValues(content, async (value) => {
         if (typeof value === "string" && value.trim()) return transformer(value);
@@ -222,7 +237,10 @@ Maintain any special formatting, placeholders, or variables within the values if
    * @param transformer The function to apply to each value.
    * @returns The transformed object, array, or value.
    */
-  private async transformObjectValues(obj: unknown, transformer: (value: unknown) => unknown | Promise<unknown>): Promise<unknown> {
+  private async transformObjectValues(
+    obj: unknown,
+    transformer: (value: unknown) => unknown | Promise<unknown>
+  ): Promise<unknown> {
     if (Array.isArray(obj)) {
       return Promise.all(obj.map((item) => this.transformObjectValues(item, transformer)));
     }

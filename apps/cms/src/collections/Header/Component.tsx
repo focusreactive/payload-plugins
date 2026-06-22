@@ -1,5 +1,11 @@
 import { ButtonVariant } from "@repo/ui/components/ui/button/types";
-import type { HeaderAction, HeaderFeatured, HeaderLink, HeaderNavItem, IHeaderProps } from "@repo/ui/components/sections/header/types";
+import type {
+  HeaderAction,
+  HeaderFeatured,
+  HeaderLink,
+  HeaderNavItem,
+  IHeaderProps,
+} from "@repo/ui/components/sections/header/types";
 import React from "react";
 
 import { resolveLocale } from "@/core/lib/resolveLocale";
@@ -25,7 +31,11 @@ const actionAppearanceToVariant: Record<string, ButtonVariant> = {
   outline: ButtonVariant.Secondary,
 };
 
-function resolveHeaderLink(link: PayloadLink | null | undefined, locale: string, fallbackLabel?: string): HeaderLink | undefined {
+function resolveHeaderLink(
+  link: PayloadLink | null | undefined,
+  locale: string,
+  fallbackLabel?: string
+): HeaderLink | undefined {
   if (!link) {
     return undefined;
   }
@@ -43,7 +53,10 @@ function resolveHeaderLink(link: PayloadLink | null | undefined, locale: string,
   };
 }
 
-function mapFeatured(featured: NonNullable<NonNullable<PayloadNavItem["dropdown"]>["featured"]>, locale: string): HeaderFeatured {
+function mapFeatured(
+  featured: NonNullable<NonNullable<PayloadNavItem["dropdown"]>["featured"]>,
+  locale: string
+): HeaderFeatured {
   return {
     badge: featured.eyebrow ?? undefined,
     title: featured.title ?? undefined,
@@ -83,7 +96,8 @@ function mapNavItem(item: PayloadNavItem, locale: string): HeaderNavItem | null 
     kind: "dropdown",
     label: item.label,
     layout: featuredEnabled ? "feature" : "grid",
-    featured: featuredEnabled && dropdown?.featured ? mapFeatured(dropdown.featured, locale) : undefined,
+    featured:
+      featuredEnabled && dropdown?.featured ? mapFeatured(dropdown.featured, locale) : undefined,
     links,
   };
 }
@@ -116,8 +130,12 @@ export async function Header({ data }: Props) {
       label: data.name ?? "",
       logo: logo ? prepareImageProps({ image: logo }) : null,
     },
-    navItems: (data.navItems ?? []).map((item) => mapNavItem(item, locale)).filter((item): item is HeaderNavItem => item !== null),
-    actions: (data.actions ?? []).map((action) => mapAction(action, locale)).filter((action): action is HeaderAction => action !== null),
+    navItems: (data.navItems ?? [])
+      .map((item) => mapNavItem(item, locale))
+      .filter((item): item is HeaderNavItem => item !== null),
+    actions: (data.actions ?? [])
+      .map((action) => mapAction(action, locale))
+      .filter((action): action is HeaderAction => action !== null),
   };
 
   return <HeaderClient {...props} />;

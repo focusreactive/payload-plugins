@@ -9,12 +9,17 @@ const cfg: ResolvedPagesConfig = {
     { slug: "posts", publishedOnly: true },
   ],
   syntheticRefs: ["__home"],
-  dimensions: { pageRef: "customEvent:fr_page_ref", contentLocale: "customEvent:fr_content_locale" },
+  dimensions: {
+    pageRef: "customEvent:fr_page_ref",
+    contentLocale: "customEvent:fr_content_locale",
+  },
 };
 
 function fakePayload(byCollection: Record<string, { id: string | number }[]>) {
   return {
-    find: vi.fn(async ({ collection }: { collection: string }) => ({ docs: byCollection[collection] ?? [] })),
+    find: vi.fn(async ({ collection }: { collection: string }) => ({
+      docs: byCollection[collection] ?? [],
+    })),
   };
 }
 
@@ -43,7 +48,11 @@ describe("getExistingPageRefs", () => {
         .mockRejectedValueOnce(new Error("The field '_status' is not valid."))
         .mockResolvedValueOnce({ docs: [{ id: 9 }] }),
     };
-    const single: ResolvedPagesConfig = { ...cfg, collections: [{ slug: "events", publishedOnly: true }], syntheticRefs: [] };
+    const single: ResolvedPagesConfig = {
+      ...cfg,
+      collections: [{ slug: "events", publishedOnly: true }],
+      syntheticRefs: [],
+    };
     const refs = await getExistingPageRefs(payload as never, single);
     expect([...refs]).toEqual(["events:9"]);
     expect(payload.find).toHaveBeenCalledTimes(2);
@@ -52,14 +61,24 @@ describe("getExistingPageRefs", () => {
 
   it("re-throws non-_status errors instead of swallowing them", async () => {
     const payload = { find: vi.fn().mockRejectedValueOnce(new Error("Connection refused")) };
-    const single: ResolvedPagesConfig = { ...cfg, collections: [{ slug: "events", publishedOnly: true }], syntheticRefs: [] };
-    await expect(getExistingPageRefs(payload as never, single)).rejects.toThrow("Connection refused");
+    const single: ResolvedPagesConfig = {
+      ...cfg,
+      collections: [{ slug: "events", publishedOnly: true }],
+      syntheticRefs: [],
+    };
+    await expect(getExistingPageRefs(payload as never, single)).rejects.toThrow(
+      "Connection refused"
+    );
     expect(payload.find).toHaveBeenCalledTimes(1);
   });
 
   it("does not filter by _status when publishedOnly is false", async () => {
     const payload = fakePayload({ events: [{ id: 3 }] });
-    const single: ResolvedPagesConfig = { ...cfg, collections: [{ slug: "events", publishedOnly: false }], syntheticRefs: [] };
+    const single: ResolvedPagesConfig = {
+      ...cfg,
+      collections: [{ slug: "events", publishedOnly: false }],
+      syntheticRefs: [],
+    };
     await getExistingPageRefs(payload as never, single);
     expect(payload.find.mock.calls[0][0].where).toBeUndefined();
   });

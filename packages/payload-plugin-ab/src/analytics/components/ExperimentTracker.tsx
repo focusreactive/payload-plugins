@@ -29,7 +29,11 @@ export interface ExperimentTrackerProps {
   visitorCookieName?: string;
 }
 
-export function ExperimentTracker({ experimentId, variantCookieName, visitorCookieName = DEFAULT_VISITOR_ID_COOKIE_NAME }: ExperimentTrackerProps) {
+export function ExperimentTracker({
+  experimentId,
+  variantCookieName,
+  visitorCookieName = DEFAULT_VISITOR_ID_COOKIE_NAME,
+}: ExperimentTrackerProps) {
   useEffect(() => {
     const resolvedVariantCookie = variantCookieName ?? defaultGetExpCookieName(experimentId);
     const variantBucket = getCookie(resolvedVariantCookie);

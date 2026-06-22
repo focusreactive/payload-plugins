@@ -13,5 +13,9 @@ export function Avatar({ user, usernameFieldPath, fallbackName }: Props) {
   const userName = resolveUsername(user, usernameFieldPath, fallbackName);
   const userInitial = userName.charAt(0).toUpperCase();
 
-  return <div className="w-9 h-9 rounded-full bg-(--theme-elevation-150) text-(--theme-text) flex items-center justify-center text-[14px] font-semibold">{userInitial}</div>;
+  return (
+    <div className="w-9 h-9 rounded-full bg-(--theme-elevation-150) text-(--theme-text) flex items-center justify-center text-[14px] font-semibold">
+      {userInitial}
+    </div>
+  );
 }

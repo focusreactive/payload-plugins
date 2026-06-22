@@ -12,7 +12,11 @@ export function MentionLabel({ name, isSelf, isDeleted, deletedSuffix = "(delete
     <span
       className={cn(
         "font-medium rounded-sm px-0.5",
-        isDeleted ? "bg-(--theme-elevation-100) text-(--theme-elevation-500) opacity-70" : isSelf ? "bg-[#f0be3621] text-[#a36e12]" : "bg-[#36c5f021] text-[#1264a3]"
+        isDeleted
+          ? "bg-(--theme-elevation-100) text-(--theme-elevation-500) opacity-70"
+          : isSelf
+            ? "bg-[#f0be3621] text-[#a36e12]"
+            : "bg-[#36c5f021] text-[#1264a3]"
       )}
     >
       @{name}

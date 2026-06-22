@@ -7,7 +7,12 @@ import type { ILinksListProps } from "./types";
 export function LinksList({ links, alignVariant }: ILinksListProps) {
   if (!links?.length) return null;
 
-  const alignClass = alignVariant === AlignVariant.Center ? "text-center items-center" : alignVariant === AlignVariant.Right ? "text-right items-end" : "text-left items-start";
+  const alignClass =
+    alignVariant === AlignVariant.Center
+      ? "text-center items-center"
+      : alignVariant === AlignVariant.Right
+        ? "text-right items-end"
+        : "text-left items-start";
 
   return (
     <div className={cn("flex flex-col gap-1", alignClass)}>
@@ -24,7 +29,10 @@ export function LinksList({ links, alignVariant }: ILinksListProps) {
           )}
         >
           {link.text}
-          <span className="translate-x-0 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100 text-primary" aria-hidden>
+          <span
+            className="translate-x-0 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100 text-primary"
+            aria-hidden
+          >
             →
           </span>
         </NextLink>

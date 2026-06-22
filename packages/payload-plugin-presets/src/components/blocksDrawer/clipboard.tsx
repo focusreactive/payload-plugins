@@ -53,7 +53,13 @@ interface MergeBlocksFormStateArgs {
   state: FormState;
 }
 
-export function hydrateBlocksFieldCustomComponents({ blocks, currentFieldState, existingFieldComponent, path, state }: MergeBlocksFormStateArgs) {
+export function hydrateBlocksFieldCustomComponents({
+  blocks,
+  currentFieldState,
+  existingFieldComponent,
+  path,
+  state,
+}: MergeBlocksFormStateArgs) {
   const nextState = { ...state };
   const fieldState = nextState[path];
 
@@ -107,7 +113,14 @@ function readClipboardPayload() {
 
     const parsedValue = JSON.parse(rawValue) as ClipboardPayload;
 
-    if (!parsedValue || typeof parsedValue !== "object" || typeof parsedValue.path !== "string" || typeof parsedValue.type !== "string" || !parsedValue.data || typeof parsedValue.data !== "object") {
+    if (
+      !parsedValue ||
+      typeof parsedValue !== "object" ||
+      typeof parsedValue.path !== "string" ||
+      typeof parsedValue.type !== "string" ||
+      !parsedValue.data ||
+      typeof parsedValue.data !== "object"
+    ) {
       return null;
     }
 
@@ -126,7 +139,11 @@ type BlocksClipboardArgs = {
   type: string;
 };
 
-export function copyBlocksFieldToClipboard({ formState, path, type }: Pick<BlocksClipboardArgs, "formState" | "path" | "type">) {
+export function copyBlocksFieldToClipboard({
+  formState,
+  path,
+  type,
+}: Pick<BlocksClipboardArgs, "formState" | "path" | "type">) {
   const payload: ClipboardPayload = {
     data: reduceFormStateByPath({ formState, path }),
     path,
@@ -136,7 +153,14 @@ export function copyBlocksFieldToClipboard({ formState, path, type }: Pick<Block
   localStorage.setItem(LOCAL_STORAGE_CLIPBOARD_KEY, JSON.stringify(payload));
 }
 
-export function pasteBlocksFieldFromClipboard({ blocks, currentFieldState, existingFieldComponent, formState, path, type }: BlocksClipboardArgs) {
+export function pasteBlocksFieldFromClipboard({
+  blocks,
+  currentFieldState,
+  existingFieldComponent,
+  formState,
+  path,
+  type,
+}: BlocksClipboardArgs) {
   const clipboardPayload = readClipboardPayload();
 
   if (!clipboardPayload || clipboardPayload.type !== type) {

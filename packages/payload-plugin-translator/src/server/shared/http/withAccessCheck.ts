@@ -7,7 +7,10 @@ import { ServerResponse } from "./ServerResponse";
  * Wraps handler with access check.
  * Returns 403 Forbidden if access guard denies the request.
  */
-export function withAccessCheck(handler: (req: PayloadRequest) => Promise<Response>, access?: AccessGuard): (req: PayloadRequest) => Promise<Response> {
+export function withAccessCheck(
+  handler: (req: PayloadRequest) => Promise<Response>,
+  access?: AccessGuard
+): (req: PayloadRequest) => Promise<Response> {
   if (!access) return handler;
 
   return async (req) => {

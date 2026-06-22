@@ -18,7 +18,9 @@ export function buildExperimentsCollection(debug: boolean, slug: string): Collec
         type: "text",
         required: true,
         index: true,
-        admin: { description: "Internal URL path used as the experiment id; matches GA4 fr_ab_experiment." },
+        admin: {
+          description: "Internal URL path used as the experiment id; matches GA4 fr_ab_experiment.",
+        },
       },
       {
         name: "parentDocId",
@@ -34,13 +36,18 @@ export function buildExperimentsCollection(debug: boolean, slug: string): Collec
       {
         name: "locale",
         type: "text",
-        admin: { description: "Locale this experiment row is scoped to; null when localization is disabled." },
+        admin: {
+          description:
+            "Locale this experiment row is scoped to; null when localization is disabled.",
+        },
       },
       {
         name: "startedAt",
         type: "date",
         required: true,
-        admin: { description: "Set to now() when the first variant for this parent+locale is published." },
+        admin: {
+          description: "Set to now() when the first variant for this parent+locale is published.",
+        },
       },
     ],
   };

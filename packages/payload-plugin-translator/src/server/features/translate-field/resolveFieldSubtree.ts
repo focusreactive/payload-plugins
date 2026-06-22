@@ -33,7 +33,12 @@ export type FieldSubtreeResolution =
  * the element's `blockType` in `doc` picks the block schema. Without `doc`, a path through a
  * `blocks` field returns `inside-blocks`.
  */
-export function resolveFieldSubtree(rootFields: Field[], fieldPath: string, value: unknown, doc?: unknown): FieldSubtreeResolution {
+export function resolveFieldSubtree(
+  rootFields: Field[],
+  fieldPath: string,
+  value: unknown,
+  doc?: unknown
+): FieldSubtreeResolution {
   const segments = fieldPath
     .split(".")
     .map((segment) => segment.trim())

@@ -267,7 +267,9 @@ describe("filterLocalizedFields", () => {
     });
 
     it("should filter out localized select field", () => {
-      const schema: Field[] = [{ name: "status", type: "select", options: ["draft", "published"], localized: true }];
+      const schema: Field[] = [
+        { name: "status", type: "select", options: ["draft", "published"], localized: true },
+      ];
       const data = { status: "draft" };
 
       const result = filterLocalizedFields(schema, data);
@@ -303,7 +305,9 @@ describe("filterLocalizedFields", () => {
     });
 
     it("should filter out localized relationship field", () => {
-      const schema: Field[] = [{ name: "author", type: "relationship", relationTo: "users", localized: true }];
+      const schema: Field[] = [
+        { name: "author", type: "relationship", relationTo: "users", localized: true },
+      ];
       const data = { author: "123" };
 
       const result = filterLocalizedFields(schema, data);
@@ -312,7 +316,9 @@ describe("filterLocalizedFields", () => {
     });
 
     it("should filter out localized upload field", () => {
-      const schema: Field[] = [{ name: "image", type: "upload", relationTo: "media", localized: true }];
+      const schema: Field[] = [
+        { name: "image", type: "upload", relationTo: "media", localized: true },
+      ];
       const data = { image: "456" };
 
       const result = filterLocalizedFields(schema, data);
@@ -447,7 +453,9 @@ describe("filterLocalizedFields", () => {
     });
 
     it("drops non-object items from arrays, keeping object items", () => {
-      const schema: Field[] = [{ name: "items", type: "array", fields: [{ name: "text", type: "text", localized: true }] }];
+      const schema: Field[] = [
+        { name: "items", type: "array", fields: [{ name: "text", type: "text", localized: true }] },
+      ];
       const data = { items: [{ id: "1", text: "A" }, "oops", 42, null] };
 
       expect(filterLocalizedFields(schema, data)).toEqual({
@@ -458,7 +466,12 @@ describe("filterLocalizedFields", () => {
 
   describe("named tab", () => {
     it("keeps localized fields inside a NAMED tab, nested under the tab name", () => {
-      const schema: Field[] = [{ type: "tabs", tabs: [{ name: "seo", fields: [{ name: "title", type: "text", localized: true }] }] }];
+      const schema: Field[] = [
+        {
+          type: "tabs",
+          tabs: [{ name: "seo", fields: [{ name: "title", type: "text", localized: true }] }],
+        },
+      ];
       // Named tabs nest data under the tab name; the walk descends into data.seo. (Before the
       // walkFields migration this site read flat and silently dropped the field — now fixed.)
       const data = { seo: { title: "Hi" } };
@@ -466,7 +479,9 @@ describe("filterLocalizedFields", () => {
     });
 
     it("drops a named tab whose fields have no localized content", () => {
-      const schema: Field[] = [{ type: "tabs", tabs: [{ name: "seo", fields: [{ name: "slug", type: "text" }] }] }];
+      const schema: Field[] = [
+        { type: "tabs", tabs: [{ name: "seo", fields: [{ name: "slug", type: "text" }] }] },
+      ];
       const data = { seo: { slug: "x" } };
       expect(filterLocalizedFields(schema, data)).toEqual({});
     });

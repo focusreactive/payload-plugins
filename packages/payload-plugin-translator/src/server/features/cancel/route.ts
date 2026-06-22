@@ -9,7 +9,11 @@ import { CancelHandler } from "./handler";
 /**
  * Creates the batch cancel endpoint
  */
-export function createCancelRoute(taskRunnerFactory: TaskRunnerFactory, access?: AccessGuard, basePath = "/translate"): Endpoint {
+export function createCancelRoute(
+  taskRunnerFactory: TaskRunnerFactory,
+  access?: AccessGuard,
+  basePath = "/translate"
+): Endpoint {
   const handler = new CancelHandler(taskRunnerFactory);
 
   return {

@@ -6,7 +6,10 @@ import { useCallback } from "react";
 import { useTranslateKitConfig } from "../../../../app/config";
 import { handleNextApiError } from "../../../../shared/lib/errors/handleApiError";
 import { DocumentTranslationStatus } from "../../model/enums";
-import type { CollectionTranslationStatus, GroupedCollectionTranslationStatus } from "../../model/types";
+import type {
+  CollectionTranslationStatus,
+  GroupedCollectionTranslationStatus,
+} from "../../model/types";
 
 type Props = {
   collection: CollectionSlug;
@@ -30,7 +33,10 @@ export function useCollectionTranslationStatus({ collection }: Props, options?: 
     queryKey: getCollectionTranslationQueryKey({ collection }),
     queryFn: async ({ signal }) => {
       return handleNextApiError(async () => {
-        const response = await ofetch<{ data: CollectionTranslationStatus }>(`/api${basePath}/collection/${collection}`, { method: "get", signal });
+        const response = await ofetch<{ data: CollectionTranslationStatus }>(
+          `/api${basePath}/collection/${collection}`,
+          { method: "get", signal }
+        );
 
         return response.data;
       });

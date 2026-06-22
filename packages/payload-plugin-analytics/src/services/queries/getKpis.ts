@@ -1,13 +1,32 @@
-import type { AnalyticsQuery, KpiCurrent, KpiResponse, KpiSeriesPoint, Row } from "../../types/query";
+import type {
+  AnalyticsQuery,
+  KpiCurrent,
+  KpiResponse,
+  KpiSeriesPoint,
+  Row,
+} from "../../types/query";
 import type { PageFilterContext } from "../pageFilter/types";
 import { resolveDateRange } from "../../utils/date/resolveDateRange";
 import { resolveComparison } from "../../utils/date/resolveComparison";
-import { dateRangesFor, bucketByDateRange, convertMetricToNumber, computeWeightedValuesAverage, dim, isoFromGa4Date } from "../../utils/ga4";
+import {
+  dateRangesFor,
+  bucketByDateRange,
+  convertMetricToNumber,
+  computeWeightedValuesAverage,
+  dim,
+  isoFromGa4Date,
+} from "../../utils/ga4";
 import { runQuery } from "../analyticsService/runQuery";
 import { aggregateSessions } from "./kpiRecompute/aggregateSessions";
 import type { KpiSessionEventRow } from "./kpiRecompute/aggregateSessions";
 
-const METRICS = [{ name: "sessions" }, { name: "totalUsers" }, { name: "screenPageViews" }, { name: "bounceRate" }, { name: "averageSessionDuration" }];
+const METRICS = [
+  { name: "sessions" },
+  { name: "totalUsers" },
+  { name: "screenPageViews" },
+  { name: "bounceRate" },
+  { name: "averageSessionDuration" },
+];
 
 function aggregate(rows: Row[]): KpiCurrent {
   let pageViews = 0,
@@ -30,7 +49,10 @@ function aggregate(rows: Row[]): KpiCurrent {
     users += usersValue;
     pageViews += pageViewsValue;
     bounceRateSamples.push({ value: bounceRateValue, weight: sessionValue });
-    averageSessionDurationSamples.push({ value: averageSessionDurationValue, weight: sessionValue });
+    averageSessionDurationSamples.push({
+      value: averageSessionDurationValue,
+      weight: sessionValue,
+    });
   }
 
   return {
@@ -61,12 +83,17 @@ function buildSeries(rows: Row[]): KpiSeriesPoint[] {
 
 async function getKpisNative(propertyId: string, query: AnalyticsQuery): Promise<KpiResponse> {
   const dateRange = resolveDateRange(query.dateRange);
-  const previousDateRange = query.comparison?.kind === "previous-period" ? resolveComparison(dateRange) : undefined;
+  const previousDateRange =
+    query.comparison?.kind === "previous-period" ? resolveComparison(dateRange) : undefined;
   const dateRanges = dateRangesFor(dateRange, previousDateRange);
 
   const dimensions = [{ name: "date" }];
 
-  const raw = await runQuery.runReport(propertyId, { dateRanges, metrics: METRICS, dimensions }, "kpis");
+  const raw = await runQuery.runReport(
+    propertyId,
+    { dateRanges, metrics: METRICS, dimensions },
+    "kpis"
+  );
   const rows = (raw.rows ?? []) as Row[];
 
   if (!previousDateRange) {
@@ -86,7 +113,12 @@ async function getKpisNative(propertyId: string, query: AnalyticsQuery): Promise
   };
 }
 
-function decodeSessionRows(rows: Row[], pageRefIndex: number, eventNameIndex: number, dhmIndex: number): KpiSessionEventRow[] {
+function decodeSessionRows(
+  rows: Row[],
+  pageRefIndex: number,
+  eventNameIndex: number,
+  dhmIndex: number
+): KpiSessionEventRow[] {
   return rows.map((row) => ({
     sessionId: dim(row, 0),
     date: dim(row, 1),
@@ -96,13 +128,21 @@ function decodeSessionRows(rows: Row[], pageRefIndex: number, eventNameIndex: nu
   }));
 }
 
-async function getKpisRecomputed(propertyId: string, query: AnalyticsQuery, pageFilter: PageFilterContext): Promise<KpiResponse> {
+async function getKpisRecomputed(
+  propertyId: string,
+  query: AnalyticsQuery,
+  pageFilter: PageFilterContext
+): Promise<KpiResponse> {
   const dateRange = resolveDateRange(query.dateRange);
-  const previousDateRange = query.comparison?.kind === "previous-period" ? resolveComparison(dateRange) : undefined;
+  const previousDateRange =
+    query.comparison?.kind === "previous-period" ? resolveComparison(dateRange) : undefined;
   const dateRanges = dateRangesFor(dateRange, previousDateRange);
   const existing = new Set(pageFilter.refs);
 
-  const dimensions: Array<{ name: string }> = [{ name: "customEvent:fr_session_id" }, { name: "date" }];
+  const dimensions: Array<{ name: string }> = [
+    { name: "customEvent:fr_session_id" },
+    { name: "date" },
+  ];
   const pageRefIndex = dimensions.length;
   dimensions.push({ name: pageFilter.pageRefDim });
   const eventNameIndex = dimensions.length;
@@ -110,18 +150,31 @@ async function getKpisRecomputed(propertyId: string, query: AnalyticsQuery, page
   const dhmIndex = dimensions.length;
   dimensions.push({ name: "dateHourMinute" });
 
-  const raw = await runQuery.runReport(propertyId, { dateRanges, metrics: [{ name: "eventCount" }], dimensions }, "kpis");
+  const raw = await runQuery.runReport(
+    propertyId,
+    { dateRanges, metrics: [{ name: "eventCount" }], dimensions },
+    "kpis"
+  );
   const rows = (raw.rows ?? []) as Row[];
 
   if (!previousDateRange) {
-    const { current, series } = aggregateSessions(decodeSessionRows(rows, pageRefIndex, eventNameIndex, dhmIndex), existing);
+    const { current, series } = aggregateSessions(
+      decodeSessionRows(rows, pageRefIndex, eventNameIndex, dhmIndex),
+      existing
+    );
 
     return { current, series };
   }
 
   const buckets = bucketByDateRange(rows, ["current", "previous"]);
-  const currentAgg = aggregateSessions(decodeSessionRows(buckets.current, pageRefIndex, eventNameIndex, dhmIndex), existing);
-  const previousAgg = aggregateSessions(decodeSessionRows(buckets.previous, pageRefIndex, eventNameIndex, dhmIndex), existing);
+  const currentAgg = aggregateSessions(
+    decodeSessionRows(buckets.current, pageRefIndex, eventNameIndex, dhmIndex),
+    existing
+  );
+  const previousAgg = aggregateSessions(
+    decodeSessionRows(buckets.previous, pageRefIndex, eventNameIndex, dhmIndex),
+    existing
+  );
 
   return {
     current: currentAgg.current,
@@ -131,7 +184,11 @@ async function getKpisRecomputed(propertyId: string, query: AnalyticsQuery, page
   };
 }
 
-export async function getKpis(propertyId: string, query: AnalyticsQuery, pageFilter?: PageFilterContext | null): Promise<KpiResponse> {
+export async function getKpis(
+  propertyId: string,
+  query: AnalyticsQuery,
+  pageFilter?: PageFilterContext | null
+): Promise<KpiResponse> {
   if (!pageFilter || pageFilter.refs.length === 0) {
     return getKpisNative(propertyId, query);
   }

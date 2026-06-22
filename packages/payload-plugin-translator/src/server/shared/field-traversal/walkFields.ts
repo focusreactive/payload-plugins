@@ -37,14 +37,16 @@ class FieldTreeWalker<Cursor extends object, Out> {
         case "tabs":
           for (const scope of tabScopes(structure.field)) {
             if (scope.named) {
-              if (this.object(scope.tab, scope.tab.name, scope.tab.fields, cursor, out)) return true;
+              if (this.object(scope.tab, scope.tab.name, scope.tab.fields, cursor, out))
+                return true;
             } else if (this.level(scope.fields, cursor, out)) {
               return true;
             }
           }
           break;
         case "group":
-          if (this.object(structure.field, structure.name, structure.fields, cursor, out)) return true;
+          if (this.object(structure.field, structure.name, structure.fields, cursor, out))
+            return true;
           break;
         case "array":
         case "blocks":
@@ -66,7 +68,13 @@ class FieldTreeWalker<Cursor extends object, Out> {
   }
 
   /** Descend a single-object boundary (named group or named tab) and assemble it. */
-  private object(field: NamedGroupField | NamedTab, key: string, childFields: Field[], cursor: Cursor, out: ChildOutput<Out>[]): boolean {
+  private object(
+    field: NamedGroupField | NamedTab,
+    key: string,
+    childFields: Field[],
+    cursor: Cursor,
+    out: ChildOutput<Out>[]
+  ): boolean {
     const result = this.walker.enterObject(field, cursor);
     if (result === "stop") return true;
     if (result === "skip") return false;
@@ -80,7 +88,12 @@ class FieldTreeWalker<Cursor extends object, Out> {
   }
 
   /** Descend an array/blocks boundary, assembling each element then the list itself. */
-  private list(field: ArrayField | BlocksField, key: string, cursor: Cursor, out: ChildOutput<Out>[]): boolean {
+  private list(
+    field: ArrayField | BlocksField,
+    key: string,
+    cursor: Cursor,
+    out: ChildOutput<Out>[]
+  ): boolean {
     const result = this.walker.enterList(field, cursor);
     if (result === "stop") return true;
     if (result === "skip") return false;
@@ -90,7 +103,11 @@ class FieldTreeWalker<Cursor extends object, Out> {
       const childOut: ChildOutput<Out>[] = [];
       if (this.level(child.fields, child.cursor, childOut)) return true;
 
-      const elementOut = this.walker.combine({ kind: "element", field, key: child.key }, childOut, child.cursor);
+      const elementOut = this.walker.combine(
+        { kind: "element", field, key: child.key },
+        childOut,
+        child.cursor
+      );
       if (elementOut !== undefined) elements.push({ key: child.key, out: elementOut });
     }
 
@@ -148,6 +165,10 @@ class FieldTreeWalker<Cursor extends object, Out> {
  * @see {@link FieldWalker} for the full visitor contract and the caller shapes it subsumes.
  * @public
  */
-export function walkFields<Cursor extends object, Out>(fields: Field[], root: Cursor, walker: FieldWalker<Cursor, Out>): Out | undefined {
+export function walkFields<Cursor extends object, Out>(
+  fields: Field[],
+  root: Cursor,
+  walker: FieldWalker<Cursor, Out>
+): Out | undefined {
   return new FieldTreeWalker(walker).run(fields, root);
 }

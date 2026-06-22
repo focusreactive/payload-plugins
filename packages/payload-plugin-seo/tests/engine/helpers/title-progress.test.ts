@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { AVG_GLYPH_PX, getTitleProgressGuarded, TITLE_FALLBACK_MAX_PX } from "../../../src/engine/helpers/title-progress";
+import {
+  AVG_GLYPH_PX,
+  getTitleProgressGuarded,
+  TITLE_FALLBACK_MAX_PX,
+} from "../../../src/engine/helpers/title-progress";
 
 describe("title-progress constants", () => {
   it("AVG_GLYPH_PX equals 8.5", () => {

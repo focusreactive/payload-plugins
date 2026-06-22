@@ -28,7 +28,8 @@ export function DiscoveryPathsBlock({ dateRange, comparison, className }: BlockC
         data && (
           <span className="flex items-center gap-2 text-[11px] text-[var(--theme-elevation-500)]">
             <span>
-              Top {data.rows.length} chains · {formatNumber(data.sessionsConsidered)} sessions analysed
+              Top {data.rows.length} chains · {formatNumber(data.sessionsConsidered)} sessions
+              analysed
             </span>
             {data.truncated && (
               <span className="inline-flex items-center px-1.5 py-px rounded-full border border-[var(--theme-warning-200)] text-[var(--theme-warning-700)] bg-[var(--theme-warning-50)] text-[10px]">
@@ -39,7 +40,11 @@ export function DiscoveryPathsBlock({ dateRange, comparison, className }: BlockC
         )
       }
     >
-      {data?.setupRequired ? <SetupRequiredCard missingKeys={data.missing ?? ["fr_session_id"]} /> : <ChainList rows={data?.rows ?? []} loading={isLoading} error={error ?? undefined} />}
+      {data?.setupRequired ? (
+        <SetupRequiredCard missingKeys={data.missing ?? ["fr_session_id"]} />
+      ) : (
+        <ChainList rows={data?.rows ?? []} loading={isLoading} error={error ?? undefined} />
+      )}
     </DataCard>
   );
 }

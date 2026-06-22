@@ -1,13 +1,17 @@
 import { describe, it, expect, vi } from "vitest";
 import { traverseLexicalTree } from "./traverseLexicalTree";
 
-const createNode = (type: string, children?: any[]) => ({ type, ...(children && { children }) }) as any;
+const createNode = (type: string, children?: any[]) =>
+  ({ type, ...(children && { children }) }) as any;
 
 describe("traverseLexicalTree", () => {
   describe("traversal order", () => {
     it("visits all nodes depth-first", () => {
       const visited: string[] = [];
-      const root = createNode("root", [createNode("paragraph", [createNode("text"), createNode("text")]), createNode("paragraph", [createNode("text")])]);
+      const root = createNode("root", [
+        createNode("paragraph", [createNode("text"), createNode("text")]),
+        createNode("paragraph", [createNode("text")]),
+      ]);
 
       traverseLexicalTree(root, (node) => {
         visited.push(node.type);
@@ -31,7 +35,10 @@ describe("traverseLexicalTree", () => {
   describe("early exit", () => {
     it("stops traversal when visitor returns false", () => {
       const visited: string[] = [];
-      const root = createNode("root", [createNode("paragraph", [createNode("text"), createNode("text")]), createNode("paragraph", [createNode("text")])]);
+      const root = createNode("root", [
+        createNode("paragraph", [createNode("text"), createNode("text")]),
+        createNode("paragraph", [createNode("text")]),
+      ]);
 
       const result = traverseLexicalTree(root, (node) => {
         visited.push(node.type);
@@ -89,7 +96,11 @@ describe("traverseLexicalTree", () => {
 
     it("handles deeply nested structures", () => {
       const visited: string[] = [];
-      const root = createNode("root", [createNode("list", [createNode("listitem", [createNode("paragraph", [createNode("text")])])])]);
+      const root = createNode("root", [
+        createNode("list", [
+          createNode("listitem", [createNode("paragraph", [createNode("text")])]),
+        ]),
+      ]);
 
       traverseLexicalTree(root, (node) => {
         visited.push(node.type);

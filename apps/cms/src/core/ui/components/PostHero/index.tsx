@@ -22,10 +22,19 @@ function DotSeparator() {
 export async function PostHero({ post, locale }: PostHeroProps) {
   const t = await getTranslations("blog");
 
-  const category = post.categories?.find((entry): entry is Category => typeof entry === "object" && entry !== null);
-  const author = post.authors?.find((entry): entry is Author => typeof entry === "object" && entry !== null);
-  const heroImage = typeof post.heroImage === "object" && post.heroImage !== null ? post.heroImage : undefined;
-  const publishedDate = post.publishedAt ? new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric" }).format(new Date(post.publishedAt)) : null;
+  const category = post.categories?.find(
+    (entry): entry is Category => typeof entry === "object" && entry !== null
+  );
+  const author = post.authors?.find(
+    (entry): entry is Author => typeof entry === "object" && entry !== null
+  );
+  const heroImage =
+    typeof post.heroImage === "object" && post.heroImage !== null ? post.heroImage : undefined;
+  const publishedDate = post.publishedAt
+    ? new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric" }).format(
+        new Date(post.publishedAt)
+      )
+    : null;
 
   return (
     <div>
@@ -63,7 +72,9 @@ export async function PostHero({ post, locale }: PostHeroProps) {
                 </time>
               )}
               {(author || publishedDate) && <DotSeparator />}
-              <span className="whitespace-nowrap">{t("readTimeLong", { minutes: readingTimeMinutes(post.content) })}</span>
+              <span className="whitespace-nowrap">
+                {t("readTimeLong", { minutes: readingTimeMinutes(post.content) })}
+              </span>
             </div>
           </div>
         </div>
@@ -73,7 +84,15 @@ export async function PostHero({ post, locale }: PostHeroProps) {
         <section>
           <div className="mx-auto w-full max-w-containerMaxW px-containerBase">
             <div className="relative aspect-[21/9] w-full overflow-hidden rounded-lg bg-surface-muted">
-              <NextImage src={heroImage.url ?? "/empty-placeholder.jpg"} alt={heroImage.alt ?? ""} fill priority quality={85} className="object-cover" sizes="(max-width: 1180px) 100vw, 1180px" />
+              <NextImage
+                src={heroImage.url ?? "/empty-placeholder.jpg"}
+                alt={heroImage.alt ?? ""}
+                fill
+                priority
+                quality={85}
+                className="object-cover"
+                sizes="(max-width: 1180px) 100vw, 1180px"
+              />
             </div>
           </div>
         </section>

@@ -68,7 +68,9 @@ export default async function ContentPage({ params }: Props) {
 
   return (
     <SiteChrome theme={theme} brand={tenant.name} brandHref={`/${tenant.slug}`} nav={nav}>
-      <LivePreviewListener serverURL={process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:4041"} />
+      <LivePreviewListener
+        serverURL={process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:4041"}
+      />
 
       <Link className="back-link" href={`/${tenant.slug}`}>
         ← {tenant.name}

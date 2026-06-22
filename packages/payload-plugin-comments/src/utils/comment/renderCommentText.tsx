@@ -22,12 +22,20 @@ interface Props {
   mentionDeletedSuffix?: string;
 }
 
-export function renderCommentText({ text, mentions, currentUserId, usernameFieldPath, fallbackDeletedUsername, mentionDeletedSuffix }: Props): ReactNode {
+export function renderCommentText({
+  text,
+  mentions,
+  currentUserId,
+  usernameFieldPath,
+  fallbackDeletedUsername,
+  mentionDeletedSuffix,
+}: Props): ReactNode {
   const mentionMap: Record<number, MentionRecord> = {};
 
   if (Array.isArray(mentions)) {
     for (const mention of mentions) {
-      const userObj = mention.user && typeof mention.user === "object" ? (mention.user as User) : null;
+      const userObj =
+        mention.user && typeof mention.user === "object" ? (mention.user as User) : null;
       const id = userObj?.id ?? mention.userIdSnapshot ?? null;
       if (id == null) continue;
       mentionMap[id] = {
@@ -51,9 +59,19 @@ export function renderCommentText({ text, mentions, currentUserId, usernameField
           const user = record?.user ?? null;
           const isSelf = isSelfMention(currentUserId, userId);
           const isDeleted = !user;
-          const name = user ? resolveUsername(user, usernameFieldPath, fallbackDeleted) : (record?.displayNameSnapshot ?? fallbackDeleted);
+          const name = user
+            ? resolveUsername(user, usernameFieldPath, fallbackDeleted)
+            : (record?.displayNameSnapshot ?? fallbackDeleted);
 
-          return <MentionLabel key={i} name={name} isSelf={isSelf} isDeleted={isDeleted} deletedSuffix={mentionDeletedSuffix} />;
+          return (
+            <MentionLabel
+              key={i}
+              name={name}
+              isSelf={isSelf}
+              isDeleted={isDeleted}
+              deletedSuffix={mentionDeletedSuffix}
+            />
+          );
         }
 
         return <span key={i}>{part}</span>;

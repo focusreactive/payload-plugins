@@ -9,12 +9,20 @@ export interface ResolvedPagesConfig {
   resolvePagePath?: (ref: string, req: PayloadRequest) => string | Promise<string>;
 }
 
-export function resolvePagesConfig(pages: PagesAnalyticsConfig | undefined): ResolvedPagesConfig | null {
+export function resolvePagesConfig(
+  pages: PagesAnalyticsConfig | undefined
+): ResolvedPagesConfig | null {
   if (!pages) return null;
 
   return {
     collections: pages.collections.map((c) =>
-      typeof c === "string" ? { slug: c, publishedOnly: true, titleField: "title" } : { slug: c.slug, publishedOnly: c.publishedOnly ?? true, titleField: c.titleField ?? "title" }
+      typeof c === "string"
+        ? { slug: c, publishedOnly: true, titleField: "title" }
+        : {
+            slug: c.slug,
+            publishedOnly: c.publishedOnly ?? true,
+            titleField: c.titleField ?? "title",
+          }
     ),
     syntheticRefs: pages.syntheticRefs ?? [],
     dimensions: {

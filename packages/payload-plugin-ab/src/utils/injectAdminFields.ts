@@ -1,6 +1,11 @@
 import type { CollectionConfig, Field, Where } from "payload";
 import type { CollectionABConfig } from "../types/config";
-import { AB_PASS_PERCENTAGE_FIELD, AB_VARIANT_OF_FIELD, AB_VARIANT_PERCENTAGES_FIELD, DEFAULT_SLUG_FIELD } from "../constants";
+import {
+  AB_PASS_PERCENTAGE_FIELD,
+  AB_VARIANT_OF_FIELD,
+  AB_VARIANT_PERCENTAGES_FIELD,
+  DEFAULT_SLUG_FIELD,
+} from "../constants";
 
 const VARIANTS_FIELD_PATH = "@focus-reactive/payload-plugin-ab/admin/VariantsField#VariantsField";
 
@@ -28,7 +33,11 @@ function patchField(fields: Field[], name: string, patcher: (f: Field) => Field)
   });
 }
 
-export function injectAdminFields<TVariantData extends object>(collection: CollectionConfig, collectionSlug: string, abConfig: CollectionABConfig<TVariantData>): CollectionConfig {
+export function injectAdminFields<TVariantData extends object>(
+  collection: CollectionConfig,
+  collectionSlug: string,
+  abConfig: CollectionABConfig<TVariantData>
+): CollectionConfig {
   const slugField = abConfig.slugField ?? DEFAULT_SLUG_FIELD;
 
   // 1. _abVariantOf — native relationship field in sidebar, read-only, visible on variant pages only.
@@ -92,7 +101,13 @@ export function injectAdminFields<TVariantData extends object>(collection: Colle
   }
 
   // 6. Assemble: pass percentage first (hidden), then user fields, then sidebar UI last.
-  const newFields: Field[] = [passPercentageField, ...patchedFields, variantOfField, variantPercentagesField, variantsUiField];
+  const newFields: Field[] = [
+    passPercentageField,
+    ...patchedFields,
+    variantOfField,
+    variantPercentagesField,
+    variantsUiField,
+  ];
 
   // 7. Patch admin.baseListFilter to exclude variant docs from the collection list view.
   const existingBaseListFilter = collection.admin?.baseListFilter;

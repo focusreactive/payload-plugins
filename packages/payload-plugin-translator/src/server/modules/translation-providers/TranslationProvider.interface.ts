@@ -54,5 +54,9 @@ export interface TranslationProvider {
    * @param targetLng - Target language code (e.g., 'fr', 'es').
    * @returns Translated output with same keys, or null on failure.
    */
-  translate(input: TranslationInput, sourceLng: string, targetLng: string): Promise<TranslationOutput | null>;
+  translate(
+    input: TranslationInput,
+    sourceLng: string,
+    targetLng: string
+  ): Promise<TranslationOutput | null>;
 }

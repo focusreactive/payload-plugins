@@ -39,12 +39,20 @@ describe("TopNTable", () => {
   });
 
   it("renders empty message when rows length is 0", () => {
-    render(<TopNTable rows={[]} columns={[{ key: "name", header: "Name" }]} emptyMessage="Nothing yet." />);
+    render(
+      <TopNTable
+        rows={[]}
+        columns={[{ key: "name", header: "Name" }]}
+        emptyMessage="Nothing yet."
+      />
+    );
     expect(screen.getByText("Nothing yet.")).toBeInTheDocument();
   });
 
   it("renders skeleton when loading", () => {
-    const { container } = render(<TopNTable rows={[]} columns={[{ key: "name", header: "Name" }]} loading />);
+    const { container } = render(
+      <TopNTable rows={[]} columns={[{ key: "name", header: "Name" }]} loading />
+    );
     expect(container.querySelector(".pa-animate-shimmer")).toBeInTheDocument();
   });
 

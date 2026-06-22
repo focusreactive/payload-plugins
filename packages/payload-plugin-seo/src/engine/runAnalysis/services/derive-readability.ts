@@ -11,13 +11,20 @@ import { enrich } from "../utils/enrich";
 import { toCategory } from "../utils/toCategory";
 import type { PaperLike } from "../../types/paper";
 
-export function deriveReadability(paper: InstanceType<typeof Paper>, keyphrase: string): CategoryResult {
+export function deriveReadability(
+  paper: InstanceType<typeof Paper>,
+  keyphrase: string
+): CategoryResult {
   const ctx = { keyphrase };
   const researcher = makeResearcher(paper);
 
   const readRaw = runAssessor(new ContentAssessor(makeResearcher(paper)), ctx, paper);
   const flesch = fleschCheck(researcher, ctx);
-  const readChecks = enrich(flesch ? [...readRaw, flesch] : readRaw, paper as PaperLike, researcher);
+  const readChecks = enrich(
+    flesch ? [...readRaw, flesch] : readRaw,
+    paper as PaperLike,
+    researcher
+  );
 
   return toCategory(readChecks);
 }

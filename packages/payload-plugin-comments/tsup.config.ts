@@ -8,5 +8,13 @@ export default defineConfig({
   dts: false,
   sourcemap: true,
   clean: true,
-  external: ["payload", "react", "react-dom", "next", "@payloadcms/ui", "@payloadcms/plugin-multi-tenant", "resend"],
+  external: [
+    "payload",
+    "react",
+    "react-dom",
+    "next",
+    "@payloadcms/ui",
+    "@payloadcms/plugin-multi-tenant",
+    "resend",
+  ],
 });

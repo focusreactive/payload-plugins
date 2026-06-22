@@ -9,7 +9,9 @@ export async function generateNotFoundMeta({ locale }: { locale: Locale }): Prom
   const settings = await getSiteSettings({ locale });
 
   const baseTitle = settings.notFoundTitle || "404 - Page not found";
-  const description = settings.notFoundDescription || "Unfortunately, the requested page does not exist or has been deleted.";
+  const description =
+    settings.notFoundDescription ||
+    "Unfortunately, the requested page does not exist or has been deleted.";
   const separator = settings.seoTitleSeparator || "|";
   const suffix = settings.seoTitleSuffix || (settings.siteName as string);
   const siteName = settings.siteName || "Site";

@@ -14,10 +14,19 @@ interface SendMentionEmailsProps extends BaseServiceOptions {
   documentId: number | null | undefined;
 }
 
-export async function sendMentionEmails({ mentionIds, authorName, commentText, collectionSlug, documentId, payload: payloadProp }: SendMentionEmailsProps) {
+export async function sendMentionEmails({
+  mentionIds,
+  authorName,
+  commentText,
+  collectionSlug,
+  documentId,
+  payload: payloadProp,
+}: SendMentionEmailsProps) {
   const payload = await extractPayload(payloadProp);
 
-  const pluginConfig = payload.config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
+  const pluginConfig = payload.config.admin?.custom?.commentsPlugin as
+    | CommentsPluginConfigStorage
+    | undefined;
   const usernameFieldPath = pluginConfig?.usernameFieldPath ?? USERNAME_DEFAULT_FIELD_PATH;
 
   const userDocs = await payload.find({
@@ -58,7 +67,9 @@ export async function sendMentionEmails({ mentionIds, authorName, commentText, c
 
   if (!apiKey || !fromEmail) {
     const missingVar = !apiKey ? "RESEND_API_KEY" : "RESEND_FROM_EMAIL";
-    console.warn(`${PREFIX} Mention emails disabled: ${missingVar} not set. Comments still work; @mention notifications won't be sent.`);
+    console.warn(
+      `${PREFIX} Mention emails disabled: ${missingVar} not set. Comments still work; @mention notifications won't be sent.`
+    );
 
     return;
   }

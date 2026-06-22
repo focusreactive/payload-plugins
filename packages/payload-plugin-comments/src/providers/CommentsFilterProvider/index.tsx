@@ -28,7 +28,11 @@ export function CommentsFilterProvider({ children }: Props) {
 
   const isAnyFilterActive = useMemo(() => filters.showResolved || filters.onlyMyThreads, [filters]);
 
-  return <CommentsFilterContext.Provider value={{ filters, isAnyFilterActive, setFilter }}>{children}</CommentsFilterContext.Provider>;
+  return (
+    <CommentsFilterContext.Provider value={{ filters, isAnyFilterActive, setFilter }}>
+      {children}
+    </CommentsFilterContext.Provider>
+  );
 }
 
 export function useCommentsFilter() {

@@ -31,7 +31,15 @@ describe("ScoreBadge", () => {
   it("uses UnreadBadge sizing/position and white text", () => {
     render(<ScoreBadge score={42} status="good" />);
     const el = screen.getByText("42");
-    expect(el).toHaveClass("absolute", "-top-1", "-right-1", "min-w-[14px]", "h-[14px]", "rounded-full", "text-white");
+    expect(el).toHaveClass(
+      "absolute",
+      "-top-1",
+      "-right-1",
+      "min-w-[14px]",
+      "h-[14px]",
+      "rounded-full",
+      "text-white"
+    );
   });
 
   it("exposes the score via an accessible label", () => {

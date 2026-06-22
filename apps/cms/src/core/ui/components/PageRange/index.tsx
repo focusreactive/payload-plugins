@@ -14,7 +14,14 @@ export const PageRange: React.FC<{
   limit?: number;
   totalDocs?: number;
 }> = (props) => {
-  const { className, collection, collectionLabels: collectionLabelsFromProps, currentPage, limit, totalDocs } = props;
+  const {
+    className,
+    collection,
+    collectionLabels: collectionLabelsFromProps,
+    currentPage,
+    limit,
+    totalDocs,
+  } = props;
 
   const t = useTranslations("pageRange");
 

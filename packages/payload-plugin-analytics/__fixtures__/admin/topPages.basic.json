@@ -1,21 +1,87 @@
 {
   "rows": [
     { "pagePath": "/", "pageTitle": "Home", "pageViews": 12480, "sessions": 9821, "avgTime": 142 },
-    { "pagePath": "/pricing", "pageTitle": "Pricing", "pageViews": 7634, "sessions": 5102, "avgTime": 213 },
-    { "pagePath": "/features", "pageTitle": "Features", "pageViews": 6210, "sessions": 4485, "avgTime": 189 },
-    { "pagePath": "/blog", "pageTitle": "Blog", "pageViews": 4920, "sessions": 3870, "avgTime": 174 },
-    { "pagePath": "/about", "pageTitle": "About", "pageViews": 3104, "sessions": 2511, "avgTime": 96 },
-    { "pagePath": "/contact", "pageTitle": "Contact", "pageViews": 2840, "sessions": 2310, "avgTime": 87 },
-    { "pagePath": "/docs", "pageTitle": "Docs", "pageViews": 2104, "sessions": 1620, "avgTime": 264 }
+    {
+      "pagePath": "/pricing",
+      "pageTitle": "Pricing",
+      "pageViews": 7634,
+      "sessions": 5102,
+      "avgTime": 213
+    },
+    {
+      "pagePath": "/features",
+      "pageTitle": "Features",
+      "pageViews": 6210,
+      "sessions": 4485,
+      "avgTime": 189
+    },
+    {
+      "pagePath": "/blog",
+      "pageTitle": "Blog",
+      "pageViews": 4920,
+      "sessions": 3870,
+      "avgTime": 174
+    },
+    {
+      "pagePath": "/about",
+      "pageTitle": "About",
+      "pageViews": 3104,
+      "sessions": 2511,
+      "avgTime": 96
+    },
+    {
+      "pagePath": "/contact",
+      "pageTitle": "Contact",
+      "pageViews": 2840,
+      "sessions": 2310,
+      "avgTime": 87
+    },
+    {
+      "pagePath": "/docs",
+      "pageTitle": "Docs",
+      "pageViews": 2104,
+      "sessions": 1620,
+      "avgTime": 264
+    }
   ],
   "total": 49826,
   "comparison": {
     "rows": [
-      { "pagePath": "/", "pageTitle": "Home", "pageViews": 11210, "sessions": 9012, "avgTime": 138 },
-      { "pagePath": "/pricing", "pageTitle": "Pricing", "pageViews": 6520, "sessions": 4421, "avgTime": 204 },
-      { "pagePath": "/features", "pageTitle": "Features", "pageViews": 5810, "sessions": 4118, "avgTime": 181 },
-      { "pagePath": "/blog", "pageTitle": "Blog", "pageViews": 4302, "sessions": 3401, "avgTime": 169 },
-      { "pagePath": "/about", "pageTitle": "About", "pageViews": 2841, "sessions": 2280, "avgTime": 93 }
+      {
+        "pagePath": "/",
+        "pageTitle": "Home",
+        "pageViews": 11210,
+        "sessions": 9012,
+        "avgTime": 138
+      },
+      {
+        "pagePath": "/pricing",
+        "pageTitle": "Pricing",
+        "pageViews": 6520,
+        "sessions": 4421,
+        "avgTime": 204
+      },
+      {
+        "pagePath": "/features",
+        "pageTitle": "Features",
+        "pageViews": 5810,
+        "sessions": 4118,
+        "avgTime": 181
+      },
+      {
+        "pagePath": "/blog",
+        "pageTitle": "Blog",
+        "pageViews": 4302,
+        "sessions": 3401,
+        "avgTime": 169
+      },
+      {
+        "pagePath": "/about",
+        "pageTitle": "About",
+        "pageViews": 2841,
+        "sessions": 2280,
+        "avgTime": 93
+      }
     ],
     "total": 43439
   }

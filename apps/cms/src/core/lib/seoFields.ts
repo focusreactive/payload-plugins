@@ -1,7 +1,15 @@
-import { MetaDescriptionField, MetaImageField, MetaTitleField, OverviewField, PreviewField } from "@payloadcms/plugin-seo/fields";
+import {
+  MetaDescriptionField,
+  MetaImageField,
+  MetaTitleField,
+  OverviewField,
+  PreviewField,
+} from "@payloadcms/plugin-seo/fields";
 import type { Field } from "payload";
 
-export const generateSeoFields = ({ robotsDefault = "index" }: { robotsDefault?: "index" | "noindex" } = {}): Field[] => [
+export const generateSeoFields = ({
+  robotsDefault = "index",
+}: { robotsDefault?: "index" | "noindex" } = {}): Field[] => [
   OverviewField({
     descriptionPath: "meta.description",
     imagePath: "meta.image",

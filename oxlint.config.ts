@@ -12,7 +12,8 @@ import next from "ultracite/oxlint/next";
 const ANALYTICS = "packages/payload-plugin-analytics";
 const GA4_SDK = {
   name: "@google-analytics/data",
-  message: "Import the GA4 SDK only inside src/services/ga4DataClient or src/services/analyticsService. Call runQuery instead.",
+  message:
+    "Import the GA4 SDK only inside src/services/ga4DataClient or src/services/analyticsService. Call runQuery instead.",
 };
 const SERVER_ONLY_PATHS = [
   { name: "react", message: "services/ and endpoints/ are server-only." },
@@ -248,7 +249,12 @@ export default defineConfig({
     // (2) services/ and endpoints/ are server-only — no React/Next imports.
     //     GA4 + test-seam restrictions from (1) still apply, so restate them.
     {
-      files: [`${ANALYTICS}/src/services/**/*.ts`, `${ANALYTICS}/src/services/**/*.tsx`, `${ANALYTICS}/src/endpoints/**/*.ts`, `${ANALYTICS}/src/endpoints/**/*.tsx`],
+      files: [
+        `${ANALYTICS}/src/services/**/*.ts`,
+        `${ANALYTICS}/src/services/**/*.tsx`,
+        `${ANALYTICS}/src/endpoints/**/*.ts`,
+        `${ANALYTICS}/src/endpoints/**/*.tsx`,
+      ],
       rules: {
         "no-restricted-imports": [
           "error",

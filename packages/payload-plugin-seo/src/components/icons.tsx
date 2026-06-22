@@ -1,6 +1,21 @@
 "use client";
 
-import { AlignLeft, Crosshair, Mail, Link2, BarChart3, Type, ArrowRight, Image as ImageIcon, Heading1, Ruler, ListOrdered, Clock, FileText, Film } from "lucide-react";
+import {
+  AlignLeft,
+  Crosshair,
+  Mail,
+  Link2,
+  BarChart3,
+  Type,
+  ArrowRight,
+  Image as ImageIcon,
+  Heading1,
+  Ruler,
+  ListOrdered,
+  Clock,
+  FileText,
+  Film,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 type CheckIconsMap = Record<string, LucideIcon> & {

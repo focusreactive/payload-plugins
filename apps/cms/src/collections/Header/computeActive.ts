@@ -29,7 +29,10 @@ function isLinkActive(href: string, newTab: boolean | undefined, currentPath: st
   return currentPath === target || currentPath.startsWith(`${target}/`);
 }
 
-export function computeActiveNavItems(navItems: HeaderNavItem[], pathname: string): HeaderNavItem[] {
+export function computeActiveNavItems(
+  navItems: HeaderNavItem[],
+  pathname: string
+): HeaderNavItem[] {
   const currentPath = normalizePath(pathname);
 
   return navItems.map((item) => {

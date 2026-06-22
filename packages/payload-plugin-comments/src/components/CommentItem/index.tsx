@@ -37,7 +37,10 @@ export function CommentItem({ comment, currentUserId }: Props) {
   const authorName = resolveUsername(narrowedAuthor, usernameFieldPath, unknownLabel);
 
   const isResolved = comment.isResolved ?? false;
-  const authorId = comment.author && typeof comment.author === "object" && "id" in comment.author ? comment.author.id : null;
+  const authorId =
+    comment.author && typeof comment.author === "object" && "id" in comment.author
+      ? comment.author.id
+      : null;
   const canDelete = currentUserId !== null && authorId === currentUserId;
 
   const renderedText = renderCommentText({
@@ -66,16 +69,35 @@ export function CommentItem({ comment, currentUserId }: Props) {
   return (
     <div ref={rootRef} className={cn("group relative")}>
       <div className="flex gap-2.5 items-start">
-        <Avatar user={narrowedAuthor} usernameFieldPath={usernameFieldPath} fallbackName={unknownLabel} />
+        <Avatar
+          user={narrowedAuthor}
+          usernameFieldPath={usernameFieldPath}
+          fallbackName={unknownLabel}
+        />
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-[13px] text-(--theme-text) truncate">{authorName}</span>
+            <span className="font-semibold text-[13px] text-(--theme-text) truncate">
+              {authorName}
+            </span>
 
-            {isResolved && <CircleCheck size={14} className="text-green-500 shrink-0" aria-label={t("comments:resolved" as never)} />}
+            {isResolved && (
+              <CircleCheck
+                size={14}
+                className="text-green-500 shrink-0"
+                aria-label={t("comments:resolved" as never)}
+              />
+            )}
 
-            <span className="text-[11px] text-(--theme-elevation-450) shrink-0">{createdAtRelativeDate}</span>
-            <span className={cn("block aspect-square w-2 bg-red-600 rounded-full opacity-0 transition-opacity duration-300 ease-in-out", isUnread && "opacity-100")}></span>
+            <span className="text-[11px] text-(--theme-elevation-450) shrink-0">
+              {createdAtRelativeDate}
+            </span>
+            <span
+              className={cn(
+                "block aspect-square w-2 bg-red-600 rounded-full opacity-0 transition-opacity duration-300 ease-in-out",
+                isUnread && "opacity-100"
+              )}
+            ></span>
           </div>
 
           <p
@@ -97,7 +119,13 @@ export function CommentItem({ comment, currentUserId }: Props) {
         </div>
       </div>
 
-      <ToolsPanel commentId={comment.id} isResolved={isResolved} canDelete={canDelete} onDelete={handleDelete} onResolve={handleToggleResolve} />
+      <ToolsPanel
+        commentId={comment.id}
+        isResolved={isResolved}
+        canDelete={canDelete}
+        onDelete={handleDelete}
+        onResolve={handleToggleResolve}
+      />
     </div>
   );
 }

@@ -13,7 +13,14 @@ interface HeadingTreeNodeProps {
   onBadgeMount?: (el: HTMLSpanElement | null) => void;
 }
 
-function HeadingTreeNode({ node, depth, globalFirst, collapsed, onToggle, onBadgeMount }: HeadingTreeNodeProps) {
+function HeadingTreeNode({
+  node,
+  depth,
+  globalFirst,
+  collapsed,
+  onToggle,
+  onBadgeMount,
+}: HeadingTreeNodeProps) {
   const hasKids = node.children.length > 0;
   const isOpen = hasKids && !collapsed.has(node.id);
 
@@ -51,12 +58,28 @@ function HeadingTreeNode({ node, depth, globalFirst, collapsed, onToggle, onBadg
         </>
       ) : null}
 
-      <HeadingTreeRow node={node} depth={depth} hasKids={hasKids} isOpen={isOpen} globalFirst={globalFirst} onToggle={onToggle} badgeRef={setBadgeRef} />
+      <HeadingTreeRow
+        node={node}
+        depth={depth}
+        hasKids={hasKids}
+        isOpen={isOpen}
+        globalFirst={globalFirst}
+        onToggle={onToggle}
+        badgeRef={setBadgeRef}
+      />
 
       {isOpen ? (
         <div>
           {node.children.map((child) => (
-            <HeadingTreeNode key={child.id} node={child} depth={depth + 1} globalFirst={false} collapsed={collapsed} onToggle={onToggle} onBadgeMount={registerChildBadge(child.id)} />
+            <HeadingTreeNode
+              key={child.id}
+              node={child}
+              depth={depth + 1}
+              globalFirst={false}
+              collapsed={collapsed}
+              onToggle={onToggle}
+              onBadgeMount={registerChildBadge(child.id)}
+            />
           ))}
         </div>
       ) : null}
@@ -75,7 +98,14 @@ export function HeadingTreeGroup({ nodes, depth, collapsed, onToggle }: HeadingT
   return (
     <>
       {nodes.map((node, i) => (
-        <HeadingTreeNode key={node.id} node={node} depth={depth} globalFirst={depth === 0 && i === 0} collapsed={collapsed} onToggle={onToggle} />
+        <HeadingTreeNode
+          key={node.id}
+          node={node}
+          depth={depth}
+          globalFirst={depth === 0 && i === 0}
+          collapsed={collapsed}
+          onToggle={onToggle}
+        />
       ))}
     </>
   );

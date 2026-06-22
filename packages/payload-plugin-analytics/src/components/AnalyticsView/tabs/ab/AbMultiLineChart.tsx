@@ -1,10 +1,20 @@
 "use client";
 
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from "recharts";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ReferenceLine,
+} from "recharts";
 import { getBucketColor, getBucketLabel, formatDayShort } from "./format";
 import type { AbTimeSeriesResponse, AbTimeSeriesDay } from "../../../../types/ab";
 
-const conversionRate = (d: AbTimeSeriesDay) => (d.cumulativeSessions > 0 ? d.cumulativeConvertingSessions / d.cumulativeSessions : 0);
+const conversionRate = (d: AbTimeSeriesDay) =>
+  d.cumulativeSessions > 0 ? d.cumulativeConvertingSessions / d.cumulativeSessions : 0;
 
 interface LineMeta {
   bucket: string;
@@ -26,14 +36,18 @@ function ChartTooltip({ active, payload, label, lines }: TooltipProps) {
 
   return (
     <div className="pointer-events-none z-[4] min-w-[130px] rounded-(--style-radius-s) border border-(--theme-border-color) bg-(--theme-elevation-0) px-2.5 py-2 text-[11.5px] shadow-popover">
-      <div className="mb-[5px] font-[family-name:var(--font-mono)] text-[10px] text-(--theme-elevation-500)">{formatDayShort(String(label))}</div>
+      <div className="mb-[5px] font-[family-name:var(--font-mono)] text-[10px] text-(--theme-elevation-500)">
+        {formatDayShort(String(label))}
+      </div>
       {lines.map((ln) => (
         <div key={ln.bucket} className="flex items-center gap-[7px] py-px">
           <span className="h-2 w-2 shrink-0 rounded-[2px]" style={{ background: ln.color }} />
           <span className="truncate" style={{ maxWidth: 90 }}>
             {ln.label}
           </span>
-          <span className="ml-auto font-semibold tabular-nums">{((Number(row[ln.bucket]) || 0) * 100).toFixed(1)}%</span>
+          <span className="ml-auto font-semibold tabular-nums">
+            {((Number(row[ln.bucket]) || 0) * 100).toFixed(1)}%
+          </span>
         </div>
       ))}
     </div>
@@ -45,7 +59,11 @@ export function AbMultiLineChart({ data }: { data: AbTimeSeriesResponse }) {
   const n = series[0]?.days.length ?? 0;
 
   if (!series.length || n === 0) {
-    return <div className="relative grid h-[240px] place-items-center text-(--theme-elevation-500)">No data in range</div>;
+    return (
+      <div className="relative grid h-[240px] place-items-center text-(--theme-elevation-500)">
+        No data in range
+      </div>
+    );
   }
 
   const lines: LineMeta[] = series.map((s, si) => ({
@@ -88,10 +106,33 @@ export function AbMultiLineChart({ data }: { data: AbTimeSeriesResponse }) {
     <div className="relative h-[240px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={rows} margin={{ top: 16, right: 14, bottom: 4, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--theme-elevation-100)" vertical={false} />
-          <XAxis dataKey="date" tickFormatter={(v: string) => formatDayShort(v)} stroke="var(--theme-elevation-500)" fontSize={9} tickLine={false} axisLine={false} minTickGap={24} />
-          <YAxis domain={[0, yMax]} tickFormatter={(v: number) => `${(v * 100).toFixed(0)}%`} stroke="var(--theme-elevation-500)" fontSize={9} tickLine={false} axisLine={false} width={38} />
-          <Tooltip content={<ChartTooltip lines={lines} />} cursor={{ stroke: "var(--theme-elevation-300)", strokeDasharray: "2 2" }} />
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke="var(--theme-elevation-100)"
+            vertical={false}
+          />
+          <XAxis
+            dataKey="date"
+            tickFormatter={(v: string) => formatDayShort(v)}
+            stroke="var(--theme-elevation-500)"
+            fontSize={9}
+            tickLine={false}
+            axisLine={false}
+            minTickGap={24}
+          />
+          <YAxis
+            domain={[0, yMax]}
+            tickFormatter={(v: number) => `${(v * 100).toFixed(0)}%`}
+            stroke="var(--theme-elevation-500)"
+            fontSize={9}
+            tickLine={false}
+            axisLine={false}
+            width={38}
+          />
+          <Tooltip
+            content={<ChartTooltip lines={lines} />}
+            cursor={{ stroke: "var(--theme-elevation-300)", strokeDasharray: "2 2" }}
+          />
           {sigLines.map((s) => (
             <ReferenceLine
               key={`sig-${s.date}-${s.color}`}
@@ -100,7 +141,13 @@ export function AbMultiLineChart({ data }: { data: AbTimeSeriesResponse }) {
               strokeWidth={1.2}
               strokeDasharray="3 3"
               opacity={0.8}
-              label={{ value: "p<.05", position: "top", fill: s.color, fontSize: 9, fontWeight: 600 }}
+              label={{
+                value: "p<.05",
+                position: "top",
+                fill: s.color,
+                fontSize: 9,
+                fontWeight: 600,
+              }}
             />
           ))}
           {lines.map((ln) => (
@@ -112,7 +159,12 @@ export function AbMultiLineChart({ data }: { data: AbTimeSeriesResponse }) {
               strokeWidth={ln.strokeWidth}
               strokeLinejoin="round"
               dot={false}
-              activeDot={{ r: 3.5, strokeWidth: 2, fill: "var(--theme-elevation-0)", stroke: ln.color }}
+              activeDot={{
+                r: 3.5,
+                strokeWidth: 2,
+                fill: "var(--theme-elevation-0)",
+                stroke: ln.color,
+              }}
               isAnimationActive={false}
             />
           ))}

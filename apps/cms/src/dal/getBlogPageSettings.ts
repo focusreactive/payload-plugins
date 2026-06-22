@@ -16,11 +16,20 @@ export interface BlogPageSettingsData {
   blogMeta?: NonNullable<SiteSetting["blog"]>["blogMeta"];
 }
 
-export const getBlogPageSettings = async ({ locale }: { locale?: Locale }): Promise<BlogPageSettingsData> => {
+export const getBlogPageSettings = async ({
+  locale,
+}: {
+  locale?: Locale;
+}): Promise<BlogPageSettingsData> => {
   const { isEnabled: draft } = await draftMode();
   const resolvedLocale = await resolveLocale(locale);
 
-  const settings = (await getCachedGlobal("site-settings", 1, resolvedLocale, draft)()) as SiteSetting;
+  const settings = (await getCachedGlobal(
+    "site-settings",
+    1,
+    resolvedLocale,
+    draft
+  )()) as SiteSetting;
 
   return {
     eyebrow: settings?.blog?.eyebrow,

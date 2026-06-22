@@ -15,7 +15,8 @@ export function PresetAdminComponentCellWrapper(props: CellProps) {
   const [media, setMedia] = useState<MediaData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const mediaId = typeof cellData === "number" || typeof cellData === "string" ? cellData : cellData?.id;
+  const mediaId =
+    typeof cellData === "number" || typeof cellData === "string" ? cellData : cellData?.id;
 
   useEffect(() => {
     if (!mediaId) {

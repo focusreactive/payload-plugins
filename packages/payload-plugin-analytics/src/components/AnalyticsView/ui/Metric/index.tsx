@@ -13,7 +13,14 @@ export interface MetricProps {
   mode?: MetricMode;
 }
 
-export function Metric({ value, prevValue, format, icon, invertDelta = false, mode = "inline" }: MetricProps) {
+export function Metric({
+  value,
+  prevValue,
+  format,
+  icon,
+  invertDelta = false,
+  mode = "inline",
+}: MetricProps) {
   const hasPrev = prevValue != null;
   const tone: MetricTone | null = hasPrev ? deriveTone(value, prevValue, invertDelta) : null;
   const formattedValue = format(value);
@@ -21,5 +28,12 @@ export function Metric({ value, prevValue, format, icon, invertDelta = false, mo
 
   const ModeComponent = metricModeComponents[mode];
 
-  return <ModeComponent formattedValue={formattedValue} formattedPrev={formattedPrev} tone={tone} icon={icon} />;
+  return (
+    <ModeComponent
+      formattedValue={formattedValue}
+      formattedPrev={formattedPrev}
+      tone={tone}
+      icon={icon}
+    />
+  );
 }

@@ -12,7 +12,13 @@ type StatusIndicatorProps = PropsWithChildren<{
   className?: string;
 }>;
 
-export default function StatusIndicator({ $color, $animated, title, className, children }: StatusIndicatorProps) {
+export default function StatusIndicator({
+  $color,
+  $animated,
+  title,
+  className,
+  children,
+}: StatusIndicatorProps) {
   const cardClassName = classNames(styles["status-indicator"], styles[$color], className);
 
   return (

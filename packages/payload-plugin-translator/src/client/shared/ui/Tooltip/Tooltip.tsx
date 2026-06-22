@@ -13,7 +13,13 @@ type TooltipProps = {
   delayDuration?: number;
 };
 
-export default function Tooltip({ children, content, side = "top", sideOffset = 6, delayDuration = 200 }: TooltipProps) {
+export default function Tooltip({
+  children,
+  content,
+  side = "top",
+  sideOffset = 6,
+  delayDuration = 200,
+}: TooltipProps) {
   return (
     <RadixTooltip.Provider delayDuration={delayDuration}>
       <RadixTooltip.Root>

@@ -10,7 +10,11 @@ describe("getTranslateKitFieldConfig", () => {
   });
 
   it("returns empty object when custom is not an object", () => {
-    const field: Field = { name: "title", type: "text", custom: "string" as unknown as Record<string, unknown> };
+    const field: Field = {
+      name: "title",
+      type: "text",
+      custom: "string" as unknown as Record<string, unknown>,
+    };
     expect(getTranslateKitFieldConfig(field)).toEqual({});
   });
 
