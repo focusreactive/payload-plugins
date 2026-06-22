@@ -2,10 +2,10 @@ import { redirect, permanentRedirect } from "next/navigation";
 import { notFound } from "next/navigation";
 import type React from "react";
 
-import { BLOG_CONFIG } from "@/core/config/blog";
-import { canonicalRedirectFrom } from "@/core/lib/redirectUrl";
-import type { Locale } from "@/core/types";
-import { buildUrl } from "@/core/utils/path/buildUrl";
+import { BLOG_CONFIG } from "@/lib/config/blog";
+import { canonicalRedirectFrom } from "@/lib/utils/redirectUrl";
+import type { Locale } from "@/lib/types";
+import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { getCachedDocumentByID } from "@/dal/getDocument";
 import { getCachedRedirects } from "@/dal/getRedirects";
 import type { Page } from "@/payload-types";

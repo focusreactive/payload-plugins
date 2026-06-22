@@ -2,10 +2,10 @@ import { unstable_cache } from "next/cache";
 import type { Payload } from "payload";
 import { cache } from "react";
 
-import { BLOG_CONFIG } from "@/core/config/blog";
-import { cacheTag } from "@/core/lib/cacheTags";
-import { resolveLocale } from "@/core/lib/resolveLocale";
-import type { Locale } from "@/core/types";
+import { BLOG_CONFIG } from "@/lib/config/blog";
+import { cacheTag } from "@/lib/utils/cacheTags";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
+import type { Locale } from "@/lib/types";
 
 export interface GetPostsOptions {
   page?: number;

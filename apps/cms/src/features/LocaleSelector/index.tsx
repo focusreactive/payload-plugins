@@ -3,7 +3,7 @@ import { Button } from "@/components/button";
 import { useLocale } from "next-intl";
 import React, { useState, useRef, useEffect } from "react";
 
-import { I18N_CONFIG } from "@/core/config/i18n";
+import { I18N_CONFIG } from "@/lib/config/i18n";
 import { usePathname } from "@/i18n/navigation";
 import { Link as LocaleLink } from "@/i18n/navigation";
 

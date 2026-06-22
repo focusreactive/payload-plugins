@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { draftMode } from "next/headers";
 import { Suspense } from "react";
 
-import { SYNTHETIC_REFS } from "@/core/lib/analytics/SYNTHETIC_REFS";
-import type { Locale } from "@/core/types";
+import { SYNTHETIC_REFS } from "@/lib/plugins/analytics/SYNTHETIC_REFS";
+import type { Locale } from "@/lib/types";
 import { getSiteSettings } from "@/dal/getSiteSettings";
 import type { Footer as FooterType, Header as HeaderType } from "@/payload-types";
 import { Footer, Header } from "@/widgets";

@@ -1,7 +1,7 @@
 import type { Block, Field } from "payload";
 
-import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
-import { generateRichText } from "@/core/lib/generateRichText";
+import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
+import { generateRichText } from "@/lib/utils/generateRichText";
 import { imageField } from "@/fields/imageField";
 import { injectSection } from "@/fields/section/injectSection";
 import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";

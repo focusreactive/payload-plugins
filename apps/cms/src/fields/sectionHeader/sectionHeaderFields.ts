@@ -1,7 +1,7 @@
 import type { Field } from "payload";
 
-import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
-import type { Locale } from "@/core/types";
+import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
+import type { Locale } from "@/lib/types";
 
 type LocalizedDefault = Record<Locale, string>;
 

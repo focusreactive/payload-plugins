@@ -1,8 +1,11 @@
 import type { Field, GroupField } from "payload";
 
-import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
-import { createLocalizedDefault, createLocalizedRichText } from "@/core/lib/createLocalizedDefault";
-import { generateRichText } from "@/core/lib/generateRichText";
+import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
+import {
+  createLocalizedDefault,
+  createLocalizedRichText,
+} from "@/lib/utils/createLocalizedDefault";
+import { generateRichText } from "@/lib/utils/generateRichText";
 import { imageField } from "@/fields/imageField";
 import { link } from "@/fields/link";
 

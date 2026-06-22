@@ -1,7 +1,7 @@
 import { mcpPlugin } from "@payloadcms/plugin-mcp";
 import type { PayloadRequest } from "payload";
 
-import { buildUrl } from "@/core/utils/path/buildUrl";
+import { buildUrl } from "@/lib/utils/path/buildUrl";
 import type { Page } from "@/payload-types";
 
 import { LOCAL_DEV_MCP_USER, LOCAL_HOSTS } from "./constants/local";

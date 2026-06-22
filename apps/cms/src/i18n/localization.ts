@@ -1,6 +1,6 @@
 import type { LocalizationConfig } from "payload";
 
-import { I18N_CONFIG } from "@/core/config/i18n";
+import { I18N_CONFIG } from "@/lib/config/i18n";
 
 export const localization: LocalizationConfig = {
   defaultLocale: I18N_CONFIG.defaultLocale,

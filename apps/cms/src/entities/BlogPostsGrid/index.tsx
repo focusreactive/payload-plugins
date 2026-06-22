@@ -1,7 +1,7 @@
 import React from "react";
 
-import { BLOG_CONFIG } from "@/core/config/blog";
-import type { CardPostData } from "@/core/types";
+import { BLOG_CONFIG } from "@/lib/config/blog";
+import type { CardPostData } from "@/lib/types";
 import { Card } from "@/components/Card";
 import { EmptyState } from "@/components/EmptyState";
 

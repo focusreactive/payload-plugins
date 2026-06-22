@@ -1,7 +1,7 @@
 import { unstable_cache } from "next/cache";
 
-import { cacheTag } from "@/core/lib/cacheTags";
-import type { Locale } from "@/core/types";
+import { cacheTag } from "@/lib/utils/cacheTags";
+import type { Locale } from "@/lib/types";
 import { getPayloadClient } from "@/dal/payload-client";
 
 export async function getRedirects(locale: Locale) {

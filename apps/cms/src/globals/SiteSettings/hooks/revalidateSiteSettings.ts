@@ -1,6 +1,6 @@
 import type { GlobalAfterChangeHook } from "payload";
 
-import { getLocaleFromRequest } from "@/core/lib/getLocaleFromRequest";
+import { getLocaleFromRequest } from "@/lib/utils/getLocaleFromRequest";
 import { revalidateGlobalTags } from "@/dal/getGlobals";
 
 export const revalidateSiteSettings: GlobalAfterChangeHook = async ({ doc, req }) => {

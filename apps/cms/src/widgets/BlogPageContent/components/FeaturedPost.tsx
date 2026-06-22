@@ -1,12 +1,12 @@
 import { getTranslations } from "next-intl/server";
 import NextImage from "next/image";
 
-import { BLOG_CONFIG } from "@/core/config/blog";
+import { BLOG_CONFIG } from "@/lib/config/blog";
 import { cn } from "@/components/utils";
-import type { Locale } from "@/core/types";
+import type { Locale } from "@/lib/types";
 import { Link } from "@/components/shared";
 import { AuthorAvatar } from "@/components/AuthorAvatar";
-import { readingTimeMinutes } from "@/core/utils/readingTime";
+import { readingTimeMinutes } from "@/lib/utils/readingTime";
 import type { Author, Category } from "@/payload-types";
 
 import type { BlogListPost } from "../types";

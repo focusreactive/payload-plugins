@@ -8,7 +8,7 @@ import { Image } from "@/components/image";
 import { CardsGridInlineComponent } from "@/blocks/CardsGrid/InlineComponent";
 import { CodeInlineComponent } from "@/blocks/Code/InlineComponent";
 import { LogosInlineComponent } from "@/blocks/Logos/InlineComponent";
-import { BLOG_CONFIG } from "@/core/config/blog";
+import { BLOG_CONFIG } from "@/lib/config/blog";
 import { cn } from "@/components/utils";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import type { Media } from "@/payload-types";

@@ -1,7 +1,7 @@
 import { revalidateTag, unstable_cache } from "next/cache";
 
-import { resolveLocale } from "@/core/lib/resolveLocale";
-import type { Locale } from "@/core/types";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
+import type { Locale } from "@/lib/types";
 import { getPayloadClient } from "@/dal/payload-client";
 
 type GlobalSlug = "site-settings";

@@ -12,7 +12,7 @@ import { HeroBlock } from "@/blocks/Hero/config";
 import { LogosBlock } from "@/blocks/Logos/config";
 import { RawHtmlBlock } from "@/blocks/RawHtml/config";
 import { TestimonialsListBlock } from "@/blocks/TestimonialsList/config";
-import { generateSeoFields } from "@/core/lib/seoFields";
+import { generateSeoFields } from "@/lib/utils/seoFields";
 
 export function createBasePageFields({ withBlocksDefaultValue = false } = {}): Field[] {
   return [

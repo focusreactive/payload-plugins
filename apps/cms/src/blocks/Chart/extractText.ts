@@ -1,5 +1,5 @@
 import type { ChartBlock } from "@/payload-types";
-import { joinText } from "@/core/utils/text";
+import { joinText } from "@/lib/utils/text";
 
 export function extractChartText(block: ChartBlock): string {
   return joinText([

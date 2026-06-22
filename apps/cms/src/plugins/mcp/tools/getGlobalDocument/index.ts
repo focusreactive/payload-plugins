@@ -1,7 +1,7 @@
 import type { GlobalSlug, PayloadRequest } from "payload";
 import { z } from "zod";
 
-import type { Locale } from "@/core/types";
+import type { Locale } from "@/lib/types";
 
 import type { BaseDocument, McpTool } from "../../types";
 import type { McpToolsRegistry } from "../index";

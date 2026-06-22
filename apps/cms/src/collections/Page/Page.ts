@@ -1,11 +1,11 @@
 import { createParentField, createBreadcrumbsField } from "@payloadcms/plugin-nested-docs";
 import type { CollectionConfig } from "payload";
 
-import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
-import { anyone, author, or, superAdmin, user } from "@/core/lib/access";
-import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
-import { generatePreviewPath } from "@/core/lib/generatePreviewPath";
-import { buildUrl } from "@/core/utils/path/buildUrl";
+import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
+import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
+import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
+import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { createSharedSlugField } from "@/fields/slugField";
 import type { Page as PageType } from "@/payload-types";
 

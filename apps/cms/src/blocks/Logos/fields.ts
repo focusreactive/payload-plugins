@@ -1,6 +1,6 @@
 import type { Field } from "payload";
 
-import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
+import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { imageField } from "@/fields/imageField";
 import { link } from "@/fields/link";
 

@@ -3,8 +3,8 @@
 import { MoonIcon, SunIcon } from "lucide-react";
 import React, { useState } from "react";
 
-import type { Theme } from "@/core/context";
-import { themeLocalStorageKey, useTheme } from "@/core/context";
+import type { Theme } from "@/lib/context";
+import { themeLocalStorageKey, useTheme } from "@/lib/context";
 import { Button, ButtonVariant, ButtonSize } from "@/components/button";
 
 export const ThemeSelector: React.FC = () => {

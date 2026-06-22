@@ -1,9 +1,9 @@
 import { seoPlugin } from "@payloadcms/plugin-seo";
 import type { GenerateTitle, GenerateDescription, GenerateURL } from "@payloadcms/plugin-seo/types";
 
-import { getLocaleFromRequest } from "@/core/lib/getLocaleFromRequest";
-import { getServerSideURL } from "@/core/lib/getURL";
-import { buildUrl } from "@/core/utils/path/buildUrl";
+import { getLocaleFromRequest } from "@/lib/utils/getLocaleFromRequest";
+import { getServerSideURL } from "@/lib/utils/getURL";
+import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { getSiteSettings } from "@/dal/getSiteSettings";
 import type { Page, Post } from "@/payload-types";
 

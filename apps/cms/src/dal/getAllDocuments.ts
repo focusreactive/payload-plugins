@@ -1,6 +1,6 @@
 import type { CollectionSlug, DataFromCollectionSlug, Payload, Where } from "payload";
 
-import type { Locale } from "@/core/types";
+import type { Locale } from "@/lib/types";
 
 interface GetAllDocumentsOptions {
   where?: Where;

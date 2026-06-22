@@ -1,6 +1,6 @@
 import type { Block, Field, GroupField } from "payload";
 
-import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
+import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 import { injectSection } from "@/fields/section/injectSection";
 import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
 import { link } from "@/fields/link";

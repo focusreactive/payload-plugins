@@ -1,7 +1,7 @@
-import { BLOG_CONFIG } from "@/core/config/blog";
-import { I18N_CONFIG } from "@/core/config/i18n";
-import type { Locale } from "@/core/types";
-import { buildUrl } from "@/core/utils/path/buildUrl";
+import { BLOG_CONFIG } from "@/lib/config/blog";
+import { I18N_CONFIG } from "@/lib/config/i18n";
+import type { Locale } from "@/lib/types";
+import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { getPayloadClient } from "@/dal/payload-client";
 import type { Page } from "@/payload-types";
 

@@ -1,7 +1,7 @@
 import { draftMode } from "next/headers";
 
-import { resolveLocale } from "@/core/lib/resolveLocale";
-import type { Locale } from "@/core/types";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
+import type { Locale } from "@/lib/types";
 import type { SiteSetting } from "@/payload-types";
 
 import { getCachedGlobal } from "./getGlobals";

@@ -2,7 +2,7 @@ import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from "paylo
 import type { Pool } from "pg";
 
 import { extractPostText } from "@/collections/Posts/extractPostText";
-import { getLocaleFromRequest } from "@/core/lib/getLocaleFromRequest";
+import { getLocaleFromRequest } from "@/lib/utils/getLocaleFromRequest";
 import type { Post } from "@/payload-types";
 import { upsertEmbedding, deleteEmbedding } from "@/search/dbOperations";
 import { generateEmbedding } from "@/search/generateEmbedding";

@@ -1,4 +1,4 @@
-import { extractLexicalText, joinText } from "@/core/utils/text";
+import { extractLexicalText, joinText } from "@/lib/utils/text";
 import type { Post } from "@/payload-types";
 
 export function extractPostText(

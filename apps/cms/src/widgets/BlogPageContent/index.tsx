@@ -2,8 +2,8 @@ import { DisplayHeading } from "@/components/DisplayHeading";
 import { Eyebrow } from "@/components/Eyebrow";
 import { getTranslations } from "next-intl/server";
 
-import { BLOG_CONFIG } from "@/core/config/blog";
-import type { Locale } from "@/core/types";
+import { BLOG_CONFIG } from "@/lib/config/blog";
+import type { Locale } from "@/lib/types";
 import { EmptyState } from "@/components/EmptyState";
 import { Pagination } from "@/components/Pagination";
 

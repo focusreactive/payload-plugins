@@ -4,12 +4,12 @@ import { draftMode } from "next/headers";
 import React from "react";
 
 import { RenderBlocks } from "@/blocks/RenderBlocks";
-import { SYNTHETIC_REFS } from "@/core/lib/analytics/SYNTHETIC_REFS";
-import { generateMeta } from "@/core/lib/generateMeta";
-import { generateNotFoundMeta } from "@/core/lib/generateNotFoundMeta";
-import { parseSlugToPath } from "@/core/lib/parseSlugToPath";
-import { BreadcrumbsJsonLd } from "@/core/seo/components";
-import type { Locale } from "@/core/types";
+import { SYNTHETIC_REFS } from "@/lib/plugins/analytics/SYNTHETIC_REFS";
+import { generateMeta } from "@/lib/utils/generateMeta";
+import { generateNotFoundMeta } from "@/lib/utils/generateNotFoundMeta";
+import { parseSlugToPath } from "@/lib/utils/parseSlugToPath";
+import { BreadcrumbsJsonLd } from "@/components/seo/components";
+import type { Locale } from "@/lib/types";
 import { getPageBySlug } from "@/dal/getPageBySlug";
 import { getMainSitePageStaticParams } from "@/dal/staticParams/pages";
 import { PayloadRedirects } from "@/features";

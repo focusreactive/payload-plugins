@@ -2,8 +2,8 @@
 
 import type { Payload } from "payload";
 
-import type { Locale } from "@/core/types";
-import { buildUrl } from "@/core/utils/path/buildUrl";
+import type { Locale } from "@/lib/types";
+import { buildUrl } from "@/lib/utils/path/buildUrl";
 import type { Page, Post } from "@/payload-types";
 
 import type { SearchCollection } from "./types";

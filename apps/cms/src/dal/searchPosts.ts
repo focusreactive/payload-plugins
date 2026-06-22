@@ -2,11 +2,11 @@ import { unstable_cache } from "next/cache";
 import type { Pool } from "pg";
 import { cache } from "react";
 
-import { BLOG_CONFIG } from "@/core/config/blog";
-import { cacheTag } from "@/core/lib/cacheTags";
-import { resolveLocale } from "@/core/lib/resolveLocale";
-import type { Locale } from "@/core/types";
-import { orderDocsByIds } from "@/core/utils/orderDocsByIds";
+import { BLOG_CONFIG } from "@/lib/config/blog";
+import { cacheTag } from "@/lib/utils/cacheTags";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
+import type { Locale } from "@/lib/types";
+import { orderDocsByIds } from "@/lib/utils/orderDocsByIds";
 import { generateEmbedding } from "@/search/generateEmbedding";
 
 import type { getPosts } from "./getPosts";

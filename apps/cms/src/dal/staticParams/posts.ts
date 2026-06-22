@@ -1,6 +1,6 @@
-import { BLOG_CONFIG } from "@/core/config/blog";
-import { I18N_CONFIG } from "@/core/config/i18n";
-import type { Locale } from "@/core/types";
+import { BLOG_CONFIG } from "@/lib/config/blog";
+import { I18N_CONFIG } from "@/lib/config/i18n";
+import type { Locale } from "@/lib/types";
 import { getPayloadClient } from "@/dal/payload-client";
 
 export type BlogPostStaticParams = { locale: string; slug: string }[];

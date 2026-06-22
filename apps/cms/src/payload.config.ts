@@ -17,7 +17,7 @@ import { Page } from "@/collections/Page/Page";
 import { Posts } from "@/collections/Posts";
 import { Testimonials } from "@/collections/Testimonials";
 import { Users } from "@/collections/Users";
-import { I18N_CONFIG } from "@/core/config/i18n";
+import { I18N_CONFIG } from "@/lib/config/i18n";
 import { createDatabaseAdapter } from "@/database";
 import { SiteSettings } from "@/globals/SiteSettings/config";
 import { plugins } from "@/plugins";

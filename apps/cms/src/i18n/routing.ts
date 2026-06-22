@@ -1,6 +1,6 @@
 import { defineRouting } from "next-intl/routing";
 
-import { I18N_CONFIG } from "@/core/config/i18n";
+import { I18N_CONFIG } from "@/lib/config/i18n";
 
 import { localization } from "./localization";
 

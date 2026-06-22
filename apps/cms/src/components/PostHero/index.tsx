@@ -3,9 +3,9 @@ import { Eyebrow } from "@/components/Eyebrow";
 import { getTranslations } from "next-intl/server";
 import NextImage from "next/image";
 
-import { BLOG_CONFIG } from "@/core/config/blog";
-import type { Locale } from "@/core/types";
-import { readingTimeMinutes } from "@/core/utils/readingTime";
+import { BLOG_CONFIG } from "@/lib/config/blog";
+import type { Locale } from "@/lib/types";
+import { readingTimeMinutes } from "@/lib/utils/readingTime";
 import type { Author, Category, Post } from "@/payload-types";
 
 import { Link } from "@/components/shared";

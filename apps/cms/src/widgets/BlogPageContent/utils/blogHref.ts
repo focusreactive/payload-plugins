@@ -1,4 +1,4 @@
-import { BLOG_CONFIG } from "@/core/config/blog";
+import { BLOG_CONFIG } from "@/lib/config/blog";
 
 interface BlogHrefParams {
   category?: string;

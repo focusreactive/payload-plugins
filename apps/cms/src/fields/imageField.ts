@@ -1,6 +1,6 @@
 import type { GroupField } from "payload";
 
-import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/core/constants/mediaDefaults";
+import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 
 const aspectRatioOptions = [

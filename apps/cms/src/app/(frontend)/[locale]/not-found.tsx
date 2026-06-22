@@ -3,9 +3,9 @@ import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 import React from "react";
 
-import { generateNotFoundMeta } from "@/core/lib/generateNotFoundMeta";
-import { resolveLocale } from "@/core/lib/resolveLocale";
-import type { Locale } from "@/core/types";
+import { generateNotFoundMeta } from "@/lib/utils/generateNotFoundMeta";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
+import type { Locale } from "@/lib/types";
 import { buttonVariants, ButtonVariant } from "@/components/button";
 import { Link } from "@/components/shared";
 import { getSiteSettings } from "@/dal/getSiteSettings";

@@ -1,6 +1,6 @@
 import type { Pool } from "pg";
 
-import type { Locale } from "@/core/types";
+import type { Locale } from "@/lib/types";
 
 interface DbRow {
   post_id: number;

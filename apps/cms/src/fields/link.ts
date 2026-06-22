@@ -1,10 +1,10 @@
 import type { Field, GroupField } from "payload";
 import type { Option } from "payload";
 
-import { BLOG_CONFIG } from "@/core/config/blog";
-import { CUSTOM_PAGES_CONFIG } from "@/core/config/customPages";
-import type { CustomPageKey } from "@/core/config/customPages";
-import deepMerge from "@/core/lib/deepMerge";
+import { BLOG_CONFIG } from "@/lib/config/blog";
+import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
+import type { CustomPageKey } from "@/lib/config/customPages";
+import deepMerge from "@/lib/utils/deepMerge";
 
 export type LinkAppearances = "default" | "outline" | "accent" | "ghost" | "link";
 

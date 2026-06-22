@@ -2,7 +2,7 @@ import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 import React from "react";
 
-import { BLOG_CONFIG } from "@/core/config/blog";
+import { BLOG_CONFIG } from "@/lib/config/blog";
 import { cn } from "@/components/utils";
 import { Button, ButtonVariant } from "@/components/button";
 import { Link } from "@/components/shared";

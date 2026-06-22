@@ -1,7 +1,7 @@
 import type { GlobalSlug, Payload } from "payload";
 
-import { getServerSideURL } from "@/core/lib/getURL";
-import type { Locale } from "@/core/types";
+import { getServerSideURL } from "@/lib/utils/getURL";
+import type { Locale } from "@/lib/types";
 
 import { PRE_FORMATTED_CONTENT_INSTRUCTION } from "../../constants/instructions";
 import type { BaseDocument, ContentBlock } from "../../types";

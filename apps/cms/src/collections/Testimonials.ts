@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 
-import { anyone, or, user, superAdmin } from "@/core/lib/access";
+import { anyone, or, user, superAdmin } from "@/lib/access";
 
 export const Testimonials: CollectionConfig<"testimonials"> = {
   access: {

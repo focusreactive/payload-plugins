@@ -1,6 +1,6 @@
 import type { HeaderNavItem } from "./ui/types";
 
-import { I18N_CONFIG } from "@/core/config/i18n";
+import { I18N_CONFIG } from "@/lib/config/i18n";
 
 const LOCALE_CODES = new Set<string>(I18N_CONFIG.locales.map((locale) => locale.code));
 

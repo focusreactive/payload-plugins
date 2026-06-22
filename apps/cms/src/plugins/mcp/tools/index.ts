@@ -1,6 +1,6 @@
 import type { CollectionSlug, GlobalSlug } from "payload";
 
-import type { Locale } from "@/core/types";
+import type { Locale } from "@/lib/types";
 
 import type { BaseDocument, McpTool } from "../types";
 import { createGetAllDocumentsTool } from "./getAllDocuments";

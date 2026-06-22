@@ -1,4 +1,4 @@
-import { extractLexicalText, joinText } from "@/core/utils/text";
+import { extractLexicalText, joinText } from "@/lib/utils/text";
 import type { CarouselBlock } from "@/payload-types";
 
 export function extractCarouselText(block: CarouselBlock): string {

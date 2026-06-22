@@ -1,5 +1,5 @@
-import { I18N_CONFIG } from "@/core/config/i18n";
-import type { Locale } from "@/core/types";
+import { I18N_CONFIG } from "@/lib/config/i18n";
+import type { Locale } from "@/lib/types";
 import { getPayloadClient } from "@/dal/payload-client";
 
 export type PageStaticParams = { locale: string; slug: string[] }[];

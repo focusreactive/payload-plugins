@@ -3,9 +3,9 @@ import { draftMode } from "next/headers";
 import type { RequiredDataFromCollectionSlug } from "payload";
 import { cache } from "react";
 
-import { cacheTag } from "@/core/lib/cacheTags";
-import { resolveLocale } from "@/core/lib/resolveLocale";
-import type { Locale } from "@/core/types";
+import { cacheTag } from "@/lib/utils/cacheTags";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
+import type { Locale } from "@/lib/types";
 import { getPayloadClient } from "@/dal/payload-client";
 
 import { getAllDocuments } from "./getAllDocuments";

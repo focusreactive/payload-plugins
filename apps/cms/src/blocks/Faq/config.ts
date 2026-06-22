@@ -1,14 +1,14 @@
 import type { Block, Field } from "payload";
 
-import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
-import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
+import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
+import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 import {
   createLocalizedDefault,
   createLocalizedRichText,
   createRichTextState,
-} from "@/core/lib/createLocalizedDefault";
-import { generateRichText } from "@/core/lib/generateRichText";
-import type { Locale } from "@/core/types";
+} from "@/lib/utils/createLocalizedDefault";
+import { generateRichText } from "@/lib/utils/generateRichText";
+import type { Locale } from "@/lib/types";
 import { injectSection } from "@/fields/section/injectSection";
 import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
 

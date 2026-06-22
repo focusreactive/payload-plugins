@@ -1,4 +1,4 @@
-import type { Locale } from "@/core/types";
+import type { Locale } from "@/lib/types";
 import { PostHero } from "@/components/PostHero";
 import { RichText } from "@/components/shared";
 import { getRelatedPosts } from "@/dal/getRelatedPosts";

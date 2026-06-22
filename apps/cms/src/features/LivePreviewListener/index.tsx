@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter, usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
-import { getClientSideURL } from "@/core/lib/getURL";
+import { getClientSideURL } from "@/lib/utils/getURL";
 
 export const LivePreviewListener: React.FC = () => {
   const router = useRouter();

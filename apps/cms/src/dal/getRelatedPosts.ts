@@ -1,7 +1,7 @@
 import { draftMode } from "next/headers";
 
-import { BLOG_CONFIG } from "@/core/config/blog";
-import type { Locale } from "@/core/types";
+import { BLOG_CONFIG } from "@/lib/config/blog";
+import type { Locale } from "@/lib/types";
 import { getPayloadClient } from "@/dal/payload-client";
 import type { Post } from "@/payload-types";
 
