@@ -5,20 +5,34 @@ import { useRowLabel } from "@payloadcms/ui";
 
 import type { Header } from "@/payload-types";
 
-const generateRowLabel = (rowNumber: number | undefined, label: string | undefined | null) => {
+import { readPath } from "../readPath";
+
+const generateRowLabel = (rowNumber: number | undefined, label: string | undefined | null, prefix = "Row") => {
   if (label) {
-    return `Row ${rowNumber !== undefined ? rowNumber + 1 : ""}: ${label}`;
+    return `${prefix} ${rowNumber !== undefined ? rowNumber + 1 : ""}: ${label}`;
   }
-  return `Row ${rowNumber !== undefined ? rowNumber + 1 : ""}`;
+  return `${prefix} ${rowNumber !== undefined ? rowNumber + 1 : ""}`;
 };
 
 interface RowLabelData {
   label?: string | null;
 }
 
-export const RowLabel: React.FC<RowLabelProps> = () => {
+type RowLabelExtendedProps = RowLabelProps & {
+  prefix?: string;
+  titleField?: string;
+};
+
+export const RowLabel: React.FC<RowLabelExtendedProps> = ({ prefix = "Row", titleField }) => {
   const data = useRowLabel<RowLabelData>();
-  return generateRowLabel(data.rowNumber, data?.data?.label);
+  let label: string | undefined | null;
+  if (titleField) {
+    const resolved = readPath(data?.data as unknown, titleField);
+    label = typeof resolved === "string" ? resolved : data?.data?.label;
+  } else {
+    label = data?.data?.label;
+  }
+  return generateRowLabel(data.rowNumber, label, prefix);
 };
 
 export const RowLabelGroupName: React.FC<RowLabelProps> = () => {
