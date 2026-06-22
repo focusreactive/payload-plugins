@@ -1,5 +1,5 @@
 import { Image } from "@/components/ui";
-import { ImageAspectRatio } from "@/components/ui/components/ui/image/types";
+import { ImageAspectRatio } from "@/components/ui/primitives/image/types";
 import NextImage from "next/image";
 import React from "react";
 

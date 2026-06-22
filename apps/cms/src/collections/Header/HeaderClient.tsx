@@ -1,7 +1,7 @@
 "use client";
 
 import { Header as HeaderUI } from "@/components/ui";
-import type { IHeaderProps } from "@/components/ui/components/sections/header/types";
+import type { IHeaderProps } from "@/components/ui/sections/header/types";
 import { usePathname } from "next/navigation";
 import React from "react";
 

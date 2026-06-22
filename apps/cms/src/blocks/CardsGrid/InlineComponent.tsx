@@ -1,5 +1,5 @@
 import { CardsGrid } from "@/components/ui";
-import type { IDefaultCardProps } from "@/components/ui/components/sections/cardsGrid/types";
+import type { IDefaultCardProps } from "@/components/ui/sections/cardsGrid/types";
 
 import { resolveLocale } from "@/core/lib/resolveLocale";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";

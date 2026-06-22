@@ -1,5 +1,5 @@
-import { ImageAspectRatio } from "@/components/ui/components/ui/image/types";
-import type { IImageProps } from "@/components/ui/components/ui/image/types";
+import { ImageAspectRatio } from "@/components/ui/primitives/image/types";
+import type { IImageProps } from "@/components/ui/primitives/image/types";
 
 import type { Media } from "@/payload-types";
 

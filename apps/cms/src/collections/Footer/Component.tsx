@@ -1,5 +1,5 @@
 import { Footer as SharedFooter } from "@/components/ui";
-import type { FooterLink, FooterLinkGroup, IFooterProps } from "@/components/ui/components/sections/footer/types";
+import type { FooterLink, FooterLinkGroup, IFooterProps } from "@/components/ui/sections/footer/types";
 import React from "react";
 
 import { resolveLocale } from "@/core/lib/resolveLocale";

@@ -1,6 +1,6 @@
 import { Logos } from "@/components/ui";
-import { AlignVariant } from "@/components/ui/components/sections/logos/types";
-import type { ILogoItem } from "@/components/ui/components/sections/logos/types";
+import { AlignVariant } from "@/components/ui/sections/logos/types";
+import type { ILogoItem } from "@/components/ui/sections/logos/types";
 
 import { resolveLocale } from "@/core/lib/resolveLocale";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";

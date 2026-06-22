@@ -1,5 +1,5 @@
-import { ButtonVariant } from "@/components/ui/components/ui/button/types";
-import type { LinkProps } from "@/components/ui/components/ui/link/types";
+import { ButtonVariant } from "@/components/ui/primitives/button/types";
+import type { LinkProps } from "@/components/ui/primitives/link/types";
 
 import { CUSTOM_PAGES_CONFIG } from "@/core/config/customPages";
 import type { CustomPageKey } from "@/core/config/customPages";
