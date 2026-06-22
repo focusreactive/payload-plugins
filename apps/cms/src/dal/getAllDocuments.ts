@@ -29,9 +29,19 @@ export async function getAllDocuments<TSlug extends CollectionSlug>(
   collection: TSlug,
   options: GetAllDocumentsOptions = { locale: "en" as Locale }
 ): Promise<DataFromCollectionSlug<TSlug>[]> {
-  const { where, select, sort = "-createdAt", depth = 0, overrideAccess = false, locale, draft } = options;
+  const {
+    where,
+    select,
+    sort = "-createdAt",
+    depth = 0,
+    overrideAccess = false,
+    locale,
+    draft,
+  } = options;
 
-  const find = payload.find as unknown as (args: FindOptions) => Promise<{ docs: DataFromCollectionSlug<TSlug>[] }>;
+  const find = payload.find as unknown as (
+    args: FindOptions
+  ) => Promise<{ docs: DataFromCollectionSlug<TSlug>[] }>;
 
   const result = await find({
     collection,

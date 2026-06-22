@@ -7,7 +7,11 @@ import type { Header } from "@/payload-types";
 
 import { readPath } from "../readPath";
 
-const generateRowLabel = (rowNumber: number | undefined, label: string | undefined | null, prefix = "Row") => {
+const generateRowLabel = (
+  rowNumber: number | undefined,
+  label: string | undefined | null,
+  prefix = "Row"
+) => {
   if (label) {
     return `${prefix} ${rowNumber !== undefined ? rowNumber + 1 : ""}: ${label}`;
   }
