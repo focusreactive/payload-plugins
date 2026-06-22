@@ -1,4 +1,4 @@
-import { NewsletterSection } from "@repo/ui";
+import { NewsletterSection } from "@/components/ui";
 
 import { SectionContainer } from "@/core/ui";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";

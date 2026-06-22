@@ -1,4 +1,4 @@
-import { cn, SectionHeader } from "@repo/ui";
+import { cn, SectionHeader } from "@/components/ui";
 import React from "react";
 
 import { SectionContainer } from "@/core/ui";

@@ -1,4 +1,4 @@
-import { Chart, SectionHeader } from "@repo/ui";
+import { Chart, SectionHeader } from "@/components/ui";
 
 import { SectionContainer } from "@/core/ui";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";

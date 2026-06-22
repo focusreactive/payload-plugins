@@ -1,4 +1,4 @@
-import { NewsletterSection } from "@repo/ui";
+import { NewsletterSection } from "@/components/ui";
 import { getTranslations } from "next-intl/server";
 
 import { SectionContainer } from "@/core/ui";

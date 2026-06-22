@@ -2,7 +2,6 @@
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
-@source "../ui";
 
 /* ──────────────── Tier 1: primitives ──────────────── */
 @theme {

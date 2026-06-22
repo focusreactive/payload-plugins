@@ -3,7 +3,7 @@ import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical
 import type { JSXConvertersFunction } from "@payloadcms/richtext-lexical/react";
 import { LinkJSXConverter, RichText as RichTextReact } from "@payloadcms/richtext-lexical/react";
 import { withVisualEditingPath } from "@fr-private/payload-plugin-visual-editing/client";
-import { Image } from "@repo/ui/components/ui/image";
+import { Image } from "@/components/ui/components/ui/image";
 
 import { CardsGridInlineComponent } from "@/blocks/CardsGrid/InlineComponent";
 import { CodeInlineComponent } from "@/blocks/Code/InlineComponent";

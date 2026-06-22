@@ -1,4 +1,4 @@
-import type { HeaderNavItem } from "@repo/ui/components/sections/header/types";
+import type { HeaderNavItem } from "@/components/ui/components/sections/header/types";
 
 import { I18N_CONFIG } from "@/core/config/i18n";
 

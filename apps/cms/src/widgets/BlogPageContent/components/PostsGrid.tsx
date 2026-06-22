@@ -1,4 +1,4 @@
-import { BlogPostCard } from "@repo/ui";
+import { BlogPostCard } from "@/components/ui";
 import { getTranslations } from "next-intl/server";
 import NextImage from "next/image";
 

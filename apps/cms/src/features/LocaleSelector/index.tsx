@@ -1,5 +1,5 @@
 "use client";
-import { Button } from "@repo/ui";
+import { Button } from "@/components/ui";
 import { useLocale } from "next-intl";
 import React, { useState, useRef, useEffect } from "react";
 

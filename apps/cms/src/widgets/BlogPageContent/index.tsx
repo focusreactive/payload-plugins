@@ -1,4 +1,4 @@
-import { DisplayHeading, Eyebrow } from "@repo/ui";
+import { DisplayHeading, Eyebrow } from "@/components/ui";
 import { getTranslations } from "next-intl/server";
 
 import { BLOG_CONFIG } from "@/core/config/blog";

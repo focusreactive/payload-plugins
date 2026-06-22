@@ -1,5 +1,5 @@
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
-import { SectionHeader } from "@repo/ui";
+import { SectionHeader } from "@/components/ui";
 
 import { RichText } from "@/core/ui";
 import type { AccordionItemData } from "@/core/ui/components/Accordion";

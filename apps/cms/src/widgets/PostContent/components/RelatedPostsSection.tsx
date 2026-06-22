@@ -1,4 +1,4 @@
-import { BlogPostCard, SectionHeader } from "@repo/ui";
+import { BlogPostCard, SectionHeader } from "@/components/ui";
 import { getTranslations } from "next-intl/server";
 import NextImage from "next/image";
 
