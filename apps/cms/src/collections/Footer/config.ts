@@ -156,7 +156,7 @@ export const Footer: CollectionConfig<"footer"> = {
         es: "© 2026 Cadence Labs, Inc.",
       }),
       localized: true,
-      name: "copywriteText",
+      name: "copyrightText",
       type: "text",
     },
   ],
