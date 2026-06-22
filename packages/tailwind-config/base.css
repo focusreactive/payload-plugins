@@ -2,7 +2,6 @@
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
-
 /* ──────────────── Tier 1: primitives ──────────────── */
 @theme {
   --font-display: var(--font-newsreader, "Times New Roman"), Georgia, serif;

@@ -1,5 +1,11 @@
 import { ButtonVariant } from "@/components/ui/primitives/button/types";
-import type { HeaderAction, HeaderFeatured, HeaderLink, HeaderNavItem, IHeaderProps } from "./ui/types";
+import type {
+  HeaderAction,
+  HeaderFeatured,
+  HeaderLink,
+  HeaderNavItem,
+  IHeaderProps,
+} from "./ui/types";
 import React from "react";
 
 import { resolveLocale } from "@/core/lib/resolveLocale";

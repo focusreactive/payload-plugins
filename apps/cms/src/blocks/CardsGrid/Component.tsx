@@ -1,7 +1,28 @@
 import { SectionHeader } from "@/components/ui";
 import { CardsGrid } from "./ui";
 import type { IDefaultCardProps } from "./ui/types";
-import { Activity, BarChart3, Bell, Calendar, Clock, Compass, FileText, Gauge, GitBranch, Layers, LayoutGrid, Map, Plug, Shield, Sparkles, Target, Users, Wand2, Workflow, Zap } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  Bell,
+  Calendar,
+  Clock,
+  Compass,
+  FileText,
+  Gauge,
+  GitBranch,
+  Layers,
+  LayoutGrid,
+  Map,
+  Plug,
+  Shield,
+  Sparkles,
+  Target,
+  Users,
+  Wand2,
+  Workflow,
+  Zap,
+} from "lucide-react";
 import React from "react";
 
 import { resolveLocale } from "@/core/lib/resolveLocale";
