@@ -25,8 +25,22 @@ const fields: Field[] = [
       {
         type: "row",
         fields: [
-          { admin: { width: "50%" }, label: { en: "Value", es: "Valor" }, localized: true, name: "value", required: true, type: "text" },
-          { admin: { width: "50%" }, label: { en: "Label", es: "Etiqueta" }, localized: true, name: "label", required: true, type: "text" },
+          {
+            admin: { width: "50%" },
+            label: { en: "Value", es: "Valor" },
+            localized: true,
+            name: "value",
+            required: true,
+            type: "text",
+          },
+          {
+            admin: { width: "50%" },
+            label: { en: "Label", es: "Etiqueta" },
+            localized: true,
+            name: "label",
+            required: true,
+            type: "text",
+          },
         ],
       },
     ],

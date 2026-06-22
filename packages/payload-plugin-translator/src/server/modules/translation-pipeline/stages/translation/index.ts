@@ -1,1 +1,1 @@
-export { TranslationStage } from './Translation.stage'
+export { TranslationStage } from "./Translation.stage";

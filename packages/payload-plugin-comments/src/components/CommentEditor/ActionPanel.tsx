@@ -42,7 +42,11 @@ export function ActionPanel({ className, onMention, onAddComment }: Props) {
 
       <hr className="w-px h-[20px] bg-(--theme-elevation-150) m-0" />
 
-      <IconButton variant="primary" title={t("comments:comment" as never)} data-action="add-comment">
+      <IconButton
+        variant="primary"
+        title={t("comments:comment" as never)}
+        data-action="add-comment"
+      >
         <SendHorizontal size={16} />
       </IconButton>
     </div>

@@ -5,7 +5,12 @@ import { resolveDateRange } from "../../utils/date/resolveDateRange";
 import { dateRangesFor } from "../../utils/ga4";
 import { runQuery } from "../analyticsService/runQuery";
 import { AB_CONTROL_BUCKET } from "../../constants/ab";
-import { aggregateBucketExposure, aggregateBucketConversions, experimentFilter, convertingFilter } from "../../utils/ga4/ab";
+import {
+  aggregateBucketExposure,
+  aggregateBucketConversions,
+  experimentFilter,
+  convertingFilter,
+} from "../../utils/ga4/ab";
 import { getAbExperimentRecordByKey } from "./getAbExperimentRecords";
 import { getExperimentBucketMeta } from "./getExperimentBucketMeta";
 import type { PayloadRequest } from "payload";
@@ -16,7 +21,11 @@ export interface AbExperimentStats {
   startedAt: string | null;
 }
 
-export async function getAbExperimentStats(manifestKey: string, query: AbExperimentQuery | { dateRange: AbExperimentQuery["dateRange"] }, req: PayloadRequest): Promise<AbExperimentStats> {
+export async function getAbExperimentStats(
+  manifestKey: string,
+  query: AbExperimentQuery | { dateRange: AbExperimentQuery["dateRange"] },
+  req: PayloadRequest
+): Promise<AbExperimentStats> {
   const pluginConfig = getPluginConfig();
   const ab = resolveAbConfig(pluginConfig.ab);
   if (!ab) throw new Error("A/B integration not configured");
@@ -28,7 +37,11 @@ export async function getAbExperimentStats(manifestKey: string, query: AbExperim
   const exposureRequest = {
     dateRanges,
     metrics: [{ name: "eventCount" }],
-    dimensions: [{ name: `customEvent:${dimensions.variant}` }, { name: "customEvent:fr_session_id" }, { name: `customEvent:${dimensions.visitorId}` }],
+    dimensions: [
+      { name: `customEvent:${dimensions.variant}` },
+      { name: "customEvent:fr_session_id" },
+      { name: `customEvent:${dimensions.visitorId}` },
+    ],
     dimensionFilter: experimentFilter(dimensions.experiment, manifestKey),
     limit: 250_000,
   };
@@ -36,21 +49,43 @@ export async function getAbExperimentStats(manifestKey: string, query: AbExperim
   const convertingRequest = {
     dateRanges,
     metrics: [{ name: "eventCount" }],
-    dimensions: [{ name: `customEvent:${dimensions.variant}` }, { name: "customEvent:fr_session_id" }, { name: "customEvent:fr_lead_type" }],
+    dimensions: [
+      { name: `customEvent:${dimensions.variant}` },
+      { name: "customEvent:fr_session_id" },
+      { name: "customEvent:fr_lead_type" },
+    ],
     dimensionFilter: convertingFilter(dimensions.experiment, manifestKey),
     limit: 250_000,
   };
 
-  const batch = await runQuery.batchRunReports(pluginConfig.ga4.propertyId, [exposureRequest, convertingRequest] as never, "abExperimentStats");
+  const batch = await runQuery.batchRunReports(
+    pluginConfig.ga4.propertyId,
+    [exposureRequest, convertingRequest] as never,
+    "abExperimentStats"
+  );
   const [exposureReport, convertingReport] = batch.reports ?? [];
 
   const exposure = aggregateBucketExposure((exposureReport?.rows ?? []) as never);
-  const { byBucket: conversionsByBucket, byBucketLead } = aggregateBucketConversions((convertingReport?.rows ?? []) as never);
+  const { byBucket: conversionsByBucket, byBucketLead } = aggregateBucketConversions(
+    (convertingReport?.rows ?? []) as never
+  );
 
   const record = await getAbExperimentRecordByKey(ab.experimentsCollectionSlug, manifestKey, req);
-  const meta = record ? await getExperimentBucketMeta(record.parentCollection, record.parentDocId, record.locale ?? undefined, ab, req) : {};
+  const meta = record
+    ? await getExperimentBucketMeta(
+        record.parentCollection,
+        record.parentDocId,
+        record.locale ?? undefined,
+        ab,
+        req
+      )
+    : {};
 
-  const allBuckets = new Set<string>([...Object.keys(exposure), ...Object.keys(conversionsByBucket), ...Object.keys(meta)]);
+  const allBuckets = new Set<string>([
+    ...Object.keys(exposure),
+    ...Object.keys(conversionsByBucket),
+    ...Object.keys(meta),
+  ]);
 
   const buckets: AbBucketCounts[] = [...allBuckets].map((bucket) => ({
     bucket,

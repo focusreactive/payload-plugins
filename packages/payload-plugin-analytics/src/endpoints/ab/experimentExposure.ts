@@ -23,7 +23,8 @@ export function buildAbExperimentExposureEndpoint(config: AnalyticsPluginConfig)
       }
 
       const parsed = AbExperimentQuerySchema.safeParse(body);
-      if (!parsed.success) return Response.json({ error: formatZodIssues(parsed.error.issues) }, { status: 400 });
+      if (!parsed.success)
+        return Response.json({ error: formatZodIssues(parsed.error.issues) }, { status: 400 });
 
       const ab = resolveAbConfig(getPluginConfig().ab)!;
 
@@ -33,7 +34,13 @@ export function buildAbExperimentExposureEndpoint(config: AnalyticsPluginConfig)
         return Response.json(shapeExposure(stats, ab));
       } catch (err) {
         const gate = abSetupGate(err);
-        if (gate) return Response.json({ buckets: [], srmPassed: true, srmPValue: 1, missing: gate.missing });
+        if (gate)
+          return Response.json({
+            buckets: [],
+            srmPassed: true,
+            srmPValue: 1,
+            missing: gate.missing,
+          });
 
         const mapped = mapGa4Error(err);
 

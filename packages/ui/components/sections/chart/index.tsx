@@ -1,7 +1,15 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import type { TooltipProps } from "recharts";
 
 import { cn } from "../../../utils";
@@ -29,8 +37,12 @@ function ChartTooltip({ active, payload, label }: TooltipProps<number, string>) 
 
   return (
     <div className="rounded-sm border border-border bg-surface px-3 py-2 shadow-lg">
-      <p className="font-mono text-[0.62rem] uppercase tracking-[0.08em] text-muted-foreground">{label}</p>
-      <p className="mt-1 font-mono text-sm font-semibold text-foreground tabular-nums">{typeof value === "number" ? value.toLocaleString("en-US") : value}</p>
+      <p className="font-mono text-[0.62rem] uppercase tracking-[0.08em] text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 font-mono text-sm font-semibold text-foreground tabular-nums">
+        {typeof value === "number" ? value.toLocaleString("en-US") : value}
+      </p>
     </div>
   );
 }
@@ -80,9 +92,18 @@ export function Chart({ title, subtitle, ranges }: ChartProps) {
         </div>
 
         {ranges.length > 1 ? (
-          <div className="inline-flex gap-0.5 rounded-pill border border-border bg-surface-muted p-1" role="group" aria-label="Select range">
+          <div
+            className="inline-flex gap-0.5 rounded-pill border border-border bg-surface-muted p-1"
+            role="group"
+            aria-label="Select range"
+          >
             {ranges.map((range, i) => (
-              <RangeTab key={range.label} label={range.label} isActive={i === activeIndex} onSelect={() => setActiveIndex(i)} />
+              <RangeTab
+                key={range.label}
+                label={range.label}
+                isActive={i === activeIndex}
+                onSelect={() => setActiveIndex(i)}
+              />
             ))}
           </div>
         ) : null}
@@ -99,7 +120,12 @@ export function Chart({ title, subtitle, ranges }: ChartProps) {
                 </linearGradient>
               </defs>
 
-              <CartesianGrid vertical={false} horizontal stroke="var(--color-border)" strokeWidth={1} />
+              <CartesianGrid
+                vertical={false}
+                horizontal
+                stroke="var(--color-border)"
+                strokeWidth={1}
+              />
 
               <XAxis
                 dataKey="label"
@@ -127,7 +153,14 @@ export function Chart({ title, subtitle, ranges }: ChartProps) {
                 }}
               />
 
-              <Area type="monotone" dataKey="value" stroke="var(--color-primary)" strokeWidth={2} fill={`url(#${gradientId})`} isAnimationActive />
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke="var(--color-primary)"
+                strokeWidth={2}
+                fill={`url(#${gradientId})`}
+                isAnimationActive
+              />
             </AreaChart>
           </ResponsiveContainer>
         ) : null}

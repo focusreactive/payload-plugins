@@ -9,7 +9,10 @@ import { resolveProportionCount } from "./resolves/resolveProportionCount";
 import { resolveValueRange } from "./resolves/resolveValueRange";
 import { readPositions } from "./utils/readPositions";
 
-export function resolveVisualization(check: CheckResult, data: Record<string, unknown> | undefined): Visualization {
+export function resolveVisualization(
+  check: CheckResult,
+  data: Record<string, unknown> | undefined
+): Visualization {
   const id = check.id as CheckId;
 
   if (PRESENCE_CHECKS.has(id)) return resolvePresence();

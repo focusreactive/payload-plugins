@@ -22,7 +22,8 @@ export const PRESETS: Preset[] = [
 ];
 
 function labelOf(value: DateRange) {
-  if ("preset" in value) return PRESETS.find((p) => p.value === value.preset)?.label ?? "Custom range";
+  if ("preset" in value)
+    return PRESETS.find((p) => p.value === value.preset)?.label ?? "Custom range";
 
   return `${formatShortDate(value.from)} – ${formatShortDate(value.to)}`;
 }
@@ -48,7 +49,9 @@ export function DateRangeDropdown({ value, onChange }: DateRangeDropdownProps) {
       >
         {(close) => (
           <>
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-[var(--theme-elevation-500)] px-2.5 pt-1.5 pb-1">Presets</div>
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-[var(--theme-elevation-500)] px-2.5 pt-1.5 pb-1">
+              Presets
+            </div>
 
             {PRESETS.map(({ label, value: presetValue }) => {
               const isActive = "preset" in value && value.preset === presetValue;

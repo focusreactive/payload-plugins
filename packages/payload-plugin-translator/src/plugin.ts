@@ -3,7 +3,11 @@ import type { CollectionConfig, Config } from "payload";
 import { CacheProviderExport } from "./client/app/cache/CacheProvider.export";
 import type { AccessGuard } from "./types/AccessGuard";
 import type { TranslationProvider } from "./server/modules/translation-providers";
-import type { TaskRunnerProvider, TaskRunnerContext, TaskRunnerFactory } from "./server/modules/task-runner";
+import type {
+  TaskRunnerProvider,
+  TaskRunnerContext,
+  TaskRunnerFactory,
+} from "./server/modules/task-runner";
 import { TranslateDocumentHandler } from "./server/features/translate-document";
 import { documentLevel, collectionLevel } from "./server/modules/translation-levels";
 import type { TranslationLevel } from "./server/modules/translation-levels";
@@ -65,7 +69,14 @@ export class TranslateCollectionPlugin {
 
   init(): (config: Config) => Promise<Config> {
     return async (config) => {
-      const { access, translationProvider, runner, collections, levels, basePath: rawBasePath = "/translate" } = this.pluginConfig;
+      const {
+        access,
+        translationProvider,
+        runner,
+        collections,
+        levels,
+        basePath: rawBasePath = "/translate",
+      } = this.pluginConfig;
 
       // Build schema map from deep-cloned collections
       // Deep clone is required because Payload mutates the original collection objects,
@@ -75,7 +86,9 @@ export class TranslateCollectionPlugin {
       // TODO: Consider introducing a FieldLike interface with only the properties
       // used by the pipeline (name, type, localized, fields, blocks, tabs, custom)
       // to make the contract explicit and avoid reliance on JSON round-trip.
-      const schemaMap = new Map(collections.map((col) => [col.slug, JSON.parse(JSON.stringify(col.fields))]));
+      const schemaMap = new Map(
+        collections.map((col) => [col.slug, JSON.parse(JSON.stringify(col.fields))])
+      );
       const collectionSlugs = new Set(schemaMap.keys());
       const basePath = normalizePath(rawBasePath);
       const translateHandler = new TranslateDocumentHandler(translationProvider, schemaMap);
@@ -142,7 +155,9 @@ export class TranslateCollectionPlugin {
  * })
  * ```
  */
-export function translatorPlugin(config: TranslatorPluginConfig): (config: Config) => Promise<Config> {
+export function translatorPlugin(
+  config: TranslatorPluginConfig
+): (config: Config) => Promise<Config> {
   return new TranslateCollectionPlugin(config).init();
 }
 

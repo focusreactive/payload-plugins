@@ -1,4 +1,10 @@
-import type { JourneyResponse, JourneyRow, JourneyStep, JourneysQuery, Row } from "../../types/query";
+import type {
+  JourneyResponse,
+  JourneyRow,
+  JourneyStep,
+  JourneysQuery,
+  Row,
+} from "../../types/query";
 import type { PageFilterContext } from "../pageFilter/types";
 import { LEAD_ACTION_EVENT_NAME } from "../../constants/events";
 import { resolveDateRange } from "../../utils/date/resolveDateRange";
@@ -33,7 +39,10 @@ function parseRow(row: Row, pageRefDimIndex: number): OrderedRow {
   };
 }
 
-function sessionRowToJourneyStep(row: OrderedRow, labels: Map<string, { path: string }> | null): JourneyStep {
+function sessionRowToJourneyStep(
+  row: OrderedRow,
+  labels: Map<string, { path: string }> | null
+): JourneyStep {
   if (row.eventName === LEAD_ACTION_EVENT_NAME && row.leadType) {
     return {
       kind: "leadAction",
@@ -65,12 +74,18 @@ function groupBySession(rows: OrderedRow[]): Map<string, OrderedRow[]> {
     rowsMap.set(row.sessionId, sessionRows);
   }
   for (const sessionRows of rowsMap.values()) {
-    sessionRows.sort((a, b) => (a.dhm === b.dhm ? a.eventSeq - b.eventSeq : a.dhm.localeCompare(b.dhm)));
+    sessionRows.sort((a, b) =>
+      a.dhm === b.dhm ? a.eventSeq - b.eventSeq : a.dhm.localeCompare(b.dhm)
+    );
   }
   return rowsMap;
 }
 
-export async function getJourneys(propertyId: string, query: JourneysQuery, pageFilter?: PageFilterContext | null): Promise<JourneyResponse> {
+export async function getJourneys(
+  propertyId: string,
+  query: JourneysQuery,
+  pageFilter?: PageFilterContext | null
+): Promise<JourneyResponse> {
   const dateRange = resolveDateRange(query.dateRange);
   const limit = query.limit ?? 20;
   const maxSteps = query.maxSteps;
@@ -99,20 +114,33 @@ export async function getJourneys(propertyId: string, query: JourneysQuery, page
       dateRanges: dateRangesFor(dateRange),
       metrics: [{ name: "eventCount" }],
       dimensions,
-      orderBys: [{ dimension: { dimensionName: "customEvent:fr_session_id" } }, { dimension: { dimensionName: "dateHourMinute" } }, { dimension: { dimensionName: "customEvent:fr_event_seq" } }],
+      orderBys: [
+        { dimension: { dimensionName: "customEvent:fr_session_id" } },
+        { dimension: { dimensionName: "dateHourMinute" } },
+        { dimension: { dimensionName: "customEvent:fr_event_seq" } },
+      ],
     },
     sampleLimit
   );
 
   let raw;
   try {
-    raw = await runQuery.runReport(propertyId, request as Parameters<typeof runQuery.runReport>[1], "journeys");
+    raw = await runQuery.runReport(
+      propertyId,
+      request as Parameters<typeof runQuery.runReport>[1],
+      "journeys"
+    );
   } catch (err) {
     const mapped = mapGa4Error(err);
     if (mapped.setupRequired) {
       return {
         setupRequired: true,
-        missing: deriveMissing({ message: mapped.message }, ["fr_session_id", "fr_event_seq", "fr_lead_type", "fr_page_ref"]),
+        missing: deriveMissing({ message: mapped.message }, [
+          "fr_session_id",
+          "fr_event_seq",
+          "fr_lead_type",
+          "fr_page_ref",
+        ]),
         rows: [],
         sessionsConsidered: 0,
         truncated: false,
@@ -158,7 +186,9 @@ export async function getJourneys(propertyId: string, query: JourneysQuery, page
 
     sessionsConsidered += 1;
 
-    const journeySteps = collapseJourneyStepDuplicates(sessionRows.map((row) => sessionRowToJourneyStep(row, labels)));
+    const journeySteps = collapseJourneyStepDuplicates(
+      sessionRows.map((row) => sessionRowToJourneyStep(row, labels))
+    );
     const path = maxSteps === undefined ? journeySteps : journeySteps.slice(0, maxSteps);
     const pathKey = JSON.stringify(path);
     const existing = journeysMapByPath.get(pathKey);

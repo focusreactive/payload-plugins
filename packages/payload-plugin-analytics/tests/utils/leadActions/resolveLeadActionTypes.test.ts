@@ -12,10 +12,16 @@ describe("resolveLeadActionTypes", () => {
   });
 
   it("returns user list verbatim (replaces defaults) when input is non-empty", () => {
-    expect(resolveLeadActionTypes(["cta_pricing_click", "phone_click"])).toEqual(["cta_pricing_click", "phone_click"]);
+    expect(resolveLeadActionTypes(["cta_pricing_click", "phone_click"])).toEqual([
+      "cta_pricing_click",
+      "phone_click",
+    ]);
   });
 
   it("deduplicates user-provided list", () => {
-    expect(resolveLeadActionTypes(["phone_click", "phone_click", "email_click"])).toEqual(["phone_click", "email_click"]);
+    expect(resolveLeadActionTypes(["phone_click", "phone_click", "email_click"])).toEqual([
+      "phone_click",
+      "email_click",
+    ]);
   });
 });

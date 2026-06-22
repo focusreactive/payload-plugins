@@ -20,7 +20,9 @@ export function getGa4Client(): BetaAnalyticsDataClient {
   return globalThis.__payloadPluginAnalyticsGa4Client;
 }
 
-export function __setGa4ClientForTests(client: Pick<BetaAnalyticsDataClient, "runReport" | "batchRunReports">) {
+export function __setGa4ClientForTests(
+  client: Pick<BetaAnalyticsDataClient, "runReport" | "batchRunReports">
+) {
   globalThis.__payloadPluginAnalyticsGa4Client = client as BetaAnalyticsDataClient;
 }
 

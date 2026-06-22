@@ -6,7 +6,10 @@ export function ChipMode({ formattedValue, formattedPrev, tone, icon: Icon }: Me
   const hasPrev = tone != null && formattedPrev != null;
 
   return (
-    <span data-metric-mode="chip" className="inline-flex items-stretch align-middle gap-px text-[11.5px] tabular-nums">
+    <span
+      data-metric-mode="chip"
+      className="inline-flex items-stretch align-middle gap-px text-[11.5px] tabular-nums"
+    >
       <span
         className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-(--theme-elevation-100) text-(--theme-elevation-700)"
         style={{

@@ -32,7 +32,9 @@ async function extractWithUploads(args: BuildAnalysisInputArgs): Promise<string>
 }
 
 export async function buildAnalysisInput(args: BuildAnalysisInputArgs): Promise<AnalysisInput> {
-  const contentHtml = args.override ? await args.override(args.values) : await extractWithUploads(args);
+  const contentHtml = args.override
+    ? await args.override(args.values)
+    : await extractWithUploads(args);
 
   return buildInput({
     values: args.values,

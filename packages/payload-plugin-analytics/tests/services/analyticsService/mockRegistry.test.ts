@@ -1,5 +1,10 @@
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
-import { registerAnalyticsMocks, clearAnalyticsMocks, getRunReportMock, getBatchRunReportsMock } from "../../../src/services/analyticsService/mockRegistry";
+import {
+  registerAnalyticsMocks,
+  clearAnalyticsMocks,
+  getRunReportMock,
+  getBatchRunReportsMock,
+} from "../../../src/services/analyticsService/mockRegistry";
 
 const runReportStub = () => ({ rows: [] });
 const batchRunReportsStub = () => ({ reports: [] });

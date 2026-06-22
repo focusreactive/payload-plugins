@@ -6,7 +6,13 @@ import { makePayloadRequest } from "../../__fixtures__/http/payloadRequest";
 import topCountries from "../../__fixtures__/ga4/topCountries.json";
 import type { AnalyticsPluginConfig } from "../../src/types/config";
 
-const cfg = { ga4: { propertyId: "12345", measurementId: "G-X", serviceAccount: { clientEmail: "x", privateKey: "y" } } } as AnalyticsPluginConfig;
+const cfg = {
+  ga4: {
+    propertyId: "12345",
+    measurementId: "G-X",
+    serviceAccount: { clientEmail: "x", privateKey: "y" },
+  },
+} as AnalyticsPluginConfig;
 
 // The handler builds a PageFilterContext via getResolvedPagesConfig() → getPluginConfig();
 // seed a config with no `pages` so the resolved config is null (feature off, no filter).
@@ -21,7 +27,10 @@ function callHandler(ep: { handler: unknown }, req: unknown): Promise<Response> 
 describe("POST /api/analytics/top-countries", () => {
   it("returns 403 when unauthenticated", async () => {
     const ep = buildTopCountriesEndpoint(cfg);
-    const res = await callHandler(ep, makePayloadRequest({ user: null, body: { dateRange: { preset: "last-7d" } } }));
+    const res = await callHandler(
+      ep,
+      makePayloadRequest({ user: null, body: { dateRange: { preset: "last-7d" } } })
+    );
     expect(res.status).toBe(403);
   });
 
@@ -35,7 +44,10 @@ describe("POST /api/analytics/top-countries", () => {
     const fake = { runReport: vi.fn().mockResolvedValue([topCountries]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
     const ep = buildTopCountriesEndpoint(cfg);
-    const res = await callHandler(ep, makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } }));
+    const res = await callHandler(
+      ep,
+      makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } })
+    );
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(Array.isArray(json.rows)).toBe(true);
@@ -45,13 +57,25 @@ describe("POST /api/analytics/top-countries", () => {
     const fake = { runReport: vi.fn().mockResolvedValue([topCountries]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
     const ep = buildTopCountriesEndpoint(cfg);
-    const res = await callHandler(ep, makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" }, dimension: "city" } }));
+    const res = await callHandler(
+      ep,
+      makePayloadRequest({
+        user: { id: "u" },
+        body: { dateRange: { preset: "last-7d" }, dimension: "city" },
+      })
+    );
     expect(res.status).toBe(200);
   });
 
   it("rejects an unknown dimension with 400", async () => {
     const ep = buildTopCountriesEndpoint(cfg);
-    const res = await callHandler(ep, makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" }, dimension: "region" } }));
+    const res = await callHandler(
+      ep,
+      makePayloadRequest({
+        user: { id: "u" },
+        body: { dateRange: { preset: "last-7d" }, dimension: "region" },
+      })
+    );
     expect(res.status).toBe(400);
   });
 
@@ -60,7 +84,10 @@ describe("POST /api/analytics/top-countries", () => {
     const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
     const ep = buildTopCountriesEndpoint(cfg);
-    const res = await callHandler(ep, makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } }));
+    const res = await callHandler(
+      ep,
+      makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } })
+    );
     expect(res.status).toBe(429);
   });
 });

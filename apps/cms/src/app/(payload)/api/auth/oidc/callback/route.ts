@@ -24,7 +24,9 @@ export async function GET(request: Request) {
     const { origin } = url;
 
     if (!config) {
-      return NextResponse.redirect(`${origin}/admin/login?error=${encodeURIComponent("OIDC not configured")}`);
+      return NextResponse.redirect(
+        `${origin}/admin/login?error=${encodeURIComponent("OIDC not configured")}`
+      );
     }
 
     const code = url.searchParams.get("code");
@@ -34,18 +36,24 @@ export async function GET(request: Request) {
 
     if (error) {
       payload.logger.error({ err: error, errorDescription }, "OIDC callback error");
-      return NextResponse.redirect(`${origin}/admin/login?error=${encodeURIComponent(errorDescription || error)}`);
+      return NextResponse.redirect(
+        `${origin}/admin/login?error=${encodeURIComponent(errorDescription || error)}`
+      );
     }
 
     if (!code) {
-      return NextResponse.redirect(`${origin}/admin/login?error=${encodeURIComponent("Authorization code not received")}`);
+      return NextResponse.redirect(
+        `${origin}/admin/login?error=${encodeURIComponent("Authorization code not received")}`
+      );
     }
 
     const cookieStore = await cookies();
     const savedState = cookieStore.get(OAUTH_STATE_COOKIE)?.value;
     if (!state || !savedState || state !== savedState) {
       payload.logger.error("Invalid OIDC state");
-      return NextResponse.redirect(`${origin}/admin/login?error=${encodeURIComponent("Invalid state")}`);
+      return NextResponse.redirect(
+        `${origin}/admin/login?error=${encodeURIComponent("Invalid state")}`
+      );
     }
     cookieStore.delete({ name: OAUTH_STATE_COOKIE, path: "/" });
     const codeVerifier = config.usePkce ? cookieStore.get(OAUTH_VERIFIER_COOKIE)?.value : undefined;
@@ -54,7 +62,9 @@ export async function GET(request: Request) {
     }
 
     if (config.usePkce && !codeVerifier) {
-      return NextResponse.redirect(`${origin}/admin/login?error=${encodeURIComponent("code_verifier is missing")}`);
+      return NextResponse.redirect(
+        `${origin}/admin/login?error=${encodeURIComponent("code_verifier is missing")}`
+      );
     }
 
     const discovery = await getDiscovery(config.issuer);
@@ -79,7 +89,9 @@ export async function GET(request: Request) {
     const tokenData = await tokenRes.json();
     if (tokenData.error) {
       payload.logger.error("OIDC token error:", tokenData);
-      return NextResponse.redirect(`${origin}/admin/login?error=${encodeURIComponent(tokenData.error_description || tokenData.error)}`);
+      return NextResponse.redirect(
+        `${origin}/admin/login?error=${encodeURIComponent(tokenData.error_description || tokenData.error)}`
+      );
     }
 
     const idToken = tokenData.id_token as string | undefined;
@@ -89,7 +101,10 @@ export async function GET(request: Request) {
 
     if (idToken) {
       const JWKS = createRemoteJWKSet(new URL(discovery.jwks_uri));
-      const issuerOpts = [config.issuer, config.issuer.endsWith("/") ? config.issuer.slice(0, -1) : `${config.issuer}/`];
+      const issuerOpts = [
+        config.issuer,
+        config.issuer.endsWith("/") ? config.issuer.slice(0, -1) : `${config.issuer}/`,
+      ];
       let idPayload: IdTokenPayload | null = null;
       for (const iss of issuerOpts) {
         try {
@@ -119,7 +134,9 @@ export async function GET(request: Request) {
         }
       }
       if (!raw.email) {
-        return NextResponse.redirect(`${origin}/admin/login?error=${encodeURIComponent("Email not received from IdP")}`);
+        return NextResponse.redirect(
+          `${origin}/admin/login?error=${encodeURIComponent("Email not received from IdP")}`
+        );
       }
       claims = {
         displayName: raw.name ?? raw.preferred_username ?? raw.email.split("@")[0],
@@ -130,19 +147,25 @@ export async function GET(request: Request) {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (!userInfoRes.ok) {
-        return NextResponse.redirect(`${origin}/admin/login?error=${encodeURIComponent("Failed to get profile")}`);
+        return NextResponse.redirect(
+          `${origin}/admin/login?error=${encodeURIComponent("Failed to get profile")}`
+        );
       }
       const userInfo = await userInfoRes.json();
       const raw = claimsFromUserInfoResponse(userInfo);
       if (!raw.email) {
-        return NextResponse.redirect(`${origin}/admin/login?error=${encodeURIComponent("Email not received from IdP")}`);
+        return NextResponse.redirect(
+          `${origin}/admin/login?error=${encodeURIComponent("Email not received from IdP")}`
+        );
       }
       claims = {
         displayName: raw.name ?? raw.preferred_username ?? raw.email.split("@")[0],
         email: raw.email,
       };
     } else {
-      return NextResponse.redirect(`${origin}/admin/login?error=${encodeURIComponent("No id_token and UserInfo")}`);
+      return NextResponse.redirect(
+        `${origin}/admin/login?error=${encodeURIComponent("No id_token and UserInfo")}`
+      );
     }
 
     const user = await findOrCreateAdminUser(payload, claims);
@@ -184,7 +207,10 @@ export async function GET(request: Request) {
     const cookieName = `${payload.config.cookiePrefix ?? "payload"}-token`;
     const cookieOpts = usersCollection.auth.cookies ?? {};
     const isSecure = cookieOpts.secure ?? process.env.NODE_ENV === "production";
-    const sameSite = cookieOpts.sameSite === false ? "lax" : ((cookieOpts.sameSite as "lax" | "strict" | "none") ?? "lax");
+    const sameSite =
+      cookieOpts.sameSite === false
+        ? "lax"
+        : ((cookieOpts.sameSite as "lax" | "strict" | "none") ?? "lax");
 
     const response = NextResponse.redirect(`${origin}/admin`);
     response.cookies.set(cookieName, token, {

@@ -1,7 +1,9 @@
 import { dim } from "../../rows";
 import type { Ga4Row } from "../../rows";
 
-export function aggregateBucketExposure(rows: Ga4Row[]): Record<string, { sessions: number; visitors: number }> {
+export function aggregateBucketExposure(
+  rows: Ga4Row[]
+): Record<string, { sessions: number; visitors: number }> {
   const sessions = new Map<string, Set<string>>();
   const visitors = new Map<string, Set<string>>();
 

@@ -19,11 +19,19 @@ export const leadActionsMock: BatchRunReportsMockFn = (requests) => {
     })
   );
   const eventsAllowed = refInListFromRequest(requests[0] as never, PAGE_REF_DIM);
-  const eventsOut = filterAndReaggregate(eventsTagged, { refIndex: 1, keepDimIndices: [0, 1], allowed: eventsAllowed ? new Set(eventsAllowed) : null });
+  const eventsOut = filterAndReaggregate(eventsTagged, {
+    refIndex: 1,
+    keepDimIndices: [0, 1],
+    allowed: eventsAllowed ? new Set(eventsAllowed) : null,
+  });
 
   const sessionsTagged = refs.map((ref) => row([ref], [ref === missing ? "90000" : "300"]));
   const sessAllowed = refInListFromRequest(requests[1] as never, PAGE_REF_DIM);
-  const sessFiltered = filterAndReaggregate(sessionsTagged, { refIndex: 0, keepDimIndices: [], allowed: sessAllowed ? new Set(sessAllowed) : null });
+  const sessFiltered = filterAndReaggregate(sessionsTagged, {
+    refIndex: 0,
+    keepDimIndices: [],
+    allowed: sessAllowed ? new Set(sessAllowed) : null,
+  });
 
   return batch([response(eventsOut), response(sessFiltered)]) as never;
 };

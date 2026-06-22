@@ -14,7 +14,10 @@ describe("resolvePagesConfig — label options", () => {
 
   it("carries an explicit titleField and resolvePagePath", () => {
     const fn = (ref: string) => `/x/${ref}`;
-    const r = resolvePagesConfig({ collections: [{ slug: "posts", titleField: "name" }], resolvePagePath: fn });
+    const r = resolvePagesConfig({
+      collections: [{ slug: "posts", titleField: "name" }],
+      resolvePagePath: fn,
+    });
     expect(r?.collections[0]).toEqual({ slug: "posts", publishedOnly: true, titleField: "name" });
     expect(r?.resolvePagePath).toBe(fn);
   });

@@ -10,7 +10,10 @@ afterEach(() => {
 describe("generateUuidV4", () => {
   it("uses crypto.randomUUID when available", () => {
     const fn = vi.fn().mockReturnValue("11111111-2222-4333-8444-555555555555");
-    vi.stubGlobal("crypto", { randomUUID: fn, getRandomValues: globalThis.crypto.getRandomValues.bind(globalThis.crypto) });
+    vi.stubGlobal("crypto", {
+      randomUUID: fn,
+      getRandomValues: globalThis.crypto.getRandomValues.bind(globalThis.crypto),
+    });
     const id = generateUuidV4();
     expect(fn).toHaveBeenCalled();
     expect(id).toBe("11111111-2222-4333-8444-555555555555");

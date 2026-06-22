@@ -49,20 +49,20 @@ export async function findAllComments({
 
       if (hasCollections || hasGlobals) {
         where.or = [
-          ...(hasCollections ?
-            [
-              {
-                collectionSlug: { in: enabledCollections },
-              },
-            ]
-          : []),
-          ...(hasGlobals ?
-            [
-              {
-                globalSlug: { in: enabledGlobals },
-              },
-            ]
-          : []),
+          ...(hasCollections
+            ? [
+                {
+                  collectionSlug: { in: enabledCollections },
+                },
+              ]
+            : []),
+          ...(hasGlobals
+            ? [
+                {
+                  globalSlug: { in: enabledGlobals },
+                },
+              ]
+            : []),
         ];
       }
     }

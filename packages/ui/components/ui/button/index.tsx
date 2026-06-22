@@ -20,12 +20,18 @@ export const buttonVariants = cva(
       },
       variant: {
         [ButtonVariant.Default]: "p-0 text-foreground hover:text-primary",
-        [ButtonVariant.Primary]: "rounded-pill font-semibold bg-secondary text-secondary-foreground hover:bg-secondary-hover",
-        [ButtonVariant.Accent]: "rounded-pill font-semibold bg-accent text-accent-foreground hover:bg-accent-hover",
-        [ButtonVariant.Secondary]: "rounded-pill font-semibold border border-foreground text-foreground hover:bg-foreground hover:text-background",
-        [ButtonVariant.Badge]: "rounded-pill border border-foreground px-3 py-1.5 text-eyebrow text-foreground",
-        [ButtonVariant.Ghost]: "rounded-pill font-semibold bg-surface text-foreground border border-border-strong hover:border-foreground",
-        [ButtonVariant.GhostDark]: "rounded-pill font-semibold bg-secondary text-secondary-foreground hover:bg-secondary-hover",
+        [ButtonVariant.Primary]:
+          "rounded-pill font-semibold bg-secondary text-secondary-foreground hover:bg-secondary-hover",
+        [ButtonVariant.Accent]:
+          "rounded-pill font-semibold bg-accent text-accent-foreground hover:bg-accent-hover",
+        [ButtonVariant.Secondary]:
+          "rounded-pill font-semibold border border-foreground text-foreground hover:bg-foreground hover:text-background",
+        [ButtonVariant.Badge]:
+          "rounded-pill border border-foreground px-3 py-1.5 text-eyebrow text-foreground",
+        [ButtonVariant.Ghost]:
+          "rounded-pill font-semibold bg-surface text-foreground border border-border-strong hover:border-foreground",
+        [ButtonVariant.GhostDark]:
+          "rounded-pill font-semibold bg-secondary text-secondary-foreground hover:bg-secondary-hover",
       },
     },
   }

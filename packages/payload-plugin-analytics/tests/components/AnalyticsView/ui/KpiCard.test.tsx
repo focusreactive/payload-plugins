@@ -1,7 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { KpiCard } from "../../../../src/components/AnalyticsView/ui/KpiCard";
-import { formatNumber, formatPercentage, formatDuration } from "../../../../src/components/AnalyticsView/numberFormatters";
+import {
+  formatNumber,
+  formatPercentage,
+  formatDuration,
+} from "../../../../src/components/AnalyticsView/numberFormatters";
 
 describe("KpiCard", () => {
   it("renders the current value through the provided format function", () => {
@@ -10,18 +14,24 @@ describe("KpiCard", () => {
   });
 
   it("renders the previous-period pill when prevValue is provided", () => {
-    const { container } = render(<KpiCard label="Sessions" value={18234} prevValue={16219} format={formatNumber} />);
+    const { container } = render(
+      <KpiCard label="Sessions" value={18234} prevValue={16219} format={formatNumber} />
+    );
     expect(container.querySelector('[data-tone="positive"]')).not.toBeNull();
     expect(container.querySelector('[data-tone="positive"]')?.textContent).toContain("16,219");
   });
 
   it("renders no pill when prevValue is null", () => {
-    const { container } = render(<KpiCard label="Sessions" value={18234} prevValue={null} format={formatNumber} />);
+    const { container } = render(
+      <KpiCard label="Sessions" value={18234} prevValue={null} format={formatNumber} />
+    );
     expect(container.querySelector("[data-tone]")).toBeNull();
   });
 
   it("invertDelta swaps the tone (lower bounce rate is positive)", () => {
-    const { container } = render(<KpiCard label="Bounce" value={0.4} prevValue={0.5} format={formatPercentage} invertDelta />);
+    const { container } = render(
+      <KpiCard label="Bounce" value={0.4} prevValue={0.5} format={formatPercentage} invertDelta />
+    );
     expect(container.querySelector('[data-tone="positive"]')).not.toBeNull();
   });
 

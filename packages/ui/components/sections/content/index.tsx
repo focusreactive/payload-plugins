@@ -2,15 +2,18 @@ import { cva } from "../../../utils";
 import type { SectionHeaderProps } from "../../ui/SectionHeader";
 import { SectionHeader } from "../../ui/SectionHeader";
 
-const gridVariants = cva("flex flex-col items-start gap-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-[clamp(36px,6vw,90px)]", {
-  defaultVariants: { layout: "image-text" },
-  variants: {
-    layout: {
-      "image-text": "",
-      "text-image": "lg:[direction:rtl] [&>*]:[direction:ltr]",
+const gridVariants = cva(
+  "flex flex-col items-start gap-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-[clamp(36px,6vw,90px)]",
+  {
+    defaultVariants: { layout: "image-text" },
+    variants: {
+      layout: {
+        "image-text": "",
+        "text-image": "lg:[direction:rtl] [&>*]:[direction:ltr]",
+      },
     },
-  },
-});
+  }
+);
 
 interface ContentSectionProps {
   layout?: "image-text" | "text-image" | null;
@@ -23,7 +26,9 @@ interface ContentSectionProps {
 export function ContentSection({ layout, header, image, body, actions }: ContentSectionProps) {
   return (
     <div className={gridVariants({ layout: layout ?? "image-text" })}>
-      {image && <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg">{image}</div>}
+      {image && (
+        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg">{image}</div>
+      )}
 
       <div className="flex max-w-[520px] flex-col gap-[18px]">
         {header && <SectionHeader {...header} className="gap-[18px]" />}

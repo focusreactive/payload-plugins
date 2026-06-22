@@ -47,7 +47,11 @@
     "build:types": "tsc --emitDeclarationOnly --outDir dist",
     "copyfiles": "copyfiles -u 1 \"src/**/*.scss\" dist",
     "clean": "rm -rf dist",
-    "dev": "bun run build:swc -- --watch"
+    "dev": "bun run build:swc -- --watch",
+    "lint": "ultracite check",
+    "lint:fix": "ultracite fix",
+    "format": "ultracite fix",
+    "format:check": "ultracite check"
   },
   "peerDependencies": {
     "@payloadcms/ui": "^3.0.0",

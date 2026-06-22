@@ -36,7 +36,19 @@ export default defineConfig({
   dts: false,
   sourcemap: true,
   clean: true,
-  external: ["payload", "react", "react-dom", "next", "@payloadcms/ui", "@payloadcms/next", "@payloadcms/next/templates", "lucide-react", "recharts", "react-day-picker", "clsx"],
+  external: [
+    "payload",
+    "react",
+    "react-dom",
+    "next",
+    "@payloadcms/ui",
+    "@payloadcms/next",
+    "@payloadcms/next/templates",
+    "lucide-react",
+    "recharts",
+    "react-day-picker",
+    "clsx",
+  ],
   async onSuccess() {
     await compileCss();
   },

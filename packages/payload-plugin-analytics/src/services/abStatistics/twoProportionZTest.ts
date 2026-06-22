@@ -5,7 +5,12 @@ import { standardNormalCdf } from "./standardNormalCdf";
  * Two-tailed two-proportion z-test of variant vs control.
  * Returns each rate, the absolute/relative lift, the z statistic, and the p-value.
  */
-export function twoProportionZTest(variantConversions: number, variantSessions: number, controlConversions: number, controlSessions: number): TwoProportionZTestResult {
+export function twoProportionZTest(
+  variantConversions: number,
+  variantSessions: number,
+  controlConversions: number,
+  controlSessions: number
+): TwoProportionZTestResult {
   const variantRate = variantSessions > 0 ? variantConversions / variantSessions : 0;
   const controlRate = controlSessions > 0 ? controlConversions / controlSessions : 0;
 
@@ -20,8 +25,11 @@ export function twoProportionZTest(variantConversions: number, variantSessions: 
 
   if (!variantSessions || !controlSessions) return result;
 
-  const pooledRate = (variantConversions + controlConversions) / (variantSessions + controlSessions);
-  const standardError = Math.sqrt(pooledRate * (1 - pooledRate) * (1 / variantSessions + 1 / controlSessions));
+  const pooledRate =
+    (variantConversions + controlConversions) / (variantSessions + controlSessions);
+  const standardError = Math.sqrt(
+    pooledRate * (1 - pooledRate) * (1 / variantSessions + 1 / controlSessions)
+  );
 
   if (standardError <= 0) return result;
 

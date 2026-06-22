@@ -10,7 +10,12 @@ import { GetCollectionStatusHandler } from "./handler";
 /**
  * Creates the get collection status endpoint
  */
-export function createGetCollectionStatusRoute(config: GetCollectionStatusConfig, taskRunnerFactory: TaskRunnerFactory, access?: AccessGuard, basePath = "/translate"): Endpoint {
+export function createGetCollectionStatusRoute(
+  config: GetCollectionStatusConfig,
+  taskRunnerFactory: TaskRunnerFactory,
+  access?: AccessGuard,
+  basePath = "/translate"
+): Endpoint {
   const handler = new GetCollectionStatusHandler(config, taskRunnerFactory);
 
   return {

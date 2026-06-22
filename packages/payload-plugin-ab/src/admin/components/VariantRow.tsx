@@ -43,7 +43,8 @@ export function VariantRow({
         borderRadius: 4,
         marginBottom: 6,
         background: "var(--theme-elevation-50)",
-      }}>
+      }}
+    >
       <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: "var(--theme-elevation-800)" }}>
         {variant.title}
       </span>
@@ -62,7 +63,12 @@ export function VariantRow({
         <span className="ab-percent-suffix">%</span>
       </div>
 
-      <button type="button" onClick={openDrawer} className="ab-variant-icon-btn" title="Edit variant">
+      <button
+        type="button"
+        onClick={openDrawer}
+        className="ab-variant-icon-btn"
+        title="Edit variant"
+      >
         <EditIcon />
       </button>
 
@@ -70,7 +76,8 @@ export function VariantRow({
         type="button"
         onClick={onDelete}
         className="ab-variant-icon-btn ab-variant-icon-btn--danger"
-        title="Remove variant">
+        title="Remove variant"
+      >
         <TrashIcon />
       </button>
 

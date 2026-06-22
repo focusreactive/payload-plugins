@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { scoreInclusive } from "../../src/engine/inclusiveScore";
 
-const ALL = ["Age", "Appearance & body", "Culture, race & religion", "Disability", "Gendered language", "Sexual orientation", "Other"];
+const ALL = [
+  "Age",
+  "Appearance & body",
+  "Culture, race & religion",
+  "Disability",
+  "Gendered language",
+  "Sexual orientation",
+  "Other",
+];
 
 describe("scoreInclusive", () => {
   it("returns 100 and all-clean when there are no flags", () => {
@@ -14,8 +22,18 @@ describe("scoreInclusive", () => {
   it("groups flags by category and lists remaining categories as clean", () => {
     const r = scoreInclusive(
       [
-        { category: "Gendered langkuage", term: "chairman", suggestion: "chair, chairperson", location: "Section 1, ¶3" },
-        { category: "Gendered language", term: "manpower", suggestion: "workforce, staff", location: "Section 4, ¶2" },
+        {
+          category: "Gendered langkuage",
+          term: "chairman",
+          suggestion: "chair, chairperson",
+          location: "Section 1, ¶3",
+        },
+        {
+          category: "Gendered language",
+          term: "manpower",
+          suggestion: "workforce, staff",
+          location: "Section 4, ¶2",
+        },
       ],
       ALL
     );

@@ -3,7 +3,7 @@ import type { CommentsPluginConfig } from "../../types";
 
 export function overrideCommentsCollection(
   config: CollectionConfig,
-  overrides: CommentsPluginConfig["overrides"],
+  overrides: CommentsPluginConfig["overrides"]
 ): CollectionConfig {
   const { access, admin, hooks, fields } = overrides ?? {};
 

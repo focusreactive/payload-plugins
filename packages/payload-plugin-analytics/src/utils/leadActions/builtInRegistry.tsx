@@ -1,4 +1,13 @@
-import { Phone, Mail, Navigation, MessageCircle, Send, ExternalLink, CalendarCheck, FormInput } from "lucide-react";
+import {
+  Phone,
+  Mail,
+  Navigation,
+  MessageCircle,
+  Send,
+  ExternalLink,
+  CalendarCheck,
+  FormInput,
+} from "lucide-react";
 import type { LeadActionRegistry } from "../../types/leadActions";
 
 export const BUILT_IN_LEAD_ACTION_REGISTRY: LeadActionRegistry = {

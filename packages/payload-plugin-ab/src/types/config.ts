@@ -30,12 +30,19 @@ export interface CollectionABConfig<TVariantData extends object = object> {
    * Return null to skip writing the manifest for that document.
    * Called once per locale when localization is enabled.
    */
-  generatePath: (args: { doc: Record<string, unknown>; locale: string | undefined }) => string | null;
+  generatePath: (args: {
+    doc: Record<string, unknown>;
+    locale: string | undefined;
+  }) => string | null;
   /**
    * Builds the data stored per variant in the manifest.
    * When omitted, auto-generates: { bucket: variantSlug, rewritePath: generatePath(variantDoc), passPercentage: _abPassPercentage }
    */
-  generateVariantData?: (args: { doc: Record<string, unknown>; variantDoc: Record<string, unknown>; locale: string | undefined }) => TVariantData;
+  generateVariantData?: (args: {
+    doc: Record<string, unknown>;
+    variantDoc: Record<string, unknown>;
+    locale: string | undefined;
+  }) => TVariantData;
 }
 
 export interface AbTestingPluginConfig<TVariantData extends object = object> {

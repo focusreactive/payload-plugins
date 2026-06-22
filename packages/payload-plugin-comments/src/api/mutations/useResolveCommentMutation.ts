@@ -18,7 +18,8 @@ export function useResolveCommentMutation() {
 
   return useMutation(
     {
-      mutationFn: ({ commentId, resolved }: ResolveCommentVariables) => resolveComment(commentId, resolved),
+      mutationFn: ({ commentId, resolved }: ResolveCommentVariables) =>
+        resolveComment(commentId, resolved),
       onMutate: async (variables) => {
         const { ctx, commentId, resolved, currentUser } = variables;
         const key = getCommentsKey(ctx);
@@ -28,15 +29,15 @@ export function useResolveCommentMutation() {
 
         queryClient.setQueryData<Comment[]>(key, (prev = []) =>
           prev.map((c) =>
-            c.id === commentId ?
-              {
-                ...c,
-                isResolved: resolved,
-                resolvedAt: resolved ? new Date().toISOString() : null,
-                resolvedBy: resolved ? currentUser : null,
-              }
-            : c,
-          ),
+            c.id === commentId
+              ? {
+                  ...c,
+                  isResolved: resolved,
+                  resolvedAt: resolved ? new Date().toISOString() : null,
+                  resolvedBy: resolved ? currentUser : null,
+                }
+              : c
+          )
         );
 
         return { snapshot, ctx };
@@ -52,6 +53,6 @@ export function useResolveCommentMutation() {
         void queryClient.invalidateQueries({ queryKey: getCommentsKey(context.ctx) });
       },
     },
-    queryClient,
+    queryClient
   );
 }

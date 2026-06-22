@@ -113,7 +113,12 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   async reclaimStaleJobs(): Promise<number> {
     const cutoff = new Date(Date.now() - this.config.staleJobTimeoutMs).toISOString();
     return this.resetProcessing({
-      and: [{ taskSlug: { equals: this.config.taskName } }, { processing: { equals: true } }, { completedAt: { exists: false } }, { updatedAt: { less_than: cutoff } }],
+      and: [
+        { taskSlug: { equals: this.config.taskName } },
+        { processing: { equals: true } },
+        { completedAt: { exists: false } },
+        { updatedAt: { less_than: cutoff } },
+      ],
     });
   }
 
@@ -187,7 +192,10 @@ export class PayloadJobsTaskRunner implements TaskRunner {
    * is effectively free. If/when the upstream drizzle bug is fixed, this can
    * collapse back to a single SQL query.
    */
-  async findByCollection(collectionSlug: CollectionSlug, documentIds?: Array<string | number>): Promise<Task[]> {
+  async findByCollection(
+    collectionSlug: CollectionSlug,
+    documentIds?: Array<string | number>
+  ): Promise<Task[]> {
     const all = await this.findJobsInternal(undefined, { pagination: false });
     const bySlug = all.filter((t) => t.input.collectionSlug === collectionSlug);
     if (!documentIds?.length) return bySlug;
@@ -230,7 +238,10 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   /**
    * Internal method to find jobs with where clause
    */
-  private async findJobsInternal(where?: Where, params?: { limit?: number; pagination?: boolean }): Promise<Task[]> {
+  private async findJobsInternal(
+    where?: Where,
+    params?: { limit?: number; pagination?: boolean }
+  ): Promise<Task[]> {
     const and: Where[] = [{ taskSlug: { equals: this.config.taskName } }];
     if (where) and.push(where);
 

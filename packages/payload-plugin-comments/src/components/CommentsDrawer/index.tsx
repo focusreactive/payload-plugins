@@ -19,7 +19,11 @@ export function CommentsDrawer({ slug }: Props) {
   const prevOpenDeleteSlugsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    const openDeleteSlugs = new Set(Object.keys(modalState).filter((key) => key.startsWith(DELETE_MODAL_SLUG_PREFIX) && modalState[key]?.isOpen));
+    const openDeleteSlugs = new Set(
+      Object.keys(modalState).filter(
+        (key) => key.startsWith(DELETE_MODAL_SLUG_PREFIX) && modalState[key]?.isOpen
+      )
+    );
 
     const prevOpenDeleteSlugs = prevOpenDeleteSlugsRef.current;
     const aDeleteModalClosed = [...prevOpenDeleteSlugs].some((key) => !openDeleteSlugs.has(key));
@@ -47,8 +51,20 @@ export function CommentsDrawer({ slug }: Props) {
 
   return (
     <>
-      {isOpen && containerRef.current && createPortal(<div className="fixed inset-0 bg-black/50 z-29 cursor-pointer" onClick={() => closeModal(slug)} />, containerRef.current)}
-      <Drawer className={cn("comments-drawer max-w-150 w-full m-0 ml-auto relative")} slug={slug} Header={<Header slug={slug} />}>
+      {isOpen &&
+        containerRef.current &&
+        createPortal(
+          <div
+            className="fixed inset-0 bg-black/50 z-29 cursor-pointer"
+            onClick={() => closeModal(slug)}
+          />,
+          containerRef.current
+        )}
+      <Drawer
+        className={cn("comments-drawer max-w-150 w-full m-0 ml-auto relative")}
+        slug={slug}
+        Header={<Header slug={slug} />}
+      >
         <CommentsPanel className="pb-5" />
       </Drawer>
     </>

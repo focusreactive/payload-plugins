@@ -19,11 +19,15 @@ function normalizeSslMode(connectionString: string): string {
   return connectionString.replace(/sslmode=(?:prefer|require|verify-ca)\b/u, "sslmode=verify-full");
 }
 
-export function createDatabaseAdapter(options: CreateDatabaseAdapterOptions = {}): ReturnType<typeof postgresAdapter> {
+export function createDatabaseAdapter(
+  options: CreateDatabaseAdapterOptions = {}
+): ReturnType<typeof postgresAdapter> {
   return postgresAdapter({
     migrationDir,
     pool: {
-      connectionString: normalizeSslMode(options.connectionString ?? process.env.DATABASE_URL ?? ""),
+      connectionString: normalizeSslMode(
+        options.connectionString ?? process.env.DATABASE_URL ?? ""
+      ),
     },
     prodMigrations: migrations,
     push: options.push ?? false,

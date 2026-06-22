@@ -9,9 +9,36 @@ afterEach(() => {
 
 const sessionsBody = {
   rows: [
-    { sessionId: "s1", landingPage: "/", source: "google", deviceCategory: ["desktop"], country: ["US"], startedAt: "2026-05-13T10:00:00.000Z", eventCount: 5, hadLeadAction: false },
-    { sessionId: "s2", landingPage: "/", source: "direct", deviceCategory: ["desktop"], country: ["DE"], startedAt: "2026-05-13T10:01:00.000Z", eventCount: 3, hadLeadAction: false },
-    { sessionId: "s3", landingPage: "/", source: "google", deviceCategory: ["mobile"], country: ["US"], startedAt: "2026-05-13T10:02:00.000Z", eventCount: 2, hadLeadAction: false },
+    {
+      sessionId: "s1",
+      landingPage: "/",
+      source: "google",
+      deviceCategory: ["desktop"],
+      country: ["US"],
+      startedAt: "2026-05-13T10:00:00.000Z",
+      eventCount: 5,
+      hadLeadAction: false,
+    },
+    {
+      sessionId: "s2",
+      landingPage: "/",
+      source: "direct",
+      deviceCategory: ["desktop"],
+      country: ["DE"],
+      startedAt: "2026-05-13T10:01:00.000Z",
+      eventCount: 3,
+      hadLeadAction: false,
+    },
+    {
+      sessionId: "s3",
+      landingPage: "/",
+      source: "google",
+      deviceCategory: ["mobile"],
+      country: ["US"],
+      startedAt: "2026-05-13T10:02:00.000Z",
+      eventCount: 2,
+      hadLeadAction: false,
+    },
   ],
   pagination: { cursor: null, hasMore: false },
 };
@@ -34,16 +61,29 @@ describe("useSessionsOptionsQuery", () => {
   it("projects rows into unique, sorted sources and countries", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(sessionsBody)));
     const { Wrapper } = createWrapper();
-    const { result } = renderHook(() => useSessionsOptionsQuery({ preset: "last-7d" }), { wrapper: Wrapper });
+    const { result } = renderHook(() => useSessionsOptionsQuery({ preset: "last-7d" }), {
+      wrapper: Wrapper,
+    });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.sources).toEqual(["direct", "google"]);
     expect(result.current.data?.countries).toEqual(["DE", "US"]);
   });
 
   it("surfaces setupRequired when the server response sets it", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ rows: [], pagination: { cursor: null, hasMore: false }, setupRequired: true })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          rows: [],
+          pagination: { cursor: null, hasMore: false },
+          setupRequired: true,
+        })
+      )
+    );
     const { Wrapper } = createWrapper();
-    const { result } = renderHook(() => useSessionsOptionsQuery({ preset: "last-7d" }), { wrapper: Wrapper });
+    const { result } = renderHook(() => useSessionsOptionsQuery({ preset: "last-7d" }), {
+      wrapper: Wrapper,
+    });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.setupRequired).toBe(true);
     expect(result.current.data?.sources).toEqual([]);

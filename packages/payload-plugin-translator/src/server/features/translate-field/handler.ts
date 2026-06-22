@@ -4,12 +4,21 @@ import { getByPath, ServerResponse } from "../../shared";
 import { translateContent } from "../../modules/translation-pipeline";
 
 import { FieldTranslationInputSchema, MAX_FIELD_VALUE_BYTES } from "./model";
-import type { FieldTranslationConfig, FieldTranslationNotice, FieldTranslationResult } from "./model";
+import type {
+  FieldTranslationConfig,
+  FieldTranslationNotice,
+  FieldTranslationResult,
+} from "./model";
 import { resolveFieldSubtree } from "./resolveFieldSubtree";
 
-const byteLength = (value: unknown): number => new TextEncoder().encode(JSON.stringify(value) ?? "").length;
+const byteLength = (value: unknown): number =>
+  new TextEncoder().encode(JSON.stringify(value) ?? "").length;
 
-const noop = (value: unknown, level: FieldTranslationNotice["level"], message: string): FieldTranslationResult => ({
+const noop = (
+  value: unknown,
+  level: FieldTranslationNotice["level"],
+  message: string
+): FieldTranslationResult => ({
   status: "noop",
   value,
   notice: { level, message },
@@ -39,7 +48,10 @@ export class TranslateFieldHandler {
     const { collection_slug, field_path, target_lng, source_lng, doc_id } = parsed.data;
 
     const fields = this.config.schemaMap.get(collection_slug);
-    if (!fields) return ServerResponse.badRequest(`Collection "${collection_slug}" is not available for translation`);
+    if (!fields)
+      return ServerResponse.badRequest(
+        `Collection "${collection_slug}" is not available for translation`
+      );
 
     // Read the source value from the saved document in `source_lng` (fallbackLocale: false so an
     // empty source reads as empty → noop, not a fallback). The doc also lets the resolver
@@ -56,24 +68,43 @@ export class TranslateFieldHandler {
     // Guard the *translated* payload (held synchronously through the provider call), not the
     // request body, which now carries no field value.
     if (byteLength(sourceValue) > MAX_FIELD_VALUE_BYTES) {
-      return ServerResponse.custom(`Field value exceeds the ${MAX_FIELD_VALUE_BYTES}-byte limit`, 413);
+      return ServerResponse.custom(
+        `Field value exceeds the ${MAX_FIELD_VALUE_BYTES}-byte limit`,
+        413
+      );
     }
 
     const resolution = resolveFieldSubtree(fields, field_path, sourceValue, sourceDoc);
 
     if (resolution.status === "not-found") {
-      return ServerResponse.badRequest(`Field path "${field_path}" was not found in collection "${collection_slug}"`);
+      return ServerResponse.badRequest(
+        `Field path "${field_path}" was not found in collection "${collection_slug}"`
+      );
     }
     if (resolution.status === "inside-blocks") {
-      return ServerResponse.success(noop(sourceValue, "info", "Couldn't resolve the block for this field in the source document"));
+      return ServerResponse.success(
+        noop(
+          sourceValue,
+          "info",
+          "Couldn't resolve the block for this field in the source document"
+        )
+      );
     }
     if (resolution.status === "localized-list-ancestor") {
       // Inside a localized blocks/array: its order/content is independent per locale, so the path
       // index can't be matched to the source locale. Translate the whole document instead.
-      return ServerResponse.success(noop(sourceValue, "warning", "This field is inside a localized block — translate the whole document instead, so blocks stay aligned across locales"));
+      return ServerResponse.success(
+        noop(
+          sourceValue,
+          "warning",
+          "This field is inside a localized block — translate the whole document instead, so blocks stay aligned across locales"
+        )
+      );
     }
     if (resolution.status === "not-translatable") {
-      return ServerResponse.success(noop(sourceValue, "info", "Nothing to translate in this field"));
+      return ServerResponse.success(
+        noop(sourceValue, "info", "Nothing to translate in this field")
+      );
     }
 
     // No `strategy`/`targetData`: a per-field translate is an explicit "translate this field now",
@@ -87,10 +118,15 @@ export class TranslateFieldHandler {
     });
 
     if (!translated) {
-      return ServerResponse.success(noop(sourceValue, "info", "Nothing to translate in this field"));
+      return ServerResponse.success(
+        noop(sourceValue, "info", "Nothing to translate in this field")
+      );
     }
 
-    const result: FieldTranslationResult = { status: "translated", value: translated[resolution.fieldName] };
+    const result: FieldTranslationResult = {
+      status: "translated",
+      value: translated[resolution.fieldName],
+    };
     return ServerResponse.success(result);
   }
 }

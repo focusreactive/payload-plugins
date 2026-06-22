@@ -38,7 +38,13 @@ function emptyResult(page: number, limit: number): PostsResult {
   };
 }
 
-async function searchPostsQuery(query: string, page: number, limit: number, locale: Locale, category: string | undefined): Promise<PostsResult> {
+async function searchPostsQuery(
+  query: string,
+  page: number,
+  limit: number,
+  locale: Locale,
+  category: string | undefined
+): Promise<PostsResult> {
   const payload = await getPayloadClient();
   const embedding = await generateEmbedding(query);
   const pool = payload.db.pool as unknown as Pool;
@@ -95,13 +101,30 @@ async function searchPostsQuery(query: string, page: number, limit: number, loca
   };
 }
 
-const searchPostsCached = cache(async (query: string, page: number, limit: number, locale: Locale, category: string | undefined) =>
-  unstable_cache(() => searchPostsQuery(query, page, limit, locale, category), ["searchPosts", query, page.toString(), limit.toString(), locale, category ?? ""], {
-    tags: [cacheTag({ locale, type: "postsList" })],
-  })()
+const searchPostsCached = cache(
+  async (
+    query: string,
+    page: number,
+    limit: number,
+    locale: Locale,
+    category: string | undefined
+  ) =>
+    unstable_cache(
+      () => searchPostsQuery(query, page, limit, locale, category),
+      ["searchPosts", query, page.toString(), limit.toString(), locale, category ?? ""],
+      {
+        tags: [cacheTag({ locale, type: "postsList" })],
+      }
+    )()
 );
 
-export const searchPosts = async ({ query, page = 1, limit = BLOG_CONFIG.postsPerPage, locale, category }: SearchPostsOptions): Promise<PostsResult> => {
+export const searchPosts = async ({
+  query,
+  page = 1,
+  limit = BLOG_CONFIG.postsPerPage,
+  locale,
+  category,
+}: SearchPostsOptions): Promise<PostsResult> => {
   const resolvedLocale = await resolveLocale(locale);
 
   try {

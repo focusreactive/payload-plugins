@@ -24,7 +24,13 @@ interface Position {
   width: number;
 }
 
-export function MentionDropdown({ users, selectedIndex, onSelect, onClose, anchorRef }: MentionDropdownProps) {
+export function MentionDropdown({
+  users,
+  selectedIndex,
+  onSelect,
+  onClose,
+  anchorRef,
+}: MentionDropdownProps) {
   const { usernameFieldPath } = useComments();
   const { t } = useTranslation();
   const unknownLabel = t("comments:unknownAuthor" as never) ?? FALLBACK_USERNAME;
@@ -44,7 +50,9 @@ export function MentionDropdown({ users, selectedIndex, onSelect, onClose, ancho
       const fitsAbove = rect.top >= height + GAP;
 
       setPosition({
-        top: fitsAbove ? rect.top + window.scrollY - height - GAP : rect.bottom + window.scrollY + GAP,
+        top: fitsAbove
+          ? rect.top + window.scrollY - height - GAP
+          : rect.bottom + window.scrollY + GAP,
         left: rect.left + window.scrollX,
         width: rect.width,
       });
@@ -105,13 +113,24 @@ export function MentionDropdown({ users, selectedIndex, onSelect, onClose, ancho
         zIndex: 9999,
       }}
     >
-      <div ref={scrollRef} className="bg-(--theme-elevation-50) rounded-md shadow-[0_2px_12px_-2px_rgba(0,0,0,0.18)] max-h-25 overflow-y-auto" onMouseDown={(e) => e.preventDefault()}>
+      <div
+        ref={scrollRef}
+        className="bg-(--theme-elevation-50) rounded-md shadow-[0_2px_12px_-2px_rgba(0,0,0,0.18)] max-h-25 overflow-y-auto"
+        onMouseDown={(e) => e.preventDefault()}
+      >
         <PopupList.ButtonGroup>
           {users.length === 0 ? (
-            <p className="m-0 px-3 py-1.5 text-[13px] text-(--theme-elevation-500)">{t("comments:noMentionMatches" as never)}</p>
+            <p className="m-0 px-3 py-1.5 text-[13px] text-(--theme-elevation-500)">
+              {t("comments:noMentionMatches" as never)}
+            </p>
           ) : (
             users.map((user, index) => (
-              <PopupList.Button key={user.id} active={index === selectedIndex} className="hover:bg-(--theme-elevation-100) rounded-none" onClick={() => onSelect(user)}>
+              <PopupList.Button
+                key={user.id}
+                active={index === selectedIndex}
+                className="hover:bg-(--theme-elevation-100) rounded-none"
+                onClick={() => onSelect(user)}
+              >
                 @{resolveUsername(user, usernameFieldPath, unknownLabel)}
               </PopupList.Button>
             ))

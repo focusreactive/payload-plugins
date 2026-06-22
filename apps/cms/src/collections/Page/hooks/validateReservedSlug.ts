@@ -8,7 +8,8 @@ import type { Page } from "@/payload-types";
 
 const RESERVED_SLUGS: readonly string[] = [BLOG_CONFIG.slug];
 
-const generateErrorMessage = (slug: string) => `Slug "${slug}" is reserved and cannot be used for pages`;
+const generateErrorMessage = (slug: string) =>
+  `Slug "${slug}" is reserved and cannot be used for pages`;
 
 export const validateReservedSlug: CollectionBeforeChangeHook<Page> = ({ data }) => {
   if (!data?.slug) {
@@ -41,7 +42,12 @@ export const validateReservedPath: CollectionBeforeChangeHook<Page> = ({ data, r
     if (fullPath) {
       const firstSegment = fullPath.split("/")[0];
       if (RESERVED_SLUGS.includes(firstSegment as (typeof RESERVED_SLUGS)[number])) {
-        throw new APIError(`Path "${fullPath}" starts with reserved slug "${firstSegment}" and cannot be used for pages`, 400, undefined, true);
+        throw new APIError(
+          `Path "${fullPath}" starts with reserved slug "${firstSegment}" and cannot be used for pages`,
+          400,
+          undefined,
+          true
+        );
       }
     }
   }

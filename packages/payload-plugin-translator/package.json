@@ -53,6 +53,8 @@
     "dev": "bun run build:swc -- --watch --copy-files",
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
+    "format": "ultracite fix",
+    "format:check": "ultracite check",
     "test": "vitest run",
     "test:watch": "vitest",
     "check-types": "tsgo --noEmit -p tsconfig.check.json"

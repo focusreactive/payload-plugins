@@ -23,12 +23,23 @@ export function Header({ drawerSlug, total, totalStatus }: HeaderProps) {
         {totalStatus === "idle" ? null : <Pill variant={totalStatus}>{total}</Pill>}
       </div>
 
-      <button aria-label="Close" className="drawer__header__close" onClick={() => closeModal(drawerSlug)} type="button">
+      <button
+        aria-label="Close"
+        className="drawer__header__close"
+        onClick={() => closeModal(drawerSlug)}
+        type="button"
+      >
         <XIcon />
       </button>
 
       <div className="absolute inset-x-0 bottom-0 h-[2px] bg-neutral-150">
-        <i className={cn("block h-full", totalStatus === "idle" ? undefined : statusVar({ status: totalStatus }))} style={{ width: `${total}%`, background: "var(--seo-c)" }} />
+        <i
+          className={cn(
+            "block h-full",
+            totalStatus === "idle" ? undefined : statusVar({ status: totalStatus })
+          )}
+          style={{ width: `${total}%`, background: "var(--seo-c)" }}
+        />
       </div>
     </div>
   );

@@ -18,12 +18,14 @@ export class GetDocumentStatusHandler {
 
   async handle(req: PayloadRequest): Promise<Response> {
     const validationResult = GetDocumentStatusInputSchema.safeParse(req.routeParams);
-    if (validationResult.error) return ServerResponse.validationError(validationResult.error.issues);
+    if (validationResult.error)
+      return ServerResponse.validationError(validationResult.error.issues);
 
     const { collection_slug, collection_id } = validationResult.data;
 
     const collectionSlug = isCollectionAvailable(collection_slug, this.config.availableCollections);
-    if (!collectionSlug) return ServerResponse.badRequest("Collection not available for translation");
+    if (!collectionSlug)
+      return ServerResponse.badRequest("Collection not available for translation");
 
     const runner = this.taskRunnerFactory.create(req.payload);
     const tasks = await runner.findByCollection(collectionSlug, [collection_id]);

@@ -8,7 +8,9 @@ export async function ensureLanguagePack(locale: string, supported: string[]): P
   if (lang === "en" || loaded.has(lang) || !supported.includes(lang)) return;
 
   try {
-    await import(/* @vite-ignore */ `yoastseo/build/languageProcessing/languages/${lang}/Researcher`);
+    await import(
+      /* @vite-ignore */ `yoastseo/build/languageProcessing/languages/${lang}/Researcher`
+    );
 
     loaded.add(lang);
   } catch {}

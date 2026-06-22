@@ -11,7 +11,9 @@ export function withSectionVisibility(block: Block): Block {
     admin: { hidden: true },
   };
 
-  const alreadyHasField = block.fields.some((field) => "name" in field && field.name === HIDDEN_FIELD_NAME);
+  const alreadyHasField = block.fields.some(
+    (field) => "name" in field && field.name === HIDDEN_FIELD_NAME
+  );
 
   return {
     ...block,

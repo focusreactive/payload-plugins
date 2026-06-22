@@ -11,7 +11,16 @@ import type { HeroBlock } from "@/payload-types";
 
 type Props = HeroBlock;
 
-export async function HeroBlockComponent({ variant, eyebrow, title, richText, actions, image, section, id }: Props) {
+export async function HeroBlockComponent({
+  variant,
+  eyebrow,
+  title,
+  richText,
+  actions,
+  image,
+  section,
+  id,
+}: Props) {
   const locale = await resolveLocale();
 
   return (

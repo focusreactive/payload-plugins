@@ -1,6 +1,9 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { kpisMock } from "../../../../src/services/analyticsService/mocks/kpis";
-import { setActiveExistingRefs, __clearActiveExistingRefs } from "../../../../src/services/pageFilter/activeRefsHolder";
+import {
+  setActiveExistingRefs,
+  __clearActiveExistingRefs,
+} from "../../../../src/services/pageFilter/activeRefsHolder";
 
 // The kpis mock is now a session-level recompute-shape generator (see kpis.mock.test.ts
 // for the filtering behavior). This file keeps the dateRange comparison-shape contract.

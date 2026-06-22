@@ -24,7 +24,11 @@ export function BlogFilterProvider({ children }: { children: React.ReactNode }) 
     });
   };
 
-  return <BlogFilterContext value={{ isPending, pendingHref: isPending ? pendingHref : null, navigate }}>{children}</BlogFilterContext>;
+  return (
+    <BlogFilterContext value={{ isPending, pendingHref: isPending ? pendingHref : null, navigate }}>
+      {children}
+    </BlogFilterContext>
+  );
 }
 
 export function useBlogFilter(): BlogFilterContextValue {

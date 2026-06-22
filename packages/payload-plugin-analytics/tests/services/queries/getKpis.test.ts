@@ -15,7 +15,13 @@ describe("getKpis", () => {
       expect.objectContaining({
         property: "properties/12345",
         dateRanges: [{ startDate: "2026-05-04", endDate: "2026-05-06", name: "current" }],
-        metrics: expect.arrayContaining([{ name: "sessions" }, { name: "totalUsers" }, { name: "screenPageViews" }, { name: "bounceRate" }, { name: "averageSessionDuration" }]),
+        metrics: expect.arrayContaining([
+          { name: "sessions" },
+          { name: "totalUsers" },
+          { name: "screenPageViews" },
+          { name: "bounceRate" },
+          { name: "averageSessionDuration" },
+        ]),
         dimensions: [{ name: "date" }],
       })
     );
@@ -69,7 +75,11 @@ describe("getKpis", () => {
       comparison: { kind: "previous-period" },
     });
     expect(res.comparisonSeries).toBeDefined();
-    expect(res.comparisonSeries?.map((p) => p.date)).toEqual(["2026-04-27", "2026-04-28", "2026-04-29"]);
+    expect(res.comparisonSeries?.map((p) => p.date)).toEqual([
+      "2026-04-27",
+      "2026-04-28",
+      "2026-04-29",
+    ]);
     expect(res.comparisonSeries?.[0]?.sessions).toBe(100);
   });
 
@@ -86,7 +96,13 @@ describe("getKpis", () => {
     await getKpis("12345", { dateRange: { from: "2026-05-04", to: "2026-05-06" } }, null);
     expect(fake.runReport).toHaveBeenCalledWith(
       expect.objectContaining({
-        metrics: expect.arrayContaining([{ name: "sessions" }, { name: "totalUsers" }, { name: "screenPageViews" }, { name: "bounceRate" }, { name: "averageSessionDuration" }]),
+        metrics: expect.arrayContaining([
+          { name: "sessions" },
+          { name: "totalUsers" },
+          { name: "screenPageViews" },
+          { name: "bounceRate" },
+          { name: "averageSessionDuration" },
+        ]),
         dimensions: [{ name: "date" }],
       })
     );
@@ -129,7 +145,13 @@ describe("getKpis", () => {
 
   it("excludes a deleted-ref session from current totals under pageFilter", async () => {
     const r = (sessionId: string, pageRef: string, eventName: string, elapsedMs: string) => ({
-      dimensionValues: [{ value: sessionId }, { value: "20260504" }, { value: pageRef }, { value: eventName }, { value: elapsedMs }],
+      dimensionValues: [
+        { value: sessionId },
+        { value: "20260504" },
+        { value: pageRef },
+        { value: eventName },
+        { value: elapsedMs },
+      ],
       metricValues: [{ value: "1" }],
     });
     const report = sessionLevelReport([
@@ -140,7 +162,11 @@ describe("getKpis", () => {
     ]);
     const fake = { runReport: vi.fn().mockResolvedValue([report]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    const res = await getKpis("12345", { dateRange: { from: "2026-05-04", to: "2026-05-06" } }, PAGE_FILTER);
+    const res = await getKpis(
+      "12345",
+      { dateRange: { from: "2026-05-04", to: "2026-05-06" } },
+      PAGE_FILTER
+    );
     expect(res.current.sessions).toBe(1);
     expect(res.current.pageViews).toBe(2);
     expect(res.current.users).toBe(1);
@@ -148,7 +174,13 @@ describe("getKpis", () => {
 
   it("populates comparison + comparisonSeries from the previous range under pageFilter", async () => {
     const r = (sessionId: string, date: string, pageRef: string) => ({
-      dimensionValues: [{ value: sessionId }, { value: date }, { value: pageRef }, { value: "page_view" }, { value: "1000" }],
+      dimensionValues: [
+        { value: sessionId },
+        { value: date },
+        { value: pageRef },
+        { value: "page_view" },
+        { value: "1000" },
+      ],
       metricValues: [{ value: "1" }],
     });
     // With two date ranges GA4 appends a trailing `dateRange` dim whose value is
@@ -157,10 +189,20 @@ describe("getKpis", () => {
       ...base,
       dimensionValues: [...base.dimensionValues, { value: range }],
     });
-    const report = sessionLevelReport([withRange(r("c1", "20260504", "page:1"), "current"), withRange(r("p1", "20260427", "page:1"), "previous")]);
+    const report = sessionLevelReport([
+      withRange(r("c1", "20260504", "page:1"), "current"),
+      withRange(r("p1", "20260427", "page:1"), "previous"),
+    ]);
     const fake = { runReport: vi.fn().mockResolvedValue([report]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    const res = await getKpis("12345", { dateRange: { from: "2026-05-04", to: "2026-05-06" }, comparison: { kind: "previous-period" } }, PAGE_FILTER);
+    const res = await getKpis(
+      "12345",
+      {
+        dateRange: { from: "2026-05-04", to: "2026-05-06" },
+        comparison: { kind: "previous-period" },
+      },
+      PAGE_FILTER
+    );
     expect(res.current.sessions).toBe(1);
     expect(res.comparison?.sessions).toBe(1);
     expect(res.series).toHaveLength(1);
@@ -171,6 +213,8 @@ describe("getKpis", () => {
     const err = new Error("3 INVALID_ARGUMENT: Field customEvent:fr_page_ref is unrecognized.");
     const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    await expect(getKpis("12345", { dateRange: { from: "2026-05-04", to: "2026-05-06" } }, PAGE_FILTER)).rejects.toBe(err);
+    await expect(
+      getKpis("12345", { dateRange: { from: "2026-05-04", to: "2026-05-06" } }, PAGE_FILTER)
+    ).rejects.toBe(err);
   });
 });

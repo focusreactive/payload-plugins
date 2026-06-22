@@ -1,1 +1,1 @@
-export { DocumentTranslationProgressPending } from './ui/DocumentTranslationProgressPending'
+export { DocumentTranslationProgressPending } from "./ui/DocumentTranslationProgressPending";

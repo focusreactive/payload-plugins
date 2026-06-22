@@ -71,7 +71,11 @@ export function SearchOverlay({ placeholder, activeCategory, initialQuery }: Sea
           )}
         >
           <Dialog.Title className="sr-only">{t("label")}</Dialog.Title>
-          <form role="search" onSubmit={onSubmit} className="flex items-center gap-2.5 rounded-pill border border-border-strong bg-surface pl-[18px] pr-2 shadow-[0_30px_70px_-20px_rgba(6,14,13,0.6)]">
+          <form
+            role="search"
+            onSubmit={onSubmit}
+            className="flex items-center gap-2.5 rounded-pill border border-border-strong bg-surface pl-[18px] pr-2 shadow-[0_30px_70px_-20px_rgba(6,14,13,0.6)]"
+          >
             <Search aria-hidden className="size-[18px] flex-none text-primary" />
             <label htmlFor="blog-search-input" className="sr-only">
               {t("label")}

@@ -1,1 +1,1 @@
-export { createCancelRoute } from './route'
+export { createCancelRoute } from "./route";

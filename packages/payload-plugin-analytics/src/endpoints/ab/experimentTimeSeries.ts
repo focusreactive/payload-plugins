@@ -20,7 +20,8 @@ export function buildAbExperimentTimeSeriesEndpoint(config: AnalyticsPluginConfi
       }
 
       const parsed = AbExperimentQuerySchema.safeParse(body);
-      if (!parsed.success) return Response.json({ error: formatZodIssues(parsed.error.issues) }, { status: 400 });
+      if (!parsed.success)
+        return Response.json({ error: formatZodIssues(parsed.error.issues) }, { status: 400 });
 
       try {
         const result = await getAbTimeSeries(parsed.data.manifestKey, parsed.data);
@@ -28,7 +29,8 @@ export function buildAbExperimentTimeSeriesEndpoint(config: AnalyticsPluginConfi
         return Response.json(result);
       } catch (err) {
         const gate = abSetupGate(err);
-        if (gate) return Response.json({ series: [], significanceDates: {}, missing: gate.missing });
+        if (gate)
+          return Response.json({ series: [], significanceDates: {}, missing: gate.missing });
 
         const mapped = mapGa4Error(err);
 

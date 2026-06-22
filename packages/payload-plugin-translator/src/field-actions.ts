@@ -18,7 +18,10 @@ import type { RawPayloadComponentExport } from "./client/shared/types/PayloadCom
  * @param control - Import-map reference to the control component.
  * @returns The field with the control positioned.
  */
-export type FieldControlPositioner = <T extends Field>(field: T, control: RawPayloadComponentExport) => T;
+export type FieldControlPositioner = <T extends Field>(
+  field: T,
+  control: RawPayloadComponentExport
+) => T;
 
 /**
  * Default positioner: append the control to the field's `admin.components.beforeInput`,
@@ -26,7 +29,9 @@ export type FieldControlPositioner = <T extends Field>(field: T, control: RawPay
  * preserving any components already declared on the field.
  */
 export const beforeInputPositioner: FieldControlPositioner = (field, control) => {
-  const withAdmin = field as typeof field & { admin?: { components?: { beforeInput?: unknown[] } } };
+  const withAdmin = field as typeof field & {
+    admin?: { components?: { beforeInput?: unknown[] } };
+  };
   const existing = withAdmin.admin?.components?.beforeInput ?? [];
 
   return {

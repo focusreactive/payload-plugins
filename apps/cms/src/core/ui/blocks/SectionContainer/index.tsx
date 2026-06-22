@@ -19,7 +19,12 @@ export const sectionVariants = cva("overflow-clip relative z-1", {
   },
 });
 
-export function SectionContainer({ children, className, containerClassName, sectionData }: ISectionContainerProps) {
+export function SectionContainer({
+  children,
+  className,
+  containerClassName,
+  sectionData,
+}: ISectionContainerProps) {
   const { id, theme, paddingY, background } = sectionData;
   const { media, overlay, opacity } = background ?? {};
 
@@ -29,7 +34,12 @@ export function SectionContainer({ children, className, containerClassName, sect
   return (
     <section
       id={id ?? undefined}
-      className={cn(sectionVariants({ paddingY }), theme && "bg-background text-foreground", "relative overflow-hidden", className)}
+      className={cn(
+        sectionVariants({ paddingY }),
+        theme && "bg-background text-foreground",
+        "relative overflow-hidden",
+        className
+      )}
       {...(theme ? { "data-theme": theme } : {})}
     >
       <Container containerData={sectionData} className={containerClassName}>
@@ -38,7 +48,14 @@ export function SectionContainer({ children, className, containerClassName, sect
 
       {hasMedia && (
         <>
-          <Media resource={media} className="absolute inset-0 size-full -z-2 pointer-events-none" imgClassName="size-full object-cover " videoClassName="size-full object-cover " fill aria-hidden />
+          <Media
+            resource={media}
+            className="absolute inset-0 size-full -z-2 pointer-events-none"
+            imgClassName="size-full object-cover "
+            videoClassName="size-full object-cover "
+            fill
+            aria-hidden
+          />
 
           {overlay && (
             <div

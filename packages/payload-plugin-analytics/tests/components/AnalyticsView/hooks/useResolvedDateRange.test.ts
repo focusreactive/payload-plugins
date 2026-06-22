@@ -30,7 +30,9 @@ describe("useResolvedDateRange", () => {
   });
 
   it("custom range passes through", () => {
-    const { result } = renderHook(() => useResolvedDateRange({ from: "2026-04-01", to: "2026-04-30" }));
+    const { result } = renderHook(() =>
+      useResolvedDateRange({ from: "2026-04-01", to: "2026-04-30" })
+    );
     expect(result.current).toEqual({ from: "2026-04-01", to: "2026-04-30" });
   });
 });

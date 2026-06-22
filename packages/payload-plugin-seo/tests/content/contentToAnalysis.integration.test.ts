@@ -23,8 +23,15 @@ describe("content extraction → analysis (links + images)", () => {
           title: "The Best Running Shoes",
           description: "Everything about running shoes for every runner.",
           // Anchor text equals the keyphrase and points off-site → a genuine competing link.
-          links: [{ id: "1", label: "running shoes", url: "https://competitor.example/running-shoes" }],
-          image: { id: "m1", url: "/media/trail.jpg", mimeType: "image/jpeg", alt: "running shoes on a trail" },
+          links: [
+            { id: "1", label: "running shoes", url: "https://competitor.example/running-shoes" },
+          ],
+          image: {
+            id: "m1",
+            url: "/media/trail.jpg",
+            mimeType: "image/jpeg",
+            alt: "running shoes on a trail",
+          },
         },
         {
           blockType: "copy",
@@ -34,13 +41,16 @@ describe("content extraction → analysis (links + images)", () => {
     };
 
     const contentHtml = extractContent(data, { content: "sections" });
-    expect(contentHtml).toContain('<a href="https://competitor.example/running-shoes">running shoes</a>');
+    expect(contentHtml).toContain(
+      '<a href="https://competitor.example/running-shoes">running shoes</a>'
+    );
     expect(contentHtml).toContain('<img src="/media/trail.jpg" alt="running shoes on a trail" />');
 
     const input: AnalysisInput = {
       title: "The Best Running Shoes",
       slug: "best-running-shoes",
-      description: "Best running shoes for runners who want quality running shoes for daily running.",
+      description:
+        "Best running shoes for runners who want quality running shoes for daily running.",
       contentHtml,
       keyphrase: "running shoes",
       locale: "en_US",
@@ -50,7 +60,10 @@ describe("content extraction → analysis (links + images)", () => {
     const result = runAnalysis(input);
 
     const competing = result.keyphrase.checks.find((c) => c.id === "textCompetingLinks");
-    expect(competing?.data, "textCompetingLinks must resolve once a competing link exists").toBeDefined();
+    expect(
+      competing?.data,
+      "textCompetingLinks must resolve once a competing link exists"
+    ).toBeDefined();
     const items = (competing?.data as { items?: unknown[] } | undefined)?.items;
     expect(Array.isArray(items)).toBe(true);
     expect((items as unknown[]).length).toBeGreaterThan(0);
@@ -76,7 +89,10 @@ describe("content extraction → analysis (links + images)", () => {
         ],
       },
     ] as unknown as ClientField[];
-    const walkCtx: UploadWalkContext = { isUploadCollection: (slug) => slug === "media", blocksBySlug: {} };
+    const walkCtx: UploadWalkContext = {
+      isUploadCollection: (slug) => slug === "media",
+      blocksBySlug: {},
+    };
     // what reduceFieldsToValues actually yields: the upload field is a bare ID
     const formValues = {
       sections: [{ blockType: "hero", title: "The Best Running Shoes", image: 7 }],
@@ -85,7 +101,12 @@ describe("content extraction → analysis (links + images)", () => {
     const refs = collectUploadRefs(formValues, schema, walkCtx);
     expect(refs).toEqual([{ collection: "media", id: 7 }]);
 
-    const resolved = new Map([["media:7", { id: 7, url: "/media/trail.jpg", mimeType: "image/jpeg", alt: "running shoes on a trail" }]]);
+    const resolved = new Map([
+      [
+        "media:7",
+        { id: 7, url: "/media/trail.jpg", mimeType: "image/jpeg", alt: "running shoes on a trail" },
+      ],
+    ]);
     const hydrated = hydrateUploadValues(formValues, schema, walkCtx, resolved);
     const contentHtml = extractContent(hydrated, { content: "sections" });
     expect(contentHtml).toContain('<img src="/media/trail.jpg" alt="running shoes on a trail" />');
@@ -105,7 +126,9 @@ describe("content extraction → analysis (links + images)", () => {
     expect((images?.data as { count?: number } | undefined)?.count).toBe(1);
 
     const imageKeyphrase = result.keyphrase.checks.find((c) => c.id === "imageKeyphrase");
-    expect((imageKeyphrase?.data as { total?: number; matched?: number } | undefined)?.total).toBe(1);
+    expect((imageKeyphrase?.data as { total?: number; matched?: number } | undefined)?.total).toBe(
+      1
+    );
     expect((imageKeyphrase?.data as { matched?: number } | undefined)?.matched).toBe(1);
 
     expect(result.vitals.images).toBe(1);

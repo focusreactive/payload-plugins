@@ -40,7 +40,10 @@ async function findIds(payload: Payload, slug: string, publishedOnly: boolean): 
   }
 }
 
-export async function getExistingPageRefs(payload: Payload, config: ResolvedPagesConfig): Promise<Set<string>> {
+export async function getExistingPageRefs(
+  payload: Payload,
+  config: ResolvedPagesConfig
+): Promise<Set<string>> {
   const refs = new Set<string>(config.syntheticRefs);
 
   for (const { slug, publishedOnly } of config.collections) {

@@ -71,7 +71,15 @@ const registry: McpToolsRegistry = {
           collection: "page",
           locale: locale ?? "en",
         }),
-      skipKeys: ["id", "generateSlug", "parent", "folder", "_abPassPercentage", "_abVariantOf", "_abVariantPercentages"],
+      skipKeys: [
+        "id",
+        "generateSlug",
+        "parent",
+        "folder",
+        "_abPassPercentage",
+        "_abVariantOf",
+        "_abVariantPercentages",
+      ],
       tableFields: ["slug", "_status"],
       titleField: "title",
     },
@@ -108,7 +116,8 @@ const registry: McpToolsRegistry = {
 export const mcpPluginConfig = mcpPlugin({
   collections: {
     authors: {
-      description: "Blog authors. Each author has a name and an avatar image. Use this collection to read, create, update or delete authors.",
+      description:
+        "Blog authors. Each author has a name and an avatar image. Use this collection to read, create, update or delete authors.",
       enabled: {
         create: true,
         delete: true,
@@ -117,7 +126,8 @@ export const mcpPluginConfig = mcpPlugin({
       },
     },
     categories: {
-      description: "Blog categories. Each category has a localized title and URL slug. Supports localization (en/es). Use this collection to read, create, update or delete blog categories.",
+      description:
+        "Blog categories. Each category has a localized title and URL slug. Supports localization (en/es). Use this collection to read, create, update or delete blog categories.",
       enabled: {
         create: true,
         delete: true,
@@ -186,7 +196,8 @@ export const mcpPluginConfig = mcpPlugin({
       },
     },
     users: {
-      description: "CMS user accounts. Each user has a name, email, and role (admin/author/user). Authentication-enabled. Use this collection to read, create, update or delete users.",
+      description:
+        "CMS user accounts. Each user has a name, email, and role (admin/author/user). Authentication-enabled. Use this collection to read, create, update or delete users.",
       enabled: {
         create: true,
         delete: true,

@@ -16,7 +16,10 @@ export function __clearExistingRefsCache(): void {
   cache.clear();
 }
 
-export async function getCachedExistingRefs(key: string, loader: () => Promise<Set<string>>): Promise<Set<string>> {
+export async function getCachedExistingRefs(
+  key: string,
+  loader: () => Promise<Set<string>>
+): Promise<Set<string>> {
   const now = nowFn();
   const hit = cache.get(key);
 

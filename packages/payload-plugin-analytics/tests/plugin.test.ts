@@ -68,7 +68,11 @@ describe("analyticsPlugin", () => {
 
 describe("analyticsPlugin endpoint registration", () => {
   it("registers all 10 endpoints with correct paths and POST method", () => {
-    const out = analyticsPlugin(validConfig)({ admin: {}, collections: [], endpoints: [] } as Config);
+    const out = analyticsPlugin(validConfig)({
+      admin: {},
+      collections: [],
+      endpoints: [],
+    } as Config);
     expect(out.endpoints).toHaveLength(10);
     expect(out.endpoints?.map((e) => e.path).sort()).toEqual([
       "/analytics/journeys",
@@ -96,7 +100,9 @@ describe("analyticsPlugin endpoint registration", () => {
 
   it("returns incoming config unchanged when disabled", () => {
     const incomingEmpty = { endpoints: [] } as Config;
-    expect(analyticsPlugin({ disabled: true, ga4: validConfig.ga4 })(incomingEmpty)).toBe(incomingEmpty);
+    expect(analyticsPlugin({ disabled: true, ga4: validConfig.ga4 })(incomingEmpty)).toBe(
+      incomingEmpty
+    );
   });
 
   it("registers /admin/analytics view", () => {

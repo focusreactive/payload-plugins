@@ -21,6 +21,15 @@ export const LEAD_ACTION_EVENT_NAME = "lead_action" as const;
 
 export const FR_LEAD_TYPE_PARAM = "fr_lead_type" as const;
 
-export const BUILT_IN_LEAD_ACTION_TYPES = ["phone_click", "email_click", "directions_click", "whatsapp_click", "telegram_click", "website_click", "booking_click", "form_submit"] as const;
+export const BUILT_IN_LEAD_ACTION_TYPES = [
+  "phone_click",
+  "email_click",
+  "directions_click",
+  "whatsapp_click",
+  "telegram_click",
+  "website_click",
+  "booking_click",
+  "form_submit",
+] as const;
 
 export type BuiltInLeadActionType = (typeof BUILT_IN_LEAD_ACTION_TYPES)[number];

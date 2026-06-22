@@ -12,20 +12,11 @@ export { BlockLabelWithPresets } from "./components/presetActions/index.js";
 // Custom BlocksField with presets integration (blocksDrawer folder)
 export { BlocksFieldWithPresets } from "./components/blocksDrawer/index.js";
 export { BlockSelectorWithPresets } from "./components/blocksDrawer/index.js";
-export {
-  BeforeOpenDrawerProvider,
-  useBeforeOpenDrawer,
-} from "./components/blocksDrawer/index.js";
-export type {
-  BeforeOpenDrawerFn,
-  BeforeOpenDrawerInfo,
-} from "./components/blocksDrawer/index.js";
+export { BeforeOpenDrawerProvider, useBeforeOpenDrawer } from "./components/blocksDrawer/index.js";
+export type { BeforeOpenDrawerFn, BeforeOpenDrawerInfo } from "./components/blocksDrawer/index.js";
 
 // Shared components
-export {
-  EmptyPlaceholder,
-  DefaultBlockImage,
-} from "./components/shared/index.js";
+export { EmptyPlaceholder, DefaultBlockImage } from "./components/shared/index.js";
 export type { Preset, MediaData } from "./components/shared/index.js";
 
 // Hook for accessing plugin config

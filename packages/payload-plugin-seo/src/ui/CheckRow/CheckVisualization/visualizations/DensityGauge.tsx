@@ -12,10 +12,20 @@ export function DensityGauge({ bands, markerPct, markerLabel, markerStatus, labe
 
   const markerPx = (markerPct / 100) * dims.bar;
   const halfLabel = dims.label / 2;
-  const labelAlign = dims.label === 0 ? "-translate-x-1/2" : markerPx < halfLabel ? "translate-x-0" : markerPx > dims.bar - halfLabel ? "-translate-x-full" : "-translate-x-1/2";
+  const labelAlign =
+    dims.label === 0
+      ? "-translate-x-1/2"
+      : markerPx < halfLabel
+        ? "translate-x-0"
+        : markerPx > dims.bar - halfLabel
+          ? "-translate-x-full"
+          : "-translate-x-1/2";
 
   const firstVisibleBand = bands.findIndex((band) => band.endPct > band.startPct);
-  const lastVisibleBand = bands.reduce((acc, band, i) => (band.endPct > band.startPct ? i : acc), -1);
+  const lastVisibleBand = bands.reduce(
+    (acc, band, i) => (band.endPct > band.startPct ? i : acc),
+    -1
+  );
 
   useLayoutEffect(() => {
     const bar = barRef.current;
@@ -40,7 +50,12 @@ export function DensityGauge({ bands, markerPct, markerLabel, markerStatus, labe
         {bands.map((band, i) => (
           <i
             key={`${band.status}-${i}`}
-            className={cn("absolute inset-y-0", statusVar({ status: band.status }), i === firstVisibleBand && "rounded-l-[3px]", i === lastVisibleBand && "rounded-r-[3px]")}
+            className={cn(
+              "absolute inset-y-0",
+              statusVar({ status: band.status }),
+              i === firstVisibleBand && "rounded-l-[3px]",
+              i === lastVisibleBand && "rounded-r-[3px]"
+            )}
             style={{
               left: `${band.startPct}%`,
               width: `${band.endPct - band.startPct}%`,
@@ -50,13 +65,20 @@ export function DensityGauge({ bands, markerPct, markerLabel, markerStatus, labe
         ))}
         <span
           ref={labelRef}
-          className={cn("absolute bottom-[13px] font-mono font-bold text-[11px] whitespace-nowrap", statusVar({ status: markerStatus }), labelAlign)}
+          className={cn(
+            "absolute bottom-[13px] font-mono font-bold text-[11px] whitespace-nowrap",
+            statusVar({ status: markerStatus }),
+            labelAlign
+          )}
           style={{ left: `${markerPct}%`, color: "var(--seo-c)" }}
         >
           {markerLabel}
         </span>
         <span
-          className={cn("absolute -top-[3px] -translate-x-1/2 block w-[12px] h-[12px] rounded-full bg-neutral-0 border-2", statusVar({ status: markerStatus }))}
+          className={cn(
+            "absolute -top-[3px] -translate-x-1/2 block w-[12px] h-[12px] rounded-full bg-neutral-0 border-2",
+            statusVar({ status: markerStatus })
+          )}
           style={{ left: `${markerPct}%`, borderColor: "var(--seo-c)" }}
         />
       </div>
@@ -64,7 +86,15 @@ export function DensityGauge({ bands, markerPct, markerLabel, markerStatus, labe
         {labels.map((label, i) => (
           <span
             key={`${label.text}-${i}`}
-            className={cn("absolute whitespace-nowrap", label.pct <= 0 ? "translate-x-0" : label.pct >= 100 ? "-translate-x-full" : "-translate-x-1/2", label.emphasis === "good" && "text-seo-good")}
+            className={cn(
+              "absolute whitespace-nowrap",
+              label.pct <= 0
+                ? "translate-x-0"
+                : label.pct >= 100
+                  ? "-translate-x-full"
+                  : "-translate-x-1/2",
+              label.emphasis === "good" && "text-seo-good"
+            )}
             style={{ left: `${label.pct}%` }}
           >
             {label.text}

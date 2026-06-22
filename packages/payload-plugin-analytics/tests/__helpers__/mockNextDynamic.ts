@@ -3,7 +3,10 @@ import type { ComponentType, ReactNode } from "react";
 
 type Mod<P> = { default?: ComponentType<P> } | ComponentType<P>;
 
-export function mockNextDynamic<P>(loader: () => Promise<Mod<P>>, opts?: { loading?: () => ReactNode; ssr?: boolean }) {
+export function mockNextDynamic<P>(
+  loader: () => Promise<Mod<P>>,
+  opts?: { loading?: () => ReactNode; ssr?: boolean }
+) {
   return function Loadable(props: P) {
     const [Comp, setComp] = useState<ComponentType<P> | null>(null);
     useEffect(() => {
@@ -13,7 +16,8 @@ export function mockNextDynamic<P>(loader: () => Promise<Mod<P>>, opts?: { loadi
         if (!active) return;
         const resolved =
           mod && typeof mod === "object" && "default" in (mod as Record<string, unknown>)
-            ? ((mod as { default: ComponentType<P> }).default ?? (mod as unknown as ComponentType<P>))
+            ? ((mod as { default: ComponentType<P> }).default ??
+              (mod as unknown as ComponentType<P>))
             : (mod as ComponentType<P>);
         setComp(() => resolved);
       })();

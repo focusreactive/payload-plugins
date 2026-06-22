@@ -10,7 +10,11 @@ import { getPayloadClient } from "@/dal/payload-client";
 
 import { getAllDocuments } from "./getAllDocuments";
 
-async function getPageBySlugQuery(pathSegmentsNorm: string[], resolvedLocale: Locale, draft: boolean): Promise<RequiredDataFromCollectionSlug<"page"> | null> {
+async function getPageBySlugQuery(
+  pathSegmentsNorm: string[],
+  resolvedLocale: Locale,
+  draft: boolean
+): Promise<RequiredDataFromCollectionSlug<"page"> | null> {
   const fullPath = pathSegmentsNorm.join("/");
   const targetUrl = `/${fullPath}`;
   const payload = await getPayloadClient();
@@ -32,23 +36,32 @@ async function getPageBySlugQuery(pathSegmentsNorm: string[], resolvedLocale: Lo
   return doc ?? null;
 }
 
-export const getPageBySlug = cache(async (pathSegments: string[], locale?: Locale): Promise<RequiredDataFromCollectionSlug<"page"> | null> => {
-  const { isEnabled: draft } = await draftMode();
-  const resolvedLocale = await resolveLocale(locale);
-  const pathSegmentsNorm = pathSegments.length === 0 ? ["home"] : [...pathSegments];
-  const pathKey = pathSegmentsNorm.join("/");
+export const getPageBySlug = cache(
+  async (
+    pathSegments: string[],
+    locale?: Locale
+  ): Promise<RequiredDataFromCollectionSlug<"page"> | null> => {
+    const { isEnabled: draft } = await draftMode();
+    const resolvedLocale = await resolveLocale(locale);
+    const pathSegmentsNorm = pathSegments.length === 0 ? ["home"] : [...pathSegments];
+    const pathKey = pathSegmentsNorm.join("/");
 
-  if (draft) {
-    return getPageBySlugQuery(pathSegmentsNorm, resolvedLocale, draft);
+    if (draft) {
+      return getPageBySlugQuery(pathSegmentsNorm, resolvedLocale, draft);
+    }
+
+    const res = cacheTag({
+      locale: resolvedLocale,
+      path: pathKey,
+      type: "page",
+    });
+
+    return unstable_cache(
+      () => getPageBySlugQuery(pathSegmentsNorm, resolvedLocale, false),
+      [pathKey, resolvedLocale],
+      {
+        tags: [res],
+      }
+    )();
   }
-
-  const res = cacheTag({
-    locale: resolvedLocale,
-    path: pathKey,
-    type: "page",
-  });
-
-  return unstable_cache(() => getPageBySlugQuery(pathSegmentsNorm, resolvedLocale, false), [pathKey, resolvedLocale], {
-    tags: [res],
-  })();
-});
+);

@@ -1,5 +1,14 @@
 import type { AnalyticsPluginConfig } from "../../types/config";
-import type { AnalyticsLayoutConfig, BlockDefinition, BlockId, ResolvedBlock, ResolvedLayout, ResolvedRow, ResolvedTab, TabId } from "../../types/layout";
+import type {
+  AnalyticsLayoutConfig,
+  BlockDefinition,
+  BlockId,
+  ResolvedBlock,
+  ResolvedLayout,
+  ResolvedRow,
+  ResolvedTab,
+  TabId,
+} from "../../types/layout";
 import { getDefaultBlockRegistry, getDefaultLayout } from "./defaults";
 import { mergeBlockRegistry, mergeLayout } from "./mergeLayout";
 import { validateResolvedLayout } from "./validateLayout";

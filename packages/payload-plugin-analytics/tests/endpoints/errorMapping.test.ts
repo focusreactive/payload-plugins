@@ -37,14 +37,18 @@ describe("mapGa4Error", () => {
 
 describe("mapGa4Error setupRequired derivation", () => {
   it("flags setupRequired + missingKey when message names customEvent:fr_session_id", () => {
-    const m = mapGa4Error(new Error("3 INVALID_ARGUMENT: Field customEvent:fr_session_id is unrecognized."));
+    const m = mapGa4Error(
+      new Error("3 INVALID_ARGUMENT: Field customEvent:fr_session_id is unrecognized.")
+    );
     expect(m.status).toBe(400);
     expect(m.setupRequired).toBe(true);
     expect(m.missingKey).toBe("fr_session_id");
   });
 
   it("flags setupRequired + fr_elapsed_ms for averageCustomEvent:fr_elapsed_ms", () => {
-    const m = mapGa4Error(new Error("3 INVALID_ARGUMENT: Field averageCustomEvent:fr_elapsed_ms is unrecognized."));
+    const m = mapGa4Error(
+      new Error("3 INVALID_ARGUMENT: Field averageCustomEvent:fr_elapsed_ms is unrecognized.")
+    );
     expect(m.setupRequired).toBe(true);
     expect(m.missingKey).toBe("fr_elapsed_ms");
   });
@@ -61,13 +65,17 @@ describe("mapGa4Error setupRequired derivation", () => {
   });
 
   it("flags setupRequired + fr_session_start for customEvent:fr_session_start", () => {
-    const m = mapGa4Error(new Error("3 INVALID_ARGUMENT: Field customEvent:fr_session_start is unrecognized."));
+    const m = mapGa4Error(
+      new Error("3 INVALID_ARGUMENT: Field customEvent:fr_session_start is unrecognized.")
+    );
     expect(m.setupRequired).toBe(true);
     expect(m.missingKey).toBe("fr_session_start");
   });
 
   it("flags setupRequired + fr_lead_type for customEvent:fr_lead_type", () => {
-    const m = mapGa4Error(new Error("3 INVALID_ARGUMENT: Field customEvent:fr_lead_type is unrecognized."));
+    const m = mapGa4Error(
+      new Error("3 INVALID_ARGUMENT: Field customEvent:fr_lead_type is unrecognized.")
+    );
     expect(m.setupRequired).toBe(true);
     expect(m.missingKey).toBe("fr_lead_type");
   });

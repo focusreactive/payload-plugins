@@ -15,14 +15,18 @@ export type TranslateDocumentDependencies = {
 /**
  * Translates a single document from source language to target language
  */
-export class TranslateDocumentHandler implements Handler<TranslateDocumentInput, TranslateDocumentOutput> {
+export class TranslateDocumentHandler implements Handler<
+  TranslateDocumentInput,
+  TranslateDocumentOutput
+> {
   constructor(
     private readonly translationProvider: TranslationProvider,
     private readonly schemaMap: CollectionSchemaMap
   ) {}
 
   async handle(payload: Payload, input: TranslateDocumentInput): Promise<TranslateDocumentOutput> {
-    const { collection, collectionId, sourceLng, targetLng, strategy, publishOnTranslation } = input;
+    const { collection, collectionId, sourceLng, targetLng, strategy, publishOnTranslation } =
+      input;
 
     // Get original schema (preserves localized: true on nested fields)
     const schema = this.schemaMap.get(collection);
@@ -54,7 +58,16 @@ export class TranslateDocumentHandler implements Handler<TranslateDocumentInput,
     if (!translatedData) return { success: true };
 
     const collectionConfig = payload.collections[collection].config;
-    await this.saveTranslatedDocument(payload, collection, collectionId, translatedData, targetLng, sourceLng, collectionConfig, publishOnTranslation);
+    await this.saveTranslatedDocument(
+      payload,
+      collection,
+      collectionId,
+      translatedData,
+      targetLng,
+      sourceLng,
+      collectionConfig,
+      publishOnTranslation
+    );
 
     return { success: true };
   }

@@ -7,11 +7,11 @@ export type SyncRunnerOptions = {
    * When exceeded, oldest completed entries are removed.
    * @default 100
    */
-  maxSize?: number
+  maxSize?: number;
   /**
    * Time-to-live for completed task results in milliseconds.
    * Expired entries are removed lazily during enqueue operations.
    * @default 3600000 (1 hour)
    */
-  ttlMs?: number
-}
+  ttlMs?: number;
+};

@@ -1,4 +1,6 @@
-export function filterHiddenBlocks<T extends { _hidden?: boolean | null }>(blocks: T[] | null | undefined): T[] {
+export function filterHiddenBlocks<T extends { _hidden?: boolean | null }>(
+  blocks: T[] | null | undefined
+): T[] {
   if (!blocks) {
     return [];
   }

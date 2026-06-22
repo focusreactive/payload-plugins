@@ -30,7 +30,8 @@ export function getOIDCConfig(): OIDCConfig | null {
   }
 
   const baseUrl = getBaseUrl();
-  const redirectUri = process.env.OIDC_REDIRECT_URI || (baseUrl ? `${baseUrl}/api/auth/oidc/callback` : "");
+  const redirectUri =
+    process.env.OIDC_REDIRECT_URI || (baseUrl ? `${baseUrl}/api/auth/oidc/callback` : "");
 
   if (!redirectUri) {
     return null;

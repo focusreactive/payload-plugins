@@ -28,10 +28,7 @@ export {
 } from "./guards";
 
 // Field config
-export {
-  isFieldExcludedFromTranslation,
-  getTranslateKitFieldConfig,
-} from "./field-config";
+export { isFieldExcludedFromTranslation, getTranslateKitFieldConfig } from "./field-config";
 export type { TranslateKitFieldConfig } from "./field-config";
 
 // Lexical utilities

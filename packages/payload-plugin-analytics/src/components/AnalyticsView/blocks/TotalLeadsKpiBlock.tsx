@@ -17,5 +17,16 @@ export function TotalLeadsKpiBlock({ dateRange, comparison, className }: BlockCo
   const cur = sumTotals(data?.current.totals);
   const prev = sumTotals(data?.comparison?.totals);
 
-  return <KpiCard label="Total leads" icon={Zap} value={cur} format={formatNumber} prevValue={showCompare ? prev : null} loading={isLoading} error={error ?? undefined} className={className} />;
+  return (
+    <KpiCard
+      label="Total leads"
+      icon={Zap}
+      value={cur}
+      format={formatNumber}
+      prevValue={showCompare ? prev : null}
+      loading={isLoading}
+      error={error ?? undefined}
+      className={className}
+    />
+  );
 }

@@ -26,7 +26,10 @@ const input: AnalysisInput = {
 
 describe("buildPaper", () => {
   it("maps analysis input onto Paper text + attributes", () => {
-    const paper = buildPaper(input) as unknown as { text: string; attributes: Record<string, unknown> };
+    const paper = buildPaper(input) as unknown as {
+      text: string;
+      attributes: Record<string, unknown>;
+    };
     expect(paper.text).toBe("<p>Running shoes.</p>");
     expect(paper.attributes.keyword).toBe("running shoes");
     expect(paper.attributes.title).toBe("Best Running Shoes");

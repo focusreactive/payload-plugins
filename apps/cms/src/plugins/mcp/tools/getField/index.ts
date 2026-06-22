@@ -9,7 +9,10 @@ import type { McpToolsRegistry } from "../index";
 import { buildCollectionFieldContent } from "./buildCollectionFieldContent";
 import { buildGlobalFieldContent } from "./buildGlobalFieldContent";
 
-export function createGetFieldTool(registry: McpToolsRegistry, knownCollections: Set<CollectionSlug>): McpTool {
+export function createGetFieldTool(
+  registry: McpToolsRegistry,
+  knownCollections: Set<CollectionSlug>
+): McpTool {
   const knownCollectionSlugs = [...knownCollections].join(", ");
   const knownGlobalSlugs = Object.keys(registry.globals).join(", ");
   const allKnownSlugs = [knownCollectionSlugs, knownGlobalSlugs].filter(Boolean).join(", ");
@@ -109,14 +112,28 @@ export function createGetFieldTool(registry: McpToolsRegistry, knownCollections:
     },
     name: "getField",
     parameters: {
-      fieldPath: z.string().describe('Dot-notation path to the field, e.g. "content" or "blocks.2"'),
-      id: z.string().optional().describe("Document ID. Required when slug is a collection; ignored for globals."),
-      locale: z.string().optional().describe('Locale code, e.g. "en" or "es". Omit to use the default locale.'),
+      fieldPath: z
+        .string()
+        .describe('Dot-notation path to the field, e.g. "content" or "blocks.2"'),
+      id: z
+        .string()
+        .optional()
+        .describe("Document ID. Required when slug is a collection; ignored for globals."),
+      locale: z
+        .string()
+        .optional()
+        .describe('Locale code, e.g. "en" or "es". Omit to use the default locale.'),
       raw: z
         .boolean()
         .optional()
-        .describe("REQUIRED before any update/create: returns raw JSON instead of Markdown, including block IDs, Lexical nodes, and full array structure needed to construct a valid update payload."),
-      slug: z.string().describe(`Collection or global slug. Collections: ${knownCollectionSlugs}. Globals: ${knownGlobalSlugs}.`),
+        .describe(
+          "REQUIRED before any update/create: returns raw JSON instead of Markdown, including block IDs, Lexical nodes, and full array structure needed to construct a valid update payload."
+        ),
+      slug: z
+        .string()
+        .describe(
+          `Collection or global slug. Collections: ${knownCollectionSlugs}. Globals: ${knownGlobalSlugs}.`
+        ),
     },
   };
 }

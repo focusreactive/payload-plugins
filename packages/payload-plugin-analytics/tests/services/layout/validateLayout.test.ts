@@ -31,7 +31,10 @@ describe("validateResolvedLayout", () => {
 
   it("throws on unknown block ID", () => {
     const layout = mkLayout();
-    (layout.tabs.overview!.rows["row1"].blocks as Record<string, unknown>)["ghost"] = { order: 9, colSpan: 1 };
+    (layout.tabs.overview!.rows["row1"].blocks as Record<string, unknown>)["ghost"] = {
+      order: 9,
+      colSpan: 1,
+    };
     expect(() => validateResolvedLayout(layout, REGISTRY)).toThrow(/unknown block.*"ghost"/iu);
   });
 

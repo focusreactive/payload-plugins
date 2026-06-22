@@ -29,7 +29,19 @@ interface BlogPageContentProps {
   locale: Locale;
 }
 
-export async function BlogPageContent({ posts, currentPage, totalPages, eyebrow, blogTitle, searchPlaceholder, readMoreLabel, categories, activeCategory, searchQuery, locale }: BlogPageContentProps) {
+export async function BlogPageContent({
+  posts,
+  currentPage,
+  totalPages,
+  eyebrow,
+  blogTitle,
+  searchPlaceholder,
+  readMoreLabel,
+  categories,
+  activeCategory,
+  searchQuery,
+  locale,
+}: BlogPageContentProps) {
   const t = await getTranslations("blog");
 
   const showFeatured = currentPage === 1 && !activeCategory && !searchQuery && posts.length > 0;
@@ -51,12 +63,25 @@ export async function BlogPageContent({ posts, currentPage, totalPages, eyebrow,
 
           <div className="mt-12 flex flex-wrap items-center justify-center gap-2.5 py-2">
             <div className="flex flex-wrap gap-2.5">
-              <FilterChip href={blogHref({ q: searchQuery })} label={t("all")} isActive={!activeCategory} />
+              <FilterChip
+                href={blogHref({ q: searchQuery })}
+                label={t("all")}
+                isActive={!activeCategory}
+              />
               {categories.map((category) => (
-                <FilterChip key={category.slug} href={blogHref({ category: category.slug, q: searchQuery })} label={category.title} isActive={activeCategory === category.slug} />
+                <FilterChip
+                  key={category.slug}
+                  href={blogHref({ category: category.slug, q: searchQuery })}
+                  label={category.title}
+                  isActive={activeCategory === category.slug}
+                />
               ))}
             </div>
-            <SearchOverlay placeholder={searchPlaceholder ?? ""} activeCategory={activeCategory} initialQuery={searchQuery} />
+            <SearchOverlay
+              placeholder={searchPlaceholder ?? ""}
+              activeCategory={activeCategory}
+              initialQuery={searchQuery}
+            />
           </div>
         </div>
       </section>
@@ -64,14 +89,28 @@ export async function BlogPageContent({ posts, currentPage, totalPages, eyebrow,
       <section className="pb-sectionBase pt-[clamp(28px,4vw,44px)]">
         <div className="mx-auto w-full max-w-containerMaxW px-containerBase">
           <DimWhilePending>
-            {featuredPost && <FeaturedPost post={featuredPost} readMoreLabel={readMoreLabel} locale={locale} className="mb-sectionBase" />}
+            {featuredPost && (
+              <FeaturedPost
+                post={featuredPost}
+                readMoreLabel={readMoreLabel}
+                locale={locale}
+                className="mb-sectionBase"
+              />
+            )}
 
             {posts.length === 0 && <EmptyState title={t("noResults")} description="" />}
 
             {gridPosts.length > 0 && <PostsGrid posts={gridPosts} />}
           </DimWhilePending>
 
-          {totalPages > 1 && <Pagination basePath={BLOG_CONFIG.basePath} page={currentPage} totalPages={totalPages} query={{ category: activeCategory, q: searchQuery }} />}
+          {totalPages > 1 && (
+            <Pagination
+              basePath={BLOG_CONFIG.basePath}
+              page={currentPage}
+              totalPages={totalPages}
+              query={{ category: activeCategory, q: searchQuery }}
+            />
+          )}
         </div>
       </section>
 

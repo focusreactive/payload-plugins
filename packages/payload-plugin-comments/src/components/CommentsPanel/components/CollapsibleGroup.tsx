@@ -1,6 +1,7 @@
 "use client";
 
-import { useImperativeHandle, type ReactNode, type RefObject } from "react";
+import { useImperativeHandle } from "react";
+import type { ReactNode, RefObject } from "react";
 import { ChevronDown } from "lucide-react";
 import { cva } from "class-variance-authority";
 import { useCollapseState } from "../hooks/useCollapseState";
@@ -50,7 +51,14 @@ const collapsibleGroupVariants = {
   }),
 };
 
-export function CollapsibleGroup({ groupKey, fieldPath, label, children, level, ref }: CollapsibleGroupProps) {
+export function CollapsibleGroup({
+  groupKey,
+  fieldPath,
+  label,
+  children,
+  level,
+  ref,
+}: CollapsibleGroupProps) {
   const [isCollapsed, toggle, open] = useCollapseState(groupKey);
 
   useImperativeHandle(ref, () => ({
@@ -66,18 +74,21 @@ export function CollapsibleGroup({ groupKey, fieldPath, label, children, level, 
         onClick={toggle}
         onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && toggle()}
         aria-expanded={!isCollapsed}
-        className={collapsibleGroupVariants.wrapper({ level })}>
+        className={collapsibleGroupVariants.wrapper({ level })}
+      >
         <span className={collapsibleGroupVariants.label({ level })}>{label}</span>
 
         <ChevronDown
           className={cn(
             "shrink-0 w-4 h-4 text-(--theme-elevation-450) transition-transform duration-150",
-            isCollapsed && "-rotate-90",
+            isCollapsed && "-rotate-90"
           )}
         />
       </div>
 
-      {!isCollapsed && <div className={collapsibleGroupVariants.childWrapper({ level })}>{children}</div>}
+      {!isCollapsed && (
+        <div className={collapsibleGroupVariants.childWrapper({ level })}>{children}</div>
+      )}
     </div>
   );
 }

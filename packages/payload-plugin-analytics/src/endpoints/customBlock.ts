@@ -7,13 +7,20 @@ import { customBlockEndpointPath } from "../constants/endpoints";
 import type { AnalyticsPluginConfig } from "../types/config";
 import type { BlockDefinition, BlockId } from "../types/layout";
 
-export function buildCustomBlockEndpoint(config: AnalyticsPluginConfig, blockId: BlockId, definition: BlockDefinition): Endpoint {
+export function buildCustomBlockEndpoint(
+  config: AnalyticsPluginConfig,
+  blockId: BlockId,
+  definition: BlockDefinition
+): Endpoint {
   return {
     path: customBlockEndpointPath(blockId),
     method: "post",
     handler: withAccess(config, async (req) => {
       if (!definition.fetch) {
-        return Response.json({ error: `Block "${blockId}" has no fetch function defined` }, { status: 500 });
+        return Response.json(
+          { error: `Block "${blockId}" has no fetch function defined` },
+          { status: 500 }
+        );
       }
 
       let body: unknown;

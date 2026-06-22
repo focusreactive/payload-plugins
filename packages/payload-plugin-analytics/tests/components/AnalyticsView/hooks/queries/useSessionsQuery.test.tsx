@@ -47,7 +47,10 @@ const page2 = {
 
 describe("useSessionsQuery (infinite)", () => {
   it("threads cursor across pages and concatenates rows", async () => {
-    const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse(page1)).mockResolvedValueOnce(jsonResponse(page2));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(page1))
+      .mockResolvedValueOnce(jsonResponse(page2));
     vi.stubGlobal("fetch", fetchMock);
     const { Wrapper } = createWrapper();
     const { result } = renderHook(() => useSessionsQuery(query), { wrapper: Wrapper });

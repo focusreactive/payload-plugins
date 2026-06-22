@@ -11,7 +11,8 @@ const token = process.env.BLOB_READ_WRITE_TOKEN;
 if (!token) {
   process.stdout.write(
     `${JSON.stringify({
-      error: "BLOB_READ_WRITE_TOKEN is not set. Copy it from the Vercel dashboard and add it to .env.",
+      error:
+        "BLOB_READ_WRITE_TOKEN is not set. Copy it from the Vercel dashboard and add it to .env.",
     })}\n`
   );
   process.exit(1);
@@ -34,7 +35,9 @@ if (args[0] === "--delete") {
     process.exit(0);
   }
 
-  const settlements = await Promise.allSettled(pathnames.map((pathname) => del(pathname, { token }).then(() => pathname)));
+  const settlements = await Promise.allSettled(
+    pathnames.map((pathname) => del(pathname, { token }).then(() => pathname))
+  );
 
   const deleted = [];
   const errors = [];
@@ -61,7 +64,8 @@ const filepaths = args;
 if (filepaths.length === 0) {
   process.stdout.write(
     `${JSON.stringify({
-      error: "Missing filepath(s). Usage: node apps/cms/.claude/skills/upload-local-image/scripts/upload-to-blob.mjs <file1> [file2] ...",
+      error:
+        "Missing filepath(s). Usage: node apps/cms/.claude/skills/upload-local-image/scripts/upload-to-blob.mjs <file1> [file2] ...",
     })}\n`
   );
   process.exit(1);

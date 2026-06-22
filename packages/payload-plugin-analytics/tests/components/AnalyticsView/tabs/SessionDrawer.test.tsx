@@ -22,21 +22,33 @@ function withProvider(node: React.ReactElement) {
 
 describe("SessionDrawer", () => {
   it("renders shortened session id, stats grid, and event timeline", () => {
-    render(withProvider(<SessionDrawer row={row} detail={detail as SessionDetailResponse} onClose={() => {}} />));
+    render(
+      withProvider(
+        <SessionDrawer row={row} detail={detail as SessionDetailResponse} onClose={() => {}} />
+      )
+    );
     expect(screen.getByText(/8f3a2b…/u)).toBeInTheDocument();
     expect(screen.getByText("Events")).toBeInTheDocument();
     expect(screen.getByText("Event timeline")).toBeInTheDocument();
   });
 
   it("marks lead_action events as lead actions in the timeline", () => {
-    const { container } = render(withProvider(<SessionDrawer row={row} detail={detail as SessionDetailResponse} onClose={() => {}} />));
+    const { container } = render(
+      withProvider(
+        <SessionDrawer row={row} detail={detail as SessionDetailResponse} onClose={() => {}} />
+      )
+    );
     expect(container.querySelector('[data-lead="true"]')).toBeInTheDocument();
     expect(screen.getByText(/Lead action: Phone click/u)).toBeInTheDocument();
   });
 
   it("invokes onClose when X clicked", () => {
     const fn = vi.fn();
-    render(withProvider(<SessionDrawer row={row} detail={detail as SessionDetailResponse} onClose={fn} />));
+    render(
+      withProvider(
+        <SessionDrawer row={row} detail={detail as SessionDetailResponse} onClose={fn} />
+      )
+    );
     fireEvent.click(screen.getByRole("button", { name: /close/iu }));
     expect(fn).toHaveBeenCalled();
   });

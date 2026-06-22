@@ -11,7 +11,9 @@ export async function resolveLocale(locale?: Locale): Promise<Locale> {
 
   try {
     const resolved = await getLocale();
-    return hasLocale(routing.locales, resolved) ? (resolved as Locale) : (routing.defaultLocale as Locale);
+    return hasLocale(routing.locales, resolved)
+      ? (resolved as Locale)
+      : (routing.defaultLocale as Locale);
   } catch {
     return routing.defaultLocale as Locale;
   }

@@ -15,7 +15,9 @@ const fakeCollection = {
 
 // Pull the make() callback handed to addCollectionComponent for the given slot.
 const componentFor = (ctx: LevelContext, slot: CollectionAdminSlot) => {
-  const call = (ctx.addCollectionComponent as ReturnType<typeof vi.fn>).mock.calls.find((c) => c[0] === slot);
+  const call = (ctx.addCollectionComponent as ReturnType<typeof vi.fn>).mock.calls.find(
+    (c) => c[0] === slot
+  );
   return call?.[1](fakeCollection);
 };
 
@@ -41,7 +43,10 @@ describe("documentLevel", () => {
 
     expect(ctx.addEndpoints).toHaveBeenCalledTimes(1);
     expect((ctx.addEndpoints as ReturnType<typeof vi.fn>).mock.calls[0][0]).toHaveLength(6);
-    expect(ctx.addCollectionComponent).toHaveBeenCalledWith("beforeDocumentControls", expect.any(Function));
+    expect(ctx.addCollectionComponent).toHaveBeenCalledWith(
+      "beforeDocumentControls",
+      expect.any(Function)
+    );
     expect(componentFor(ctx, "beforeDocumentControls")).toBeInstanceOf(TranslateDocumentExport);
   });
 });
@@ -54,7 +59,10 @@ describe("collectionLevel", () => {
 
     expect(ctx.addEndpoints).toHaveBeenCalledTimes(1);
     expect((ctx.addEndpoints as ReturnType<typeof vi.fn>).mock.calls[0][0]).toHaveLength(6);
-    expect(ctx.addCollectionComponent).toHaveBeenCalledWith("beforeListTable", expect.any(Function));
+    expect(ctx.addCollectionComponent).toHaveBeenCalledWith(
+      "beforeListTable",
+      expect.any(Function)
+    );
     expect(componentFor(ctx, "beforeListTable")).toBeInstanceOf(BulkDocumentTranslationDashboard);
   });
 });

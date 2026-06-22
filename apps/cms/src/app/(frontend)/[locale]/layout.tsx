@@ -53,7 +53,11 @@ export default async function RootLayout({ children, params }: Props) {
   const messages = await getMessages();
 
   return (
-    <html lang={locale} data-theme="light" className={`${newsreader.variable} ${archivo.variable} ${ibmPlexMono.variable}`}>
+    <html
+      lang={locale}
+      data-theme="light"
+      className={`${newsreader.variable} ${archivo.variable} ${ibmPlexMono.variable}`}
+    >
       <head />
       <body>
         <AnalyticsProviderClient measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID!}>

@@ -5,9 +5,18 @@
     { "name": "totalUsers", "type": "TYPE_INTEGER" }
   ],
   "rows": [
-    { "dimensionValues": [{ "value": "New York" }, { "value": "United States" }], "metricValues": [{ "value": "450" }, { "value": "380" }] },
-    { "dimensionValues": [{ "value": "London" }, { "value": "United Kingdom" }], "metricValues": [{ "value": "210" }, { "value": "175" }] },
-    { "dimensionValues": [{ "value": "Berlin" }, { "value": "Germany" }], "metricValues": [{ "value": "120" }, { "value": "95" }] }
+    {
+      "dimensionValues": [{ "value": "New York" }, { "value": "United States" }],
+      "metricValues": [{ "value": "450" }, { "value": "380" }]
+    },
+    {
+      "dimensionValues": [{ "value": "London" }, { "value": "United Kingdom" }],
+      "metricValues": [{ "value": "210" }, { "value": "175" }]
+    },
+    {
+      "dimensionValues": [{ "value": "Berlin" }, { "value": "Germany" }],
+      "metricValues": [{ "value": "120" }, { "value": "95" }]
+    }
   ],
   "rowCount": 3
 }

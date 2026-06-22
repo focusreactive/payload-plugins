@@ -1,10 +1,14 @@
-import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { RefObject } from "react";
 import { clamp } from "./clamp";
 import { measureLineRects } from "./measureLineRects";
 
 const SPEED = 20;
 
-export function useStrikethroughAnimation(isResolved: boolean, contentRect: RefObject<HTMLElement | null>) {
+export function useStrikethroughAnimation(
+  isResolved: boolean,
+  contentRect: RefObject<HTMLElement | null>
+) {
   const [lineRects, setLineRects] = useState<DOMRect[]>([]);
   const [lineContentRect, setLineContentRect] = useState<DOMRect | null>(null);
 
@@ -74,7 +78,9 @@ export function useStrikethroughAnimation(isResolved: boolean, contentRect: RefO
       progressRef.current = clamp(0, progressRef.current + direction * SPEED, n);
       updateLines(progressRef.current);
 
-      const done = (direction === 1 && progressRef.current >= n) || (direction === -1 && progressRef.current <= 0);
+      const done =
+        (direction === 1 && progressRef.current >= n) ||
+        (direction === -1 && progressRef.current <= 0);
 
       if (!done) {
         animationIdRef.current = requestAnimationFrame(tick);
@@ -93,7 +99,8 @@ export function useStrikethroughAnimation(isResolved: boolean, contentRect: RefO
     mountedRef.current = true;
 
     const prefersReducedMotion =
-      typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     if (isResolved && !measuredRef.current) {
       measureLines();

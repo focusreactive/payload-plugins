@@ -42,11 +42,18 @@ describe("AnalyticsView query-layer invariants", () => {
       }
     }
 
-    expect(offenders, `["analytics", …] literal found outside keys.ts:\n${offenders.join("\n")}`).toEqual([]);
+    expect(
+      offenders,
+      `["analytics", …] literal found outside keys.ts:\n${offenders.join("\n")}`
+    ).toEqual([]);
   });
 
   it("@tanstack/react-query only imported from the allow-list", () => {
-    const allow = new Set(["AnalyticsProviders.tsx", "RefreshButton.tsx", "tabs/SessionsTab.tsx"].map((p) => path.resolve(ROOT, p).replace(/\\/gu, "/")));
+    const allow = new Set(
+      ["AnalyticsProviders.tsx", "RefreshButton.tsx", "tabs/SessionsTab.tsx"].map((p) =>
+        path.resolve(ROOT, p).replace(/\\/gu, "/")
+      )
+    );
 
     const offenders: string[] = [];
 
@@ -61,6 +68,9 @@ describe("AnalyticsView query-layer invariants", () => {
       }
     }
 
-    expect(offenders, `@tanstack/react-query imported outside the allow-list:\n${offenders.join("\n")}`).toEqual([]);
+    expect(
+      offenders,
+      `@tanstack/react-query imported outside the allow-list:\n${offenders.join("\n")}`
+    ).toEqual([]);
   });
 });

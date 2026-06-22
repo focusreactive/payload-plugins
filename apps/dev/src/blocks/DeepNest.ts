@@ -55,7 +55,10 @@ const deepNestFields: Field[] = [
           // Presentational row → transparent. Two leaves sit at `panel.*`.
           {
             type: "row",
-            fields: [withFieldTranslation({ localized: true, name: "heading", type: "text" }), withFieldTranslation({ localized: true, name: "subheading", type: "textarea" })],
+            fields: [
+              withFieldTranslation({ localized: true, name: "heading", type: "text" }),
+              withFieldTranslation({ localized: true, name: "subheading", type: "textarea" }),
+            ],
           },
           withFieldTranslation({ localized: true, name: "intro", type: "richText" }),
         ],
@@ -69,7 +72,10 @@ const deepNestFields: Field[] = [
       {
         name: "meta",
         label: "Meta",
-        fields: [withFieldTranslation({ localized: true, name: "seoTitle", type: "text" }), withFieldTranslation({ localized: true, name: "seoDescription", type: "textarea" })],
+        fields: [
+          withFieldTranslation({ localized: true, name: "seoTitle", type: "text" }),
+          withFieldTranslation({ localized: true, name: "seoDescription", type: "textarea" }),
+        ],
       },
       {
         label: "Body",

@@ -31,7 +31,9 @@ export function TopSourcesBlock({ dateRange, comparison, className }: BlockCompo
                 <span className="truncate">
                   {r.source} / {r.medium}
                 </span>
-                <span className="text-[var(--theme-elevation-500)] text-[11px] truncate">{r.channel}</span>
+                <span className="text-[var(--theme-elevation-500)] text-[11px] truncate">
+                  {r.channel}
+                </span>
               </div>
             ),
           },
@@ -40,7 +42,9 @@ export function TopSourcesBlock({ dateRange, comparison, className }: BlockCompo
             header: "Sessions",
             align: "right",
             value: (r) => r.sessions,
-            prevValue: showCompare ? (r) => prev.get(`${r.source}|${r.medium}`)?.sessions ?? null : undefined,
+            prevValue: showCompare
+              ? (r) => prev.get(`${r.source}|${r.medium}`)?.sessions ?? null
+              : undefined,
             format: formatNumber,
           },
         ]}

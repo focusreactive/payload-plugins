@@ -7,7 +7,12 @@ function isValidRecord(value: unknown): value is SessionRecord {
   if (typeof value !== "object" || value === null) return false;
   const r = value as Partial<SessionRecord>;
 
-  return typeof r.id === "string" && typeof r.startedAt === "number" && typeof r.lastActivityAt === "number" && typeof r.eventSeq === "number";
+  return (
+    typeof r.id === "string" &&
+    typeof r.startedAt === "number" &&
+    typeof r.lastActivityAt === "number" &&
+    typeof r.eventSeq === "number"
+  );
 }
 
 function tryRead(storage: Storage | undefined): SessionRecord | null {

@@ -22,7 +22,13 @@ export const BlogPostsGrid: React.FC<Props> = (props) => {
         if (typeof result === "object" && result !== null) {
           return (
             <div className="col-span-4" key={index}>
-              <Card className="h-full" doc={result} basePath={BLOG_CONFIG.basePath} showCategories readMoreLabel={readMoreLabel ?? undefined} />
+              <Card
+                className="h-full"
+                doc={result}
+                basePath={BLOG_CONFIG.basePath}
+                showCategories
+                readMoreLabel={readMoreLabel ?? undefined}
+              />
             </div>
           );
         }

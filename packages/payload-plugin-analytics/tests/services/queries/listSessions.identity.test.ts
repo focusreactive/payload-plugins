@@ -30,11 +30,27 @@ const SESSIONS_FIXTURE = {
   metricHeaders: [{ name: "eventCount", type: "TYPE_INTEGER" }],
   rows: [
     {
-      dimensionValues: [{ value: "A" }, { value: "/raw-landing?x=1" }, { value: "google" }, { value: "desktop" }, { value: "US" }, { value: "2026-05-10T16:00:00.000Z" }, { value: "pages:1" }],
+      dimensionValues: [
+        { value: "A" },
+        { value: "/raw-landing?x=1" },
+        { value: "google" },
+        { value: "desktop" },
+        { value: "US" },
+        { value: "2026-05-10T16:00:00.000Z" },
+        { value: "pages:1" },
+      ],
       metricValues: [{ value: "1" }],
     },
     {
-      dimensionValues: [{ value: "A" }, { value: "/raw-landing?x=1" }, { value: "google" }, { value: "desktop" }, { value: "US" }, { value: "2026-05-10T16:00:00.000Z" }, { value: "pages:2" }],
+      dimensionValues: [
+        { value: "A" },
+        { value: "/raw-landing?x=1" },
+        { value: "google" },
+        { value: "desktop" },
+        { value: "US" },
+        { value: "2026-05-10T16:00:00.000Z" },
+        { value: "pages:2" },
+      ],
       metricValues: [{ value: "1" }],
     },
   ],
@@ -46,8 +62,24 @@ describe("listSessions landing-page identity resolution", () => {
     // Ordered event-level rows: pages:1 is the landing (first) event; pages:2 is later.
     const landingReport = {
       rows: [
-        { dimensionValues: [{ value: "A" }, { value: "pages:1" }, { value: "202605101600" }, { value: "1" }], metricValues: [{ value: "1" }] },
-        { dimensionValues: [{ value: "A" }, { value: "pages:2" }, { value: "202605101605" }, { value: "2" }], metricValues: [{ value: "1" }] },
+        {
+          dimensionValues: [
+            { value: "A" },
+            { value: "pages:1" },
+            { value: "202605101600" },
+            { value: "1" },
+          ],
+          metricValues: [{ value: "1" }],
+        },
+        {
+          dimensionValues: [
+            { value: "A" },
+            { value: "pages:2" },
+            { value: "202605101605" },
+            { value: "2" },
+          ],
+          metricValues: [{ value: "1" }],
+        },
       ],
     };
     const fake = {
@@ -66,7 +98,12 @@ describe("listSessions landing-page identity resolution", () => {
     expect(fake.runReport).toHaveBeenCalledTimes(1);
     const request = fake.runReport.mock.calls[0][0];
     expect(request.property).toBe("properties/12345");
-    expect(request.dimensions).toEqual([{ name: "customEvent:fr_session_id" }, { name: "customEvent:fr_page_ref" }, { name: "dateHourMinute" }, { name: "customEvent:fr_event_seq" }]);
+    expect(request.dimensions).toEqual([
+      { name: "customEvent:fr_session_id" },
+      { name: "customEvent:fr_page_ref" },
+      { name: "dateHourMinute" },
+      { name: "customEvent:fr_event_seq" },
+    ]);
     const json = JSON.stringify(request.dimensionFilter);
     expect(json).toContain("page_view");
     expect(json).toContain('"A"');
@@ -91,7 +128,14 @@ describe("listSessions landing-page identity resolution", () => {
       metricHeaders: [{ name: "eventCount", type: "TYPE_INTEGER" }],
       rows: [
         {
-          dimensionValues: [{ value: "A" }, { value: "/raw-landing?x=1" }, { value: "google" }, { value: "desktop" }, { value: "US" }, { value: "2026-05-10T16:00:00.000Z" }],
+          dimensionValues: [
+            { value: "A" },
+            { value: "/raw-landing?x=1" },
+            { value: "google" },
+            { value: "desktop" },
+            { value: "US" },
+            { value: "2026-05-10T16:00:00.000Z" },
+          ],
           metricValues: [{ value: "1" }],
         },
       ],

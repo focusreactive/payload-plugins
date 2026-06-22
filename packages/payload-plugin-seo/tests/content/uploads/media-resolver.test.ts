@@ -9,7 +9,9 @@ afterEach(() => {
 
 describe("createMediaResolver", () => {
   it("fetches per collection with depth 0, locale, and id filters; returns docs keyed collection:id", async () => {
-    const fetchMock = vi.fn(async () => okResponse([{ id: 1, url: "/m/a.jpg", mimeType: "image/jpeg", alt: "A" }]));
+    const fetchMock = vi.fn(async () =>
+      okResponse([{ id: 1, url: "/m/a.jpg", mimeType: "image/jpeg", alt: "A" }])
+    );
     vi.stubGlobal("fetch", fetchMock);
 
     const resolver = createMediaResolver("/api");
@@ -26,7 +28,9 @@ describe("createMediaResolver", () => {
   });
 
   it("caches resolved docs per locale and refetches only missing refs", async () => {
-    const fetchMock = vi.fn(async () => okResponse([{ id: 1, url: "/m/a.jpg", mimeType: "image/jpeg" }]));
+    const fetchMock = vi.fn(async () =>
+      okResponse([{ id: 1, url: "/m/a.jpg", mimeType: "image/jpeg" }])
+    );
     vi.stubGlobal("fetch", fetchMock);
     const resolver = createMediaResolver("/api");
 
@@ -60,11 +64,19 @@ describe("createMediaResolver", () => {
     vi.stubGlobal("fetch", fetchMock);
     const resolver = createMediaResolver("/api");
 
-    await expect(resolver.resolve([{ collection: "media", id: 3 }], "en")).resolves.toEqual(new Map());
+    await expect(resolver.resolve([{ collection: "media", id: 3 }], "en")).resolves.toEqual(
+      new Map()
+    );
   });
 
   it("groups refs into one request per collection", async () => {
-    const fetchMock = vi.fn(async (url: string) => okResponse(url.includes("/media?") ? [{ id: 1, url: "/a.jpg", mimeType: "image/png" }] : [{ id: 2, url: "/b.pdf", mimeType: "application/pdf" }]));
+    const fetchMock = vi.fn(async (url: string) =>
+      okResponse(
+        url.includes("/media?")
+          ? [{ id: 1, url: "/a.jpg", mimeType: "image/png" }]
+          : [{ id: 2, url: "/b.pdf", mimeType: "application/pdf" }]
+      )
+    );
     vi.stubGlobal("fetch", fetchMock);
     const resolver = createMediaResolver("/api");
 

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { inverseStandardNormalCdf, minimumDetectableEffect } from "../../../src/services/abStatistics/minimumDetectableEffect";
+import {
+  inverseStandardNormalCdf,
+  minimumDetectableEffect,
+} from "../../../src/services/abStatistics/minimumDetectableEffect";
 
 describe("inverseStandardNormalCdf", () => {
   it("inverts the standard normal CDF", () => {

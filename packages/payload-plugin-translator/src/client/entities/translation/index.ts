@@ -1,13 +1,13 @@
-import { useCancelCollectionTranslations } from './api/mutations/useCancelCollectionTranslations'
-import { useCancelDocumentTranslation } from './api/mutations/useCancelDocumentTranslation'
-import { useQueueDocumentTranslation } from './api/mutations/useQueueDocumentTranslation'
-import { useRunDocumentTranslation } from './api/mutations/useRunDocumentTranslation'
-import { useCollectionTranslationStatus } from './api/queries/useCollectionTranslationStatus'
-import { useDocumentTranslation } from './api/queries/useDocumentTranslation'
+import { useCancelCollectionTranslations } from "./api/mutations/useCancelCollectionTranslations";
+import { useCancelDocumentTranslation } from "./api/mutations/useCancelDocumentTranslation";
+import { useQueueDocumentTranslation } from "./api/mutations/useQueueDocumentTranslation";
+import { useRunDocumentTranslation } from "./api/mutations/useRunDocumentTranslation";
+import { useCollectionTranslationStatus } from "./api/queries/useCollectionTranslationStatus";
+import { useDocumentTranslation } from "./api/queries/useDocumentTranslation";
 
-export { CompletedTranslationStatus } from './ui/CompletedTranslationStatus'
-export { FailedTranslationStatus } from './ui/FailedTranslationStatus'
-export { RunningTranslationStatus } from './ui/RunningTranslationStatus'
+export { CompletedTranslationStatus } from "./ui/CompletedTranslationStatus";
+export { FailedTranslationStatus } from "./ui/FailedTranslationStatus";
+export { RunningTranslationStatus } from "./ui/RunningTranslationStatus";
 
 export const TranslationsApi = {
   useRunDocumentTranslation,
@@ -16,9 +16,9 @@ export const TranslationsApi = {
   useCancelDocumentTranslation,
   useCollectionTranslationStatus,
   useCancelCollectionTranslations,
-}
+};
 
-export { PendingTranslationStatus } from './ui/PendingTranslationStatus'
+export { PendingTranslationStatus } from "./ui/PendingTranslationStatus";
 
 export type {
   DocumentTranslation,
@@ -29,6 +29,6 @@ export type {
   CollectionTranslationStatus,
   CollectionTranslationStatusItem,
   GroupedCollectionTranslationStatus,
-} from './model/types'
+} from "./model/types";
 
-export { DocumentTranslationStatus } from './model/enums'
+export { DocumentTranslationStatus } from "./model/enums";

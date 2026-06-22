@@ -55,7 +55,7 @@
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
     "format": "ultracite fix",
-    "format:check": "ultracite fix",
+    "format:check": "ultracite check",
     "test": "vitest run",
     "test:watch": "vitest"
   },

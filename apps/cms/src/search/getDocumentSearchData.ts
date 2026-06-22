@@ -16,7 +16,12 @@ interface DisplayData {
   imageAlt: string | null;
 }
 
-export async function getDocumentSearchData(payload: Payload, documentId: string, collection: SearchCollection, locale: string): Promise<DisplayData | null> {
+export async function getDocumentSearchData(
+  payload: Payload,
+  documentId: string,
+  collection: SearchCollection,
+  locale: string
+): Promise<DisplayData | null> {
   if (collection === "page") {
     let doc: Page;
 

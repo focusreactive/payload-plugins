@@ -3,7 +3,8 @@
 import { useRef, useEffect } from "react";
 import { useTranslation } from "@payloadcms/ui";
 import type { Comment } from "../../../types/comment";
-import { CollapsibleGroup, type CollapsibleGroupHandle } from "./CollapsibleGroup";
+import { CollapsibleGroup } from "./CollapsibleGroup";
+import type { CollapsibleGroupHandle } from "./CollapsibleGroup";
 import { CommentItem } from "../../CommentItem";
 import { createCollapsibleGroupKey } from "../utils/createCollapsibleGroupKey";
 import { resolveFieldLabel } from "../utils/resolveFieldLabel";
@@ -22,7 +23,13 @@ interface Props {
   globalSlug?: string;
 }
 
-export function FieldGroupSection({ fields, userId, collectionSlug, documentId, globalSlug }: Props) {
+export function FieldGroupSection({
+  fields,
+  userId,
+  collectionSlug,
+  documentId,
+  globalSlug,
+}: Props) {
   const { t } = useTranslation();
   const { queryContext } = useComments();
   const { data: fieldLabelRegistry = {} } = useFieldLabelsQuery(queryContext);
@@ -31,11 +38,15 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
   const pendingFieldCollapsibleGroup = useRef<CollapsibleGroupHandle | null>(null);
 
   const generalComments = fields.get(null) ?? [];
-  const fieldEntries = [...fields.entries()].filter((entry): entry is [string, Comment[]] => entry[0] !== null);
+  const fieldEntries = [...fields.entries()].filter(
+    (entry): entry is [string, Comment[]] => entry[0] !== null
+  );
 
   const allEntries: [string, Comment[]][] = [
     ...fieldEntries,
-    ...(pendingField && !fields.has(pendingField.path) ? [[pendingField.path, []] as [string, Comment[]]] : []),
+    ...(pendingField && !fields.has(pendingField.path)
+      ? [[pendingField.path, []] as [string, Comment[]]]
+      : []),
   ];
 
   useEffect(() => {
@@ -51,9 +62,15 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
   return (
     <>
       <CollapsibleGroup
-        groupKey={createCollapsibleGroupKey({ collectionSlug, documentId, globalSlug, fieldPath: null })}
+        groupKey={createCollapsibleGroupKey({
+          collectionSlug,
+          documentId,
+          globalSlug,
+          fieldPath: null,
+        })}
         label={t("comments:general" as never)}
-        level="field">
+        level="field"
+      >
         <div className="flex flex-col gap-3">
           {generalComments.map((comment) => (
             <CommentItem key={comment.id} comment={comment} currentUserId={userId} />
@@ -76,13 +93,25 @@ export function FieldGroupSection({ fields, userId, collectionSlug, documentId, 
             key={fieldPath}
             fieldPath={fieldPath}
             ref={isPending ? pendingFieldCollapsibleGroup : undefined}
-            groupKey={createCollapsibleGroupKey({ collectionSlug, documentId, globalSlug, fieldPath })}
+            groupKey={createCollapsibleGroupKey({
+              collectionSlug,
+              documentId,
+              globalSlug,
+              fieldPath,
+            })}
             label={
-              isPending ?
-                pendingField.label
-              : resolveFieldLabel({ registry: fieldLabelRegistry, collectionSlug, documentId, globalSlug, fieldPath })
+              isPending
+                ? pendingField.label
+                : resolveFieldLabel({
+                    registry: fieldLabelRegistry,
+                    collectionSlug,
+                    documentId,
+                    globalSlug,
+                    fieldPath,
+                  })
             }
-            level="field">
+            level="field"
+          >
             <div className="flex flex-col gap-3">
               {fieldComments.map((comment) => (
                 <CommentItem key={comment.id} comment={comment} currentUserId={userId} />

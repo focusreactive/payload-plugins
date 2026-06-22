@@ -12,13 +12,18 @@ export function walkBlock(val: unknown): unknown {
   }
 
   if (typeof val === "object" && val !== null) {
-    return Object.fromEntries(Object.entries(val as Record<string, unknown>).map(([k, v]) => [k, walkBlock(v)]));
+    return Object.fromEntries(
+      Object.entries(val as Record<string, unknown>).map(([k, v]) => [k, walkBlock(v)])
+    );
   }
 
   return val;
 }
 
-export function resolvePath(doc: BaseDocument, fieldPath: string): { value: unknown } | { error: string } {
+export function resolvePath(
+  doc: BaseDocument,
+  fieldPath: string
+): { value: unknown } | { error: string } {
   const segments = fieldPath.split(".");
   let current: unknown = doc;
 

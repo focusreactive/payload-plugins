@@ -15,7 +15,11 @@ type CollectionTranslationPopupProps = PropsWithChildren<{
   selectedCount: number;
 }>;
 
-function CollectionTranslationPopup({ children, translationInProgress, selectedCount }: CollectionTranslationPopupProps) {
+function CollectionTranslationPopup({
+  children,
+  translationInProgress,
+  selectedCount,
+}: CollectionTranslationPopupProps) {
   const [isPopupOpen, popupOpen] = useToggle();
 
   return (
@@ -23,8 +27,16 @@ function CollectionTranslationPopup({ children, translationInProgress, selectedC
       $align="start"
       onOpenChange={popupOpen.setValue}
       $trigger={
-        <Button $size="md" $variant="outlined-light" className={styles["popup-trigger-button"]} aria-label="Open translation options" onClick={popupOpen.setTrue}>
-          {translationInProgress && <ColorIndicator title="Translations In Progress" $animated $color="blue" />}
+        <Button
+          $size="md"
+          $variant="outlined-light"
+          className={styles["popup-trigger-button"]}
+          aria-label="Open translation options"
+          onClick={popupOpen.setTrue}
+        >
+          {translationInProgress && (
+            <ColorIndicator title="Translations In Progress" $animated $color="blue" />
+          )}
           <LanguageTranslateIcon />
           {selectedCount > 0 && !translationInProgress && (
             <>

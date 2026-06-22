@@ -13,11 +13,25 @@ export interface BlockRendererProps extends BlockComponentProps {
   hasFetch: boolean;
 }
 
-function CustomBlockShell({ blockId, Component, ...rest }: Omit<BlockRendererProps, "hasFetch"> & { Component: ComponentType<Record<string, unknown>> }) {
-  const query = useMemo(() => ({ dateRange: rest.dateRange, comparison: rest.comparison }), [rest.dateRange, rest.comparison]);
+function CustomBlockShell({
+  blockId,
+  Component,
+  ...rest
+}: Omit<BlockRendererProps, "hasFetch"> & { Component: ComponentType<Record<string, unknown>> }) {
+  const query = useMemo(
+    () => ({ dateRange: rest.dateRange, comparison: rest.comparison }),
+    [rest.dateRange, rest.comparison]
+  );
   const { data, isLoading, error } = useCustomBlockQuery<unknown>(blockId, query);
 
-  return <Component {...(rest as unknown as Record<string, unknown>)} data={data} loading={isLoading} error={error ?? undefined} />;
+  return (
+    <Component
+      {...(rest as unknown as Record<string, unknown>)}
+      data={data}
+      loading={isLoading}
+      error={error ?? undefined}
+    />
+  );
 }
 
 export function BlockRenderer({ blockId, Component, hasFetch, ...rest }: BlockRendererProps) {
@@ -29,7 +43,12 @@ export function BlockRenderer({ blockId, Component, hasFetch, ...rest }: BlockRe
   }
 
   if (!Component) {
-    return <ErrorTile error={new Error(`Block "${blockId}" has no resolvable component`)} className={propsWithClass.className} />;
+    return (
+      <ErrorTile
+        error={new Error(`Block "${blockId}" has no resolvable component`)}
+        className={propsWithClass.className}
+      />
+    );
   }
 
   if (hasFetch) {

@@ -40,7 +40,11 @@ export async function createBreadcrumbsSchema(options: CreateBreadcrumbsOptions)
   if ("items" in options && Array.isArray(options.items)) {
     for (const item of options.items) {
       if (item?.label && item?.url) {
-        const url = item.url.startsWith("http") ? item.url : item.url.startsWith("/") ? `${baseUrl}${item.url}` : `${baseUrl}/${item.url}`;
+        const url = item.url.startsWith("http")
+          ? item.url
+          : item.url.startsWith("/")
+            ? `${baseUrl}${item.url}`
+            : `${baseUrl}/${item.url}`;
 
         breadcrumbs.push({ name: item.label, url });
       }

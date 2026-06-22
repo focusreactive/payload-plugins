@@ -34,8 +34,20 @@ interface FormatFieldLineOpts {
   fieldPath?: string;
 }
 
-export function formatFieldLine(key: string, value: unknown, depth: number, options: FormatFieldLineOpts): string {
-  const { fieldLabels, blockLabels, fieldPath = key, summarizeComplexValues, collectionSlug, documentId } = options;
+export function formatFieldLine(
+  key: string,
+  value: unknown,
+  depth: number,
+  options: FormatFieldLineOpts
+): string {
+  const {
+    fieldLabels,
+    blockLabels,
+    fieldPath = key,
+    summarizeComplexValues,
+    collectionSlug,
+    documentId,
+  } = options;
 
   const indent = LIST_INDENT.repeat(depth);
   const childIndent = LIST_INDENT.repeat(depth + 1);
@@ -66,7 +78,9 @@ export function formatFieldLine(key: string, value: unknown, depth: number, opti
         .join("\n");
       const idLine = `${childIndent}- **id**: ${formatEmptyValue(value.id)}`;
 
-      return fields ? `${indent}- **${label}**:\n${idLine}\n${fields}` : `${indent}- **${label}**:\n${idLine}`;
+      return fields
+        ? `${indent}- **${label}**:\n${idLine}\n${fields}`
+        : `${indent}- **${label}**:\n${idLine}`;
     }
     return `${indent}- **${label}**: ${formatRelationValueClue(value, options.fieldRelationTo?.[key])}`;
   }

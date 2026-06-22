@@ -14,7 +14,9 @@ describe("DateRangeCalendar", () => {
 
   it("Apply with active preset writes a preset range", () => {
     const onApply = vi.fn();
-    render(<DateRangeCalendar value={{ preset: "last-7d" }} onApply={onApply} onClose={() => {}} />);
+    render(
+      <DateRangeCalendar value={{ preset: "last-7d" }} onApply={onApply} onClose={() => {}} />
+    );
     fireEvent.click(screen.getByText("Apply"));
     expect(onApply).toHaveBeenCalledWith({ preset: "last-7d" });
   });

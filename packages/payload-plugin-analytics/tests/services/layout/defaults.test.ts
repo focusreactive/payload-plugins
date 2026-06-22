@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { getDefaultBlockRegistry, getDefaultLayout } from "../../../src/services/layout/defaults";
-import { BUILTIN_OVERVIEW_BLOCK_IDS, BUILTIN_LEAD_ACTIONS_BLOCK_IDS } from "../../../src/constants/layout";
+import {
+  BUILTIN_OVERVIEW_BLOCK_IDS,
+  BUILTIN_LEAD_ACTIONS_BLOCK_IDS,
+} from "../../../src/constants/layout";
 
 describe("default block registry", () => {
   const reg = getDefaultBlockRegistry();
@@ -8,7 +11,9 @@ describe("default block registry", () => {
   it("has an entry for every built-in overview block", () => {
     for (const id of BUILTIN_OVERVIEW_BLOCK_IDS) {
       expect(reg[id]).toBeDefined();
-      expect(reg[id].component).toMatch(/^@focus-reactive\/payload-plugin-analytics\/components\/AnalyticsView\/blocks\//u);
+      expect(reg[id].component).toMatch(
+        /^@focus-reactive\/payload-plugin-analytics\/components\/AnalyticsView\/blocks\//u
+      );
     }
   });
 

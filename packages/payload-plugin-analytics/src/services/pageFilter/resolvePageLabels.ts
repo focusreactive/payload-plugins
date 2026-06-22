@@ -17,11 +17,16 @@ function parseRef(ref: string) {
   };
 }
 
-export async function resolvePageLabels(req: PayloadRequest, config: ResolvedPagesConfig, refs: string[]): Promise<Map<string, PageLabel>> {
+export async function resolvePageLabels(
+  req: PayloadRequest,
+  config: ResolvedPagesConfig,
+  refs: string[]
+): Promise<Map<string, PageLabel>> {
   const unique = [...new Set(refs)];
   const result = new Map<string, PageLabel>();
   const byCollection = new Map<string, string[]>();
-  const defaultLocale = (req.payload.config.localization && req.payload.config.localization.defaultLocale) || undefined;
+  const defaultLocale =
+    (req.payload.config.localization && req.payload.config.localization.defaultLocale) || undefined;
 
   for (const ref of unique) {
     const parsed = parseRef(ref);

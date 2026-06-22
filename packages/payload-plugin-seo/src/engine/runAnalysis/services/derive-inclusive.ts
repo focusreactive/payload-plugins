@@ -63,7 +63,10 @@ function extractInclusiveFlags(assessor: YoastInclusiveAssessor): RawInclusiveFl
     }
 
     const category = CATEGORY_LABELS[assessment?.category ?? ""] ?? "Other";
-    const suggestion = (assessment?.inclusiveAlternatives ?? []).map(stripTags).filter(Boolean).join(", ");
+    const suggestion = (assessment?.inclusiveAlternatives ?? [])
+      .map(stripTags)
+      .filter(Boolean)
+      .join(", ");
 
     return phrases.map((found) => ({
       category,

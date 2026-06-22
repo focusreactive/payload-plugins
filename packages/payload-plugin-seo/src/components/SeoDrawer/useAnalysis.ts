@@ -20,7 +20,12 @@ export interface UseAnalysisResult {
   analyzeNow: () => void;
 }
 
-export function useAnalysis({ getInput, signature, supportedLocales, enabled = true }: UseAnalysisArgs): UseAnalysisResult {
+export function useAnalysis({
+  getInput,
+  signature,
+  supportedLocales,
+  enabled = true,
+}: UseAnalysisArgs): UseAnalysisResult {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzedKeyphrase, setAnalyzedKeyphrase] = useState<string | null>(null);

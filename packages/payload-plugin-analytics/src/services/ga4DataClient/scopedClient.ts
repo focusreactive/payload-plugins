@@ -7,7 +7,10 @@ export function createScopedGa4Client(propertyId: string): ScopedGa4Client {
 
   return {
     async runReport(request: object) {
-      const [response] = await client.runReport({ property: propertyPath, ...(request as Record<string, unknown>) });
+      const [response] = await client.runReport({
+        property: propertyPath,
+        ...(request as Record<string, unknown>),
+      });
       return response;
     },
     async batchRunReports(request: object) {

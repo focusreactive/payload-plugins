@@ -9,7 +9,7 @@ import { extractPayload } from "../utils/payload/extractPayload";
 export async function resolveComment(
   id: number | string,
   resolved: boolean,
-  options?: BaseServiceOptions,
+  options?: BaseServiceOptions
 ): Promise<Response<Comment>> {
   try {
     const payload = await extractPayload(options?.payload);
