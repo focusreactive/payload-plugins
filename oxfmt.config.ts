@@ -10,4 +10,10 @@ export default defineConfig({
   printWidth: 200,
   sortImports: false,
   sortPackageJson: false,
+  // Keep oxfmt's ignore set aligned with oxlint.config.ts so a whole-repo
+  // `ultracite fix` never rewrites generated/committed files. ultracite's
+  // shared ignores cover build output, but these project-specific paths
+  // (committed, not gitignored) must be added explicitly — they were
+  // previously protected by the now-removed root .prettierignore.
+  ignorePatterns: [...(ultracite.ignorePatterns ?? []), "**/payload-types.ts", "**/importMap.js", "**/src/database/migrations/**", "apps/cms/scripts/**", "upload-data-scripta/**"],
 });
