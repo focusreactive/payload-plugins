@@ -6,7 +6,13 @@ import { makePayloadRequest } from "../../__fixtures__/http/payloadRequest";
 import basic from "../../__fixtures__/ga4/journeys.basic.json";
 import type { AnalyticsPluginConfig } from "../../src/types/config";
 
-const cfg = { ga4: { propertyId: "12345", measurementId: "G-X", serviceAccount: { clientEmail: "x", privateKey: "y" } } } as AnalyticsPluginConfig;
+const cfg = {
+  ga4: {
+    propertyId: "12345",
+    measurementId: "G-X",
+    serviceAccount: { clientEmail: "x", privateKey: "y" },
+  },
+} as AnalyticsPluginConfig;
 
 // The handler builds a PageFilterContext via getResolvedPagesConfig() → getPluginConfig();
 // seed a config with no `pages` so the resolved config is null (feature off, no filter).
@@ -21,7 +27,10 @@ function callHandler(ep: { handler: unknown }, req: unknown): Promise<Response> 
 describe("POST /api/analytics/journeys", () => {
   it("returns 403 when unauthenticated", async () => {
     const ep = buildJourneysEndpoint(cfg);
-    const res = await callHandler(ep, makePayloadRequest({ user: null, body: { dateRange: { preset: "last-7d" } } }));
+    const res = await callHandler(
+      ep,
+      makePayloadRequest({ user: null, body: { dateRange: { preset: "last-7d" } } })
+    );
     expect(res.status).toBe(403);
   });
 
@@ -35,7 +44,10 @@ describe("POST /api/analytics/journeys", () => {
     const fake = { runReport: vi.fn().mockResolvedValue([basic]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
     const ep = buildJourneysEndpoint(cfg);
-    const res = await callHandler(ep, makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } }));
+    const res = await callHandler(
+      ep,
+      makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } })
+    );
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(Array.isArray(json.rows)).toBe(true);
@@ -48,7 +60,10 @@ describe("POST /api/analytics/journeys", () => {
     const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
     const ep = buildJourneysEndpoint(cfg);
-    const res = await callHandler(ep, makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } }));
+    const res = await callHandler(
+      ep,
+      makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } })
+    );
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.setupRequired).toBe(true);
@@ -60,13 +75,22 @@ describe("POST /api/analytics/journeys", () => {
     const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
     const ep = buildJourneysEndpoint(cfg);
-    const res = await callHandler(ep, makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } }));
+    const res = await callHandler(
+      ep,
+      makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } })
+    );
     expect(res.status).toBe(429);
   });
 
   it("validates limit/maxSteps/sampleLimit bounds", async () => {
     const ep = buildJourneysEndpoint(cfg);
-    const res = await callHandler(ep, makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" }, limit: 9999 } }));
+    const res = await callHandler(
+      ep,
+      makePayloadRequest({
+        user: { id: "u" },
+        body: { dateRange: { preset: "last-7d" }, limit: 9999 },
+      })
+    );
     expect(res.status).toBe(400);
   });
 });

@@ -5,9 +5,11 @@ import { resolveBlockFields } from "./kernel";
 import type { ChildCursor, FieldWalker, LeafField } from "./types";
 import { walkFields } from "./walkFields";
 
-const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
 
-const isLocalizedText = (f: LeafField): boolean => (f.type === "text" || f.type === "textarea" || f.type === "richText") && f.localized === true;
+const isLocalizedText = (f: LeafField): boolean =>
+  (f.type === "text" || f.type === "textarea" || f.type === "richText") && f.localized === true;
 
 describe("walkFields", () => {
   it("build-tree shape (filter): keeps localized leaves, rebuilds structure, drops empties", () => {
@@ -74,12 +76,23 @@ describe("walkFields", () => {
         return v.flatMap((item, i) => {
           if (!isRecord(item)) return [];
           const fields = field.type === "blocks" ? resolveBlockFields(field, item) : field.fields;
-          return fields ? [{ cursor: { data: item, path: [...cursor.path, field.name, String(i)] }, fields, key: i }] : [];
+          return fields
+            ? [
+                {
+                  cursor: { data: item, path: [...cursor.path, field.name, String(i)] },
+                  fields,
+                  key: i,
+                },
+              ]
+            : [];
         });
       },
       leaf(field, cursor) {
         if (isLocalizedText(field)) {
-          collected.push({ path: [...cursor.path, field.name].join("."), value: cursor.data[field.name] });
+          collected.push({
+            path: [...cursor.path, field.name].join("."),
+            value: cursor.data[field.name],
+          });
         }
         return undefined;
       },
@@ -125,12 +138,23 @@ const stdEnterList = (field: ArrayField | BlocksField, c: Cur): ChildCursor<Cur>
   return value.flatMap((item, index) => {
     if (!isRecord(item)) return [];
     const fields = field.type === "blocks" ? resolveBlockFields(field, item) : field.fields;
-    return fields ? [{ cursor: { data: item, path: [...c.path, field.name, String(index)] }, fields, key: index }] : [];
+    return fields
+      ? [
+          {
+            cursor: { data: item, path: [...c.path, field.name, String(index)] },
+            fields,
+            key: index,
+          },
+        ]
+      : [];
   });
 };
 
 /** Collect every visited leaf as `path → value`, in visit order. */
-const collectLeaves = (schema: Field[], data: Record<string, unknown>): Array<{ path: string; value: unknown }> => {
+const collectLeaves = (
+  schema: Field[],
+  data: Record<string, unknown>
+): Array<{ path: string; value: unknown }> => {
   const leaves: Array<{ path: string; value: unknown }> = [];
   walkFields<Cur, void>(
     schema,
@@ -307,7 +331,9 @@ describe("walkFields — deep nesting & engine mechanics", () => {
     );
     expect(seen).not.toContain("seo.metaTitle");
     expect(seen).not.toContain("seo.og.ogTitle");
-    expect(seen).toEqual(expect.arrayContaining(["title", "sections.0.heading", "meta.slug", "intro", "rowField"]));
+    expect(seen).toEqual(
+      expect.arrayContaining(["title", "sections.0.heading", "meta.slug", "intro", "rowField"])
+    );
   });
 
   it("enterList 'skip' prunes the whole list", () => {
@@ -368,7 +394,13 @@ describe("walkFields — deep nesting & engine mechanics", () => {
 
   it("combine fires bottom-up — children before their container, root last", () => {
     const order: string[] = [];
-    const orderSchema = [{ name: "items", type: "array", fields: [{ name: "g", type: "group", fields: [{ name: "x", type: "text" }] }] }] as unknown as Field[];
+    const orderSchema = [
+      {
+        name: "items",
+        type: "array",
+        fields: [{ name: "g", type: "group", fields: [{ name: "x", type: "text" }] }],
+      },
+    ] as unknown as Field[];
     walkFields<Cur, unknown>(
       orderSchema,
       { data: { items: [{ g: { x: "v" } }] }, path: [] },
@@ -386,7 +418,13 @@ describe("walkFields — deep nesting & engine mechanics", () => {
   });
 
   it("drops empty containers, cascading up (empty array inside group → group omitted)", () => {
-    const schema = [{ name: "wrap", type: "group", fields: [{ name: "list", type: "array", fields: [{ name: "x", type: "text" }] }] }] as unknown as Field[];
+    const schema = [
+      {
+        name: "wrap",
+        type: "group",
+        fields: [{ name: "list", type: "array", fields: [{ name: "x", type: "text" }] }],
+      },
+    ] as unknown as Field[];
     expect(rebuildAll(schema, { wrap: { list: [] } })).toBeUndefined();
   });
 

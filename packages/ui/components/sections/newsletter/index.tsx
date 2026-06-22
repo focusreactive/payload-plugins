@@ -16,7 +16,13 @@ interface NewsletterSectionProps {
   theme?: string | null;
 }
 
-export function NewsletterSection({ header, inputPlaceholder, buttonLabel, disclaimer, theme }: NewsletterSectionProps) {
+export function NewsletterSection({
+  header,
+  inputPlaceholder,
+  buttonLabel,
+  disclaimer,
+  theme,
+}: NewsletterSectionProps) {
   const [submitted, setSubmitted] = useState(false);
   const backdropTone = resolveBackdropTone(theme);
 
@@ -36,7 +42,10 @@ export function NewsletterSection({ header, inputPlaceholder, buttonLabel, discl
           {submitted ? (
             <p className="text-lead font-medium">You&rsquo;re in. Talk soon.</p>
           ) : (
-            <form onSubmit={handleSubmit} className="flex flex-wrap items-center justify-center gap-3">
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-wrap items-center justify-center gap-3"
+            >
               <label htmlFor="newsletter-email" className="sr-only">
                 Email address
               </label>

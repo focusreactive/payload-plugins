@@ -8,7 +8,10 @@ interface AbstractBackdropProps {
   className?: string;
 }
 
-type ShapeMap = Record<NonNullable<AbstractBackdropProps["variant"]>, Record<BackdropTone, string[]>>;
+type ShapeMap = Record<
+  NonNullable<AbstractBackdropProps["variant"]>,
+  Record<BackdropTone, string[]>
+>;
 
 const SHAPES: ShapeMap = {
   orbs: {
@@ -49,7 +52,12 @@ function subtleDarkShapes(variant: NonNullable<AbstractBackdropProps["variant"]>
   return variant === "orbs" ? SUBTLE_ORBS_DARK : SUBTLE_BLOBS_DARK;
 }
 
-export function AbstractBackdrop({ variant = "orbs", tone = "dark", intensity = "default", className }: AbstractBackdropProps) {
+export function AbstractBackdrop({
+  variant = "orbs",
+  tone = "dark",
+  intensity = "default",
+  className,
+}: AbstractBackdropProps) {
   const subtle = intensity === "subtle" && tone === "dark";
   const shapes = subtle ? subtleDarkShapes(variant) : SHAPES[variant][tone];
   return (
@@ -57,8 +65,12 @@ export function AbstractBackdrop({ variant = "orbs", tone = "dark", intensity = 
       aria-hidden="true"
       className={cn(
         "pointer-events-none absolute inset-0 overflow-hidden",
-        tone === "dark" && variant === "orbs" && "bg-[#070f0d] bg-[radial-gradient(120%_90%_at_78%_8%,#103a34_0%,transparent_52%),radial-gradient(110%_100%_at_8%_100%,#0a201d_0%,transparent_58%)]",
-        tone === "light" && variant === "orbs" && "bg-[radial-gradient(120%_90%_at_78%_8%,var(--color-teal-soft-light)_0%,transparent_52%)]",
+        tone === "dark" &&
+          variant === "orbs" &&
+          "bg-[#070f0d] bg-[radial-gradient(120%_90%_at_78%_8%,#103a34_0%,transparent_52%),radial-gradient(110%_100%_at_8%_100%,#0a201d_0%,transparent_58%)]",
+        tone === "light" &&
+          variant === "orbs" &&
+          "bg-[radial-gradient(120%_90%_at_78%_8%,var(--color-teal-soft-light)_0%,transparent_52%)]",
         subtle &&
           variant === "blobs" &&
           "bg-[#070f0d] bg-[radial-gradient(75%_135%_at_50%_128%,rgba(216,255,58,0.15),transparent_60%),radial-gradient(120%_90%_at_80%_6%,#123f38_0%,transparent_52%),radial-gradient(115%_100%_at_6%_100%,#0a201d_0%,transparent_58%)]",
@@ -66,7 +78,13 @@ export function AbstractBackdrop({ variant = "orbs", tone = "dark", intensity = 
       )}
     >
       {shapes.map((shape) => (
-        <div key={shape} className={cn("absolute rounded-pill will-change-transform motion-reduce:animate-none", shape)} />
+        <div
+          key={shape}
+          className={cn(
+            "absolute rounded-pill will-change-transform motion-reduce:animate-none",
+            shape
+          )}
+        />
       ))}
     </div>
   );

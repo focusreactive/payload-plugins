@@ -12,7 +12,13 @@ export interface DropdownProps {
   triggerClassName?: string;
 }
 
-export function Dropdown({ trigger, children, align = "right", minWidth = 220, triggerClassName }: DropdownProps) {
+export function Dropdown({
+  trigger,
+  children,
+  align = "right",
+  minWidth = 220,
+  triggerClassName,
+}: DropdownProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 

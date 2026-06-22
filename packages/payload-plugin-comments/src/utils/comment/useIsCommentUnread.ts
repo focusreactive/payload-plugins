@@ -20,7 +20,7 @@ export function useIsCommentUnread(comment: Comment, currentUserId: number | nul
 
   const mentions = (comment.mentions ?? []) as CommentMention[];
   const isMentioned = mentions.some(
-    (m) => extractRelationId(m.user as number | { id: number } | null) === currentUserId,
+    (m) => extractRelationId(m.user as number | { id: number } | null) === currentUserId
   );
   if (!isMentioned) return false;
 

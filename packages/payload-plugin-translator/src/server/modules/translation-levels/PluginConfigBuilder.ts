@@ -26,7 +26,11 @@ export type PluginConfigBuilderDeps = {
 
 const endpointKey = (endpoint: Endpoint): string => `${endpoint.method} ${endpoint.path}`;
 
-function attachToSlot(collection: CollectionConfig, slot: CollectionAdminSlot, component: RawPayloadComponentExport): void {
+function attachToSlot(
+  collection: CollectionConfig,
+  slot: CollectionAdminSlot,
+  component: RawPayloadComponentExport
+): void {
   if (!collection.admin) collection.admin = {};
   if (!collection.admin.components) collection.admin.components = {};
   const components = collection.admin.components;
@@ -85,7 +89,10 @@ export class PluginConfigBuilder implements LevelContext {
     this.endpoints.push(...endpoints);
   }
 
-  addCollectionComponent(slot: CollectionAdminSlot, make: (collection: CollectionConfig) => RawPayloadComponentExport): void {
+  addCollectionComponent(
+    slot: CollectionAdminSlot,
+    make: (collection: CollectionConfig) => RawPayloadComponentExport
+  ): void {
     this.collectionComponents.push({ slot, make });
   }
 

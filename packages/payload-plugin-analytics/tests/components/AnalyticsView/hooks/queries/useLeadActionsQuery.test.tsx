@@ -8,7 +8,10 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const query = { dateRange: { preset: "last-7d" as const }, comparison: { kind: "previous-period" as const } };
+const query = {
+  dateRange: { preset: "last-7d" as const },
+  comparison: { kind: "previous-period" as const },
+};
 
 describe("useLeadActionsQuery", () => {
   it("posts to /api/analytics/lead-actions with the query body and resolves data", async () => {

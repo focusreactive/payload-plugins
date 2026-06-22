@@ -2,16 +2,24 @@ import { AlertTriangle, ExternalLink } from "lucide-react";
 import type { CustomRegistrationKey } from "../../../types/query";
 
 const SETUP_COPY: Record<CustomRegistrationKey, string> = {
-  fr_elapsed_ms: "Register `fr_elapsed_ms` as a custom metric (Standard, milliseconds) in GA4 Admin to enable this metric.",
-  fr_session_id: "Register `fr_session_id` as a custom dimension in GA4 Admin to enable session-level analytics.",
-  fr_event_seq: "Register `fr_event_seq` as a custom dimension to enable within-minute event ordering.",
-  fr_session_start: "Register `fr_session_start` as an event-scoped custom dimension to populate session start time.",
-  fr_lead_type: "Register `fr_lead_type` as an event-scoped custom dimension to track lead action types.",
-  fr_page_ref: "Register `fr_page_ref` as an event-scoped custom dimension to scope analytics to existing pages.",
-  fr_content_locale: "Register `fr_content_locale` as an event-scoped custom dimension to enable per-locale page analytics.",
+  fr_elapsed_ms:
+    "Register `fr_elapsed_ms` as a custom metric (Standard, milliseconds) in GA4 Admin to enable this metric.",
+  fr_session_id:
+    "Register `fr_session_id` as a custom dimension in GA4 Admin to enable session-level analytics.",
+  fr_event_seq:
+    "Register `fr_event_seq` as a custom dimension to enable within-minute event ordering.",
+  fr_session_start:
+    "Register `fr_session_start` as an event-scoped custom dimension to populate session start time.",
+  fr_lead_type:
+    "Register `fr_lead_type` as an event-scoped custom dimension to track lead action types.",
+  fr_page_ref:
+    "Register `fr_page_ref` as an event-scoped custom dimension to scope analytics to existing pages.",
+  fr_content_locale:
+    "Register `fr_content_locale` as an event-scoped custom dimension to enable per-locale page analytics.",
 };
 
-const SETUP_GUIDE_URL = "https://github.com/focusreactive/payload-plugins/blob/main/packages/payload-plugin-analytics/docs/setup-ga4.md#stage-3-custom-registrations";
+const SETUP_GUIDE_URL =
+  "https://github.com/focusreactive/payload-plugins/blob/main/packages/payload-plugin-analytics/docs/setup-ga4.md#stage-3-custom-registrations";
 
 export function SetupWarningIcon({ missingKey }: { missingKey: CustomRegistrationKey }) {
   const copy = SETUP_COPY[missingKey];
@@ -30,7 +38,10 @@ export function SetupWarningIcon({ missingKey }: { missingKey: CustomRegistratio
       >
         {parts.map((seg, i) =>
           i % 2 ? (
-            <code key={i} className="font-[family-name:var(--font-mono)] bg-[var(--theme-elevation-700)] px-1 rounded text-[10px]">
+            <code
+              key={i}
+              className="font-[family-name:var(--font-mono)] bg-[var(--theme-elevation-700)] px-1 rounded text-[10px]"
+            >
               {seg}
             </code>
           ) : (
@@ -38,7 +49,12 @@ export function SetupWarningIcon({ missingKey }: { missingKey: CustomRegistratio
           )
         )}
         <br />
-        <a href={SETUP_GUIDE_URL} target="_blank" rel="noreferrer" className="text-[var(--theme-warning-500)] mt-1.5 inline-flex items-center gap-1 no-underline pointer-events-auto">
+        <a
+          href={SETUP_GUIDE_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="text-[var(--theme-warning-500)] mt-1.5 inline-flex items-center gap-1 no-underline pointer-events-auto"
+        >
           Setup guide <ExternalLink size={10} />
         </a>
       </span>

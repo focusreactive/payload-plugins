@@ -30,12 +30,18 @@ export default async function middleware(request: NextRequest) {
   const localeMatch = pathname.match(localeRegex);
 
   const matchedLocale = localeMatch?.[1];
-  const isNextRoute = matchedLocale ? pathname.startsWith(`/${matchedLocale}/next/`) : pathname.startsWith("/next/");
+  const isNextRoute = matchedLocale
+    ? pathname.startsWith(`/${matchedLocale}/next/`)
+    : pathname.startsWith("/next/");
 
   const { isEnabled: isDraftMode } = await draftMode();
 
   if (!isNextRoute && !isDraftMode) {
-    const internalPathname = buildInternalPathname(pathname, matchedLocale, I18N_CONFIG.defaultLocale);
+    const internalPathname = buildInternalPathname(
+      pathname,
+      matchedLocale,
+      I18N_CONFIG.defaultLocale
+    );
     const abResponse = await resolveAbRewrite(request, pathname, pathname, internalPathname);
 
     if (abResponse) {

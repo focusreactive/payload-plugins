@@ -13,13 +13,22 @@ import { getComponentPath } from "../../utils/path/getComponentPath";
 
 const ANALYTICS_HEADER_LINK_PATH = getComponentPath("components/AnalyticsView/AnalyticsHeaderLink");
 
-const BUILTIN_BLOCK_IDS = new Set<string>([...BUILTIN_OVERVIEW_BLOCK_IDS, ...BUILTIN_LEAD_ACTIONS_BLOCK_IDS]);
+const BUILTIN_BLOCK_IDS = new Set<string>([
+  ...BUILTIN_OVERVIEW_BLOCK_IDS,
+  ...BUILTIN_LEAD_ACTIONS_BLOCK_IDS,
+]);
 
-export default function AnalyticsView({ initPageResult, params, searchParams }: AdminViewServerProps) {
+export default function AnalyticsView({
+  initPageResult,
+  params,
+  searchParams,
+}: AdminViewServerProps) {
   const { req, permissions, locale, visibleEntities } = initPageResult;
   const { i18n, payload, user } = req;
 
-  const viewActions = [...(payload.config.admin?.components?.actions ?? [])].filter((action) => action !== ANALYTICS_HEADER_LINK_PATH).reverse();
+  const viewActions = [...(payload.config.admin?.components?.actions ?? [])]
+    .filter((action) => action !== ANALYTICS_HEADER_LINK_PATH)
+    .reverse();
   const title = i18n.t("analytics:title" as never);
 
   const resolved = getResolvedLayout();
@@ -70,7 +79,14 @@ export default function AnalyticsView({ initPageResult, params, searchParams }: 
       <SetAnalyticsStepNav label={title} />
 
       <Gutter>
-        <AnalyticsShell title={title} layout={resolved} clientRegistry={clientRegistry} blockComponents={blockComponents} SessionsTabComponent={SessionsTabComponent} abEnabled={abEnabled} />
+        <AnalyticsShell
+          title={title}
+          layout={resolved}
+          clientRegistry={clientRegistry}
+          blockComponents={blockComponents}
+          SessionsTabComponent={SessionsTabComponent}
+          abEnabled={abEnabled}
+        />
       </Gutter>
     </DefaultTemplate>
   );

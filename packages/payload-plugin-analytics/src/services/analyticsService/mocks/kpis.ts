@@ -21,6 +21,8 @@ export const kpisMock: RunReportMockFn = (request) => {
       });
     });
 
-  const rows = hasComparison ? [...buildRows("current"), ...buildRows("previous")] : buildRows("current");
+  const rows = hasComparison
+    ? [...buildRows("current"), ...buildRows("previous")]
+    : buildRows("current");
   return response(rows) as never;
 };

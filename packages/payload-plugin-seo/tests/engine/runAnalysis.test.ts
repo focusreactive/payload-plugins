@@ -11,7 +11,11 @@ vi.mock("yoastseo", () => {
   const res = (id: string, score: number) => ({ getIdentifier: () => id, score });
   const assessorReturning = (results: ReturnType<typeof res>[]) =>
     function FakeAssessor() {
-      return { assess: () => undefined, getValidResults: () => results, addAssessment: () => undefined };
+      return {
+        assess: () => undefined,
+        getValidResults: () => results,
+        addAssessment: () => undefined,
+      };
     };
   return {
     Paper: function (text: string, attributes: Record<string, unknown>) {

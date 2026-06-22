@@ -91,7 +91,9 @@ export function SectionVisibilityLabel() {
         const list = document.body.querySelector(".popup__content .popup-button-list");
         if (!list) return;
 
-        const existing = list.querySelector("[data-section-visibility-container]") as HTMLDivElement | null;
+        const existing = list.querySelector(
+          "[data-section-visibility-container]"
+        ) as HTMLDivElement | null;
 
         if (existing) {
           setPortalContainer(existing);
@@ -115,7 +117,9 @@ export function SectionVisibilityLabel() {
   const toggleVisibility = () => {
     setValue(!isHidden);
 
-    const actionsButton = anchorRef.current?.closest(".blocks-field__row")?.querySelector<HTMLButtonElement>(".array-actions__button");
+    const actionsButton = anchorRef.current
+      ?.closest(".blocks-field__row")
+      ?.querySelector<HTMLButtonElement>(".array-actions__button");
 
     if (actionsButton) {
       suppressNextActionsClickRef.current = true;
@@ -125,9 +129,15 @@ export function SectionVisibilityLabel() {
 
   return (
     <span ref={anchorRef} style={{ display: "contents" }}>
-      <span className={`${baseClass}__block-number`}>{String((rowNumber ?? 0) + 1).padStart(2, "0")}</span>
+      <span className={`${baseClass}__block-number`}>
+        {String((rowNumber ?? 0) + 1).padStart(2, "0")}
+      </span>
 
-      <Pill className={`${baseClass}__block-pill ${baseClass}__block-pill-${data?.blockType ?? ""}`} pillStyle="white" size="small">
+      <Pill
+        className={`${baseClass}__block-pill ${baseClass}__block-pill-${data?.blockType ?? ""}`}
+        pillStyle="white"
+        size="small"
+      >
         {titleCase(data?.blockType)}
       </Pill>
 
@@ -146,7 +156,10 @@ export function SectionVisibilityLabel() {
                 color: var(--theme-error-600);
               }
             `}</style>
-            <PopupList.Button className={`popup-button-list__button array-actions__action${isHidden ? "" : " section-visibility-action--disable"}`} onClick={toggleVisibility}>
+            <PopupList.Button
+              className={`popup-button-list__button array-actions__action${isHidden ? "" : " section-visibility-action--disable"}`}
+              onClick={toggleVisibility}
+            >
               <EyeIcon className="w-[17px] h-[17px]" active={!isHidden} />
 
               {isHidden ? "Show Section" : "Disable Section"}

@@ -30,7 +30,10 @@ describe("transformUploadValues", () => {
       field({ name: "gallery", type: "upload", relationTo: "media", hasMany: true }),
       field({ name: "asset", type: "upload", relationTo: ["media", "videos"] }),
     ];
-    const refs = collect({ image: 1, gallery: [2, 3], asset: { relationTo: "media", value: 4 } }, fields);
+    const refs = collect(
+      { image: 1, gallery: [2, 3], asset: { relationTo: "media", value: 4 } },
+      fields
+    );
 
     expect(refs).toEqual([
       { collection: "media", id: 1 },
@@ -58,12 +61,26 @@ describe("transformUploadValues", () => {
     });
     const fields = [
       field({ name: "sections", type: "blocks", blocks: [hero] }),
-      field({ name: "items", type: "array", fields: [field({ name: "icon", type: "upload", relationTo: "media" })] }),
-      field({ name: "meta", type: "group", fields: [field({ name: "og", type: "upload", relationTo: "media" })] }),
-      field({ type: "row", fields: [field({ name: "rowImg", type: "upload", relationTo: "media" })] }),
+      field({
+        name: "items",
+        type: "array",
+        fields: [field({ name: "icon", type: "upload", relationTo: "media" })],
+      }),
+      field({
+        name: "meta",
+        type: "group",
+        fields: [field({ name: "og", type: "upload", relationTo: "media" })],
+      }),
+      field({
+        type: "row",
+        fields: [field({ name: "rowImg", type: "upload", relationTo: "media" })],
+      }),
       field({
         type: "tabs",
-        tabs: [{ name: "seo", fields: [field({ name: "tabImg", type: "upload", relationTo: "media" })] }, { fields: [field({ name: "looseImg", type: "upload", relationTo: "media" })] }],
+        tabs: [
+          { name: "seo", fields: [field({ name: "tabImg", type: "upload", relationTo: "media" })] },
+          { fields: [field({ name: "looseImg", type: "upload", relationTo: "media" })] },
+        ],
       }),
     ];
     const values = {
@@ -82,9 +99,18 @@ describe("transformUploadValues", () => {
   });
 
   it("resolves block slugs through blockReferences and blocksBySlug", () => {
-    const shared = block({ slug: "shared", fields: [field({ name: "pic", type: "upload", relationTo: "media" })] });
-    const fields = [field({ name: "sections", type: "blocks", blocks: [], blockReferences: ["shared"] })];
-    const refs = collect({ sections: [{ blockType: "shared", pic: 8 }] }, fields, ctx({ blocksBySlug: { shared } }));
+    const shared = block({
+      slug: "shared",
+      fields: [field({ name: "pic", type: "upload", relationTo: "media" })],
+    });
+    const fields = [
+      field({ name: "sections", type: "blocks", blocks: [], blockReferences: ["shared"] }),
+    ];
+    const refs = collect(
+      { sections: [{ blockType: "shared", pic: 8 }] },
+      fields,
+      ctx({ blocksBySlug: { shared } })
+    );
 
     expect(refs).toEqual([{ collection: "media", id: 8 }]);
   });
@@ -92,7 +118,9 @@ describe("transformUploadValues", () => {
   it("visits lexical upload nodes inside richText fields", () => {
     const fields = [field({ name: "body", type: "richText" })];
     const values = {
-      body: { root: { type: "root", children: [{ type: "upload", relationTo: "media", value: 9 }] } },
+      body: {
+        root: { type: "root", children: [{ type: "upload", relationTo: "media", value: 9 }] },
+      },
     };
 
     expect(collect(values, fields)).toEqual([{ collection: "media", id: 9 }]);
@@ -118,7 +146,10 @@ describe("transformUploadValues", () => {
   });
 
   it("skips missing values and already-populated objects on monomorphic fields", () => {
-    const fields = [field({ name: "image", type: "upload", relationTo: "media" }), field({ name: "other", type: "upload", relationTo: "media" })];
+    const fields = [
+      field({ name: "image", type: "upload", relationTo: "media" }),
+      field({ name: "other", type: "upload", relationTo: "media" }),
+    ];
     const populated = { id: 1, url: "/m/a.jpg" };
     const refs = collect({ other: populated }, fields);
 

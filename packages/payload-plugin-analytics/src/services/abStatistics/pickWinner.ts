@@ -18,7 +18,12 @@ export function pickWinner(candidates: WinnerCandidate[], opts: WinnerOpts): Win
   const byConfidence = [...candidates].sort((a, b) => confidence(b.zScore) - confidence(a.zScore));
 
   const leaderBucket = byConfidence[0]!.bucket;
-  const winner = byConfidence.find((c) => confidence(c.zScore) >= confidenceThreshold && c.relativeLift > 0 && c.minBucketSessions >= opts.sessionFloor);
+  const winner = byConfidence.find(
+    (c) =>
+      confidence(c.zScore) >= confidenceThreshold &&
+      c.relativeLift > 0 &&
+      c.minBucketSessions >= opts.sessionFloor
+  );
 
   return {
     winnerBucket: winner?.bucket ?? null,

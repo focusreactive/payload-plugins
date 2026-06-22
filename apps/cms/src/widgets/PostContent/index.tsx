@@ -13,7 +13,11 @@ interface PostContentProps {
   relatedPostsLabel?: string | null;
 }
 
-export const PostContent: React.FC<PostContentProps> = async ({ post, locale, relatedPostsLabel }) => {
+export const PostContent: React.FC<PostContentProps> = async ({
+  post,
+  locale,
+  relatedPostsLabel,
+}) => {
   const relatedPosts = await getRelatedPosts({ locale, post });
 
   const hasFaq = (post.faq?.items?.length ?? 0) > 0;
@@ -33,7 +37,9 @@ export const PostContent: React.FC<PostContentProps> = async ({ post, locale, re
 
       {hasFaq && post.faq && <PostFaq faq={post.faq} />}
 
-      {relatedPosts.length > 0 && <RelatedPostsSection posts={relatedPosts} relatedPostsLabel={relatedPostsLabel} />}
+      {relatedPosts.length > 0 && (
+        <RelatedPostsSection posts={relatedPosts} relatedPostsLabel={relatedPostsLabel} />
+      )}
 
       {hasCta && post.cta && <PostCta cta={post.cta} />}
     </article>

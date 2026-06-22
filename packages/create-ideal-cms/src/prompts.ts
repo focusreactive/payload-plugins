@@ -1,4 +1,14 @@
-import { cancel, confirm, intro, isCancel, log, outro, password, select, text } from "@clack/prompts";
+import {
+  cancel,
+  confirm,
+  intro,
+  isCancel,
+  log,
+  outro,
+  password,
+  select,
+  text,
+} from "@clack/prompts";
 import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
@@ -40,7 +50,11 @@ function unwrap<T>(value: T | symbol): T {
   return value as T;
 }
 
-export async function collectAnswers(argv: { name?: string; ref?: string; fromLocal?: string }): Promise<Answers> {
+export async function collectAnswers(argv: {
+  name?: string;
+  ref?: string;
+  fromLocal?: string;
+}): Promise<Answers> {
   intro(pc.bgCyan(pc.black(" create-ideal-cms ")));
   log.message("Scaffolds a Payload CMS monorepo preconfigured with @focus-reactive plugins.");
 
@@ -51,7 +65,8 @@ export async function collectAnswers(argv: { name?: string; ref?: string; fromLo
       initialValue: argv.name,
       validate: (value) => {
         if (!value) return "Required.";
-        if (!PROJECT_RE.test(value)) return "Use lowercase letters, digits, dashes, or underscores.";
+        if (!PROJECT_RE.test(value))
+          return "Use lowercase letters, digits, dashes, or underscores.";
         const target = resolve(process.cwd(), value);
         if (existsSync(target)) return `Directory "${value}" already exists.`;
         return;
@@ -152,7 +167,8 @@ export async function collectAnswers(argv: { name?: string; ref?: string; fromLo
 
   const runInitialMigration = unwrap(
     await confirm({
-      message: "Run an initial database migration after install? (requires DATABASE_URL to be reachable)",
+      message:
+        "Run an initial database migration after install? (requires DATABASE_URL to be reachable)",
       initialValue: true,
     })
   );
@@ -177,7 +193,9 @@ export async function collectAnswers(argv: { name?: string; ref?: string; fromLo
     })
   );
 
-  const source: TemplateSource = argv.fromLocal ? { kind: "local", path: resolve(process.cwd(), argv.fromLocal) } : { kind: "github", ref: argv.ref ?? "main" };
+  const source: TemplateSource = argv.fromLocal
+    ? { kind: "local", path: resolve(process.cwd(), argv.fromLocal) }
+    : { kind: "github", ref: argv.ref ?? "main" };
 
   return {
     projectName,

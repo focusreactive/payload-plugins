@@ -42,7 +42,10 @@ export async function markCommentRead({
     }
 
     const tenantId = await getCurrentTenantId(payload);
-    if (tenantId && extractRelationId(comment.tenant as number | { id: number } | null) !== tenantId) {
+    if (
+      tenantId &&
+      extractRelationId(comment.tenant as number | { id: number } | null) !== tenantId
+    ) {
       return { success: false, error: "Forbidden" };
     }
 
@@ -61,7 +64,9 @@ export async function markCommentRead({
     }
 
     const mentions = (comment.mentions ?? []) as CommentMention[];
-    const isMentioned = mentions.some((m) => extractRelationId(m.user as number | { id: number } | null) === user.id);
+    const isMentioned = mentions.some(
+      (m) => extractRelationId(m.user as number | { id: number } | null) === user.id
+    );
     if (!isMentioned) {
       return {
         success: false,

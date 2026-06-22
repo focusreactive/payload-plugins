@@ -89,7 +89,10 @@ describe("PayloadJobsTaskRunner", () => {
     });
 
     it("queues multiple tasks", async () => {
-      const inputs = [createInput({ collectionId: "doc-1" }), createInput({ collectionId: "doc-2" })];
+      const inputs = [
+        createInput({ collectionId: "doc-1" }),
+        createInput({ collectionId: "doc-2" }),
+      ];
       await runner.enqueue(inputs);
 
       expect(mockPayload.jobs.queue).toHaveBeenCalledTimes(2);
@@ -266,7 +269,9 @@ describe("PayloadJobsTaskRunner", () => {
       });
       // update (lock reset) must precede jobs.run — a regression that runs first
       // would leave the job stuck processing: true when run rejects
-      expect(mockPayload.update.mock.invocationCallOrder[0]).toBeLessThan(mockPayload.jobs.run.mock.invocationCallOrder[0]);
+      expect(mockPayload.update.mock.invocationCallOrder[0]).toBeLessThan(
+        mockPayload.jobs.run.mock.invocationCallOrder[0]
+      );
     });
 
     it("re-runs a stale locked job and propagates jobs.run rejection after resetting the lock", async () => {
@@ -358,9 +363,16 @@ describe("PayloadJobsTaskRunner", () => {
       expect(arg.depth).toBe(0);
       // Narrows by real payload-jobs columns only (no JSON-path traversal,
       // which would hit the drizzle SQLite issue documented in findByCollection).
-      const expectedCutoff = new Date(Date.parse("2026-01-01T00:00:00.000Z") - 300_000).toISOString();
+      const expectedCutoff = new Date(
+        Date.parse("2026-01-01T00:00:00.000Z") - 300_000
+      ).toISOString();
       expect(arg.where).toEqual({
-        and: [{ taskSlug: { equals: "translate_document" } }, { processing: { equals: true } }, { completedAt: { exists: false } }, { updatedAt: { less_than: expectedCutoff } }],
+        and: [
+          { taskSlug: { equals: "translate_document" } },
+          { processing: { equals: true } },
+          { completedAt: { exists: false } },
+          { updatedAt: { less_than: expectedCutoff } },
+        ],
       });
     });
 

@@ -121,7 +121,13 @@ export const Footer: CollectionConfig<"footer"> = {
         ],
       }),
       fields: [
-        { label: { en: "Group label", es: "Etiqueta del grupo" }, localized: true, name: "label", required: true, type: "text" },
+        {
+          label: { en: "Group label", es: "Etiqueta del grupo" },
+          localized: true,
+          name: "label",
+          required: true,
+          type: "text",
+        },
         {
           fields: [link({ appearances: false })],
           minRows: 1,

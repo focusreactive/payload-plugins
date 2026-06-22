@@ -3,7 +3,10 @@ import { extractContent } from "../../src/content/extractContent";
 
 describe("extractContent", () => {
   it("wraps plain text fragments as paragraphs", () => {
-    const html = extractContent({ sections: [{ blockType: "copy", text: "Hello world" }] }, { content: "sections" });
+    const html = extractContent(
+      { sections: [{ blockType: "copy", text: "Hello world" }] },
+      { content: "sections" }
+    );
     expect(html).toContain("<p>Hello world</p>");
   });
 
@@ -11,7 +14,15 @@ describe("extractContent", () => {
     const data = {
       sections: [
         { blockType: "hero", title: "Big" },
-        { blockType: "copy", richText: { root: { type: "root", children: [{ type: "paragraph", children: [{ type: "text", text: "Body" }] }] } } },
+        {
+          blockType: "copy",
+          richText: {
+            root: {
+              type: "root",
+              children: [{ type: "paragraph", children: [{ type: "text", text: "Body" }] }],
+            },
+          },
+        },
       ],
     };
     const html = extractContent(data, { content: "sections" });
@@ -37,7 +48,12 @@ describe("extractContent", () => {
           blockType: "hero",
           title: "Big",
           links: [{ id: "1", label: "running shoes", url: "https://other.example/running-shoes" }],
-          image: { id: "m1", url: "/media/trail.jpg", mimeType: "image/jpeg", alt: "running shoes on a trail" },
+          image: {
+            id: "m1",
+            url: "/media/trail.jpg",
+            mimeType: "image/jpeg",
+            alt: "running shoes on a trail",
+          },
         },
       ],
     };

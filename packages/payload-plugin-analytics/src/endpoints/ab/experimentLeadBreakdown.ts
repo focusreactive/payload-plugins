@@ -21,7 +21,8 @@ export function buildAbExperimentLeadBreakdownEndpoint(config: AnalyticsPluginCo
       }
 
       const parsed = AbExperimentQuerySchema.safeParse(body);
-      if (!parsed.success) return Response.json({ error: formatZodIssues(parsed.error.issues) }, { status: 400 });
+      if (!parsed.success)
+        return Response.json({ error: formatZodIssues(parsed.error.issues) }, { status: 400 });
 
       try {
         const stats = await getAbExperimentStats(parsed.data.manifestKey, parsed.data, req);

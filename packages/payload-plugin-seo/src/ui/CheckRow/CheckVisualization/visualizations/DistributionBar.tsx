@@ -7,7 +7,11 @@ export function DistributionBar({ positions }: DistributionModel) {
     <>
       <div className="seo-docbar relative h-[24px] rounded-rs border border-neutral-200">
         {positions.map((p, i) => (
-          <i key={`${p}-${i}`} className="absolute top-[3px] bottom-[3px] w-[3px] rounded-[2px] bg-neutral-800" style={{ left: `${p}%` }} />
+          <i
+            key={`${p}-${i}`}
+            className="absolute top-[3px] bottom-[3px] w-[3px] rounded-[2px] bg-neutral-800"
+            style={{ left: `${p}%` }}
+          />
         ))}
       </div>
 

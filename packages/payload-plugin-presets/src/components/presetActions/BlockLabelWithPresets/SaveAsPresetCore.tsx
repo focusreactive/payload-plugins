@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { PopupList, useForm, useTranslation, toast, useAuth, useDocumentDrawer } from "@payloadcms/ui";
+import {
+  PopupList,
+  useForm,
+  useTranslation,
+  toast,
+  useAuth,
+  useDocumentDrawer,
+} from "@payloadcms/ui";
 import { usePresetsConfig } from "../../usePresetsConfig.js";
 import { useOpenDrawer } from "../../blocksDrawer/OpenDrawerContext.js";
 import { Data } from "payload";
@@ -86,7 +93,9 @@ export function SaveAsPresetCore({ presetBlockData, rowIndex }: SaveAsPresetCore
         const list = document.body.querySelector(".popup__content .popup-button-list");
 
         if (list) {
-          const existing = list.querySelector("[data-save-as-preset-container]") as HTMLDivElement | null;
+          const existing = list.querySelector(
+            "[data-save-as-preset-container]"
+          ) as HTMLDivElement | null;
           if (existing) {
             setPortalContainer(existing);
           } else {
@@ -111,7 +120,10 @@ export function SaveAsPresetCore({ presetBlockData, rowIndex }: SaveAsPresetCore
     };
   }, [openPresetsDrawer, presetType, rowIndex]);
 
-  const blockContent = cleanPresetData(presetBlockData ?? {}, excludeSet) as Record<string, unknown>;
+  const blockContent = cleanPresetData(presetBlockData ?? {}, excludeSet) as Record<
+    string,
+    unknown
+  >;
 
   const data = presetType
     ? ({
@@ -129,7 +141,10 @@ export function SaveAsPresetCore({ presetBlockData, rowIndex }: SaveAsPresetCore
         portalContainer &&
         createPortal(
           <div>
-            <PopupList.Button className="popup-button-list__button array-actions__action" onClick={openDrawer}>
+            <PopupList.Button
+              className="popup-button-list__button array-actions__action"
+              onClick={openDrawer}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="17"

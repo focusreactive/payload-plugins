@@ -19,7 +19,9 @@ describe("TranslateDocumentHandler", () => {
   let mockSchemaMap: CollectionSchemaMap;
   let mockPayload: Payload;
 
-  const createInput = (overrides: Partial<TranslateDocumentInput> = {}): TranslateDocumentInput => ({
+  const createInput = (
+    overrides: Partial<TranslateDocumentInput> = {}
+  ): TranslateDocumentInput => ({
     collection: "posts" as CollectionSlug,
     collectionId: "doc-123",
     sourceLng: "en",
@@ -68,7 +70,9 @@ describe("TranslateDocumentHandler", () => {
       const input = createInput({ collection: "unknown" as CollectionSlug });
 
       await expect(handler.handle(mockPayload, input)).rejects.toThrow(APIError);
-      await expect(handler.handle(mockPayload, input)).rejects.toThrow('Collection "unknown" not found in schemaMap');
+      await expect(handler.handle(mockPayload, input)).rejects.toThrow(
+        'Collection "unknown" not found in schemaMap'
+      );
     });
   });
 
@@ -143,7 +147,9 @@ describe("TranslateDocumentHandler", () => {
 
     it("returns success after saving translated document", async () => {
       const { translateContent } = await import("../../modules/translation-pipeline");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ title: "Übersetzter Titel" });
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+        title: "Übersetzter Titel",
+      });
 
       const input = createInput();
       const result = await handler.handle(mockPayload, input);
@@ -155,7 +161,9 @@ describe("TranslateDocumentHandler", () => {
   describe("saving translated documents", () => {
     beforeEach(async () => {
       const { translateContent } = await import("../../modules/translation-pipeline");
-      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ title: "Translated" });
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+        title: "Translated",
+      });
     });
 
     it("saves document with target locale and source as fallback", async () => {
@@ -186,7 +194,9 @@ describe("TranslateDocumentHandler", () => {
     });
 
     it("sets _status to draft when versions with drafts enabled", async () => {
-      (mockPayload.collections["posts"].config as { versions: unknown }).versions = { drafts: true };
+      (mockPayload.collections["posts"].config as { versions: unknown }).versions = {
+        drafts: true,
+      };
 
       const input = createInput();
       await handler.handle(mockPayload, input);
@@ -201,7 +211,9 @@ describe("TranslateDocumentHandler", () => {
     });
 
     it("sets _status to published when publishOnTranslation is true", async () => {
-      (mockPayload.collections["posts"].config as { versions: unknown }).versions = { drafts: true };
+      (mockPayload.collections["posts"].config as { versions: unknown }).versions = {
+        drafts: true,
+      };
 
       const input = createInput({ publishOnTranslation: true });
       await handler.handle(mockPayload, input);

@@ -21,18 +21,27 @@ describe("pickWinner", () => {
   });
 
   it("declares no winner but still names a provisional leader when nothing is significant", () => {
-    const r = pickWinner([{ bucket: "a", zScore: 1.2, relativeLift: 0.1, minBucketSessions: 2000 }], opts);
+    const r = pickWinner(
+      [{ bucket: "a", zScore: 1.2, relativeLift: 0.1, minBucketSessions: 2000 }],
+      opts
+    );
     expect(r.winnerBucket).toBeNull();
     expect(r.leaderBucket).toBe("a");
   });
 
   it("does not crown a significant but negative-lift variant", () => {
-    const r = pickWinner([{ bucket: "a", zScore: -2.6, relativeLift: -0.3, minBucketSessions: 2000 }], opts);
+    const r = pickWinner(
+      [{ bucket: "a", zScore: -2.6, relativeLift: -0.3, minBucketSessions: 2000 }],
+      opts
+    );
     expect(r.winnerBucket).toBeNull();
   });
 
   it("blocks a significant winner that fails the session floor (noise guard)", () => {
-    const r = pickWinner([{ bucket: "a", zScore: 3, relativeLift: 0.5, minBucketSessions: 40 }], opts);
+    const r = pickWinner(
+      [{ bucket: "a", zScore: 3, relativeLift: 0.5, minBucketSessions: 40 }],
+      opts
+    );
     expect(r.winnerBucket).toBeNull();
     expect(r.leaderBucket).toBe("a");
   });

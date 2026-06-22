@@ -29,7 +29,10 @@ export const LivePreviewListener: React.FC = () => {
             isAdmin = parentPath.includes("/admin");
           } catch {
             const referrer = document.referrer || "";
-            isAdmin = referrer.includes("/admin") || referrer.includes("payload") || window.location.search.includes("preview=true");
+            isAdmin =
+              referrer.includes("/admin") ||
+              referrer.includes("payload") ||
+              window.location.search.includes("preview=true");
           }
 
           setIsFromPayloadAdmin(isAdmin);
@@ -50,7 +53,10 @@ export const LivePreviewListener: React.FC = () => {
       <PayloadLivePreview refresh={router.refresh} serverURL={getClientSideURL()} />
       {(!isInIframe || !isFromPayloadAdmin) && (
         <div className="fixed bottom-4 right-4 z-50">
-          <a href={exitPreviewUrl} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium shadow-lg transition-colors">
+          <a
+            href={exitPreviewUrl}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium shadow-lg transition-colors"
+          >
             {t("exitPreview")}
           </a>
         </div>

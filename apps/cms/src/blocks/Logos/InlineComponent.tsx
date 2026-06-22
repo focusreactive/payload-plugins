@@ -17,7 +17,10 @@ export const LogosInlineComponent: React.FC<LogosInlineBlock> = async ({ items, 
 
   return (
     <div className="prose-embedded-block">
-      <Logos items={logoItems} alignVariant={(alignVariant as AlignVariant) ?? AlignVariant.Center} />
+      <Logos
+        items={logoItems}
+        alignVariant={(alignVariant as AlignVariant) ?? AlignVariant.Center}
+      />
     </div>
   );
 };

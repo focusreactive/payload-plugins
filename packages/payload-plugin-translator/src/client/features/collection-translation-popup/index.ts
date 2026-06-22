@@ -1,1 +1,1 @@
-export { default } from './ui/CollectionTranslationPopup'
+export { default } from "./ui/CollectionTranslationPopup";

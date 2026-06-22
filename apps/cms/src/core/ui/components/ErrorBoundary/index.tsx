@@ -18,7 +18,14 @@ interface ErrorBoundaryProps {
   wrapperClassName?: string;
 }
 
-export const ErrorBoundary: React.FC<ErrorBoundaryProps> = ({ error, reset, title, message, backLink, wrapperClassName }) => {
+export const ErrorBoundary: React.FC<ErrorBoundaryProps> = ({
+  error,
+  reset,
+  title,
+  message,
+  backLink,
+  wrapperClassName,
+}) => {
   const t = useTranslations("common");
   useEffect(() => {
     console.error("Error:", error);

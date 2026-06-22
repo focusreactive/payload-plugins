@@ -74,9 +74,13 @@ describe("translatorPlugin — default levels (behaviour-preserving)", () => {
   it("attaches the doc popup and bulk dashboard to the managed collection (right component on right slot)", async () => {
     const { posts } = await build();
     expect(posts.admin.components.edit.beforeDocumentControls).toHaveLength(1);
-    expect(posts.admin.components.edit.beforeDocumentControls[0]).toBeInstanceOf(TranslateDocumentExport);
+    expect(posts.admin.components.edit.beforeDocumentControls[0]).toBeInstanceOf(
+      TranslateDocumentExport
+    );
     expect(posts.admin.components.beforeListTable).toHaveLength(1);
-    expect(posts.admin.components.beforeListTable[0]).toBeInstanceOf(BulkDocumentTranslationDashboard);
+    expect(posts.admin.components.beforeListTable[0]).toBeInstanceOf(
+      BulkDocumentTranslationDashboard
+    );
   });
 
   it("threads a custom basePath into every endpoint", async () => {

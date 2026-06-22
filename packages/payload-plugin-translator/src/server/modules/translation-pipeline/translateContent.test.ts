@@ -27,7 +27,9 @@ const run = (schema: Field[], sourceData: Record<string, unknown>) =>
 
 describe("translateContent", () => {
   it("translates a localized leaf field", async () => {
-    const result = await run([{ name: "title", type: "text", localized: true }], { title: "hello" });
+    const result = await run([{ name: "title", type: "text", localized: true }], {
+      title: "hello",
+    });
     expect(result).toEqual({ title: "T:hello" });
   });
 

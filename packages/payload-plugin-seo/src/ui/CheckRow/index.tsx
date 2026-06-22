@@ -21,14 +21,20 @@ export function CheckRow({ check }: CheckRowProps) {
   const Icon = CHECK_ICONS[check.id] ?? CHECK_ICONS._default;
 
   return (
-    <div className={cn("relative px-[15px] py-[13px] overflow-visible", ROW_SEPARATOR)} data-status={check.status}>
+    <div
+      className={cn("relative px-[15px] py-[13px] overflow-visible", ROW_SEPARATOR)}
+      data-status={check.status}
+    >
       <div className="flex items-center gap-[9px] mb-[7px]">
         <span className="w-[26px] h-[26px] rounded-rs bg-neutral-100 text-neutral-600 grid place-items-center flex-none [&_svg]:size-[15px]">
           <Icon size={15} />
         </span>
 
         <span className="flex-1 font-semibold text-[12.5px]">
-          <Tooltip content={meta.tip} className="border-0 border-b border-dotted border-neutral-400">
+          <Tooltip
+            content={meta.tip}
+            className="border-0 border-b border-dotted border-neutral-400"
+          >
             {meta.name}
           </Tooltip>
         </span>
@@ -38,7 +44,9 @@ export function CheckRow({ check }: CheckRowProps) {
 
       <CheckVisualization check={check} />
 
-      {check.recommendation && <div className="text-neutral-600 text-[11.5px]">{check.recommendation}</div>}
+      {check.recommendation && (
+        <div className="text-neutral-600 text-[11.5px]">{check.recommendation}</div>
+      )}
     </div>
   );
 }

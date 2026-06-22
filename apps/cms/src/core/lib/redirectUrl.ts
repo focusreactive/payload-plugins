@@ -1,7 +1,10 @@
 const REDIRECT_PATH_REGEX = /^[a-zA-Z0-9/\-_.~]*$/;
 const REDIRECT_URL_REGEX = /^[a-zA-Z0-9/\-_.~:%]*$/;
 
-export function validateRedirectPath(value: string | null | undefined, opts?: { allowUrl?: boolean }): true | string {
+export function validateRedirectPath(
+  value: string | null | undefined,
+  opts?: { allowUrl?: boolean }
+): true | string {
   if (!value) {
     return true;
   }

@@ -17,7 +17,10 @@ export const createSharedSlugField = (currentCollection: "page" | "posts") => {
 
       if (slugInput) {
         slugInput.unique = true;
-        slugInput.validate = async (value: string | null | undefined, { req }: { req: PayloadRequest }): Promise<string | true> => {
+        slugInput.validate = async (
+          value: string | null | undefined,
+          { req }: { req: PayloadRequest }
+        ): Promise<string | true> => {
           if (!value || !req?.payload) {
             return true;
           }

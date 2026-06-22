@@ -20,7 +20,8 @@ export function buildAbExperimentsListEndpoint(config: AnalyticsPluginConfig): E
       }
 
       const parsed = AnalyticsQuerySchema.safeParse(body);
-      if (!parsed.success) return Response.json({ error: formatZodIssues(parsed.error.issues) }, { status: 400 });
+      if (!parsed.success)
+        return Response.json({ error: formatZodIssues(parsed.error.issues) }, { status: 400 });
 
       try {
         const { rows } = await getAbOverview(parsed.data, req);

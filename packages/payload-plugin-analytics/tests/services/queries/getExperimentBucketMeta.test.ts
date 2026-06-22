@@ -4,10 +4,19 @@ import type { ResolvedAbConfig } from "../../../src/config/resolveAbConfig";
 
 const ab: ResolvedAbConfig = {
   experimentsCollectionSlug: "ab-experiments",
-  dimensions: { experiment: "fr_ab_experiment", variant: "fr_ab_variant", visitorId: "fr_ab_visitor_id" },
+  dimensions: {
+    experiment: "fr_ab_experiment",
+    variant: "fr_ab_variant",
+    visitorId: "fr_ab_visitor_id",
+  },
   stats: { alpha: 0.05, power: 0.8, srmThreshold: 0.001, srmWindowDays: 7 },
   winRate: { mdeCeiling: 0.2, sessionFloor: 100 },
-  variantFields: { variantOf: "_abVariantOf", passPercentage: "_abPassPercentage", slug: "slug", name: "title" },
+  variantFields: {
+    variantOf: "_abVariantOf",
+    passPercentage: "_abPassPercentage",
+    slug: "slug",
+    name: "title",
+  },
 };
 
 function makeReq(variants: Array<Record<string, unknown>>) {

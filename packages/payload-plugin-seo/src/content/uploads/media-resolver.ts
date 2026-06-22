@@ -2,7 +2,10 @@ import { uploadKey } from "./types";
 import type { ResolvedUploadDoc, UploadRef } from "./types";
 
 export interface MediaResolver {
-  resolve: (refs: UploadRef[], locale: string | undefined) => Promise<Map<string, ResolvedUploadDoc>>;
+  resolve: (
+    refs: UploadRef[],
+    locale: string | undefined
+  ) => Promise<Map<string, ResolvedUploadDoc>>;
   invalidate: () => void;
 }
 
@@ -10,7 +13,12 @@ interface FindResponse {
   docs?: Array<ResolvedUploadDoc & { id?: unknown }>;
 }
 
-async function fetchDocs(apiRoute: string, collection: string, ids: Array<string | number>, locale: string | undefined): Promise<Map<string, ResolvedUploadDoc>> {
+async function fetchDocs(
+  apiRoute: string,
+  collection: string,
+  ids: Array<string | number>,
+  locale: string | undefined
+): Promise<Map<string, ResolvedUploadDoc>> {
   const params = new URLSearchParams({ depth: "0", limit: String(ids.length) });
   if (locale) params.set("locale", locale);
   ids.forEach((id, i) => params.set(`where[id][in][${i}]`, String(id)));
@@ -22,7 +30,11 @@ async function fetchDocs(apiRoute: string, collection: string, ids: Array<string
     if (!res.ok) return new Map();
     const body = (await res.json()) as FindResponse;
 
-    return new Map((body.docs ?? []).filter((d) => d.id !== undefined && d.id !== null).map((d) => [String(d.id), d]));
+    return new Map(
+      (body.docs ?? [])
+        .filter((d) => d.id !== undefined && d.id !== null)
+        .map((d) => [String(d.id), d])
+    );
   } catch {
     return new Map();
   }
@@ -30,7 +42,8 @@ async function fetchDocs(apiRoute: string, collection: string, ids: Array<string
 
 export function createMediaResolver(apiRoute: string): MediaResolver {
   const cache = new Map<string, ResolvedUploadDoc | null>();
-  const cacheKey = (ref: UploadRef, locale: string | undefined) => `${uploadKey(ref)}:${locale ?? ""}`;
+  const cacheKey = (ref: UploadRef, locale: string | undefined) =>
+    `${uploadKey(ref)}:${locale ?? ""}`;
 
   return {
     async resolve(refs, locale) {

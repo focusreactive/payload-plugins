@@ -16,23 +16,25 @@ function makeProvider(): AnalyticsProvider {
 }
 
 describe("installDirectionsClick", () => {
-  it.each(["https://www.google.com/maps/place/Foo", "https://google.com/maps/?q=foo", "https://maps.app.goo.gl/abc", "https://goo.gl/maps/xyz"])(
-    "fires lead_action with fr_lead_type=directions_click on %s",
-    (href) => {
-      const provider = makeProvider();
-      const cleanup = installDirectionsClick(provider);
-      document.body.innerHTML = `<a id="a" href="${href}">x</a>`;
-      document.querySelector("#a")!.click();
-      expect(provider.trackEvent).toHaveBeenCalledWith(
-        "lead_action",
-        expect.objectContaining({
-          fr_lead_type: "directions_click",
-          link_url: expect.stringContaining(href),
-        })
-      );
-      cleanup();
-    }
-  );
+  it.each([
+    "https://www.google.com/maps/place/Foo",
+    "https://google.com/maps/?q=foo",
+    "https://maps.app.goo.gl/abc",
+    "https://goo.gl/maps/xyz",
+  ])("fires lead_action with fr_lead_type=directions_click on %s", (href) => {
+    const provider = makeProvider();
+    const cleanup = installDirectionsClick(provider);
+    document.body.innerHTML = `<a id="a" href="${href}">x</a>`;
+    document.querySelector("#a")!.click();
+    expect(provider.trackEvent).toHaveBeenCalledWith(
+      "lead_action",
+      expect.objectContaining({
+        fr_lead_type: "directions_click",
+        link_url: expect.stringContaining(href),
+      })
+    );
+    cleanup();
+  });
 
   it("does not fire on non-maps URLs", () => {
     const provider = makeProvider();

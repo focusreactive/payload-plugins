@@ -27,13 +27,13 @@ export const commentsPlugin =
     const allCollectionSlugs = (incomingConfig.collections ?? []).map((c) => c.slug);
 
     const normalizedCollections = normalizeCollections(collectionEntries);
-    const documentTitleFields =
-      normalizedCollections ?
-        Object.fromEntries([...normalizedCollections.entries()].map(([k, v]) => [k, v.titleField]))
+    const documentTitleFields = normalizedCollections
+      ? Object.fromEntries([...normalizedCollections.entries()].map(([k, v]) => [k, v.titleField]))
       : {};
 
     const userTranslations = config.translations ?? {};
-    const incomingConfigTranslations = (incomingConfig.i18n?.translations as Record<string, object> | undefined) ?? {};
+    const incomingConfigTranslations =
+      (incomingConfig.i18n?.translations as Record<string, object> | undefined) ?? {};
 
     const mergedTranslations = mergeTranslations(incomingConfigTranslations, userTranslations);
 
@@ -72,7 +72,11 @@ export const commentsPlugin =
 
         await incomingConfig.onInit?.(payload);
       },
-      collections: [...overrideCollections(incomingConfig.collections), finalCollection, readsCollection],
+      collections: [
+        ...overrideCollections(incomingConfig.collections),
+        finalCollection,
+        readsCollection,
+      ],
       globals: overrideGlobals(incomingConfig.globals),
     };
   };

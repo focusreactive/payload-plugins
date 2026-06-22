@@ -1,6 +1,9 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { sessionsMock } from "../../../../src/services/analyticsService/mocks/sessions";
-import { setActiveExistingRefs, __clearActiveExistingRefs } from "../../../../src/services/pageFilter/activeRefsHolder";
+import {
+  setActiveExistingRefs,
+  __clearActiveExistingRefs,
+} from "../../../../src/services/pageFilter/activeRefsHolder";
 import { MOCK_MISSING_REF } from "../../../../src/services/analyticsService/mocks/mockRefs";
 
 type BatchRes = { reports: Array<{ rows: Array<{ dimensionValues: Array<{ value: string }> }> }> };

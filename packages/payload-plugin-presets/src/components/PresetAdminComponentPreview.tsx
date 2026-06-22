@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useField, useTranslation, ShimmerEffect } from "@payloadcms/ui";
-import { EmptyPlaceholder, type MediaData } from "./shared/index.js";
+import { EmptyPlaceholder } from "./shared/index.js";
+import type { MediaData } from "./shared/index.js";
 import { usePresetsConfig } from "./usePresetsConfig.js";
 
 import "./PresetAdminComponent.scss";
@@ -63,9 +64,7 @@ export const PresetAdminComponentPreview: React.FC = () => {
         />
       ) : (
         <Image
-          alt={
-            media.alt || t("presetsPlugin:blocksDrawer:presetPreview" as never)
-          }
+          alt={media.alt || t("presetsPlugin:blocksDrawer:presetPreview" as never)}
           src={media?.url}
           className="preset-admin-preview__image"
           width={400}

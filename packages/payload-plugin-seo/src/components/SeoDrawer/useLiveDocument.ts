@@ -27,7 +27,14 @@ export interface UseLiveDocumentResult {
   invalidateMedia: () => void;
 }
 
-export function useLiveDocument({ collectionSlug, fields, site, keyphrase, enabled = true, override }: LiveDocArgs): UseLiveDocumentResult {
+export function useLiveDocument({
+  collectionSlug,
+  fields,
+  site,
+  keyphrase,
+  enabled = true,
+  override,
+}: LiveDocArgs): UseLiveDocumentResult {
   const [formFields] = useAllFormFields();
   const locale = useLocale();
   const { config, getEntityConfig } = useConfig();
@@ -47,13 +54,17 @@ export function useLiveDocument({ collectionSlug, fields, site, keyphrase, enabl
 
   const walkCtx = useMemo<UploadWalkContext>(
     () => ({
-      isUploadCollection: (slug) => Boolean(config.collections?.find((c) => c.slug === slug)?.upload),
+      isUploadCollection: (slug) =>
+        Boolean(config.collections?.find((c) => c.slug === slug)?.upload),
       blocksBySlug: { ...config.blocksMap },
     }),
     [config]
   );
 
-  const values = useMemo<Record<string, unknown>>(() => (enabled ? (reduceFieldsToValues(debouncedFields, true) as Record<string, unknown>) : {}), [enabled, debouncedFields]);
+  const values = useMemo<Record<string, unknown>>(
+    () => (enabled ? (reduceFieldsToValues(debouncedFields, true) as Record<string, unknown>) : {}),
+    [enabled, debouncedFields]
+  );
 
   const signature = useMemo(
     () =>
@@ -92,23 +103,28 @@ export function useLiveDocument({ collectionSlug, fields, site, keyphrase, enabl
     resolver,
   };
 
-  const getInput = useCallback(async ({ live = false }: { live?: boolean } = {}): Promise<AnalysisInput> => {
-    const s = liveRef.current;
-    const inputValues = live ? (reduceFieldsToValues(s.formFields, true) as Record<string, unknown>) : s.values;
+  const getInput = useCallback(
+    async ({ live = false }: { live?: boolean } = {}): Promise<AnalysisInput> => {
+      const s = liveRef.current;
+      const inputValues = live
+        ? (reduceFieldsToValues(s.formFields, true) as Record<string, unknown>)
+        : s.values;
 
-    return buildAnalysisInput({
-      values: inputValues,
-      locale: s.locale,
-      payloadLocale: s.locale?.code,
-      keyphrase: live ? s.keyphrase : s.debouncedKeyphrase,
-      fields: s.fields,
-      site: s.site,
-      schemaFields: s.schemaFields,
-      walkCtx: s.walkCtx,
-      resolver: s.resolver,
-      override: s.override,
-    });
-  }, []);
+      return buildAnalysisInput({
+        values: inputValues,
+        locale: s.locale,
+        payloadLocale: s.locale?.code,
+        keyphrase: live ? s.keyphrase : s.debouncedKeyphrase,
+        fields: s.fields,
+        site: s.site,
+        schemaFields: s.schemaFields,
+        walkCtx: s.walkCtx,
+        resolver: s.resolver,
+        override: s.override,
+      });
+    },
+    []
+  );
 
   const invalidateMedia = useCallback(() => liveRef.current.resolver.invalidate(), []);
 

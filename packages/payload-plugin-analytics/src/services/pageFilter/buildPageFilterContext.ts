@@ -7,10 +7,16 @@ import { getCachedPageLabels } from "./pageLabelsCache";
 import { resolvePageLabels } from "./resolvePageLabels";
 import { setActiveExistingRefs } from "./activeRefsHolder";
 
-export async function buildPageFilterContext(req: PayloadRequest, config: ResolvedPagesConfig | null): Promise<PageFilterContext | null> {
+export async function buildPageFilterContext(
+  req: PayloadRequest,
+  config: ResolvedPagesConfig | null
+): Promise<PageFilterContext | null> {
   if (!config) return null;
 
-  const key = config.collections.map((c) => `${c.slug}:${c.publishedOnly}`).join(",") + "|" + config.syntheticRefs.join(",");
+  const key =
+    config.collections.map((c) => `${c.slug}:${c.publishedOnly}`).join(",") +
+    "|" +
+    config.syntheticRefs.join(",");
   const refs = await getCachedExistingRefs(key, () => getExistingPageRefs(req.payload, config));
   const refList = [...refs];
 

@@ -4,7 +4,10 @@ import { BUILTIN_LEAD_ACTIONS_BLOCK_IDS, BUILTIN_OVERVIEW_BLOCK_IDS } from "../.
 import type { BlockDefinition, BlockId } from "../../types/layout";
 import type { LeadActionsPluginConfig } from "../../types/leadActions";
 
-const BUILTIN_BLOCK_IDS = new Set<string>([...BUILTIN_OVERVIEW_BLOCK_IDS, ...BUILTIN_LEAD_ACTIONS_BLOCK_IDS]);
+const BUILTIN_BLOCK_IDS = new Set<string>([
+  ...BUILTIN_OVERVIEW_BLOCK_IDS,
+  ...BUILTIN_LEAD_ACTIONS_BLOCK_IDS,
+]);
 
 export interface OverrideAdminOptions {
   adminRegistry?: LeadActionsPluginConfig["adminRegistry"];
@@ -15,11 +18,22 @@ export interface OverrideAdminOptions {
 export function overrideAdmin(incomingConfig: Config, options: OverrideAdminOptions = {}): Config {
   const existingProviders = incomingConfig.admin?.components?.providers ?? [];
 
-  const customBlockEntries = Object.entries(options.registry ?? {}).filter(([id]) => !BUILTIN_BLOCK_IDS.has(id));
+  const customBlockEntries = Object.entries(options.registry ?? {}).filter(
+    ([id]) => !BUILTIN_BLOCK_IDS.has(id)
+  );
 
-  const providers = [...existingProviders, ...(options.adminRegistry ? [options.adminRegistry] : []), ...(options.sessionsTabComponent ? [options.sessionsTabComponent] : [])];
+  const providers = [
+    ...existingProviders,
+    ...(options.adminRegistry ? [options.adminRegistry] : []),
+    ...(options.sessionsTabComponent ? [options.sessionsTabComponent] : []),
+  ];
 
-  const customBlockDependencies = Object.fromEntries(customBlockEntries.map(([id, def]) => [`analyticsCustomBlock_${id}`, { type: "component" as const, path: def.component }]));
+  const customBlockDependencies = Object.fromEntries(
+    customBlockEntries.map(([id, def]) => [
+      `analyticsCustomBlock_${id}`,
+      { type: "component" as const, path: def.component },
+    ])
+  );
 
   return {
     ...incomingConfig,
@@ -40,7 +54,10 @@ export function overrideAdmin(incomingConfig: Config, options: OverrideAdminOpti
             exact: true,
           },
         },
-        actions: [...(incomingConfig.admin?.components?.actions ?? []), getComponentPath("components/AnalyticsView/AnalyticsHeaderLink")],
+        actions: [
+          ...(incomingConfig.admin?.components?.actions ?? []),
+          getComponentPath("components/AnalyticsView/AnalyticsHeaderLink"),
+        ],
       },
     },
   };

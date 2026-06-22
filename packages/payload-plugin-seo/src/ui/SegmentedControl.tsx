@@ -4,15 +4,18 @@ import { cva } from "class-variance-authority";
 import { useRef } from "react";
 import type { ReactNode } from "react";
 
-const segmentVariants = cva("inline-flex items-center gap-[5px] px-[11px] py-[4px] rounded-rs text-[11px] font-medium border-0 cursor-pointer", {
-  variants: {
-    active: {
-      true: "bg-neutral-0 text-neutral-1000",
-      false: "bg-transparent text-neutral-600",
+const segmentVariants = cva(
+  "inline-flex items-center gap-[5px] px-[11px] py-[4px] rounded-rs text-[11px] font-medium border-0 cursor-pointer",
+  {
+    variants: {
+      active: {
+        true: "bg-neutral-0 text-neutral-1000",
+        false: "bg-transparent text-neutral-600",
+      },
     },
-  },
-  defaultVariants: { active: false },
-});
+    defaultVariants: { active: false },
+  }
+);
 
 interface SegmentedControlOption<T extends string> {
   value: T;
@@ -27,7 +30,12 @@ interface SegmentedControlProps<T extends string> {
   label: string;
 }
 
-export function SegmentedControl<T extends string>({ options, value, onChange, label }: SegmentedControlProps<T>) {
+export function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+  label,
+}: SegmentedControlProps<T>) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const selectIndex = (index: number) => {
@@ -66,7 +74,11 @@ export function SegmentedControl<T extends string>({ options, value, onChange, l
   };
 
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex bg-neutral-100 rounded-rm p-[2px] gap-[2px]">
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className="inline-flex bg-neutral-100 rounded-rm p-[2px] gap-[2px]"
+    >
       {options.map((option, index) => {
         const isActive = option.value === value;
 

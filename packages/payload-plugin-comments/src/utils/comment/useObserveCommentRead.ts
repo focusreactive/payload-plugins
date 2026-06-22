@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, type RefObject } from "react";
+import { useEffect } from "react";
+import type { RefObject } from "react";
 import { READ_DWELL_MS, READ_OBSERVER_THRESHOLD } from "../../constants";
 import { useMarkCommentReadMutation } from "../../api/mutations/useMarkCommentReadMutation";
 
@@ -47,7 +48,7 @@ export function useObserveCommentRead({ ref, commentId, enabled }: Params) {
           }
         }
       },
-      { threshold: [READ_OBSERVER_THRESHOLD] },
+      { threshold: [READ_OBSERVER_THRESHOLD] }
     );
 
     observer.observe(node);

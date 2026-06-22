@@ -18,7 +18,13 @@ export function ContentSection({ content, image }: Props) {
       <div style={{ fontSize: "1.125rem", lineHeight: 1.7 }}>
         <RichText data={content} />
       </div>
-      {image?.url && <img alt={image.alt ?? ""} src={image.url} style={{ borderRadius: 8, marginTop: 24, maxWidth: "100%" }} />}
+      {image?.url && (
+        <img
+          alt={image.alt ?? ""}
+          src={image.url}
+          style={{ borderRadius: 8, marginTop: 24, maxWidth: "100%" }}
+        />
+      )}
     </section>
   );
 }

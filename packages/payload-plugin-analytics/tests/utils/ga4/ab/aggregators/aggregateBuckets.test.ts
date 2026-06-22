@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { aggregateBucketExposure, aggregateBucketConversions, aggregateDailyByBucket } from "../../../../../src/utils/ga4/ab/aggregators";
+import {
+  aggregateBucketExposure,
+  aggregateBucketConversions,
+  aggregateDailyByBucket,
+} from "../../../../../src/utils/ga4/ab/aggregators";
 
-type Row = { dimensionValues?: Array<{ value?: string | null }>; metricValues?: Array<{ value?: string | null }> };
+type Row = {
+  dimensionValues?: Array<{ value?: string | null }>;
+  metricValues?: Array<{ value?: string | null }>;
+};
 const row = (dims: string[], metrics: string[] = []): Row => ({
   dimensionValues: dims.map((value) => ({ value })),
   metricValues: metrics.map((value) => ({ value })),

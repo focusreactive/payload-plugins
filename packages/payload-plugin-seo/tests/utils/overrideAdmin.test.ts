@@ -13,7 +13,12 @@ describe("overrideAdmin", () => {
     const result = overrideAdmin(incoming, {
       collections: [{ slug: "pages", fields: { slug: "slug", content: "sections" } }],
       site: { name: "RunShop" },
-    }) as never as { collections: { slug: string; admin?: { components?: { edit?: { beforeDocumentControls?: unknown[] } } } }[] };
+    }) as never as {
+      collections: {
+        slug: string;
+        admin?: { components?: { edit?: { beforeDocumentControls?: unknown[] } } };
+      }[];
+    };
 
     const pages = result.collections.find((c) => c.slug === "pages");
     const media = result.collections.find((c) => c.slug === "media");
@@ -25,9 +30,19 @@ describe("overrideAdmin", () => {
     const result = overrideAdmin(incoming, {
       collections: [{ slug: "pages", fields: { slug: "slug" } }],
       site: { name: "RunShop", baseUrl: "https://runshop.com" },
-    }) as never as { collections: { slug: string; admin?: { components?: { edit?: { beforeDocumentControls?: { clientProps?: Record<string, unknown> }[] } } } }[] };
+    }) as never as {
+      collections: {
+        slug: string;
+        admin?: {
+          components?: {
+            edit?: { beforeDocumentControls?: { clientProps?: Record<string, unknown> }[] };
+          };
+        };
+      }[];
+    };
 
-    const entry = result.collections.find((c) => c.slug === "pages")?.admin?.components?.edit?.beforeDocumentControls?.[0];
+    const entry = result.collections.find((c) => c.slug === "pages")?.admin?.components?.edit
+      ?.beforeDocumentControls?.[0];
     expect(entry?.clientProps).toMatchObject({
       collectionSlug: "pages",
       fields: { slug: "slug" },

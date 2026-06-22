@@ -4,7 +4,10 @@ export interface NamedDateRange extends ResolvedDateRange {
   name: string;
 }
 
-export function dateRangesFor(current: ResolvedDateRange, previous?: ResolvedDateRange): NamedDateRange[] {
+export function dateRangesFor(
+  current: ResolvedDateRange,
+  previous?: ResolvedDateRange
+): NamedDateRange[] {
   if (!previous) return [{ ...current, name: "current" }];
 
   return [

@@ -43,7 +43,12 @@ export async function search({ query, locale }: Params): Promise<Response> {
 
     const enrichedItems = await Promise.all(
       rawItems.map(async (item) => {
-        const displayData = await getDocumentSearchData(payload, item.documentId, item.collection, item.locale);
+        const displayData = await getDocumentSearchData(
+          payload,
+          item.documentId,
+          item.collection,
+          item.locale
+        );
 
         if (!displayData) {
           return null;

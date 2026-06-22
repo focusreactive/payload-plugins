@@ -19,7 +19,9 @@ type GetAlternateLocalesOptions =
       page?: number;
     };
 
-export async function getAlternateLocales(options: GetAlternateLocalesOptions): Promise<Record<string, string>> {
+export async function getAlternateLocales(
+  options: GetAlternateLocalesOptions
+): Promise<Record<string, string>> {
   const payload = await getPayloadClient();
   const locales = I18N_CONFIG.locales.map((l) => l.code as Locale);
   const languages: Partial<Record<Locale | "x-default", string>> = {};

@@ -36,10 +36,14 @@ export function ComparisonDropdown({ value, onChange }: ComparisonDropdownProps)
     >
       {(close) => (
         <>
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-[var(--theme-elevation-500)] px-2.5 pt-1.5 pb-1">Compare to</div>
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-[var(--theme-elevation-500)] px-2.5 pt-1.5 pb-1">
+            Compare to
+          </div>
 
           {OPTIONS.map(({ label, value: optionValue, disabled }) => {
-            const isActive = !disabled && (optionValue === "none" ? value.kind === "none" : value.kind === optionValue);
+            const isActive =
+              !disabled &&
+              (optionValue === "none" ? value.kind === "none" : value.kind === optionValue);
 
             return (
               <div

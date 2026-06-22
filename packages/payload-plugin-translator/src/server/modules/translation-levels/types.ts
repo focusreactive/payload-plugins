@@ -48,5 +48,8 @@ export interface LevelContext {
   /** Register endpoints. Deduplicated by method + path when applied. */
   addEndpoints(endpoints: Endpoint[]): void;
   /** Attach an admin component to a slot on every managed collection. */
-  addCollectionComponent(slot: CollectionAdminSlot, make: (collection: CollectionConfig) => RawPayloadComponentExport): void;
+  addCollectionComponent(
+    slot: CollectionAdminSlot,
+    make: (collection: CollectionConfig) => RawPayloadComponentExport
+  ): void;
 }

@@ -23,6 +23,6 @@ export function useFieldLabelsQuery(ctx: QueryContext) {
       refetchInterval: isOpen ? REFETCH_INTERVAL : false,
       refetchIntervalInBackground: false,
     },
-    queryClient,
+    queryClient
   );
 }

@@ -39,7 +39,10 @@ export default async function Page({ params }: Args) {
     return <PayloadRedirects url={url} locale={locale} />;
   }
 
-  const pageRef = decodedSegments[0] === "home" || decodedSegments.length === 0 ? SYNTHETIC_REFS.home : `page:${page.id}`;
+  const pageRef =
+    decodedSegments[0] === "home" || decodedSegments.length === 0
+      ? SYNTHETIC_REFS.home
+      : `page:${page.id}`;
 
   return (
     <>

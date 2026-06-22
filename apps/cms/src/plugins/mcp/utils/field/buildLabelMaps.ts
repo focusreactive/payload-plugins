@@ -1,6 +1,9 @@
 import type { CollectionSlug, Field, LabelFunction, Payload, StaticLabel } from "payload";
 
-function resolveLabel(label: false | StaticLabel | LabelFunction | undefined, name: string): string {
+function resolveLabel(
+  label: false | StaticLabel | LabelFunction | undefined,
+  name: string
+): string {
   if (!label || typeof label === "function") {
     return name;
   }
@@ -23,7 +26,10 @@ export function buildLabelMaps(
   blockLabels: Record<string, string>;
   fieldRelationTo: Record<string, string>;
 } {
-  const fields: Field[] = type === "global" ? (payload.globals.config.find((g) => g.slug === slug)?.fields ?? []) : (payload.collections[slug as CollectionSlug]?.config.fields ?? []);
+  const fields: Field[] =
+    type === "global"
+      ? (payload.globals.config.find((g) => g.slug === slug)?.fields ?? [])
+      : (payload.collections[slug as CollectionSlug]?.config.fields ?? []);
 
   const fieldLabels: Record<string, string> = {};
   const blockLabels: Record<string, string> = {};
@@ -42,7 +48,9 @@ export function buildLabelMaps(
 
     if (field.type === "blocks") {
       for (const block of field.blocks) {
-        blockLabels[block.slug] = block.labels?.singular ? resolveLabel(block.labels.singular, block.slug) : block.slug;
+        blockLabels[block.slug] = block.labels?.singular
+          ? resolveLabel(block.labels.singular, block.slug)
+          : block.slug;
       }
     }
   }

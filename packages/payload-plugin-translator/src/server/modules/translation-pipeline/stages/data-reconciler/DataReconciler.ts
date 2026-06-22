@@ -2,7 +2,11 @@ import type { Field } from "payload";
 
 import { isEmpty, isObject } from "../../../../shared";
 import type { ChildCursor, FieldWalker } from "../../../../shared/field-traversal";
-import { matchElementById, resolveBlockFields, walkFields } from "../../../../shared/field-traversal";
+import {
+  matchElementById,
+  resolveBlockFields,
+  walkFields,
+} from "../../../../shared/field-traversal";
 
 /** Data position for the reconcile walk: the source + target objects at the current level. */
 type Cursor = { source: Record<string, unknown>; target: Record<string, unknown> };
@@ -39,7 +43,11 @@ const reconcileWalker: FieldWalker<Cursor, unknown> = {
       const fields = isBlocks ? resolveBlockFields(field, item) : field.fields;
       if (!fields) return; // unknown blockType → passthrough
       // Pair by id, not position: target[index] may be a different element under per-locale ordering.
-      children.push({ cursor: { source: item, target: matchElementById(targetArr, item, isBlocks) }, fields, key: index });
+      children.push({
+        cursor: { source: item, target: matchElementById(targetArr, item, isBlocks) },
+        fields,
+        key: index,
+      });
     });
     return children;
   },
@@ -90,8 +98,13 @@ export class DataReconciler {
    * @param targetData - Target locale document data (may be empty/partial)
    * @returns Complete document shape with reconciled field values
    */
-  reconcile(sourceData: Record<string, unknown>, targetData: Record<string, unknown>): Record<string, unknown> {
+  reconcile(
+    sourceData: Record<string, unknown>,
+    targetData: Record<string, unknown>
+  ): Record<string, unknown> {
     const root: Cursor = { source: sourceData, target: targetData ?? {} };
-    return (walkFields(this.schema, root, reconcileWalker) as Record<string, unknown> | undefined) ?? {};
+    return (
+      (walkFields(this.schema, root, reconcileWalker) as Record<string, unknown> | undefined) ?? {}
+    );
   }
 }

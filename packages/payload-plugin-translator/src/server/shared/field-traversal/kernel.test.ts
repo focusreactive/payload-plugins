@@ -1,9 +1,19 @@
-import type { ArrayField, BlocksField, Field, NamedGroupField, RowField, TabsField, TextField, UIField } from "payload";
+import type {
+  ArrayField,
+  BlocksField,
+  Field,
+  NamedGroupField,
+  RowField,
+  TabsField,
+  TextField,
+  UIField,
+} from "payload";
 import { describe, expect, it } from "vitest";
 
 import { classifyField, matchElementById, resolveBlockFields, tabScopes } from "./kernel";
 
-const text = (name: string, extra: Record<string, unknown> = {}): TextField => ({ name, type: "text", ...extra }) as unknown as TextField;
+const text = (name: string, extra: Record<string, unknown> = {}): TextField =>
+  ({ name, type: "text", ...extra }) as unknown as TextField;
 
 describe("classifyField", () => {
   it("classifies text/textarea/richText leaves as `leaf`", () => {
@@ -35,13 +45,20 @@ describe("classifyField", () => {
 
   it("classifies blocks as `blocks` (child fields resolved per-element later)", () => {
     const field = { type: "blocks", name: "content", blocks: [] } as unknown as BlocksField;
-    expect(classifyField(field as unknown as Field)).toEqual({ kind: "blocks", name: "content", field });
+    expect(classifyField(field as unknown as Field)).toEqual({
+      kind: "blocks",
+      name: "content",
+      field,
+    });
   });
 
   it("classifies a presentational container (row) as `transparent` — same data scope", () => {
     const inner = text("title");
     const field = { type: "row", fields: [inner] } as unknown as RowField;
-    expect(classifyField(field as unknown as Field)).toEqual({ kind: "transparent", fields: [inner] });
+    expect(classifyField(field as unknown as Field)).toEqual({
+      kind: "transparent",
+      fields: [inner],
+    });
   });
 
   it("classifies an UNNAMED group as `transparent` (it opens no data boundary)", () => {
@@ -146,10 +163,17 @@ describe("matchElementById", () => {
   it("requires blockType to match too when isBlocks is true", () => {
     const arr = [{ id: "1", blockType: "quote", v: "x" }];
     expect(matchElementById(arr, { id: "1", blockType: "text" }, true)).toEqual({}); // same id, wrong type
-    expect(matchElementById(arr, { id: "1", blockType: "quote" }, true)).toEqual({ id: "1", blockType: "quote", v: "x" });
+    expect(matchElementById(arr, { id: "1", blockType: "quote" }, true)).toEqual({
+      id: "1",
+      blockType: "quote",
+      v: "x",
+    });
   });
 
   it("ignores non-object candidates", () => {
-    expect(matchElementById(["raw", 42, { id: "1", v: "a" }], { id: "1" }, false)).toEqual({ id: "1", v: "a" });
+    expect(matchElementById(["raw", 42, { id: "1", v: "a" }], { id: "1" }, false)).toEqual({
+      id: "1",
+      v: "a",
+    });
   });
 });

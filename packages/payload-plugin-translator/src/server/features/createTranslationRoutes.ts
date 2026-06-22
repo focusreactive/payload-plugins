@@ -28,7 +28,12 @@ export type TranslationRoutesDeps = {
  * context; the plugin deduplicates by method + path, so it registers exactly
  * once. Behaviour-preserving: same endpoints, same order, same wiring.
  */
-export function createTranslationRoutes({ taskRunnerFactory, collectionConfig, access, basePath }: TranslationRoutesDeps): Endpoint[] {
+export function createTranslationRoutes({
+  taskRunnerFactory,
+  collectionConfig,
+  access,
+  basePath,
+}: TranslationRoutesDeps): Endpoint[] {
   return [
     createEnqueueRoute(taskRunnerFactory, collectionConfig, access, basePath),
     createRunRoute(taskRunnerFactory, access, basePath),

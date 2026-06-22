@@ -24,7 +24,14 @@ type BuildUrlOptions = (
   locale: string;
 };
 
-export function buildUrl({ collection, breadcrumbs, absolute = true, page, slug, locale }: BuildUrlOptions): string {
+export function buildUrl({
+  collection,
+  breadcrumbs,
+  absolute = true,
+  page,
+  slug,
+  locale,
+}: BuildUrlOptions): string {
   const baseUrl = getServerSideURL();
   const currentLocale = locale || routing.defaultLocale;
   const localePrefix = shouldIncludeLocalePrefix(currentLocale) ? `/${currentLocale}` : "";

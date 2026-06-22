@@ -31,14 +31,19 @@ function transformNode(node: LexicalNode, transform: UploadTransform): LexicalNo
   if (Array.isArray(node.children)) {
     return {
       ...node,
-      children: node.children.map((child) => (isNode(child) ? transformNode(child, transform) : child)),
+      children: node.children.map((child) =>
+        isNode(child) ? transformNode(child, transform) : child
+      ),
     };
   }
 
   return node;
 }
 
-export function transformLexicalUploads<T extends { root?: unknown }>(value: T, transform: UploadTransform): T {
+export function transformLexicalUploads<T extends { root?: unknown }>(
+  value: T,
+  transform: UploadTransform
+): T {
   if (!isNode(value.root)) return value;
 
   return { ...value, root: transformNode(value.root, transform) };

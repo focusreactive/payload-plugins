@@ -21,13 +21,15 @@ export default async function HomePage() {
       <section className="hero">
         <h1 className="hero-title">One Payload app, many isolated tenants.</h1>
         <p className="hero-tagline">
-          Each tenant below owns its own pages and its own look. Pick one to preview only that tenant&apos;s content — the frontend equivalent of the admin tenant selector.
+          Each tenant below owns its own pages and its own look. Pick one to preview only that
+          tenant&apos;s content — the frontend equivalent of the admin tenant selector.
         </p>
       </section>
 
       {tenants.length === 0 ? (
         <p className="empty">
-          No tenants yet. Run <code>bun run seed</code> in <code>apps/multi-tenancy-demo</code> to create the demo tenants.
+          No tenants yet. Run <code>bun run seed</code> in <code>apps/multi-tenancy-demo</code> to
+          create the demo tenants.
         </p>
       ) : (
         <ul className="tenant-grid">
@@ -38,7 +40,11 @@ export default async function HomePage() {
                 <Link className="tenant-card" href={`/${tenant.slug}`} style={themeStyle(theme)}>
                   {theme.logo ? (
                     // eslint-disable-next-line @next/next/no-img-element -- tiny static brand SVG; next/image optimization is unnecessary
-                    <img alt={`${tenant.name} logo`} className="tenant-card-logo" src={theme.logo} />
+                    <img
+                      alt={`${tenant.name} logo`}
+                      className="tenant-card-logo"
+                      src={theme.logo}
+                    />
                   ) : (
                     <span className="tenant-card-mark" aria-hidden>
                       {tenant.name.charAt(0)}

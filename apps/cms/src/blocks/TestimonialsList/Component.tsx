@@ -10,8 +10,20 @@ import { sectionVariants } from "@/core/ui/blocks/SectionContainer";
 
 type Props = TestimonialsListBlock;
 
-export const TestimonialsListBlockComponent: React.FC<Props> = ({ eyebrow, heading, description, testimonialItems, showRating = true, showAvatar = true, duration = 60, section, id }) => {
-  const testimonials = (testimonialItems ?? []).map((item) => item.testimonial).filter((t): t is Testimonial => typeof t !== "number" && t !== null && t !== undefined);
+export const TestimonialsListBlockComponent: React.FC<Props> = ({
+  eyebrow,
+  heading,
+  description,
+  testimonialItems,
+  showRating = true,
+  showAvatar = true,
+  duration = 60,
+  section,
+  id,
+}) => {
+  const testimonials = (testimonialItems ?? [])
+    .map((item) => item.testimonial)
+    .filter((t): t is Testimonial => typeof t !== "number" && t !== null && t !== undefined);
   const header = prepareSectionHeaderProps({
     align: "center",
     eyebrow,
@@ -24,7 +36,11 @@ export const TestimonialsListBlockComponent: React.FC<Props> = ({ eyebrow, headi
   return (
     <section
       id={id ?? undefined}
-      className={cn(sectionVariants({ paddingY: section?.paddingY }), theme && "bg-background text-foreground", "relative overflow-hidden")}
+      className={cn(
+        sectionVariants({ paddingY: section?.paddingY }),
+        theme && "bg-background text-foreground",
+        "relative overflow-hidden"
+      )}
       {...(theme ? { "data-theme": theme } : {})}
     >
       {header && (
@@ -33,7 +49,12 @@ export const TestimonialsListBlockComponent: React.FC<Props> = ({ eyebrow, headi
         </Container>
       )}
 
-      <AnimatedCarousel testimonials={testimonials} showRating={showRating ?? true} showAvatar={showAvatar ?? true} duration={duration ?? 60} />
+      <AnimatedCarousel
+        testimonials={testimonials}
+        showRating={showRating ?? true}
+        showAvatar={showAvatar ?? true}
+        duration={duration ?? 60}
+      />
     </section>
   );
 };

@@ -20,7 +20,14 @@ export interface KeyphraseTabProps {
   analyzeNow: () => void;
 }
 
-export function KeyphraseTab({ data, keyphrase, setKeyphrase, analyzing, keyphrasePending, analyzeNow }: KeyphraseTabProps) {
+export function KeyphraseTab({
+  data,
+  keyphrase,
+  setKeyphrase,
+  analyzing,
+  keyphrasePending,
+  analyzeNow,
+}: KeyphraseTabProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const visible = data.checks.filter((c) => filter === "all" || c.status === filter);
   const passing = data.checks.filter((c) => c.status === "good").length;
@@ -53,7 +60,11 @@ export function KeyphraseTab({ data, keyphrase, setKeyphrase, analyzing, keyphra
         </button>
       </div>
 
-      {!keyphrasePresent && <p className="text-neutral-500 text-[13px]">Enter a focus keyphrase to analyze how well your content targets it.</p>}
+      {!keyphrasePresent && (
+        <p className="text-neutral-500 text-[13px]">
+          Enter a focus keyphrase to analyze how well your content targets it.
+        </p>
+      )}
 
       {keyphrasePresent && !checksReady && (
         <div className="flex items-center gap-[8px] text-neutral-500 text-[13px]">

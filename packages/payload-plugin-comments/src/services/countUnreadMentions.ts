@@ -38,7 +38,9 @@ export async function countUnreadMentions({
 
     if (!user) return { success: true, data: { count: 0 } };
 
-    const pluginConfig = payload.config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
+    const pluginConfig = payload.config.admin?.custom?.commentsPlugin as
+      | CommentsPluginConfigStorage
+      | undefined;
     const collections = enabledCollections ?? pluginConfig?.collections ?? [];
     const globals = enabledGlobals ?? pluginConfig?.globals ?? [];
 
@@ -59,7 +61,7 @@ export async function countUnreadMentions({
         },
         {
           documentId: { equals: documentId },
-        },
+        }
       );
     } else if (mode === "global-document" && globalSlug) {
       where.and.push({ globalSlug: { equals: globalSlug } });

@@ -48,7 +48,15 @@ describe("buildInput", () => {
   });
 
   it("normalizes locale to xx_XX from a string, object, or null", () => {
-    const at = (locale: unknown) => buildInput({ values: {}, locale: locale as never, keyphrase: "k", fields: FIELDS, site: SITE, contentHtml: "" }).locale;
+    const at = (locale: unknown) =>
+      buildInput({
+        values: {},
+        locale: locale as never,
+        keyphrase: "k",
+        fields: FIELDS,
+        site: SITE,
+        contentHtml: "",
+      }).locale;
     expect(at("en")).toBe("en_EN");
     expect(at({ code: "de" })).toBe("de_DE");
     expect(at("fr_FR")).toBe("fr_FR");
@@ -64,7 +72,12 @@ describe("buildInput", () => {
       site: SITE,
       contentHtml: "<p>content</p>",
     });
-    expect(present.has).toEqual({ seoTitle: true, metaDescription: true, slug: true, content: true });
+    expect(present.has).toEqual({
+      seoTitle: true,
+      metaDescription: true,
+      slug: true,
+      content: true,
+    });
 
     const sparse = buildInput({
       values: {},

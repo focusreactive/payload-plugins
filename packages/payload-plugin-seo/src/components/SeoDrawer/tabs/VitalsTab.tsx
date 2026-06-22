@@ -29,16 +29,35 @@ export function VitalsTab({ data, onRequestKeyphrase }: VitalsTabProps) {
 
       <HeadingsSection data={data.headings} />
 
-      <SectionCard title="Prominent words" widget={<Pill variant="neutral">{data.prominentWords.length}</Pill>}>
+      <SectionCard
+        title="Prominent words"
+        widget={<Pill variant="neutral">{data.prominentWords.length}</Pill>}
+      >
         {data.prominentWords.map((w) => (
-          <div className={cn("relative flex items-center gap-[12px] px-[15px] py-[9px]", ROW_SEPARATOR)} key={w.word}>
+          <div
+            className={cn(
+              "relative flex items-center gap-[12px] px-[15px] py-[9px]",
+              ROW_SEPARATOR
+            )}
+            key={w.word}
+          >
             <div className="w-[120px] flex-none text-[12px] font-medium flex items-center gap-[6px]">
-              {w.word} {w.isKeyphrase && <span className="text-[9px] font-bold uppercase tracking-[0.04em] text-neutral-1000 bg-neutral-150 rounded-[3px] px-[5px] py-[1px]">Key</span>}
+              {w.word}{" "}
+              {w.isKeyphrase && (
+                <span className="text-[9px] font-bold uppercase tracking-[0.04em] text-neutral-1000 bg-neutral-150 rounded-[3px] px-[5px] py-[1px]">
+                  Key
+                </span>
+              )}
             </div>
             <div className="flex-1 h-[6px] rounded-[3px] bg-neutral-100 overflow-hidden">
-              <i className={cn("block h-full", w.isKeyphrase ? "bg-neutral-1000" : "bg-neutral-400")} style={{ width: `${(w.count / max) * 100}%` }} />
+              <i
+                className={cn("block h-full", w.isKeyphrase ? "bg-neutral-1000" : "bg-neutral-400")}
+                style={{ width: `${(w.count / max) * 100}%` }}
+              />
             </div>
-            <div className="w-[30px] text-right font-mono text-[11px] font-semibold text-neutral-700">{w.count}</div>
+            <div className="w-[30px] text-right font-mono text-[11px] font-semibold text-neutral-700">
+              {w.count}
+            </div>
           </div>
         ))}
       </SectionCard>

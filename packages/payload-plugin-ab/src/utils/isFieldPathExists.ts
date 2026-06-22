@@ -40,9 +40,9 @@ export function isFieldPathExists(fields: Field[], path: string): boolean {
 
     // Transparent layout fields
     if (
-      (field.type === "row" || field.type === "collapsible")
-      && "fields" in field
-      && Array.isArray((field as unknown as FieldsContainer).fields)
+      (field.type === "row" || field.type === "collapsible") &&
+      "fields" in field &&
+      Array.isArray((field as unknown as FieldsContainer).fields)
     ) {
       if (isFieldPathExists((field as unknown as FieldsContainer).fields, path)) return true;
     }

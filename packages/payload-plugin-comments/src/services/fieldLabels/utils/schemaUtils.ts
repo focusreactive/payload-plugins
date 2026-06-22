@@ -17,7 +17,9 @@ export function flattenFields(fields: Field[]) {
 }
 
 export function findFieldByName(fields: Field[], name: string): Field | undefined {
-  return flattenFields(fields).find((field) => "name" in field && (field as { name: string }).name === name);
+  return flattenFields(fields).find(
+    (field) => "name" in field && (field as { name: string }).name === name
+  );
 }
 
 export function getLabelString(field: Field) {

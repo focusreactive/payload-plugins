@@ -13,7 +13,8 @@ const deps = (collections: Array<{ slug: string }> = []) => ({
   translationProvider: { translate: vi.fn() },
 });
 
-const ep = (method: string, path: string): Endpoint => ({ method, path, handler: vi.fn() }) as unknown as Endpoint;
+const ep = (method: string, path: string): Endpoint =>
+  ({ method, path, handler: vi.fn() }) as unknown as Endpoint;
 
 const component = (path: string) => ({ path }) as unknown as RawPayloadComponentExport;
 
@@ -26,7 +27,10 @@ describe("PluginConfigBuilder", () => {
     const config = {} as Config;
     builder.applyTo(config);
 
-    expect(config.endpoints?.map((e) => `${e.method} ${e.path}`)).toEqual(["post /translate/enqueue", "post /translate/run/:id"]);
+    expect(config.endpoints?.map((e) => `${e.method} ${e.path}`)).toEqual([
+      "post /translate/enqueue",
+      "post /translate/run/:id",
+    ]);
   });
 
   it("keeps endpoints that differ in method or path", () => {

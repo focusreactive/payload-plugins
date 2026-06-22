@@ -7,7 +7,9 @@ describe("getRecommendation", () => {
   });
 
   it("returns mapped copy for a known id + bad status", () => {
-    expect(getRecommendation("introductionKeyword", "bad", { keyphrase: "best running shoes" })).toContain("best running shoes");
+    expect(
+      getRecommendation("introductionKeyword", "bad", { keyphrase: "best running shoes" })
+    ).toContain("best running shoes");
   });
 
   it("falls back to a generic message for unmapped ids", () => {

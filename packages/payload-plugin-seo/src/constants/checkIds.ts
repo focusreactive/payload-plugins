@@ -12,8 +12,24 @@ export const CHECK_IDS = {
     "functionWordsInKeyphrase",
     "keyphraseDistribution",
   ],
-  onPage: ["textLength", "metaDescriptionLength", "titleWidth", "images", "externalLinks", "internalLinks", "singleH1"],
-  readability: ["subheadingsTooLong", "textParagraphTooLong", "textSentenceLength", "textTransitionWords", "passiveVoice", "sentenceBeginnings", "fleschReadingEase"],
+  onPage: [
+    "textLength",
+    "metaDescriptionLength",
+    "titleWidth",
+    "images",
+    "externalLinks",
+    "internalLinks",
+    "singleH1",
+  ],
+  readability: [
+    "subheadingsTooLong",
+    "textParagraphTooLong",
+    "textSentenceLength",
+    "textTransitionWords",
+    "passiveVoice",
+    "sentenceBeginnings",
+    "fleschReadingEase",
+  ],
 } as const;
 
 export type CheckTab = keyof typeof CHECK_IDS;

@@ -1,6 +1,10 @@
 // tests/services/analyticsService/mocks/ga4RowBuilder.test.ts
 import { describe, expect, it } from "vitest";
-import { row, response, batch } from "../../../../src/services/analyticsService/mocks/ga4RowBuilder";
+import {
+  row,
+  response,
+  batch,
+} from "../../../../src/services/analyticsService/mocks/ga4RowBuilder";
 
 describe("ga4RowBuilder", () => {
   it("row builds dimensionValues/metricValues from string arrays", () => {

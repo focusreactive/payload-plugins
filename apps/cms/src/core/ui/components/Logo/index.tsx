@@ -14,9 +14,25 @@ interface Props {
   loading?: "eager" | "lazy";
 }
 
-export const Logo = ({ resource, className, imgClassName, alt = "Logo", priority = true, loading = "eager" }: Props) => {
+export const Logo = ({
+  resource,
+  className,
+  imgClassName,
+  alt = "Logo",
+  priority = true,
+  loading = "eager",
+}: Props) => {
   if (resource) {
-    return <Media resource={resource} imgClassName={cn("size-9 object-contain", imgClassName)} className={className} priority={true} loading={loading} size="(max-width: 768px) 150px, 200px" />;
+    return (
+      <Media
+        resource={resource}
+        imgClassName={cn("size-9 object-contain", imgClassName)}
+        className={className}
+        priority={true}
+        loading={loading}
+        size="(max-width: 768px) 150px, 200px"
+      />
+    );
   }
 
   return (

@@ -46,8 +46,8 @@
   --radius-rs: var(--style-radius-s);
   --radius-rm: var(--style-radius-m);
 
-  --shadow-popover: 0 12px 32px -12px var(--seo-shadow-strong),
-    0 2px 6px -2px var(--seo-shadow-soft);
+  --shadow-popover:
+    0 12px 32px -12px var(--seo-shadow-strong), 0 2px 6px -2px var(--seo-shadow-soft);
 
   --animate-seo-fade-in: seo-fade-in 0.18s ease;
 

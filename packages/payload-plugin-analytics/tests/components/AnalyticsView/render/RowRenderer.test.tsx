@@ -36,7 +36,9 @@ describe("RowRenderer", () => {
       blocks: [{ id: "sessions-kpi", order: 1, colSpan: 1 }],
     } as unknown as ResolvedRow;
 
-    const { container } = renderWith(<RowRenderer row={row} registry={{ "sessions-kpi": { component: "x" } }} {...baseProps} />);
+    const { container } = renderWith(
+      <RowRenderer row={row} registry={{ "sessions-kpi": { component: "x" } }} {...baseProps} />
+    );
     const grid = container.firstChild as HTMLElement;
     expect(grid.style.gridTemplateColumns).toBe("repeat(3, minmax(0, 1fr))");
   });
@@ -52,7 +54,13 @@ describe("RowRenderer", () => {
       ],
     } as unknown as ResolvedRow;
 
-    const { container } = renderWith(<RowRenderer row={row} registry={{ "devices-donut": { component: "x" }, "top-countries": { component: "x" } }} {...baseProps} />);
+    const { container } = renderWith(
+      <RowRenderer
+        row={row}
+        registry={{ "devices-donut": { component: "x" }, "top-countries": { component: "x" } }}
+        {...baseProps}
+      />
+    );
     const cells = container.querySelectorAll<HTMLElement>("[data-block-cell]");
     expect(cells).toHaveLength(2);
     expect(cells[0].style.gridColumn).toBe("span 1");

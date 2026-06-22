@@ -12,6 +12,9 @@ export const cascadeDeleteCommentReads: CollectionBeforeDeleteHook = async ({ id
       req,
     });
   } catch (err) {
-    req.payload.logger?.error?.({ err, msg: "cascadeDeleteCommentReads: failed to clear read rows" });
+    req.payload.logger?.error?.({
+      err,
+      msg: "cascadeDeleteCommentReads: failed to clear read rows",
+    });
   }
 };

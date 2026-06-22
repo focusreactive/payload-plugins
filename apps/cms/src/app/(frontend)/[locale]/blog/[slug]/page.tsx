@@ -28,7 +28,11 @@ export default async function Page({ params }: Args) {
   const decodedSlug = decodeURIComponent(slug);
   const url = buildUrl({ collection: "posts", locale, slug: decodedSlug });
 
-  const [post, siteSettings, blogSettings] = await Promise.all([getPostBySlug({ locale, slug: decodedSlug }), getSiteSettings({ locale }), getBlogPageSettings({ locale })]);
+  const [post, siteSettings, blogSettings] = await Promise.all([
+    getPostBySlug({ locale, slug: decodedSlug }),
+    getSiteSettings({ locale }),
+    getBlogPageSettings({ locale }),
+  ]);
 
   if (!post) {
     return <PayloadRedirects url={url} locale={locale} />;
@@ -54,7 +58,11 @@ export default async function Page({ params }: Args) {
 
         <PayloadRedirects disableNotFound url={url} locale={locale} />
 
-        <PostContent post={post} locale={locale} relatedPostsLabel={blogSettings.relatedPostsLabel} />
+        <PostContent
+          post={post}
+          locale={locale}
+          relatedPostsLabel={blogSettings.relatedPostsLabel}
+        />
       </main>
       <Footer data={siteSettings.footer as FooterType} />
     </>

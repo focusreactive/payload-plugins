@@ -14,10 +14,18 @@ const RELATED_POSTS_COUNT = 3;
  * Excludes the current post from results.
  * If not enough posts match the filters, returns only those available.
  */
-export async function getRelatedPosts({ post, locale }: { post: Post; locale: Locale }): Promise<Post[]> {
+export async function getRelatedPosts({
+  post,
+  locale,
+}: {
+  post: Post;
+  locale: Locale;
+}): Promise<Post[]> {
   const { isEnabled: draft } = await draftMode();
 
-  const manualPosts = (post.relatedPosts ?? []).filter((p): p is Post => typeof p === "object" && p !== null);
+  const manualPosts = (post.relatedPosts ?? []).filter(
+    (p): p is Post => typeof p === "object" && p !== null
+  );
 
   if (manualPosts.length >= RELATED_POSTS_COUNT) {
     return manualPosts.slice(0, RELATED_POSTS_COUNT);
@@ -26,7 +34,9 @@ export async function getRelatedPosts({ post, locale }: { post: Post; locale: Lo
   const remaining = RELATED_POSTS_COUNT - manualPosts.length;
   const excludeIds = [post.id, ...manualPosts.map((p) => p.id)];
 
-  const categoryIds = (post.categories ?? []).map((cat) => (typeof cat === "object" ? cat.id : cat)).filter(Boolean);
+  const categoryIds = (post.categories ?? [])
+    .map((cat) => (typeof cat === "object" ? cat.id : cat))
+    .filter(Boolean);
 
   if (categoryIds.length === 0) {
     return manualPosts;
@@ -43,7 +53,11 @@ export async function getRelatedPosts({ post, locale }: { post: Post; locale: Lo
     overrideAccess: true,
     sort: "-publishedAt",
     where: {
-      and: [{ id: { not_in: excludeIds } }, { categories: { in: categoryIds } }, ...(!draft ? [{ _status: { equals: "published" } }] : [])],
+      and: [
+        { id: { not_in: excludeIds } },
+        { categories: { in: categoryIds } },
+        ...(!draft ? [{ _status: { equals: "published" } }] : []),
+      ],
     },
   });
 

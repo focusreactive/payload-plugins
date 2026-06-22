@@ -1,4 +1,9 @@
-import type { HeadingLevel, HeadingLevelCount, HeadingNode, HeadingStructure } from "../../../types/analysis";
+import type {
+  HeadingLevel,
+  HeadingLevelCount,
+  HeadingNode,
+  HeadingStructure,
+} from "../../../types/analysis";
 
 export interface FlatHeading {
   level: HeadingLevel;

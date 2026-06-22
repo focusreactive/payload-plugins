@@ -6,7 +6,13 @@ import { makePayloadRequest } from "../../__fixtures__/http/payloadRequest";
 import kpisCurrent from "../../__fixtures__/ga4/kpis.current.json";
 import type { AnalyticsPluginConfig } from "../../src/types/config";
 
-const cfg = { ga4: { propertyId: "12345", measurementId: "G-X", serviceAccount: { clientEmail: "x", privateKey: "y" } } } as AnalyticsPluginConfig;
+const cfg = {
+  ga4: {
+    propertyId: "12345",
+    measurementId: "G-X",
+    serviceAccount: { clientEmail: "x", privateKey: "y" },
+  },
+} as AnalyticsPluginConfig;
 
 // The handler builds a PageFilterContext via getResolvedPagesConfig() → getPluginConfig();
 // seed a config with no `pages` so the resolved config is null (feature off, no filter).
@@ -22,7 +28,10 @@ function callHandler(ep: { handler: unknown }, req: unknown): Promise<Response> 
 describe("POST /api/analytics/kpis", () => {
   it("returns 403 when unauthenticated", async () => {
     const ep = buildKpisEndpoint(cfg);
-    const res = await callHandler(ep, makePayloadRequest({ user: null, body: { dateRange: { preset: "last-7d" } } }));
+    const res = await callHandler(
+      ep,
+      makePayloadRequest({ user: null, body: { dateRange: { preset: "last-7d" } } })
+    );
     expect(res.status).toBe(403);
   });
 
@@ -36,7 +45,10 @@ describe("POST /api/analytics/kpis", () => {
     const fake = { runReport: vi.fn().mockResolvedValue([kpisCurrent]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
     const ep = buildKpisEndpoint(cfg);
-    const res = await callHandler(ep, makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } }));
+    const res = await callHandler(
+      ep,
+      makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } })
+    );
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(typeof json.current.sessions).toBe("number");
@@ -47,7 +59,10 @@ describe("POST /api/analytics/kpis", () => {
     const fake = { runReport: vi.fn().mockRejectedValue(err), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
     const ep = buildKpisEndpoint(cfg);
-    const res = await callHandler(ep, makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } }));
+    const res = await callHandler(
+      ep,
+      makePayloadRequest({ user: { id: "u" }, body: { dateRange: { preset: "last-7d" } } })
+    );
     expect(res.status).toBe(429);
   });
 });

@@ -21,7 +21,11 @@ async function getDocument(collection: Collection, slug: string, depth = 0) {
   return page.docs[0];
 }
 
-async function getDocumentByID(collection: Collection, id: number, depth = 1): Promise<Config["collections"][Collection] | null> {
+async function getDocumentByID(
+  collection: Collection,
+  id: number,
+  depth = 1
+): Promise<Config["collections"][Collection] | null> {
   const payload = await getPayloadClient();
   try {
     const doc = await payload.findByID({

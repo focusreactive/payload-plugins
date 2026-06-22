@@ -1,21 +1,51 @@
 {
-  "dimensionHeaders": [{ "name": "eventName" }, { "name": "pagePath" }, { "name": "dateHourMinute" }, { "name": "customEvent:fr_event_seq" }, { "name": "customEvent:fr_lead_type" }],
+  "dimensionHeaders": [
+    { "name": "eventName" },
+    { "name": "pagePath" },
+    { "name": "dateHourMinute" },
+    { "name": "customEvent:fr_event_seq" },
+    { "name": "customEvent:fr_lead_type" }
+  ],
   "metricHeaders": [{ "name": "eventCount", "type": "TYPE_INTEGER" }],
   "rows": [
     {
-      "dimensionValues": [{ "value": "page_view" }, { "value": "/" }, { "value": "202605101430" }, { "value": "1" }, { "value": "" }],
+      "dimensionValues": [
+        { "value": "page_view" },
+        { "value": "/" },
+        { "value": "202605101430" },
+        { "value": "1" },
+        { "value": "" }
+      ],
       "metricValues": [{ "value": "1" }]
     },
     {
-      "dimensionValues": [{ "value": "scroll" }, { "value": "/" }, { "value": "202605101431" }, { "value": "2" }, { "value": "" }],
+      "dimensionValues": [
+        { "value": "scroll" },
+        { "value": "/" },
+        { "value": "202605101431" },
+        { "value": "2" },
+        { "value": "" }
+      ],
       "metricValues": [{ "value": "1" }]
     },
     {
-      "dimensionValues": [{ "value": "page_view" }, { "value": "/about" }, { "value": "202605101433" }, { "value": "3" }, { "value": "" }],
+      "dimensionValues": [
+        { "value": "page_view" },
+        { "value": "/about" },
+        { "value": "202605101433" },
+        { "value": "3" },
+        { "value": "" }
+      ],
       "metricValues": [{ "value": "1" }]
     },
     {
-      "dimensionValues": [{ "value": "lead_action" }, { "value": "/contact" }, { "value": "202605101440" }, { "value": "4" }, { "value": "form_submit" }],
+      "dimensionValues": [
+        { "value": "lead_action" },
+        { "value": "/contact" },
+        { "value": "202605101440" },
+        { "value": "4" },
+        { "value": "form_submit" }
+      ],
       "metricValues": [{ "value": "1" }]
     }
   ],

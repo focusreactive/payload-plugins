@@ -22,7 +22,17 @@ interface Props {
   buildUrl?: (doc: BaseDocument, locale?: Locale) => string | null;
 }
 
-export function buildContent({ doc, skipKeys, collection, titleField, payload, full, raw, locale, buildUrl }: Props): ContentBlock[] {
+export function buildContent({
+  doc,
+  skipKeys,
+  collection,
+  titleField,
+  payload,
+  full,
+  raw,
+  locale,
+  buildUrl,
+}: Props): ContentBlock[] {
   if (raw) {
     return [{ text: JSON.stringify(doc, null, 2), type: "text" }];
   }
@@ -31,7 +41,10 @@ export function buildContent({ doc, skipKeys, collection, titleField, payload, f
   const titleIsId = titleField === "id" || !titleField;
 
   const url = buildUrl ? buildUrl(doc, locale) : null;
-  const adminUrl = doc.id && collection ? `${getServerSideURL()}/admin/collections/${collection}/${doc.id}${locale ? `?locale=${locale}` : ""}` : null;
+  const adminUrl =
+    doc.id && collection
+      ? `${getServerSideURL()}/admin/collections/${collection}/${doc.id}${locale ? `?locale=${locale}` : ""}`
+      : null;
 
   const extractedDoc = extractFields(doc, skipKeys);
 

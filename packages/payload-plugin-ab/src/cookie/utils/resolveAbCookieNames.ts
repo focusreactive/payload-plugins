@@ -13,7 +13,10 @@ export interface ResolvedAbCookieNames {
  * Resolves an `AbCookieConfig` + experiment ID into plain serializable strings.
  * Use this in Server Components to derive props for Client Components.
  */
-export function resolveAbCookieNames(config: AbCookieConfig | undefined, experimentId: string): ResolvedAbCookieNames {
+export function resolveAbCookieNames(
+  config: AbCookieConfig | undefined,
+  experimentId: string
+): ResolvedAbCookieNames {
   return {
     variantCookieName: (config?.getExpCookieName ?? defaultGetExpCookieName)(experimentId),
     visitorCookieName: config?.visitorIdCookieName ?? DEFAULT_VISITOR_ID_COOKIE_NAME,

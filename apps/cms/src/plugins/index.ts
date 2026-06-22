@@ -4,7 +4,11 @@ import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
 import { seoPlugin as seoAnalysisPlugin } from "@focus-reactive/payload-plugin-seo";
-import { translatorPlugin, createOpenAIProvider, createSyncRunner } from "@focus-reactive/payload-plugin-translator";
+import {
+  translatorPlugin,
+  createOpenAIProvider,
+  createSyncRunner,
+} from "@focus-reactive/payload-plugin-translator";
 import { visualEditingPlugin } from "@fr-private/payload-plugin-visual-editing";
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
@@ -146,7 +150,12 @@ export const plugins: Plugin[] = [
             };
           }
 
-          if ("name" in field && field.name === "to" && "fields" in field && Array.isArray(field.fields)) {
+          if (
+            "name" in field &&
+            field.name === "to" &&
+            "fields" in field &&
+            Array.isArray(field.fields)
+          ) {
             return {
               ...field,
               fields: field.fields.map((sub: Field) =>
@@ -154,7 +163,8 @@ export const plugins: Plugin[] = [
                   ? {
                       ...sub,
                       localized: true,
-                      validate: (v: unknown) => validateRedirectPath(v as string, { allowUrl: true }),
+                      validate: (v: unknown) =>
+                        validateRedirectPath(v as string, { allowUrl: true }),
                     }
                   : {
                       ...sub,
@@ -302,13 +312,16 @@ export const plugins: Plugin[] = [
   }),
 
   translatorPlugin({
-    collections: [PageCollection, Posts, Categories, Authors, Testimonials, Header, Footer].map((col) => JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))),
+    collections: [PageCollection, Posts, Categories, Authors, Testimonials, Header, Footer].map(
+      (col) => JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
+    ),
     runner: createSyncRunner(),
     translationProvider: createOpenAIProvider({
       apiKey: process.env.OPENAI_API_KEY!,
       dryRun: false,
       model: "gpt-4o-mini",
-      systemPrompt: ({ defaultPrompt }) => `${defaultPrompt}\nUse formal language. Keep brand names unchanged.`,
+      systemPrompt: ({ defaultPrompt }) =>
+        `${defaultPrompt}\nUse formal language. Keep brand names unchanged.`,
     }),
   }),
 
@@ -323,9 +336,12 @@ export const plugins: Plugin[] = [
           const restPath = !lastUrl || lastUrl === "/home" ? "" : lastUrl;
 
           const resolvedLocale = locale ?? I18N_CONFIG.defaultLocale;
-          return shouldIncludeLocalePrefix(resolvedLocale) ? `/${resolvedLocale}${restPath}` : restPath || "/";
+          return shouldIncludeLocalePrefix(resolvedLocale)
+            ? `/${resolvedLocale}${restPath}`
+            : restPath || "/";
         },
-        generateVariantData: ({ variantDoc, locale }) => buildVariantData(variantDoc as unknown as Page & { _abPassPercentage?: number }, locale),
+        generateVariantData: ({ variantDoc, locale }) =>
+          buildVariantData(variantDoc as unknown as Page & { _abPassPercentage?: number }, locale),
       },
     },
     debug: isDev(),

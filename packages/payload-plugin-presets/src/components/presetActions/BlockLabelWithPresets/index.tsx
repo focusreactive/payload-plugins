@@ -1,21 +1,13 @@
 "use client";
 
-import {
-  Pill,
-  SectionTitle,
-  useRowLabel,
-  useTranslation,
-} from "@payloadcms/ui";
+import { Pill, SectionTitle, useRowLabel, useTranslation } from "@payloadcms/ui";
 import { SaveAsPresetCore } from "./SaveAsPresetCore";
 import { PresetBlockData } from "./types";
 import { useBlocksConfig } from "../../blocksDrawer/BlocksConfigContext.js";
 
 const baseClass = "blocks-field";
 
-function resolveLabel(
-  label: string | Record<string, string> | undefined,
-  language: string,
-) {
+function resolveLabel(label: string | Record<string, string> | undefined, language: string) {
   if (typeof label === "string") return label;
 
   if (label && typeof label === "object") {
@@ -50,9 +42,7 @@ export function BlockLabelWithPresets() {
           : data.blockType}
       </Pill>
 
-      {showBlockName && (
-        <SectionTitle path={`${path}.blockName`} readOnly={false} />
-      )}
+      {showBlockName && <SectionTitle path={`${path}.blockName`} readOnly={false} />}
 
       <SaveAsPresetCore presetBlockData={data} rowIndex={rowNumber ?? 0} />
     </>

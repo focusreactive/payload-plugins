@@ -66,7 +66,10 @@ describe("<AnalyticsProvider>", () => {
       </AnalyticsProvider>
     );
     document.querySelector("#phone")!.click();
-    expect(provider.trackEvent).toHaveBeenCalledWith("lead_action", expect.objectContaining({ fr_lead_type: "phone_click" }));
+    expect(provider.trackEvent).toHaveBeenCalledWith(
+      "lead_action",
+      expect.objectContaining({ fr_lead_type: "phone_click" })
+    );
   });
 
   it("does NOT install phone-click when phoneClicks=false", () => {
@@ -80,7 +83,13 @@ describe("<AnalyticsProvider>", () => {
     );
     document.querySelector("#phone")!.click();
     const trackCalls = (provider.trackEvent as ReturnType<typeof vi.fn>).mock.calls;
-    expect(trackCalls.find((c) => c[0] === "lead_action" && (c[1] as Record<string, unknown>)?.fr_lead_type === "phone_click")).toBeUndefined();
+    expect(
+      trackCalls.find(
+        (c) =>
+          c[0] === "lead_action" &&
+          (c[1] as Record<string, unknown>)?.fr_lead_type === "phone_click"
+      )
+    ).toBeUndefined();
   });
 
   it("does NOT install phone-click when leadActionTypes excludes phone_click", () => {
@@ -94,7 +103,13 @@ describe("<AnalyticsProvider>", () => {
     );
     document.querySelector("#phone")!.click();
     const trackCalls = (provider.trackEvent as ReturnType<typeof vi.fn>).mock.calls;
-    expect(trackCalls.find((c) => c[0] === "lead_action" && (c[1] as Record<string, unknown>)?.fr_lead_type === "phone_click")).toBeUndefined();
+    expect(
+      trackCalls.find(
+        (c) =>
+          c[0] === "lead_action" &&
+          (c[1] as Record<string, unknown>)?.fr_lead_type === "phone_click"
+      )
+    ).toBeUndefined();
   });
 
   it("warns in dev when nested inside another <AnalyticsProvider>", () => {

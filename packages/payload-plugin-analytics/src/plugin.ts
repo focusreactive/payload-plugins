@@ -22,18 +22,24 @@ export const analyticsPlugin =
     }
 
     if (!MEASUREMENT_ID_RE.test(config.ga4.measurementId ?? "")) {
-      console.warn(`${PREFIX} Disabled: ga4.measurementId "${config.ga4.measurementId ?? ""}" is not a valid GA4 ID (expected G-XXXXXXX, likely GA4_MEASUREMENT_ID not set). Plugin not registered.`);
+      console.warn(
+        `${PREFIX} Disabled: ga4.measurementId "${config.ga4.measurementId ?? ""}" is not a valid GA4 ID (expected G-XXXXXXX, likely GA4_MEASUREMENT_ID not set). Plugin not registered.`
+      );
       return incomingConfig;
     }
 
     if (!config.ga4.propertyId) {
-      console.warn(`${PREFIX} Disabled: ga4.propertyId is missing (likely GA4_PROPERTY_ID not set). Plugin not registered.`);
+      console.warn(
+        `${PREFIX} Disabled: ga4.propertyId is missing (likely GA4_PROPERTY_ID not set). Plugin not registered.`
+      );
       return incomingConfig;
     }
 
     const serviceAccount = config.ga4.serviceAccount;
     if (!serviceAccount?.clientEmail || !serviceAccount?.privateKey) {
-      console.warn(`${PREFIX} Disabled: ga4.serviceAccount.{ clientEmail, privateKey } missing (likely GA4_CLIENT_EMAIL / GA4_PRIVATE_KEY not set). Plugin not registered.`);
+      console.warn(
+        `${PREFIX} Disabled: ga4.serviceAccount.{ clientEmail, privateKey } missing (likely GA4_CLIENT_EMAIL / GA4_PRIVATE_KEY not set). Plugin not registered.`
+      );
       return incomingConfig;
     }
 
@@ -50,7 +56,10 @@ export const analyticsPlugin =
     }
 
     const incomingConfigTranslations = incomingConfig.i18n?.translations ?? {};
-    const mergedTranslations = mergeTranslations(incomingConfigTranslations, config.translations ?? {});
+    const mergedTranslations = mergeTranslations(
+      incomingConfigTranslations,
+      config.translations ?? {}
+    );
 
     return overrideAdmin(
       {

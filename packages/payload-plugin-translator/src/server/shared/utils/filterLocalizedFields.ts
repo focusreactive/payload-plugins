@@ -33,7 +33,9 @@ const filterWalker: FieldWalker<Cursor, unknown> = {
   },
 
   leaf(field, cursor) {
-    return isTranslatableField(field) && isLocalizedField(field) ? cursor.data[field.name] : undefined;
+    return isTranslatableField(field) && isLocalizedField(field)
+      ? cursor.data[field.name]
+      : undefined;
   },
 
   combine(container, children, cursor) {
@@ -62,6 +64,9 @@ const filterWalker: FieldWalker<Cursor, unknown> = {
  * @param data - Document data to filter
  * @returns Filtered data containing only translatable localized fields
  */
-export function filterLocalizedFields(schema: Field[], data: Record<string, unknown>): Record<string, unknown> {
+export function filterLocalizedFields(
+  schema: Field[],
+  data: Record<string, unknown>
+): Record<string, unknown> {
   return (walkFields(schema, { data }, filterWalker) as Record<string, unknown> | undefined) ?? {};
 }

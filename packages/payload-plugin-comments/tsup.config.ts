@@ -1,20 +1,20 @@
-import { defineConfig } from 'tsup'
+import { defineConfig } from "tsup";
 
 export default defineConfig({
-  onSuccess: 'tailwindcss -i src/styles.css -o dist/styles.css --minify',
-  entry: ['src/**/*.{ts,tsx}'],
+  onSuccess: "tailwindcss -i src/styles.css -o dist/styles.css --minify",
+  entry: ["src/**/*.{ts,tsx}"],
   bundle: false,
-  format: ['esm'],
+  format: ["esm"],
   dts: false,
   sourcemap: true,
   clean: true,
   external: [
-    'payload',
-    'react',
-    'react-dom',
-    'next',
-    '@payloadcms/ui',
-    '@payloadcms/plugin-multi-tenant',
-    'resend',
+    "payload",
+    "react",
+    "react-dom",
+    "next",
+    "@payloadcms/ui",
+    "@payloadcms/plugin-multi-tenant",
+    "resend",
   ],
-})
+});

@@ -6,9 +6,18 @@
     { "name": "averageSessionDuration", "type": "TYPE_SECONDS" }
   ],
   "rows": [
-    { "dimensionValues": [{ "value": "/" }, { "value": "Home" }], "metricValues": [{ "value": "500" }, { "value": "300" }, { "value": "75.0" }] },
-    { "dimensionValues": [{ "value": "/about" }, { "value": "About" }], "metricValues": [{ "value": "200" }, { "value": "150" }, { "value": "60.0" }] },
-    { "dimensionValues": [{ "value": "/contact" }, { "value": "Contact Us" }], "metricValues": [{ "value": "120" }, { "value": "100" }, { "value": "45.5" }] }
+    {
+      "dimensionValues": [{ "value": "/" }, { "value": "Home" }],
+      "metricValues": [{ "value": "500" }, { "value": "300" }, { "value": "75.0" }]
+    },
+    {
+      "dimensionValues": [{ "value": "/about" }, { "value": "About" }],
+      "metricValues": [{ "value": "200" }, { "value": "150" }, { "value": "60.0" }]
+    },
+    {
+      "dimensionValues": [{ "value": "/contact" }, { "value": "Contact Us" }],
+      "metricValues": [{ "value": "120" }, { "value": "100" }, { "value": "45.5" }]
+    }
   ],
   "rowCount": 3
 }

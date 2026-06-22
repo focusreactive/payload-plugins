@@ -10,41 +10,104 @@
   "metricHeaders": [{ "name": "eventCount", "type": "TYPE_INTEGER" }],
   "rows": [
     {
-      "dimensionValues": [{ "value": "S1" }, { "value": "page_view" }, { "value": "/" }, { "value": "202605101430" }, { "value": "1" }, { "value": "" }],
+      "dimensionValues": [
+        { "value": "S1" },
+        { "value": "page_view" },
+        { "value": "/" },
+        { "value": "202605101430" },
+        { "value": "1" },
+        { "value": "" }
+      ],
       "metricValues": [{ "value": "1" }]
     },
     {
-      "dimensionValues": [{ "value": "S1" }, { "value": "page_view" }, { "value": "/" }, { "value": "202605101430" }, { "value": "2" }, { "value": "" }],
+      "dimensionValues": [
+        { "value": "S1" },
+        { "value": "page_view" },
+        { "value": "/" },
+        { "value": "202605101430" },
+        { "value": "2" },
+        { "value": "" }
+      ],
       "metricValues": [{ "value": "1" }]
     },
     {
-      "dimensionValues": [{ "value": "S1" }, { "value": "page_view" }, { "value": "/pricing" }, { "value": "202605101431" }, { "value": "3" }, { "value": "" }],
+      "dimensionValues": [
+        { "value": "S1" },
+        { "value": "page_view" },
+        { "value": "/pricing" },
+        { "value": "202605101431" },
+        { "value": "3" },
+        { "value": "" }
+      ],
       "metricValues": [{ "value": "1" }]
     },
     {
-      "dimensionValues": [{ "value": "S1" }, { "value": "lead_action" }, { "value": "/pricing" }, { "value": "202605101431" }, { "value": "4" }, { "value": "phone_click" }],
+      "dimensionValues": [
+        { "value": "S1" },
+        { "value": "lead_action" },
+        { "value": "/pricing" },
+        { "value": "202605101431" },
+        { "value": "4" },
+        { "value": "phone_click" }
+      ],
       "metricValues": [{ "value": "1" }]
     },
 
     {
-      "dimensionValues": [{ "value": "S2" }, { "value": "page_view" }, { "value": "/" }, { "value": "202605101500" }, { "value": "1" }, { "value": "" }],
+      "dimensionValues": [
+        { "value": "S2" },
+        { "value": "page_view" },
+        { "value": "/" },
+        { "value": "202605101500" },
+        { "value": "1" },
+        { "value": "" }
+      ],
       "metricValues": [{ "value": "1" }]
     },
     {
-      "dimensionValues": [{ "value": "S2" }, { "value": "page_view" }, { "value": "/pricing" }, { "value": "202605101501" }, { "value": "2" }, { "value": "" }],
+      "dimensionValues": [
+        { "value": "S2" },
+        { "value": "page_view" },
+        { "value": "/pricing" },
+        { "value": "202605101501" },
+        { "value": "2" },
+        { "value": "" }
+      ],
       "metricValues": [{ "value": "1" }]
     },
     {
-      "dimensionValues": [{ "value": "S2" }, { "value": "lead_action" }, { "value": "/pricing" }, { "value": "202605101501" }, { "value": "3" }, { "value": "phone_click" }],
+      "dimensionValues": [
+        { "value": "S2" },
+        { "value": "lead_action" },
+        { "value": "/pricing" },
+        { "value": "202605101501" },
+        { "value": "3" },
+        { "value": "phone_click" }
+      ],
       "metricValues": [{ "value": "1" }]
     },
 
     {
-      "dimensionValues": [{ "value": "S3" }, { "value": "page_view" }, { "value": "/" }, { "value": "202605101530" }, { "value": "1" }, { "value": "" }],
+      "dimensionValues": [
+        { "value": "S3" },
+        { "value": "page_view" },
+        { "value": "/" },
+        { "value": "202605101530" },
+        { "value": "1" },
+        { "value": "" }
+      ],
       "metricValues": [{ "value": "1" }]
     },
     {
-      "dimensionValues": [{ "value": "S3" }, { "value": "page_view" }, { "value": "/about" }, { "value": "202605101531" }, { "value": "2" }, { "value": "" }],
+      "dimensionValues": [
+        { "value": "S3" },
+        { "value": "page_view" },
+        { "value": "/about" },
+        { "value": "202605101531" },
+        { "value": "2" },
+        { "value": "" }
+      ],
       "metricValues": [{ "value": "1" }]
     }
   ],

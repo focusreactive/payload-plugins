@@ -2,7 +2,12 @@ import type { Row, TopNQuery, TopSourcesResponse, TopSourcesRow } from "../../ty
 import type { PageFilterContext } from "../pageFilter/types";
 import { resolveDateRange } from "../../utils/date/resolveDateRange";
 import { resolveComparison } from "../../utils/date/resolveComparison";
-import { bucketByDateRange, convertMetricToNumber, dateRangesFor, withRowLimit } from "../../utils/ga4";
+import {
+  bucketByDateRange,
+  convertMetricToNumber,
+  dateRangesFor,
+  withRowLimit,
+} from "../../utils/ga4";
 import { DEFAULT_PAGE_DIMENSIONS } from "../../constants/page";
 import { withPageRefFilter } from "../../utils/ga4/withPageRefFilter";
 import { runQuery } from "../analyticsService/runQuery";
@@ -26,17 +31,34 @@ function buildSourceKey(row: TopSourcesRow): string {
   return `${row.source}|${row.medium}|${row.channel}`;
 }
 
-export async function getTopSources(propertyId: string, query: TopNQuery, pageFilter?: PageFilterContext | null): Promise<TopSourcesResponse> {
+export async function getTopSources(
+  propertyId: string,
+  query: TopNQuery,
+  pageFilter?: PageFilterContext | null
+): Promise<TopSourcesResponse> {
   const dateRange = resolveDateRange(query.dateRange);
-  const previousDateRange = query.comparison?.kind === "previous-period" ? resolveComparison(dateRange) : undefined;
+  const previousDateRange =
+    query.comparison?.kind === "previous-period" ? resolveComparison(dateRange) : undefined;
   const dateRanges = dateRangesFor(dateRange, previousDateRange);
 
-  const dimensions = [{ name: "sessionSource" }, { name: "sessionMedium" }, { name: "sessionDefaultChannelGroup" }];
+  const dimensions = [
+    { name: "sessionSource" },
+    { name: "sessionMedium" },
+    { name: "sessionDefaultChannelGroup" },
+  ];
 
   const request = withRowLimit({ dateRanges, metrics: METRICS, dimensions }, query.limit);
   const refs = pageFilter?.refs ?? [];
-  const filtered = withPageRefFilter(request, pageFilter?.pageRefDim ?? DEFAULT_PAGE_DIMENSIONS.pageRef, refs);
-  const raw = await runQuery.runReport(propertyId, filtered as Parameters<typeof runQuery.runReport>[1], "topSources");
+  const filtered = withPageRefFilter(
+    request,
+    pageFilter?.pageRefDim ?? DEFAULT_PAGE_DIMENSIONS.pageRef,
+    refs
+  );
+  const raw = await runQuery.runReport(
+    propertyId,
+    filtered as Parameters<typeof runQuery.runReport>[1],
+    "topSources"
+  );
   const rows = (raw.rows ?? []) as Row[];
 
   if (!previousDateRange) {
@@ -51,7 +73,9 @@ export async function getTopSources(propertyId: string, query: TopNQuery, pageFi
     previousRowsByKey.set(buildSourceKey(row), row);
   }
 
-  const comparisonRows = currentRows.map((row) => previousRowsByKey.get(buildSourceKey(row))).filter((row): row is TopSourcesRow => row !== undefined);
+  const comparisonRows = currentRows
+    .map((row) => previousRowsByKey.get(buildSourceKey(row)))
+    .filter((row): row is TopSourcesRow => row !== undefined);
 
   return {
     rows: currentRows,

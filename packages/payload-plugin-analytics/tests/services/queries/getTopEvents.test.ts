@@ -25,10 +25,20 @@ describe("getTopEvents", () => {
     await getTopEvents(
       "12345",
       { dateRange: { preset: "last-7d" } },
-      { refs: ["page:1", "__home"], pageRefDim: "customEvent:fr_page_ref", contentLocaleDim: "customEvent:fr_content_locale", resolveLabels: async () => new Map() }
+      {
+        refs: ["page:1", "__home"],
+        pageRefDim: "customEvent:fr_page_ref",
+        contentLocaleDim: "customEvent:fr_content_locale",
+        resolveLabels: async () => new Map(),
+      }
     );
     const arg = fake.runReport.mock.calls[0][0];
-    expect(arg.dimensionFilter).toEqual({ filter: { fieldName: "customEvent:fr_page_ref", inListFilter: { values: ["page:1", "__home"] } } });
+    expect(arg.dimensionFilter).toEqual({
+      filter: {
+        fieldName: "customEvent:fr_page_ref",
+        inListFilter: { values: ["page:1", "__home"] },
+      },
+    });
   });
   it("adds no fr_page_ref filter when pageFilter is null", async () => {
     const fake = { runReport: vi.fn().mockResolvedValue([topEvents]), batchRunReports: vi.fn() };

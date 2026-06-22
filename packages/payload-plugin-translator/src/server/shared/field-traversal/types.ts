@@ -1,4 +1,13 @@
-import type { ArrayField, BlocksField, Field, FieldAffectingData, NamedGroupField, NamedTab, TabAsField, TabsField } from "payload";
+import type {
+  ArrayField,
+  BlocksField,
+  Field,
+  FieldAffectingData,
+  NamedGroupField,
+  NamedTab,
+  TabAsField,
+  TabsField,
+} from "payload";
 
 /**
  * A data-affecting field the engine routes to `leaf`: a scalar/relational leaf, never a
@@ -8,7 +17,10 @@ import type { ArrayField, BlocksField, Field, FieldAffectingData, NamedGroupFiel
  *
  * @public
  */
-export type LeafField = Exclude<FieldAffectingData, ArrayField | BlocksField | NamedGroupField | TabAsField>;
+export type LeafField = Exclude<
+  FieldAffectingData,
+  ArrayField | BlocksField | NamedGroupField | TabAsField
+>;
 
 /**
  * Structural classification of a single Payload field — the one place that encodes

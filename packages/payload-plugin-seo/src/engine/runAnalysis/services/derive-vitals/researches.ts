@@ -37,7 +37,10 @@ interface EstimateReadingTimeArgs {
 }
 
 export function estimateReadingTime({ researcher, words }: EstimateReadingTimeArgs): number {
-  return getResearch<number>(researcher, "readingTime") ?? Math.max(1, Math.round(words / WORDS_PER_MINUTE));
+  return (
+    getResearch<number>(researcher, "readingTime") ??
+    Math.max(1, Math.round(words / WORDS_PER_MINUTE))
+  );
 }
 
 interface FindProminentWordsArgs {
@@ -45,10 +48,17 @@ interface FindProminentWordsArgs {
   keyphrase: string;
 }
 
-export function findProminentWords({ researcher, keyphrase }: FindProminentWordsArgs): ProminentWord[] {
+export function findProminentWords({
+  researcher,
+  keyphrase,
+}: FindProminentWordsArgs): ProminentWord[] {
   const keyphraseWords = new Set(keyphrase.toLowerCase().split(/\s+/u).filter(Boolean));
 
-  const insights = getResearch<{ getWord?: () => string; getOccurrences?: () => number }[]>(researcher, "getProminentWordsForInsights") ?? [];
+  const insights =
+    getResearch<{ getWord?: () => string; getOccurrences?: () => number }[]>(
+      researcher,
+      "getProminentWordsForInsights"
+    ) ?? [];
 
   return insights.slice(0, MAX_PROMINENT_WORDS).map((entry) => {
     const word = entry.getWord?.() ?? String(entry);

@@ -25,5 +25,12 @@
     "declarationMap": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests", "__fixtures__", "vitest.config.ts", "vitest.setup.ts"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests",
+    "__fixtures__",
+    "vitest.config.ts",
+    "vitest.setup.ts"
+  ]
 }

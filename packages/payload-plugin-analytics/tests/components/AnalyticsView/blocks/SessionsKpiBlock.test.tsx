@@ -27,7 +27,10 @@ beforeEach(() => {
 describe("SessionsKpiBlock", () => {
   it("renders sessions count from useKpisQuery", () => {
     vi.mocked(useKpisQuery).mockReturnValue({
-      data: { current: { sessions: 1234, users: 0, pageViews: 0, bounceRate: 0, avgSessionDuration: 0 }, series: [] },
+      data: {
+        current: { sessions: 1234, users: 0, pageViews: 0, bounceRate: 0, avgSessionDuration: 0 },
+        series: [],
+      },
       isLoading: false,
       error: null,
     } as unknown as ReturnType<typeof useKpisQuery>);

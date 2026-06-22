@@ -1,4 +1,4 @@
-import type { Field } from 'payload'
+import type { Field } from "payload";
 
 /**
  * Represents a field-level chunk containing schema metadata.
@@ -8,11 +8,11 @@ import type { Field } from 'payload'
  */
 export type FieldChunk = {
   /** The field schema from Payload CMS */
-  schema: Field
+  schema: Field;
   /** Reference to the parent data object (for mutation) */
-  dataRef: Record<string, unknown>
+  dataRef: Record<string, unknown>;
   /** The key in the dataRef object */
-  key: string
+  key: string;
   /** Full path from root for strategy lookup in targetData */
-  path: string[]
-}
+  path: string[];
+};

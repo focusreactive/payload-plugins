@@ -3,7 +3,15 @@ import { makeResearcher } from "../../../researcherAdapter";
 import type { VitalsResult } from "../../../types/analysis";
 import { buildHeadingTree } from "./heading-tree";
 import { extractHeadings } from "./headings";
-import { countImages, countParagraphs, countSentences, countVideos, countWords, estimateReadingTime, findProminentWords } from "./researches";
+import {
+  countImages,
+  countParagraphs,
+  countSentences,
+  countVideos,
+  countWords,
+  estimateReadingTime,
+  findProminentWords,
+} from "./researches";
 
 export function deriveVitals(paper: InstanceType<typeof Paper>, keyphrase: string): VitalsResult {
   const researcher = makeResearcher(paper);

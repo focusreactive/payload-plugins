@@ -10,7 +10,11 @@ export async function NewsletterBand() {
   return (
     <SectionContainer sectionData={{ paddingY: "none", theme: "dark" }}>
       <NewsletterSection
-        header={prepareSectionHeaderProps({ align: "center", eyebrow: t("eyebrow"), heading: t("heading") })}
+        header={prepareSectionHeaderProps({
+          align: "center",
+          eyebrow: t("eyebrow"),
+          heading: t("heading"),
+        })}
         inputPlaceholder={t("placeholder")}
         buttonLabel={t("button")}
         disclaimer={t("disclaimer")}

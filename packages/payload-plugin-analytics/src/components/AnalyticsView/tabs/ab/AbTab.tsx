@@ -8,7 +8,8 @@ import { AbExperimentsTable } from "./AbExperimentsTable";
 import { AbDrawer } from "./AbDrawer";
 import type { DateRange, Comparison } from "../../../../types/query";
 
-const SETUP_GUIDE_URL = "https://github.com/focusreactive/payload-plugins/blob/main/packages/payload-plugin-analytics/docs/setup-ga4.md#stage-3-custom-registrations";
+const SETUP_GUIDE_URL =
+  "https://github.com/focusreactive/payload-plugins/blob/main/packages/payload-plugin-analytics/docs/setup-ga4.md#stage-3-custom-registrations";
 
 /**
  * A/B-specific setup gate. The shared SetupRequiredCard only knows the
@@ -23,18 +24,29 @@ function AbSetupRequiredCard({ missing }: { missing: string[] }) {
         <span>Setup required</span>
       </div>
       <div className="text-(--theme-warning-700) text-sm leading-relaxed">
-        <p className="my-1">Register these event-scoped custom dimensions in GA4 Admin to enable the A/B tab:</p>
+        <p className="my-1">
+          Register these event-scoped custom dimensions in GA4 Admin to enable the A/B tab:
+        </p>
         <ul className="my-2 pl-5 list-disc">
           {missing.map((k) => (
             <li key={k} className="mb-1">
-              <code className="font-[family-name:var(--font-mono)] bg-(--theme-warning-100) px-1.5 rounded text-[11px]">{k}</code>
+              <code className="font-[family-name:var(--font-mono)] bg-(--theme-warning-100) px-1.5 rounded text-[11px]">
+                {k}
+              </code>
             </li>
           ))}
         </ul>
-        <a href={SETUP_GUIDE_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-(--theme-warning-700) mt-2">
+        <a
+          href={SETUP_GUIDE_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1 font-medium text-(--theme-warning-700) mt-2"
+        >
           Setup guide <ExternalLink size={12} />
         </a>
-        <p className="mt-2 text-[12.5px] text-(--theme-warning-700)/80">After registering, GA4 takes up to 24 hours to backfill data.</p>
+        <p className="mt-2 text-[12.5px] text-(--theme-warning-700)/80">
+          After registering, GA4 takes up to 24 hours to backfill data.
+        </p>
       </div>
     </div>
   );
@@ -69,7 +81,11 @@ export function AbTab({ dateRange, comparison }: AbTabProps) {
           <span>Experiments</span>
         </div>
 
-        <span className="text-xs text-(--theme-elevation-500)">{experiments.isLoading ? "Loading…" : `Click a row to open the deep dive · ${rows.length} experiments`}</span>
+        <span className="text-xs text-(--theme-elevation-500)">
+          {experiments.isLoading
+            ? "Loading…"
+            : `Click a row to open the deep dive · ${rows.length} experiments`}
+        </span>
       </div>
 
       {rows.length === 0 && !experiments.isLoading ? (
@@ -80,7 +96,13 @@ export function AbTab({ dateRange, comparison }: AbTabProps) {
         <AbExperimentsTable rows={rows} onOpen={setSelectedExperiment} />
       )}
 
-      {selectedExperiment && <AbDrawer manifestKey={selectedExperiment} query={query} onClose={() => setSelectedExperiment(null)} />}
+      {selectedExperiment && (
+        <AbDrawer
+          manifestKey={selectedExperiment}
+          query={query}
+          onClose={() => setSelectedExperiment(null)}
+        />
+      )}
     </div>
   );
 }

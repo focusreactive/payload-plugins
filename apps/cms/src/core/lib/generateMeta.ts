@@ -12,7 +12,10 @@ import { getServerSideURL } from "./getURL";
 import { mergeOpenGraph } from "./mergeOpenGraph";
 
 function getOpenGraphLocale(locale: Locale): string {
-  return I18N_CONFIG.openGraphLocales[locale as keyof typeof I18N_CONFIG.openGraphLocales] || I18N_CONFIG.openGraphLocales.en;
+  return (
+    I18N_CONFIG.openGraphLocales[locale as keyof typeof I18N_CONFIG.openGraphLocales] ||
+    I18N_CONFIG.openGraphLocales.en
+  );
 }
 
 const getImageURL = (image: Media | null | undefined) => {
@@ -28,10 +31,21 @@ const getImageURL = (image: Media | null | undefined) => {
   return url;
 };
 
-export const generateMeta = async (args: { doc: Partial<Page | Post> | null; overrides?: Partial<Metadata>; locale: Locale; collection: "page" | "posts"; page?: number }): Promise<Metadata> => {
+export const generateMeta = async (args: {
+  doc: Partial<Page | Post> | null;
+  overrides?: Partial<Metadata>;
+  locale: Locale;
+  collection: "page" | "posts";
+  page?: number;
+}): Promise<Metadata> => {
   const { doc, overrides, locale, collection, page } = args;
 
-  const { openGraph: overridesOpenGraph = {}, twitter: overridesTwitter = {}, alternates: overridesAlternates = {}, ...overridesRest } = overrides || {};
+  const {
+    openGraph: overridesOpenGraph = {},
+    twitter: overridesTwitter = {},
+    alternates: overridesAlternates = {},
+    ...overridesRest
+  } = overrides || {};
 
   const settings = await getSiteSettings({ locale });
 
@@ -44,11 +58,15 @@ export const generateMeta = async (args: { doc: Partial<Page | Post> | null; ove
 
   const title = buildPageTitle(baseTitle, separator, suffix, siteName);
 
-  const description = doc?.meta?.description || settings?.defaultDescription || settings?.defaultOgDescription || "";
+  const description =
+    doc?.meta?.description || settings?.defaultDescription || settings?.defaultOgDescription || "";
 
-  const ogDescription = doc?.meta?.description || settings?.defaultOgDescription || settings?.defaultDescription || "";
+  const ogDescription =
+    doc?.meta?.description || settings?.defaultOgDescription || settings?.defaultDescription || "";
 
-  const ogImage = getImageURL((doc?.meta?.image || settings?.defaultOgImage) as Parameters<typeof getImageURL>[0]);
+  const ogImage = getImageURL(
+    (doc?.meta?.image || settings?.defaultOgImage) as Parameters<typeof getImageURL>[0]
+  );
 
   const ogTitle = doc?.meta?.title || doc?.title || settings?.defaultOgTitle || siteName;
 
@@ -109,7 +127,9 @@ export const generateMeta = async (args: { doc: Partial<Page | Post> | null; ove
   }
 
   const isArticle = collection === "posts";
-  const publishedTime = isArticle ? ((doc as Partial<Post> | null)?.publishedAt ?? undefined) : undefined;
+  const publishedTime = isArticle
+    ? ((doc as Partial<Post> | null)?.publishedAt ?? undefined)
+    : undefined;
 
   return {
     alternates: {
@@ -131,7 +151,9 @@ export const generateMeta = async (args: { doc: Partial<Page | Post> | null; ove
       locale: getOpenGraphLocale(locale),
       siteName: ogSiteName,
       title: ogTitle,
-      ...(isArticle ? { type: "article", ...(publishedTime ? { publishedTime } : {}) } : { type: "website" }),
+      ...(isArticle
+        ? { type: "article", ...(publishedTime ? { publishedTime } : {}) }
+        : { type: "website" }),
       url: canonical,
       ...overridesOpenGraph,
     }),

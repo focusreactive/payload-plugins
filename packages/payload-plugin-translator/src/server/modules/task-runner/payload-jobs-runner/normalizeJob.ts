@@ -35,12 +35,23 @@ function getJobStatus(job: PayloadJob): TaskStatus {
 }
 
 function extractErrorMessage(error: unknown): string {
-  if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
     return error.message;
   }
   return "Unknown error";
 }
 
 function isCancelled(error: unknown): boolean {
-  return error !== null && typeof error === "object" && "cancelled" in error && typeof error.cancelled === "boolean" && error.cancelled;
+  return (
+    error !== null &&
+    typeof error === "object" &&
+    "cancelled" in error &&
+    typeof error.cancelled === "boolean" &&
+    error.cancelled
+  );
 }

@@ -9,7 +9,15 @@ import { SegmentedControl } from "../../../ui/SegmentedControl";
 import { SerpPreview } from "../components/SerpPreview";
 import type { SerpMode } from "../components/SerpPreview";
 
-export function SerpTab({ data, keyphrase, faviconUrl }: { data: SerpResult; keyphrase: string; faviconUrl: string }) {
+export function SerpTab({
+  data,
+  keyphrase,
+  faviconUrl,
+}: {
+  data: SerpResult;
+  keyphrase: string;
+  faviconUrl: string;
+}) {
   const [mode, setMode] = useState<SerpMode>("mobile");
 
   return (

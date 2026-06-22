@@ -74,7 +74,11 @@ describe("mergeLayout", () => {
         tabs: {
           overview: {
             rows: {
-              "my-row": { order: 100, columns: 2, blocks: { "my-block": { order: 1, colSpan: 1 } } },
+              "my-row": {
+                order: 100,
+                columns: 2,
+                blocks: { "my-block": { order: 1, colSpan: 1 } },
+              },
             },
           },
         },
@@ -110,7 +114,10 @@ describe("mergeBlockRegistry", () => {
   });
 
   it("adds new user-defined blocks", () => {
-    const merged = mergeBlockRegistry({ "my-block": { component: "user/MyBlock", fetch: async () => ({}) } }, defaults);
+    const merged = mergeBlockRegistry(
+      { "my-block": { component: "user/MyBlock", fetch: async () => ({}) } },
+      defaults
+    );
     expect(merged["my-block"]).toBeDefined();
     expect(merged["sessions-kpi"]).toBeDefined();
   });

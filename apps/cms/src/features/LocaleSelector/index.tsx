@@ -55,7 +55,11 @@ export const LocaleSelector = ({ render }: LocaleSelectorProps) => {
         <ul className="absolute right-0 top-full z-50 mt-1 min-w-[120px] rounded-md border border-primary-soft bg-background py-1 shadow-lg">
           {I18N_CONFIG.locales.map((loc) => (
             <li className="px-1" key={loc.code}>
-              <Button key={loc.code} clickDisabled={loc.code === locale} onClick={() => setOpen(false)}>
+              <Button
+                key={loc.code}
+                clickDisabled={loc.code === locale}
+                onClick={() => setOpen(false)}
+              >
                 <LocaleLink href={pathname} locale={loc.code}>
                   {loc.label}
                 </LocaleLink>

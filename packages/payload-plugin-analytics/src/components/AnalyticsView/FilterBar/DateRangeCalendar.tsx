@@ -22,9 +22,12 @@ export interface DateRangeCalendarProps {
 }
 
 export function DateRangeCalendar({ value, onApply, onClose }: DateRangeCalendarProps) {
-  const initial: DPRange | undefined = "from" in value ? { from: isoToDate(value.from), to: isoToDate(value.to) } : undefined;
+  const initial: DPRange | undefined =
+    "from" in value ? { from: isoToDate(value.from), to: isoToDate(value.to) } : undefined;
   const [picked, setPicked] = useState<DPRange | undefined>(initial);
-  const [activePreset, setActivePreset] = useState<DateRangePreset | null>("preset" in value ? value.preset : null);
+  const [activePreset, setActivePreset] = useState<DateRangePreset | null>(
+    "preset" in value ? value.preset : null
+  );
 
   return (
     <div
@@ -32,7 +35,9 @@ export function DateRangeCalendar({ value, onApply, onClose }: DateRangeCalendar
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex flex-col gap-0.5 min-w-[140px] pr-3.5 border-r border-[var(--theme-border-color)]">
-        <div className="text-[10px] font-semibold uppercase tracking-widest text-[var(--theme-elevation-500)] px-1 pt-1 pb-1">Presets</div>
+        <div className="text-[10px] font-semibold uppercase tracking-widest text-[var(--theme-elevation-500)] px-1 pt-1 pb-1">
+          Presets
+        </div>
 
         {PRESETS.map(({ label, value: presetValue }) => (
           <button
@@ -65,7 +70,11 @@ export function DateRangeCalendar({ value, onApply, onClose }: DateRangeCalendar
 
         <div className="mt-2.5 pt-2.5 border-t border-[var(--theme-border-color)] flex items-center justify-between">
           <span className="font-[family-name:var(--font-mono)] text-[11px] text-[var(--theme-elevation-700)]">
-            {picked?.from ? dateToIso(picked.from) : activePreset ? `Preset: ${activePreset}` : "Pick a start date"}
+            {picked?.from
+              ? dateToIso(picked.from)
+              : activePreset
+                ? `Preset: ${activePreset}`
+                : "Pick a start date"}
             {picked?.to ? ` – ${dateToIso(picked.to)}` : ""}
           </span>
           <div className="flex gap-1.5">

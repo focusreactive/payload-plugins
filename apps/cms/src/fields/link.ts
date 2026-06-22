@@ -46,9 +46,21 @@ export const appearanceOptions: Record<LinkAppearances, Option> = {
   },
 };
 
-type LinkType = (options?: { appearances?: LinkAppearances[] | false; customPageDbName?: string; disableLabel?: boolean; required?: boolean; overrides?: Partial<GroupField> }) => Field;
+type LinkType = (options?: {
+  appearances?: LinkAppearances[] | false;
+  customPageDbName?: string;
+  disableLabel?: boolean;
+  required?: boolean;
+  overrides?: Partial<GroupField>;
+}) => Field;
 
-export const link: LinkType = ({ appearances, customPageDbName, disableLabel = false, required = true, overrides = {} } = {}) => {
+export const link: LinkType = ({
+  appearances,
+  customPageDbName,
+  disableLabel = false,
+  required = true,
+  overrides = {},
+} = {}) => {
   const linkResult: GroupField = {
     admin: {
       hideGutter: true,
@@ -188,7 +200,13 @@ export const link: LinkType = ({ appearances, customPageDbName, disableLabel = f
   }
 
   if (appearances !== false) {
-    let appearanceOptionsToUse = [appearanceOptions.default, appearanceOptions.outline, appearanceOptions.accent, appearanceOptions.ghost, appearanceOptions.link];
+    let appearanceOptionsToUse = [
+      appearanceOptions.default,
+      appearanceOptions.outline,
+      appearanceOptions.accent,
+      appearanceOptions.ghost,
+      appearanceOptions.link,
+    ];
 
     if (appearances) {
       appearanceOptionsToUse = appearances.map((appearance) => appearanceOptions[appearance]);
