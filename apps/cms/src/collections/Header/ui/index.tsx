@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { cn } from "@/components/ui/utils";
+import { cn } from "@/components/utils";
 import { Brand } from "./components/Brand";
 import { DesktopNav } from "./components/DesktopNav";
 import { HeaderActions } from "./components/HeaderActions";

@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 
-import { cn } from "@/components/ui/utils";
+import { cn } from "@/components/utils";
 
 interface GlowCardProps {
   children: React.ReactNode;

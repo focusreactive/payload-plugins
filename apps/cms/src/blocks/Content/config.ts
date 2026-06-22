@@ -63,7 +63,7 @@ const fields: Field[] = [
   },
   {
     admin: {
-      components: { RowLabel: "@/components/shared/components/RowLabel#RowLabel" },
+      components: { RowLabel: "@/components/admin/RowLabel#RowLabel" },
       initCollapsed: true,
     },
     fields: (link() as GroupField).fields,

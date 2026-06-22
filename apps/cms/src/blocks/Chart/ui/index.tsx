@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import type { TooltipProps } from "recharts";
 
-import { cn } from "@/components/ui/utils";
+import { cn } from "@/components/utils";
 
 interface ChartDataPoint {
   label: string;

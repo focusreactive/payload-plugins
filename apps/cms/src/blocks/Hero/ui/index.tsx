@@ -1,13 +1,13 @@
-import { cn, resolveBackdropTone } from "@/components/ui/utils";
-import { AbstractBackdrop } from "@/components/ui/primitives/AbstractBackdrop";
-import { DisplayHeading } from "@/components/ui/primitives/DisplayHeading";
-import { GridLines } from "@/components/ui/primitives/GridLines";
-import { Image } from "@/components/ui/primitives/image";
-import type { IImageProps } from "@/components/ui/primitives/image/types";
-import { Link } from "@/components/ui/primitives/link";
-import type { LinkProps } from "@/components/ui/primitives/link/types";
-import { Eyebrow } from "@/components/ui/primitives/Eyebrow";
-import { RichText } from "@/components/ui/primitives/richText";
+import { cn, resolveBackdropTone } from "@/components/utils";
+import { AbstractBackdrop } from "@/components/AbstractBackdrop";
+import { DisplayHeading } from "@/components/DisplayHeading";
+import { GridLines } from "@/components/GridLines";
+import { Image } from "@/components/image";
+import type { IImageProps } from "@/components/image/types";
+import { Link } from "@/components/link";
+import type { LinkProps } from "@/components/link/types";
+import { Eyebrow } from "@/components/Eyebrow";
+import { RichText } from "@/components/richText";
 import type { IHeroProps } from "./types";
 
 interface HeroBadgeProps {

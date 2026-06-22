@@ -1,7 +1,7 @@
 import type React from "react";
 
-import type { IImageProps } from "@/components/ui/primitives/image/types";
-import type { LinkProps } from "@/components/ui/primitives/link/types";
+import type { IImageProps } from "@/components/image/types";
+import type { LinkProps } from "@/components/link/types";
 
 export interface IDefaultCardProps {
   title: string;

@@ -1,8 +1,8 @@
 import * as NavigationMenu from "@radix-ui/react-navigation-menu";
 import NextLink from "next/link";
 
-import { cn } from "@/components/ui/utils";
-import { Eyebrow } from "@/components/ui/primitives/Eyebrow";
+import { cn } from "@/components/utils";
+import { Eyebrow } from "@/components/Eyebrow";
 import type { HeaderFeatured } from "../types";
 
 interface FeaturedCardProps {

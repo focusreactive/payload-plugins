@@ -1,5 +1,5 @@
-import { cn } from "@/components/ui/utils";
-import { Eyebrow } from "@/components/ui/primitives/Eyebrow";
+import { cn } from "@/components/utils";
+import { Eyebrow } from "@/components/Eyebrow";
 import LogoItem from "./LogoItem";
 import { AlignVariant } from "./types";
 import type { ILogosProps } from "./types";

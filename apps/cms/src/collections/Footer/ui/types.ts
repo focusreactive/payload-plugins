@@ -1,4 +1,4 @@
-import type { IImageProps } from "@/components/ui/primitives/image/types";
+import type { IImageProps } from "@/components/image/types";
 
 export interface FooterLink {
   label: string;

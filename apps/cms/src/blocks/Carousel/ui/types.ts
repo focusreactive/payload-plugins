@@ -1,5 +1,5 @@
-import type { IImageProps } from "@/components/ui/primitives/image/types";
-import type { IRichTextProps } from "@/components/ui/primitives/richText/types";
+import type { IImageProps } from "@/components/image/types";
+import type { IRichTextProps } from "@/components/richText/types";
 
 export type CarouselEffect = "slide" | "fade" | "cube" | "flip" | "coverflow" | "cards";
 

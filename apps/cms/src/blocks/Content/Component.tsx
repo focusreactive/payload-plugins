@@ -1,4 +1,4 @@
-import { ButtonSize } from "@/components/ui";
+import { ButtonSize } from "@/components/button";
 import { ContentSection } from "./ui";
 
 import { CMSLink, Media, RichText, SectionContainer } from "@/components/shared";

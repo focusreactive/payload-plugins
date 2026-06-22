@@ -49,7 +49,7 @@ export const Header: CollectionConfig<"header"> = {
     {
       admin: {
         components: {
-          RowLabel: "@/components/shared/components/RowLabel#RowLabel",
+          RowLabel: "@/components/admin/RowLabel#RowLabel",
         },
         initCollapsed: true,
       },

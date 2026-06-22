@@ -5,7 +5,7 @@ import { Search, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-import { cn } from "@/components/ui/utils";
+import { cn } from "@/components/utils";
 import { usePathname } from "@/i18n/navigation";
 
 import { useBlogFilter } from "./BlogFilterProvider";

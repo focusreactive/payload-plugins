@@ -1,7 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
 
-import { ErrorBoundary } from "@/components/shared";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function BlogError({
   error,

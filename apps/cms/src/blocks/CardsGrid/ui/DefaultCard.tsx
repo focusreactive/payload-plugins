@@ -1,6 +1,6 @@
-import { cn, cva } from "@/components/ui/utils";
-import { Link } from "@/components/ui/primitives/link";
-import { ButtonVariant } from "@/components/ui/primitives/button/types";
+import { cn, cva } from "@/components/utils";
+import { Link } from "@/components/link";
+import { ButtonVariant } from "@/components/button/types";
 import { GlowCard } from "./GlowCard";
 import type { IDefaultCardProps } from "./types";
 

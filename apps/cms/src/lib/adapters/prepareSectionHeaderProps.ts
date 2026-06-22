@@ -1,4 +1,4 @@
-import type { SectionHeaderEyebrow, SectionHeaderProps } from "@/components/ui";
+import type { SectionHeaderEyebrow, SectionHeaderProps } from "@/components/SectionHeader";
 
 export interface SectionHeaderInput {
   eyebrow?: string | null;

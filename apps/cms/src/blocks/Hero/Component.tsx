@@ -1,5 +1,5 @@
 import { Hero } from "./ui";
-import { ButtonSize } from "@/components/ui/primitives/button/types";
+import { ButtonSize } from "@/components/button/types";
 import React from "react";
 
 import { resolveLocale } from "@/core/lib/resolveLocale";

@@ -1,7 +1,7 @@
 import NextLink from "next/link";
 
-import { Button } from "@/components/ui/primitives/button";
-import { ButtonSize, ButtonVariant } from "@/components/ui/primitives/button/types";
+import { Button } from "@/components/button";
+import { ButtonSize, ButtonVariant } from "@/components/button/types";
 import type { HeaderAction } from "../types";
 
 interface HeaderActionsProps {

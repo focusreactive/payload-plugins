@@ -3,9 +3,9 @@
 import NextLink from "next/link";
 import { useEffect, useId, useState } from "react";
 
-import { cn } from "@/components/ui/utils";
-import { Button } from "@/components/ui/primitives/button";
-import { ButtonSize, ButtonVariant } from "@/components/ui/primitives/button/types";
+import { cn } from "@/components/utils";
+import { Button } from "@/components/button";
+import { ButtonSize, ButtonVariant } from "@/components/button/types";
 import type { HeaderAction, HeaderNavItem } from "../types";
 import { Chevron } from "./Chevron";
 

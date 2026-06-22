@@ -1,6 +1,6 @@
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
-import { AlignVariant } from "@/components/ui/primitives/richText/types";
-import type { IRichTextProps } from "@/components/ui/primitives/richText/types";
+import { AlignVariant } from "@/components/richText/types";
+import type { IRichTextProps } from "@/components/richText/types";
 import React from "react";
 
 import { RichText } from "@/components/shared";

@@ -61,7 +61,7 @@ export const heroFields: Field[] = [
   {
     admin: {
       components: {
-        RowLabel: "@/components/shared/components/RowLabel#RowLabel",
+        RowLabel: "@/components/admin/RowLabel#RowLabel",
       },
       initCollapsed: true,
     },

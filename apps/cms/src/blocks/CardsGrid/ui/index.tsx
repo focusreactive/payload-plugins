@@ -1,4 +1,4 @@
-import { cn } from "@/components/ui/utils";
+import { cn } from "@/components/utils";
 import DefaultCard from "./DefaultCard";
 import type { ICardsGridProps } from "./types";
 

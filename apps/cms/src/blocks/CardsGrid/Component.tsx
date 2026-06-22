@@ -1,4 +1,4 @@
-import { SectionHeader } from "@/components/ui";
+import { SectionHeader } from "@/components/SectionHeader";
 import { CardsGrid } from "./ui";
 import type { IDefaultCardProps } from "./ui/types";
 import {

@@ -1,7 +1,7 @@
 import * as NavigationMenu from "@radix-ui/react-navigation-menu";
 import NextLink from "next/link";
 
-import { cn } from "@/components/ui/utils";
+import { cn } from "@/components/utils";
 import type { HeaderLink } from "../types";
 
 interface MegaLinkProps {

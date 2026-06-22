@@ -1,11 +1,12 @@
-import { cn, SectionHeader } from "@/components/ui";
+import { SectionHeader } from "@/components/SectionHeader";
+import { cn } from "@/components/utils";
 import React from "react";
 
 import { AnimatedCarousel } from "@/entities";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { Testimonial, TestimonialsListBlock } from "@/payload-types";
-import { Container } from "@/components/shared/blocks/Container";
-import { sectionVariants } from "@/components/shared/blocks/SectionContainer";
+import { Container } from "@/components/shared/Container";
+import { sectionVariants } from "@/components/shared/SectionContainer";
 
 type Props = TestimonialsListBlock;
 

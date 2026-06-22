@@ -1,5 +1,5 @@
-import type { ButtonVariant } from "@/components/ui/primitives/button/types";
-import type { IImageProps } from "@/components/ui/primitives/image/types";
+import type { ButtonVariant } from "@/components/button/types";
+import type { IImageProps } from "@/components/image/types";
 
 export interface HeaderLink {
   label: string;

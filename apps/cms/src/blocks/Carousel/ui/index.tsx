@@ -2,9 +2,9 @@
 
 import React, { useEffect, useRef, useState } from "react";
 
-import { cn } from "@/components/ui/utils";
-import { Image } from "@/components/ui/primitives/image";
-import { RichText } from "@/components/ui/primitives/richText";
+import { cn } from "@/components/utils";
+import { Image } from "@/components/image";
+import { RichText } from "@/components/richText";
 import type { ICarouselProps } from "./types";
 
 const AUTOPLAY_DELAY = 6500;

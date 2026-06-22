@@ -1,6 +1,6 @@
-import { cva } from "@/components/ui/utils";
-import type { SectionHeaderProps } from "@/components/ui/primitives/SectionHeader";
-import { SectionHeader } from "@/components/ui/primitives/SectionHeader";
+import { cva } from "@/components/utils";
+import type { SectionHeaderProps } from "@/components/SectionHeader";
+import { SectionHeader } from "@/components/SectionHeader";
 
 const gridVariants = cva(
   "flex flex-col items-start gap-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-[clamp(36px,6vw,90px)]",

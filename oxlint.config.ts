@@ -224,16 +224,11 @@ export default defineConfig({
   },
   overrides: [
     {
-      // Presentational ↔ controller boundary (apps/cms).
-      // The presentational layer — components/ui/** plus each block's and
-      // collection's colocated ui/ folder — must stay Payload-agnostic:
-      // props in, JSX out. Data/Payload logic belongs in the controller
-      // (Component.tsx) or in components/shared.
-      files: [
-        "apps/cms/src/components/ui/**",
-        "apps/cms/src/blocks/*/ui/**",
-        "apps/cms/src/collections/*/ui/**",
-      ],
+      // Presentational boundary (apps/cms): each block's and collection's
+      // colocated ui/ folder is the presentational section — props in, JSX
+      // out. Data/Payload access belongs in the controller (Component.tsx),
+      // never in the ui/ section.
+      files: ["apps/cms/src/blocks/*/ui/**", "apps/cms/src/collections/*/ui/**"],
       rules: {
         "no-restricted-imports": [
           "error",
@@ -248,11 +243,9 @@ export default defineConfig({
                   "@/lib/adapters/*",
                   "payload",
                   "@payloadcms/*",
-                  "@/components/shared",
-                  "@/components/shared/*",
                 ],
                 message:
-                  "Presentational components must stay Payload-agnostic. Move data/Payload access into the controller (Component.tsx) or components/shared, and pass plain props down.",
+                  "A colocated ui/ section must stay Payload-agnostic. Move data/Payload access into the block's Component.tsx and pass plain props into the section.",
               },
             ],
           },

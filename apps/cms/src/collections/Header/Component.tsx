@@ -1,4 +1,4 @@
-import { ButtonVariant } from "@/components/ui/primitives/button/types";
+import { ButtonVariant } from "@/components/button/types";
 import type {
   HeaderAction,
   HeaderFeatured,

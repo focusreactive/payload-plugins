@@ -1,4 +1,4 @@
-import { SectionHeader } from "@/components/ui";
+import { SectionHeader } from "@/components/SectionHeader";
 import { Chart } from "./ui";
 
 import { SectionContainer } from "@/components/shared";

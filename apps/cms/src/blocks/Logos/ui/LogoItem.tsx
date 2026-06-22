@@ -1,7 +1,7 @@
-import { cn } from "@/components/ui/utils";
-import { Image } from "@/components/ui/primitives/image";
-import { ImageAspectRatio } from "@/components/ui/primitives/image/types";
-import { Link } from "@/components/ui/primitives/link";
+import { cn } from "@/components/utils";
+import { Image } from "@/components/image";
+import { ImageAspectRatio } from "@/components/image/types";
+import { Link } from "@/components/link";
 import type { ILogoItem } from "./types";
 
 export default function LogoItem({ image, link }: ILogoItem) {
