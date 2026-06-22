@@ -5,6 +5,9 @@ wrapper around Payload's Local API (or other data sources later — Stripe, R2,
 Klaviyo, etc.). **Application code never calls `getPayload({ config })`
 directly** — it imports from `@/dal/...`.
 
+> Location: `src/lib/dal/`. The import root stays `@/dal` via a tsconfig alias
+> (`@/dal` → `./src/lib/dal`), so call sites never reference the physical path.
+
 ## Why
 
 - **Single seam.** All app-side data access is in one place: easier to cache,
@@ -22,18 +25,17 @@ directly** — it imports from `@/dal/...`.
 ## Structure
 
 ```
-src/dal/
+src/lib/dal/                  (import root: @/dal)
 ├── README.md
-├── index.ts             ← public barrel (import from '@/dal')
-├── payload-client.ts    ← the ONLY caller of getPayload({ config })
-├── pages.ts             ← page document reads
-├── posts.ts             ← post reads + related + listing
-├── documents.ts         ← generic find / findByID across collections
-├── globals.ts           ← site-settings, header, footer, blog page settings
-├── media.ts             ← default media slot lookup
-├── redirects.ts         ← redirects collection reads
-├── users.ts             ← user lookup / SSO helpers
-└── locales.ts           ← alternate locale URL resolution
+├── index.ts                  ← public barrel (import from '@/dal')
+├── payload-client.ts         ← the ONLY caller of getPayload({ config })
+├── getPageBySlug.ts          ← page reads
+├── getPostBySlug.ts · getPosts.ts · getRelatedPosts.ts   ← post reads + listing + related
+├── getGlobals.ts · getSiteSettings.ts · getBlogPageSettings.ts   ← globals
+├── getDocument.ts · getAllDocuments.ts                   ← generic find / findByID
+├── getRedirects.ts · getAlternateLocales.ts · getDefaultMediaId.ts
+├── searchPosts.ts · runPostSemanticSearch.ts             ← search-backed reads
+└── staticParams/             ← generateStaticParams helpers (pages, posts)
 ```
 
 ## Where the DAL applies — and where it doesn't
@@ -59,19 +61,19 @@ operation joins the surrounding transaction.
 
 ## How to add a new method
 
-1. Pick the right domain file (or create one if the surface is genuinely new).
-2. Add a typed function that takes a small, named-arg options object.
+1. Add a typed function in its own file (one read per file is the current convention).
+2. Give it a small, named-arg options object.
 3. Get the Payload instance via `await getPayloadClient()` — never import
    `getPayload` from `payload` outside `payload-client.ts`.
 4. Wrap with `react.cache` (per-request memoization) and/or
    `unstable_cache` (cross-request cache with tags) as appropriate.
-5. Re-export from `src/dal/index.ts` if it's part of the public surface.
+5. Re-export from `src/lib/dal/index.ts` if it's part of the public surface.
 
 ## Caching
 
 - `react.cache` deduplicates within a single render pass.
 - `next/cache.unstable_cache` deduplicates across requests; pair with
-  `revalidateTag` (see `src/core/lib/cacheTags.ts`).
+  `revalidateTag` (see `src/lib/utils/cacheTags.ts`).
 - Tag every cached read so collection/global hooks can invalidate it via
   `revalidateTag`.
 
@@ -81,7 +83,7 @@ When this app starts talking to other systems, add a new file next to the
 Payload modules:
 
 ```
-src/dal/
+src/lib/dal/
 ├── stripe.ts            # billing reads / customer portal session
 ├── media-storage.ts     # R2 / S3 signed-URL issuance
 ├── klaviyo.ts           # transactional email sends, list operations

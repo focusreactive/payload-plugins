@@ -28,8 +28,8 @@ packages/
 ```
 
 `apps/cms` consumes the workspace plugins via `workspace:*`, owns its Postgres
-adapter + migrations under `src/database/`, and runs all app-layer data access
-through its own `src/dal/` (see `apps/cms/src/dal/README.md`). `apps/dev` is
+adapter + migrations under `src/lib/database/`, and runs all app-layer data access
+through its own `src/lib/dal/` (see `apps/cms/src/lib/dal/README.md`). `apps/dev` is
 the minimal plugin sandbox.
 
 ## Agent setup (`.claude` / `.agents`)

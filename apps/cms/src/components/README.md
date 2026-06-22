@@ -8,18 +8,21 @@ components/
   admin/       # components rendered inside the Payload admin panel:
                #   RowLabel, CopyAiPromptButton, Icon, Logo, SSOButtons (+ readPath helper)
                #   referenced by path string in field/collection configs + the import map
+  seo/         # JSON-LD renderers + schema builders (JsonLd, ArticleJsonLd, BlogJsonLd, FaqJsonLd, …)
   <Component>/ # every other reusable component gets its own folder, flat here:
                #   Button, SectionHeader, Eyebrow, DisplayHeading, GridLines, AbstractBackdrop,
                #   Switch, HorizontalSelect, image, link, richText, Card, Accordion, Pagination,
                #   FaqSection, CtaBandSection, AuthorAvatar, PageRange, ErrorBoundary, EmptyState,
-               #   SkeletonFallback, EmptyBlock, blog, newsletter, ctaBand, cookieBanner, copy, linksList
+               #   SkeletonFallback, EmptyBlock, blog, newsletter, ctaBand, cookieBanner, copy, linksList,
+               #   Testimonials, RelatedPosts, BlogPostsGrid, ThemeSelector, LocaleSelector,
+               #   LivePreviewListener, PayloadRedirects   (← former entities/ + features/)
   utils.ts     # the one canonical cn / cva / resolveBackdropTone — import from "@/components/utils"
 ```
 
 ## Conventions
 
-- **`shared/`** and **`admin/`** are the only grouped folders — `shared/` for the
-  cross-cutting building blocks, `admin/` for Payload admin-panel UI.
+- **`shared/`**, **`admin/`**, and **`seo/`** are the grouped folders — `shared/` for
+  cross-cutting building blocks, `admin/` for Payload admin-panel UI, `seo/` for JSON-LD output.
 - Any other component is its own top-level folder: `components/<ComponentName>/`.
   Import it directly: `import { Card } from "@/components/Card"`.
 - A component owned by exactly one block/collection is **not** here — it stays
