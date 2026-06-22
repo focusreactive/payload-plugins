@@ -72,12 +72,8 @@ export const Page: CollectionConfig<"page"> = {
         position: "sidebar",
       },
       filterOptions: ({ id }) => ({
-        id: {
-          not_equals: id,
-        },
-        slug: {
-          not_equals: "home",
-        },
+        ...(id ? { id: { not_equals: id } } : {}),
+        slug: { not_equals: "home" },
       }),
     }),
     createBreadcrumbsField("page", {
