@@ -4,7 +4,7 @@ import React from "react";
 
 import { BLOG_CONFIG } from "@/core/config/blog";
 import { cn } from "@/core/lib/utils";
-import { Button, ButtonVariant, Link } from "@/core/ui";
+import { Button, ButtonVariant, Link } from "@/components/shared";
 import type { LinkAppearances } from "@/fields/link";
 import type { Page, Post } from "@/payload-types";
 

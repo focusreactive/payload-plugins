@@ -5,7 +5,7 @@ import React, { useState } from "react";
 
 import type { Theme } from "@/core/context";
 import { themeLocalStorageKey, useTheme } from "@/core/context";
-import { Button, ButtonVariant, ButtonSize } from "@/core/ui";
+import { Button, ButtonVariant, ButtonSize } from "@/components/shared";
 
 export const ThemeSelector: React.FC = () => {
   const { setTheme } = useTheme();

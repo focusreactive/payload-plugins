@@ -1,7 +1,7 @@
 import Image from "next/image";
 import React from "react";
 
-import { Media } from "@/core/ui";
+import { Media } from "@/components/shared";
 import { getSiteSettings } from "@/dal/getSiteSettings";
 import type { Media as MediaType } from "@/payload-types";
 

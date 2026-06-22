@@ -3,7 +3,7 @@ import { AlignVariant } from "@/components/ui/primitives/richText/types";
 import type { IRichTextProps } from "@/components/ui/primitives/richText/types";
 import React from "react";
 
-import { RichText } from "@/core/ui";
+import { RichText } from "@/components/shared";
 
 export function prepareRichTextProps(content: SerializedEditorState | null | undefined, align: AlignVariant = AlignVariant.Left, removeInnerMargins = false): IRichTextProps {
   return {

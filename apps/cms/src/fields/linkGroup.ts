@@ -11,7 +11,7 @@ export const linkGroup: LinkGroupType = ({ appearances, defaultValue, overrides 
   const generatedLinkGroup: Field = {
     admin: {
       components: {
-        RowLabel: "@/core/ui/components/RowLabel#RowLabel",
+        RowLabel: "@/components/shared/components/RowLabel#RowLabel",
       },
       initCollapsed: true,
     },

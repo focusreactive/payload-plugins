@@ -2,7 +2,7 @@ import Image from "next/image";
 import React from "react";
 
 import { cn } from "@/core/lib/utils";
-import { Media } from "@/core/ui";
+import { Media } from "@/components/shared";
 import type { Media as MediaType } from "@/payload-types";
 
 interface Props {

@@ -1,5 +1,5 @@
-import { SectionContainer } from "@/core/ui";
-import { FaqSection } from "@/core/ui/components/FaqSection";
+import { SectionContainer } from "@/components/shared";
+import { FaqSection } from "@/components/shared/components/FaqSection";
 import type { Post } from "@/payload-types";
 
 interface PostFaqProps {

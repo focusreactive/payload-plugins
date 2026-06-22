@@ -57,7 +57,7 @@ export const Footer: CollectionConfig<"footer"> = {
     },
     {
       admin: {
-        components: { RowLabel: "@/core/ui/components/RowLabel#RowLabelGroupName" },
+        components: { RowLabel: "@/components/shared/components/RowLabel#RowLabelGroupName" },
         initCollapsed: true,
       },
       defaultValue: createLocalizedDefault({

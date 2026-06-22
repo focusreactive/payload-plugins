@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import NextImage from "next/image";
 
 import { BLOG_CONFIG } from "@/core/config/blog";
-import { Link, SectionContainer } from "@/core/ui";
+import { Link, SectionContainer } from "@/components/shared";
 import { readingTimeMinutes } from "@/core/utils/readingTime";
 import type { Category, Post } from "@/payload-types";
 

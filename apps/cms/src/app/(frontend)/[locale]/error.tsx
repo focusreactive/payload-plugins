@@ -1,7 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
 
-import { ErrorBoundary } from "@/core/ui";
+import { ErrorBoundary } from "@/components/shared";
 
 export default function SiteError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const t = useTranslations("common");

@@ -4,8 +4,8 @@ import NextImage from "next/image";
 import { BLOG_CONFIG } from "@/core/config/blog";
 import { cn } from "@/core/lib/utils";
 import type { Locale } from "@/core/types";
-import { Link } from "@/core/ui";
-import { AuthorAvatar } from "@/core/ui/components/AuthorAvatar";
+import { Link } from "@/components/shared";
+import { AuthorAvatar } from "@/components/shared/components/AuthorAvatar";
 import { readingTimeMinutes } from "@/core/utils/readingTime";
 import type { Author, Category } from "@/payload-types";
 

@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 
 import { BLOG_CONFIG } from "@/core/config/blog";
 import type { Locale } from "@/core/types";
-import { EmptyState, Pagination } from "@/core/ui";
+import { EmptyState, Pagination } from "@/components/shared";
 
 import { BlogFilterProvider } from "./components/BlogFilterProvider";
 import { DimWhilePending } from "./components/DimWhilePending";

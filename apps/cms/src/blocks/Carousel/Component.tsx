@@ -3,7 +3,7 @@ import { Carousel } from "./ui";
 import type { ICarouselCardProps } from "./ui/types";
 import React from "react";
 
-import { SectionContainer } from "@/core/ui";
+import { SectionContainer } from "@/components/shared";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import { prepareRichTextProps } from "@/lib/adapters/prepareRichTextProps";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";

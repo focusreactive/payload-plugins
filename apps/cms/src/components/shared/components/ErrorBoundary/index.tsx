@@ -3,8 +3,8 @@
 import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 
-import { Button, ButtonVariant } from "@/core/ui";
-import { Link } from "@/core/ui";
+import { Button, ButtonVariant } from "@/components/shared";
+import { Link } from "@/components/shared";
 
 interface ErrorBoundaryProps {
   error: Error & { digest?: string };

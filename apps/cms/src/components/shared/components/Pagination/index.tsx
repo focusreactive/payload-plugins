@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import React from "react";
 
 import { cn } from "@/core/lib/utils";
-import { Link } from "@/core/ui";
+import { Link } from "@/components/shared";
 
 export interface PaginationProps {
   className?: string;

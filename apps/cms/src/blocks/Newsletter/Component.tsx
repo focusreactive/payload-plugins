@@ -1,6 +1,6 @@
 import { NewsletterSection } from "@/components/ui";
 
-import { SectionContainer } from "@/core/ui";
+import { SectionContainer } from "@/components/shared";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { NewsletterBlock } from "@/payload-types";
 

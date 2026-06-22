@@ -1,7 +1,7 @@
 import { SectionHeader } from "@/components/ui";
 import { Chart } from "./ui";
 
-import { SectionContainer } from "@/core/ui";
+import { SectionContainer } from "@/components/shared";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { ChartBlock } from "@/payload-types";
 

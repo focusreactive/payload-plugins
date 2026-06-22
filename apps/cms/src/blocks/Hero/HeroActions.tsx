@@ -1,6 +1,6 @@
 import React from "react";
 
-import { CMSLink } from "@/core/ui";
+import { CMSLink } from "@/components/shared";
 import type { HeroBlock } from "@/payload-types";
 
 type Action = NonNullable<HeroBlock["actions"]>[number];

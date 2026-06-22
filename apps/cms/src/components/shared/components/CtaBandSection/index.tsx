@@ -2,7 +2,7 @@ import { TrackLeadAction } from "@focus-reactive/payload-plugin-analytics/client
 import { CtaBand } from "@/components/ui";
 import { ButtonSize } from "@/components/ui/primitives/button/types";
 
-import { CMSLink } from "@/core/ui/blocks/CMSLink";
+import { CMSLink } from "@/components/shared/blocks/CMSLink";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { Page, Post } from "@/payload-types";
 

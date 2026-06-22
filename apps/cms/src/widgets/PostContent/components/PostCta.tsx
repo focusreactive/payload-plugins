@@ -1,5 +1,5 @@
-import { SectionContainer } from "@/core/ui";
-import { CtaBandSection } from "@/core/ui/components/CtaBandSection";
+import { SectionContainer } from "@/components/shared";
+import { CtaBandSection } from "@/components/shared/components/CtaBandSection";
 import type { Post } from "@/payload-types";
 
 interface PostCtaProps {

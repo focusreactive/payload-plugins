@@ -1,7 +1,7 @@
 import { ButtonSize } from "@/components/ui";
 import { ContentSection } from "./ui";
 
-import { CMSLink, Media, RichText, SectionContainer } from "@/core/ui";
+import { CMSLink, Media, RichText, SectionContainer } from "@/components/shared";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { ContentBlock as ContentBlockProps, Page, Post } from "@/payload-types";
 

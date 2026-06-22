@@ -2,7 +2,7 @@ import React from "react";
 
 import { BLOG_CONFIG } from "@/core/config/blog";
 import type { CardPostData } from "@/core/types";
-import { Card, EmptyState } from "@/core/ui";
+import { Card, EmptyState } from "@/components/shared";
 
 export interface Props {
   posts: CardPostData[];

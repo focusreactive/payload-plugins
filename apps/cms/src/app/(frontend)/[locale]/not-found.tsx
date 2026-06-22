@@ -6,7 +6,7 @@ import React from "react";
 import { generateNotFoundMeta } from "@/core/lib/generateNotFoundMeta";
 import { resolveLocale } from "@/core/lib/resolveLocale";
 import type { Locale } from "@/core/types";
-import { buttonVariants, ButtonVariant, Link } from "@/core/ui";
+import { buttonVariants, ButtonVariant, Link } from "@/components/shared";
 import { getSiteSettings } from "@/dal/getSiteSettings";
 import type { Header as HeaderType, Footer as FooterType } from "@/payload-types";
 import { Footer, Header } from "@/widgets";

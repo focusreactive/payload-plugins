@@ -4,7 +4,7 @@ import type { ILogoItem } from "./ui/types";
 import React from "react";
 
 import { resolveLocale } from "@/core/lib/resolveLocale";
-import { SectionContainer } from "@/core/ui";
+import { SectionContainer } from "@/components/shared";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { LogosBlock } from "@/payload-types";

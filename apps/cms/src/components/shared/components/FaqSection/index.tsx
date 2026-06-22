@@ -1,9 +1,9 @@
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
 import { SectionHeader } from "@/components/ui";
 
-import { RichText } from "@/core/ui";
-import type { AccordionItemData } from "@/core/ui/components/Accordion";
-import { Accordion } from "@/core/ui/components/Accordion";
+import { RichText } from "@/components/shared";
+import type { AccordionItemData } from "@/components/shared/components/Accordion";
+import { Accordion } from "@/components/shared/components/Accordion";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 
 export interface FaqSectionItem {
