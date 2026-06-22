@@ -126,6 +126,11 @@ export const generateMeta = async (args: {
     }
   }
 
+  const isArticle = collection === "posts";
+  const publishedTime = isArticle
+    ? ((doc as Partial<Post> | null)?.publishedAt ?? undefined)
+    : undefined;
+
   return {
     alternates: {
       canonical,
@@ -146,7 +151,9 @@ export const generateMeta = async (args: {
       locale: getOpenGraphLocale(locale),
       siteName: ogSiteName,
       title: ogTitle,
-      type: "website",
+      ...(isArticle
+        ? { type: "article", ...(publishedTime ? { publishedTime } : {}) }
+        : { type: "website" }),
       url: canonical,
       ...overridesOpenGraph,
     }),

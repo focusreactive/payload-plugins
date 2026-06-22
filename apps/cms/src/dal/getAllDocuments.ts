@@ -6,7 +6,6 @@ interface GetAllDocumentsOptions {
   where?: Where;
   select?: Record<string, boolean>;
   sort?: string;
-  limit?: number;
   depth?: number;
   overrideAccess?: boolean;
   locale?: Locale;
@@ -18,12 +17,11 @@ interface FindOptions {
   where?: Where;
   select?: Record<string, boolean>;
   sort?: string;
-  page?: number;
-  limit?: number;
   depth?: number;
   overrideAccess?: boolean;
   locale?: Locale;
   draft?: boolean;
+  pagination: false;
 }
 
 export async function getAllDocuments<TSlug extends CollectionSlug>(
@@ -35,7 +33,6 @@ export async function getAllDocuments<TSlug extends CollectionSlug>(
     where,
     select,
     sort = "-createdAt",
-    limit = 1000,
     depth = 0,
     overrideAccess = false,
     locale,
@@ -44,41 +41,19 @@ export async function getAllDocuments<TSlug extends CollectionSlug>(
 
   const find = payload.find as unknown as (
     args: FindOptions
-  ) => Promise<{ docs: DataFromCollectionSlug<TSlug>[]; totalPages: number }>;
+  ) => Promise<{ docs: DataFromCollectionSlug<TSlug>[] }>;
 
-  const firstPage = await find({
+  const result = await find({
     collection,
     depth,
     draft,
     locale,
     overrideAccess,
-    page: 1,
+    pagination: false,
     select,
     sort,
     where,
   });
 
-  const allDocs: DataFromCollectionSlug<TSlug>[] = [...firstPage.docs];
-  const { totalPages } = firstPage;
-
-  if (totalPages <= 1) {
-    return allDocs;
-  }
-
-  for (let page = 2; page <= totalPages; page++) {
-    const result = await find({
-      collection,
-      depth,
-      limit,
-      locale,
-      overrideAccess,
-      page,
-      select,
-      sort,
-      where,
-    });
-    allDocs.push(...result.docs);
-  }
-
-  return allDocs;
+  return result.docs;
 }
