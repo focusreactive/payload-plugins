@@ -12,10 +12,11 @@ import { BreadcrumbsJsonLd } from "@/components/seo/components";
 import type { Locale } from "@/lib/types";
 import { getPageBySlug } from "@/dal/getPageBySlug";
 import { getMainSitePageStaticParams } from "@/dal/staticParams/pages";
-import { PayloadRedirects } from "@/features";
+import { PayloadRedirects } from "@/components/PayloadRedirects";
 import { redirect } from "@/lib/i18n/navigation";
 import type { Footer as FooterType, Header as HeaderType } from "@/payload-types";
-import { Footer, Header } from "@/widgets";
+import { Footer } from "@/collections/Footer/Component";
+import { Header } from "@/collections/Header/Component";
 
 interface Args {
   params: Promise<{

@@ -12,9 +12,11 @@ import { getBlogPageSettings } from "@/dal/getBlogPageSettings";
 import { getPostBySlug } from "@/dal/getPostBySlug";
 import { getSiteSettings } from "@/dal/getSiteSettings";
 import { getBlogPostStaticParams } from "@/dal/staticParams/posts";
-import { PayloadRedirects } from "@/features";
+import { PayloadRedirects } from "@/components/PayloadRedirects";
 import type { Footer as FooterType, Header as HeaderType } from "@/payload-types";
-import { Footer, Header, PostContent } from "@/widgets";
+import { Footer } from "@/collections/Footer/Component";
+import { Header } from "@/collections/Header/Component";
+import { PostContent } from "./_components/PostContent";
 
 interface Args {
   params: Promise<{

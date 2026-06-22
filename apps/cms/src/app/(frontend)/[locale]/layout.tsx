@@ -9,7 +9,7 @@ import { VisualEditing } from "@fr-private/payload-plugin-visual-editing/client"
 import { Providers } from "@/lib/context";
 import { AnalyticsProviderClient } from "@/lib/plugins/analytics/AnalyticsProviderClient";
 import type { Locale } from "@/lib/types";
-import { LivePreviewListener } from "@/features";
+import { LivePreviewListener } from "@/components/LivePreviewListener";
 
 const newsreader = Newsreader({
   display: "swap",

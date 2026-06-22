@@ -10,7 +10,8 @@ import { buttonVariants, ButtonVariant } from "@/components/button";
 import { Link } from "@/components/shared";
 import { getSiteSettings } from "@/dal/getSiteSettings";
 import type { Header as HeaderType, Footer as FooterType } from "@/payload-types";
-import { Footer, Header } from "@/widgets";
+import { Footer } from "@/collections/Footer/Component";
+import { Header } from "@/collections/Header/Component";
 
 interface Props {
   params?: Promise<{ locale: Locale }>;

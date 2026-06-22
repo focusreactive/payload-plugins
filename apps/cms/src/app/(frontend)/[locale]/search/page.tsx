@@ -7,7 +7,8 @@ import { SYNTHETIC_REFS } from "@/lib/plugins/analytics/SYNTHETIC_REFS";
 import type { Locale } from "@/lib/types";
 import { getSiteSettings } from "@/dal/getSiteSettings";
 import type { Footer as FooterType, Header as HeaderType } from "@/payload-types";
-import { Footer, Header } from "@/widgets";
+import { Footer } from "@/collections/Footer/Component";
+import { Header } from "@/collections/Header/Component";
 
 import { SearchInput } from "./_components/SearchInput";
 import { SearchResults } from "./_components/SearchResults";

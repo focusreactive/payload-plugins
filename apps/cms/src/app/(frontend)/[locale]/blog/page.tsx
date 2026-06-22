@@ -11,7 +11,8 @@ import type { Locale } from "@/lib/types";
 import { getBlogPageSettings } from "@/dal/getBlogPageSettings";
 import { getSiteSettings } from "@/dal/getSiteSettings";
 import type { Footer as FooterType, Header as HeaderType } from "@/payload-types";
-import { Footer, Header } from "@/widgets";
+import { Footer } from "@/collections/Footer/Component";
+import { Header } from "@/collections/Header/Component";
 
 import { BlogJsonLdWrapper } from "./_components/BlogJsonLdWrapper";
 import { BlogPageDynamic } from "./_components/BlogPageDynamic";
