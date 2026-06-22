@@ -24,7 +24,7 @@ import * as migration_20260616_182705_remove_links_and_text_blocks from './20260
 import * as migration_20260617_104920_add_raw_html_block from './20260617_104920_add_raw_html_block';
 import * as migration_20260618_200838_add_section_visibility_to_blocks from './20260618_200838_add_section_visibility_to_blocks';
 import * as migration_20260619_011448_add_pgvector_embedding_column from './20260619_011448_add_pgvector_embedding_column';
-import * as migration_20260622_000000_rename_footer_copywrite_text_to_copyright_text from './20260622_000000_rename_footer_copywrite_text_to_copyright_text';
+import * as migration_20260622_105221_rename_copywrite from './20260622_105221_rename_copywrite';
 
 export const migrations = [
   {
@@ -150,16 +150,16 @@ export const migrations = [
   {
     up: migration_20260618_200838_add_section_visibility_to_blocks.up,
     down: migration_20260618_200838_add_section_visibility_to_blocks.down,
-    name: '20260618_200838_add_section_visibility_to_blocks'
+    name: '20260618_200838_add_section_visibility_to_blocks',
   },
   {
     up: migration_20260619_011448_add_pgvector_embedding_column.up,
     down: migration_20260619_011448_add_pgvector_embedding_column.down,
-    name: '20260619_011448_add_pgvector_embedding_column'
+    name: '20260619_011448_add_pgvector_embedding_column',
   },
   {
-    up: migration_20260622_000000_rename_footer_copywrite_text_to_copyright_text.up,
-    down: migration_20260622_000000_rename_footer_copywrite_text_to_copyright_text.down,
-    name: '20260622_000000_rename_footer_copywrite_text_to_copyright_text'
+    up: migration_20260622_105221_rename_copywrite.up,
+    down: migration_20260622_105221_rename_copywrite.down,
+    name: '20260622_105221_rename_copywrite'
   },
 ];
