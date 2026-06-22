@@ -4,7 +4,7 @@ import NextImage from "next/image";
 import React from "react";
 
 import { BLOG_CONFIG } from "@/core/config/blog";
-import { cn } from "@/core/lib/utils";
+import { cn } from "@/components/ui/utils";
 import type { CardPostData } from "@/core/types";
 import { Link } from "@/components/shared";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";

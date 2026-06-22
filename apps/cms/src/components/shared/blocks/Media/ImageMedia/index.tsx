@@ -2,7 +2,7 @@ import type { StaticImageData } from "next/image";
 import NextImage from "next/image";
 import React from "react";
 
-import { cn } from "@/core/lib/utils";
+import { cn } from "@/components/ui/utils";
 
 import type { MediaProps } from "../index";
 

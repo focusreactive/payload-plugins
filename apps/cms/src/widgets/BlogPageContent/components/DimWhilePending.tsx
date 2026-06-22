@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/core/lib/utils";
+import { cn } from "@/components/ui/utils";
 
 import { useBlogFilter } from "./BlogFilterProvider";
 

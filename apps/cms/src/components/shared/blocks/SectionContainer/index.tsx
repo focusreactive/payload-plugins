@@ -1,6 +1,6 @@
 import { cva } from "class-variance-authority";
 
-import { cn } from "@/core/lib/utils";
+import { cn } from "@/components/ui/utils";
 
 import { Container } from "../Container";
 import { Media } from "../Media";

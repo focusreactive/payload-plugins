@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import NextImage from "next/image";
 
 import { BLOG_CONFIG } from "@/core/config/blog";
-import { cn } from "@/core/lib/utils";
+import { cn } from "@/components/ui/utils";
 import type { Locale } from "@/core/types";
 import { Link } from "@/components/shared";
 import { AuthorAvatar } from "@/components/shared/components/AuthorAvatar";

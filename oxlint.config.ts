@@ -195,4 +195,27 @@ export default defineConfig({
     // Unused vars allowed when prefixed with `_`; flag otherwise.
     "no-unused-vars": "warn",
   },
+  overrides: [
+    {
+      // Presentational ↔ controller boundary (apps/cms).
+      // The presentational layer — components/ui/** plus each block's and
+      // collection's colocated ui/ folder — must stay Payload-agnostic:
+      // props in, JSX out. Data/Payload logic belongs in the controller
+      // (Component.tsx) or in components/shared.
+      files: ["apps/cms/src/components/ui/**", "apps/cms/src/blocks/*/ui/**", "apps/cms/src/collections/*/ui/**"],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            patterns: [
+              {
+                group: ["@/payload-types", "@/dal", "@/dal/*", "@/lib/adapters", "@/lib/adapters/*", "payload", "@payloadcms/*", "@/components/shared", "@/components/shared/*"],
+                message: "Presentational components must stay Payload-agnostic. Move data/Payload access into the controller (Component.tsx) or components/shared, and pass plain props down.",
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
 });

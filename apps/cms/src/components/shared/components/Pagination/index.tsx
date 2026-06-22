@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import React from "react";
 
-import { cn } from "@/core/lib/utils";
+import { cn } from "@/components/ui/utils";
 import { Link } from "@/components/shared";
 
 export interface PaginationProps {

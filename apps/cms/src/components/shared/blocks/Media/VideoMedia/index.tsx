@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from "react";
 
 import { getMediaUrl } from "@/core/lib/getMediaUrl";
-import { cn } from "@/core/lib/utils";
+import { cn } from "@/components/ui/utils";
 
 import type { MediaProps } from "..";
 

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import React from "react";
 
-import { cn } from "@/core/lib/utils";
+import { cn } from "@/components/ui/utils";
 import { Media } from "@/components/shared";
 import type { Media as MediaType } from "@/payload-types";
 

@@ -1,6 +1,6 @@
 import React from "react";
 
-import { cn } from "@/core/lib/utils";
+import { cn } from "@/components/ui/utils";
 import type { EmptyStateProps } from "@/core/types";
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ title = "Nothing found", description = "Try changing the search parameters or come back later", className, icon }) => (
