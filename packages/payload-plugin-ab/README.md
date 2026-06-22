@@ -337,7 +337,7 @@ const result = await resolveAbRewrite(
   request,
   pathname, // visiblePathname — used as the per-path cookie key
   pathname, // manifestKey — key to look up in the manifest
-  pathname // originalRewritePath — where to send 'original' bucket users
+  pathname, // originalRewritePath — where to send 'original' bucket users
 );
 ```
 
@@ -415,7 +415,11 @@ export default async function Page({ params }) {
   return (
     <>
       {/* page content */}
-      <ExperimentTracker experimentId={experimentId} variantCookieName={variantCookieName} visitorCookieName={visitorCookieName} />
+      <ExperimentTracker
+        experimentId={experimentId}
+        variantCookieName={variantCookieName}
+        visitorCookieName={visitorCookieName}
+      />
     </>
   );
 }

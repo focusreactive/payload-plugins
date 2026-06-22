@@ -42,7 +42,7 @@ cost.
       stay green" is verifiable. (Also extracted the 6 into a `createTranslationRoutes()` bundle.)
 - [x] **`translateContent()` wrapper** — ✅ shipped (PR #22). NOT a core extraction: the core is
       already pure and reusable (`TranslationPipeline.execute({ schema, sourceData, targetData,
-    sourceLng, targetLng })` is a relative recursive walk over any `Field[]` + matching data —
+      sourceLng, targetLng })` is a relative recursive walk over any `Field[]` + matching data —
       collector/reconciler/mutator carry no DB, root, or absolute-path assumptions). The **subtree
       resolver** (declared field path → `[fieldConfig]` + data rooted as `{ [name]: value }`) was
       **deferred to Phase 2** — it has no caller until `POST /field`, so building it now was premature.
@@ -52,7 +52,7 @@ cost.
       an orchestration concern and moot in Phase 1 (single root runner, configured once); it returns
       only if per-level runners are added later.
 - [ ] **Introduce optional `levels` config field** with default `[documentLevel(),
-  collectionLevel()]` — non-breaking by construction. (Phase 1 — see the
+    collectionLevel()]` — non-breaking by construction. (Phase 1 — see the
       [Phase 1 design](./2026-06-09-translation-levels-phase1-design.md).)
 
 ## 3. API surface unification (minor: deprecate, major: remove)

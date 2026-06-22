@@ -15,7 +15,6 @@
 ## Task 1: Update constants and types
 
 **Files:**
-
 - Modify: `src/constants.ts`
 - Modify: `src/types/config.ts`
 
@@ -65,7 +64,11 @@ export interface CollectionABConfig<TVariantData extends object = object> {
    * Builds the data stored per variant in the manifest.
    * When omitted, auto-generates: { bucket: variantSlug, rewritePath: generatePath(variantDoc), passPercentage: _abPassPercentage }
    */
-  generateVariantData?: (args: { doc: Record<string, unknown>; variantDoc: Record<string, unknown>; locale: string | undefined }) => TVariantData;
+  generateVariantData?: (args: {
+    doc: Record<string, unknown>;
+    variantDoc: Record<string, unknown>;
+    locale: string | undefined;
+  }) => TVariantData;
 }
 
 export interface AbTestingPluginConfig<TVariantData extends object = object> {
@@ -100,7 +103,6 @@ git commit -m "feat: simplify CollectionABConfig — remove variantCollectionSlu
 ## Task 2: Create the duplicate variant endpoint
 
 **Files:**
-
 - Create: `src/endpoints/duplicateVariant.ts`
 
 **Background:** Payload v3 custom endpoints are registered on `config.endpoints`. The handler receives a `PayloadRequest` and returns a Web API `Response`. The endpoint duplicates the parent doc, strips identity fields, generates a new slug `{original}--{hash}`, sets `_abVariantOf` and `_abPassPercentage = 0`, and creates the new doc.
@@ -181,7 +183,10 @@ export const duplicateVariantHandler: PayloadHandler = async (req) => {
     return Response.json({ error: message }, { status: 500 });
   }
 
-  return Response.json({ id: newDoc.id, slug: newDoc[slugField] }, { status: 201 });
+  return Response.json(
+    { id: newDoc.id, slug: newDoc[slugField] },
+    { status: 201 },
+  );
 };
 ```
 
@@ -205,11 +210,9 @@ git commit -m "feat: add duplicate variant endpoint handler"
 ## Task 3: Create the VariantsField admin component
 
 **Files:**
-
 - Create: `src/admin/components/VariantsField.tsx`
 
 **Background:** Payload v3 `type: 'ui'` fields render a React component referenced by a string module path. The component uses `@payloadcms/ui` hooks:
-
 - `useDocumentInfo()` → `{ id, collectionSlug }` of the current document
 - The component fetches variants via the Payload REST API
 
@@ -256,7 +259,9 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
     if (!id || !slug) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/${slug}?where[${AB_VARIANT_OF_FIELD}][equals]=${id}&limit=100&depth=0`);
+      const res = await fetch(
+        `/api/${slug}?where[${AB_VARIANT_OF_FIELD}][equals]=${id}&limit=100&depth=0`,
+      );
       if (!res.ok) throw new Error("Failed to fetch variants");
       const data = await res.json();
       setVariants(
@@ -266,7 +271,7 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
           title: doc[titleField] ?? doc[slugField] ?? doc.id,
           slug: doc[slugField],
           passPercentage: (doc[AB_PASS_PERCENTAGE_FIELD] as number) ?? 0,
-        }))
+        })),
       );
     } catch {
       // non-fatal
@@ -325,7 +330,9 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ [AB_PASS_PERCENTAGE_FIELD]: clamped }),
       });
-      setVariants((prev) => prev.map((v) => (v.id === variantId ? { ...v, passPercentage: clamped } : v)));
+      setVariants((prev) =>
+        prev.map((v) => (v.id === variantId ? { ...v, passPercentage: clamped } : v)),
+      );
     } catch {
       showToast("Failed to update percentage");
     }
@@ -338,7 +345,11 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <label style={{ fontWeight: 600, fontSize: 14 }}>Variants</label>
         {variants.length > 0 && (
-          <button type="button" onClick={handleClearAll} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#666" }}>
+          <button
+            type="button"
+            onClick={handleClearAll}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#666" }}
+          >
             Clear All
           </button>
         )}
@@ -371,7 +382,13 @@ export function VariantsField({ slugField = "slug", titleField = "title", collec
             title="Traffic percentage (0–100)"
           />
           <span style={{ fontSize: 11, color: "#888" }}>%</span>
-          <a href={`/admin/collections/${slug}/${variant.id}`} target="_blank" rel="noreferrer" style={{ color: "#555", display: "flex", alignItems: "center" }} title="Edit variant">
+          <a
+            href={`/admin/collections/${slug}/${variant.id}`}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: "#555", display: "flex", alignItems: "center" }}
+            title="Edit variant"
+          >
             ↗
           </a>
           <button
@@ -454,18 +471,17 @@ The `_abVariantOf` relationship field is rendered natively by Payload in the sid
 ## Task 5: Create injectAdminFields utility
 
 **Files:**
-
 - Create: `src/utils/injectAdminFields.ts`
 
 **What this injects (all appended to the sidebar):**
 
-| Field               | Type                  | Where shown         | Behaviour                                                                                     |
-| ------------------- | --------------------- | ------------------- | --------------------------------------------------------------------------------------------- |
-| `_abVariantOf`      | `relationship` (self) | Variant pages only  | Sidebar, read-only. Shows which original page this is a variant of. Hidden on original pages. |
-| `_abPassPercentage` | `number`              | Hidden everywhere   | Managed inline via the Variants panel. Not shown directly.                                    |
-| `_abVariants`       | `ui`                  | Original pages only | Sidebar. Variants panel — list of variants with % inputs and edit links.                      |
-| `slug`              | patched               | Original pages only | Hidden on variant pages via condition (slug is auto-generated, must not change).              |
-| `tenantField`       | patched               | Original pages only | Hidden on variant pages via condition (tenant must match parent).                             |
+| Field | Type | Where shown | Behaviour |
+|---|---|---|---|
+| `_abVariantOf` | `relationship` (self) | Variant pages only | Sidebar, read-only. Shows which original page this is a variant of. Hidden on original pages. |
+| `_abPassPercentage` | `number` | Hidden everywhere | Managed inline via the Variants panel. Not shown directly. |
+| `_abVariants` | `ui` | Original pages only | Sidebar. Variants panel — list of variants with % inputs and edit links. |
+| `slug` | patched | Original pages only | Hidden on variant pages via condition (slug is auto-generated, must not change). |
+| `tenantField` | patched | Original pages only | Hidden on variant pages via condition (tenant must match parent). |
 
 `admin.baseListFilter` is patched to hide variant docs from the collection list view.
 
@@ -502,7 +518,11 @@ function patchField(fields: Field[], name: string, patcher: (f: Field) => Field)
   });
 }
 
-export function injectAdminFields<TVariantData extends object>(collection: CollectionConfig, collectionSlug: string, abConfig: CollectionABConfig<TVariantData>): CollectionConfig {
+export function injectAdminFields<TVariantData extends object>(
+  collection: CollectionConfig,
+  collectionSlug: string,
+  abConfig: CollectionABConfig<TVariantData>,
+): CollectionConfig {
   const slugField = abConfig.slugField ?? DEFAULT_SLUG_FIELD;
 
   // 1. _abVariantOf — native relationship field in sidebar, read-only, visible on variant pages only.
@@ -553,7 +573,12 @@ export function injectAdminFields<TVariantData extends object>(collection: Colle
   }
 
   // 6. Assemble: internal data fields first, then user fields, then sidebar UI last.
-  const newFields: Field[] = [variantOfField, passPercentageField, ...patchedFields, variantsUiField];
+  const newFields: Field[] = [
+    variantOfField,
+    passPercentageField,
+    ...patchedFields,
+    variantsUiField,
+  ];
 
   // 7. Patch admin.baseListFilter to exclude variant docs from the collection list view.
   const existingBaseListFilter = collection.admin?.baseListFilter;
@@ -597,20 +622,17 @@ git commit -m "feat: add injectAdminFields utility"
 ## Task 6: Create new hooks for the parent collection
 
 **Files:**
-
 - Create: `src/hooks/buildParentAfterChangeHook.ts`
 - Create: `src/hooks/buildParentAfterDeleteHook.ts`
 - Create: `src/hooks/buildParentBeforeChangeHook.ts`
 
 **Background:** Hooks now fire on ALL docs in the parent collection. Each hook inspects `_abVariantOf`:
-
 - If set → the doc is a variant. Recompute the manifest for the parent (`_abVariantOf` value).
 - If not set → the doc is an original. Recompute the manifest using all of its variants.
 
 For `afterChange` on an original doc (not variant), we still need to recompute because `generatePath` / `generateVariantData` may depend on parent fields (e.g., slug, locale).
 
 Default variant data (when `generateVariantData` is omitted):
-
 ```ts
 { bucket: variantSlug, rewritePath: generatePath(variantDoc, locale), passPercentage: _abPassPercentage ?? 0 }
 ```
@@ -630,7 +652,7 @@ async function recomputeManifestForParent<TVariantData extends object>(
   abConfig: CollectionABConfig<TVariantData>,
   pluginConfig: AbTestingPluginConfig<TVariantData>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  req: any
+  req: any,
 ): Promise<void> {
   const { payload } = req;
   const locales = getLocales(payload);
@@ -685,7 +707,7 @@ async function recomputeManifestForParent<TVariantData extends object>(
 export function buildParentAfterChangeHook<TVariantData extends object>(
   parentCollectionSlug: string,
   abConfig: CollectionABConfig<TVariantData>,
-  pluginConfig: AbTestingPluginConfig<TVariantData>
+  pluginConfig: AbTestingPluginConfig<TVariantData>,
 ): CollectionAfterChangeHook {
   return async ({ doc, req }) => {
     const { payload } = req;
@@ -718,7 +740,7 @@ import { getLocales } from "../utils/getLocales";
 export function buildParentAfterDeleteHook<TVariantData extends object>(
   parentCollectionSlug: string,
   abConfig: CollectionABConfig<TVariantData>,
-  pluginConfig: AbTestingPluginConfig<TVariantData>
+  pluginConfig: AbTestingPluginConfig<TVariantData>,
 ): CollectionAfterDeleteHook {
   return async ({ doc, req, id }) => {
     const { payload } = req;
@@ -796,7 +818,7 @@ import { resolveId } from "../utils/resolveId";
 export function buildParentBeforeChangeHook<TVariantData extends object>(
   parentCollectionSlug: string,
   _abConfig: CollectionABConfig<TVariantData>,
-  _pluginConfig: AbTestingPluginConfig<TVariantData>
+  _pluginConfig: AbTestingPluginConfig<TVariantData>,
 ): CollectionBeforeChangeHook {
   return async ({ data, originalDoc, req, operation }) => {
     // Only validate when saving a variant doc
@@ -865,11 +887,9 @@ git commit -m "feat: add parent collection hooks for inline variant model"
 ## Task 7: Refactor plugin.ts
 
 **Files:**
-
 - Modify: `src/plugin.ts`
 
 **What changes:**
-
 - Register the `/_ab/duplicate` endpoint on `config.endpoints`
 - Replace `addHooksToVariantCollections` (which patched variant collections) with a new approach that patches **parent collections**
 - Inject admin fields into parent collections via `injectAdminFields`
@@ -907,9 +927,18 @@ export const abTestingPlugin =
         ...withAdminFields,
         hooks: {
           ...withAdminFields.hooks,
-          beforeChange: [...(withAdminFields.hooks?.beforeChange ?? []), buildParentBeforeChangeHook(collection.slug, abConfig, pluginConfig)],
-          afterChange: [...(withAdminFields.hooks?.afterChange ?? []), buildParentAfterChangeHook(collection.slug, abConfig, pluginConfig)],
-          afterDelete: [...(withAdminFields.hooks?.afterDelete ?? []), buildParentAfterDeleteHook(collection.slug, abConfig, pluginConfig)],
+          beforeChange: [
+            ...(withAdminFields.hooks?.beforeChange ?? []),
+            buildParentBeforeChangeHook(collection.slug, abConfig, pluginConfig),
+          ],
+          afterChange: [
+            ...(withAdminFields.hooks?.afterChange ?? []),
+            buildParentAfterChangeHook(collection.slug, abConfig, pluginConfig),
+          ],
+          afterDelete: [
+            ...(withAdminFields.hooks?.afterDelete ?? []),
+            buildParentAfterDeleteHook(collection.slug, abConfig, pluginConfig),
+          ],
         },
       };
     });
@@ -950,7 +979,6 @@ git commit -m "feat: refactor plugin to use inline variant model"
 ## Task 8: Remove obsolete files and clean up imports
 
 **Files:**
-
 - Delete: `src/utils/addHooksToVariantCollections.ts`
 - Delete: `src/utils/buildVariantToParentCollectionSlugsMap.ts`
 - Delete: `src/hooks/validateVariantPercentageSum.ts`
@@ -987,7 +1015,6 @@ git commit -m "chore: remove obsolete variant collection hooks and utils"
 ## Task 9: Add admin component entry points to tsup and package.json
 
 **Files:**
-
 - Modify: `tsup.config.ts`
 - Modify: `package.json`
 
@@ -996,26 +1023,27 @@ git commit -m "chore: remove obsolete variant collection hooks and utils"
 **Step 1: Update `tsup.config.ts`**
 
 ```ts
-import { defineConfig } from "tsup";
+import { defineConfig } from 'tsup'
 
 export default defineConfig({
   entry: {
-    index: "src/index.ts",
-    "adapters/payloadGlobal/index": "src/adapters/payloadGlobal/index.ts",
-    "adapters/vercelEdge/index": "src/adapters/vercelEdge/index.ts",
-    "analytics/index": "src/analytics/index.ts",
-    "analytics/client": "src/analytics/client.ts",
-    "analytics/adapters/googleAnalytics/index": "src/analytics/adapters/googleAnalytics/index.ts",
-    "middleware/index": "src/middleware/index.ts",
-    "admin/VariantsField": "src/admin/components/VariantsField.tsx",
+    index: 'src/index.ts',
+    'adapters/payloadGlobal/index': 'src/adapters/payloadGlobal/index.ts',
+    'adapters/vercelEdge/index': 'src/adapters/vercelEdge/index.ts',
+    'analytics/index': 'src/analytics/index.ts',
+    'analytics/client': 'src/analytics/client.ts',
+    'analytics/adapters/googleAnalytics/index':
+      'src/analytics/adapters/googleAnalytics/index.ts',
+    'middleware/index': 'src/middleware/index.ts',
+    'admin/VariantsField': 'src/admin/components/VariantsField.tsx',
   },
-  format: ["esm"],
+  format: ['esm'],
   dts: true,
   sourcemap: true,
   splitting: false,
   clean: true,
-  external: ["payload", "react", "next", "@vercel/edge-config", "@payloadcms/ui"],
-});
+  external: ['payload', 'react', 'next', '@vercel/edge-config', '@payloadcms/ui'],
+})
 ```
 
 **Step 2: Add exports to `package.json`**
@@ -1061,7 +1089,6 @@ git commit -m "build: add admin component entry points to tsup and package expor
 ## Task 10: Update README
 
 **Files:**
-
 - Modify: `README.md`
 
 **Step 1: Update the Quick Start section**
@@ -1120,7 +1147,6 @@ ls dist/ && ls dist/admin/
 ```
 
 Expected:
-
 ```
 dist/
   index.js  index.d.ts

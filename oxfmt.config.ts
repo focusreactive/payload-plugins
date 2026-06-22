@@ -15,5 +15,17 @@ export default defineConfig({
   // shared ignores cover build output, but these project-specific paths
   // (committed, not gitignored) must be added explicitly — they were
   // previously protected by the now-removed root .prettierignore.
-  ignorePatterns: [...(ultracite.ignorePatterns ?? []), "**/payload-types.ts", "**/importMap.js", "**/migrations/**", "apps/cms/scripts/**", "upload-data-scripta/**"],
+  ignorePatterns: [
+    ...(ultracite.ignorePatterns ?? []),
+    "**/payload-types.ts",
+    "**/importMap.js",
+    "**/migrations/**",
+    "apps/cms/scripts/**",
+    "upload-data-scripta/**",
+    // Markdown is excluded from formatting: oxfmt's markdown reflow is
+    // non-idempotent on nested list/code blocks (it re-flips wrapped lines on
+    // each run). READMEs / CHANGELOGs / docs stay hand-authored.
+    "**/*.md",
+    "**/*.mdx",
+  ],
 });

@@ -134,11 +134,18 @@ import { resolveAbCookieNames } from "@focus-reactive/payload-plugin-ab/middlewa
 
 export default async function Page({ params }: { params: { slug: string } }) {
   const experimentId = `/${params.slug}`;
-  const { variantCookieName, visitorCookieName } = resolveAbCookieNames(undefined, experimentId);
+  const { variantCookieName, visitorCookieName } = resolveAbCookieNames(
+    undefined,
+    experimentId
+  );
   return (
     <main>
       <h1>Page content</h1>
-      <ExperimentTracker experimentId={experimentId} variantCookieName={variantCookieName} visitorCookieName={visitorCookieName} />
+      <ExperimentTracker
+        experimentId={experimentId}
+        variantCookieName={variantCookieName}
+        visitorCookieName={visitorCookieName}
+      />
     </main>
   );
 }
@@ -174,7 +181,9 @@ export default buildConfig({
             const tenantId = (doc.tenant as { id: string } | undefined)?.id;
             const slug = doc.slug as string | undefined;
             if (!tenantId || !slug) return null;
-            return locale ? `/${tenantId}/${locale}/${slug}` : `/${tenantId}/${slug}`;
+            return locale
+              ? `/${tenantId}/${locale}/${slug}`
+              : `/${tenantId}/${slug}`;
           },
         },
       },
@@ -193,7 +202,7 @@ interface MyVariantData {
   bucket: string;
   rewritePath: string;
   passPercentage: number;
-  pageTitle: string; // extra field for analytics labeling
+  pageTitle: string;  // extra field for analytics labeling
 }
 
 abTestingPlugin<MyVariantData>({

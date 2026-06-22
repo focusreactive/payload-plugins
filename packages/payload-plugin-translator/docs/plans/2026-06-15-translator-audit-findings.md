@@ -30,10 +30,10 @@ The plugin never sets `jobs.deleteJobOnComplete` (`task-runner/payload-jobs-runn
 - **Fix direction:** Default the translations queue to `deleteJobOnComplete: false`, or emit a startup warning when it's left at the Payload default.
 
 **P3 — OpenAI provider: unguarded `choices[0]` + no client-option configurability. [verified] — FIXED 2026-06-15.**
-_Downgraded from "reliability, important" after verification._ Two distinct points, not equal:
+*Downgraded from "reliability, important" after verification.* Two distinct points, not equal:
 
 - **Real bug (fixed):** `chatCompletion.choices[0].message.content` accessed `choices[0]` unguarded — an empty `choices` array (e.g. content-filtered response) threw a `TypeError` instead of the intended graceful `null`. The surrounding code (`if (!translatedContent) return null`, `try/catch` on `JSON.parse`) clearly intended to fail soft. Fixed with optional chaining (`choices[0]?.message?.content`) + a regression test.
-- **Not a bug — configurability (added):** the client was created with `apiKey` only, relying on SDK defaults. The OpenAI SDK _does_ retry by default (2x on 429/5xx/network) and _does_ time out (10 min) — so the original "no retry / hangs indefinitely" wording was **overstated and is corrected here**. The only real gap was that the 10-min default is too long for a blocking job and neither value was configurable. Added optional `timeout` / `maxRetries` to `OpenAIProviderConfig` (`@since 0.6.0`), passed through to the client; `undefined` keeps SDK defaults.
+- **Not a bug — configurability (added):** the client was created with `apiKey` only, relying on SDK defaults. The OpenAI SDK *does* retry by default (2x on 429/5xx/network) and *does* time out (10 min) — so the original "no retry / hangs indefinitely" wording was **overstated and is corrected here**. The only real gap was that the 10-min default is too long for a blocking job and neither value was configurable. Added optional `timeout` / `maxRetries` to `OpenAIProviderConfig` (`@since 0.6.0`), passed through to the client; `undefined` keeps SDK defaults.
 
 **P4 — `skip_existing` + job retry is not idempotent. [likely / needs-check]**
 `SkipExistingStrategy.shouldTranslate` skips when the target value is non-empty (`strategies/SkipExisting.strategy.ts:9-12`). If a job partially writes then Payload retries it (`retries.attempts: 3` by default), the partially-written fields now look "done" and are permanently skipped. `overwrite` is safe.
@@ -48,7 +48,7 @@ The plugin requires explicit `localized: true` on every leaf; if an author marks
 - **Fix direction:** Init-time schema validation that warns when a `localized` container has no `localized` translatable leaves.
 
 **P6 — Concurrent-enqueue race. [verified]**
-`PayloadJobsTaskRunner.enqueue` dedups by cancelling existing jobs for the same collection+ids _within a single call_ (`:19-28`), but two near-simultaneous enqueue requests each find nothing and both queue the same doc.
+`PayloadJobsTaskRunner.enqueue` dedups by cancelling existing jobs for the same collection+ids *within a single call* (`:19-28`), but two near-simultaneous enqueue requests each find nothing and both queue the same doc.
 
 - **Fix direction:** dedup at pickup, or a unique (taskSlug, collection_slug, collection_id) guard.
 
@@ -64,7 +64,7 @@ The whole `textMap` goes in one provider call; a very large doc or single huge r
 
 All **[verified]** against `TranslateFieldControl.tsx` + `translate-field/handler.ts`:
 
-- **Unsaved source edits are ignored, no warning.** The endpoint reads the _saved_ source doc (`handler.ts:47-54`, `fallbackLocale:false`); if the user edited the source locale without saving, the translation uses the stale saved value. _(Confirmed real.)_
+- **Unsaved source edits are ignored, no warning.** The endpoint reads the *saved* source doc (`handler.ts:47-54`, `fallbackLocale:false`); if the user edited the source locale without saving, the translation uses the stale saved value. *(Confirmed real.)*
 - **New-doc: control hidden entirely** (`TranslateFieldControl.tsx:65`) — can't translate before first save.
 - **richText re-mount** on write-back (`:75-78`) — acceptable since translate is a deliberate click, but worth a guard if the field is mid-edit.
 - **i18n: control strings are hardcoded English** (`"Translate field"`, `"Field translated"`, …). Locale codes shown raw/lowercased, no display-name fallback.
@@ -78,7 +78,7 @@ All **[verified]** against `TranslateFieldControl.tsx` + `translate-field/handle
 ### Current design is sound [verified — read `2026-06-12-cross-locale-block-identity.md` + `kernel.ts`]
 
 - Elements pair **by `id`** (and identical `blockType` for blocks) via `matchElementById` (`kernel.ts:149-154`), shared by `DataReconciler` and `FieldChunkCollector`. No match → source fills in; output follows source order; `id` is stripped on write (Postgres rejects it on update).
-- **Supported regime:** _non-localized_ container + _localized leaves_ → structure shared, `id` == position, exact matching. This is the only fully-correct shape and is what our seed uses.
+- **Supported regime:** *non-localized* container + *localized leaves* → structure shared, `id` == position, exact matching. This is the only fully-correct shape and is what our seed uses.
 - **Field level guards** a localized blocks/array ancestor with a `noop` notice instead of guessing positionally (`handler.ts:70-73`).
 - The design doc's rejection of position / per-locale block id / blockType / content-similarity as auto-match signals is correct: **independent localized blocks cannot be auto-matched** — refusing beats silent corruption.
 
@@ -92,7 +92,7 @@ All **[verified]** against `TranslateFieldControl.tsx` + `translate-field/handle
 
 The case **"different block layout per locale AND translate between them"** is a **real requirement** per product. The current design explicitly punts it (`cross-locale-block-identity.md` §"Out of scope") to an **author-managed correlation key** — a non-localized key the author maintains per element to link locales. This now needs its **own design doc** before any code. Key open questions for that design:
 
-- Where does the key live (it can't sit _inside_ the localized field — the whole subtree is locale-partitioned)? A sibling non-localized map keyed by element? A convention field?
+- Where does the key live (it can't sit *inside* the localized field — the whole subtree is locale-partitioned)? A sibling non-localized map keyed by element? A convention field?
 - How is it surfaced/maintained in the admin UI without burdening authors?
 - How do reconciler + field-level consume it (replace/augment `matchElementById`)?
 - Migration/back-compat for existing localized-blocks content with no keys.
@@ -126,12 +126,12 @@ The case **"different block layout per locale AND translate between them"** is a
 
 ## 6. Recommended breakdown
 
-- `**/task` — Reliability pass (P1–P2):\*_ provider response validation + "incomplete" surfacing, `deleteJobOnComplete` default/warning. High value, low blast radius. _(P3 already done — `choices[0]` guard + configurable `timeout`/`maxRetries`, 2026-06-15.)\*
-- `**/task` — `skip_existing` retry idempotency (P4):\*\* after a quick Payload Jobs retry-semantics check.
-- `**/task` — Field-level UX:\*\* unsaved-source handling + warning, i18n of control strings, undo polish.
-- `**/task` — Schema validation (P5)** and **block notices\*\* (duplicate-id guard, blockType-mismatch notice).
-- `**/feature` (largest) — Author-managed cross-locale correlation key:\*\* needs its own design doc; unblocks the "different layout per locale + translate between them" requirement.
-- `**/feature` — Auto-translate on source change**, then **glossary/tone**, then **translation memory\*\*.
+- `**/task` — Reliability pass (P1–P2):** provider response validation + "incomplete" surfacing, `deleteJobOnComplete` default/warning. High value, low blast radius. *(P3 already done — `choices[0]` guard + configurable `timeout`/`maxRetries`, 2026-06-15.)*
+- `**/task` — `skip_existing` retry idempotency (P4):** after a quick Payload Jobs retry-semantics check.
+- `**/task` — Field-level UX:** unsaved-source handling + warning, i18n of control strings, undo polish.
+- `**/task` — Schema validation (P5)** and **block notices** (duplicate-id guard, blockType-mismatch notice).
+- `**/feature` (largest) — Author-managed cross-locale correlation key:** needs its own design doc; unblocks the "different layout per locale + translate between them" requirement.
+- `**/feature` — Auto-translate on source change**, then **glossary/tone**, then **translation memory**.
 
 ---
 
@@ -147,3 +147,4 @@ The case **"different block layout per locale AND translate between them"** is a
 - `task-runner/payload-jobs-runner/PayloadJobsTaskRunner.ts:19-28` — within-call enqueue dedup.
 - `task-runner/payload-jobs-runner/PayloadJobsRunnerProvider.ts:17-30` — runner defaults; no `deleteJobOnComplete`.
 - `plugin.ts:78` — JSON-clone schema, no validation.
+

@@ -280,7 +280,11 @@ export default async function Page({ params }) {
   return (
     <>
       {/* page content */}
-      <ExperimentTracker experimentId={experimentId} variantCookieName={variantCookieName} visitorCookieName={visitorCookieName} />
+      <ExperimentTracker
+        experimentId={experimentId}
+        variantCookieName={variantCookieName}
+        visitorCookieName={visitorCookieName}
+      />
     </>
   );
 }
