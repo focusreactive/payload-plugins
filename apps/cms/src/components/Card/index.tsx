@@ -3,9 +3,9 @@ import { ImageAspectRatio } from "@/components/image/types";
 import NextImage from "next/image";
 import React from "react";
 
-import { BLOG_CONFIG } from "@/core/config/blog";
+import { BLOG_CONFIG } from "@/lib/config/blog";
 import { cn } from "@/components/utils";
-import type { CardPostData } from "@/core/types";
+import type { CardPostData } from "@/lib/types";
 import { Link } from "@/components/shared";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 

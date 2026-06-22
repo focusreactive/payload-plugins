@@ -1,8 +1,8 @@
 import type { Field } from "payload";
 
-import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
-import { imageField } from "@/fields/imageField";
-import { link } from "@/fields/link";
+import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
+import { imageField } from "@/lib/fields/imageField";
+import { link } from "@/lib/fields/link";
 
 export const logosFields: Field[] = [
   {

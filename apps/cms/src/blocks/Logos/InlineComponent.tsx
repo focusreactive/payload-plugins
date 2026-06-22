@@ -2,7 +2,7 @@ import { Logos } from "./ui";
 import { AlignVariant } from "./ui/types";
 import type { ILogoItem } from "./ui/types";
 
-import { resolveLocale } from "@/core/lib/resolveLocale";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { LogosInlineBlock } from "@/payload-types";

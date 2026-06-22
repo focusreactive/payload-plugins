@@ -3,7 +3,7 @@ import { AlignVariant } from "./ui/types";
 import type { ILogoItem } from "./ui/types";
 import React from "react";
 
-import { resolveLocale } from "@/core/lib/resolveLocale";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
 import { SectionContainer } from "@/components/shared";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";

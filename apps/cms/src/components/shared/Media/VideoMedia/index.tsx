@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 
-import { getMediaUrl } from "@/core/lib/getMediaUrl";
+import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import { cn } from "@/components/utils";
 
 import type { MediaProps } from "..";

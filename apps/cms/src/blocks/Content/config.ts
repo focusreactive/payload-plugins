@@ -1,14 +1,14 @@
 import type { Block, Field, GroupField } from "payload";
 
-import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
-import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/core/constants/mediaDefaults";
-import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
-import { createLocalizedRichText } from "@/core/lib/createLocalizedDefault";
-import { generateRichText } from "@/core/lib/generateRichText";
+import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
+import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
+import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
+import { createLocalizedRichText } from "@/lib/utils/createLocalizedDefault";
+import { generateRichText } from "@/lib/utils/generateRichText";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
-import { link } from "@/fields/link";
-import { injectSection } from "@/fields/section/injectSection";
-import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
+import { link } from "@/lib/fields/link";
+import { injectSection } from "@/lib/fields/section/injectSection";
+import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
 
 const fields: Field[] = [
   ...sectionHeaderFields({ headingDefault: DEFAULT_VALUES.blocks.content.heading }),

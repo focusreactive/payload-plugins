@@ -2,7 +2,7 @@ import { Footer as SharedFooter } from "./ui";
 import type { FooterLink, FooterLinkGroup, IFooterProps } from "./ui/types";
 import React from "react";
 
-import { resolveLocale } from "@/core/lib/resolveLocale";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { Footer as FooterType, Media } from "@/payload-types";

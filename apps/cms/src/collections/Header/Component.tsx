@@ -8,7 +8,7 @@ import type {
 } from "./ui/types";
 import React from "react";
 
-import { resolveLocale } from "@/core/lib/resolveLocale";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { Header as HeaderType, Media } from "@/payload-types";

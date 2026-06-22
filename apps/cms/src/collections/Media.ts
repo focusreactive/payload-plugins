@@ -1,8 +1,8 @@
 import { revalidateTag } from "next/cache";
 import type { CollectionBeforeChangeHook, CollectionConfig } from "payload";
 
-import { anyone, author, or, superAdmin, user } from "@/core/lib/access";
-import { generateRichText } from "@/core/lib/generateRichText";
+import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { generateRichText } from "@/lib/utils/generateRichText";
 import { DEFAULT_MEDIA_CACHE_TAG } from "@/dal/getDefaultMediaId";
 
 const setDefaultFocalPoint: CollectionBeforeChangeHook = ({ data }) => {

@@ -13,7 +13,7 @@ and needs its text extraction wired into semantic search.
 
 Each block owns its extractor at `apps/cms/src/blocks/<BlockName>/extractText.ts`.
 The orchestrator that calls all extractors is `apps/cms/src/collections/Page/extractPageText.ts`.
-The two shared utilities are `extractLexicalText` and `joinText` from `@/core/utils/text`.
+The two shared utilities are `extractLexicalText` and `joinText` from `@/lib/utils/text`.
 
 ---
 
@@ -42,7 +42,7 @@ Write the extractor function in the block's own folder:
 
 ```ts
 import type { <BlockName>Block } from '@/payload-types'
-import { extractLexicalText, joinText } from '@/core/utils/text'
+import { extractLexicalText, joinText } from '@/lib/utils/text'
 
 export function extract<BlockName>Text(block: <BlockName>Block): string {
   return joinText([
@@ -56,7 +56,7 @@ Example — for a block named `Promo` with a `text` field, a `richText` body, an
 ```ts
 // apps/cms/src/blocks/Promo/extractText.ts
 import type { PromoBlock } from "@/payload-types";
-import { extractLexicalText, joinText } from "@/core/utils/text";
+import { extractLexicalText, joinText } from "@/lib/utils/text";
 
 export function extractPromoText(block: PromoBlock): string {
   return joinText([block.text, extractLexicalText(block.body), ...(block.items ?? []).flatMap((item) => [item.label])]);

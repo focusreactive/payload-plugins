@@ -1,10 +1,10 @@
 import type { CollectionConfig, GroupField } from "payload";
 
-import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/core/constants/mediaDefaults";
-import { anyone, or, user, superAdmin } from "@/core/lib/access";
-import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
+import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
+import { anyone, or, user, superAdmin } from "@/lib/access";
+import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
-import { link } from "@/fields/link";
+import { link } from "@/lib/fields/link";
 
 import { revalidateResourcesUsingHeader } from "./hooks/revalidateResourcesUsingHeader";
 

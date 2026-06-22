@@ -1,8 +1,8 @@
 import type { Block } from "payload";
 
-import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
-import { injectSection } from "@/fields/section/injectSection";
-import { testimonialsListFields } from "@/fields/testimonialsListFields";
+import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
+import { injectSection } from "@/lib/fields/section/injectSection";
+import { testimonialsListFields } from "@/lib/fields/testimonialsListFields";
 
 export const TestimonialsListBlock: Block = injectSection({
   slug: "testimonialsList",

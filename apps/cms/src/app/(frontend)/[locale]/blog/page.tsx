@@ -3,15 +3,16 @@ import type { Metadata } from "next/types";
 import { draftMode } from "next/headers";
 import React, { Suspense } from "react";
 
-import { BLOG_CONFIG } from "@/core/config/blog";
-import { SYNTHETIC_REFS } from "@/core/lib/analytics/SYNTHETIC_REFS";
-import { I18N_CONFIG } from "@/core/config/i18n";
-import { generateMeta } from "@/core/lib/generateMeta";
-import type { Locale } from "@/core/types";
+import { BLOG_CONFIG } from "@/lib/config/blog";
+import { SYNTHETIC_REFS } from "@/lib/plugins/analytics/SYNTHETIC_REFS";
+import { I18N_CONFIG } from "@/lib/config/i18n";
+import { generateMeta } from "@/lib/utils/generateMeta";
+import type { Locale } from "@/lib/types";
 import { getBlogPageSettings } from "@/dal/getBlogPageSettings";
 import { getSiteSettings } from "@/dal/getSiteSettings";
 import type { Footer as FooterType, Header as HeaderType } from "@/payload-types";
-import { Footer, Header } from "@/widgets";
+import { Footer } from "@/collections/Footer/Component";
+import { Header } from "@/collections/Header/Component";
 
 import { BlogJsonLdWrapper } from "./_components/BlogJsonLdWrapper";
 import { BlogPageDynamic } from "./_components/BlogPageDynamic";

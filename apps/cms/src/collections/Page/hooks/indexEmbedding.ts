@@ -2,10 +2,10 @@ import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from "paylo
 import type { Pool } from "pg";
 
 import { extractPageText } from "@/collections/Page/extractPageText";
-import { getLocaleFromRequest } from "@/core/lib/getLocaleFromRequest";
+import { getLocaleFromRequest } from "@/lib/utils/getLocaleFromRequest";
 import type { Page } from "@/payload-types";
-import { upsertEmbedding, deleteEmbedding } from "@/search/dbOperations";
-import { generateEmbedding } from "@/search/generateEmbedding";
+import { upsertEmbedding, deleteEmbedding } from "@/lib/search/dbOperations";
+import { generateEmbedding } from "@/lib/search/generateEmbedding";
 
 export const indexPageEmbedding: CollectionAfterChangeHook<Page> = async ({ doc, req }) => {
   if (doc._status !== "published") {

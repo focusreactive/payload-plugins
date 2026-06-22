@@ -1,4 +1,4 @@
-import { FaqJsonLd } from "@/core/seo/components";
+import { FaqJsonLd } from "@/components/seo/components";
 import { SectionContainer } from "@/components/shared";
 import { FaqSection } from "@/components/FaqSection";
 import type { FaqBlock as FaqBlockProps } from "@/payload-types";

@@ -1,9 +1,9 @@
 import type { GlobalConfig } from "payload";
 
-import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
-import { anyone, or, user, superAdmin } from "@/core/lib/access";
-import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
-import { generateSeoFields } from "@/core/lib/seoFields";
+import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
+import { anyone, or, user, superAdmin } from "@/lib/access";
+import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
+import { generateSeoFields } from "@/lib/utils/seoFields";
 
 import { revalidateSiteSettings } from "./hooks/revalidateSiteSettings";
 

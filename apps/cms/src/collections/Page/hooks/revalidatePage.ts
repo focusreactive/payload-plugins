@@ -1,7 +1,7 @@
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from "payload";
 
-import { getLocaleFromRequest } from "@/core/lib/getLocaleFromRequest";
-import { revalidatePageCache } from "@/core/lib/revalidatePageCache";
+import { getLocaleFromRequest } from "@/lib/utils/getLocaleFromRequest";
+import { revalidatePageCache } from "@/lib/utils/revalidatePageCache";
 import type { Page } from "@/payload-types";
 
 export const revalidatePage: CollectionAfterChangeHook<Page> = async ({

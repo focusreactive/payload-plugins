@@ -2,7 +2,7 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { cn } from "@/components/utils";
 import React from "react";
 
-import { AnimatedCarousel } from "@/entities";
+import { AnimatedCarousel } from "@/components/Testimonials";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { Testimonial, TestimonialsListBlock } from "@/payload-types";
 import { Container } from "@/components/shared/Container";

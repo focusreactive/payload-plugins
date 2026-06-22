@@ -1,7 +1,7 @@
 import type { Block } from "payload";
 
-import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
-import { injectSection } from "@/fields/section/injectSection";
+import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
+import { injectSection } from "@/lib/fields/section/injectSection";
 
 import { logosFields } from "./fields";
 

@@ -1,4 +1,4 @@
-import { joinText } from "@/core/utils/text";
+import { joinText } from "@/lib/utils/text";
 import type { CardsGridBlock } from "@/payload-types";
 
 function extractLinkLabel(value: unknown): string {

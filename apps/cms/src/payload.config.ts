@@ -17,10 +17,10 @@ import { Page } from "@/collections/Page/Page";
 import { Posts } from "@/collections/Posts";
 import { Testimonials } from "@/collections/Testimonials";
 import { Users } from "@/collections/Users";
-import { I18N_CONFIG } from "@/core/config/i18n";
-import { createDatabaseAdapter } from "@/database";
+import { I18N_CONFIG } from "@/lib/config/i18n";
+import { createDatabaseAdapter } from "@/lib/database";
 import { SiteSettings } from "@/globals/SiteSettings/config";
-import { plugins } from "@/plugins";
+import { plugins } from "@/lib/plugins";
 
 const baseDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -32,7 +32,7 @@ export default buildConfig({
         Icon: "/components/admin/Icon",
         Logo: "/components/admin/Logo",
       },
-      providers: ["/providers/BeforeOpenDrawerWrapper"],
+      providers: ["/lib/context/BeforeOpenDrawerWrapper"],
     },
     importMap: {
       baseDir,

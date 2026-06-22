@@ -1,7 +1,7 @@
 import type { CollectionAfterChangeHook } from "payload";
 
-import { getLocaleFromRequest } from "@/core/lib/getLocaleFromRequest";
-import { revalidatePageCache } from "@/core/lib/revalidatePageCache";
+import { getLocaleFromRequest } from "@/lib/utils/getLocaleFromRequest";
+import { revalidatePageCache } from "@/lib/utils/revalidatePageCache";
 import { revalidateGlobalTags } from "@/dal/getGlobals";
 import type { Footer } from "@/payload-types";
 

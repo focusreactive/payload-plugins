@@ -1,5 +1,5 @@
-import { BlogJsonLd, BreadcrumbsJsonLd } from "@/core/seo/components";
-import type { Locale } from "@/core/types";
+import { BlogJsonLd, BreadcrumbsJsonLd } from "@/components/seo/components";
+import type { Locale } from "@/lib/types";
 import { getBlogPageSettings, getPayloadClient, getPosts, getSiteSettings } from "@/dal";
 
 interface BlogJsonLdWrapperProps {
