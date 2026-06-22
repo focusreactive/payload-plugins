@@ -33,8 +33,8 @@ import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 import { validateRedirectPath } from "@/lib/utils/redirectUrl";
 import { isDev } from "@/lib/utils/isDev";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
-import { normalizeRedirectFields } from "@/hooks/normalizeRedirectFields";
-import { revalidateRedirects } from "@/hooks/revalidateRedirects";
+import { normalizeRedirectFields } from "@/lib/hooks/normalizeRedirectFields";
+import { revalidateRedirects } from "@/lib/hooks/revalidateRedirects";
 import type { Page } from "@/payload-types";
 
 import { mcpPluginConfig } from "./mcp";

@@ -1,9 +1,9 @@
 import type { Block, Field, GroupField } from "payload";
 
 import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
-import { injectSection } from "@/fields/section/injectSection";
-import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
-import { link } from "@/fields/link";
+import { injectSection } from "@/lib/fields/section/injectSection";
+import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
+import { link } from "@/lib/fields/link";
 
 const fields: Field[] = [
   ...sectionHeaderFields({

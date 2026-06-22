@@ -6,9 +6,9 @@ import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 import { createLocalizedRichText } from "@/lib/utils/createLocalizedDefault";
 import { generateRichText } from "@/lib/utils/generateRichText";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
-import { link } from "@/fields/link";
-import { injectSection } from "@/fields/section/injectSection";
-import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
+import { link } from "@/lib/fields/link";
+import { injectSection } from "@/lib/fields/section/injectSection";
+import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
 
 const fields: Field[] = [
   ...sectionHeaderFields({ headingDefault: DEFAULT_VALUES.blocks.content.heading }),

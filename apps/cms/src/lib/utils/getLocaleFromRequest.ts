@@ -3,7 +3,7 @@ import type { PayloadRequest } from "payload";
 
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import type { Locale } from "@/lib/types";
-import { routing } from "@/i18n/routing";
+import { routing } from "@/lib/i18n/routing";
 
 export function getLocaleFromRequest(req: PayloadRequest): Locale {
   const searchLocale = req.searchParams?.get("locale");

@@ -4,8 +4,8 @@ import { useLocale } from "next-intl";
 import React, { useState, useRef, useEffect } from "react";
 
 import { I18N_CONFIG } from "@/lib/config/i18n";
-import { usePathname } from "@/i18n/navigation";
-import { Link as LocaleLink } from "@/i18n/navigation";
+import { usePathname } from "@/lib/i18n/navigation";
+import { Link as LocaleLink } from "@/lib/i18n/navigation";
 
 interface LocaleSelectorProps {
   render: (locale: string) => React.ReactNode;

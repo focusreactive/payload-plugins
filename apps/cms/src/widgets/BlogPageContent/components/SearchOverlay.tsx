@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { cn } from "@/components/utils";
-import { usePathname } from "@/i18n/navigation";
+import { usePathname } from "@/lib/i18n/navigation";
 
 import { useBlogFilter } from "./BlogFilterProvider";
 

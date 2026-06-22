@@ -2,7 +2,7 @@ import { hasLocale } from "next-intl";
 import { getLocale } from "next-intl/server";
 
 import type { Locale } from "@/lib/types";
-import { routing } from "@/i18n/routing";
+import { routing } from "@/lib/i18n/routing";
 
 export async function resolveLocale(locale?: Locale): Promise<Locale> {
   if (locale) {

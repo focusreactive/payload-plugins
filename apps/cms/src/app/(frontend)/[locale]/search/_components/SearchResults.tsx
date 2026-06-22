@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { search } from "@/search/search";
+import { search } from "@/lib/search/search";
 
 const PLACEHOLDER = "/empty-placeholder.jpg";
 

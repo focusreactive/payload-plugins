@@ -2,8 +2,8 @@ import type { Block, Field } from "payload";
 
 import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
-import { injectSection } from "@/fields/section/injectSection";
-import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
+import { injectSection } from "@/lib/fields/section/injectSection";
+import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
 
 const fields: Field[] = [
   ...sectionHeaderFields(),

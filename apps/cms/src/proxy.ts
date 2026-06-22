@@ -10,7 +10,7 @@ import { buildInternalPathname } from "@/lib/plugins/ab/buildInternalPathname";
 import type { ABVariantData } from "@/lib/plugins/ab/types";
 
 import { abCookies } from "./lib/plugins/ab/abCookies";
-import { routing } from "./i18n/routing";
+import { routing } from "./lib/i18n/routing";
 
 const intlMiddleware = createMiddleware(routing);
 

@@ -6,8 +6,8 @@ import {
   createLocalizedRichText,
 } from "@/lib/utils/createLocalizedDefault";
 import { generateRichText } from "@/lib/utils/generateRichText";
-import { imageField } from "@/fields/imageField";
-import { link } from "@/fields/link";
+import { imageField } from "@/lib/fields/imageField";
+import { link } from "@/lib/fields/link";
 
 const defaultHeroLinkItem = (label: string) => ({
   appearance: "default" as const,

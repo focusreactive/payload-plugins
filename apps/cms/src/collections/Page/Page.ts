@@ -6,7 +6,7 @@ import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
-import { createSharedSlugField } from "@/fields/slugField";
+import { createSharedSlugField } from "@/lib/fields/slugField";
 import type { Page as PageType } from "@/payload-types";
 
 import { createBasePageFields } from "./basePageFields";

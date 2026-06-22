@@ -6,7 +6,7 @@ import { BLOG_CONFIG } from "@/lib/config/blog";
 import { cn } from "@/components/utils";
 import { Button, ButtonVariant } from "@/components/button";
 import { Link } from "@/components/shared";
-import type { LinkAppearances } from "@/fields/link";
+import type { LinkAppearances } from "@/lib/fields/link";
 import type { Page, Post } from "@/payload-types";
 
 type ButtonProps = React.ComponentProps<typeof Button>;

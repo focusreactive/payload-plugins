@@ -7,7 +7,7 @@ import { cacheTag } from "@/lib/utils/cacheTags";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { Locale } from "@/lib/types";
 import { orderDocsByIds } from "@/lib/utils/orderDocsByIds";
-import { generateEmbedding } from "@/search/generateEmbedding";
+import { generateEmbedding } from "@/lib/search/generateEmbedding";
 
 import type { getPosts } from "./getPosts";
 import { getPayloadClient } from "./payload-client";

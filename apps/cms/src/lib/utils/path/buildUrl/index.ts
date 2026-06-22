@@ -1,6 +1,6 @@
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
-import { routing } from "@/i18n/routing";
+import { routing } from "@/lib/i18n/routing";
 import type { Page } from "@/payload-types";
 
 import { getServerSideURL } from "../../getURL";

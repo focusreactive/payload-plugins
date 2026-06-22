@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { getOIDCConfig } from "@/auth/oidc/config";
-import { getDiscovery } from "@/auth/oidc/discovery";
-import { generatePKCE } from "@/auth/oidc/pkce";
+import { getOIDCConfig } from "@/lib/auth/oidc/config";
+import { getDiscovery } from "@/lib/auth/oidc/discovery";
+import { generatePKCE } from "@/lib/auth/oidc/pkce";
 
 /**
  * GET /api/auth/oidc

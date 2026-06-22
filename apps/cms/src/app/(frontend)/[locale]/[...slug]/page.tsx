@@ -13,7 +13,7 @@ import type { Locale } from "@/lib/types";
 import { getPageBySlug } from "@/dal/getPageBySlug";
 import { getMainSitePageStaticParams } from "@/dal/staticParams/pages";
 import { PayloadRedirects } from "@/features";
-import { redirect } from "@/i18n/navigation";
+import { redirect } from "@/lib/i18n/navigation";
 import type { Footer as FooterType, Header as HeaderType } from "@/payload-types";
 import { Footer, Header } from "@/widgets";
 

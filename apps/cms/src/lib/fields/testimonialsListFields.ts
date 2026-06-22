@@ -1,7 +1,7 @@
 import type { Field } from "payload";
 
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
-import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
+import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
 
 export const testimonialsListFields: Field[] = [
   ...sectionHeaderFields({

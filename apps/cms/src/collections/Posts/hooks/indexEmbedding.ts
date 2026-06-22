@@ -4,8 +4,8 @@ import type { Pool } from "pg";
 import { extractPostText } from "@/collections/Posts/extractPostText";
 import { getLocaleFromRequest } from "@/lib/utils/getLocaleFromRequest";
 import type { Post } from "@/payload-types";
-import { upsertEmbedding, deleteEmbedding } from "@/search/dbOperations";
-import { generateEmbedding } from "@/search/generateEmbedding";
+import { upsertEmbedding, deleteEmbedding } from "@/lib/search/dbOperations";
+import { generateEmbedding } from "@/lib/search/generateEmbedding";
 
 export const indexPostEmbedding: CollectionAfterChangeHook<Post> = async ({ doc, req }) => {
   if (doc._status !== "published") {

@@ -4,11 +4,11 @@ import { NextResponse } from "next/server";
 import { createLocalReq, getFieldsToSign, jwtSign } from "payload";
 import { addSessionToUser } from "payload/shared";
 
-import { claimsFromIdTokenPayload, claimsFromUserInfoResponse } from "@/auth/oidc/claims";
-import type { IdTokenPayload } from "@/auth/oidc/claims";
-import { getOIDCConfig } from "@/auth/oidc/config";
-import { getDiscovery } from "@/auth/oidc/discovery";
-import { findOrCreateAdminUser } from "@/auth/utils/user";
+import { claimsFromIdTokenPayload, claimsFromUserInfoResponse } from "@/lib/auth/oidc/claims";
+import type { IdTokenPayload } from "@/lib/auth/oidc/claims";
+import { getOIDCConfig } from "@/lib/auth/oidc/config";
+import { getDiscovery } from "@/lib/auth/oidc/discovery";
+import { findOrCreateAdminUser } from "@/lib/auth/utils/user";
 import { getPayloadClient } from "@/dal";
 
 const OAUTH_STATE_COOKIE = "oidc_state";

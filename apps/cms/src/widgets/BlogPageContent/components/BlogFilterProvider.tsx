@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useTransition } from "react";
 
-import { useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/lib/i18n/navigation";
 
 interface BlogFilterContextValue {
   isPending: boolean;

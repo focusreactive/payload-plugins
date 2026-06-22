@@ -5,6 +5,8 @@
     "declaration": false,
     "declarationMap": false,
     "paths": {
+      "@/dal": ["./src/lib/dal"],
+      "@/dal/*": ["./src/lib/dal/*"],
       "@/*": ["./src/*"],
       "@payload-config": ["./src/payload.config.ts"]
     }

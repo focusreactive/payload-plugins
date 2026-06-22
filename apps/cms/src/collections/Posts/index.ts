@@ -16,8 +16,8 @@ import { generateRichText } from "@/lib/utils/generateRichText";
 import { generateSeoFields } from "@/lib/utils/seoFields";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
-import { link } from "@/fields/link";
-import { createSharedSlugField } from "@/fields/slugField";
+import { link } from "@/lib/fields/link";
+import { createSharedSlugField } from "@/lib/fields/slugField";
 
 import { indexPostEmbedding, deletePostEmbedding } from "./hooks/indexEmbedding";
 import { revalidateDelete, revalidatePost } from "./hooks/revalidatePost";

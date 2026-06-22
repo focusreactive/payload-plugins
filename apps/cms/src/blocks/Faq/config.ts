@@ -9,8 +9,8 @@ import {
 } from "@/lib/utils/createLocalizedDefault";
 import { generateRichText } from "@/lib/utils/generateRichText";
 import type { Locale } from "@/lib/types";
-import { injectSection } from "@/fields/section/injectSection";
-import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
+import { injectSection } from "@/lib/fields/section/injectSection";
+import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
 
 function buildFaqItems(locale: Locale) {
   const { question, answer } = DEFAULT_VALUES.blocks.faq;

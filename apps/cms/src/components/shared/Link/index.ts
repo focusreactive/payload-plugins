@@ -1,1 +1,1 @@
-export { Link } from "@/i18n/navigation";
+export { Link } from "@/lib/i18n/navigation";
