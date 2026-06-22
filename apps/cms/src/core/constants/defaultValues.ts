@@ -1,3 +1,8 @@
+type LocalizedString = { en: string; es: string };
+type LocalizedRecord = { en: Record<string, string>; es: Record<string, string> };
+type LocalizedNode = LocalizedString | LocalizedRecord | { [key: string]: LocalizedNode };
+type LocalizedDefaults = { [key: string]: LocalizedNode };
+
 export const DEFAULT_VALUES = {
   blocks: {
     content: {
@@ -104,4 +109,4 @@ export const DEFAULT_VALUES = {
       },
     },
   },
-} as const;
+} as const satisfies LocalizedDefaults;
