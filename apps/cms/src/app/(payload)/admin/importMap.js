@@ -23,9 +23,9 @@ import { InlineToolbarFeatureClient as InlineToolbarFeatureClient_e70f5e05f09f93
 import { FixedToolbarFeatureClient as FixedToolbarFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { FolderTableCell as FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { FolderField as FolderField_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
-import { RowLabel as RowLabel_e82054cbfea0bb801c8062fddecc03a2 } from '@/components/admin/RowLabel'
+import { RowLabel as RowLabel_7f4fa5fc68fb5a0a92393f6444a57fbd } from '@/components/admin/RowLabel'
 import { BlockLabelServerWrapper as BlockLabelServerWrapper_ad8f8fdcc54c2df5d561bf1e2721dc58 } from '@focus-reactive/payload-plugin-presets/rsc'
-import { CopyAiPromptButton as CopyAiPromptButton_8eae3508993fc390856ace1dee04984d } from '@/components/admin/CopyAiPromptButton'
+import { CopyAiPromptButton as CopyAiPromptButton_9694d9e75b2ba68d2307fd533ed819ca } from '@/components/admin/CopyAiPromptButton'
 import { BlocksFieldWithPresets as BlocksFieldWithPresets_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { OverviewComponent as OverviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { MetaTitleComponent as MetaTitleComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
@@ -38,23 +38,21 @@ import { default as default_5a9e6bfe3379b31c0258f532ec5399fb } from '@focus-reac
 import { SeoButton as SeoButton_0275c4dc7702e5d88e7eb977a6a3d442 } from '@focus-reactive/payload-plugin-seo/components/SeoButton'
 import { default as default_587142b484744b5573788fdf4a68522a } from '@focus-reactive/payload-plugin-translator/client/widgets/translate-document/ui/TranslateDocument.server'
 import { BlocksFeatureClient as BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
-import { RowLabelGroupName as RowLabelGroupName_e82054cbfea0bb801c8062fddecc03a2 } from '@/components/admin/RowLabel'
+import { RowLabelGroupName as RowLabelGroupName_7f4fa5fc68fb5a0a92393f6444a57fbd } from '@/components/admin/RowLabel'
 import { PresetAdminComponentPreview as PresetAdminComponentPreview_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { PresetAdminComponentCellWrapper as PresetAdminComponentCellWrapper_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { FolderTypeField as FolderTypeField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
-import { default as default_7f68c8599c3d7b5d2129a6ae7f4980ff } from '../../../components/admin/Icon'
-import { default as default_5df3fc9f82e232c8de10a82a9a443e7d } from '../../../components/admin/Logo'
+import { default as default_dfe4008080d895d460898c3a6155e9ba } from '../../../components/admin/Icon'
+import { default as default_91a09b539d3c86b0aebf520e7564ce08 } from '../../../components/admin/Logo'
 import { CommentsHeaderButton as CommentsHeaderButton_30d38dd40c31eff500900a16a2792204 } from '@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton'
-import { default as default_293abdab3a9d96b17cfed3bec5ca5deb } from '@focus-reactive/payload-plugin-analytics/components/AnalyticsView/AnalyticsHeaderLink'
-import { default as default_88a77bb5f874c6169bfbae723148426a } from '../../../components/admin/SSOButtons'
-import { default as default_00d3674195ceabea61e57994789ae3d5 } from '../../../providers/BeforeOpenDrawerWrapper'
+import { default as default_3fd776aeb7e4127cf324115b5226afbf } from '../../../components/admin/SSOButtons'
+import { default as default_3da48296ca27cce2dd5904839611d77c } from '../../../lib/context/BeforeOpenDrawerWrapper'
 import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e } from '@payloadcms/storage-vercel-blob/client'
 import { CommentsProviderWrapper as CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a } from '@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper'
 import { default as default_5668654bc04fc84f784cb30b290f6f3d } from '@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider'
 import { VisualEditingBridgeProvider as VisualEditingBridgeProvider_673e524fc3ed2dc6764c4e182a583baf } from '@fr-private/payload-plugin-visual-editing/admin'
-import { default as default_7772b5ceb4db588e7e8d7d6ad669ce76 } from '@focus-reactive/payload-plugin-analytics/components/AnalyticsView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
-import { SectionVisibilityLabel as SectionVisibilityLabel_c3184946b1da62be43daccb6658b32f3 } from '@/fields/section/SectionVisibilityLabel'
+import { SectionVisibilityLabel as SectionVisibilityLabel_5f6b8b6dd39e89e57e0c331f9970bb73 } from '@/lib/fields/section/SectionVisibilityLabel'
 
 /** @type import('payload').ImportMap */
 export const importMap = {
@@ -83,9 +81,9 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#FixedToolbarFeatureClient": FixedToolbarFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/next/rsc#FolderTableCell": FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@payloadcms/next/rsc#FolderField": FolderField_f9c02e79a4aed9a3924487c0cd4cafb1,
-  "@/components/admin/RowLabel#RowLabel": RowLabel_e82054cbfea0bb801c8062fddecc03a2,
+  "@/components/admin/RowLabel#RowLabel": RowLabel_7f4fa5fc68fb5a0a92393f6444a57fbd,
   "@focus-reactive/payload-plugin-presets/rsc#BlockLabelServerWrapper": BlockLabelServerWrapper_ad8f8fdcc54c2df5d561bf1e2721dc58,
-  "@/components/admin/CopyAiPromptButton#CopyAiPromptButton": CopyAiPromptButton_8eae3508993fc390856ace1dee04984d,
+  "@/components/admin/CopyAiPromptButton#CopyAiPromptButton": CopyAiPromptButton_9694d9e75b2ba68d2307fd533ed819ca,
   "@focus-reactive/payload-plugin-presets/client#BlocksFieldWithPresets": BlocksFieldWithPresets_f0a4a6f21f15d606fa328a5e35f17d11,
   "@payloadcms/plugin-seo/client#OverviewComponent": OverviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/plugin-seo/client#MetaTitleComponent": MetaTitleComponent_a8a977ebc872c5d5ea7ee689724c0860,
@@ -98,21 +96,19 @@ export const importMap = {
   "@focus-reactive/payload-plugin-seo/components/SeoButton#SeoButton": SeoButton_0275c4dc7702e5d88e7eb977a6a3d442,
   "@focus-reactive/payload-plugin-translator/client/widgets/translate-document/ui/TranslateDocument.server#default": default_587142b484744b5573788fdf4a68522a,
   "@payloadcms/richtext-lexical/client#BlocksFeatureClient": BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
-  "@/components/admin/RowLabel#RowLabelGroupName": RowLabelGroupName_e82054cbfea0bb801c8062fddecc03a2,
+  "@/components/admin/RowLabel#RowLabelGroupName": RowLabelGroupName_7f4fa5fc68fb5a0a92393f6444a57fbd,
   "@focus-reactive/payload-plugin-presets/client#PresetAdminComponentPreview": PresetAdminComponentPreview_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-presets/client#PresetAdminComponentCellWrapper": PresetAdminComponentCellWrapper_f0a4a6f21f15d606fa328a5e35f17d11,
   "@payloadcms/next/client#FolderTypeField": FolderTypeField_2b8867833a34864a02ddf429b0728a40,
-  "/components/admin/Icon#default": default_7f68c8599c3d7b5d2129a6ae7f4980ff,
-  "/components/admin/Logo#default": default_5df3fc9f82e232c8de10a82a9a443e7d,
+  "/components/admin/Icon#default": default_dfe4008080d895d460898c3a6155e9ba,
+  "/components/admin/Logo#default": default_91a09b539d3c86b0aebf520e7564ce08,
   "@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton#CommentsHeaderButton": CommentsHeaderButton_30d38dd40c31eff500900a16a2792204,
-  "@focus-reactive/payload-plugin-analytics/components/AnalyticsView/AnalyticsHeaderLink#default": default_293abdab3a9d96b17cfed3bec5ca5deb,
-  "/components/admin/SSOButtons#default": default_88a77bb5f874c6169bfbae723148426a,
-  "/providers/BeforeOpenDrawerWrapper#default": default_00d3674195ceabea61e57994789ae3d5,
+  "/components/admin/SSOButtons#default": default_3fd776aeb7e4127cf324115b5226afbf,
+  "/lib/context/BeforeOpenDrawerWrapper#default": default_3da48296ca27cce2dd5904839611d77c,
   "@payloadcms/storage-vercel-blob/client#VercelBlobClientUploadHandler": VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e,
   "@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper#CommentsProviderWrapper": CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a,
   "@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider#default": default_5668654bc04fc84f784cb30b290f6f3d,
   "@fr-private/payload-plugin-visual-editing/admin#VisualEditingBridgeProvider": VisualEditingBridgeProvider_673e524fc3ed2dc6764c4e182a583baf,
-  "@focus-reactive/payload-plugin-analytics/components/AnalyticsView#default": default_7772b5ceb4db588e7e8d7d6ad669ce76,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1,
-  "@/fields/section/SectionVisibilityLabel#SectionVisibilityLabel": SectionVisibilityLabel_c3184946b1da62be43daccb6658b32f3
+  "@/lib/fields/section/SectionVisibilityLabel#SectionVisibilityLabel": SectionVisibilityLabel_5f6b8b6dd39e89e57e0c331f9970bb73
 }
