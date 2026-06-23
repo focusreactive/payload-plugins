@@ -2,49 +2,34 @@ import { describe, expect, it } from "vitest";
 import { extractContent } from "../../src/content/extractContent";
 
 describe("extractContent", () => {
-  it("wraps plain text fragments as paragraphs", () => {
-    const html = extractContent({ sections: [{ blockType: "copy", text: "Hello world" }] }, { content: "sections" });
-    expect(html).toContain("<p>Hello world</p>");
+  it("string content path (back-compat): walks one field", () => {
+    const ir = extractContent({ sections: [{ blockType: "copy", text: "Hello world" }] }, { content: "sections" });
+    expect(ir).toEqual([{ type: "paragraph", text: "Hello world" }]);
   });
-
-  it("converts lexical fragments and concatenates blocks in order", () => {
-    const data = {
-      sections: [
-        { blockType: "hero", title: "Big" },
-        { blockType: "copy", richText: { root: { type: "root", children: [{ type: "paragraph", children: [{ type: "text", text: "Body" }] }] } } },
-      ],
-    };
-    const html = extractContent(data, { content: "sections" });
-    expect(html.indexOf("Big")).toBeLessThan(html.indexOf("Body"));
-    expect(html).toContain("<p>Big</p>");
-    expect(html).toContain("Body");
+  it("returns [] when content is undefined", () => {
+    expect(extractContent({ sections: [{ text: "x" }] }, {})).toEqual([]);
   });
-
-  it("returns empty string when the content path is missing or unset", () => {
-    expect(extractContent({}, { content: "sections" })).toBe("");
-    expect(extractContent({ sections: [{ blockType: "copy", text: "x" }] }, {})).toBe("");
+  it("include array walks each path in order", () => {
+    const ir = extractContent({ a: "A", b: "B" }, { content: { include: ["b", "a"] } });
+    expect(ir).toEqual([
+      { type: "paragraph", text: "B" },
+      { type: "paragraph", text: "A" },
+    ]);
   });
-
-  it("reads nested dot-path content fields", () => {
-    const html = extractContent({ meta: { body: "Nested" } }, { content: "meta.body" });
-    expect(html).toContain("<p>Nested</p>");
+  it("empty selection walks the whole document", () => {
+    const ir = extractContent({ a: "A", nested: { b: "B" } }, { content: {} });
+    expect(ir).toEqual([
+      { type: "paragraph", text: "A" },
+      { type: "paragraph", text: "B" },
+    ]);
   });
-
-  it("passes link and image fragments through as raw html (no paragraph wrap, no escaping)", () => {
-    const data = {
-      sections: [
-        {
-          blockType: "hero",
-          title: "Big",
-          links: [{ id: "1", label: "running shoes", url: "https://other.example/running-shoes" }],
-          image: { id: "m1", url: "/media/trail.jpg", mimeType: "image/jpeg", alt: "running shoes on a trail" },
-        },
-      ],
-    };
-    const html = extractContent(data, { content: "sections" });
-    expect(html).toContain('<a href="https://other.example/running-shoes">running shoes</a>');
-    expect(html).toContain('<img src="/media/trail.jpg" alt="running shoes on a trail" />');
-    expect(html).not.toContain("<p><a");
-    expect(html).not.toContain("&lt;a");
+  it("auto-excludes the configured metadata paths in whole-doc mode", () => {
+    const data = { meta: { title: "T", description: "D" }, slug: "s", body: "KEEP" };
+    const ir = extractContent(data, { content: {}, seoTitle: "meta.title", metaDescription: "meta.description", slug: "slug" });
+    expect(ir).toEqual([{ type: "paragraph", text: "KEEP" }]);
+  });
+  it("honors user-provided exclude", () => {
+    const ir = extractContent({ a: "A", b: "B" }, { content: { exclude: ["b"] } });
+    expect(ir).toEqual([{ type: "paragraph", text: "A" }]);
   });
 });

@@ -8,6 +8,7 @@
 import { describe, expect, it } from "vitest";
 import type { ClientField } from "payload";
 import { extractContent } from "../../src/content/extractContent";
+import { serialize } from "../../src/content/schema/serialize";
 import { runAnalysis } from "../../src/engine/runAnalysis";
 import type { AnalysisInput } from "../../src/engine/types/analysis";
 import { collectUploadRefs } from "../../src/content/uploads/collect-upload-refs";
@@ -33,7 +34,7 @@ describe("content extraction → analysis (links + images)", () => {
       ],
     };
 
-    const contentHtml = extractContent(data, { content: "sections" });
+    const contentHtml = serialize(extractContent(data, { content: "sections" }));
     expect(contentHtml).toContain('<a href="https://competitor.example/running-shoes">running shoes</a>');
     expect(contentHtml).toContain('<img src="/media/trail.jpg" alt="running shoes on a trail" />');
 
@@ -87,7 +88,7 @@ describe("content extraction → analysis (links + images)", () => {
 
     const resolved = new Map([["media:7", { id: 7, url: "/media/trail.jpg", mimeType: "image/jpeg", alt: "running shoes on a trail" }]]);
     const hydrated = hydrateUploadValues(formValues, schema, walkCtx, resolved);
-    const contentHtml = extractContent(hydrated, { content: "sections" });
+    const contentHtml = serialize(extractContent(hydrated, { content: "sections" }));
     expect(contentHtml).toContain('<img src="/media/trail.jpg" alt="running shoes on a trail" />');
 
     const result = runAnalysis({

@@ -41,9 +41,17 @@ function transformRelationValue(value: unknown, relationTo: string | string[], c
   return value;
 }
 
-function blockDef(field: { blocks?: ClientBlock[]; blockReferences?: (ClientBlock | string)[] }, slug: string, ctx: UploadWalkContext): ClientBlock | undefined {
+function blockDef(
+  field: {
+    blocks?: ClientBlock[];
+    blockReferences?: (ClientBlock | string)[];
+  },
+  slug: string,
+  ctx: UploadWalkContext
+): ClientBlock | undefined {
   const inline = field.blocks?.find((b) => b.slug === slug);
   if (inline) return inline;
+
   const ref = field.blockReferences?.find((r) => (typeof r === "string" ? r === slug : r.slug === slug));
   if (ref) return typeof ref === "string" ? ctx.blocksBySlug[ref] : ref;
 

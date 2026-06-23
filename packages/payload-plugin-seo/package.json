@@ -37,6 +37,10 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
+    "./content": {
+      "import": "./dist/content/index.js",
+      "types": "./dist/content/index.d.ts"
+    },
     "./admin.css": "./dist/admin.css",
     "./components/SeoButton": {
       "import": "./dist/components/SeoButton/index.js",

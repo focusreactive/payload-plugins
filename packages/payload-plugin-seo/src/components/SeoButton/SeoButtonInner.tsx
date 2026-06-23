@@ -19,7 +19,7 @@ export interface SeoButtonProps {
 
 const DRAWER_SLUG = "seo-analytics-drawer";
 
-export function SeoButtonInner({ collectionSlug, fields, site, supportedLocales }: SeoButtonProps) {
+export function SeoButtonInner({ collectionSlug, fields, site, supportedLocales, extractContentPath }: SeoButtonProps) {
   const { openModal } = useModal();
   const [keyphrase, setKeyphrase] = useState("");
 
@@ -28,6 +28,7 @@ export function SeoButtonInner({ collectionSlug, fields, site, supportedLocales 
     fields,
     site: { name: site.name, baseUrl: site.baseUrl },
     keyphrase,
+    extractContentPath,
   });
   const { result, analyzing, analyzedKeyphrase, analyzeNow } = useAnalysis({
     getInput,

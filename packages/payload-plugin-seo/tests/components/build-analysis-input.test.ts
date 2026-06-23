@@ -61,14 +61,11 @@ describe("buildAnalysisInput", () => {
     expect(input.contentHtml).toContain("<p>Hi</p>");
   });
 
-  it("uses the async override with raw values and skips hydration", async () => {
-    const resolve = vi.fn();
-    const resolver = { resolve, invalidate: () => undefined } as unknown as MediaResolver;
-    const override = vi.fn(async (data: Record<string, unknown>) => `<p>custom ${String((data as { x?: unknown }).x)}</p>`);
-
+  it("uses the async override with HYDRATED values and serializes its Intermediate Representation", async () => {
+    const resolver = { resolve: vi.fn(async () => new Map()), invalidate: vi.fn() } as never;
+    const override = vi.fn(async (data: Record<string, unknown>) => [{ type: "paragraph" as const, text: `custom ${String((data as { x?: unknown }).x)}` }]);
     const input = await buildAnalysisInput({ ...baseArgs, values: { x: 42 }, resolver, override });
-
+    expect(override).toHaveBeenCalledOnce();
     expect(input.contentHtml).toBe("<p>custom 42</p>");
-    expect(resolve).not.toHaveBeenCalled();
   });
 });
