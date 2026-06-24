@@ -1,3 +1,18 @@
+# @focus-reactive/payload-plugin-seo [1.4.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.3.0...@focus-reactive/payload-plugin-seo@1.4.0) (2026-06-24)
+
+
+### Features
+
+* **seo:** add depth-aware doc resolver and ref types for generalized content extraction ([438a5d9](https://github.com/focusreactive/payload-plugins/commit/438a5d98f837f4ece2981797c8dd489125176563))
+* **seo:** add per-collection resolveDepth config  threaded to client props ([c139388](https://github.com/focusreactive/payload-plugins/commit/c1393885e809e3b153aeb180ac673aae00ee5fcf))
+* **seo:** add schema field traversal and generalized ref collection (uploads + relationships, mono + poly, lexical) ([f7add90](https://github.com/focusreactive/payload-plugins/commit/f7add90b5630423aa9bb1872a7ee93ff6ae0f8ff))
+* **seo:** add schema-aware content extractor with depth-bounded relation recursion and selection pruning ([3b7644b](https://github.com/focusreactive/payload-plugins/commit/3b7644b7d9bc1cac72dba74e92884dc81512ce49))
+* **seo:** extract document content via a serializable content schema ([fd59e02](https://github.com/focusreactive/payload-plugins/commit/fd59e02acf340829c666d598075bb5647f6f4733))
+* **seo:** pass locale and apiRoute context to content extractors ([490726e](https://github.com/focusreactive/payload-plugins/commit/490726e6f6ff875d56c80ceba440ca0879d10ae2))
+* **seo:** remove the legacy image-only extractor ([2662232](https://github.com/focusreactive/payload-plugins/commit/266223250bed8614e5a7b352806f41cf88ce2ef9))
+* **seo:** resolve inline lexical uploads and internal links during content extraction ([386252e](https://github.com/focusreactive/payload-plugins/commit/386252eedd75f7cf44b85c31170e413e64f1d794))
+* **seo:** wire generalized resolve+extract pipeline through the drawer ([2008d90](https://github.com/focusreactive/payload-plugins/commit/2008d906bc855353a52d429611418c529459b20d))
+
 # @focus-reactive/payload-plugin-seo [1.3.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.2.0...@focus-reactive/payload-plugin-seo@1.3.0) (2026-06-18)
 
 
