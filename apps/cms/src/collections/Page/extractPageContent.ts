@@ -67,7 +67,10 @@ export function extractPageBlockContent(block: Block, ctx: LinkResolveCtx): Cont
     case "chart":
       return compact([paragraph(b.eyebrow as string), heading(2, b.heading as string), paragraph(b.description as string), heading(3, b.title as string), paragraph(b.subtitle as string)]);
     case "logos":
-      return [...compact([paragraph(b.label as string)]), ...((b.items as { image?: ImageGroup }[] | undefined) ?? []).map((i) => groupImage(i.image)).filter((n): n is ContentNode => n !== null)];
+      return compact([
+        paragraph(b.label as string),
+        ...((b.items as { image?: ImageGroup; link?: LinkValue }[] | undefined) ?? []).flatMap((i) => [groupImage(i.image), linkToContentNode(i.link, ctx)]),
+      ]);
     case "newsletter":
       return compact([paragraph(b.eyebrow as string), heading(2, b.heading as string), paragraph(b.buttonLabel as string), paragraph(b.disclaimer as string)]);
     case "stats":
