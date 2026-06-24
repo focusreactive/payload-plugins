@@ -1,5 +1,6 @@
 import type { ClientBlock, ClientField } from "payload";
 import { lexicalToHtml } from "../lexicalToHtml";
+import { transformLexical } from "../lexical/transform";
 import type { ContentNode } from "../schema/nodes";
 import { html, image, link, paragraph, video } from "../schema/helpers";
 import type { ResolvedDoc } from "../resolve/types";
@@ -144,7 +145,13 @@ export function extractContent(args: ExtractArgs): ContentNode[] {
           if ("name" in f && typeof f.name === "string" && keep(join(base, f.name))) {
             const v = vals[f.name];
             if (isRecord(v) && "root" in v) {
-              const n = html(lexicalToHtml(v as { root: never }));
+              const n = html(
+                lexicalToHtml(
+                  transformLexical(v as { root: never }, ctx) as {
+                    root: never;
+                  }
+                )
+              );
               if (n) out.push(n);
             }
           }
