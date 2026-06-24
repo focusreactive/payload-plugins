@@ -69,6 +69,15 @@ function uploadNodes(value: unknown, relationTo: string | string[], ctx: Extract
   });
 }
 
+function linkNode(obj: Values): ContentNode | null {
+  const url = str(obj.url);
+  if (!url) return null;
+
+  const label = str(obj.label) ?? str(obj.text) ?? str(obj.title);
+
+  return label ? link(url, label) : null;
+}
+
 function join(path: string, key: string | number): string {
   return path ? `${path}.${key}` : String(key);
 }
@@ -159,7 +168,21 @@ export function extractContent(args: ExtractArgs): ContentNode[] {
         }
         case "array": {
           const v = vals[f.name];
-          if (Array.isArray(v)) v.forEach((item, i) => isRecord(item) && walk(item, f.fields, join(base, `${f.name}.${i}`), depthLeft, keep));
+          if (Array.isArray(v)) {
+            v.forEach((item, i) => {
+              if (!isRecord(item)) return;
+
+              const path = join(base, `${f.name}.${i}`);
+              const ln = keep(path) ? linkNode(item) : null;
+
+              if (ln) {
+                out.push(ln);
+                return;
+              }
+
+              walk(item, f.fields, path, depthLeft, keep);
+            });
+          }
           break;
         }
         case "blocks": {
@@ -170,7 +193,16 @@ export function extractContent(args: ExtractArgs): ContentNode[] {
         case "group": {
           if ("name" in f && typeof f.name === "string") {
             const v = vals[f.name];
-            if (isRecord(v)) walk(v, f.fields, join(base, f.name), depthLeft, keep);
+            if (isRecord(v)) {
+              const path = join(base, f.name);
+              const ln = keep(path) ? linkNode(v) : null;
+
+              if (ln) {
+                out.push(ln);
+              } else {
+                walk(v, f.fields, path, depthLeft, keep);
+              }
+            }
           } else {
             walk(vals, f.fields, base, depthLeft, keep);
           }

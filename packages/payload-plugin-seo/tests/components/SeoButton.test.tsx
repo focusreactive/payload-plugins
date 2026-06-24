@@ -20,6 +20,8 @@ const props = {
   extractContentPath: null,
   site: { name: "Site", baseUrl: "https://example.com", faviconUrl: "" },
   supportedLocales: ["en"],
+  resolveDepth: 2,
+  slugPaths: {},
 };
 
 afterEach(() => {

@@ -56,3 +56,29 @@ describe("extractContent — leaves", () => {
     expect(out[0].type).toBe("html");
   });
 });
+
+describe("extractContent — link-object heuristic", () => {
+  it("emits a link node for a {url,label} array item and skips its sub-fields", () => {
+    const fields = [field({ name: "links", type: "array", fields: [field({ name: "label", type: "text" }), field({ name: "url", type: "text" })] })];
+    const out = run({ links: [{ label: "running shoes", url: "https://x/shoes" }] }, fields);
+    expect(out).toEqual([{ type: "link", href: "https://x/shoes", text: "running shoes" }]);
+  });
+
+  it("emits a link node for a {url,label} named group and skips its sub-fields", () => {
+    const fields = [field({ name: "cta", type: "group", fields: [field({ name: "label", type: "text" }), field({ name: "url", type: "text" })] })];
+    const out = run({ cta: { label: "Buy", url: "/buy" } }, fields);
+    expect(out).toEqual([{ type: "link", href: "/buy", text: "Buy" }]);
+  });
+
+  it("uses text/title as the label fallback", () => {
+    const fields = [field({ name: "links", type: "array", fields: [field({ name: "title", type: "text" }), field({ name: "url", type: "text" })] })];
+    const out = run({ links: [{ title: "Home", url: "/" }] }, fields);
+    expect(out).toEqual([{ type: "link", href: "/", text: "Home" }]);
+  });
+
+  it("does not emit a link when the object lacks a url (recurses normally)", () => {
+    const fields = [field({ name: "items", type: "array", fields: [field({ name: "title", type: "text" })] })];
+    const out = run({ items: [{ title: "Just text" }] }, fields);
+    expect(out).toEqual([{ type: "paragraph", text: "Just text" }]);
+  });
+});
