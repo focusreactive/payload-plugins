@@ -26,11 +26,12 @@ export interface BuildAnalysisInputArgs {
 async function hydrate(args: BuildAnalysisInputArgs): Promise<Record<string, unknown>> {
   const refs = collectUploadRefs(args.values, args.schemaFields, args.walkCtx);
   if (refs.length === 0) return args.values;
+
   const resolved = await args.resolver.resolve(refs, args.payloadLocale);
   return hydrateUploadValues(args.values, args.schemaFields, args.walkCtx, resolved);
 }
 
-async function extractIr(args: BuildAnalysisInputArgs): Promise<ContentNode[]> {
+async function extractIntermediateRepresentation(args: BuildAnalysisInputArgs): Promise<ContentNode[]> {
   const hydrated = await hydrate(args);
   if (args.override) return await args.override(hydrated);
 
@@ -38,7 +39,8 @@ async function extractIr(args: BuildAnalysisInputArgs): Promise<ContentNode[]> {
 }
 
 export async function buildAnalysisInput(args: BuildAnalysisInputArgs): Promise<AnalysisInput> {
-  const contentHtml = serialize(await extractIr(args));
+  const intermediateRepresentation = await extractIntermediateRepresentation(args);
+  const contentHtml = serialize(intermediateRepresentation);
 
   return buildInput({
     values: args.values,
