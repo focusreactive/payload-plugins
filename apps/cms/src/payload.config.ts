@@ -32,7 +32,7 @@ export default buildConfig({
         Icon: "/core/ui/components/Admin/Icon",
         Logo: "/core/ui/components/Admin/Logo",
       },
-      providers: ["/providers/BeforeOpenDrawerWrapper"],
+      providers: ["/providers/BeforeOpenDrawerWrapper", "/providers/SeoExtractorRegistrar"],
     },
     importMap: {
       baseDir,
