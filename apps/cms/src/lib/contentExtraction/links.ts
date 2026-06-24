@@ -1,9 +1,9 @@
 import { link } from "@focus-reactive/payload-plugin-seo/content";
 import type { ContentNode } from "@focus-reactive/payload-plugin-seo/content";
 
-import { CUSTOM_PAGES_CONFIG } from "@/core/config/customPages";
-import type { CustomPageKey } from "@/core/config/customPages";
-import { buildUrl } from "@/core/utils/path/buildUrl";
+import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
+import type { CustomPageKey } from "@/lib/config/customPages";
+import { buildUrl } from "@/lib/utils/path/buildUrl";
 import type { Page } from "@/payload-types";
 
 export type LinkRelation = "page" | "posts";
@@ -102,7 +102,10 @@ export function collectLinkRefs(value: unknown): LinkRef[] {
 function resolveReferenceHref(reference: LinkReference, ctx: LinkResolveCtx): string {
   const { relationTo, value } = reference;
 
-  const doc: ResolvedLinkDoc | undefined = typeof value === "object" && value !== null ? value : ctx.docsById.get(linkRefKey({ collection: relationTo, id: value }));
+  const doc: ResolvedLinkDoc | undefined =
+    typeof value === "object" && value !== null
+      ? value
+      : ctx.docsById.get(linkRefKey({ collection: relationTo, id: value }));
 
   if (!doc) return "";
 
@@ -126,7 +129,9 @@ function resolveLinkHref(value: LinkValue, ctx: LinkResolveCtx): string {
     case "custom":
       return value.url ?? "";
     case "customPage": {
-      const entry = value.customPage ? CUSTOM_PAGES_CONFIG[value.customPage as CustomPageKey] : undefined;
+      const entry = value.customPage
+        ? CUSTOM_PAGES_CONFIG[value.customPage as CustomPageKey]
+        : undefined;
       return entry ? entry.resolver(ctx.locale) : "";
     }
     case "reference":

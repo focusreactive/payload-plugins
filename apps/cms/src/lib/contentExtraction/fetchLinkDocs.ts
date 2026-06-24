@@ -5,7 +5,12 @@ interface FindResponse {
   docs?: Array<ResolvedLinkDoc & { id?: unknown }>;
 }
 
-async function fetchByIds(apiRoute: string, collection: LinkRelation, ids: Array<string | number>, locale: string | undefined): Promise<Map<string, ResolvedLinkDoc>> {
+async function fetchByIds(
+  apiRoute: string,
+  collection: LinkRelation,
+  ids: Array<string | number>,
+  locale: string | undefined
+): Promise<Map<string, ResolvedLinkDoc>> {
   const params = new URLSearchParams({ depth: "0", limit: String(ids.length) });
 
   if (locale) params.set("locale", locale);
@@ -20,13 +25,20 @@ async function fetchByIds(apiRoute: string, collection: LinkRelation, ids: Array
 
     const body = (await res.json()) as FindResponse;
 
-    return new Map((body.docs ?? []).filter((d) => d.id !== undefined && d.id !== null).map((d) => [linkRefKey({ collection, id: d.id as string | number }), d]));
+    return new Map(
+      (body.docs ?? [])
+        .filter((d) => d.id !== undefined && d.id !== null)
+        .map((d) => [linkRefKey({ collection, id: d.id as string | number }), d])
+    );
   } catch {
     return new Map();
   }
 }
 
-export async function fetchLinkDocs(refs: LinkRef[], opts: { apiRoute?: string; locale?: string }): Promise<Map<string, ResolvedLinkDoc>> {
+export async function fetchLinkDocs(
+  refs: LinkRef[],
+  opts: { apiRoute?: string; locale?: string }
+): Promise<Map<string, ResolvedLinkDoc>> {
   const out = new Map<string, ResolvedLinkDoc>();
   if (!opts.apiRoute || refs.length === 0) return out;
 

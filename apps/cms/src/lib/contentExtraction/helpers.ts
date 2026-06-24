@@ -13,8 +13,13 @@ export function asUpload(value: UploadField): Upload | null {
   return value && typeof value === "object" ? value : null;
 }
 
-export function actionLinks(actions: LinkValue[] | null | undefined, ctx: LinkResolveCtx): ContentNode[] {
-  return (actions ?? []).map((a) => linkToContentNode(a, ctx)).filter((n): n is ContentNode => n !== null);
+export function actionLinks(
+  actions: LinkValue[] | null | undefined,
+  ctx: LinkResolveCtx
+): ContentNode[] {
+  return (actions ?? [])
+    .map((a) => linkToContentNode(a, ctx))
+    .filter((n): n is ContentNode => n !== null);
 }
 
 export function groupImage(group: ImageGroup): ContentNode | null {
