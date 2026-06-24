@@ -18,16 +18,35 @@ type CollectionTranslationFormProps = {
   hasDrafts: boolean;
 };
 
-export function CollectionTranslationForm({ form, onSubmit, selectedCount, hasDrafts }: CollectionTranslationFormProps) {
+export function CollectionTranslationForm({
+  form,
+  onSubmit,
+  selectedCount,
+  hasDrafts,
+}: CollectionTranslationFormProps) {
   return (
     <FormProvider {...form}>
       <fieldset className={styles.fieldset}>
         <div className={styles.row}>
           <div className={styles["locale-group"]}>
-            <FormSelectLocale label="From" className={styles["select-locale-field"]} size="md" name={FORM_FIELDS.SOURCE_LNG} />
-            <FormSelectLocale label="To" className={styles["select-locale-field"]} size="md" name={FORM_FIELDS.TARGET_LNG} />
+            <FormSelectLocale
+              label="From"
+              className={styles["select-locale-field"]}
+              size="md"
+              name={FORM_FIELDS.SOURCE_LNG}
+            />
+            <FormSelectLocale
+              label="To"
+              className={styles["select-locale-field"]}
+              size="md"
+              name={FORM_FIELDS.TARGET_LNG}
+            />
           </div>
-          <FormSelectStrategy className={styles["strategy-field"]} name={FORM_FIELDS.STRATEGY} size="md" />
+          <FormSelectStrategy
+            className={styles["strategy-field"]}
+            name={FORM_FIELDS.STRATEGY}
+            size="md"
+          />
         </div>
         {hasDrafts && <FormCheckboxPublish name={FORM_FIELDS.PUBLISH_ON_TRANSLATION} />}
         <input {...form.register(FORM_FIELDS.HIDDEN_COLLECTION_SLUG)} type="hidden" />

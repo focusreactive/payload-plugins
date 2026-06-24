@@ -2,7 +2,7 @@ import React, { Fragment } from "react";
 
 import type { Page } from "@/payload-types";
 
-import { filterHiddenBlocks } from "@/fields/section/filterHiddenBlocks";
+import { filterHiddenBlocks } from "@/lib/fields/section/filterHiddenBlocks";
 
 import { CardsGridBlockComponent } from "./CardsGrid/Component";
 import { CarouselBlockComponent } from "./Carousel/Component";

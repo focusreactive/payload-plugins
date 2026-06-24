@@ -14,7 +14,11 @@ export interface AnalyticsFetchOptions {
 
 const API_BASE = "/api";
 
-export async function analyticsFetch<TBody, TRes>(path: string, body: TBody, opts: AnalyticsFetchOptions = {}): Promise<TRes> {
+export async function analyticsFetch<TBody, TRes>(
+  path: string,
+  body: TBody,
+  opts: AnalyticsFetchOptions = {}
+): Promise<TRes> {
   const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

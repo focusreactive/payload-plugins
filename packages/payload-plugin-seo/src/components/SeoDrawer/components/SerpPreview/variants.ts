@@ -9,14 +9,17 @@ export const serpContainer = cva("", {
   },
 });
 
-export const serpUrlRow = cva("flex items-center gap-x-[12px] mb-[12px] pt-[1px] overflow-hidden whitespace-nowrap text-ellipsis", {
-  variants: {
-    mode: {
-      desktop: "",
-      mobile: "",
+export const serpUrlRow = cva(
+  "flex items-center gap-x-[12px] mb-[12px] pt-[1px] overflow-hidden whitespace-nowrap text-ellipsis",
+  {
+    variants: {
+      mode: {
+        desktop: "",
+        mobile: "",
+      },
     },
-  },
-});
+  }
+);
 
 export const serpSiteName = cva("text-[14px] leading-[18px] text-serp-sitename font-normal", {
   variants: {
@@ -39,7 +42,8 @@ export const serpHostname = cva("", {
 export const serpTitle = cva("text-[20px] font-normal", {
   variants: {
     mode: {
-      desktop: "block leading-[1.3] text-serp-title max-w-[600px] overflow-hidden text-ellipsis whitespace-nowrap",
+      desktop:
+        "block leading-[1.3] text-serp-title max-w-[600px] overflow-hidden text-ellipsis whitespace-nowrap",
       mobile: "leading-[26px] text-serp-title-mobile line-clamp-2 max-h-[52px] overflow-hidden",
     },
   },

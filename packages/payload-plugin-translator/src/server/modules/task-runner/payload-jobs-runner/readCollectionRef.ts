@@ -28,7 +28,9 @@ export function readCollectionRef(input: PayloadJob["input"]): CollectionRef {
   // writes. The fallback to the legacy shape therefore only fires when the new
   // field is genuinely absent (i.e. a job queued before the ID-agnostic migration).
   return {
-    collectionSlug: (input?.collection_slug ?? input?.collection?.relationTo ?? "") as CollectionSlug,
+    collectionSlug: (input?.collection_slug ??
+      input?.collection?.relationTo ??
+      "") as CollectionSlug,
     collectionId: String(input?.collection_id ?? input?.collection?.value ?? ""),
   };
 }

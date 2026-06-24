@@ -1,4 +1,7 @@
-export function buildStablePath(positionPath: string, getRowId: (positionalIdPath: string) => string | undefined) {
+export function buildStablePath(
+  positionPath: string,
+  getRowId: (positionalIdPath: string) => string | undefined
+) {
   const segments = positionPath.split(".");
   const result: string[] = [];
 

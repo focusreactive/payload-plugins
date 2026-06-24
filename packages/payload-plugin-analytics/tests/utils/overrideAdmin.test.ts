@@ -7,9 +7,14 @@ describe("overrideAdmin", () => {
     const incoming = {} as Config;
     const next = overrideAdmin(incoming);
     expect(next.admin?.components?.views?.analytics).toBeDefined();
-    const analyticsView = next.admin?.components?.views?.analytics as { path?: string; Component?: string };
+    const analyticsView = next.admin?.components?.views?.analytics as {
+      path?: string;
+      Component?: string;
+    };
     expect(analyticsView.path).toBe("/analytics");
-    expect(analyticsView.Component).toContain("@focus-reactive/payload-plugin-analytics/components/AnalyticsView");
+    expect(analyticsView.Component).toContain(
+      "@focus-reactive/payload-plugin-analytics/components/AnalyticsView"
+    );
   });
 
   it("preserves existing views and actions", () => {
@@ -30,7 +35,9 @@ describe("overrideAdmin", () => {
 
 describe("overrideAdmin with leadActions.adminRegistry", () => {
   it("pushes adminRegistry path into admin.components.providers", () => {
-    const incoming = { admin: { components: { providers: ["already-here"] } } } as unknown as Config;
+    const incoming = {
+      admin: { components: { providers: ["already-here"] } },
+    } as unknown as Config;
     const out = overrideAdmin(incoming, { adminRegistry: "@/lead-actions-admin#default" });
     expect(out.admin?.components?.providers).toContain("@/lead-actions-admin#default");
     expect(out.admin?.components?.providers).toContain("already-here");

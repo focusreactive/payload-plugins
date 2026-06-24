@@ -17,7 +17,11 @@ function identifierOf(r: YoastAssessmentResult): string {
   return r.getIdentifier?.() ?? r._identifier ?? "unknown";
 }
 
-export function runAssessor(assessor: YoastAssessor, ctx: RecoContext, paper?: unknown): CheckResult[] {
+export function runAssessor(
+  assessor: YoastAssessor,
+  ctx: RecoContext,
+  paper?: unknown
+): CheckResult[] {
   assessor.assess(paper);
 
   return assessor.getValidResults().map((result) => {

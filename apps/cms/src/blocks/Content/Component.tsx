@@ -1,10 +1,21 @@
-import { ButtonSize, ContentSection } from "@repo/ui";
+import { ButtonSize } from "@/components/button";
+import { ContentSection } from "./ui";
 
-import { CMSLink, Media, RichText, SectionContainer } from "@/core/ui";
+import { CMSLink, Media, RichText, SectionContainer } from "@/components/shared";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { ContentBlock as ContentBlockProps, Page, Post } from "@/payload-types";
 
-export const ContentBlockComponent: React.FC<ContentBlockProps> = ({ eyebrow, heading, description, layout, content, image, actions, section, id }) => {
+export const ContentBlockComponent: React.FC<ContentBlockProps> = ({
+  eyebrow,
+  heading,
+  description,
+  layout,
+  content,
+  image,
+  actions,
+  section,
+  id,
+}) => {
   const resolvedImage = typeof image !== "number" ? image : null;
   const header = prepareSectionHeaderProps({ eyebrow, description, heading });
 
@@ -13,7 +24,16 @@ export const ContentBlockComponent: React.FC<ContentBlockProps> = ({ eyebrow, he
       <ContentSection
         layout={layout}
         header={header}
-        image={resolvedImage ? <Media resource={resolvedImage} fill className="absolute inset-0" imgClassName="object-cover" /> : null}
+        image={
+          resolvedImage ? (
+            <Media
+              resource={resolvedImage}
+              fill
+              className="absolute inset-0"
+              imgClassName="object-cover"
+            />
+          ) : null
+        }
         body={content ? <RichText content={content} /> : null}
         actions={
           actions?.length

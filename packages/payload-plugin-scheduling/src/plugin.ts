@@ -9,18 +9,30 @@ import { overrideEndpoints } from "./utils/overrideEndpoints";
 const PREFIX = `[${PLUGIN_NAME}]`;
 
 export function schedulePublicationPlugin(options: SchedulePublicationPluginConfig): Plugin {
-  const { collections = [], globals = [], queue = DEFAULT_QUEUE, secret, schedulePublish } = options;
+  const {
+    collections = [],
+    globals = [],
+    queue = DEFAULT_QUEUE,
+    secret,
+    schedulePublish,
+  } = options;
 
   return (config: Config): Config => {
     if (!secret || typeof secret !== "string") {
-      console.warn(`${PREFIX} Disabled: required option "secret" is missing or empty (likely CRON_SECRET not set). Scheduled-publish endpoints not registered.`);
+      console.warn(
+        `${PREFIX} Disabled: required option "secret" is missing or empty (likely CRON_SECRET not set). Scheduled-publish endpoints not registered.`
+      );
       return config;
     }
 
     warnUnknownSlugs(collections, config.collections, "collection");
     warnUnknownSlugs(globals, config.globals, "global");
 
-    const updatedCollections = applySchedulePublish(config.collections, collections, schedulePublish);
+    const updatedCollections = applySchedulePublish(
+      config.collections,
+      collections,
+      schedulePublish
+    );
     const updatedGlobals = applySchedulePublish(config.globals, globals, schedulePublish);
 
     return {

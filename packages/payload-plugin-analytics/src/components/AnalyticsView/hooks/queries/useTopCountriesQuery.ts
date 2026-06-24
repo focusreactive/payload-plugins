@@ -9,6 +9,11 @@ import { analyticsKeys } from "./keys";
 export function useTopCountriesQuery(query: TopCountriesQuery) {
   return useQuery({
     queryKey: analyticsKeys.topCountries(query),
-    queryFn: ({ signal }) => analyticsFetch<TopCountriesQuery, TopCountriesResponse>(ANALYTICS_ENDPOINT_PATHS.topCountries, query, { signal }),
+    queryFn: ({ signal }) =>
+      analyticsFetch<TopCountriesQuery, TopCountriesResponse>(
+        ANALYTICS_ENDPOINT_PATHS.topCountries,
+        query,
+        { signal }
+      ),
   });
 }

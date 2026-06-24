@@ -1,8 +1,8 @@
-import { Footer as SharedFooter } from "@repo/ui";
-import type { FooterLink, FooterLinkGroup, IFooterProps } from "@repo/ui/components/sections/footer/types";
+import { Footer as SharedFooter } from "./ui";
+import type { FooterLink, FooterLinkGroup, IFooterProps } from "./ui/types";
 import React from "react";
 
-import { resolveLocale } from "@/core/lib/resolveLocale";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { Footer as FooterType, Media } from "@/payload-types";
@@ -13,7 +13,10 @@ interface Props {
 
 type PayloadLink = NonNullable<NonNullable<FooterType["legalLinks"]>[number]["link"]>;
 
-function resolveFooterLink(link: PayloadLink | null | undefined, locale: string): FooterLink | undefined {
+function resolveFooterLink(
+  link: PayloadLink | null | undefined,
+  locale: string
+): FooterLink | undefined {
   if (!link) {
     return undefined;
   }
@@ -59,7 +62,7 @@ export async function Footer({ data }: Props) {
       label: data.name ?? "",
       logo: logo ? prepareImageProps({ image: logo }) : null,
     },
-    copywriteText: data.copywriteText ?? undefined,
+    copywriteText: data.copyrightText ?? undefined,
     description: data.description ?? undefined,
     legalLinks,
     linkGroups,

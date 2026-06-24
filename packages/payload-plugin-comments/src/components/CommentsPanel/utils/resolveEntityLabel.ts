@@ -1,6 +1,10 @@
 import type { EntityLabel } from "../../../types";
 
-export function resolveEntityLabel(label: EntityLabel | undefined, locale: string, fallback: string) {
+export function resolveEntityLabel(
+  label: EntityLabel | undefined,
+  locale: string,
+  fallback: string
+) {
   if (label === undefined) return fallback;
   if (typeof label === "string") return label;
 

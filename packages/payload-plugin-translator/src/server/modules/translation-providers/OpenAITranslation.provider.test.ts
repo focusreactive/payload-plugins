@@ -120,10 +120,16 @@ describe("OpenAITranslationProvider", () => {
       const OpenAI = (await import("openai")).default as unknown as ReturnType<typeof vi.fn>;
       OpenAI.mockClear();
 
-      const withOptions = new OpenAITranslationProvider({ apiKey: "test-key", timeout: 60_000, maxRetries: 0 });
+      const withOptions = new OpenAITranslationProvider({
+        apiKey: "test-key",
+        timeout: 60_000,
+        maxRetries: 0,
+      });
 
       expect(withOptions).toBeInstanceOf(OpenAITranslationProvider);
-      expect(OpenAI).toHaveBeenCalledWith(expect.objectContaining({ apiKey: "test-key", timeout: 60_000, maxRetries: 0 }));
+      expect(OpenAI).toHaveBeenCalledWith(
+        expect.objectContaining({ apiKey: "test-key", timeout: 60_000, maxRetries: 0 })
+      );
     });
   });
 

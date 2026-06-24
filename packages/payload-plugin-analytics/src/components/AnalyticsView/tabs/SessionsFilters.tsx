@@ -36,7 +36,9 @@ function SingleSelect({ label, value, options, onChange, renderOption }: SingleS
     >
       {(close) => (
         <>
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-[var(--theme-elevation-500)] px-2.5 pt-1.5 pb-1">{label}</div>
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-[var(--theme-elevation-500)] px-2.5 pt-1.5 pb-1">
+            {label}
+          </div>
 
           <div
             role="button"
@@ -79,7 +81,12 @@ export interface SessionsFiltersProps {
   countryOptions: string[];
 }
 
-export function SessionsFilters({ filters, onChange, sourceOptions, countryOptions }: SessionsFiltersProps) {
+export function SessionsFilters({
+  filters,
+  onChange,
+  sourceOptions,
+  countryOptions,
+}: SessionsFiltersProps) {
   return (
     <div className="flex gap-2 items-center pb-3.5">
       <button
@@ -96,7 +103,12 @@ export function SessionsFilters({ filters, onChange, sourceOptions, countryOptio
         <Zap size={12} /> Had lead action {filters.hadLeadAction && <X size={11} />}
       </button>
 
-      <SingleSelect label="Source" value={filters.source} options={sourceOptions} onChange={(v) => onChange({ source: v ?? undefined })} />
+      <SingleSelect
+        label="Source"
+        value={filters.source}
+        options={sourceOptions}
+        onChange={(v) => onChange({ source: v ?? undefined })}
+      />
 
       <SingleSelect
         label="Device"
@@ -115,7 +127,12 @@ export function SessionsFilters({ filters, onChange, sourceOptions, countryOptio
         }}
       />
 
-      <SingleSelect label="Country" value={filters.country} options={countryOptions} onChange={(v) => onChange({ country: v ?? undefined })} />
+      <SingleSelect
+        label="Country"
+        value={filters.country}
+        options={countryOptions}
+        onChange={(v) => onChange({ country: v ?? undefined })}
+      />
     </div>
   );
 }

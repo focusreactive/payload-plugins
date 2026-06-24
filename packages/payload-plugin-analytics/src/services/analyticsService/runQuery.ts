@@ -8,7 +8,11 @@ type IRunReportResponse = protos.google.analytics.data.v1beta.IRunReportResponse
 type IBatchRunReportsResponse = protos.google.analytics.data.v1beta.IBatchRunReportsResponse;
 
 export const runQuery = {
-  async runReport(propertyId: string, request: IRunReportRequest, mockKey?: string): Promise<IRunReportResponse> {
+  async runReport(
+    propertyId: string,
+    request: IRunReportRequest,
+    mockKey?: string
+  ): Promise<IRunReportResponse> {
     if (isMockingEnabled() && mockKey) {
       const mock = getRunReportMock(mockKey);
 
@@ -24,7 +28,11 @@ export const runQuery = {
 
     return response;
   },
-  async batchRunReports(propertyId: string, requests: IRunReportRequest[], mockKey?: string): Promise<IBatchRunReportsResponse> {
+  async batchRunReports(
+    propertyId: string,
+    requests: IRunReportRequest[],
+    mockKey?: string
+  ): Promise<IBatchRunReportsResponse> {
     if (isMockingEnabled() && mockKey) {
       const mock = getBatchRunReportsMock(mockKey);
 

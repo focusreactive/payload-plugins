@@ -1,12 +1,12 @@
 import { createParentField, createBreadcrumbsField } from "@payloadcms/plugin-nested-docs";
 import type { CollectionConfig } from "payload";
 
-import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
-import { anyone, author, or, superAdmin, user } from "@/core/lib/access";
-import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
-import { generatePreviewPath } from "@/core/lib/generatePreviewPath";
-import { buildUrl } from "@/core/utils/path/buildUrl";
-import { createSharedSlugField } from "@/fields/slugField";
+import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
+import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
+import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
+import { buildUrl } from "@/lib/utils/path/buildUrl";
+import { createSharedSlugField } from "@/lib/fields/slugField";
 import type { Page as PageType } from "@/payload-types";
 
 import { createBasePageFields } from "./basePageFields";
@@ -72,12 +72,8 @@ export const Page: CollectionConfig<"page"> = {
         position: "sidebar",
       },
       filterOptions: ({ id }) => ({
-        id: {
-          not_equals: id,
-        },
-        slug: {
-          not_equals: "home",
-        },
+        ...(id ? { id: { not_equals: id } } : {}),
+        slug: { not_equals: "home" },
       }),
     }),
     createBreadcrumbsField("page", {

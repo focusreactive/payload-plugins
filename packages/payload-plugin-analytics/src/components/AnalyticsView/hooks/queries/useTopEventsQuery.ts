@@ -9,6 +9,9 @@ import { analyticsKeys } from "./keys";
 export function useTopEventsQuery(query: TopNQuery) {
   return useQuery({
     queryKey: analyticsKeys.topEvents(query),
-    queryFn: ({ signal }) => analyticsFetch<TopNQuery, TopEventsResponse>(ANALYTICS_ENDPOINT_PATHS.topEvents, query, { signal }),
+    queryFn: ({ signal }) =>
+      analyticsFetch<TopNQuery, TopEventsResponse>(ANALYTICS_ENDPOINT_PATHS.topEvents, query, {
+        signal,
+      }),
   });
 }

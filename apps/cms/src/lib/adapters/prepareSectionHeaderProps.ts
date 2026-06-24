@@ -1,4 +1,4 @@
-import type { SectionHeaderEyebrow, SectionHeaderProps } from "@repo/ui";
+import type { SectionHeaderEyebrow, SectionHeaderProps } from "@/components/SectionHeader";
 
 export interface SectionHeaderInput {
   eyebrow?: string | null;
@@ -9,7 +9,14 @@ export interface SectionHeaderInput {
   eyebrowVariant?: SectionHeaderEyebrow["variant"];
 }
 
-export function prepareSectionHeaderProps({ eyebrow, heading, description, size, align, eyebrowVariant }: SectionHeaderInput): SectionHeaderProps | null {
+export function prepareSectionHeaderProps({
+  eyebrow,
+  heading,
+  description,
+  size,
+  align,
+  eyebrowVariant,
+}: SectionHeaderInput): SectionHeaderProps | null {
   if (!eyebrow && !heading && !description) {
     return null;
   }

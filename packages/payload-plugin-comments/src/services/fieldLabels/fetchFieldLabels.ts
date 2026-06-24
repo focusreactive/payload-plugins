@@ -22,7 +22,7 @@ type BaseDocumentData = Record<string, unknown>;
 
 export async function fetchFieldLabels(
   comments: Comment[],
-  options?: BaseServiceOptions,
+  options?: BaseServiceOptions
 ): Promise<GlobalFieldLabelRegistry> {
   const registry: GlobalFieldLabelRegistry = {};
 

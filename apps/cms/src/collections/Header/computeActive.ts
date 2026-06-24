@@ -1,6 +1,6 @@
-import type { HeaderNavItem } from "@repo/ui/components/sections/header/types";
+import type { HeaderNavItem } from "./ui/types";
 
-import { I18N_CONFIG } from "@/core/config/i18n";
+import { I18N_CONFIG } from "@/lib/config/i18n";
 
 const LOCALE_CODES = new Set<string>(I18N_CONFIG.locales.map((locale) => locale.code));
 
@@ -29,7 +29,10 @@ function isLinkActive(href: string, newTab: boolean | undefined, currentPath: st
   return currentPath === target || currentPath.startsWith(`${target}/`);
 }
 
-export function computeActiveNavItems(navItems: HeaderNavItem[], pathname: string): HeaderNavItem[] {
+export function computeActiveNavItems(
+  navItems: HeaderNavItem[],
+  pathname: string
+): HeaderNavItem[] {
   const currentPath = normalizePath(pathname);
 
   return navItems.map((item) => {

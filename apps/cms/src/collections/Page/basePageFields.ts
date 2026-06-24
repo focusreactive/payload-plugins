@@ -12,7 +12,7 @@ import { HeroBlock } from "@/blocks/Hero/config";
 import { LogosBlock } from "@/blocks/Logos/config";
 import { RawHtmlBlock } from "@/blocks/RawHtml/config";
 import { TestimonialsListBlock } from "@/blocks/TestimonialsList/config";
-import { generateSeoFields } from "@/core/lib/seoFields";
+import { generateSeoFields } from "@/lib/utils/seoFields";
 
 export function createBasePageFields({ withBlocksDefaultValue = false } = {}): Field[] {
   return [
@@ -53,13 +53,29 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
               admin: {
                 initCollapsed: false,
               },
-              blocks: [HeroBlock, ContentBlock, FaqBlock, TestimonialsListBlock, CardsGridBlock, CarouselBlock, LogosBlock, ChartBlock, CtaBandBlock, NewsletterBlock, StatsBlock, RawHtmlBlock],
+              blocks: [
+                HeroBlock,
+                ContentBlock,
+                FaqBlock,
+                TestimonialsListBlock,
+                CardsGridBlock,
+                CarouselBlock,
+                LogosBlock,
+                ChartBlock,
+                CtaBandBlock,
+                NewsletterBlock,
+                StatsBlock,
+                RawHtmlBlock,
+              ],
               localized: true,
               name: "blocks",
               required: true,
               type: "blocks",
               ...(withBlocksDefaultValue && {
-                defaultValue: () => ["hero", "content", "testimonialsList", "faq"].map((blockType) => ({ blockType })),
+                defaultValue: () =>
+                  ["hero", "content", "testimonialsList", "faq"].map((blockType) => ({
+                    blockType,
+                  })),
               }),
             },
           ],

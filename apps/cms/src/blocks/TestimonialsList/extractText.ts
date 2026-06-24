@@ -1,4 +1,4 @@
-import { joinText } from "@/core/utils/text";
+import { joinText } from "@/lib/utils/text";
 import type { Testimonial, TestimonialsListBlock } from "@/payload-types";
 
 export function extractTestimonialsText(block: TestimonialsListBlock): string {

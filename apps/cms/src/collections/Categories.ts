@@ -1,9 +1,9 @@
 import type { CollectionConfig } from "payload";
 import { slugField } from "payload";
 
-import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
-import { anyone, author, or, superAdmin, user } from "@/core/lib/access";
-import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
+import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
+import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 
 export const Categories: CollectionConfig<"categories"> = {
   access: {

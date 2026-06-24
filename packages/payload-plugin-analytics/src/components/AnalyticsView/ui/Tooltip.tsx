@@ -25,16 +25,35 @@ interface Coords {
   transform: string;
 }
 
-function computeCoords(rect: DOMRect, side: NonNullable<TooltipProps["side"]>, align: NonNullable<TooltipProps["align"]>, width: number): Coords {
-  let left = align === "start" ? rect.left : align === "end" ? rect.right - width : rect.left + rect.width / 2 - width / 2;
+function computeCoords(
+  rect: DOMRect,
+  side: NonNullable<TooltipProps["side"]>,
+  align: NonNullable<TooltipProps["align"]>,
+  width: number
+): Coords {
+  let left =
+    align === "start"
+      ? rect.left
+      : align === "end"
+        ? rect.right - width
+        : rect.left + rect.width / 2 - width / 2;
 
   const maxLeft = Math.max(GAP, window.innerWidth - width - GAP);
   left = Math.max(GAP, Math.min(left, maxLeft));
 
-  return side === "top" ? { top: rect.top - GAP, left, transform: "translateY(-100%)" } : { top: rect.bottom + GAP, left, transform: "none" };
+  return side === "top"
+    ? { top: rect.top - GAP, left, transform: "translateY(-100%)" }
+    : { top: rect.bottom + GAP, left, transform: "none" };
 }
 
-export function Tooltip({ content, children, side = "bottom", align = "start", width = 290, className }: TooltipProps) {
+export function Tooltip({
+  content,
+  children,
+  side = "bottom",
+  align = "start",
+  width = 290,
+  className,
+}: TooltipProps) {
   const triggerRef = useRef<HTMLSpanElement>(null);
   const [coords, setCoords] = useState<Coords | null>(null);
   const isOpen = coords != null;
@@ -61,12 +80,24 @@ export function Tooltip({ content, children, side = "bottom", align = "start", w
   }, [isOpen, side, align, width]);
 
   return (
-    <span ref={triggerRef} className={cn("relative inline-flex cursor-help outline-none", className)} tabIndex={0} onMouseEnter={open} onMouseLeave={close} onFocus={open} onBlur={close}>
+    <span
+      ref={triggerRef}
+      className={cn("relative inline-flex cursor-help outline-none", className)}
+      tabIndex={0}
+      onMouseEnter={open}
+      onMouseLeave={close}
+      onFocus={open}
+      onBlur={close}
+    >
       {children}
       {isOpen &&
         typeof document !== "undefined" &&
         createPortal(
-          <span role="tooltip" className={TIP_BASE} style={{ top: coords.top, left: coords.left, width, transform: coords.transform }}>
+          <span
+            role="tooltip"
+            className={TIP_BASE}
+            style={{ top: coords.top, left: coords.left, width, transform: coords.transform }}
+          >
             {content}
           </span>,
           document.body
@@ -80,11 +111,17 @@ export function TooltipTitle({ children }: { children: ReactNode }) {
 }
 
 export function TooltipText({ children }: { children: ReactNode }) {
-  return <span className="text-[11.5px] leading-[1.45] text-(--theme-elevation-300)">{children}</span>;
+  return (
+    <span className="text-[11.5px] leading-[1.45] text-(--theme-elevation-300)">{children}</span>
+  );
 }
 
 export function TooltipLegend({ children }: { children: ReactNode }) {
-  return <span className="mt-0.5 flex flex-col gap-1 border-t border-(--theme-elevation-700) pt-2">{children}</span>;
+  return (
+    <span className="mt-0.5 flex flex-col gap-1 border-t border-(--theme-elevation-700) pt-2">
+      {children}
+    </span>
+  );
 }
 
 export function TooltipLegendRow({ color, children }: { color: string; children: ReactNode }) {

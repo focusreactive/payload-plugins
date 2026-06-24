@@ -10,7 +10,12 @@ import { CancelByCollectionHandler } from "./handler";
 /**
  * Creates the cancel by collection endpoint
  */
-export function createCancelByCollectionRoute(config: CancelConfig, taskRunnerFactory: TaskRunnerFactory, access?: AccessGuard, basePath = "/translate"): Endpoint {
+export function createCancelByCollectionRoute(
+  config: CancelConfig,
+  taskRunnerFactory: TaskRunnerFactory,
+  access?: AccessGuard,
+  basePath = "/translate"
+): Endpoint {
   const handler = new CancelByCollectionHandler(config, taskRunnerFactory);
 
   return {

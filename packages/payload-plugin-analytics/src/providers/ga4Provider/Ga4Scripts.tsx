@@ -16,7 +16,11 @@ export function Ga4Scripts({ measurementId }: Ga4ScriptsProps) {
 
   return (
     <>
-      <Script id="ga4-script" src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`} strategy="afterInteractive" />
+      <Script
+        id="ga4-script"
+        src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
+        strategy="afterInteractive"
+      />
 
       <Script id="ga4-init" strategy="afterInteractive">
         {initScript}

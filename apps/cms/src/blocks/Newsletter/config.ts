@@ -1,8 +1,8 @@
 import type { Block, Field } from "payload";
 
-import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
-import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
-import { injectSection } from "@/fields/section/injectSection";
+import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
+import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
+import { injectSection } from "@/lib/fields/section/injectSection";
 
 const fields: Field[] = [
   {
@@ -10,7 +10,10 @@ const fields: Field[] = [
     fields: [
       {
         admin: { width: "40%" },
-        defaultValue: createLocalizedDefault({ en: "The Journal, monthly", es: "The Journal, mensual" }),
+        defaultValue: createLocalizedDefault({
+          en: "The Journal, monthly",
+          es: "The Journal, mensual",
+        }),
         label: { en: "Eyebrow", es: "Antetítulo" },
         localized: true,
         name: "eyebrow",
@@ -18,7 +21,10 @@ const fields: Field[] = [
       },
       {
         admin: { width: "60%" },
-        defaultValue: createLocalizedDefault({ en: "One thoughtful email a month. No noise.", es: "Un correo cuidado al mes. Sin ruido." }),
+        defaultValue: createLocalizedDefault({
+          en: "One thoughtful email a month. No noise.",
+          es: "Un correo cuidado al mes. Sin ruido.",
+        }),
         label: { en: "Heading", es: "Encabezado" },
         localized: true,
         name: "heading",
@@ -51,7 +57,10 @@ const fields: Field[] = [
     ],
   },
   {
-    defaultValue: createLocalizedDefault({ en: "No spam. Unsubscribe anytime.", es: "Sin spam. Cancela cuando quieras." }),
+    defaultValue: createLocalizedDefault({
+      en: "No spam. Unsubscribe anytime.",
+      es: "Sin spam. Cancela cuando quieras.",
+    }),
     label: { en: "Disclaimer", es: "Aviso" },
     localized: true,
     name: "disclaimer",

@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { readSessionRecord, writeSessionRecord, __resetInMemoryStore } from "../../../src/client/session/store";
+import {
+  readSessionRecord,
+  writeSessionRecord,
+  __resetInMemoryStore,
+} from "../../../src/client/session/store";
 import { SESSION_STORAGE_KEY } from "../../../src/constants/session";
 
 const rec = { id: "abc", startedAt: 1, lastActivityAt: 1, eventSeq: 0 };

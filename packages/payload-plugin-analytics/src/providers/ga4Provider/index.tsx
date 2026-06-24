@@ -11,6 +11,7 @@ export function ga4Provider(config: { measurementId: string }): AnalyticsProvide
     name: "ga4",
     Scripts: () => <Ga4Scripts measurementId={config.measurementId} />,
     trackEvent: (name, payload) => pushEvent(name, payload),
-    pageView: (path) => pushPageView(path, getPageTitle(), typeof window !== "undefined" ? window.location.href : ""),
+    pageView: (path) =>
+      pushPageView(path, getPageTitle(), typeof window !== "undefined" ? window.location.href : ""),
   };
 }

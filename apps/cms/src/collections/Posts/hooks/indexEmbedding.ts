@@ -2,10 +2,10 @@ import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from "paylo
 import type { Pool } from "pg";
 
 import { extractPostText } from "@/collections/Posts/extractPostText";
-import { I18N_CONFIG } from "@/core/config/i18n";
+import { getLocaleFromRequest } from "@/lib/utils/getLocaleFromRequest";
 import type { Post } from "@/payload-types";
-import { upsertEmbedding, deleteEmbedding } from "@/search/dbOperations";
-import { generateEmbedding } from "@/search/generateEmbedding";
+import { upsertEmbedding, deleteEmbedding } from "@/lib/search/dbOperations";
+import { generateEmbedding } from "@/lib/search/generateEmbedding";
 
 export const indexPostEmbedding: CollectionAfterChangeHook<Post> = async ({ doc, req }) => {
   if (doc._status !== "published") {
@@ -13,7 +13,7 @@ export const indexPostEmbedding: CollectionAfterChangeHook<Post> = async ({ doc,
   }
 
   try {
-    const locale = (req.locale ?? I18N_CONFIG.defaultLocale) as string;
+    const locale = getLocaleFromRequest(req);
     const text = extractPostText(doc);
     const embedding = await generateEmbedding(text);
     const { pool } = req.payload.db as unknown as { pool: Pool };

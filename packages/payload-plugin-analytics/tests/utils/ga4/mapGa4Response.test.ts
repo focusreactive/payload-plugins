@@ -1,11 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { bucketByDateRange, computeWeightedValuesAverage, convertMetricToNumber } from "../../../src/utils/ga4";
+import {
+  bucketByDateRange,
+  computeWeightedValuesAverage,
+  convertMetricToNumber,
+} from "../../../src/utils/ga4";
 
 describe("bucketByDateRange", () => {
   it("splits rows by the dateRange dimension value (last dim)", () => {
     const rows = [
-      { dimensionValues: [{ value: "2026-05-10" }, { value: "current" }], metricValues: [{ value: "100" }] },
-      { dimensionValues: [{ value: "2026-05-03" }, { value: "previous" }], metricValues: [{ value: "80" }] },
+      {
+        dimensionValues: [{ value: "2026-05-10" }, { value: "current" }],
+        metricValues: [{ value: "100" }],
+      },
+      {
+        dimensionValues: [{ value: "2026-05-03" }, { value: "previous" }],
+        metricValues: [{ value: "80" }],
+      },
     ];
     const { current, previous } = bucketByDateRange(rows, ["current", "previous"]);
     expect(current).toHaveLength(1);

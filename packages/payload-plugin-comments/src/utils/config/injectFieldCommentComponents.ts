@@ -49,7 +49,10 @@ function injectIntoField(field: Field, parentPath: string): Field {
       ...result,
       tabs: result.tabs.map((tab: { name?: string; fields: Field[] }) => ({
         ...tab,
-        fields: injectIntoFields(tab.fields, tab.name ? buildPath(currentPath, tab.name) : currentPath),
+        fields: injectIntoFields(
+          tab.fields,
+          tab.name ? buildPath(currentPath, tab.name) : currentPath
+        ),
       })),
     };
   }

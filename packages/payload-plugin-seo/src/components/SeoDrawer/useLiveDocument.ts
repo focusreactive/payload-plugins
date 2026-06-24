@@ -32,7 +32,16 @@ export interface UseLiveDocumentResult {
   invalidateMedia: () => void;
 }
 
-export function useLiveDocument({ collectionSlug, fields, site, keyphrase, enabled = true, extractContentPath, resolveDepth, slugPaths }: LiveDocArgs): UseLiveDocumentResult {
+export function useLiveDocument({
+  collectionSlug,
+  fields,
+  site,
+  keyphrase,
+  enabled = true,
+  extractContentPath,
+  resolveDepth,
+  slugPaths,
+}: LiveDocArgs): UseLiveDocumentResult {
   const [formFields] = useAllFormFields();
   const locale = useLocale();
   const { config, getEntityConfig } = useConfig();
@@ -45,18 +54,24 @@ export function useLiveDocument({ collectionSlug, fields, site, keyphrase, enabl
 
   const getFields = useCallback(
     (slug: string): ClientField[] => {
-      const entity = getEntityConfig({ collectionSlug: slug as never }) as { fields?: ClientField[] } | undefined;
+      const entity = getEntityConfig({ collectionSlug: slug as never }) as
+        | { fields?: ClientField[] }
+        | undefined;
       return entity?.fields ?? [];
     },
     [getEntityConfig]
   );
 
-  const hostFields = useMemo<ClientField[]>(() => getFields(collectionSlug), [getFields, collectionSlug]);
+  const hostFields = useMemo<ClientField[]>(
+    () => getFields(collectionSlug),
+    [getFields, collectionSlug]
+  );
 
   const ctx = useMemo<ExtractContext>(
     () => ({
       getFields,
-      isUploadCollection: (slug) => Boolean(config.collections?.find((c) => c.slug === slug)?.upload),
+      isUploadCollection: (slug) =>
+        Boolean(config.collections?.find((c) => c.slug === slug)?.upload),
       slugPath: (slug) => slugPaths[slug] ?? "slug",
       blocksBySlug: { ...config.blocksMap },
       resolved: new Map(),
@@ -65,7 +80,10 @@ export function useLiveDocument({ collectionSlug, fields, site, keyphrase, enabl
     [getFields, config, slugPaths, site.baseUrl]
   );
 
-  const values = useMemo<Record<string, unknown>>(() => (enabled ? (reduceFieldsToValues(debouncedFields, true) as Record<string, unknown>) : {}), [enabled, debouncedFields]);
+  const values = useMemo<Record<string, unknown>>(
+    () => (enabled ? (reduceFieldsToValues(debouncedFields, true) as Record<string, unknown>) : {}),
+    [enabled, debouncedFields]
+  );
 
   const signature = useMemo(
     () =>
@@ -108,38 +126,43 @@ export function useLiveDocument({ collectionSlug, fields, site, keyphrase, enabl
     apiRoute,
   };
 
-  const getInput = useCallback(async ({ live = false }: { live?: boolean } = {}): Promise<AnalysisInput> => {
-    const s = liveRef.current;
-    const inputValues = live ? (reduceFieldsToValues(s.formFields, true) as Record<string, unknown>) : s.values;
+  const getInput = useCallback(
+    async ({ live = false }: { live?: boolean } = {}): Promise<AnalysisInput> => {
+      const s = liveRef.current;
+      const inputValues = live
+        ? (reduceFieldsToValues(s.formFields, true) as Record<string, unknown>)
+        : s.values;
 
-    const override = (() => {
-      if (!s.extractContentPath) return undefined;
+      const override = (() => {
+        if (!s.extractContentPath) return undefined;
 
-      const fn = resolveContentExtractor(s.extractContentPath);
-      if (!fn && !warnedPaths.has(s.extractContentPath)) {
-        warnedPaths.add(s.extractContentPath);
-        console.warn(
-          `[payload-plugin-seo] extractContentPath "${s.extractContentPath}" is not registered; falling back to the built-in extractor. Call registerContentExtractors from "@focus-reactive/payload-plugin-seo/content" in an admin-mounted client module.`
-        );
-      }
-      return fn;
-    })();
+        const fn = resolveContentExtractor(s.extractContentPath);
+        if (!fn && !warnedPaths.has(s.extractContentPath)) {
+          warnedPaths.add(s.extractContentPath);
+          console.warn(
+            `[payload-plugin-seo] extractContentPath "${s.extractContentPath}" is not registered; falling back to the built-in extractor. Call registerContentExtractors from "@focus-reactive/payload-plugin-seo/content" in an admin-mounted client module.`
+          );
+        }
+        return fn;
+      })();
 
-    return buildAnalysisInput({
-      values: inputValues,
-      locale: s.locale,
-      payloadLocale: s.locale?.code,
-      apiRoute: s.apiRoute,
-      keyphrase: live ? s.keyphrase : s.debouncedKeyphrase,
-      fields: s.fields,
-      site: s.site,
-      hostFields: s.hostFields,
-      ctx: s.ctx,
-      resolver: s.resolver,
-      resolveDepth: s.resolveDepth,
-      override,
-    });
-  }, []);
+      return buildAnalysisInput({
+        values: inputValues,
+        locale: s.locale,
+        payloadLocale: s.locale?.code,
+        apiRoute: s.apiRoute,
+        keyphrase: live ? s.keyphrase : s.debouncedKeyphrase,
+        fields: s.fields,
+        site: s.site,
+        hostFields: s.hostFields,
+        ctx: s.ctx,
+        resolver: s.resolver,
+        resolveDepth: s.resolveDepth,
+        override,
+      });
+    },
+    []
+  );
 
   const invalidateMedia = useCallback(() => liveRef.current.resolver.invalidate(), []);
 

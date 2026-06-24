@@ -1,11 +1,19 @@
-import type { ArrayField, BlocksField, CollapsibleField, Field, GroupField, RowField, TabsField } from "payload";
+import type {
+  ArrayField,
+  BlocksField,
+  CollapsibleField,
+  Field,
+  GroupField,
+  RowField,
+  TabsField,
+} from "payload";
 import type { FieldLabelSegment } from "../../../types";
 import { findFieldByName, getLabelString } from "./schemaUtils";
 
 export function resolveFieldPath(
   segments: string[],
   schemaFields: Field[],
-  docData: Record<string, unknown> | null,
+  docData: Record<string, unknown> | null
 ): FieldLabelSegment[] {
   const result: FieldLabelSegment[] = [];
   let currentFields: Field[] = schemaFields;
@@ -21,7 +29,9 @@ export function resolveFieldPath(
       const arrayData = parentData?.[fieldName];
 
       if (Array.isArray(arrayData)) {
-        const idx = arrayData.findIndex((item: unknown) => String((item as { id?: unknown }).id) === rowId);
+        const idx = arrayData.findIndex(
+          (item: unknown) => String((item as { id?: unknown }).id) === rowId
+        );
         if (idx >= 0) {
           position = idx;
           const rowItem = arrayData[idx] as Record<string, unknown>;
@@ -30,7 +40,9 @@ export function resolveFieldPath(
           if (awaitingRowForField.type === "blocks") {
             const blockType = rowItem["blockType"] as string | undefined;
             if (blockType) {
-              const blockConfig = (awaitingRowForField as BlocksField).blocks.find((b) => b.slug === blockType);
+              const blockConfig = (awaitingRowForField as BlocksField).blocks.find(
+                (b) => b.slug === blockType
+              );
               currentFields = blockConfig?.fields ?? [];
             } else {
               currentFields = [];

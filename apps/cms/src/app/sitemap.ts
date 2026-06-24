@@ -1,13 +1,13 @@
 import type { MetadataRoute } from "next";
 import { unstable_cache } from "next/cache";
 
-import { BLOG_CONFIG } from "@/core/config/blog";
-import { I18N_CONFIG } from "@/core/config/i18n";
-import { cacheTag } from "@/core/lib/cacheTags";
-import { getLastModifiedDate } from "@/core/lib/getLastModifiedDate";
-import { getServerSideURL } from "@/core/lib/getURL";
-import type { Locale } from "@/core/types";
-import { buildUrl } from "@/core/utils/path/buildUrl";
+import { BLOG_CONFIG } from "@/lib/config/blog";
+import { I18N_CONFIG } from "@/lib/config/i18n";
+import { cacheTag } from "@/lib/utils/cacheTags";
+import { getLastModifiedDate } from "@/lib/utils/getLastModifiedDate";
+import { getServerSideURL } from "@/lib/utils/getURL";
+import type { Locale } from "@/lib/types";
+import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { getAllDocuments, getBlogPageSettings, getPayloadClient } from "@/dal";
 
 type Sitemap = MetadataRoute.Sitemap;
@@ -94,7 +94,11 @@ async function generateSitemap(): Promise<Sitemap> {
         posts.forEach((post) => {
           sitemap.push({
             changeFrequency: "monthly",
-            lastModified: post.publishedAt ? new Date(post.publishedAt) : post.updatedAt ? new Date(post.updatedAt) : new Date(),
+            lastModified: post.publishedAt
+              ? new Date(post.publishedAt)
+              : post.updatedAt
+                ? new Date(post.updatedAt)
+                : new Date(),
             priority: 0.7,
             url: buildUrl({
               collection: "posts",
@@ -120,10 +124,14 @@ async function generateSitemap(): Promise<Sitemap> {
   }
 }
 
-const getCachedSitemap = unstable_cache(async () => generateSitemap(), [cacheTag({ type: "sitemap" })], {
-  revalidate: false,
-  tags: [cacheTag({ type: "sitemap" })],
-});
+const getCachedSitemap = unstable_cache(
+  async () => generateSitemap(),
+  [cacheTag({ type: "sitemap" })],
+  {
+    revalidate: false,
+    tags: [cacheTag({ type: "sitemap" })],
+  }
+);
 
 export default async function sitemap(): Promise<Sitemap> {
   return getCachedSitemap();

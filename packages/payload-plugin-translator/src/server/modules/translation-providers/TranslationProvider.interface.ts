@@ -2,7 +2,7 @@
  * Numeric index used as key in translation input and output.
  * Represents the position of text in the original document structure.
  */
-export type TranslationIndex = number
+export type TranslationIndex = number;
 
 /**
  * Input map of text content for translation.
@@ -12,7 +12,7 @@ export type TranslationIndex = number
  * @example
  * { 0: "Hello", 1: "World", 2: "Welcome to our site" }
  */
-export type TranslationInput = Record<TranslationIndex, string>
+export type TranslationInput = Record<TranslationIndex, string>;
 
 /**
  * Output of translation operation.
@@ -22,7 +22,7 @@ export type TranslationInput = Record<TranslationIndex, string>
  * // Input: { 0: "Hello", 1: "World" }
  * // Output: { 0: "Привет", 1: "Мир" }
  */
-export type TranslationOutput = Record<TranslationIndex, string>
+export type TranslationOutput = Record<TranslationIndex, string>;
 
 /**
  * Interface for translation service providers.
@@ -54,5 +54,9 @@ export interface TranslationProvider {
    * @param targetLng - Target language code (e.g., 'fr', 'es').
    * @returns Translated output with same keys, or null on failure.
    */
-  translate(input: TranslationInput, sourceLng: string, targetLng: string): Promise<TranslationOutput | null>
+  translate(
+    input: TranslationInput,
+    sourceLng: string,
+    targetLng: string
+  ): Promise<TranslationOutput | null>;
 }

@@ -21,7 +21,15 @@ const pkgDir = (pkg) => {
   }
 };
 
-const GA4_SERVER_EXTERNALS = ["@google-analytics/data", "@grpc/grpc-js", "@grpc/proto-loader", "google-gax", "google-auth-library", "gcp-metadata", "gtoken"];
+const GA4_SERVER_EXTERNALS = [
+  "@google-analytics/data",
+  "@grpc/grpc-js",
+  "@grpc/proto-loader",
+  "google-gax",
+  "google-auth-library",
+  "gcp-metadata",
+  "gtoken",
+];
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

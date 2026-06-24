@@ -27,8 +27,10 @@ describe("resolveComparison", () => {
   it("prev.length === current.length", () => {
     const current = { startDate: "2026-05-04", endDate: "2026-05-10" };
     const prev = resolveComparison(current);
-    const lenC = (new Date(current.endDate).getTime() - new Date(current.startDate).getTime()) / 86_400_000;
-    const lenP = (new Date(prev.endDate).getTime() - new Date(prev.startDate).getTime()) / 86_400_000;
+    const lenC =
+      (new Date(current.endDate).getTime() - new Date(current.startDate).getTime()) / 86_400_000;
+    const lenP =
+      (new Date(prev.endDate).getTime() - new Date(prev.startDate).getTime()) / 86_400_000;
     expect(lenP).toBe(lenC);
   });
 });

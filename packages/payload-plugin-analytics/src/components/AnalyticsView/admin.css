@@ -15,8 +15,10 @@
 @custom-variant dark ([data-theme="dark"] &);
 
 @theme {
-  --shadow-popover: 0 12px 32px -12px oklch(0.2 0.01 70 / 0.14), 0 2px 6px -2px oklch(0.2 0.01 70 / 0.06);
-  --shadow-drawer: 0 24px 60px -20px oklch(0.2 0.01 70 / 0.18), 0 4px 12px -4px oklch(0.2 0.01 70 / 0.08);
+  --shadow-popover:
+    0 12px 32px -12px oklch(0.2 0.01 70 / 0.14), 0 2px 6px -2px oklch(0.2 0.01 70 / 0.06);
+  --shadow-drawer:
+    0 24px 60px -20px oklch(0.2 0.01 70 / 0.18), 0 4px 12px -4px oklch(0.2 0.01 70 / 0.08);
 }
 
 @layer base {
@@ -45,7 +47,12 @@
 
 @layer utilities {
   .pa-animate-shimmer {
-    background: linear-gradient(90deg, var(--theme-elevation-100) 0%, var(--theme-elevation-50) 50%, var(--theme-elevation-100) 100%);
+    background: linear-gradient(
+      90deg,
+      var(--theme-elevation-100) 0%,
+      var(--theme-elevation-50) 50%,
+      var(--theme-elevation-100) 100%
+    );
     background-size: 200% 100%;
     animation: pa-shimmer 1.4s infinite ease-in-out;
   }

@@ -1,16 +1,40 @@
 import { describe, expect, it } from "vitest";
-import { shapeExposure, shapeOutcome, shapeHeader, shapeLeadBreakdown } from "../../../src/services/queries/shapeAbPanels";
+import {
+  shapeExposure,
+  shapeOutcome,
+  shapeHeader,
+  shapeLeadBreakdown,
+} from "../../../src/services/queries/shapeAbPanels";
 import type { AbExperimentStats } from "../../../src/services/queries/getAbExperimentStats";
 
 const stats: AbExperimentStats = {
   startedAt: "2026-04-20",
   buckets: [
-    { bucket: "original", name: null, visitors: 3600, sessions: 4200, convertingSessions: 357, rawConversions: 410, configuredShare: 0.5 },
-    { bucket: "pricing--b", name: "Annual", visitors: 1810, sessions: 2100, convertingSessions: 252, rawConversions: 298, configuredShare: 0.5 },
+    {
+      bucket: "original",
+      name: null,
+      visitors: 3600,
+      sessions: 4200,
+      convertingSessions: 357,
+      rawConversions: 410,
+      configuredShare: 0.5,
+    },
+    {
+      bucket: "pricing--b",
+      name: "Annual",
+      visitors: 1810,
+      sessions: 2100,
+      convertingSessions: 252,
+      rawConversions: 298,
+      configuredShare: 0.5,
+    },
   ],
   byBucketLead: { original: { phone_click: 168 }, "pricing--b": { phone_click: 96 } },
 };
-const ab = { stats: { alpha: 0.05, power: 0.8, srmThreshold: 0.001, srmWindowDays: 7 }, winRate: { mdeCeiling: 0.2, sessionFloor: 100 } } as never;
+const ab = {
+  stats: { alpha: 0.05, power: 0.8, srmThreshold: 0.001, srmWindowDays: 7 },
+  winRate: { mdeCeiling: 0.2, sessionFloor: 100 },
+} as never;
 
 describe("shapeExposure", () => {
   it("computes SRM across buckets", () => {

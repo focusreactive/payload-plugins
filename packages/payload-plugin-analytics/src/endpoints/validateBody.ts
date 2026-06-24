@@ -16,7 +16,10 @@ const CustomDateRangeSchema = z
   });
 
 const DateRangeSchema = z.union([PresetSchema, CustomDateRangeSchema]);
-const ComparisonSchema = z.union([z.object({ kind: z.literal("none") }), z.object({ kind: z.literal("previous-period") })]);
+const ComparisonSchema = z.union([
+  z.object({ kind: z.literal("none") }),
+  z.object({ kind: z.literal("previous-period") }),
+]);
 
 export const AnalyticsQuerySchema = z.object({
   dateRange: DateRangeSchema,

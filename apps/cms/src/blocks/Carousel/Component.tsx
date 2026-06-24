@@ -1,14 +1,23 @@
-import { Carousel, SectionHeader } from "@repo/ui";
-import type { ICarouselCardProps } from "@repo/ui/components/sections/carousel/types";
+import { SectionHeader } from "@/components/SectionHeader";
+import { Carousel } from "./ui";
+import type { ICarouselCardProps } from "./ui/types";
 import React from "react";
 
-import { SectionContainer } from "@/core/ui";
+import { SectionContainer } from "@/components/shared";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import { prepareRichTextProps } from "@/lib/adapters/prepareRichTextProps";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { CarouselBlock } from "@/payload-types";
 
-export const CarouselBlockComponent: React.FC<CarouselBlock> = ({ eyebrow, heading, description, effect, slides, section, id }) => {
+export const CarouselBlockComponent: React.FC<CarouselBlock> = ({
+  eyebrow,
+  heading,
+  description,
+  effect,
+  slides,
+  section,
+  id,
+}) => {
   const cards: ICarouselCardProps[] = (slides ?? []).map((slide) => ({
     effect: (effect as ICarouselCardProps["effect"]) ?? "slide",
     image: prepareImageProps(slide.image),

@@ -16,7 +16,11 @@ vi.mock("next/dynamic", () => ({
 }));
 
 const baseConfig: AnalyticsPluginConfig = {
-  ga4: { propertyId: "1", measurementId: "G-X", serviceAccount: { clientEmail: "x", privateKey: "x" } },
+  ga4: {
+    propertyId: "1",
+    measurementId: "G-X",
+    serviceAccount: { clientEmail: "x", privateKey: "x" },
+  },
 };
 
 beforeAll(() => {
@@ -32,7 +36,12 @@ afterEach(() => {
 describe("AnalyticsShell", () => {
   it("renders page title, FilterBar, RefreshButton, and the Overview tab by default", () => {
     // Stub fetch so the wrappers' queries don't blow up jsdom.
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({}, { headers: { "Content-Type": "application/json" } })));
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(Response.json({}, { headers: { "Content-Type": "application/json" } }))
+    );
 
     render(<AnalyticsShell title="Analytics" />);
     expect(screen.getByRole("heading", { name: /Analytics/iu })).toBeInTheDocument();

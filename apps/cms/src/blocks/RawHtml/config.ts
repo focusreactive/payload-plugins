@@ -1,14 +1,14 @@
 import type { Block, Field } from "payload";
 
-import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
-import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
-import { injectSection } from "@/fields/section/injectSection";
+import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
+import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
+import { injectSection } from "@/lib/fields/section/injectSection";
 
 const fields: Field[] = [
   {
     admin: {
       components: {
-        Field: "@/core/ui/components/CopyAiPromptButton#CopyAiPromptButton",
+        Field: "@/components/admin/CopyAiPromptButton#CopyAiPromptButton",
       },
     },
     name: "copyAiPrompt",

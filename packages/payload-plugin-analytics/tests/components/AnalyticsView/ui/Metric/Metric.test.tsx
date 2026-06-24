@@ -2,7 +2,11 @@ import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { Activity } from "lucide-react";
 import { Metric } from "../../../../../src/components/AnalyticsView/ui/Metric";
-import { formatNumber, formatPercentage, formatDuration } from "../../../../../src/components/AnalyticsView/numberFormatters";
+import {
+  formatNumber,
+  formatPercentage,
+  formatDuration,
+} from "../../../../../src/components/AnalyticsView/numberFormatters";
 
 describe("Metric", () => {
   it("renders the formatted current value", () => {
@@ -37,7 +41,9 @@ describe("Metric", () => {
   });
 
   it("invertDelta flips positive/negative tones", () => {
-    const { container } = render(<Metric value={0.4} prevValue={0.5} format={formatPercentage} invertDelta />);
+    const { container } = render(
+      <Metric value={0.4} prevValue={0.5} format={formatPercentage} invertDelta />
+    );
     // value dropped (0.4 < 0.5) but invertDelta makes the drop positive
     expect(container.querySelector('[data-tone="positive"]')).not.toBeNull();
   });
@@ -58,13 +64,17 @@ describe("Metric", () => {
   });
 
   it("renders the supplied icon", () => {
-    const { container } = render(<Metric value={5} format={formatNumber} icon={Activity} mode="chip" />);
+    const { container } = render(
+      <Metric value={5} format={formatNumber} icon={Activity} mode="chip" />
+    );
     // lucide icons render as <svg>
     expect(container.querySelector("svg")).not.toBeNull();
   });
 
   it("chip mode renders both halves when prevValue is set", () => {
-    const { container } = render(<Metric value={64} prevValue={41} format={formatNumber} icon={Activity} mode="chip" />);
+    const { container } = render(
+      <Metric value={64} prevValue={41} format={formatNumber} icon={Activity} mode="chip" />
+    );
     const root = container.querySelector('[data-metric-mode="chip"]');
     expect(root).not.toBeNull();
     expect(root?.textContent).toContain("64");
@@ -72,7 +82,9 @@ describe("Metric", () => {
   });
 
   it("chip mode without prevValue renders only the current half", () => {
-    const { container } = render(<Metric value={64} prevValue={null} format={formatNumber} icon={Activity} mode="chip" />);
+    const { container } = render(
+      <Metric value={64} prevValue={null} format={formatNumber} icon={Activity} mode="chip" />
+    );
     expect(container.querySelector("[data-tone]")).toBeNull();
     expect(container.textContent).toContain("64");
   });

@@ -9,7 +9,11 @@ import { RunTranslationHandler } from "./handler";
 /**
  * Creates the run translation endpoint
  */
-export function createRunRoute(taskRunnerFactory: TaskRunnerFactory, access?: AccessGuard, basePath = "/translate"): Endpoint {
+export function createRunRoute(
+  taskRunnerFactory: TaskRunnerFactory,
+  access?: AccessGuard,
+  basePath = "/translate"
+): Endpoint {
   const handler = new RunTranslationHandler(taskRunnerFactory);
 
   return {

@@ -30,27 +30,55 @@ export function EventTimeline({ events }: EventTimelineProps) {
         const { eventName, timestamp, isLeadAction, params } = event;
         const isFirst = i === 0;
         const isLast = i === events.length - 1;
-        const leadType = isLeadAction && typeof params?.fr_lead_type === "string" ? (params.fr_lead_type as string) : undefined;
-        const primaryLabel = isLeadAction && leadType ? `Lead action: ${resolveLabel(leadType)}` : eventName;
+        const leadType =
+          isLeadAction && typeof params?.fr_lead_type === "string"
+            ? (params.fr_lead_type as string)
+            : undefined;
+        const primaryLabel =
+          isLeadAction && leadType ? `Lead action: ${resolveLabel(leadType)}` : eventName;
 
         return (
-          <div key={i} data-lead={isLeadAction ? "true" : undefined} className="grid grid-cols-[auto_10px_1fr] gap-3 items-baseline">
-            <span className="font-[family-name:var(--font-mono)] text-[11px] text-(--theme-elevation-500) text-right">{timestamp}</span>
+          <div
+            key={i}
+            data-lead={isLeadAction ? "true" : undefined}
+            className="grid grid-cols-[auto_10px_1fr] gap-3 items-baseline"
+          >
+            <span className="font-[family-name:var(--font-mono)] text-[11px] text-(--theme-elevation-500) text-right">
+              {timestamp}
+            </span>
 
             <div className="relative self-stretch">
-              {!isFirst && eventCount && <span className="absolute top-0 bottom-1/2 left-1/2 -translate-x-1/2 w-px bg-(--theme-border-color)" />}
-              {!isLast && eventCount && <span className="absolute top-1/2 -bottom-4 left-1/2 -translate-x-1/2 w-px bg-(--theme-border-color)" />}
+              {!isFirst && eventCount && (
+                <span className="absolute top-0 bottom-1/2 left-1/2 -translate-x-1/2 w-px bg-(--theme-border-color)" />
+              )}
+              {!isLast && eventCount && (
+                <span className="absolute top-1/2 -bottom-4 left-1/2 -translate-x-1/2 w-px bg-(--theme-border-color)" />
+              )}
               <span
                 className={cn(
                   "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full ring-1 ring-offset-2 ring-offset-(--theme-elevation-0)",
-                  isLeadAction ? "bg-(--theme-success-500) ring-(--theme-success-200)" : "bg-(--theme-elevation-300) ring-(--theme-border-color)"
+                  isLeadAction
+                    ? "bg-(--theme-success-500) ring-(--theme-success-200)"
+                    : "bg-(--theme-elevation-300) ring-(--theme-border-color)"
                 )}
               />
             </div>
 
             <div className="min-w-0">
-              <span className={isLeadAction ? "text-sm font-semibold text-[var(--theme-success-700)]" : "text-sm font-medium text-[var(--theme-elevation-900)]"}>{primaryLabel}</span>
-              {pickDetail(event) && <span className="text-xs text-[var(--theme-elevation-500)] ml-2 font-[family-name:var(--font-mono)]">{pickDetail(event)}</span>}
+              <span
+                className={
+                  isLeadAction
+                    ? "text-sm font-semibold text-[var(--theme-success-700)]"
+                    : "text-sm font-medium text-[var(--theme-elevation-900)]"
+                }
+              >
+                {primaryLabel}
+              </span>
+              {pickDetail(event) && (
+                <span className="text-xs text-[var(--theme-elevation-500)] ml-2 font-[family-name:var(--font-mono)]">
+                  {pickDetail(event)}
+                </span>
+              )}
             </div>
           </div>
         );

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { search } from "@/search/search";
+import { search } from "@/lib/search/search";
 
 const PLACEHOLDER = "/empty-placeholder.jpg";
 
@@ -37,13 +37,25 @@ export async function SearchResults({ query, locale }: SearchResultsProps) {
     <div className="mt-6 space-y-8">
       {result.data.map((group) => (
         <section key={group.collection}>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">{group.collection === "post" ? "Posts" : "Pages"}</h2>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+            {group.collection === "post" ? "Posts" : "Pages"}
+          </h2>
 
           <div className="space-y-2">
             {group.items.map((item) => (
-              <Link key={item.documentId} href={item.url} className="flex items-center gap-4 rounded-lg border border-gray-200 p-4 transition-colors hover:bg-gray-50">
+              <Link
+                key={item.documentId}
+                href={item.url}
+                className="flex items-center gap-4 rounded-lg border border-gray-200 p-4 transition-colors hover:bg-gray-50"
+              >
                 <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-gray-100">
-                  <Image src={item.imageUrl ?? PLACEHOLDER} alt={item.imageAlt ?? item.title} fill className="object-cover" sizes="64px" />
+                  <Image
+                    src={item.imageUrl ?? PLACEHOLDER}
+                    alt={item.imageAlt ?? item.title}
+                    fill
+                    className="object-cover"
+                    sizes="64px"
+                  />
                 </div>
                 <span className="text-sm font-medium text-gray-900 line-clamp-2">{item.title}</span>
               </Link>

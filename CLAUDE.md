@@ -28,9 +28,32 @@ packages/
 ```
 
 `apps/cms` consumes the workspace plugins via `workspace:*`, owns its Postgres
-adapter + migrations under `src/database/`, and runs all app-layer data access
-through its own `src/dal/` (see `apps/cms/src/dal/README.md`). `apps/dev` is
+adapter + migrations under `src/lib/database/`, and runs all app-layer data access
+through its own `src/lib/dal/` (see `apps/cms/src/lib/dal/README.md`). `apps/dev` is
 the minimal plugin sandbox.
+
+## Agent setup (`.claude` / `.agents`)
+
+There is **one** agent config, at the repo root. The convention:
+
+- **`.agents/`** holds the real, tool-agnostic source of truth:
+  - `.agents/skills/<name>/` — skill content (one dir per skill)
+  - `.agents/agents/<name>.md` — subagent definitions
+- **`.claude/`** contains **nothing but relative symlinks** into `.agents/`:
+  - `.claude/skills/<name>  → ../../.agents/skills/<name>`
+  - `.claude/agents/<name>.md → ../../.agents/agents/<name>.md`
+  - (`.claude/settings.local.json` and `.claude/worktrees/` are the only
+    non-symlink entries — both git-ignored.)
+
+Rules:
+
+- Never commit a real file under `.claude/skills` or `.claude/agents`. Add the
+  content under `.agents/`, then symlink it into `.claude/` with a **relative**
+  path so it resolves on every machine and inside git worktrees.
+- Do **not** create per-package `.claude` / `.agents` dirs (e.g. under
+  `apps/cms`). Work from the repo root so root-level skills/agents apply.
+- `AGENTS.md` / `CLAUDE.md` instruction files are separate from this convention
+  and live wherever they're relevant.
 
 ## Bun layout
 
@@ -90,5 +113,5 @@ Releases are fully automated via **multi-semantic-release** + **semantic-release
 ## Gotchas
 
 - Git remote is `focusreactive/payload-plugins` (no hyphen). Package `repository.url` must match exactly or semantic-release will fail with a 128 git error.
-- `apps/dev` and internal packages (`eslint-config`, `typescript-config`) are skipped via `--ignore-private-packages`.
+- `apps/dev` and internal packages (`ui`, `tailwind-config`, `typescript-config`) are skipped via `--ignore-private-packages`.
 - Do not manually bump versions in `package.json` — semantic-release owns version fields.

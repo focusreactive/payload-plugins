@@ -1,9 +1,9 @@
 import type { Block, Field } from "payload";
 
-import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
-import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
-import { injectSection } from "@/fields/section/injectSection";
-import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
+import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
+import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
+import { injectSection } from "@/lib/fields/section/injectSection";
+import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
 
 const fields: Field[] = [
   ...sectionHeaderFields(),
@@ -53,8 +53,20 @@ const fields: Field[] = [
           {
             type: "row",
             fields: [
-              { admin: { width: "50%" }, label: { en: "Label", es: "Etiqueta" }, name: "label", required: true, type: "text" },
-              { admin: { width: "50%" }, label: { en: "Value", es: "Valor" }, name: "value", required: true, type: "number" },
+              {
+                admin: { width: "50%" },
+                label: { en: "Label", es: "Etiqueta" },
+                name: "label",
+                required: true,
+                type: "text",
+              },
+              {
+                admin: { width: "50%" },
+                label: { en: "Value", es: "Valor" },
+                name: "value",
+                required: true,
+                type: "number",
+              },
             ],
           },
         ],

@@ -9,7 +9,8 @@ export function getEntitiesLabels(entities: EntityConfig[], enabledSlugs: string
 
     const rawLabel = "labels" in entity ? entity.labels?.plural : entity.label;
 
-    result[entity.slug] = typeof rawLabel === "function" || rawLabel === undefined ? entity.slug : rawLabel;
+    result[entity.slug] =
+      typeof rawLabel === "function" || rawLabel === undefined ? entity.slug : rawLabel;
   }
 
   return result;

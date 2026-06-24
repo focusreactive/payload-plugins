@@ -1,16 +1,16 @@
-import type { FieldChunk, TextChunk } from '../../types'
+import type { FieldChunk, TextChunk } from "../../types";
 
 /**
  * Result of text expansion for a single FieldChunk.
  */
 export type ExpansionResult = {
   /** Generated TextChunks */
-  chunks: TextChunk[]
+  chunks: TextChunk[];
   /** Map of index -> text for translation API */
-  textMap: Record<number, string>
+  textMap: Record<number, string>;
   /** Next available index */
-  nextIndex: number
-}
+  nextIndex: number;
+};
 
 /**
  * Interface for text expanders.
@@ -20,10 +20,10 @@ export interface TextExpander {
   /**
    * Checks if this expander can handle the given field chunk.
    */
-  canExpand(chunk: FieldChunk, value: unknown): boolean
+  canExpand(chunk: FieldChunk, value: unknown): boolean;
 
   /**
    * Expands a FieldChunk into one or more TextChunks.
    */
-  expand(chunk: FieldChunk, value: unknown, startIndex: number): ExpansionResult
+  expand(chunk: FieldChunk, value: unknown, startIndex: number): ExpansionResult;
 }

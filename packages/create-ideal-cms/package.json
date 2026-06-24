@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/create-ideal-cms",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Scaffold a production-ready Payload CMS monorepo preconfigured with @focus-reactive plugins.",
   "keywords": [
     "payload-cms",
@@ -33,7 +33,7 @@
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
     "format": "ultracite fix",
-    "format:check": "ultracite fix",
+    "format:check": "ultracite check",
     "start": "node ./dist/index.js",
     "test:local": "bun run build && bash -c 'src=$PWD && repo=$(cd \"$src/../..\" && pwd) && out=\"$src/.test-output\" && mkdir -p \"$out\" && cd \"$out\" && echo \"\\nScaffolding into: $out\\n\" && node \"$src/dist/index.js\" --from-local \"$repo\"'"
   },

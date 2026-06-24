@@ -11,7 +11,10 @@ export const journeysMock: RunReportMockFn = () => {
     refs.flatMap((ref, i) => {
       const sid = `s${i}`;
       const p = pathFor(ref);
-      return [row([sid, "page_view", p, "202606171400", "1", "", ref], ["1"]), row([sid, "lead_action", p, "202606171401", "2", "phone_click", ref], ["1"])];
+      return [
+        row([sid, "page_view", p, "202606171400", "1", "", ref], ["1"]),
+        row([sid, "lead_action", p, "202606171401", "2", "phone_click", ref], ["1"]),
+      ];
     })
   ) as never;
 };

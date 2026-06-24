@@ -3,7 +3,11 @@ import { resolveLayout } from "../../../src/services/layout/resolveLayout";
 import type { AnalyticsPluginConfig } from "../../../src/types/config";
 
 const BASE_CONFIG = {
-  ga4: { propertyId: "1", measurementId: "G-X", serviceAccount: { clientEmail: "x", privateKey: "x" } },
+  ga4: {
+    propertyId: "1",
+    measurementId: "G-X",
+    serviceAccount: { clientEmail: "x", privateKey: "x" },
+  },
 } as AnalyticsPluginConfig;
 
 describe("resolveLayout", () => {
@@ -16,7 +20,12 @@ describe("resolveLayout", () => {
   it("returns sorted resolved tabs by row order", () => {
     const { resolved } = resolveLayout(BASE_CONFIG);
     const overview = resolved.tabs.find((t) => t.id === "overview")!;
-    expect(overview.rows.map((r) => r.id)).toEqual(["kpi-row", "trend-row", "top-row", "devices-countries-row"]);
+    expect(overview.rows.map((r) => r.id)).toEqual([
+      "kpi-row",
+      "trend-row",
+      "top-row",
+      "devices-countries-row",
+    ]);
   });
 
   it("excludes disabled rows from resolved output", () => {

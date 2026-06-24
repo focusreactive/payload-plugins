@@ -15,14 +15,32 @@ interface Props {
   locale: string | null | undefined;
 }
 
-export function useUnreadMentionsCountQuery({ mode, collectionSlug, documentId, globalSlug, locale }: Props) {
+export function useUnreadMentionsCountQuery({
+  mode,
+  collectionSlug,
+  documentId,
+  globalSlug,
+  locale,
+}: Props) {
   const queryClient = useCommentsQueryClient();
 
   return useQuery(
     {
-      queryKey: QUERY_KEYS.unreadMentionsCount(mode, collectionSlug, documentId, globalSlug, locale),
+      queryKey: QUERY_KEYS.unreadMentionsCount(
+        mode,
+        collectionSlug,
+        documentId,
+        globalSlug,
+        locale
+      ),
       queryFn: async () => {
-        const res = await countUnreadMentions({ mode, collectionSlug, documentId, globalSlug, locale });
+        const res = await countUnreadMentions({
+          mode,
+          collectionSlug,
+          documentId,
+          globalSlug,
+          locale,
+        });
 
         if (!res.success) throw new Error(res.error);
 
@@ -33,6 +51,6 @@ export function useUnreadMentionsCountQuery({ mode, collectionSlug, documentId, 
       refetchIntervalInBackground: false,
       refetchOnWindowFocus: true,
     },
-    queryClient,
+    queryClient
   );
 }

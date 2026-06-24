@@ -1,6 +1,13 @@
 "use client";
 
-import { useTranslation, useLocale, useAuth, FieldLabel, useForm, useEditDepth } from "@payloadcms/ui";
+import {
+  useTranslation,
+  useLocale,
+  useAuth,
+  FieldLabel,
+  useForm,
+  useEditDepth,
+} from "@payloadcms/ui";
 import { MessageSquareIcon, MessageSquarePlus } from "lucide-react";
 import { useComments } from "../../providers/CommentsProvider";
 import type { FieldLabelClientProps } from "payload";
@@ -35,9 +42,8 @@ export function FieldCommentLabel({ field, path: fieldPath }: Props) {
 
   const as = resolveFieldLabelAs(field.type);
   const localized = field.type === "group" ? false : (field.localized ?? false);
-  const htmlFor =
-    fieldPath ?
-      `field-${fieldPath.replace(/\./g, "__")}${editDepth > 1 ? `-${editDepth}` : ""}${uuid ? `-${uuid}` : ""}`
+  const htmlFor = fieldPath
+    ? `field-${fieldPath.replace(/\./g, "__")}${editDepth > 1 ? `-${editDepth}` : ""}${uuid ? `-${uuid}` : ""}`
     : undefined;
 
   const { t } = useTranslation();
@@ -98,7 +104,8 @@ export function FieldCommentLabel({ field, path: fieldPath }: Props) {
               className="w-auto px-1 gap-1 text-[12px] font-semibold leading-none [&_svg]:opacity-100"
               size="sm"
               title={t("comments:openComments" as never, { count: openCommentsCount })}
-              onClick={handleOpenDrawer}>
+              onClick={handleOpenDrawer}
+            >
               <MessageSquareIcon size={14} />
 
               {openCommentsCount}
@@ -111,7 +118,8 @@ export function FieldCommentLabel({ field, path: fieldPath }: Props) {
               }
               size="sm"
               title={t("comments:add" as never)}
-              onClick={handleOpenDrawer}>
+              onClick={handleOpenDrawer}
+            >
               <MessageSquarePlus size={14} />
             </IconButton>
           )}

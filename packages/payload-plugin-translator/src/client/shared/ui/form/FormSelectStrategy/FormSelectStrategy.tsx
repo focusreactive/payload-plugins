@@ -1,17 +1,17 @@
-import type { ReactElement } from 'react'
+import type { ReactElement } from "react";
 
-import FormSelect from '../FormSelect'
-import Tooltip from '../../Tooltip'
-import { QuestionCircleIcon } from '../../../lib/assets/icons/QuestionCircleIcon'
+import FormSelect from "../FormSelect";
+import Tooltip from "../../Tooltip";
+import { QuestionCircleIcon } from "../../../lib/assets/icons/QuestionCircleIcon";
 
-import styles from './styles.module.scss'
+import styles from "./styles.module.scss";
 
 const STRATEGY_OPTIONS = [
-  { value: 'overwrite', label: 'Overwrite' },
-  { value: 'skip_existing', label: 'Skip existing' },
-] as const
+  { value: "overwrite", label: "Overwrite" },
+  { value: "skip_existing", label: "Skip existing" },
+] as const;
 
-const STRATEGY_LABEL = 'Update mode'
+const STRATEGY_LABEL = "Update mode";
 
 const STRATEGY_TOOLTIP = (
   <>
@@ -19,7 +19,7 @@ const STRATEGY_TOOLTIP = (
     <br />
     <strong>Skip existing</strong> — only translate empty fields, keep existing values
   </>
-)
+);
 
 const StrategyLabel: ReactElement = (
   <span className={styles.label}>
@@ -30,16 +30,16 @@ const StrategyLabel: ReactElement = (
       </span>
     </Tooltip>
   </span>
-)
+);
 
 type FormSelectStrategyProps = {
-  name: string
-  required?: boolean
-  description?: string
-  disabled?: boolean
-  size?: 'sm' | 'md' | 'lg'
-  className?: string
-}
+  name: string;
+  required?: boolean;
+  description?: string;
+  disabled?: boolean;
+  size?: "sm" | "md" | "lg";
+  className?: string;
+};
 
 export function FormSelectStrategy({
   name,
@@ -60,7 +60,7 @@ export function FormSelectStrategy({
       options={[...STRATEGY_OPTIONS]}
       disabled={disabled}
     />
-  )
+  );
 }
 
-export type TranslationStrategy = (typeof STRATEGY_OPTIONS)[number]['value']
+export type TranslationStrategy = (typeof STRATEGY_OPTIONS)[number]["value"];

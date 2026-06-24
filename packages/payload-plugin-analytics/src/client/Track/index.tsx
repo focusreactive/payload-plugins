@@ -22,12 +22,16 @@ export function Track({ on, event, payload, children }: TrackProps) {
   if (isValidElement(children)) {
     child = children as ReactElement<ChildProps>;
   } else {
-    const elements = Children.toArray(children).filter(isValidElement) as ReactElement<ChildProps>[];
+    const elements = Children.toArray(children).filter(
+      isValidElement
+    ) as ReactElement<ChildProps>[];
     if (elements.length === 1) {
       child = elements[0];
     } else if (elements.length > 1) {
       if (process.env.NODE_ENV !== "production") {
-        console.warn("<Track> expects a single React element child; received multiple. Rendering children untouched without tracking.");
+        console.warn(
+          "<Track> expects a single React element child; received multiple. Rendering children untouched without tracking."
+        );
       }
       return <>{children}</>;
     }

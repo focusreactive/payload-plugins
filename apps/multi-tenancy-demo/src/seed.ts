@@ -40,19 +40,22 @@ const TENANTS: SeedTenant[] = [
         title: "OpenAI",
         slug: "home",
         tagline: "Creating safe AGI that benefits all of humanity.",
-        content: "OpenAI is an AI research and deployment company. We build frontier models like GPT and Codex, and ship them through products developers and businesses rely on every day.",
+        content:
+          "OpenAI is an AI research and deployment company. We build frontier models like GPT and Codex, and ship them through products developers and businesses rely on every day.",
       },
       {
         title: "Products",
         slug: "products",
         tagline: "Frontier models, ready to build on.",
-        content: "From ChatGPT to the API and Codex, our products put state-of-the-art models in your hands — with the tooling to deploy them responsibly at scale.",
+        content:
+          "From ChatGPT to the API and Codex, our products put state-of-the-art models in your hands — with the tooling to deploy them responsibly at scale.",
       },
       {
         title: "Research",
         slug: "research",
         tagline: "Advancing the field, one breakthrough at a time.",
-        content: "Our research spans reasoning, alignment, and multimodality. This page only exists under the OpenAI tenant — request /anthropic/research and you'll get a 404.",
+        content:
+          "Our research spans reasoning, alignment, and multimodality. This page only exists under the OpenAI tenant — request /anthropic/research and you'll get a 404.",
       },
     ],
   },
@@ -65,19 +68,22 @@ const TENANTS: SeedTenant[] = [
         title: "Anthropic",
         slug: "home",
         tagline: "AI research and products that put safety at the frontier.",
-        content: "Anthropic is an AI safety company. We build Claude — a family of models designed to be helpful, honest, and harmless — and the research that makes them trustworthy.",
+        content:
+          "Anthropic is an AI safety company. We build Claude — a family of models designed to be helpful, honest, and harmless — and the research that makes them trustworthy.",
       },
       {
         title: "Products",
         slug: "products",
         tagline: "Meet Claude, your AI collaborator.",
-        content: "Claude powers everything from everyday chat to agentic coding with Claude Code. Same slug as OpenAI's Products page — entirely different tenant, entirely different content.",
+        content:
+          "Claude powers everything from everyday chat to agentic coding with Claude Code. Same slug as OpenAI's Products page — entirely different tenant, entirely different content.",
       },
       {
         title: "Safety",
         slug: "safety",
         tagline: "Reliable, interpretable, steerable AI.",
-        content: "Safety is the heart of what we do — interpretability, Constitutional AI, and responsible scaling. This page only exists under the Anthropic tenant; /openai/safety returns a 404.",
+        content:
+          "Safety is the heart of what we do — interpretability, Constitutional AI, and responsible scaling. This page only exists under the Anthropic tenant; /openai/safety returns a 404.",
       },
     ],
   },
@@ -86,7 +92,11 @@ const TENANTS: SeedTenant[] = [
 const run = async () => {
   const payload = await getPayload({ config });
 
-  const findOrCreateUser = async (email: string, password: string, name: string): Promise<number> => {
+  const findOrCreateUser = async (
+    email: string,
+    password: string,
+    name: string
+  ): Promise<number> => {
     const existing = await payload.find({
       collection: "users",
       where: { email: { equals: email } },
@@ -129,12 +139,23 @@ const run = async () => {
     await payload.delete({ collection: "pages", where: { tenant: { equals: tenantId } } });
     // Pages have drafts enabled (for visual editing), so publish them explicitly
     // — otherwise the public, non-draft frontend would render nothing.
-    await Promise.all(tenant.pages.map((page) => payload.create({ collection: "pages", data: { ...page, tenant: tenantId, _status: "published" } })));
+    await Promise.all(
+      tenant.pages.map((page) =>
+        payload.create({
+          collection: "pages",
+          data: { ...page, tenant: tenantId, _status: "published" },
+        })
+      )
+    );
 
     // This user belongs to exactly ONE tenant. Logged in as them, the admin
     // tenant selector has nothing to switch to — that single tenant is the only
     // access they have.
-    const userId = await findOrCreateUser(tenant.user.email, tenant.user.password, tenant.user.name);
+    const userId = await findOrCreateUser(
+      tenant.user.email,
+      tenant.user.password,
+      tenant.user.name
+    );
     await payload.update({
       collection: "users",
       id: userId,

@@ -1,9 +1,21 @@
 import { revalidateTag } from "next/cache";
-import type { CollectionConfig } from "payload";
+import type { CollectionBeforeChangeHook, CollectionConfig } from "payload";
 
-import { anyone, author, or, superAdmin, user } from "@/core/lib/access";
-import { generateRichText } from "@/core/lib/generateRichText";
+import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { generateRichText } from "@/lib/utils/generateRichText";
 import { DEFAULT_MEDIA_CACHE_TAG } from "@/dal/getDefaultMediaId";
+
+const setDefaultFocalPoint: CollectionBeforeChangeHook = ({ data }) => {
+  if (data) {
+    if (data.focalX === undefined || data.focalX === null) {
+      data.focalX = 50;
+    }
+    if (data.focalY === undefined || data.focalY === null) {
+      data.focalY = 50;
+    }
+  }
+  return data;
+};
 
 export const Media: CollectionConfig<"media"> = {
   access: {
@@ -63,6 +75,7 @@ export const Media: CollectionConfig<"media"> = {
   ],
   folders: true,
   hooks: {
+    beforeChange: [setDefaultFocalPoint],
     afterChange: [
       ({ req }) => {
         if (req?.context?.disableRevalidate) return;

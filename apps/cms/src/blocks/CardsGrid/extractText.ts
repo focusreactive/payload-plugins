@@ -1,4 +1,4 @@
-import { joinText } from "@/core/utils/text";
+import { joinText } from "@/lib/utils/text";
 import type { CardsGridBlock } from "@/payload-types";
 
 function extractLinkLabel(value: unknown): string {
@@ -10,5 +10,14 @@ function extractLinkLabel(value: unknown): string {
 }
 
 export function extractCardsGridText(block: CardsGridBlock): string {
-  return joinText([block.eyebrow, block.heading, block.description, ...(block.items ?? []).flatMap((item) => [item.title, item.description, extractLinkLabel(item.link)])]);
+  return joinText([
+    block.eyebrow,
+    block.heading,
+    block.description,
+    ...(block.items ?? []).flatMap((item) => [
+      item.title,
+      item.description,
+      extractLinkLabel(item.link),
+    ]),
+  ]);
 }

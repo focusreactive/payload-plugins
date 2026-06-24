@@ -63,7 +63,7 @@ The CLI applies a brand color by appending a `--color-primary` overlay to
 
 - Tweak the full token palette in `packages/tailwind-config/base.css`.
 - Update collections, globals, and blocks under `apps/cms/src/`.
-- Add or remove plugins in `apps/cms/src/plugins/index.ts`.
+- Add or remove plugins in `apps/cms/src/lib/plugins/index.ts`.
 
 ## Local development
 

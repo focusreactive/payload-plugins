@@ -19,7 +19,10 @@ type UseFormProps = {
   disabled?: boolean;
 };
 
-export const useTranslateDocumentForm = ({ initialValues, disabled }: UseFormProps = {}): UseFormReturn_ => {
+export const useTranslateDocumentForm = ({
+  initialValues,
+  disabled,
+}: UseFormProps = {}): UseFormReturn_ => {
   const defaultFormValues = useMemo(
     () => ({
       ...defaultValues,

@@ -3,18 +3,21 @@ import type { CollectionConfig, GroupField } from "payload";
 import { CardsGridInlineBlock } from "@/blocks/CardsGrid/inlineConfig";
 import { CodeInlineBlock } from "@/blocks/Code/inlineConfig";
 import { LogosInlineBlock } from "@/blocks/Logos/inlineConfig";
-import { BLOG_CONFIG } from "@/core/config/blog";
-import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
-import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/core/constants/mediaDefaults";
-import { anyone, author, or, user, superAdmin } from "@/core/lib/access";
-import { createLocalizedDefault, createLocalizedRichText } from "@/core/lib/createLocalizedDefault";
-import { generatePreviewPath } from "@/core/lib/generatePreviewPath";
-import { generateRichText } from "@/core/lib/generateRichText";
-import { generateSeoFields } from "@/core/lib/seoFields";
-import { buildUrl } from "@/core/utils/path/buildUrl";
+import { BLOG_CONFIG } from "@/lib/config/blog";
+import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
+import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
+import { anyone, author, or, user, superAdmin } from "@/lib/access";
+import {
+  createLocalizedDefault,
+  createLocalizedRichText,
+} from "@/lib/utils/createLocalizedDefault";
+import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
+import { generateRichText } from "@/lib/utils/generateRichText";
+import { generateSeoFields } from "@/lib/utils/seoFields";
+import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
-import { link } from "@/fields/link";
-import { createSharedSlugField } from "@/fields/slugField";
+import { link } from "@/lib/fields/link";
+import { createSharedSlugField } from "@/lib/fields/slugField";
 
 import { indexPostEmbedding, deletePostEmbedding } from "./hooks/indexEmbedding";
 import { revalidateDelete, revalidatePost } from "./hooks/revalidatePost";
@@ -130,11 +133,29 @@ export const Posts: CollectionConfig<"posts"> = {
                 },
               },
               fields: [
-                { label: { en: "Heading", es: "Encabezado" }, localized: true, name: "heading", type: "text" },
+                {
+                  label: { en: "Heading", es: "Encabezado" },
+                  localized: true,
+                  name: "heading",
+                  type: "text",
+                },
                 {
                   fields: [
-                    { label: { en: "Question", es: "Pregunta" }, localized: true, name: "question", required: true, type: "text" },
-                    { editor: generateRichText(), label: { en: "Answer", es: "Respuesta" }, localized: true, name: "answer", required: true, type: "richText" },
+                    {
+                      label: { en: "Question", es: "Pregunta" },
+                      localized: true,
+                      name: "question",
+                      required: true,
+                      type: "text",
+                    },
+                    {
+                      editor: generateRichText(),
+                      label: { en: "Answer", es: "Respuesta" },
+                      localized: true,
+                      name: "answer",
+                      required: true,
+                      type: "richText",
+                    },
                   ],
                   localized: true,
                   name: "items",
@@ -156,11 +177,28 @@ export const Posts: CollectionConfig<"posts"> = {
                 {
                   type: "row",
                   fields: [
-                    { admin: { width: "40%" }, label: { en: "Eyebrow", es: "Antetítulo" }, localized: true, name: "eyebrow", type: "text" },
-                    { admin: { width: "60%" }, label: { en: "Heading", es: "Encabezado" }, localized: true, name: "heading", type: "text" },
+                    {
+                      admin: { width: "40%" },
+                      label: { en: "Eyebrow", es: "Antetítulo" },
+                      localized: true,
+                      name: "eyebrow",
+                      type: "text",
+                    },
+                    {
+                      admin: { width: "60%" },
+                      label: { en: "Heading", es: "Encabezado" },
+                      localized: true,
+                      name: "heading",
+                      type: "text",
+                    },
                   ],
                 },
-                { label: { en: "Description", es: "Descripción" }, localized: true, name: "description", type: "textarea" },
+                {
+                  label: { en: "Description", es: "Descripción" },
+                  localized: true,
+                  name: "description",
+                  type: "textarea",
+                },
                 {
                   fields: (link() as GroupField).fields,
                   label: { en: "Actions", es: "Acciones" },

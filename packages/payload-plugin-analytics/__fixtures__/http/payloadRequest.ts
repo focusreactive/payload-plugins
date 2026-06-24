@@ -6,7 +6,12 @@ interface MakeReqArgs {
   params?: Record<string, string>;
   routeParams?: Record<string, string>;
 }
-export function makePayloadRequest({ user, body, params, routeParams }: MakeReqArgs = {}): PayloadRequest {
+export function makePayloadRequest({
+  user,
+  body,
+  params,
+  routeParams,
+}: MakeReqArgs = {}): PayloadRequest {
   const route = routeParams ?? params ?? {};
 
   return {

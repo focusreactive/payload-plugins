@@ -44,7 +44,9 @@ export function HeadingTree({ tree }: HeadingTreeProps) {
         )}
       </div>
       {empty ? (
-        <div className="px-[15px] pt-[20px] pb-[24px] text-center text-[12px] text-neutral-500">No headings found in this content.</div>
+        <div className="px-[15px] pt-[20px] pb-[24px] text-center text-[12px] text-neutral-500">
+          No headings found in this content.
+        </div>
       ) : (
         <div className="relative pt-[5px] pb-[7px]">
           <HeadingTreeGroup nodes={tree} depth={0} collapsed={collapsed} onToggle={toggle} />

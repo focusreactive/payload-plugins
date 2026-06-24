@@ -13,9 +13,16 @@ describe("invariants", () => {
   it("no GA4 SDK imports outside services/ga4DataClient and services/analyticsService", async () => {
     const files = await glob("src/**/*.{ts,tsx}", {
       cwd: PKG,
-      ignore: ["src/services/ga4DataClient/**", "src/services/analyticsService/**", "src/**/*.test.ts", "src/**/*.test.tsx"],
+      ignore: [
+        "src/services/ga4DataClient/**",
+        "src/services/analyticsService/**",
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+      ],
     });
-    const offenders = files.filter((f) => /from\s+["']@google-analytics\/data["']/u.test(readFileSync(resolve(PKG, f), "utf-8")));
+    const offenders = files.filter((f) =>
+      /from\s+["']@google-analytics\/data["']/u.test(readFileSync(resolve(PKG, f), "utf-8"))
+    );
     expect(offenders).toEqual([]);
   });
 
@@ -36,9 +43,14 @@ describe("admin view invariants", () => {
   it("no recharts imports outside TrendChartInner.tsx and DonutChartInner.tsx", async () => {
     const files = await glob(`${COMPONENTS_DIR}/**/*.{ts,tsx}`, {
       cwd: PKG,
-      ignore: [`${COMPONENTS_DIR}/ui/TrendChartInner.tsx`, `${COMPONENTS_DIR}/ui/DonutChartInner.tsx`],
+      ignore: [
+        `${COMPONENTS_DIR}/ui/TrendChartInner.tsx`,
+        `${COMPONENTS_DIR}/ui/DonutChartInner.tsx`,
+      ],
     });
-    const offenders = files.filter((f) => /from\s+["']recharts["']/u.test(readFileSync(resolve(PKG, f), "utf-8")));
+    const offenders = files.filter((f) =>
+      /from\s+["']recharts["']/u.test(readFileSync(resolve(PKG, f), "utf-8"))
+    );
     expect(offenders).toEqual([]);
   });
 
@@ -53,7 +65,9 @@ describe("admin view invariants", () => {
 
   it("no process.env reads inside AnalyticsView components", async () => {
     const files = await glob(`${COMPONENTS_DIR}/**/*.{ts,tsx}`, { cwd: PKG });
-    const offenders = files.filter((f) => /process\.env/u.test(readFileSync(resolve(PKG, f), "utf-8")));
+    const offenders = files.filter((f) =>
+      /process\.env/u.test(readFileSync(resolve(PKG, f), "utf-8"))
+    );
     expect(offenders).toEqual([]);
   });
 
@@ -73,7 +87,9 @@ describe("admin view invariants", () => {
     const files = await glob(`${COMPONENTS_DIR}/**/*.{ts,tsx}`, { cwd: PKG });
     const offenders = files.filter((f) => {
       const src = readFileSync(resolve(PKG, f), "utf-8");
-      return /from\s+["']\.\.\/\.\.\/services|from\s+["']\.\.\/\.\.\/\.\.\/services|from\s+["']\.\.\/\.\.\/endpoints/u.test(src);
+      return /from\s+["']\.\.\/\.\.\/services|from\s+["']\.\.\/\.\.\/\.\.\/services|from\s+["']\.\.\/\.\.\/endpoints/u.test(
+        src
+      );
     });
     expect(offenders).toEqual([]);
   });
@@ -81,7 +97,11 @@ describe("admin view invariants", () => {
   it("builtInRegistry.tsx is the only file mapping lead-action types -> LucideIcon", async () => {
     const files = await glob(`src/**/*.{ts,tsx}`, {
       cwd: PKG,
-      ignore: ["src/utils/leadActions/builtInRegistry.tsx", "src/**/*.test.ts", "src/**/*.test.tsx"],
+      ignore: [
+        "src/utils/leadActions/builtInRegistry.tsx",
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+      ],
     });
     const offenders = files.filter((f) => {
       const src = readFileSync(resolve(PKG, f), "utf-8");
@@ -92,7 +112,9 @@ describe("admin view invariants", () => {
 
   it("no LEAD_ACTION_EVENTS imports remain in source", async () => {
     const files = await glob("src/**/*.{ts,tsx}", { cwd: PKG });
-    const offenders = files.filter((f) => /LEAD_ACTION_EVENTS/u.test(readFileSync(resolve(PKG, f), "utf-8")));
+    const offenders = files.filter((f) =>
+      /LEAD_ACTION_EVENTS/u.test(readFileSync(resolve(PKG, f), "utf-8"))
+    );
     expect(offenders).toEqual([]);
   });
 });

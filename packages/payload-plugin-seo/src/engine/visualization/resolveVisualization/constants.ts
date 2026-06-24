@@ -12,4 +12,12 @@ export const gaugeKeyByCheck: Partial<Record<CheckId, string>> = {
   fleschReadingEase: "score",
 };
 
-export const PRESENCE_CHECKS = new Set<CheckId>(["introductionKeyword", "metaDescriptionKeyword", "keyphraseInSEOTitle", "slugKeyword", "functionWordsInKeyphrase", "images", "singleH1"]);
+export const PRESENCE_CHECKS = new Set<CheckId>([
+  "introductionKeyword",
+  "metaDescriptionKeyword",
+  "keyphraseInSEOTitle",
+  "slugKeyword",
+  "functionWordsInKeyphrase",
+  "images",
+  "singleH1",
+]);

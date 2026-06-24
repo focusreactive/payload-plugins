@@ -1,0 +1,98 @@
+import type { CollectionSlug, PayloadRequest } from "payload";
+import { z } from "zod";
+
+import type { Locale } from "@/lib/types";
+
+import type { BaseDocument, McpTool } from "../../types";
+import type { McpToolsRegistry } from "../index";
+import { buildContent } from "./buildContent";
+
+async function fetchDocument(
+  collection: CollectionSlug,
+  id: string,
+  req: PayloadRequest,
+  locale?: Locale,
+  full?: boolean
+): Promise<BaseDocument> {
+  return req.payload.findByID({
+    collection,
+    depth: full ? 2 : 1,
+    id,
+    locale,
+    overrideAccess: false,
+    req,
+  }) as unknown as Promise<BaseDocument>;
+}
+
+export function createGetDocumentTool(
+  registry: McpToolsRegistry,
+  knownCollections: Set<CollectionSlug>,
+  baseSkipKeys: Set<string>
+): McpTool {
+  const knownSlugs = [...knownCollections].join(", ");
+
+  return {
+    description: `Fetch a collection document by ID. Specify collectionSlug (one of: ${knownSlugs}). Returns all top-level fields as a structured overview — complex fields (arrays, blocks, relations, rich text) are summarized with their type and item count. Use getAllDocuments to list documents first, then this tool by ID. Use getField to drill into specific fields. Do NOT pass full: true unless the user explicitly asks to extract the entire content. Pass raw: true to get the full raw JSON — use this when you need structured data for analysis or to construct an update payload. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.`,
+    handler: async (args, req) => {
+      const { collectionSlug, id, locale, full, raw } = args as {
+        collectionSlug: string;
+        id: string;
+        locale?: Locale;
+        full?: boolean;
+        raw?: boolean;
+      };
+
+      const config = registry.collections[collectionSlug as CollectionSlug];
+      if (!config) {
+        return {
+          content: [
+            {
+              text: `Error: unknown collectionSlug "${collectionSlug}". Known collections: ${knownSlugs}`,
+              type: "text" as const,
+            },
+          ],
+        };
+      }
+
+      const collection = collectionSlug as CollectionSlug;
+      const effectiveSkipKeys = new Set([...baseSkipKeys, ...(config.skipKeys ?? [])]);
+
+      const doc = await fetchDocument(collection, id, req, locale, full);
+
+      const content = buildContent({
+        buildUrl: config.buildUrl,
+        collection,
+        doc,
+        full,
+        locale,
+        payload: req.payload,
+        raw,
+        skipKeys: effectiveSkipKeys,
+        titleField: config.titleField,
+      });
+
+      return { content };
+    },
+    name: "getDocument",
+    parameters: {
+      collectionSlug: z.string().describe(`The collection slug. One of: ${knownSlugs}`),
+      full: z
+        .boolean()
+        .optional()
+        .describe(
+          "Only pass full: true when the user explicitly asks to extract the entire document content. Expands all nested fields, arrays, rich text, and relations inline (uses depth 2). Produces a much larger response — omit by default."
+        ),
+      id: z.string().describe("Document ID"),
+      locale: z
+        .string()
+        .optional()
+        .describe('Locale code, e.g. "en" or "es". Omit to use the default locale.'),
+      raw: z
+        .boolean()
+        .optional()
+        .describe(
+          "Return the raw JSON document instead of formatted Markdown. Use this when you need all field values, IDs, and Lexical node structure — for example, to extract structured data for analysis or passing back in an update call."
+        ),
+    },
+  };
+}

@@ -1,5 +1,11 @@
 import type { AbIntegrationConfig } from "../types/config";
-import { AB_STATS_DEFAULTS, AB_WIN_RATE_DEFAULTS, DEFAULT_AB_DIMENSIONS, DEFAULT_AB_EXPERIMENTS_SLUG, DEFAULT_AB_VARIANT_FIELDS } from "../constants/ab";
+import {
+  AB_STATS_DEFAULTS,
+  AB_WIN_RATE_DEFAULTS,
+  DEFAULT_AB_DIMENSIONS,
+  DEFAULT_AB_EXPERIMENTS_SLUG,
+  DEFAULT_AB_VARIANT_FIELDS,
+} from "../constants/ab";
 
 export interface ResolvedAbConfig {
   experimentsCollectionSlug: string;

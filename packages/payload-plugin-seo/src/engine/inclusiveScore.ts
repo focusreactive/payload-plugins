@@ -18,7 +18,10 @@ function flagsToRing(count: number): number {
   return Math.max(0, 100 - count * 10);
 }
 
-export function scoreInclusive(flags: RawInclusiveFlag[], allCategories: string[]): InclusiveResult {
+export function scoreInclusive(
+  flags: RawInclusiveFlag[],
+  allCategories: string[]
+): InclusiveResult {
   const byCategory = new Map<string, InclusiveCategory>();
 
   for (const f of flags) {

@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { Phone, Zap } from "lucide-react";
-import { LeadActionRegistryProvider, createLeadActionRegistry, useLeadActionRegistry } from "../../../../src/components/AnalyticsView/contexts/LeadActionRegistryContext";
+import {
+  LeadActionRegistryProvider,
+  createLeadActionRegistry,
+  useLeadActionRegistry,
+} from "../../../../src/components/AnalyticsView/contexts/LeadActionRegistryContext";
 
 function Probe({ type }: { type: string }) {
   const { resolveLabel, resolveIcon } = useLeadActionRegistry();
@@ -43,7 +47,9 @@ describe("LeadActionRegistryContext", () => {
   });
 
   it("createLeadActionRegistry returns a Provider component with bound registry", () => {
-    const Provider = createLeadActionRegistry({ cta_pricing_click: { icon: Phone, label: "Pricing CTA" } });
+    const Provider = createLeadActionRegistry({
+      cta_pricing_click: { icon: Phone, label: "Pricing CTA" },
+    });
     render(
       <Provider>
         <Probe type="cta_pricing_click" />

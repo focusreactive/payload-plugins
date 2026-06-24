@@ -1,1 +1,1 @@
-export { TranslateDocumentExport } from './ui/TranslateDocument.export'
+export { TranslateDocumentExport } from "./ui/TranslateDocument.export";

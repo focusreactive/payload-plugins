@@ -14,17 +14,35 @@ export interface RowRendererProps {
   blockComponents?: Record<string, ComponentType<Record<string, unknown>>>;
 }
 
-export function RowRenderer({ row, clientRegistry, dateRange, comparison, t, blockComponents }: RowRendererProps) {
+export function RowRenderer({
+  row,
+  clientRegistry,
+  dateRange,
+  comparison,
+  t,
+  blockComponents,
+}: RowRendererProps) {
   const blocks = row.blocks as unknown as Array<{ id: BlockId; order: number; colSpan: number }>;
 
   return (
-    <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${row.columns}, minmax(0, 1fr))` }}>
+    <div
+      className="grid gap-4"
+      style={{ gridTemplateColumns: `repeat(${row.columns}, minmax(0, 1fr))` }}
+    >
       {blocks.map((b) => {
         const entry = clientRegistry[b.id];
 
         return (
           <div key={b.id} data-block-cell="" style={{ gridColumn: `span ${b.colSpan}` }}>
-            <BlockRenderer blockId={b.id} Component={blockComponents?.[b.id]} hasFetch={Boolean(entry?.hasFetch)} dateRange={dateRange} comparison={comparison} colSpan={b.colSpan} t={t} />
+            <BlockRenderer
+              blockId={b.id}
+              Component={blockComponents?.[b.id]}
+              hasFetch={Boolean(entry?.hasFetch)}
+              dateRange={dateRange}
+              comparison={comparison}
+              colSpan={b.colSpan}
+              t={t}
+            />
           </div>
         );
       })}

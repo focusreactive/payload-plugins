@@ -1,9 +1,9 @@
 import { revalidateTag } from "next/cache";
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook, Payload } from "payload";
 
-import { cacheTag } from "@/core/lib/cacheTags";
-import { getLocaleFromRequest } from "@/core/lib/getLocaleFromRequest";
-import type { Locale } from "@/core/types";
+import { cacheTag } from "@/lib/utils/cacheTags";
+import { getLocaleFromRequest } from "@/lib/utils/getLocaleFromRequest";
+import type { Locale } from "@/lib/types";
 import type { Post } from "@/payload-types";
 
 function revalidatePostTags(slug: string, locale: Locale, payload: Payload) {
@@ -15,7 +15,11 @@ function revalidatePostTags(slug: string, locale: Locale, payload: Payload) {
   revalidateTag(cacheTag({ locale, type: "postsList" }), "max");
 }
 
-export const revalidatePost: CollectionAfterChangeHook<Post> = async ({ doc, previousDoc, req }) => {
+export const revalidatePost: CollectionAfterChangeHook<Post> = async ({
+  doc,
+  previousDoc,
+  req,
+}) => {
   const { payload, context } = req;
 
   if (!context.disableRevalidate) {

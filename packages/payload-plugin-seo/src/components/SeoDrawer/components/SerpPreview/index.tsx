@@ -2,7 +2,14 @@ import type { ReactElement } from "react";
 import type { SerpResult } from "../../../../engine/types/analysis";
 import { highlightKeyphrase } from "./highlight-keyphrase";
 import { SerpFavicon } from "./serp-favicon";
-import { serpContainer, serpDescription, serpHostname, serpSiteName, serpTitle, serpUrlRow } from "./variants";
+import {
+  serpContainer,
+  serpDescription,
+  serpHostname,
+  serpSiteName,
+  serpTitle,
+  serpUrlRow,
+} from "./variants";
 import { truncateDescription } from "./truncate-description";
 
 export type SerpMode = "mobile" | "desktop";
@@ -28,7 +35,9 @@ export function SerpPreview({ data, keyphrase, faviconUrl, mode }: SerpPreviewPr
 
       <div className={serpTitle({ mode })}>{data.title}</div>
 
-      <div className={serpDescription({ mode })}>{highlightKeyphrase(truncateDescription(data.description), keyphrase)}</div>
+      <div className={serpDescription({ mode })}>
+        {highlightKeyphrase(truncateDescription(data.description), keyphrase)}
+      </div>
     </div>
   );
 

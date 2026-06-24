@@ -26,6 +26,6 @@ export function useMentionableUsersQuery() {
       refetchInterval: isOpen ? REFETCH_INTERVAL : false,
       refetchIntervalInBackground: false,
     },
-    queryClient,
+    queryClient
   );
 }

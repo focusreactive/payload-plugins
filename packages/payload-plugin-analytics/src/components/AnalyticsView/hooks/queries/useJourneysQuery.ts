@@ -9,6 +9,9 @@ import { analyticsKeys } from "./keys";
 export function useJourneysQuery(query: JourneysQuery) {
   return useQuery({
     queryKey: analyticsKeys.journeys(query),
-    queryFn: ({ signal }) => analyticsFetch<JourneysQuery, JourneyResponse>(ANALYTICS_ENDPOINT_PATHS.journeys, query, { signal }),
+    queryFn: ({ signal }) =>
+      analyticsFetch<JourneysQuery, JourneyResponse>(ANALYTICS_ENDPOINT_PATHS.journeys, query, {
+        signal,
+      }),
   });
 }

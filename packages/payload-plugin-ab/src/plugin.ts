@@ -18,35 +18,50 @@ export const abTestingPlugin =
     if (!enabled) return incomingConfig;
 
     if ((storage as typeof storage | undefined) == null) {
-      console.warn(`${PREFIX} Disabled: required option "storage" is missing (provide a storage adapter, e.g. payloadGlobalAdapter() or vercelEdgeAdapter(...)). Plugin not registered.`);
+      console.warn(
+        `${PREFIX} Disabled: required option "storage" is missing (provide a storage adapter, e.g. payloadGlobalAdapter() or vercelEdgeAdapter(...)). Plugin not registered.`
+      );
       return incomingConfig;
     }
 
     if (!collections || Object.keys(collections).length === 0) {
-      console.warn(`${PREFIX} Disabled: required option "collections" is missing or empty. Plugin not registered.`);
+      console.warn(
+        `${PREFIX} Disabled: required option "collections" is missing or empty. Plugin not registered.`
+      );
       return incomingConfig;
     }
 
     const extraGlobals = storage.createGlobal ? [storage.createGlobal(debug)] : [];
 
-    const patchedCollections = (incomingConfig.collections ?? []).map((collection): CollectionConfig => {
-      const abConfig = collections[collection.slug];
-      if (!abConfig) return collection;
+    const patchedCollections = (incomingConfig.collections ?? []).map(
+      (collection): CollectionConfig => {
+        const abConfig = collections[collection.slug];
+        if (!abConfig) return collection;
 
-      // Inject admin fields (UI panel, hidden data fields, list filter)
-      const withAdminFields = injectAdminFields(collection, collection.slug, abConfig);
+        // Inject admin fields (UI panel, hidden data fields, list filter)
+        const withAdminFields = injectAdminFields(collection, collection.slug, abConfig);
 
-      // Inject hooks
-      return {
-        ...withAdminFields,
-        hooks: {
-          ...withAdminFields.hooks,
-          beforeChange: [...(withAdminFields.hooks?.beforeChange ?? []), buildParentBeforeChangeHook(collection.slug, abConfig, pluginConfig)],
-          afterChange: [...(withAdminFields.hooks?.afterChange ?? []), buildParentAfterChangeHook(collection.slug, abConfig, pluginConfig)],
-          afterDelete: [...(withAdminFields.hooks?.afterDelete ?? []), buildParentAfterDeleteHook(collection.slug, abConfig, pluginConfig)],
-        },
-      };
-    });
+        // Inject hooks
+        return {
+          ...withAdminFields,
+          hooks: {
+            ...withAdminFields.hooks,
+            beforeChange: [
+              ...(withAdminFields.hooks?.beforeChange ?? []),
+              buildParentBeforeChangeHook(collection.slug, abConfig, pluginConfig),
+            ],
+            afterChange: [
+              ...(withAdminFields.hooks?.afterChange ?? []),
+              buildParentAfterChangeHook(collection.slug, abConfig, pluginConfig),
+            ],
+            afterDelete: [
+              ...(withAdminFields.hooks?.afterDelete ?? []),
+              buildParentAfterDeleteHook(collection.slug, abConfig, pluginConfig),
+            ],
+          },
+        };
+      }
+    );
 
     const experimentsSlug = pluginConfig.experimentsCollectionSlug ?? AB_EXPERIMENTS_SLUG;
     const experimentsCollection = buildExperimentsCollection(debug, experimentsSlug);

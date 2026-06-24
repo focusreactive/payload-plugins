@@ -17,20 +17,20 @@ import { Page } from "@/collections/Page/Page";
 import { Posts } from "@/collections/Posts";
 import { Testimonials } from "@/collections/Testimonials";
 import { Users } from "@/collections/Users";
-import { I18N_CONFIG } from "@/core/config/i18n";
-import { createDatabaseAdapter } from "@/database";
+import { I18N_CONFIG } from "@/lib/config/i18n";
+import { createDatabaseAdapter } from "@/lib/database";
 import { SiteSettings } from "@/globals/SiteSettings/config";
-import { plugins } from "@/plugins";
+import { plugins } from "@/lib/plugins";
 
 const baseDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default buildConfig({
   admin: {
     components: {
-      afterLogin: ["/core/ui/components/Admin/SSOButtons"],
+      afterLogin: ["/components/admin/SSOButtons"],
       graphics: {
-        Icon: "/core/ui/components/Admin/Icon",
-        Logo: "/core/ui/components/Admin/Logo",
+        Icon: "/components/admin/Icon",
+        Logo: "/components/admin/Logo",
       },
       providers: ["/providers/BeforeOpenDrawerWrapper", "/providers/SeoExtractorRegistrar"],
     },
@@ -61,7 +61,18 @@ export default buildConfig({
     },
     user: Users.slug,
   },
-  collections: [Users, Media, Page, Categories, Authors, Posts, Testimonials, Header, Footer, DocumentEmbeddings],
+  collections: [
+    Users,
+    Media,
+    Page,
+    Categories,
+    Authors,
+    Posts,
+    Testimonials,
+    Header,
+    Footer,
+    DocumentEmbeddings,
+  ],
   db: createDatabaseAdapter({
     connectionString: process.env.DATABASE_URL,
   }),

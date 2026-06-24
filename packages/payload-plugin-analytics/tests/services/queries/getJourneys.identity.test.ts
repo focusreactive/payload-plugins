@@ -23,22 +23,76 @@ const FIXTURE = {
   dimensionHeaders: [],
   metricHeaders: [{ name: "eventCount", type: "TYPE_INTEGER" }],
   rows: [
-    { dimensionValues: [{ value: "S1" }, { value: "page_view" }, { value: "/" }, { value: "202605101430" }, { value: "1" }, { value: "" }, { value: "__home" }], metricValues: [{ value: "1" }] },
     {
-      dimensionValues: [{ value: "S1" }, { value: "page_view" }, { value: "/old-pricing" }, { value: "202605101431" }, { value: "2" }, { value: "" }, { value: "pages:1" }],
+      dimensionValues: [
+        { value: "S1" },
+        { value: "page_view" },
+        { value: "/" },
+        { value: "202605101430" },
+        { value: "1" },
+        { value: "" },
+        { value: "__home" },
+      ],
       metricValues: [{ value: "1" }],
     },
     {
-      dimensionValues: [{ value: "S1" }, { value: "lead_action" }, { value: "/old-pricing" }, { value: "202605101431" }, { value: "3" }, { value: "phone_click" }, { value: "pages:1" }],
+      dimensionValues: [
+        { value: "S1" },
+        { value: "page_view" },
+        { value: "/old-pricing" },
+        { value: "202605101431" },
+        { value: "2" },
+        { value: "" },
+        { value: "pages:1" },
+      ],
       metricValues: [{ value: "1" }],
     },
-    { dimensionValues: [{ value: "S2" }, { value: "page_view" }, { value: "/" }, { value: "202605101500" }, { value: "1" }, { value: "" }, { value: "__home" }], metricValues: [{ value: "1" }] },
     {
-      dimensionValues: [{ value: "S2" }, { value: "page_view" }, { value: "/pricing" }, { value: "202605101501" }, { value: "2" }, { value: "" }, { value: "pages:1" }],
+      dimensionValues: [
+        { value: "S1" },
+        { value: "lead_action" },
+        { value: "/old-pricing" },
+        { value: "202605101431" },
+        { value: "3" },
+        { value: "phone_click" },
+        { value: "pages:1" },
+      ],
       metricValues: [{ value: "1" }],
     },
     {
-      dimensionValues: [{ value: "S2" }, { value: "lead_action" }, { value: "/pricing" }, { value: "202605101501" }, { value: "3" }, { value: "phone_click" }, { value: "pages:1" }],
+      dimensionValues: [
+        { value: "S2" },
+        { value: "page_view" },
+        { value: "/" },
+        { value: "202605101500" },
+        { value: "1" },
+        { value: "" },
+        { value: "__home" },
+      ],
+      metricValues: [{ value: "1" }],
+    },
+    {
+      dimensionValues: [
+        { value: "S2" },
+        { value: "page_view" },
+        { value: "/pricing" },
+        { value: "202605101501" },
+        { value: "2" },
+        { value: "" },
+        { value: "pages:1" },
+      ],
+      metricValues: [{ value: "1" }],
+    },
+    {
+      dimensionValues: [
+        { value: "S2" },
+        { value: "lead_action" },
+        { value: "/pricing" },
+        { value: "202605101501" },
+        { value: "3" },
+        { value: "phone_click" },
+        { value: "pages:1" },
+      ],
       metricValues: [{ value: "1" }],
     },
   ],
@@ -50,7 +104,11 @@ describe("getJourneys identity labels", () => {
     const fake = { runReport: vi.fn().mockResolvedValue([FIXTURE]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
 
-    const res = await getJourneys("12345", { dateRange: { preset: "last-7d" }, limit: 20, sampleLimit: 50_000 }, pageFilter);
+    const res = await getJourneys(
+      "12345",
+      { dateRange: { preset: "last-7d" }, limit: 20, sampleLimit: 50_000 },
+      pageFilter
+    );
 
     expect(res.sessionsConsidered).toBe(2);
     expect(res.rows).toHaveLength(1);

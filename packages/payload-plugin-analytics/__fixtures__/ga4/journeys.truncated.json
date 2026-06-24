@@ -10,7 +10,14 @@
   "metricHeaders": [{ "name": "eventCount", "type": "TYPE_INTEGER" }],
   "rows": [
     {
-      "dimensionValues": [{ "value": "S1" }, { "value": "page_view" }, { "value": "/" }, { "value": "202605101430" }, { "value": "1" }, { "value": "" }],
+      "dimensionValues": [
+        { "value": "S1" },
+        { "value": "page_view" },
+        { "value": "/" },
+        { "value": "202605101430" },
+        { "value": "1" },
+        { "value": "" }
+      ],
       "metricValues": [{ "value": "1" }]
     }
   ],

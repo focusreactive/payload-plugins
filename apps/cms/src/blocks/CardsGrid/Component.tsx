@@ -1,10 +1,32 @@
-import { CardsGrid, SectionHeader } from "@repo/ui";
-import type { IDefaultCardProps } from "@repo/ui/components/sections/cardsGrid/types";
-import { Activity, BarChart3, Bell, Calendar, Clock, Compass, FileText, Gauge, GitBranch, Layers, LayoutGrid, Map, Plug, Shield, Sparkles, Target, Users, Wand2, Workflow, Zap } from "lucide-react";
+import { SectionHeader } from "@/components/SectionHeader";
+import { CardsGrid } from "./ui";
+import type { IDefaultCardProps } from "./ui/types";
+import {
+  Activity,
+  BarChart3,
+  Bell,
+  Calendar,
+  Clock,
+  Compass,
+  FileText,
+  Gauge,
+  GitBranch,
+  Layers,
+  LayoutGrid,
+  Map,
+  Plug,
+  Shield,
+  Sparkles,
+  Target,
+  Users,
+  Wand2,
+  Workflow,
+  Zap,
+} from "lucide-react";
 import React from "react";
 
-import { resolveLocale } from "@/core/lib/resolveLocale";
-import { SectionContainer } from "@/core/ui";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
+import { SectionContainer } from "@/components/shared";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
@@ -35,7 +57,15 @@ const ICON_MAP: Record<CardIcon, React.ReactElement> = {
   zap: <Zap size={22} strokeWidth={1.8} />,
 };
 
-export async function CardsGridBlockComponent({ eyebrow, heading, description, items, columns, section, id }: CardsGridBlock) {
+export async function CardsGridBlockComponent({
+  eyebrow,
+  heading,
+  description,
+  items,
+  columns,
+  section,
+  id,
+}: CardsGridBlock) {
   const locale = await resolveLocale();
 
   const cards: IDefaultCardProps[] = (items ?? []).map((item) => {

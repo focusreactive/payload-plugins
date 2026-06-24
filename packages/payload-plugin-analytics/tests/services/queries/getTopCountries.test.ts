@@ -30,14 +30,22 @@ describe("getTopCountries — country dimension", () => {
             { name: "sessions", type: "TYPE_INTEGER" },
             { name: "totalUsers", type: "TYPE_INTEGER" },
           ],
-          rows: [{ dimensionValues: [{ value: "United States" }], metricValues: [{ value: "100" }, { value: "80" }] }],
+          rows: [
+            {
+              dimensionValues: [{ value: "United States" }],
+              metricValues: [{ value: "100" }, { value: "80" }],
+            },
+          ],
           rowCount: 1,
         },
       ]),
       batchRunReports: vi.fn(),
     };
     __setGa4ClientForTests(fake as never);
-    const res = await getTopCountries("12345", { dateRange: { preset: "last-7d" }, dimension: "country" });
+    const res = await getTopCountries("12345", {
+      dateRange: { preset: "last-7d" },
+      dimension: "country",
+    });
     expect(res.rows[0]).toEqual({ country: "United States", city: "", sessions: 100, users: 80 });
   });
 });
@@ -54,8 +62,16 @@ describe("getTopCountries — city dimension", () => {
   it("maps rows with both city and country populated", async () => {
     const fake = { runReport: vi.fn().mockResolvedValue([topCities]), batchRunReports: vi.fn() };
     __setGa4ClientForTests(fake as never);
-    const res = await getTopCountries("12345", { dateRange: { preset: "last-7d" }, dimension: "city" });
-    expect(res.rows[0]).toEqual({ city: "New York", country: "United States", sessions: 450, users: 380 });
+    const res = await getTopCountries("12345", {
+      dateRange: { preset: "last-7d" },
+      dimension: "city",
+    });
+    expect(res.rows[0]).toEqual({
+      city: "New York",
+      country: "United States",
+      sessions: 450,
+      users: 380,
+    });
   });
 });
 
@@ -105,11 +121,19 @@ describe("getTopCountries — comparison join key", () => {
           ],
           rows: [
             {
-              dimensionValues: [{ value: "New York" }, { value: "United States" }, { value: "current" }],
+              dimensionValues: [
+                { value: "New York" },
+                { value: "United States" },
+                { value: "current" },
+              ],
               metricValues: [{ value: "100" }, { value: "80" }],
             },
             {
-              dimensionValues: [{ value: "New York" }, { value: "United States" }, { value: "previous" }],
+              dimensionValues: [
+                { value: "New York" },
+                { value: "United States" },
+                { value: "previous" },
+              ],
               metricValues: [{ value: "60" }, { value: "50" }],
             },
           ],
@@ -124,8 +148,16 @@ describe("getTopCountries — comparison join key", () => {
       comparison: { kind: "previous-period" },
       dimension: "city",
     });
-    expect(res.rows[0]).toMatchObject({ city: "New York", country: "United States", sessions: 100 });
-    expect(res.comparison?.rows[0]).toMatchObject({ city: "New York", country: "United States", sessions: 60 });
+    expect(res.rows[0]).toMatchObject({
+      city: "New York",
+      country: "United States",
+      sessions: 100,
+    });
+    expect(res.comparison?.rows[0]).toMatchObject({
+      city: "New York",
+      country: "United States",
+      sessions: 60,
+    });
   });
 });
 
@@ -136,10 +168,20 @@ describe("getTopCountries — page filter", () => {
     await getTopCountries(
       "12345",
       { dateRange: { preset: "last-7d" } },
-      { refs: ["page:1", "__home"], pageRefDim: "customEvent:fr_page_ref", contentLocaleDim: "customEvent:fr_content_locale", resolveLabels: async () => new Map() }
+      {
+        refs: ["page:1", "__home"],
+        pageRefDim: "customEvent:fr_page_ref",
+        contentLocaleDim: "customEvent:fr_content_locale",
+        resolveLabels: async () => new Map(),
+      }
     );
     const arg = fake.runReport.mock.calls[0][0];
-    expect(arg.dimensionFilter).toEqual({ filter: { fieldName: "customEvent:fr_page_ref", inListFilter: { values: ["page:1", "__home"] } } });
+    expect(arg.dimensionFilter).toEqual({
+      filter: {
+        fieldName: "customEvent:fr_page_ref",
+        inListFilter: { values: ["page:1", "__home"] },
+      },
+    });
   });
   it("adds no fr_page_ref filter when pageFilter is null", async () => {
     const fake = { runReport: vi.fn().mockResolvedValue([topCountries]), batchRunReports: vi.fn() };

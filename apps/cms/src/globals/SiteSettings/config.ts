@@ -1,9 +1,9 @@
 import type { GlobalConfig } from "payload";
 
-import { DEFAULT_VALUES } from "@/core/constants/defaultValues";
-import { anyone, or, user, superAdmin } from "@/core/lib/access";
-import { createLocalizedDefault } from "@/core/lib/createLocalizedDefault";
-import { generateSeoFields } from "@/core/lib/seoFields";
+import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
+import { anyone, or, user, superAdmin } from "@/lib/access";
+import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
+import { generateSeoFields } from "@/lib/utils/seoFields";
 
 import { revalidateSiteSettings } from "./hooks/revalidateSiteSettings";
 
@@ -23,7 +23,9 @@ export const SiteSettings: GlobalConfig = {
             {
               name: "siteName",
               type: "text",
-              defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.siteName),
+              defaultValue: createLocalizedDefault(
+                DEFAULT_VALUES.collections.siteSettings.siteName
+              ),
               admin: {
                 description: {
                   en: "The name of your website",
@@ -157,7 +159,9 @@ export const SiteSettings: GlobalConfig = {
                     },
                   },
                   localized: true,
-                  defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.seoTitleSuffix),
+                  defaultValue: createLocalizedDefault(
+                    DEFAULT_VALUES.collections.siteSettings.seoTitleSuffix
+                  ),
                 },
               ],
             },
@@ -215,7 +219,9 @@ export const SiteSettings: GlobalConfig = {
                   es: "Descripción de respaldo cuando la página no tiene descripción",
                 },
               },
-              defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.defaultDescription),
+              defaultValue: createLocalizedDefault(
+                DEFAULT_VALUES.collections.siteSettings.defaultDescription
+              ),
               localized: true,
             },
             {
@@ -232,7 +238,9 @@ export const SiteSettings: GlobalConfig = {
                 },
               },
               localized: true,
-              defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.defaultOgDescription),
+              defaultValue: createLocalizedDefault(
+                DEFAULT_VALUES.collections.siteSettings.defaultOgDescription
+              ),
             },
             {
               name: "defaultOgImage",
@@ -345,7 +353,9 @@ export const SiteSettings: GlobalConfig = {
                 },
               },
               localized: true,
-              defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.notFoundTitle),
+              defaultValue: createLocalizedDefault(
+                DEFAULT_VALUES.collections.siteSettings.notFoundTitle
+              ),
             },
             {
               name: "notFoundDescription",
@@ -354,7 +364,9 @@ export const SiteSettings: GlobalConfig = {
                 en: "404 Description",
                 es: "Descripción de la página 404",
               },
-              defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.notFoundDescription),
+              defaultValue: createLocalizedDefault(
+                DEFAULT_VALUES.collections.siteSettings.notFoundDescription
+              ),
               admin: {
                 description: {
                   en: "Text displayed on 404 page",
@@ -382,7 +394,10 @@ export const SiteSettings: GlobalConfig = {
                       fields: [
                         {
                           admin: { width: "40%" },
-                          defaultValue: createLocalizedDefault({ en: "The Journal", es: "The Journal" }),
+                          defaultValue: createLocalizedDefault({
+                            en: "The Journal",
+                            es: "The Journal",
+                          }),
                           label: { en: "Eyebrow", es: "Antetítulo" },
                           localized: true,
                           name: "eyebrow",
@@ -393,7 +408,9 @@ export const SiteSettings: GlobalConfig = {
                           name: "blogTitle",
                           type: "text",
                           required: true,
-                          defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.blog.blogTitle),
+                          defaultValue: createLocalizedDefault(
+                            DEFAULT_VALUES.collections.siteSettings.blog.blogTitle
+                          ),
                           localized: true,
                           label: {
                             en: "Blog Page Title",
@@ -411,7 +428,9 @@ export const SiteSettings: GlobalConfig = {
                         en: "Blog Page Description",
                         es: "Descripción de la página de blog",
                       },
-                      defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.blog.blogDescription),
+                      defaultValue: createLocalizedDefault(
+                        DEFAULT_VALUES.collections.siteSettings.blog.blogDescription
+                      ),
                     },
                     {
                       type: "row",
@@ -426,7 +445,9 @@ export const SiteSettings: GlobalConfig = {
                             es: "Etiqueta del botón Leer más",
                           },
                           localized: true,
-                          defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.blog.readMoreLabel),
+                          defaultValue: createLocalizedDefault(
+                            DEFAULT_VALUES.collections.siteSettings.blog.readMoreLabel
+                          ),
                         },
                         {
                           admin: { width: "33%" },
@@ -438,11 +459,16 @@ export const SiteSettings: GlobalConfig = {
                             es: "Etiqueta de publicaciones relacionadas",
                           },
                           localized: true,
-                          defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.siteSettings.blog.relatedPostsLabel),
+                          defaultValue: createLocalizedDefault(
+                            DEFAULT_VALUES.collections.siteSettings.blog.relatedPostsLabel
+                          ),
                         },
                         {
                           admin: { width: "34%" },
-                          defaultValue: createLocalizedDefault({ en: "Search articles…", es: "Buscar artículos…" }),
+                          defaultValue: createLocalizedDefault({
+                            en: "Search articles…",
+                            es: "Buscar artículos…",
+                          }),
                           label: { en: "Search placeholder", es: "Marcador de búsqueda" },
                           localized: true,
                           name: "searchPlaceholder",

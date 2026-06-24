@@ -13,7 +13,10 @@ function dimVal(r: MockRow, i: number): string {
   return r.dimensionValues[i]?.value ?? "";
 }
 
-export function filterAndReaggregate(rows: MockRow[], { refIndex, keepDimIndices, allowed }: Options): MockRow[] {
+export function filterAndReaggregate(
+  rows: MockRow[],
+  { refIndex, keepDimIndices, allowed }: Options
+): MockRow[] {
   const groups = new Map<string, { dims: string[]; metrics: number[] }>();
 
   for (const r of rows) {
@@ -25,7 +28,8 @@ export function filterAndReaggregate(rows: MockRow[], { refIndex, keepDimIndices
 
     const existing = groups.get(key);
     if (existing) {
-      for (let i = 0; i < metrics.length; i++) existing.metrics[i] = (existing.metrics[i] ?? 0) + (metrics[i] ?? 0);
+      for (let i = 0; i < metrics.length; i++)
+        existing.metrics[i] = (existing.metrics[i] ?? 0) + (metrics[i] ?? 0);
     } else {
       groups.set(key, { dims, metrics });
     }

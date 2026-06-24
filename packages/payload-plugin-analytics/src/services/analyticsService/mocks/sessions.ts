@@ -10,7 +10,10 @@ export const sessionsMock: BatchRunReportsMockFn = () => {
   const rows = refs.map((ref, i) => {
     const big = ref === missing;
     const sid = `s${i}`;
-    return row([sid, pathFor(ref), "google", "desktop", "United States", "2026-06-17T14:00:00.000Z", ref], [big ? "9999" : "12"]);
+    return row(
+      [sid, pathFor(ref), "google", "desktop", "United States", "2026-06-17T14:00:00.000Z", ref],
+      [big ? "9999" : "12"]
+    );
   });
 
   const leadRows = refs.slice(0, 1).map((_ref, i) => row([`s${i}`], ["3"]));

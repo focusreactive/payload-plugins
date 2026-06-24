@@ -8,7 +8,7 @@ import { extractFaqText } from "@/blocks/Faq/extractText";
 import { extractHeroText } from "@/blocks/Hero/extractText";
 import { extractLogosText } from "@/blocks/Logos/extractText";
 import { extractTestimonialsText } from "@/blocks/TestimonialsList/extractText";
-import { extractLexicalText, joinText } from "@/core/utils/text";
+import { extractLexicalText, joinText } from "@/lib/utils/text";
 import type { Page } from "@/payload-types";
 
 export function extractPageBlockText(block: Page["blocks"][number]): string {
@@ -17,7 +17,12 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
       return extractHeroText(block);
     }
     case "content": {
-      return joinText([block.eyebrow, block.heading, block.description, extractLexicalText(block.content)]);
+      return joinText([
+        block.eyebrow,
+        block.heading,
+        block.description,
+        extractLexicalText(block.content),
+      ]);
     }
     case "chart": {
       return extractChartText(block);

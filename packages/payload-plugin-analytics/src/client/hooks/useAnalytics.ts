@@ -19,7 +19,8 @@ export function useAnalytics(): UseAnalytics {
 
   return {
     track: (event, payload) => ctx.provider.trackEvent(event, payload),
-    trackLeadAction: (type, payload) => ctx.provider.trackEvent(LEAD_ACTION_EVENT_NAME, { [FR_LEAD_TYPE_PARAM]: type, ...payload }),
+    trackLeadAction: (type, payload) =>
+      ctx.provider.trackEvent(LEAD_ACTION_EVENT_NAME, { [FR_LEAD_TYPE_PARAM]: type, ...payload }),
     pageView: (path) => ctx.provider.pageView(path),
   };
 }

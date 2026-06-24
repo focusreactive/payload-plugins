@@ -4,13 +4,13 @@ import { draftMode } from "next/headers";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { I18N_CONFIG } from "@/core/config/i18n";
-import { abAdapter } from "@/core/lib/abTesting/abAdapter";
-import { buildInternalPathname } from "@/core/lib/abTesting/buildInternalPathname";
-import type { ABVariantData } from "@/core/lib/abTesting/types";
+import { I18N_CONFIG } from "@/lib/config/i18n";
+import { abAdapter } from "@/lib/plugins/ab/abAdapter";
+import { buildInternalPathname } from "@/lib/plugins/ab/buildInternalPathname";
+import type { ABVariantData } from "@/lib/plugins/ab/types";
 
-import { abCookies } from "./core/lib/abTesting/abCookies";
-import { routing } from "./i18n/routing";
+import { abCookies } from "./lib/plugins/ab/abCookies";
+import { routing } from "./lib/i18n/routing";
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -30,12 +30,18 @@ export default async function middleware(request: NextRequest) {
   const localeMatch = pathname.match(localeRegex);
 
   const matchedLocale = localeMatch?.[1];
-  const isNextRoute = matchedLocale ? pathname.startsWith(`/${matchedLocale}/next/`) : pathname.startsWith("/next/");
+  const isNextRoute = matchedLocale
+    ? pathname.startsWith(`/${matchedLocale}/next/`)
+    : pathname.startsWith("/next/");
 
   const { isEnabled: isDraftMode } = await draftMode();
 
   if (!isNextRoute && !isDraftMode) {
-    const internalPathname = buildInternalPathname(pathname, matchedLocale, I18N_CONFIG.defaultLocale);
+    const internalPathname = buildInternalPathname(
+      pathname,
+      matchedLocale,
+      I18N_CONFIG.defaultLocale
+    );
     const abResponse = await resolveAbRewrite(request, pathname, pathname, internalPathname);
 
     if (abResponse) {

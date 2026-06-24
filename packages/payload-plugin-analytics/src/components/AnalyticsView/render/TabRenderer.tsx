@@ -14,11 +14,26 @@ export interface TabRendererProps {
   blockComponents?: Record<string, ComponentType<Record<string, unknown>>>;
 }
 
-export function TabRenderer({ tab, clientRegistry, dateRange, comparison, t, blockComponents }: TabRendererProps) {
+export function TabRenderer({
+  tab,
+  clientRegistry,
+  dateRange,
+  comparison,
+  t,
+  blockComponents,
+}: TabRendererProps) {
   return (
     <div className="flex flex-col gap-4">
       {tab.rows.map((row) => (
-        <RowRenderer key={row.id} row={row} clientRegistry={clientRegistry} dateRange={dateRange} comparison={comparison} t={t} blockComponents={blockComponents} />
+        <RowRenderer
+          key={row.id}
+          row={row}
+          clientRegistry={clientRegistry}
+          dateRange={dateRange}
+          comparison={comparison}
+          t={t}
+          blockComponents={blockComponents}
+        />
       ))}
     </div>
   );

@@ -327,7 +327,9 @@ describe("DataReconciler", () => {
 
   describe("array/blocks edge cases", () => {
     it("passes non-object array items through unchanged", () => {
-      const schema: Field[] = [{ name: "items", type: "array", fields: [{ name: "text", type: "text", localized: true }] }];
+      const schema: Field[] = [
+        { name: "items", type: "array", fields: [{ name: "text", type: "text", localized: true }] },
+      ];
       const sourceData = { items: [{ text: "A" }, "raw", 42] };
 
       const reconciler = new DataReconciler(schema);
@@ -337,7 +339,13 @@ describe("DataReconciler", () => {
     });
 
     it("falls back to source for a source element with no id-match in target", () => {
-      const schema: Field[] = [{ name: "items", type: "array", fields: [{ name: "label", type: "text", localized: true }] }];
+      const schema: Field[] = [
+        {
+          name: "items",
+          type: "array",
+          fields: [{ name: "label", type: "text", localized: true }],
+        },
+      ];
       const sourceData = {
         items: [
           { id: "1", label: "A" },
@@ -354,7 +362,13 @@ describe("DataReconciler", () => {
     });
 
     it("mirrors source when array items carry no id to match on", () => {
-      const schema: Field[] = [{ name: "items", type: "array", fields: [{ name: "label", type: "text", localized: true }] }];
+      const schema: Field[] = [
+        {
+          name: "items",
+          type: "array",
+          fields: [{ name: "label", type: "text", localized: true }],
+        },
+      ];
       const sourceData = { items: [{ label: "A" }, { label: "B" }] };
       const targetData = { items: [{ label: "T" }, { label: "U" }] };
 
@@ -382,7 +396,13 @@ describe("DataReconciler", () => {
     });
 
     it("ignores the target when the source element id is null", () => {
-      const schema: Field[] = [{ name: "items", type: "array", fields: [{ name: "label", type: "text", localized: true }] }];
+      const schema: Field[] = [
+        {
+          name: "items",
+          type: "array",
+          fields: [{ name: "label", type: "text", localized: true }],
+        },
+      ];
       const sourceData = { items: [{ id: null, label: "A" }] };
       const targetData = { items: [{ id: null, label: "T" }] };
 
@@ -392,7 +412,13 @@ describe("DataReconciler", () => {
     });
 
     it("pairs reordered array items by id (output keeps source order)", () => {
-      const schema: Field[] = [{ name: "items", type: "array", fields: [{ name: "label", type: "text", localized: true }] }];
+      const schema: Field[] = [
+        {
+          name: "items",
+          type: "array",
+          fields: [{ name: "label", type: "text", localized: true }],
+        },
+      ];
       const sourceData = {
         items: [
           { id: "1", label: "A" },
@@ -408,11 +434,19 @@ describe("DataReconciler", () => {
 
       const reconciler = new DataReconciler(schema);
       // id 1 ↔ "T1", id 2 ↔ "T2"; output follows source order
-      expect(reconciler.reconcile(sourceData, targetData)).toEqual({ items: [{ label: "T1" }, { label: "T2" }] });
+      expect(reconciler.reconcile(sourceData, targetData)).toEqual({
+        items: [{ label: "T1" }, { label: "T2" }],
+      });
     });
 
     it("drops target elements with no source counterpart", () => {
-      const schema: Field[] = [{ name: "items", type: "array", fields: [{ name: "label", type: "text", localized: true }] }];
+      const schema: Field[] = [
+        {
+          name: "items",
+          type: "array",
+          fields: [{ name: "label", type: "text", localized: true }],
+        },
+      ];
       const sourceData = { items: [{ id: "1", label: "A" }] };
       const targetData = {
         items: [

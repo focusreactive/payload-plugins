@@ -3,18 +3,20 @@ import type { Metadata } from "next";
 import { draftMode } from "next/headers";
 import React from "react";
 
-import { generateMeta } from "@/core/lib/generateMeta";
-import { generateNotFoundMeta } from "@/core/lib/generateNotFoundMeta";
-import { ArticleJsonLd, BreadcrumbsJsonLd } from "@/core/seo/components";
-import type { Locale } from "@/core/types";
-import { buildUrl } from "@/core/utils/path/buildUrl";
+import { generateMeta } from "@/lib/utils/generateMeta";
+import { generateNotFoundMeta } from "@/lib/utils/generateNotFoundMeta";
+import { ArticleJsonLd, BreadcrumbsJsonLd } from "@/components/seo/components";
+import type { Locale } from "@/lib/types";
+import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { getBlogPageSettings } from "@/dal/getBlogPageSettings";
 import { getPostBySlug } from "@/dal/getPostBySlug";
 import { getSiteSettings } from "@/dal/getSiteSettings";
 import { getBlogPostStaticParams } from "@/dal/staticParams/posts";
-import { PayloadRedirects } from "@/features";
+import { PayloadRedirects } from "@/components/PayloadRedirects";
 import type { Footer as FooterType, Header as HeaderType } from "@/payload-types";
-import { Footer, Header, PostContent } from "@/widgets";
+import { Footer } from "@/collections/Footer/Component";
+import { Header } from "@/collections/Header/Component";
+import { PostContent } from "./_components/PostContent";
 
 interface Args {
   params: Promise<{
@@ -28,7 +30,11 @@ export default async function Page({ params }: Args) {
   const decodedSlug = decodeURIComponent(slug);
   const url = buildUrl({ collection: "posts", locale, slug: decodedSlug });
 
-  const [post, siteSettings, blogSettings] = await Promise.all([getPostBySlug({ locale, slug: decodedSlug }), getSiteSettings({ locale }), getBlogPageSettings({ locale })]);
+  const [post, siteSettings, blogSettings] = await Promise.all([
+    getPostBySlug({ locale, slug: decodedSlug }),
+    getSiteSettings({ locale }),
+    getBlogPageSettings({ locale }),
+  ]);
 
   if (!post) {
     return <PayloadRedirects url={url} locale={locale} />;
@@ -54,7 +60,11 @@ export default async function Page({ params }: Args) {
 
         <PayloadRedirects disableNotFound url={url} locale={locale} />
 
-        <PostContent post={post} locale={locale} relatedPostsLabel={blogSettings.relatedPostsLabel} />
+        <PostContent
+          post={post}
+          locale={locale}
+          relatedPostsLabel={blogSettings.relatedPostsLabel}
+        />
       </main>
       <Footer data={siteSettings.footer as FooterType} />
     </>

@@ -1,9 +1,9 @@
 import type { Block, Field, GroupField } from "payload";
 
-import { getBlockPreviewImage } from "@/core/lib/blockPreviewImage";
-import { injectSection } from "@/fields/section/injectSection";
-import { sectionHeaderFields } from "@/fields/sectionHeader/sectionHeaderFields";
-import { link } from "@/fields/link";
+import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
+import { injectSection } from "@/lib/fields/section/injectSection";
+import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
+import { link } from "@/lib/fields/link";
 
 const fields: Field[] = [
   ...sectionHeaderFields({
@@ -12,7 +12,7 @@ const fields: Field[] = [
   }),
   {
     admin: {
-      components: { RowLabel: "@/core/ui/components/RowLabel#RowLabel" },
+      components: { RowLabel: "@/components/admin/RowLabel#RowLabel" },
       initCollapsed: true,
     },
     fields: (link() as GroupField).fields,

@@ -1,11 +1,15 @@
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
-import { AlignVariant } from "@repo/ui/components/ui/richText/types";
-import type { IRichTextProps } from "@repo/ui/components/ui/richText/types";
+import { AlignVariant } from "@/components/richText/types";
+import type { IRichTextProps } from "@/components/richText/types";
 import React from "react";
 
-import { RichText } from "@/core/ui";
+import { RichText } from "@/components/shared";
 
-export function prepareRichTextProps(content: SerializedEditorState | null | undefined, align: AlignVariant = AlignVariant.Left, removeInnerMargins = false): IRichTextProps {
+export function prepareRichTextProps(
+  content: SerializedEditorState | null | undefined,
+  align: AlignVariant = AlignVariant.Left,
+  removeInnerMargins = false
+): IRichTextProps {
   return {
     alignVariant: align,
     removeInnerMargins,

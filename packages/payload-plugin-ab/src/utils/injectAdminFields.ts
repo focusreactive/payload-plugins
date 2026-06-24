@@ -1,6 +1,11 @@
 import type { CollectionConfig, Field, Where } from "payload";
 import type { CollectionABConfig } from "../types/config";
-import { AB_PASS_PERCENTAGE_FIELD, AB_VARIANT_OF_FIELD, AB_VARIANT_PERCENTAGES_FIELD, DEFAULT_SLUG_FIELD } from "../constants";
+import {
+  AB_PASS_PERCENTAGE_FIELD,
+  AB_VARIANT_OF_FIELD,
+  AB_VARIANT_PERCENTAGES_FIELD,
+  DEFAULT_SLUG_FIELD,
+} from "../constants";
 
 const VARIANTS_FIELD_PATH = "@focus-reactive/payload-plugin-ab/admin/VariantsField#VariantsField";
 
@@ -31,7 +36,7 @@ function patchField(fields: Field[], name: string, patcher: (f: Field) => Field)
 export function injectAdminFields<TVariantData extends object>(
   collection: CollectionConfig,
   collectionSlug: string,
-  abConfig: CollectionABConfig<TVariantData>,
+  abConfig: CollectionABConfig<TVariantData>
 ): CollectionConfig {
   const slugField = abConfig.slugField ?? DEFAULT_SLUG_FIELD;
 

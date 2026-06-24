@@ -6,10 +6,10 @@ import React from "react";
 
 import { VisualEditing } from "@fr-private/payload-plugin-visual-editing/client";
 
-import { Providers } from "@/core/context";
-import { AnalyticsProviderClient } from "@/core/lib/analytics/AnalyticsProviderClient";
-import type { Locale } from "@/core/types";
-import { LivePreviewListener } from "@/features";
+import { Providers } from "@/lib/context";
+import { AnalyticsProviderClient } from "@/lib/plugins/analytics/AnalyticsProviderClient";
+import type { Locale } from "@/lib/types";
+import { LivePreviewListener } from "@/components/LivePreviewListener";
 
 const newsreader = Newsreader({
   display: "swap",
@@ -53,7 +53,11 @@ export default async function RootLayout({ children, params }: Props) {
   const messages = await getMessages();
 
   return (
-    <html lang={locale} data-theme="light" className={`${newsreader.variable} ${archivo.variable} ${ibmPlexMono.variable}`}>
+    <html
+      lang={locale}
+      data-theme="light"
+      className={`${newsreader.variable} ${archivo.variable} ${ibmPlexMono.variable}`}
+    >
       <head />
       <body>
         <AnalyticsProviderClient measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID!}>

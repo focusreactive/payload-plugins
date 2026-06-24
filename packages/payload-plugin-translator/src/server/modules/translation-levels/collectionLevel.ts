@@ -20,7 +20,10 @@ export function collectionLevel(): TranslationLevel {
   return {
     extend(ctx) {
       useDocTranslationApi(ctx);
-      ctx.addCollectionComponent("beforeListTable", () => new BulkDocumentTranslationDashboard(ctx.access));
+      ctx.addCollectionComponent(
+        "beforeListTable",
+        () => new BulkDocumentTranslationDashboard(ctx.access)
+      );
     },
   };
 }

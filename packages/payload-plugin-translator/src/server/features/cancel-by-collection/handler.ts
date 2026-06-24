@@ -18,10 +18,15 @@ export class CancelByCollectionHandler {
 
   async handle(req: PayloadRequest): Promise<Response> {
     const validationResult = CancelByCollectionInputSchema.safeParse(req.routeParams);
-    if (validationResult.error) return ServerResponse.validationError(validationResult.error.issues);
+    if (validationResult.error)
+      return ServerResponse.validationError(validationResult.error.issues);
 
-    const collectionSlug = isCollectionAvailable(validationResult.data.collection_slug, this.config.availableCollections);
-    if (!collectionSlug) return ServerResponse.badRequest("Collection not available for translation");
+    const collectionSlug = isCollectionAvailable(
+      validationResult.data.collection_slug,
+      this.config.availableCollections
+    );
+    if (!collectionSlug)
+      return ServerResponse.badRequest("Collection not available for translation");
 
     const runner = this.taskRunnerFactory.create(req.payload);
     const tasks = await runner.findByCollection(collectionSlug);

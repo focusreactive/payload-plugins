@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { SERP_DESCRIPTION_MAX, truncateDescription } from "../../../src/components/SeoDrawer/components/SerpPreview/truncate-description";
+import {
+  SERP_DESCRIPTION_MAX,
+  truncateDescription,
+} from "../../../src/components/SeoDrawer/components/SerpPreview/truncate-description";
 
 const OMISSION = " …"; // " …"
 

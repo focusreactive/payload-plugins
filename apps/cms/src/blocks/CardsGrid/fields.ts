@@ -1,7 +1,7 @@
 import type { Field } from "payload";
 
-import { imageField } from "@/fields/imageField";
-import { link } from "@/fields/link";
+import { imageField } from "@/lib/fields/imageField";
+import { link } from "@/lib/fields/link";
 
 import { CARD_ICONS } from "./icons";
 

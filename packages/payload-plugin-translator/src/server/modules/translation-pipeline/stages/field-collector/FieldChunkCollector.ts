@@ -1,8 +1,17 @@
 import type { Field } from "payload";
 
-import { isFieldExcludedFromTranslation, isLocalizedField, isObject, isTranslatableField } from "../../../../shared";
+import {
+  isFieldExcludedFromTranslation,
+  isLocalizedField,
+  isObject,
+  isTranslatableField,
+} from "../../../../shared";
 import type { ChildCursor, FieldWalker } from "../../../../shared/field-traversal";
-import { matchElementById, resolveBlockFields, walkFields } from "../../../../shared/field-traversal";
+import {
+  matchElementById,
+  resolveBlockFields,
+  walkFields,
+} from "../../../../shared/field-traversal";
 import type { TranslationStrategy } from "../../strategies";
 import type { FieldChunk } from "../../types";
 
@@ -38,7 +47,13 @@ export class FieldChunkCollector {
   private readonly targetData: Record<string, unknown>;
   private readonly strategy: TranslationStrategy;
 
-  constructor(schema: Field[], filteredData: Record<string, unknown>, sourceData: Record<string, unknown>, targetData: Record<string, unknown>, strategy: TranslationStrategy) {
+  constructor(
+    schema: Field[],
+    filteredData: Record<string, unknown>,
+    sourceData: Record<string, unknown>,
+    targetData: Record<string, unknown>,
+    strategy: TranslationStrategy
+  ) {
     this.schema = schema;
     this.filteredData = filteredData;
     this.sourceData = sourceData;
@@ -100,9 +115,19 @@ export class FieldChunkCollector {
 
         const sourceValue = cursor.source[field.name];
         const targetValue = cursor.target[field.name];
-        if (isTranslatableField(field) && isLocalizedField(field) && !isFieldExcludedFromTranslation(field) && strategy.shouldTranslate({ sourceValue, targetValue })) {
+        if (
+          isTranslatableField(field) &&
+          isLocalizedField(field) &&
+          !isFieldExcludedFromTranslation(field) &&
+          strategy.shouldTranslate({ sourceValue, targetValue })
+        ) {
           cursor.data[field.name] = sourceValue; // write source value into filteredData — this is what gets translated
-          chunks.push({ schema: field, dataRef: cursor.data, key: field.name, path: [...cursor.path, field.name] });
+          chunks.push({
+            schema: field,
+            dataRef: cursor.data,
+            key: field.name,
+            path: [...cursor.path, field.name],
+          });
         }
         return undefined;
       },
@@ -112,7 +137,11 @@ export class FieldChunkCollector {
       },
     };
 
-    walkFields(this.schema, { data: this.filteredData, source: this.sourceData, target: this.targetData, path: [] }, walker);
+    walkFields(
+      this.schema,
+      { data: this.filteredData, source: this.sourceData, target: this.targetData, path: [] },
+      walker
+    );
 
     return chunks;
   }

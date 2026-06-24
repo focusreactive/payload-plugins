@@ -1,1 +1,1 @@
-export { default } from './BulkTranslationDashboard'
+export { default } from "./BulkTranslationDashboard";

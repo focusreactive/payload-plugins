@@ -1,9 +1,24 @@
 import { describe, expect, it, vi } from "vitest";
-import { getAbExperimentRecords, getAbExperimentRecordByKey } from "../../../src/services/queries/getAbExperimentRecords";
+import {
+  getAbExperimentRecords,
+  getAbExperimentRecordByKey,
+} from "../../../src/services/queries/getAbExperimentRecords";
 
 const rows = [
-  { manifestKey: "/en/about", parentDocId: "p1", parentCollection: "pages", locale: "en", startedAt: "2026-05-01" },
-  { manifestKey: "/en/pricing", parentDocId: "p2", parentCollection: "pages", locale: "en", startedAt: "2026-04-20" },
+  {
+    manifestKey: "/en/about",
+    parentDocId: "p1",
+    parentCollection: "pages",
+    locale: "en",
+    startedAt: "2026-05-01",
+  },
+  {
+    manifestKey: "/en/pricing",
+    parentDocId: "p2",
+    parentCollection: "pages",
+    locale: "en",
+    startedAt: "2026-04-20",
+  },
 ];
 
 function makeReq() {
@@ -11,10 +26,12 @@ function makeReq() {
     payload: {
       // Honor the `where: { manifestKey: { equals } }` filter the way Payload would,
       // so the by-key lookup returns the matching row rather than the first row.
-      find: vi.fn().mockImplementation(({ where }: { where?: { manifestKey?: { equals?: string } } }) => {
-        const key = where?.manifestKey?.equals;
-        return Promise.resolve({ docs: key ? rows.filter((r) => r.manifestKey === key) : rows });
-      }),
+      find: vi
+        .fn()
+        .mockImplementation(({ where }: { where?: { manifestKey?: { equals?: string } } }) => {
+          const key = where?.manifestKey?.equals;
+          return Promise.resolve({ docs: key ? rows.filter((r) => r.manifestKey === key) : rows });
+        }),
     },
   };
 }

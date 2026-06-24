@@ -1,11 +1,26 @@
 import { describe, it, expectTypeOf } from "vitest";
-import type { AnalyticsLayoutConfig, BlockComponentProps, BlockDefinition, BlockPlacement, RowConfig, TabLayoutConfig } from "../../src/types/layout";
+import type {
+  AnalyticsLayoutConfig,
+  BlockComponentProps,
+  BlockDefinition,
+  BlockPlacement,
+  RowConfig,
+  TabLayoutConfig,
+} from "../../src/types/layout";
 import type { Comparison, DateRange } from "../../src/types/query";
 
 describe("layout types", () => {
   it("BlockDefinition is generic on TData", () => {
     type Custom = BlockDefinition<{ count: number }>;
-    expectTypeOf<Custom["fetch"]>().toMatchTypeOf<undefined | ((args: { dateRange: DateRange; comparison: Comparison; ga4: unknown; req: unknown }) => Promise<{ count: number }>)>();
+    expectTypeOf<Custom["fetch"]>().toMatchTypeOf<
+      | undefined
+      | ((args: {
+          dateRange: DateRange;
+          comparison: Comparison;
+          ga4: unknown;
+          req: unknown;
+        }) => Promise<{ count: number }>)
+    >();
   });
 
   it("BlockPlacement requires order and colSpan", () => {

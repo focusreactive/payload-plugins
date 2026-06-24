@@ -12,7 +12,8 @@ import {
 } from "@payloadcms/ui";
 import type { ClientBlock } from "payload";
 import { usePresetsConfig } from "../usePresetsConfig.js";
-import { DefaultBlockImage, type Preset } from "../shared/index.js";
+import { DefaultBlockImage } from "../shared/index.js";
+import type { Preset } from "../shared/index.js";
 import "./BlockSelectorWithPresets.scss";
 import { PresetItem } from "./PresetItem/index.js";
 
@@ -23,9 +24,12 @@ type BlockSelectorWithPresetsProps = {
   locale?: string;
 };
 
-export const BlockSelectorWithPresets: React.FC<
-  BlockSelectorWithPresetsProps
-> = ({ blocks, onSelect, tenantId, locale }) => {
+export const BlockSelectorWithPresets: React.FC<BlockSelectorWithPresetsProps> = ({
+  blocks,
+  onSelect,
+  tenantId,
+  locale,
+}) => {
   const { slug: presetsCollectionSlug, presetTypes } = usePresetsConfig();
   const { i18n, t } = useTranslation();
 
@@ -51,7 +55,7 @@ export const BlockSelectorWithPresets: React.FC<
       acc[group].push(block);
       return acc;
     },
-    {} as Record<string, ClientBlock[]>,
+    {} as Record<string, ClientBlock[]>
   );
 
   // Fetch presets for specific block type
@@ -72,9 +76,7 @@ export const BlockSelectorWithPresets: React.FC<
       params.append("depth", "0");
       params.append("limit", "50");
 
-      const response = await fetch(
-        `/api/${presetsCollectionSlug}?${params.toString()}`,
-      );
+      const response = await fetch(`/api/${presetsCollectionSlug}?${params.toString()}`);
       const data = await response.json();
       const fetchedPresets: Preset[] = data.docs || [];
 
@@ -117,9 +119,7 @@ export const BlockSelectorWithPresets: React.FC<
 
   // Get presets for specific block from cache
   const getBlockPresets = (blockSlug: string): Preset[] => {
-    return presetsCache.filter(
-      (preset) => preset.presetBlock?.[0]?.blockType === blockSlug,
-    );
+    return presetsCache.filter((preset) => preset.presetBlock?.[0]?.blockType === blockSlug);
   };
 
   useEffect(() => {
@@ -136,11 +136,7 @@ export const BlockSelectorWithPresets: React.FC<
           <div className="blocks-drawer__blocks">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="blocks-drawer__block">
-                <ShimmerEffect
-                  key={i}
-                  height="100px"
-                  animationDelay={`${i * 50}ms`}
-                />
+                <ShimmerEffect key={i} height="100px" animationDelay={`${i * 50}ms`} />
               </div>
             ))}
           </div>
@@ -154,9 +150,7 @@ export const BlockSelectorWithPresets: React.FC<
       <div className="block-search">
         <input
           className="block-search__input"
-          placeholder={t(
-            "presetsPlugin:blocksDrawer:searchPlaceholder" as never,
-          )}
+          placeholder={t("presetsPlugin:blocksDrawer:searchPlaceholder" as never)}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -197,9 +191,7 @@ export const BlockSelectorWithPresets: React.FC<
                       isMobile={isMobile}
                       presets={blockPresets}
                       onBlockClick={() =>
-                        hasPresets
-                          ? handleBlockClick(block)
-                          : onSelect(block.slug)
+                        hasPresets ? handleBlockClick(block) : onSelect(block.slug)
                       }
                       onPresetSelect={handlePresetSelect}
                       onClose={() => setActiveBlockSlug(null)}
@@ -262,9 +254,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
   const { slug: presetsCollectionSlug } = usePresetsConfig();
   const { t } = useTranslation();
   const presetListRef = useRef<HTMLDivElement>(null);
-  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
-    null,
-  );
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
 
   const modalSlug = `delete-preset-${block.slug}`;
 
@@ -363,10 +353,9 @@ const BlockCard: React.FC<BlockCardProps> = ({
           confirmLabel={t("presetsPlugin:deletePreset:confirm" as never)}
           cancelLabel={t("presetsPlugin:deletePreset:cancel" as never)}
           onConfirm={async () => {
-            const res = await fetch(
-              `/api/${presetsCollectionSlug}/${deletingPreset.id}`,
-              { method: "DELETE" },
-            );
+            const res = await fetch(`/api/${presetsCollectionSlug}/${deletingPreset.id}`, {
+              method: "DELETE",
+            });
             if (res.ok) {
               onDelete(deletingPreset.id);
               setDeletingPreset(null);
@@ -419,7 +408,7 @@ const PresetsList: React.FC<PresetsListProps> = ({
   listRef,
 }) => {
   const filteredPresets = presets.filter(
-    (preset) => preset.presetBlock?.[0]?.blockType === blockSlug,
+    (preset) => preset.presetBlock?.[0]?.blockType === blockSlug
   );
   const { mediaCollection } = usePresetsConfig();
   const { t } = useTranslation();
@@ -433,8 +422,7 @@ const PresetsList: React.FC<PresetsListProps> = ({
 
   useEffect(() => {
     itemsRef.current = Array.from(
-      listRef.current?.querySelectorAll<HTMLElement>("button.preset-item") ??
-        [],
+      listRef.current?.querySelectorAll<HTMLElement>("button.preset-item") ?? []
     );
   }, []);
 

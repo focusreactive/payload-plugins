@@ -14,11 +14,24 @@ interface HeadingTreeRowProps {
   badgeRef?: Ref<HTMLSpanElement>;
 }
 
-export function HeadingTreeRow({ node, depth, hasKids, isOpen, globalFirst, onToggle, rowRef, badgeRef }: HeadingTreeRowProps) {
+export function HeadingTreeRow({
+  node,
+  depth,
+  hasKids,
+  isOpen,
+  globalFirst,
+  onToggle,
+  rowRef,
+  badgeRef,
+}: HeadingTreeRowProps) {
   return (
     <div
       ref={rowRef}
-      className={cn("relative flex items-center gap-[9px] h-[34px] box-border", hasKids && "cursor-pointer focus-visible:outline-2 focus-visible:outline-neutral-400 focus-visible:-outline-offset-2")}
+      className={cn(
+        "relative flex items-center gap-[9px] h-[34px] box-border",
+        hasKids &&
+          "cursor-pointer focus-visible:outline-2 focus-visible:outline-neutral-400 focus-visible:-outline-offset-2"
+      )}
       style={{ paddingLeft: depth * 20 }}
       role={hasKids ? "button" : undefined}
       tabIndex={hasKids ? 0 : undefined}
@@ -36,17 +49,30 @@ export function HeadingTreeRow({ node, depth, hasKids, isOpen, globalFirst, onTo
       }
       title={hasKids ? (isOpen ? "Collapse" : "Expand") : undefined}
     >
-      <span ref={badgeRef} className="flex-none font-mono text-[9px] font-bold leading-[100%] text-neutral-1000 bg-neutral-150 rounded-rs px-[6px] py-[3px] min-w-[22px] text-center">
+      <span
+        ref={badgeRef}
+        className="flex-none font-mono text-[9px] font-bold leading-[100%] text-neutral-1000 bg-neutral-150 rounded-rs px-[6px] py-[3px] min-w-[22px] text-center"
+      >
         H{node.level}
       </span>
 
-      <div className={cn("flex-1 min-w-0 flex items-center gap-[9px] h-full", !globalFirst && "border-t border-neutral-150")}>
+      <div
+        className={cn(
+          "flex-1 min-w-0 flex items-center gap-[9px] h-full",
+          !globalFirst && "border-t border-neutral-150"
+        )}
+      >
         {node.text ? (
-          <span className="flex-1 min-w-0 truncate text-[12px] font-medium text-neutral-800" title={node.text}>
+          <span
+            className="flex-1 min-w-0 truncate text-[12px] font-medium text-neutral-800"
+            title={node.text}
+          >
             {node.text}
           </span>
         ) : (
-          <span className="flex-1 min-w-0 truncate text-[12px] font-medium italic text-neutral-400">(empty heading)</span>
+          <span className="flex-1 min-w-0 truncate text-[12px] font-medium italic text-neutral-400">
+            (empty heading)
+          </span>
         )}
 
         {hasKids ? <Chevron open={isOpen} /> : null}

@@ -9,5 +9,9 @@ interface SectionWrapperProps {
 }
 
 export function SectionWrapper({ className, children }: SectionWrapperProps) {
-  return <div className={cn("bg-neutral-0 border border-neutral-200 rounded-rm", className)}>{children}</div>;
+  return (
+    <div className={cn("bg-neutral-0 border border-neutral-200 rounded-rm", className)}>
+      {children}
+    </div>
+  );
 }

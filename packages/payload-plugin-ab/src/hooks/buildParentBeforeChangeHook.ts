@@ -7,7 +7,7 @@ import { resolveId } from "../utils/resolveId";
 export function buildParentBeforeChangeHook<TVariantData extends object>(
   parentCollectionSlug: string,
   _abConfig: CollectionABConfig<TVariantData>,
-  _pluginConfig: AbTestingPluginConfig<TVariantData>,
+  _pluginConfig: AbTestingPluginConfig<TVariantData>
 ): CollectionBeforeChangeHook {
   return async ({ data, originalDoc, req, operation }) => {
     // Only validate when saving a variant doc

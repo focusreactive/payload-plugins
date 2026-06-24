@@ -14,30 +14,32 @@ export function useCommentsQuery(ctx: QueryContext) {
   const queryClient = useCommentsQueryClient();
   const { isOpen } = useCommentsDrawer();
   const { config } = useConfig();
-  const pluginConfig = config.admin?.custom?.commentsPlugin as CommentsPluginConfigStorage | undefined;
+  const pluginConfig = config.admin?.custom?.commentsPlugin as
+    | CommentsPluginConfigStorage
+    | undefined;
 
   return useQuery(
     {
       queryKey: getCommentsKey(ctx),
       queryFn: async () => {
         const params =
-          ctx.mode === "doc" ?
-            {
-              enabledCollections: pluginConfig?.collections,
-              enabledGlobals: pluginConfig?.globals,
-              docId: ctx.docId,
-              filterCollectionSlug: ctx.collectionSlug,
-            }
-          : ctx.mode === "global-doc" ?
-            {
-              enabledCollections: pluginConfig?.collections,
-              enabledGlobals: pluginConfig?.globals,
-              filterGlobalSlug: ctx.globalSlug,
-            }
-          : {
-              enabledCollections: pluginConfig?.collections,
-              enabledGlobals: pluginConfig?.globals,
-            };
+          ctx.mode === "doc"
+            ? {
+                enabledCollections: pluginConfig?.collections,
+                enabledGlobals: pluginConfig?.globals,
+                docId: ctx.docId,
+                filterCollectionSlug: ctx.collectionSlug,
+              }
+            : ctx.mode === "global-doc"
+              ? {
+                  enabledCollections: pluginConfig?.collections,
+                  enabledGlobals: pluginConfig?.globals,
+                  filterGlobalSlug: ctx.globalSlug,
+                }
+              : {
+                  enabledCollections: pluginConfig?.collections,
+                  enabledGlobals: pluginConfig?.globals,
+                };
 
         const res = await findAllComments(params);
 
@@ -49,6 +51,6 @@ export function useCommentsQuery(ctx: QueryContext) {
       refetchInterval: isOpen ? REFETCH_INTERVAL : false,
       refetchIntervalInBackground: false,
     },
-    queryClient,
+    queryClient
   );
 }

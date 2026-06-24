@@ -5,9 +5,12 @@ import { resolveVisualization } from "../../../src/engine/visualization/resolveV
 const check = (id: string, status: Status = "good"): CheckResult => ({ id, status, score: 9 });
 
 describe("resolveVisualization — presence", () => {
-  it.each(["introductionKeyword", "keyphraseInSEOTitle", "images", "singleH1"])("resolves %s to presence", (id) => {
-    expect(resolveVisualization(check(id), undefined)).toEqual({ type: "presence" });
-  });
+  it.each(["introductionKeyword", "keyphraseInSEOTitle", "images", "singleH1"])(
+    "resolves %s to presence",
+    (id) => {
+      expect(resolveVisualization(check(id), undefined)).toEqual({ type: "presence" });
+    }
+  );
 });
 
 describe("resolveVisualization — value-range", () => {
@@ -77,7 +80,9 @@ describe("resolveVisualization — proportion (imageKeyphrase)", () => {
 
 describe("resolveVisualization — count-drilldown labels", () => {
   it("uses singular 'link' for one textCompetingLinks item", () => {
-    const v = resolveVisualization(check("textCompetingLinks"), { items: [{ left: "a", right: "x" }] });
+    const v = resolveVisualization(check("textCompetingLinks"), {
+      items: [{ left: "a", right: "x" }],
+    });
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
@@ -99,7 +104,9 @@ describe("resolveVisualization — count-drilldown labels", () => {
   });
 
   it("uses singular 'section' for one subheadingsTooLong item", () => {
-    const v = resolveVisualization(check("subheadingsTooLong"), { items: [{ left: "a", right: "x" }] });
+    const v = resolveVisualization(check("subheadingsTooLong"), {
+      items: [{ left: "a", right: "x" }],
+    });
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
@@ -120,7 +127,9 @@ describe("resolveVisualization — count-drilldown labels", () => {
   });
 
   it("reads the 'paragraphs' key for one textParagraphTooLong item", () => {
-    const v = resolveVisualization(check("textParagraphTooLong"), { paragraphs: [{ left: "a", right: "x" }] });
+    const v = resolveVisualization(check("textParagraphTooLong"), {
+      paragraphs: [{ left: "a", right: "x" }],
+    });
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
@@ -141,7 +150,9 @@ describe("resolveVisualization — count-drilldown labels", () => {
   });
 
   it("uses singular 'group' for one sentenceBeginnings item", () => {
-    const v = resolveVisualization(check("sentenceBeginnings"), { items: [{ left: "a", right: "x" }] });
+    const v = resolveVisualization(check("sentenceBeginnings"), {
+      items: [{ left: "a", right: "x" }],
+    });
 
     expect(v.type).toBe("count-drilldown");
     if (v.type !== "count-drilldown") return;
@@ -162,7 +173,9 @@ describe("resolveVisualization — count-drilldown labels", () => {
   });
 
   it("falls back to presence when a drilldown has no items", () => {
-    expect(resolveVisualization(check("textCompetingLinks"), { items: [] })).toEqual({ type: "presence" });
+    expect(resolveVisualization(check("textCompetingLinks"), { items: [] })).toEqual({
+      type: "presence",
+    });
     expect(resolveVisualization(check("textCompetingLinks"), {})).toEqual({ type: "presence" });
   });
 });
@@ -177,7 +190,9 @@ describe("resolveVisualization — distribution", () => {
   });
 
   it("falls back to presence when positions are empty or missing", () => {
-    expect(resolveVisualization(check("keyphraseDistribution"), { positions: [] })).toEqual({ type: "presence" });
+    expect(resolveVisualization(check("keyphraseDistribution"), { positions: [] })).toEqual({
+      type: "presence",
+    });
     expect(resolveVisualization(check("keyphraseDistribution"), {})).toEqual({ type: "presence" });
   });
 });

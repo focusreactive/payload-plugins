@@ -1,8 +1,8 @@
-import { BLOG_CONFIG } from "@/core/config/blog";
-import type { Locale } from "@/core/types";
+import { BLOG_CONFIG } from "@/lib/config/blog";
+import type { Locale } from "@/lib/types";
 import { getBlogPageSettings, getPayloadClient, getPosts, searchPosts } from "@/dal";
-import { redirect } from "@/i18n/navigation";
-import { BlogPageContent } from "@/widgets";
+import { redirect } from "@/lib/i18n/navigation";
+import { BlogPageContent } from "./BlogPageContent";
 
 interface BlogPageDynamicProps {
   searchParams: Promise<{

@@ -9,6 +9,9 @@ import { analyticsKeys } from "./keys";
 export function useTopPagesQuery(query: TopNQuery) {
   return useQuery({
     queryKey: analyticsKeys.topPages(query),
-    queryFn: ({ signal }) => analyticsFetch<TopNQuery, TopPagesResponse>(ANALYTICS_ENDPOINT_PATHS.topPages, query, { signal }),
+    queryFn: ({ signal }) =>
+      analyticsFetch<TopNQuery, TopPagesResponse>(ANALYTICS_ENDPOINT_PATHS.topPages, query, {
+        signal,
+      }),
   });
 }

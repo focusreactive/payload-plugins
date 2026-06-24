@@ -1,5 +1,9 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { setPageContext, getPageContext, clearPageContext } from "../../../src/client/pageContext/store";
+import {
+  setPageContext,
+  getPageContext,
+  clearPageContext,
+} from "../../../src/client/pageContext/store";
 
 describe("pageContext store", () => {
   beforeEach(() => clearPageContext());

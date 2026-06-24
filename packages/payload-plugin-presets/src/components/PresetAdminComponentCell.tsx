@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { EmptyPlaceholder, type MediaData } from "./shared/index.js";
+import { EmptyPlaceholder } from "./shared/index.js";
+import type { MediaData } from "./shared/index.js";
 import { ShimmerEffect, useTranslation } from "@payloadcms/ui";
 
 import "./PresetAdminComponent.scss";
@@ -49,9 +50,7 @@ export function PresetAdminComponentCell({
   const { width, height, shimmerClass } = SIZE_MAP[size];
 
   if (isLoading) {
-    return (
-      <ShimmerEffect height={height} width={width} className={shimmerClass} />
-    );
+    return <ShimmerEffect height={height} width={width} className={shimmerClass} />;
   }
 
   const mediaUrl = media?.url;

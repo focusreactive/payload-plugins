@@ -1,7 +1,7 @@
-import { CardsGrid } from "@repo/ui";
-import type { IDefaultCardProps } from "@repo/ui/components/sections/cardsGrid/types";
+import { CardsGrid } from "./ui";
+import type { IDefaultCardProps } from "./ui/types";
 
-import { resolveLocale } from "@/core/lib/resolveLocale";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { CardsGridInlineBlock } from "@/payload-types";

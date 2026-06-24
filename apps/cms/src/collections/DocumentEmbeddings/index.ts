@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 
-import { superAdmin } from "@/core/lib/access";
+import { superAdmin } from "@/lib/access";
 
 export const DocumentEmbeddings: CollectionConfig = {
   access: {
