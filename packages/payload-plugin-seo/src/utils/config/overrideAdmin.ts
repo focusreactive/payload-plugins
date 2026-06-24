@@ -11,6 +11,7 @@ function normalizeDepth(depth: number | undefined): number {
 export function overrideAdmin(incomingConfig: Config, config: SeoPluginConfig): Config {
   const bySlug = new Map(config.collections.map((c) => [c.slug, c]));
   const site: SeoSiteConfig = config.site ?? {};
+  const slugPaths = Object.fromEntries(config.collections.map((c) => [c.slug, c.fields?.slug ?? "slug"]));
 
   const collections = (incomingConfig.collections ?? []).map((collection) => {
     const seoCfg = bySlug.get(collection.slug);
@@ -29,6 +30,7 @@ export function overrideAdmin(incomingConfig: Config, config: SeoPluginConfig): 
         },
         supportedLocales: config.supportedLocales ?? ["en"],
         resolveDepth: normalizeDepth(seoCfg.resolveDepth),
+        slugPaths,
       },
     };
 

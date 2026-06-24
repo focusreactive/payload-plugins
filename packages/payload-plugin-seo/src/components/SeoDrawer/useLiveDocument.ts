@@ -5,8 +5,8 @@ import type { ClientField } from "payload";
 import { reduceFieldsToValues } from "payload/shared";
 import { useCallback, useMemo, useRef } from "react";
 import { resolveContentExtractor } from "../../content/registry";
-import { createMediaResolver } from "../../content/uploads/media-resolver";
-import type { UploadWalkContext } from "../../content/uploads/transform-upload-values";
+import { createDocResolver } from "../../content/resolve/resolver";
+import type { ExtractContext } from "../../content/extract/context";
 import type { AnalysisInput } from "../../engine/types/analysis";
 import type { SeoFieldPaths } from "../../types/config";
 import { buildAnalysisInput } from "./build-analysis-input";
@@ -22,6 +22,8 @@ export interface LiveDocArgs {
   keyphrase: string;
   enabled?: boolean;
   extractContentPath?: string | null;
+  resolveDepth: number;
+  slugPaths: Record<string, string>;
 }
 
 export interface UseLiveDocumentResult {
@@ -30,7 +32,7 @@ export interface UseLiveDocumentResult {
   invalidateMedia: () => void;
 }
 
-export function useLiveDocument({ collectionSlug, fields, site, keyphrase, enabled = true, extractContentPath }: LiveDocArgs): UseLiveDocumentResult {
+export function useLiveDocument({ collectionSlug, fields, site, keyphrase, enabled = true, extractContentPath, resolveDepth, slugPaths }: LiveDocArgs): UseLiveDocumentResult {
   const [formFields] = useAllFormFields();
   const locale = useLocale();
   const { config, getEntityConfig } = useConfig();
@@ -38,22 +40,29 @@ export function useLiveDocument({ collectionSlug, fields, site, keyphrase, enabl
   const debouncedFields = useDebounce(formFields, DEBOUNCE_MS);
   const debouncedKeyphrase = useDebounce(keyphrase, DEBOUNCE_MS);
 
-  const resolver = useMemo(() => createMediaResolver(config.routes.api), [config.routes.api]);
+  const apiRoute = config.routes.api;
+  const resolver = useMemo(() => createDocResolver(apiRoute), [apiRoute]);
 
-  const schemaFields = useMemo<ClientField[]>(() => {
-    const entity = getEntityConfig({
-      collectionSlug: collectionSlug as never,
-    }) as { fields?: ClientField[] } | undefined;
+  const getFields = useCallback(
+    (slug: string): ClientField[] => {
+      const entity = getEntityConfig({ collectionSlug: slug as never }) as { fields?: ClientField[] } | undefined;
+      return entity?.fields ?? [];
+    },
+    [getEntityConfig]
+  );
 
-    return entity?.fields ?? [];
-  }, [getEntityConfig, collectionSlug]);
+  const hostFields = useMemo<ClientField[]>(() => getFields(collectionSlug), [getFields, collectionSlug]);
 
-  const walkCtx = useMemo<UploadWalkContext>(
+  const ctx = useMemo<ExtractContext>(
     () => ({
+      getFields,
       isUploadCollection: (slug) => Boolean(config.collections?.find((c) => c.slug === slug)?.upload),
+      slugPath: (slug) => slugPaths[slug] ?? "slug",
       blocksBySlug: { ...config.blocksMap },
+      resolved: new Map(),
+      baseUrl: site.baseUrl,
     }),
-    [config]
+    [getFields, config, slugPaths, site.baseUrl]
   );
 
   const values = useMemo<Record<string, unknown>>(() => (enabled ? (reduceFieldsToValues(debouncedFields, true) as Record<string, unknown>) : {}), [enabled, debouncedFields]);
@@ -77,9 +86,11 @@ export function useLiveDocument({ collectionSlug, fields, site, keyphrase, enabl
     fields,
     site,
     extractContentPath,
-    schemaFields,
-    walkCtx,
+    hostFields,
+    ctx,
     resolver,
+    resolveDepth,
+    apiRoute,
   });
   liveRef.current = {
     formFields,
@@ -90,9 +101,11 @@ export function useLiveDocument({ collectionSlug, fields, site, keyphrase, enabl
     fields,
     site,
     extractContentPath,
-    schemaFields,
-    walkCtx,
+    hostFields,
+    ctx,
     resolver,
+    resolveDepth,
+    apiRoute,
   };
 
   const getInput = useCallback(async ({ live = false }: { live?: boolean } = {}): Promise<AnalysisInput> => {
@@ -116,13 +129,14 @@ export function useLiveDocument({ collectionSlug, fields, site, keyphrase, enabl
       values: inputValues,
       locale: s.locale,
       payloadLocale: s.locale?.code,
-      apiRoute: config.routes.api,
+      apiRoute: s.apiRoute,
       keyphrase: live ? s.keyphrase : s.debouncedKeyphrase,
       fields: s.fields,
       site: s.site,
-      schemaFields: s.schemaFields,
-      walkCtx: s.walkCtx,
+      hostFields: s.hostFields,
+      ctx: s.ctx,
       resolver: s.resolver,
+      resolveDepth: s.resolveDepth,
       override,
     });
   }, []);

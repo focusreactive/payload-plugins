@@ -49,4 +49,16 @@ describe("overrideAdmin", () => {
     expect(run(1.7)).toBe(1);
     expect(run(Number.NaN)).toBe(0);
   });
+
+  it("passes a slugPaths map of every configured collection's configured slug path (default 'slug')", () => {
+    const result = overrideAdmin(incoming, {
+      collections: [
+        { slug: "pages", fields: { slug: "slug" } },
+        { slug: "media", fields: { slug: "permalink" } },
+      ],
+    }) as never as { collections: { slug: string; admin?: { components?: { edit?: { beforeDocumentControls?: { clientProps?: { slugPaths?: Record<string, string> } }[] } } } }[] };
+
+    const entry = result.collections.find((c) => c.slug === "pages")?.admin?.components?.edit?.beforeDocumentControls?.[0];
+    expect(entry?.clientProps?.slugPaths).toEqual({ pages: "slug", media: "permalink" });
+  });
 });

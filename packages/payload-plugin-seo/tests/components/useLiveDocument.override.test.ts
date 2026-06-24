@@ -1,10 +1,20 @@
 import { describe, expect, it, vi } from "vitest";
 import { registerContentExtractors } from "../../src/content/registry";
 import { buildAnalysisInput } from "../../src/components/SeoDrawer/build-analysis-input";
+import type { ExtractContext } from "../../src/content/extract/context";
 
 // This test asserts the wiring contract: a registered extractor, when passed as override,
-// produces serialized Intermediate Representation. (useLiveDocument is a hook; its getInput delegates to buildAnalysisInput
-// with override = resolveContentExtractor(extractContentPath).)
+// produces serialized Intermediate Representation and receives the runtime { locale, apiRoute } context.
+const ctx: ExtractContext = {
+  getFields: () => [],
+  isUploadCollection: () => false,
+  slugPath: () => "slug",
+  blocksBySlug: {},
+  resolved: new Map(),
+  baseUrl: "",
+};
+const resolver = { resolve: vi.fn(async () => new Map()), invalidate: vi.fn() } as never;
+
 describe("extractContentPath → override contract", () => {
   it("a registered extractor's Intermediate Representation is serialized into contentHtml", async () => {
     const fn = vi.fn(async () => [{ type: "heading" as const, level: 1 as const, text: "Reg" }]);
@@ -15,12 +25,14 @@ describe("extractContentPath → override contract", () => {
       values: {},
       locale: "en",
       payloadLocale: "en",
+      apiRoute: "/api",
       keyphrase: "",
       fields: { content: "blocks" },
       site: { name: "S", baseUrl: "" },
-      schemaFields: [],
-      walkCtx: { isUploadCollection: () => false, blocksBySlug: {} },
-      resolver: { resolve: vi.fn(async () => new Map()), invalidate: vi.fn() } as never,
+      hostFields: [],
+      ctx,
+      resolver,
+      resolveDepth: 2,
       override,
     });
     expect(fn).toHaveBeenCalledOnce();
@@ -40,9 +52,10 @@ describe("extractContentPath → override contract", () => {
       keyphrase: "",
       fields: { content: "blocks" },
       site: { name: "S", baseUrl: "" },
-      schemaFields: [],
-      walkCtx: { isUploadCollection: () => false, blocksBySlug: {} },
-      resolver: { resolve: vi.fn(async () => new Map()), invalidate: vi.fn() } as never,
+      hostFields: [],
+      ctx,
+      resolver,
+      resolveDepth: 2,
       override,
     });
     expect(fn).toHaveBeenCalledWith({ a: 1 }, { locale: "es", apiRoute: "/api" });
