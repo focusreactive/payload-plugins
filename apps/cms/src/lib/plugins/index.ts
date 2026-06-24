@@ -215,6 +215,7 @@ export const plugins: Plugin[] = [
           slug: "slug",
           content: "blocks",
         },
+        extractContentPath: "@/collections/Page/extractPageContent#default",
       },
       {
         slug: "posts",
@@ -224,6 +225,7 @@ export const plugins: Plugin[] = [
           slug: "slug",
           content: "content",
         },
+        extractContentPath: "@/collections/Posts/extractPostContent#default",
       },
     ],
     site: {

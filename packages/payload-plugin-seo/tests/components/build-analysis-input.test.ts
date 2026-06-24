@@ -1,87 +1,83 @@
 import type { ClientField } from "payload";
 import { describe, expect, it, vi } from "vitest";
 import { buildAnalysisInput } from "../../src/components/SeoDrawer/build-analysis-input";
-import type { MediaResolver } from "../../src/content/uploads/media-resolver";
-import type { UploadWalkContext } from "../../src/content/uploads/transform-upload-values";
-import type { ResolvedUploadDoc } from "../../src/content/uploads/types";
+import type { ExtractContext } from "../../src/content/extract/context";
+import { refKey } from "../../src/content/resolve/types";
 
-const SCHEMA = [
-  {
-    name: "sections",
-    type: "blocks",
-    blocks: [
-      {
-        slug: "hero",
-        fields: [
-          { name: "title", type: "text" },
-          { name: "image", type: "upload", relationTo: "media" },
-        ],
-      },
-    ],
-  },
-] as unknown as ClientField[];
+const field = (f: Record<string, unknown>) => f as unknown as ClientField;
 
-const WALK_CTX: UploadWalkContext = {
-  isUploadCollection: (slug) => slug === "media",
+const ctx = (over: Partial<ExtractContext> = {}): ExtractContext => ({
+  getFields: () => [],
+  isUploadCollection: (s) => s === "media",
+  slugPath: () => "slug",
   blocksBySlug: {},
-};
-
-const fakeResolver = (docs: Record<string, ResolvedUploadDoc>): MediaResolver => ({
-  resolve: async () => new Map(Object.entries(docs)),
-  invalidate: () => undefined,
+  resolved: new Map(),
+  baseUrl: "https://x.com",
+  ...over,
 });
 
-const baseArgs = {
-  locale: "en" as const,
-  payloadLocale: "en",
-  keyphrase: "running shoes",
-  fields: { content: "sections", slug: "slug" },
-  site: { name: "Dev", baseUrl: "https://dev.test" },
-  schemaFields: SCHEMA,
-  walkCtx: WALK_CTX,
-};
+const resolver = (docs: Record<string, Record<string, unknown>> = {}) => ({
+  resolve: vi.fn(async () => new Map(Object.entries(docs))),
+  invalidate: vi.fn(),
+});
 
 describe("buildAnalysisInput", () => {
-  it("resolves upload IDs into <img> tags in contentHtml", async () => {
-    const resolver = fakeResolver({
-      "media:1": {
-        id: 1,
-        url: "/m/trail.jpg",
-        mimeType: "image/jpeg",
-        alt: "running shoes on a trail",
-      },
+  it("resolves host refs at depth-1 and serializes extracted content", async () => {
+    const r = resolver({ [refKey({ collection: "media", id: 1 })]: { url: "/a.jpg", mimeType: "image/jpeg", alt: "A" } });
+    const out = await buildAnalysisInput({
+      values: { title: "T", cover: 1, body: "Hello" },
+      locale: "en",
+      payloadLocale: "en",
+      keyphrase: "k",
+      fields: { seoTitle: "title", content: {} },
+      site: { name: "S", baseUrl: "https://x.com" },
+      hostFields: [field({ name: "cover", type: "upload", relationTo: "media" }), field({ name: "body", type: "text" })],
+      ctx: ctx(),
+      resolver: r as never,
+      resolveDepth: 2,
     });
-    const values = { sections: [{ blockType: "hero", title: "Hi", image: 1 }] };
-
-    const input = await buildAnalysisInput({ ...baseArgs, values, resolver });
-
-    expect(input.contentHtml).toContain(
-      '<img src="/m/trail.jpg" alt="running shoes on a trail" />'
-    );
+    expect(r.resolve).toHaveBeenCalledWith(expect.any(Array), "en", 1);
+    expect(out.contentHtml).toContain('<img src="/a.jpg"');
+    expect(out.contentHtml).toContain("<p>Hello</p>");
   });
 
-  it("skips collection/resolution entirely when no refs are present", async () => {
-    const resolve = vi.fn();
-    const resolver = { resolve, invalidate: () => undefined } as unknown as MediaResolver;
-    const values = { sections: [{ blockType: "hero", title: "Hi" }] };
-
-    const input = await buildAnalysisInput({ ...baseArgs, values, resolver });
-
-    expect(resolve).not.toHaveBeenCalled();
-    expect(input.contentHtml).toContain("<p>Hi</p>");
+  it("skips resolution entirely when resolveDepth is 0", async () => {
+    const r = resolver();
+    await buildAnalysisInput({
+      values: { body: "Hello" },
+      locale: "en",
+      payloadLocale: "en",
+      keyphrase: "k",
+      fields: { content: {} },
+      site: { name: "S", baseUrl: "https://x.com" },
+      hostFields: [field({ name: "body", type: "text" })],
+      ctx: ctx(),
+      resolver: r as never,
+      resolveDepth: 0,
+    });
+    expect(r.resolve).not.toHaveBeenCalled();
   });
 
-  it("uses the async override with raw values and skips hydration", async () => {
-    const resolve = vi.fn();
-    const resolver = { resolve, invalidate: () => undefined } as unknown as MediaResolver;
-    const override = vi.fn(
-      async (data: Record<string, unknown>) =>
-        `<p>custom ${String((data as { x?: unknown }).x)}</p>`
-    );
-
-    const input = await buildAnalysisInput({ ...baseArgs, values: { x: 42 }, resolver, override });
-
-    expect(input.contentHtml).toBe("<p>custom 42</p>");
-    expect(resolve).not.toHaveBeenCalled();
+  it("uses the override with hydrated values when provided", async () => {
+    const r = resolver({ [refKey({ collection: "media", id: 1 })]: { url: "/a.jpg", mimeType: "image/jpeg" } });
+    const override = vi.fn(async (v: Record<string, unknown>) => {
+      expect((v.cover as Record<string, unknown>).url).toBe("/a.jpg");
+      return [{ type: "paragraph", text: "OV" } as const];
+    });
+    const out = await buildAnalysisInput({
+      values: { cover: 1 },
+      locale: "en",
+      payloadLocale: "en",
+      keyphrase: "k",
+      fields: { content: {} },
+      site: { name: "S", baseUrl: "https://x.com" },
+      hostFields: [field({ name: "cover", type: "upload", relationTo: "media" })],
+      ctx: ctx(),
+      resolver: r as never,
+      resolveDepth: 2,
+      override,
+    });
+    expect(override).toHaveBeenCalled();
+    expect(out.contentHtml).toBe("<p>OV</p>");
   });
 });

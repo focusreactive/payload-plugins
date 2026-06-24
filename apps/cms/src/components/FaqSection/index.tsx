@@ -33,7 +33,7 @@ export function FaqSection({ eyebrow, heading, description, items }: FaqSectionP
     <div className="grid grid-cols-1 items-start gap-[clamp(32px,6vw,80px)] min-[861px]:grid-cols-[0.8fr_1.2fr]">
       {header ? <SectionHeader {...header} /> : <div aria-hidden />}
 
-      <Accordion items={accordionItems} defaultOpenId={firstId} />
+      <Accordion items={accordionItems} defaultOpenId={firstId} triggerHeadingLevel={3} />
     </div>
   );
 }

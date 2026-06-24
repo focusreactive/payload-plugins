@@ -1,26 +1,33 @@
-import { uploadKey } from "./types";
-import type { ResolvedUploadDoc, UploadRef } from "./types";
+import { refKey } from "./types";
+import type { DocRef, ResolvedDoc } from "./types";
 
-export interface MediaResolver {
+export interface DocResolver {
   resolve: (
-    refs: UploadRef[],
-    locale: string | undefined
-  ) => Promise<Map<string, ResolvedUploadDoc>>;
+    refs: DocRef[],
+    locale: string | undefined,
+    depth: number
+  ) => Promise<Map<string, ResolvedDoc>>;
   invalidate: () => void;
 }
 
 interface FindResponse {
-  docs?: Array<ResolvedUploadDoc & { id?: unknown }>;
+  docs?: Array<ResolvedDoc & { id?: unknown }>;
 }
 
 async function fetchDocs(
   apiRoute: string,
   collection: string,
   ids: Array<string | number>,
-  locale: string | undefined
-): Promise<Map<string, ResolvedUploadDoc>> {
-  const params = new URLSearchParams({ depth: "0", limit: String(ids.length) });
+  locale: string | undefined,
+  depth: number
+): Promise<Map<string, ResolvedDoc>> {
+  const params = new URLSearchParams({
+    depth: String(depth),
+    limit: String(ids.length),
+  });
+
   if (locale) params.set("locale", locale);
+
   ids.forEach((id, i) => params.set(`where[id][in][${i}]`, String(id)));
 
   try {
@@ -28,6 +35,7 @@ async function fetchDocs(
       credentials: "include",
     });
     if (!res.ok) return new Map();
+
     const body = (await res.json()) as FindResponse;
 
     return new Map(
@@ -40,16 +48,16 @@ async function fetchDocs(
   }
 }
 
-export function createMediaResolver(apiRoute: string): MediaResolver {
-  const cache = new Map<string, ResolvedUploadDoc | null>();
-  const cacheKey = (ref: UploadRef, locale: string | undefined) =>
-    `${uploadKey(ref)}:${locale ?? ""}`;
+export function createDocResolver(apiRoute: string): DocResolver {
+  const cache = new Map<string, ResolvedDoc | null>();
+  const cacheKey = (ref: DocRef, locale: string | undefined, depth: number) =>
+    `${refKey(ref)}:${locale ?? ""}:${depth}`;
 
   return {
-    async resolve(refs, locale) {
-      const missing = refs.filter((ref) => !cache.has(cacheKey(ref, locale)));
+    async resolve(refs, locale, depth) {
+      const missing = refs.filter((ref) => !cache.has(cacheKey(ref, locale, depth)));
 
-      const byCollection = new Map<string, UploadRef[]>();
+      const byCollection = new Map<string, DocRef[]>();
       for (const ref of missing) {
         const group = byCollection.get(ref.collection) ?? [];
         group.push(ref);
@@ -62,18 +70,20 @@ export function createMediaResolver(apiRoute: string): MediaResolver {
             apiRoute,
             collection,
             group.map((r) => r.id),
-            locale
+            locale,
+            depth
           );
-          for (const ref of group) {
-            cache.set(cacheKey(ref, locale), docs.get(String(ref.id)) ?? null);
-          }
+
+          for (const ref of group)
+            cache.set(cacheKey(ref, locale, depth), docs.get(String(ref.id)) ?? null);
         })
       );
 
-      const out = new Map<string, ResolvedUploadDoc>();
+      const out = new Map<string, ResolvedDoc>();
+
       for (const ref of refs) {
-        const doc = cache.get(cacheKey(ref, locale));
-        if (doc) out.set(uploadKey(ref), doc);
+        const doc = cache.get(cacheKey(ref, locale, depth));
+        if (doc) out.set(refKey(ref), doc);
       }
 
       return out;

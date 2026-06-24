@@ -15,11 +15,13 @@ export interface SeoButtonProps {
   extractContentPath: string | null;
   site: { name: string; baseUrl: string; faviconUrl: string };
   supportedLocales: string[];
+  resolveDepth: number;
+  slugPaths: Record<string, string>;
 }
 
 const DRAWER_SLUG = "seo-analytics-drawer";
 
-export function SeoButtonInner({ collectionSlug, fields, site, supportedLocales }: SeoButtonProps) {
+export function SeoButtonInner({ collectionSlug, fields, site, supportedLocales, extractContentPath, resolveDepth, slugPaths }: SeoButtonProps) {
   const { openModal } = useModal();
   const [keyphrase, setKeyphrase] = useState("");
 
@@ -28,6 +30,9 @@ export function SeoButtonInner({ collectionSlug, fields, site, supportedLocales 
     fields,
     site: { name: site.name, baseUrl: site.baseUrl },
     keyphrase,
+    extractContentPath,
+    resolveDepth,
+    slugPaths,
   });
   const { result, analyzing, analyzedKeyphrase, analyzeNow } = useAnalysis({
     getInput,
