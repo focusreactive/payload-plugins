@@ -14,6 +14,7 @@ export interface BuildAnalysisInputArgs {
   values: Record<string, unknown>;
   locale: string | { code?: string } | null | undefined;
   payloadLocale: string | undefined;
+  apiRoute?: string;
   keyphrase: string;
   fields: SeoFieldPaths;
   site: { name: string; baseUrl: string };
@@ -33,7 +34,11 @@ async function hydrate(args: BuildAnalysisInputArgs): Promise<Record<string, unk
 
 async function extractIntermediateRepresentation(args: BuildAnalysisInputArgs): Promise<ContentNode[]> {
   const hydrated = await hydrate(args);
-  if (args.override) return await args.override(hydrated);
+  if (args.override)
+    return await args.override(hydrated, {
+      locale: args.payloadLocale,
+      apiRoute: args.apiRoute,
+    });
 
   return extractContent(hydrated, args.fields);
 }

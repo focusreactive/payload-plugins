@@ -116,6 +116,7 @@ export function useLiveDocument({ collectionSlug, fields, site, keyphrase, enabl
       values: inputValues,
       locale: s.locale,
       payloadLocale: s.locale?.code,
+      apiRoute: config.routes.api,
       keyphrase: live ? s.keyphrase : s.debouncedKeyphrase,
       fields: s.fields,
       site: s.site,

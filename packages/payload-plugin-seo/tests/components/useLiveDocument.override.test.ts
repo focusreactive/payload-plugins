@@ -26,4 +26,25 @@ describe("extractContentPath → override contract", () => {
     expect(fn).toHaveBeenCalledOnce();
     expect(input.contentHtml).toBe("<h1>Reg</h1>");
   });
+
+  it("passes { locale, apiRoute } as the second argument to the override", async () => {
+    const fn = vi.fn(async () => [{ type: "paragraph" as const, text: "ctx" }]);
+    registerContentExtractors({ "@/ctx#default": fn });
+    const { resolveContentExtractor } = await import("../../src/content/registry");
+    const override = resolveContentExtractor("@/ctx#default");
+    await buildAnalysisInput({
+      values: { a: 1 },
+      locale: "es",
+      payloadLocale: "es",
+      apiRoute: "/api",
+      keyphrase: "",
+      fields: { content: "blocks" },
+      site: { name: "S", baseUrl: "" },
+      schemaFields: [],
+      walkCtx: { isUploadCollection: () => false, blocksBySlug: {} },
+      resolver: { resolve: vi.fn(async () => new Map()), invalidate: vi.fn() } as never,
+      override,
+    });
+    expect(fn).toHaveBeenCalledWith({ a: 1 }, { locale: "es", apiRoute: "/api" });
+  });
 });

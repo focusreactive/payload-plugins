@@ -1,8 +1,16 @@
 import type { ContentNode } from "../content/schema/nodes";
 import type { Translations } from "../translations/types";
 
-/** Client extractor: receives hydrated, unflattened form values, returns the content schema (Intermediate Representation). */
-export type ContentExtractor = (values: Record<string, unknown>) => ContentNode[] | Promise<ContentNode[]>;
+/** Runtime context handed to a content extractor so it can resolve references and locale-correct hrefs. */
+export interface ExtractContext {
+  /** Payload locale code (e.g. "en", "es"); absent → extractor falls back to its own default. */
+  locale?: string;
+  /** Payload REST API route (e.g. "/api") for client-side reference fetches. */
+  apiRoute?: string;
+}
+
+/** Client extractor: receives hydrated, unflattened form values + runtime context, returns the content schema (Intermediate Representation). */
+export type ContentExtractor = (values: Record<string, unknown>, ctx?: ExtractContext) => ContentNode[] | Promise<ContentNode[]>;
 
 /** Which parts of the document the built-in extractor walks. */
 export interface ContentSelection {
