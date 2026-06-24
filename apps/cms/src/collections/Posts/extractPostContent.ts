@@ -1,11 +1,17 @@
-import { heading, link, paragraph, richText } from "@focus-reactive/payload-plugin-seo/content";
-import type { ContentNode } from "@focus-reactive/payload-plugin-seo/content";
-import { compact, uploadImage } from "@/core/lib/contentExtraction";
-import type { Action, Upload } from "@/core/lib/contentExtraction";
+import { heading, paragraph, richText } from "@focus-reactive/payload-plugin-seo/content";
+import type { ContentNode, ExtractContext } from "@focus-reactive/payload-plugin-seo/content";
+
+import { I18N_CONFIG } from "@/core/config/i18n";
+import { collectLinkRefs, compact, fetchLinkDocs, linkToContentNode, uploadImage } from "@/core/lib/contentExtraction";
+import type { LinkResolveCtx, LinkValue, Upload } from "@/core/lib/contentExtraction";
 import type { Post } from "@/payload-types";
 
-export default function extractPostContent(values: Record<string, unknown>): ContentNode[] {
+export default async function extractPostContent(values: Record<string, unknown>, ctx?: ExtractContext): Promise<ContentNode[]> {
   const post = values as Partial<Post>;
+  const locale = ctx?.locale ?? I18N_CONFIG.defaultLocale;
+  const docsById = await fetchLinkDocs(collectLinkRefs(post), { apiRoute: ctx?.apiRoute, locale });
+  const linkCtx: LinkResolveCtx = { docsById, locale };
+
   const faq = post.faq ?? undefined;
   const cta = post.cta ?? undefined;
 
@@ -19,6 +25,6 @@ export default function extractPostContent(values: Record<string, unknown>): Con
     paragraph(cta?.eyebrow),
     heading(2, cta?.heading),
     paragraph(cta?.description),
-    ...((cta?.actions ?? []) as Action[]).map((a) => link(a.url, a.label)),
+    ...((cta?.actions ?? []) as LinkValue[]).map((a) => linkToContentNode(a, linkCtx)),
   ]);
 }
