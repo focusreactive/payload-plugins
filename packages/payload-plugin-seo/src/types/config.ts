@@ -46,6 +46,11 @@ export interface SeoCollectionConfig {
    * Register the function via registerContentExtractors from "@focus-reactive/payload-plugin-seo/content".
    */
   extractContentPath?: string;
+  /**
+   * Depth of nested relation/upload resolution for the built-in extractor.
+   * @default 2
+   */
+  resolveDepth?: number;
 }
 
 export interface SeoSiteConfig {
