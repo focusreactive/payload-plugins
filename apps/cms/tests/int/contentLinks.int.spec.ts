@@ -196,7 +196,9 @@ describe("buildRefQueries", () => {
     });
     const byCol = Object.fromEntries(queries.map((q) => [q.collection, q]));
     expect(byCol.page).toMatchObject({ ids: [1], select: ["slug", "breadcrumbs"], depth: 1 });
-    expect(byCol.media).toMatchObject({ ids: [8], select: ["url", "alt", "mimeType"] });
+    // `filename` is REQUIRED: Payload's upload `url` is virtual (computed from filename);
+    // selecting url without filename returns url: null.
+    expect(byCol.media).toMatchObject({ ids: [8], select: ["url", "filename", "mimeType", "alt"] });
     expect(byCol.testimonials).toMatchObject({
       ids: [2],
       select: ["author", "company", "position", "content"],

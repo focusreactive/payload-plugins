@@ -120,7 +120,11 @@ export function buildRefQueries(values: unknown): DocQuery[] {
 
   const media = collectMediaIds(values);
   if (media.length > 0) {
-    queries.push({ collection: MEDIA_COLLECTION, ids: media, select: ["url", "alt", "mimeType"] });
+    queries.push({
+      collection: MEDIA_COLLECTION,
+      ids: media,
+      select: ["url", "filename", "mimeType", "alt"],
+    });
   }
 
   const testimonials = collectRelationIds(values, "testimonial");
