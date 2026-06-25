@@ -1,3 +1,11 @@
+# @focus-reactive/payload-plugin-seo [1.5.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.4.0...@focus-reactive/payload-plugin-seo@1.5.0) (2026-06-25)
+
+
+### Features
+
+* **seo:** add resolveDocs parallel doc-fetch utility and compact intermediate representation helper for the content-extraction toolkit ([528aef0](https://github.com/focusreactive/payload-plugins/commit/528aef09f3b89d419746848748d58472dd32c7de))
+* **seo:** remove built-in content extractor; extractors now receive raw values plus an injected resolveDocs + helpers toolkit ([31cad54](https://github.com/focusreactive/payload-plugins/commit/31cad5462609e19e8e366467e2fdaebbbe2665f5))
+
 # @focus-reactive/payload-plugin-seo [1.4.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.3.0...@focus-reactive/payload-plugin-seo@1.4.0) (2026-06-24)
 
 
