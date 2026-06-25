@@ -2,7 +2,7 @@
 
 Live SEO analysis for [Payload CMS](https://payloadcms.com/) v3 + Next.js, powered by [Yoast](https://github.com/Yoast/wordpress-seo). Adds a real-time SEO drawer to the document editor — keyphrase optimization, on-page checks, readability, inclusive language, content vitals, and a Google SERP preview — without adding a single field to your database.
 
-The plugin injects a button into the editor toolbar of each configured collection. Clicking it opens a drawer that reads the current (unsaved) form values, extracts the title, meta description, slug, body content, and images, and runs the Yoast analysis engine **entirely in the browser**. Nothing is persisted — there are zero new collections, globals, or fields.
+The plugin injects a button into the editor toolbar of each configured collection. Clicking it opens a drawer that reads the current (unsaved) form values, derives the title, meta description, and slug from dot-path config, runs **your** registered content extractor to build the body content, and runs the Yoast analysis engine **entirely in the browser**. Nothing is persisted — there are zero new collections, globals, or fields.
 
 ---
 
@@ -19,8 +19,11 @@ The plugin adds NO database fields, collections, or globals. It injects a button
 document editor toolbar (admin.components.edit.beforeDocumentControls) of each configured
 collection. The button opens a drawer that:
 - Reads the live (unsaved) form values for the document
-- Extracts title, meta description, slug, body content and images using dot-path config
-- Resolves upload/relationship media into <img> tags via the Payload REST API
+- Derives title, meta description, and slug from dot-path config
+- Runs YOUR registered content extractor to build the body content. Content extraction is
+  app-owned — there is no built-in walker. The extractor receives the raw form values plus a
+  toolkit ({ resolveDocs, helpers }); it fetches any referenced/upload docs it needs via
+  resolveDocs and returns a ContentNode[] the plugin serializes to HTML.
 - Runs the Yoast engine (yoastseo + @yoast/search-metadata-previews) in the browser
 - Shows tabs: Keyphrase, On-page SEO, Readability, Inclusive, Content vitals, SERP preview
 
@@ -43,8 +46,9 @@ seoPlugin({
         seoTitle: 'seoTitle',           // dot-path; falls back to useAsTitle / 'title'
         metaDescription: 'metaDescription',
         slug: 'slug',                   // default: 'slug'
-        content: 'sections',            // dot-path to the main content field (blocks/richText/textarea)
       },
+      // REQUIRED: lookup key for a content extractor you register (see Step 4).
+      extractContentPath: '@/seo/extractPageContent#default',
     },
   ],
   site: { name: 'My Site', baseUrl: 'https://example.com', faviconUrl: '/favicon.ico' },
@@ -65,18 +69,39 @@ const nextConfig = {
   transpilePackages: ['@yoast/search-metadata-previews', '@yoast/components'],
 }
 
+## Step 4 — Write and register a content extractor (REQUIRED)
+
+Content extraction is entirely yours — there is no built-in walker, and extractContentPath is
+required. Write an extractor and register it under the same key, from an admin-mounted client
+module:
+
+// src/seo/extractPageContent.ts
+import type { ContentExtractor } from '@focus-reactive/payload-plugin-seo/content'
+const extractPageContent: ContentExtractor = async (values, ctx, { resolveDocs, helpers }) => {
+  // 1. collect ids from the RAW values (relationship/upload fields are ids)
+  // 2. const docs = await resolveDocs([{ collection: 'media', ids, select: ['url','alt'] }])
+  // 3. build the IR with helpers
+  return helpers.compact([helpers.heading(1, values.title as string) /* … */])
+}
+export default extractPageContent
+
+// src/providers/SeoExtractorRegistrar.tsx   ("use client")
+import { registerContentExtractors } from '@focus-reactive/payload-plugin-seo/content'
+import extractPageContent from '@/seo/extractPageContent'
+registerContentExtractors({ '@/seo/extractPageContent#default': extractPageContent })
+// export a component that renders {children} and mount it via admin.components.providers
+
 ## Important notes
 
 - The plugin reads UNSAVED form values, so analysis updates live as you type (debounced ~1s).
-- `fields.content` should point at your primary body field. The built-in extractor walks
-  blocks, arrays, groups, tabs, lexical richText, and uploads, converting them to HTML.
-- If the built-in extractor can't reach your content shape, supply `extractContentPath`:
-  the lookup key for a `ContentExtractor` you register via `registerContentExtractors` from
-  `@focus-reactive/payload-plugin-seo/content`. The extractor receives hydrated form values
-  and returns `ContentNode[]` — a structured Intermediate Representation the plugin serializes to HTML internally.
+- Content extraction is done by YOUR registered extractor; extractContentPath is required and
+  there is no built-in fallback. The extractor receives raw form values, a ctx
+  ({ locale, apiRoute }), and a toolkit ({ resolveDocs, helpers }), and returns ContentNode[].
+- relationship/upload fields arrive as ids; use toolkit.resolveDocs(queries) to fetch only the
+  docs/fields you need (one parallel request per collection), then read them with store.get().
 - Non-English analysis requires the locale code in `supportedLocales`; the matching Yoast
   language pack is dynamically imported on demand.
-- No GA4, no API keys, no server calls except resolving media URLs from your own Payload API.
+- No GA4, no API keys, no server calls except the resolveDocs reads against your own Payload API.
 ```
 
 ---
@@ -92,9 +117,10 @@ Document editor (configured collection)
         ▼
    SEO Drawer (client-only)
         │
-        ├─ read live form values (title, description, slug, content, keyphrase)
-        ├─ collect upload/relationship refs → resolve via /api/{collection}?depth=0&locale=…
-        ├─ hydrate values → walk tree → build HTML (lexical → HTML, images → <img>)
+        ├─ read live form values (title, description, slug, keyphrase)
+        ├─ run your registered extractor(values, ctx, toolkit)
+        │     └─ toolkit.resolveDocs(): parallel, projected /api/{collection} fetches
+        ├─ extractor returns ContentNode[] → plugin serializes to HTML
         ▼
    Yoast engine (in browser): Paper + EnglishResearcher + SeoAssessor
         │
@@ -137,8 +163,9 @@ export default buildConfig({
             seoTitle: "seoTitle",
             metaDescription: "metaDescription",
             slug: "slug",
-            content: "sections",
           },
+          // Required: register a matching extractor (see "Content Extraction").
+          extractContentPath: "@/seo/extractPageContent#default",
         },
       ],
       site: {
@@ -176,6 +203,10 @@ const nextConfig = {
 export default nextConfig;
 ```
 
+### Step 4 — Write and register a content extractor
+
+Required — see [Content Extraction](#content-extraction).
+
 ---
 
 ## Configuration Reference
@@ -203,30 +234,27 @@ interface SeoPluginConfig {
 interface SeoCollectionConfig {
   /** Collection slug to attach the drawer to. */
   slug: string;
-  /** Dot-paths telling the plugin which fields hold the SEO inputs. */
+  /** Dot-paths telling the plugin which fields hold the title / meta description / slug. */
   fields?: SeoFieldPaths;
   /**
-   * Lookup key for a registered ContentExtractor.
-   * Set this to the same string you pass as the key in registerContentExtractors().
-   * Convention: use the module path of the extractor file, e.g. "@/seo/my-extractor#default".
-   * The extractor runs in the browser on hydrated, unflattened form values and returns ContentNode[].
-   * Register it from an admin-mounted client module — see "Content Extraction" below.
-   * Default: the built-in document walker.
+   * REQUIRED. Lookup key for a registered ContentExtractor — the only content path;
+   * there is no built-in walker. Set it to the same string you pass as the key in
+   * registerContentExtractors(). Convention: the module path of the extractor file,
+   * e.g. "@/collections/Page/extractPageContent#default". The extractor runs in the
+   * browser on the raw form values and returns ContentNode[]. See "Content Extraction".
+   *
+   * A collection whose extractContentPath is missing/empty is dropped at plugin init
+   * (with a warning); if no collection has a valid extractContentPath the plugin no-ops.
+   * If the key is set but not registered at runtime, content analysis for that collection
+   * is empty (a one-time console error is logged) — there is no built-in fallback.
    */
-  extractContentPath?: string;
+  extractContentPath: string;
 }
 ```
 
 ### SeoFieldPaths
 
 ```ts
-interface ContentSelection {
-  /** Dot-paths to walk, in order. Omitted or empty = whole document root. */
-  include?: string[];
-  /** Dot-paths to skip (merged with auto-excluded seoTitle/metaDescription/slug). */
-  exclude?: string[];
-}
-
 interface SeoFieldPaths {
   /** Dot-path to the SEO title. Falls back to the collection's useAsTitle / `title`. */
   seoTitle?: string;
@@ -235,27 +263,10 @@ interface SeoFieldPaths {
   metaDescription?: string;
   /** Dot-path to the slug. Default: 'slug' */
   slug?: string;
-  /**
-   * Built-in content selection. A string is a single field path (back-compat).
-   * An object selects include/exclude paths over the whole document.
-   * Ignored when extractContentPath is set and registered.
-   */
-  content?: string | ContentSelection;
 }
 ```
 
-Dot-paths support nesting, e.g. `"meta.description"` or `"content.body"`.
-
-**`content` selection semantics:**
-
-| Value                                | Behavior                                                   |
-| ------------------------------------ | ---------------------------------------------------------- |
-| `"blocks"` (string)                  | Walk that one field path. Back-compat — unchanged from v1. |
-| `{ include: ["blocks", "excerpt"] }` | Walk each listed path in order, concatenated.              |
-| `{ exclude: ["meta"] }` (no include) | Walk the whole document root, skipping excluded subtrees.  |
-| `{}` / `{ include: [] }`             | Walk the whole document root.                              |
-
-**Automatic metadata exclusion:** the configured `seoTitle`, `metaDescription`, and `slug` paths are always excluded from body content so their text is not double-counted in the Yoast analysis.
+Dot-paths support nesting, e.g. `"meta.description"` or `"content.body"`. Body content is **not** configured here — it is produced by your registered extractor (see below).
 
 ### SeoSiteConfig
 
@@ -272,6 +283,8 @@ interface SeoSiteConfig {
 
 ## Content Extraction
 
+Content extraction is **app-owned**: you register one `ContentExtractor` per collection. The plugin makes no assumptions about your document schema, relationships, link types, or URL construction — it hands your extractor the raw values plus a small, generic toolkit, and serializes whatever `ContentNode[]` you return.
+
 ### The `ContentNode` Intermediate Representation
 
 The plugin represents page content as a flat array of typed nodes before serializing to HTML. This is the `ContentNode` union exported from `@focus-reactive/payload-plugin-seo/content`:
@@ -286,11 +299,11 @@ type ContentNode =
   | { type: "html"; html: string }; // lexical-converted or raw HTML escape hatch
 ```
 
-Serialization to HTML (for the Yoast engine) happens entirely inside the plugin. Custom extractors produce `ContentNode[]`; they never construct HTML strings directly.
+Serialization to HTML (for the Yoast engine) happens entirely inside the plugin. Extractors produce `ContentNode[]`; they never construct HTML strings directly.
 
 ### Builder helpers
 
-The `/content` subpath exports pure builder functions. Each helper returns `null` for empty or missing input, so you can call `.filter(Boolean)` on an array of helper results:
+The `/content` subpath exports pure builder functions. Each helper returns `null` for empty or missing input, and `compact` drops the nulls — so you can build sparse arrays and clean them in one pass. The same helpers are also handed to your extractor as `toolkit.helpers`, so you can use either the imports or the injected object.
 
 ```ts
 import {
@@ -299,8 +312,9 @@ import {
   link, // link(href?: string | null, text?: string | null): ContentNode | null
   image, // image(src?: string | null, alt?: string | null): ContentNode | null
   video, // video(src?: string | null, poster?: string | null): ContentNode | null
-  richText, // richText(lexicalValue: unknown): ContentNode | null  (converts via convertLexicalToHTML; null when empty)
+  richText, // richText(lexicalValue: unknown): ContentNode | null  (lexical → HTML; null when empty)
   html, // html(raw?: string | null): ContentNode | null
+  compact, // compact(nodes: (ContentNode | null | undefined)[]): ContentNode[]
 } from "@focus-reactive/payload-plugin-seo/content";
 import type {
   ContentNode,
@@ -308,77 +322,73 @@ import type {
 } from "@focus-reactive/payload-plugin-seo/content";
 ```
 
-### Built-in extractor
-
-When `extractContentPath` is not set (or points to an unregistered key), the plugin's built-in extractor runs:
-
-1. **Selects** the subtree(s) specified by `fields.content` — a single field path, an `include` list, or the whole document root.
-2. **Collects upload / relationship references** by walking the form schema (arrays, blocks, groups, tabs, rows, collapsibles, and lexical richText, including inline media nodes).
-3. **Resolves media** by calling your Payload REST API per collection:
-   `GET /api/{collection}?depth=0&locale={locale}&where[id][in][]=…` — fetching each doc's `url`, `mimeType`, and `alt`. Results are cached in-memory and invalidated when the drawer re-opens or content changes.
-4. **Hydrates** the value tree (upload IDs → full docs) and walks it to emit `ContentNode[]`:
-   - Lexical richText → `{ type: "html", html: "…" }` via `@payloadcms/richtext-lexical/html`
-   - `{ url, mimeType: "image/*", alt? }` → `{ type: "image", … }`
-   - `{ url, label | text | title }` → `{ type: "link", … }`
-   - Strings → `{ type: "paragraph", … }`
-   - Structural keys (`id`, `blockType`, `blockName`, `_template`, `order`) are skipped
-5. **Serializes** the Intermediate Representation to an HTML string that is fed to the Yoast engine.
-
-Image checks (alt text, keyphrase in alt, image count) work against the real, resolved media — not raw relationship IDs.
-
-### Custom extractor (`ContentExtractor`)
+### The extractor contract
 
 ```ts
 type ContentExtractor = (
-  values: Record<string, unknown>,
+  values: Record<string, unknown>, // RAW form values; relationship/upload fields are ids
+  ctx: ExtractContext, // { locale?: string; apiRoute?: string }
+  toolkit: ExtractToolkit, // { resolveDocs, helpers }
 ) => ContentNode[] | Promise<ContentNode[]>;
+
+interface ExtractToolkit {
+  resolveDocs: (queries: DocQuery[]) => Promise<DocStore>;
+  helpers: ContentHelpers; // heading, paragraph, link, image, video, richText, html, compact
+}
+
+interface DocQuery {
+  collection: string;
+  ids: (string | number)[];
+  select?: string[]; // field projection → ?select[field]=true
+  depth?: number; // relationship population → ?depth=N (default 0)
+}
+
+interface DocStore {
+  get(collection: string, id: string | number): Record<string, unknown> | undefined;
+}
 ```
 
-Supply a custom extractor when the built-in walker cannot reconstruct your content shape (e.g. a complex block schema with a specific heading hierarchy). The extractor:
+Your extractor:
 
-- Receives **hydrated, unflattened** form values — upload IDs have already been resolved to full media objects before your function is called.
-- Returns `ContentNode[]` (not an HTML string).
-- Runs **entirely in the browser** on the live, unsaved form state.
-
-Use the `/content` helpers to build the Intermediate Representation:
+- Receives the **raw**, unsaved form values. Relationship and upload fields are **ids** (or id arrays / `{ relationTo, value }`), **not** populated objects — the plugin does no hydration.
+- Owns ref collection and any link/URL building. The plugin makes no assumptions about your link types (internal references, custom URLs, etc.) — you decide what to fetch and how to turn it into a node.
+- Uses `toolkit.resolveDocs(queries)` to fetch referenced/upload documents. You pass one query per collection with the `ids` you collected and an optional `select` projection (fetch only the fields you need) and `depth`. **All queries run in parallel.** Read results with `store.get(collection, id)`.
+- Returns `ContentNode[]` (built with the helpers); the plugin serializes it.
 
 ```ts
-// src/seo/extract-page-content.ts
-import {
-  heading,
-  paragraph,
-  image,
-  link,
-  richText,
+// src/collections/Page/extractPageContent.ts
+import { heading, image, paragraph, richText } from "@focus-reactive/payload-plugin-seo/content";
+import type {
+  ContentExtractor,
+  DocStore,
 } from "@focus-reactive/payload-plugin-seo/content";
-import type { ContentNode } from "@focus-reactive/payload-plugin-seo/content";
 
-export default function extractPageContent(
-  values: Record<string, unknown>,
-): ContentNode[] {
-  const blocks = (values as { blocks?: unknown[] }).blocks ?? [];
-  return blocks.flatMap((block) => {
-    const b = block as Record<string, unknown>;
-    switch (b.blockType) {
-      case "hero":
-        return [
-          heading(2, b.title as string),
-          paragraph(b.subtitle as string),
-          image(
-            (b.image as { url?: string; alt?: string } | null)?.url,
-            (b.image as { url?: string; alt?: string } | null)?.alt,
-          ),
-          link(b.ctaUrl as string, b.ctaLabel as string),
-        ].filter((n): n is ContentNode => n !== null);
-      case "richText":
-        return [richText(b.content)].filter(
-          (n): n is ContentNode => n !== null,
-        );
-      default:
-        return [];
-    }
-  });
-}
+const extractPageContent: ContentExtractor = async (values, _ctx, { resolveDocs, helpers }) => {
+  const blocks = (values as { blocks?: Record<string, unknown>[] }).blocks ?? [];
+
+  // 1. Collect the ids you care about from the RAW values (you know your schema).
+  const mediaIds = blocks.flatMap((b) => (typeof b.image === "number" ? [b.image] : []));
+
+  // 2. Fetch them — one parallel request per collection, projected to only the fields you need.
+  const docs: DocStore = await resolveDocs([
+    { collection: "media", ids: mediaIds, select: ["url", "alt", "mimeType"] },
+  ]);
+
+  // 3. Build the Intermediate Representation.
+  return helpers.compact(
+    blocks.flatMap((b) => {
+      const media = typeof b.image === "number" ? docs.get("media", b.image) : undefined;
+      return [
+        heading(2, b.title as string),
+        paragraph(b.subtitle as string),
+        image((media as { url?: string })?.url, (media as { alt?: string })?.alt),
+        richText(b.content),
+      ];
+    }),
+  );
+};
+
+export default extractPageContent;
 ```
 
 ### The registry: why it exists and how to use it
@@ -401,7 +411,6 @@ seoPlugin({
         seoTitle: "meta.title",
         metaDescription: "meta.description",
         slug: "slug",
-        content: "blocks",
       },
       extractContentPath: "@/collections/Page/extractPageContent#default",
     },
@@ -447,11 +456,11 @@ export default buildConfig({
 });
 ```
 
-If the configured `extractContentPath` is set but the function is not registered (e.g. the provider is missing), the plugin logs a one-time console warning and falls back to the built-in document walker.
+If the configured `extractContentPath` is set but the function is not registered (e.g. the provider is missing), the plugin logs a one-time console error and content analysis for that collection is empty — there is no built-in fallback.
 
-### Limitation: `reference`-type action links
+### Limitation: links and uploads embedded inside richText
 
-Only actions with a literal `url` string become `link` nodes in the Intermediate Representation. Internal relationship references (Payload `relationship` fields pointing to a page or post) cannot be resolved to a URL client-side — only upload media is hydrated before the extractor runs. Omit `reference`-type actions from your extractor or return nothing for them.
+`helpers.richText(value)` serializes the lexical tree to HTML **as-is**. Internal-link nodes and upload nodes embedded inside richText *body content* are **not** resolved by the plugin — their `href`s / `src`s are left as the lexical tree provides them. This keeps the plugin fully schema-agnostic. If you need those resolved, walk the lexical tree yourself inside your extractor (its structure is standard Payload lexical), collect the referenced ids, fetch them with `resolveDocs`, and rewrite the nodes before building the IR.
 
 ---
 
@@ -478,23 +487,29 @@ The drawer presents six tabs, all derived from a single in-browser Yoast analysi
 
 ```ts
 seoPlugin({
-  collections: [{ slug: "pages", fields: { content: "sections" } }],
+  collections: [
+    {
+      slug: "pages",
+      fields: { slug: "slug" },
+      extractContentPath: "@/seo/extractPageContent#default",
+    },
+  ],
   supportedLocales: ["en", "de", "fr", "es"],
 });
 ```
 
-The active locale is taken from the admin and normalized to Yoast's `xx_XX` form (e.g. `en` → `en_EN`). Media is resolved per-locale so localized URLs and alt text are analyzed correctly. A locale not listed in `supportedLocales` falls back to English processing.
+The active locale is taken from the admin and normalized to Yoast's `xx_XX` form (e.g. `en` → `en_EN`). The locale is passed to your extractor as `ctx.locale` and to `resolveDocs` (so projected fetches are locale-correct). A locale not listed in `supportedLocales` falls back to English processing.
 
 ---
 
 ## Exports Reference
 
-| Import path                                               | Exports                                                                                                                                                                                                                   |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@focus-reactive/payload-plugin-seo`                      | `seoPlugin`, and types `SeoPluginConfig`, `SeoCollectionConfig`, `SeoFieldPaths`, `SeoSiteConfig`, `ContentExtractor`, `ContentSelection`                                                                                 |
-| `@focus-reactive/payload-plugin-seo/content`              | Builder helpers `heading`, `paragraph`, `link`, `image`, `video`, `richText`, `html`; `registerContentExtractors`, `resolveContentExtractor`; types `ContentNode`, `HeadingLevel`, `ContentExtractor`, `ContentSelection` |
-| `@focus-reactive/payload-plugin-seo/admin.css`            | Compiled admin styles for the drawer & button                                                                                                                                                                             |
-| `@focus-reactive/payload-plugin-seo/components/SeoButton` | `SeoButton` — the toolbar button component (wired automatically by the plugin via the importMap; you normally never import this directly)                                                                                 |
+| Import path                                               | Exports                                                                                                                                                                                                                                              |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@focus-reactive/payload-plugin-seo`                      | `seoPlugin`, and types `SeoPluginConfig`, `SeoCollectionConfig`, `SeoFieldPaths`, `SeoSiteConfig`, `ContentExtractor`                                                                                                                                |
+| `@focus-reactive/payload-plugin-seo/content`              | Builder helpers `heading`, `paragraph`, `link`, `image`, `video`, `richText`, `html`, `compact`; `registerContentExtractors`, `resolveContentExtractor`; types `ContentNode`, `HeadingLevel`, `ContentExtractor`, `ExtractContext`, `ExtractToolkit`, `DocQuery`, `DocStore`, `ContentHelpers` |
+| `@focus-reactive/payload-plugin-seo/admin.css`            | Compiled admin styles for the drawer & button                                                                                                                                                                                                       |
+| `@focus-reactive/payload-plugin-seo/components/SeoButton` | `SeoButton` — the toolbar button component (wired automatically by the plugin via the importMap; you normally never import this directly)                                                                                                            |
 
 ---
 

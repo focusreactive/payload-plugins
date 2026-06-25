@@ -1,16 +1,26 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
+  buildRefQueries,
   collectLinkRefs,
-  fetchLinkDocs,
+  collectMediaIds,
+  collectRelationIds,
   isLinkValue,
   linkRefKey,
   linkToContentNode,
 } from "@/lib/contentExtraction";
 import type { LinkResolveCtx, LinkValue, ResolvedLinkDoc } from "@/lib/contentExtraction";
+import { extractPageBlockContent } from "@/collections/Page/extractPageContent";
 
 function ctx(docs: Array<[string, ResolvedLinkDoc]> = [], locale = "en"): LinkResolveCtx {
-  return { docsById: new Map(docs), locale };
+  const map = new Map(docs);
+  return {
+    docs: {
+      get: (collection, id) =>
+        map.get(`${collection}:${id}`) as Record<string, unknown> | undefined,
+    },
+    locale,
+  };
 }
 
 describe("isLinkValue", () => {
@@ -135,47 +145,111 @@ describe("linkToContentNode", () => {
   });
 });
 
-describe("fetchLinkDocs", () => {
-  afterEach(() => vi.unstubAllGlobals());
-
-  it("batches by collection and maps docs by ref key", async () => {
-    const fetchMock = vi.fn(async (url: string) => {
-      const collection = url.includes("/page?") ? "page" : "posts";
-      const docs = collection === "page" ? [{ id: 1, slug: "about" }] : [{ id: 7, slug: "hello" }];
-      return { ok: true, json: async () => ({ docs }) } as Response;
-    });
-    vi.stubGlobal("fetch", fetchMock);
-
-    const out = await fetchLinkDocs(
-      [
-        { collection: "page", id: 1 },
-        { collection: "posts", id: 7 },
+describe("collectMediaIds", () => {
+  it("collects nested-group, flat-upload, and heroImage ids, deduped; ignores non-numeric", () => {
+    const ids = collectMediaIds({
+      blocks: [
+        { image: { image: 1 } },
+        { image: 2 },
+        { slides: [{ image: { image: 1 } }] },
+        { heroImage: 3 },
+        { image: { image: { slug: "not-an-id" } } },
       ],
-      { apiRoute: "/api", locale: "en" }
-    );
-
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(out.get(linkRefKey({ collection: "page", id: 1 }))).toEqual({ id: 1, slug: "about" });
-    expect(out.get(linkRefKey({ collection: "posts", id: 7 }))).toEqual({ id: 7, slug: "hello" });
-  });
-
-  it("returns an empty map when apiRoute is missing or there are no refs", async () => {
-    expect((await fetchLinkDocs([], { apiRoute: "/api", locale: "en" })).size).toBe(0);
-    expect(
-      (await fetchLinkDocs([{ collection: "page", id: 1 }], { apiRoute: undefined, locale: "en" }))
-        .size
-    ).toBe(0);
-  });
-
-  it("swallows fetch failures and returns an empty map", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => ({ ok: false }) as Response)
-    );
-    const out = await fetchLinkDocs([{ collection: "page", id: 1 }], {
-      apiRoute: "/api",
-      locale: "en",
     });
-    expect(out.size).toBe(0);
+    expect([...ids].sort((a, b) => a - b)).toEqual([1, 2, 3]);
+  });
+  it("returns empty when there is no media", () => {
+    expect(collectMediaIds({})).toEqual([]);
+    expect(collectMediaIds({ title: "x", count: 5 })).toEqual([]);
+  });
+});
+
+describe("collectRelationIds", () => {
+  it("collects single ids, hasMany arrays, populated objects, deduped", () => {
+    expect(
+      [...collectRelationIds({ authors: [3, 4, 3], x: { authors: 4 } }, "authors")].sort(
+        (a, b) => Number(a) - Number(b)
+      )
+    ).toEqual([3, 4]);
+    expect(
+      collectRelationIds(
+        { blocks: [{ testimonialItems: [{ testimonial: 1 }, { testimonial: { id: 2 } }] }] },
+        "testimonial"
+      ).sort((a, b) => Number(a) - Number(b))
+    ).toEqual([1, 2]);
+    expect(collectRelationIds({}, "authors")).toEqual([]);
+  });
+});
+
+describe("buildRefQueries", () => {
+  it("also collects inline lexical upload media ids and internal link doc refs from richText", () => {
+    const queries = buildRefQueries({
+      content: {
+        root: {
+          type: "root",
+          children: [
+            { type: "upload", relationTo: "media", value: 42, fields: {} },
+            {
+              type: "paragraph",
+              children: [
+                {
+                  type: "link",
+                  fields: { linkType: "internal", doc: { relationTo: "posts", value: 99 } },
+                  children: [],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+    const byCol = Object.fromEntries(queries.map((q) => [q.collection, q]));
+    expect(byCol.media?.ids).toContain(42);
+    expect(byCol.posts?.ids).toContain(99);
+  });
+
+  it("emits projected parallel queries for links, media, testimonials, authors, categories", () => {
+    const queries = buildRefQueries({
+      authors: [3],
+      categories: [5],
+      heroImage: 8,
+      blocks: [
+        {
+          actions: [{ type: "reference", reference: { relationTo: "page", value: 1 }, label: "a" }],
+        },
+        { testimonialItems: [{ testimonial: 2 }] },
+      ],
+    });
+    const byCol = Object.fromEntries(queries.map((q) => [q.collection, q]));
+    expect(byCol.page).toMatchObject({ ids: [1], select: ["slug", "breadcrumbs"], depth: 1 });
+    // `filename` is REQUIRED: Payload's upload `url` is virtual (computed from filename);
+    // selecting url without filename returns url: null.
+    expect(byCol.media).toMatchObject({ ids: [8], select: ["url", "filename", "mimeType", "alt"] });
+    expect(byCol.testimonials).toMatchObject({
+      ids: [2],
+      select: ["author", "company", "position", "content"],
+    });
+    expect(byCol.authors).toMatchObject({ ids: [3], select: ["name"] });
+    expect(byCol.categories).toMatchObject({ ids: [5], select: ["title"] });
+  });
+});
+
+describe("testimonialsList resolves relation data via DocStore", () => {
+  it("reads testimonial content/author/role from the fetched doc when the value is an id", () => {
+    const store = {
+      get: (collection: string, id: string | number) =>
+        collection === "testimonials" && id === 9
+          ? { content: "Great product", author: "Jane Roe", position: "CEO", company: "Acme" }
+          : undefined,
+    };
+    const nodes = extractPageBlockContent(
+      { blockType: "testimonialsList", testimonialItems: [{ testimonial: 9 }] } as never,
+      { docs: store, locale: "en" } as never,
+      store as never,
+      { compact: (n: (unknown | null | undefined)[]) => n.filter(Boolean) } as never
+    );
+    expect(nodes).toContainEqual({ type: "paragraph", text: "Great product" });
+    expect(nodes).toContainEqual({ type: "paragraph", text: "Jane Roe" });
+    expect(nodes).toContainEqual({ type: "paragraph", text: "CEO, Acme" });
   });
 });

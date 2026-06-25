@@ -57,7 +57,7 @@ export function buildInput({
       seoTitle: Boolean(fields.seoTitle && valueAt(values, fields.seoTitle)),
       metaDescription: Boolean(fields.metaDescription),
       slug: Boolean(fields.slug ?? "slug"),
-      content: Boolean(fields.content),
+      content: contentHtml.trim().length > 0,
     },
   };
 }

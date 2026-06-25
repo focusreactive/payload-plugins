@@ -12,27 +12,29 @@ import { useLiveDocument } from "../SeoDrawer/useLiveDocument";
 export interface SeoButtonProps {
   collectionSlug: string;
   fields: Record<string, string>;
-  extractContentPath: string | null;
+  extractContentPath: string;
   site: { name: string; baseUrl: string; faviconUrl: string };
   supportedLocales: string[];
-  resolveDepth: number;
-  slugPaths: Record<string, string>;
 }
 
 const DRAWER_SLUG = "seo-analytics-drawer";
 
-export function SeoButtonInner({ collectionSlug, fields, site, supportedLocales, extractContentPath, resolveDepth, slugPaths }: SeoButtonProps) {
+export function SeoButtonInner({
+  collectionSlug,
+  fields,
+  site,
+  supportedLocales,
+  extractContentPath,
+}: SeoButtonProps) {
   const { openModal } = useModal();
   const [keyphrase, setKeyphrase] = useState("");
 
-  const { signature, getInput, invalidateMedia } = useLiveDocument({
+  const { signature, getInput } = useLiveDocument({
     collectionSlug,
     fields,
     site: { name: site.name, baseUrl: site.baseUrl },
     keyphrase,
     extractContentPath,
-    resolveDepth,
-    slugPaths,
   });
   const { result, analyzing, analyzedKeyphrase, analyzeNow } = useAnalysis({
     getInput,
@@ -44,10 +46,9 @@ export function SeoButtonInner({ collectionSlug, fields, site, supportedLocales,
   const overall = result?.overall ?? null;
 
   const open = useCallback(() => {
-    invalidateMedia();
     analyzeNow();
     openModal(DRAWER_SLUG);
-  }, [analyzeNow, invalidateMedia, openModal]);
+  }, [analyzeNow, openModal]);
 
   return (
     <span className="relative inline-flex">

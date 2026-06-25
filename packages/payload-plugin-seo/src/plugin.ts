@@ -20,11 +20,29 @@ export const seoPlugin =
       return incomingConfig;
     }
 
-    setPluginConfig(config);
+    const collections = config.collections.filter((c) => {
+      if (typeof c.extractContentPath === "string" && c.extractContentPath.trim()) return true;
+
+      console.warn(
+        `${PREFIX} Collection "${c.slug}" is missing a required extractContentPath; SEO analysis disabled for it.`
+      );
+
+      return false;
+    });
+
+    if (collections.length === 0) {
+      console.warn(
+        `${PREFIX} Disabled: no collection has a valid extractContentPath. Plugin not registered.`
+      );
+      return incomingConfig;
+    }
+
+    const effectiveConfig: SeoPluginConfig = { ...config, collections };
+    setPluginConfig(effectiveConfig);
 
     const merged = mergeTranslations(
       (incomingConfig.i18n?.translations as never) ?? {},
-      mergeTranslations(en, config.translations ?? {})
+      mergeTranslations(en, effectiveConfig.translations ?? {})
     );
 
     const withTranslations: Config = {
@@ -32,5 +50,5 @@ export const seoPlugin =
       i18n: { ...incomingConfig.i18n, translations: merged as never },
     };
 
-    return overrideAdmin(withTranslations, config);
+    return overrideAdmin(withTranslations, effectiveConfig);
   };

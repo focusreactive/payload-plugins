@@ -6,7 +6,6 @@ const FIELDS: SeoFieldPaths = {
   seoTitle: "meta.title",
   metaDescription: "meta.description",
   slug: "slug",
-  content: "body",
 };
 const SITE = { name: "Acme", baseUrl: "https://acme.test" };
 
@@ -83,13 +82,35 @@ describe("buildInput", () => {
       values: {},
       locale: "en",
       keyphrase: "k",
-      fields: { content: "body" } as SeoFieldPaths,
+      fields: {},
       site: SITE,
       contentHtml: "<p>content</p>",
     });
     expect(sparse.has.seoTitle).toBe(false);
     expect(sparse.has.metaDescription).toBe(false);
     expect(sparse.has.content).toBe(true);
+  });
+
+  it("derives has.content from contentHtml, not a field path", () => {
+    const empty = buildInput({
+      values: {},
+      locale: "en",
+      keyphrase: "k",
+      fields: FIELDS,
+      site: SITE,
+      contentHtml: "",
+    });
+    expect(empty.has.content).toBe(false);
+
+    const filled = buildInput({
+      values: {},
+      locale: "en",
+      keyphrase: "k",
+      fields: FIELDS,
+      site: SITE,
+      contentHtml: "<p>x</p>",
+    });
+    expect(filled.has.content).toBe(true);
   });
 
   it("passes keyphrase and site through unchanged", () => {

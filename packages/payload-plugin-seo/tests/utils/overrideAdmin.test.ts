@@ -11,7 +11,7 @@ const incoming = {
 describe("overrideAdmin", () => {
   it("adds a beforeDocumentControls component only to configured collections", () => {
     const result = overrideAdmin(incoming, {
-      collections: [{ slug: "pages", fields: { slug: "slug", content: "sections" } }],
+      collections: [{ slug: "pages", fields: { slug: "slug" }, extractContentPath: "@/x#default" }],
       site: { name: "RunShop" },
     }) as never as {
       collections: {
@@ -26,9 +26,11 @@ describe("overrideAdmin", () => {
     expect(media?.admin?.components?.edit?.beforeDocumentControls).toBeUndefined();
   });
 
-  it("passes resolved field paths + site as clientProps", () => {
+  it("forwards collectionSlug, fields, site, and extractContentPath as clientProps", () => {
     const result = overrideAdmin(incoming, {
-      collections: [{ slug: "pages", fields: { slug: "slug" } }],
+      collections: [
+        { slug: "pages", fields: { slug: "slug" }, extractContentPath: "@/page#default" },
+      ],
       site: { name: "RunShop", baseUrl: "https://runshop.com" },
     }) as never as {
       collections: {
@@ -46,56 +48,8 @@ describe("overrideAdmin", () => {
     expect(entry?.clientProps).toMatchObject({
       collectionSlug: "pages",
       fields: { slug: "slug" },
+      extractContentPath: "@/page#default",
       site: { name: "RunShop", baseUrl: "https://runshop.com" },
     });
-  });
-
-  it("passes normalized resolveDepth as a clientProp (default 2, honors config, clamps negatives to 0)", () => {
-    const run = (resolveDepth?: number) => {
-      const result = overrideAdmin(incoming, {
-        collections: [{ slug: "pages", ...(resolveDepth === undefined ? {} : { resolveDepth }) }],
-      }) as never as {
-        collections: {
-          slug: string;
-          admin?: {
-            components?: {
-              edit?: { beforeDocumentControls?: { clientProps?: { resolveDepth?: number } }[] };
-            };
-          };
-        }[];
-      };
-      return result.collections.find((c) => c.slug === "pages")?.admin?.components?.edit
-        ?.beforeDocumentControls?.[0]?.clientProps?.resolveDepth;
-    };
-    expect(run()).toBe(2);
-    expect(run(3)).toBe(3);
-    expect(run(0)).toBe(0);
-    expect(run(-5)).toBe(0);
-    expect(run(1.7)).toBe(1);
-    expect(run(Number.NaN)).toBe(0);
-  });
-
-  it("passes a slugPaths map of every configured collection's configured slug path (default 'slug')", () => {
-    const result = overrideAdmin(incoming, {
-      collections: [
-        { slug: "pages", fields: { slug: "slug" } },
-        { slug: "media", fields: { slug: "permalink" } },
-      ],
-    }) as never as {
-      collections: {
-        slug: string;
-        admin?: {
-          components?: {
-            edit?: {
-              beforeDocumentControls?: { clientProps?: { slugPaths?: Record<string, string> } }[];
-            };
-          };
-        };
-      }[];
-    };
-
-    const entry = result.collections.find((c) => c.slug === "pages")?.admin?.components?.edit
-      ?.beforeDocumentControls?.[0];
-    expect(entry?.clientProps?.slugPaths).toEqual({ pages: "slug", media: "permalink" });
   });
 });

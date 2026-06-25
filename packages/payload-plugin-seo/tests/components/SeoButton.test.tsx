@@ -17,11 +17,9 @@ vi.mock("../../src/components/SeoButton/SeoButtonInner", () => ({
 const props = {
   collectionSlug: "pages",
   fields: {},
-  extractContentPath: null,
+  extractContentPath: "@/x#default",
   site: { name: "Site", baseUrl: "https://example.com", faviconUrl: "" },
   supportedLocales: ["en"],
-  resolveDepth: 2,
-  slugPaths: {},
 };
 
 afterEach(() => {
