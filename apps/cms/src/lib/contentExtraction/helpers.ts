@@ -3,6 +3,7 @@ import type { ContentNode, DocQuery, DocStore } from "@focus-reactive/payload-pl
 
 import { collectLinkRefs, linkToContentNode } from "./links";
 import type { LinkResolveCtx, LinkValue } from "./links";
+import { collectRichTextRefs } from "./richTextRefs";
 import type { ImageGroup, Upload, UploadField } from "./types";
 
 export const MEDIA_COLLECTION = "media";
@@ -106,19 +107,22 @@ export function uploadImage(value: UploadField, docs: DocStore): ContentNode | n
 
 export function buildRefQueries(values: unknown): DocQuery[] {
   const queries: DocQuery[] = [];
+  const rt = collectRichTextRefs(values);
 
-  const linkRefs = collectLinkRefs(values);
-  const byCollection = new Map<string, (string | number)[]>();
-  for (const ref of linkRefs) {
-    const ids = byCollection.get(ref.collection) ?? [];
-    ids.push(ref.id);
-    byCollection.set(ref.collection, ids);
-  }
+  const byCollection = new Map<string, Set<string | number>>();
+  const addLink = (collection: string, id: string | number) => {
+    const ids = byCollection.get(collection) ?? new Set<string | number>();
+    ids.add(id);
+    byCollection.set(collection, ids);
+  };
+
+  for (const ref of collectLinkRefs(values)) addLink(ref.collection, ref.id);
+  for (const ref of rt.links) addLink(ref.collection, ref.id);
   for (const [collection, ids] of byCollection) {
-    queries.push({ collection, ids, select: ["slug", "breadcrumbs"], depth: 1 });
+    queries.push({ collection, ids: [...ids], select: ["slug", "breadcrumbs"], depth: 1 });
   }
 
-  const media = collectMediaIds(values);
+  const media = [...new Set<string | number>([...collectMediaIds(values), ...rt.media])];
   if (media.length > 0) {
     queries.push({
       collection: MEDIA_COLLECTION,

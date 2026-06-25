@@ -182,6 +182,32 @@ describe("collectRelationIds", () => {
 });
 
 describe("buildRefQueries", () => {
+  it("also collects inline lexical upload media ids and internal link doc refs from richText", () => {
+    const queries = buildRefQueries({
+      content: {
+        root: {
+          type: "root",
+          children: [
+            { type: "upload", relationTo: "media", value: 42, fields: {} },
+            {
+              type: "paragraph",
+              children: [
+                {
+                  type: "link",
+                  fields: { linkType: "internal", doc: { relationTo: "posts", value: 99 } },
+                  children: [],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+    const byCol = Object.fromEntries(queries.map((q) => [q.collection, q]));
+    expect(byCol.media?.ids).toContain(42);
+    expect(byCol.posts?.ids).toContain(99);
+  });
+
   it("emits projected parallel queries for links, media, testimonials, authors, categories", () => {
     const queries = buildRefQueries({
       authors: [3],

@@ -1,8 +1,13 @@
-import { heading, paragraph, richText } from "@focus-reactive/payload-plugin-seo/content";
+import { heading, paragraph } from "@focus-reactive/payload-plugin-seo/content";
 import type { ContentExtractor, DocStore } from "@focus-reactive/payload-plugin-seo/content";
 
 import { I18N_CONFIG } from "@/lib/config/i18n";
-import { buildRefQueries, linkToContentNode, uploadImage } from "@/lib/contentExtraction";
+import {
+  buildRefQueries,
+  linkToContentNode,
+  richTextToContent,
+  uploadImage,
+} from "@/lib/contentExtraction";
 import type { LinkResolveCtx, LinkValue, Upload } from "@/lib/contentExtraction";
 import type { Post } from "@/payload-types";
 
@@ -40,11 +45,11 @@ const extractPostContent: ContentExtractor = async (values, ctx, { resolveDocs, 
     ...authorNodes,
     paragraph(post.excerpt),
     uploadImage(post.heroImage as Upload, docs),
-    richText(post.content),
+    ...richTextToContent(post.content, linkCtx),
     heading(2, faq?.heading),
     ...((faq?.items ?? []) as { question?: string | null; answer?: unknown }[]).flatMap((i) => [
       heading(3, i.question),
-      richText(i.answer),
+      ...richTextToContent(i.answer, linkCtx),
     ]),
     paragraph(cta?.eyebrow),
     heading(2, cta?.heading),

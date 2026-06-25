@@ -1,4 +1,4 @@
-import { heading, html, paragraph, richText } from "@focus-reactive/payload-plugin-seo/content";
+import { heading, html, paragraph } from "@focus-reactive/payload-plugin-seo/content";
 import type {
   ContentExtractor,
   ContentNode,
@@ -11,6 +11,7 @@ import {
   buildRefQueries,
   groupImage,
   linkToContentNode,
+  richTextToContent,
   uploadImage,
 } from "@/lib/contentExtraction";
 import type { ImageGroup, LinkResolveCtx, LinkValue, Upload } from "@/lib/contentExtraction";
@@ -31,7 +32,7 @@ export function extractPageBlockContent(
         ...helpers.compact([
           paragraph(b.eyebrow as string),
           heading(1, b.title as string),
-          richText(b.richText),
+          ...richTextToContent(b.richText, ctx),
           groupImage(b.image as ImageGroup, docs),
         ]),
         ...actionLinks(b.actions as LinkValue[], ctx),
@@ -43,7 +44,7 @@ export function extractPageBlockContent(
           heading(2, b.heading as string),
           paragraph(b.description as string),
           uploadImage(b.image as Upload, docs),
-          richText(b.content),
+          ...richTextToContent(b.content, ctx),
         ]),
         ...actionLinks(b.actions as LinkValue[], ctx),
       ];
@@ -53,7 +54,7 @@ export function extractPageBlockContent(
         heading(2, b.heading as string),
         paragraph(b.description as string),
         ...((b.items as { question?: string; answer?: unknown }[] | undefined) ?? []).flatMap(
-          (i) => [heading(3, i.question), richText(i.answer)]
+          (i) => [heading(3, i.question), ...richTextToContent(i.answer, ctx)]
         ),
       ]);
     case "ctaBand":
@@ -71,7 +72,7 @@ export function extractPageBlockContent(
         heading(2, b.heading as string),
         paragraph(b.description as string),
         ...((b.slides as { image?: ImageGroup; text?: unknown }[] | undefined) ?? []).flatMap(
-          (s) => [groupImage(s.image, docs), richText(s.text)]
+          (s) => [groupImage(s.image, docs), ...richTextToContent(s.text, ctx)]
         ),
       ]);
     case "cardsGrid":
