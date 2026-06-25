@@ -30,7 +30,7 @@ export function extractPageBlockContent(
       return [
         ...helpers.compact([
           paragraph(b.eyebrow as string),
-          heading(2, b.title as string),
+          heading(1, b.title as string),
           richText(b.richText),
           groupImage(b.image as ImageGroup, docs),
         ]),
