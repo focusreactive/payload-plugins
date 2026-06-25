@@ -9,22 +9,15 @@ export interface ExtractContext {
   apiRoute?: string;
 }
 
-/** Client extractor: receives hydrated, unflattened form values + runtime context, returns the content schema (Intermediate Representation). */
+/** Developer-authored extractor: raw form values + runtime ctx + injected toolkit → content schema (Intermediate Representation). */
 export type ContentExtractor = (
   values: Record<string, unknown>,
-  ctx?: ExtractContext
+  ctx: ExtractContext,
+  toolkit: ExtractToolkit
 ) => ContentNode[] | Promise<ContentNode[]>;
 
-/** Which parts of the document the built-in extractor walks. */
-export interface ContentSelection {
-  /** Dot-paths to walk, in order. Omitted or empty = whole document root. */
-  include?: string[];
-  /** Dot-paths to skip (merged with auto-excluded seoTitle/metaDescription/slug). */
-  exclude?: string[];
-}
-
 export interface SeoFieldPaths {
-  /** Dot-path to the SEO title. Falls back to the collection useAsTitle / `title` if absent. */
+  /** Dot-path to the SEO title. Falls back to `title` if absent. */
   seoTitle?: string;
   /** Dot-path to the meta description. Absent → meta-desc checks disabled + snippet has no description. */
   metaDescription?: string;
@@ -33,27 +26,17 @@ export interface SeoFieldPaths {
    * @default "slug"
    */
   slug?: string;
-  /**
-   * Built-in content selection. A string is a single field path.
-   * An object selects include/exclude paths over the whole document.
-   * Ignored when `extractContentPath` is set and registered.
-   */
-  content?: string | ContentSelection;
 }
 
 export interface SeoCollectionConfig {
   slug: string;
   fields?: SeoFieldPaths;
   /**
-   * importMap path string used as the lookup key for a registered ContentExtractor (returns ContentNode[]).
-   * Register the function via registerContentExtractors from "@focus-reactive/payload-plugin-seo/content".
+   * importMap path string used as the lookup key for a registered ContentExtractor.
+   * Register the function via registerContentExtractors from
+   * "@focus-reactive/payload-plugin-seo/content" in an admin-mounted client module.
    */
-  extractContentPath?: string;
-  /**
-   * Depth of nested relation/upload resolution for the built-in extractor.
-   * @default 2
-   */
-  resolveDepth?: number;
+  extractContentPath: string;
 }
 
 export interface SeoSiteConfig {

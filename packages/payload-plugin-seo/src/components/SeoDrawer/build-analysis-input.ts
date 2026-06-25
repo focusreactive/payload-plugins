@@ -1,16 +1,27 @@
-import type { ClientField } from "payload";
 import type { ContentNode } from "../../content/schema/nodes";
 import { serialize } from "../../content/schema/serialize";
-import { extractContent } from "../../content/extract/extract";
-import type { ExtractContext } from "../../content/extract/context";
-import { collectRefs } from "../../content/resolve/collect-refs";
-import { hydrate } from "../../content/resolve/hydrate";
-import type { DocResolver } from "../../content/resolve/resolver";
-import type { ResolvedDoc } from "../../content/resolve/types";
-import { makeExcluded, makeIncluded } from "../../content/extract/selection";
+import {
+  compact,
+  heading,
+  html,
+  image,
+  link,
+  paragraph,
+  richText,
+  video,
+} from "../../content/schema/helpers";
+import { createResolveDocs } from "../../content/resolve/resolve-docs";
 import type { AnalysisInput } from "../../engine/types/analysis";
-import type { ContentExtractor, ContentSelection, SeoFieldPaths } from "../../types/config";
+import type {
+  ContentExtractor,
+  ContentHelpers,
+  ExtractContext,
+  ExtractToolkit,
+  SeoFieldPaths,
+} from "../../types/config";
 import { buildInput } from "./buildInput";
+
+const helpers: ContentHelpers = { heading, paragraph, link, image, video, html, richText, compact };
 
 export interface BuildAnalysisInputArgs {
   values: Record<string, unknown>;
@@ -20,25 +31,7 @@ export interface BuildAnalysisInputArgs {
   keyphrase: string;
   fields: SeoFieldPaths;
   site: { name: string; baseUrl: string };
-  hostFields: ClientField[];
-  ctx: ExtractContext;
-  resolver: DocResolver;
-  resolveDepth: number;
-  override?: ContentExtractor;
-}
-
-function normalizeSelection(content: SeoFieldPaths["content"]): {
-  include: string[];
-  exclude: string[];
-} {
-  if (content == null) return { include: [], exclude: [] };
-  if (typeof content === "string") return { include: [content], exclude: [] };
-  const sel = content as ContentSelection;
-  return { include: sel.include ?? [], exclude: sel.exclude ?? [] };
-}
-
-function metadataPaths(fields: SeoFieldPaths): string[] {
-  return [fields.seoTitle, fields.metaDescription, fields.slug ?? "slug"].filter((p): p is string => p !== undefined);
+  extractor?: ContentExtractor;
 }
 
 export async function buildAnalysisInput(args: BuildAnalysisInputArgs): Promise<AnalysisInput> {
@@ -55,29 +48,20 @@ export async function buildAnalysisInput(args: BuildAnalysisInputArgs): Promise<
   });
 }
 
-async function extractIntermediateRepresentation(args: BuildAnalysisInputArgs): Promise<ContentNode[]> {
-  const selection = normalizeSelection(args.fields.content);
-  const meta = metadataPaths(args.fields);
+async function extractIntermediateRepresentation(
+  args: BuildAnalysisInputArgs
+): Promise<ContentNode[]> {
+  if (!args.extractor) return [];
 
-  if (args.fields.content == null) return [];
+  const ctx: ExtractContext = {
+    locale: args.payloadLocale,
+    apiRoute: args.apiRoute,
+  };
 
-  const excluded = makeExcluded(meta, selection.exclude);
-  const included = makeIncluded(selection.include);
-  const prune = (path: string) => excluded(path) || !included(path);
+  const toolkit: ExtractToolkit = {
+    resolveDocs: createResolveDocs(args.apiRoute, args.payloadLocale),
+    helpers,
+  };
 
-  const refs = args.resolveDepth >= 1 ? collectRefs(args.values, args.hostFields, args.ctx, prune) : [];
-  const resolved = refs.length > 0 ? await args.resolver.resolve(refs, args.payloadLocale, args.resolveDepth - 1) : new Map<string, ResolvedDoc>();
-
-  const ctx: ExtractContext = { ...args.ctx, resolved };
-
-  if (args.override) return await args.override(hydrate(args.values, args.hostFields, ctx, resolved), { locale: args.payloadLocale, apiRoute: args.apiRoute });
-
-  return extractContent({
-    values: args.values,
-    fields: args.hostFields,
-    ctx,
-    selection,
-    metadataPaths: meta,
-    depth: args.resolveDepth,
-  });
+  return await args.extractor(args.values, ctx, toolkit);
 }

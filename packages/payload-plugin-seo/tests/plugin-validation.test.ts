@@ -28,4 +28,28 @@ describe("seoPlugin config validation", () => {
     expect(result).toBe(incoming);
     expect(warn).not.toHaveBeenCalled();
   });
+
+  it("drops a collection missing extractContentPath and warns (keeps valid ones)", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const incomingWithCols = {
+      collections: [{ slug: "page", fields: [] }],
+    } as unknown as Config;
+    const result = seoPlugin({
+      collections: [
+        { slug: "page", extractContentPath: "@/page#default" },
+        { slug: "bad" } as never,
+      ],
+    } as unknown as SeoPluginConfig)(incomingWithCols);
+    expect(result).not.toBe(incomingWithCols);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"bad"'));
+  });
+
+  it("no-ops when no collection has a valid extractContentPath", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const result = seoPlugin({
+      collections: [{ slug: "bad" } as never],
+    } as unknown as SeoPluginConfig)(incoming);
+    expect(result).toBe(incoming);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("valid extractContentPath"));
+  });
 });
