@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { heading, paragraph, link, image, video, richText, html } from "../../../src/content/schema/helpers";
+import {
+  heading,
+  paragraph,
+  link,
+  image,
+  video,
+  richText,
+  html,
+  compact,
+} from "../../../src/content/schema/helpers";
 
 describe("content helpers", () => {
   it("heading: builds or returns null on empty", () => {
@@ -26,7 +35,12 @@ describe("content helpers", () => {
     expect(video(null)).toBeNull();
   });
   it("richText converts lexical, null when empty", () => {
-    const lex = { root: { type: "root", children: [{ type: "paragraph", children: [{ type: "text", text: "Hi" }] }] } };
+    const lex = {
+      root: {
+        type: "root",
+        children: [{ type: "paragraph", children: [{ type: "text", text: "Hi" }] }],
+      },
+    };
     const node = richText(lex);
     expect(node?.type).toBe("html");
     expect((node as { html: string }).html).toContain("Hi");
@@ -36,5 +50,19 @@ describe("content helpers", () => {
   it("html passes through, null when empty", () => {
     expect(html("<p>x</p>")).toEqual({ type: "html", html: "<p>x</p>" });
     expect(html("   ")).toBeNull();
+  });
+  it("compact drops null/undefined and keeps nodes in order", () => {
+    expect(
+      compact([
+        { type: "paragraph", text: "a" },
+        null,
+        undefined,
+        { type: "heading", level: 2, text: "b" },
+      ])
+    ).toEqual([
+      { type: "paragraph", text: "a" },
+      { type: "heading", level: 2, text: "b" },
+    ]);
+    expect(compact([])).toEqual([]);
   });
 });

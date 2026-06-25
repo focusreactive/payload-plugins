@@ -53,3 +53,7 @@ export function html(raw?: string | null): ContentNode | null {
   const r = clean(raw);
   return r ? { type: "html", html: r } : null;
 }
+
+export function compact(nodes: (ContentNode | null | undefined)[]): ContentNode[] {
+  return nodes.filter((n): n is ContentNode => n != null);
+}

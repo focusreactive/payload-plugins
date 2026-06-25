@@ -1,4 +1,4 @@
-import type { ContentNode } from "../content/schema/nodes";
+import type { ContentNode, HeadingLevel } from "../content/schema/nodes";
 import type { Translations } from "../translations/types";
 
 /** Runtime context handed to a content extractor so it can resolve references and locale-correct hrefs. */
@@ -10,7 +10,10 @@ export interface ExtractContext {
 }
 
 /** Client extractor: receives hydrated, unflattened form values + runtime context, returns the content schema (Intermediate Representation). */
-export type ContentExtractor = (values: Record<string, unknown>, ctx?: ExtractContext) => ContentNode[] | Promise<ContentNode[]>;
+export type ContentExtractor = (
+  values: Record<string, unknown>,
+  ctx?: ExtractContext
+) => ContentNode[] | Promise<ContentNode[]>;
 
 /** Which parts of the document the built-in extractor walks. */
 export interface ContentSelection {
@@ -65,4 +68,35 @@ export interface SeoPluginConfig {
   site?: SeoSiteConfig;
   supportedLocales?: string[];
   translations?: Translations;
+}
+
+export interface DocQuery {
+  collection: string;
+  ids: (string | number)[];
+  /** Payload field-projection: only these top-level fields are returned. */
+  select?: string[];
+  /** Payload relationship-population depth.
+   * @default 0
+   */
+  depth?: number;
+}
+
+export interface DocStore {
+  get(collection: string, id: string | number): Record<string, unknown> | undefined;
+}
+
+export interface ContentHelpers {
+  heading: (level: HeadingLevel, text?: string | null) => ContentNode | null;
+  paragraph: (text?: string | null) => ContentNode | null;
+  link: (href?: string | null, text?: string | null) => ContentNode | null;
+  image: (src?: string | null, alt?: string | null) => ContentNode | null;
+  video: (src?: string | null, poster?: string | null) => ContentNode | null;
+  html: (raw?: string | null) => ContentNode | null;
+  richText: (value: unknown) => ContentNode | null;
+  compact: (nodes: (ContentNode | null | undefined)[]) => ContentNode[];
+}
+
+export interface ExtractToolkit {
+  resolveDocs: (queries: DocQuery[]) => Promise<DocStore>;
+  helpers: ContentHelpers;
 }
