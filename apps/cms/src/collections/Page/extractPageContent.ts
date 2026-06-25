@@ -1,12 +1,14 @@
 import { heading, html, paragraph, richText } from "@focus-reactive/payload-plugin-seo/content";
-import type { ContentNode, ExtractContext } from "@focus-reactive/payload-plugin-seo/content";
+import type {
+  ContentExtractor,
+  ContentNode,
+  DocStore,
+} from "@focus-reactive/payload-plugin-seo/content";
 
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import {
   actionLinks,
-  collectLinkRefs,
-  compact,
-  fetchLinkDocs,
+  buildRefQueries,
   groupImage,
   linkToContentNode,
   uploadImage,
@@ -16,32 +18,37 @@ import type { Page } from "@/payload-types";
 
 type Block = Page["blocks"][number];
 
-export function extractPageBlockContent(block: Block, ctx: LinkResolveCtx): ContentNode[] {
+export function extractPageBlockContent(
+  block: Block,
+  ctx: LinkResolveCtx,
+  docs: DocStore,
+  helpers: { compact: (n: (ContentNode | null | undefined)[]) => ContentNode[] }
+): ContentNode[] {
   const b = block as Record<string, unknown> & Block;
   switch (block.blockType) {
     case "hero":
       return [
-        ...compact([
+        ...helpers.compact([
           paragraph(b.eyebrow as string),
           heading(2, b.title as string),
           richText(b.richText),
-          groupImage(b.image as ImageGroup),
+          groupImage(b.image as ImageGroup, docs),
         ]),
         ...actionLinks(b.actions as LinkValue[], ctx),
       ];
     case "content":
       return [
-        ...compact([
+        ...helpers.compact([
           paragraph(b.eyebrow as string),
           heading(2, b.heading as string),
           paragraph(b.description as string),
-          uploadImage(b.image as Upload),
+          uploadImage(b.image as Upload, docs),
           richText(b.content),
         ]),
         ...actionLinks(b.actions as LinkValue[], ctx),
       ];
     case "faq":
-      return compact([
+      return helpers.compact([
         paragraph(b.eyebrow as string),
         heading(2, b.heading as string),
         paragraph(b.description as string),
@@ -51,7 +58,7 @@ export function extractPageBlockContent(block: Block, ctx: LinkResolveCtx): Cont
       ]);
     case "ctaBand":
       return [
-        ...compact([
+        ...helpers.compact([
           paragraph(b.eyebrow as string),
           heading(2, b.heading as string),
           paragraph(b.description as string),
@@ -59,16 +66,16 @@ export function extractPageBlockContent(block: Block, ctx: LinkResolveCtx): Cont
         ...actionLinks(b.actions as LinkValue[], ctx),
       ];
     case "carousel":
-      return compact([
+      return helpers.compact([
         paragraph(b.eyebrow as string),
         heading(2, b.heading as string),
         paragraph(b.description as string),
         ...((b.slides as { image?: ImageGroup; text?: unknown }[] | undefined) ?? []).flatMap(
-          (s) => [groupImage(s.image), richText(s.text)]
+          (s) => [groupImage(s.image, docs), richText(s.text)]
         ),
       ]);
     case "cardsGrid":
-      return compact([
+      return helpers.compact([
         paragraph(b.eyebrow as string),
         heading(2, b.heading as string),
         paragraph(b.description as string),
@@ -79,32 +86,35 @@ export function extractPageBlockContent(block: Block, ctx: LinkResolveCtx): Cont
         ).flatMap((c) => [
           heading(3, c.title),
           paragraph(c.description),
-          groupImage(c.image),
+          groupImage(c.image, docs),
           linkToContentNode(c.link, ctx),
         ]),
       ]);
-    case "testimonialsList":
-      return compact([
+    case "testimonialsList": {
+      type Testimonial = { author?: string; company?: string; position?: string; content?: string };
+      const resolveTestimonial = (val: unknown): Testimonial | undefined => {
+        if (typeof val === "object" && val !== null) return val as Testimonial;
+        if (typeof val === "number" || typeof val === "string") {
+          return docs.get("testimonials", val) as Testimonial | undefined;
+        }
+        return undefined;
+      };
+      return helpers.compact([
         paragraph(b.eyebrow as string),
         heading(2, b.heading as string),
         paragraph(b.description as string),
         ...(
-          (b.testimonialItems as
-            | {
-                testimonial?:
-                  | { author?: string; company?: string; position?: string; content?: string }
-                  | number;
-              }[]
-            | undefined) ?? []
+          (b.testimonialItems as { testimonial?: Testimonial | number | string }[] | undefined) ??
+          []
         ).flatMap((t) => {
-          const ref = typeof t.testimonial === "object" ? t.testimonial : undefined;
+          const ref = resolveTestimonial(t.testimonial);
           const role = [ref?.position, ref?.company].filter(Boolean).join(", ");
-
           return [paragraph(ref?.content), paragraph(ref?.author), paragraph(role)];
         }),
       ]);
+    }
     case "chart":
-      return compact([
+      return helpers.compact([
         paragraph(b.eyebrow as string),
         heading(2, b.heading as string),
         paragraph(b.description as string),
@@ -112,14 +122,14 @@ export function extractPageBlockContent(block: Block, ctx: LinkResolveCtx): Cont
         paragraph(b.subtitle as string),
       ]);
     case "logos":
-      return compact([
+      return helpers.compact([
         paragraph(b.label as string),
         ...((b.items as { image?: ImageGroup; link?: LinkValue }[] | undefined) ?? []).flatMap(
-          (i) => [groupImage(i.image), linkToContentNode(i.link, ctx)]
+          (i) => [groupImage(i.image, docs), linkToContentNode(i.link, ctx)]
         ),
       ]);
     case "newsletter":
-      return compact([
+      return helpers.compact([
         paragraph(b.eyebrow as string),
         heading(2, b.heading as string),
         paragraph(b.buttonLabel as string),
@@ -127,26 +137,22 @@ export function extractPageBlockContent(block: Block, ctx: LinkResolveCtx): Cont
       ]);
     case "stats":
       return ((b.items as { value?: string; label?: string }[] | undefined) ?? []).flatMap((s) =>
-        compact([paragraph(s.value), paragraph(s.label)])
+        helpers.compact([paragraph(s.value), paragraph(s.label)])
       );
     case "rawHtml":
-      return compact([html(b.html as string)]);
+      return helpers.compact([html(b.html as string)]);
     default:
       return [];
   }
 }
 
-export default async function extractPageContent(
-  values: Record<string, unknown>,
-  ctx?: ExtractContext
-): Promise<ContentNode[]> {
+const extractPageContent: ContentExtractor = async (values, ctx, { resolveDocs, helpers }) => {
   const blocks = (values as { blocks?: Block[] }).blocks ?? [];
-  const locale = ctx?.locale ?? I18N_CONFIG.defaultLocale;
-  const docsById = await fetchLinkDocs(collectLinkRefs(blocks), {
-    apiRoute: ctx?.apiRoute,
-    locale,
-  });
-  const linkCtx: LinkResolveCtx = { docsById, locale };
+  const locale = ctx.locale ?? I18N_CONFIG.defaultLocale;
+  const docs: DocStore = await resolveDocs(buildRefQueries(values));
+  const linkCtx: LinkResolveCtx = { docs, locale };
 
-  return blocks.flatMap((block) => extractPageBlockContent(block, linkCtx));
-}
+  return blocks.flatMap((block) => extractPageBlockContent(block, linkCtx, docs, helpers));
+};
+
+export default extractPageContent;

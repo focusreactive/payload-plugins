@@ -1,5 +1,5 @@
 import { link } from "@focus-reactive/payload-plugin-seo/content";
-import type { ContentNode } from "@focus-reactive/payload-plugin-seo/content";
+import type { ContentNode, DocStore } from "@focus-reactive/payload-plugin-seo/content";
 
 import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
 import type { CustomPageKey } from "@/lib/config/customPages";
@@ -33,7 +33,7 @@ export interface LinkRef {
 }
 
 export interface LinkResolveCtx {
-  docsById: Map<string, ResolvedLinkDoc>;
+  docs: DocStore;
   locale: string;
 }
 
@@ -105,7 +105,7 @@ function resolveReferenceHref(reference: LinkReference, ctx: LinkResolveCtx): st
   const doc: ResolvedLinkDoc | undefined =
     typeof value === "object" && value !== null
       ? value
-      : ctx.docsById.get(linkRefKey({ collection: relationTo, id: value }));
+      : (ctx.docs.get(relationTo, value) as ResolvedLinkDoc | undefined);
 
   if (!doc) return "";
 
