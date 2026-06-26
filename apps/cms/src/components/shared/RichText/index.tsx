@@ -10,6 +10,8 @@ import { CodeInlineComponent } from "@/blocks/Code/InlineComponent";
 import { LogosInlineComponent } from "@/blocks/Logos/InlineComponent";
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { cn } from "@/components/utils";
+import { proseVariants } from "@/components/richText/proseVariants";
+import type { ProseVariant } from "@/components/richText/proseVariants";
 import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import type { Media } from "@/payload-types";
 
@@ -57,9 +59,11 @@ const jsxConverters: JSXConvertersFunction<NodeTypes> = ({ defaultConverters }) 
 export const RichText = ({
   content,
   className,
+  variant,
 }: {
   content: SerializedEditorState;
   className?: string;
+  variant?: ProseVariant;
 }) => {
   if (!content) {
     return null;
@@ -68,7 +72,7 @@ export const RichText = ({
   return (
     <div {...withVisualEditingPath(content)}>
       <RichTextReact
-        className={cn("prose prose-sm sm:prose-base md:prose-lg max-w-full", className)}
+        className={cn(proseVariants({ variant }), className)}
         converters={jsxConverters}
         data={content}
       />
