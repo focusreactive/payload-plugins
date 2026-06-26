@@ -1,8 +1,13 @@
 import type { DefaultNodeTypes, SerializedLinkNode } from "@payloadcms/richtext-lexical";
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
-import type { JSXConvertersFunction } from "@payloadcms/richtext-lexical/react";
-import { LinkJSXConverter, RichText as RichTextReact } from "@payloadcms/richtext-lexical/react";
+import type { JSXConverterArgs, JSXConvertersFunction } from "@payloadcms/richtext-lexical/react";
+import {
+  LinkJSXConverter,
+  ListJSXConverter,
+  RichText as RichTextReact,
+} from "@payloadcms/richtext-lexical/react";
 import { withVisualEditingPath } from "@fr-private/payload-plugin-visual-editing/client";
+import { Check } from "lucide-react";
 import { Image } from "@/components/image";
 
 import { CardsGridInlineComponent } from "@/blocks/CardsGrid/InlineComponent";
@@ -32,29 +37,52 @@ const internalDocToHref = ({ linkNode }: { linkNode: SerializedLinkNode }): stri
   return relationTo === "posts" ? `${BLOG_CONFIG.basePath}/${slug}` : `/${slug}`;
 };
 
-const jsxConverters: JSXConvertersFunction<NodeTypes> = ({ defaultConverters }) => ({
-  ...defaultConverters,
-  ...LinkJSXConverter({ internalDocToHref }),
-  blocks: {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    cardsGridInline: ({ node }: { node: any }) => (
-      <CardsGridInlineComponent {...(node.fields as any)} />
-    ),
-    logosInline: ({ node }: { node: any }) => <LogosInlineComponent {...(node.fields as any)} />,
-    codeInline: ({ node }: { node: any }) => <CodeInlineComponent {...(node.fields as any)} />,
-    /* eslint-enable @typescript-eslint/no-explicit-any */
-  },
-  upload: ({ node }) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const uploadNode = node as any;
-    const media = typeof uploadNode.value === "object" ? (uploadNode.value as Media) : null;
-    const aspectRatio = uploadNode.fields?.aspectRatio ?? null;
-    const imageProps = prepareImageProps({ aspectRatio, image: media });
+const createJsxConverters =
+  (variant?: ProseVariant): JSXConvertersFunction<NodeTypes> =>
+  ({ defaultConverters }) => ({
+    ...defaultConverters,
+    ...LinkJSXConverter({ internalDocToHref }),
+    ...(variant === "content"
+      ? {
+          listitem: (args: JSXConverterArgs<Extract<DefaultNodeTypes, { type: "listitem" }>>) => {
+            const { node, parent, nodesToJSX } = args;
+            const isBullet = (parent as { listType?: string }).listType === "bullet";
+            const hasSubLists = node.children.some((child) => child.type === "list");
 
-    // eslint-disable-next-line jsx-a11y/alt-text
-    return <Image {...imageProps} />;
-  },
-});
+            if (!isBullet || hasSubLists) {
+              const fallback = ListJSXConverter.listitem;
+              return typeof fallback === "function" ? fallback(args) : null;
+            }
+
+            return (
+              <li>
+                <Check aria-hidden className="prose-content-check" />
+                {nodesToJSX({ nodes: node.children })}
+              </li>
+            );
+          },
+        }
+      : {}),
+    blocks: {
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+      cardsGridInline: ({ node }: { node: any }) => (
+        <CardsGridInlineComponent {...(node.fields as any)} />
+      ),
+      logosInline: ({ node }: { node: any }) => <LogosInlineComponent {...(node.fields as any)} />,
+      codeInline: ({ node }: { node: any }) => <CodeInlineComponent {...(node.fields as any)} />,
+      /* eslint-enable @typescript-eslint/no-explicit-any */
+    },
+    upload: ({ node }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const uploadNode = node as any;
+      const media = typeof uploadNode.value === "object" ? (uploadNode.value as Media) : null;
+      const aspectRatio = uploadNode.fields?.aspectRatio ?? null;
+      const imageProps = prepareImageProps({ aspectRatio, image: media });
+
+      // eslint-disable-next-line jsx-a11y/alt-text
+      return <Image {...imageProps} />;
+    },
+  });
 
 export const RichText = ({
   content,
@@ -73,7 +101,7 @@ export const RichText = ({
     <div {...withVisualEditingPath(content)}>
       <RichTextReact
         className={cn(proseVariants({ variant }), className)}
-        converters={jsxConverters}
+        converters={createJsxConverters(variant)}
         data={content}
       />
     </div>

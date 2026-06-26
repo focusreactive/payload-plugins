@@ -283,27 +283,17 @@ body {
     margin-top: 0.75rem;
   }
 
-  .prose-content ul > li::before {
-    content: "";
+  .prose-content ul > li > .prose-content-check {
     position: absolute;
     left: 0;
     top: 7px;
-    width: 1rem;
-    height: 1rem;
+    box-sizing: border-box;
+    width: 1.125rem;
+    height: 1.125rem;
+    padding: 3px;
     border-radius: var(--radius-pill);
     background: var(--color-primary-soft);
-  }
-
-  .prose-content ul > li::after {
-    content: "";
-    position: absolute;
-    left: 5px;
-    top: 11px;
-    height: 0.5rem;
-    width: 5px;
-    transform: rotate(45deg);
-    border-bottom: 2px solid var(--color-primary);
-    border-right: 2px solid var(--color-primary);
+    color: var(--color-primary);
   }
 
   .prose-card {
