@@ -37,7 +37,8 @@
     "search": {
       "label": "Search articles",
       "open": "Search articles",
-      "close": "Close search"
+      "close": "Close search",
+      "clear": "Clear search"
     },
     "newsletter": {
       "eyebrow": "The Journal, monthly",

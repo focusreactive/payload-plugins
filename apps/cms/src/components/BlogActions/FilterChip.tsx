@@ -3,7 +3,7 @@
 import { cn } from "@/components/utils";
 import { Link } from "@/components/shared";
 
-import { useBlogFilter } from "./BlogFilterProvider";
+import { useBlogFilter } from "../../app/(frontend)/[locale]/blog/_components/BlogPageContent/components/BlogFilterProvider";
 
 interface FilterChipProps {
   href: string;
