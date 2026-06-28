@@ -30,6 +30,11 @@ export const Posts: CollectionConfig<"posts"> = {
     update: or(superAdmin, user, author),
   },
   admin: {
+    components: {
+      edit: {
+        PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
+      },
+    },
     defaultColumns: ["title", "slug", "updatedAt"],
     group: "Blog",
     livePreview: {
