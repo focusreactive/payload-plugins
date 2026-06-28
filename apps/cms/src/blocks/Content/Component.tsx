@@ -34,7 +34,7 @@ export const ContentBlockComponent: React.FC<ContentBlockProps> = ({
             />
           ) : null
         }
-        body={content ? <RichText content={content} /> : null}
+        body={content ? <RichText content={content} variant="content" /> : null}
         actions={
           actions?.length
             ? actions.map((action) => (

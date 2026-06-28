@@ -1,4 +1,4 @@
-﻿@import "@repo/tailwind-config/base.css";
+@import "@repo/tailwind-config/base.css";
 
 @source "../..";
 
@@ -25,102 +25,360 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-.prose {
-  --tw-prose-body: var(--color-foreground);
-  --tw-prose-headings: var(--color-foreground);
-  --tw-prose-lead: var(--color-muted-foreground);
-  --tw-prose-bold: var(--color-foreground);
-  --tw-prose-links: var(--color-primary);
-  --tw-prose-counters: var(--color-muted-foreground);
-  --tw-prose-bullets: var(--color-muted-foreground);
-  --tw-prose-quotes: var(--color-foreground);
-  --tw-prose-code: var(--color-foreground);
+@layer utilities {
+  .prose {
+    --tw-prose-body: var(--color-foreground);
+    --tw-prose-headings: var(--color-foreground);
+    --tw-prose-lead: var(--color-muted-foreground);
+    --tw-prose-bold: var(--color-foreground);
+    --tw-prose-links: var(--color-primary);
+    --tw-prose-counters: var(--color-muted-foreground);
+    --tw-prose-bullets: var(--color-muted-foreground);
+    --tw-prose-quotes: var(--color-foreground);
+    --tw-prose-code: var(--color-foreground);
 
-  --tw-prose-invert-body: var(--color-foreground);
-  --tw-prose-invert-headings: var(--color-foreground);
-  --tw-prose-invert-lead: var(--color-muted-foreground);
-  --tw-prose-invert-bold: var(--color-foreground);
-  --tw-prose-invert-links: var(--color-primary);
-  --tw-prose-invert-counters: var(--color-muted-foreground);
-  --tw-prose-invert-bullets: var(--color-muted-foreground);
-  --tw-prose-invert-quotes: var(--color-foreground);
-  --tw-prose-invert-code: var(--color-foreground);
-}
+    --tw-prose-invert-body: var(--color-foreground);
+    --tw-prose-invert-headings: var(--color-foreground);
+    --tw-prose-invert-lead: var(--color-muted-foreground);
+    --tw-prose-invert-bold: var(--color-foreground);
+    --tw-prose-invert-links: var(--color-primary);
+    --tw-prose-invert-counters: var(--color-muted-foreground);
+    --tw-prose-invert-bullets: var(--color-muted-foreground);
+    --tw-prose-invert-quotes: var(--color-foreground);
+    --tw-prose-invert-code: var(--color-foreground);
+  }
 
-.prose :where(p):not(:where(.content-section-prose *)) {
-  font-size: 1.18rem;
-  line-height: 1.75;
-  color: color-mix(in srgb, var(--color-foreground) 88%, transparent);
-}
+  .prose p {
+    font-size: 1.18rem;
+    line-height: 1.75;
+    color: color-mix(in srgb, var(--color-foreground) 88%, transparent);
+  }
 
-.prose :where(h2):not(:where(.content-section-prose *)) {
-  font-family: var(--font-display);
-  font-size: clamp(1.7rem, 3vw, 2.2rem);
-  line-height: 1.1;
-  letter-spacing: -0.012em;
-  margin-top: 1.8em;
-  color: var(--color-foreground);
-}
+  .prose h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.7rem, 3vw, 2.2rem);
+    line-height: 1.1;
+    letter-spacing: -0.012em;
+    margin-top: 1.8em;
+    color: var(--color-foreground);
+  }
 
-.prose :where(h3):not(:where(.content-section-prose *)) {
-  font-family: var(--font-display);
-  font-size: 1.4rem;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-  margin-top: 1.6em;
-  color: var(--color-foreground);
-}
+  .prose h3 {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin-top: 1.6em;
+    color: var(--color-foreground);
+  }
 
-.prose :where(blockquote):not(:where(.content-section-prose *)) {
-  margin: 1.8em 0;
-  padding: 4px 0 4px 28px;
-  border-left: 3px solid var(--color-primary);
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
-  font-weight: 500;
-  font-style: italic;
-  color: color-mix(in srgb, var(--color-foreground) 80%, transparent);
-}
+  .prose blockquote {
+    margin: 1.8em 0;
+    padding: 4px 0 4px 28px;
+    border-left: 3px solid var(--color-primary);
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    font-weight: 500;
+    font-style: italic;
+    color: color-mix(in srgb, var(--color-foreground) 80%, transparent);
+  }
 
-.prose :where(ul):not(:where(.content-section-prose *)) {
-  padding-left: 1.3em;
-  font-size: 1.12rem;
-  line-height: 1.7;
-  color: color-mix(in srgb, var(--color-foreground) 88%, transparent);
-}
+  .prose ul {
+    padding-left: 1.3em;
+    font-size: 1.12rem;
+    line-height: 1.7;
+    color: color-mix(in srgb, var(--color-foreground) 88%, transparent);
+  }
 
-.prose :where(figcaption):not(:where(.content-section-prose *)) {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--color-muted-foreground);
-  margin-top: 12px;
-  text-align: center;
-}
+  .prose figcaption {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+    margin-top: 12px;
+    text-align: center;
+  }
 
-.prose :where(figure):not(:where(.content-section-prose *)) {
-  margin-top: 2em;
-  margin-bottom: 2em;
-}
+  .prose figure {
+    margin-top: 2em;
+    margin-bottom: 2em;
+  }
 
-.prose-embedded-block {
-  margin-block: 2.4em;
-  padding: 1.875rem; /* 30px */
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-}
+  .prose-copy p {
+    font-size: 1.18rem;
+    line-height: 1.75;
+    color: color-mix(in srgb, var(--color-foreground) 88%, transparent);
+  }
 
-.prose-embedded-block__label {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-primary);
-  margin-bottom: 18px;
+  .prose-copy :is(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--font-display);
+    letter-spacing: -0.025em;
+    color: var(--color-foreground);
+    text-wrap: balance;
+  }
+
+  .prose-copy h1 {
+    font-size: 3rem;
+    line-height: 1.05;
+  }
+
+  @media (min-width: 640px) {
+    .prose-copy h1 {
+      font-size: 3.75rem;
+    }
+  }
+
+  .prose-copy h2 {
+    font-size: clamp(1.7rem, 3vw, 2.2rem);
+    line-height: 1.1;
+    margin-top: 1.8em;
+  }
+
+  .prose-copy h3 {
+    font-size: 1.4rem;
+    line-height: 1.15;
+    margin-top: 1.6em;
+  }
+
+  .prose-copy strong {
+    color: var(--color-foreground);
+    font-weight: 600;
+  }
+
+  .prose-copy em {
+    font-family: var(--font-display);
+    font-style: italic;
+    color: var(--color-primary);
+  }
+
+  .prose-copy a {
+    color: var(--color-primary);
+    text-underline-offset: 4px;
+  }
+
+  .prose-copy a:hover {
+    color: var(--color-primary-hover);
+  }
+
+  .prose-copy blockquote {
+    border-left: 3px solid var(--color-primary);
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 1.5rem;
+    line-height: 1.3;
+    padding-left: 1.75rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    color: color-mix(in srgb, var(--color-foreground) 80%, transparent);
+  }
+
+  .prose-copy code {
+    background: var(--color-muted);
+    color: var(--color-foreground);
+    border-radius: 0.25rem;
+    padding: 0.125rem 0.375rem;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+  }
+
+  .prose-copy code::before,
+  .prose-copy code::after {
+    content: "";
+  }
+
+  .prose-copy ul {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .prose-copy ul > li {
+    position: relative;
+    padding-left: 2rem;
+    color: color-mix(in srgb, var(--color-foreground) 88%, transparent);
+    font-size: 1.12rem;
+    line-height: 1.7;
+  }
+
+  .prose-copy ul > li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 6px;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-primary-soft);
+  }
+
+  .prose-copy ul > li::after {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 10px;
+    height: 9px;
+    width: 5px;
+    transform: rotate(45deg);
+    border-bottom: 2px solid var(--color-primary);
+    border-right: 2px solid var(--color-primary);
+  }
+
+  .prose-copy figcaption {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-align: center;
+    color: var(--color-muted-foreground);
+    margin-top: 0.75rem;
+  }
+
+  .prose-copy figure {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .prose-copy hr {
+    border-color: var(--color-border);
+  }
+
+  .prose-content {
+    color: var(--color-muted-foreground);
+  }
+
+  .prose-content p {
+    color: var(--color-muted-foreground);
+  }
+
+  .prose-content :is(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--font-display);
+    letter-spacing: -0.025em;
+    color: var(--color-foreground);
+  }
+
+  .prose-content strong {
+    color: var(--color-foreground);
+  }
+
+  .prose-content a {
+    color: var(--color-primary);
+    text-underline-offset: 4px;
+  }
+
+  .prose-content ul {
+    margin: 0;
+    list-style: none;
+    padding: 0;
+  }
+
+  .prose-content ul > li {
+    position: relative;
+    padding-left: 30px;
+    color: var(--color-muted-foreground);
+  }
+
+  .prose-content ul > li + li {
+    margin-top: 0.75rem;
+  }
+
+  .prose-content ul > li > .prose-content-check {
+    position: absolute;
+    left: 0;
+    top: 7px;
+    box-sizing: border-box;
+    width: 1.125rem;
+    height: 1.125rem;
+    padding: 3px;
+    border-radius: var(--radius-pill);
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+  }
+
+  .prose-card {
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  .prose-card p {
+    color: var(--color-muted-foreground);
+    line-height: 1.7;
+  }
+
+  .prose-card p:not(:last-child) {
+    margin-bottom: 1rem;
+  }
+
+  .prose-card h1,
+  .prose-card h2,
+  .prose-card h3,
+  .prose-card h4,
+  .prose-card h5,
+  .prose-card h6 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    color: var(--color-foreground);
+  }
+
+  .prose-card :is(h1, h2, h3, h4, h5, h6):not(:first-child) {
+    margin-top: 1.4em;
+  }
+
+  .prose-card h1 {
+    font-size: 2.4rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .prose-card h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .prose-card h3 {
+    font-size: 1.6rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .prose-card h4 {
+    font-size: 1.3rem;
+    margin-bottom: 0.625rem;
+  }
+
+  .prose-card h5 {
+    font-size: 1.15rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .prose-card h6 {
+    font-size: 1.05rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .prose-card a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .prose-embedded-block {
+    margin-block: 2.4em;
+    padding: 1.875rem;
+    background: var(--color-surface-muted);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+
+  .prose-embedded-block__label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    margin-bottom: 18px;
+  }
 }
 
 .testimonials-carousel-group {

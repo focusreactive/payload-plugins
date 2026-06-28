@@ -8,11 +8,18 @@ export function BlogPageSkeleton() {
             <div className="h-[clamp(2.8rem,7vw,5.4rem)] w-full max-w-[560px] animate-pulse rounded-md bg-primary-soft" />
           </div>
 
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-2.5 py-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-[34px] w-24 animate-pulse rounded-pill bg-primary-soft" />
-            ))}
-            <div className="size-10 animate-pulse rounded-pill bg-primary-soft" />
+          <div className="flex flex-col items-center mt-12 py-2">
+            <div className="flex sm:justify-center gap-5 mb-3">
+              <div className="flex flex-wrap items-center sm:justify-center gap-2.5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-[34px] w-24 animate-pulse rounded-pill bg-primary-soft"
+                  />
+                ))}
+              </div>
+              <div className="size-10 flex-none animate-pulse rounded-pill bg-primary-soft" />
+            </div>
           </div>
         </div>
       </section>

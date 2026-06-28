@@ -93,20 +93,7 @@ function SlideContent({ slide, index }: SlideContentProps) {
       </div>
 
       <div className="flex flex-col justify-center gap-4 rounded-b-lg bg-surface px-8 py-10 md:rounded-r-lg md:rounded-bl-none md:px-[clamp(2rem,4vw,3.5rem)] md:py-[clamp(2rem,5vw,3.5rem)]">
-        {text && (
-          <div
-            className={cn(
-              "prose max-w-none",
-              "prose-h4:mb-3 prose-h4:font-mono prose-h4:text-eyebrow prose-h4:text-primary",
-              "prose-h3:mb-3 prose-h3:font-display prose-h3:text-h-card prose-h3:text-foreground",
-              "prose-h2:mb-3 prose-h2:font-display prose-h2:text-h-section prose-h2:text-foreground",
-              "prose-p:leading-relaxed prose-p:text-muted-foreground",
-              "prose-a:text-primary prose-a:underline-offset-4"
-            )}
-          >
-            <RichText {...text} />
-          </div>
-        )}
+        {text && <RichText {...text} variant="card" />}
       </div>
     </div>
   );
@@ -157,7 +144,7 @@ export function Carousel({ slides, effect }: ICarouselProps) {
   return (
     <div
       ref={containerRef}
-      className="not-prose relative"
+      className="relative"
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
       onFocus={() => setIsFocused(true)}

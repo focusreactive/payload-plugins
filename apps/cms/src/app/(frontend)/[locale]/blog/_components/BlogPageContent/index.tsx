@@ -10,12 +10,10 @@ import { Pagination } from "@/components/Pagination";
 import { BlogFilterProvider } from "./components/BlogFilterProvider";
 import { DimWhilePending } from "./components/DimWhilePending";
 import { FeaturedPost } from "./components/FeaturedPost";
-import { FilterChip } from "./components/FilterChip";
 import { NewsletterBand } from "./components/NewsletterBand";
 import { PostsGrid } from "./components/PostsGrid";
-import { SearchOverlay } from "./components/SearchOverlay";
 import type { BlogListPost } from "./types";
-import { blogHref } from "./utils/blogHref";
+import { BlogActions } from "@/components/BlogActions";
 
 interface BlogPageContentProps {
   posts: BlogListPost[];
@@ -63,28 +61,12 @@ export async function BlogPageContent({
             {blogTitle && <DisplayHeading as="h1" size="display-1" text={blogTitle} />}
           </div>
 
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-2.5 py-2">
-            <div className="flex flex-wrap gap-2.5">
-              <FilterChip
-                href={blogHref({ q: searchQuery })}
-                label={t("all")}
-                isActive={!activeCategory}
-              />
-              {categories.map((category) => (
-                <FilterChip
-                  key={category.slug}
-                  href={blogHref({ category: category.slug, q: searchQuery })}
-                  label={category.title}
-                  isActive={activeCategory === category.slug}
-                />
-              ))}
-            </div>
-            <SearchOverlay
-              placeholder={searchPlaceholder ?? ""}
-              activeCategory={activeCategory}
-              initialQuery={searchQuery}
-            />
-          </div>
+          <BlogActions
+            categories={categories}
+            activeCategory={activeCategory}
+            initialQuery={searchQuery}
+            placeholder={searchPlaceholder ?? ""}
+          />
         </div>
       </section>
 

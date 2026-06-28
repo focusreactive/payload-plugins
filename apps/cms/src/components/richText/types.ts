@@ -1,3 +1,5 @@
+import type { ProseVariant } from "@/components/richText/proseVariants";
+
 export enum AlignVariant {
   Left = "left",
   Center = "center",
@@ -9,4 +11,5 @@ export interface IRichTextProps {
   removeInnerMargins?: boolean;
   alignVariant: AlignVariant;
   className?: string;
+  variant?: ProseVariant;
 }
