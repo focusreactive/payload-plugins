@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-comments [1.11.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.10.0...@focus-reactive/payload-plugin-comments@1.11.0) (2026-06-28)
+
+
+### Features
+
+* **comments:** set initCollapsed prop to true for mentions field ([f944250](https://github.com/focusreactive/payload-plugins/commit/f944250a6a79eed118f9a3580e6440c9e7f9bbc8))
+
 # @focus-reactive/payload-plugin-comments [1.10.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.9.0...@focus-reactive/payload-plugin-comments@1.10.0) (2026-06-18)
 
 
