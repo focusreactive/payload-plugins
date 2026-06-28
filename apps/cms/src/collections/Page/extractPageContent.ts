@@ -2,6 +2,7 @@ import { heading, html, paragraph } from "@focus-reactive/payload-plugin-seo/con
 import type {
   ContentExtractor,
   ContentNode,
+  DocQuery,
   DocStore,
 } from "@focus-reactive/payload-plugin-seo/content";
 
@@ -11,13 +12,15 @@ import {
   buildRefQueries,
   groupImage,
   linkToContentNode,
+  relationId,
   richTextToContent,
   uploadImage,
 } from "@/lib/contentExtraction";
 import type { ImageGroup, LinkResolveCtx, LinkValue, Upload } from "@/lib/contentExtraction";
-import type { Page } from "@/payload-types";
+import type { GlobalSection, Page } from "@/payload-types";
 
 type Block = Page["blocks"][number];
+type GlobalBlock = NonNullable<GlobalSection["block"]>[number];
 
 export function extractPageBlockContent(
   block: Block,
@@ -142,15 +145,69 @@ export function extractPageBlockContent(
       );
     case "rawHtml":
       return helpers.compact([html(b.html as string)]);
+    case "globalSectionSlot": {
+      const gid = relationId(b.reference);
+      const resolved =
+        gid != null
+          ? (docs.get("globalSection", gid) as { block?: GlobalBlock[] } | undefined)
+          : undefined;
+      const inner = resolved?.block?.[0];
+
+      return inner ? extractPageBlockContent(inner as unknown as Block, ctx, docs, helpers) : [];
+    }
     default:
       return [];
   }
 }
 
+function collectGlobalSectionIds(blocks: Block[]): (string | number)[] {
+  const ids = new Set<string | number>();
+
+  for (const block of blocks) {
+    if (block.blockType === "globalSectionSlot") {
+      const id = relationId((block as { reference?: unknown }).reference);
+      if (id != null) ids.add(id);
+    }
+  }
+
+  return [...ids];
+}
+
+function mergeStores(...stores: (DocStore | null)[]): DocStore {
+  return {
+    get: (collection, id) => {
+      for (const store of stores) {
+        const doc = store?.get(collection, id);
+        if (doc) return doc;
+      }
+      return undefined;
+    },
+  };
+}
+
 const extractPageContent: ContentExtractor = async (values, ctx, { resolveDocs, helpers }) => {
   const blocks = (values as { blocks?: Block[] }).blocks ?? [];
   const locale = ctx.locale ?? I18N_CONFIG.defaultLocale;
-  const docs: DocStore = await resolveDocs(buildRefQueries(values));
+
+  const globalIds = collectGlobalSectionIds(blocks);
+  const phase1Queries: DocQuery[] = [...buildRefQueries(values)];
+  if (globalIds.length > 0) {
+    phase1Queries.push({
+      collection: "globalSection",
+      ids: globalIds,
+      select: ["block"],
+      depth: 0,
+    });
+  }
+  const docs1: DocStore = await resolveDocs(phase1Queries);
+
+  const globalDocs = globalIds
+    .map((id) => docs1.get("globalSection", id))
+    .filter(Boolean) as Record<string, unknown>[];
+  const phase2Queries: DocQuery[] = globalDocs.flatMap((doc) => buildRefQueries(doc));
+  const docs2: DocStore | null = phase2Queries.length > 0 ? await resolveDocs(phase2Queries) : null;
+
+  const docs = mergeStores(docs1, docs2);
   const linkCtx: LinkResolveCtx = { docs, locale };
 
   return blocks.flatMap((block) => extractPageBlockContent(block, linkCtx, docs, helpers));

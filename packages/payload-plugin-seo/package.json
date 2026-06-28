@@ -45,6 +45,18 @@
     "./components/SeoButton": {
       "import": "./dist/components/SeoButton/index.js",
       "types": "./dist/components/SeoButton/index.d.ts"
+    },
+    "./fields": {
+      "import": "./dist/fields/index.js",
+      "types": "./dist/fields/index.d.ts"
+    },
+    "./components/SeoField": {
+      "import": "./dist/components/SeoField/index.js",
+      "types": "./dist/components/SeoField/index.d.ts"
+    },
+    "./providers/SeoClientConfigProvider": {
+      "import": "./dist/providers/SeoClientConfigProvider.js",
+      "types": "./dist/providers/SeoClientConfigProvider.d.ts"
     }
   },
   "scripts": {

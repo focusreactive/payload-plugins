@@ -148,6 +148,7 @@ export const Header: CollectionConfig<"header"> = {
               type: "group",
             },
             {
+              admin: { initCollapsed: true },
               fields: [
                 {
                   type: "row",

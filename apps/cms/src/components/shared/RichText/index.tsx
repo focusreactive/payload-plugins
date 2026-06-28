@@ -12,6 +12,7 @@ import { Image } from "@/components/image";
 
 import { CardsGridInlineComponent } from "@/blocks/CardsGrid/InlineComponent";
 import { CodeInlineComponent } from "@/blocks/Code/InlineComponent";
+import { CtaBannerInlineComponent } from "@/blocks/CtaBanner/InlineComponent";
 import { LogosInlineComponent } from "@/blocks/Logos/InlineComponent";
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { cn } from "@/components/utils";
@@ -70,6 +71,9 @@ const createJsxConverters =
       ),
       logosInline: ({ node }: { node: any }) => <LogosInlineComponent {...(node.fields as any)} />,
       codeInline: ({ node }: { node: any }) => <CodeInlineComponent {...(node.fields as any)} />,
+      ctaBannerInline: ({ node }: { node: any }) => (
+        <CtaBannerInlineComponent {...(node.fields as any)} />
+      ),
       /* eslint-enable @typescript-eslint/no-explicit-any */
     },
     upload: ({ node }) => {

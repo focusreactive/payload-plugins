@@ -166,6 +166,19 @@ function expandBlock(
           `<pre><code class="language-${escapeAttr(str(fields.language))}">${escapeText(str(fields.code))}</code></pre>`
         ),
       ];
+    case "ctaBannerInline": {
+      const nodes: (ContentNode | null)[] = [
+        heading(3, str(fields.heading)),
+        paragraph(str(fields.eyebrow)),
+        paragraph(str(fields.description)),
+      ];
+
+      for (const action of (fields.actions as Array<Record<string, unknown>> | undefined) ?? []) {
+        nodes.push(linkToContentNode(action as LinkValue, linkCtx));
+      }
+
+      return nodes;
+    }
     default:
       return [];
   }

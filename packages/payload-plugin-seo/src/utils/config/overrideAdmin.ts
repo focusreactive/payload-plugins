@@ -1,5 +1,8 @@
 import type { Config } from "payload";
 import { getComponentPath } from "./getComponentPath";
+import { resolveApiKey } from "../../server/generate/apiKey";
+import { createGenerateEndpoint } from "../../server/generate/endpoint";
+import type { SeoClientConfig } from "../../client-config/registry";
 import type { SeoPluginConfig, SeoSiteConfig } from "../../types/config";
 
 export function overrideAdmin(incomingConfig: Config, config: SeoPluginConfig): Config {
@@ -42,5 +45,32 @@ export function overrideAdmin(incomingConfig: Config, config: SeoPluginConfig): 
     };
   });
 
-  return { ...incomingConfig, collections };
+  const clientConfig: SeoClientConfig = {
+    enabled: Boolean(resolveApiKey(config.generation)),
+    extractByCollection: Object.fromEntries(
+      config.collections.map((c) => [c.slug, c.extractContentPath])
+    ),
+  };
+
+  const providerEntry = {
+    path: getComponentPath("providers/SeoClientConfigProvider", "SeoClientConfigProvider"),
+    clientProps: {
+      config: clientConfig,
+    },
+  };
+
+  const providers = [...(incomingConfig.admin?.components?.providers ?? []), providerEntry];
+
+  return {
+    ...incomingConfig,
+    collections,
+    endpoints: [...(incomingConfig.endpoints ?? []), createGenerateEndpoint()],
+    admin: {
+      ...incomingConfig.admin,
+      components: {
+        ...incomingConfig.admin?.components,
+        providers,
+      },
+    },
+  };
 }

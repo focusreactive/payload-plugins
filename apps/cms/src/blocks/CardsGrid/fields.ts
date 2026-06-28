@@ -15,6 +15,7 @@ export const cardsGridFields: Field[] = [
     type: "number",
   },
   {
+    admin: { initCollapsed: true },
     fields: [
       {
         type: "row",

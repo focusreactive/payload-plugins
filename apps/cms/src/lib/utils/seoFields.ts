@@ -1,33 +1,35 @@
-import {
-  MetaDescriptionField,
-  MetaImageField,
-  MetaTitleField,
-  OverviewField,
-  PreviewField,
-} from "@payloadcms/plugin-seo/fields";
+import { seoTextField } from "@focus-reactive/payload-plugin-seo";
 import type { Field } from "payload";
 
 export const generateSeoFields = ({
   robotsDefault = "index",
-}: { robotsDefault?: "index" | "noindex" } = {}): Field[] => [
-  OverviewField({
-    descriptionPath: "meta.description",
-    imagePath: "meta.image",
-    titlePath: "meta.title",
+  generation = false,
+}: { robotsDefault?: "index" | "noindex"; generation?: boolean } = {}): Field[] => [
+  seoTextField({
+    name: "title",
+    kind: "title",
+    label: { en: "Meta title", es: "Meta título" },
+    showButton: generation,
+    generateOnPublish: generation,
   }),
-  MetaTitleField({
-    hasGenerateFn: true,
-  }),
-  MetaImageField({
+  {
+    admin: {
+      description: {
+        en: "Image used when sharing this page on social media.",
+        es: "Imagen utilizada al compartir esta página en redes sociales.",
+      },
+    },
+    label: { en: "Meta image", es: "Imagen meta" },
+    name: "image",
     relationTo: "media",
-  }),
-  MetaDescriptionField({
-    hasGenerateFn: true,
-  }),
-  PreviewField({
-    descriptionPath: "meta.description",
-    hasGenerateFn: true,
-    titlePath: "meta.title",
+    type: "upload",
+  },
+  seoTextField({
+    name: "description",
+    kind: "description",
+    label: { en: "Meta description", es: "Meta descripción" },
+    showButton: generation,
+    generateOnPublish: generation,
   }),
   {
     admin: {
@@ -37,26 +39,11 @@ export const generateSeoFields = ({
       },
     },
     defaultValue: robotsDefault,
-    label: {
-      en: "Robots",
-      es: "Robots",
-    },
+    label: { en: "Robots", es: "Robots" },
     name: "robots",
     options: [
-      {
-        label: {
-          en: "Index",
-          es: "Index",
-        },
-        value: "index",
-      },
-      {
-        label: {
-          en: "No Index",
-          es: "No Index",
-        },
-        value: "noindex",
-      },
+      { label: { en: "Index", es: "Index" }, value: "index" },
+      { label: { en: "No Index", es: "No Index" }, value: "noindex" },
     ],
     type: "select",
   },

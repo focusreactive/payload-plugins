@@ -23,6 +23,11 @@ export const Page: CollectionConfig<"page"> = {
     update: or(superAdmin, user, author),
   },
   admin: {
+    components: {
+      edit: {
+        PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
+      },
+    },
     defaultColumns: ["title", "slug", "updatedAt"],
     group: "Content",
     livePreview: {

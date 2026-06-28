@@ -168,6 +168,7 @@ const createPresetsCollection = (
       type: "blocks",
       required: true,
       maxRows: 1,
+      admin: { initCollapsed: true },
       label: { en: "Preset Block", es: "Bloque de Preset" },
       blocks: resolvedPresetTypes.map(({ slug: typeSlug, label, fields }) => ({
         slug: typeSlug,

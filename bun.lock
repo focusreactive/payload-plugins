@@ -40,7 +40,6 @@
         "@payloadcms/plugin-multi-tenant": "3.84.1",
         "@payloadcms/plugin-nested-docs": "3.84.1",
         "@payloadcms/plugin-redirects": "3.84.1",
-        "@payloadcms/plugin-seo": "3.84.1",
         "@payloadcms/richtext-lexical": "3.84.1",
         "@payloadcms/storage-vercel-blob": "3.84.1",
         "@payloadcms/translations": "3.84.0",
@@ -165,7 +164,7 @@
     },
     "packages/create-ideal-cms": {
       "name": "@focus-reactive/create-ideal-cms",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "bin": {
         "create-ideal-cms": "./dist/index.js",
       },
@@ -342,7 +341,7 @@
     },
     "packages/payload-plugin-seo": {
       "name": "@focus-reactive/payload-plugin-seo",
-      "version": "1.3.0",
+      "version": "1.5.0",
       "dependencies": {
         "@yoast/search-metadata-previews": "^3.0.0",
         "class-variance-authority": "0.7.1",
@@ -1110,8 +1109,6 @@
     "@payloadcms/plugin-nested-docs": ["@payloadcms/plugin-nested-docs@3.84.1", "", { "peerDependencies": { "payload": "3.84.1" } }, "sha512-5UuyTkzuc/ALC9oPz8dGQkQ/eOF/HrxKVi88YnKsBHnG4mCWTRxXVMYXjuIb8pH8UFhZpQgphuQqDljw9ZcOqA=="],
 
     "@payloadcms/plugin-redirects": ["@payloadcms/plugin-redirects@3.84.1", "", { "dependencies": { "@payloadcms/translations": "3.84.1", "payload": "3.84.1" } }, "sha512-izKKI5Mm6nosetsAxlqbdOKxraYPlHSGy246D4YbsDemAV4CLOpGcQKTaeTW/JAqYt+RlcvzcWXm0qNMX+2MeQ=="],
-
-    "@payloadcms/plugin-seo": ["@payloadcms/plugin-seo@3.84.1", "", { "dependencies": { "@payloadcms/translations": "3.84.1", "@payloadcms/ui": "3.84.1" }, "peerDependencies": { "payload": "3.84.1", "react": "^19.0.1 || ^19.1.2 || ^19.2.1", "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1" } }, "sha512-9FYs5ML/eWR/A/rQfHt2NhPzkJWbUx5SN/+lEQ90r3c3Z8CQUVpt4vETXSI9Gxi764lTutIGemuZAJK9WRy3Lw=="],
 
     "@payloadcms/richtext-lexical": ["@payloadcms/richtext-lexical@3.84.1", "", { "dependencies": { "@lexical/clipboard": "0.41.0", "@lexical/headless": "0.41.0", "@lexical/html": "0.41.0", "@lexical/link": "0.41.0", "@lexical/list": "0.41.0", "@lexical/mark": "0.41.0", "@lexical/react": "0.41.0", "@lexical/rich-text": "0.41.0", "@lexical/selection": "0.41.0", "@lexical/table": "0.41.0", "@lexical/utils": "0.41.0", "@payloadcms/translations": "3.84.1", "@payloadcms/ui": "3.84.1", "acorn": "8.16.0", "bson-objectid": "2.0.4", "csstype": "3.1.3", "dequal": "2.0.3", "escape-html": "1.0.3", "jsox": "1.2.121", "lexical": "0.41.0", "mdast-util-from-markdown": "2.0.2", "mdast-util-mdx-jsx": "3.1.3", "micromark-extension-mdx-jsx": "3.0.1", "qs-esm": "8.0.1", "react-error-boundary": "4.1.2", "ts-essentials": "10.0.3", "uuid": "11.1.0" }, "peerDependencies": { "@faceless-ui/modal": "3.0.0", "@faceless-ui/scroll-info": "2.0.0", "@payloadcms/next": "3.84.1", "payload": "3.84.1", "react": "^19.0.1 || ^19.1.2 || ^19.2.1", "react-dom": "^19.0.1 || ^19.1.2 || ^19.2.1" } }, "sha512-KaNSz0RJFLnLc/hBRGg8Lgwk5FjCZSskA6KuufNWG5QdgUsgQe4Dx4Vr7G+VSR9zSZj+R4TVVSC0aVv4z7vL3g=="],
 

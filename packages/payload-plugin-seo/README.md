@@ -464,6 +464,195 @@ If the configured `extractContentPath` is set but the function is not registered
 
 ---
 
+## Generated SEO fields
+
+`seoTextField` is an optional utility that adds AI-assisted generation directly inside
+a Payload text field. Import it from `@focus-reactive/payload-plugin-seo/fields` and
+drop it anywhere in a collection's `fields` array — it returns a standard Payload `text`
+field with an enhanced field component that shows a length meter, a status pill, and
+(optionally) a **Generate** button.
+
+### Usage
+
+```ts
+// payload.config.ts (or a separate collection file)
+import { seoPlugin } from "@focus-reactive/payload-plugin-seo";
+import { seoTextField } from "@focus-reactive/payload-plugin-seo/fields";
+
+const MyCollection = {
+  slug: "pages",
+  fields: [
+    {
+      name: "meta",
+      type: "group",
+      fields: [
+        seoTextField({
+          name: "title",
+          kind: "title",
+          label: "Meta Title",
+          localized: true,
+          showButton: true,         // Mode 2: on-demand Generate button
+          generateOnPublish: true,  // Mode 1: auto-fill on publish when empty
+        }),
+        seoTextField({
+          name: "description",
+          kind: "description",
+          label: "Meta Description",
+          localized: true,
+          showButton: true,
+          generateOnPublish: true,
+        }),
+      ],
+    },
+  ],
+};
+```
+
+Both modes can be active on the same field at the same time.
+
+### `seoTextField` options
+
+```ts
+interface SeoTextFieldOptions {
+  /** Field name — passed straight to the underlying Payload text field. */
+  name: string;
+  /**
+   * "title" or "description".
+   * Drives the generation prompt, the default target range, the measurement unit, and the
+   * rendered input/field type:
+   *   title       → single-line `text` field; pixel-width measurement (Yoast heuristic)
+   *   description → multi-line `textarea` field; character-count measurement
+   */
+  kind: "title" | "description";
+  /** Human-readable label shown in the admin UI. */
+  label?: string;
+  /** Mark the field as required. */
+  required?: boolean;
+  /** Enable per-locale storage. */
+  localized?: boolean;
+  /** Standard Payload field admin overrides. */
+  admin?: Record<string, unknown>;
+  /**
+   * Mode 2 — render a black-shade Generate button in the field's label row.
+   * Clicking it calls the generation endpoint using the current (unsaved) page content.
+   * Works on new/unsaved documents.
+   * Default: false.
+   */
+  showButton?: boolean;
+  /**
+   * Mode 1 — on publish, auto-fill the field from page content ONLY when it is empty.
+   * A manual value is never overwritten.
+   * Shows a small "generated on publish" tooltip icon next to the label.
+   * Default: false.
+   */
+  generateOnPublish?: boolean;
+  /**
+   * Override the target length window.
+   * Defaults: title → 400–600 px; description → 120–160 chars.
+   */
+  range?: { min?: number; max?: number };
+}
+```
+
+The field renders identically to a native Payload text field, with two additions below
+the input: a length meter (pixels for title, characters for description) and a status
+pill showing **Too short**, **Good**, or **Too long** against the configured range.
+
+### Generation endpoint and OpenAI config
+
+When at least one `seoTextField` has `showButton` or `generateOnPublish` enabled, the
+plugin registers a server endpoint at `POST {apiRoute}/seo/generate`. This endpoint
+reads `OPENAI_API_KEY` from the server environment and calls OpenAI to produce the
+field value.
+
+Configure generation via the plugin's `generation` option:
+
+```ts
+seoPlugin({
+  collections: [/* ... */],
+  generation: {
+    /** OpenAI model. Default: "gpt-4o-mini". */
+    model: "gpt-4o-mini",
+    /**
+     * API key. Optional — falls back to process.env.OPENAI_API_KEY automatically.
+     * Useful when the key lives in a non-standard env variable or is resolved at
+     * config time.
+     */
+    apiKey: process.env.OPENAI_API_KEY,
+    /**
+     * Maximum characters of page content sent to the model.
+     * Default: 6000.
+     */
+    maxContentChars: 6000,
+    /** Override the system prompt used for title generation. */
+    titlePrompt: "Write an SEO meta title…",
+    /** Override the system prompt used for description generation. */
+    descriptionPrompt: "Write an SEO meta description…",
+  },
+})
+```
+
+If no API key resolves (neither `generation.apiKey` nor `OPENAI_API_KEY` is set),
+generation is **disabled gracefully**: the Generate button is hidden in the UI and
+the on-publish hook is a no-op — no errors are thrown.
+
+Generation is locale-aware: the active document locale is forwarded to the endpoint
+and included in the prompt.
+
+### Extractors for generation
+
+**Mode 2 (button)** reuses the `extractContentPath` extractor already configured for
+the analysis drawer. No additional registration is needed — the button calls the same
+client-side extractor.
+
+**Mode 1 (on-publish)** runs server-side and requires a `serverExtractContent` function
+on the collection's plugin config. It follows the same `ContentExtractor` contract, but
+receives a Local-API-backed `resolveDocs` and the document being saved:
+
+```ts
+// src/collections/Page/extractPageContent.server.ts
+import type { ContentExtractor } from "@focus-reactive/payload-plugin-seo/content";
+
+export const serverExtractPageContent: ContentExtractor = async (
+  values,
+  _ctx,
+  { resolveDocs, helpers },
+) => {
+  // values = the document being saved (same shape as the client-side extractor)
+  // resolveDocs = Local API-backed; works the same way as the client version
+  return helpers.compact([
+    helpers.heading(1, values.title as string),
+    // … rest of your extraction logic
+  ]);
+};
+```
+
+```ts
+// payload.config.ts
+import { serverExtractPageContent } from "@/collections/Page/extractPageContent.server";
+
+seoPlugin({
+  collections: [
+    {
+      slug: "page",
+      fields: { seoTitle: "meta.title", metaDescription: "meta.description", slug: "slug" },
+      extractContentPath: "@/collections/Page/extractPageContent#default", // client (button + drawer)
+      serverExtractContent: serverExtractPageContent,                       // server (on-publish)
+    },
+  ],
+  generation: { /* ... */ },
+});
+```
+
+Because the extractor only reads ids and calls the injected `resolveDocs`, the same
+function body can usually serve both client and server without modification — just
+export it twice (or re-export from a shared file).
+
+> **Note:** The plugin auto-registers the `SeoClientConfigProvider` admin provider
+> internally. You do not need to add it to `admin.components.providers` manually.
+
+---
+
 ## The Analysis Drawer
 
 The drawer presents six tabs, all derived from a single in-browser Yoast analysis pass (a `Paper` analyzed by `SeoAssessor` with the language-appropriate `Researcher`):
@@ -504,12 +693,15 @@ The active locale is taken from the admin and normalized to Yoast's `xx_XX` form
 
 ## Exports Reference
 
-| Import path                                               | Exports                                                                                                                                                                                                                                              |
-| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@focus-reactive/payload-plugin-seo`                      | `seoPlugin`, and types `SeoPluginConfig`, `SeoCollectionConfig`, `SeoFieldPaths`, `SeoSiteConfig`, `ContentExtractor`                                                                                                                                |
-| `@focus-reactive/payload-plugin-seo/content`              | Builder helpers `heading`, `paragraph`, `link`, `image`, `video`, `richText`, `html`, `compact`; `registerContentExtractors`, `resolveContentExtractor`; types `ContentNode`, `HeadingLevel`, `ContentExtractor`, `ExtractContext`, `ExtractToolkit`, `DocQuery`, `DocStore`, `ContentHelpers` |
-| `@focus-reactive/payload-plugin-seo/admin.css`            | Compiled admin styles for the drawer & button                                                                                                                                                                                                       |
-| `@focus-reactive/payload-plugin-seo/components/SeoButton` | `SeoButton` — the toolbar button component (wired automatically by the plugin via the importMap; you normally never import this directly)                                                                                                            |
+| Import path                                                          | Exports                                                                                                                                                                                                                                              |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@focus-reactive/payload-plugin-seo`                                 | `seoPlugin`, `seoTextField`; types `SeoPluginConfig`, `SeoCollectionConfig`, `SeoFieldPaths`, `SeoSiteConfig`, `ContentExtractor`, `SeoGenerationConfig`                                                                                             |
+| `@focus-reactive/payload-plugin-seo/content`                         | Builder helpers `heading`, `paragraph`, `link`, `image`, `video`, `richText`, `html`, `compact`; `registerContentExtractors`, `resolveContentExtractor`; types `ContentNode`, `HeadingLevel`, `ContentExtractor`, `ExtractContext`, `ExtractToolkit`, `DocQuery`, `DocStore`, `ContentHelpers` |
+| `@focus-reactive/payload-plugin-seo/fields`                          | `seoTextField`; type `SeoTextFieldOptions`                                                                                                                                                                                                           |
+| `@focus-reactive/payload-plugin-seo/admin.css`                       | Compiled admin styles for the drawer & button                                                                                                                                                                                                       |
+| `@focus-reactive/payload-plugin-seo/components/SeoButton`            | `SeoButton` — the toolbar button component (wired automatically by the plugin via the importMap; you normally never import this directly)                                                                                                            |
+| `@focus-reactive/payload-plugin-seo/components/SeoField`             | `SeoField` — the enhanced text field component (length meter + status pill + Generate button); wired automatically via `seoTextField`; you normally never import this directly                                                                       |
+| `@focus-reactive/payload-plugin-seo/providers/SeoClientConfigProvider` | `SeoClientConfigProvider` — carries the client-side plugin config (generation settings, collection map) into the admin bundle; auto-registered by the plugin — do not add it to `admin.components.providers` manually                              |
 
 ---
 

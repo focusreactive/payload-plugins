@@ -32,7 +32,7 @@ export default defineConfig({
   format: ["esm"],
   dts: false,
   sourcemap: true,
-  clean: true,
+  clean: ["dist/**/*.js", "dist/**/*.map", "dist/**/*.d.ts"],
   external: [
     "payload",
     "react",
