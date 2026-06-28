@@ -383,7 +383,7 @@ export interface Page {
   meta?: {
     title?: string | null;
     /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     * Image used when sharing this page on social media.
      */
     image?: (number | null) | Media;
     description?: string | null;
@@ -618,7 +618,7 @@ export interface Post {
   meta?: {
     title?: string | null;
     /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     * Image used when sharing this page on social media.
      */
     image?: (number | null) | Media;
     description?: string | null;
@@ -4297,7 +4297,7 @@ export interface SiteSetting {
     blogMeta?: {
       title?: string | null;
       /**
-       * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+       * Image used when sharing this page on social media.
        */
       image?: (number | null) | Media;
       description?: string | null;

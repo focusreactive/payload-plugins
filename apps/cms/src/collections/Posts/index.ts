@@ -232,7 +232,10 @@ export const Posts: CollectionConfig<"posts"> = {
           },
         },
         {
-          fields: generateSeoFields({ robotsDefault: "noindex" }),
+          fields: generateSeoFields({
+            generation: true,
+            robotsDefault: "noindex",
+          }),
           label: {
             en: "SEO",
             es: "SEO",

@@ -1,7 +1,8 @@
 import { getTitleProgress } from "@yoast/search-metadata-previews/build/helpers/progress";
 import type { LengthProgress } from "@yoast/search-metadata-previews/build/helpers/progress";
+import { AVG_GLYPH_PX } from "../../constants/generation";
 
-export const AVG_GLYPH_PX = 8.5;
+export { AVG_GLYPH_PX };
 export const TITLE_FALLBACK_MAX_PX = 600;
 
 export function getTitleProgressGuarded(title: string): LengthProgress {

@@ -20,7 +20,9 @@ import { Categories } from "@/collections/Categories";
 import { Footer } from "@/collections/Footer/config";
 import { Header } from "@/collections/Header/config";
 import { Page as PageCollection } from "@/collections/Page/Page";
+import serverExtractPageContent from "@/collections/Page/serverExtractPageContent";
 import { Posts } from "@/collections/Posts";
+import serverExtractPostContent from "@/collections/Posts/serverExtractPostContent";
 import { Testimonials } from "@/collections/Testimonials";
 import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
 import { I18N_CONFIG } from "@/lib/config/i18n";
@@ -38,7 +40,6 @@ import { revalidateRedirects } from "@/lib/hooks/revalidateRedirects";
 import type { Page } from "@/payload-types";
 
 import { mcpPluginConfig } from "./mcp";
-import seoPlugin from "./seoPlugin";
 
 const resolveAnalyticsPagePath = async (ref: string, req: PayloadRequest): Promise<string> => {
   const { defaultLocale } = I18N_CONFIG;
@@ -204,7 +205,6 @@ export const plugins: Plugin[] = [
     },
     redirectTypes: ["307", "308"],
   }),
-  seoPlugin,
   seoAnalysisPlugin({
     collections: [
       {
@@ -215,6 +215,7 @@ export const plugins: Plugin[] = [
           slug: "slug",
         },
         extractContentPath: "@/collections/Page/extractPageContent#default",
+        serverExtractContent: serverExtractPageContent,
       },
       {
         slug: "posts",
@@ -224,6 +225,7 @@ export const plugins: Plugin[] = [
           slug: "slug",
         },
         extractContentPath: "@/collections/Posts/extractPostContent#default",
+        serverExtractContent: serverExtractPostContent,
       },
     ],
     site: {

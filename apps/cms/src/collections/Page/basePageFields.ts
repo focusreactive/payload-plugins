@@ -59,7 +59,7 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
           label: { en: "Content", es: "Contenido" },
         },
         {
-          fields: generateSeoFields(),
+          fields: generateSeoFields({ generation: true }),
           label: { en: "SEO", es: "SEO" },
           localized: true,
           name: "meta",

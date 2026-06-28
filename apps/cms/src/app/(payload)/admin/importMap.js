@@ -26,12 +26,9 @@ import { FolderField as FolderField_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@pa
 import { RowLabel as RowLabel_7f4fa5fc68fb5a0a92393f6444a57fbd } from '@/components/admin/RowLabel'
 import { BlockLabelServerWrapper as BlockLabelServerWrapper_ad8f8fdcc54c2df5d561bf1e2721dc58 } from '@focus-reactive/payload-plugin-presets/rsc'
 import { CopyAiPromptButton as CopyAiPromptButton_9694d9e75b2ba68d2307fd533ed819ca } from '@/components/admin/CopyAiPromptButton'
+import { BlockLabelWithPresets as BlockLabelWithPresets_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { BlocksFieldWithPresets as BlocksFieldWithPresets_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
-import { OverviewComponent as OverviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
-import { MetaTitleComponent as MetaTitleComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
-import { MetaImageComponent as MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
-import { MetaDescriptionComponent as MetaDescriptionComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
-import { PreviewComponent as PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
+import { SeoField as SeoField_8b0de638b8c4dbaba7d1d35a3b22b14d } from '@focus-reactive/payload-plugin-seo/components/SeoField'
 import { SlugField as SlugField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
 import { VariantsField as VariantsField_1e5bf2338fb8c7d4f6284f3e67c93951 } from '@focus-reactive/payload-plugin-ab/admin/VariantsField'
 import { default as default_5a9e6bfe3379b31c0258f532ec5399fb } from '@focus-reactive/payload-plugin-translator/client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.server'
@@ -51,6 +48,7 @@ import { default as default_3fd776aeb7e4127cf324115b5226afbf } from '../../../co
 import { default as default_3da48296ca27cce2dd5904839611d77c } from '../../../lib/context/BeforeOpenDrawerWrapper'
 import { default as default_c0acd3f4d5b9577c4e185cd84f6b1b50 } from '../../../lib/context/SeoExtractorRegistrar'
 import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e } from '@payloadcms/storage-vercel-blob/client'
+import { SeoClientConfigProvider as SeoClientConfigProvider_f1e7cc56df4c13de864b4f015213d8e2 } from '@focus-reactive/payload-plugin-seo/providers/SeoClientConfigProvider'
 import { CommentsProviderWrapper as CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a } from '@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper'
 import { default as default_5668654bc04fc84f784cb30b290f6f3d } from '@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider'
 import { VisualEditingBridgeProvider as VisualEditingBridgeProvider_673e524fc3ed2dc6764c4e182a583baf } from '@fr-private/payload-plugin-visual-editing/admin'
@@ -88,12 +86,9 @@ export const importMap = {
   "@/components/admin/RowLabel#RowLabel": RowLabel_7f4fa5fc68fb5a0a92393f6444a57fbd,
   "@focus-reactive/payload-plugin-presets/rsc#BlockLabelServerWrapper": BlockLabelServerWrapper_ad8f8fdcc54c2df5d561bf1e2721dc58,
   "@/components/admin/CopyAiPromptButton#CopyAiPromptButton": CopyAiPromptButton_9694d9e75b2ba68d2307fd533ed819ca,
+  "@focus-reactive/payload-plugin-presets/client#BlockLabelWithPresets": BlockLabelWithPresets_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-presets/client#BlocksFieldWithPresets": BlocksFieldWithPresets_f0a4a6f21f15d606fa328a5e35f17d11,
-  "@payloadcms/plugin-seo/client#OverviewComponent": OverviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
-  "@payloadcms/plugin-seo/client#MetaTitleComponent": MetaTitleComponent_a8a977ebc872c5d5ea7ee689724c0860,
-  "@payloadcms/plugin-seo/client#MetaImageComponent": MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860,
-  "@payloadcms/plugin-seo/client#MetaDescriptionComponent": MetaDescriptionComponent_a8a977ebc872c5d5ea7ee689724c0860,
-  "@payloadcms/plugin-seo/client#PreviewComponent": PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
+  "@focus-reactive/payload-plugin-seo/components/SeoField#SeoField": SeoField_8b0de638b8c4dbaba7d1d35a3b22b14d,
   "@payloadcms/next/client#SlugField": SlugField_2b8867833a34864a02ddf429b0728a40,
   "@focus-reactive/payload-plugin-ab/admin/VariantsField#VariantsField": VariantsField_1e5bf2338fb8c7d4f6284f3e67c93951,
   "@focus-reactive/payload-plugin-translator/client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.server#default": default_5a9e6bfe3379b31c0258f532ec5399fb,
@@ -113,6 +108,7 @@ export const importMap = {
   "/lib/context/BeforeOpenDrawerWrapper#default": default_3da48296ca27cce2dd5904839611d77c,
   "/lib/context/SeoExtractorRegistrar#default": default_c0acd3f4d5b9577c4e185cd84f6b1b50,
   "@payloadcms/storage-vercel-blob/client#VercelBlobClientUploadHandler": VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e,
+  "@focus-reactive/payload-plugin-seo/providers/SeoClientConfigProvider#SeoClientConfigProvider": SeoClientConfigProvider_f1e7cc56df4c13de864b4f015213d8e2,
   "@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper#CommentsProviderWrapper": CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a,
   "@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider#default": default_5668654bc04fc84f784cb30b290f6f3d,
   "@fr-private/payload-plugin-visual-editing/admin#VisualEditingBridgeProvider": VisualEditingBridgeProvider_673e524fc3ed2dc6764c4e182a583baf,
