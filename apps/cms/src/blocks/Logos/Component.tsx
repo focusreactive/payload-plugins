@@ -20,8 +20,8 @@ export const LogosBlockComponent: React.FC<LogosBlock> = async ({
 
   const logoItems: ILogoItem[] = (items ?? []).map(({ image, link }) => {
     const { image: rawImage } = image;
-    const width = typeof rawImage === "number" ? 120 : (rawImage.width ?? 120);
-    const height = typeof rawImage === "number" ? 40 : (rawImage.height ?? 40);
+    const width = typeof rawImage === "number" ? 90 : (rawImage.width ?? 90);
+    const height = typeof rawImage === "number" ? 30 : (rawImage.height ?? 30);
 
     return {
       image: prepareImageProps({
