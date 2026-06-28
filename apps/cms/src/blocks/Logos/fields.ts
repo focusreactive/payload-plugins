@@ -34,6 +34,7 @@ export const logosFields: Field[] = [
     ],
   },
   {
+    admin: { initCollapsed: true },
     fields: [imageField(), link({ appearances: false })],
     label: { en: "Logo Items", es: "Logos" },
     localized: true,

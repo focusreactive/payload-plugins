@@ -49,6 +49,7 @@ const fields: Field[] = [
         type: "text",
       },
       {
+        admin: { initCollapsed: true },
         fields: [
           {
             type: "row",

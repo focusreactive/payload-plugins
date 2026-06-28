@@ -23,6 +23,7 @@ function buildFaqItems(locale: Locale) {
 const fields: Field[] = [
   ...sectionHeaderFields({ headingDefault: DEFAULT_VALUES.blocks.faq.heading }),
   {
+    admin: { initCollapsed: true },
     defaultValue: createLocalizedDefault({
       en: buildFaqItems("en"),
       es: buildFaqItems("es"),

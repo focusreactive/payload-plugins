@@ -23,6 +23,7 @@ const fields: Field[] = [
     type: "select",
   },
   {
+    admin: { initCollapsed: true },
     fields: [
       imageField(),
       {

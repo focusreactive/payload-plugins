@@ -9,6 +9,7 @@ export const testimonialsListFields: Field[] = [
     descriptionDefault: DEFAULT_VALUES.blocks.testimonialsList.subheading,
   }),
   {
+    admin: { initCollapsed: true },
     fields: [
       {
         label: { en: "Testimonial", es: "Testimonio" },

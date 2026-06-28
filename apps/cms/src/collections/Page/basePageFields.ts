@@ -51,7 +51,7 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
           fields: [
             {
               admin: {
-                initCollapsed: false,
+                initCollapsed: true,
               },
               blocks: [
                 HeroBlock,

@@ -140,6 +140,7 @@ export const Posts: CollectionConfig<"posts"> = {
                   type: "text",
                 },
                 {
+                  admin: { initCollapsed: true },
                   fields: [
                     {
                       label: { en: "Question", es: "Pregunta" },
@@ -200,6 +201,7 @@ export const Posts: CollectionConfig<"posts"> = {
                   type: "textarea",
                 },
                 {
+                  admin: { initCollapsed: true },
                   fields: (link() as GroupField).fields,
                   label: { en: "Actions", es: "Acciones" },
                   localized: true,
