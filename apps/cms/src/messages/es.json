@@ -29,12 +29,12 @@
     "morePages": "Más páginas"
   },
   "blog": {
-    "all": "Todas",
     "backToJournal": "Volver al Journal",
     "noResults": "Ningún artículo coincide con tu búsqueda.",
     "readTime": "{minutes} min",
     "readTimeLong": "{minutes} min de lectura",
     "search": {
+      "all": "Todas",
       "label": "Buscar artículos",
       "open": "Buscar artículos",
       "close": "Cerrar búsqueda",
