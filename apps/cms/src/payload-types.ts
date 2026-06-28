@@ -4435,6 +4435,45 @@ export interface CodeInlineBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CtaBannerInline".
+ */
+export interface CtaBannerInline {
+  eyebrow?: string | null;
+  /**
+   * Visual emphasis of the banner.
+   */
+  variant?: ('default' | 'accent' | 'dark') | null;
+  heading?: string | null;
+  description?: string | null;
+  actions?:
+    | {
+        type?: ('reference' | 'custom' | 'customPage') | null;
+        newTab?: boolean | null;
+        reference?:
+          | ({
+              relationTo: 'page';
+              value: number | Page;
+            } | null)
+          | ({
+              relationTo: 'posts';
+              value: number | Post;
+            } | null);
+        url?: string | null;
+        customPage?: ('blog' | 'search') | null;
+        label: string;
+        /**
+         * Choose how the link should be rendered.
+         */
+        appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'ctaBannerInline';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "auth".
  */
 export interface Auth {
