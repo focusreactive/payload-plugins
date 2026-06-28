@@ -4,33 +4,8 @@ import type { Page } from "@/payload-types";
 
 import { filterHiddenBlocks } from "@/lib/fields/section/filterHiddenBlocks";
 
-import { CardsGridBlockComponent } from "./CardsGrid/Component";
-import { CarouselBlockComponent } from "./Carousel/Component";
-import { ChartBlockComponent } from "./Chart/Component";
-import { ContentBlockComponent } from "./Content/Component";
-import { CtaBandBlockComponent } from "./CtaBand/Component";
-import { NewsletterBlockComponent } from "./Newsletter/Component";
-import { StatsBlockComponent } from "./Stats/Component";
-import { FaqBlockComponent } from "./Faq/Component";
-import { HeroBlockComponent } from "./Hero/Component";
-import { LogosBlockComponent } from "./Logos/Component";
-import { RawHtmlBlockComponent } from "./RawHtml/Component";
-import { TestimonialsListBlockComponent } from "./TestimonialsList/Component";
-
-const blockComponents = {
-  cardsGrid: CardsGridBlockComponent,
-  carousel: CarouselBlockComponent,
-  chart: ChartBlockComponent,
-  content: ContentBlockComponent,
-  ctaBand: CtaBandBlockComponent,
-  newsletter: NewsletterBlockComponent,
-  stats: StatsBlockComponent,
-  faq: FaqBlockComponent,
-  hero: HeroBlockComponent,
-  logos: LogosBlockComponent,
-  rawHtml: RawHtmlBlockComponent,
-  testimonialsList: TestimonialsListBlockComponent,
-};
+import { renderContentBlock } from "./contentBlockComponents";
+import { GlobalSectionSlotBlockComponent } from "./GlobalSectionSlot/Component";
 
 export const RenderBlocks: React.FC<{
   blocks: Page["blocks"][0][];
@@ -40,29 +15,19 @@ export const RenderBlocks: React.FC<{
   const visibleBlocks = filterHiddenBlocks(blocks);
   const hasBlocks = visibleBlocks.length > 0;
 
-  if (hasBlocks) {
-    return (
-      <Fragment>
-        {visibleBlocks.map((block, index) => {
-          const { blockType } = block;
-
-          if (blockType && blockType in blockComponents) {
-            const Block = blockComponents[blockType];
-
-            if (Block) {
-              return (
-                <div key={index}>
-                  {/* @ts-expect-error there may be some mismatch between the expected types here */}
-                  <Block {...block} disableInnerContainer />
-                </div>
-              );
-            }
-          }
-          return null;
-        })}
-      </Fragment>
-    );
+  if (!hasBlocks) {
+    return null;
   }
 
-  return null;
+  return (
+    <Fragment>
+      {visibleBlocks.map((block, index) => {
+        if (block.blockType === "globalSectionSlot") {
+          return <GlobalSectionSlotBlockComponent key={index} {...block} />;
+        }
+
+        return renderContentBlock(block, index);
+      })}
+    </Fragment>
+  );
 };

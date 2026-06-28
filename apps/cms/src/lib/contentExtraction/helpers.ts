@@ -21,7 +21,7 @@ function mediaDoc(value: UploadField, docs: DocStore): Upload | null {
   return (docs.get(MEDIA_COLLECTION, id) as Upload | undefined) ?? null;
 }
 
-function relationId(v: unknown): string | number | null {
+export function relationId(v: unknown): string | number | null {
   if (typeof v === "number" || typeof v === "string") return v;
   if (typeof v === "object" && v !== null) {
     const id = (v as { id?: unknown }).id;

@@ -71,6 +71,7 @@ export interface Config {
     users: User;
     media: Media;
     page: Page;
+    globalSection: GlobalSection;
     categories: Category;
     authors: Author;
     posts: Post;
@@ -100,6 +101,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     page: PageSelect<false> | PageSelect<true>;
+    globalSection: GlobalSectionSelect<false> | GlobalSectionSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     authors: AuthorsSelect<false> | AuthorsSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
@@ -376,6 +378,7 @@ export interface Page {
     | NewsletterBlock
     | StatsBlock
     | RawHtmlBlock
+    | GlobalSectionSlotBlock
   )[];
   meta?: {
     title?: string | null;
@@ -1394,6 +1397,50 @@ export interface RawHtmlBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "GlobalSectionSlotBlock".
+ */
+export interface GlobalSectionSlotBlock {
+  /**
+   * Pick a global section to embed. Editing that section updates every page using it.
+   */
+  reference: number | GlobalSection;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'globalSectionSlot';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "globalSection".
+ */
+export interface GlobalSection {
+  id: number;
+  /**
+   * Internal name to identify this global section in the picker.
+   */
+  title: string;
+  /**
+   * The single section this global represents. Edit once, reuse on any page.
+   */
+  block: (
+    | HeroBlock
+    | ContentBlock
+    | FaqBlock
+    | TestimonialsListBlock
+    | CardsGridBlock
+    | CarouselBlock
+    | LogosBlock
+    | ChartBlock
+    | CtaBandBlock
+    | NewsletterBlock
+    | StatsBlock
+    | RawHtmlBlock
+  )[];
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "document-embeddings".
  */
 export interface DocumentEmbedding {
@@ -2043,6 +2090,15 @@ export interface Preset {
         blockName?: string | null;
         blockType: 'rawHtml';
       }
+    | {
+        /**
+         * Pick a global section to embed. Editing that section updates every page using it.
+         */
+        reference: number | GlobalSection;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'globalSectionSlot';
+      }
   )[];
   updatedAt: string;
   createdAt: string;
@@ -2437,6 +2493,10 @@ export interface PayloadLockedDocument {
         value: number | Page;
       } | null)
     | ({
+        relationTo: 'globalSection';
+        value: number | GlobalSection;
+      } | null)
+    | ({
         relationTo: 'categories';
         value: number | Category;
       } | null)
@@ -2687,6 +2747,7 @@ export interface PageSelect<T extends boolean = true> {
         newsletter?: T | NewsletterBlockSelect<T>;
         stats?: T | StatsBlockSelect<T>;
         rawHtml?: T | RawHtmlBlockSelect<T>;
+        globalSectionSlot?: T | GlobalSectionSlotBlockSelect<T>;
       };
   meta?:
     | T
@@ -3180,6 +3241,41 @@ export interface RawHtmlBlockSelect<T extends boolean = true> {
   _hidden?: T;
   id?: T;
   blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "GlobalSectionSlotBlock_select".
+ */
+export interface GlobalSectionSlotBlockSelect<T extends boolean = true> {
+  reference?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "globalSection_select".
+ */
+export interface GlobalSectionSelect<T extends boolean = true> {
+  title?: T;
+  block?:
+    | T
+    | {
+        hero?: T | HeroBlockSelect<T>;
+        content?: T | ContentBlockSelect<T>;
+        faq?: T | FaqBlockSelect<T>;
+        testimonialsList?: T | TestimonialsListBlockSelect<T>;
+        cardsGrid?: T | CardsGridBlockSelect<T>;
+        carousel?: T | CarouselBlockSelect<T>;
+        logos?: T | LogosBlockSelect<T>;
+        chart?: T | ChartBlockSelect<T>;
+        ctaBand?: T | CtaBandBlockSelect<T>;
+        newsletter?: T | NewsletterBlockSelect<T>;
+        stats?: T | StatsBlockSelect<T>;
+        rawHtml?: T | RawHtmlBlockSelect<T>;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3879,6 +3975,13 @@ export interface PresetsSelect<T extends boolean = true> {
                         };
                   };
               _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        globalSectionSlot?:
+          | T
+          | {
+              reference?: T;
               id?: T;
               blockName?: T;
             };

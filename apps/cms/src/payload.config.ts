@@ -11,6 +11,7 @@ import { Authors } from "@/collections/Authors";
 import { Categories } from "@/collections/Categories";
 import { DocumentEmbeddings } from "@/collections/DocumentEmbeddings";
 import { Footer } from "@/collections/Footer/config";
+import { GlobalSection } from "@/collections/GlobalSection/config";
 import { Header } from "@/collections/Header/config";
 import { Media } from "@/collections/Media";
 import { Page } from "@/collections/Page/Page";
@@ -65,6 +66,7 @@ export default buildConfig({
     Users,
     Media,
     Page,
+    GlobalSection,
     Categories,
     Authors,
     Posts,
