@@ -26,9 +26,9 @@ describe("buildPrompt", () => {
     const { system } = buildPrompt({
       ...base,
       kind: "description",
-      range: { min: 120, max: 160, unit: "char" },
+      range: { min: 120, max: 156, unit: "char" },
     });
-    expect(system).toContain("160");
+    expect(system).toContain("156");
     expect(system.toLowerCase()).toContain("description");
   });
   it("mentions the locale when provided", () => {
@@ -53,7 +53,7 @@ describe("buildPrompt", () => {
     const { system } = buildPrompt({
       ...base,
       kind: "description",
-      range: { min: 120, max: 160, unit: "char" },
+      range: { min: 120, max: 156, unit: "char" },
       config: { descriptionPrompt: "DESC RULES" },
     });
     expect(system).toContain("DESC RULES");

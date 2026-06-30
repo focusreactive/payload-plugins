@@ -548,7 +548,7 @@ interface SeoTextFieldOptions {
   generateOnPublish?: boolean;
   /**
    * Override the target length window.
-   * Defaults: title → 400–600 px; description → 120–160 chars.
+   * Defaults: title → 400–600 px; description → 120–156 chars.
    */
   range?: { min?: number; max?: number };
 }

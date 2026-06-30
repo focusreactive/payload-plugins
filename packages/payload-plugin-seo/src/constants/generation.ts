@@ -11,5 +11,5 @@ export const TITLE_RANGE = {
 
 export const DESCRIPTION_RANGE = {
   min: 120,
-  max: 160,
+  max: 156,
 } as const;

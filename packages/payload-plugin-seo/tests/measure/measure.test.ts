@@ -4,7 +4,7 @@ import { measureDescription, measureTitle } from "../../src/measure/measure";
 describe("measureDescription", () => {
   it("flags short text", () => {
     const m = measureDescription("short");
-    expect(m).toMatchObject({ unit: "char", value: 5, min: 120, max: 160, status: "short" });
+    expect(m).toMatchObject({ unit: "char", value: 5, min: 120, max: 156, status: "short" });
   });
   it("accepts in-range text", () => {
     const m = measureDescription("x".repeat(140));
