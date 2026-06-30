@@ -10,4 +10,5 @@ export type CardPostData = Pick<
   | "publishedAt"
   | "updatedAt"
   | "authors"
+  | "readingTime"
 >;

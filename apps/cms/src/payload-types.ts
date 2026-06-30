@@ -633,6 +633,10 @@ export interface Post {
   generateSlug?: boolean | null;
   slug: string;
   publishedAt?: string | null;
+  /**
+   * Estimated reading time in minutes. Auto-calculated from the content on save.
+   */
+  readingTime?: number | null;
   categories: (number | Category)[];
   authors: (number | Author)[];
   /**
@@ -3349,6 +3353,7 @@ export interface PostsSelect<T extends boolean = true> {
   generateSlug?: T;
   slug?: T;
   publishedAt?: T;
+  readingTime?: T;
   categories?: T;
   authors?: T;
   relatedPosts?: T;

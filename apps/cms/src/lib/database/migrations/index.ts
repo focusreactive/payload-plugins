@@ -26,6 +26,7 @@ import * as migration_20260618_200838_add_section_visibility_to_blocks from './2
 import * as migration_20260619_011448_add_pgvector_embedding_column from './20260619_011448_add_pgvector_embedding_column';
 import * as migration_20260622_105221_rename_copywrite from './20260622_105221_rename_copywrite';
 import * as migration_20260628_193856_create_and_wire_global_section_collection from './20260628_193856_create_and_wire_global_section_collection';
+import * as migration_20260630_154649_add_reading_time_to_posts from './20260630_154649_add_reading_time_to_posts';
 
 export const migrations = [
   {
@@ -166,6 +167,11 @@ export const migrations = [
   {
     up: migration_20260628_193856_create_and_wire_global_section_collection.up,
     down: migration_20260628_193856_create_and_wire_global_section_collection.down,
-    name: '20260628_193856_create_and_wire_global_section_collection'
+    name: '20260628_193856_create_and_wire_global_section_collection',
+  },
+  {
+    up: migration_20260630_154649_add_reading_time_to_posts.up,
+    down: migration_20260630_154649_add_reading_time_to_posts.down,
+    name: '20260630_154649_add_reading_time_to_posts'
   },
 ];

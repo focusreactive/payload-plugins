@@ -72,11 +72,11 @@ async function searchPostsQuery(
     select: {
       authors: true,
       categories: true,
-      content: true,
       excerpt: true,
       heroImage: true,
       meta: true,
       publishedAt: true,
+      readingTime: true,
       slug: true,
       title: true,
       updatedAt: true,

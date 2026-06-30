@@ -4,7 +4,6 @@ import NextImage from "next/image";
 
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { Link } from "@/components/shared";
-import { readingTimeMinutes } from "@/lib/utils/readingTime";
 import type { Category } from "@/payload-types";
 
 import type { BlogListPost } from "../types";
@@ -33,7 +32,7 @@ export async function PostsGrid({ posts }: PostsGridProps) {
               title={post.title}
               excerpt={post.excerpt}
               category={category?.title}
-              readTime={t("readTime", { minutes: readingTimeMinutes(post.content) })}
+              readTime={t("readTime", { minutes: post.readingTime ?? 1 })}
               image={
                 <NextImage
                   src={heroImage?.url ?? "/empty-placeholder.jpg"}

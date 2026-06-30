@@ -51,6 +51,14 @@ export async function getRelatedPosts({
     limit: remaining,
     locale,
     overrideAccess: true,
+    select: {
+      categories: true,
+      heroImage: true,
+      publishedAt: true,
+      readingTime: true,
+      slug: true,
+      title: true,
+    },
     sort: "-publishedAt",
     where: {
       and: [
@@ -61,5 +69,5 @@ export async function getRelatedPosts({
     },
   });
 
-  return [...manualPosts, ...backfillPosts];
+  return [...manualPosts, ...(backfillPosts as Post[])];
 }
