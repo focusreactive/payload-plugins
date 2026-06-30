@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import type { Field } from "payload";
 import type { FieldChunk } from "../../types";
+import type { LeafFieldLike } from "../../../../shared/field-traversal/types";
 import { TextChunkExpander } from "./TextChunkExpander";
 import { PlainTextExpander } from "./PlainTextExpander";
 import { RichTextExpander } from "./RichTextExpander";
@@ -9,12 +9,12 @@ const createFieldChunk = (
   name: string,
   type: string,
   value: unknown,
-  overrides: Partial<Field> = {}
+  overrides: Partial<LeafFieldLike> = {}
 ): { chunk: FieldChunk; data: Record<string, unknown> } => {
   const data = { [name]: value };
   return {
     chunk: {
-      schema: { name, type, ...overrides } as Field,
+      schema: { name, type, ...overrides } as LeafFieldLike,
       dataRef: data,
       key: name,
       path: [name],
@@ -428,13 +428,13 @@ describe("TextChunkExpander", () => {
 
       const chunks: FieldChunk[] = [
         {
-          schema: { name: "title", type: "text" } as Field,
+          schema: { name: "title", type: "text" } as LeafFieldLike,
           dataRef: data1,
           key: "title",
           path: ["title"],
         },
         {
-          schema: { name: "description", type: "text" } as Field,
+          schema: { name: "description", type: "text" } as LeafFieldLike,
           dataRef: data2,
           key: "description",
           path: ["description"],
@@ -473,13 +473,13 @@ describe("TextChunkExpander", () => {
 
       const chunks: FieldChunk[] = [
         {
-          schema: { name: "content", type: "richText" } as Field,
+          schema: { name: "content", type: "richText" } as LeafFieldLike,
           dataRef: data1,
           key: "content",
           path: ["content"],
         },
         {
-          schema: { name: "title", type: "text" } as Field,
+          schema: { name: "title", type: "text" } as LeafFieldLike,
           dataRef: data2,
           key: "title",
           path: ["title"],
@@ -497,7 +497,7 @@ describe("TextChunkExpander", () => {
       const data = { title: "Hello" };
       const chunks: FieldChunk[] = [
         {
-          schema: { name: "title", type: "text" } as Field,
+          schema: { name: "title", type: "text" } as LeafFieldLike,
           dataRef: data,
           key: "title",
           path: ["title"],
@@ -515,7 +515,7 @@ describe("TextChunkExpander", () => {
       const data = { title: 123 }; // number, no expander matches
       const chunks: FieldChunk[] = [
         {
-          schema: { name: "title", type: "text" } as Field,
+          schema: { name: "title", type: "text" } as LeafFieldLike,
           dataRef: data,
           key: "title",
           path: ["title"],
