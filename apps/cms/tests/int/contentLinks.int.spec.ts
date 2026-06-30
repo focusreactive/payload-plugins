@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  actionLinks,
   buildRefQueries,
   collectLinkRefs,
   collectMediaIds,
@@ -231,6 +232,55 @@ describe("buildRefQueries", () => {
     });
     expect(byCol.authors).toMatchObject({ ids: [3], select: ["name"] });
     expect(byCol.categories).toMatchObject({ ids: [5], select: ["title"] });
+  });
+});
+
+describe("empty array fields leaked from form state as a row-count number", () => {
+  // Payload's form-state builder stores an EMPTY array field's `value` as its row
+  // count (the number 0) and does NOT set `disableFormData` (only set when length > 0).
+  // So `reduceFieldsToValues(formState, true)` reconstructs an empty `actions`/`items`
+  // field as `0`, not `[]`. A `?? []` guard does not catch `0`, so `.map`/`.flatMap`
+  // throws "0.map is not a function". The extractor must coerce non-arrays to empty.
+  const helpers = {
+    compact: (n: (unknown | null | undefined)[]) => n.filter(Boolean),
+  } as never;
+
+  it("actionLinks tolerates a non-array (0 / object) input", () => {
+    expect(actionLinks(0 as never, ctx())).toEqual([]);
+    expect(actionLinks({} as never, ctx())).toEqual([]);
+  });
+
+  it("does not throw for a content block with actions: 0 (the .map path)", () => {
+    expect(() =>
+      extractPageBlockContent(
+        { blockType: "content", heading: "H", actions: 0 } as never,
+        ctx(),
+        ctx().docs as never,
+        helpers
+      )
+    ).not.toThrow();
+  });
+
+  it("does not throw for a faq block with items: 0 (the .flatMap path)", () => {
+    expect(() =>
+      extractPageBlockContent(
+        { blockType: "faq", heading: "H", items: 0 } as never,
+        ctx(),
+        ctx().docs as never,
+        helpers
+      )
+    ).not.toThrow();
+  });
+
+  it("does not throw for a stats block with items: 0", () => {
+    expect(() =>
+      extractPageBlockContent(
+        { blockType: "stats", items: 0 } as never,
+        ctx(),
+        ctx().docs as never,
+        helpers
+      )
+    ).not.toThrow();
   });
 });
 

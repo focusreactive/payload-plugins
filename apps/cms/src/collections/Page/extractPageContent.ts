@@ -9,6 +9,7 @@ import type {
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import {
   actionLinks,
+  asArray,
   buildRefQueries,
   groupImage,
   linkToContentNode,
@@ -56,9 +57,10 @@ export function extractPageBlockContent(
         paragraph(b.eyebrow as string),
         heading(2, b.heading as string),
         paragraph(b.description as string),
-        ...((b.items as { question?: string; answer?: unknown }[] | undefined) ?? []).flatMap(
-          (i) => [heading(3, i.question), ...richTextToContent(i.answer, ctx)]
-        ),
+        ...asArray<{ question?: string; answer?: unknown }>(b.items).flatMap((i) => [
+          heading(3, i.question),
+          ...richTextToContent(i.answer, ctx),
+        ]),
       ]);
     case "ctaBand":
       return [
@@ -74,20 +76,22 @@ export function extractPageBlockContent(
         paragraph(b.eyebrow as string),
         heading(2, b.heading as string),
         paragraph(b.description as string),
-        ...((b.slides as { image?: ImageGroup; text?: unknown }[] | undefined) ?? []).flatMap(
-          (s) => [groupImage(s.image, docs), ...richTextToContent(s.text, ctx)]
-        ),
+        ...asArray<{ image?: ImageGroup; text?: unknown }>(b.slides).flatMap((s) => [
+          groupImage(s.image, docs),
+          ...richTextToContent(s.text, ctx),
+        ]),
       ]);
     case "cardsGrid":
       return helpers.compact([
         paragraph(b.eyebrow as string),
         heading(2, b.heading as string),
         paragraph(b.description as string),
-        ...(
-          (b.items as
-            | { title?: string; description?: string; image?: ImageGroup; link?: LinkValue }[]
-            | undefined) ?? []
-        ).flatMap((c) => [
+        ...asArray<{
+          title?: string;
+          description?: string;
+          image?: ImageGroup;
+          link?: LinkValue;
+        }>(b.items).flatMap((c) => [
           heading(3, c.title),
           paragraph(c.description),
           groupImage(c.image, docs),
@@ -107,14 +111,13 @@ export function extractPageBlockContent(
         paragraph(b.eyebrow as string),
         heading(2, b.heading as string),
         paragraph(b.description as string),
-        ...(
-          (b.testimonialItems as { testimonial?: Testimonial | number | string }[] | undefined) ??
-          []
-        ).flatMap((t) => {
-          const ref = resolveTestimonial(t.testimonial);
-          const role = [ref?.position, ref?.company].filter(Boolean).join(", ");
-          return [paragraph(ref?.content), paragraph(ref?.author), paragraph(role)];
-        }),
+        ...asArray<{ testimonial?: Testimonial | number | string }>(b.testimonialItems).flatMap(
+          (t) => {
+            const ref = resolveTestimonial(t.testimonial);
+            const role = [ref?.position, ref?.company].filter(Boolean).join(", ");
+            return [paragraph(ref?.content), paragraph(ref?.author), paragraph(role)];
+          }
+        ),
       ]);
     }
     case "chart":
@@ -128,9 +131,10 @@ export function extractPageBlockContent(
     case "logos":
       return helpers.compact([
         paragraph(b.label as string),
-        ...((b.items as { image?: ImageGroup; link?: LinkValue }[] | undefined) ?? []).flatMap(
-          (i) => [groupImage(i.image, docs), linkToContentNode(i.link, ctx)]
-        ),
+        ...asArray<{ image?: ImageGroup; link?: LinkValue }>(b.items).flatMap((i) => [
+          groupImage(i.image, docs),
+          linkToContentNode(i.link, ctx),
+        ]),
       ]);
     case "newsletter":
       return helpers.compact([
@@ -140,7 +144,7 @@ export function extractPageBlockContent(
         paragraph(b.disclaimer as string),
       ]);
     case "stats":
-      return ((b.items as { value?: string; label?: string }[] | undefined) ?? []).flatMap((s) =>
+      return asArray<{ value?: string; label?: string }>(b.items).flatMap((s) =>
         helpers.compact([paragraph(s.value), paragraph(s.label)])
       );
     case "rawHtml":
@@ -186,7 +190,7 @@ function mergeStores(...stores: (DocStore | null)[]): DocStore {
 }
 
 const extractPageContent: ContentExtractor = async (values, ctx, { resolveDocs, helpers }) => {
-  const blocks = (values as { blocks?: Block[] }).blocks ?? [];
+  const blocks = asArray<Block>((values as { blocks?: unknown }).blocks);
   const locale = ctx.locale ?? I18N_CONFIG.defaultLocale;
 
   const globalIds = collectGlobalSectionIds(blocks);

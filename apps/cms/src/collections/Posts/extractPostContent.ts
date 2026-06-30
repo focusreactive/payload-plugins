@@ -3,6 +3,7 @@ import type { ContentExtractor, DocStore } from "@focus-reactive/payload-plugin-
 
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import {
+  asArray,
   buildRefQueries,
   linkToContentNode,
   richTextToContent,
@@ -33,10 +34,10 @@ const extractPostContent: ContentExtractor = async (values, ctx, { resolveDocs, 
     return typeof v === "string" ? v : undefined;
   };
 
-  const authorNodes = ((post.authors ?? []) as unknown[]).map((a) =>
+  const authorNodes = asArray<unknown>(post.authors).map((a) =>
     paragraph(named(a, "authors", "name"))
   );
-  const categoryNodes = ((post.categories ?? []) as unknown[]).map((c) =>
+  const categoryNodes = asArray<unknown>(post.categories).map((c) =>
     paragraph(named(c, "categories", "title"))
   );
 
@@ -47,14 +48,14 @@ const extractPostContent: ContentExtractor = async (values, ctx, { resolveDocs, 
     uploadImage(post.heroImage as Upload, docs),
     ...richTextToContent(post.content, linkCtx),
     heading(2, faq?.heading),
-    ...((faq?.items ?? []) as { question?: string | null; answer?: unknown }[]).flatMap((i) => [
+    ...asArray<{ question?: string | null; answer?: unknown }>(faq?.items).flatMap((i) => [
       heading(3, i.question),
       ...richTextToContent(i.answer, linkCtx),
     ]),
     paragraph(cta?.eyebrow),
     heading(2, cta?.heading),
     paragraph(cta?.description),
-    ...((cta?.actions ?? []) as LinkValue[]).map((a) => linkToContentNode(a, linkCtx)),
+    ...asArray<LinkValue>(cta?.actions).map((a) => linkToContentNode(a, linkCtx)),
     ...categoryNodes,
   ]);
 };
