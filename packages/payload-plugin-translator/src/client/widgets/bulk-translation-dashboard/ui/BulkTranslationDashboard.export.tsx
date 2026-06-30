@@ -1,6 +1,6 @@
 import type { AccessGuard } from "../../../../types/AccessGuard";
 import { AnyAccessGuard } from "../../../../server/shared";
-import type { RawPayloadComponentExport } from "../../../shared/types/PayloadComponentExport";
+import type { RawPayloadComponentExport } from "../../../../types/PayloadComponentExport";
 import { clientComponentPath } from "../../../shared/utils/componentPath";
 
 export class BulkDocumentTranslationDashboard implements RawPayloadComponentExport {

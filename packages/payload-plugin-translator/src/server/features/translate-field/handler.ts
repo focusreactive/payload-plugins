@@ -3,12 +3,12 @@ import type { CollectionSlug, PayloadRequest } from "payload";
 import { getByPath, ServerResponse } from "../../shared";
 import { translateContent } from "../../modules/translation-pipeline";
 
-import { FieldTranslationInputSchema, MAX_FIELD_VALUE_BYTES } from "./model";
 import type {
-  FieldTranslationConfig,
   FieldTranslationNotice,
   FieldTranslationResult,
-} from "./model";
+} from "../../../types/wire/field-translation";
+import { FieldTranslationInputSchema, MAX_FIELD_VALUE_BYTES } from "./model";
+import type { FieldTranslationConfig } from "./model";
 import { resolveFieldSubtree } from "./resolveFieldSubtree";
 
 const byteLength = (value: unknown): number =>

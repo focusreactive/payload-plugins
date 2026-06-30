@@ -1,6 +1,6 @@
-import { createTranslationRoutes } from "../../features/createTranslationRoutes";
+import { createTranslationRoutes } from "../../server/features/createTranslationRoutes";
 
-import type { LevelContext } from "./types";
+import type { LevelContext } from "../../server/modules/translation-levels";
 
 /**
  * Contribute the runner-agnostic document-translation API — the shared 6-route

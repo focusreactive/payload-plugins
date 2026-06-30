@@ -29,6 +29,49 @@ const TEST_SEAM = {
   message: "Test seam — only *.test.ts files may import it.",
 };
 
+// ── Framework-agnostic core for payload-plugin-translator ─────────────────
+// The @repo/translator-core extraction requires src/server/shared/field-traversal/**
+// and src/server/shared/lexical/** to stay framework-agnostic: no Payload, no
+// React/Next, and no upward edges into server/features or client. The cheap
+// in-repo backstop is src/server/shared/no-payload-boundary.test.ts; this lint
+// makes the boundary fail at edit time too. Test files in these zones are
+// exempt (the conformance test deliberately imports payload types).
+const TRANSLATOR = "packages/payload-plugin-translator";
+const TRANSLATOR_CORE_PATHS = [
+  { name: "payload", message: "translator-core must stay framework-agnostic — no payload import." },
+  {
+    name: "react",
+    message: "translator-core must stay framework-agnostic — no react import.",
+  },
+  {
+    name: "react-dom",
+    message: "translator-core must stay framework-agnostic — no react-dom import.",
+  },
+  { name: "next", message: "translator-core must stay framework-agnostic — no next import." },
+];
+const TRANSLATOR_CORE_PATTERNS = [
+  {
+    group: ["payload/*"],
+    message: "translator-core must stay framework-agnostic — no payload/* import.",
+  },
+  {
+    group: ["@payloadcms/*"],
+    message: "translator-core must stay framework-agnostic — no @payloadcms/* import.",
+  },
+  {
+    group: ["next/*"],
+    message: "translator-core must stay framework-agnostic — no next/* import.",
+  },
+  {
+    group: ["**/features/**", "**/server/features/**"],
+    message: "translator-core may not depend upward on server/features.",
+  },
+  {
+    group: ["**/client/**"],
+    message: "translator-core may not depend upward on client/.",
+  },
+];
+
 export default defineConfig({
   extends: [core, next],
   ignorePatterns: [
@@ -316,6 +359,33 @@ export default defineConfig({
     // (4) Test files may import anything, including the GA4 test seam.
     {
       files: [`${ANALYTICS}/src/**/*.test.ts`, `${ANALYTICS}/src/**/*.test.tsx`],
+      rules: { "no-restricted-imports": "off" },
+    },
+
+    // ── payload-plugin-translator: framework-agnostic core boundary ───────
+    // Same last-match-wins / options-REPLACE semantics as the analytics zones
+    // above: each region restates the full restriction set it needs.
+    // (T1) The two agnostic-core zones: no payload / react / next, no upward
+    //      edges into server/features or client.
+    {
+      files: [
+        `${TRANSLATOR}/src/server/shared/field-traversal/**/*.ts`,
+        `${TRANSLATOR}/src/server/shared/lexical/**/*.ts`,
+      ],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          { paths: TRANSLATOR_CORE_PATHS, patterns: TRANSLATOR_CORE_PATTERNS },
+        ],
+      },
+    },
+    // (T2) Test files in those zones are exempt — the conformance/boundary tests
+    //      deliberately import payload types to assert structural compatibility.
+    {
+      files: [
+        `${TRANSLATOR}/src/server/shared/field-traversal/**/*.test.ts`,
+        `${TRANSLATOR}/src/server/shared/lexical/**/*.test.ts`,
+      ],
       rules: { "no-restricted-imports": "off" },
     },
   ],

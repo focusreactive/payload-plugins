@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import type { CollectionSlug, Field } from "payload";
 
-import type { CollectionSchemaMap } from "../../features/translate-document";
+import type { CollectionSchemaMap } from "../../types/CollectionSchemaMap";
 
 import { fieldLevel } from "./fieldLevel";
-import type { LevelContext } from "./types";
+import type { LevelContext } from "../../server/modules/translation-levels";
 
 // Unit-level: assert which context primitives the level calls. The endpoint's
 // path / method / basePath / access wiring is covered by createFieldRoute's own

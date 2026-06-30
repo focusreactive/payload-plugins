@@ -9,7 +9,7 @@ import type {
   TaskRunnerFactory,
 } from "./server/modules/task-runner";
 import { TranslateDocumentHandler } from "./server/features/translate-document";
-import { documentLevel, collectionLevel } from "./server/modules/translation-levels";
+import { documentLevel, collectionLevel } from "./composition/levels";
 import type { TranslationLevel } from "./server/modules/translation-levels";
 import { PluginConfigBuilder } from "./server/modules/translation-levels/PluginConfigBuilder";
 import { normalizePath } from "./server/shared";
