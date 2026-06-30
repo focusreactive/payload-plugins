@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { draftMode } from "next/headers";
-import type { RequiredDataFromCollectionSlug } from "payload";
+import type { Payload, RequiredDataFromCollectionSlug } from "payload";
 import { cache } from "react";
 
 import { cacheTag } from "@/lib/utils/cacheTags";
@@ -10,30 +10,29 @@ import { getPayloadClient } from "@/dal/payload-client";
 
 import { getAllDocuments } from "./getAllDocuments";
 
-async function getPageBySlugQuery(
+export async function getPageBySlugQuery(
+  payload: Payload,
   pathSegmentsNorm: string[],
   resolvedLocale: Locale,
   draft: boolean
 ): Promise<RequiredDataFromCollectionSlug<"page"> | null> {
-  const fullPath = pathSegmentsNorm.join("/");
-  const targetUrl = `/${fullPath}`;
-  const payload = await getPayloadClient();
+  const targetUrl = `/${pathSegmentsNorm.join("/")}`;
+  const lastSegment = pathSegmentsNorm.at(-1)!;
 
-  const result = await getAllDocuments(payload, "page", {
-    depth: 4,
+  const docs = await getAllDocuments(payload, "page", {
+    depth: 3,
     draft,
     locale: resolvedLocale,
     overrideAccess: true,
     where: {
+      slug: { equals: lastSegment },
       ...(!draft && {
         _status: { equals: "published" },
       }),
     },
   });
 
-  const doc = result.find((p) => p?.breadcrumbs?.length && p.breadcrumbs.at(-1)?.url === targetUrl);
-
-  return doc ?? null;
+  return docs.find((p) => p?.breadcrumbs?.at(-1)?.url === targetUrl) ?? null;
 }
 
 export const getPageBySlug = cache(
@@ -45,9 +44,10 @@ export const getPageBySlug = cache(
     const resolvedLocale = await resolveLocale(locale);
     const pathSegmentsNorm = pathSegments.length === 0 ? ["home"] : [...pathSegments];
     const pathKey = pathSegmentsNorm.join("/");
+    const payload = await getPayloadClient();
 
     if (draft) {
-      return getPageBySlugQuery(pathSegmentsNorm, resolvedLocale, draft);
+      return getPageBySlugQuery(payload, pathSegmentsNorm, resolvedLocale, true);
     }
 
     const res = cacheTag({
@@ -57,7 +57,7 @@ export const getPageBySlug = cache(
     });
 
     return unstable_cache(
-      () => getPageBySlugQuery(pathSegmentsNorm, resolvedLocale, false),
+      () => getPageBySlugQuery(payload, pathSegmentsNorm, resolvedLocale, false),
       [pathKey, resolvedLocale],
       {
         tags: [res],
