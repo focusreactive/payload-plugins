@@ -1,17 +1,7 @@
 import type { Field } from "payload";
 
-import { CardsGridBlock } from "@/blocks/CardsGrid/config";
-import { CarouselBlock } from "@/blocks/Carousel/config";
-import { ChartBlock } from "@/blocks/Chart/config";
-import { ContentBlock } from "@/blocks/Content/config";
-import { CtaBandBlock } from "@/blocks/CtaBand/config";
-import { NewsletterBlock } from "@/blocks/Newsletter/config";
-import { StatsBlock } from "@/blocks/Stats/config";
-import { FaqBlock } from "@/blocks/Faq/config";
-import { HeroBlock } from "@/blocks/Hero/config";
-import { LogosBlock } from "@/blocks/Logos/config";
-import { RawHtmlBlock } from "@/blocks/RawHtml/config";
-import { TestimonialsListBlock } from "@/blocks/TestimonialsList/config";
+import { contentBlocks } from "@/blocks/contentBlocks";
+import { GlobalSectionSlotBlock } from "@/blocks/GlobalSectionSlot/config";
 import { generateSeoFields } from "@/lib/utils/seoFields";
 
 export function createBasePageFields({ withBlocksDefaultValue = false } = {}): Field[] {
@@ -51,22 +41,9 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
           fields: [
             {
               admin: {
-                initCollapsed: false,
+                initCollapsed: true,
               },
-              blocks: [
-                HeroBlock,
-                ContentBlock,
-                FaqBlock,
-                TestimonialsListBlock,
-                CardsGridBlock,
-                CarouselBlock,
-                LogosBlock,
-                ChartBlock,
-                CtaBandBlock,
-                NewsletterBlock,
-                StatsBlock,
-                RawHtmlBlock,
-              ],
+              blocks: [...contentBlocks, GlobalSectionSlotBlock],
               localized: true,
               name: "blocks",
               required: true,
@@ -82,7 +59,7 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
           label: { en: "Content", es: "Contenido" },
         },
         {
-          fields: generateSeoFields(),
+          fields: generateSeoFields({ generation: true }),
           label: { en: "SEO", es: "SEO" },
           localized: true,
           name: "meta",

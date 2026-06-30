@@ -2,22 +2,26 @@ import { heading, html, paragraph } from "@focus-reactive/payload-plugin-seo/con
 import type {
   ContentExtractor,
   ContentNode,
+  DocQuery,
   DocStore,
 } from "@focus-reactive/payload-plugin-seo/content";
 
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import {
   actionLinks,
+  asArray,
   buildRefQueries,
   groupImage,
   linkToContentNode,
+  relationId,
   richTextToContent,
   uploadImage,
 } from "@/lib/contentExtraction";
 import type { ImageGroup, LinkResolveCtx, LinkValue, Upload } from "@/lib/contentExtraction";
-import type { Page } from "@/payload-types";
+import type { GlobalSection, Page } from "@/payload-types";
 
 type Block = Page["blocks"][number];
+type GlobalBlock = NonNullable<GlobalSection["block"]>[number];
 
 export function extractPageBlockContent(
   block: Block,
@@ -53,9 +57,10 @@ export function extractPageBlockContent(
         paragraph(b.eyebrow as string),
         heading(2, b.heading as string),
         paragraph(b.description as string),
-        ...((b.items as { question?: string; answer?: unknown }[] | undefined) ?? []).flatMap(
-          (i) => [heading(3, i.question), ...richTextToContent(i.answer, ctx)]
-        ),
+        ...asArray<{ question?: string; answer?: unknown }>(b.items).flatMap((i) => [
+          heading(3, i.question),
+          ...richTextToContent(i.answer, ctx),
+        ]),
       ]);
     case "ctaBand":
       return [
@@ -71,20 +76,22 @@ export function extractPageBlockContent(
         paragraph(b.eyebrow as string),
         heading(2, b.heading as string),
         paragraph(b.description as string),
-        ...((b.slides as { image?: ImageGroup; text?: unknown }[] | undefined) ?? []).flatMap(
-          (s) => [groupImage(s.image, docs), ...richTextToContent(s.text, ctx)]
-        ),
+        ...asArray<{ image?: ImageGroup; text?: unknown }>(b.slides).flatMap((s) => [
+          groupImage(s.image, docs),
+          ...richTextToContent(s.text, ctx),
+        ]),
       ]);
     case "cardsGrid":
       return helpers.compact([
         paragraph(b.eyebrow as string),
         heading(2, b.heading as string),
         paragraph(b.description as string),
-        ...(
-          (b.items as
-            | { title?: string; description?: string; image?: ImageGroup; link?: LinkValue }[]
-            | undefined) ?? []
-        ).flatMap((c) => [
+        ...asArray<{
+          title?: string;
+          description?: string;
+          image?: ImageGroup;
+          link?: LinkValue;
+        }>(b.items).flatMap((c) => [
           heading(3, c.title),
           paragraph(c.description),
           groupImage(c.image, docs),
@@ -104,14 +111,13 @@ export function extractPageBlockContent(
         paragraph(b.eyebrow as string),
         heading(2, b.heading as string),
         paragraph(b.description as string),
-        ...(
-          (b.testimonialItems as { testimonial?: Testimonial | number | string }[] | undefined) ??
-          []
-        ).flatMap((t) => {
-          const ref = resolveTestimonial(t.testimonial);
-          const role = [ref?.position, ref?.company].filter(Boolean).join(", ");
-          return [paragraph(ref?.content), paragraph(ref?.author), paragraph(role)];
-        }),
+        ...asArray<{ testimonial?: Testimonial | number | string }>(b.testimonialItems).flatMap(
+          (t) => {
+            const ref = resolveTestimonial(t.testimonial);
+            const role = [ref?.position, ref?.company].filter(Boolean).join(", ");
+            return [paragraph(ref?.content), paragraph(ref?.author), paragraph(role)];
+          }
+        ),
       ]);
     }
     case "chart":
@@ -125,9 +131,10 @@ export function extractPageBlockContent(
     case "logos":
       return helpers.compact([
         paragraph(b.label as string),
-        ...((b.items as { image?: ImageGroup; link?: LinkValue }[] | undefined) ?? []).flatMap(
-          (i) => [groupImage(i.image, docs), linkToContentNode(i.link, ctx)]
-        ),
+        ...asArray<{ image?: ImageGroup; link?: LinkValue }>(b.items).flatMap((i) => [
+          groupImage(i.image, docs),
+          linkToContentNode(i.link, ctx),
+        ]),
       ]);
     case "newsletter":
       return helpers.compact([
@@ -137,20 +144,74 @@ export function extractPageBlockContent(
         paragraph(b.disclaimer as string),
       ]);
     case "stats":
-      return ((b.items as { value?: string; label?: string }[] | undefined) ?? []).flatMap((s) =>
+      return asArray<{ value?: string; label?: string }>(b.items).flatMap((s) =>
         helpers.compact([paragraph(s.value), paragraph(s.label)])
       );
     case "rawHtml":
       return helpers.compact([html(b.html as string)]);
+    case "globalSectionSlot": {
+      const gid = relationId(b.reference);
+      const resolved =
+        gid != null
+          ? (docs.get("globalSection", gid) as { block?: GlobalBlock[] } | undefined)
+          : undefined;
+      const inner = resolved?.block?.[0];
+
+      return inner ? extractPageBlockContent(inner as unknown as Block, ctx, docs, helpers) : [];
+    }
     default:
       return [];
   }
 }
 
+function collectGlobalSectionIds(blocks: Block[]): (string | number)[] {
+  const ids = new Set<string | number>();
+
+  for (const block of blocks) {
+    if (block.blockType === "globalSectionSlot") {
+      const id = relationId((block as { reference?: unknown }).reference);
+      if (id != null) ids.add(id);
+    }
+  }
+
+  return [...ids];
+}
+
+function mergeStores(...stores: (DocStore | null)[]): DocStore {
+  return {
+    get: (collection, id) => {
+      for (const store of stores) {
+        const doc = store?.get(collection, id);
+        if (doc) return doc;
+      }
+      return undefined;
+    },
+  };
+}
+
 const extractPageContent: ContentExtractor = async (values, ctx, { resolveDocs, helpers }) => {
-  const blocks = (values as { blocks?: Block[] }).blocks ?? [];
+  const blocks = asArray<Block>((values as { blocks?: unknown }).blocks);
   const locale = ctx.locale ?? I18N_CONFIG.defaultLocale;
-  const docs: DocStore = await resolveDocs(buildRefQueries(values));
+
+  const globalIds = collectGlobalSectionIds(blocks);
+  const phase1Queries: DocQuery[] = [...buildRefQueries(values)];
+  if (globalIds.length > 0) {
+    phase1Queries.push({
+      collection: "globalSection",
+      ids: globalIds,
+      select: ["block"],
+      depth: 0,
+    });
+  }
+  const docs1: DocStore = await resolveDocs(phase1Queries);
+
+  const globalDocs = globalIds
+    .map((id) => docs1.get("globalSection", id))
+    .filter(Boolean) as Record<string, unknown>[];
+  const phase2Queries: DocQuery[] = globalDocs.flatMap((doc) => buildRefQueries(doc));
+  const docs2: DocStore | null = phase2Queries.length > 0 ? await resolveDocs(phase2Queries) : null;
+
+  const docs = mergeStores(docs1, docs2);
   const linkCtx: LinkResolveCtx = { docs, locale };
 
   return blocks.flatMap((block) => extractPageBlockContent(block, linkCtx, docs, helpers));

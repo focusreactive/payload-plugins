@@ -2,6 +2,7 @@ import type { CollectionConfig, GroupField } from "payload";
 
 import { CardsGridInlineBlock } from "@/blocks/CardsGrid/inlineConfig";
 import { CodeInlineBlock } from "@/blocks/Code/inlineConfig";
+import { CtaBannerInlineBlock } from "@/blocks/CtaBanner/inlineConfig";
 import { LogosInlineBlock } from "@/blocks/Logos/inlineConfig";
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
@@ -30,6 +31,11 @@ export const Posts: CollectionConfig<"posts"> = {
     update: or(superAdmin, user, author),
   },
   admin: {
+    components: {
+      edit: {
+        PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
+      },
+    },
     defaultColumns: ["title", "slug", "updatedAt"],
     group: "Blog",
     livePreview: {
@@ -114,7 +120,12 @@ export const Posts: CollectionConfig<"posts"> = {
             {
               defaultValue: createLocalizedRichText(DEFAULT_VALUES.richText.content),
               editor: generateRichText("default", {
-                blocks: [CardsGridInlineBlock, LogosInlineBlock, CodeInlineBlock],
+                blocks: [
+                  CardsGridInlineBlock,
+                  LogosInlineBlock,
+                  CodeInlineBlock,
+                  CtaBannerInlineBlock,
+                ],
               }),
               label: {
                 en: "Content",
@@ -140,6 +151,7 @@ export const Posts: CollectionConfig<"posts"> = {
                   type: "text",
                 },
                 {
+                  admin: { initCollapsed: true },
                   fields: [
                     {
                       label: { en: "Question", es: "Pregunta" },
@@ -200,6 +212,7 @@ export const Posts: CollectionConfig<"posts"> = {
                   type: "textarea",
                 },
                 {
+                  admin: { initCollapsed: true },
                   fields: (link() as GroupField).fields,
                   label: { en: "Actions", es: "Acciones" },
                   localized: true,
@@ -219,7 +232,10 @@ export const Posts: CollectionConfig<"posts"> = {
           },
         },
         {
-          fields: generateSeoFields({ robotsDefault: "noindex" }),
+          fields: generateSeoFields({
+            generation: true,
+            robotsDefault: "noindex",
+          }),
           label: {
             en: "SEO",
             es: "SEO",

@@ -1,4 +1,5 @@
 import { cn } from "@/components/utils";
+import { proseVariants } from "./proseVariants";
 import { AlignVariant } from "./types";
 import type { IRichTextProps } from "./types";
 
@@ -7,11 +8,12 @@ export function RichText({
   richText,
   removeInnerMargins,
   alignVariant,
+  variant,
 }: IRichTextProps) {
   return (
     <div
       className={cn(
-        "text-foreground prose max-w-full dark:prose-invert lg:prose-xl",
+        proseVariants({ variant }),
         {
           "no-children-margins": removeInnerMargins,
           "text-center": alignVariant === AlignVariant.Center,

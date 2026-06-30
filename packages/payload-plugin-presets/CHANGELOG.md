@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-presets [0.12.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.11.1...@focus-reactive/payload-plugin-presets@0.12.0) (2026-06-28)
+
+
+### Features
+
+* **presets:** set initCollapsed prop to true for presetBlock field ([591715f](https://github.com/focusreactive/payload-plugins/commit/591715fa2d75aa2e613775654ddb5604ba565e82))
+
 ## @focus-reactive/payload-plugin-presets [0.11.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.11.0...@focus-reactive/payload-plugin-presets@0.11.1) (2026-06-18)
 
 

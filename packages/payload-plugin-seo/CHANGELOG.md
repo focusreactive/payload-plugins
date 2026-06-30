@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-seo [1.6.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.5.0...@focus-reactive/payload-plugin-seo@1.6.0) (2026-06-28)
+
+
+### Features
+
+* **seo:** add AI generation for SEO title and description fields ([bb8bc36](https://github.com/focusreactive/payload-plugins/commit/bb8bc36453a07aa4fbbd84946982479cda4030b2))
+
 # @focus-reactive/payload-plugin-seo [1.5.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.4.0...@focus-reactive/payload-plugin-seo@1.5.0) (2026-06-25)
 
 

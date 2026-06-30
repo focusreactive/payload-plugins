@@ -37,6 +37,13 @@ export interface SeoCollectionConfig {
    * "@focus-reactive/payload-plugin-seo/content" in an admin-mounted client module.
    */
   extractContentPath: string;
+  /**
+   * Server-side content extractor for on-publish generation. Same contract as the
+   * client ContentExtractor, but `toolkit.resolveDocs` is backed by the Payload Local API and
+   * `values` is the document being saved. May be the SAME function as the client extractor when
+   * it only reads ids + injected resolveDocs (it is runtime-agnostic).
+   */
+  serverExtractContent?: ContentExtractor;
 }
 
 export interface SeoSiteConfig {
@@ -45,12 +52,32 @@ export interface SeoSiteConfig {
   faviconUrl?: string;
 }
 
+export interface SeoGenerationConfig {
+  /** OpenAI chat model.
+   * @default "gpt-4o-mini"
+   */
+  model?: string;
+  /** Explicit API key.
+   * @default process.env.OPENAI_API_KEY
+   */
+  apiKey?: string;
+  /** Max chars of serialized page content sent to the model.
+   * @default 6000
+   */
+  maxContentChars?: number;
+  /** Override the system prompt for title generation. */
+  titlePrompt?: string;
+  /** Override the system prompt for description generation. */
+  descriptionPrompt?: string;
+}
+
 export interface SeoPluginConfig {
   disabled?: boolean;
   collections: SeoCollectionConfig[];
   site?: SeoSiteConfig;
   supportedLocales?: string[];
   translations?: Translations;
+  generation?: SeoGenerationConfig;
 }
 
 export interface DocQuery {

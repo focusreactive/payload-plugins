@@ -8,6 +8,10 @@ import type { ImageGroup, Upload, UploadField } from "./types";
 
 export const MEDIA_COLLECTION = "media";
 
+export function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
 function asId(value: unknown): number | null {
   return typeof value === "number" ? value : null;
 }
@@ -21,7 +25,7 @@ function mediaDoc(value: UploadField, docs: DocStore): Upload | null {
   return (docs.get(MEDIA_COLLECTION, id) as Upload | undefined) ?? null;
 }
 
-function relationId(v: unknown): string | number | null {
+export function relationId(v: unknown): string | number | null {
   if (typeof v === "number" || typeof v === "string") return v;
   if (typeof v === "object" && v !== null) {
     const id = (v as { id?: unknown }).id;
@@ -90,7 +94,7 @@ export function actionLinks(
   actions: LinkValue[] | null | undefined,
   ctx: LinkResolveCtx
 ): ContentNode[] {
-  return (actions ?? [])
+  return asArray<LinkValue>(actions)
     .map((a) => linkToContentNode(a, ctx))
     .filter((n): n is ContentNode => n !== null);
 }

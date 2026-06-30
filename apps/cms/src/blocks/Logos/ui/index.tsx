@@ -16,11 +16,14 @@ export function Logos({ items, alignVariant, label }: ILogosProps) {
       ) : null}
 
       <div
-        className={cn("flex flex-wrap items-center gap-x-[clamp(28px,5vw,64px)] gap-y-6", {
-          "justify-center": align === AlignVariant.Center,
-          "justify-end": align === AlignVariant.Right,
-          "justify-start": align === AlignVariant.Left,
-        })}
+        className={cn(
+          "flex flex-wrap items-center gap-x-[clamp(28px,5vw,64px)] gap-y-6 sm:gap-y-8",
+          {
+            "justify-center": align === AlignVariant.Center,
+            "justify-end": align === AlignVariant.Right,
+            "justify-start": align === AlignVariant.Left,
+          }
+        )}
       >
         {items.map((item, i) => (
           <div
@@ -29,7 +32,7 @@ export function Logos({ items, alignVariant, label }: ILogosProps) {
               "h-6 opacity-60 grayscale transition-[opacity,filter]",
               "motion-safe:duration-200 motion-safe:[transition-timing-function:var(--ease-out)]",
               "hover:opacity-100",
-              "sm:h-10"
+              "sm:h-7.5"
             )}
           >
             <LogoItem {...item} />

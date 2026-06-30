@@ -83,6 +83,7 @@ export const baseCollection = (tenantConfig?: TenantPluginConfig): CollectionCon
       label: "Mentions",
       admin: {
         readOnly: true,
+        initCollapsed: true,
       },
       fields: [
         {

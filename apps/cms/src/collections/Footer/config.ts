@@ -129,6 +129,7 @@ export const Footer: CollectionConfig<"footer"> = {
           type: "text",
         },
         {
+          admin: { initCollapsed: true },
           fields: [link({ appearances: false })],
           minRows: 1,
           name: "links",

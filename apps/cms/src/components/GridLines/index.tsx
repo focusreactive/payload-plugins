@@ -15,7 +15,7 @@ const LIT_RGB = "45, 212, 191";
 
 const REST_ALPHA = {
   dark: { dot: 0.11, line: 0.07 },
-  light: { dot: 0.17, line: 0.11 },
+  light: { dot: 0.07, line: 0.04 },
 } as const;
 const PEAK_ALPHA = { dot: 0.66, line: 0.5 };
 
@@ -29,9 +29,9 @@ export function GridLines({ tone = "dark", className }: GridLinesProps) {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const parent = canvas?.parentElement;
     const ctx = canvas?.getContext("2d");
-    if (!canvas || !parent || !ctx) return;
+    const host = canvas?.offsetParent as HTMLElement | null;
+    if (!canvas || !host || !ctx) return;
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const rest = REST_ALPHA[tone];
@@ -133,14 +133,14 @@ export function GridLines({ tone = "dark", className }: GridLinesProps) {
     resize();
 
     if (!reduceMotion) {
-      parent.addEventListener("pointermove", handleMove);
-      parent.addEventListener("pointerleave", handleLeave);
+      host.addEventListener("pointermove", handleMove);
+      host.addEventListener("pointerleave", handleLeave);
     }
 
     return () => {
       observer.disconnect();
-      parent.removeEventListener("pointermove", handleMove);
-      parent.removeEventListener("pointerleave", handleLeave);
+      host.removeEventListener("pointermove", handleMove);
+      host.removeEventListener("pointerleave", handleLeave);
       cancelAnimationFrame(rafId);
     };
   }, [tone]);
@@ -150,7 +150,7 @@ export function GridLines({ tone = "dark", className }: GridLinesProps) {
       ref={canvasRef}
       aria-hidden="true"
       className={cn(
-        "pointer-events-none absolute inset-0 size-full [mask-image:radial-gradient(ellipse_at_center,#fff_35%,transparent_78%)]",
+        "pointer-events-none absolute inset-0 size-full [mask-image:radial-gradient(ellipse_at_center,#fff_45%,transparent_80%)]",
         className
       )}
     />

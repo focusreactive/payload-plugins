@@ -29,15 +29,16 @@
     "morePages": "More pages"
   },
   "blog": {
-    "all": "All",
     "backToJournal": "Back to the Journal",
     "noResults": "No articles match your search.",
     "readTime": "{minutes} min",
     "readTimeLong": "{minutes} min read",
     "search": {
+      "all": "All",
       "label": "Search articles",
       "open": "Search articles",
-      "close": "Close search"
+      "close": "Close search",
+      "clear": "Clear search"
     },
     "newsletter": {
       "eyebrow": "The Journal, monthly",
