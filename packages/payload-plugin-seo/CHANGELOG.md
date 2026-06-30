@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-seo [1.6.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.6.0...@focus-reactive/payload-plugin-seo@1.6.1) (2026-06-30)
+
+
+### Bug Fixes
+
+* **seo:** align description length good range to 120-156 chars ([4c9d98e](https://github.com/focusreactive/payload-plugins/commit/4c9d98e4fc1d03733529e48dfed53d84ea46cb00))
+
 # @focus-reactive/payload-plugin-seo [1.6.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.5.0...@focus-reactive/payload-plugin-seo@1.6.0) (2026-06-28)
 
 
