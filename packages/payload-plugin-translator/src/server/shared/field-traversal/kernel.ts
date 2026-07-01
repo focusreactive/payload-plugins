@@ -1,18 +1,23 @@
-import type { BlocksField, Field, TabsField } from "payload";
+import { hasFields, isBlockItem, isTabsField } from "../guards";
+import { isObject } from "../utils";
 import {
   fieldAffectsData,
   fieldIsArrayType,
   fieldIsBlockType,
   fieldIsGroupType,
   tabHasName,
-} from "payload/shared";
-
-import { hasFields, isBlockItem, isTabsField } from "../guards";
-import { isObject } from "../utils";
-import type { FieldStructure, LeafField, TabScope } from "./types";
+} from "./predicates";
+import type {
+  BlocksFieldLike,
+  FieldLike,
+  FieldStructure,
+  LeafField,
+  TabScope,
+  TabsFieldLike,
+} from "./types";
 
 /**
- * Classify a single Payload {@link Field} into a discriminated {@link FieldStructure} — the
+ * Classify a single {@link FieldLike} into a discriminated {@link FieldStructure} — the
  * one place that encodes how Payload field types map onto data boundaries.
  *
  * Traversals switch on the result instead of re-deriving the predicate chain
@@ -50,7 +55,7 @@ import type { FieldStructure, LeafField, TabScope } from "./types";
  * @see {@link walkFields} — the recursive engine built on this classification.
  * @public
  */
-export function classifyField(field: Field): FieldStructure {
+export function classifyField(field: FieldLike): FieldStructure {
   if (isTabsField(field)) {
     return { kind: "tabs", field };
   }
@@ -81,7 +86,7 @@ export function classifyField(field: Field): FieldStructure {
  * Flatten a `tabs` field's tabs into {@link TabScope}s, absorbing the named/unnamed +
  * `hasFields` handling that field traversals would otherwise each repeat.
  *
- * @param field - A Payload `tabs` field.
+ * @param field - A {@link TabsFieldLike}.
  * @returns One {@link TabScope} per tab that has fields, in declaration order:
  * - a **named** tab → `{ named: true, tab }` — it opens a data boundary at `tab.name`, and
  *   the `NamedTab` is surfaced so callers can read its `name`/`fields`/config;
@@ -97,7 +102,7 @@ export function classifyField(field: Field): FieldStructure {
  * ```
  * @public
  */
-export function tabScopes(field: TabsField): TabScope[] {
+export function tabScopes(field: TabsFieldLike): TabScope[] {
   const scopes: TabScope[] = [];
   for (const tab of field.tabs) {
     if (tabHasName(tab)) scopes.push({ named: true, tab });
@@ -110,7 +115,7 @@ export function tabScopes(field: TabsField): TabScope[] {
  * Resolve the child `fields` for a single `blocks` element by matching its `blockType`
  * against the field's block definitions.
  *
- * @param field - A Payload `blocks` field carrying inline block definitions.
+ * @param field - A {@link BlocksFieldLike} carrying inline block definitions.
  * @param item - The data for one block element (expected to carry a `blockType` string).
  * @returns The matched block's `fields`, or `null` when `item` is not a block object or its
  * `blockType` matches no defined block.
@@ -127,7 +132,7 @@ export function tabScopes(field: TabsField): TabScope[] {
  * ```
  * @public
  */
-export function resolveBlockFields(field: BlocksField, item: unknown): Field[] | null {
+export function resolveBlockFields(field: BlocksFieldLike, item: unknown): FieldLike[] | null {
   if (!isBlockItem(item)) return null;
   const block = field.blocks.find((candidate) => candidate.slug === item.blockType);
   return block ? block.fields : null;

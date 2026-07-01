@@ -1,6 +1,6 @@
-import { BulkDocumentTranslationDashboard } from "../../../client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.export";
+import { BulkDocumentTranslationDashboard } from "../../client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.export";
 
-import type { TranslationLevel } from "./types";
+import type { TranslationLevel } from "../../server/modules/translation-levels";
 import { useDocTranslationApi } from "./useDocTranslationApi";
 
 /**

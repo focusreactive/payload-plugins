@@ -1,4 +1,4 @@
-import type { Field } from "payload";
+import type { LeafFieldLike } from "../../../shared/field-traversal/types";
 
 /**
  * Represents a field-level chunk containing schema metadata.
@@ -7,8 +7,8 @@ import type { Field } from "payload";
  * Contains a reference to the parent data object for later mutation.
  */
 export type FieldChunk = {
-  /** The field schema from Payload CMS */
-  schema: Field;
+  /** The leaf field schema (only `type`/`name` are read downstream). */
+  schema: LeafFieldLike;
   /** Reference to the parent data object (for mutation) */
   dataRef: Record<string, unknown>;
   /** The key in the dataRef object */

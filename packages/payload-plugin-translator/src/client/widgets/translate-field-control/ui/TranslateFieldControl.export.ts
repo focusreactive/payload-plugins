@@ -1,4 +1,4 @@
-import type { RawPayloadComponentExport } from "../../../shared/types/PayloadComponentExport";
+import type { RawPayloadComponentExport } from "../../../../types/PayloadComponentExport";
 import { clientComponentPath } from "../../../shared/utils/componentPath";
 
 /**

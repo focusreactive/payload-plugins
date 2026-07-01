@@ -3,7 +3,7 @@ import type { Config } from "payload";
 
 import { translatorPlugin } from "./plugin";
 import type { TranslatorPluginConfig } from "./plugin";
-import { documentLevel, fieldLevel } from "./server/modules/translation-levels";
+import { documentLevel, fieldLevel } from "./composition/levels";
 import { TranslateDocumentExport } from "./client/widgets/translate-document";
 import { BulkDocumentTranslationDashboard } from "./client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.export";
 

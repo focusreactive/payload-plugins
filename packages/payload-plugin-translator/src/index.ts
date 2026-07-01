@@ -20,7 +20,7 @@ export { createPayloadJobsRunner, createSyncRunner } from "./server/modules/task
 export type { TaskRunnerProvider, PayloadJobsRunnerOptions } from "./server/modules/task-runner";
 
 // Translation levels
-export { documentLevel, collectionLevel, fieldLevel } from "./server/modules/translation-levels";
+export { documentLevel, collectionLevel, fieldLevel } from "./composition/levels";
 export type { TranslationLevel } from "./server/modules/translation-levels";
 
 // Field config

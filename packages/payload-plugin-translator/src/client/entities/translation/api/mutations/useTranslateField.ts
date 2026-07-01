@@ -3,7 +3,7 @@ import { ofetch } from "ofetch";
 
 import { useTranslateKitConfig } from "../../../../app/config";
 import { handleNextApiError } from "../../../../shared/lib/errors/handleApiError";
-import type { FieldTranslationResult } from "../../../../../server/features/translate-field";
+import type { FieldTranslationResult } from "../../../../../types/wire/field-translation";
 
 type Variables = {
   collectionSlug: string;

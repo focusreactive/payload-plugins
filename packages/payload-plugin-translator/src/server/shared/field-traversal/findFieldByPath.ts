@@ -1,7 +1,5 @@
-import type { Field } from "payload";
-
 import { classifyField, resolveBlockFields, tabScopes } from "./kernel";
-import type { LeafField } from "./types";
+import type { FieldLike, LeafField } from "./types";
 
 /**
  * Outcome of navigating a field schema by a path of segment names (see {@link findFieldByPath}).
@@ -57,7 +55,7 @@ const childData = (data: unknown, key: string): unknown =>
  * @public
  */
 export function findFieldByPath(
-  fields: Field[],
+  fields: FieldLike[],
   segments: string[],
   data?: unknown
 ): FieldPathResult {

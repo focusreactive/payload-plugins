@@ -1,7 +1,13 @@
-import type { ArrayField, BlocksField, Field, NamedGroupField, NamedTab } from "payload";
-
 import { classifyField, tabScopes } from "./kernel";
-import type { ChildOutput, FieldWalker } from "./types";
+import type {
+  ArrayFieldLike,
+  BlocksFieldLike,
+  ChildOutput,
+  FieldLike,
+  FieldWalker,
+  GroupFieldLike,
+  TabLike,
+} from "./types";
 
 /**
  * Internal engine backing {@link walkFields}. Methods return `true` to mean "stop requested —
@@ -18,14 +24,14 @@ class FieldTreeWalker<Cursor extends object, Out> {
     this.walker = walker;
   }
 
-  run(fields: Field[], root: Cursor): Out | undefined {
+  run(fields: FieldLike[], root: Cursor): Out | undefined {
     const out: ChildOutput<Out>[] = [];
     if (this.level(fields, root, out)) return undefined;
     return this.walker.combine({ kind: "root", field: null }, out, root);
   }
 
   /** Walk one data level (root, a group/tab body, or a list element), pushing child outputs into `out`. */
-  private level(fields: Field[], cursor: Cursor, out: ChildOutput<Out>[]): boolean {
+  private level(fields: FieldLike[], cursor: Cursor, out: ChildOutput<Out>[]): boolean {
     for (const field of fields) {
       const structure = classifyField(field);
       switch (structure.kind) {
@@ -69,9 +75,9 @@ class FieldTreeWalker<Cursor extends object, Out> {
 
   /** Descend a single-object boundary (named group or named tab) and assemble it. */
   private object(
-    field: NamedGroupField | NamedTab,
+    field: GroupFieldLike | (TabLike & { name: string }),
     key: string,
-    childFields: Field[],
+    childFields: FieldLike[],
     cursor: Cursor,
     out: ChildOutput<Out>[]
   ): boolean {
@@ -89,7 +95,7 @@ class FieldTreeWalker<Cursor extends object, Out> {
 
   /** Descend an array/blocks boundary, assembling each element then the list itself. */
   private list(
-    field: ArrayField | BlocksField,
+    field: ArrayFieldLike | BlocksFieldLike,
     key: string,
     cursor: Cursor,
     out: ChildOutput<Out>[]
@@ -166,7 +172,7 @@ class FieldTreeWalker<Cursor extends object, Out> {
  * @public
  */
 export function walkFields<Cursor extends object, Out>(
-  fields: Field[],
+  fields: FieldLike[],
   root: Cursor,
   walker: FieldWalker<Cursor, Out>
 ): Out | undefined {

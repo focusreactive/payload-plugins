@@ -1,6 +1,6 @@
-import { createFieldRoute } from "../../features/translate-field";
+import { createFieldRoute } from "../../server/features/translate-field";
 
-import type { LevelContext, TranslationLevel } from "./types";
+import type { LevelContext, TranslationLevel } from "../../server/modules/translation-levels";
 
 /**
  * Field-level translation surface: a synchronous `POST {basePath}/field` endpoint that translates

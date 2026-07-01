@@ -1,6 +1,6 @@
-import { TranslateDocumentExport } from "../../../client/widgets/translate-document";
+import { TranslateDocumentExport } from "../../client/widgets/translate-document";
 
-import type { TranslationLevel } from "./types";
+import type { TranslationLevel } from "../../server/modules/translation-levels";
 import { useDocTranslationApi } from "./useDocTranslationApi";
 
 /**

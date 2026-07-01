@@ -3,7 +3,8 @@ import type { Payload, CollectionSlug } from "payload";
 import { APIError } from "payload";
 import { TranslateDocumentHandler } from "./handler";
 import type { TranslationProvider } from "../../modules/translation-providers";
-import type { CollectionSchemaMap, TranslateDocumentInput } from "./model";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
+import type { TranslateDocumentInput } from "./model";
 
 // Mock the translation core — the handler's unit tests isolate its
 // orchestration (fetch / strategy plumbing / save), not the pipeline itself.

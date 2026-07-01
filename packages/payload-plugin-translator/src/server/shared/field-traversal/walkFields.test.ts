@@ -1,8 +1,16 @@
-import type { ArrayField, BlocksField, Field, NamedGroupField, NamedTab } from "payload";
+import type { Field } from "payload";
 import { describe, expect, it } from "vitest";
 
 import { resolveBlockFields } from "./kernel";
-import type { ChildCursor, FieldWalker, LeafField } from "./types";
+import type {
+  ArrayFieldLike,
+  BlocksFieldLike,
+  ChildCursor,
+  FieldWalker,
+  GroupFieldLike,
+  LeafField,
+  TabLike,
+} from "./types";
 import { walkFields } from "./walkFields";
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
@@ -127,12 +135,15 @@ describe("walkFields", () => {
 
 type Cur = { data: Record<string, unknown>; path: string[] };
 
-const stdEnterObject = (field: NamedGroupField | NamedTab, c: Cur): Cur | "skip" => {
+const stdEnterObject = (
+  field: GroupFieldLike | (TabLike & { name: string }),
+  c: Cur
+): Cur | "skip" => {
   const value = c.data[field.name];
   return isRecord(value) ? { data: value, path: [...c.path, field.name] } : "skip";
 };
 
-const stdEnterList = (field: ArrayField | BlocksField, c: Cur): ChildCursor<Cur>[] => {
+const stdEnterList = (field: ArrayFieldLike | BlocksFieldLike, c: Cur): ChildCursor<Cur>[] => {
   const value = c.data[field.name];
   if (!Array.isArray(value)) return [];
   return value.flatMap((item, index) => {

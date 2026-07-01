@@ -3,7 +3,7 @@ import type { CollectionSlug, Field, PayloadRequest } from "payload";
 
 import type { AccessGuard } from "../../shared";
 import type { TranslationProvider } from "../../modules/translation-providers";
-import type { CollectionSchemaMap } from "../translate-document";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 
 import { createFieldRoute } from "./route";
 

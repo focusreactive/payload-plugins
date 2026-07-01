@@ -1,30 +1,121 @@
-import type {
-  ArrayField,
-  BlocksField,
-  Field,
-  FieldAffectingData,
-  NamedGroupField,
-  NamedTab,
-  TabAsField,
-  TabsField,
-} from "payload";
-
 /**
- * A data-affecting field the engine routes to `leaf`: a scalar/relational leaf, never a
- * container (`group`/`array`/`blocks`) and never a `TabAsField`. Narrowing `FieldAffectingData`
- * down to these members is what guarantees `name: string` — the raw union does NOT, because
- * an unnamed `TabAsField` carries `name?: string`.
+ * A block definition as this layer needs to read it: a `slug` to match a data element's
+ * `blockType` against, and the child `fields` to descend into. Structurally a superset-compatible
+ * shape of Payload's `Block` (Payload's concrete `Block` is assignable to this).
  *
  * @public
  */
-export type LeafField = Exclude<
-  FieldAffectingData,
-  ArrayField | BlocksField | NamedGroupField | TabAsField
->;
+export interface BlockLike {
+  slug: string;
+  fields: FieldLike[];
+}
 
 /**
- * Structural classification of a single Payload field — the one place that encodes
- * how Payload field types map onto data boundaries (the dispatch order
+ * A tab as this layer needs to read it: an optional `name` (present → it opens a data boundary;
+ * absent → it flattens into the parent scope) and its child `fields`. Payload's `Tab`
+ * (`NamedTab | UnnamedTab`) is assignable to this.
+ *
+ * @public
+ */
+export interface TabLike {
+  name?: string;
+  fields: FieldLike[];
+}
+
+/**
+ * The structural shape of a single field this traversal layer reads — a framework-agnostic
+ * superset that Payload's concrete `Field` union is assignable to. The layer only ever reads
+ * `type` (to classify), `name`/`localized`/`custom` (leaf data + translation config), and the
+ * container members `fields`/`blocks`/`tabs` (to descend). Nothing Payload-specific leaks in.
+ *
+ * @public
+ */
+export interface FieldLike {
+  type: string;
+  name?: string;
+  localized?: boolean;
+  custom?: Record<string, unknown>;
+  fields?: FieldLike[];
+  blocks?: BlockLike[];
+  tabs?: TabLike[];
+}
+
+/**
+ * A `group` field: a named data boundary whose child `fields` live one level down at `name`.
+ *
+ * @public
+ */
+export interface GroupFieldLike extends FieldLike {
+  type: "group";
+  name: string;
+  fields: FieldLike[];
+}
+
+/**
+ * An `array` field: a named, repeating data boundary. Its `fields` describe one element; the
+ * data carries N elements keyed by index.
+ *
+ * @public
+ */
+export interface ArrayFieldLike extends FieldLike {
+  type: "array";
+  name: string;
+  fields: FieldLike[];
+}
+
+/**
+ * A `blocks` field: a named, polymorphic repeating boundary. Each element's child fields are
+ * resolved per element by matching its `blockType` against `blocks[].slug`.
+ *
+ * @public
+ */
+export interface BlocksFieldLike extends FieldLike {
+  type: "blocks";
+  name: string;
+  blocks: BlockLike[];
+}
+
+/**
+ * A `tabs` field: carries `tabs` (not `fields`) and is non-data-affecting. Expand with
+ * `tabScopes` into named/unnamed {@link TabScope}s.
+ *
+ * @public
+ */
+export interface TabsFieldLike extends FieldLike {
+  type: "tabs";
+  tabs: TabLike[];
+}
+
+/**
+ * A data-affecting field the engine routes to `leaf`: a scalar/relational leaf, never a
+ * container (`group`/`array`/`blocks`/`tabs`). The `never` guards on the container members are
+ * what exclude containers — a `FieldLike` carrying `fields`/`blocks`/`tabs` is NOT assignable
+ * here, so leaf dispatch can never silently widen onto a container, and `name` is always present.
+ *
+ * @public
+ */
+export interface LeafFieldLike {
+  name: string;
+  type: string;
+  localized?: boolean;
+  custom?: Record<string, unknown>;
+  fields?: never;
+  blocks?: never;
+  tabs?: never;
+}
+
+/**
+ * Back-compat alias for {@link LeafFieldLike}. Existing consumers (and `index.ts`) re-export
+ * `LeafField`; the leaf is now defined structurally rather than as a narrowing of Payload's
+ * `FieldAffectingData`.
+ *
+ * @public
+ */
+export type LeafField = LeafFieldLike;
+
+/**
+ * Structural classification of a single field — the one place that encodes
+ * how field types map onto data boundaries (the dispatch order
  * `tabs → transparent → group → array → blocks → leaf`).
  *
  * Consumed by {@link FieldWalker}/`walkFields` (the exhaustive, data-parallel walks)
@@ -42,23 +133,25 @@ export type LeafField = Exclude<
  * @public
  */
 export type FieldStructure =
-  | { kind: "tabs"; field: TabsField }
-  | { kind: "transparent"; fields: Field[] }
+  | { kind: "tabs"; field: TabsFieldLike }
+  | { kind: "transparent"; fields: FieldLike[] }
   | { kind: "presentational" }
-  | { kind: "group"; name: string; fields: Field[]; field: NamedGroupField }
-  | { kind: "array"; name: string; fields: Field[]; field: ArrayField }
-  | { kind: "blocks"; name: string; field: BlocksField }
-  | { kind: "leaf"; name: string; field: LeafField };
+  | { kind: "group"; name: string; fields: FieldLike[]; field: GroupFieldLike }
+  | { kind: "array"; name: string; fields: FieldLike[]; field: ArrayFieldLike }
+  | { kind: "blocks"; name: string; field: BlocksFieldLike }
+  | { kind: "leaf"; name: string; field: LeafFieldLike };
 
 /**
- * A tab flattened by `tabScopes`. A named tab opens a data boundary, so its `NamedTab`
+ * A tab flattened by `tabScopes`. A named tab opens a data boundary, so its {@link TabLike}
  * is surfaced (the walker passes it to `enterObject`, and `tab.name` is the data key).
  * An unnamed tab flattens into the parent data scope, so only its `fields` are needed.
  *
  * @see {@link tabScopes}
  * @public
  */
-export type TabScope = { named: true; tab: NamedTab } | { named: false; fields: Field[] };
+export type TabScope =
+  | { named: true; tab: TabLike & { name: string } }
+  | { named: false; fields: FieldLike[] };
 
 /**
  * Control signal a walker callback can return instead of descending.
@@ -80,7 +173,7 @@ export type WalkSignal = "skip" | "stop";
 export interface ChildCursor<Cursor extends object> {
   cursor: Cursor;
   /** Child fields to walk under this item. For `blocks`, the resolved `block.fields`. */
-  fields: Field[];
+  fields: FieldLike[];
   /** Index/key this child sits at; surfaced back to `combine`. */
   key: string | number;
 }
@@ -99,9 +192,9 @@ export interface ChildCursor<Cursor extends object> {
  */
 export type ContainerInfo =
   | { kind: "root"; field: null }
-  | { kind: "object"; field: NamedGroupField | NamedTab; key: string }
-  | { kind: "list"; field: ArrayField | BlocksField; key: string }
-  | { kind: "element"; field: ArrayField | BlocksField; key: string | number };
+  | { kind: "object"; field: GroupFieldLike | (TabLike & { name: string }); key: string }
+  | { kind: "list"; field: ArrayFieldLike | BlocksFieldLike; key: string }
+  | { kind: "element"; field: ArrayFieldLike | BlocksFieldLike; key: string | number };
 
 /**
  * A child's assembled output, tagged with the key it sat at within its parent. Passed to
@@ -156,16 +249,22 @@ export interface ChildOutput<Out> {
  */
 export interface FieldWalker<Cursor extends object, Out> {
   /** Enter a single-object boundary (named `group` or named tab). Return the child cursor, or a signal. */
-  enterObject(field: NamedGroupField | NamedTab, cursor: Cursor): Cursor | WalkSignal;
+  enterObject(
+    field: GroupFieldLike | (TabLike & { name: string }),
+    cursor: Cursor
+  ): Cursor | WalkSignal;
   /** Enter an `array`/`blocks` boundary. Return one {@link ChildCursor} per element, or a signal. */
-  enterList(field: ArrayField | BlocksField, cursor: Cursor): ChildCursor<Cursor>[] | WalkSignal;
+  enterList(
+    field: ArrayFieldLike | BlocksFieldLike,
+    cursor: Cursor
+  ): ChildCursor<Cursor>[] | WalkSignal;
   /**
-   * Visit a data-affecting leaf. `field` is a {@link LeafField} — the engine has already
+   * Visit a data-affecting leaf. `field` is a {@link LeafFieldLike} — the engine has already
    * resolved it via the `fieldAffectsData` guard and excluded containers/tabs, so `field.name`
-   * is always present and callers never touch the raw `Field` union. Return its output, or
+   * is always present and callers never touch the raw field union. Return its output, or
    * `undefined` to drop it.
    */
-  leaf(field: LeafField, cursor: Cursor): Out | undefined;
+  leaf(field: LeafFieldLike, cursor: Cursor): Out | undefined;
   /**
    * Assemble a container from its children's outputs (called bottom-up). Build-tree
    * callers reconstruct here; collectors return `undefined`. Return `undefined` to drop

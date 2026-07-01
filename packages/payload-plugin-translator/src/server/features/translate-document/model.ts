@@ -1,4 +1,4 @@
-import type { CollectionSlug, Field } from "payload";
+import type { CollectionSlug } from "payload";
 import type { ID } from "../../modules/task-runner/types";
 import type { TranslationStrategyName } from "../../modules/translation-pipeline/strategies";
 
@@ -20,9 +20,3 @@ export type TranslateDocumentInput = {
 export type TranslateDocumentOutput = {
   success: true;
 };
-
-/**
- * Map of collection slug to original field schema.
- * Used to access original schemas before Payload sanitization.
- */
-export type CollectionSchemaMap = Map<CollectionSlug, Field[]>;

@@ -1,6 +1,7 @@
 import type { Field } from "payload";
 
-import { isEmpty, isObject } from "../../../../shared";
+import { isEmpty } from "../../../../shared/utils/isEmpty";
+import { isObject } from "../../../../shared/utils/isObject";
 import type { ChildCursor, FieldWalker } from "../../../../shared/field-traversal";
 import {
   matchElementById,

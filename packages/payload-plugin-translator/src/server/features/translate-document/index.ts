@@ -1,2 +1,2 @@
 export { TranslateDocumentHandler } from "./handler";
-export type { CollectionSchemaMap } from "./model";
+export type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
