@@ -6,6 +6,7 @@ export const statusVar = cva("", {
       good: "[--seo-c:var(--color-seo-good)]",
       warn: "[--seo-c:var(--color-seo-warn)]",
       bad: "[--seo-c:var(--color-seo-bad)]",
+      idle: "[--seo-c:var(--color-neutral-300)]",
     },
   },
 });

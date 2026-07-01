@@ -57,6 +57,7 @@ const input: AnalysisInput = {
     "Discover the best running shoes for every type of runner. Expert picks, comparisons, and buying guides to help you find your perfect pair of running shoes.",
   contentHtml,
   keyphrase: "running shoes",
+  keyphrases: [{ text: "running shoes", synonyms: [] }],
   locale: "en_US",
   site: { name: "RunShop", baseUrl: "https://runshop.com" },
   has: {

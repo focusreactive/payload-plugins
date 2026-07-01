@@ -4,18 +4,22 @@ import { useAllFormFields, useConfig, useDebounce, useLocale } from "@payloadcms
 import { reduceFieldsToValues } from "payload/shared";
 import { useCallback, useMemo, useRef } from "react";
 import { resolveContentExtractor } from "../../content/registry";
-import type { AnalysisInput } from "../../engine/types/analysis";
+import type { AnalysisInput, KeyphraseInput } from "../../engine/types/analysis";
 import type { SeoFieldPaths } from "../../types/config";
 import { buildAnalysisInput } from "./build-analysis-input";
 
 const erroredPaths = new Set<string>();
 const DEBOUNCE_MS = 1000;
 
+export function keyphraseSignature(keyphrases: KeyphraseInput[]): string {
+  return JSON.stringify(keyphrases.map((k) => [k.text, k.synonyms]));
+}
+
 export interface LiveDocArgs {
   collectionSlug: string;
   fields: SeoFieldPaths;
   site: { name: string; baseUrl: string };
-  keyphrase: string;
+  keyphrases: KeyphraseInput[];
   enabled?: boolean;
   extractContentPath: string;
 }
@@ -29,7 +33,7 @@ export function useLiveDocument({
   collectionSlug: _collectionSlug,
   fields,
   site,
-  keyphrase,
+  keyphrases,
   enabled = true,
   extractContentPath,
 }: LiveDocArgs): UseLiveDocumentResult {
@@ -38,7 +42,7 @@ export function useLiveDocument({
   const { config } = useConfig();
 
   const debouncedFields = useDebounce(formFields, DEBOUNCE_MS);
-  const debouncedKeyphrase = useDebounce(keyphrase, DEBOUNCE_MS);
+  const debouncedKeyphrases = useDebounce(keyphrases, DEBOUNCE_MS);
   const apiRoute = config.routes.api;
 
   const values = useMemo<Record<string, unknown>>(
@@ -47,15 +51,20 @@ export function useLiveDocument({
   );
 
   const signature = useMemo(
-    () => JSON.stringify({ values, keyphrase: debouncedKeyphrase, locale: locale?.code ?? null }),
-    [values, debouncedKeyphrase, locale]
+    () =>
+      JSON.stringify({
+        values,
+        keyphrases: keyphraseSignature(debouncedKeyphrases),
+        locale: locale?.code ?? null,
+      }),
+    [values, debouncedKeyphrases, locale]
   );
 
   const liveRef = useRef({
     formFields,
     values,
-    keyphrase,
-    debouncedKeyphrase,
+    keyphrases,
+    debouncedKeyphrases,
     locale,
     fields,
     site,
@@ -65,8 +74,8 @@ export function useLiveDocument({
   liveRef.current = {
     formFields,
     values,
-    keyphrase,
-    debouncedKeyphrase,
+    keyphrases,
+    debouncedKeyphrases,
     locale,
     fields,
     site,
@@ -94,7 +103,7 @@ export function useLiveDocument({
         locale: s.locale,
         payloadLocale: s.locale?.code,
         apiRoute: s.apiRoute,
-        keyphrase: live ? s.keyphrase : s.debouncedKeyphrase,
+        keyphrases: live ? s.keyphrases : s.debouncedKeyphrases,
         fields: s.fields,
         site: s.site,
         extractor,

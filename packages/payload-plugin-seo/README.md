@@ -659,7 +659,7 @@ The drawer presents six tabs, all derived from a single in-browser Yoast analysi
 
 | Tab                       | What it checks                                                                                                                                     |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Keyphrase**             | Focus keyphrase usage — in title, slug, meta description, first paragraph, density, image alt, synonyms. Enter a keyphrase to unlock these checks. |
+| **Keyphrase**             | Two-pane keyphrase workspace: a **focus keyphrase** — usage in title, slug, meta description, first paragraph, density, image alt, synonyms — plus up to **four related keyphrases** (five total), each with its own synonyms and independent Yoast checks. Only the focus keyphrase's result feeds the overall score; related keyphrases are scored side-by-side for reference and never affect it. Enter a keyphrase to unlock these checks. |
 | **On-page SEO**           | Title width, meta description presence/length, internal & outbound links, heading structure.                                                       |
 | **Readability**           | Sentence/paragraph length, transition words, passive voice, consecutive sentences.                                                                 |
 | **Inclusive**             | Flags potentially exclusionary or non-inclusive language.                                                                                          |
@@ -667,6 +667,17 @@ The drawer presents six tabs, all derived from a single in-browser Yoast analysi
 | **Search result preview** | Live Google SERP preview (desktop + mobile) with keyphrase highlighting, built on `@yoast/search-metadata-previews`.                               |
 
 **Without a keyphrase:** the drawer still runs and the On-page, Readability, Inclusive, Content vitals, and SERP tabs all populate. Only the keyphrase-specific assessments wait until you type a focus keyphrase and analysis runs.
+
+### Keyphrase tab
+
+The **Keyphrase** tab is a master–detail workspace: a rail lists all configured keyphrases (the focus keyphrase first, then any related ones), and selecting an entry shows its detail pane — the keyphrase text, its synonyms, and its own Yoast result.
+
+- **Focus keyphrase** — the first entry. It runs the full `SeoAssessor` (the same checks listed above), and its result is the only one that feeds the drawer's overall score badge.
+- **Related keyphrases** — up to four more entries (five total, a fixed cap with no config option). Each runs Yoast's `RelatedKeywordAssessor`, a smaller check set built for secondary keyphrases (title, meta description, first paragraph, image alt, keyphrase density, and prominent-word coverage). Related results are shown for reference only — they never affect the overall score.
+- **Synonyms** — each keyphrase (focus or related) can have its own synonym list; synonyms are folded into that keyphrase's own analysis pass, the same way they would be for a single Yoast focus keyphrase.
+- **SERP highlighting** — the search-result preview bolds only the focus keyphrase and its synonyms; related keyphrases are not highlighted there.
+
+**Persistence:** keyphrases are **not stored in the database** — there are no new fields, collections, or globals. The full list (text + synonyms per entry) is kept in the browser's `localStorage`, keyed per collection + document + locale, and is pruned of empty entries on save. Switching documents or locales loads (or starts) a separate list; clearing browser storage resets it.
 
 ---
 

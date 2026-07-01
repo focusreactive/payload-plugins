@@ -4,6 +4,7 @@ import { Drawer } from "@payloadcms/ui";
 import { Loader2 } from "lucide-react";
 import { memo, useState } from "react";
 import type { AnalysisResult, TotalStatus } from "../../engine/types/analysis";
+import type { KeyphraseEntry } from "./keyphraseState";
 import { Header } from "./components/Header";
 import { TabsNav } from "./TabsNav";
 import type { TabKey } from "./TabsNav";
@@ -18,29 +19,44 @@ import "../../admin.css";
 
 export interface SeoDrawerProps {
   drawerSlug: string;
-  keyphrase: string;
-  setKeyphrase: (keyphrase: string) => void;
+  keyphrases: KeyphraseEntry[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
   result: AnalysisResult | null;
   analyzing: boolean;
-  keyphrasePending: boolean;
-  analyzeNow: () => void;
+  onAddRelated: () => void;
+  onTextChange: (id: string, text: string) => void;
+  onAddSynonym: (id: string, syn: string) => void;
+  onRemoveSynonym: (id: string, index: number) => void;
+  onRemove: (id: string) => void;
+  onSetFocus: (id: string) => void;
+  isDuplicate: (id: string, text: string) => boolean;
   site: { name: string; baseUrl: string; faviconUrl: string };
 }
 
 export const SeoDrawer = memo(function SeoDrawer({
   drawerSlug,
-  keyphrase,
-  setKeyphrase,
   result,
-  analyzing,
-  keyphrasePending,
-  analyzeNow,
   site,
+  analyzing,
+  isDuplicate,
+  keyphrases,
+  onAddRelated,
+  onAddSynonym,
+  onRemove,
+  onRemoveSynonym,
+  onSelect,
+  onSetFocus,
+  onTextChange,
+  selectedId,
 }: SeoDrawerProps) {
   const [tab, setTab] = useState<TabKey>("keyphrase");
 
   const total = result?.overall.seoScore ?? 0;
   const totalStatus: TotalStatus = result ? result.overall.status : "idle";
+
+  const focusKeyphrase = keyphrases[0]?.text ?? "";
+  const focusSynonyms = keyphrases[0]?.synonyms ?? [];
 
   return (
     <Drawer
@@ -51,8 +67,8 @@ export const SeoDrawer = memo(function SeoDrawer({
       <div className="seo-root relative text-neutral-800" data-status={totalStatus}>
         <TabsNav active={tab} onChange={setTab} />
 
-        <div className="py-[18px]">
-          {result === null ? (
+        <div>
+          {result === null && tab !== "keyphrase" ? (
             <div
               className="flex items-center gap-[8px] text-neutral-500 text-[13px]"
               role="status"
@@ -65,22 +81,33 @@ export const SeoDrawer = memo(function SeoDrawer({
             <>
               {tab === "keyphrase" && (
                 <KeyphraseTab
-                  data={result.keyphrase}
-                  keyphrase={keyphrase}
-                  setKeyphrase={setKeyphrase}
+                  keyphrases={keyphrases}
+                  selectedId={selectedId}
+                  onSelect={onSelect}
+                  result={result}
                   analyzing={analyzing}
-                  keyphrasePending={keyphrasePending}
-                  analyzeNow={analyzeNow}
+                  onAddRelated={onAddRelated}
+                  onTextChange={onTextChange}
+                  onAddSynonym={onAddSynonym}
+                  onRemoveSynonym={onRemoveSynonym}
+                  onRemove={onRemove}
+                  onSetFocus={onSetFocus}
+                  isDuplicate={isDuplicate}
                 />
               )}
-              {tab === "onpage" && <OnPageTab data={result.onPage} />}
-              {tab === "readability" && <ReadabilityTab data={result.readability} />}
-              {tab === "inclusive" && <InclusiveTab data={result.inclusive} />}
-              {tab === "vitals" && (
+              {tab === "onpage" && result && <OnPageTab data={result.onPage} />}
+              {tab === "readability" && result && <ReadabilityTab data={result.readability} />}
+              {tab === "inclusive" && result && <InclusiveTab data={result.inclusive} />}
+              {tab === "vitals" && result && (
                 <VitalsTab data={result.vitals} onRequestKeyphrase={() => setTab("keyphrase")} />
               )}
-              {tab === "serp" && (
-                <SerpTab data={result.serp} keyphrase={keyphrase} faviconUrl={site.faviconUrl} />
+              {tab === "serp" && result && (
+                <SerpTab
+                  data={result.serp}
+                  keyphrase={focusKeyphrase}
+                  synonyms={focusSynonyms}
+                  faviconUrl={site.faviconUrl}
+                />
               )}
             </>
           )}

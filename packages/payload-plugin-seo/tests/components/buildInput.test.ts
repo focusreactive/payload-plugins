@@ -14,7 +14,7 @@ describe("buildInput", () => {
     const withSeo = buildInput({
       values: { meta: { title: "SEO Title" }, title: "Doc Title" },
       locale: "en",
-      keyphrase: "k",
+      keyphrases: [{ text: "k", synonyms: [] }],
       fields: FIELDS,
       site: SITE,
       contentHtml: "<p>content</p>",
@@ -24,7 +24,7 @@ describe("buildInput", () => {
     const fallback = buildInput({
       values: { title: "Doc Title" },
       locale: "en",
-      keyphrase: "k",
+      keyphrases: [{ text: "k", synonyms: [] }],
       fields: FIELDS,
       site: SITE,
       contentHtml: "<p>content</p>",
@@ -36,7 +36,7 @@ describe("buildInput", () => {
     const input = buildInput({
       values: { slug: "my-slug", meta: { description: "Desc" } },
       locale: "en",
-      keyphrase: "k",
+      keyphrases: [{ text: "k", synonyms: [] }],
       fields: FIELDS,
       site: SITE,
       contentHtml: "<p>content</p>",
@@ -51,7 +51,7 @@ describe("buildInput", () => {
       buildInput({
         values: {},
         locale: locale as never,
-        keyphrase: "k",
+        keyphrases: [{ text: "k", synonyms: [] }],
         fields: FIELDS,
         site: SITE,
         contentHtml: "",
@@ -66,7 +66,7 @@ describe("buildInput", () => {
     const present = buildInput({
       values: { meta: { title: "T" } },
       locale: "en",
-      keyphrase: "k",
+      keyphrases: [{ text: "k", synonyms: [] }],
       fields: FIELDS,
       site: SITE,
       contentHtml: "<p>content</p>",
@@ -81,7 +81,7 @@ describe("buildInput", () => {
     const sparse = buildInput({
       values: {},
       locale: "en",
-      keyphrase: "k",
+      keyphrases: [{ text: "k", synonyms: [] }],
       fields: {},
       site: SITE,
       contentHtml: "<p>content</p>",
@@ -95,7 +95,7 @@ describe("buildInput", () => {
     const empty = buildInput({
       values: {},
       locale: "en",
-      keyphrase: "k",
+      keyphrases: [{ text: "k", synonyms: [] }],
       fields: FIELDS,
       site: SITE,
       contentHtml: "",
@@ -105,7 +105,7 @@ describe("buildInput", () => {
     const filled = buildInput({
       values: {},
       locale: "en",
-      keyphrase: "k",
+      keyphrases: [{ text: "k", synonyms: [] }],
       fields: FIELDS,
       site: SITE,
       contentHtml: "<p>x</p>",
@@ -117,12 +117,44 @@ describe("buildInput", () => {
     const input = buildInput({
       values: {},
       locale: "en",
-      keyphrase: "focus kp",
+      keyphrases: [{ text: "focus kp", synonyms: [] }],
       fields: FIELDS,
       site: SITE,
       contentHtml: "<p>content</p>",
     });
     expect(input.keyphrase).toBe("focus kp");
     expect(input.site).toEqual(SITE);
+  });
+});
+
+describe("buildInput multi-keyphrase", () => {
+  it("focus keyphrase is keyphrases[0]; list is passed through", () => {
+    const out = buildInput({
+      values: { title: "T", slug: "s" },
+      contentHtml: "<p>x</p>",
+      locale: "en",
+      keyphrases: [
+        { text: "payload cms", synonyms: ["payloadcms"] },
+        { text: "headless cms", synonyms: [] },
+      ],
+      fields: { slug: "slug" },
+      site: { name: "n", baseUrl: "" },
+    });
+    expect(out.keyphrase).toBe("payload cms");
+    expect(out.keyphrases).toHaveLength(2);
+    expect(out.keyphrases[0].synonyms).toEqual(["payloadcms"]);
+  });
+
+  it("empty list yields empty focus keyphrase", () => {
+    const out = buildInput({
+      values: {},
+      contentHtml: "",
+      locale: "en",
+      keyphrases: [],
+      fields: {},
+      site: { name: "", baseUrl: "" },
+    });
+    expect(out.keyphrase).toBe("");
+    expect(out.keyphrases).toEqual([]);
   });
 });

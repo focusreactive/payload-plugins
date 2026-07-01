@@ -123,4 +123,77 @@ describe("highlightKeyphrase", () => {
     // The entire text comes back as a single segment
     expect(result).toContain("Nothing here matches");
   });
+
+  // Synonyms -----------------------------------------------------------
+
+  it("defaults to no synonym highlighting when synonyms arg is omitted", () => {
+    const result = highlightKeyphrase("Buy running shoes today", "running shoes");
+    const strongEls = result.filter(isStrongElement);
+    expect(strongEls).toHaveLength(1);
+    expect(strongChildren(strongEls[0])).toBe("running shoes");
+  });
+
+  it("highlights a synonym substring even when the focus keyphrase is absent", () => {
+    const result = highlightKeyphrase("Buy sneakers today", "running shoes", ["sneakers"]);
+    const strongEl = result.find(isStrongElement);
+    expect(strongEl).toBeDefined();
+    expect(strongChildren(strongEl)).toBe("sneakers");
+  });
+
+  it("highlights both the focus keyphrase and a synonym in the same text", () => {
+    const result = highlightKeyphrase("Buy running shoes or sneakers today", "running shoes", [
+      "sneakers",
+    ]);
+    const strongEls = result.filter(isStrongElement);
+    expect(strongEls).toHaveLength(2);
+    const texts = strongEls.map(strongChildren);
+    expect(texts).toContain("running shoes");
+    expect(texts).toContain("sneakers");
+  });
+
+  it("highlights multiple synonyms independently", () => {
+    const result = highlightKeyphrase("sneakers and trainers and pumps", "", [
+      "sneakers",
+      "trainers",
+      "pumps",
+    ]);
+    const strongEls = result.filter(isStrongElement);
+    expect(strongEls).toHaveLength(3);
+  });
+
+  it("ignores blank/whitespace-only synonyms", () => {
+    const result = highlightKeyphrase("Hello world", "", ["   ", ""]);
+    expect(result).toEqual(["Hello world"]);
+  });
+
+  it("treats regex metacharacters in a synonym literally — does not throw", () => {
+    expect(() => highlightKeyphrase("hello (world.*) test", "", ["(world.*)"])).not.toThrow();
+  });
+
+  it("matches a synonym with regex metacharacters when literally present", () => {
+    const result = highlightKeyphrase("hello (world.*) test", "", ["(world.*)"]);
+    const strongEl = result.find(isStrongElement);
+    expect(strongEl).toBeDefined();
+    expect(strongChildren(strongEl)).toBe("(world.*)");
+  });
+
+  it("does not duplicate-highlight overlapping matches between keyphrase and a synonym that contains it", () => {
+    // "running shoes" is a substring of the synonym match target "running shoes for men"
+    const result = highlightKeyphrase("Buy running shoes for men today", "running shoes", [
+      "running shoes for men",
+    ]);
+    const strongEls = result.filter(isStrongElement);
+    // The longer synonym match should win for that span; no leftover unmatched overlap duplication
+    expect(strongEls.length).toBeGreaterThan(0);
+    const combined = strongEls.map(strongChildren).join("");
+    expect(combined.toLowerCase()).toContain("running shoes for men");
+  });
+
+  it("each synonym-matched strong element has a defined, distinct key", () => {
+    const result = highlightKeyphrase("sneakers and sneakers again", "", ["sneakers"]);
+    const strongEls = result.filter(isStrongElement);
+    const keys = strongEls.map((el) => el.key);
+    expect(keys.every((k) => k !== null && k !== undefined)).toBe(true);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
 });

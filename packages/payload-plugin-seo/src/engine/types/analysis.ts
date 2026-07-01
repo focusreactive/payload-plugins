@@ -73,9 +73,21 @@ export interface CategoryResult {
   checks: CheckResult[];
 }
 
+export interface KeyphraseInput {
+  text: string;
+  synonyms: string[];
+}
+
+export interface RelatedKeyphraseResult {
+  text: string;
+  result: CategoryResult;
+}
+
 export interface AnalysisResult {
   overall: { seoScore: number; status: Status };
+  keyphraseText: string;
   keyphrase: CategoryResult;
+  relatedKeyphrases: RelatedKeyphraseResult[];
   onPage: CategoryResult;
   readability: CategoryResult;
   inclusive: {
@@ -94,6 +106,7 @@ export interface AnalysisInput {
   description: string;
   contentHtml: string;
   keyphrase: string;
+  keyphrases: KeyphraseInput[];
   locale: string;
   site: { name: string; baseUrl: string };
   has: {

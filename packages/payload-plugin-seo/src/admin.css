@@ -102,6 +102,10 @@
   --seo-bad-100: #311714;
 }
 
+.seo-root button {
+  border: none;
+}
+
 .seo-root [role="tab"] {
   border: 0;
   border-bottom: 2px solid transparent;
