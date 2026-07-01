@@ -4,6 +4,7 @@ import type {
   HeadingNode,
   HeadingStructure,
 } from "../../../types/analysis";
+import { deriveHeadingIssues } from "./heading-issues";
 
 export interface FlatHeading {
   level: HeadingLevel;
@@ -20,10 +21,11 @@ function countLevels(flat: FlatHeading[]): HeadingLevelCount[] {
 }
 
 export function buildHeadingTree(flat: FlatHeading[]): HeadingStructure {
+  const { docIssues, nodeIssues } = deriveHeadingIssues(flat);
   const roots: HeadingNode[] = [];
   const stack: HeadingNode[] = [];
 
-  for (const heading of flat) {
+  for (const [index, heading] of flat.entries()) {
     let top = stack.at(-1);
 
     while (top && top.level >= heading.level) {
@@ -39,6 +41,7 @@ export function buildHeadingTree(flat: FlatHeading[]): HeadingStructure {
       level: heading.level,
       text: heading.text,
       children: [],
+      issue: nodeIssues[index],
     };
     if (parent) {
       parent.children.push(node);
@@ -52,5 +55,6 @@ export function buildHeadingTree(flat: FlatHeading[]): HeadingStructure {
     total: flat.length,
     levels: countLevels(flat),
     tree: roots,
+    issues: docIssues,
   };
 }

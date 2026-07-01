@@ -16,3 +16,18 @@ export function collectParentIds(nodes: HeadingNode[]): string[] {
 
   return ids;
 }
+
+export function countHeadingWarnings(nodes: HeadingNode[]): number {
+  let count = 0;
+
+  const walk = (ns: HeadingNode[]) => {
+    for (const n of ns) {
+      if (n.issue) count++;
+      walk(n.children);
+    }
+  };
+
+  walk(nodes);
+
+  return count;
+}

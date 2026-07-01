@@ -31,11 +31,26 @@ export interface ProminentWord {
 
 export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
+export type HeadingDocIssue =
+  | {
+      type: "missing-h1";
+    }
+  | {
+      type: "multiple-h1";
+      count: number;
+    };
+
+export interface HeadingNodeIssue {
+  type: "skipped-level";
+  skipped: HeadingLevel[];
+}
+
 export interface HeadingNode {
   id: string;
   level: HeadingLevel;
   text: string;
   children: HeadingNode[];
+  issue?: HeadingNodeIssue;
 }
 
 export interface HeadingLevelCount {
@@ -47,6 +62,7 @@ export interface HeadingStructure {
   total: number;
   levels: HeadingLevelCount[];
   tree: HeadingNode[];
+  issues: HeadingDocIssue[];
 }
 
 export interface VitalsResult {
