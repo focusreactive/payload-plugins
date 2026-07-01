@@ -1,17 +1,13 @@
 import type { Field } from "payload";
 
-import {
-  isFieldExcludedFromTranslation,
-  isLocalizedField,
-  isObject,
-  isTranslatableField,
-} from "../../../../shared";
+import { isTranslatableLeaf } from "../../../../shared/content-projection/translatableLeaf";
 import type { ChildCursor, FieldWalker } from "../../../../shared/field-traversal";
 import {
   matchElementById,
   resolveBlockFields,
   walkFields,
 } from "../../../../shared/field-traversal";
+import { isObject } from "../../../../shared/utils/isObject";
 import type { TranslationStrategy } from "../../strategies";
 import type { FieldChunk } from "../../types";
 
@@ -63,6 +59,10 @@ export class FieldChunkCollector {
 
   /** Collects translatable field chunks that need translation. */
   collect(): FieldChunk[] {
+    // The read walk SELECTS translatable leaves (via the shared selection core) and records, per
+    // selected leaf, the source value to translate plus its write target. The mutation is applied
+    // in a separate explicit pass below — read and write are no longer fused inside the walk.
+    const selected: { dataRef: Record<string, unknown>; key: string; sourceValue: unknown }[] = [];
     const chunks: FieldChunk[] = [];
     const { strategy } = this;
 
@@ -115,13 +115,8 @@ export class FieldChunkCollector {
 
         const sourceValue = cursor.source[field.name];
         const targetValue = cursor.target[field.name];
-        if (
-          isTranslatableField(field) &&
-          isLocalizedField(field) &&
-          !isFieldExcludedFromTranslation(field) &&
-          strategy.shouldTranslate({ sourceValue, targetValue })
-        ) {
-          cursor.data[field.name] = sourceValue; // write source value into filteredData — this is what gets translated
+        if (isTranslatableLeaf(field) && strategy.shouldTranslate({ sourceValue, targetValue })) {
+          selected.push({ dataRef: cursor.data, key: field.name, sourceValue });
           chunks.push({
             schema: field,
             dataRef: cursor.data,
@@ -142,6 +137,12 @@ export class FieldChunkCollector {
       { data: this.filteredData, source: this.sourceData, target: this.targetData, path: [] },
       walker
     );
+
+    // Apply pass: write each selected leaf's source value into filteredData — this is what gets
+    // translated. Kept separate from the read walk above so selection stays read-only.
+    for (const { dataRef, key, sourceValue } of selected) {
+      dataRef[key] = sourceValue;
+    }
 
     return chunks;
   }

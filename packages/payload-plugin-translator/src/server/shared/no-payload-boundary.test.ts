@@ -22,7 +22,11 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 // (single or double quotes).
 const FRAMEWORK_IMPORT = /from\s+["'](payload(\/[\w/-]+)?|@payloadcms\/[\w/-]+)["']/u;
 
-const zones = [join(HERE, "field-traversal"), join(HERE, "lexical")];
+const zones = [
+  join(HERE, "field-traversal"),
+  join(HERE, "lexical"),
+  join(HERE, "content-projection"),
+];
 
 const sourceFilesIn = (dir: string) =>
   readdirSync(dir).filter((name) => name.endsWith(".ts") && !name.endsWith(".test.ts"));

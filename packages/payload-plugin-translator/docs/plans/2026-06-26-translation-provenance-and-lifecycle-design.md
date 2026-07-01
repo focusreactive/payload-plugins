@@ -10,18 +10,30 @@
 record of *what a translation was derived from*, and (2) plugin-config lifecycle callbacks fired by
 the runner. New public config surface → `@since` to be set from the next release bump.
 
-> **Revision needed (architecture review, 2026-06-26 — see `2026-06-26-architecture-review.md`).**
-> This doc assumes the fingerprint reuses the existing translation field-collector as **one shared
-> projection**. The review found that does **not** hold against the current pipeline: translation
-> content lives in `textMap: Record<number, string>` (index-keyed, order-dependent) and
-> `FieldChunkCollector.leaf` **fuses mutation into the traversal** (writes data + emits live
-> write-handles). A read-only, id-path-keyed projection cannot be factored out without splitting read
-> from write — otherwise the fingerprint becomes a **second independent traversal that can drift**
-> from translation's notion of a translatable leaf (silent false-stale). Two consequences for this
-> design: (1) the `idPath` must be a **branded type with a documented grammar** (a bare `string`
-> can't distinguish positional `content.0.title` from id-based `content.<id>.title` — the reorder
-> guarantee depends on the latter); (2) the shared `ContentProjector` this doc relies on is built in
-> **slice 6** of the core extraction (read/write split), which is a prerequisite, not a given.
+> **Revised — slice 6 shipped the prerequisite (2026-07-01).** The architecture review
+> (`2026-06-26-architecture-review.md`) flagged that the "one shared projection" this doc relies on
+> did not exist: translation content lived in `textMap: Record<number, string>` (index-keyed,
+> order-dependent) and `FieldChunkCollector.leaf` **fused mutation into the traversal**, so a
+> read-only, id-path-keyed projection could not be factored out — leaving the fingerprint as a
+> second, driftable traversal. **Slice 6 of the core extraction resolved both** (see
+> `2026-06-30-slice6-contentprojector-idpath-design.md`, option B):
+>
+> - The shared **`ContentProjector` is now real, not hypothetical**:
+>   `projectTranslatableContent(doc, schema): Array<{ idPath, text }>`
+>   (`src/server/shared/content-projection/contentProjector.ts`), pure and read-only, built on the
+>   same `walkFields` engine, the same leaf-selection predicate, and the same text extraction the
+>   translation pipeline uses. `FieldChunkCollector` was refactored onto that same selection core and
+>   its mutation un-fused into an explicit apply pass; a **drift-guard test** pins that projection and
+>   translation agree on the translatable set + source text.
+> - **`idPath` is the branded type from slice 6** (`src/server/shared/content-projection/idPath.ts`),
+>   with a documented grammar and a single constructor (`makeIdPath`): array/blocks element indices
+>   are replaced by the element `id` (`+ blockType`), so the reorder guarantee holds. A bare `string`
+>   positional path (`content.0.title`) is no longer representable.
+> - The staleness baseline is therefore concrete:
+>   **`CURRENT = fingerprint(projectTranslatableContent(sourceDoc, schema))`**
+>   (`src/server/shared/content-projection/fingerprinter.ts` — sorts entries by `idPath` then
+>   sha256-hashes, so reorder is invisible and only real content change moves the hash), computed
+>   lazily on read (this slice unchanged) or at write-time later if dashboard perf demands.
 
 ---
 

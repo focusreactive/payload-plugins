@@ -5,7 +5,7 @@ import type {
   TranslationInput,
   TranslationOutput,
 } from "./TranslationProvider.interface";
-import { isObject } from "../../shared";
+import { isObject } from "../../shared/utils/isObject";
 import type { ChatModel } from "openai/resources/index.mjs";
 
 /**

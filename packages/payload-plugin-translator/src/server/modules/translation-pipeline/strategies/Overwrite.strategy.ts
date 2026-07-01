@@ -1,4 +1,4 @@
-import { isEmpty } from "../../../shared";
+import { isEmpty } from "../../../shared/utils/isEmpty";
 import type { TranslationStrategy, StrategyContext } from "./TranslationStrategy.interface";
 
 /**
