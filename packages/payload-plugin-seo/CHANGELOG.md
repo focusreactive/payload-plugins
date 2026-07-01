@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-seo [1.7.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.6.1...@focus-reactive/payload-plugin-seo@1.7.0) (2026-07-01)
+
+
+### Features
+
+* **seo:** add related keyphrases with per-keyphrase synonyms ([0419e94](https://github.com/focusreactive/payload-plugins/commit/0419e9416efa64a40fc2241c03807a55c9bedb88))
+
 ## @focus-reactive/payload-plugin-seo [1.6.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.6.0...@focus-reactive/payload-plugin-seo@1.6.1) (2026-06-30)
 
 
