@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-seo [1.8.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.7.0...@focus-reactive/payload-plugin-seo@1.8.0) (2026-07-01)
+
+
+### Features
+
+* **seo:** flag missing/multiple H1 and skipped heading levels in analysis ([5dc34f9](https://github.com/focusreactive/payload-plugins/commit/5dc34f9e95843da0d745a327ce1632c81d0e9063))
+
 # @focus-reactive/payload-plugin-seo [1.7.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.6.1...@focus-reactive/payload-plugin-seo@1.7.0) (2026-07-01)
 
 
