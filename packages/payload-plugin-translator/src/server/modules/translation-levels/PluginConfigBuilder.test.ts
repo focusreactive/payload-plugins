@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import type { CollectionConfig, Config, Endpoint } from "payload";
 
-import type { RawPayloadComponentExport } from "../../../client/shared/types/PayloadComponentExport";
+import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport";
 
 import { PluginConfigBuilder } from "./PluginConfigBuilder";
 

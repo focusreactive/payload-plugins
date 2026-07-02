@@ -1,4 +1,4 @@
-import { isObject } from "./isObject";
+import { isObject } from "../../../core/utils/isObject";
 
 /**
  * Sets a value in an object by dot-notation path.

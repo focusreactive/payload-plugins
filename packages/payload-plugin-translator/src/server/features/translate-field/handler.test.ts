@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CollectionSlug, Field, PayloadRequest } from "payload";
 
-import type { TranslationProvider } from "../../modules/translation-providers";
+import type { TranslationProvider } from "../../../core/translation-providers";
 
 import { TranslateFieldHandler } from "./handler";
 import type { FieldTranslationConfig, FieldTranslationInput } from "./model";
@@ -9,7 +9,7 @@ import { MAX_FIELD_VALUE_BYTES } from "./model";
 
 // Isolate the handler's orchestration (read → resolve → translate → response mapping)
 // from the pipeline itself.
-vi.mock("../../modules/translation-pipeline", () => ({
+vi.mock("../../../core/translation-pipeline", () => ({
   translateContent: vi.fn().mockResolvedValue(null),
 }));
 
@@ -82,7 +82,7 @@ beforeEach(() => {
 });
 
 const importTranslateContent = async () =>
-  (await import("../../modules/translation-pipeline")).translateContent as unknown as ReturnType<
+  (await import("../../../core/translation-pipeline")).translateContent as unknown as ReturnType<
     typeof vi.fn
   >;
 

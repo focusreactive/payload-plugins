@@ -1,9 +1,9 @@
 import type { CollectionConfig, Endpoint } from "payload";
 
 import type { AccessGuard } from "../../../types/AccessGuard";
-import type { RawPayloadComponentExport } from "../../../client/shared/types/PayloadComponentExport";
-import type { CollectionSchemaMap } from "../../features/translate-document";
-import type { TranslationProvider } from "../translation-providers";
+import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
+import type { TranslationProvider } from "../../../core/translation-providers";
 import type { TaskRunnerFactory } from "../task-runner";
 
 export type CollectionAdminSlot = "beforeDocumentControls" | "beforeListTable";

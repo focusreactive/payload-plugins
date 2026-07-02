@@ -1,5 +1,5 @@
-export { isEmpty } from "./isEmpty";
-export { isObject } from "./isObject";
+export { isEmpty } from "../../../core/utils/isEmpty";
+export { isObject } from "../../../core/utils/isObject";
 export { normalizePath } from "./normalizePath";
 export { getByPath } from "./getByPath";
 export { setByPath } from "./setByPath";
