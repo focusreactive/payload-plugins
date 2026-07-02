@@ -3,7 +3,6 @@
 import { Plus } from "lucide-react";
 import { MAX_KEYPHRASES } from "../../../../constants";
 import type { KeyphraseEntry } from "../../keyphraseState";
-import { firstEmptyId } from "../../keyphraseState";
 import { KeyphraseCard } from "./KeyphraseCard";
 import type { CardState } from "./KeyphraseCard";
 
@@ -23,8 +22,6 @@ export function KeyphraseRail({
   onAdd,
 }: KeyphraseRailProps) {
   const atMax = entries.length >= MAX_KEYPHRASES;
-  const hasEmpty = Boolean(firstEmptyId(entries));
-  const addDisabled = atMax || hasEmpty;
 
   return (
     <aside className="w-[264px] flex-none border-r border-neutral-200 bg-neutral-50">
@@ -38,9 +35,9 @@ export function KeyphraseRail({
             type="button"
             aria-label="Add related keyphrase"
             title={atMax ? `Up to ${MAX_KEYPHRASES} keyphrases` : "Add related keyphrase"}
-            disabled={addDisabled}
+            disabled={atMax}
             onClick={onAdd}
-            className="w-[26px] h-[26px] rounded-rs border border-neutral-200 grid place-items-center text-neutral-600 bg-neutral-0 hover:border-neutral-800 hover:text-neutral-800 disabled:opacity-35 disabled:cursor-not-allowed [&_svg]:size-[15px]"
+            className="w-[26px] h-[26px] rounded-rs border border-neutral-200 grid place-items-center text-neutral-600 bg-neutral-0 hover:border-neutral-800 hover:text-neutral-800 disabled:opacity-35 not-disabled:cursor-pointer disabled:cursor-not-allowed [&_svg]:size-[15px]"
           >
             <Plus aria-hidden="true" />
           </button>

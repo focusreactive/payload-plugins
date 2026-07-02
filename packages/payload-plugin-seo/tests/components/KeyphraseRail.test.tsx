@@ -3,6 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { KeyphraseRail } from "../../src/components/SeoDrawer/tabs/keyphrase/KeyphraseRail";
+import { MAX_KEYPHRASES } from "../../src/constants";
 
 const entries = [
   { id: "a", text: "payload cms", synonyms: [] },
@@ -25,11 +26,11 @@ describe("KeyphraseRail", () => {
       />
     );
     expect(screen.getByText(/2\s*\/\s*5/)).toBeTruthy();
-    expect(screen.getByText("FOCUS")).toBeTruthy();
+    expect(screen.getByText("Focus")).toBeTruthy();
     expect(screen.getByText(/new keyphrase/i)).toBeTruthy();
   });
 
-  it("selects on click and disables Add when an empty entry exists", () => {
+  it("selects on click and keeps Add enabled below the cap, even with an empty entry", () => {
     const onSelect = vi.fn();
     render(
       <KeyphraseRail
@@ -42,6 +43,26 @@ describe("KeyphraseRail", () => {
     );
     fireEvent.click(screen.getByText("payload cms"));
     expect(onSelect).toHaveBeenCalledWith("a");
+    expect(
+      (screen.getByRole("button", { name: /add related keyphrase/i }) as HTMLButtonElement).disabled
+    ).toBe(false);
+  });
+
+  it("disables Add at MAX_KEYPHRASES", () => {
+    const full = Array.from({ length: MAX_KEYPHRASES }, (_, i) => ({
+      id: `k${i}`,
+      text: `keyphrase ${i}`,
+      synonyms: [],
+    }));
+    render(
+      <KeyphraseRail
+        entries={full}
+        selectedId="k0"
+        stateFor={() => ({ kind: "idle" as const })}
+        onSelect={vi.fn()}
+        onAdd={vi.fn()}
+      />
+    );
     expect(
       (screen.getByRole("button", { name: /add related keyphrase/i }) as HTMLButtonElement).disabled
     ).toBe(true);

@@ -3,12 +3,12 @@
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useId, useState } from "react";
 import type { CategoryResult } from "../../../../engine/types/analysis";
-import { Button } from "../../../../ui/Button";
 import { CheckRow } from "../../../../ui/CheckRow";
 import type { Filter } from "../../../../ui/FilterPills";
 import { FilterPills } from "../../../../ui/FilterPills";
 import { Pill } from "../../../../ui/Pill";
 import { SectionCard } from "../../../../ui/SectionCard";
+import { IconButton } from "../../../../ui/IconButton";
 import { TabHeader } from "../../../../ui/TabHeader";
 import { cn } from "../../../../utils/style";
 import type { KeyphraseEntry } from "../../keyphraseState";
@@ -105,12 +105,34 @@ export function KeyphraseDetail({
   return (
     <section className="flex-1 min-w-0 px-[15px] py-[18px] flex flex-col gap-[13px] overflow-auto">
       <div className="mb-[9px]">
-        <label
-          className="block text-[10px] uppercase tracking-[0.05em] text-neutral-500 mb-[6px]"
-          htmlFor={textInputId}
-        >
-          {label}
-        </label>
+        <div className="flex items-center justify-between gap-[8px] mb-[6px]">
+          <label
+            className="text-[10px] uppercase tracking-[0.05em] text-neutral-500"
+            htmlFor={textInputId}
+          >
+            {label}
+          </label>
+          {!isFocus && (
+            <div className="flex items-center gap-[6px]">
+              <IconButton
+                aria-label="Set as focus"
+                onClick={onSetFocus}
+                title="Set as focus"
+                variant="primary"
+              >
+                <Target aria-hidden="true" />
+              </IconButton>
+              <IconButton
+                aria-label="Remove keyphrase"
+                onClick={onRemove}
+                title="Remove keyphrase"
+                variant="error"
+              >
+                <Trash2 aria-hidden="true" />
+              </IconButton>
+            </div>
+          )}
+        </div>
         <input
           autoComplete="off"
           className="w-full border border-neutral-200 rounded-rs px-[12px] py-[10px] text-[13px] text-neutral-800 bg-neutral-0 outline-none focus:border-neutral-800"
@@ -135,17 +157,6 @@ export function KeyphraseDetail({
 
       <div className="mb-[9px]">
         <SynonymsField onAdd={onAddSynonym} onRemove={onRemoveSynonym} synonyms={entry.synonyms} />
-      </div>
-
-      <div className="flex gap-[8px] items-center">
-        {!isFocus && (
-          <Button icon={<Target aria-hidden="true" />} onClick={onSetFocus} variant="primary">
-            Set as focus
-          </Button>
-        )}
-        <Button icon={<Trash2 aria-hidden="true" />} onClick={onRemove} variant="error">
-          Remove
-        </Button>
       </div>
 
       <Analysis analysis={analysis} />

@@ -20,10 +20,10 @@ const base = {
 };
 
 describe("KeyphraseDetail", () => {
-  it("focus keyphrase shows Remove but not Set as focus", () => {
+  it("focus keyphrase shows neither Set as focus nor Remove", () => {
     render(<KeyphraseDetail {...base} isFocus />);
-    expect(screen.getByRole("button", { name: /remove/i })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /set as focus/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /remove/i })).toBeNull();
     expect(screen.getByLabelText(/focus keyphrase/i)).toBeTruthy();
   });
 

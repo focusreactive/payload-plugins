@@ -2,6 +2,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { useKeyphrases } from "../../src/components/SeoDrawer/useKeyphrases";
+import { MAX_KEYPHRASES } from "../../src/constants";
 
 beforeEach(() => localStorage.clear());
 
@@ -29,12 +30,14 @@ describe("useKeyphrases", () => {
     expect(de.current.keyphrases[0].text).toBe("");
   });
 
-  it("addRelated respects the cap and single-empty rule", () => {
+  it("addRelated adds a new empty on every call and caps at MAX_KEYPHRASES", () => {
     const { result } = renderHook(() => useKeyphrases(args));
     act(() => result.current.updateText(result.current.keyphrases[0].id, "a"));
-    act(() => result.current.addRelated());
-    act(() => result.current.addRelated()); // second call: empty already exists → no-op
-    expect(result.current.keyphrases).toHaveLength(2);
+    act(() => result.current.addRelated()); // 2
+    act(() => result.current.addRelated()); // 3: adds another empty, no single-empty block
+    expect(result.current.keyphrases).toHaveLength(3);
+    for (let i = 0; i < MAX_KEYPHRASES; i++) act(() => result.current.addRelated());
+    expect(result.current.keyphrases).toHaveLength(MAX_KEYPHRASES);
   });
 
   it("addRelated returns the id of the newly added entry", () => {
@@ -50,11 +53,11 @@ describe("useKeyphrases", () => {
     expect(last?.text).toBe("");
   });
 
-  it("recreates a single empty focus entry when the last keyphrase is removed", () => {
+  it("never removes the focus entry; it stays and can only be emptied", () => {
     const { result } = renderHook(() => useKeyphrases(args));
     act(() => result.current.updateText(result.current.keyphrases[0].id, "payload cms"));
     act(() => result.current.remove(result.current.keyphrases[0].id));
     expect(result.current.keyphrases).toHaveLength(1);
-    expect(result.current.keyphrases[0].text).toBe("");
+    expect(result.current.keyphrases[0].text).toBe("payload cms");
   });
 });

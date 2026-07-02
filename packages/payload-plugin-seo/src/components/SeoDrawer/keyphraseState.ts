@@ -22,13 +22,8 @@ export function createEntry(text = "", synonyms: string[] = []): KeyphraseEntry 
   };
 }
 
-export function firstEmptyId(list: KeyphraseEntry[]): string | undefined {
-  return list.find((k) => k.text.trim() === "")?.id;
-}
-
 export function addRelated(list: KeyphraseEntry[]): KeyphraseEntry[] {
   if (list.length >= MAX_KEYPHRASES) return list;
-  if (firstEmptyId(list)) return list;
 
   return [...list, createEntry()];
 }
@@ -55,6 +50,8 @@ export function removeSynonym(list: KeyphraseEntry[], id: string, index: number)
 }
 
 export function remove(list: KeyphraseEntry[], id: string): KeyphraseEntry[] {
+  if (list[0]?.id === id) return list;
+
   return list.filter((k) => k.id !== id);
 }
 

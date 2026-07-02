@@ -57,7 +57,7 @@ export function useKeyphrases({
     const current = listRef.current;
     const next = ops.addRelated(current);
 
-    if (next === current) return ops.firstEmptyId(current);
+    if (next === current) return undefined;
     setList(next);
 
     return next.at(-1)?.id;
@@ -74,15 +74,7 @@ export function useKeyphrases({
     (id: string, index: number) => setList((l) => ops.removeSynonym(l, id, index)),
     []
   );
-  const remove = useCallback(
-    (id: string) =>
-      setList((l) => {
-        const next = ops.remove(l, id);
-
-        return next.length > 0 ? next : [ops.createEntry()];
-      }),
-    []
-  );
+  const remove = useCallback((id: string) => setList((l) => ops.remove(l, id)), []);
   const setFocus = useCallback((id: string) => setList((l) => ops.setFocus(l, id)), []);
   const isDuplicate = useCallback(
     (id: string, text: string) => ops.isDuplicate(listRef.current, id, text),

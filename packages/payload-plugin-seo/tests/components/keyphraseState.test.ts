@@ -3,7 +3,6 @@ import {
   addRelated,
   addSynonym,
   createEntry,
-  firstEmptyId,
   isDuplicate,
   pruneEmpties,
   remove,
@@ -27,25 +26,18 @@ describe("keyphraseState", () => {
     expect(a).toMatchObject({ text: "x", synonyms: ["y"] });
   });
 
-  it("addRelated appends an empty entry up to the cap", () => {
-    // addRelated only appends when no empty entry already exists, so reaching
-    // the cap means filling each appended empty before adding the next.
+  it("addRelated appends a new empty entry on every call up to the cap", () => {
     let list = seed(); // 3 filled entries
-    list = addRelated(list); // 4: one empty appended
-    expect(list).toHaveLength(4);
-    list = addRelated(list); // no-op: an empty entry already exists
-    expect(list).toHaveLength(4);
-    list = updateText(list, firstEmptyId(list) as string, "fourth"); // fill it
-    list = addRelated(list); // 5: another empty appended
+    list = addRelated(list); // 4
+    list = addRelated(list); // 5
     expect(list).toHaveLength(MAX_KEYPHRASES);
-    list = updateText(list, firstEmptyId(list) as string, "fifth"); // fill it
     list = addRelated(list); // capped at MAX_KEYPHRASES
     expect(list).toHaveLength(MAX_KEYPHRASES);
   });
 
-  it("addRelated does not add a second empty entry", () => {
+  it("addRelated adds another empty even when an empty already exists", () => {
     const list = addRelated(addRelated(seed()));
-    expect(list.filter((k) => k.text === "")).toHaveLength(1);
+    expect(list.filter((k) => k.text === "")).toHaveLength(2);
   });
 
   it("updateText changes only the matching entry", () => {
@@ -71,10 +63,15 @@ describe("keyphraseState", () => {
     expect(removeSynonym(l, l[0].id, 0)[0].synonyms).toEqual([]);
   });
 
-  it("remove of focus promotes the next entry", () => {
+  it("remove leaves the focus entry untouched (it can only be emptied)", () => {
     const l = seed();
-    const l2 = remove(l, l[0].id);
-    expect(l2.map((k) => k.text)).toEqual(["headless cms", "typescript cms"]);
+    expect(remove(l, l[0].id)).toBe(l);
+  });
+
+  it("remove drops a related entry", () => {
+    const l = seed();
+    const l2 = remove(l, l[1].id);
+    expect(l2.map((k) => k.text)).toEqual(["payload cms", "typescript cms"]);
   });
 
   it("setFocus moves the entry to index 0, others keep order", () => {
