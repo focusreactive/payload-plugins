@@ -1,7 +1,7 @@
 import type { CollectionSlug, PayloadRequest } from "payload";
 
 import { getByPath, ServerResponse } from "../../shared";
-import { translateContent } from "../../modules/translation-pipeline";
+import { translateContent } from "../../../core/translation-pipeline";
 
 import type {
   FieldTranslationNotice,

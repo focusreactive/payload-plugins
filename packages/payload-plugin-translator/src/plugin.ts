@@ -2,7 +2,7 @@ import type { CollectionConfig, Config } from "payload";
 
 import { CacheProviderExport } from "./client/app/cache/CacheProvider.export";
 import type { AccessGuard } from "./types/AccessGuard";
-import type { TranslationProvider } from "./server/modules/translation-providers";
+import type { TranslationProvider } from "./core/translation-providers";
 import type {
   TaskRunnerProvider,
   TaskRunnerContext,

@@ -5,15 +5,11 @@ export type { TranslatorPluginConfig } from "./plugin";
 // Access control
 export type { AccessGuard, AccessGuardRequest } from "./types/AccessGuard";
 
-// Translation providers
-export { createOpenAIProvider } from "./server/modules/translation-providers";
-export type {
-  TranslationProvider,
-  TranslationInput,
-  TranslationOutput,
-  OpenAIProviderConfig,
-  DryRunConfig,
-} from "./server/modules/translation-providers";
+// Translation provider port (from the dependency-free core)
+export type { TranslationProvider, TranslationInput, TranslationOutput } from "./core";
+// Built-in OpenAI provider (opt-in; pulls `openai`) — lives in the plugin's src/providers, outside core
+export { createOpenAIProvider } from "./translation-providers";
+export type { OpenAIProviderConfig, DryRunConfig } from "./translation-providers";
 
 // Task runners
 export { createPayloadJobsRunner, createSyncRunner } from "./server/modules/task-runner";
@@ -30,6 +26,6 @@ export type { FieldTranslationConfig } from "./field-config";
 // Deprecated exports (for backwards compatibility)
 export { createTranslatePlugin, TranslateCollectionPlugin } from "./plugin";
 export type { TranslateCollectionPluginConfig } from "./plugin";
-export { OpenAITranslationProvider } from "./server/modules/translation-providers";
+export { OpenAITranslationProvider } from "./translation-providers";
 export { translateKitField } from "./field-config";
 export type { TranslateKitFieldConfig } from "./field-config";

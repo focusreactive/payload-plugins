@@ -1,7 +1,7 @@
 import type { CollectionSlug, Config, Payload } from "payload";
 import type { TaskRunner } from "./TaskRunner.interface";
 import type { ID } from "./types";
-import type { TranslationStrategyName } from "../translation-pipeline/strategies";
+import type { TranslationStrategyName } from "../../../core/translation-pipeline/strategies";
 
 /**
  * Input for task handler callback

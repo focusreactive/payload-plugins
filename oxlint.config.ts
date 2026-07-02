@@ -30,12 +30,12 @@ const TEST_SEAM = {
 };
 
 // ── Framework-agnostic core for payload-plugin-translator ─────────────────
-// The @repo/translator-core extraction requires src/server/shared/field-traversal/**
-// and src/server/shared/lexical/** to stay framework-agnostic: no Payload, no
-// React/Next, and no upward edges into server/features or client. The cheap
-// in-repo backstop is src/server/shared/no-payload-boundary.test.ts; this lint
-// makes the boundary fail at edit time too. Test files in these zones are
-// exempt (the conformance test deliberately imports payload types).
+// src/core/** is the consolidated framework-agnostic surface (slice 7, Option C):
+// no Payload, no React/Next, and no downward edges into the plugin adapter
+// (src/server, src/client). The cheap in-repo backstop is
+// src/core/no-payload-boundary.test.ts; this lint makes the boundary fail at edit
+// time too. Test files in this zone are exempt (the conformance test deliberately
+// imports payload types to assert structural compatibility).
 const TRANSLATOR = "packages/payload-plugin-translator";
 const TRANSLATOR_CORE_PATHS = [
   { name: "payload", message: "translator-core must stay framework-agnostic — no payload import." },
@@ -63,32 +63,12 @@ const TRANSLATOR_CORE_PATTERNS = [
     message: "translator-core must stay framework-agnostic — no next/* import.",
   },
   {
-    group: ["**/features/**", "**/server/features/**"],
-    message: "translator-core may not depend upward on server/features.",
+    group: ["**/server/**"],
+    message: "translator-core (src/core) may not depend on the plugin adapter (src/server).",
   },
   {
     group: ["**/client/**"],
-    message: "translator-core may not depend upward on client/.",
-  },
-];
-
-// The pipeline + provider zones are core-BOUND (destined for translator-core in slice 7) but not
-// yet fully payload-free: they still carry a few `import type { Field } from "payload"` type-only
-// imports on their schema surface (erased at runtime — no runtime edge). The slice-6 barrel-split
-// removed the payload RUNTIME edge (the `shared` barrel → `withErrorHandler` → `APIError`); this
-// boundary locks that in by banning every runtime framework surface — the payload subpaths,
-// `@payloadcms/*`, react/next, and upward feature/client edges — while tolerating the remaining
-// bare-`payload` TYPE import until slice 7 re-types the schema surface onto `FieldLike`.
-const TRANSLATOR_PIPELINE_PATHS = TRANSLATOR_CORE_PATHS.filter((entry) => entry.name !== "payload");
-const TRANSLATOR_PIPELINE_PATTERNS = [
-  ...TRANSLATOR_CORE_PATTERNS,
-  // The exact runtime edge slice 6 removed: the `src/server/shared` BARREL re-exports
-  // `withErrorHandler` → `import { APIError } from "payload"` (a runtime value). Core-bound files
-  // must import the leaf modules (shared/utils, shared/lexical, shared/field-config, …) directly.
-  {
-    group: ["**/shared", "**/shared/index", "**/shared/index.ts"],
-    message:
-      "translator-core-bound files must import shared LEAF modules directly (shared/utils, shared/lexical, …) — the shared barrel re-exports a payload runtime import.",
+    message: "translator-core (src/core) may not depend on the plugin adapter (src/client).",
   },
 ];
 
@@ -385,15 +365,13 @@ export default defineConfig({
     // ── payload-plugin-translator: framework-agnostic core boundary ───────
     // Same last-match-wins / options-REPLACE semantics as the analytics zones
     // above: each region restates the full restriction set it needs.
-    // (T1) The fully payload-free zones: no payload / react / next at all, no
-    //      upward edges into server/features or client. content-projection
-    //      (slice 6) joins field-traversal + lexical here.
+    // (T1) The consolidated payload-free core (slice 7, Option C): no payload /
+    //      react / next at all, and no downward edges into the plugin adapter
+    //      (src/server, src/client). One zone now covers the whole surface —
+    //      field-traversal, lexical, content-projection, field-config, utils,
+    //      translation-pipeline, translation-providers all live under src/core.
     {
-      files: [
-        `${TRANSLATOR}/src/server/shared/field-traversal/**/*.ts`,
-        `${TRANSLATOR}/src/server/shared/lexical/**/*.ts`,
-        `${TRANSLATOR}/src/server/shared/content-projection/**/*.ts`,
-      ],
+      files: [`${TRANSLATOR}/src/core/**/*.ts`],
       rules: {
         "no-restricted-imports": [
           "error",
@@ -401,34 +379,10 @@ export default defineConfig({
         ],
       },
     },
-    // (T1b) The pipeline + provider zones: core-bound, barrel-free after slice 6.
-    //       The framework runtime surfaces (`payload/*`, `@payloadcms/*`, react/next,
-    //       upward feature/client edges) AND the `shared` barrel are banned; the
-    //       barrel ban is the guard for the exact runtime edge this slice removed
-    //       (barrel → withErrorHandler → APIError). The bare-`payload` type-only
-    //       import on the schema surface is tolerated until slice 7 re-types it.
-    {
-      files: [
-        `${TRANSLATOR}/src/server/modules/translation-pipeline/**/*.ts`,
-        `${TRANSLATOR}/src/server/modules/translation-providers/**/*.ts`,
-      ],
-      rules: {
-        "no-restricted-imports": [
-          "error",
-          { paths: TRANSLATOR_PIPELINE_PATHS, patterns: TRANSLATOR_PIPELINE_PATTERNS },
-        ],
-      },
-    },
-    // (T2) Test files in those zones are exempt — the conformance/boundary tests
+    // (T2) Test files in the core zone are exempt — the conformance/boundary tests
     //      deliberately import payload types to assert structural compatibility.
     {
-      files: [
-        `${TRANSLATOR}/src/server/shared/field-traversal/**/*.test.ts`,
-        `${TRANSLATOR}/src/server/shared/lexical/**/*.test.ts`,
-        `${TRANSLATOR}/src/server/shared/content-projection/**/*.test.ts`,
-        `${TRANSLATOR}/src/server/modules/translation-pipeline/**/*.test.ts`,
-        `${TRANSLATOR}/src/server/modules/translation-providers/**/*.test.ts`,
-      ],
+      files: [`${TRANSLATOR}/src/core/**/*.test.ts`],
       rules: { "no-restricted-imports": "off" },
     },
   ],

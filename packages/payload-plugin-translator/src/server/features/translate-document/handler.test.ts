@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 import { APIError } from "payload";
 import { TranslateDocumentHandler } from "./handler";
-import type { TranslationProvider } from "../../modules/translation-providers";
+import type { TranslationProvider } from "../../../core/translation-providers";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import type { TranslateDocumentInput } from "./model";
 
@@ -10,7 +10,7 @@ import type { TranslateDocumentInput } from "./model";
 // orchestration (fetch / strategy plumbing / save), not the pipeline itself.
 // translateContent returns the translated data directly, or null when there is
 // nothing to translate.
-vi.mock("../../modules/translation-pipeline", () => ({
+vi.mock("../../../core/translation-pipeline", () => ({
   translateContent: vi.fn().mockResolvedValue(null),
 }));
 
@@ -108,7 +108,7 @@ describe("TranslateDocumentHandler", () => {
 
   describe("translateContent invocation", () => {
     it("forwards fetched docs, strategy and locales to translateContent", async () => {
-      const { translateContent } = await import("../../modules/translation-pipeline");
+      const { translateContent } = await import("../../../core/translation-pipeline");
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       const input = createInput({
@@ -135,7 +135,7 @@ describe("TranslateDocumentHandler", () => {
 
   describe("success responses", () => {
     it("returns success when no translation needed (pipeline returns null)", async () => {
-      const { translateContent } = await import("../../modules/translation-pipeline");
+      const { translateContent } = await import("../../../core/translation-pipeline");
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       const input = createInput();
@@ -147,7 +147,7 @@ describe("TranslateDocumentHandler", () => {
     });
 
     it("returns success after saving translated document", async () => {
-      const { translateContent } = await import("../../modules/translation-pipeline");
+      const { translateContent } = await import("../../../core/translation-pipeline");
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         title: "Übersetzter Titel",
       });
@@ -161,7 +161,7 @@ describe("TranslateDocumentHandler", () => {
 
   describe("saving translated documents", () => {
     beforeEach(async () => {
-      const { translateContent } = await import("../../modules/translation-pipeline");
+      const { translateContent } = await import("../../../core/translation-pipeline");
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         title: "Translated",
       });

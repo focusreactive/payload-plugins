@@ -3,7 +3,7 @@ import type { CollectionConfig, Config, Endpoint } from "payload";
 import type { AccessGuard } from "../../../types/AccessGuard";
 import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
-import type { TranslationProvider } from "../translation-providers";
+import type { TranslationProvider } from "../../../core/translation-providers";
 import type { TaskRunnerFactory } from "../task-runner";
 
 import type { CollectionAdminSlot, LevelContext } from "./types";

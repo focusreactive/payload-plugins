@@ -1,6 +1,6 @@
 import type { CollectionSlug } from "payload";
 import type { ID } from "../../modules/task-runner/types";
-import type { TranslationStrategyName } from "../../modules/translation-pipeline/strategies";
+import type { TranslationStrategyName } from "../../../core/translation-pipeline/strategies";
 
 /**
  * Input for the translate document handler

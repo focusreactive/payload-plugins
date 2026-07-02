@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import type { CollectionSlug, Field, PayloadRequest } from "payload";
 
 import type { AccessGuard } from "../../shared";
-import type { TranslationProvider } from "../../modules/translation-providers";
+import type { TranslationProvider } from "../../../core/translation-providers";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 
 import { createFieldRoute } from "./route";
