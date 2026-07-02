@@ -120,7 +120,7 @@ export function KeyphraseTab({
   const analysis = detailAnalysis();
 
   return (
-    <div className="flex min-h-[420px]">
+    <div className="flex h-auto min-h-full">
       <KeyphraseRail
         entries={keyphrases}
         onAdd={onAddRelated}

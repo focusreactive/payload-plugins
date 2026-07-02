@@ -102,6 +102,23 @@
   --seo-bad-100: #311714;
 }
 
+.seo-drawer .drawer__content-children {
+  display: flex;
+  flex-direction: column;
+}
+
+.seo-root {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.seo-tabpanel {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .seo-root button {
   border: none;
 }

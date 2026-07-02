@@ -67,7 +67,7 @@ export const SeoDrawer = memo(function SeoDrawer({
       <div className="seo-root relative text-neutral-800" data-status={totalStatus}>
         <TabsNav active={tab} onChange={setTab} />
 
-        <div>
+        <div className="seo-tabpanel">
           {result === null && tab !== "keyphrase" ? (
             <div
               className="flex items-center gap-[8px] text-neutral-500 text-[13px]"

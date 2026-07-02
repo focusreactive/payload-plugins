@@ -13,7 +13,10 @@ export interface TabsNavProps {
 
 export function TabsNav({ active, onChange }: TabsNavProps) {
   return (
-    <nav role="tablist" className="flex gap-[20px] border-b border-neutral-200 overflow-x-auto">
+    <nav
+      role="tablist"
+      className="flex shrink-0 gap-[20px] border-b border-neutral-200 overflow-x-auto"
+    >
       {TABS.map(({ key, label, icon: Icon }) => (
         <button
           key={key}
