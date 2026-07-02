@@ -1,7 +1,9 @@
 # Translation provenance & lifecycle events — design
 
 **Date:** 2026-06-26
-**Status:** Draft (first pass — to be refined before implementation)
+**Status:** Ready for implementation — all open questions resolved 2026-07-02. Four decisions
+(scope, sidecar slug, callback-error semantics, delete cleanup) are marked **[pending confirm]**
+below: they use the recommended default and can be overridden before the relevant slice is coded.
 **Tracks:** [#47](https://github.com/focusreactive/payload-plugins/issues/47) — foundation for
 [#50](https://github.com/focusreactive/payload-plugins/issues/50) (stale detection),
 [#51](https://github.com/focusreactive/payload-plugins/issues/51) (auto-translate on source change),
@@ -104,13 +106,46 @@ collect exactly this set in the pipeline — `FieldChunkCollector`). Version id 
 an opt-in cheaper fingerprint *for consumers who have versions enabled*, but it cannot be the default
 because versions are opt-in and coarser. (Open question below.)
 
-### Storage: plugin-managed sidecar collection
+### Storage: plugin-managed sidecar collection (opt-in)
 
 Store provenance in a **separate plugin-owned collection**, keyed by
 `(collectionSlug, documentId, locale)` — **not** as hidden fields on consumer collections. Hidden
 fields would force schema/migration changes onto every consumer collection; a sidecar keeps the
 blast radius inside the plugin. The collection is injected the same way the plugin already injects
 config, via a config modifier through `PluginConfigBuilder` (see `src/plugin.ts`).
+
+#### Opt-in, because it needs a consumer migration (drives the version bump)
+
+The sidecar is a **new collection**, and on SQL consumers (Postgres/SQLite) a new collection means a
+new table → a **migration the consumer must run**. We cannot run it for them (we don't own their
+migration directory, DB creds, or migration ordering; Payload creates SQL tables only via
+migrations). Silently forcing that on every consumer during an upgrade would be operationally
+breaking — unacceptable in a patch/minor.
+
+**Therefore the provenance collection is opt-in and default-OFF**, enabled by presence of a
+`provenance` config key:
+
+```ts
+translatorPlugin({
+  // ...
+  provenance: { /* slug?: string */ },   // present = enabled; omit = disabled (default)
+})
+```
+
+Consequences:
+
+- A consumer who does **not** set `provenance` sees **zero change** on upgrade — no new collection,
+  no migration, no behaviour change. So adding this feature is a backward-compatible **`feat` →
+  minor** (`0.6.x → 0.7.0`), **not** breaking and not a patch.
+- Enabling it is the programmer's **conscious act**. That is exactly where we tell them (JSDoc on the
+  field + README) to generate/run the migration on SQL (`payload migrate:create` + `payload migrate`;
+  dev push in development; MongoDB infers the collection with no migration).
+- If they enable it but forget to migrate on SQL, Payload itself errors on the first provenance query
+  with a clear "relation does not exist" — an acceptable, self-explaining failure. We do not attempt
+  runtime table creation.
+
+**Note the split:** only the *collection* is gated. The **lifecycle callbacks (Primitive 2) carry no
+schema and no migration**, so they are always available regardless of the `provenance` flag.
 
 #### Cross-database concern (raised in review — must be designed for)
 
@@ -131,15 +166,12 @@ Mongo. Migration generation/ordering on SQL is the main open risk — to be deta
 
 #### Name-collision concern (raised in review)
 
-The sidecar slug must not clash with a consumer collection or with another plugin's table. Options
-to decide on:
+The sidecar slug must not clash with a consumer collection or with another plugin's table. Resolved:
 
-- a distinctive default slug (e.g. `translator-provenance` / `_translator_translations`), **plus**
-- a config override (`provenance: { slug?: string }` or similar) so a consumer can rename on a clash,
-- and a startup guard: if the chosen slug already exists in `config.collections`, fail fast with a
-  clear error rather than silently colliding.
-
-(Exact slug + override shape: open question.)
+- default slug **`translator-provenance`**, `admin: { hidden: true }`;
+- override via **`provenance.slug`** so a consumer can rename on a clash;
+- a **startup guard**: if the chosen slug already exists in `config.collections`, throw a clear error
+  at init (fail fast, never silently share a table).
 
 ### Where it gets written
 
@@ -186,8 +218,11 @@ Firing points:
 
 Constraints:
 
+- **Always available, no migration.** Callbacks are just optional config functions — they carry no
+  schema and no collection, so they are active regardless of the `provenance` opt-in flag and never
+  require a consumer migration.
 - Callbacks must not break the translation if they throw — wrap and log; a failing callback is the
-  host's problem, not a reason to fail the run. (Confirm desired semantics.)
+  host's problem, not a reason to fail the run.
 - They run server-side only.
 
 This gives the host a push-based extension point (logging, notifications, cache invalidation, feeding
@@ -207,20 +242,94 @@ This gives the host a push-based extension point (logging, notifications, cache 
 
 ---
 
-## Open questions (to resolve in the next pass)
+## Decisions (resolved 2026-07-02)
 
-1. **Fingerprint algorithm** — exact hash input (normalized JSON of the translated source leaf set?),
-   hash function, and how rich text (Lexical) is normalized before hashing.
-2. **Version-based fingerprint** — offer it as an opt-in when consumer has versions enabled? Or defer
-   entirely?
-3. **Sidecar slug** — default name + override config shape + collision guard behaviour.
-4. **SQL migration story** — how the table is created across consumers we don't own the migrations
-   for; documented manual step vs. anything we can automate.
-5. **Provenance lifecycle** — what happens on document delete (cascade-clean the records?), and on a
-   collection being removed from the plugin config.
-6. **Callback error semantics** — swallow-and-log vs. surfacing.
-7. **Status endpoint merge shape** — how the durable + live layers combine in the response model
-   without breaking existing consumers of `get-document-status` / `get-collection-status`.
+Each numbered item is the former open question, now answered.
+
+1. **Fingerprint algorithm — RESOLVED by slice 6.** No new algorithm. The source fingerprint is
+   `sourceFingerprint = fingerprint(projectTranslatableContent(sourceDoc, schema))`, both from
+   `@core` (`src/core/content-projection/`). `fingerprint` sha256-hashes the `{ idPath, text }`
+   entries sorted by `idPath`, each length-prefixed. Rich text is normalized by the projector
+   (text-nodes-only) — the **same** extraction sent to the provider, so drift can only be a real
+   content change. Inherits the known "text-nodes-only" blind spot (formatting-only edits do not mark
+   stale) — accepted, documented.
+2. **Version-based fingerprint — DEFERRED.** v1 uses the content hash only. An opt-in
+   `updatedAt`/version fingerprint (for consumers with versions enabled) can be added later,
+   additively, without breaking the record shape. Not built now.
+3. **Provenance collection is opt-in; slug guarded. [pending confirm]** The provenance *collection*
+   is default-OFF, enabled by presence of a `provenance` config key (`provenance?: { slug?: string }`
+   on `TranslatorPluginConfig`) — because it needs a consumer migration on SQL and must not be forced
+   silently (see "Opt-in, because it needs a consumer migration"). Default slug `translator-provenance`,
+   `admin: { hidden: true }`; override via `provenance.slug`; **startup guard**: if the chosen slug
+   already exists in `config.collections`, throw a clear error at init (fail fast, never silently
+   share a table). The **lifecycle callbacks are NOT gated** by this flag — they carry no schema.
+4. **SQL migration — consumer-generated, documented.** The plugin ships only the collection *config*;
+   the consumer's Payload creates the table (SQL prod: `payload migrate`; SQL dev: push; Mongo:
+   inferred, no migration). The collection is deliberately minimal (all `text`/`date`, one composite
+   index) so the generated migration is trivial. README gets a required post-install step.
+5. **Delete cleanup — cascade-clean. [pending confirm]** An `afterDelete` hook injected on each
+   configured collection deletes provenance rows for `(collectionSlug, documentId)`. A collection
+   later removed from the plugin config leaves its rows orphaned (records simply stop updating) —
+   tolerated and documented; no cross-run reconciliation in v1.
+6. **Callback errors — swallow-and-log. [pending confirm]** Every lifecycle callback is wrapped in
+   try/catch; a throw is logged via the Payload logger and never propagates. A failing host callback
+   is never a reason to fail the translation (especially `onTranslationFailed`).
+7. **Status endpoint merge — OUT OF SCOPE for #47, deferred to #50. [pending confirm]** #47 only
+   *writes* provenance and exposes the sidecar collection as queryable. Merging the durable
+   provenance layer into `get-document-status` / `get-collection-status` (the "runner-independent
+   status" idea) is #50's job. To avoid a later migration, the `dismissedFingerprint` column is added
+   to the schema **now** but left unused until #50.
+8. **Version bump — minor `0.7.0`.** Because provenance is opt-in default-off and the callbacks are
+   backward-compatible additions, adding this feature changes nothing for a consumer who does not
+   opt in → it is a `feat` (minor), not breaking and not a patch. The public-API additions
+   (`provenance` config, the three callbacks, `TranslationTask`) get `@since 0.7.0`. At 0.x a caret
+   range (`^0.6.x`) will not auto-upgrade to `0.7.0`, so even opted-in SQL consumers pull it
+   deliberately.
+
+## Implementation slices
+
+TDD (red tests first), each slice run through `/sp-finalize` (simplify + iterative-review + gate)
+before its commit; tests are type-checked (tsconfig.check.json) and lint is run. New branch
+`feat/translator-provenance` off updated `main`. The `ProvenanceStore` **port** + record type are
+payload-free → they live in `@core`; only the Payload-backed store impl and hooks are adapter code.
+
+- **Slice A — provenance store + sidecar collection (no wiring).**
+  `TranslationProvenanceRecord` type + `ProvenanceStore` port in `src/core/provenance/`; the sidecar
+  `CollectionConfig` factory (fields below, composite index, `admin.hidden`, slug override); a
+  Payload-backed `ProvenanceStore` impl (upsert by composite key, find, `deleteByDocument`); the
+  startup collision guard. Tests: collection shape + store CRUD against a fake payload.
+- **Slice B — write provenance on successful translation (behind the opt-in flag).** Add the
+  `provenance?: { slug?: string }` config; **only when present**, inject the sidecar collection +
+  store into `plugin.ts` (config modifier), run the collision guard, and — in the document
+  translation path — compute `sourceFingerprint` via the core projector+fingerprint and `store.upsert`
+  after the target locale is written. When `provenance` is absent, nothing is injected and no write
+  happens. Tests: opted-in → a record appears with the right fingerprint/locales/timestamp and
+  re-translate updates the same row (upsert, not duplicate); opted-out → no collection, no write.
+- **Slice C — lifecycle callbacks (always available, not gated).** Extend `TranslatorPluginConfig`
+  with `onTranslationQueued` / `onTranslationCompleted` / `onTranslationFailed` + the `TranslationTask`
+  type (with `@since 0.7.0`); fire queued at enqueue, completed after a successful handle, failed in
+  the handler's catch (fire, then rethrow so the runner still marks the job failed). Callback errors
+  swallowed-and-logged. Independent of the `provenance` flag. Tests: each fires with the right
+  descriptor; a throwing callback does not break the translation.
+- **Slice D — delete cleanup + docs.** When `provenance` is enabled, inject an `afterDelete` hook on
+  configured collections → `store.deleteByDocument` (not injected when opted out). README: the opt-in
+  `provenance` config, the required SQL migration step, the callbacks API, `@since 0.7.0`. Tests:
+  deleting a document removes its provenance rows.
+
+### Sidecar collection shape (slice A)
+
+Minimal, DB-portable. All `text`/`date`; composite uniqueness on
+`(collectionSlug, documentId, targetLocale)` is the upsert key.
+
+| field | type | notes |
+| --- | --- | --- |
+| `collectionSlug` | text | indexed; part of upsert key |
+| `documentId` | text | stringified even when numeric; part of upsert key |
+| `targetLocale` | text | part of upsert key |
+| `sourceLocale` | text | which locale was translated from |
+| `sourceFingerprint` | text | `fingerprint(projectTranslatableContent(sourceDoc, schema))` |
+| `translatedAt` | date | last successful translation time |
+| `dismissedFingerprint` | text (nullable) | added now, unused until #50 |
 
 ## Out of scope
 
