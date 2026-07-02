@@ -8,46 +8,57 @@ import { SectionCard } from "../../../ui/SectionCard";
 import { SegmentedControl } from "../../../ui/SegmentedControl";
 import { SerpPreview } from "../components/SerpPreview";
 import type { SerpMode } from "../components/SerpPreview";
+import { TabWrapper } from "../components/TabWrapper";
 
 export function SerpTab({
   data,
   keyphrase,
+  synonyms = [],
   faviconUrl,
 }: {
   data: SerpResult;
   keyphrase: string;
+  synonyms?: string[];
   faviconUrl: string;
 }) {
   const [mode, setMode] = useState<SerpMode>("mobile");
 
   return (
-    <section className="flex flex-col gap-[13px]">
-      <SectionCard
-        title="Search result preview"
-        widget={
-          <SegmentedControl
-            options={[
-              {
-                value: "mobile",
-                label: "Mobile",
-                icon: <Smartphone aria-hidden="true" className="w-[13px] h-[13px]" />,
-              },
-              {
-                value: "desktop",
-                label: "Desktop",
-                icon: <Monitor aria-hidden="true" className="w-[13px] h-[13px]" />,
-              },
-            ]}
-            value={mode}
-            onChange={setMode}
-            label="Preview device"
-          />
-        }
-      >
-        <div className="p-4">
-          <SerpPreview data={data} keyphrase={keyphrase} faviconUrl={faviconUrl} mode={mode} />
-        </div>
-      </SectionCard>
-    </section>
+    <TabWrapper>
+      <section className="flex flex-col gap-[13px]">
+        <SectionCard
+          title="Search result preview"
+          widget={
+            <SegmentedControl
+              options={[
+                {
+                  value: "mobile",
+                  label: "Mobile",
+                  icon: <Smartphone aria-hidden="true" className="w-[13px] h-[13px]" />,
+                },
+                {
+                  value: "desktop",
+                  label: "Desktop",
+                  icon: <Monitor aria-hidden="true" className="w-[13px] h-[13px]" />,
+                },
+              ]}
+              value={mode}
+              onChange={setMode}
+              label="Preview device"
+            />
+          }
+        >
+          <div className="p-4">
+            <SerpPreview
+              data={data}
+              keyphrase={keyphrase}
+              synonyms={synonyms}
+              faviconUrl={faviconUrl}
+              mode={mode}
+            />
+          </div>
+        </SectionCard>
+      </section>
+    </TabWrapper>
   );
 }

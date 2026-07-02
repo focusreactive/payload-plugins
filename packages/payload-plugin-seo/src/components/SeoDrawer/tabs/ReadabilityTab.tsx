@@ -8,6 +8,7 @@ import { Pill } from "../../../ui/Pill";
 import { FilterPills } from "../../../ui/FilterPills";
 import type { Filter } from "../../../ui/FilterPills";
 import { CheckRow } from "../../../ui/CheckRow";
+import { TabWrapper } from "../components/TabWrapper";
 
 export function ReadabilityTab({ data }: { data: CategoryResult }) {
   const [filter, setFilter] = useState<Filter>("all");
@@ -15,24 +16,26 @@ export function ReadabilityTab({ data }: { data: CategoryResult }) {
   const passing = data.checks.filter((c) => c.status === "good").length;
 
   return (
-    <section className="flex flex-col gap-[13px]">
-      <TabHeader
-        title="Readability"
-        score={data.ringScore}
-        status={data.status}
-        subtitle={
-          <>
-            {passing} / {data.checks.length} checks passing
-          </>
-        }
-      />
+    <TabWrapper>
+      <section className="flex flex-col gap-[13px]">
+        <TabHeader
+          title="Readability"
+          score={data.ringScore}
+          status={data.status}
+          subtitle={
+            <>
+              {passing} / {data.checks.length} checks passing
+            </>
+          }
+        />
 
-      <SectionCard title="Checks" widget={<Pill variant="neutral">{data.checks.length}</Pill>}>
-        <FilterPills checks={data.checks} value={filter} onChange={setFilter} />
-        {visible.map((c) => (
-          <CheckRow key={c.id} check={c} />
-        ))}
-      </SectionCard>
-    </section>
+        <SectionCard title="Checks" widget={<Pill variant="neutral">{data.checks.length}</Pill>}>
+          <FilterPills checks={data.checks} value={filter} onChange={setFilter} />
+          {visible.map((c) => (
+            <CheckRow key={c.id} check={c} />
+          ))}
+        </SectionCard>
+      </section>
+    </TabWrapper>
   );
 }

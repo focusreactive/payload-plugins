@@ -20,6 +20,7 @@ import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
 import { createSharedSlugField } from "@/lib/fields/slugField";
 
+import { computeReadingTime } from "./hooks/computeReadingTime";
 import { indexPostEmbedding, deletePostEmbedding } from "./hooks/indexEmbedding";
 import { revalidateDelete, revalidatePost } from "./hooks/revalidatePost";
 
@@ -76,6 +77,7 @@ export const Posts: CollectionConfig<"posts"> = {
     excerpt: true,
     heroImage: true,
     publishedAt: true,
+    readingTime: true,
     slug: true,
     title: true,
   },
@@ -275,6 +277,23 @@ export const Posts: CollectionConfig<"posts"> = {
     {
       admin: {
         position: "sidebar",
+        readOnly: true,
+        description: {
+          en: "Estimated reading time in minutes. Auto-calculated from the content on save.",
+          es: "Tiempo de lectura estimado en minutos. Se calcula automáticamente al guardar.",
+        },
+      },
+      label: {
+        en: "Reading Time (min)",
+        es: "Tiempo de lectura (min)",
+      },
+      localized: true,
+      name: "readingTime",
+      type: "number",
+    },
+    {
+      admin: {
+        position: "sidebar",
       },
       hasMany: true,
       label: {
@@ -324,6 +343,7 @@ export const Posts: CollectionConfig<"posts"> = {
     },
   ],
   hooks: {
+    beforeChange: [computeReadingTime],
     afterChange: [revalidatePost, indexPostEmbedding],
     afterDelete: [revalidateDelete, deletePostEmbedding],
   },

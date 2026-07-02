@@ -26,6 +26,7 @@ const input: AnalysisInput = {
   description: "Discover the best running shoes for every type of runner.",
   contentHtml,
   keyphrase: "",
+  keyphrases: [{ text: "", synonyms: [] }],
   locale: "en_US",
   site: { name: "RunShop", baseUrl: "https://runshop.com" },
   has: {

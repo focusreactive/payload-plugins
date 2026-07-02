@@ -13,7 +13,7 @@ describe("registered extractor → analysis input", () => {
       locale: "en",
       payloadLocale: "en",
       apiRoute: "/api",
-      keyphrase: "",
+      keyphrases: [],
       fields: {},
       site: { name: "S", baseUrl: "" },
       extractor,

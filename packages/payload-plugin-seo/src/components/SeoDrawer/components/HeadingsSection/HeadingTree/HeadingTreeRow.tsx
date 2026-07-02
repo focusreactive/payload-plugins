@@ -1,6 +1,7 @@
 import type { Ref } from "react";
 import type { HeadingNode } from "../../../../../engine/types/analysis";
 import { cn } from "../../../../../utils/style";
+import { formatSkippedLevels } from "../headingIssueCopy";
 import { Chevron } from "./Chevron";
 
 interface HeadingTreeRowProps {
@@ -74,6 +75,12 @@ export function HeadingTreeRow({
             (empty heading)
           </span>
         )}
+
+        {node.issue ? (
+          <span className="flex-none inline-flex items-center rounded-[20px] bg-seo-warn-100 px-[8px] py-[2px] text-[9.5px] font-bold tracking-[0.02em] text-seo-warn">
+            {formatSkippedLevels(node.issue.skipped)}
+          </span>
+        ) : null}
 
         {hasKids ? <Chevron open={isOpen} /> : null}
       </div>

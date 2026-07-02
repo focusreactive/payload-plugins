@@ -31,11 +31,26 @@ export interface ProminentWord {
 
 export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
+export type HeadingDocIssue =
+  | {
+      type: "missing-h1";
+    }
+  | {
+      type: "multiple-h1";
+      count: number;
+    };
+
+export interface HeadingNodeIssue {
+  type: "skipped-level";
+  skipped: HeadingLevel[];
+}
+
 export interface HeadingNode {
   id: string;
   level: HeadingLevel;
   text: string;
   children: HeadingNode[];
+  issue?: HeadingNodeIssue;
 }
 
 export interface HeadingLevelCount {
@@ -47,6 +62,7 @@ export interface HeadingStructure {
   total: number;
   levels: HeadingLevelCount[];
   tree: HeadingNode[];
+  issues: HeadingDocIssue[];
 }
 
 export interface VitalsResult {
@@ -73,9 +89,21 @@ export interface CategoryResult {
   checks: CheckResult[];
 }
 
+export interface KeyphraseInput {
+  text: string;
+  synonyms: string[];
+}
+
+export interface RelatedKeyphraseResult {
+  text: string;
+  result: CategoryResult;
+}
+
 export interface AnalysisResult {
   overall: { seoScore: number; status: Status };
+  keyphraseText: string;
   keyphrase: CategoryResult;
+  relatedKeyphrases: RelatedKeyphraseResult[];
   onPage: CategoryResult;
   readability: CategoryResult;
   inclusive: {
@@ -94,6 +122,7 @@ export interface AnalysisInput {
   description: string;
   contentHtml: string;
   keyphrase: string;
+  keyphrases: KeyphraseInput[];
   locale: string;
   site: { name: string; baseUrl: string };
   has: {

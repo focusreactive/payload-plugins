@@ -16,7 +16,6 @@ export interface UseAnalysisArgs {
 export interface UseAnalysisResult {
   result: AnalysisResult | null;
   analyzing: boolean;
-  analyzedKeyphrase: string | null;
   analyzeNow: () => void;
 }
 
@@ -28,7 +27,6 @@ export function useAnalysis({
 }: UseAnalysisArgs): UseAnalysisResult {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [analyzedKeyphrase, setAnalyzedKeyphrase] = useState<string | null>(null);
 
   const getInputRef = useRef(getInput);
   getInputRef.current = getInput;
@@ -52,7 +50,6 @@ export function useAnalysis({
       if (runId !== runSeq.current) return;
 
       setResult(runAnalysis(input));
-      setAnalyzedKeyphrase(input.keyphrase);
     } finally {
       if (runId === runSeq.current) setAnalyzing(false);
     }
@@ -77,7 +74,6 @@ export function useAnalysis({
   return {
     result,
     analyzing,
-    analyzedKeyphrase,
     analyzeNow,
   };
 }

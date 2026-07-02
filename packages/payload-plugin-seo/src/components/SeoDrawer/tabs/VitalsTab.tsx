@@ -6,6 +6,7 @@ import { KpiCard } from "../../../ui/KpiCard";
 import { SectionCard } from "../../../ui/SectionCard";
 import { Pill } from "../../../ui/Pill";
 import { HeadingsSection } from "../components/HeadingsSection";
+import { TabWrapper } from "../components/TabWrapper";
 
 export interface VitalsTabProps {
   data: VitalsResult;
@@ -17,60 +18,65 @@ export function VitalsTab({ data, onRequestKeyphrase }: VitalsTabProps) {
   const noKeyphraseMatch = data.prominentWords.every((w) => !w.isKeyphrase);
 
   return (
-    <section className="flex flex-col gap-[13px]">
-      <div className="grid grid-cols-3 gap-[9px]">
-        <KpiCard label="Words" value={data.words.toLocaleString()} />
-        <KpiCard label="Sentences" value={data.sentences} />
-        <KpiCard label="Paragraphs" value={data.paragraphs} />
-        <KpiCard label="Images" value={data.images} />
-        <KpiCard label="Videos" value={data.videos} />
-        <KpiCard label="Reading time" value={data.readingTimeMinutes} suffix="min" />
-      </div>
+    <TabWrapper>
+      <section className="flex flex-col gap-[13px]">
+        <div className="grid grid-cols-3 gap-[9px]">
+          <KpiCard label="Words" value={data.words.toLocaleString()} />
+          <KpiCard label="Sentences" value={data.sentences} />
+          <KpiCard label="Paragraphs" value={data.paragraphs} />
+          <KpiCard label="Images" value={data.images} />
+          <KpiCard label="Videos" value={data.videos} />
+          <KpiCard label="Reading time" value={data.readingTimeMinutes} suffix="min" />
+        </div>
 
-      <HeadingsSection data={data.headings} />
+        <HeadingsSection data={data.headings} />
 
-      <SectionCard
-        title="Prominent words"
-        widget={<Pill variant="neutral">{data.prominentWords.length}</Pill>}
-      >
-        {data.prominentWords.map((w) => (
-          <div
-            className={cn(
-              "relative flex items-center gap-[12px] px-[15px] py-[9px]",
-              ROW_SEPARATOR
-            )}
-            key={w.word}
-          >
-            <div className="w-[120px] flex-none text-[12px] font-medium flex items-center gap-[6px]">
-              {w.word}{" "}
-              {w.isKeyphrase && (
-                <span className="text-[9px] font-bold uppercase tracking-[0.04em] text-neutral-1000 bg-neutral-150 rounded-[3px] px-[5px] py-[1px]">
-                  Key
-                </span>
-              )}
-            </div>
-            <div className="flex-1 h-[6px] rounded-[3px] bg-neutral-100 overflow-hidden">
-              <i
-                className={cn("block h-full", w.isKeyphrase ? "bg-neutral-1000" : "bg-neutral-400")}
-                style={{ width: `${(w.count / max) * 100}%` }}
-              />
-            </div>
-            <div className="w-[30px] text-right font-mono text-[11px] font-semibold text-neutral-700">
-              {w.count}
-            </div>
-          </div>
-        ))}
-      </SectionCard>
-
-      {noKeyphraseMatch && (
-        <button
-          type="button"
-          onClick={onRequestKeyphrase}
-          className="self-start text-[12px] text-neutral-600 underline underline-offset-2 hover:text-neutral-800 cursor-pointer bg-transparent border-0 p-0"
+        <SectionCard
+          title="Prominent words"
+          widget={<Pill variant="neutral">{data.prominentWords.length}</Pill>}
         >
-          Set a focus keyphrase to see which prominent words match it
-        </button>
-      )}
-    </section>
+          {data.prominentWords.map((w) => (
+            <div
+              className={cn(
+                "relative flex items-center gap-[12px] px-[15px] py-[9px]",
+                ROW_SEPARATOR
+              )}
+              key={w.word}
+            >
+              <div className="w-[120px] flex-none text-[12px] font-medium flex items-center gap-[6px]">
+                {w.word}{" "}
+                {w.isKeyphrase && (
+                  <span className="text-[9px] font-bold uppercase tracking-[0.04em] text-neutral-1000 bg-neutral-150 rounded-[3px] px-[5px] py-[1px]">
+                    Key
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 h-[6px] rounded-[3px] bg-neutral-100 overflow-hidden">
+                <i
+                  className={cn(
+                    "block h-full",
+                    w.isKeyphrase ? "bg-neutral-1000" : "bg-neutral-400"
+                  )}
+                  style={{ width: `${(w.count / max) * 100}%` }}
+                />
+              </div>
+              <div className="w-[30px] text-right font-mono text-[11px] font-semibold text-neutral-700">
+                {w.count}
+              </div>
+            </div>
+          ))}
+        </SectionCard>
+
+        {noKeyphraseMatch && (
+          <button
+            type="button"
+            onClick={onRequestKeyphrase}
+            className="self-start text-[12px] text-neutral-600 underline underline-offset-2 hover:text-neutral-800 cursor-pointer bg-transparent border-0 p-0"
+          >
+            Set a focus keyphrase to see which prominent words match it
+          </button>
+        )}
+      </section>
+    </TabWrapper>
   );
 }

@@ -80,6 +80,24 @@ imports `createDatabaseAdapter()` from `@/lib/database`; the adapter is configur
 with `migrationDir` pointing at `src/lib/database/migrations/`, so `payload
 migrate:create` writes new files there.
 
+### Postgres 63-char identifier limit
+
+Postgres caps table/enum names at **63 characters**. Payload derives those names
+by concatenating the full nested path (e.g. `_default_templates_v_blocks_<slug>_<array>_<field>`),
+so a deeply nested field inside a block can overflow and make `payload migrate:create` abort with `Exceeded max identifier length for table or enum name of 63 characters`.
+
+- **When it bites:** worst case is a block that has a draft mirror (`_pages_v_*`),
+  a template-override variant (`_default_templates_v_blocks_*`), **and** a nested
+  array/select inside it (e.g. a `linkGroup` array with an `iconTrailing` select).
+  The system prefix `_default_templates_v_blocks_` alone eats ~28 chars — only the
+  **slug + nested-path tail** is yours to shrink.
+- **The fix is shorter names, not config tricks.** Keep block `slug` short, and
+  keep nested array/group/field names short. Budget the full path against 63 chars
+  *before* generating the migration — count `_default_templates_v_blocks_` (28) +
+  slug + every nested segment.
+- For an unavoidably long table, set an explicit short `dbName` on the
+  block/array/field rather than letting Payload derive it, then regenerate.
+
 ## Wired Plugins
 
 `src/lib/plugins/index.ts` is the single source of truth for plugin wiring. Currently active:

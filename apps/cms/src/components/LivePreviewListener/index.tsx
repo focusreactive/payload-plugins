@@ -1,57 +1,61 @@
 "use client";
 
 import { RefreshRouteOnSave as PayloadLivePreview } from "@payloadcms/live-preview-react";
-import { useTranslations } from "next-intl";
-import { useRouter, usePathname } from "next/navigation";
-import React, { useEffect, useState } from "react";
+// import { useTranslations } from "next-intl";
+// import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
+import React from "react";
 
 import { getClientSideURL } from "@/lib/utils/getURL";
 
 export const LivePreviewListener: React.FC = () => {
   const router = useRouter();
-  const pathname = usePathname();
-  const [isInIframe, setIsInIframe] = useState(false);
-  const [isFromPayloadAdmin, setIsFromPayloadAdmin] = useState(false);
-  const t = useTranslations("common");
 
-  useEffect(() => {
-    const checkIframe = () => {
-      try {
-        const inIframe = window.self !== window.top;
-        setIsInIframe(inIframe);
-
-        if (inIframe) {
-          let isAdmin = false;
-
-          try {
-            const parentLocation = window.parent.location;
-            const parentPath = parentLocation.pathname || "";
-            isAdmin = parentPath.includes("/admin");
-          } catch {
-            const referrer = document.referrer || "";
-            isAdmin =
-              referrer.includes("/admin") ||
-              referrer.includes("payload") ||
-              window.location.search.includes("preview=true");
-          }
-
-          setIsFromPayloadAdmin(isAdmin);
-        }
-      } catch {
-        setIsInIframe(false);
-        setIsFromPayloadAdmin(false);
-      }
-    };
-
-    checkIframe();
-  }, []);
-
-  const exitPreviewUrl = `/next/exit-preview?path=${encodeURIComponent(pathname)}`;
+  // --- Exit Preview button logic (disabled) ---
+  // const pathname = usePathname();
+  // const [isInIframe, setIsInIframe] = useState(false);
+  // const [isFromPayloadAdmin, setIsFromPayloadAdmin] = useState(false);
+  // const t = useTranslations("common");
+  //
+  // useEffect(() => {
+  //   const checkIframe = () => {
+  //     try {
+  //       const inIframe = window.self !== window.top;
+  //       setIsInIframe(inIframe);
+  //
+  //       if (inIframe) {
+  //         let isAdmin = false;
+  //
+  //         try {
+  //           const parentLocation = window.parent.location;
+  //           const parentPath = parentLocation.pathname || "";
+  //           isAdmin = parentPath.includes("/admin");
+  //         } catch {
+  //           const referrer = document.referrer || "";
+  //           isAdmin =
+  //             referrer.includes("/admin") ||
+  //             referrer.includes("payload") ||
+  //             window.location.search.includes("preview=true");
+  //         }
+  //
+  //         setIsFromPayloadAdmin(isAdmin);
+  //       }
+  //     } catch {
+  //       setIsInIframe(false);
+  //       setIsFromPayloadAdmin(false);
+  //     }
+  //   };
+  //
+  //   checkIframe();
+  // }, []);
+  //
+  // const exitPreviewUrl = `/next/exit-preview?path=${encodeURIComponent(pathname)}`;
 
   return (
     <>
       <PayloadLivePreview refresh={router.refresh} serverURL={getClientSideURL()} />
-      {(!isInIframe || !isFromPayloadAdmin) && (
+      {/* Exit Preview button (disabled) */}
+      {/* {(!isInIframe || !isFromPayloadAdmin) && (
         <div className="fixed bottom-4 right-4 z-50">
           <a
             href={exitPreviewUrl}
@@ -60,7 +64,7 @@ export const LivePreviewListener: React.FC = () => {
             {t("exitPreview")}
           </a>
         </div>
-      )}
+      )} */}
     </>
   );
 };

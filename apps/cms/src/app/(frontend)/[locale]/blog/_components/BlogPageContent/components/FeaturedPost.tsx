@@ -6,7 +6,6 @@ import { cn } from "@/components/utils";
 import type { Locale } from "@/lib/types";
 import { Link } from "@/components/shared";
 import { AuthorAvatar } from "@/components/AuthorAvatar";
-import { readingTimeMinutes } from "@/lib/utils/readingTime";
 import type { Author, Category } from "@/payload-types";
 
 import type { BlogListPost } from "../types";
@@ -64,7 +63,7 @@ export async function FeaturedPost({ post, readMoreLabel, locale, className }: F
             </>
           )}
           <span className="whitespace-nowrap">
-            {t("readTimeLong", { minutes: readingTimeMinutes(post.content) })}
+            {t("readTimeLong", { minutes: post.readingTime ?? 1 })}
           </span>
         </div>
 

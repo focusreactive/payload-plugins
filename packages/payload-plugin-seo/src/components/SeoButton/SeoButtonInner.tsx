@@ -1,12 +1,12 @@
 "use client";
 
-import { Button, useModal } from "@payloadcms/ui";
+import { Button, useDocumentInfo, useLocale, useModal } from "@payloadcms/ui";
 import { Gauge } from "lucide-react";
 import { useCallback, useState } from "react";
 import { ScoreBadge } from "./ScoreBadge";
 import { SeoDrawer } from "../SeoDrawer";
-import { isKeyphrasePending } from "../SeoDrawer/keyphrasePending";
 import { useAnalysis } from "../SeoDrawer/useAnalysis";
+import { useKeyphrases } from "../SeoDrawer/useKeyphrases";
 import { useLiveDocument } from "../SeoDrawer/useLiveDocument";
 
 export interface SeoButtonProps {
@@ -27,28 +27,54 @@ export function SeoButtonInner({
   extractContentPath,
 }: SeoButtonProps) {
   const { openModal } = useModal();
-  const [keyphrase, setKeyphrase] = useState("");
+  const { id } = useDocumentInfo();
+  const locale = useLocale();
 
+  const docId = id == null ? "" : String(id);
+  const localeCode = locale?.code ?? "en";
+
+  const {
+    addRelated,
+    addSynonym,
+    isDuplicate,
+    keyphrases,
+    remove: removeKeyphrase,
+    removeSynonym,
+    setFocus,
+    updateText,
+  } = useKeyphrases({ collectionSlug, docId, localeCode });
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const { signature, getInput } = useLiveDocument({
     collectionSlug,
     fields,
-    site: { name: site.name, baseUrl: site.baseUrl },
-    keyphrase,
+    site: {
+      name: site.name,
+      baseUrl: site.baseUrl,
+    },
+    keyphrases,
     extractContentPath,
   });
-  const { result, analyzing, analyzedKeyphrase, analyzeNow } = useAnalysis({
-    getInput,
-    signature,
-    supportedLocales,
-  });
+  const { result, analyzing, analyzeNow } = useAnalysis({ getInput, signature, supportedLocales });
 
-  const keyphrasePending = isKeyphrasePending(keyphrase, analyzedKeyphrase);
   const overall = result?.overall ?? null;
 
   const open = useCallback(() => {
     analyzeNow();
     openModal(DRAWER_SLUG);
   }, [analyzeNow, openModal]);
+
+  const handleAddRelated = useCallback(() => {
+    const newId = addRelated();
+    if (newId) setSelectedId(newId);
+  }, [addRelated]);
+
+  const handleRemove = useCallback(
+    (id: string) => {
+      removeKeyphrase(id);
+      setSelectedId((current) => (current === id ? null : current));
+    },
+    [removeKeyphrase]
+  );
 
   return (
     <span className="relative inline-flex">
@@ -67,13 +93,19 @@ export function SeoButtonInner({
       {overall && <ScoreBadge score={overall.seoScore} status={overall.status} />}
 
       <SeoDrawer
-        analyzeNow={analyzeNow}
-        analyzing={analyzing}
         drawerSlug={DRAWER_SLUG}
-        keyphrase={keyphrase}
-        keyphrasePending={keyphrasePending}
+        keyphrases={keyphrases}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
         result={result}
-        setKeyphrase={setKeyphrase}
+        analyzing={analyzing}
+        onAddRelated={handleAddRelated}
+        onTextChange={updateText}
+        onAddSynonym={addSynonym}
+        onRemoveSynonym={removeSynonym}
+        onRemove={handleRemove}
+        onSetFocus={setFocus}
+        isDuplicate={isDuplicate}
         site={site}
       />
     </span>

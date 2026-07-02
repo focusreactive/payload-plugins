@@ -33,6 +33,7 @@
   --color-seo-warn-100: var(--seo-warn-100);
   --color-seo-bad: var(--seo-bad);
   --color-seo-bad-100: var(--seo-bad-100);
+  --color-seo-bad-200: var(--seo-bad-200);
 
   --color-serp-title: var(--serp-title);
   --color-serp-title-mobile: var(--serp-title-mobile);
@@ -78,6 +79,7 @@
   --seo-warn-100: #fbf2e0;
   --seo-bad: #d9483f;
   --seo-bad-100: #fbe9e7;
+  --seo-bad-200: #f6d4cf;
 }
 
 [data-theme="dark"] {
@@ -100,6 +102,28 @@
   --seo-warn-100: #2e2310;
   --seo-bad: #f0746b;
   --seo-bad-100: #311714;
+  --seo-bad-200: #4a201c;
+}
+
+.seo-drawer .drawer__content-children {
+  display: flex;
+  flex-direction: column;
+}
+
+.seo-root {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.seo-tabpanel {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.seo-root button {
+  border: none;
 }
 
 .seo-root [role="tab"] {

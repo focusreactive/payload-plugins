@@ -5,7 +5,6 @@ import NextImage from "next/image";
 
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { Link, SectionContainer } from "@/components/shared";
-import { readingTimeMinutes } from "@/lib/utils/readingTime";
 import type { Category, Post } from "@/payload-types";
 
 interface RelatedPostsSectionProps {
@@ -37,7 +36,7 @@ export async function RelatedPostsSection({ posts, relatedPostsLabel }: RelatedP
               <BlogPostCard
                 title={post.title}
                 category={category?.title}
-                readTime={t("readTime", { minutes: readingTimeMinutes(post.content) })}
+                readTime={t("readTime", { minutes: post.readingTime ?? 1 })}
                 image={
                   <NextImage
                     src={heroImage?.url ?? "/empty-placeholder.jpg"}

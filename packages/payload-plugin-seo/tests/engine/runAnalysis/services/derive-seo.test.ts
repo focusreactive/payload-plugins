@@ -40,6 +40,7 @@ function makeInput(keyphrase: string): AnalysisInput {
       "Discover the best running shoes for every type of runner. Expert picks, comparisons, and buying guides to help you find your perfect pair of running shoes.",
     contentHtml,
     keyphrase,
+    keyphrases: [{ text: keyphrase, synonyms: [] }],
     locale: "en_US",
     site: { name: "RunShop", baseUrl: "https://runshop.com" },
     has: { seoTitle: true, metaDescription: true, slug: true, content: true },

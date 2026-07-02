@@ -15,6 +15,7 @@ function inputWith(contentHtml: string): AnalysisInput {
     description: "About our team.",
     contentHtml,
     keyphrase: "team",
+    keyphrases: [{ text: "team", synonyms: [] }],
     locale: "en_US",
     site: { name: "Acme", baseUrl: "https://acme.com" },
     has: { seoTitle: true, metaDescription: true, slug: true, content: true },

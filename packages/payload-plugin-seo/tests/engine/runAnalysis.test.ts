@@ -37,12 +37,25 @@ vi.mock("yoastseo/build/languageProcessing/languages/en/Researcher", () => ({
   },
 }));
 
+vi.mock("yoastseo/build/scoring/assessors/relatedKeywordAssessor", () => ({
+  default: function () {
+    return {
+      assess: () => undefined,
+      getValidResults: () => [{ getIdentifier: () => "keywordDensity", score: 6 }],
+    };
+  },
+}));
+
 const input: AnalysisInput = {
   title: "Best Running Shoes",
   slug: "running-shoes",
   description: "Discover the best running shoes.",
   contentHtml: "<p>Running shoes.</p>",
   keyphrase: "running shoes",
+  keyphrases: [
+    { text: "running shoes", synonyms: ["trainers"] },
+    { text: "trail shoes", synonyms: [] },
+  ],
   locale: "en_US",
   site: { name: "RunShop", baseUrl: "https://runshop.com" },
   has: { seoTitle: true, metaDescription: true, slug: true, content: true },
@@ -66,5 +79,20 @@ describe("runAnalysis", () => {
     for (const c of all) {
       expect(Object.hasOwn(c, "data")).toBe(true);
     }
+  });
+
+  it("produces one relatedKeyphrases entry per non-empty related keyphrase", () => {
+    const r = runAnalysis(input);
+    expect(r.relatedKeyphrases).toHaveLength(1);
+    expect(r.relatedKeyphrases[0].text).toBe("trail shoes");
+    expect(r.relatedKeyphrases[0].result.checks.map((c) => c.id)).toContain("keywordDensity");
+  });
+
+  it("skips related keyphrases with empty text", () => {
+    const r = runAnalysis({
+      ...input,
+      keyphrases: [input.keyphrases[0], { text: "  ", synonyms: [] }],
+    });
+    expect(r.relatedKeyphrases).toHaveLength(0);
   });
 });

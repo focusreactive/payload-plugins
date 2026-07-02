@@ -17,11 +17,18 @@ export type SerpMode = "mobile" | "desktop";
 interface SerpPreviewProps {
   data: SerpResult;
   keyphrase: string;
+  synonyms?: string[];
   faviconUrl: string;
   mode: SerpMode;
 }
 
-export function SerpPreview({ data, keyphrase, faviconUrl, mode }: SerpPreviewProps): ReactElement {
+export function SerpPreview({
+  data,
+  keyphrase,
+  synonyms = [],
+  faviconUrl,
+  mode,
+}: SerpPreviewProps): ReactElement {
   const result = (
     <div className={serpContainer({ mode })}>
       <div className={serpUrlRow({ mode })}>
@@ -36,7 +43,7 @@ export function SerpPreview({ data, keyphrase, faviconUrl, mode }: SerpPreviewPr
       <div className={serpTitle({ mode })}>{data.title}</div>
 
       <div className={serpDescription({ mode })}>
-        {highlightKeyphrase(truncateDescription(data.description), keyphrase)}
+        {highlightKeyphrase(truncateDescription(data.description), keyphrase, synonyms)}
       </div>
     </div>
   );

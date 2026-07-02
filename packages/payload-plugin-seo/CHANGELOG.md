@@ -1,3 +1,36 @@
+# @focus-reactive/payload-plugin-seo [1.9.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.8.0...@focus-reactive/payload-plugin-seo@1.9.0) (2026-07-02)
+
+
+### Bug Fixes
+
+* **seo:** make drawer tab panel fill available height with flex layout ([fee777c](https://github.com/focusreactive/payload-plugins/commit/fee777c009dc6eb4f18c31e8cee87abe2a93ea6e))
+
+
+### Features
+
+* **seo:** protect focus keyphrase from removal and allow multiple empty entries ([2d44752](https://github.com/focusreactive/payload-plugins/commit/2d447524029d0ff9bdbd3b434e6a1ac280c3ba75))
+
+# @focus-reactive/payload-plugin-seo [1.8.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.7.0...@focus-reactive/payload-plugin-seo@1.8.0) (2026-07-01)
+
+
+### Features
+
+* **seo:** flag missing/multiple H1 and skipped heading levels in analysis ([5dc34f9](https://github.com/focusreactive/payload-plugins/commit/5dc34f9e95843da0d745a327ce1632c81d0e9063))
+
+# @focus-reactive/payload-plugin-seo [1.7.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.6.1...@focus-reactive/payload-plugin-seo@1.7.0) (2026-07-01)
+
+
+### Features
+
+* **seo:** add related keyphrases with per-keyphrase synonyms ([0419e94](https://github.com/focusreactive/payload-plugins/commit/0419e9416efa64a40fc2241c03807a55c9bedb88))
+
+## @focus-reactive/payload-plugin-seo [1.6.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.6.0...@focus-reactive/payload-plugin-seo@1.6.1) (2026-06-30)
+
+
+### Bug Fixes
+
+* **seo:** align description length good range to 120-156 chars ([4c9d98e](https://github.com/focusreactive/payload-plugins/commit/4c9d98e4fc1d03733529e48dfed53d84ea46cb00))
+
 # @focus-reactive/payload-plugin-seo [1.6.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.5.0...@focus-reactive/payload-plugin-seo@1.6.0) (2026-06-28)
 
 

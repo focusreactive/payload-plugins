@@ -1,4 +1,4 @@
-import type { AnalysisInput } from "../../engine/types/analysis";
+import type { AnalysisInput, KeyphraseInput } from "../../engine/types/analysis";
 import type { SeoFieldPaths } from "../../types/config";
 
 function valueAt(values: Record<string, unknown>, path?: string): string {
@@ -30,7 +30,7 @@ export interface BuildInputArgs {
   values: Record<string, unknown>;
   contentHtml: string;
   locale: string | { code?: string } | null | undefined;
-  keyphrase: string;
+  keyphrases: KeyphraseInput[];
   fields: SeoFieldPaths;
   site: { name: string; baseUrl: string };
 }
@@ -39,7 +39,7 @@ export function buildInput({
   values,
   contentHtml,
   locale,
-  keyphrase,
+  keyphrases,
   fields,
   site,
 }: BuildInputArgs): AnalysisInput {
@@ -50,7 +50,8 @@ export function buildInput({
     slug: valueAt(values, fields.slug ?? "slug"),
     description: valueAt(values, fields.metaDescription),
     contentHtml,
-    keyphrase,
+    keyphrase: keyphrases[0]?.text ?? "",
+    keyphrases,
     locale: normalizeLocale(locale),
     site,
     has: {

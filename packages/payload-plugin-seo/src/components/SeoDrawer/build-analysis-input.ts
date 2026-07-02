@@ -11,7 +11,7 @@ import {
   video,
 } from "../../content/schema/helpers";
 import { createResolveDocs } from "../../content/resolve/resolve-docs";
-import type { AnalysisInput } from "../../engine/types/analysis";
+import type { AnalysisInput, KeyphraseInput } from "../../engine/types/analysis";
 import type {
   ContentExtractor,
   ContentHelpers,
@@ -28,7 +28,7 @@ export interface BuildAnalysisInputArgs {
   locale: string | { code?: string } | null | undefined;
   payloadLocale: string | undefined;
   apiRoute?: string;
-  keyphrase: string;
+  keyphrases: KeyphraseInput[];
   fields: SeoFieldPaths;
   site: { name: string; baseUrl: string };
   extractor?: ContentExtractor;
@@ -42,7 +42,7 @@ export async function buildAnalysisInput(args: BuildAnalysisInputArgs): Promise<
     values: args.values,
     contentHtml,
     locale: args.locale,
-    keyphrase: args.keyphrase,
+    keyphrases: args.keyphrases,
     fields: args.fields,
     site: args.site,
   });
