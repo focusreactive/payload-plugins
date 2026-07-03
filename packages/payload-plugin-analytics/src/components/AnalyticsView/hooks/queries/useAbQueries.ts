@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ANALYTICS_ENDPOINT_PATHS } from "../../../../constants/endpoints";
 import type { AnalyticsQuery } from "../../../../types/query";
 import type {
@@ -23,6 +23,7 @@ export function useAbKpisQuery(query: AnalyticsQuery) {
       analyticsFetch<AnalyticsQuery, AbKpisResponse>(ANALYTICS_ENDPOINT_PATHS.abKpis, query, {
         signal,
       }),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -37,6 +38,7 @@ export function useAbExperimentsQuery(query: AnalyticsQuery) {
           signal,
         }
       ),
+    placeholderData: keepPreviousData,
   });
 }
 

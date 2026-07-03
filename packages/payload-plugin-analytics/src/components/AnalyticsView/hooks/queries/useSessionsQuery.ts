@@ -1,6 +1,6 @@
 "use client";
 
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
 import { ANALYTICS_ENDPOINT_PATHS } from "../../../../constants/endpoints";
 import type { SessionsListQuery, SessionsResponse } from "../../../../types/query";
 import { analyticsFetch } from "./client";
@@ -18,5 +18,6 @@ export function useSessionsQuery(query: SessionsListQuery) {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) =>
       last.pagination.hasMore ? (last.pagination.cursor ?? undefined) : undefined,
+    placeholderData: keepPreviousData,
   });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ANALYTICS_ENDPOINT_PATHS } from "../../../../constants/endpoints";
 import type { DateRange, SessionsListQuery, SessionsResponse } from "../../../../types/query";
 import { analyticsFetch } from "./client";
@@ -28,5 +28,6 @@ export function useSessionsOptionsQuery(dateRange: DateRange) {
       countries: [...new Set(res.rows.flatMap((r) => r.country))].sort(),
       setupRequired: res.setupRequired,
     }),
+    placeholderData: keepPreviousData,
   });
 }

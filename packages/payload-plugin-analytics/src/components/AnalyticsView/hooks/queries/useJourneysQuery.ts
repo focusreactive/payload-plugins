@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ANALYTICS_ENDPOINT_PATHS } from "../../../../constants/endpoints";
 import type { JourneyResponse, JourneysQuery } from "../../../../types/query";
 import { analyticsFetch } from "./client";
@@ -13,5 +13,6 @@ export function useJourneysQuery(query: JourneysQuery) {
       analyticsFetch<JourneysQuery, JourneyResponse>(ANALYTICS_ENDPOINT_PATHS.journeys, query, {
         signal,
       }),
+    placeholderData: keepPreviousData,
   });
 }

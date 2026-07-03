@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { analyticsFetch } from "./client";
 import { analyticsKeys } from "./keys";
 import { customBlockEndpointPath } from "../../../../constants/endpoints";
@@ -11,5 +11,6 @@ export function useCustomBlockQuery<TData>(blockId: string, query: AnalyticsQuer
     queryKey: analyticsKeys.customBlock(blockId, query),
     queryFn: ({ signal }) =>
       analyticsFetch<AnalyticsQuery, TData>(customBlockEndpointPath(blockId), query, { signal }),
+    placeholderData: keepPreviousData,
   });
 }
