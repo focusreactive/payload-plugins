@@ -141,6 +141,7 @@ Allowed on **`text`, `textarea`, and `richText`** fields (a compile error on oth
 | `access`              | `AccessGuard`         | No       | `undefined`                            | Access guard (`{ check }`) for the translation endpoints; omit to leave them open.                             |
 | `basePath`            | `string`              | No       | `'/translate'`                         | Base path for the plugin's API endpoints.                                                                      |
 | `levels`              | `TranslationLevel[]`  | No       | `[documentLevel(), collectionLevel()]` | Which surfaces to enable — see [Translation surfaces](#translation-surfaces-levels).                           |
+| `provenance`          | `boolean \| { slug?: string }` | No | `false` (disabled) | Opt in to recording a provenance record per translation. _Since v0.7.0._ See [Provenance](#provenance-opt-in) below. |
 
 ```typescript
 translatorPlugin({
@@ -148,6 +149,29 @@ translatorPlugin({
   translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
   runner: createPayloadJobsRunner(),
   access: { check: ({ req }) => req.user?.role === "admin" },
+});
+```
+
+### Provenance (opt-in)
+
+_Since v0.7.0._
+
+Set `provenance: true` (or `{}`) to record, after each successful translation, a durable per-locale
+provenance entry — what source state a translation was derived from. Use `{ slug }` to customise the
+sidecar collection's slug (default `'translator-provenance'`), e.g. to resolve a name collision with
+one of your own collections. Omit (or set `false`) to leave everything as-is: no collection, no
+migration, no behavior change.
+
+Enabling it adds a plugin-managed, hidden sidecar collection to your config. **On a SQL database
+(Postgres/SQLite) this requires a migration** — run `payload migrate:create` then `payload migrate`
+(or let dev push apply it in development). MongoDB infers the collection with no migration step.
+
+```typescript
+translatorPlugin({
+  collections: [Posts, Pages],
+  translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
+  runner: createPayloadJobsRunner(),
+  provenance: true, // or { slug: "my-provenance" }
 });
 ```
 

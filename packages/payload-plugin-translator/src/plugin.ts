@@ -1,6 +1,13 @@
-import type { CollectionConfig, Config } from "payload";
+import type { CollectionConfig, Config, Payload } from "payload";
 
 import { CacheProviderExport } from "./client/app/cache/CacheProvider.export";
+import {
+  DEFAULT_PROVENANCE_SLUG,
+  PayloadProvenanceStore,
+  assertProvenanceSlugFree,
+  isProvenanceCollection,
+  makeProvenanceCollection,
+} from "./server/modules/provenance";
 import type { AccessGuard } from "./types/AccessGuard";
 import type { TranslationProvider } from "./core/translation-providers";
 import type {
@@ -13,6 +20,17 @@ import { documentLevel, collectionLevel } from "./composition/levels";
 import type { TranslationLevel } from "./server/modules/translation-levels";
 import { PluginConfigBuilder } from "./server/modules/translation-levels/PluginConfigBuilder";
 import { normalizePath } from "./server/shared";
+
+/**
+ * Resolve the opt-in `provenance` config to a sidecar slug, or `null` when disabled.
+ * `false`/omitted → off; `true` or `{}` → on with the default slug; `{ slug }` → on with that slug.
+ */
+function resolveProvenanceSlug(provenance: TranslatorPluginConfig["provenance"]): string | null {
+  if (!provenance) return null;
+  if (provenance === true) return DEFAULT_PROVENANCE_SLUG;
+  // `||` (not `??`) so an empty/blank slug falls back to the default instead of silently disabling.
+  return provenance.slug || DEFAULT_PROVENANCE_SLUG;
+}
 
 export type TranslatorPluginConfig = {
   /**
@@ -54,6 +72,26 @@ export type TranslatorPluginConfig = {
    * @since 0.5.0
    */
   levels?: TranslationLevel[];
+  /**
+   * Opt-in translation provenance — a durable, per-locale record of what source state each
+   * translation was derived from, stored in a plugin-managed sidecar collection. Set `true` (or `{}`)
+   * to enable with the default slug, or `{ slug }` to customise it. Omit (or `false`) to disable
+   * entirely — no collection, no migration, no behaviour change. **Enabling it on a SQL database adds
+   * a table**: generate and run a migration (`payload migrate:create` + `payload migrate`; dev push in
+   * development; MongoDB infers it with no migration). The lifecycle callbacks are unaffected by this
+   * flag.
+   * @since 0.7.0
+   */
+  provenance?:
+    | boolean
+    | {
+        /**
+         * Slug for the sidecar collection. Change it only to resolve a collision with an existing
+         * collection.
+         * @default 'translator-provenance'
+         */
+        slug?: string;
+      };
 };
 
 /** @deprecated Use `TranslatorPluginConfig` instead */
@@ -75,6 +113,7 @@ export class TranslateCollectionPlugin {
         runner,
         collections,
         levels,
+        provenance,
         basePath: rawBasePath = "/translate",
       } = this.pluginConfig;
 
@@ -91,7 +130,27 @@ export class TranslateCollectionPlugin {
       );
       const collectionSlugs = new Set(schemaMap.keys());
       const basePath = normalizePath(rawBasePath);
-      const translateHandler = new TranslateDocumentHandler(translationProvider, schemaMap);
+
+      // Provenance is opt-in: present `provenance` → resolve the slug, guard it against a collision
+      // with a collection the consumer already defines (ignoring an already-added sidecar so repeated
+      // plugin runs stay idempotent), and give the handler a factory that binds a store to the
+      // request's Payload instance. Absent → no factory, no collection, no behaviour change.
+      const provenanceSlug = resolveProvenanceSlug(provenance);
+      if (provenanceSlug) {
+        const existing = (config.collections ?? []).filter(
+          (collection) => !isProvenanceCollection(collection)
+        );
+        assertProvenanceSlugFree(provenanceSlug, existing);
+      }
+      const provenanceStoreFactory = provenanceSlug
+        ? (p: Payload) => new PayloadProvenanceStore(p, provenanceSlug)
+        : undefined;
+
+      const translateHandler = new TranslateDocumentHandler(
+        translationProvider,
+        schemaMap,
+        provenanceStoreFactory
+      );
 
       const runnerContext: TaskRunnerContext = {
         handler: async (payload, input) => {
@@ -131,6 +190,20 @@ export class TranslateCollectionPlugin {
       //    so a modifier returning a fresh config object doesn't drop later writes),
       //  - the always-on client cache provider.
       builder.addConfigModifier(runnerConfigModifier);
+      if (provenanceSlug) {
+        builder.addConfigModifier((cfg) => {
+          const alreadyAdded = cfg.collections?.some(
+            (collection) => collection.slug === provenanceSlug && isProvenanceCollection(collection)
+          );
+          if (!alreadyAdded) {
+            cfg.collections = [
+              ...(cfg.collections ?? []),
+              makeProvenanceCollection(provenanceSlug),
+            ];
+          }
+          return cfg;
+        });
+      }
       builder.addAdminProvider(new CacheProviderExport(basePath));
 
       // The single place the Payload config is mutated.

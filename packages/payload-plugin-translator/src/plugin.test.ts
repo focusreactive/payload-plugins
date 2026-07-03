@@ -113,3 +113,86 @@ describe("translatorPlugin — explicit levels", () => {
     expect(runner.configure).toHaveBeenCalledTimes(1);
   });
 });
+
+const provenanceOf = (result: Config, slug = "translator-provenance") =>
+  result.collections?.find((c) => c.slug === slug) as Record<string, any> | undefined;
+
+describe("translatorPlugin — provenance (opt-in)", () => {
+  it("does not add the provenance collection by default", async () => {
+    const { result } = await build();
+    expect(provenanceOf(result)).toBeUndefined();
+  });
+
+  it("adds the hidden provenance sidecar when provenance is enabled with {}", async () => {
+    const { result } = await build({ provenance: {} } as Partial<TranslatorPluginConfig>);
+    const provenance = provenanceOf(result);
+    expect(provenance).toBeDefined();
+    expect(provenance?.admin?.hidden).toBe(true);
+  });
+
+  it("enables provenance with the default slug when set to true", async () => {
+    const { result } = await build({ provenance: true } as Partial<TranslatorPluginConfig>);
+    expect(provenanceOf(result)).toBeDefined();
+  });
+
+  it("does not add the provenance collection when set to false", async () => {
+    const { result } = await build({ provenance: false } as Partial<TranslatorPluginConfig>);
+    expect(provenanceOf(result)).toBeUndefined();
+  });
+
+  it("honours a custom provenance slug", async () => {
+    const { result } = await build({
+      provenance: { slug: "my-provenance" },
+    } as Partial<TranslatorPluginConfig>);
+    expect(provenanceOf(result, "my-provenance")).toBeDefined();
+    expect(provenanceOf(result)).toBeUndefined();
+  });
+
+  it("throws when the provenance slug collides with an existing collection", async () => {
+    await expect(
+      build({ provenance: { slug: "posts" } } as Partial<TranslatorPluginConfig>)
+    ).rejects.toThrow(/posts/u);
+  });
+
+  it("does not duplicate the provenance collection when run twice", async () => {
+    const collection = {
+      slug: "posts",
+      fields: [{ name: "title", type: "text", localized: true }],
+    };
+    const pluginConfig = {
+      collections: [collection],
+      translationProvider: { translate: vi.fn() },
+      runner: { create: vi.fn(), configure: vi.fn().mockReturnValue((c: Config) => c) },
+      provenance: {},
+    } as unknown as TranslatorPluginConfig;
+
+    const once = await translatorPlugin(pluginConfig)({
+      collections: [collection],
+    } as unknown as Config);
+    const twice = await translatorPlugin(pluginConfig)(once);
+
+    expect(twice.collections?.filter((c) => c.slug === "translator-provenance")).toHaveLength(1);
+  });
+
+  it("adds both sidecars when run twice with two different provenance slugs", async () => {
+    const collection = {
+      slug: "posts",
+      fields: [{ name: "title", type: "text", localized: true }],
+    };
+    const makePluginConfig = (slug: string) =>
+      ({
+        collections: [collection],
+        translationProvider: { translate: vi.fn() },
+        runner: { create: vi.fn(), configure: vi.fn().mockReturnValue((c: Config) => c) },
+        provenance: { slug },
+      }) as unknown as TranslatorPluginConfig;
+
+    const once = await translatorPlugin(makePluginConfig("provenance-a"))({
+      collections: [collection],
+    } as unknown as Config);
+    const twice = await translatorPlugin(makePluginConfig("provenance-b"))(once);
+
+    expect(provenanceOf(twice, "provenance-a")).toBeDefined();
+    expect(provenanceOf(twice, "provenance-b")).toBeDefined();
+  });
+});

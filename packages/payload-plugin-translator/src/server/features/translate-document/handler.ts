@@ -4,6 +4,8 @@ import { APIError } from "payload";
 import type { Handler } from "../../shared";
 import type { TranslationProvider } from "../../../core/translation-providers";
 import { translateContent } from "../../../core/translation-pipeline";
+import { computeSourceFingerprint } from "../../../core/content-projection/computeSourceFingerprint";
+import type { ProvenanceStore } from "../../../core/provenance";
 
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import type { TranslateDocumentInput, TranslateDocumentOutput } from "./model";
@@ -13,6 +15,9 @@ export type TranslateDocumentDependencies = {
   schemaMap: CollectionSchemaMap;
 };
 
+/** Builds a provenance store bound to a Payload instance; absent when provenance is disabled. */
+export type ProvenanceStoreFactory = (payload: Payload) => ProvenanceStore;
+
 /**
  * Translates a single document from source language to target language
  */
@@ -20,10 +25,19 @@ export class TranslateDocumentHandler implements Handler<
   TranslateDocumentInput,
   TranslateDocumentOutput
 > {
+  private readonly translationProvider: TranslationProvider;
+  private readonly schemaMap: CollectionSchemaMap;
+  private readonly provenanceStoreFactory?: ProvenanceStoreFactory;
+
   constructor(
-    private readonly translationProvider: TranslationProvider,
-    private readonly schemaMap: CollectionSchemaMap
-  ) {}
+    translationProvider: TranslationProvider,
+    schemaMap: CollectionSchemaMap,
+    provenanceStoreFactory?: ProvenanceStoreFactory
+  ) {
+    this.translationProvider = translationProvider;
+    this.schemaMap = schemaMap;
+    this.provenanceStoreFactory = provenanceStoreFactory;
+  }
 
   async handle(payload: Payload, input: TranslateDocumentInput): Promise<TranslateDocumentOutput> {
     const { collection, collectionId, sourceLng, targetLng, strategy, publishOnTranslation } =
@@ -69,6 +83,26 @@ export class TranslateDocumentHandler implements Handler<
       collectionConfig,
       publishOnTranslation
     );
+
+    if (this.provenanceStoreFactory) {
+      const store = this.provenanceStoreFactory(payload);
+      try {
+        await store.upsert({
+          collectionSlug: collection,
+          documentId: String(collectionId),
+          targetLocale: targetLng,
+          sourceLocale: sourceLng,
+          sourceFingerprint: computeSourceFingerprint(sourceData, schema),
+          translatedAt: new Date().toISOString(),
+          dismissedFingerprint: null,
+        });
+      } catch (error) {
+        payload.logger.error({
+          err: error,
+          msg: "translator: failed to record translation provenance",
+        });
+      }
+    }
 
     return { success: true };
   }

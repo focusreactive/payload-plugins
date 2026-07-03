@@ -256,7 +256,7 @@ Each numbered item is the former open question, now answered.
 2. **Version-based fingerprint — DEFERRED.** v1 uses the content hash only. An opt-in
    `updatedAt`/version fingerprint (for consumers with versions enabled) can be added later,
    additively, without breaking the record shape. Not built now.
-3. **Provenance collection is opt-in; slug guarded. [pending confirm]** The provenance *collection*
+3. **Provenance collection is opt-in; slug guarded. [confirmed 2026-07-03]** The provenance *collection*
    is default-OFF, enabled by presence of a `provenance` config key (`provenance?: { slug?: string }`
    on `TranslatorPluginConfig`) — because it needs a consumer migration on SQL and must not be forced
    silently (see "Opt-in, because it needs a consumer migration"). Default slug `translator-provenance`,
@@ -274,7 +274,7 @@ Each numbered item is the former open question, now answered.
 6. **Callback errors — swallow-and-log. [pending confirm]** Every lifecycle callback is wrapped in
    try/catch; a throw is logged via the Payload logger and never propagates. A failing host callback
    is never a reason to fail the translation (especially `onTranslationFailed`).
-7. **Status endpoint merge — OUT OF SCOPE for #47, deferred to #50. [pending confirm]** #47 only
+7. **Status endpoint merge — OUT OF SCOPE for #47, deferred to #50. [confirmed 2026-07-03]** #47 only
    *writes* provenance and exposes the sidecar collection as queryable. Merging the durable
    provenance layer into `get-document-status` / `get-collection-status` (the "runner-independent
    status" idea) is #50's job. To avoid a later migration, the `dismissedFingerprint` column is added

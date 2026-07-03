@@ -21,6 +21,7 @@ export type { ProvenanceKey, ProvenanceStore, TranslationProvenanceRecord } from
 export { projectTranslatableContent } from "./content-projection/contentProjector";
 export type { ProjectionEntry } from "./content-projection/contentProjector";
 export { fingerprint } from "./content-projection/fingerprinter";
+export { computeSourceFingerprint } from "./content-projection/computeSourceFingerprint";
 export { makeIdPath } from "./content-projection/idPath";
 export type { IdPath, PathSegment } from "./content-projection/idPath";
 

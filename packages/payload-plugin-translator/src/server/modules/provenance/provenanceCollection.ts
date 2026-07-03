@@ -3,6 +3,18 @@ import type { CollectionConfig } from "payload";
 /** Default slug for the provenance sidecar collection. Overridable via `provenance.slug`. */
 export const DEFAULT_PROVENANCE_SLUG = "translator-provenance";
 
+/** The `custom` marker tagging the plugin's own provenance sidecar (set + read in this module). */
+const PROVENANCE_MARKER = "translatorProvenance";
+
+/**
+ * True for the plugin's own provenance sidecar collection. Recognised by the {@link PROVENANCE_MARKER}
+ * on `custom` (not the slug, which is consumer-configurable), so plugin wiring can stay idempotent on
+ * a repeated run and the slug-collision guard can ignore an already-added sidecar.
+ */
+export function isProvenanceCollection(collection: { custom?: unknown }): boolean {
+  return (collection.custom as Record<string, unknown> | undefined)?.[PROVENANCE_MARKER] === true;
+}
+
 /**
  * Build the Payload config for the provenance sidecar collection.
  *
@@ -18,6 +30,9 @@ export function makeProvenanceCollection(slug: string = DEFAULT_PROVENANCE_SLUG)
   return {
     slug,
     admin: { hidden: true },
+    // Marker so plugin wiring can recognise its own collection ({@link isProvenanceCollection}) — lets
+    // a repeated plugin run stay idempotent and lets the slug-collision guard ignore its own sidecar.
+    custom: { [PROVENANCE_MARKER]: true },
     fields: [
       { name: "collectionSlug", type: "text", required: true, index: true },
       { name: "documentId", type: "text", required: true, index: true },
