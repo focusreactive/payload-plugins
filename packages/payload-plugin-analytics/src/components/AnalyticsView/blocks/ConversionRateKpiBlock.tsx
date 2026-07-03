@@ -31,6 +31,7 @@ export function ConversionRateKpiBlock({ dateRange, comparison, className }: Blo
       format={formatPercentage}
       prevValue={prevValue}
       loading={kpis.isLoading || lead.isLoading}
+      refreshing={kpis.isPlaceholderData || lead.isPlaceholderData}
       error={lead.error ?? undefined}
       className={className}
     />

@@ -17,7 +17,11 @@ function aggregateByDevice(rows: TopDevicesResponse["rows"]) {
 }
 
 export function DevicesDonutBlock({ dateRange, comparison, className }: BlockComponentProps) {
-  const { data, isLoading, error } = useTopDevicesQuery({ dateRange, comparison, limit: LIMIT });
+  const { data, isLoading, isPlaceholderData, error } = useTopDevicesQuery({
+    dateRange,
+    comparison,
+    limit: LIMIT,
+  });
   const showCompare = comparison.kind === "previous-period";
   const prev = new Map(
     aggregateByDevice(data?.comparison?.rows ?? []).map((d) => [d.deviceCategory, d.sessions])
@@ -33,6 +37,7 @@ export function DevicesDonutBlock({ dateRange, comparison, className }: BlockCom
           prev: showCompare ? (prev.get(d.deviceCategory) ?? undefined) : undefined,
         }))}
         loading={isLoading}
+        refreshing={isPlaceholderData}
         error={error ?? undefined}
       />
     </DataCard>

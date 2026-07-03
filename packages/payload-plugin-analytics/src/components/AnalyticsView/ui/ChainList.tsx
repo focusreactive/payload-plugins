@@ -7,6 +7,7 @@ import { useLeadActionRegistry } from "../contexts/LeadActionRegistryContext";
 import { SkeletonBlock } from "./SkeletonBlock";
 import { ErrorTile } from "./ErrorTile";
 import { EmptyTile } from "./EmptyTile";
+import { Refreshable } from "./Refreshable";
 import type { BlockStateProps } from "../types/blockState";
 import { formatPercentage } from "../numberFormatters";
 
@@ -14,7 +15,7 @@ export interface ChainListProps extends BlockStateProps {
   rows: JourneyRow[];
 }
 
-export function ChainList({ rows, loading, error, onRetry }: ChainListProps) {
+export function ChainList({ rows, loading, refreshing, error, onRetry }: ChainListProps) {
   const { resolveLabel, resolveIcon } = useLeadActionRegistry();
 
   if (loading) return <SkeletonBlock shape="table" rows={5} />;
@@ -22,7 +23,7 @@ export function ChainList({ rows, loading, error, onRetry }: ChainListProps) {
   if (rows.length === 0) return <EmptyTile message="No journeys in this range." />;
 
   return (
-    <div className="flex flex-col">
+    <Refreshable refreshing={refreshing} className="flex flex-col">
       {rows.map((row, i) => (
         <div
           key={i}
@@ -64,6 +65,6 @@ export function ChainList({ rows, loading, error, onRetry }: ChainListProps) {
           </span>
         </div>
       ))}
-    </div>
+    </Refreshable>
   );
 }

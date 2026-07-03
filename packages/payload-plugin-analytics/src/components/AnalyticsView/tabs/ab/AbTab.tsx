@@ -6,6 +6,7 @@ import { useAnalyticsParams } from "../../hooks/useAnalyticsParams";
 import { AbKpiStrip } from "./AbKpiStrip";
 import { AbExperimentsTable } from "./AbExperimentsTable";
 import { AbDrawer } from "./AbDrawer";
+import { Refreshable } from "../../ui/Refreshable";
 import type { DateRange, Comparison } from "../../../../types/query";
 
 const SETUP_GUIDE_URL =
@@ -72,7 +73,9 @@ export function AbTab({ dateRange, comparison }: AbTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <AbKpiStrip data={kpis.data} />
+      <Refreshable refreshing={kpis.isPlaceholderData}>
+        <AbKpiStrip data={kpis.data} />
+      </Refreshable>
 
       <div className="mt-1 flex items-baseline justify-between gap-3">
         <div className="flex items-center gap-2 text-[13px] font-semibold text-(--theme-elevation-1000)">
@@ -93,7 +96,9 @@ export function AbTab({ dateRange, comparison }: AbTabProps) {
           Publish a variant on any A/B-enabled document to start tracking experiments here.
         </div>
       ) : (
-        <AbExperimentsTable rows={rows} onOpen={setSelectedExperiment} />
+        <Refreshable refreshing={experiments.isPlaceholderData}>
+          <AbExperimentsTable rows={rows} onOpen={setSelectedExperiment} />
+        </Refreshable>
       )}
 
       {selectedExperiment && (

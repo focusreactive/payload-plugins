@@ -52,6 +52,7 @@ export function SessionsTab({ dateRange, filters, onFiltersChange }: SessionsTab
       isFetchingNextPage={sessions.isFetchingNextPage}
       onLoadMore={() => void sessions.fetchNextPage()}
       loading={sessions.isLoading}
+      refreshing={sessions.isPlaceholderData}
       error={sessions.error ?? undefined}
       openId={openId}
       onOpenRow={setOpenId}

@@ -12,7 +12,7 @@ const LIMIT = 20;
 const MAX_STEPS = 8;
 
 export function DiscoveryPathsBlock({ dateRange, comparison, className }: BlockComponentProps) {
-  const { data, isLoading, error } = useJourneysQuery({
+  const { data, isLoading, isPlaceholderData, error } = useJourneysQuery({
     dateRange,
     comparison,
     limit: LIMIT,
@@ -43,7 +43,12 @@ export function DiscoveryPathsBlock({ dateRange, comparison, className }: BlockC
       {data?.setupRequired ? (
         <SetupRequiredCard missingKeys={data.missing ?? ["fr_session_id"]} />
       ) : (
-        <ChainList rows={data?.rows ?? []} loading={isLoading} error={error ?? undefined} />
+        <ChainList
+          rows={data?.rows ?? []}
+          loading={isLoading}
+          refreshing={isPlaceholderData}
+          error={error ?? undefined}
+        />
       )}
     </DataCard>
   );

@@ -5,6 +5,7 @@ import { SetupRequiredCard } from "../ui/SetupRequiredCard";
 import { SkeletonBlock } from "../ui/SkeletonBlock";
 import { ErrorTile } from "../ui/ErrorTile";
 import { EmptyTile } from "../ui/EmptyTile";
+import { Refreshable } from "../ui/Refreshable";
 import { SessionsFilters } from "./SessionsFilters";
 import { SessionDrawer } from "./SessionDrawer";
 import { getDeviceIcon } from "../icons";
@@ -30,6 +31,7 @@ export interface SessionsTabViewProps {
   isFetchingNextPage?: boolean;
   onLoadMore?: () => void;
   loading?: boolean;
+  refreshing?: boolean;
   error?: Error;
   openId: string | null;
   onOpenRow: (sessionId: string) => void;
@@ -53,6 +55,7 @@ export function SessionsTabView({
   isFetchingNextPage,
   onLoadMore,
   loading,
+  refreshing,
   error,
   openId,
   onOpenRow,
@@ -73,7 +76,10 @@ export function SessionsTabView({
       {setupRequired ? (
         <SetupRequiredCard missingKeys={missing ?? ["fr_session_id"]} />
       ) : (
-        <div className="bg-[var(--theme-elevation-0)] border border-[var(--theme-border-color)] rounded-[var(--style-radius-m)] overflow-hidden">
+        <Refreshable
+          refreshing={refreshing}
+          className="bg-[var(--theme-elevation-0)] border border-[var(--theme-border-color)] rounded-[var(--style-radius-m)] overflow-hidden"
+        >
           {loading ? (
             <div className="p-4">
               <SkeletonBlock shape="table" rows={6} />
@@ -199,7 +205,7 @@ export function SessionsTabView({
               </button>
             </div>
           )}
-        </div>
+        </Refreshable>
       )}
 
       {openId && (

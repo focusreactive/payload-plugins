@@ -5,6 +5,7 @@ import type { KpiSeriesPoint } from "../../../types/query";
 import { SkeletonBlock } from "./SkeletonBlock";
 import { ErrorTile } from "./ErrorTile";
 import { EmptyTile } from "./EmptyTile";
+import { Refreshable } from "./Refreshable";
 import type { BlockStateProps } from "../types/blockState";
 
 const TrendChartInner = dynamic(async () => (await import("./TrendChartInner")).TrendChartInner, {
@@ -26,10 +27,12 @@ export function TrendChart(props: TrendChartProps) {
   if (props.series.length === 0) return <EmptyTile message="No data in this range." />;
 
   return (
-    <TrendChartInner
-      series={props.series}
-      comparisonSeries={props.comparisonSeries}
-      metric={props.metric}
-    />
+    <Refreshable refreshing={props.refreshing}>
+      <TrendChartInner
+        series={props.series}
+        comparisonSeries={props.comparisonSeries}
+        metric={props.metric}
+      />
+    </Refreshable>
   );
 }

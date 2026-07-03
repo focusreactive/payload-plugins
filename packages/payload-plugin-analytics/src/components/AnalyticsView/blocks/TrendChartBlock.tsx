@@ -11,7 +11,7 @@ import type { BlockComponentProps } from "../../../types/layout";
 
 export function TrendChartBlock({ dateRange, comparison, className }: BlockComponentProps) {
   const [metric, setMetric] = useState<TrendMetric>("sessions");
-  const { data, isLoading, error } = useKpisQuery({ dateRange, comparison });
+  const { data, isLoading, isPlaceholderData, error } = useKpisQuery({ dateRange, comparison });
   const showCompare = comparison.kind === "previous-period";
 
   return (
@@ -51,6 +51,7 @@ export function TrendChartBlock({ dateRange, comparison, className }: BlockCompo
         comparisonSeries={showCompare ? data?.comparisonSeries : undefined}
         metric={metric}
         loading={isLoading}
+        refreshing={isPlaceholderData}
         error={error ?? undefined}
       />
     </DataCard>

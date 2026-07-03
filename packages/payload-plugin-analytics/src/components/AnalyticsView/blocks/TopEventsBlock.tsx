@@ -11,7 +11,11 @@ import type { BlockComponentProps } from "../../../types/layout";
 const LIMIT = 10;
 
 export function TopEventsBlock({ dateRange, comparison, className }: BlockComponentProps) {
-  const { data, isLoading, error } = useTopEventsQuery({ dateRange, comparison, limit: LIMIT });
+  const { data, isLoading, isPlaceholderData, error } = useTopEventsQuery({
+    dateRange,
+    comparison,
+    limit: LIMIT,
+  });
   const showCompare = comparison.kind === "previous-period";
   const prev = new Map((data?.comparison?.rows ?? []).map((r) => [r.eventName, r]));
 
@@ -20,6 +24,7 @@ export function TopEventsBlock({ dateRange, comparison, className }: BlockCompon
       <TopNTable<TopEventsRow>
         rows={data?.rows ?? []}
         loading={isLoading}
+        refreshing={isPlaceholderData}
         error={error ?? undefined}
         columns={[
           {

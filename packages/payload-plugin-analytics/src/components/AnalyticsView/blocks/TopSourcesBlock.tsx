@@ -11,7 +11,11 @@ import type { BlockComponentProps } from "../../../types/layout";
 const LIMIT = 10;
 
 export function TopSourcesBlock({ dateRange, comparison, className }: BlockComponentProps) {
-  const { data, isLoading, error } = useTopSourcesQuery({ dateRange, comparison, limit: LIMIT });
+  const { data, isLoading, isPlaceholderData, error } = useTopSourcesQuery({
+    dateRange,
+    comparison,
+    limit: LIMIT,
+  });
   const showCompare = comparison.kind === "previous-period";
   const prev = new Map((data?.comparison?.rows ?? []).map((r) => [`${r.source}|${r.medium}`, r]));
 
@@ -20,6 +24,7 @@ export function TopSourcesBlock({ dateRange, comparison, className }: BlockCompo
       <TopNTable<TopSourcesRow>
         rows={data?.rows ?? []}
         loading={isLoading}
+        refreshing={isPlaceholderData}
         error={error ?? undefined}
         columns={[
           {

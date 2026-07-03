@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { SkeletonBlock } from "./SkeletonBlock";
 import { ErrorTile } from "./ErrorTile";
 import { EmptyTile } from "./EmptyTile";
+import { Refreshable } from "./Refreshable";
 import type { LucideIcon } from "lucide-react";
 import type { BlockStateProps } from "../types/blockState";
 
@@ -29,5 +30,9 @@ export function DonutChart(props: DonutChartProps) {
   if (props.error) return <ErrorTile error={props.error} onRetry={props.onRetry} />;
   if (props.data.length === 0) return <EmptyTile message="No data in this range." />;
 
-  return <DonutInner data={props.data} centerCaption={props.centerCaption ?? "SESSIONS"} />;
+  return (
+    <Refreshable refreshing={props.refreshing}>
+      <DonutInner data={props.data} centerCaption={props.centerCaption ?? "SESSIONS"} />
+    </Refreshable>
+  );
 }

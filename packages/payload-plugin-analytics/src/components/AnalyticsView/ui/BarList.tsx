@@ -7,6 +7,7 @@ import { Metric } from "./Metric";
 import { SkeletonBlock } from "./SkeletonBlock";
 import { ErrorTile } from "./ErrorTile";
 import { EmptyTile } from "./EmptyTile";
+import { Refreshable } from "./Refreshable";
 import type { BlockStateProps } from "../types/blockState";
 
 export interface BarListRow {
@@ -30,6 +31,7 @@ export function BarList<R extends BarListRow>({
   initialVisible = 5,
   getIcon,
   loading,
+  refreshing,
   error,
   onRetry,
   format = formatNumber,
@@ -47,7 +49,7 @@ export function BarList<R extends BarListRow>({
   const visibleRows = expanded ? rows : rows.slice(0, initialVisible);
 
   return (
-    <div>
+    <Refreshable refreshing={refreshing}>
       <div className="flex flex-col gap-2">
         {visibleRows.map((row, i) => {
           const { label, value, color, sub, prev } = row;
@@ -127,6 +129,6 @@ export function BarList<R extends BarListRow>({
           <ChevronRight size={11} />
         </button>
       )}
-    </div>
+    </Refreshable>
   );
 }

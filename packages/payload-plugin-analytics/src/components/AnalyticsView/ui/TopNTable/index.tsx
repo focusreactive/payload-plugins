@@ -2,6 +2,7 @@ import { useState } from "react";
 import { SkeletonBlock } from "../SkeletonBlock";
 import { ErrorTile } from "../ErrorTile";
 import { EmptyTile } from "../EmptyTile";
+import { Refreshable } from "../Refreshable";
 import { TableHeader } from "./components/TableHeader";
 import { TableRow } from "./components/TableRow";
 import { ExpandButton } from "./components/ExpandButton";
@@ -21,6 +22,7 @@ export function TopNTable<Row extends object>({
   initialVisible = 5,
   emptyMessage = "No data in this range.",
   loading,
+  refreshing,
   error,
   onRetry,
 }: TopNTableProps<Row>) {
@@ -33,7 +35,7 @@ export function TopNTable<Row extends object>({
   const visible = expanded ? rows : rows.slice(0, initialVisible);
 
   return (
-    <div>
+    <Refreshable refreshing={refreshing}>
       <table className="w-full border-collapse text-[12.5px]">
         <TableHeader columns={columns} />
 
@@ -51,6 +53,6 @@ export function TopNTable<Row extends object>({
           onToggle={() => setExpanded((e) => !e)}
         />
       )}
-    </div>
+    </Refreshable>
   );
 }
