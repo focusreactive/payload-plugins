@@ -1,3 +1,16 @@
+# @focus-reactive/payload-plugin-analytics [1.2.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.1.2...@focus-reactive/payload-plugin-analytics@1.2.0) (2026-07-03)
+
+
+### Bug Fixes
+
+* **analytics:** switch admin tabs and filters instantly via shallow history updates ([23ddaf0](https://github.com/focusreactive/payload-plugins/commit/23ddaf0aba3e9f2ec50b5b16e2a80ef05baea907))
+
+
+### Features
+
+* **analytics:** dim stale block data while fresh results load ([ebc323a](https://github.com/focusreactive/payload-plugins/commit/ebc323a74ea59bb02f2c2f91aba6581639f269e3))
+* **analytics:** keep previous data visible while range and filter refetches run ([744fab1](https://github.com/focusreactive/payload-plugins/commit/744fab14ac484fc746a9cc3c38d177e4547643cd))
+
 ## @focus-reactive/payload-plugin-analytics [1.1.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.1.1...@focus-reactive/payload-plugin-analytics@1.1.2) (2026-06-18)
 
 ## @focus-reactive/payload-plugin-analytics [1.1.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.1.0...@focus-reactive/payload-plugin-analytics@1.1.1) (2026-06-18)
