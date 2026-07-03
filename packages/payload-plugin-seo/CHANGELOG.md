@@ -1,3 +1,15 @@
+# @focus-reactive/payload-plugin-seo [1.9.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.8.0...@focus-reactive/payload-plugin-seo@1.9.0) (2026-07-02)
+
+
+### Bug Fixes
+
+* **seo:** make drawer tab panel fill available height with flex layout ([fee777c](https://github.com/focusreactive/payload-plugins/commit/fee777c009dc6eb4f18c31e8cee87abe2a93ea6e))
+
+
+### Features
+
+* **seo:** protect focus keyphrase from removal and allow multiple empty entries ([2d44752](https://github.com/focusreactive/payload-plugins/commit/2d447524029d0ff9bdbd3b434e6a1ac280c3ba75))
+
 # @focus-reactive/payload-plugin-seo [1.8.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.7.0...@focus-reactive/payload-plugin-seo@1.8.0) (2026-07-01)
 
 

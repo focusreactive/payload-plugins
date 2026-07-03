@@ -1,7 +1,7 @@
 import type { Field, RichTextField, TextareaField, TextField } from "payload";
 
-import type { FieldTranslationConfig } from "./server/shared/field-config";
-import { TRANSLATE_KIT_CUSTOM_KEY } from "./server/shared/field-config";
+import type { FieldTranslationConfig } from "./core/field-config";
+import { TRANSLATE_KIT_CUSTOM_KEY } from "./core/field-config";
 import { TranslateFieldControlExport } from "./client/widgets/translate-field-control/ui/TranslateFieldControl.export";
 import type { FieldControlPositioner } from "./field-actions";
 import { beforeInputPositioner } from "./field-actions";

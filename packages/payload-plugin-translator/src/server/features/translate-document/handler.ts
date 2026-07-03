@@ -2,10 +2,11 @@ import type { Payload, SanitizedCollectionConfig } from "payload";
 import { APIError } from "payload";
 
 import type { Handler } from "../../shared";
-import type { TranslationProvider } from "../../modules/translation-providers";
-import { translateContent } from "../../modules/translation-pipeline";
+import type { TranslationProvider } from "../../../core/translation-providers";
+import { translateContent } from "../../../core/translation-pipeline";
 
-import type { CollectionSchemaMap, TranslateDocumentInput, TranslateDocumentOutput } from "./model";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
+import type { TranslateDocumentInput, TranslateDocumentOutput } from "./model";
 
 export type TranslateDocumentDependencies = {
   translationProvider: TranslationProvider;

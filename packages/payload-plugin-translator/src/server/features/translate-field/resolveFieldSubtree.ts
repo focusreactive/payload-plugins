@@ -1,7 +1,7 @@
 import type { Field } from "payload";
 
 import { isTranslatableField } from "../../shared";
-import { findFieldByPath } from "../../shared/field-traversal";
+import { findFieldByPath } from "../../../core/field-traversal";
 
 /**
  * Outcome of mapping a declared field path to a translatable subtree.

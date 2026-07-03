@@ -2,14 +2,14 @@ import type { CollectionConfig, Config } from "payload";
 
 import { CacheProviderExport } from "./client/app/cache/CacheProvider.export";
 import type { AccessGuard } from "./types/AccessGuard";
-import type { TranslationProvider } from "./server/modules/translation-providers";
+import type { TranslationProvider } from "./core/translation-providers";
 import type {
   TaskRunnerProvider,
   TaskRunnerContext,
   TaskRunnerFactory,
 } from "./server/modules/task-runner";
 import { TranslateDocumentHandler } from "./server/features/translate-document";
-import { documentLevel, collectionLevel } from "./server/modules/translation-levels";
+import { documentLevel, collectionLevel } from "./composition/levels";
 import type { TranslationLevel } from "./server/modules/translation-levels";
 import { PluginConfigBuilder } from "./server/modules/translation-levels/PluginConfigBuilder";
 import { normalizePath } from "./server/shared";

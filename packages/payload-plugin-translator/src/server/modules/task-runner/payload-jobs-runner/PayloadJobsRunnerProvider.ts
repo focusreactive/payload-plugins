@@ -5,7 +5,7 @@ import type { PayloadJobsRunnerOptions, PayloadJobsRunnerConfig, AutoRunConfig }
 import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner";
 import { readCollectionRef } from "./readCollectionRef";
 import type { TaskRunnerContext, TaskRunnerProvider } from "../TaskRunnerProvider.interface";
-import type { TranslationStrategyName } from "../../translation-pipeline/strategies";
+import type { TranslationStrategyName } from "../../../../core/translation-pipeline/strategies";
 
 const defaultAutoRun: Required<AutoRunConfig> = {
   cron: "* * * * *",

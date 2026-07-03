@@ -1,2 +1,2 @@
-export * from "./translation-providers";
-export * from "./translation-pipeline";
+export * from "../../core/translation-providers";
+export * from "../../core/translation-pipeline";
