@@ -11,7 +11,11 @@ import type { BlockComponentProps } from "../../../types/layout";
 const LIMIT = 10;
 
 export function TopPagesBlock({ dateRange, comparison, className }: BlockComponentProps) {
-  const { data, isLoading, error } = useTopPagesQuery({ dateRange, comparison, limit: LIMIT });
+  const { data, isLoading, isPlaceholderData, error } = useTopPagesQuery({
+    dateRange,
+    comparison,
+    limit: LIMIT,
+  });
   const showCompare = comparison.kind === "previous-period";
   const prev = new Map((data?.comparison?.rows ?? []).map((r) => [r.pagePath, r]));
 
@@ -20,6 +24,7 @@ export function TopPagesBlock({ dateRange, comparison, className }: BlockCompone
       <TopNTable<TopPagesRow>
         rows={data?.rows ?? []}
         loading={isLoading}
+        refreshing={isPlaceholderData}
         error={error ?? undefined}
         columns={[
           {

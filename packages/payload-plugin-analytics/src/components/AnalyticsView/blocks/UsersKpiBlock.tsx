@@ -7,7 +7,7 @@ import { formatNumber } from "../numberFormatters";
 import type { BlockComponentProps } from "../../../types/layout";
 
 export function UsersKpiBlock({ dateRange, comparison, className }: BlockComponentProps) {
-  const { data, isLoading, error } = useKpisQuery({ dateRange, comparison });
+  const { data, isLoading, isPlaceholderData, error } = useKpisQuery({ dateRange, comparison });
   const showCompare = comparison.kind === "previous-period";
 
   return (
@@ -18,6 +18,7 @@ export function UsersKpiBlock({ dateRange, comparison, className }: BlockCompone
       format={formatNumber}
       prevValue={showCompare ? (data?.comparison?.users ?? null) : null}
       loading={isLoading}
+      refreshing={isPlaceholderData}
       error={error ?? undefined}
       className={className}
     />

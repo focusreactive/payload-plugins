@@ -14,7 +14,7 @@ const LIMIT = 10;
 
 export function TopCountriesBlock({ dateRange, comparison, className }: BlockComponentProps) {
   const [mode, setMode] = useState<TopCountriesDimension>("country");
-  const { data, isLoading, error } = useTopCountriesQuery({
+  const { data, isLoading, isPlaceholderData, error } = useTopCountriesQuery({
     dateRange,
     comparison,
     limit: LIMIT,
@@ -60,6 +60,7 @@ export function TopCountriesBlock({ dateRange, comparison, className }: BlockCom
         })}
         initialVisible={6}
         loading={isLoading}
+        refreshing={isPlaceholderData}
         error={error ?? undefined}
         format={formatNumber}
       />

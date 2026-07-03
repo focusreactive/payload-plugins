@@ -11,7 +11,10 @@ import type { BlockComponentProps } from "../../../types/layout";
 
 export function LeadActionsByTypeBlock({ dateRange, comparison, className }: BlockComponentProps) {
   const { resolveLabel, resolveIcon } = useLeadActionRegistry();
-  const { data, isLoading, error } = useLeadActionsQuery({ dateRange, comparison });
+  const { data, isLoading, isPlaceholderData, error } = useLeadActionsQuery({
+    dateRange,
+    comparison,
+  });
   const showCompare = comparison.kind === "previous-period";
   const cur = data?.current;
   const prev = data?.comparison;
@@ -38,6 +41,7 @@ export function LeadActionsByTypeBlock({ dateRange, comparison, className }: Blo
           initialVisible={5}
           format={formatNumber}
           loading={isLoading}
+          refreshing={isPlaceholderData}
           error={error ?? undefined}
         />
       )}

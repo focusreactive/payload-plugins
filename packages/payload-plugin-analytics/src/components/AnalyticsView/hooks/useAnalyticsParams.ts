@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import type { DateRange, Comparison, DeviceCategory, DateRangePreset } from "../../../types/query";
 
@@ -38,7 +38,6 @@ const VALID_PRESETS = new Set([
 ]);
 
 export function useAnalyticsParams(): UseAnalyticsParamsResult {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -97,7 +96,7 @@ export function useAnalyticsParams(): UseAnalyticsParamsResult {
 
   const writeParams = useCallback(
     (patch: Record<string, string | null | undefined>) => {
-      const next = new URLSearchParams(searchParams.toString());
+      const next = new URLSearchParams(window.location.search);
 
       for (const [k, v] of Object.entries(patch)) {
         if (v == null || v === "") next.delete(k);
@@ -105,9 +104,9 @@ export function useAnalyticsParams(): UseAnalyticsParamsResult {
       }
 
       const qs = next.toString();
-      router.replace(`${pathname}${qs ? `?${qs}` : ""}`);
+      window.history.replaceState(null, "", `${pathname}${qs ? `?${qs}` : ""}`);
     },
-    [searchParams, router, pathname]
+    [pathname]
   );
 
   const setTab = useCallback(

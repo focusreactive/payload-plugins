@@ -3,6 +3,7 @@ import { Metric } from "./Metric";
 import { SetupWarningIcon } from "./SetupWarningIcon";
 import { SkeletonBlock } from "./SkeletonBlock";
 import { ErrorTile } from "./ErrorTile";
+import { Refreshable } from "./Refreshable";
 import { cn } from "../../../utils/style";
 import type { BlockStateProps } from "../types/blockState";
 
@@ -25,6 +26,7 @@ export function KpiCard(props: KpiCardProps) {
     prevValue,
     invertDelta,
     loading,
+    refreshing,
     error,
     onRetry,
     missing,
@@ -60,7 +62,8 @@ export function KpiCard(props: KpiCardProps) {
   const showPending = (missing?.length ?? 0) > 0;
 
   return (
-    <div
+    <Refreshable
+      refreshing={refreshing}
       className={cn(
         "bg-[var(--theme-elevation-0)] border border-[var(--theme-border-color)] rounded-[var(--style-radius-m)] p-4 flex flex-col gap-2.5 relative",
         className
@@ -84,6 +87,6 @@ export function KpiCard(props: KpiCardProps) {
           mode="large"
         />
       </div>
-    </div>
+    </Refreshable>
   );
 }

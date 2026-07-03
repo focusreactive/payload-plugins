@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ANALYTICS_ENDPOINT_PATHS } from "../../../../constants/endpoints";
 import type { TopCountriesQuery, TopCountriesResponse } from "../../../../types/query";
 import { analyticsFetch } from "./client";
@@ -15,5 +15,6 @@ export function useTopCountriesQuery(query: TopCountriesQuery) {
         query,
         { signal }
       ),
+    placeholderData: keepPreviousData,
   });
 }

@@ -22,13 +22,17 @@ function CustomBlockShell({
     () => ({ dateRange: rest.dateRange, comparison: rest.comparison }),
     [rest.dateRange, rest.comparison]
   );
-  const { data, isLoading, error } = useCustomBlockQuery<unknown>(blockId, query);
+  const { data, isLoading, isPlaceholderData, error } = useCustomBlockQuery<unknown>(
+    blockId,
+    query
+  );
 
   return (
     <Component
       {...(rest as unknown as Record<string, unknown>)}
       data={data}
       loading={isLoading}
+      refreshing={isPlaceholderData}
       error={error ?? undefined}
     />
   );

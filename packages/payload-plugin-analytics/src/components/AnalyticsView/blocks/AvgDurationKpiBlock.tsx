@@ -7,7 +7,7 @@ import { formatDuration } from "../numberFormatters";
 import type { BlockComponentProps } from "../../../types/layout";
 
 export function AvgDurationKpiBlock({ dateRange, comparison, className }: BlockComponentProps) {
-  const { data, isLoading, error } = useKpisQuery({ dateRange, comparison });
+  const { data, isLoading, isPlaceholderData, error } = useKpisQuery({ dateRange, comparison });
   const showCompare = comparison.kind === "previous-period";
 
   return (
@@ -18,6 +18,7 @@ export function AvgDurationKpiBlock({ dateRange, comparison, className }: BlockC
       format={formatDuration}
       prevValue={showCompare ? (data?.comparison?.avgSessionDuration ?? null) : null}
       loading={isLoading}
+      refreshing={isPlaceholderData}
       error={error ?? undefined}
       className={className}
     />
