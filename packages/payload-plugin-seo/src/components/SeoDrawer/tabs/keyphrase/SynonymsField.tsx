@@ -58,7 +58,7 @@ export function SynonymsField({ synonyms, onAdd, onRemove }: SynonymsFieldProps)
             className={cn(
               "inline-flex items-center gap-[5px] rounded-[15px] px-[11px] py-[5px] text-[11.5px] font-semibold [&_svg]:size-[13px] not-disabled:cursor-pointer transition-colors duration-150",
               "bg-neutral-1000 text-neutral-0 not-disabled:hover:bg-neutral-800",
-              "disabled:bg-neutral-100 disabled:text-neutral-300 disabled:cursor-not-allowed"
+              "disabled:bg-neutral-100 disabled:text-neutral-300 disabled:cursor-not-allowed disabled:transition-none"
             )}
           >
             <Plus aria-hidden="true" /> Add synonym
