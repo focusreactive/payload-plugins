@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-analytics [1.2.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.2.0...@focus-reactive/payload-plugin-analytics@1.2.1) (2026-07-04)
+
+
+### Bug Fixes
+
+* **analytics:** compile admin styles with franalytics prefix to isolate from consumer css ([4a9f23e](https://github.com/focusreactive/payload-plugins/commit/4a9f23e8b49c928b981842f1cc5cc124a63d20d4))
+
 # @focus-reactive/payload-plugin-analytics [1.2.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.1.2...@focus-reactive/payload-plugin-analytics@1.2.0) (2026-07-03)
 
 
