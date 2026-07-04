@@ -1,5 +1,6 @@
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
+import { cn } from "../../../../../utils/style";
 
 export const indBoxVariants = cva(
   "flex min-w-[200px] flex-1 basis-0 items-center gap-[11px] rounded-(--style-radius-m) border border-(--theme-border-color) bg-(--theme-elevation-0) px-3.5 py-[11px] [&>svg]:shrink-0",
@@ -50,5 +51,6 @@ export const verdictBadgeVariants = cva(
 
 export type VerdictTone = NonNullable<VariantProps<typeof verdictBadgeVariants>["verdict"]>;
 
-export const PANEL_TBL =
-  "w-full border-collapse text-[12.5px] [&_th]:px-2 [&_th]:py-1.5 [&_td]:border-b [&_td]:border-(--theme-elevation-100) [&_td]:px-2 [&_td]:py-[9px] [&_thead_th]:border-b [&_thead_th]:border-(--theme-border-color) [&_thead_th]:text-left [&_thead_th]:font-semibold [&_thead_th]:text-(--theme-elevation-500) [&_.num]:text-right [&_.num]:tabular-nums";
+export const PANEL_TBL = cn(
+  "w-full border-collapse text-[12.5px] [&_th]:px-2 [&_th]:py-1.5 [&_td]:border-b [&_td]:border-(--theme-elevation-100) [&_td]:px-2 [&_td]:py-[9px] [&_thead_th]:border-b [&_thead_th]:border-(--theme-border-color) [&_thead_th]:text-left [&_thead_th]:font-semibold [&_thead_th]:text-(--theme-elevation-500) [&_.num]:text-right [&_.num]:tabular-nums"
+);

@@ -54,12 +54,15 @@ export function SessionDrawer({ row, detail, onClose }: SessionDrawerProps) {
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/25 z-[80] pa-animate-fade-in" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-black/25 z-[80] franalytics-animate-fade-in"
+        onClick={onClose}
+      />
 
       <div
         role="dialog"
         aria-modal="true"
-        className="fixed top-0 right-0 bottom-0 w-[520px] max-w-full bg-[var(--theme-elevation-0)] shadow-drawer border-l border-[var(--theme-border-color)] z-[90] flex flex-col pa-animate-drawer-in"
+        className="fixed top-0 right-0 bottom-0 w-[520px] max-w-full bg-[var(--theme-elevation-0)] shadow-drawer border-l border-[var(--theme-border-color)] z-[90] flex flex-col franalytics-animate-drawer-in"
       >
         <div className="px-5 py-4 border-b border-[var(--theme-border-color)] flex flex-col gap-1">
           <div className="flex items-center gap-2">

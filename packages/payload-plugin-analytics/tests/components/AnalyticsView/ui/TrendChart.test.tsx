@@ -52,6 +52,6 @@ describe("TrendChart", () => {
 
   it("shows skeleton when loading=true", () => {
     const { container } = render(<TrendChart series={[]} metric="sessions" loading />);
-    expect(container.querySelector(".pa-animate-shimmer")).toBeInTheDocument();
+    expect(container.querySelector(".franalytics-animate-shimmer")).toBeInTheDocument();
   });
 });

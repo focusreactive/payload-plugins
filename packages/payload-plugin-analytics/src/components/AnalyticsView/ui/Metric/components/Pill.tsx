@@ -13,11 +13,13 @@ export function Pill({ tone, formattedPrev }: PillProps) {
       data-tone={tone}
       className={cn(
         "inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[11px] font-medium leading-none tabular-nums",
-        tone === "positive" && "bg-(--metric-pos-bg) text-(--metric-pos-fg)",
-        tone === "negative" && "bg-(--metric-neg-bg) text-(--metric-neg-fg)",
-        tone === "flat" && "bg-(--metric-flat-bg) text-(--metric-flat-fg)"
+        tone === "positive" &&
+          "bg-(--franalytics-metric-pos-bg) text-(--franalytics-metric-pos-fg)",
+        tone === "negative" &&
+          "bg-(--franalytics-metric-neg-bg) text-(--franalytics-metric-neg-fg)",
+        tone === "flat" && "bg-(--franalytics-metric-flat-bg) text-(--franalytics-metric-flat-fg)"
       )}
-      style={{ borderRadius: "var(--metric-prev-radius)" }}
+      style={{ borderRadius: "var(--franalytics-metric-prev-radius)" }}
     >
       <ArrowForTone tone={tone} />
       {formattedPrev}

@@ -14,8 +14,9 @@ export interface TooltipProps {
   className?: string;
 }
 
-const TIP_BASE =
-  "pointer-events-none fixed z-[100] flex cursor-default flex-col gap-[7px] rounded-(--style-radius-s) bg-(--theme-elevation-1000) px-[13px] py-[11px] text-left font-normal normal-case tracking-normal text-(--theme-elevation-0) shadow-popover pa-animate-fade-in";
+const TIP_BASE = cn(
+  "pointer-events-none fixed z-[100] flex cursor-default flex-col gap-[7px] rounded-(--style-radius-s) bg-(--theme-elevation-1000) px-[13px] py-[11px] text-left font-normal normal-case tracking-normal text-(--theme-elevation-0) shadow-popover franalytics-animate-fade-in"
+);
 
 const GAP = 8;
 

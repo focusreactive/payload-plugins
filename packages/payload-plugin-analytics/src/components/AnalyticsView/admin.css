@@ -23,13 +23,13 @@
 
 @layer base {
   :root {
-    --metric-pos-bg: rgba(35, 134, 54, 0.14);
-    --metric-pos-fg: rgb(35, 134, 54);
-    --metric-neg-bg: rgba(207, 34, 46, 0.14);
-    --metric-neg-fg: rgb(207, 34, 46);
-    --metric-flat-bg: rgba(120, 120, 120, 0.18);
-    --metric-flat-fg: rgb(100, 100, 100);
-    --metric-prev-radius: 999px;
+    --franalytics-metric-pos-bg: rgba(35, 134, 54, 0.14);
+    --franalytics-metric-pos-fg: rgb(35, 134, 54);
+    --franalytics-metric-neg-bg: rgba(207, 34, 46, 0.14);
+    --franalytics-metric-neg-fg: rgb(207, 34, 46);
+    --franalytics-metric-flat-bg: rgba(120, 120, 120, 0.18);
+    --franalytics-metric-flat-fg: rgb(100, 100, 100);
+    --franalytics-metric-prev-radius: 999px;
 
     --ab-bucket-0: oklch(0.62 0.012 70);
     --ab-bucket-1: oklch(0.58 0.13 150);
@@ -46,7 +46,7 @@
 }
 
 @layer utilities {
-  .pa-animate-shimmer {
+  .franalytics-animate-shimmer {
     background: linear-gradient(
       90deg,
       var(--theme-elevation-100) 0%,
@@ -54,46 +54,46 @@
       var(--theme-elevation-100) 100%
     );
     background-size: 200% 100%;
-    animation: pa-shimmer 1.4s infinite ease-in-out;
+    animation: franalytics-shimmer 1.4s infinite ease-in-out;
   }
 
-  @keyframes pa-shimmer {
+  @keyframes franalytics-shimmer {
     to {
       background-position: -200% 0;
     }
   }
 
-  .pa-animate-drawer-in {
-    animation: pa-slide-in 0.2s ease;
+  .franalytics-animate-drawer-in {
+    animation: franalytics-slide-in 0.2s ease;
   }
 
-  @keyframes pa-slide-in {
+  @keyframes franalytics-slide-in {
     from {
       transform: translateX(20px);
       opacity: 0;
     }
   }
 
-  .pa-animate-fade-in {
-    animation: pa-fade-in 0.18s ease;
+  .franalytics-animate-fade-in {
+    animation: franalytics-fade-in 0.18s ease;
   }
 
-  @keyframes pa-fade-in {
+  @keyframes franalytics-fade-in {
     from {
       opacity: 0;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .pa-animate-shimmer {
+    .franalytics-animate-shimmer {
       animation: none;
     }
 
-    .pa-animate-drawer-in {
+    .franalytics-animate-drawer-in {
       animation: none;
     }
 
-    .pa-animate-fade-in {
+    .franalytics-animate-fade-in {
       animation: none;
     }
   }

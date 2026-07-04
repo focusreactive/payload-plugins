@@ -25,7 +25,7 @@ describe("DonutChart", () => {
 
   it("renders skeleton when loading", () => {
     const { container } = render(<DonutChart data={[]} loading />);
-    expect(container.querySelector(".pa-animate-shimmer")).toBeInTheDocument();
+    expect(container.querySelector(".franalytics-animate-shimmer")).toBeInTheDocument();
   });
 
   it("renders Metric on each legend row when any slice has prev", () => {

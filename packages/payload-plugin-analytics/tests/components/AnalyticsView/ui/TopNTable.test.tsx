@@ -53,7 +53,7 @@ describe("TopNTable", () => {
     const { container } = render(
       <TopNTable rows={[]} columns={[{ key: "name", header: "Name" }]} loading />
     );
-    expect(container.querySelector(".pa-animate-shimmer")).toBeInTheDocument();
+    expect(container.querySelector(".franalytics-animate-shimmer")).toBeInTheDocument();
   });
 
   it("renders a metric-mode column through Metric with a prev pill", () => {

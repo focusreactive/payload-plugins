@@ -5,6 +5,6 @@ import { SkeletonBlock } from "../../../../src/components/AnalyticsView/ui/Skele
 describe("SkeletonBlock", () => {
   it.each(["kpi", "table", "chart"] as const)("renders for shape %s", (shape) => {
     const { container } = render(<SkeletonBlock shape={shape} />);
-    expect(container.querySelectorAll(".pa-animate-shimmer").length).toBeGreaterThan(0);
+    expect(container.querySelectorAll(".franalytics-animate-shimmer").length).toBeGreaterThan(0);
   });
 });

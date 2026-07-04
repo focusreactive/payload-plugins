@@ -52,7 +52,7 @@ describe("KpiCard", () => {
 
   it("renders skeleton when loading", () => {
     const { container } = render(<KpiCard label="X" value={0} format={formatNumber} loading />);
-    expect(container.querySelector(".pa-animate-shimmer")).toBeInTheDocument();
+    expect(container.querySelector(".franalytics-animate-shimmer")).toBeInTheDocument();
   });
 
   it("renders error tile when error passed", () => {

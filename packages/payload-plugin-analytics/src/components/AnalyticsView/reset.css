@@ -1,13 +1,13 @@
 @layer base {
-  .pa-analytics-view,
-  .pa-analytics-view *,
-  .pa-analytics-view *::before,
-  .pa-analytics-view *::after {
+  .franalytics-view,
+  .franalytics-view *,
+  .franalytics-view *::before,
+  .franalytics-view *::after {
     box-sizing: border-box;
     border: 0 solid;
   }
 
-  .pa-analytics-view {
+  .franalytics-view {
     -webkit-text-size-adjust: 100%;
     -moz-tab-size: 4;
     tab-size: 4;
@@ -17,89 +17,89 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  .pa-analytics-view h1,
-  .pa-analytics-view h2,
-  .pa-analytics-view h3,
-  .pa-analytics-view h4,
-  .pa-analytics-view h5,
-  .pa-analytics-view h6,
-  .pa-analytics-view p,
-  .pa-analytics-view figure,
-  .pa-analytics-view blockquote,
-  .pa-analytics-view dl,
-  .pa-analytics-view dd {
+  .franalytics-view h1,
+  .franalytics-view h2,
+  .franalytics-view h3,
+  .franalytics-view h4,
+  .franalytics-view h5,
+  .franalytics-view h6,
+  .franalytics-view p,
+  .franalytics-view figure,
+  .franalytics-view blockquote,
+  .franalytics-view dl,
+  .franalytics-view dd {
     margin: 0;
   }
 
-  .pa-analytics-view h1,
-  .pa-analytics-view h2,
-  .pa-analytics-view h3,
-  .pa-analytics-view h4,
-  .pa-analytics-view h5,
-  .pa-analytics-view h6 {
+  .franalytics-view h1,
+  .franalytics-view h2,
+  .franalytics-view h3,
+  .franalytics-view h4,
+  .franalytics-view h5,
+  .franalytics-view h6 {
     font-size: inherit;
     font-weight: inherit;
   }
 
-  .pa-analytics-view ol,
-  .pa-analytics-view ul,
-  .pa-analytics-view menu {
+  .franalytics-view ol,
+  .franalytics-view ul,
+  .franalytics-view menu {
     list-style: none;
     margin: 0;
     padding: 0;
   }
 
-  .pa-analytics-view a {
+  .franalytics-view a {
     color: inherit;
     text-decoration: inherit;
   }
 
-  .pa-analytics-view b,
-  .pa-analytics-view strong {
+  .franalytics-view b,
+  .franalytics-view strong {
     font-weight: bolder;
   }
 
-  .pa-analytics-view code,
-  .pa-analytics-view kbd,
-  .pa-analytics-view samp,
-  .pa-analytics-view pre {
+  .franalytics-view code,
+  .franalytics-view kbd,
+  .franalytics-view samp,
+  .franalytics-view pre {
     font-family:
       ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
       monospace;
     font-size: 1em;
   }
 
-  .pa-analytics-view small {
+  .franalytics-view small {
     font-size: 80%;
   }
 
-  .pa-analytics-view sub,
-  .pa-analytics-view sup {
+  .franalytics-view sub,
+  .franalytics-view sup {
     font-size: 75%;
     line-height: 0;
     position: relative;
     vertical-align: baseline;
   }
 
-  .pa-analytics-view sub {
+  .franalytics-view sub {
     bottom: -0.25em;
   }
 
-  .pa-analytics-view sup {
+  .franalytics-view sup {
     top: -0.5em;
   }
 
-  .pa-analytics-view table {
+  .franalytics-view table {
     border-collapse: collapse;
     border-color: inherit;
     text-indent: 0;
   }
 
-  .pa-analytics-view button,
-  .pa-analytics-view input,
-  .pa-analytics-view optgroup,
-  .pa-analytics-view select,
-  .pa-analytics-view textarea {
+  .franalytics-view button,
+  .franalytics-view input,
+  .franalytics-view optgroup,
+  .franalytics-view select,
+  .franalytics-view textarea {
     font-family: inherit;
     font-feature-settings: inherit;
     font-variation-settings: inherit;
@@ -112,86 +112,86 @@
     padding: 0;
   }
 
-  .pa-analytics-view button,
-  .pa-analytics-view select {
+  .franalytics-view button,
+  .franalytics-view select {
     text-transform: none;
   }
 
-  .pa-analytics-view button,
-  .pa-analytics-view input:where([type="button"], [type="reset"], [type="submit"]) {
+  .franalytics-view button,
+  .franalytics-view input:where([type="button"], [type="reset"], [type="submit"]) {
     appearance: button;
     background-color: transparent;
     background-image: none;
     cursor: pointer;
   }
 
-  .pa-analytics-view :-moz-focusring {
+  .franalytics-view :-moz-focusring {
     outline: auto;
   }
 
-  .pa-analytics-view :-moz-ui-invalid {
+  .franalytics-view :-moz-ui-invalid {
     box-shadow: none;
   }
 
-  .pa-analytics-view progress {
+  .franalytics-view progress {
     vertical-align: baseline;
   }
 
-  .pa-analytics-view ::-webkit-search-decoration {
+  .franalytics-view ::-webkit-search-decoration {
     -webkit-appearance: none;
   }
 
-  .pa-analytics-view summary {
+  .franalytics-view summary {
     display: list-item;
   }
 
-  .pa-analytics-view fieldset {
+  .franalytics-view fieldset {
     margin: 0;
     padding: 0;
   }
 
-  .pa-analytics-view legend {
+  .franalytics-view legend {
     padding: 0;
   }
 
-  .pa-analytics-view textarea {
+  .franalytics-view textarea {
     resize: vertical;
   }
 
-  .pa-analytics-view input::placeholder,
-  .pa-analytics-view textarea::placeholder {
+  .franalytics-view input::placeholder,
+  .franalytics-view textarea::placeholder {
     opacity: 1;
     color: color-mix(in oklch, currentColor 50%, transparent);
   }
 
-  .pa-analytics-view button,
-  .pa-analytics-view [role="button"] {
+  .franalytics-view button,
+  .franalytics-view [role="button"] {
     cursor: pointer;
   }
 
-  .pa-analytics-view :disabled {
+  .franalytics-view :disabled {
     cursor: default;
   }
 
-  .pa-analytics-view img,
-  .pa-analytics-view svg,
-  .pa-analytics-view video,
-  .pa-analytics-view canvas,
-  .pa-analytics-view audio,
-  .pa-analytics-view iframe,
-  .pa-analytics-view embed,
-  .pa-analytics-view object {
+  .franalytics-view img,
+  .franalytics-view svg,
+  .franalytics-view video,
+  .franalytics-view canvas,
+  .franalytics-view audio,
+  .franalytics-view iframe,
+  .franalytics-view embed,
+  .franalytics-view object {
     display: block;
     vertical-align: middle;
   }
 
-  .pa-analytics-view img,
-  .pa-analytics-view video {
+  .franalytics-view img,
+  .franalytics-view video {
     max-width: 100%;
     height: auto;
   }
 
-  .pa-analytics-view [hidden] {
+  .franalytics-view [hidden] {
     display: none;
   }
 }

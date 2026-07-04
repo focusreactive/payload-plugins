@@ -38,7 +38,7 @@ export function AnalyticsShell({
 
   return (
     <AnalyticsProviders>
-      <div className="pa-analytics-view font-[family-name:var(--font-body)] text-(--theme-text) pb-(--gutter-h)">
+      <div className="franalytics-view font-[family-name:var(--font-body)] text-(--theme-text) pb-(--gutter-h)">
         <header className="flex items-start gap-6 mb-5 flex-wrap">
           <div>
             <h1 className="text-[26px] font-semibold tracking-tight text-(--theme-elevation-1000) m-0">

@@ -82,11 +82,14 @@ export function AbDrawer({ manifestKey, query, onClose }: AbDrawerProps) {
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/25 z-[80] pa-animate-fade-in" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-black/25 z-[80] franalytics-animate-fade-in"
+        onClick={onClose}
+      />
       <div
         role="dialog"
         aria-modal="true"
-        className="fixed top-0 right-0 bottom-0 z-[90] w-[720px] max-w-full overflow-y-auto border-l border-(--theme-border-color) bg-(--theme-elevation-0) shadow-drawer pa-animate-drawer-in max-[760px]:w-screen"
+        className="fixed top-0 right-0 bottom-0 z-[90] w-[720px] max-w-full overflow-y-auto border-l border-(--theme-border-color) bg-(--theme-elevation-0) shadow-drawer franalytics-animate-drawer-in max-[760px]:w-screen"
       >
         {/* header (scrolls with content) */}
         <div className="px-5 py-4 border-b border-(--theme-border-color) flex flex-col gap-2.5">
