@@ -30,7 +30,7 @@ export function verifyCss(css: string): string[] {
   return errors;
 }
 
-const UNPREFIXED_CLASSNAME = /className:\s*["'](?!["']|frcomments[:-])/u;
+const UNPREFIXED_CLASSNAME = /className:\s*["'](?:\\[nrt]|\s)*(?!\s|\\[nrt]|["']|frcomments[:-])/u;
 
 export function verifyJs(code: string, fileName: string): string[] {
   if (UNPREFIXED_CLASSNAME.test(code)) {

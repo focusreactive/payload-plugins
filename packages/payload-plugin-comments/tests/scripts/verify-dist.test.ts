@@ -63,7 +63,14 @@ describe("verifyJs", () => {
     expect(verifyJs(`jsx("div", { className: cn("x") });`, "a.js")).toEqual([]);
   });
 
+  it("accepts prefixed literals with leading escaped whitespace (transformed template literals)", () => {
+    expect(
+      verifyJs(`jsx("div", { className: "\\n  frcomments:flex frcomments:gap-2\\n" });`, "a.js")
+    ).toEqual([]);
+  });
+
   it("flags unprefixed className literals", () => {
     expect(verifyJs(`jsx("div", { className: "flex gap-2" });`, "a.js")).not.toEqual([]);
+    expect(verifyJs(`jsx("div", { className: "\\n  flex gap-2\\n" });`, "a.js")).not.toEqual([]);
   });
 });

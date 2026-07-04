@@ -1,7 +1,8 @@
-@import "tailwindcss/theme";
-@import "tailwindcss/utilities";
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme) prefix(frcomments);
+@import "tailwindcss/utilities.css" layer(utilities);
 
-@source "./**/*.{ts,tsx}";
+@source "../dist/**/*.js";
 
 .frcomments-drawer .gutter {
   padding: 0 20px !important;
