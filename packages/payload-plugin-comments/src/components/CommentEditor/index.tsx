@@ -191,7 +191,7 @@ export function CommentEditor({
 
     const isEmpty = editor.innerHTML === "" || editor.innerHTML === "<br>";
 
-    editor.classList.toggle("is-empty", isEmpty);
+    editor.classList.toggle("frcomments-is-empty", isEmpty);
   };
 
   // Editor API
@@ -207,7 +207,7 @@ export function CommentEditor({
 
     if (editorRef.current) {
       editorRef.current.innerHTML = "";
-      editorRef.current.classList.add("is-empty");
+      editorRef.current.classList.add("frcomments-is-empty");
     }
   };
 
@@ -305,10 +305,10 @@ export function CommentEditor({
           <div className="relative">
             <div
               className={`
-                is-empty w-full min-h-5 max-h-32 overflow-y-auto whitespace-pre-wrap wrap-break-word
+                frcomments-is-empty w-full min-h-5 max-h-32 overflow-y-auto whitespace-pre-wrap wrap-break-word
                 text-(--theme-text) text-[13px] outline-none box-border
-                [&.is-empty]:before:content-[attr(data-placeholder)] [&.is-empty]:before:text-(--theme-elevation-450)
-                [&.is-empty]:before:pointer-events-none [&.is-empty]:before:absolute
+                [&.frcomments-is-empty]:before:content-[attr(data-placeholder)] [&.frcomments-is-empty]:before:text-(--theme-elevation-450)
+                [&.frcomments-is-empty]:before:pointer-events-none [&.frcomments-is-empty]:before:absolute
               `}
               ref={editorRef}
               contentEditable={!disabled}
