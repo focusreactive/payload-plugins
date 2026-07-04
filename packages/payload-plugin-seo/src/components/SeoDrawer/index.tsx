@@ -61,13 +61,13 @@ export const SeoDrawer = memo(function SeoDrawer({
   return (
     <Drawer
       slug={drawerSlug}
-      className="seo-drawer"
+      className="frseo-drawer"
       Header={<Header drawerSlug={drawerSlug} total={total} totalStatus={totalStatus} />}
     >
-      <div className="seo-root relative text-neutral-800" data-status={totalStatus}>
+      <div className="frseo-root relative text-neutral-800" data-status={totalStatus}>
         <TabsNav active={tab} onChange={setTab} />
 
-        <div className="seo-tabpanel">
+        <div className="frseo-tabpanel">
           {result === null && tab !== "keyphrase" ? (
             <div
               className="flex items-center gap-[8px] text-neutral-500 text-[13px]"
