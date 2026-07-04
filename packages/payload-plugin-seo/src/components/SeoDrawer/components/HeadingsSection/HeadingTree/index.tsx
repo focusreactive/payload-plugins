@@ -10,7 +10,7 @@ export interface HeadingTreeProps {
   tree: HeadingNode[];
 }
 
-const SUB_LABEL = "text-[9.5px] font-semibold uppercase tracking-[0.05em] text-neutral-500";
+const SUB_LABEL = cn("text-[9.5px] font-semibold uppercase tracking-[0.05em] text-neutral-500");
 
 export function HeadingTree({ tree }: HeadingTreeProps) {
   const parentIds = useMemo(() => collectParentIds(tree), [tree]);
