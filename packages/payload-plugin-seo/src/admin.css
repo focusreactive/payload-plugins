@@ -1,14 +1,8 @@
 @layer theme, base, components, utilities;
-@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/theme.css" layer(theme) prefix(frseo);
 @import "tailwindcss/utilities.css" layer(utilities);
 
-@source "./**/*.{ts,tsx}";
-
-@layer utilities {
-  .table {
-    display: revert-layer;
-  }
-}
+@source "../dist/**/*.js";
 
 @custom-variant dark ([data-theme="dark"] &);
 
