@@ -9,6 +9,7 @@ const base: AnalysisInput = {
   description: "Discover the best running shoes for every surface.",
   contentHtml: "",
   keyphrase: "running shoes",
+  keyphrases: [],
   locale: "en_US",
   site: { name: "RunShop", baseUrl: "https://runshop.com" },
   has: { seoTitle: true, metaDescription: true, slug: true, content: true },

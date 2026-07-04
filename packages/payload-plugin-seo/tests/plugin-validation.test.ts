@@ -12,7 +12,7 @@ afterEach(() => {
 describe("seoPlugin config validation", () => {
   it("warns + returns incoming (no throw) when collections empty", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    let result: Config | undefined;
+    let result: Config | Promise<Config> | undefined;
     expect(() => {
       result = seoPlugin({ collections: [] } as unknown as SeoPluginConfig)(incoming);
     }).not.toThrow();

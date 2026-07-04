@@ -60,7 +60,7 @@
     }
   },
   "scripts": {
-    "build": "tsup && tsc --emitDeclarationOnly --declarationMap",
+    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly --declarationMap",
     "dev": "tsup --watch",
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
@@ -102,7 +102,7 @@
     "@payloadcms/richtext-lexical": "3.84.1",
     "@payloadcms/ui": "3.84.1",
     "@tailwindcss/postcss": "^4.0.0",
-    "@types/node": "^25.7.0",
+    "@types/node": "^26.1.0",
     "@types/react": "19.2.9",
     "@types/react-dom": "19.2.3",
     "lucide-react": "^0.469.0",
