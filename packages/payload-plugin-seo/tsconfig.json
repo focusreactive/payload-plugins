@@ -13,12 +13,9 @@
     "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "outDir": "dist",
-    "rootDir": "src",
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true
+    "noEmit": true,
+    "types": ["node"]
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests", "__fixtures__", "vitest.config.ts"]
+  "include": ["src", "scripts", "tsup.config.ts", "vitest.config.ts"],
+  "exclude": ["node_modules", "dist", "__fixtures__"]
 }

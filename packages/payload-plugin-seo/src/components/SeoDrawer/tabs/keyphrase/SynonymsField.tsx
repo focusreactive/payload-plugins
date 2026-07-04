@@ -44,7 +44,7 @@ export function SynonymsField({ synonyms, onAdd, onRemove }: SynonymsFieldProps)
               <button
                 type="button"
                 aria-label={`Remove synonym ${synonym} (${index + 1})`}
-                className="grid place-items-center p-0.5 text-[#a9adb4] rounded-full bg-transparent hover:text-neutral-0 hover:bg-neutral-900! [&_svg]:size-[1em] cursor-pointer"
+                className="grid place-items-center p-0.5 text-neutral-400 rounded-full bg-transparent hover:text-neutral-0 hover:bg-neutral-800 [&_svg]:size-[1em] cursor-pointer"
                 onClick={() => onRemove(index)}
               >
                 <X aria-hidden="true" />
@@ -57,7 +57,7 @@ export function SynonymsField({ synonyms, onAdd, onRemove }: SynonymsFieldProps)
             onClick={commit}
             className={cn(
               "inline-flex items-center gap-[5px] rounded-[15px] px-[11px] py-[5px] text-[11.5px] font-semibold [&_svg]:size-[13px] not-disabled:cursor-pointer transition-colors duration-150",
-              "bg-neutral-1000 text-neutral-0 not-disabled:hover:bg-neutral-900",
+              "bg-neutral-1000 text-neutral-0 not-disabled:hover:bg-neutral-800",
               "disabled:bg-neutral-100 disabled:text-neutral-300 disabled:cursor-not-allowed"
             )}
           >

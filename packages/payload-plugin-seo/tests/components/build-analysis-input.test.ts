@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { buildAnalysisInput } from "../../src/components/SeoDrawer/build-analysis-input";
-import type { ContentExtractor } from "../../src/types/config";
+import type { ContentNode } from "../../src/content/schema/nodes";
+import type { ContentExtractor, ExtractToolkit } from "../../src/types/config";
 
 describe("buildAnalysisInput", () => {
   it("returns empty content when no extractor is provided", async () => {
@@ -18,9 +19,9 @@ describe("buildAnalysisInput", () => {
   });
 
   it("serializes the extractor's IR into contentHtml and sets has.content", async () => {
-    const extractor: ContentExtractor = vi.fn(async () => [
-      { type: "heading", level: 1, text: "Reg" },
-    ]);
+    const extractor: ContentExtractor = vi.fn(
+      async (): Promise<ContentNode[]> => [{ type: "heading", level: 1, text: "Reg" }]
+    );
     const out = await buildAnalysisInput({
       values: {},
       locale: "en",
@@ -40,7 +41,7 @@ describe("buildAnalysisInput", () => {
     let received: {
       values: unknown;
       ctx: unknown;
-      toolkit: { resolveDocs: unknown; helpers: Record<string, unknown> };
+      toolkit: ExtractToolkit;
     } | null = null;
     const extractor: ContentExtractor = async (values, ctx, toolkit) => {
       received = { values, ctx, toolkit };

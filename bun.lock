@@ -207,7 +207,7 @@
     },
     "packages/payload-plugin-analytics": {
       "name": "@focus-reactive/payload-plugin-analytics",
-      "version": "1.1.2",
+      "version": "1.2.0",
       "dependencies": {
         "@google-analytics/data": "^5.2.2",
         "class-variance-authority": "0.7.1",
@@ -244,7 +244,7 @@
         "@payloadcms/ui": "^3.0.0",
         "@tanstack/react-query": "^5.59.0",
         "lucide-react": "^0.469.0",
-        "next": "^14.0.0 || ^15.0.0",
+        "next": "^14.1.0 || ^15.0.0",
         "payload": "^3.0.0",
         "react": "^18.0.0 || ^19.0.0",
         "react-day-picker": "^9.0.0",
@@ -259,7 +259,7 @@
     },
     "packages/payload-plugin-comments": {
       "name": "@focus-reactive/payload-plugin-comments",
-      "version": "1.10.0",
+      "version": "1.11.0",
       "dependencies": {
         "@radix-ui/react-dropdown-menu": "^2.1.16",
         "@tanstack/react-query": "5.0.0",
@@ -301,7 +301,7 @@
     },
     "packages/payload-plugin-presets": {
       "name": "@focus-reactive/payload-plugin-presets",
-      "version": "0.11.1",
+      "version": "0.12.0",
       "dependencies": {
         "@radix-ui/react-popover": "1.1.15",
       },
@@ -341,7 +341,7 @@
     },
     "packages/payload-plugin-seo": {
       "name": "@focus-reactive/payload-plugin-seo",
-      "version": "1.5.0",
+      "version": "1.9.0",
       "dependencies": {
         "@yoast/search-metadata-previews": "^3.0.0",
         "class-variance-authority": "0.7.1",
@@ -354,7 +354,7 @@
         "@payloadcms/richtext-lexical": "3.84.1",
         "@payloadcms/ui": "3.84.1",
         "@tailwindcss/postcss": "^4.0.0",
-        "@types/node": "^25.7.0",
+        "@types/node": "^26.1.0",
         "@types/react": "19.2.9",
         "@types/react-dom": "19.2.3",
         "lucide-react": "^0.469.0",
@@ -387,7 +387,7 @@
     },
     "packages/payload-plugin-translator": {
       "name": "@focus-reactive/payload-plugin-translator",
-      "version": "0.6.1",
+      "version": "0.6.2",
       "dependencies": {
         "@hookform/resolvers": "^3.9.0",
         "@radix-ui/react-popover": "^1.1.0",
@@ -3664,7 +3664,7 @@
 
     "@focus-reactive/payload-plugin-scheduling/typescript": ["typescript@5.0.2", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-wVORMBGO/FAs/++blGNeAVdbNKtIh1rbBL2EyQ1+J9lClJ93KiiKe8PmFIVdXhHcyv44SL9oglmfeSsndo0jRw=="],
 
-    "@focus-reactive/payload-plugin-seo/@types/node": ["@types/node@25.9.3", "", { "dependencies": { "undici-types": ">=7.24.0 <7.24.7" } }, "sha512-603BddQMv3pUcr4U2dhujk83N2tTDVr/34wII2B6bJy6g+8WD6yUb11jszNs0gdi4PesVWl7ABt8nYMVpnLUcg=="],
+    "@focus-reactive/payload-plugin-seo/@types/node": ["@types/node@26.1.0", "", { "dependencies": { "undici-types": "~8.3.0" } }, "sha512-O0A1G3xPGy4w7AgQdAQYUlQ+BKk2Oovw8eRpofyp5KdBZULnbe+WqaOVNrm705SHphCiG4XHsACrSmPu1f+Kgw=="],
 
     "@focus-reactive/payload-plugin-seo/typescript": ["typescript@5.7.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-84MVSjMEHP+FQRPy3pX9sTVV/INIex71s9TL2Gm5FG/WG1SqXeKyZ0k7/blY/4FdOzI12CBy1vGc4og/eus0fw=="],
 
@@ -4668,7 +4668,7 @@
 
     "@focus-reactive/payload-plugin-comments/@tanstack/react-query/@tanstack/query-core": ["@tanstack/query-core@5.0.0", "", {}, "sha512-Y1BpiA6BblJd/UlVqxEVeAG7IACn568YJuTTItAiecBI7En+33g780kg+/8lhgl+BzcUPN7o+NjBrSRGJoemyQ=="],
 
-    "@focus-reactive/payload-plugin-seo/@types/node/undici-types": ["undici-types@7.24.6", "", {}, "sha512-WRNW+sJgj5OBN4/0JpHFqtqzhpbnV0GuB+OozA9gCL7a993SmU+1JBZCzLNxYsbMfIeDL+lTsphD5jN5N+n0zg=="],
+    "@focus-reactive/payload-plugin-seo/@types/node/undici-types": ["undici-types@8.3.0", "", {}, "sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ=="],
 
     "@focus-reactive/payload-plugin-translator/vitest/@vitest/expect": ["@vitest/expect@3.2.4", "", { "dependencies": { "@types/chai": "^5.2.2", "@vitest/spy": "3.2.4", "@vitest/utils": "3.2.4", "chai": "^5.2.0", "tinyrainbow": "^2.0.0" } }, "sha512-Io0yyORnB6sikFlt8QW5K7slY4OjqNX9jmJQ02QDda8lyM6B5oNgVWoSoKPac8/kgnCUzuHQKrSLtu/uOqqrig=="],
 

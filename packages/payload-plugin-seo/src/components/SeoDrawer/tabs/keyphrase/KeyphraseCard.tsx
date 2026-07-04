@@ -38,9 +38,7 @@ export function KeyphraseCard({ entry, isFocus, selected, state, onSelect }: Key
       onClick={() => onSelect(entry.id)}
       className={cn(
         "flex items-center gap-[10px] p-[8px] rounded-rs w-full text-left bg-neutral-0 border cursor-pointer",
-        selected
-          ? "border-neutral-300 shadow-[0_1px_5px_rgba(30,25,20,0.09)]"
-          : "border-transparent hover:border-neutral-150"
+        selected ? "border-neutral-300 shadow-card" : "border-transparent hover:border-neutral-150"
       )}
     >
       <MiniRing state={state} />
