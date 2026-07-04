@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-comments [1.11.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.11.0...@focus-reactive/payload-plugin-comments@1.11.1) (2026-07-04)
+
+
+### Bug Fixes
+
+* **comments:** compile styles with frcomments prefix to isolate from consumer css ([edc01cc](https://github.com/focusreactive/payload-plugins/commit/edc01cc472331238a073704cf149e17d93e09236))
+
 # @focus-reactive/payload-plugin-comments [1.11.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-comments@1.10.0...@focus-reactive/payload-plugin-comments@1.11.0) (2026-06-28)
 
 
