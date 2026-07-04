@@ -2,8 +2,11 @@
 
 import { defineConfig } from "tsup";
 import { spawn } from "node:child_process";
-import { copyFileSync, mkdirSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
+import { join } from "node:path";
+import { transformDistDirectory } from "./scripts/prefix-classes";
+import { verifyCss, verifyJs } from "./scripts/verify-dist";
 
 const postcssCli = createRequire(import.meta.url).resolve("postcss-cli");
 
@@ -50,6 +53,21 @@ export default defineConfig({
     "clsx",
   ],
   async onSuccess() {
+    const changed = transformDistDirectory("dist");
+    console.log(`[prefix-classes] prefixed class literals in ${changed} files`);
+
     await compileCss();
+
+    const errors = verifyCss(readFileSync("dist/admin.css", "utf-8"));
+    for (const entry of readdirSync("dist", { recursive: true, withFileTypes: true })) {
+      if (entry.isFile() && entry.name.endsWith(".js")) {
+        const filePath = join(entry.parentPath, entry.name);
+        errors.push(...verifyJs(readFileSync(filePath, "utf-8"), filePath));
+      }
+    }
+
+    if (errors.length > 0) {
+      throw new Error(`[verify-dist] style isolation regressed:\n- ${errors.join("\n- ")}`);
+    }
   },
 });

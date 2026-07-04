@@ -1,9 +1,13 @@
 import { AB_CONTROL_BUCKET } from "../../../../constants/ab";
 
-const BUCKET_VARS = ["var(--ab-bucket-1)", "var(--ab-bucket-2)", "var(--ab-bucket-3)"];
+const BUCKET_VARS = [
+  "var(--franalytics-ab-bucket-1)",
+  "var(--franalytics-ab-bucket-2)",
+  "var(--franalytics-ab-bucket-3)",
+];
 
 export function getBucketColor(index: number): string {
-  if (index === 0) return "var(--ab-bucket-0)";
+  if (index === 0) return "var(--franalytics-ab-bucket-0)";
 
   return BUCKET_VARS[(index - 1) % BUCKET_VARS.length]!;
 }
