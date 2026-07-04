@@ -50,7 +50,7 @@
     }
   },
   "scripts": {
-    "build": "tsup && tsc --emitDeclarationOnly --declarationMap",
+    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly --declarationMap",
     "dev": "tsup --watch",
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",

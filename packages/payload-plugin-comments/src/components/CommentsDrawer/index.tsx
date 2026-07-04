@@ -61,7 +61,7 @@ export function CommentsDrawer({ slug }: Props) {
           containerRef.current
         )}
       <Drawer
-        className={cn("comments-drawer max-w-150 w-full m-0 ml-auto relative")}
+        className={cn("frcomments-drawer max-w-150 w-full m-0 ml-auto relative")}
         slug={slug}
         Header={<Header slug={slug} />}
       >
