@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-seo [1.10.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.10.0...@focus-reactive/payload-plugin-seo@1.10.1) (2026-07-04)
+
+
+### Bug Fixes
+
+* **seo:** stop add-synonym button flashing idle style when disabled under jank ([eb6f6be](https://github.com/focusreactive/payload-plugins/commit/eb6f6beac7372db2acff882c7996db9d4e3e8c07))
+
 # @focus-reactive/payload-plugin-seo [1.10.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.9.0...@focus-reactive/payload-plugin-seo@1.10.0) (2026-07-04)
 
 
