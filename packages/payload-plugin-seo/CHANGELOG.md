@@ -1,3 +1,18 @@
+# @focus-reactive/payload-plugin-seo [1.10.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.9.0...@focus-reactive/payload-plugin-seo@1.10.0) (2026-07-04)
+
+
+### Bug Fixes
+
+* **seo:** compile admin styles with frseo prefix to isolate from consumer css ([40da2f7](https://github.com/focusreactive/payload-plugins/commit/40da2f76f20d0e573fd6c9e8bb80d20a23db3ea1))
+
+
+### Features
+
+* **seo:** add AST codemod that prefixes class literals in compiled JS ([7f03de0](https://github.com/focusreactive/payload-plugins/commit/7f03de073f3688715b053240dbd860e394af5787))
+* **seo:** add dist output isolation verifier ([79f25c7](https://github.com/focusreactive/payload-plugins/commit/79f25c7a2a2bf5f8682bf92bed243fbb38df3d21))
+* **seo:** configure tailwind-merge for the frseo prefix ([c5c5e78](https://github.com/focusreactive/payload-plugins/commit/c5c5e78bf26fa724d4764b39ae34b32b369e5dc6))
+* **seo:** route standalone class-string constants through cn() ([eb9f472](https://github.com/focusreactive/payload-plugins/commit/eb9f472fb66ccbcbc2d428c7949ff5d8a41f4024))
+
 # @focus-reactive/payload-plugin-seo [1.9.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-seo@1.8.0...@focus-reactive/payload-plugin-seo@1.9.0) (2026-07-02)
 
 
