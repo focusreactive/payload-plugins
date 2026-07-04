@@ -18,6 +18,7 @@
   --color-neutral-600: var(--theme-elevation-600);
   --color-neutral-700: var(--theme-elevation-700);
   --color-neutral-800: var(--theme-elevation-800);
+  --color-neutral-900: var(--theme-elevation-900);
   --color-neutral-1000: var(--theme-elevation-1000);
 
   --color-seo-good: var(--seo-good);
@@ -28,6 +29,8 @@
   --color-seo-bad: var(--seo-bad);
   --color-seo-bad-100: var(--seo-bad-100);
   --color-seo-bad-200: var(--seo-bad-200);
+
+  --color-seo-badge-fg: #fff;
 
   --color-serp-title: var(--serp-title);
   --color-serp-title-mobile: var(--serp-title-mobile);
@@ -43,6 +46,7 @@
 
   --shadow-popover:
     0 12px 32px -12px var(--seo-shadow-strong), 0 2px 6px -2px var(--seo-shadow-soft);
+  --shadow-card: 0 1px 5px var(--seo-shadow-medium);
 
   --animate-seo-fade-in: seo-fade-in 0.18s ease;
 
@@ -55,6 +59,7 @@
 
 :root {
   --seo-shadow-strong: oklch(0.2 0.01 70 / 0.14);
+  --seo-shadow-medium: oklch(0.2 0.01 70 / 0.09);
   --seo-shadow-soft: oklch(0.2 0.01 70 / 0.06);
 
   --serp-title: #1a0dab;
@@ -78,6 +83,7 @@
 
 [data-theme="dark"] {
   --seo-shadow-strong: oklch(0.97 0 0 / 0.2);
+  --seo-shadow-medium: oklch(0.97 0 0 / 0.13);
   --seo-shadow-soft: oklch(0.97 0 0 / 0.09);
 
   --serp-title: #99c3ff;
