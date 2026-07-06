@@ -5,6 +5,7 @@ import {
   DEFAULT_PROVENANCE_SLUG,
   PayloadProvenanceStore,
   assertProvenanceSlugFree,
+  injectProvenanceCleanup,
   isProvenanceCollection,
   makeProvenanceCollection,
 } from "./server/modules/provenance";
@@ -146,11 +147,6 @@ export class TranslateCollectionPlugin {
       );
       const collectionSlugs = new Set(schemaMap.keys());
       const basePath = normalizePath(rawBasePath);
-
-      // Provenance is opt-in: present `provenance` → resolve the slug, guard it against a collision
-      // with a collection the consumer already defines (ignoring an already-added sidecar so repeated
-      // plugin runs stay idempotent), and give the handler a factory that binds a store to the
-      // request's Payload instance. Absent → no factory, no collection, no behaviour change.
       const provenanceSlug = resolveProvenanceSlug(provenance);
       if (provenanceSlug) {
         const existing = (config.collections ?? []).filter(
@@ -217,12 +213,8 @@ export class TranslateCollectionPlugin {
       });
       for (const level of activeLevels) level.extend(builder);
 
-      // Plugin-level contributions, routed through the same single config-writer:
-      //  - the runner's jobs/autorun/onInit modifier (the builder applies it first,
-      //    so a modifier returning a fresh config object doesn't drop later writes),
-      //  - the always-on client cache provider.
       builder.addConfigModifier(runnerConfigModifier);
-      if (provenanceSlug) {
+      if (provenanceSlug && provenanceStoreFactory) {
         builder.addConfigModifier((cfg) => {
           const alreadyAdded = cfg.collections?.some(
             (collection) => collection.slug === provenanceSlug && isProvenanceCollection(collection)
@@ -233,6 +225,7 @@ export class TranslateCollectionPlugin {
               makeProvenanceCollection(provenanceSlug),
             ];
           }
+          injectProvenanceCleanup(cfg, collectionSlugs, provenanceStoreFactory, provenanceSlug);
           return cfg;
         });
       }

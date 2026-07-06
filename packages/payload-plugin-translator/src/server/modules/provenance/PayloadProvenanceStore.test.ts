@@ -108,5 +108,14 @@ describe("PayloadProvenanceStore", () => {
         })
       );
     });
+
+    it("does not thread `req`, so cleanup runs in its own transaction (best-effort contract)", async () => {
+      // The delete-cleanup guarantee (never roll back the user's delete) relies on this: joining the
+      // primary delete's transaction would let a failed sidecar delete poison it. Lock it in.
+      await store.deleteByDocument("posts", "doc-1");
+      expect(payload.delete).not.toHaveBeenCalledWith(
+        expect.objectContaining({ req: expect.anything() })
+      );
+    });
   });
 });

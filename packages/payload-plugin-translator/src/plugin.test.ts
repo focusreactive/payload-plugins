@@ -214,6 +214,42 @@ describe("translatorPlugin — provenance (opt-in)", () => {
     expect(provenanceOf(twice, "provenance-a")).toBeDefined();
     expect(provenanceOf(twice, "provenance-b")).toBeDefined();
   });
+
+  it("attaches a delete-cleanup afterDelete hook to translatable collections when enabled", async () => {
+    const { posts } = await build({ provenance: {} } as Partial<TranslatorPluginConfig>);
+    expect(posts.hooks?.afterDelete).toHaveLength(1);
+  });
+
+  it("does not attach a cleanup hook when provenance is disabled", async () => {
+    const { posts } = await build();
+    expect(posts.hooks?.afterDelete ?? []).toHaveLength(0);
+  });
+
+  it("does not attach the cleanup hook to the sidecar collection itself", async () => {
+    const { result } = await build({ provenance: {} } as Partial<TranslatorPluginConfig>);
+    expect(provenanceOf(result)?.hooks?.afterDelete ?? []).toHaveLength(0);
+  });
+
+  it("does not stack duplicate cleanup hooks when run twice", async () => {
+    const collection = {
+      slug: "posts",
+      fields: [{ name: "title", type: "text", localized: true }],
+    };
+    const pluginConfig = {
+      collections: [collection],
+      translationProvider: { translate: vi.fn() },
+      runner: { create: vi.fn(), configure: vi.fn().mockReturnValue((c: Config) => c) },
+      provenance: {},
+    } as unknown as TranslatorPluginConfig;
+
+    const once = await translatorPlugin(pluginConfig)({
+      collections: [collection],
+    } as unknown as Config);
+    const twice = await translatorPlugin(pluginConfig)(once);
+
+    const posts = twice.collections?.find((c) => c.slug === "posts") as Record<string, any>;
+    expect(posts.hooks?.afterDelete).toHaveLength(1);
+  });
 });
 
 describe("translatorPlugin — lifecycle callbacks", () => {

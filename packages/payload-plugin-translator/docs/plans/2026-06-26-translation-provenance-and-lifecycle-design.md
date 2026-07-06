@@ -319,10 +319,11 @@ payload-free → they live in `@core`; only the Payload-backed store impl and ho
   the handler's catch (fire, then rethrow so the runner still marks the job failed). Callback errors
   swallowed-and-logged. Independent of the `provenance` flag. Tests: each fires with the right
   descriptor; a throwing callback does not break the translation.
-- **Slice D — delete cleanup + docs.** When `provenance` is enabled, inject an `afterDelete` hook on
-  configured collections → `store.deleteByDocument` (not injected when opted out). README: the opt-in
-  `provenance` config, the required SQL migration step, the callbacks API, `@since 0.7.0`. Tests:
-  deleting a document removes its provenance rows.
+- **Slice D — delete cleanup + docs.** When `provenance` is enabled, inject an `afterDelete` hook
+  (separate transaction + swallow-and-log — see D.1 detail) on configured collections →
+  `store.deleteByDocument` (not injected when opted out). README: the opt-in `provenance` config, the
+  required SQL migration step, the callbacks API, `@since 0.7.0`. Tests: deleting a document removes
+  its provenance rows.
 
 ### Sidecar collection shape (slice A)
 
@@ -338,6 +339,105 @@ Minimal, DB-portable. All `text`/`date`; composite uniqueness on
 | `sourceFingerprint` | text | `fingerprint(projectTranslatableContent(sourceDoc, schema))` |
 | `translatedAt` | date | last successful translation time |
 | `dismissedFingerprint` | text (nullable) | added now, unused until #50 |
+
+### Slice D — delete cleanup, public surface & docs (detailed)
+
+The closing slice of #47. Three parts + a real-DB verification pass. No new algorithm — it wires the
+`deleteByDocument` primitive built in slice A, closes the public surface, and documents the opt-in.
+
+#### D.1 — delete cleanup (via `afterDelete` + separate transaction + swallow)
+
+**Why.** A provenance row is keyed `(collectionSlug, documentId, targetLocale)`. When the consumer
+deletes the source document, its rows are orphaned — never updated again, misreported by the #49/#50
+dashboard, and (under id reuse on Mongo/uuid) potentially re-attached to an unrelated document. So we
+cascade-clean on delete.
+
+**Hook choice — `afterDelete` (chosen 2026-07-06, Option B).** Source review of Payload 3.84.1
+(`deleteByID.js`, `delete.js`) found that **BOTH `afterDelete` (loop @192-202) AND `afterOperation`
+(@206 / @259) run inside the delete transaction, *before* `commitTransaction` (@216 / @266)** — neither
+is post-commit, and an unhandled throw in either propagates to the `catch` that calls `killTransaction`
+(rollback). So the "never fail the delete" guarantee does **not** come from picking a post-commit hook
+(there isn't one); it comes from two things together:
+1. **Swallow** the cleanup error in our hook (try/catch) → we never throw → no `killTransaction` → the
+   primary delete proceeds to commit.
+2. Run the cleanup in a **separate transaction** — `deleteByDocument` calls `payload.delete` **without**
+   threading `req`, so it opens its own transaction on its own connection. A failure there cannot poison
+   the primary delete's Postgres transaction. (Threading `req` would join the primary tx, where a failed
+   statement poisons it → the primary commit fails even if we swallow. So we deliberately do NOT pass
+   `req`.)
+
+Given both hold, `afterDelete` vs `afterOperation` is purely ergonomic, and `afterDelete` wins: it hands
+us `id` directly, fires **once per deleted document** (so bulk delete is handled automatically), and
+needs no result-shape branching. (See `2026-07-06-slice-d-research.md` for the full evidence + A/B/C.)
+Residual risk: a tiny orphan-on-rollback window if `commitTransaction` itself fails *after* our separate
+cleanup already committed — negligible and self-healing (the next translation re-upserts provenance).
+
+**How.** The primitive already exists: `PayloadProvenanceStore.deleteByDocument(collectionSlug,
+documentId)` (its `where` deliberately omits `targetLocale`, so one call removes the document's rows
+across *all* target locales). Slice D only wires the hook:
+
+- In `plugin.ts` `init()`, **gated on `provenanceSlug` being set** (opted out → no collection exists,
+  so no hook — attaching one would query a missing table). Added through the config-modifier path,
+  mutating the sanitized `config.collections` objects (not the throwaway `pluginConfig.collections`).
+- Attach the `afterDelete` hook only to the **translatable collections** (`collectionSlugs` — the ones
+  in the plugin's `collections` config), since provenance rows exist only for those. The sidecar is not
+  in that set, so it is never hooked (no recursion).
+- Hook body: `deleteByDocument(collection.slug, String(id))` — `collection.slug` comes from the hook arg
+  and `id` is `number | string`, so always stringify. The store's delete runs in its own transaction
+  (no `req` threaded), keeping cleanup isolated from the primary delete.
+- **Best-effort, swallow-and-log** via `req.payload.logger`: wrap the body in try/catch so a cleanup
+  failure only logs and never fails the user's delete.
+- **Append, don't replace** any consumer-supplied `afterDelete` array, and make injection
+  **idempotent**: mark the injected hook (a flag on the hook fn) so repeated `init()` runs don't stack
+  duplicates — analogous to `isProvenanceCollection`.
+
+**Resolved — versions / drafts / locales.** Payload's `afterDelete` fires on **document** deletion,
+not on version/draft pruning; locales in Payload are field-level, not separate documents. So one
+delete = remove that `documentId`'s provenance across every locale, which `deleteByDocument` already
+does. **No** version/draft-specific handling is added in v1. If a consumer enables trash/soft-delete,
+`afterDelete` fires only on the real (permanent) delete — acceptable: a trashed-then-restored document
+keeps its provenance, which is the correct behavior.
+
+#### D.2 — Public surface (0.7.0)
+
+- **Export `TranslationProvenanceRecord`** from `src/index.ts` with `@since 0.7.0` — a consumer that
+  queries the sidecar collection (and #50's dashboard) wants the typed record shape.
+- Keep `ProvenanceStore`, `ProvenanceKey`, and `PayloadProvenanceStore` **internal** — the consumer
+  opts in via config and never constructs a store; exposing them now would freeze a wider surface than
+  #47 needs.
+- Verify `TranslatorPluginConfig.provenance` carries `@since 0.7.0` (inline in `plugin.ts`), and that
+  the slice-C lifecycle exports are wired (already done).
+
+#### D.3 — README: enabling provenance (migration)
+
+The sidecar is a new collection → a new SQL **table**. The plugin ships only the `CollectionConfig`;
+it cannot create the table in the consumer's database (no access to their migration dir/creds). This
+is the whole reason provenance is opt-in, default-OFF, and it must be documented as a conscious step:
+
+- `provenance: true` (or `{ slug }`);
+- **SQL (Postgres):** `payload migrate:create` then `payload migrate` (precedent: the AB plugin's
+  `apps/dev/src/migrations/…create_ab_experiments.ts`);
+- **Mongo:** nothing — the collection is inferred;
+- caveat: future schema changes stay **additive & nullable only** (renames = data loss).
+
+Also document the lifecycle callbacks API (`lifecycle: { onQueued, onCompleted, onFailed }`) with
+`Since v0.7.0` notes.
+
+#### D.4 — Deferred real-DB verification (carried from A/B)
+
+Run once on a real instance (`apps/dev` or `apps/cms`, Postgres) as part of slice D:
+
+- `dismissedFingerprint: null` round-trips on both SQL and Mongo.
+- Real table-name collision (snake_case / `dbName`) behaves acceptably — the startup guard
+  deliberately checks only exact-slug collision, not the derived SQL table name.
+
+#### Tests
+
+- Deleting a document with provenance enabled removes all its rows (across locales); other documents'
+  rows are untouched.
+- `afterDelete` is a no-op / not attached when provenance is opted out.
+- A `deleteByDocument` failure is swallowed and logged, and does not fail the delete.
+- Idempotency: two plugin runs don't stack duplicate `afterDelete` hooks.
 
 ## Out of scope
 

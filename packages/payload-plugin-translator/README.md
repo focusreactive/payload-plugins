@@ -167,6 +167,10 @@ Enabling it adds a plugin-managed, hidden sidecar collection to your config. **O
 (Postgres/SQLite) this requires a migration** — run `payload migrate:create` then `payload migrate`
 (or let dev push apply it in development). MongoDB infers the collection with no migration step.
 
+When a translated document is deleted, its provenance rows are cleaned up automatically (across all
+locales). The cleanup is best-effort — a failure is logged and never blocks the delete. The exported
+`TranslationProvenanceRecord` type describes a stored row if you query the sidecar collection directly.
+
 ```typescript
 translatorPlugin({
   collections: [Posts, Pages],
