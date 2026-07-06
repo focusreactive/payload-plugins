@@ -9,9 +9,6 @@ import SetAnalyticsStepNav from "./SetAnalyticsStepNav";
 import { AnalyticsShell } from "./AnalyticsShell";
 import { getResolvedBlockRegistry, getResolvedLayout, getPluginConfig } from "../../config";
 import { BUILTIN_LEAD_ACTIONS_BLOCK_IDS, BUILTIN_OVERVIEW_BLOCK_IDS } from "../../constants/layout";
-import { getComponentPath } from "../../utils/path/getComponentPath";
-
-const ANALYTICS_HEADER_LINK_PATH = getComponentPath("components/AnalyticsView/AnalyticsHeaderLink");
 
 const BUILTIN_BLOCK_IDS = new Set<string>([
   ...BUILTIN_OVERVIEW_BLOCK_IDS,
@@ -26,9 +23,7 @@ export default function AnalyticsView({
   const { req, permissions, locale, visibleEntities } = initPageResult;
   const { i18n, payload, user } = req;
 
-  const viewActions = [...(payload.config.admin?.components?.actions ?? [])]
-    .filter((action) => action !== ANALYTICS_HEADER_LINK_PATH)
-    .reverse();
+  const viewActions = [...(payload.config.admin?.components?.actions ?? [])].reverse();
   const title = i18n.t("analytics:title" as never);
 
   const resolved = getResolvedLayout();
