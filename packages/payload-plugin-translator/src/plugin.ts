@@ -16,6 +16,12 @@ import type {
   TaskRunnerFactory,
 } from "./server/modules/task-runner";
 import { TranslateDocumentHandler } from "./server/features/translate-document";
+import {
+  LifecycleNotifier,
+  taskFromHandlerInput,
+  withQueuedNotification,
+} from "./server/modules/lifecycle";
+import type { TranslationLifecycleCallbacks } from "./server/modules/lifecycle";
 import { documentLevel, collectionLevel } from "./composition/levels";
 import type { TranslationLevel } from "./server/modules/translation-levels";
 import { PluginConfigBuilder } from "./server/modules/translation-levels/PluginConfigBuilder";
@@ -92,6 +98,13 @@ export type TranslatorPluginConfig = {
          */
         slug?: string;
       };
+  /**
+   * Optional server-side lifecycle callbacks fired around each translation task
+   * (`onQueued` / `onCompleted` / `onFailed`). Always available — no schema, no migration, not gated
+   * by `provenance`. A throwing callback is caught and logged, never failing the translation.
+   * @since 0.7.0
+   */
+  lifecycle?: TranslationLifecycleCallbacks;
 };
 
 /** @deprecated Use `TranslatorPluginConfig` instead */
@@ -114,8 +127,11 @@ export class TranslateCollectionPlugin {
         collections,
         levels,
         provenance,
+        lifecycle,
         basePath: rawBasePath = "/translate",
       } = this.pluginConfig;
+
+      const lifecycleCallbacks: TranslationLifecycleCallbacks = lifecycle ?? {};
 
       // Build schema map from deep-cloned collections
       // Deep clone is required because Payload mutates the original collection objects,
@@ -154,14 +170,22 @@ export class TranslateCollectionPlugin {
 
       const runnerContext: TaskRunnerContext = {
         handler: async (payload, input) => {
-          await translateHandler.handle(payload, {
-            collection: input.collection,
-            collectionId: input.collectionId,
-            sourceLng: input.sourceLng,
-            targetLng: input.targetLng,
-            strategy: input.strategy,
-            publishOnTranslation: input.publishOnTranslation,
-          });
+          const notifier = new LifecycleNotifier(lifecycleCallbacks, payload.logger);
+          const task = taskFromHandlerInput(input);
+          try {
+            await translateHandler.handle(payload, {
+              collection: input.collection,
+              collectionId: input.collectionId,
+              sourceLng: input.sourceLng,
+              targetLng: input.targetLng,
+              strategy: input.strategy,
+              publishOnTranslation: input.publishOnTranslation,
+            });
+          } catch (error) {
+            await notifier.failed(task, error);
+            throw error; // rethrow so the runner marks the job failed
+          }
+          await notifier.completed(task);
         },
         collections: Array.from(collectionSlugs),
       };
@@ -170,8 +194,16 @@ export class TranslateCollectionPlugin {
       // Bind the context once so routes receive a self-sufficient factory: the
       // runner needs no mutable per-instance handler state and create() has no
       // "configure() must run first" ordering coupling (translator plan, 0c).
+      // When an `onQueued` callback is set, decorate the runner so `enqueue` fires it.
       const taskRunnerFactory: TaskRunnerFactory = {
-        create: (payload) => runner.create(payload, runnerContext.handler),
+        create: (payload) => {
+          const taskRunner = runner.create(payload, runnerContext.handler);
+          if (!lifecycleCallbacks.onQueued) return taskRunner;
+          return withQueuedNotification(
+            taskRunner,
+            new LifecycleNotifier(lifecycleCallbacks, payload.logger)
+          );
+        },
       };
 
       const activeLevels = levels ?? [documentLevel(), collectionLevel()];

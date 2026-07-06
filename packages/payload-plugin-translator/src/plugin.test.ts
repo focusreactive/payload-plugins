@@ -1,11 +1,30 @@
 import { describe, it, expect, vi } from "vitest";
-import type { Config } from "payload";
+import type { Config, Payload } from "payload";
 
 import { translatorPlugin } from "./plugin";
 import type { TranslatorPluginConfig } from "./plugin";
 import { documentLevel, fieldLevel } from "./composition/levels";
 import { TranslateDocumentExport } from "./client/widgets/translate-document";
 import { BulkDocumentTranslationDashboard } from "./client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.export";
+import { withQueuedNotification } from "./server/modules/lifecycle";
+
+// Isolate the lifecycle-wiring tests from the real pipeline: a mocked translateContent that returns
+// null makes the handler finish cleanly (nothing to translate) so we can assert `completed` fires
+// without standing up a provider. `vi.mock` is hoisted, so it applies regardless of position; kept
+// below the imports to satisfy the import/first lint rule. Other tests never execute the handler.
+vi.mock("./core/translation-pipeline", () => ({
+  translateContent: vi.fn().mockResolvedValue(null),
+}));
+
+// Spy on withQueuedNotification while keeping its real behaviour, so a test can assert the runner
+// was (or wasn't) wrapped for the `lifecycle.onQueued` absent/present branch in plugin.ts.
+vi.mock("./server/modules/lifecycle", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./server/modules/lifecycle")>();
+  return {
+    ...actual,
+    withQueuedNotification: vi.fn(actual.withQueuedNotification),
+  };
+});
 
 // End-to-end behaviour guard for the levels refactor: the default levels must
 // reproduce today's wiring (6-route bundle, cache provider, doc popup + bulk
@@ -194,5 +213,187 @@ describe("translatorPlugin — provenance (opt-in)", () => {
 
     expect(provenanceOf(twice, "provenance-a")).toBeDefined();
     expect(provenanceOf(twice, "provenance-b")).toBeDefined();
+  });
+});
+
+describe("translatorPlugin — lifecycle callbacks", () => {
+  // The runner's execution handler is what the plugin wraps for completed/failed. It is handed to
+  // `runner.configure(context)` at init, so we capture it from the configure mock and invoke it.
+  const capturedHandler = (runner: ReturnType<typeof makeRunner>) =>
+    runner.configure.mock.calls[0][0].handler as (
+      payload: Payload,
+      input: Record<string, unknown>
+    ) => Promise<void>;
+
+  const handlerInput = (overrides: Record<string, unknown> = {}) => ({
+    collection: "posts",
+    collectionId: "doc-1",
+    sourceLng: "en",
+    targetLng: "de",
+    strategy: "overwrite",
+    publishOnTranslation: false,
+    ...overrides,
+  });
+
+  const mockPayload = () =>
+    ({
+      findByID: vi.fn().mockResolvedValue({ id: "doc-1" }),
+      logger: { error: vi.fn() },
+    }) as unknown as Payload;
+
+  it("fires lifecycle.onCompleted after a successful task", async () => {
+    const onCompleted = vi.fn();
+    const { runner } = await build({
+      lifecycle: { onCompleted },
+    } as Partial<TranslatorPluginConfig>);
+
+    await capturedHandler(runner)(mockPayload(), handlerInput());
+
+    expect(onCompleted).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: "posts",
+        id: "doc-1",
+        sourceLng: "en",
+        targetLng: "de",
+      })
+    );
+  });
+
+  it("fires lifecycle.onFailed with the error and rethrows so the runner marks it failed", async () => {
+    const onFailed = vi.fn();
+    const { runner } = await build({ lifecycle: { onFailed } } as Partial<TranslatorPluginConfig>);
+
+    // an unknown collection makes the handler throw before translating
+    let rejectedError: unknown;
+    try {
+      await capturedHandler(runner)(mockPayload(), handlerInput({ collection: "unknown" }));
+    } catch (error) {
+      rejectedError = error;
+    }
+
+    expect(rejectedError).toBeInstanceOf(Error);
+    expect(onFailed).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: "unknown" }),
+      rejectedError
+    );
+    // the rejected error and the error handed to onFailed must be the identical object
+    expect(onFailed.mock.calls[0][1]).toBe(rejectedError);
+  });
+
+  it("rethrows the original translation error even when onFailed itself throws", async () => {
+    const onFailed = vi.fn(() => {
+      throw new Error("callback boom");
+    });
+    const { runner } = await build({ lifecycle: { onFailed } } as Partial<TranslatorPluginConfig>);
+
+    await expect(
+      capturedHandler(runner)(mockPayload(), handlerInput({ collection: "unknown" }))
+    ).rejects.toThrow(/not found in schemaMap/u);
+  });
+
+  it("does not fail the task when a lifecycle callback throws (swallow + log)", async () => {
+    const onCompleted = vi.fn(() => {
+      throw new Error("callback boom");
+    });
+    const { runner } = await build({
+      lifecycle: { onCompleted },
+    } as Partial<TranslatorPluginConfig>);
+
+    await expect(capturedHandler(runner)(mockPayload(), handlerInput())).resolves.toBeUndefined();
+  });
+
+  it("fires lifecycle.onQueued for each task when enqueuing", async () => {
+    const onQueued = vi.fn();
+    const taskRunner = {
+      enqueue: vi.fn().mockResolvedValue(undefined),
+      cancel: vi.fn(),
+      run: vi.fn(),
+      findByCollection: vi.fn(),
+    };
+    const runner = {
+      create: vi.fn().mockReturnValue(taskRunner),
+      configure: vi.fn().mockReturnValue((c: Config) => c),
+    };
+    const { result } = await build({
+      runner,
+      lifecycle: { onQueued },
+    } as unknown as Partial<TranslatorPluginConfig>);
+
+    const enqueue = result.endpoints?.find((e) => e.path === "/translate/enqueue");
+    const req = {
+      json: async () => ({
+        source_lng: "en",
+        target_lng: "de",
+        collection_slug: "posts",
+        collection_id: ["1", "2"],
+      }),
+      payload: { logger: { error: vi.fn() } },
+    };
+    await enqueue?.handler?.(req as never);
+
+    expect(onQueued).toHaveBeenCalledTimes(2);
+    expect(onQueued).toHaveBeenCalledWith(expect.objectContaining({ id: "1" }));
+    expect(taskRunner.enqueue).toHaveBeenCalled();
+  });
+
+  it("does not wrap the runner in withQueuedNotification when lifecycle.onQueued is absent", async () => {
+    vi.mocked(withQueuedNotification).mockClear();
+    const taskRunner = {
+      enqueue: vi.fn().mockResolvedValue(undefined),
+      cancel: vi.fn(),
+      run: vi.fn(),
+      findByCollection: vi.fn(),
+    };
+    const runner = {
+      create: vi.fn().mockReturnValue(taskRunner),
+      configure: vi.fn().mockReturnValue((c: Config) => c),
+    };
+    const { result } = await build({
+      runner,
+      lifecycle: { onCompleted: vi.fn() },
+    } as unknown as Partial<TranslatorPluginConfig>);
+
+    const enqueue = result.endpoints?.find((e) => e.path === "/translate/enqueue");
+    const req = {
+      json: async () => ({
+        source_lng: "en",
+        target_lng: "de",
+        collection_slug: "posts",
+        collection_id: ["1", "2"],
+      }),
+      payload: { logger: { error: vi.fn() } },
+    };
+    await enqueue?.handler?.(req as never);
+
+    expect(withQueuedNotification).not.toHaveBeenCalled();
+    expect(taskRunner.enqueue).toHaveBeenCalled();
+  });
+
+  it("does not fire onFailed on the success path when both onCompleted and onFailed are registered", async () => {
+    const onCompleted = vi.fn();
+    const onFailed = vi.fn();
+    const { runner } = await build({
+      lifecycle: { onCompleted, onFailed },
+    } as Partial<TranslatorPluginConfig>);
+
+    await capturedHandler(runner)(mockPayload(), handlerInput());
+
+    expect(onCompleted).toHaveBeenCalledTimes(1);
+    expect(onFailed).not.toHaveBeenCalled();
+  });
+
+  it("does not fire onCompleted on the failure path when both onCompleted and onFailed are registered", async () => {
+    const onCompleted = vi.fn();
+    const onFailed = vi.fn();
+    const { runner } = await build({
+      lifecycle: { onCompleted, onFailed },
+    } as Partial<TranslatorPluginConfig>);
+
+    await expect(
+      capturedHandler(runner)(mockPayload(), handlerInput({ collection: "unknown" }))
+    ).rejects.toThrow();
+
+    expect(onFailed).toHaveBeenCalledTimes(1);
+    expect(onCompleted).not.toHaveBeenCalled();
   });
 });

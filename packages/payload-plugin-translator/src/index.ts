@@ -2,6 +2,9 @@
 export { translatorPlugin } from "./plugin";
 export type { TranslatorPluginConfig } from "./plugin";
 
+// Lifecycle callbacks — the task descriptor passed to onQueued/onCompleted/onFailed
+export type { TranslationTask, TranslationLifecycleCallbacks } from "./server/modules/lifecycle";
+
 // Access control
 export type { AccessGuard, AccessGuardRequest } from "./types/AccessGuard";
 

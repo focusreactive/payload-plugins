@@ -142,6 +142,7 @@ Allowed on **`text`, `textarea`, and `richText`** fields (a compile error on oth
 | `basePath`            | `string`              | No       | `'/translate'`                         | Base path for the plugin's API endpoints.                                                                      |
 | `levels`              | `TranslationLevel[]`  | No       | `[documentLevel(), collectionLevel()]` | Which surfaces to enable — see [Translation surfaces](#translation-surfaces-levels).                           |
 | `provenance`          | `boolean \| { slug?: string }` | No | `false` (disabled) | Opt in to recording a provenance record per translation. _Since v0.7.0._ See [Provenance](#provenance-opt-in) below. |
+| `lifecycle`           | `{ onQueued?, onCompleted?, onFailed? }` | No | `undefined` | Server-side callbacks fired around each task. _Since v0.7.0._ See [Lifecycle callbacks](#lifecycle-callbacks). |
 
 ```typescript
 translatorPlugin({
@@ -172,6 +173,32 @@ translatorPlugin({
   translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
   runner: createPayloadJobsRunner(),
   provenance: true, // or { slug: "my-provenance" }
+});
+```
+
+### Lifecycle callbacks
+
+_Since v0.7.0._
+
+Optional server-side hooks fired around each translation task — for logging, notifications, cache
+invalidation, or feeding a dashboard. They need no schema or migration and are independent of the
+`provenance` opt-in. Each receives a `TranslationTask` descriptor
+(`{ collection, id, sourceLng, targetLng, strategy }`); `onFailed` also receives the error.
+
+A callback that throws is caught and logged — it never fails the translation. `onCompleted` /
+`onFailed` fire per execution attempt (the Payload Jobs runner may retry a failed task); `onQueued`
+fires once at enqueue.
+
+```typescript
+translatorPlugin({
+  collections: [Posts, Pages],
+  translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
+  runner: createPayloadJobsRunner(),
+  lifecycle: {
+    onQueued: (task) => console.log("queued", task),
+    onCompleted: (task) => console.log("done", task),
+    onFailed: (task, error) => console.error("failed", task, error),
+  },
 });
 ```
 

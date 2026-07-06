@@ -184,25 +184,33 @@ fingerprint is already available at that point in the pipeline.
 
 ## Primitive 2 — Lifecycle callbacks
 
-Add optional callbacks to `TranslatorPluginConfig` (`src/plugin.ts`), invoked by the runner:
+Add an optional `lifecycle` object to `TranslatorPluginConfig` (`src/plugin.ts`), invoked by the runner:
 
 ```ts
 translatorPlugin({
   // ...existing config...
-  onTranslationQueued?:    (task: TranslationTask) => void | Promise<void>,
-  onTranslationCompleted?: (task: TranslationTask) => void | Promise<void>,
-  onTranslationFailed?:    (task: TranslationTask, error: unknown) => void | Promise<void>,
+  lifecycle?: {
+    onQueued?:    (task: TranslationTask) => void | Promise<void>,
+    onCompleted?: (task: TranslationTask) => void | Promise<void>,
+    onFailed?:    (task: TranslationTask, error: unknown) => void | Promise<void>,
+  },
 })
 ```
 
+> **Implementation note (Slice C):** the callbacks were nested under a `lifecycle` config object
+> rather than left flat on the plugin config. Nesting makes the `onTranslation` prefix redundant, so
+> the shipped names are `onQueued` / `onCompleted` / `onFailed` (not the flat
+> `onTranslationQueued/…` sketched in the original draft above). This is the authoritative
+> `@since 0.7.0` public surface.
+
 `TranslationTask` mirrors the descriptor the runner already threads through
 (`{ collection, collectionId, sourceLng, targetLng, strategy }` — see `runnerContext.handler` in
-`src/plugin.ts`):
+`src/plugin.ts`). `id` is normalized to a `string` at ingress (the plugin is ID-agnostic):
 
 ```ts
 type TranslationTask = {
   collection: string;
-  id: string | number;
+  id: string;
   sourceLng: string;
   targetLng: string;
   strategy: string;
@@ -273,7 +281,7 @@ Each numbered item is the former open question, now answered.
    tolerated and documented; no cross-run reconciliation in v1.
 6. **Callback errors — swallow-and-log. [pending confirm]** Every lifecycle callback is wrapped in
    try/catch; a throw is logged via the Payload logger and never propagates. A failing host callback
-   is never a reason to fail the translation (especially `onTranslationFailed`).
+   is never a reason to fail the translation (especially `onFailed`).
 7. **Status endpoint merge — OUT OF SCOPE for #47, deferred to #50. [confirmed 2026-07-03]** #47 only
    *writes* provenance and exposes the sidecar collection as queryable. Merging the durable
    provenance layer into `get-document-status` / `get-collection-status` (the "runner-independent
@@ -306,7 +314,7 @@ payload-free → they live in `@core`; only the Payload-backed store impl and ho
   happens. Tests: opted-in → a record appears with the right fingerprint/locales/timestamp and
   re-translate updates the same row (upsert, not duplicate); opted-out → no collection, no write.
 - **Slice C — lifecycle callbacks (always available, not gated).** Extend `TranslatorPluginConfig`
-  with `onTranslationQueued` / `onTranslationCompleted` / `onTranslationFailed` + the `TranslationTask`
+  with a `lifecycle: { onQueued, onCompleted, onFailed }` object + the `TranslationTask`
   type (with `@since 0.7.0`); fire queued at enqueue, completed after a successful handle, failed in
   the handler's catch (fire, then rethrow so the runner still marks the job failed). Callback errors
   swallowed-and-logged. Independent of the `provenance` flag. Tests: each fires with the right
