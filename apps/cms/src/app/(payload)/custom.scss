@@ -5,6 +5,11 @@
   max-width: 32rem;
 }
 
+.popup__scroll-container:has([data-save-as-preset-container]),
+.popup__scroll-container:has([data-section-visibility-container]) {
+  max-height: 100%;
+}
+
 .LexicalEditorTheme__table {
   width: 100%;
 }
