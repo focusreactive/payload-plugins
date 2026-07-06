@@ -1,8 +1,9 @@
 import type { Block } from "payload";
 
+import { withSectionVisibility } from "@/lib/fields/section/withSectionVisibility";
 import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 
-export const GlobalSectionSlotBlock: Block = {
+export const GlobalSectionSlotBlock: Block = withSectionVisibility({
   slug: "globalSectionSlot",
   interfaceName: "GlobalSectionSlotBlock",
   ...getBlockPreviewImage("Global Section"),
@@ -24,4 +25,4 @@ export const GlobalSectionSlotBlock: Block = {
       type: "relationship",
     },
   ],
-};
+});

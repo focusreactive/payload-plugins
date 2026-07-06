@@ -1408,6 +1408,7 @@ export interface GlobalSectionSlotBlock {
    * Pick a global section to embed. Editing that section updates every page using it.
    */
   reference: number | GlobalSection;
+  _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'globalSectionSlot';
@@ -2099,6 +2100,7 @@ export interface Preset {
          * Pick a global section to embed. Editing that section updates every page using it.
          */
         reference: number | GlobalSection;
+        _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
         blockType: 'globalSectionSlot';
@@ -3252,6 +3254,7 @@ export interface RawHtmlBlockSelect<T extends boolean = true> {
  */
 export interface GlobalSectionSlotBlockSelect<T extends boolean = true> {
   reference?: T;
+  _hidden?: T;
   id?: T;
   blockName?: T;
 }
@@ -3987,6 +3990,7 @@ export interface PresetsSelect<T extends boolean = true> {
           | T
           | {
               reference?: T;
+              _hidden?: T;
               id?: T;
               blockName?: T;
             };
