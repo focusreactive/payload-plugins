@@ -8,14 +8,12 @@ import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-schedu
 import {
   translatorPlugin,
   createOpenAIProvider,
-  createPayloadJobsRunner,
   documentLevel,
   collectionLevel,
   fieldLevel,
 } from "@focus-reactive/payload-plugin-translator";
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { seoPlugin } from "@focus-reactive/payload-plugin-seo";
-import { sqliteAdapter } from "@payloadcms/db-sqlite";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { buildConfig } from "payload";
 import sharp from "sharp";
@@ -27,6 +25,9 @@ import { Playground } from "./collections/Playground";
 import { Users } from "./collections/Users";
 import { Header } from "./globals/Header";
 import { abAdapter } from "./lib/ab-testing/dbAdapter";
+import { resolveDbAdapter } from "./lib/database/resolveAdapter";
+import { loggingLifecycle } from "./lib/translator/lifecycleLogging";
+import { resolveDryRun, resolveTranslatorRunner } from "./lib/translator/devToggles";
 
 const baseDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -44,12 +45,7 @@ export default buildConfig({
     user: Users.slug,
   },
   collections: [Users, Media, Pages, Articles, Playground],
-  db: sqliteAdapter({
-    client: {
-      url: process.env.DATABASE_URL || "",
-    },
-    push: process.env.PAYLOAD_DB_PUSH === "false" ? false : undefined,
-  }),
+  db: resolveDbAdapter(),
   jobs: {
     deleteJobOnComplete: false,
   },
@@ -96,12 +92,14 @@ export default buildConfig({
     }),
     translatorPlugin({
       collections: [Pages, Articles, Playground],
-      runner: createPayloadJobsRunner(),
+      runner: resolveTranslatorRunner(),
       translationProvider: createOpenAIProvider({
         apiKey: process.env.OPENAI_API_KEY ?? "",
-        dryRun: !process.env.OPENAI_API_KEY,
+        dryRun: resolveDryRun(),
       }),
       levels: [documentLevel(), collectionLevel(), fieldLevel()],
+      provenance: true,
+      lifecycle: loggingLifecycle,
     }),
     analyticsPlugin({
       ga4: {
