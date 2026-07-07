@@ -370,6 +370,9 @@ import type {
   FieldTranslationConfig,
   AccessGuard,
   AccessGuardRequest,
+  TranslationTask, // descriptor passed to the lifecycle callbacks — Since v0.7.0
+  TranslationLifecycleCallbacks, // shape of the `lifecycle` config — Since v0.7.0
+  TranslationProvenanceRecord, // a stored provenance row — Since v0.7.0
 } from "@focus-reactive/payload-plugin-translator";
 ```
 
@@ -379,9 +382,11 @@ Every public API is annotated with `@since x.y.z` in its JSDoc, and features car
 
 ## Roadmap
 
+Planned features building on the v0.7.0 provenance foundation:
+
+- **Stale-translation detection** — surface which target locales are out of sync with their source, using the recorded provenance fingerprint.
 - **Global translation dashboard** — translate across all collections from one place, with project-wide progress.
-- **Vercel Cron runner** — a built-in runner for serverless deploys without manual API-route wiring.
-- **Auto-translate on source change** — trigger translation automatically when default-locale content changes.
+- **Auto-translate on source change** — retranslate automatically when default-locale content changes.
 
 ## License
 
