@@ -14,6 +14,12 @@ vi.mock("../../../core/translation-pipeline", () => ({
   translateContent: vi.fn().mockResolvedValue(null),
 }));
 
+// Provenance fingerprinting is the core's job and tested there; here we pin a fixed hash so the
+// handler test asserts only the record the handler builds and hands to the store.
+vi.mock("../../../core/content-projection/computeSourceFingerprint", () => ({
+  computeSourceFingerprint: vi.fn(() => "fp-fixed"),
+}));
+
 describe("TranslateDocumentHandler", () => {
   let handler: TranslateDocumentHandler;
   let mockTranslationProvider: TranslationProvider;
@@ -47,6 +53,7 @@ describe("TranslateDocumentHandler", () => {
     mockPayload = {
       findByID: vi.fn().mockResolvedValue({ id: "doc-123", title: "Test" }),
       update: vi.fn().mockResolvedValue({}),
+      logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
       collections: {
         posts: {
           config: {
@@ -256,6 +263,103 @@ describe("TranslateDocumentHandler", () => {
           autosave: false,
         })
       );
+    });
+  });
+
+  describe("provenance recording", () => {
+    let store: {
+      upsert: ReturnType<typeof vi.fn>;
+      find: ReturnType<typeof vi.fn>;
+      deleteByDocument: ReturnType<typeof vi.fn>;
+    };
+    let storeFactory: ReturnType<typeof vi.fn>;
+
+    const makeHandlerWithProvenance = () =>
+      new TranslateDocumentHandler(
+        mockTranslationProvider,
+        mockSchemaMap,
+        storeFactory as unknown as (payload: typeof mockPayload) => typeof store
+      );
+
+    beforeEach(() => {
+      store = { upsert: vi.fn(), find: vi.fn(), deleteByDocument: vi.fn() };
+      storeFactory = vi.fn(() => store);
+    });
+
+    const withTranslatedData = async () => {
+      const { translateContent } = await import("../../../core/translation-pipeline");
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+        title: "Hallo",
+      });
+    };
+
+    it("upserts a provenance record after a successful translation", async () => {
+      await withTranslatedData();
+      const { computeSourceFingerprint } =
+        await import("../../../core/content-projection/computeSourceFingerprint");
+      // Distinguish source vs. target findByID calls by locale so this assertion actually
+      // proves the handler fingerprints the source document, not the target one.
+      (mockPayload.findByID as ReturnType<typeof vi.fn>).mockImplementation(
+        ({ locale }: { locale: string }) =>
+          Promise.resolve(
+            locale === "en"
+              ? { id: "doc-123", title: "Source" }
+              : { id: "doc-123", title: "Target" }
+          )
+      );
+      const handlerWithProvenance = makeHandlerWithProvenance();
+
+      await handlerWithProvenance.handle(
+        mockPayload,
+        createInput({ collection: "posts" as CollectionSlug, sourceLng: "en", targetLng: "de" })
+      );
+
+      expect(computeSourceFingerprint).toHaveBeenCalledWith({ id: "doc-123", title: "Source" }, [
+        { name: "title", type: "text", localized: true },
+      ]);
+      expect(storeFactory).toHaveBeenCalledWith(mockPayload);
+      expect(store.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          collectionSlug: "posts",
+          documentId: "doc-123",
+          targetLocale: "de",
+          sourceLocale: "en",
+          sourceFingerprint: "fp-fixed",
+          dismissedFingerprint: null,
+        })
+      );
+      const record = store.upsert.mock.calls[0][0] as { translatedAt: string };
+      expect(new Date(record.translatedAt).toISOString()).toBe(record.translatedAt);
+    });
+
+    it("does not record provenance when no store factory is supplied (disabled)", async () => {
+      await withTranslatedData();
+      // handler built without the factory (default in beforeEach) — provenance off.
+      await handler.handle(mockPayload, createInput());
+
+      expect(store.upsert).not.toHaveBeenCalled();
+    });
+
+    it("does not record provenance when nothing was translated (pipeline returns null)", async () => {
+      const { translateContent } = await import("../../../core/translation-pipeline");
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+      await makeHandlerWithProvenance().handle(mockPayload, createInput());
+
+      expect(storeFactory).not.toHaveBeenCalled();
+      expect(store.upsert).not.toHaveBeenCalled();
+    });
+
+    it("does not fail the translation when the provenance write throws (best-effort + logged)", async () => {
+      await withTranslatedData();
+      store.upsert.mockRejectedValue(new Error("provenance table down"));
+
+      const result = await makeHandlerWithProvenance().handle(mockPayload, createInput());
+
+      expect(result).toEqual({ success: true });
+      expect(
+        (mockPayload as unknown as { logger: { error: ReturnType<typeof vi.fn> } }).logger.error
+      ).toHaveBeenCalled();
     });
   });
 });

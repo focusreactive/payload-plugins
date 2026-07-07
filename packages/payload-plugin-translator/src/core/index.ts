@@ -14,10 +14,14 @@ export type {
 export { TranslationPipeline, translateContent } from "./translation-pipeline";
 export type { TranslateContentArgs, TranslationStrategy } from "./translation-pipeline";
 
+// Provenance (contracts only — payload-free port + record types)
+export type { ProvenanceKey, ProvenanceStore, TranslationProvenanceRecord } from "./provenance";
+
 // Content projection
 export { projectTranslatableContent } from "./content-projection/contentProjector";
 export type { ProjectionEntry } from "./content-projection/contentProjector";
 export { fingerprint } from "./content-projection/fingerprinter";
+export { computeSourceFingerprint } from "./content-projection/computeSourceFingerprint";
 export { makeIdPath } from "./content-projection/idPath";
 export type { IdPath, PathSegment } from "./content-projection/idPath";
 

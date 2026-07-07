@@ -2,6 +2,13 @@
 export { translatorPlugin } from "./plugin";
 export type { TranslatorPluginConfig } from "./plugin";
 
+// Lifecycle callbacks — the task descriptor passed to onQueued/onCompleted/onFailed
+export type { TranslationTask, TranslationLifecycleCallbacks } from "./server/modules/lifecycle";
+
+// Provenance — the durable per-locale record shape (opt-in `provenance` sidecar). The store/key and
+// the Payload-backed impl stay internal; consumers only read the sidecar collection.
+export type { TranslationProvenanceRecord } from "./core";
+
 // Access control
 export type { AccessGuard, AccessGuardRequest } from "./types/AccessGuard";
 
