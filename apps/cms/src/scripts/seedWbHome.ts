@@ -19,7 +19,16 @@ async function main() {
       where: { alt: { equals: alt } },
       limit: 1,
     });
-    if (existing.docs[0]) return existing.docs[0].id as number;
+    const prev = existing.docs[0];
+    if (prev) {
+      // Reuse only if already stored in Vercel Blob. A local URL
+      // (http://localhost.../api/media/file/...) won't resolve on deployed
+      // previews — delete and re-upload to Blob.
+      if (typeof prev.url === "string" && prev.url.includes("vercel-storage.com")) {
+        return prev.id as number;
+      }
+      await payload.delete({ collection: "media", id: prev.id });
+    }
     const doc = await payload.create({
       collection: "media",
       data: { alt },
