@@ -1,6 +1,6 @@
-import type { CollectionAfterDeleteHook, Config, Payload } from "payload";
+import type { CollectionAfterDeleteHook, Config } from "payload";
 
-import type { ProvenanceStore } from "../../../core/provenance";
+import type { ProvenanceStoreFactory } from "./PayloadProvenanceStore";
 
 /**
  * Marks the plugin's own provenance cleanup hook so a repeated `init()` can recognise an
@@ -21,7 +21,7 @@ type MarkedHook = CollectionAfterDeleteHook & { __translatorProvenanceCleanup?: 
  * document delete. `id` is `number | string`, so it is stringified to match the stored `documentId`.
  */
 export function makeProvenanceCleanupHook(
-  storeFactory: (payload: Payload) => ProvenanceStore,
+  storeFactory: ProvenanceStoreFactory,
   provenanceSlug: string
 ): CollectionAfterDeleteHook {
   const hook: MarkedHook = async ({ id, collection, req }) => {
@@ -51,7 +51,7 @@ export function makeProvenanceCleanupHook(
 export function injectProvenanceCleanup(
   config: Config,
   managedSlugs: Set<string>,
-  storeFactory: (payload: Payload) => ProvenanceStore,
+  storeFactory: ProvenanceStoreFactory,
   provenanceSlug: string
 ): void {
   const hook = makeProvenanceCleanupHook(storeFactory, provenanceSlug);

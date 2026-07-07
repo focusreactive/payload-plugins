@@ -14,9 +14,7 @@ export function withQueuedNotification(
 ): TaskRunner {
   return {
     async enqueue(tasks) {
-      for (const task of tasks) {
-        await notifier.queued(taskFromInput(task));
-      }
+      await Promise.all(tasks.map((task) => notifier.queued(taskFromInput(task))));
       await runner.enqueue(tasks);
     },
     cancel: (taskIds) => runner.cancel(taskIds),

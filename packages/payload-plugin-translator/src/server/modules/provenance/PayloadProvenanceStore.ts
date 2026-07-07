@@ -5,6 +5,9 @@ import type {
   TranslationProvenanceRecord,
 } from "../../../core/provenance";
 
+/** Builds a provenance store bound to a Payload instance; absent when provenance is disabled. */
+export type ProvenanceStoreFactory = (payload: Payload) => ProvenanceStore;
+
 interface ProvenanceDoc extends Record<string, unknown> {
   id: string | number;
 }
@@ -54,7 +57,13 @@ export class PayloadProvenanceStore implements ProvenanceStore {
   async upsert(record: TranslationProvenanceRecord): Promise<void> {
     const existing = await this.findDoc(record);
     if (existing === null) {
-      await this.payload.create({ collection: this.collection, data: record });
+      try {
+        await this.payload.create({ collection: this.collection, data: record });
+      } catch (error) {
+        const raceWinner = await this.findDoc(record);
+        if (raceWinner === null) throw error;
+        await this.payload.update({ collection: this.collection, id: raceWinner.id, data: record });
+      }
     } else {
       await this.payload.update({ collection: this.collection, id: existing.id, data: record });
     }

@@ -167,6 +167,14 @@ describe("translatorPlugin — provenance (opt-in)", () => {
     expect(provenanceOf(result)).toBeUndefined();
   });
 
+  it("falls back to the default slug when given a blank slug", async () => {
+    // `||` (not `??`) in resolveProvenanceSlug: a blank slug must enable with the default, not disable.
+    const { result } = await build({
+      provenance: { slug: "" },
+    } as Partial<TranslatorPluginConfig>);
+    expect(provenanceOf(result)).toBeDefined();
+  });
+
   it("throws when the provenance slug collides with an existing collection", async () => {
     await expect(
       build({ provenance: { slug: "posts" } } as Partial<TranslatorPluginConfig>)

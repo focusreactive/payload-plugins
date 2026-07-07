@@ -5,7 +5,7 @@ import type { Handler } from "../../shared";
 import type { TranslationProvider } from "../../../core/translation-providers";
 import { translateContent } from "../../../core/translation-pipeline";
 import { computeSourceFingerprint } from "../../../core/content-projection/computeSourceFingerprint";
-import type { ProvenanceStore } from "../../../core/provenance";
+import type { ProvenanceStoreFactory } from "../../modules/provenance";
 
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import type { TranslateDocumentInput, TranslateDocumentOutput } from "./model";
@@ -14,9 +14,6 @@ export type TranslateDocumentDependencies = {
   translationProvider: TranslationProvider;
   schemaMap: CollectionSchemaMap;
 };
-
-/** Builds a provenance store bound to a Payload instance; absent when provenance is disabled. */
-export type ProvenanceStoreFactory = (payload: Payload) => ProvenanceStore;
 
 /**
  * Translates a single document from source language to target language
@@ -99,6 +96,10 @@ export class TranslateDocumentHandler implements Handler<
       } catch (error) {
         payload.logger.error({
           err: error,
+          collection,
+          documentId: String(collectionId),
+          targetLocale: targetLng,
+          sourceLocale: sourceLng,
           msg: "translator: failed to record translation provenance",
         });
       }

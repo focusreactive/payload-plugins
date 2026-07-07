@@ -6,5 +6,6 @@ export {
   makeProvenanceCollection,
 } from "./provenanceCollection";
 export { PayloadProvenanceStore } from "./PayloadProvenanceStore";
+export type { ProvenanceStoreFactory } from "./PayloadProvenanceStore";
 export { injectProvenanceCleanup, makeProvenanceCleanupHook } from "./provenanceCleanupHook";
 export { assertProvenanceSlugFree } from "./slugGuard";

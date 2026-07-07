@@ -72,6 +72,32 @@ describe("PayloadProvenanceStore", () => {
         })
       );
     });
+
+    it("falls back to update when a concurrent writer wins the create race", async () => {
+      const findMock = payload.find as ReturnType<typeof vi.fn>;
+      findMock.mockResolvedValueOnce({ docs: [] }).mockResolvedValueOnce({
+        docs: [{ id: 9, ...record }],
+      });
+      (payload.create as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new Error("unique constraint violation")
+      );
+
+      await expect(store.upsert(record)).resolves.toBeUndefined();
+
+      expect(payload.update).toHaveBeenCalledWith(
+        expect.objectContaining({ collection: SLUG, id: 9, data: expect.objectContaining(record) })
+      );
+    });
+
+    it("rethrows the original create error when the race-fallback re-find also finds nothing", async () => {
+      setFound([]);
+      const createError = new Error("unique constraint violation");
+      (payload.create as ReturnType<typeof vi.fn>).mockRejectedValueOnce(createError);
+
+      await expect(store.upsert(record)).rejects.toBe(createError);
+
+      expect(payload.update).not.toHaveBeenCalled();
+    });
   });
 
   describe("find", () => {
@@ -93,6 +119,28 @@ describe("PayloadProvenanceStore", () => {
         targetLocale: "de",
       });
       expect(result).toBeNull();
+    });
+
+    it("normalizes a Date translatedAt to an ISO-8601 string", async () => {
+      // Payload's `date` field may hand back a Date; #50's fingerprint comparison needs a stable ISO
+      // string, so toRecord must convert it.
+      setFound([{ id: 7, ...record, translatedAt: new Date("2026-07-02T00:00:00.000Z") }]);
+      const result = await store.find({
+        collectionSlug: "posts",
+        documentId: "doc-1",
+        targetLocale: "de",
+      });
+      expect(result?.translatedAt).toBe("2026-07-02T00:00:00.000Z");
+    });
+
+    it("preserves a non-null dismissedFingerprint as a string", async () => {
+      setFound([{ id: 7, ...record, dismissedFingerprint: "fp-dismissed" }]);
+      const result = await store.find({
+        collectionSlug: "posts",
+        documentId: "doc-1",
+        targetLocale: "de",
+      });
+      expect(result?.dismissedFingerprint).toBe("fp-dismissed");
     });
   });
 
