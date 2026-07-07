@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-translator [0.7.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.6.2...@focus-reactive/payload-plugin-translator@0.7.0) (2026-07-07)
+
+
+### Features
+
+* **translator:** translation provenance & lifecycle events ([#47](https://github.com/focusreactive/payload-plugins/issues/47)) ([#61](https://github.com/focusreactive/payload-plugins/issues/61)) ([ff2dec0](https://github.com/focusreactive/payload-plugins/commit/ff2dec030cf5768e89a36f99f7c509dd37cda4b6)), closes [50/#51](https://github.com/focusreactive/payload-plugins/issues/51) [#50](https://github.com/focusreactive/payload-plugins/issues/50) [49/#50](https://github.com/focusreactive/payload-plugins/issues/50)
+
 ## @focus-reactive/payload-plugin-translator [0.6.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.6.1...@focus-reactive/payload-plugin-translator@0.6.2) (2026-07-02)
 
 ## @focus-reactive/payload-plugin-translator [0.6.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.6.0...@focus-reactive/payload-plugin-translator@0.6.1) (2026-06-15)
