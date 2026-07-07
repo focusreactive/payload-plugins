@@ -366,6 +366,18 @@ export interface Page {
    */
   footer?: (number | null) | Footer;
   blocks: (
+    | WbHeroBlock
+    | WbAwardsBlock
+    | WbEventsBlock
+    | WbBrandsBlock
+    | WbResearchBlock
+    | WbPeopleBlock
+    | WbFeaturedBlock
+    | WbNewsBlock
+    | WbAnalysisBlock
+    | WbMoreReadBlock
+    | WbSponsorsBlock
+    | WbSubscribeBlock
     | HeroBlock
     | ContentBlock
     | FaqBlock
@@ -744,6 +756,382 @@ export interface Footer {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbHeroBlock".
+ */
+export interface WbHeroBlock {
+  eyebrow?: string | null;
+  title?: string | null;
+  date?: string | null;
+  featured?: {
+    image?: (number | null) | Media;
+    category?: string | null;
+    brand?: string | null;
+    title?: string | null;
+    excerpt?: string | null;
+    cta?: string | null;
+    href?: string | null;
+  };
+  compactCards?:
+    | {
+        label?: string | null;
+        status?: string | null;
+        title?: string | null;
+        text?: string | null;
+        cta?: string | null;
+        brand?: string | null;
+        href?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  todayLinks?:
+    | {
+        brand?: string | null;
+        title?: string | null;
+        href?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  showTodayStrip?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'wbHero';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbAwardsBlock".
+ */
+export interface WbAwardsBlock {
+  eyebrow?: string | null;
+  title?: string | null;
+  cta?: string | null;
+  ctaHref?: string | null;
+  items?:
+    | {
+        region?: string | null;
+        title?: string | null;
+        description?: string | null;
+        cta?: string | null;
+        href?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'wbAwards';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbEventsBlock".
+ */
+export interface WbEventsBlock {
+  eyebrow?: string | null;
+  title?: string | null;
+  cta?: string | null;
+  ctaHref?: string | null;
+  featured?: {
+    image?: (number | null) | Media;
+    pill?: string | null;
+    date?: string | null;
+    location?: string | null;
+    title?: string | null;
+    description?: string | null;
+    cta?: string | null;
+    href?: string | null;
+  };
+  events?:
+    | {
+        type?: string | null;
+        date?: string | null;
+        location?: string | null;
+        title?: string | null;
+        description?: string | null;
+        cta?: string | null;
+        href?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'wbEvents';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbBrandsBlock".
+ */
+export interface WbBrandsBlock {
+  eyebrow?: string | null;
+  title?: string | null;
+  titleSecondLine?: string | null;
+  subtitle?: string | null;
+  items?:
+    | {
+        number?: string | null;
+        brand?: string | null;
+        description?: string | null;
+        includes?: string[] | null;
+        latestHighlight?: string | null;
+        latestCta?: string | null;
+        href?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'wbBrands';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbResearchBlock".
+ */
+export interface WbResearchBlock {
+  eyebrow?: string | null;
+  title?: string | null;
+  cta?: string | null;
+  ctaHref?: string | null;
+  featured?: {
+    image?: (number | null) | Media;
+    pill?: string | null;
+    meta?: string | null;
+    title?: string | null;
+    excerpt?: string | null;
+    cta?: string | null;
+    href?: string | null;
+  };
+  items?:
+    | {
+        date?: string | null;
+        type?: string | null;
+        title?: string | null;
+        desc?: string | null;
+        cta?: string | null;
+        href?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'wbResearch';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbPeopleBlock".
+ */
+export interface WbPeopleBlock {
+  eyebrow?: string | null;
+  title?: string | null;
+  cta?: string | null;
+  ctaHref?: string | null;
+  items?:
+    | {
+        date?: string | null;
+        category?: string | null;
+        region?: string | null;
+        title?: string | null;
+        href?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'wbPeople';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbFeaturedBlock".
+ */
+export interface WbFeaturedBlock {
+  eyebrow?: string | null;
+  title?: string | null;
+  cta?: string | null;
+  ctaHref?: string | null;
+  items?:
+    | {
+        image?: (number | null) | Media;
+        category?: string | null;
+        brand?: string | null;
+        title?: string | null;
+        description?: string | null;
+        date?: string | null;
+        href?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'wbFeatured';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbNewsBlock".
+ */
+export interface WbNewsBlock {
+  eyebrow?: string | null;
+  title?: string | null;
+  cta?: string | null;
+  ctaHref?: string | null;
+  featured?: {
+    image?: (number | null) | Media;
+    category?: string | null;
+    date?: string | null;
+    title?: string | null;
+    description?: string | null;
+    cta?: string | null;
+    byline?: string | null;
+    href?: string | null;
+  };
+  items?:
+    | {
+        category?: string | null;
+        date?: string | null;
+        title?: string | null;
+        text?: string | null;
+        href?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'wbNews';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbAnalysisBlock".
+ */
+export interface WbAnalysisBlock {
+  eyebrow?: string | null;
+  title?: string | null;
+  cta?: string | null;
+  ctaHref?: string | null;
+  featured?: {
+    image?: (number | null) | Media;
+    category?: string | null;
+    date?: string | null;
+    title?: string | null;
+    excerpt?: string | null;
+    cta?: string | null;
+    href?: string | null;
+  };
+  items?:
+    | {
+        category?: string | null;
+        date?: string | null;
+        title?: string | null;
+        description?: string | null;
+        href?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'wbAnalysis';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbMoreReadBlock".
+ */
+export interface WbMoreReadBlock {
+  storiesHeading?: string | null;
+  stories?:
+    | {
+        category?: string | null;
+        title?: string | null;
+        href?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  mostReadHeading?: string | null;
+  mostRead?:
+    | {
+        rank?: string | null;
+        category?: string | null;
+        title?: string | null;
+        href?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'wbMoreRead';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbSponsorsBlock".
+ */
+export interface WbSponsorsBlock {
+  eyebrow?: string | null;
+  title?: string | null;
+  description?: string | null;
+  primaryCta?: {
+    label?: string | null;
+    href?: string | null;
+  };
+  secondaryCta?: {
+    label?: string | null;
+    href?: string | null;
+  };
+  trustedLabel?: string | null;
+  partnerLogos?: string[] | null;
+  cards?:
+    | {
+        title?: string | null;
+        description?: string | null;
+        includes?: string[] | null;
+        cta?: string | null;
+        href?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'wbSponsors';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbSubscribeBlock".
+ */
+export interface WbSubscribeBlock {
+  eyebrow?: string | null;
+  title?: string | null;
+  plans?:
+    | {
+        value?: string | null;
+        title?: string | null;
+        tagLabel?: string | null;
+        tagTone?: ('paid' | 'free') | null;
+        description?: string | null;
+        cta?: string | null;
+        note?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  defaultPlanValue?: string | null;
+  detailsLabel?: string | null;
+  emailPlaceholder?: string | null;
+  firstNamePlaceholder?: string | null;
+  lastNamePlaceholder?: string | null;
+  companyPlaceholder?: string | null;
+  regions?:
+    | {
+        region?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  defaultRegion?: string | null;
+  agreeLabel?: string | null;
+  submitLabel?: string | null;
+  errorMessage?: string | null;
+  privacyText?: string | null;
+  privacyLinkLabel?: string | null;
+  privacyHref?: string | null;
+  successTitle?: string | null;
+  successBody?: string | null;
+  successCtaLabel?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'wbSubscribe';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1427,6 +1815,18 @@ export interface GlobalSection {
    * The single section this global represents. Edit once, reuse on any page.
    */
   block: (
+    | WbHeroBlock
+    | WbAwardsBlock
+    | WbEventsBlock
+    | WbBrandsBlock
+    | WbResearchBlock
+    | WbPeopleBlock
+    | WbFeaturedBlock
+    | WbNewsBlock
+    | WbAnalysisBlock
+    | WbMoreReadBlock
+    | WbSponsorsBlock
+    | WbSubscribeBlock
     | HeroBlock
     | ContentBlock
     | FaqBlock
@@ -1504,6 +1904,334 @@ export interface Preset {
    */
   preview?: (number | null) | Media;
   presetBlock: (
+    | {
+        eyebrow?: string | null;
+        title?: string | null;
+        date?: string | null;
+        featured?: {
+          image?: (number | null) | Media;
+          category?: string | null;
+          brand?: string | null;
+          title?: string | null;
+          excerpt?: string | null;
+          cta?: string | null;
+          href?: string | null;
+        };
+        compactCards?:
+          | {
+              label?: string | null;
+              status?: string | null;
+              title?: string | null;
+              text?: string | null;
+              cta?: string | null;
+              brand?: string | null;
+              href?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        todayLinks?:
+          | {
+              brand?: string | null;
+              title?: string | null;
+              href?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        showTodayStrip?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'wbHero';
+      }
+    | {
+        eyebrow?: string | null;
+        title?: string | null;
+        cta?: string | null;
+        ctaHref?: string | null;
+        items?:
+          | {
+              region?: string | null;
+              title?: string | null;
+              description?: string | null;
+              cta?: string | null;
+              href?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'wbAwards';
+      }
+    | {
+        eyebrow?: string | null;
+        title?: string | null;
+        cta?: string | null;
+        ctaHref?: string | null;
+        featured?: {
+          image?: (number | null) | Media;
+          pill?: string | null;
+          date?: string | null;
+          location?: string | null;
+          title?: string | null;
+          description?: string | null;
+          cta?: string | null;
+          href?: string | null;
+        };
+        events?:
+          | {
+              type?: string | null;
+              date?: string | null;
+              location?: string | null;
+              title?: string | null;
+              description?: string | null;
+              cta?: string | null;
+              href?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'wbEvents';
+      }
+    | {
+        eyebrow?: string | null;
+        title?: string | null;
+        titleSecondLine?: string | null;
+        subtitle?: string | null;
+        items?:
+          | {
+              number?: string | null;
+              brand?: string | null;
+              description?: string | null;
+              includes?: string[] | null;
+              latestHighlight?: string | null;
+              latestCta?: string | null;
+              href?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'wbBrands';
+      }
+    | {
+        eyebrow?: string | null;
+        title?: string | null;
+        cta?: string | null;
+        ctaHref?: string | null;
+        featured?: {
+          image?: (number | null) | Media;
+          pill?: string | null;
+          meta?: string | null;
+          title?: string | null;
+          excerpt?: string | null;
+          cta?: string | null;
+          href?: string | null;
+        };
+        items?:
+          | {
+              date?: string | null;
+              type?: string | null;
+              title?: string | null;
+              desc?: string | null;
+              cta?: string | null;
+              href?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'wbResearch';
+      }
+    | {
+        eyebrow?: string | null;
+        title?: string | null;
+        cta?: string | null;
+        ctaHref?: string | null;
+        items?:
+          | {
+              date?: string | null;
+              category?: string | null;
+              region?: string | null;
+              title?: string | null;
+              href?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'wbPeople';
+      }
+    | {
+        eyebrow?: string | null;
+        title?: string | null;
+        cta?: string | null;
+        ctaHref?: string | null;
+        items?:
+          | {
+              image?: (number | null) | Media;
+              category?: string | null;
+              brand?: string | null;
+              title?: string | null;
+              description?: string | null;
+              date?: string | null;
+              href?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'wbFeatured';
+      }
+    | {
+        eyebrow?: string | null;
+        title?: string | null;
+        cta?: string | null;
+        ctaHref?: string | null;
+        featured?: {
+          image?: (number | null) | Media;
+          category?: string | null;
+          date?: string | null;
+          title?: string | null;
+          description?: string | null;
+          cta?: string | null;
+          byline?: string | null;
+          href?: string | null;
+        };
+        items?:
+          | {
+              category?: string | null;
+              date?: string | null;
+              title?: string | null;
+              text?: string | null;
+              href?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'wbNews';
+      }
+    | {
+        eyebrow?: string | null;
+        title?: string | null;
+        cta?: string | null;
+        ctaHref?: string | null;
+        featured?: {
+          image?: (number | null) | Media;
+          category?: string | null;
+          date?: string | null;
+          title?: string | null;
+          excerpt?: string | null;
+          cta?: string | null;
+          href?: string | null;
+        };
+        items?:
+          | {
+              category?: string | null;
+              date?: string | null;
+              title?: string | null;
+              description?: string | null;
+              href?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'wbAnalysis';
+      }
+    | {
+        storiesHeading?: string | null;
+        stories?:
+          | {
+              category?: string | null;
+              title?: string | null;
+              href?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        mostReadHeading?: string | null;
+        mostRead?:
+          | {
+              rank?: string | null;
+              category?: string | null;
+              title?: string | null;
+              href?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'wbMoreRead';
+      }
+    | {
+        eyebrow?: string | null;
+        title?: string | null;
+        description?: string | null;
+        primaryCta?: {
+          label?: string | null;
+          href?: string | null;
+        };
+        secondaryCta?: {
+          label?: string | null;
+          href?: string | null;
+        };
+        trustedLabel?: string | null;
+        partnerLogos?: string[] | null;
+        cards?:
+          | {
+              title?: string | null;
+              description?: string | null;
+              includes?: string[] | null;
+              cta?: string | null;
+              href?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'wbSponsors';
+      }
+    | {
+        eyebrow?: string | null;
+        title?: string | null;
+        plans?:
+          | {
+              value?: string | null;
+              title?: string | null;
+              tagLabel?: string | null;
+              tagTone?: ('paid' | 'free') | null;
+              description?: string | null;
+              cta?: string | null;
+              note?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        defaultPlanValue?: string | null;
+        detailsLabel?: string | null;
+        emailPlaceholder?: string | null;
+        firstNamePlaceholder?: string | null;
+        lastNamePlaceholder?: string | null;
+        companyPlaceholder?: string | null;
+        regions?:
+          | {
+              region?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        defaultRegion?: string | null;
+        agreeLabel?: string | null;
+        submitLabel?: string | null;
+        errorMessage?: string | null;
+        privacyText?: string | null;
+        privacyLinkLabel?: string | null;
+        privacyHref?: string | null;
+        successTitle?: string | null;
+        successBody?: string | null;
+        successCtaLabel?: string | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'wbSubscribe';
+      }
     | {
         variant: 'showcase' | 'centered';
         eyebrow?: string | null;
@@ -2741,6 +3469,18 @@ export interface PageSelect<T extends boolean = true> {
   blocks?:
     | T
     | {
+        wbHero?: T | WbHeroBlockSelect<T>;
+        wbAwards?: T | WbAwardsBlockSelect<T>;
+        wbEvents?: T | WbEventsBlockSelect<T>;
+        wbBrands?: T | WbBrandsBlockSelect<T>;
+        wbResearch?: T | WbResearchBlockSelect<T>;
+        wbPeople?: T | WbPeopleBlockSelect<T>;
+        wbFeatured?: T | WbFeaturedBlockSelect<T>;
+        wbNews?: T | WbNewsBlockSelect<T>;
+        wbAnalysis?: T | WbAnalysisBlockSelect<T>;
+        wbMoreRead?: T | WbMoreReadBlockSelect<T>;
+        wbSponsors?: T | WbSponsorsBlockSelect<T>;
+        wbSubscribe?: T | WbSubscribeBlockSelect<T>;
         hero?: T | HeroBlockSelect<T>;
         content?: T | ContentBlockSelect<T>;
         faq?: T | FaqBlockSelect<T>;
@@ -2780,6 +3520,384 @@ export interface PageSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbHeroBlock_select".
+ */
+export interface WbHeroBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  title?: T;
+  date?: T;
+  featured?:
+    | T
+    | {
+        image?: T;
+        category?: T;
+        brand?: T;
+        title?: T;
+        excerpt?: T;
+        cta?: T;
+        href?: T;
+      };
+  compactCards?:
+    | T
+    | {
+        label?: T;
+        status?: T;
+        title?: T;
+        text?: T;
+        cta?: T;
+        brand?: T;
+        href?: T;
+        id?: T;
+      };
+  todayLinks?:
+    | T
+    | {
+        brand?: T;
+        title?: T;
+        href?: T;
+        id?: T;
+      };
+  showTodayStrip?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbAwardsBlock_select".
+ */
+export interface WbAwardsBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  title?: T;
+  cta?: T;
+  ctaHref?: T;
+  items?:
+    | T
+    | {
+        region?: T;
+        title?: T;
+        description?: T;
+        cta?: T;
+        href?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbEventsBlock_select".
+ */
+export interface WbEventsBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  title?: T;
+  cta?: T;
+  ctaHref?: T;
+  featured?:
+    | T
+    | {
+        image?: T;
+        pill?: T;
+        date?: T;
+        location?: T;
+        title?: T;
+        description?: T;
+        cta?: T;
+        href?: T;
+      };
+  events?:
+    | T
+    | {
+        type?: T;
+        date?: T;
+        location?: T;
+        title?: T;
+        description?: T;
+        cta?: T;
+        href?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbBrandsBlock_select".
+ */
+export interface WbBrandsBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  title?: T;
+  titleSecondLine?: T;
+  subtitle?: T;
+  items?:
+    | T
+    | {
+        number?: T;
+        brand?: T;
+        description?: T;
+        includes?: T;
+        latestHighlight?: T;
+        latestCta?: T;
+        href?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbResearchBlock_select".
+ */
+export interface WbResearchBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  title?: T;
+  cta?: T;
+  ctaHref?: T;
+  featured?:
+    | T
+    | {
+        image?: T;
+        pill?: T;
+        meta?: T;
+        title?: T;
+        excerpt?: T;
+        cta?: T;
+        href?: T;
+      };
+  items?:
+    | T
+    | {
+        date?: T;
+        type?: T;
+        title?: T;
+        desc?: T;
+        cta?: T;
+        href?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbPeopleBlock_select".
+ */
+export interface WbPeopleBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  title?: T;
+  cta?: T;
+  ctaHref?: T;
+  items?:
+    | T
+    | {
+        date?: T;
+        category?: T;
+        region?: T;
+        title?: T;
+        href?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbFeaturedBlock_select".
+ */
+export interface WbFeaturedBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  title?: T;
+  cta?: T;
+  ctaHref?: T;
+  items?:
+    | T
+    | {
+        image?: T;
+        category?: T;
+        brand?: T;
+        title?: T;
+        description?: T;
+        date?: T;
+        href?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbNewsBlock_select".
+ */
+export interface WbNewsBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  title?: T;
+  cta?: T;
+  ctaHref?: T;
+  featured?:
+    | T
+    | {
+        image?: T;
+        category?: T;
+        date?: T;
+        title?: T;
+        description?: T;
+        cta?: T;
+        byline?: T;
+        href?: T;
+      };
+  items?:
+    | T
+    | {
+        category?: T;
+        date?: T;
+        title?: T;
+        text?: T;
+        href?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbAnalysisBlock_select".
+ */
+export interface WbAnalysisBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  title?: T;
+  cta?: T;
+  ctaHref?: T;
+  featured?:
+    | T
+    | {
+        image?: T;
+        category?: T;
+        date?: T;
+        title?: T;
+        excerpt?: T;
+        cta?: T;
+        href?: T;
+      };
+  items?:
+    | T
+    | {
+        category?: T;
+        date?: T;
+        title?: T;
+        description?: T;
+        href?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbMoreReadBlock_select".
+ */
+export interface WbMoreReadBlockSelect<T extends boolean = true> {
+  storiesHeading?: T;
+  stories?:
+    | T
+    | {
+        category?: T;
+        title?: T;
+        href?: T;
+        id?: T;
+      };
+  mostReadHeading?: T;
+  mostRead?:
+    | T
+    | {
+        rank?: T;
+        category?: T;
+        title?: T;
+        href?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbSponsorsBlock_select".
+ */
+export interface WbSponsorsBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  title?: T;
+  description?: T;
+  primaryCta?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
+  secondaryCta?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
+  trustedLabel?: T;
+  partnerLogos?: T;
+  cards?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        includes?: T;
+        cta?: T;
+        href?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WbSubscribeBlock_select".
+ */
+export interface WbSubscribeBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  title?: T;
+  plans?:
+    | T
+    | {
+        value?: T;
+        title?: T;
+        tagLabel?: T;
+        tagTone?: T;
+        description?: T;
+        cta?: T;
+        note?: T;
+        id?: T;
+      };
+  defaultPlanValue?: T;
+  detailsLabel?: T;
+  emailPlaceholder?: T;
+  firstNamePlaceholder?: T;
+  lastNamePlaceholder?: T;
+  companyPlaceholder?: T;
+  regions?:
+    | T
+    | {
+        region?: T;
+        id?: T;
+      };
+  defaultRegion?: T;
+  agreeLabel?: T;
+  submitLabel?: T;
+  errorMessage?: T;
+  privacyText?: T;
+  privacyLinkLabel?: T;
+  privacyHref?: T;
+  successTitle?: T;
+  successBody?: T;
+  successCtaLabel?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3267,6 +4385,18 @@ export interface GlobalSectionSelect<T extends boolean = true> {
   block?:
     | T
     | {
+        wbHero?: T | WbHeroBlockSelect<T>;
+        wbAwards?: T | WbAwardsBlockSelect<T>;
+        wbEvents?: T | WbEventsBlockSelect<T>;
+        wbBrands?: T | WbBrandsBlockSelect<T>;
+        wbResearch?: T | WbResearchBlockSelect<T>;
+        wbPeople?: T | WbPeopleBlockSelect<T>;
+        wbFeatured?: T | WbFeaturedBlockSelect<T>;
+        wbNews?: T | WbNewsBlockSelect<T>;
+        wbAnalysis?: T | WbAnalysisBlockSelect<T>;
+        wbMoreRead?: T | WbMoreReadBlockSelect<T>;
+        wbSponsors?: T | WbSponsorsBlockSelect<T>;
+        wbSubscribe?: T | WbSubscribeBlockSelect<T>;
         hero?: T | HeroBlockSelect<T>;
         content?: T | ContentBlockSelect<T>;
         faq?: T | FaqBlockSelect<T>;
@@ -3543,6 +4673,360 @@ export interface PresetsSelect<T extends boolean = true> {
   presetBlock?:
     | T
     | {
+        wbHero?:
+          | T
+          | {
+              eyebrow?: T;
+              title?: T;
+              date?: T;
+              featured?:
+                | T
+                | {
+                    image?: T;
+                    category?: T;
+                    brand?: T;
+                    title?: T;
+                    excerpt?: T;
+                    cta?: T;
+                    href?: T;
+                  };
+              compactCards?:
+                | T
+                | {
+                    label?: T;
+                    status?: T;
+                    title?: T;
+                    text?: T;
+                    cta?: T;
+                    brand?: T;
+                    href?: T;
+                    id?: T;
+                  };
+              todayLinks?:
+                | T
+                | {
+                    brand?: T;
+                    title?: T;
+                    href?: T;
+                    id?: T;
+                  };
+              showTodayStrip?: T;
+              id?: T;
+              blockName?: T;
+            };
+        wbAwards?:
+          | T
+          | {
+              eyebrow?: T;
+              title?: T;
+              cta?: T;
+              ctaHref?: T;
+              items?:
+                | T
+                | {
+                    region?: T;
+                    title?: T;
+                    description?: T;
+                    cta?: T;
+                    href?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        wbEvents?:
+          | T
+          | {
+              eyebrow?: T;
+              title?: T;
+              cta?: T;
+              ctaHref?: T;
+              featured?:
+                | T
+                | {
+                    image?: T;
+                    pill?: T;
+                    date?: T;
+                    location?: T;
+                    title?: T;
+                    description?: T;
+                    cta?: T;
+                    href?: T;
+                  };
+              events?:
+                | T
+                | {
+                    type?: T;
+                    date?: T;
+                    location?: T;
+                    title?: T;
+                    description?: T;
+                    cta?: T;
+                    href?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        wbBrands?:
+          | T
+          | {
+              eyebrow?: T;
+              title?: T;
+              titleSecondLine?: T;
+              subtitle?: T;
+              items?:
+                | T
+                | {
+                    number?: T;
+                    brand?: T;
+                    description?: T;
+                    includes?: T;
+                    latestHighlight?: T;
+                    latestCta?: T;
+                    href?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        wbResearch?:
+          | T
+          | {
+              eyebrow?: T;
+              title?: T;
+              cta?: T;
+              ctaHref?: T;
+              featured?:
+                | T
+                | {
+                    image?: T;
+                    pill?: T;
+                    meta?: T;
+                    title?: T;
+                    excerpt?: T;
+                    cta?: T;
+                    href?: T;
+                  };
+              items?:
+                | T
+                | {
+                    date?: T;
+                    type?: T;
+                    title?: T;
+                    desc?: T;
+                    cta?: T;
+                    href?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        wbPeople?:
+          | T
+          | {
+              eyebrow?: T;
+              title?: T;
+              cta?: T;
+              ctaHref?: T;
+              items?:
+                | T
+                | {
+                    date?: T;
+                    category?: T;
+                    region?: T;
+                    title?: T;
+                    href?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        wbFeatured?:
+          | T
+          | {
+              eyebrow?: T;
+              title?: T;
+              cta?: T;
+              ctaHref?: T;
+              items?:
+                | T
+                | {
+                    image?: T;
+                    category?: T;
+                    brand?: T;
+                    title?: T;
+                    description?: T;
+                    date?: T;
+                    href?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        wbNews?:
+          | T
+          | {
+              eyebrow?: T;
+              title?: T;
+              cta?: T;
+              ctaHref?: T;
+              featured?:
+                | T
+                | {
+                    image?: T;
+                    category?: T;
+                    date?: T;
+                    title?: T;
+                    description?: T;
+                    cta?: T;
+                    byline?: T;
+                    href?: T;
+                  };
+              items?:
+                | T
+                | {
+                    category?: T;
+                    date?: T;
+                    title?: T;
+                    text?: T;
+                    href?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        wbAnalysis?:
+          | T
+          | {
+              eyebrow?: T;
+              title?: T;
+              cta?: T;
+              ctaHref?: T;
+              featured?:
+                | T
+                | {
+                    image?: T;
+                    category?: T;
+                    date?: T;
+                    title?: T;
+                    excerpt?: T;
+                    cta?: T;
+                    href?: T;
+                  };
+              items?:
+                | T
+                | {
+                    category?: T;
+                    date?: T;
+                    title?: T;
+                    description?: T;
+                    href?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        wbMoreRead?:
+          | T
+          | {
+              storiesHeading?: T;
+              stories?:
+                | T
+                | {
+                    category?: T;
+                    title?: T;
+                    href?: T;
+                    id?: T;
+                  };
+              mostReadHeading?: T;
+              mostRead?:
+                | T
+                | {
+                    rank?: T;
+                    category?: T;
+                    title?: T;
+                    href?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        wbSponsors?:
+          | T
+          | {
+              eyebrow?: T;
+              title?: T;
+              description?: T;
+              primaryCta?:
+                | T
+                | {
+                    label?: T;
+                    href?: T;
+                  };
+              secondaryCta?:
+                | T
+                | {
+                    label?: T;
+                    href?: T;
+                  };
+              trustedLabel?: T;
+              partnerLogos?: T;
+              cards?:
+                | T
+                | {
+                    title?: T;
+                    description?: T;
+                    includes?: T;
+                    cta?: T;
+                    href?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        wbSubscribe?:
+          | T
+          | {
+              eyebrow?: T;
+              title?: T;
+              plans?:
+                | T
+                | {
+                    value?: T;
+                    title?: T;
+                    tagLabel?: T;
+                    tagTone?: T;
+                    description?: T;
+                    cta?: T;
+                    note?: T;
+                    id?: T;
+                  };
+              defaultPlanValue?: T;
+              detailsLabel?: T;
+              emailPlaceholder?: T;
+              firstNamePlaceholder?: T;
+              lastNamePlaceholder?: T;
+              companyPlaceholder?: T;
+              regions?:
+                | T
+                | {
+                    region?: T;
+                    id?: T;
+                  };
+              defaultRegion?: T;
+              agreeLabel?: T;
+              submitLabel?: T;
+              errorMessage?: T;
+              privacyText?: T;
+              privacyLinkLabel?: T;
+              privacyHref?: T;
+              successTitle?: T;
+              successBody?: T;
+              successCtaLabel?: T;
+              id?: T;
+              blockName?: T;
+            };
         hero?:
           | T
           | {
