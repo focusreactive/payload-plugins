@@ -100,7 +100,9 @@ export const plugins: Plugin[] = [
     collections: {
       media: true,
     },
-    enabled: process.env.NODE_ENV === "production",
+    // Blob storage in production; opt-in override (e.g. for seeding real media
+    // that must resolve on deployed previews) via PAYLOAD_BLOB_ENABLED=true.
+    enabled: process.env.NODE_ENV === "production" || process.env.PAYLOAD_BLOB_ENABLED === "true",
     token: process.env.BLOB_READ_WRITE_TOKEN || "",
   }),
   redirectsPlugin({

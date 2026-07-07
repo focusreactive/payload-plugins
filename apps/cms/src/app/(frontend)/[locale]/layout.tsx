@@ -1,5 +1,5 @@
 import type { Viewport } from "next";
-import { Archivo, IBM_Plex_Mono, Newsreader } from "next/font/google";
+import { Inter, Onest } from "next/font/google";
 import { getMessages } from "next-intl/server";
 import { draftMode } from "next/headers";
 import React from "react";
@@ -12,33 +12,26 @@ import type { Locale } from "@/lib/types";
 import { LivePreviewListener } from "@/components/LivePreviewListener";
 import { VisualEditingEditRouter } from "@/components/VisualEditingEditRouter";
 
-const newsreader = Newsreader({
+// WealthBriefing brand fonts: Onest for body/UI, Inter for headings.
+const onest = Onest({
   display: "swap",
-  style: ["normal", "italic"],
   subsets: ["latin"],
-  variable: "--font-newsreader",
-  weight: ["400", "500", "600"],
+  variable: "--font-onest",
+  weight: ["400", "500", "600", "700"],
 });
 
-const archivo = Archivo({
+const inter = Inter({
   display: "swap",
   subsets: ["latin"],
-  variable: "--font-archivo",
-  weight: ["400", "500", "600"],
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  display: "swap",
-  subsets: ["latin"],
-  variable: "--font-ibm-plex-mono",
-  weight: ["400", "500"],
+  variable: "--font-inter",
+  weight: ["400", "500", "600", "700"],
 });
 
 export const viewport: Viewport = {
   initialScale: 1,
   themeColor: [
-    { color: "#eef2f3", media: "(prefers-color-scheme: light)" },
-    { color: "#08100f", media: "(prefers-color-scheme: dark)" },
+    { color: "#ffffff", media: "(prefers-color-scheme: light)" },
+    { color: "#355464", media: "(prefers-color-scheme: dark)" },
   ],
   width: "device-width",
 };
@@ -54,11 +47,7 @@ export default async function RootLayout({ children, params }: Props) {
   const messages = await getMessages();
 
   return (
-    <html
-      lang={locale}
-      data-theme="light"
-      className={`${newsreader.variable} ${archivo.variable} ${ibmPlexMono.variable}`}
-    >
+    <html lang={locale} data-theme="light" className={`${onest.variable} ${inter.variable}`}>
       <head />
       <body>
         <AnalyticsProviderClient measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID!}>

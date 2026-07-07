@@ -14,9 +14,8 @@ import { getPageBySlug } from "@/dal/getPageBySlug";
 import { getMainSitePageStaticParams } from "@/dal/staticParams/pages";
 import { PayloadRedirects } from "@/components/PayloadRedirects";
 import { redirect } from "@/lib/i18n/navigation";
-import type { Footer as FooterType, Header as HeaderType } from "@/payload-types";
-import { Footer } from "@/collections/Footer/Component";
-import { Header } from "@/collections/Header/Component";
+import { WbFooter } from "@/components/wb/WbFooter";
+import { WbHeader } from "@/components/wb/WbHeader";
 
 interface Args {
   params: Promise<{
@@ -48,7 +47,7 @@ export default async function Page({ params }: Args) {
   return (
     <>
       <TrackPage pageRef={pageRef} locale={locale} enabled={!draft} />
-      <Header data={page.header as HeaderType} />
+      <WbHeader />
       <main>
         <div>
           <BreadcrumbsJsonLd items={page.breadcrumbs} locale={locale} />
@@ -58,7 +57,7 @@ export default async function Page({ params }: Args) {
           <RenderBlocks blocks={page.blocks} />
         </div>
       </main>
-      <Footer data={page.footer as FooterType} />
+      <WbFooter />
     </>
   );
 }

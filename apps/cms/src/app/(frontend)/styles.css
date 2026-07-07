@@ -1,12 +1,20 @@
-@import "@repo/tailwind-config/base.css";
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
 
 @source "../..";
 
+/* ============================================================
+   WealthBriefing design system.
+   Replaces the shared @repo/tailwind-config base for this app.
+   Onest = body/UI, Inter = headings. Editorial red + teal palette.
+   ============================================================ */
+
 :root {
-  --section-margin-base: clamp(56px, 8vw, 104px);
-  --section-margin-large: clamp(96px, 14vw, 180px);
-  --container-padding-base: clamp(20px, 5vw, 64px);
-  --container-max-width: 1180px;
+  --section-margin-base: clamp(56px, 8vw, 96px);
+  --section-margin-large: clamp(80px, 12vw, 128px);
+  --container-padding-base: clamp(22px, 5vw, 72px);
+  --container-max-width: 1296px;
 }
 
 @theme {
@@ -16,18 +24,220 @@
   --spacing-containerMaxW: var(--container-max-width);
 }
 
-body {
-  background: var(--color-background);
-  color: var(--color-foreground);
-  font-family: var(--font-sans);
-  font-size: 18px;
-  line-height: 1.65;
-  text-rendering: optimizeLegibility;
+/* ──────────────── Tier 1: primitives ──────────────── */
+@theme {
+  --font-sans: var(--font-onest), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-inter), var(--font-onest), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-onest), ui-monospace, monospace;
+
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* Brand */
+  --color-red-600: #b4181e; /* primary */
+  --color-red-700: #9c1419; /* primary hover */
+  --color-teal-700: #355464; /* editorial teal / dark zone */
+  --color-teal-800: #2a4250; /* deeper teal (gradients) */
+
+  /* Ink + greys */
+  --color-ink-900: #111111; /* titles */
+  --color-ink-700: #333333; /* body */
+  --color-ink-500: #58595b; /* secondary text */
+  --color-ink-400: #9ea2a3; /* meta / faint */
+  --color-line: #dadee0; /* hairline borders */
+  --color-chip: #f0f3f5; /* chip / pill backgrounds */
+  --color-wash: #f4f8f9; /* light section wash */
+
+  /* On-dark alphas */
+  --color-white-70: rgba(255, 255, 255, 0.7);
+  --color-white-55: rgba(255, 255, 255, 0.55);
+  --color-white-16: rgba(255, 255, 255, 0.16);
+  --color-white-08: rgba(255, 255, 255, 0.08);
+
+  --radius-button: 5px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
+/* ──────────────── Tier 2: semantic roles ──────────────── */
+@theme {
+  --color-background: var(--color-white);
+  --color-foreground: var(--color-ink-900);
+
+  --color-surface: var(--color-white);
+  --color-surface-muted: var(--color-wash);
+
+  --color-card: var(--color-white);
+  --color-card-foreground: var(--color-ink-900);
+
+  --color-popover: var(--color-white);
+  --color-popover-foreground: var(--color-ink-900);
+
+  --color-primary: var(--color-red-600);
+  --color-primary-foreground: var(--color-white);
+  --color-primary-hover: var(--color-red-700);
+  --color-primary-soft: var(--color-chip);
+
+  --color-secondary: var(--color-teal-700);
+  --color-secondary-foreground: var(--color-white);
+  --color-secondary-hover: var(--color-teal-800);
+
+  --color-muted: var(--color-chip);
+  --color-muted-foreground: var(--color-ink-500);
+
+  --color-faint: var(--color-ink-400);
+
+  --color-accent: var(--color-teal-700);
+  --color-accent-hover: var(--color-teal-800);
+  --color-accent-foreground: var(--color-white);
+
+  --color-highlight: var(--color-primary);
+
+  --color-destructive: var(--color-red-600);
+  --color-destructive-foreground: var(--color-white);
+  --color-success: oklch(0.6 0.15 145);
+  --color-warning: oklch(0.75 0.15 85);
+
+  --color-border: var(--color-line);
+  --color-border-strong: rgba(0, 0, 0, 0.2);
+  --color-input: var(--color-line);
+  --color-ring: var(--color-teal-700);
+
+  --tw-prose-headings: var(--color-foreground);
+  --tw-prose-invert-headings: var(--color-white);
+}
+
+/* ──────────────── Section theme zones ────────────────
+   light (default) · light-gray wash · dark = teal · dark-gray = black */
+[data-theme="light-gray"] {
+  --color-background: var(--color-wash);
+  --color-surface-muted: var(--color-chip);
+}
+
+.dark-zone,
+[data-theme="dark"] {
+  --color-background: var(--color-teal-700);
+  --color-foreground: var(--color-white);
+  --color-surface: var(--color-teal-800);
+  --color-surface-muted: var(--color-teal-800);
+  --color-card: var(--color-teal-800);
+  --color-card-foreground: var(--color-white);
+  --color-muted: var(--color-white-08);
+  --color-muted-foreground: var(--color-white-70);
+  --color-faint: var(--color-white-55);
+  --color-border: var(--color-white-16);
+  --color-border-strong: rgba(255, 255, 255, 0.28);
+  --color-secondary: var(--color-white);
+  --color-secondary-foreground: var(--color-teal-700);
+  --color-highlight: var(--color-primary);
+}
+
+[data-theme="dark-gray"] {
+  --color-background: var(--color-black);
+  --color-foreground: var(--color-white);
+  --color-surface: #0a0a0a;
+  --color-surface-muted: #141414;
+  --color-card: #0f0f0f;
+  --color-card-foreground: var(--color-white);
+  --color-muted: var(--color-white-08);
+  --color-muted-foreground: var(--color-ink-400);
+  --color-faint: var(--color-ink-400);
+  --color-border: var(--color-white-16);
+}
+
+::selection {
+  background: var(--color-teal-700);
+  color: var(--color-white);
+}
+
+/* ──────────────── Editorial type utilities ──────────────── */
+@utility text-eyebrow {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+@utility text-display-1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2rem, 4vw, 2.625rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+
+@utility text-display-2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 3.4vw, 2.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+@utility text-h-section {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+@utility text-h-card {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+@utility text-lead {
+  font-size: clamp(1rem, 1.4vw, 1.0625rem);
+  line-height: 1.55;
+}
+
+@utility text-body-lg {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+@utility text-small {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-ink-700);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}
+
+/* ──────────────── Prose (RichText / Content) — token-driven ──────────────── */
 @layer utilities {
+  .no-children-margins {
+    & > * {
+      @apply my-0!;
+    }
+  }
+
   .prose {
-    --tw-prose-body: var(--color-foreground);
+    --tw-prose-body: var(--color-ink-700);
     --tw-prose-headings: var(--color-foreground);
     --tw-prose-lead: var(--color-muted-foreground);
     --tw-prose-bold: var(--color-foreground);
@@ -49,24 +259,26 @@ body {
   }
 
   .prose p {
-    font-size: 1.18rem;
-    line-height: 1.75;
-    color: color-mix(in srgb, var(--color-foreground) 88%, transparent);
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: color-mix(in srgb, var(--color-ink-700) 96%, transparent);
   }
 
   .prose h2 {
     font-family: var(--font-display);
-    font-size: clamp(1.7rem, 3vw, 2.2rem);
-    line-height: 1.1;
-    letter-spacing: -0.012em;
+    font-weight: 600;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    line-height: 1.12;
+    letter-spacing: -0.015em;
     margin-top: 1.8em;
     color: var(--color-foreground);
   }
 
   .prose h3 {
     font-family: var(--font-display);
-    font-size: 1.4rem;
-    line-height: 1.15;
+    font-weight: 600;
+    font-size: 1.35rem;
+    line-height: 1.2;
     letter-spacing: -0.01em;
     margin-top: 1.6em;
     color: var(--color-foreground);
@@ -77,23 +289,22 @@ body {
     padding: 4px 0 4px 28px;
     border-left: 3px solid var(--color-primary);
     font-family: var(--font-display);
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     line-height: 1.3;
     letter-spacing: -0.01em;
     font-weight: 500;
-    font-style: italic;
-    color: color-mix(in srgb, var(--color-foreground) 80%, transparent);
+    color: color-mix(in srgb, var(--color-foreground) 82%, transparent);
   }
 
   .prose ul {
     padding-left: 1.3em;
-    font-size: 1.12rem;
+    font-size: 1.0625rem;
     line-height: 1.7;
-    color: color-mix(in srgb, var(--color-foreground) 88%, transparent);
+    color: color-mix(in srgb, var(--color-ink-700) 96%, transparent);
   }
 
   .prose figcaption {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 0.75rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -107,301 +318,31 @@ body {
     margin-bottom: 2em;
   }
 
-  .prose-copy p {
-    font-size: 1.18rem;
-    line-height: 1.75;
-    color: color-mix(in srgb, var(--color-foreground) 88%, transparent);
-  }
-
-  .prose-copy :is(h1, h2, h3, h4, h5, h6) {
-    font-family: var(--font-display);
-    letter-spacing: -0.025em;
-    color: var(--color-foreground);
-    text-wrap: balance;
-  }
-
-  .prose-copy h1 {
-    font-size: 3rem;
-    line-height: 1.05;
-  }
-
-  @media (min-width: 640px) {
-    .prose-copy h1 {
-      font-size: 3.75rem;
-    }
-  }
-
-  .prose-copy h2 {
-    font-size: clamp(1.7rem, 3vw, 2.2rem);
-    line-height: 1.1;
-    margin-top: 1.8em;
-  }
-
-  .prose-copy h3 {
-    font-size: 1.4rem;
-    line-height: 1.15;
-    margin-top: 1.6em;
-  }
-
-  .prose-copy strong {
-    color: var(--color-foreground);
-    font-weight: 600;
-  }
-
-  .prose-copy em {
-    font-family: var(--font-display);
-    font-style: italic;
-    color: var(--color-primary);
-  }
-
-  .prose-copy a {
-    color: var(--color-primary);
-    text-underline-offset: 4px;
-  }
-
-  .prose-copy a:hover {
-    color: var(--color-primary-hover);
-  }
-
-  .prose-copy blockquote {
-    border-left: 3px solid var(--color-primary);
-    font-family: var(--font-display);
-    font-style: italic;
-    font-size: 1.5rem;
-    line-height: 1.3;
-    padding-left: 1.75rem;
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-    color: color-mix(in srgb, var(--color-foreground) 80%, transparent);
-  }
-
-  .prose-copy code {
-    background: var(--color-muted);
-    color: var(--color-foreground);
-    border-radius: 0.25rem;
-    padding: 0.125rem 0.375rem;
-    font-family: var(--font-mono);
-    font-size: 0.85em;
-  }
-
-  .prose-copy code::before,
-  .prose-copy code::after {
-    content: "";
-  }
-
-  .prose-copy ul {
-    list-style: none;
-    padding-left: 0;
-  }
-
-  .prose-copy ul > li {
-    position: relative;
-    padding-left: 2rem;
-    color: color-mix(in srgb, var(--color-foreground) 88%, transparent);
-    font-size: 1.12rem;
-    line-height: 1.7;
-  }
-
-  .prose-copy ul > li::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 6px;
-    width: 1.25rem;
-    height: 1.25rem;
-    border-radius: var(--radius-pill);
-    background: var(--color-primary-soft);
-  }
-
-  .prose-copy ul > li::after {
-    content: "";
-    position: absolute;
-    left: 6px;
-    top: 10px;
-    height: 9px;
-    width: 5px;
-    transform: rotate(45deg);
-    border-bottom: 2px solid var(--color-primary);
-    border-right: 2px solid var(--color-primary);
-  }
-
-  .prose-copy figcaption {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    text-align: center;
-    color: var(--color-muted-foreground);
-    margin-top: 0.75rem;
-  }
-
-  .prose-copy figure {
-    margin-top: 2rem;
-    margin-bottom: 2rem;
-  }
-
-  .prose-copy hr {
-    border-color: var(--color-border);
-  }
-
-  .prose-content {
-    color: var(--color-muted-foreground);
-  }
-
-  .prose-content p {
-    color: var(--color-muted-foreground);
-  }
-
-  .prose-content :is(h1, h2, h3, h4, h5, h6) {
-    font-family: var(--font-display);
-    letter-spacing: -0.025em;
-    color: var(--color-foreground);
-  }
-
-  .prose-content strong {
-    color: var(--color-foreground);
-  }
-
-  .prose-content a {
-    color: var(--color-primary);
-    text-underline-offset: 4px;
-  }
-
-  .prose-content ul {
-    margin: 0;
-    list-style: none;
-    padding: 0;
-  }
-
-  .prose-content ul > li {
-    position: relative;
-    padding-left: 30px;
-    color: var(--color-muted-foreground);
-  }
-
-  .prose-content ul > li + li {
-    margin-top: 0.75rem;
-  }
-
-  .prose-content ul > li > .prose-content-check {
-    position: absolute;
-    left: 0;
-    top: 7px;
-    box-sizing: border-box;
-    width: 1.125rem;
-    height: 1.125rem;
-    padding: 3px;
-    border-radius: var(--radius-pill);
-    background: var(--color-primary-soft);
-    color: var(--color-primary);
-  }
-
   .prose-card {
     font-size: 1rem;
-    line-height: 1.65;
+    line-height: 1.6;
   }
 
   .prose-card p {
     color: var(--color-muted-foreground);
-    line-height: 1.7;
+    line-height: 1.6;
   }
 
   .prose-card p:not(:last-child) {
     margin-bottom: 1rem;
   }
 
-  .prose-card h1,
-  .prose-card h2,
-  .prose-card h3,
-  .prose-card h4,
-  .prose-card h5,
-  .prose-card h6 {
+  .prose-card :is(h1, h2, h3, h4, h5, h6) {
     font-family: var(--font-display);
-    font-weight: 500;
-    line-height: 1.1;
+    font-weight: 600;
+    line-height: 1.2;
     letter-spacing: -0.015em;
     color: var(--color-foreground);
-  }
-
-  .prose-card :is(h1, h2, h3, h4, h5, h6):not(:first-child) {
-    margin-top: 1.4em;
-  }
-
-  .prose-card h1 {
-    font-size: 2.4rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .prose-card h2 {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-  }
-
-  .prose-card h3 {
-    font-size: 1.6rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .prose-card h4 {
-    font-size: 1.3rem;
-    margin-bottom: 0.625rem;
-  }
-
-  .prose-card h5 {
-    font-size: 1.15rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .prose-card h6 {
-    font-size: 1.05rem;
-    margin-bottom: 0.5rem;
   }
 
   .prose-card a {
     color: var(--color-primary);
     text-decoration: underline;
     text-underline-offset: 4px;
-  }
-
-  .prose-embedded-block {
-    margin-block: 2.4em;
-    padding: 1.875rem;
-    background: var(--color-surface-muted);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-  }
-
-  .prose-embedded-block__label {
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--color-primary);
-    margin-bottom: 18px;
-  }
-}
-
-.testimonials-carousel-group {
-  animation: testimonials-carousel-scrolling var(--testimonials-carousel-duration, 60s) linear
-    infinite;
-}
-
-.testimonials-carousel:hover .testimonials-carousel-group,
-.testimonials-carousel:focus-within .testimonials-carousel-group {
-  animation-play-state: paused;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .testimonials-carousel-group {
-    animation: none;
-  }
-}
-
-@keyframes testimonials-carousel-scrolling {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-100%);
   }
 }
