@@ -1,0 +1,21 @@
+{
+  "name": "@fr-private/payload-plugin-visual-editing",
+  "version": "1.0.2",
+  "private": true,
+  "type": "module",
+  "description": "Local no-op stand-in for the private @fr-private/payload-plugin-visual-editing package. Lets bun install succeed without an @fr-private-scoped npm token. Replace with the real package once org access is available (see README).",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./client": {
+      "types": "./client.d.ts",
+      "default": "./client.js"
+    },
+    "./admin": {
+      "types": "./admin.d.ts",
+      "default": "./admin.js"
+    }
+  }
+}
