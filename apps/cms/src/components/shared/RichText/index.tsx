@@ -82,10 +82,12 @@ const createJsxConverters =
       const media = typeof uploadNode.value === "object" ? (uploadNode.value as MediaDoc) : null;
       const aspectRatio = uploadNode.fields?.aspectRatio ?? null;
       const prepared = prepareMediaProps({ aspectRatio, image: media });
+      const isAuto = !aspectRatio || aspectRatio === "auto";
 
       return (
         <Media
           {...prepared.data}
+          className={cn("my-6 overflow-hidden rounded-xl", isAuto && "w-fit")}
           visualEditing={prepared.visualEditing}
           imageProps={prepared.imageProps}
         />
