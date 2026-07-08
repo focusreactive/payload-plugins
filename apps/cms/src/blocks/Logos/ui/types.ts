@@ -1,4 +1,4 @@
-import type { IImageProps } from "@/components/image/types";
+import type { PreparedMedia } from "@/components/media";
 import type { LinkProps } from "@/components/link/types";
 
 export enum AlignVariant {
@@ -9,7 +9,7 @@ export enum AlignVariant {
 
 export interface ILogoItem {
   link?: LinkProps;
-  image: IImageProps;
+  image: PreparedMedia;
 }
 
 export interface ILogosProps {

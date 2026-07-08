@@ -1,7 +1,8 @@
 import { StarIcon } from "lucide-react";
 import React from "react";
 
-import { Media } from "@/components/shared";
+import { Media } from "@/components/media";
+import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import type { Media as MediaType, Testimonial } from "@/payload-types";
 
 const StarRow: React.FC<{ rating: number | null | undefined }> = ({ rating }) => {
@@ -28,14 +29,19 @@ const Avatar: React.FC<{ avatar: (number | null) | MediaType | undefined; name: 
   const hasImage = avatar !== null && avatar !== undefined && typeof avatar !== "number";
 
   if (hasImage) {
+    const media = prepareMediaProps({ image: avatar });
     return (
       <Media
-        resource={avatar}
+        {...media.data}
+        visualEditing={media.visualEditing}
         htmlElement="div"
         className="size-[42px] shrink-0 overflow-hidden rounded-full"
-        imgClassName="size-full object-cover"
-        pictureClassName="block size-full"
-        size="42px"
+        imageProps={{
+          ...media.imageProps,
+          className: "size-full object-cover",
+          pictureClassName: "block size-full",
+          sizes: "42px",
+        }}
       />
     );
   }

@@ -1110,7 +1110,6 @@ export interface CarouselBlock {
   slides: {
     image: {
       image: number | Media;
-      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
     };
     text?: {
       root: {
@@ -1161,7 +1160,6 @@ export interface LogosBlock {
   items: {
     image: {
       image: number | Media;
-      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
     };
     link: {
       type?: ('reference' | 'custom' | 'customPage') | null;
@@ -1830,7 +1828,6 @@ export interface Preset {
         slides: {
           image: {
             image: number | Media;
-            aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
           };
           text?: {
             root: {
@@ -1877,7 +1874,6 @@ export interface Preset {
         items: {
           image: {
             image: number | Media;
-            aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
           };
           link: {
             type?: ('reference' | 'custom' | 'customPage') | null;
@@ -3011,7 +3007,6 @@ export interface CarouselBlockSelect<T extends boolean = true> {
           | T
           | {
               image?: T;
-              aspectRatio?: T;
             };
         text?: T;
         id?: T;
@@ -3049,7 +3044,6 @@ export interface LogosBlockSelect<T extends boolean = true> {
           | T
           | {
               image?: T;
-              aspectRatio?: T;
             };
         link?:
           | T
@@ -3761,7 +3755,6 @@ export interface PresetsSelect<T extends boolean = true> {
                       | T
                       | {
                           image?: T;
-                          aspectRatio?: T;
                         };
                     text?: T;
                     id?: T;
@@ -3797,7 +3790,6 @@ export interface PresetsSelect<T extends boolean = true> {
                       | T
                       | {
                           image?: T;
-                          aspectRatio?: T;
                         };
                     link?:
                       | T
@@ -4507,7 +4499,6 @@ export interface LogosInlineBlock {
   items: {
     image: {
       image: number | Media;
-      aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
     };
     link: {
       type?: ('reference' | 'custom' | 'customPage') | null;

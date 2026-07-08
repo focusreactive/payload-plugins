@@ -2,8 +2,8 @@ import { cn, resolveBackdropTone } from "@/components/utils";
 import { AbstractBackdrop } from "@/components/AbstractBackdrop";
 import { DisplayHeading } from "@/components/DisplayHeading";
 import { GridLines } from "@/components/GridLines";
-import { Image } from "@/components/image";
-import type { IImageProps } from "@/components/image/types";
+import { Media } from "@/components/media";
+import type { PreparedMedia } from "@/components/media";
 import { Link } from "@/components/link";
 import type { LinkProps } from "@/components/link/types";
 import { Eyebrow } from "@/components/Eyebrow";
@@ -41,17 +41,17 @@ function HeroActions({ links, className }: HeroActionsProps) {
   );
 }
 
-function HeroImage({ image }: { image: IImageProps }) {
+function HeroImage({ image }: { image: PreparedMedia }) {
   return (
-    <div className="relative ml-auto aspect-[4/3] w-full max-w-[480px] overflow-hidden rounded-md">
-      <Image {...image} fit="cover" quality={85} sizes="(max-width: 900px) 92vw, 480px" />
+    <div className="relative ml-auto w-full max-w-[480px] overflow-hidden rounded-md">
+      <Media {...image.data} visualEditing={image.visualEditing} imageProps={image.imageProps} />
     </div>
   );
 }
 
 export function Hero({ variant, theme, badge, title, text, image, links }: IHeroProps) {
   const backdropTone = resolveBackdropTone(theme);
-  const hasImage = typeof image?.src === "string" && image.src.length > 0;
+  const hasImage = typeof image?.data?.src === "string" && image.data.src.length > 0;
 
   if (variant === "centered") {
     return (

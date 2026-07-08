@@ -2,7 +2,7 @@ import { CardsGrid } from "./ui";
 import type { IDefaultCardProps } from "./ui/types";
 
 import { resolveLocale } from "@/lib/utils/resolveLocale";
-import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
+import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { CardsGridInlineBlock } from "@/payload-types";
 
@@ -13,7 +13,7 @@ export async function CardsGridInlineComponent({ items, columns }: CardsGridInli
     alignVariant: (item.alignVariant as IDefaultCardProps["alignVariant"]) ?? "center",
     backgroundColor: (item.backgroundColor as IDefaultCardProps["backgroundColor"]) ?? "none",
     description: item.description ?? undefined,
-    image: prepareImageProps(item.image ?? null),
+    image: prepareMediaProps(item.image ?? null),
     link: prepareLinkProps(item.link, locale),
     rounded: (item.rounded as IDefaultCardProps["rounded"]) ?? "none",
     title: item.title,

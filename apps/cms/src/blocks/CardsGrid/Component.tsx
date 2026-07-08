@@ -27,7 +27,7 @@ import React from "react";
 
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import { SectionContainer } from "@/components/shared";
-import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
+import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { CardsGridBlock } from "@/payload-types";
@@ -77,7 +77,7 @@ export async function CardsGridBlockComponent({
       backgroundColor: (item.backgroundColor as IDefaultCardProps["backgroundColor"]) ?? "none",
       description: item.description ?? undefined,
       icon,
-      image: prepareImageProps(item.image ?? null),
+      image: prepareMediaProps(item.image ?? null),
       link: prepareLinkProps(item.link, locale),
       rounded: (item.rounded as IDefaultCardProps["rounded"]) ?? "none",
       title: item.title,

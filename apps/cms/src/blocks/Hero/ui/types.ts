@@ -1,4 +1,4 @@
-import type { IImageProps } from "@/components/image/types";
+import type { PreparedMedia } from "@/components/media";
 import type { LinkProps } from "@/components/link/types";
 import type { IRichTextProps } from "@/components/richText/types";
 
@@ -12,6 +12,6 @@ export interface IHeroProps {
   badge?: string | null;
   title: string;
   text: IRichTextProps;
-  image: IImageProps;
+  image: PreparedMedia;
   links: LinkProps[];
 }

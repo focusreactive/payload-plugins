@@ -1,5 +1,5 @@
 import type { ButtonVariant } from "@/components/button/types";
-import type { IImageProps } from "@/components/image/types";
+import type { PreparedMedia } from "@/components/media";
 
 export interface HeaderLink {
   label: string;
@@ -47,7 +47,7 @@ export interface HeaderAction {
 export interface HeaderBrand {
   label: string;
   href: string;
-  logo?: IImageProps | null;
+  logo?: PreparedMedia | null;
 }
 
 export interface IHeaderProps {

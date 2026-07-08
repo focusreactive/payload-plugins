@@ -107,6 +107,11 @@ body {
     margin-bottom: 2em;
   }
 
+  .prose picture {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
   .prose-copy p {
     font-size: 1.18rem;
     line-height: 1.75;

@@ -4,7 +4,7 @@ import React from "react";
 
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import { SectionContainer } from "@/components/shared";
-import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
+import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import { prepareRichTextProps } from "@/lib/adapters/prepareRichTextProps";
 import type { HeroBlock } from "@/payload-types";
@@ -31,7 +31,7 @@ export async function HeroBlockComponent({
         badge={eyebrow}
         title={title ?? ""}
         text={prepareRichTextProps(richText)}
-        image={prepareImageProps(image)}
+        image={prepareMediaProps(image)}
         links={(actions ?? []).map((action) => ({
           ...prepareLinkProps(action, locale),
           size: ButtonSize.Large,

@@ -20,7 +20,8 @@ export function imageField(
   {
     withDefaultMedia = false,
     required = true,
-  }: { withDefaultMedia?: boolean; required?: boolean } = {}
+    withAspectRatio = true,
+  }: { withDefaultMedia?: boolean; required?: boolean; withAspectRatio?: boolean } = {}
 ): GroupField {
   return {
     fields: [
@@ -36,13 +37,17 @@ export function imageField(
             }
           : {}),
       },
-      {
-        defaultValue: "1/1",
-        label: { en: "Aspect Ratio", es: "Relación de aspecto" },
-        name: "aspectRatio",
-        options: aspectRatioOptions,
-        type: "select",
-      },
+      ...(withAspectRatio
+        ? [
+            {
+              defaultValue: "1/1",
+              label: { en: "Aspect Ratio", es: "Relación de aspecto" },
+              name: "aspectRatio",
+              options: aspectRatioOptions,
+              type: "select" as const,
+            },
+          ]
+        : []),
     ],
     label: { en: "Image", es: "Imagen" },
     name,

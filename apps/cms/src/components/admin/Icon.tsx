@@ -1,8 +1,9 @@
 import Image from "next/image";
 import React from "react";
 
-import { Media } from "@/components/shared";
+import { Media } from "@/components/media";
 import { getSiteSettings } from "@/dal/getSiteSettings";
+import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import type { Media as MediaType } from "@/payload-types";
 
 export default async function Icon() {
@@ -11,7 +12,10 @@ export default async function Icon() {
   const icon = settings?.adminIcon as MediaType | null;
 
   if (icon) {
-    return <Media resource={icon} imgClassName="object-contain" />;
+    const media = prepareMediaProps({ image: icon });
+    return (
+      <Media {...media.data} imageProps={{ ...media.imageProps, className: "object-contain" }} />
+    );
   }
 
   return <Image src="/favicon.svg" alt="Icon" width={32} height={32} />;

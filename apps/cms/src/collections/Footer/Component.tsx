@@ -3,7 +3,7 @@ import type { FooterLink, FooterLinkGroup, IFooterProps } from "./ui/types";
 import React from "react";
 
 import { resolveLocale } from "@/lib/utils/resolveLocale";
-import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
+import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { Footer as FooterType, Media } from "@/payload-types";
 
@@ -60,7 +60,7 @@ export async function Footer({ data }: Props) {
     brand: {
       href: "/",
       label: data.name ?? "",
-      logo: logo ? prepareImageProps({ image: logo }) : null,
+      logo: logo ? prepareMediaProps({ image: logo }) : null,
     },
     copywriteText: data.copyrightText ?? undefined,
     description: data.description ?? undefined,

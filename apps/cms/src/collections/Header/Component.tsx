@@ -9,7 +9,7 @@ import type {
 import React from "react";
 
 import { resolveLocale } from "@/lib/utils/resolveLocale";
-import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
+import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { Header as HeaderType, Media } from "@/payload-types";
 
@@ -128,7 +128,7 @@ export async function Header({ data }: Props) {
     brand: {
       href: "/",
       label: data.name ?? "",
-      logo: logo ? prepareImageProps({ image: logo }) : null,
+      logo: logo ? prepareMediaProps({ image: logo }) : null,
     },
     navItems: (data.navItems ?? [])
       .map((item) => mapNavItem(item, locale))

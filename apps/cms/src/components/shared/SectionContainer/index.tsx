@@ -1,9 +1,10 @@
 import { cva } from "class-variance-authority";
 
 import { cn } from "@/components/utils";
+import { Media } from "@/components/media";
+import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 
 import { Container } from "../Container";
-import { Media } from "../Media";
 import type { ISectionContainerProps } from "./types";
 
 export const sectionVariants = cva("overflow-clip relative z-1", {
@@ -29,7 +30,8 @@ export function SectionContainer({
   const { media, overlay, opacity } = background ?? {};
 
   const overlayOpacity = opacity != null ? opacity / 100 : undefined;
-  const hasMedia = !!media;
+  const resolvedMedia = media && typeof media === "object" ? media : null;
+  const preparedMedia = resolvedMedia ? prepareMediaProps({ image: resolvedMedia }) : null;
 
   return (
     <section
@@ -46,15 +48,22 @@ export function SectionContainer({
         {children}
       </Container>
 
-      {hasMedia && (
+      {preparedMedia && (
         <>
           <Media
-            resource={media}
+            {...preparedMedia.data}
             className="absolute inset-0 size-full -z-2 pointer-events-none"
-            imgClassName="size-full object-cover "
-            videoClassName="size-full object-cover "
-            fill
-            aria-hidden
+            imageProps={{
+              ...preparedMedia.imageProps,
+              className: "size-full object-cover",
+              fill: true,
+              "aria-hidden": true,
+            }}
+            videoProps={{
+              className: "size-full object-cover",
+              "aria-hidden": true,
+            }}
+            visualEditing={preparedMedia.visualEditing}
           />
 
           {overlay && (

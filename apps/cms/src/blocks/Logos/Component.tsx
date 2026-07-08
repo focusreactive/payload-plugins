@@ -5,7 +5,7 @@ import React from "react";
 
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import { SectionContainer } from "@/components/shared";
-import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
+import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { LogosBlock } from "@/payload-types";
 
@@ -24,7 +24,7 @@ export const LogosBlockComponent: React.FC<LogosBlock> = async ({
     const height = typeof rawImage === "number" ? 30 : (rawImage.height ?? 30);
 
     return {
-      image: prepareImageProps({
+      image: prepareMediaProps({
         ...image,
         fill: false,
         width,

@@ -1,4 +1,4 @@
-import type { IImageProps } from "@/components/image/types";
+import type { PreparedMedia } from "@/components/media";
 
 export interface FooterLink {
   label: string;
@@ -14,7 +14,7 @@ export interface FooterLinkGroup {
 export interface FooterBrand {
   label: string;
   href: string;
-  logo?: IImageProps | null;
+  logo?: PreparedMedia | null;
 }
 
 export interface IFooterProps {

@@ -1,12 +1,12 @@
 import type React from "react";
 
-import type { IImageProps } from "@/components/image/types";
+import type { PreparedMedia } from "@/components/media";
 import type { LinkProps } from "@/components/link/types";
 
 export interface IDefaultCardProps {
   title: string;
   description?: string;
-  image: IImageProps;
+  image: PreparedMedia;
   link: LinkProps;
   alignVariant: "left" | "center" | "right";
   rounded: "none" | "large";

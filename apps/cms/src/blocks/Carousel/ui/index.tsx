@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/components/utils";
-import { Image } from "@/components/image";
+import { Media } from "@/components/media";
 import { RichText } from "@/components/richText";
 import type { ICarouselProps } from "./types";
 
@@ -79,13 +79,15 @@ function SlideContent({ slide, index }: SlideContentProps) {
   return (
     <div className="grid min-h-[420px] grid-cols-1 md:grid-cols-[1.1fr_0.9fr]">
       <div className="relative overflow-hidden rounded-t-lg md:rounded-l-lg md:rounded-tr-none">
-        {image?.src ? (
-          <Image
-            {...image}
-            fit="cover"
-            quality={85}
-            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 60vw, 700px"
-            priority={index === 0}
+        {image?.data?.src ? (
+          <Media
+            {...image.data}
+            visualEditing={image.visualEditing}
+            imageProps={{
+              ...image.imageProps,
+              fill: true,
+              priority: index === 0,
+            }}
           />
         ) : (
           <div className="h-full min-h-[260px] w-full bg-surface-muted md:min-h-0" />

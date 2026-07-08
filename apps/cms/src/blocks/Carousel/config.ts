@@ -25,7 +25,7 @@ const fields: Field[] = [
   {
     admin: { initCollapsed: true },
     fields: [
-      imageField(),
+      imageField("image", { withAspectRatio: false }),
       {
         editor: generateRichText(),
         label: { en: "Slide Text", es: "Texto de la diapositiva" },
