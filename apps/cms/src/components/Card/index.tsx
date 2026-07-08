@@ -1,5 +1,4 @@
-import { Image } from "@/components/image";
-import { ImageAspectRatio } from "@/components/image/types";
+import { Media, ImageAspectRatio } from "@/components/media";
 import NextImage from "next/image";
 import React from "react";
 
@@ -7,7 +6,7 @@ import { BLOG_CONFIG } from "@/lib/config/blog";
 import { cn } from "@/components/utils";
 import type { CardPostData } from "@/lib/types";
 import { Link } from "@/components/shared";
-import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
+import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 
 export const Card: React.FC<{
   alignItems?: "center";
@@ -54,18 +53,26 @@ export const Card: React.FC<{
               />
             </div>
           )}
-          {heroImage && typeof heroImage !== "number" && (
-            // eslint-disable-next-line jsx-a11y/alt-text
-            <Image
-              fill
-              priority
-              className="object-cover"
-              {...prepareImageProps({
+          {heroImage &&
+            typeof heroImage !== "number" &&
+            (() => {
+              const media = prepareMediaProps({
                 aspectRatio: ImageAspectRatio["4/3"],
                 image: heroImage,
-              })}
-            />
-          )}
+              });
+              return (
+                <Media
+                  {...media.data}
+                  visualEditing={media.visualEditing}
+                  imageProps={{
+                    ...media.imageProps,
+                    fill: true,
+                    priority: true,
+                    className: "object-cover",
+                  }}
+                />
+              );
+            })()}
         </div>
         <div className="p-4">
           {showCategories && hasCategories && (

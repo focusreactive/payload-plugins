@@ -8,7 +8,7 @@ import {
 } from "@payloadcms/richtext-lexical/react";
 import { withVisualEditingPath } from "@fr-private/payload-plugin-visual-editing/client";
 import { Check } from "lucide-react";
-import { Image } from "@/components/image";
+import { Media } from "@/components/media";
 
 import { CardsGridInlineComponent } from "@/blocks/CardsGrid/InlineComponent";
 import { CodeInlineComponent } from "@/blocks/Code/InlineComponent";
@@ -18,8 +18,8 @@ import { BLOG_CONFIG } from "@/lib/config/blog";
 import { cn } from "@/components/utils";
 import { proseVariants } from "@/components/richText/proseVariants";
 import type { ProseVariant } from "@/components/richText/proseVariants";
-import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
-import type { Media } from "@/payload-types";
+import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
+import type { Media as MediaDoc } from "@/payload-types";
 
 type UploadNodeWithAspectRatio = DefaultNodeTypes & {
   type: "upload";
@@ -79,12 +79,17 @@ const createJsxConverters =
     upload: ({ node }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const uploadNode = node as any;
-      const media = typeof uploadNode.value === "object" ? (uploadNode.value as Media) : null;
+      const media = typeof uploadNode.value === "object" ? (uploadNode.value as MediaDoc) : null;
       const aspectRatio = uploadNode.fields?.aspectRatio ?? null;
-      const imageProps = prepareImageProps({ aspectRatio, image: media });
+      const prepared = prepareMediaProps({ aspectRatio, image: media });
 
-      // eslint-disable-next-line jsx-a11y/alt-text
-      return <Image {...imageProps} />;
+      return (
+        <Media
+          {...prepared.data}
+          visualEditing={prepared.visualEditing}
+          imageProps={prepared.imageProps}
+        />
+      );
     },
   });
 

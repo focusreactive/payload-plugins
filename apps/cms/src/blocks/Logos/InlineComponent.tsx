@@ -3,7 +3,7 @@ import { AlignVariant } from "./ui/types";
 import type { ILogoItem } from "./ui/types";
 
 import { resolveLocale } from "@/lib/utils/resolveLocale";
-import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
+import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { LogosInlineBlock } from "@/payload-types";
 
@@ -11,7 +11,7 @@ export const LogosInlineComponent: React.FC<LogosInlineBlock> = async ({ items, 
   const locale = await resolveLocale();
 
   const logoItems: ILogoItem[] = (items ?? []).map((item) => ({
-    image: prepareImageProps(item.image),
+    image: prepareMediaProps(item.image),
     link: item.link ? prepareLinkProps(item.link, locale) : undefined,
   }));
 

@@ -1,7 +1,20 @@
-import Image from "next/image";
 import NextLink from "next/link";
 
+import { Media } from "@/components/media";
+import type { MediaProps, PreparedMedia } from "@/components/media";
+
 import type { FooterLink, IFooterProps } from "./types";
+
+function toLogoMediaProps(logo: PreparedMedia): MediaProps {
+  const imageProps = {
+    ...logo.imageProps,
+    className: "w-auto h-7.5",
+  };
+
+  return logo.data.kind === "video"
+    ? { ...logo.data, visualEditing: logo.visualEditing, imageProps }
+    : { ...logo.data, visualEditing: logo.visualEditing, imageProps, width: 120, height: 30 };
+}
 
 function FooterAnchor({ link, className }: { link: FooterLink; className?: string }) {
   return (
@@ -32,17 +45,7 @@ export function Footer({
               href={brand.href}
               className="inline-flex items-center gap-2.5 font-display text-[1.4rem] font-semibold tracking-[-0.02em]"
             >
-              {brand.logo ? (
-                <Image
-                  alt={brand.logo.alt}
-                  className="w-full min-w-20 max-w-30"
-                  height={40}
-                  src={brand.logo.src}
-                  width={120}
-                />
-              ) : (
-                brand.label
-              )}
+              {brand.logo ? <Media {...toLogoMediaProps(brand.logo)} /> : brand.label}
             </NextLink>
             {description ? (
               <p className="text-muted-foreground mt-4 max-w-[30ch] text-small">{description}</p>

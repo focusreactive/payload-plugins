@@ -1,4 +1,4 @@
-import type { IImageProps } from "@/components/image/types";
+import type { PreparedMedia } from "@/components/media";
 import type { IRichTextProps } from "@/components/richText/types";
 
 export type CarouselEffect = "slide" | "fade" | "cube" | "flip" | "coverflow" | "cards";
@@ -9,7 +9,7 @@ export interface ICarouselProps {
 }
 
 export interface ICarouselCardProps {
-  image: IImageProps;
+  image: PreparedMedia;
   text?: IRichTextProps;
   /** @deprecated kept for backward compat; no longer used in rendering */
   effect?: CarouselEffect;

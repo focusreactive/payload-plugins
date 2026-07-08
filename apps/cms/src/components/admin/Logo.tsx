@@ -1,8 +1,9 @@
 import Image from "next/image";
 import React from "react";
 
-import { Media } from "@/components/shared";
+import { Media } from "@/components/media";
 import { getSiteSettings } from "@/dal/getSiteSettings";
+import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import type { Media as MediaType } from "@/payload-types";
 
 export default async function Logo() {
@@ -11,9 +12,13 @@ export default async function Logo() {
   const logo = settings?.adminLogo as MediaType;
 
   if (logo) {
+    const media = prepareMediaProps({ image: logo });
     return (
       <div style={{ maxWidth: "150px", padding: "20px 0" }}>
-        <Media resource={logo} imgClassName="object-contain w-full h-auto" />
+        <Media
+          {...media.data}
+          imageProps={{ ...media.imageProps, className: "object-contain w-full h-auto" }}
+        />
       </div>
     );
   }

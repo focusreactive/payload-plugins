@@ -2,7 +2,8 @@ import Image from "next/image";
 import React from "react";
 
 import { cn } from "@/components/utils";
-import { Media } from "@/components/shared";
+import { Media } from "@/components/media";
+import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import type { Media as MediaType } from "@/payload-types";
 
 interface Props {
@@ -23,14 +24,19 @@ export const Logo = ({
   loading = "eager",
 }: Props) => {
   if (resource) {
+    const media = prepareMediaProps({ image: resource });
     return (
       <Media
-        resource={resource}
-        imgClassName={cn("size-9 object-contain", imgClassName)}
+        {...media.data}
+        visualEditing={media.visualEditing}
         className={className}
-        priority={true}
-        loading={loading}
-        size="(max-width: 768px) 150px, 200px"
+        imageProps={{
+          ...media.imageProps,
+          className: cn("size-9 object-contain", imgClassName),
+          priority: true,
+          loading,
+          sizes: "(max-width: 768px) 150px, 200px",
+        }}
       />
     );
   }
