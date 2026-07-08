@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-analytics [1.2.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.2.1...@focus-reactive/payload-plugin-analytics@1.2.2) (2026-07-08)
+
+
+### Bug Fixes
+
+* **analytics:** stop filtering header link from view actions ([875fb04](https://github.com/focusreactive/payload-plugins/commit/875fb0435e14cf2033b1858fd7c3a1a2b04d11ea))
+
 ## @focus-reactive/payload-plugin-analytics [1.2.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-analytics@1.2.0...@focus-reactive/payload-plugin-analytics@1.2.1) (2026-07-04)
 
 
