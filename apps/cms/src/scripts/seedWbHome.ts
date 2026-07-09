@@ -585,7 +585,9 @@ async function main() {
     },
   ];
 
-  const slug = "wealthbriefing";
+  // WealthBriefing is the site homepage: the root `/` resolves to the page with
+  // slug "home", so we upsert onto that doc (replacing any prior home content).
+  const slug = "home";
   const existing = await payload.find({
     collection: "page",
     where: { slug: { equals: slug } },
@@ -594,7 +596,7 @@ async function main() {
   });
 
   const data = {
-    title: "WealthBriefing Homepage",
+    title: "WealthBriefing",
     slug,
     _status: "published" as const,
     // Set meta explicitly so the AI-SEO auto-fill hook doesn't run on create.
@@ -627,6 +629,23 @@ async function main() {
   payload.logger.info(
     `Seeded WealthBriefing page: id=${result.id} slug=${result.slug} status=${result._status} blocks=${result.blocks?.length}`
   );
+
+  // Remove the earlier standalone "wealthbriefing" page — the homepage now lives
+  // on the "home" doc, so that slug is redundant.
+  const legacy = await payload.find({
+    collection: "page",
+    where: { slug: { equals: "wealthbriefing" } },
+    limit: 1,
+    locale: "en",
+  });
+  if (legacy.docs[0]) {
+    await payload.delete({
+      collection: "page",
+      id: legacy.docs[0].id,
+      context: { disableRevalidate: true },
+    });
+    payload.logger.info(`Removed legacy page id=${legacy.docs[0].id} slug=wealthbriefing`);
+  }
 }
 
 // Top-level await so `payload run` (which awaits `import()`) waits for the seed
