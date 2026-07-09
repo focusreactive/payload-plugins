@@ -21,8 +21,18 @@ async function fetchDefaultMediaId(slot: string): Promise<string | number | null
 
 export async function getDefaultMediaId(slot: string): Promise<string | number | null> {
   const cacheKey = `default-media-${slot}`;
-  return unstable_cache(() => fetchDefaultMediaId(slot), [cacheKey], {
-    revalidate: REVALIDATE_SEC,
-    tags: [DEFAULT_MEDIA_CACHE_TAG],
-  })();
+  try {
+    return await unstable_cache(() => fetchDefaultMediaId(slot), [cacheKey], {
+      revalidate: REVALIDATE_SEC,
+      tags: [DEFAULT_MEDIA_CACHE_TAG],
+    })();
+  } catch (error) {
+    // unstable_cache throws "incrementalCache missing" outside a Next request
+    // context (standalone `payload run` scripts, migrations). Fall back to a
+    // direct uncached lookup so field defaults still resolve there.
+    if (error instanceof Error && error.message.includes("incrementalCache missing")) {
+      return fetchDefaultMediaId(slot);
+    }
+    throw error;
+  }
 }
