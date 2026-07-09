@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-translator [0.7.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.7.1...@focus-reactive/payload-plugin-translator@0.7.2) (2026-07-09)
+
+
+### Bug Fixes
+
+* **translator:** keep block/array id for shared rows to stop source wipe ([c0a49d1](https://github.com/focusreactive/payload-plugins/commit/c0a49d1b036a74dcd70f216e16e9cdc02532b83e))
+
 ## @focus-reactive/payload-plugin-translator [0.7.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.7.0...@focus-reactive/payload-plugin-translator@0.7.1) (2026-07-07)
 
 # @focus-reactive/payload-plugin-translator [0.7.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.6.2...@focus-reactive/payload-plugin-translator@0.7.0) (2026-07-07)
