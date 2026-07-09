@@ -12,13 +12,15 @@ export interface BlockLike {
 
 /**
  * A tab as this layer needs to read it: an optional `name` (present → it opens a data boundary;
- * absent → it flattens into the parent scope) and its child `fields`. Payload's `Tab`
- * (`NamedTab | UnnamedTab`) is assignable to this.
+ * absent → it flattens into the parent scope), its child `fields`, and `localized` (a *named* tab
+ * may be `localized`, partitioning its subtree per locale — Payload's sanitizer propagates it the
+ * same as a group). Payload's `Tab` (`NamedTab | UnnamedTab`) is assignable to this.
  *
  * @public
  */
 export interface TabLike {
   name?: string;
+  localized?: boolean;
   fields: FieldLike[];
 }
 

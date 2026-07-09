@@ -112,11 +112,11 @@ describe("DataReconciler", () => {
       };
 
       const reconciler = new DataReconciler(schema);
-      // Note: id is not included in result - Postgres rejects it on update
+      // Non-localized array → shared rows → id kept so Payload updates them in place.
       expect(reconciler.reconcile(sourceData, targetData)).toEqual({
         items: [
-          { label: "Translated", value: "one" },
-          { label: "Second", value: "y" },
+          { id: "1", label: "Translated", value: "one" },
+          { id: "2", label: "Second", value: "y" },
         ],
       });
     });
@@ -145,9 +145,9 @@ describe("DataReconciler", () => {
       };
 
       const reconciler = new DataReconciler(schema);
-      // Note: id is not included in result - Postgres rejects it on update
+      // Non-localized blocks → shared rows → id kept.
       expect(reconciler.reconcile(sourceData, targetData)).toEqual({
-        layout: [{ blockType: "text", content: "Existing", style: "bold" }],
+        layout: [{ id: "1", blockType: "text", content: "Existing", style: "bold" }],
       });
     });
 
@@ -172,9 +172,9 @@ describe("DataReconciler", () => {
       };
 
       const reconciler = new DataReconciler(schema);
-      // Note: id is not included in result - Postgres rejects it on update
+      // Non-localized blocks → shared rows → id kept.
       expect(reconciler.reconcile(sourceData, targetData)).toEqual({
-        layout: [{ blockType: "text", content: "Hello" }],
+        layout: [{ id: "1", blockType: "text", content: "Hello" }],
       });
     });
   });
@@ -355,9 +355,12 @@ describe("DataReconciler", () => {
       const targetData = { items: [{ id: "1", label: "T" }] };
 
       const reconciler = new DataReconciler(schema);
-      // id 1 → target "T" wins; id 2 → no counterpart → source "B"
+      // id 1 → target "T" wins; id 2 → no counterpart → source "B". Non-localized → ids kept.
       expect(reconciler.reconcile(sourceData, targetData)).toEqual({
-        items: [{ label: "T" }, { label: "B" }],
+        items: [
+          { id: "1", label: "T" },
+          { id: "2", label: "B" },
+        ],
       });
     });
 
@@ -433,9 +436,12 @@ describe("DataReconciler", () => {
       };
 
       const reconciler = new DataReconciler(schema);
-      // id 1 ↔ "T1", id 2 ↔ "T2"; output follows source order
+      // id 1 ↔ "T1", id 2 ↔ "T2"; output follows source order. Non-localized → ids kept.
       expect(reconciler.reconcile(sourceData, targetData)).toEqual({
-        items: [{ label: "T1" }, { label: "T2" }],
+        items: [
+          { id: "1", label: "T1" },
+          { id: "2", label: "T2" },
+        ],
       });
     });
 
@@ -456,16 +462,22 @@ describe("DataReconciler", () => {
       };
 
       const reconciler = new DataReconciler(schema);
-      // output is driven by source → only id 1 survives, id-1 target value wins
-      expect(reconciler.reconcile(sourceData, targetData)).toEqual({ items: [{ label: "T" }] });
+      // output is driven by source → only id 1 survives, id-1 target value wins. Non-localized → id kept.
+      expect(reconciler.reconcile(sourceData, targetData)).toEqual({
+        items: [{ id: "1", label: "T" }],
+      });
     });
   });
 
   describe("cross-locale block identity", () => {
+    // Per-locale independent blocks (reordering / diverging ids) only occur for a LOCALIZED
+    // container — Payload stores an independent array per locale. So the id is stripped on output
+    // (per-locale rows); these cases assert the merge/pairing logic, not id retention.
     const blocksSchema: Field[] = [
       {
         name: "layout",
         type: "blocks",
+        localized: true,
         blocks: [
           { slug: "text", fields: [{ name: "content", type: "text", localized: true }] },
           { slug: "quote", fields: [{ name: "content", type: "text", localized: true }] },
@@ -532,6 +544,303 @@ describe("DataReconciler", () => {
       const reconciler = new DataReconciler(schema);
       // non-object source for a group → the group is skipped entirely
       expect(reconciler.reconcile(sourceData, {})).toEqual({ keep: "K" });
+    });
+  });
+
+  // Data-loss guard (critical): the reconciler output feeds payload.update({ locale }). For a
+  // NON-localized array/blocks container the rows are SHARED across locales, so the element `id`
+  // MUST survive — without it Payload can't match the shared rows on a localized update and
+  // deletes + recreates them, wiping every other locale's leaf values (the source). For a
+  // LOCALIZED container (or any localized ancestor) the rows are per-locale, so the id is stripped
+  // (keeping it would collide with the source locale's row on insert).
+  describe("id retention by shared-vs-per-locale row (data-loss guard)", () => {
+    it("KEEPS id on a non-localized blocks container (shared rows)", () => {
+      const schema: Field[] = [
+        {
+          name: "layout",
+          type: "blocks",
+          blocks: [{ slug: "text", fields: [{ name: "content", type: "text", localized: true }] }],
+        },
+      ];
+      const sourceData = { layout: [{ id: "b1", blockType: "text", content: "Hello" }] };
+
+      expect(new DataReconciler(schema).reconcile(sourceData, {})).toEqual({
+        layout: [{ id: "b1", blockType: "text", content: "Hello" }],
+      });
+    });
+
+    it("KEEPS id on a non-localized array container (shared rows)", () => {
+      const schema: Field[] = [
+        {
+          name: "items",
+          type: "array",
+          fields: [{ name: "label", type: "text", localized: true }],
+        },
+      ];
+      const sourceData = { items: [{ id: "a1", label: "One" }] };
+
+      expect(new DataReconciler(schema).reconcile(sourceData, {})).toEqual({
+        items: [{ id: "a1", label: "One" }],
+      });
+    });
+
+    it("STRIPS id on a localized blocks container (independent per-locale rows)", () => {
+      const schema: Field[] = [
+        {
+          name: "layout",
+          type: "blocks",
+          localized: true,
+          blocks: [{ slug: "text", fields: [{ name: "content", type: "text", localized: true }] }],
+        },
+      ];
+      const sourceData = { layout: [{ id: "b1", blockType: "text", content: "Hello" }] };
+
+      expect(new DataReconciler(schema).reconcile(sourceData, {})).toEqual({
+        layout: [{ blockType: "text", content: "Hello" }],
+      });
+    });
+
+    it("STRIPS id on a localized array container", () => {
+      const schema: Field[] = [
+        {
+          name: "items",
+          type: "array",
+          localized: true,
+          fields: [{ name: "label", type: "text", localized: true }],
+        },
+      ];
+      const sourceData = { items: [{ id: "a1", label: "One" }] };
+
+      expect(new DataReconciler(schema).reconcile(sourceData, {})).toEqual({
+        items: [{ label: "One" }],
+      });
+    });
+
+    it("STRIPS id on a non-localized array nested under a localized blocks ancestor", () => {
+      const schema: Field[] = [
+        {
+          name: "layout",
+          type: "blocks",
+          localized: true,
+          blocks: [
+            {
+              slug: "row",
+              fields: [
+                {
+                  name: "items",
+                  type: "array",
+                  fields: [{ name: "label", type: "text", localized: true }],
+                },
+              ],
+            },
+          ],
+        },
+      ];
+      const sourceData = {
+        layout: [{ id: "b1", blockType: "row", items: [{ id: "a1", label: "One" }] }],
+      };
+
+      // localized ancestor → the whole subtree is per-locale → every element id stripped.
+      expect(new DataReconciler(schema).reconcile(sourceData, {})).toEqual({
+        layout: [{ blockType: "row", items: [{ label: "One" }] }],
+      });
+    });
+
+    it("STRIPS id under a localized group ancestor", () => {
+      const schema: Field[] = [
+        {
+          name: "panel",
+          type: "group",
+          localized: true,
+          fields: [
+            {
+              name: "items",
+              type: "array",
+              fields: [{ name: "label", type: "text", localized: true }],
+            },
+          ],
+        },
+      ];
+      const sourceData = { panel: { items: [{ id: "a1", label: "One" }] } };
+
+      expect(new DataReconciler(schema).reconcile(sourceData, {})).toEqual({
+        panel: { items: [{ label: "One" }] },
+      });
+    });
+
+    it("STRIPS id under a localized named-tab ancestor", () => {
+      const schema: Field[] = [
+        {
+          type: "tabs",
+          tabs: [
+            {
+              name: "meta",
+              localized: true,
+              fields: [
+                {
+                  name: "items",
+                  type: "array",
+                  fields: [{ name: "label", type: "text", localized: true }],
+                },
+              ],
+            },
+          ],
+        },
+      ];
+      const sourceData = { meta: { items: [{ id: "a1", label: "One" }] } };
+
+      expect(new DataReconciler(schema).reconcile(sourceData, {})).toEqual({
+        meta: { items: [{ label: "One" }] },
+      });
+    });
+
+    it("KEEPS id at every level of a deeply-nested all-non-localized tree (Playground shape)", () => {
+      const schema: Field[] = [
+        {
+          name: "layout",
+          type: "blocks",
+          blocks: [
+            {
+              slug: "deepNest",
+              fields: [
+                {
+                  name: "nested",
+                  type: "blocks",
+                  blocks: [
+                    {
+                      slug: "inner",
+                      fields: [
+                        { name: "innerText", type: "text", localized: true },
+                        {
+                          name: "leaves",
+                          type: "blocks",
+                          blocks: [
+                            {
+                              slug: "leaf",
+                              fields: [{ name: "deepText", type: "text", localized: true }],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ];
+      const sourceData = {
+        layout: [
+          {
+            id: "L1",
+            blockType: "deepNest",
+            nested: [
+              {
+                id: "N1",
+                blockType: "inner",
+                innerText: "inner en",
+                leaves: [{ id: "F1", blockType: "leaf", deepText: "deep en" }],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(new DataReconciler(schema).reconcile(sourceData, {})).toEqual({
+        layout: [
+          {
+            id: "L1",
+            blockType: "deepNest",
+            nested: [
+              {
+                id: "N1",
+                blockType: "inner",
+                innerText: "inner en",
+                leaves: [{ id: "F1", blockType: "leaf", deepText: "deep en" }],
+              },
+            ],
+          },
+        ],
+      });
+    });
+
+    it("KEEPS id and merges on a non-localized blocks container with an existing target", () => {
+      const schema: Field[] = [
+        {
+          name: "layout",
+          type: "blocks",
+          blocks: [
+            {
+              slug: "text",
+              fields: [
+                { name: "content", type: "text", localized: true },
+                { name: "style", type: "text", localized: false },
+              ],
+            },
+          ],
+        },
+      ];
+      const sourceData = {
+        layout: [{ id: "b1", blockType: "text", content: "Hello", style: "bold" }],
+      };
+      const targetData = {
+        layout: [{ id: "b1", blockType: "text", content: "Existing", style: "" }],
+      };
+
+      // shared row: target content wins, source style fills, id kept so the row updates in place.
+      expect(new DataReconciler(schema).reconcile(sourceData, targetData)).toEqual({
+        layout: [{ id: "b1", blockType: "text", content: "Existing", style: "bold" }],
+      });
+    });
+
+    it("STRIPS id on a passthrough (unknown blockType) element under a localized container", () => {
+      // Unknown blockType → element skips the reconcile walk and passes through raw; it must still
+      // obey the per-locale id rule, or it leaks the source row's id and collides on insert.
+      const schema: Field[] = [
+        {
+          name: "layout",
+          type: "blocks",
+          localized: true,
+          blocks: [{ slug: "text", fields: [{ name: "content", type: "text", localized: true }] }],
+        },
+      ];
+      const sourceData = { layout: [{ id: "b1", blockType: "ghost", body: "X" }] };
+
+      expect(new DataReconciler(schema).reconcile(sourceData, {})).toEqual({
+        layout: [{ blockType: "ghost", body: "X" }],
+      });
+    });
+
+    it("KEEPS id on a passthrough (unknown blockType) element in a non-localized container", () => {
+      const schema: Field[] = [
+        {
+          name: "layout",
+          type: "blocks",
+          blocks: [{ slug: "text", fields: [{ name: "content", type: "text", localized: true }] }],
+        },
+      ];
+      const sourceData = { layout: [{ id: "b1", blockType: "ghost", body: "X" }] };
+
+      // shared row → the raw passthrough keeps its id.
+      expect(new DataReconciler(schema).reconcile(sourceData, {})).toEqual({
+        layout: [{ id: "b1", blockType: "ghost", body: "X" }],
+      });
+    });
+
+    it("adds no id key when a non-localized element carries no id (guard against id:undefined)", () => {
+      const schema: Field[] = [
+        {
+          name: "items",
+          type: "array",
+          fields: [{ name: "label", type: "text", localized: true }],
+        },
+      ];
+      const sourceData = { items: [{ label: "One" }] };
+
+      expect(new DataReconciler(schema).reconcile(sourceData, {})).toEqual({
+        items: [{ label: "One" }],
+      });
     });
   });
 });

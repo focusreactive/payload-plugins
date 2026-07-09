@@ -92,9 +92,21 @@ change.
 
 **Honest limit:** this removes the *corruption / wrong skip*, but it does not make `skip_existing`
 preserve per-block target edits for genuinely-independent localized blocks — there is no identity to
-preserve them by, and the reconciler strips `id` on output (Postgres rejects it on update) so a
+preserve them by, and for those (localized) containers the reconciler strips `id` on output so a
 re-translated target gets fresh ids anyway. For independent localized blocks, re-translation
 effectively re-mirrors source. That is the correct, consistent behaviour given no identity.
+
+> **Correction (2026-07-07, patch — `docs/plans/2026-07-07-blocks-id-retention-dataloss-fix.md`).**
+> The original patch stripped `id` from **every** array/block element, justified as "Postgres rejects
+> it on update". That was **wrong for the recommended regime** (Decision 1: non-localized container,
+> localized leaves). Those rows are **shared** across locales; an id-less `payload.update({ locale })`
+> can't match them, so Payload **deletes + recreates** the rows and **wipes every other locale's leaf
+> values — including the source** (a critical data-loss bug, reproduced on SQLite *and* Postgres).
+> Postgres does **not** reject a kept `id` for a shared row — it updates in place. The id-strip is only
+> needed for **per-locale** rows (a `localized` container or any `localized` ancestor), where keeping
+> the source row's id would collide on insert. So id retention is now **conditional**: keep `id` for a
+> shared row (no localized ancestor and the container itself non-localized); strip it for a per-locale
+> row. See the fix doc for the rule + regression tests.
 
 ### 3. Field level: guard, don't pretend (ships with the field-level feature)
 
