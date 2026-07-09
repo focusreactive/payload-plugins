@@ -1,24 +1,29 @@
 import React from "react";
 
+import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { WbPeopleBlock } from "@/payload-types";
 
 import { WbPeopleMoves } from "./ui";
 
-export function WbPeopleMovesBlockComponent(props: WbPeopleBlock) {
-  const { eyebrow, title, cta, ctaHref, items } = props;
+export async function WbPeopleMovesBlockComponent(props: WbPeopleBlock) {
+  const { eyebrow, title, cta, items } = props;
+  const locale = await resolveLocale();
+
+  const sectionCta = prepareLinkProps(cta, locale);
 
   return (
     <WbPeopleMoves
       eyebrow={eyebrow ?? ""}
       title={title ?? ""}
-      cta={cta ?? ""}
-      ctaHref={ctaHref ?? "#"}
+      cta={sectionCta.text}
+      ctaHref={sectionCta.href || "#"}
       items={(items ?? []).map((item) => ({
         date: item.date ?? "",
         category: item.category ?? "",
         region: item.region ?? "",
         title: item.title ?? "",
-        href: item.href ?? "#",
+        href: prepareLinkProps(item.link, locale).href || "#",
       }))}
     />
   );

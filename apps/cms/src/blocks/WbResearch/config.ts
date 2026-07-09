@@ -1,5 +1,7 @@
 import type { Block } from "payload";
 
+import { wbLink } from "@/lib/fields/wbLink";
+
 // WealthBriefing Research. Self-contained section (its ui/ renders its own
 // <section>/container/background), so no injectSection/SectionContainer.
 // Field names mirror the ui props 1:1 so the controller maps straight through.
@@ -10,8 +12,7 @@ export const WbResearchBlock: Block = {
   fields: [
     { name: "eyebrow", type: "text" },
     { name: "title", type: "text" },
-    { name: "cta", type: "text" },
-    { name: "ctaHref", type: "text" },
+    wbLink({ name: "cta", withLabel: true }),
     {
       name: "featured",
       type: "group",
@@ -21,8 +22,7 @@ export const WbResearchBlock: Block = {
         { name: "meta", type: "text" },
         { name: "title", type: "text" },
         { name: "excerpt", type: "textarea" },
-        { name: "cta", type: "text" },
-        { name: "href", type: "text" },
+        wbLink({ withLabel: true }),
       ],
     },
     {
@@ -33,8 +33,7 @@ export const WbResearchBlock: Block = {
         { name: "type", type: "text" },
         { name: "title", type: "text" },
         { name: "desc", type: "textarea" },
-        { name: "cta", type: "text" },
-        { name: "href", type: "text" },
+        wbLink({ withLabel: true }),
       ],
     },
   ],

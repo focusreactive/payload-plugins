@@ -1,35 +1,41 @@
 import React from "react";
 
 import { mediaSrc } from "@/blocks/WbHero/Component";
+import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { WbNewsBlock } from "@/payload-types";
 
 import { WbLatestNews } from "./ui";
 
-export function WbLatestNewsBlockComponent(props: WbNewsBlock) {
-  const { eyebrow, title, cta, ctaHref, featured, items } = props;
+export async function WbLatestNewsBlockComponent(props: WbNewsBlock) {
+  const { eyebrow, title, cta, featured, items } = props;
+  const locale = await resolveLocale();
+
+  const sectionCta = prepareLinkProps(cta, locale);
+  const featuredLink = prepareLinkProps(featured?.link, locale);
 
   return (
     <WbLatestNews
       eyebrow={eyebrow ?? ""}
       title={title ?? ""}
-      cta={cta ?? ""}
-      ctaHref={ctaHref ?? "#"}
+      cta={sectionCta.text}
+      ctaHref={sectionCta.href || "#"}
       featured={{
         image: mediaSrc(featured?.image),
         category: featured?.category ?? "",
         date: featured?.date ?? "",
         title: featured?.title ?? "",
         description: featured?.description ?? "",
-        cta: featured?.cta ?? "",
+        cta: featuredLink.text,
         byline: featured?.byline ?? "",
-        href: featured?.href ?? "#",
+        href: featuredLink.href || "#",
       }}
       items={(items ?? []).map((item) => ({
         category: item.category ?? "",
         date: item.date ?? "",
         title: item.title ?? "",
         text: item.text ?? "",
-        href: item.href ?? "#",
+        href: prepareLinkProps(item.link, locale).href || "#",
       }))}
     />
   );

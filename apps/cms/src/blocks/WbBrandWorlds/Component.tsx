@@ -1,11 +1,14 @@
 import React from "react";
 
+import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { WbBrandsBlock } from "@/payload-types";
 
 import { WbBrandWorlds } from "./ui";
 
-export function WbBrandWorldsBlockComponent(props: WbBrandsBlock) {
+export async function WbBrandWorldsBlockComponent(props: WbBrandsBlock) {
   const { eyebrow, title, titleSecondLine, subtitle, items } = props;
+  const locale = await resolveLocale();
 
   return (
     <WbBrandWorlds
@@ -20,7 +23,7 @@ export function WbBrandWorldsBlockComponent(props: WbBrandsBlock) {
         includes: item.includes ?? [],
         latestHighlight: item.latestHighlight ?? "",
         latestCta: item.latestCta ?? "",
-        href: item.href ?? "#",
+        href: prepareLinkProps(item.link, locale).href || "#",
       }))}
     />
   );

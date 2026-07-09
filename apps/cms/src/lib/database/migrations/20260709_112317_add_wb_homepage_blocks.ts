@@ -2,11 +2,291 @@ import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
-   CREATE TYPE "public"."enum_page_blocks_wb_subscribe_plans_tag_tone" AS ENUM('paid', 'free');
+   CREATE TYPE "public"."enum_page_blocks_wb_hero_compact_cards_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_hero_compact_cards_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_hero_today_links_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_hero_today_links_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_hero_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_hero_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_awards_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_awards_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_awards_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_awards_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_events_events_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_events_events_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_events_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_events_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_events_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_events_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_brands_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_brands_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_research_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_research_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_research_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_research_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_research_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_research_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_people_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_people_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_people_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_people_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_featured_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_featured_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_featured_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_featured_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_news_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_news_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_news_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_news_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_news_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_news_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_analysis_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_analysis_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_analysis_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_analysis_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_analysis_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_analysis_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_more_read_stories_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_more_read_stories_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_more_read_most_read_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_more_read_most_read_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_sponsors_cards_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_sponsors_cards_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_sponsors_primary_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_sponsors_primary_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_sponsors_secondary_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_sponsors_secondary_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_page_blocks_wb_subscribe_plans_tag_tone" AS ENUM('paid', 'free');
+  CREATE TYPE "public"."enum_page_blocks_wb_subscribe_privacy_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_page_blocks_wb_subscribe_privacy_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_hero_compact_cards_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_hero_compact_cards_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_hero_today_links_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_hero_today_links_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_hero_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_hero_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_awards_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_awards_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_awards_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_awards_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_events_events_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_events_events_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_events_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_events_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_events_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_events_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_brands_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_brands_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_research_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_research_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_research_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_research_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_research_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_research_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_people_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_people_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_people_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_people_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_featured_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_featured_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_featured_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_featured_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_news_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_news_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_news_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_news_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_news_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_news_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_analysis_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_analysis_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_analysis_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_analysis_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_analysis_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_analysis_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_more_read_stories_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_more_read_stories_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_more_read_most_read_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_more_read_most_read_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_sponsors_cards_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_sponsors_cards_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_sponsors_primary_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_sponsors_primary_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_sponsors_secondary_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_sponsors_secondary_cta_custom_page" AS ENUM('blog', 'search');
   CREATE TYPE "public"."enum__page_v_blocks_wb_subscribe_plans_tag_tone" AS ENUM('paid', 'free');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_subscribe_privacy_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__page_v_blocks_wb_subscribe_privacy_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_hero_compact_cards_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_hero_compact_cards_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_hero_today_links_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_hero_today_links_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_hero_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_hero_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_awards_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_awards_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_awards_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_awards_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_events_events_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_events_events_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_events_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_events_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_events_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_events_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_brands_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_brands_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_research_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_research_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_research_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_research_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_research_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_research_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_people_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_people_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_people_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_people_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_featured_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_featured_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_featured_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_featured_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_news_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_news_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_news_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_news_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_news_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_news_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_analysis_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_analysis_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_analysis_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_analysis_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_analysis_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_analysis_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_more_read_stories_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_more_read_stories_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_more_read_most_read_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_more_read_most_read_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_sponsors_cards_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_sponsors_cards_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_sponsors_primary_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_sponsors_primary_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_sponsors_secondary_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_sponsors_secondary_cta_custom_page" AS ENUM('blog', 'search');
   CREATE TYPE "public"."enum_gsec_blocks_wb_subscribe_plans_tag_tone" AS ENUM('paid', 'free');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_subscribe_privacy_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_gsec_blocks_wb_subscribe_privacy_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_hero_compact_cards_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_hero_compact_cards_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_hero_today_links_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_hero_today_links_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_hero_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_hero_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_awards_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_awards_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_awards_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_awards_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_events_events_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_events_events_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_events_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_events_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_events_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_events_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_brands_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_brands_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_research_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_research_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_research_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_research_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_research_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_research_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_people_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_people_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_people_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_people_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_featured_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_featured_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_featured_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_featured_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_news_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_news_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_news_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_news_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_news_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_news_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_analysis_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_analysis_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_analysis_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_analysis_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_analysis_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_analysis_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_more_read_stories_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_more_read_stories_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_more_read_most_read_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_more_read_most_read_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_sponsors_cards_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_sponsors_cards_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_sponsors_primary_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_sponsors_primary_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_sponsors_secondary_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_sponsors_secondary_cta_custom_page" AS ENUM('blog', 'search');
   CREATE TYPE "public"."enum__gsec_v_blocks_wb_subscribe_plans_tag_tone" AS ENUM('paid', 'free');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_subscribe_privacy_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum__gsec_v_blocks_wb_subscribe_privacy_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_hero_compact_cards_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_hero_compact_cards_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_hero_today_links_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_hero_today_links_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_hero_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_hero_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_awards_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_awards_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_awards_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_awards_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_events_events_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_events_events_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_events_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_events_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_events_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_events_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_brands_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_brands_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_research_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_research_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_research_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_research_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_research_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_research_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_people_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_people_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_people_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_people_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_featured_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_featured_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_featured_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_featured_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_news_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_news_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_news_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_news_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_news_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_news_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_analysis_items_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_analysis_items_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_analysis_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_analysis_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_analysis_featured_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_analysis_featured_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_more_read_stories_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_more_read_stories_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_more_read_most_read_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_more_read_most_read_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_sponsors_cards_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_sponsors_cards_link_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_sponsors_primary_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_sponsors_primary_cta_custom_page" AS ENUM('blog', 'search');
+  CREATE TYPE "public"."enum_presets_blocks_wb_sponsors_secondary_cta_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_sponsors_secondary_cta_custom_page" AS ENUM('blog', 'search');
   CREATE TYPE "public"."enum_presets_blocks_wb_subscribe_plans_tag_tone" AS ENUM('paid', 'free');
+  CREATE TYPE "public"."enum_presets_blocks_wb_subscribe_privacy_link_type" AS ENUM('reference', 'custom', 'customPage');
+  CREATE TYPE "public"."enum_presets_blocks_wb_subscribe_privacy_link_custom_page" AS ENUM('blog', 'search');
   CREATE TABLE "page_blocks_wb_hero_compact_cards" (
   	"_order" integer NOT NULL,
   	"_parent_id" varchar NOT NULL,
@@ -16,9 +296,12 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"status" varchar,
   	"title" varchar,
   	"text" varchar,
-  	"cta" varchar,
   	"brand" varchar,
-  	"href" varchar
+  	"link_type" "enum_page_blocks_wb_hero_compact_cards_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_page_blocks_wb_hero_compact_cards_link_custom_page",
+  	"link_label" varchar
   );
   
   CREATE TABLE "page_blocks_wb_hero_today_links" (
@@ -28,7 +311,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"brand" varchar,
   	"title" varchar,
-  	"href" varchar
+  	"link_type" "enum_page_blocks_wb_hero_today_links_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_page_blocks_wb_hero_today_links_link_custom_page"
   );
   
   CREATE TABLE "page_blocks_wb_hero" (
@@ -45,8 +331,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"featured_brand" varchar,
   	"featured_title" varchar,
   	"featured_excerpt" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum_page_blocks_wb_hero_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum_page_blocks_wb_hero_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"show_today_strip" boolean DEFAULT true,
   	"block_name" varchar
   );
@@ -59,8 +348,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"region" varchar,
   	"title" varchar,
   	"description" varchar,
-  	"cta" varchar,
-  	"href" varchar
+  	"link_type" "enum_page_blocks_wb_awards_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_page_blocks_wb_awards_items_link_custom_page",
+  	"link_label" varchar
   );
   
   CREATE TABLE "page_blocks_wb_awards" (
@@ -71,8 +363,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_page_blocks_wb_awards_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_page_blocks_wb_awards_cta_custom_page",
+  	"cta_label" varchar,
   	"block_name" varchar
   );
   
@@ -86,8 +381,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"location" varchar,
   	"title" varchar,
   	"description" varchar,
-  	"cta" varchar,
-  	"href" varchar
+  	"link_type" "enum_page_blocks_wb_events_events_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_page_blocks_wb_events_events_link_custom_page",
+  	"link_label" varchar
   );
   
   CREATE TABLE "page_blocks_wb_events" (
@@ -98,16 +396,22 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_page_blocks_wb_events_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_page_blocks_wb_events_cta_custom_page",
+  	"cta_label" varchar,
   	"featured_image_id" integer,
   	"featured_pill" varchar,
   	"featured_date" varchar,
   	"featured_location" varchar,
   	"featured_title" varchar,
   	"featured_description" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum_page_blocks_wb_events_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum_page_blocks_wb_events_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"block_name" varchar
   );
   
@@ -121,7 +425,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"description" varchar,
   	"latest_highlight" varchar,
   	"latest_cta" varchar,
-  	"href" varchar
+  	"link_type" "enum_page_blocks_wb_brands_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_page_blocks_wb_brands_items_link_custom_page"
   );
   
   CREATE TABLE "page_blocks_wb_brands" (
@@ -146,8 +453,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"type" varchar,
   	"title" varchar,
   	"desc" varchar,
-  	"cta" varchar,
-  	"href" varchar
+  	"link_type" "enum_page_blocks_wb_research_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_page_blocks_wb_research_items_link_custom_page",
+  	"link_label" varchar
   );
   
   CREATE TABLE "page_blocks_wb_research" (
@@ -158,15 +468,21 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_page_blocks_wb_research_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_page_blocks_wb_research_cta_custom_page",
+  	"cta_label" varchar,
   	"featured_image_id" integer,
   	"featured_pill" varchar,
   	"featured_meta" varchar,
   	"featured_title" varchar,
   	"featured_excerpt" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum_page_blocks_wb_research_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum_page_blocks_wb_research_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"block_name" varchar
   );
   
@@ -179,7 +495,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"category" varchar,
   	"region" varchar,
   	"title" varchar,
-  	"href" varchar
+  	"link_type" "enum_page_blocks_wb_people_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_page_blocks_wb_people_items_link_custom_page"
   );
   
   CREATE TABLE "page_blocks_wb_people" (
@@ -190,8 +509,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_page_blocks_wb_people_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_page_blocks_wb_people_cta_custom_page",
+  	"cta_label" varchar,
   	"block_name" varchar
   );
   
@@ -206,7 +528,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"title" varchar,
   	"description" varchar,
   	"date" varchar,
-  	"href" varchar
+  	"link_type" "enum_page_blocks_wb_featured_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_page_blocks_wb_featured_items_link_custom_page"
   );
   
   CREATE TABLE "page_blocks_wb_featured" (
@@ -217,8 +542,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_page_blocks_wb_featured_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_page_blocks_wb_featured_cta_custom_page",
+  	"cta_label" varchar,
   	"block_name" varchar
   );
   
@@ -231,7 +559,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"date" varchar,
   	"title" varchar,
   	"text" varchar,
-  	"href" varchar
+  	"link_type" "enum_page_blocks_wb_news_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_page_blocks_wb_news_items_link_custom_page"
   );
   
   CREATE TABLE "page_blocks_wb_news" (
@@ -242,16 +573,22 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_page_blocks_wb_news_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_page_blocks_wb_news_cta_custom_page",
+  	"cta_label" varchar,
   	"featured_image_id" integer,
   	"featured_category" varchar,
   	"featured_date" varchar,
   	"featured_title" varchar,
   	"featured_description" varchar,
-  	"featured_cta" varchar,
   	"featured_byline" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum_page_blocks_wb_news_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum_page_blocks_wb_news_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"block_name" varchar
   );
   
@@ -264,7 +601,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"date" varchar,
   	"title" varchar,
   	"description" varchar,
-  	"href" varchar
+  	"link_type" "enum_page_blocks_wb_analysis_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_page_blocks_wb_analysis_items_link_custom_page"
   );
   
   CREATE TABLE "page_blocks_wb_analysis" (
@@ -275,15 +615,21 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_page_blocks_wb_analysis_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_page_blocks_wb_analysis_cta_custom_page",
+  	"cta_label" varchar,
   	"featured_image_id" integer,
   	"featured_category" varchar,
   	"featured_date" varchar,
   	"featured_title" varchar,
   	"featured_excerpt" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum_page_blocks_wb_analysis_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum_page_blocks_wb_analysis_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"block_name" varchar
   );
   
@@ -294,7 +640,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"category" varchar,
   	"title" varchar,
-  	"href" varchar
+  	"link_type" "enum_page_blocks_wb_more_read_stories_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_page_blocks_wb_more_read_stories_link_custom_page"
   );
   
   CREATE TABLE "page_blocks_wb_more_read_most_read" (
@@ -305,7 +654,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"rank" varchar,
   	"category" varchar,
   	"title" varchar,
-  	"href" varchar
+  	"link_type" "enum_page_blocks_wb_more_read_most_read_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_page_blocks_wb_more_read_most_read_link_custom_page"
   );
   
   CREATE TABLE "page_blocks_wb_more_read" (
@@ -326,8 +678,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"title" varchar,
   	"description" varchar,
-  	"cta" varchar,
-  	"href" varchar
+  	"link_type" "enum_page_blocks_wb_sponsors_cards_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_page_blocks_wb_sponsors_cards_link_custom_page",
+  	"link_label" varchar
   );
   
   CREATE TABLE "page_blocks_wb_sponsors" (
@@ -339,10 +694,16 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"eyebrow" varchar,
   	"title" varchar,
   	"description" varchar,
+  	"primary_cta_type" "enum_page_blocks_wb_sponsors_primary_cta_type" DEFAULT 'reference',
+  	"primary_cta_new_tab" boolean,
+  	"primary_cta_url" varchar,
+  	"primary_cta_custom_page" "enum_page_blocks_wb_sponsors_primary_cta_custom_page",
   	"primary_cta_label" varchar,
-  	"primary_cta_href" varchar,
+  	"secondary_cta_type" "enum_page_blocks_wb_sponsors_secondary_cta_type" DEFAULT 'reference',
+  	"secondary_cta_new_tab" boolean,
+  	"secondary_cta_url" varchar,
+  	"secondary_cta_custom_page" "enum_page_blocks_wb_sponsors_secondary_cta_custom_page",
   	"secondary_cta_label" varchar,
-  	"secondary_cta_href" varchar,
   	"trusted_label" varchar,
   	"block_name" varchar
   );
@@ -388,8 +749,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"submit_label" varchar,
   	"error_message" varchar,
   	"privacy_text" varchar,
+  	"privacy_link_type" "enum_page_blocks_wb_subscribe_privacy_link_type" DEFAULT 'reference',
+  	"privacy_link_new_tab" boolean,
+  	"privacy_link_url" varchar,
+  	"privacy_link_custom_page" "enum_page_blocks_wb_subscribe_privacy_link_custom_page",
   	"privacy_link_label" varchar,
-  	"privacy_href" varchar,
   	"success_title" varchar,
   	"success_body" varchar,
   	"success_cta_label" varchar,
@@ -414,9 +778,12 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"status" varchar,
   	"title" varchar,
   	"text" varchar,
-  	"cta" varchar,
   	"brand" varchar,
-  	"href" varchar,
+  	"link_type" "enum__page_v_blocks_wb_hero_compact_cards_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__page_v_blocks_wb_hero_compact_cards_link_custom_page",
+  	"link_label" varchar,
   	"_uuid" varchar
   );
   
@@ -427,7 +794,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"brand" varchar,
   	"title" varchar,
-  	"href" varchar,
+  	"link_type" "enum__page_v_blocks_wb_hero_today_links_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__page_v_blocks_wb_hero_today_links_link_custom_page",
   	"_uuid" varchar
   );
   
@@ -445,8 +815,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"featured_brand" varchar,
   	"featured_title" varchar,
   	"featured_excerpt" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum__page_v_blocks_wb_hero_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum__page_v_blocks_wb_hero_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"show_today_strip" boolean DEFAULT true,
   	"_uuid" varchar,
   	"block_name" varchar
@@ -460,8 +833,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"region" varchar,
   	"title" varchar,
   	"description" varchar,
-  	"cta" varchar,
-  	"href" varchar,
+  	"link_type" "enum__page_v_blocks_wb_awards_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__page_v_blocks_wb_awards_items_link_custom_page",
+  	"link_label" varchar,
   	"_uuid" varchar
   );
   
@@ -473,8 +849,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum__page_v_blocks_wb_awards_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum__page_v_blocks_wb_awards_cta_custom_page",
+  	"cta_label" varchar,
   	"_uuid" varchar,
   	"block_name" varchar
   );
@@ -489,8 +868,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"location" varchar,
   	"title" varchar,
   	"description" varchar,
-  	"cta" varchar,
-  	"href" varchar,
+  	"link_type" "enum__page_v_blocks_wb_events_events_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__page_v_blocks_wb_events_events_link_custom_page",
+  	"link_label" varchar,
   	"_uuid" varchar
   );
   
@@ -502,16 +884,22 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum__page_v_blocks_wb_events_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum__page_v_blocks_wb_events_cta_custom_page",
+  	"cta_label" varchar,
   	"featured_image_id" integer,
   	"featured_pill" varchar,
   	"featured_date" varchar,
   	"featured_location" varchar,
   	"featured_title" varchar,
   	"featured_description" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum__page_v_blocks_wb_events_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum__page_v_blocks_wb_events_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"_uuid" varchar,
   	"block_name" varchar
   );
@@ -526,7 +914,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"description" varchar,
   	"latest_highlight" varchar,
   	"latest_cta" varchar,
-  	"href" varchar,
+  	"link_type" "enum__page_v_blocks_wb_brands_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__page_v_blocks_wb_brands_items_link_custom_page",
   	"_uuid" varchar
   );
   
@@ -553,8 +944,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"type" varchar,
   	"title" varchar,
   	"desc" varchar,
-  	"cta" varchar,
-  	"href" varchar,
+  	"link_type" "enum__page_v_blocks_wb_research_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__page_v_blocks_wb_research_items_link_custom_page",
+  	"link_label" varchar,
   	"_uuid" varchar
   );
   
@@ -566,15 +960,21 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum__page_v_blocks_wb_research_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum__page_v_blocks_wb_research_cta_custom_page",
+  	"cta_label" varchar,
   	"featured_image_id" integer,
   	"featured_pill" varchar,
   	"featured_meta" varchar,
   	"featured_title" varchar,
   	"featured_excerpt" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum__page_v_blocks_wb_research_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum__page_v_blocks_wb_research_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"_uuid" varchar,
   	"block_name" varchar
   );
@@ -588,7 +988,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"category" varchar,
   	"region" varchar,
   	"title" varchar,
-  	"href" varchar,
+  	"link_type" "enum__page_v_blocks_wb_people_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__page_v_blocks_wb_people_items_link_custom_page",
   	"_uuid" varchar
   );
   
@@ -600,8 +1003,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum__page_v_blocks_wb_people_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum__page_v_blocks_wb_people_cta_custom_page",
+  	"cta_label" varchar,
   	"_uuid" varchar,
   	"block_name" varchar
   );
@@ -617,7 +1023,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"title" varchar,
   	"description" varchar,
   	"date" varchar,
-  	"href" varchar,
+  	"link_type" "enum__page_v_blocks_wb_featured_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__page_v_blocks_wb_featured_items_link_custom_page",
   	"_uuid" varchar
   );
   
@@ -629,8 +1038,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum__page_v_blocks_wb_featured_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum__page_v_blocks_wb_featured_cta_custom_page",
+  	"cta_label" varchar,
   	"_uuid" varchar,
   	"block_name" varchar
   );
@@ -644,7 +1056,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"date" varchar,
   	"title" varchar,
   	"text" varchar,
-  	"href" varchar,
+  	"link_type" "enum__page_v_blocks_wb_news_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__page_v_blocks_wb_news_items_link_custom_page",
   	"_uuid" varchar
   );
   
@@ -656,16 +1071,22 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum__page_v_blocks_wb_news_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum__page_v_blocks_wb_news_cta_custom_page",
+  	"cta_label" varchar,
   	"featured_image_id" integer,
   	"featured_category" varchar,
   	"featured_date" varchar,
   	"featured_title" varchar,
   	"featured_description" varchar,
-  	"featured_cta" varchar,
   	"featured_byline" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum__page_v_blocks_wb_news_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum__page_v_blocks_wb_news_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"_uuid" varchar,
   	"block_name" varchar
   );
@@ -679,7 +1100,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"date" varchar,
   	"title" varchar,
   	"description" varchar,
-  	"href" varchar,
+  	"link_type" "enum__page_v_blocks_wb_analysis_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__page_v_blocks_wb_analysis_items_link_custom_page",
   	"_uuid" varchar
   );
   
@@ -691,15 +1115,21 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum__page_v_blocks_wb_analysis_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum__page_v_blocks_wb_analysis_cta_custom_page",
+  	"cta_label" varchar,
   	"featured_image_id" integer,
   	"featured_category" varchar,
   	"featured_date" varchar,
   	"featured_title" varchar,
   	"featured_excerpt" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum__page_v_blocks_wb_analysis_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum__page_v_blocks_wb_analysis_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"_uuid" varchar,
   	"block_name" varchar
   );
@@ -711,7 +1141,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"category" varchar,
   	"title" varchar,
-  	"href" varchar,
+  	"link_type" "enum__page_v_blocks_wb_more_read_stories_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__page_v_blocks_wb_more_read_stories_link_custom_page",
   	"_uuid" varchar
   );
   
@@ -723,7 +1156,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"rank" varchar,
   	"category" varchar,
   	"title" varchar,
-  	"href" varchar,
+  	"link_type" "enum__page_v_blocks_wb_more_read_most_read_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__page_v_blocks_wb_more_read_most_read_link_custom_page",
   	"_uuid" varchar
   );
   
@@ -746,8 +1182,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"title" varchar,
   	"description" varchar,
-  	"cta" varchar,
-  	"href" varchar,
+  	"link_type" "enum__page_v_blocks_wb_sponsors_cards_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__page_v_blocks_wb_sponsors_cards_link_custom_page",
+  	"link_label" varchar,
   	"_uuid" varchar
   );
   
@@ -760,10 +1199,16 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"eyebrow" varchar,
   	"title" varchar,
   	"description" varchar,
+  	"primary_cta_type" "enum__page_v_blocks_wb_sponsors_primary_cta_type" DEFAULT 'reference',
+  	"primary_cta_new_tab" boolean,
+  	"primary_cta_url" varchar,
+  	"primary_cta_custom_page" "enum__page_v_blocks_wb_sponsors_primary_cta_custom_page",
   	"primary_cta_label" varchar,
-  	"primary_cta_href" varchar,
+  	"secondary_cta_type" "enum__page_v_blocks_wb_sponsors_secondary_cta_type" DEFAULT 'reference',
+  	"secondary_cta_new_tab" boolean,
+  	"secondary_cta_url" varchar,
+  	"secondary_cta_custom_page" "enum__page_v_blocks_wb_sponsors_secondary_cta_custom_page",
   	"secondary_cta_label" varchar,
-  	"secondary_cta_href" varchar,
   	"trusted_label" varchar,
   	"_uuid" varchar,
   	"block_name" varchar
@@ -812,8 +1257,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"submit_label" varchar,
   	"error_message" varchar,
   	"privacy_text" varchar,
+  	"privacy_link_type" "enum__page_v_blocks_wb_subscribe_privacy_link_type" DEFAULT 'reference',
+  	"privacy_link_new_tab" boolean,
+  	"privacy_link_url" varchar,
+  	"privacy_link_custom_page" "enum__page_v_blocks_wb_subscribe_privacy_link_custom_page",
   	"privacy_link_label" varchar,
-  	"privacy_href" varchar,
   	"success_title" varchar,
   	"success_body" varchar,
   	"success_cta_label" varchar,
@@ -839,9 +1287,12 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"status" varchar,
   	"title" varchar,
   	"text" varchar,
-  	"cta" varchar,
   	"brand" varchar,
-  	"href" varchar
+  	"link_type" "enum_gsec_blocks_wb_hero_compact_cards_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_gsec_blocks_wb_hero_compact_cards_link_custom_page",
+  	"link_label" varchar
   );
   
   CREATE TABLE "gsec_blocks_wb_hero_today_links" (
@@ -851,7 +1302,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"brand" varchar,
   	"title" varchar,
-  	"href" varchar
+  	"link_type" "enum_gsec_blocks_wb_hero_today_links_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_gsec_blocks_wb_hero_today_links_link_custom_page"
   );
   
   CREATE TABLE "gsec_blocks_wb_hero" (
@@ -868,8 +1322,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"featured_brand" varchar,
   	"featured_title" varchar,
   	"featured_excerpt" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum_gsec_blocks_wb_hero_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum_gsec_blocks_wb_hero_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"show_today_strip" boolean DEFAULT true,
   	"block_name" varchar
   );
@@ -882,8 +1339,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"region" varchar,
   	"title" varchar,
   	"description" varchar,
-  	"cta" varchar,
-  	"href" varchar
+  	"link_type" "enum_gsec_blocks_wb_awards_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_gsec_blocks_wb_awards_items_link_custom_page",
+  	"link_label" varchar
   );
   
   CREATE TABLE "gsec_blocks_wb_awards" (
@@ -894,8 +1354,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_gsec_blocks_wb_awards_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_gsec_blocks_wb_awards_cta_custom_page",
+  	"cta_label" varchar,
   	"block_name" varchar
   );
   
@@ -909,8 +1372,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"location" varchar,
   	"title" varchar,
   	"description" varchar,
-  	"cta" varchar,
-  	"href" varchar
+  	"link_type" "enum_gsec_blocks_wb_events_events_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_gsec_blocks_wb_events_events_link_custom_page",
+  	"link_label" varchar
   );
   
   CREATE TABLE "gsec_blocks_wb_events" (
@@ -921,16 +1387,22 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_gsec_blocks_wb_events_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_gsec_blocks_wb_events_cta_custom_page",
+  	"cta_label" varchar,
   	"featured_image_id" integer,
   	"featured_pill" varchar,
   	"featured_date" varchar,
   	"featured_location" varchar,
   	"featured_title" varchar,
   	"featured_description" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum_gsec_blocks_wb_events_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum_gsec_blocks_wb_events_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"block_name" varchar
   );
   
@@ -944,7 +1416,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"description" varchar,
   	"latest_highlight" varchar,
   	"latest_cta" varchar,
-  	"href" varchar
+  	"link_type" "enum_gsec_blocks_wb_brands_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_gsec_blocks_wb_brands_items_link_custom_page"
   );
   
   CREATE TABLE "gsec_blocks_wb_brands" (
@@ -969,8 +1444,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"type" varchar,
   	"title" varchar,
   	"desc" varchar,
-  	"cta" varchar,
-  	"href" varchar
+  	"link_type" "enum_gsec_blocks_wb_research_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_gsec_blocks_wb_research_items_link_custom_page",
+  	"link_label" varchar
   );
   
   CREATE TABLE "gsec_blocks_wb_research" (
@@ -981,15 +1459,21 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_gsec_blocks_wb_research_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_gsec_blocks_wb_research_cta_custom_page",
+  	"cta_label" varchar,
   	"featured_image_id" integer,
   	"featured_pill" varchar,
   	"featured_meta" varchar,
   	"featured_title" varchar,
   	"featured_excerpt" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum_gsec_blocks_wb_research_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum_gsec_blocks_wb_research_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"block_name" varchar
   );
   
@@ -1002,7 +1486,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"category" varchar,
   	"region" varchar,
   	"title" varchar,
-  	"href" varchar
+  	"link_type" "enum_gsec_blocks_wb_people_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_gsec_blocks_wb_people_items_link_custom_page"
   );
   
   CREATE TABLE "gsec_blocks_wb_people" (
@@ -1013,8 +1500,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_gsec_blocks_wb_people_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_gsec_blocks_wb_people_cta_custom_page",
+  	"cta_label" varchar,
   	"block_name" varchar
   );
   
@@ -1029,7 +1519,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"title" varchar,
   	"description" varchar,
   	"date" varchar,
-  	"href" varchar
+  	"link_type" "enum_gsec_blocks_wb_featured_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_gsec_blocks_wb_featured_items_link_custom_page"
   );
   
   CREATE TABLE "gsec_blocks_wb_featured" (
@@ -1040,8 +1533,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_gsec_blocks_wb_featured_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_gsec_blocks_wb_featured_cta_custom_page",
+  	"cta_label" varchar,
   	"block_name" varchar
   );
   
@@ -1054,7 +1550,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"date" varchar,
   	"title" varchar,
   	"text" varchar,
-  	"href" varchar
+  	"link_type" "enum_gsec_blocks_wb_news_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_gsec_blocks_wb_news_items_link_custom_page"
   );
   
   CREATE TABLE "gsec_blocks_wb_news" (
@@ -1065,16 +1564,22 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_gsec_blocks_wb_news_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_gsec_blocks_wb_news_cta_custom_page",
+  	"cta_label" varchar,
   	"featured_image_id" integer,
   	"featured_category" varchar,
   	"featured_date" varchar,
   	"featured_title" varchar,
   	"featured_description" varchar,
-  	"featured_cta" varchar,
   	"featured_byline" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum_gsec_blocks_wb_news_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum_gsec_blocks_wb_news_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"block_name" varchar
   );
   
@@ -1087,7 +1592,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"date" varchar,
   	"title" varchar,
   	"description" varchar,
-  	"href" varchar
+  	"link_type" "enum_gsec_blocks_wb_analysis_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_gsec_blocks_wb_analysis_items_link_custom_page"
   );
   
   CREATE TABLE "gsec_blocks_wb_analysis" (
@@ -1098,15 +1606,21 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_gsec_blocks_wb_analysis_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_gsec_blocks_wb_analysis_cta_custom_page",
+  	"cta_label" varchar,
   	"featured_image_id" integer,
   	"featured_category" varchar,
   	"featured_date" varchar,
   	"featured_title" varchar,
   	"featured_excerpt" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum_gsec_blocks_wb_analysis_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum_gsec_blocks_wb_analysis_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"block_name" varchar
   );
   
@@ -1117,7 +1631,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"category" varchar,
   	"title" varchar,
-  	"href" varchar
+  	"link_type" "enum_gsec_blocks_wb_more_read_stories_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_gsec_blocks_wb_more_read_stories_link_custom_page"
   );
   
   CREATE TABLE "gsec_blocks_wb_more_read_most_read" (
@@ -1128,7 +1645,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"rank" varchar,
   	"category" varchar,
   	"title" varchar,
-  	"href" varchar
+  	"link_type" "enum_gsec_blocks_wb_more_read_most_read_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_gsec_blocks_wb_more_read_most_read_link_custom_page"
   );
   
   CREATE TABLE "gsec_blocks_wb_more_read" (
@@ -1149,8 +1669,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"title" varchar,
   	"description" varchar,
-  	"cta" varchar,
-  	"href" varchar
+  	"link_type" "enum_gsec_blocks_wb_sponsors_cards_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_gsec_blocks_wb_sponsors_cards_link_custom_page",
+  	"link_label" varchar
   );
   
   CREATE TABLE "gsec_blocks_wb_sponsors" (
@@ -1162,10 +1685,16 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"eyebrow" varchar,
   	"title" varchar,
   	"description" varchar,
+  	"primary_cta_type" "enum_gsec_blocks_wb_sponsors_primary_cta_type" DEFAULT 'reference',
+  	"primary_cta_new_tab" boolean,
+  	"primary_cta_url" varchar,
+  	"primary_cta_custom_page" "enum_gsec_blocks_wb_sponsors_primary_cta_custom_page",
   	"primary_cta_label" varchar,
-  	"primary_cta_href" varchar,
+  	"secondary_cta_type" "enum_gsec_blocks_wb_sponsors_secondary_cta_type" DEFAULT 'reference',
+  	"secondary_cta_new_tab" boolean,
+  	"secondary_cta_url" varchar,
+  	"secondary_cta_custom_page" "enum_gsec_blocks_wb_sponsors_secondary_cta_custom_page",
   	"secondary_cta_label" varchar,
-  	"secondary_cta_href" varchar,
   	"trusted_label" varchar,
   	"block_name" varchar
   );
@@ -1211,8 +1740,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"submit_label" varchar,
   	"error_message" varchar,
   	"privacy_text" varchar,
+  	"privacy_link_type" "enum_gsec_blocks_wb_subscribe_privacy_link_type" DEFAULT 'reference',
+  	"privacy_link_new_tab" boolean,
+  	"privacy_link_url" varchar,
+  	"privacy_link_custom_page" "enum_gsec_blocks_wb_subscribe_privacy_link_custom_page",
   	"privacy_link_label" varchar,
-  	"privacy_href" varchar,
   	"success_title" varchar,
   	"success_body" varchar,
   	"success_cta_label" varchar,
@@ -1237,9 +1769,12 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"status" varchar,
   	"title" varchar,
   	"text" varchar,
-  	"cta" varchar,
   	"brand" varchar,
-  	"href" varchar,
+  	"link_type" "enum__gsec_v_blocks_wb_hero_compact_cards_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__gsec_v_blocks_wb_hero_compact_cards_link_custom_page",
+  	"link_label" varchar,
   	"_uuid" varchar
   );
   
@@ -1250,7 +1785,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"brand" varchar,
   	"title" varchar,
-  	"href" varchar,
+  	"link_type" "enum__gsec_v_blocks_wb_hero_today_links_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__gsec_v_blocks_wb_hero_today_links_link_custom_page",
   	"_uuid" varchar
   );
   
@@ -1268,8 +1806,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"featured_brand" varchar,
   	"featured_title" varchar,
   	"featured_excerpt" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum__gsec_v_blocks_wb_hero_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum__gsec_v_blocks_wb_hero_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"show_today_strip" boolean DEFAULT true,
   	"_uuid" varchar,
   	"block_name" varchar
@@ -1283,8 +1824,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"region" varchar,
   	"title" varchar,
   	"description" varchar,
-  	"cta" varchar,
-  	"href" varchar,
+  	"link_type" "enum__gsec_v_blocks_wb_awards_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__gsec_v_blocks_wb_awards_items_link_custom_page",
+  	"link_label" varchar,
   	"_uuid" varchar
   );
   
@@ -1296,8 +1840,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum__gsec_v_blocks_wb_awards_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum__gsec_v_blocks_wb_awards_cta_custom_page",
+  	"cta_label" varchar,
   	"_uuid" varchar,
   	"block_name" varchar
   );
@@ -1312,8 +1859,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"location" varchar,
   	"title" varchar,
   	"description" varchar,
-  	"cta" varchar,
-  	"href" varchar,
+  	"link_type" "enum__gsec_v_blocks_wb_events_events_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__gsec_v_blocks_wb_events_events_link_custom_page",
+  	"link_label" varchar,
   	"_uuid" varchar
   );
   
@@ -1325,16 +1875,22 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum__gsec_v_blocks_wb_events_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum__gsec_v_blocks_wb_events_cta_custom_page",
+  	"cta_label" varchar,
   	"featured_image_id" integer,
   	"featured_pill" varchar,
   	"featured_date" varchar,
   	"featured_location" varchar,
   	"featured_title" varchar,
   	"featured_description" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum__gsec_v_blocks_wb_events_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum__gsec_v_blocks_wb_events_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"_uuid" varchar,
   	"block_name" varchar
   );
@@ -1349,7 +1905,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"description" varchar,
   	"latest_highlight" varchar,
   	"latest_cta" varchar,
-  	"href" varchar,
+  	"link_type" "enum__gsec_v_blocks_wb_brands_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__gsec_v_blocks_wb_brands_items_link_custom_page",
   	"_uuid" varchar
   );
   
@@ -1376,8 +1935,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"type" varchar,
   	"title" varchar,
   	"desc" varchar,
-  	"cta" varchar,
-  	"href" varchar,
+  	"link_type" "enum__gsec_v_blocks_wb_research_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__gsec_v_blocks_wb_research_items_link_custom_page",
+  	"link_label" varchar,
   	"_uuid" varchar
   );
   
@@ -1389,15 +1951,21 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum__gsec_v_blocks_wb_research_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum__gsec_v_blocks_wb_research_cta_custom_page",
+  	"cta_label" varchar,
   	"featured_image_id" integer,
   	"featured_pill" varchar,
   	"featured_meta" varchar,
   	"featured_title" varchar,
   	"featured_excerpt" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum__gsec_v_blocks_wb_research_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum__gsec_v_blocks_wb_research_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"_uuid" varchar,
   	"block_name" varchar
   );
@@ -1411,7 +1979,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"category" varchar,
   	"region" varchar,
   	"title" varchar,
-  	"href" varchar,
+  	"link_type" "enum__gsec_v_blocks_wb_people_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__gsec_v_blocks_wb_people_items_link_custom_page",
   	"_uuid" varchar
   );
   
@@ -1423,8 +1994,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum__gsec_v_blocks_wb_people_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum__gsec_v_blocks_wb_people_cta_custom_page",
+  	"cta_label" varchar,
   	"_uuid" varchar,
   	"block_name" varchar
   );
@@ -1440,7 +2014,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"title" varchar,
   	"description" varchar,
   	"date" varchar,
-  	"href" varchar,
+  	"link_type" "enum__gsec_v_blocks_wb_featured_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__gsec_v_blocks_wb_featured_items_link_custom_page",
   	"_uuid" varchar
   );
   
@@ -1452,8 +2029,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum__gsec_v_blocks_wb_featured_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum__gsec_v_blocks_wb_featured_cta_custom_page",
+  	"cta_label" varchar,
   	"_uuid" varchar,
   	"block_name" varchar
   );
@@ -1467,7 +2047,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"date" varchar,
   	"title" varchar,
   	"text" varchar,
-  	"href" varchar,
+  	"link_type" "enum__gsec_v_blocks_wb_news_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__gsec_v_blocks_wb_news_items_link_custom_page",
   	"_uuid" varchar
   );
   
@@ -1479,16 +2062,22 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum__gsec_v_blocks_wb_news_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum__gsec_v_blocks_wb_news_cta_custom_page",
+  	"cta_label" varchar,
   	"featured_image_id" integer,
   	"featured_category" varchar,
   	"featured_date" varchar,
   	"featured_title" varchar,
   	"featured_description" varchar,
-  	"featured_cta" varchar,
   	"featured_byline" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum__gsec_v_blocks_wb_news_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum__gsec_v_blocks_wb_news_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"_uuid" varchar,
   	"block_name" varchar
   );
@@ -1502,7 +2091,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"date" varchar,
   	"title" varchar,
   	"description" varchar,
-  	"href" varchar,
+  	"link_type" "enum__gsec_v_blocks_wb_analysis_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__gsec_v_blocks_wb_analysis_items_link_custom_page",
   	"_uuid" varchar
   );
   
@@ -1514,15 +2106,21 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum__gsec_v_blocks_wb_analysis_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum__gsec_v_blocks_wb_analysis_cta_custom_page",
+  	"cta_label" varchar,
   	"featured_image_id" integer,
   	"featured_category" varchar,
   	"featured_date" varchar,
   	"featured_title" varchar,
   	"featured_excerpt" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum__gsec_v_blocks_wb_analysis_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum__gsec_v_blocks_wb_analysis_featured_link_custom_page",
+  	"featured_link_label" varchar,
   	"_uuid" varchar,
   	"block_name" varchar
   );
@@ -1534,7 +2132,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"category" varchar,
   	"title" varchar,
-  	"href" varchar,
+  	"link_type" "enum__gsec_v_blocks_wb_more_read_stories_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__gsec_v_blocks_wb_more_read_stories_link_custom_page",
   	"_uuid" varchar
   );
   
@@ -1546,7 +2147,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"rank" varchar,
   	"category" varchar,
   	"title" varchar,
-  	"href" varchar,
+  	"link_type" "enum__gsec_v_blocks_wb_more_read_most_read_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__gsec_v_blocks_wb_more_read_most_read_link_custom_page",
   	"_uuid" varchar
   );
   
@@ -1569,8 +2173,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"title" varchar,
   	"description" varchar,
-  	"cta" varchar,
-  	"href" varchar,
+  	"link_type" "enum__gsec_v_blocks_wb_sponsors_cards_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum__gsec_v_blocks_wb_sponsors_cards_link_custom_page",
+  	"link_label" varchar,
   	"_uuid" varchar
   );
   
@@ -1583,10 +2190,16 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"eyebrow" varchar,
   	"title" varchar,
   	"description" varchar,
+  	"primary_cta_type" "enum__gsec_v_blocks_wb_sponsors_primary_cta_type" DEFAULT 'reference',
+  	"primary_cta_new_tab" boolean,
+  	"primary_cta_url" varchar,
+  	"primary_cta_custom_page" "enum__gsec_v_blocks_wb_sponsors_primary_cta_custom_page",
   	"primary_cta_label" varchar,
-  	"primary_cta_href" varchar,
+  	"secondary_cta_type" "enum__gsec_v_blocks_wb_sponsors_secondary_cta_type" DEFAULT 'reference',
+  	"secondary_cta_new_tab" boolean,
+  	"secondary_cta_url" varchar,
+  	"secondary_cta_custom_page" "enum__gsec_v_blocks_wb_sponsors_secondary_cta_custom_page",
   	"secondary_cta_label" varchar,
-  	"secondary_cta_href" varchar,
   	"trusted_label" varchar,
   	"_uuid" varchar,
   	"block_name" varchar
@@ -1635,8 +2248,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"submit_label" varchar,
   	"error_message" varchar,
   	"privacy_text" varchar,
+  	"privacy_link_type" "enum__gsec_v_blocks_wb_subscribe_privacy_link_type" DEFAULT 'reference',
+  	"privacy_link_new_tab" boolean,
+  	"privacy_link_url" varchar,
+  	"privacy_link_custom_page" "enum__gsec_v_blocks_wb_subscribe_privacy_link_custom_page",
   	"privacy_link_label" varchar,
-  	"privacy_href" varchar,
   	"success_title" varchar,
   	"success_body" varchar,
   	"success_cta_label" varchar,
@@ -1661,9 +2277,18 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"status" varchar,
   	"title" varchar,
   	"text" varchar,
-  	"cta" varchar,
   	"brand" varchar,
-  	"href" varchar
+  	"link_type" "enum_presets_blocks_wb_hero_compact_cards_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_presets_blocks_wb_hero_compact_cards_link_custom_page"
+  );
+  
+  CREATE TABLE "presets_blocks_wb_hero_compact_cards_locales" (
+  	"link_label" varchar,
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"_locale" "_locales" NOT NULL,
+  	"_parent_id" varchar NOT NULL
   );
   
   CREATE TABLE "presets_blocks_wb_hero_today_links" (
@@ -1672,7 +2297,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"brand" varchar,
   	"title" varchar,
-  	"href" varchar
+  	"link_type" "enum_presets_blocks_wb_hero_today_links_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_presets_blocks_wb_hero_today_links_link_custom_page"
   );
   
   CREATE TABLE "presets_blocks_wb_hero" (
@@ -1688,10 +2316,19 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"featured_brand" varchar,
   	"featured_title" varchar,
   	"featured_excerpt" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum_presets_blocks_wb_hero_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum_presets_blocks_wb_hero_featured_link_custom_page",
   	"show_today_strip" boolean DEFAULT true,
   	"block_name" varchar
+  );
+  
+  CREATE TABLE "presets_blocks_wb_hero_locales" (
+  	"featured_link_label" varchar,
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"_locale" "_locales" NOT NULL,
+  	"_parent_id" varchar NOT NULL
   );
   
   CREATE TABLE "presets_blocks_wb_awards_items" (
@@ -1701,8 +2338,17 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"region" varchar,
   	"title" varchar,
   	"description" varchar,
-  	"cta" varchar,
-  	"href" varchar
+  	"link_type" "enum_presets_blocks_wb_awards_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_presets_blocks_wb_awards_items_link_custom_page"
+  );
+  
+  CREATE TABLE "presets_blocks_wb_awards_items_locales" (
+  	"link_label" varchar,
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"_locale" "_locales" NOT NULL,
+  	"_parent_id" varchar NOT NULL
   );
   
   CREATE TABLE "presets_blocks_wb_awards" (
@@ -1712,9 +2358,18 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_presets_blocks_wb_awards_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_presets_blocks_wb_awards_cta_custom_page",
   	"block_name" varchar
+  );
+  
+  CREATE TABLE "presets_blocks_wb_awards_locales" (
+  	"cta_label" varchar,
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"_locale" "_locales" NOT NULL,
+  	"_parent_id" varchar NOT NULL
   );
   
   CREATE TABLE "presets_blocks_wb_events_events" (
@@ -1726,8 +2381,17 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"location" varchar,
   	"title" varchar,
   	"description" varchar,
-  	"cta" varchar,
-  	"href" varchar
+  	"link_type" "enum_presets_blocks_wb_events_events_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_presets_blocks_wb_events_events_link_custom_page"
+  );
+  
+  CREATE TABLE "presets_blocks_wb_events_events_locales" (
+  	"link_label" varchar,
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"_locale" "_locales" NOT NULL,
+  	"_parent_id" varchar NOT NULL
   );
   
   CREATE TABLE "presets_blocks_wb_events" (
@@ -1737,17 +2401,29 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_presets_blocks_wb_events_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_presets_blocks_wb_events_cta_custom_page",
   	"featured_image_id" integer,
   	"featured_pill" varchar,
   	"featured_date" varchar,
   	"featured_location" varchar,
   	"featured_title" varchar,
   	"featured_description" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum_presets_blocks_wb_events_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum_presets_blocks_wb_events_featured_link_custom_page",
   	"block_name" varchar
+  );
+  
+  CREATE TABLE "presets_blocks_wb_events_locales" (
+  	"cta_label" varchar,
+  	"featured_link_label" varchar,
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"_locale" "_locales" NOT NULL,
+  	"_parent_id" varchar NOT NULL
   );
   
   CREATE TABLE "presets_blocks_wb_brands_items" (
@@ -1759,7 +2435,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"description" varchar,
   	"latest_highlight" varchar,
   	"latest_cta" varchar,
-  	"href" varchar
+  	"link_type" "enum_presets_blocks_wb_brands_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_presets_blocks_wb_brands_items_link_custom_page"
   );
   
   CREATE TABLE "presets_blocks_wb_brands" (
@@ -1782,8 +2461,17 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"type" varchar,
   	"title" varchar,
   	"desc" varchar,
-  	"cta" varchar,
-  	"href" varchar
+  	"link_type" "enum_presets_blocks_wb_research_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_presets_blocks_wb_research_items_link_custom_page"
+  );
+  
+  CREATE TABLE "presets_blocks_wb_research_items_locales" (
+  	"link_label" varchar,
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"_locale" "_locales" NOT NULL,
+  	"_parent_id" varchar NOT NULL
   );
   
   CREATE TABLE "presets_blocks_wb_research" (
@@ -1793,16 +2481,28 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_presets_blocks_wb_research_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_presets_blocks_wb_research_cta_custom_page",
   	"featured_image_id" integer,
   	"featured_pill" varchar,
   	"featured_meta" varchar,
   	"featured_title" varchar,
   	"featured_excerpt" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum_presets_blocks_wb_research_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum_presets_blocks_wb_research_featured_link_custom_page",
   	"block_name" varchar
+  );
+  
+  CREATE TABLE "presets_blocks_wb_research_locales" (
+  	"cta_label" varchar,
+  	"featured_link_label" varchar,
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"_locale" "_locales" NOT NULL,
+  	"_parent_id" varchar NOT NULL
   );
   
   CREATE TABLE "presets_blocks_wb_people_items" (
@@ -1813,7 +2513,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"category" varchar,
   	"region" varchar,
   	"title" varchar,
-  	"href" varchar
+  	"link_type" "enum_presets_blocks_wb_people_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_presets_blocks_wb_people_items_link_custom_page"
   );
   
   CREATE TABLE "presets_blocks_wb_people" (
@@ -1823,9 +2526,18 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_presets_blocks_wb_people_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_presets_blocks_wb_people_cta_custom_page",
   	"block_name" varchar
+  );
+  
+  CREATE TABLE "presets_blocks_wb_people_locales" (
+  	"cta_label" varchar,
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"_locale" "_locales" NOT NULL,
+  	"_parent_id" varchar NOT NULL
   );
   
   CREATE TABLE "presets_blocks_wb_featured_items" (
@@ -1838,7 +2550,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"title" varchar,
   	"description" varchar,
   	"date" varchar,
-  	"href" varchar
+  	"link_type" "enum_presets_blocks_wb_featured_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_presets_blocks_wb_featured_items_link_custom_page"
   );
   
   CREATE TABLE "presets_blocks_wb_featured" (
@@ -1848,9 +2563,18 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_presets_blocks_wb_featured_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_presets_blocks_wb_featured_cta_custom_page",
   	"block_name" varchar
+  );
+  
+  CREATE TABLE "presets_blocks_wb_featured_locales" (
+  	"cta_label" varchar,
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"_locale" "_locales" NOT NULL,
+  	"_parent_id" varchar NOT NULL
   );
   
   CREATE TABLE "presets_blocks_wb_news_items" (
@@ -1861,7 +2585,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"date" varchar,
   	"title" varchar,
   	"text" varchar,
-  	"href" varchar
+  	"link_type" "enum_presets_blocks_wb_news_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_presets_blocks_wb_news_items_link_custom_page"
   );
   
   CREATE TABLE "presets_blocks_wb_news" (
@@ -1871,17 +2598,29 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_presets_blocks_wb_news_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_presets_blocks_wb_news_cta_custom_page",
   	"featured_image_id" integer,
   	"featured_category" varchar,
   	"featured_date" varchar,
   	"featured_title" varchar,
   	"featured_description" varchar,
-  	"featured_cta" varchar,
   	"featured_byline" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum_presets_blocks_wb_news_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum_presets_blocks_wb_news_featured_link_custom_page",
   	"block_name" varchar
+  );
+  
+  CREATE TABLE "presets_blocks_wb_news_locales" (
+  	"cta_label" varchar,
+  	"featured_link_label" varchar,
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"_locale" "_locales" NOT NULL,
+  	"_parent_id" varchar NOT NULL
   );
   
   CREATE TABLE "presets_blocks_wb_analysis_items" (
@@ -1892,7 +2631,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"date" varchar,
   	"title" varchar,
   	"description" varchar,
-  	"href" varchar
+  	"link_type" "enum_presets_blocks_wb_analysis_items_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_presets_blocks_wb_analysis_items_link_custom_page"
   );
   
   CREATE TABLE "presets_blocks_wb_analysis" (
@@ -1902,16 +2644,28 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"eyebrow" varchar,
   	"title" varchar,
-  	"cta" varchar,
-  	"cta_href" varchar,
+  	"cta_type" "enum_presets_blocks_wb_analysis_cta_type" DEFAULT 'reference',
+  	"cta_new_tab" boolean,
+  	"cta_url" varchar,
+  	"cta_custom_page" "enum_presets_blocks_wb_analysis_cta_custom_page",
   	"featured_image_id" integer,
   	"featured_category" varchar,
   	"featured_date" varchar,
   	"featured_title" varchar,
   	"featured_excerpt" varchar,
-  	"featured_cta" varchar,
-  	"featured_href" varchar,
+  	"featured_link_type" "enum_presets_blocks_wb_analysis_featured_link_type" DEFAULT 'reference',
+  	"featured_link_new_tab" boolean,
+  	"featured_link_url" varchar,
+  	"featured_link_custom_page" "enum_presets_blocks_wb_analysis_featured_link_custom_page",
   	"block_name" varchar
+  );
+  
+  CREATE TABLE "presets_blocks_wb_analysis_locales" (
+  	"cta_label" varchar,
+  	"featured_link_label" varchar,
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"_locale" "_locales" NOT NULL,
+  	"_parent_id" varchar NOT NULL
   );
   
   CREATE TABLE "presets_blocks_wb_more_read_stories" (
@@ -1920,7 +2674,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"category" varchar,
   	"title" varchar,
-  	"href" varchar
+  	"link_type" "enum_presets_blocks_wb_more_read_stories_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_presets_blocks_wb_more_read_stories_link_custom_page"
   );
   
   CREATE TABLE "presets_blocks_wb_more_read_most_read" (
@@ -1930,7 +2687,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"rank" varchar,
   	"category" varchar,
   	"title" varchar,
-  	"href" varchar
+  	"link_type" "enum_presets_blocks_wb_more_read_most_read_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_presets_blocks_wb_more_read_most_read_link_custom_page"
   );
   
   CREATE TABLE "presets_blocks_wb_more_read" (
@@ -1949,8 +2709,17 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" varchar PRIMARY KEY NOT NULL,
   	"title" varchar,
   	"description" varchar,
-  	"cta" varchar,
-  	"href" varchar
+  	"link_type" "enum_presets_blocks_wb_sponsors_cards_link_type" DEFAULT 'reference',
+  	"link_new_tab" boolean,
+  	"link_url" varchar,
+  	"link_custom_page" "enum_presets_blocks_wb_sponsors_cards_link_custom_page"
+  );
+  
+  CREATE TABLE "presets_blocks_wb_sponsors_cards_locales" (
+  	"link_label" varchar,
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"_locale" "_locales" NOT NULL,
+  	"_parent_id" varchar NOT NULL
   );
   
   CREATE TABLE "presets_blocks_wb_sponsors" (
@@ -1961,12 +2730,24 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"eyebrow" varchar,
   	"title" varchar,
   	"description" varchar,
-  	"primary_cta_label" varchar,
-  	"primary_cta_href" varchar,
-  	"secondary_cta_label" varchar,
-  	"secondary_cta_href" varchar,
+  	"primary_cta_type" "enum_presets_blocks_wb_sponsors_primary_cta_type" DEFAULT 'reference',
+  	"primary_cta_new_tab" boolean,
+  	"primary_cta_url" varchar,
+  	"primary_cta_custom_page" "enum_presets_blocks_wb_sponsors_primary_cta_custom_page",
+  	"secondary_cta_type" "enum_presets_blocks_wb_sponsors_secondary_cta_type" DEFAULT 'reference',
+  	"secondary_cta_new_tab" boolean,
+  	"secondary_cta_url" varchar,
+  	"secondary_cta_custom_page" "enum_presets_blocks_wb_sponsors_secondary_cta_custom_page",
   	"trusted_label" varchar,
   	"block_name" varchar
+  );
+  
+  CREATE TABLE "presets_blocks_wb_sponsors_locales" (
+  	"primary_cta_label" varchar,
+  	"secondary_cta_label" varchar,
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"_locale" "_locales" NOT NULL,
+  	"_parent_id" varchar NOT NULL
   );
   
   CREATE TABLE "presets_blocks_wb_subscribe_plans" (
@@ -2007,12 +2788,21 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"submit_label" varchar,
   	"error_message" varchar,
   	"privacy_text" varchar,
-  	"privacy_link_label" varchar,
-  	"privacy_href" varchar,
+  	"privacy_link_type" "enum_presets_blocks_wb_subscribe_privacy_link_type" DEFAULT 'reference',
+  	"privacy_link_new_tab" boolean,
+  	"privacy_link_url" varchar,
+  	"privacy_link_custom_page" "enum_presets_blocks_wb_subscribe_privacy_link_custom_page",
   	"success_title" varchar,
   	"success_body" varchar,
   	"success_cta_label" varchar,
   	"block_name" varchar
+  );
+  
+  CREATE TABLE "presets_blocks_wb_subscribe_locales" (
+  	"privacy_link_label" varchar,
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"_locale" "_locales" NOT NULL,
+  	"_parent_id" varchar NOT NULL
   );
   
   CREATE TABLE "presets_texts" (
@@ -2160,38 +2950,53 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "_gsec_v_blocks_wb_subscribe" ADD CONSTRAINT "_gsec_v_blocks_wb_subscribe_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."_gsec_v"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "_gsec_v_texts" ADD CONSTRAINT "_gsec_v_texts_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."_gsec_v"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_hero_compact_cards" ADD CONSTRAINT "presets_blocks_wb_hero_compact_cards_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_hero"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "presets_blocks_wb_hero_compact_cards_locales" ADD CONSTRAINT "presets_blocks_wb_hero_compact_cards_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_hero_compact_cards"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_hero_today_links" ADD CONSTRAINT "presets_blocks_wb_hero_today_links_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_hero"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_hero" ADD CONSTRAINT "presets_blocks_wb_hero_featured_image_id_media_id_fk" FOREIGN KEY ("featured_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_hero" ADD CONSTRAINT "presets_blocks_wb_hero_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "presets_blocks_wb_hero_locales" ADD CONSTRAINT "presets_blocks_wb_hero_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_hero"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_awards_items" ADD CONSTRAINT "presets_blocks_wb_awards_items_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_awards"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "presets_blocks_wb_awards_items_locales" ADD CONSTRAINT "presets_blocks_wb_awards_items_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_awards_items"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_awards" ADD CONSTRAINT "presets_blocks_wb_awards_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "presets_blocks_wb_awards_locales" ADD CONSTRAINT "presets_blocks_wb_awards_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_awards"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_events_events" ADD CONSTRAINT "presets_blocks_wb_events_events_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_events"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "presets_blocks_wb_events_events_locales" ADD CONSTRAINT "presets_blocks_wb_events_events_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_events_events"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_events" ADD CONSTRAINT "presets_blocks_wb_events_featured_image_id_media_id_fk" FOREIGN KEY ("featured_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_events" ADD CONSTRAINT "presets_blocks_wb_events_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "presets_blocks_wb_events_locales" ADD CONSTRAINT "presets_blocks_wb_events_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_events"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_brands_items" ADD CONSTRAINT "presets_blocks_wb_brands_items_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_brands"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_brands" ADD CONSTRAINT "presets_blocks_wb_brands_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_research_items" ADD CONSTRAINT "presets_blocks_wb_research_items_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_research"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "presets_blocks_wb_research_items_locales" ADD CONSTRAINT "presets_blocks_wb_research_items_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_research_items"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_research" ADD CONSTRAINT "presets_blocks_wb_research_featured_image_id_media_id_fk" FOREIGN KEY ("featured_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_research" ADD CONSTRAINT "presets_blocks_wb_research_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "presets_blocks_wb_research_locales" ADD CONSTRAINT "presets_blocks_wb_research_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_research"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_people_items" ADD CONSTRAINT "presets_blocks_wb_people_items_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_people"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_people" ADD CONSTRAINT "presets_blocks_wb_people_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "presets_blocks_wb_people_locales" ADD CONSTRAINT "presets_blocks_wb_people_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_people"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_featured_items" ADD CONSTRAINT "presets_blocks_wb_featured_items_image_id_media_id_fk" FOREIGN KEY ("image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_featured_items" ADD CONSTRAINT "presets_blocks_wb_featured_items_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_featured"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_featured" ADD CONSTRAINT "presets_blocks_wb_featured_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "presets_blocks_wb_featured_locales" ADD CONSTRAINT "presets_blocks_wb_featured_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_featured"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_news_items" ADD CONSTRAINT "presets_blocks_wb_news_items_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_news"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_news" ADD CONSTRAINT "presets_blocks_wb_news_featured_image_id_media_id_fk" FOREIGN KEY ("featured_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_news" ADD CONSTRAINT "presets_blocks_wb_news_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "presets_blocks_wb_news_locales" ADD CONSTRAINT "presets_blocks_wb_news_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_news"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_analysis_items" ADD CONSTRAINT "presets_blocks_wb_analysis_items_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_analysis"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_analysis" ADD CONSTRAINT "presets_blocks_wb_analysis_featured_image_id_media_id_fk" FOREIGN KEY ("featured_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_analysis" ADD CONSTRAINT "presets_blocks_wb_analysis_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "presets_blocks_wb_analysis_locales" ADD CONSTRAINT "presets_blocks_wb_analysis_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_analysis"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_more_read_stories" ADD CONSTRAINT "presets_blocks_wb_more_read_stories_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_more_read"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_more_read_most_read" ADD CONSTRAINT "presets_blocks_wb_more_read_most_read_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_more_read"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_more_read" ADD CONSTRAINT "presets_blocks_wb_more_read_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_sponsors_cards" ADD CONSTRAINT "presets_blocks_wb_sponsors_cards_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_sponsors"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "presets_blocks_wb_sponsors_cards_locales" ADD CONSTRAINT "presets_blocks_wb_sponsors_cards_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_sponsors_cards"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_sponsors" ADD CONSTRAINT "presets_blocks_wb_sponsors_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "presets_blocks_wb_sponsors_locales" ADD CONSTRAINT "presets_blocks_wb_sponsors_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_sponsors"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_subscribe_plans" ADD CONSTRAINT "presets_blocks_wb_subscribe_plans_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_subscribe"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_subscribe_regions" ADD CONSTRAINT "presets_blocks_wb_subscribe_regions_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_subscribe"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_blocks_wb_subscribe" ADD CONSTRAINT "presets_blocks_wb_subscribe_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "presets_blocks_wb_subscribe_locales" ADD CONSTRAINT "presets_blocks_wb_subscribe_locales_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."presets_blocks_wb_subscribe"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "presets_texts" ADD CONSTRAINT "presets_texts_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."presets"("id") ON DELETE cascade ON UPDATE no action;
   CREATE INDEX "page_blocks_wb_hero_compact_cards_order_idx" ON "page_blocks_wb_hero_compact_cards" USING btree ("_order");
   CREATE INDEX "page_blocks_wb_hero_compact_cards_parent_id_idx" ON "page_blocks_wb_hero_compact_cards" USING btree ("_parent_id");
@@ -2599,23 +3404,29 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "_gsec_v_texts_locale_parent" ON "_gsec_v_texts" USING btree ("locale","parent_id");
   CREATE INDEX "presets_blocks_wb_hero_compact_cards_order_idx" ON "presets_blocks_wb_hero_compact_cards" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_hero_compact_cards_parent_id_idx" ON "presets_blocks_wb_hero_compact_cards" USING btree ("_parent_id");
+  CREATE UNIQUE INDEX "presets_blocks_wb_hero_compact_cards_locales_locale_parent_i" ON "presets_blocks_wb_hero_compact_cards_locales" USING btree ("_locale","_parent_id");
   CREATE INDEX "presets_blocks_wb_hero_today_links_order_idx" ON "presets_blocks_wb_hero_today_links" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_hero_today_links_parent_id_idx" ON "presets_blocks_wb_hero_today_links" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_hero_order_idx" ON "presets_blocks_wb_hero" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_hero_parent_id_idx" ON "presets_blocks_wb_hero" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_hero_path_idx" ON "presets_blocks_wb_hero" USING btree ("_path");
   CREATE INDEX "presets_blocks_wb_hero_featured_featured_image_idx" ON "presets_blocks_wb_hero" USING btree ("featured_image_id");
+  CREATE UNIQUE INDEX "presets_blocks_wb_hero_locales_locale_parent_id_unique" ON "presets_blocks_wb_hero_locales" USING btree ("_locale","_parent_id");
   CREATE INDEX "presets_blocks_wb_awards_items_order_idx" ON "presets_blocks_wb_awards_items" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_awards_items_parent_id_idx" ON "presets_blocks_wb_awards_items" USING btree ("_parent_id");
+  CREATE UNIQUE INDEX "presets_blocks_wb_awards_items_locales_locale_parent_id_uniq" ON "presets_blocks_wb_awards_items_locales" USING btree ("_locale","_parent_id");
   CREATE INDEX "presets_blocks_wb_awards_order_idx" ON "presets_blocks_wb_awards" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_awards_parent_id_idx" ON "presets_blocks_wb_awards" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_awards_path_idx" ON "presets_blocks_wb_awards" USING btree ("_path");
+  CREATE UNIQUE INDEX "presets_blocks_wb_awards_locales_locale_parent_id_unique" ON "presets_blocks_wb_awards_locales" USING btree ("_locale","_parent_id");
   CREATE INDEX "presets_blocks_wb_events_events_order_idx" ON "presets_blocks_wb_events_events" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_events_events_parent_id_idx" ON "presets_blocks_wb_events_events" USING btree ("_parent_id");
+  CREATE UNIQUE INDEX "presets_blocks_wb_events_events_locales_locale_parent_id_uni" ON "presets_blocks_wb_events_events_locales" USING btree ("_locale","_parent_id");
   CREATE INDEX "presets_blocks_wb_events_order_idx" ON "presets_blocks_wb_events" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_events_parent_id_idx" ON "presets_blocks_wb_events" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_events_path_idx" ON "presets_blocks_wb_events" USING btree ("_path");
   CREATE INDEX "presets_blocks_wb_events_featured_featured_image_idx" ON "presets_blocks_wb_events" USING btree ("featured_image_id");
+  CREATE UNIQUE INDEX "presets_blocks_wb_events_locales_locale_parent_id_unique" ON "presets_blocks_wb_events_locales" USING btree ("_locale","_parent_id");
   CREATE INDEX "presets_blocks_wb_brands_items_order_idx" ON "presets_blocks_wb_brands_items" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_brands_items_parent_id_idx" ON "presets_blocks_wb_brands_items" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_brands_order_idx" ON "presets_blocks_wb_brands" USING btree ("_order");
@@ -2623,33 +3434,39 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "presets_blocks_wb_brands_path_idx" ON "presets_blocks_wb_brands" USING btree ("_path");
   CREATE INDEX "presets_blocks_wb_research_items_order_idx" ON "presets_blocks_wb_research_items" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_research_items_parent_id_idx" ON "presets_blocks_wb_research_items" USING btree ("_parent_id");
+  CREATE UNIQUE INDEX "presets_blocks_wb_research_items_locales_locale_parent_id_un" ON "presets_blocks_wb_research_items_locales" USING btree ("_locale","_parent_id");
   CREATE INDEX "presets_blocks_wb_research_order_idx" ON "presets_blocks_wb_research" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_research_parent_id_idx" ON "presets_blocks_wb_research" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_research_path_idx" ON "presets_blocks_wb_research" USING btree ("_path");
   CREATE INDEX "presets_blocks_wb_research_featured_featured_image_idx" ON "presets_blocks_wb_research" USING btree ("featured_image_id");
+  CREATE UNIQUE INDEX "presets_blocks_wb_research_locales_locale_parent_id_unique" ON "presets_blocks_wb_research_locales" USING btree ("_locale","_parent_id");
   CREATE INDEX "presets_blocks_wb_people_items_order_idx" ON "presets_blocks_wb_people_items" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_people_items_parent_id_idx" ON "presets_blocks_wb_people_items" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_people_order_idx" ON "presets_blocks_wb_people" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_people_parent_id_idx" ON "presets_blocks_wb_people" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_people_path_idx" ON "presets_blocks_wb_people" USING btree ("_path");
+  CREATE UNIQUE INDEX "presets_blocks_wb_people_locales_locale_parent_id_unique" ON "presets_blocks_wb_people_locales" USING btree ("_locale","_parent_id");
   CREATE INDEX "presets_blocks_wb_featured_items_order_idx" ON "presets_blocks_wb_featured_items" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_featured_items_parent_id_idx" ON "presets_blocks_wb_featured_items" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_featured_items_image_idx" ON "presets_blocks_wb_featured_items" USING btree ("image_id");
   CREATE INDEX "presets_blocks_wb_featured_order_idx" ON "presets_blocks_wb_featured" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_featured_parent_id_idx" ON "presets_blocks_wb_featured" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_featured_path_idx" ON "presets_blocks_wb_featured" USING btree ("_path");
+  CREATE UNIQUE INDEX "presets_blocks_wb_featured_locales_locale_parent_id_unique" ON "presets_blocks_wb_featured_locales" USING btree ("_locale","_parent_id");
   CREATE INDEX "presets_blocks_wb_news_items_order_idx" ON "presets_blocks_wb_news_items" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_news_items_parent_id_idx" ON "presets_blocks_wb_news_items" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_news_order_idx" ON "presets_blocks_wb_news" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_news_parent_id_idx" ON "presets_blocks_wb_news" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_news_path_idx" ON "presets_blocks_wb_news" USING btree ("_path");
   CREATE INDEX "presets_blocks_wb_news_featured_featured_image_idx" ON "presets_blocks_wb_news" USING btree ("featured_image_id");
+  CREATE UNIQUE INDEX "presets_blocks_wb_news_locales_locale_parent_id_unique" ON "presets_blocks_wb_news_locales" USING btree ("_locale","_parent_id");
   CREATE INDEX "presets_blocks_wb_analysis_items_order_idx" ON "presets_blocks_wb_analysis_items" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_analysis_items_parent_id_idx" ON "presets_blocks_wb_analysis_items" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_analysis_order_idx" ON "presets_blocks_wb_analysis" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_analysis_parent_id_idx" ON "presets_blocks_wb_analysis" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_analysis_path_idx" ON "presets_blocks_wb_analysis" USING btree ("_path");
   CREATE INDEX "presets_blocks_wb_analysis_featured_featured_image_idx" ON "presets_blocks_wb_analysis" USING btree ("featured_image_id");
+  CREATE UNIQUE INDEX "presets_blocks_wb_analysis_locales_locale_parent_id_unique" ON "presets_blocks_wb_analysis_locales" USING btree ("_locale","_parent_id");
   CREATE INDEX "presets_blocks_wb_more_read_stories_order_idx" ON "presets_blocks_wb_more_read_stories" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_more_read_stories_parent_id_idx" ON "presets_blocks_wb_more_read_stories" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_more_read_most_read_order_idx" ON "presets_blocks_wb_more_read_most_read" USING btree ("_order");
@@ -2659,9 +3476,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "presets_blocks_wb_more_read_path_idx" ON "presets_blocks_wb_more_read" USING btree ("_path");
   CREATE INDEX "presets_blocks_wb_sponsors_cards_order_idx" ON "presets_blocks_wb_sponsors_cards" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_sponsors_cards_parent_id_idx" ON "presets_blocks_wb_sponsors_cards" USING btree ("_parent_id");
+  CREATE UNIQUE INDEX "presets_blocks_wb_sponsors_cards_locales_locale_parent_id_un" ON "presets_blocks_wb_sponsors_cards_locales" USING btree ("_locale","_parent_id");
   CREATE INDEX "presets_blocks_wb_sponsors_order_idx" ON "presets_blocks_wb_sponsors" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_sponsors_parent_id_idx" ON "presets_blocks_wb_sponsors" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_sponsors_path_idx" ON "presets_blocks_wb_sponsors" USING btree ("_path");
+  CREATE UNIQUE INDEX "presets_blocks_wb_sponsors_locales_locale_parent_id_unique" ON "presets_blocks_wb_sponsors_locales" USING btree ("_locale","_parent_id");
   CREATE INDEX "presets_blocks_wb_subscribe_plans_order_idx" ON "presets_blocks_wb_subscribe_plans" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_subscribe_plans_parent_id_idx" ON "presets_blocks_wb_subscribe_plans" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_subscribe_regions_order_idx" ON "presets_blocks_wb_subscribe_regions" USING btree ("_order");
@@ -2669,6 +3488,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "presets_blocks_wb_subscribe_order_idx" ON "presets_blocks_wb_subscribe" USING btree ("_order");
   CREATE INDEX "presets_blocks_wb_subscribe_parent_id_idx" ON "presets_blocks_wb_subscribe" USING btree ("_parent_id");
   CREATE INDEX "presets_blocks_wb_subscribe_path_idx" ON "presets_blocks_wb_subscribe" USING btree ("_path");
+  CREATE UNIQUE INDEX "presets_blocks_wb_subscribe_locales_locale_parent_id_unique" ON "presets_blocks_wb_subscribe_locales" USING btree ("_locale","_parent_id");
   CREATE INDEX "presets_texts_order_parent" ON "presets_texts" USING btree ("order","parent_id");`)
 }
 
@@ -2787,36 +3607,331 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "_gsec_v_blocks_wb_subscribe" CASCADE;
   DROP TABLE "_gsec_v_texts" CASCADE;
   DROP TABLE "presets_blocks_wb_hero_compact_cards" CASCADE;
+  DROP TABLE "presets_blocks_wb_hero_compact_cards_locales" CASCADE;
   DROP TABLE "presets_blocks_wb_hero_today_links" CASCADE;
   DROP TABLE "presets_blocks_wb_hero" CASCADE;
+  DROP TABLE "presets_blocks_wb_hero_locales" CASCADE;
   DROP TABLE "presets_blocks_wb_awards_items" CASCADE;
+  DROP TABLE "presets_blocks_wb_awards_items_locales" CASCADE;
   DROP TABLE "presets_blocks_wb_awards" CASCADE;
+  DROP TABLE "presets_blocks_wb_awards_locales" CASCADE;
   DROP TABLE "presets_blocks_wb_events_events" CASCADE;
+  DROP TABLE "presets_blocks_wb_events_events_locales" CASCADE;
   DROP TABLE "presets_blocks_wb_events" CASCADE;
+  DROP TABLE "presets_blocks_wb_events_locales" CASCADE;
   DROP TABLE "presets_blocks_wb_brands_items" CASCADE;
   DROP TABLE "presets_blocks_wb_brands" CASCADE;
   DROP TABLE "presets_blocks_wb_research_items" CASCADE;
+  DROP TABLE "presets_blocks_wb_research_items_locales" CASCADE;
   DROP TABLE "presets_blocks_wb_research" CASCADE;
+  DROP TABLE "presets_blocks_wb_research_locales" CASCADE;
   DROP TABLE "presets_blocks_wb_people_items" CASCADE;
   DROP TABLE "presets_blocks_wb_people" CASCADE;
+  DROP TABLE "presets_blocks_wb_people_locales" CASCADE;
   DROP TABLE "presets_blocks_wb_featured_items" CASCADE;
   DROP TABLE "presets_blocks_wb_featured" CASCADE;
+  DROP TABLE "presets_blocks_wb_featured_locales" CASCADE;
   DROP TABLE "presets_blocks_wb_news_items" CASCADE;
   DROP TABLE "presets_blocks_wb_news" CASCADE;
+  DROP TABLE "presets_blocks_wb_news_locales" CASCADE;
   DROP TABLE "presets_blocks_wb_analysis_items" CASCADE;
   DROP TABLE "presets_blocks_wb_analysis" CASCADE;
+  DROP TABLE "presets_blocks_wb_analysis_locales" CASCADE;
   DROP TABLE "presets_blocks_wb_more_read_stories" CASCADE;
   DROP TABLE "presets_blocks_wb_more_read_most_read" CASCADE;
   DROP TABLE "presets_blocks_wb_more_read" CASCADE;
   DROP TABLE "presets_blocks_wb_sponsors_cards" CASCADE;
+  DROP TABLE "presets_blocks_wb_sponsors_cards_locales" CASCADE;
   DROP TABLE "presets_blocks_wb_sponsors" CASCADE;
+  DROP TABLE "presets_blocks_wb_sponsors_locales" CASCADE;
   DROP TABLE "presets_blocks_wb_subscribe_plans" CASCADE;
   DROP TABLE "presets_blocks_wb_subscribe_regions" CASCADE;
   DROP TABLE "presets_blocks_wb_subscribe" CASCADE;
+  DROP TABLE "presets_blocks_wb_subscribe_locales" CASCADE;
   DROP TABLE "presets_texts" CASCADE;
+  DROP TYPE "public"."enum_page_blocks_wb_hero_compact_cards_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_hero_compact_cards_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_hero_today_links_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_hero_today_links_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_hero_featured_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_hero_featured_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_awards_items_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_awards_items_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_awards_cta_type";
+  DROP TYPE "public"."enum_page_blocks_wb_awards_cta_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_events_events_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_events_events_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_events_cta_type";
+  DROP TYPE "public"."enum_page_blocks_wb_events_cta_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_events_featured_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_events_featured_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_brands_items_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_brands_items_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_research_items_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_research_items_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_research_cta_type";
+  DROP TYPE "public"."enum_page_blocks_wb_research_cta_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_research_featured_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_research_featured_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_people_items_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_people_items_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_people_cta_type";
+  DROP TYPE "public"."enum_page_blocks_wb_people_cta_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_featured_items_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_featured_items_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_featured_cta_type";
+  DROP TYPE "public"."enum_page_blocks_wb_featured_cta_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_news_items_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_news_items_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_news_cta_type";
+  DROP TYPE "public"."enum_page_blocks_wb_news_cta_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_news_featured_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_news_featured_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_analysis_items_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_analysis_items_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_analysis_cta_type";
+  DROP TYPE "public"."enum_page_blocks_wb_analysis_cta_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_analysis_featured_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_analysis_featured_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_more_read_stories_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_more_read_stories_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_more_read_most_read_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_more_read_most_read_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_sponsors_cards_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_sponsors_cards_link_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_sponsors_primary_cta_type";
+  DROP TYPE "public"."enum_page_blocks_wb_sponsors_primary_cta_custom_page";
+  DROP TYPE "public"."enum_page_blocks_wb_sponsors_secondary_cta_type";
+  DROP TYPE "public"."enum_page_blocks_wb_sponsors_secondary_cta_custom_page";
   DROP TYPE "public"."enum_page_blocks_wb_subscribe_plans_tag_tone";
+  DROP TYPE "public"."enum_page_blocks_wb_subscribe_privacy_link_type";
+  DROP TYPE "public"."enum_page_blocks_wb_subscribe_privacy_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_hero_compact_cards_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_hero_compact_cards_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_hero_today_links_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_hero_today_links_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_hero_featured_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_hero_featured_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_awards_items_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_awards_items_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_awards_cta_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_awards_cta_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_events_events_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_events_events_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_events_cta_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_events_cta_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_events_featured_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_events_featured_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_brands_items_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_brands_items_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_research_items_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_research_items_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_research_cta_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_research_cta_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_research_featured_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_research_featured_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_people_items_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_people_items_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_people_cta_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_people_cta_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_featured_items_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_featured_items_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_featured_cta_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_featured_cta_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_news_items_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_news_items_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_news_cta_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_news_cta_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_news_featured_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_news_featured_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_analysis_items_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_analysis_items_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_analysis_cta_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_analysis_cta_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_analysis_featured_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_analysis_featured_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_more_read_stories_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_more_read_stories_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_more_read_most_read_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_more_read_most_read_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_sponsors_cards_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_sponsors_cards_link_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_sponsors_primary_cta_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_sponsors_primary_cta_custom_page";
+  DROP TYPE "public"."enum__page_v_blocks_wb_sponsors_secondary_cta_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_sponsors_secondary_cta_custom_page";
   DROP TYPE "public"."enum__page_v_blocks_wb_subscribe_plans_tag_tone";
+  DROP TYPE "public"."enum__page_v_blocks_wb_subscribe_privacy_link_type";
+  DROP TYPE "public"."enum__page_v_blocks_wb_subscribe_privacy_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_hero_compact_cards_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_hero_compact_cards_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_hero_today_links_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_hero_today_links_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_hero_featured_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_hero_featured_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_awards_items_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_awards_items_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_awards_cta_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_awards_cta_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_events_events_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_events_events_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_events_cta_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_events_cta_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_events_featured_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_events_featured_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_brands_items_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_brands_items_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_research_items_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_research_items_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_research_cta_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_research_cta_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_research_featured_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_research_featured_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_people_items_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_people_items_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_people_cta_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_people_cta_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_featured_items_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_featured_items_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_featured_cta_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_featured_cta_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_news_items_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_news_items_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_news_cta_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_news_cta_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_news_featured_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_news_featured_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_analysis_items_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_analysis_items_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_analysis_cta_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_analysis_cta_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_analysis_featured_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_analysis_featured_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_more_read_stories_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_more_read_stories_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_more_read_most_read_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_more_read_most_read_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_sponsors_cards_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_sponsors_cards_link_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_sponsors_primary_cta_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_sponsors_primary_cta_custom_page";
+  DROP TYPE "public"."enum_gsec_blocks_wb_sponsors_secondary_cta_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_sponsors_secondary_cta_custom_page";
   DROP TYPE "public"."enum_gsec_blocks_wb_subscribe_plans_tag_tone";
+  DROP TYPE "public"."enum_gsec_blocks_wb_subscribe_privacy_link_type";
+  DROP TYPE "public"."enum_gsec_blocks_wb_subscribe_privacy_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_hero_compact_cards_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_hero_compact_cards_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_hero_today_links_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_hero_today_links_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_hero_featured_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_hero_featured_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_awards_items_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_awards_items_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_awards_cta_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_awards_cta_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_events_events_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_events_events_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_events_cta_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_events_cta_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_events_featured_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_events_featured_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_brands_items_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_brands_items_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_research_items_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_research_items_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_research_cta_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_research_cta_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_research_featured_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_research_featured_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_people_items_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_people_items_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_people_cta_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_people_cta_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_featured_items_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_featured_items_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_featured_cta_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_featured_cta_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_news_items_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_news_items_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_news_cta_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_news_cta_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_news_featured_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_news_featured_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_analysis_items_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_analysis_items_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_analysis_cta_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_analysis_cta_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_analysis_featured_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_analysis_featured_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_more_read_stories_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_more_read_stories_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_more_read_most_read_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_more_read_most_read_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_sponsors_cards_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_sponsors_cards_link_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_sponsors_primary_cta_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_sponsors_primary_cta_custom_page";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_sponsors_secondary_cta_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_sponsors_secondary_cta_custom_page";
   DROP TYPE "public"."enum__gsec_v_blocks_wb_subscribe_plans_tag_tone";
-  DROP TYPE "public"."enum_presets_blocks_wb_subscribe_plans_tag_tone";`)
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_subscribe_privacy_link_type";
+  DROP TYPE "public"."enum__gsec_v_blocks_wb_subscribe_privacy_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_hero_compact_cards_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_hero_compact_cards_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_hero_today_links_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_hero_today_links_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_hero_featured_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_hero_featured_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_awards_items_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_awards_items_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_awards_cta_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_awards_cta_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_events_events_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_events_events_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_events_cta_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_events_cta_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_events_featured_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_events_featured_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_brands_items_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_brands_items_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_research_items_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_research_items_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_research_cta_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_research_cta_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_research_featured_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_research_featured_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_people_items_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_people_items_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_people_cta_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_people_cta_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_featured_items_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_featured_items_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_featured_cta_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_featured_cta_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_news_items_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_news_items_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_news_cta_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_news_cta_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_news_featured_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_news_featured_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_analysis_items_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_analysis_items_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_analysis_cta_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_analysis_cta_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_analysis_featured_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_analysis_featured_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_more_read_stories_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_more_read_stories_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_more_read_most_read_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_more_read_most_read_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_sponsors_cards_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_sponsors_cards_link_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_sponsors_primary_cta_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_sponsors_primary_cta_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_sponsors_secondary_cta_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_sponsors_secondary_cta_custom_page";
+  DROP TYPE "public"."enum_presets_blocks_wb_subscribe_plans_tag_tone";
+  DROP TYPE "public"."enum_presets_blocks_wb_subscribe_privacy_link_type";
+  DROP TYPE "public"."enum_presets_blocks_wb_subscribe_privacy_link_custom_page";`)
 }

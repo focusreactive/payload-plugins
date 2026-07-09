@@ -10,6 +10,16 @@ import config from "@payload-config";
 
 const ASSETS = path.resolve(process.cwd(), "public/wb");
 
+// Build a WB link-field value. Placeholder homepage links are custom URLs;
+// editors can switch any of them to an internal reference in the admin. Pass a
+// label only for links the design renders text for (section CTAs, card CTAs);
+// omit it for whole-card/title links whose text is a sibling field.
+const link = (url: string, label?: string) => ({
+  type: "custom" as const,
+  url,
+  ...(label ? { label } : {}),
+});
+
 async function main() {
   const payload = await getPayload({ config });
 
@@ -58,8 +68,7 @@ async function main() {
         title: "EXCLUSIVE: Investment Managers Remain Upbeat On Emerging Markets' Outlook",
         excerpt:
           "Investment managers share their views on the case for emerging markets, tested by recent geopolitical volatility and changing global allocation priorities.",
-        cta: "Read latest intelligence",
-        href: "#",
+        link: link("#", "Read latest intelligence"),
       },
       compactCards: [
         {
@@ -67,44 +76,41 @@ async function main() {
           status: "Entries open",
           title: "WealthBriefing Awards Programmes",
           text: "Explore current awards programmes across the wealth management network.",
-          cta: "View awards",
           brand: "WealthBriefing",
-          href: "#",
+          link: link("#", "View awards"),
         },
         {
           label: "Events & Forums",
           status: "Upcoming",
           title: "Summits, Forums and Breakfast Briefings",
           text: "Join senior wealth management professionals at curated industry events.",
-          cta: "View events",
           brand: "WealthBriefing",
-          href: "#",
+          link: link("#", "View events"),
         },
         {
           label: "People Moves",
           status: "30 Jun",
           title: "UBS Makes Raft Of Asia-Pacific Senior Appointments",
           text: "Senior changes affect Taiwan, Singapore, Philippines, Indonesia, Australia and India.",
-          cta: "Read update",
           brand: "WealthBriefingAsia",
-          href: "#",
+          link: link("#", "Read update"),
         },
       ],
       todayLinks: [
         {
           brand: "WealthBriefingAsia",
           title: "UBS appoints senior wealth management leaders across APAC",
-          href: "#",
+          link: link("#"),
         },
         {
           brand: "Family Wealth Report",
           title: "North American family offices adjust private market allocations",
-          href: "#",
+          link: link("#"),
         },
         {
           brand: "WealthBriefing",
           title: "UK over-55s reluctant to discuss inheritance",
-          href: "#",
+          link: link("#"),
         },
       ],
       showTodayStrip: true,
@@ -113,32 +119,28 @@ async function main() {
       blockType: "wbAwards",
       eyebrow: "Awards",
       title: "Upcoming Awards",
-      cta: "Explore awards by brand",
-      ctaHref: "#",
+      cta: link("#", "Explore awards by brand"),
       items: [
         {
           region: "UK & Europe",
           title: "WealthBriefing",
           description:
             "Recognising leading firms, teams and individuals serving private clients and the wealth management sector across Europe.",
-          cta: "View",
-          href: "#",
+          link: link("#", "View"),
         },
         {
           region: "Asia-Pacific",
           title: "WealthBriefingAsia",
           description:
             "Celebrating excellence and innovation across Asia-Pacific private banking, wealth management and family office services.",
-          cta: "View",
-          href: "#",
+          link: link("#", "View"),
         },
         {
           region: "North America",
           title: "Family Wealth Report",
           description:
             "Highlighting outstanding providers, advisors and technology partners in the North American wealth management market.",
-          cta: "View",
-          href: "#",
+          link: link("#", "View"),
         },
       ],
     },
@@ -146,8 +148,7 @@ async function main() {
       blockType: "wbEvents",
       eyebrow: "Events",
       title: "Events & Forums",
-      cta: "View all events",
-      ctaHref: "#",
+      cta: link("#", "View all events"),
       featured: {
         image: img.events,
         pill: "Summit",
@@ -156,8 +157,7 @@ async function main() {
         title: "WealthBriefing Summit",
         description:
           "A senior industry gathering focused on strategy, client experience, regulation and technology in wealth management.",
-        cta: "View event",
-        href: "#",
+        link: link("#", "View event"),
       },
       events: [
         {
@@ -167,8 +167,7 @@ async function main() {
           title: "Breakfast Briefings",
           description:
             "Exclusive invited discussions with wealth management leaders and specialist partners.",
-          cta: "Explore briefings",
-          href: "#",
+          link: link("#", "Explore briefings"),
         },
         {
           type: "Forum",
@@ -177,8 +176,7 @@ async function main() {
           title: "Asia-Pacific Wealth Management Forum",
           description:
             "Regional industry discussion on private banking, family office trends and cross-border wealth management.",
-          cta: "View forum",
-          href: "#",
+          link: link("#", "View forum"),
         },
         {
           type: "Forum",
@@ -187,8 +185,7 @@ async function main() {
           title: "Family Wealth Report Forum",
           description:
             "Senior-level discussion for North American family office and wealth management professionals.",
-          cta: "View forum",
-          href: "#",
+          link: link("#", "View forum"),
         },
       ],
     },
@@ -209,7 +206,7 @@ async function main() {
           latestHighlight:
             "EXCLUSIVE: Investment Managers Remain Upbeat On Emerging Markets' Outlook",
           latestCta: "Enter WealthBriefing",
-          href: "#",
+          link: link("#"),
         },
         {
           number: "02",
@@ -219,7 +216,7 @@ async function main() {
           includes: ["People Moves", "Regional Analysis", "Awards & Events"],
           latestHighlight: "UBS Makes Raft Of Asia-Pacific Senior Wealth Management Appointments",
           latestCta: "Enter WealthBriefingAsia",
-          href: "#",
+          link: link("#"),
         },
         {
           number: "03",
@@ -229,7 +226,7 @@ async function main() {
           includes: ["Family Office", "Private Client", "Awards & Forums"],
           latestHighlight: "North American wealth managers adjust to changing client expectations",
           latestCta: "Enter Family Wealth Report",
-          href: "#",
+          link: link("#"),
         },
       ],
     },
@@ -237,8 +234,7 @@ async function main() {
       blockType: "wbResearch",
       eyebrow: "Research",
       title: "Latest Research & Intelligence",
-      cta: "Explore research",
-      ctaHref: "#",
+      cta: link("#", "Explore research"),
       featured: {
         image: img.research,
         pill: "Research",
@@ -246,8 +242,7 @@ async function main() {
         title: "The Private Banker In The AI Era – Impact For Clients, Advisors",
         excerpt:
           "A close look at how artificial intelligence is affecting client relationships, advisor productivity and operating models across wealth management.",
-        cta: "Read research",
-        href: "#",
+        link: link("#", "Read research"),
       },
       items: [
         {
@@ -255,24 +250,21 @@ async function main() {
           type: "Analysis",
           title: "Can AI Turbocharge Behavioural Finance?",
           desc: "How behavioural finance insights may be translated into better portfolio decisions and client engagement.",
-          cta: "Read more",
-          href: "#",
+          link: link("#", "Read more"),
         },
         {
           date: "23 Feb 2026",
           type: "Compliance",
           title: "Ground-breaking Swiss-UK Financial Pact – How Will It Boost Business?",
           desc: "What the Berne Financial Services Agreement means for banks, insurers, wealth managers and clients.",
-          cta: "Read more",
-          href: "#",
+          link: link("#", "Read more"),
         },
         {
           date: "2026",
           type: "Market Reports",
           title: "Summary Of Q1 2026 Financial Results In Wealth Management, Private Banking",
           desc: "A concise view of quarterly results and performance signals across the sector.",
-          cta: "Read more",
-          href: "#",
+          link: link("#", "Read more"),
         },
       ],
     },
@@ -280,50 +272,49 @@ async function main() {
       blockType: "wbPeople",
       eyebrow: "People Moves",
       title: "Industry Appointments",
-      cta: "View all people moves",
-      ctaHref: "#",
+      cta: link("#", "View all people moves"),
       items: [
         {
           date: "30 Jun 2026",
           category: "People Moves",
           region: "Asia-Pacific",
           title: "UBS Makes Raft Of Asia-Pacific Senior Wealth Management Appointments",
-          href: "#",
+          link: link("#"),
         },
         {
           date: "30 Jun 2026",
           category: "New Office",
           region: "Europe",
           title: "Westgarth Wines Launches Into European Market; Makes Senior Hire",
-          href: "#",
+          link: link("#"),
         },
         {
           date: "30 Jun 2026",
           category: "Strategy",
           region: "Global",
           title: "IQ-EQ Unifies Gordian Capital Under Global Brand Following Dubai Expansion",
-          href: "#",
+          link: link("#"),
         },
         {
           date: "2026",
           category: "People Moves",
           region: "Europe",
           title: "Mirova Names New CEO",
-          href: "#",
+          link: link("#"),
         },
         {
           date: "2026",
           category: "Collaboration",
           region: "Europe / Japan",
           title: "Lombard Odier And Alpha Japan Bolster Collaboration",
-          href: "#",
+          link: link("#"),
         },
         {
           date: "2026",
           category: "Strategy",
           region: "UK",
           title: "Organic Is Growth Watchword For Mirabaud's UK Wealth Business",
-          href: "#",
+          link: link("#"),
         },
       ],
     },
@@ -331,8 +322,7 @@ async function main() {
       blockType: "wbFeatured",
       eyebrow: "Featured",
       title: "Featured Intelligence",
-      cta: "View all features",
-      ctaHref: "#",
+      cta: link("#", "View all features"),
       items: [
         {
           image: img.events,
@@ -342,7 +332,7 @@ async function main() {
           description:
             "A new residency system, lifestyle shifts and US political trends are encouraging HNW Americans to look at the UK.",
           date: "8 May 2026",
-          href: "#",
+          link: link("#"),
         },
         {
           image: img.hero,
@@ -352,7 +342,7 @@ async function main() {
           description:
             "Wealth managers and private bankers face important questions around employment restrictions and freedom of action.",
           date: "5 May 2026",
-          href: "#",
+          link: link("#"),
         },
         {
           image: img.analysis,
@@ -362,7 +352,7 @@ async function main() {
           description:
             "Lawyers comment on the implications of offshore structures, foreign corporations and trusts used to shield assets.",
           date: "5 May 2026",
-          href: "#",
+          link: link("#"),
         },
       ],
     },
@@ -370,8 +360,7 @@ async function main() {
       blockType: "wbNews",
       eyebrow: "News",
       title: "Latest News",
-      cta: "More News",
-      ctaHref: "#",
+      cta: link("#", "More News"),
       featured: {
         image: img.news,
         category: "Surveys",
@@ -379,9 +368,8 @@ async function main() {
         title: "Over 55s Reluctant To Discuss Inheritance – Mattioli Woods",
         description:
           "Research by YouGov for Mattioli Woods shows that many people over 55 in the UK are still reluctant to discuss inheritance, at a time when tax changes are under the spotlight.",
-        cta: "Read story",
         byline: "WealthBriefing Editorial",
-        href: "#",
+        link: link("#", "Read story"),
       },
       items: [
         {
@@ -389,28 +377,28 @@ async function main() {
           date: "30 Jun 2026",
           title: "EXCLUSIVE: Investment Managers Remain Upbeat On Emerging Markets' Outlook",
           text: "Managers from Edmond de Rothschild, Guinness Global Investors and Franklin Templeton discuss emerging markets.",
-          href: "#",
+          link: link("#"),
         },
         {
           category: "People Moves",
           date: "30 Jun 2026",
           title: "UBS Makes Raft Of Asia-Pacific Senior Wealth Management Appointments",
           text: "Senior wealth management appointments across several APAC jurisdictions.",
-          href: "#",
+          link: link("#"),
         },
         {
           category: "Strategy",
           date: "30 Jun 2026",
           title: "IQ-EQ Unifies Gordian Capital Under Global Brand Following Dubai Expansion",
           text: "Gordian's client base includes family offices, asset managers and hedge funds.",
-          href: "#",
+          link: link("#"),
         },
         {
           category: "New Office",
           date: "30 Jun 2026",
           title: "Westgarth Wines Launches Into European Market; Makes Senior Hire",
           text: "Specialist fine wine retailer opens a London base and appoints a director of sales.",
-          href: "#",
+          link: link("#"),
         },
       ],
     },
@@ -418,8 +406,7 @@ async function main() {
       blockType: "wbAnalysis",
       eyebrow: "Analysis",
       title: "Comment & Analysis",
-      cta: "More Comment & Analysis",
-      ctaHref: "#",
+      cta: link("#", "More Comment & Analysis"),
       featured: {
         image: img.analysis,
         category: "Client Affairs",
@@ -427,8 +414,7 @@ async function main() {
         title: "ANALYSIS: The American Citizen Inflow To UK – What's Driving It?",
         excerpt:
           "A new residency system, lifestyle shifts and US political trends are encouraging HNW Americans to look at the UK as lifestyle.",
-        cta: "Read analysis",
-        href: "#",
+        link: link("#", "Read analysis"),
       },
       items: [
         {
@@ -437,7 +423,7 @@ async function main() {
           title: "ANALYSIS: To Reform Or Leave Alone? – Non-Compete Clauses In The UK",
           description:
             "A look at contractual restrictions affecting wealth managers, private bankers and advisors.",
-          href: "#",
+          link: link("#"),
         },
         {
           category: "Legal",
@@ -445,7 +431,7 @@ async function main() {
           title: "HNW Israel Divorce Court Case Uncovers Hidden Assets – Implications",
           description:
             "Lawyers examine the implications of foreign corporations, trusts and hidden asset structures.",
-          href: "#",
+          link: link("#"),
         },
         {
           category: "Strategy",
@@ -453,7 +439,7 @@ async function main() {
           title: "ANALYSIS: The Private Banker In The AI Era – Impact For Clients, Advisors",
           description:
             "Group editors examine AI's impact on wealth management and advisor-client relationships.",
-          href: "#",
+          link: link("#"),
         },
         {
           category: "Wealth Strategies",
@@ -461,7 +447,7 @@ async function main() {
           title: "Can AI Turbocharge Behavioural Finance?",
           description:
             "How behavioural finance ideas may be activated through better data and portfolio decision-making.",
-          href: "#",
+          link: link("#"),
         },
       ],
     },
@@ -472,24 +458,24 @@ async function main() {
         {
           category: "Financial Results",
           title: "Summary Of Q1 2026 Financial Results In Wealth Management, Private Banking",
-          href: "#",
+          link: link("#"),
         },
         {
           category: "Client Affairs",
           title: "Trusted Relationships, Not Transactions – In Conversation With Meta Octav",
-          href: "#",
+          link: link("#"),
         },
         {
           category: "New Office",
           title: "Westgarth Wines Launches Into European Market; Makes Senior Hire",
-          href: "#",
+          link: link("#"),
         },
         {
           category: "Investment Strategies",
           title: "Lombard Odier And Alpha Japan Bolster Collaboration",
-          href: "#",
+          link: link("#"),
         },
-        { category: "People Moves", title: "Mirova Names New CEO", href: "#" },
+        { category: "People Moves", title: "Mirova Names New CEO", link: link("#") },
       ],
       mostReadHeading: "Most Read",
       mostRead: [
@@ -497,31 +483,31 @@ async function main() {
           rank: "01",
           category: "People Moves",
           title: "UBS Makes Raft Of Asia-Pacific Senior Wealth Management Appointments",
-          href: "#",
+          link: link("#"),
         },
         {
           rank: "02",
           category: "Strategy",
           title: '"Organic" Is Growth Watchword For Mirabaud\'s UK Wealth Business',
-          href: "#",
+          link: link("#"),
         },
         {
           rank: "03",
           category: "Investment Strategies",
           title: "The AI Story, Concentration Risk And Shrewd Positioning – A UBP Panel Discussion",
-          href: "#",
+          link: link("#"),
         },
         {
           rank: "04",
           category: "Market Reports",
           title: "AI Creates Investor Cheer In Turbulent Times – Natixis IM",
-          href: "#",
+          link: link("#"),
         },
         {
           rank: "05",
           category: "Strategy",
           title: "Wealth Managers Discuss Brexit Impact 10 Years On",
-          href: "#",
+          link: link("#"),
         },
       ],
     },
@@ -531,8 +517,8 @@ async function main() {
       title: "Partner with the wealth management industry's leading intelligence network",
       description:
         "Connect with senior decision-makers through awards, events, research, editorial programmes and targeted sponsorship opportunities.",
-      primaryCta: { label: "Sponsorship opportunities", href: "#" },
-      secondaryCta: { label: "Download sponsorship pack", href: "#" },
+      primaryCta: link("#", "Sponsorship opportunities"),
+      secondaryCta: link("#", "Download sponsorship pack"),
       trustedLabel: "Trusted by firms across\nthe wealth management industry",
       partnerLogos: [
         "Meridian Capital",
@@ -547,8 +533,7 @@ async function main() {
           description:
             "Support leading regional awards programmes and connect your brand with recognised firms, advisors and technology partners.",
           includes: ["Brand visibility", "Ceremony presence", "Winner network access"],
-          cta: "Explore",
-          href: "#",
+          link: link("#", "Explore"),
         },
         {
           title: "Events",
@@ -559,16 +544,14 @@ async function main() {
             "Senior audience access",
             "Thought leadership positioning",
           ],
-          cta: "Explore",
-          href: "#",
+          link: link("#", "Explore"),
         },
         {
           title: "Research",
           description:
             "Align your expertise with research, white papers and editorial programmes for targeted professional audiences.",
           includes: ["Research sponsorship", "Content partnerships", "Lead generation support"],
-          cta: "Explore",
-          href: "#",
+          link: link("#", "Explore"),
         },
       ],
     },
@@ -598,6 +581,7 @@ async function main() {
           cta: "Sign up free",
         },
       ],
+      privacyLink: link("#", "Privacy Policy"),
     },
   ];
 

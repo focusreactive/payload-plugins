@@ -1,37 +1,45 @@
 import React from "react";
 
-import type { WbResearchBlock } from "@/payload-types";
-
 import { mediaSrc } from "@/blocks/WbHero/Component";
+import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
+import type { WbResearchBlock } from "@/payload-types";
 
 import { WbResearch } from "./ui";
 
-export function WbResearchBlockComponent(props: WbResearchBlock) {
-  const { eyebrow, title, cta, ctaHref, featured, items } = props;
+export async function WbResearchBlockComponent(props: WbResearchBlock) {
+  const { eyebrow, title, cta, featured, items } = props;
+  const locale = await resolveLocale();
+
+  const sectionCta = prepareLinkProps(cta, locale);
+  const featuredLink = prepareLinkProps(featured?.link, locale);
 
   return (
     <WbResearch
       eyebrow={eyebrow ?? ""}
       title={title ?? ""}
-      cta={cta ?? ""}
-      ctaHref={ctaHref ?? "#"}
+      cta={sectionCta.text}
+      ctaHref={sectionCta.href || "#"}
       featured={{
         image: mediaSrc(featured?.image),
         pill: featured?.pill ?? "",
         meta: featured?.meta ?? "",
         title: featured?.title ?? "",
         excerpt: featured?.excerpt ?? "",
-        cta: featured?.cta ?? "",
-        href: featured?.href ?? "#",
+        cta: featuredLink.text,
+        href: featuredLink.href || "#",
       }}
-      items={(items ?? []).map((item) => ({
-        date: item.date ?? "",
-        type: item.type ?? "",
-        title: item.title ?? "",
-        desc: item.desc ?? "",
-        cta: item.cta ?? "",
-        href: item.href ?? "#",
-      }))}
+      items={(items ?? []).map((item) => {
+        const link = prepareLinkProps(item.link, locale);
+        return {
+          date: item.date ?? "",
+          type: item.type ?? "",
+          title: item.title ?? "",
+          desc: item.desc ?? "",
+          cta: link.text,
+          href: link.href || "#",
+        };
+      })}
     />
   );
 }

@@ -1,5 +1,7 @@
 import type { Block } from "payload";
 
+import { wbLink } from "@/lib/fields/wbLink";
+
 // WealthBriefing Events. Self-contained section (its ui/ renders its own
 // <section>/container), so no injectSection/SectionContainer. Field names
 // mirror the ui props 1:1 so the controller maps straight through.
@@ -10,8 +12,7 @@ export const WbEventsBlock: Block = {
   fields: [
     { name: "eyebrow", type: "text" },
     { name: "title", type: "text" },
-    { name: "cta", type: "text" },
-    { name: "ctaHref", type: "text" },
+    wbLink({ name: "cta", withLabel: true }),
     {
       name: "featured",
       type: "group",
@@ -22,8 +23,7 @@ export const WbEventsBlock: Block = {
         { name: "location", type: "text" },
         { name: "title", type: "text" },
         { name: "description", type: "textarea" },
-        { name: "cta", type: "text" },
-        { name: "href", type: "text" },
+        wbLink({ withLabel: true }),
       ],
     },
     {
@@ -35,8 +35,7 @@ export const WbEventsBlock: Block = {
         { name: "location", type: "text" },
         { name: "title", type: "text" },
         { name: "description", type: "textarea" },
-        { name: "cta", type: "text" },
-        { name: "href", type: "text" },
+        wbLink({ withLabel: true }),
       ],
     },
   ],

@@ -1,5 +1,7 @@
 import React from "react";
 
+import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { WbHeroBlock } from "@/payload-types";
 
 import { WbHero } from "./ui";
@@ -11,8 +13,11 @@ export function mediaSrc(media: unknown): string {
     : "";
 }
 
-export function WbHeroBlockComponent(props: WbHeroBlock) {
+export async function WbHeroBlockComponent(props: WbHeroBlock) {
   const { eyebrow, title, date, featured, compactCards, todayLinks, showTodayStrip } = props;
+  const locale = await resolveLocale();
+
+  const featuredLink = prepareLinkProps(featured?.link, locale);
 
   return (
     <WbHero
@@ -25,22 +30,25 @@ export function WbHeroBlockComponent(props: WbHeroBlock) {
         brand: featured?.brand ?? "",
         title: featured?.title ?? "",
         excerpt: featured?.excerpt ?? "",
-        cta: featured?.cta ?? "",
-        href: featured?.href ?? "#",
+        cta: featuredLink.text,
+        href: featuredLink.href || "#",
       }}
-      compactCards={(compactCards ?? []).map((card) => ({
-        label: card.label ?? "",
-        status: card.status ?? "",
-        title: card.title ?? "",
-        text: card.text ?? "",
-        cta: card.cta ?? "",
-        brand: card.brand ?? "",
-        href: card.href ?? "#",
-      }))}
-      todayLinks={(todayLinks ?? []).map((link) => ({
-        brand: link.brand ?? "",
-        title: link.title ?? "",
-        href: link.href ?? "#",
+      compactCards={(compactCards ?? []).map((card) => {
+        const link = prepareLinkProps(card.link, locale);
+        return {
+          label: card.label ?? "",
+          status: card.status ?? "",
+          title: card.title ?? "",
+          text: card.text ?? "",
+          cta: link.text,
+          brand: card.brand ?? "",
+          href: link.href || "#",
+        };
+      })}
+      todayLinks={(todayLinks ?? []).map((entry) => ({
+        brand: entry.brand ?? "",
+        title: entry.title ?? "",
+        href: prepareLinkProps(entry.link, locale).href || "#",
       }))}
       showTodayStrip={showTodayStrip ?? true}
     />

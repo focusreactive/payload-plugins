@@ -1,5 +1,7 @@
 import type { Block } from "payload";
 
+import { wbLink } from "@/lib/fields/wbLink";
+
 // WealthBriefing Brand Worlds. Self-contained section (its ui/ renders its own
 // <section>/container/background), so no injectSection/SectionContainer.
 // Field names mirror the ui props 1:1 so the controller maps straight through.
@@ -21,8 +23,9 @@ export const WbBrandsBlock: Block = {
         { name: "description", type: "textarea" },
         { name: "includes", type: "text", hasMany: true },
         { name: "latestHighlight", type: "text" },
+        // Decorative label shown inside the card; the whole card is the link.
         { name: "latestCta", type: "text" },
-        { name: "href", type: "text" },
+        wbLink(),
       ],
     },
   ],

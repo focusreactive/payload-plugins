@@ -1,10 +1,12 @@
 import React from "react";
 
+import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { WbSubscribeBlock } from "@/payload-types";
 
 import { WbSubscribe } from "./ui";
 
-export function WbSubscribeBlockComponent(props: WbSubscribeBlock) {
+export async function WbSubscribeBlockComponent(props: WbSubscribeBlock) {
   const {
     eyebrow,
     title,
@@ -21,12 +23,14 @@ export function WbSubscribeBlockComponent(props: WbSubscribeBlock) {
     submitLabel,
     errorMessage,
     privacyText,
-    privacyLinkLabel,
-    privacyHref,
+    privacyLink,
     successTitle,
     successBody,
     successCtaLabel,
   } = props;
+  const locale = await resolveLocale();
+
+  const privacy = prepareLinkProps(privacyLink, locale);
 
   return (
     <WbSubscribe
@@ -55,8 +59,8 @@ export function WbSubscribeBlockComponent(props: WbSubscribeBlock) {
       submitLabel={submitLabel ?? undefined}
       errorMessage={errorMessage ?? undefined}
       privacyText={privacyText ?? undefined}
-      privacyLinkLabel={privacyLinkLabel ?? undefined}
-      privacyHref={privacyHref ?? "#"}
+      privacyLinkLabel={privacy.text || undefined}
+      privacyHref={privacy.href || "#"}
       successTitle={successTitle ?? undefined}
       successBody={successBody ?? undefined}
       successCtaLabel={successCtaLabel ?? undefined}

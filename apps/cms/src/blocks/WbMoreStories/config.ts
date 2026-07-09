@@ -1,5 +1,7 @@
 import type { Block } from "payload";
 
+import { wbLink } from "@/lib/fields/wbLink";
+
 // WealthBriefing "More Stories" / "Most Read" section. Self-contained
 // (its ui/ renders its own <section>/container), so no injectSection/
 // SectionContainer. Field names mirror the ui props 1:1 so the controller
@@ -13,11 +15,7 @@ export const WbMoreReadBlock: Block = {
     {
       name: "stories",
       type: "array",
-      fields: [
-        { name: "category", type: "text" },
-        { name: "title", type: "text" },
-        { name: "href", type: "text" },
-      ],
+      fields: [{ name: "category", type: "text" }, { name: "title", type: "text" }, wbLink()],
     },
     { name: "mostReadHeading", type: "text" },
     {
@@ -27,7 +25,7 @@ export const WbMoreReadBlock: Block = {
         { name: "rank", type: "text" },
         { name: "category", type: "text" },
         { name: "title", type: "text" },
-        { name: "href", type: "text" },
+        wbLink(),
       ],
     },
   ],

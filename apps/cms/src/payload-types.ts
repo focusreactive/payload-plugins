@@ -771,8 +771,22 @@ export interface WbHeroBlock {
     brand?: string | null;
     title?: string | null;
     excerpt?: string | null;
-    cta?: string | null;
-    href?: string | null;
+    link?: {
+      type?: ('reference' | 'custom' | 'customPage') | null;
+      newTab?: boolean | null;
+      reference?:
+        | ({
+            relationTo: 'page';
+            value: number | Page;
+          } | null)
+        | ({
+            relationTo: 'posts';
+            value: number | Post;
+          } | null);
+      url?: string | null;
+      customPage?: ('blog' | 'search') | null;
+      label?: string | null;
+    };
   };
   compactCards?:
     | {
@@ -780,9 +794,23 @@ export interface WbHeroBlock {
         status?: string | null;
         title?: string | null;
         text?: string | null;
-        cta?: string | null;
         brand?: string | null;
-        href?: string | null;
+        link?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
         id?: string | null;
       }[]
     | null;
@@ -790,7 +818,21 @@ export interface WbHeroBlock {
     | {
         brand?: string | null;
         title?: string | null;
-        href?: string | null;
+        link?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+        };
         id?: string | null;
       }[]
     | null;
@@ -806,15 +848,43 @@ export interface WbHeroBlock {
 export interface WbAwardsBlock {
   eyebrow?: string | null;
   title?: string | null;
-  cta?: string | null;
-  ctaHref?: string | null;
+  cta?: {
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+    label?: string | null;
+  };
   items?:
     | {
         region?: string | null;
         title?: string | null;
         description?: string | null;
-        cta?: string | null;
-        href?: string | null;
+        link?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
         id?: string | null;
       }[]
     | null;
@@ -829,8 +899,22 @@ export interface WbAwardsBlock {
 export interface WbEventsBlock {
   eyebrow?: string | null;
   title?: string | null;
-  cta?: string | null;
-  ctaHref?: string | null;
+  cta?: {
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+    label?: string | null;
+  };
   featured?: {
     image?: (number | null) | Media;
     pill?: string | null;
@@ -838,8 +922,22 @@ export interface WbEventsBlock {
     location?: string | null;
     title?: string | null;
     description?: string | null;
-    cta?: string | null;
-    href?: string | null;
+    link?: {
+      type?: ('reference' | 'custom' | 'customPage') | null;
+      newTab?: boolean | null;
+      reference?:
+        | ({
+            relationTo: 'page';
+            value: number | Page;
+          } | null)
+        | ({
+            relationTo: 'posts';
+            value: number | Post;
+          } | null);
+      url?: string | null;
+      customPage?: ('blog' | 'search') | null;
+      label?: string | null;
+    };
   };
   events?:
     | {
@@ -848,8 +946,22 @@ export interface WbEventsBlock {
         location?: string | null;
         title?: string | null;
         description?: string | null;
-        cta?: string | null;
-        href?: string | null;
+        link?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
         id?: string | null;
       }[]
     | null;
@@ -874,7 +986,21 @@ export interface WbBrandsBlock {
         includes?: string[] | null;
         latestHighlight?: string | null;
         latestCta?: string | null;
-        href?: string | null;
+        link?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+        };
         id?: string | null;
       }[]
     | null;
@@ -889,16 +1015,44 @@ export interface WbBrandsBlock {
 export interface WbResearchBlock {
   eyebrow?: string | null;
   title?: string | null;
-  cta?: string | null;
-  ctaHref?: string | null;
+  cta?: {
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+    label?: string | null;
+  };
   featured?: {
     image?: (number | null) | Media;
     pill?: string | null;
     meta?: string | null;
     title?: string | null;
     excerpt?: string | null;
-    cta?: string | null;
-    href?: string | null;
+    link?: {
+      type?: ('reference' | 'custom' | 'customPage') | null;
+      newTab?: boolean | null;
+      reference?:
+        | ({
+            relationTo: 'page';
+            value: number | Page;
+          } | null)
+        | ({
+            relationTo: 'posts';
+            value: number | Post;
+          } | null);
+      url?: string | null;
+      customPage?: ('blog' | 'search') | null;
+      label?: string | null;
+    };
   };
   items?:
     | {
@@ -906,8 +1060,22 @@ export interface WbResearchBlock {
         type?: string | null;
         title?: string | null;
         desc?: string | null;
-        cta?: string | null;
-        href?: string | null;
+        link?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
         id?: string | null;
       }[]
     | null;
@@ -922,15 +1090,43 @@ export interface WbResearchBlock {
 export interface WbPeopleBlock {
   eyebrow?: string | null;
   title?: string | null;
-  cta?: string | null;
-  ctaHref?: string | null;
+  cta?: {
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+    label?: string | null;
+  };
   items?:
     | {
         date?: string | null;
         category?: string | null;
         region?: string | null;
         title?: string | null;
-        href?: string | null;
+        link?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+        };
         id?: string | null;
       }[]
     | null;
@@ -945,8 +1141,22 @@ export interface WbPeopleBlock {
 export interface WbFeaturedBlock {
   eyebrow?: string | null;
   title?: string | null;
-  cta?: string | null;
-  ctaHref?: string | null;
+  cta?: {
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+    label?: string | null;
+  };
   items?:
     | {
         image?: (number | null) | Media;
@@ -955,7 +1165,21 @@ export interface WbFeaturedBlock {
         title?: string | null;
         description?: string | null;
         date?: string | null;
-        href?: string | null;
+        link?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+        };
         id?: string | null;
       }[]
     | null;
@@ -970,17 +1194,45 @@ export interface WbFeaturedBlock {
 export interface WbNewsBlock {
   eyebrow?: string | null;
   title?: string | null;
-  cta?: string | null;
-  ctaHref?: string | null;
+  cta?: {
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+    label?: string | null;
+  };
   featured?: {
     image?: (number | null) | Media;
     category?: string | null;
     date?: string | null;
     title?: string | null;
     description?: string | null;
-    cta?: string | null;
     byline?: string | null;
-    href?: string | null;
+    link?: {
+      type?: ('reference' | 'custom' | 'customPage') | null;
+      newTab?: boolean | null;
+      reference?:
+        | ({
+            relationTo: 'page';
+            value: number | Page;
+          } | null)
+        | ({
+            relationTo: 'posts';
+            value: number | Post;
+          } | null);
+      url?: string | null;
+      customPage?: ('blog' | 'search') | null;
+      label?: string | null;
+    };
   };
   items?:
     | {
@@ -988,7 +1240,21 @@ export interface WbNewsBlock {
         date?: string | null;
         title?: string | null;
         text?: string | null;
-        href?: string | null;
+        link?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+        };
         id?: string | null;
       }[]
     | null;
@@ -1003,16 +1269,44 @@ export interface WbNewsBlock {
 export interface WbAnalysisBlock {
   eyebrow?: string | null;
   title?: string | null;
-  cta?: string | null;
-  ctaHref?: string | null;
+  cta?: {
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+    label?: string | null;
+  };
   featured?: {
     image?: (number | null) | Media;
     category?: string | null;
     date?: string | null;
     title?: string | null;
     excerpt?: string | null;
-    cta?: string | null;
-    href?: string | null;
+    link?: {
+      type?: ('reference' | 'custom' | 'customPage') | null;
+      newTab?: boolean | null;
+      reference?:
+        | ({
+            relationTo: 'page';
+            value: number | Page;
+          } | null)
+        | ({
+            relationTo: 'posts';
+            value: number | Post;
+          } | null);
+      url?: string | null;
+      customPage?: ('blog' | 'search') | null;
+      label?: string | null;
+    };
   };
   items?:
     | {
@@ -1020,7 +1314,21 @@ export interface WbAnalysisBlock {
         date?: string | null;
         title?: string | null;
         description?: string | null;
-        href?: string | null;
+        link?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+        };
         id?: string | null;
       }[]
     | null;
@@ -1038,7 +1346,21 @@ export interface WbMoreReadBlock {
     | {
         category?: string | null;
         title?: string | null;
-        href?: string | null;
+        link?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+        };
         id?: string | null;
       }[]
     | null;
@@ -1048,7 +1370,21 @@ export interface WbMoreReadBlock {
         rank?: string | null;
         category?: string | null;
         title?: string | null;
-        href?: string | null;
+        link?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+        };
         id?: string | null;
       }[]
     | null;
@@ -1065,12 +1401,36 @@ export interface WbSponsorsBlock {
   title?: string | null;
   description?: string | null;
   primaryCta?: {
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
     label?: string | null;
-    href?: string | null;
   };
   secondaryCta?: {
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
     label?: string | null;
-    href?: string | null;
   };
   trustedLabel?: string | null;
   partnerLogos?: string[] | null;
@@ -1079,8 +1439,22 @@ export interface WbSponsorsBlock {
         title?: string | null;
         description?: string | null;
         includes?: string[] | null;
-        cta?: string | null;
-        href?: string | null;
+        link?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
         id?: string | null;
       }[]
     | null;
@@ -1124,8 +1498,22 @@ export interface WbSubscribeBlock {
   submitLabel?: string | null;
   errorMessage?: string | null;
   privacyText?: string | null;
-  privacyLinkLabel?: string | null;
-  privacyHref?: string | null;
+  privacyLink?: {
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+    label?: string | null;
+  };
   successTitle?: string | null;
   successBody?: string | null;
   successCtaLabel?: string | null;
@@ -1914,8 +2302,22 @@ export interface Preset {
           brand?: string | null;
           title?: string | null;
           excerpt?: string | null;
-          cta?: string | null;
-          href?: string | null;
+          link?: {
+            type?: ('reference' | 'custom' | 'customPage') | null;
+            newTab?: boolean | null;
+            reference?:
+              | ({
+                  relationTo: 'page';
+                  value: number | Page;
+                } | null)
+              | ({
+                  relationTo: 'posts';
+                  value: number | Post;
+                } | null);
+            url?: string | null;
+            customPage?: ('blog' | 'search') | null;
+            label?: string | null;
+          };
         };
         compactCards?:
           | {
@@ -1923,9 +2325,23 @@ export interface Preset {
               status?: string | null;
               title?: string | null;
               text?: string | null;
-              cta?: string | null;
               brand?: string | null;
-              href?: string | null;
+              link?: {
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                newTab?: boolean | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+                label?: string | null;
+              };
               id?: string | null;
             }[]
           | null;
@@ -1933,7 +2349,21 @@ export interface Preset {
           | {
               brand?: string | null;
               title?: string | null;
-              href?: string | null;
+              link?: {
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                newTab?: boolean | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+              };
               id?: string | null;
             }[]
           | null;
@@ -1945,15 +2375,43 @@ export interface Preset {
     | {
         eyebrow?: string | null;
         title?: string | null;
-        cta?: string | null;
-        ctaHref?: string | null;
+        cta?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
         items?:
           | {
               region?: string | null;
               title?: string | null;
               description?: string | null;
-              cta?: string | null;
-              href?: string | null;
+              link?: {
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                newTab?: boolean | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+                label?: string | null;
+              };
               id?: string | null;
             }[]
           | null;
@@ -1964,8 +2422,22 @@ export interface Preset {
     | {
         eyebrow?: string | null;
         title?: string | null;
-        cta?: string | null;
-        ctaHref?: string | null;
+        cta?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
         featured?: {
           image?: (number | null) | Media;
           pill?: string | null;
@@ -1973,8 +2445,22 @@ export interface Preset {
           location?: string | null;
           title?: string | null;
           description?: string | null;
-          cta?: string | null;
-          href?: string | null;
+          link?: {
+            type?: ('reference' | 'custom' | 'customPage') | null;
+            newTab?: boolean | null;
+            reference?:
+              | ({
+                  relationTo: 'page';
+                  value: number | Page;
+                } | null)
+              | ({
+                  relationTo: 'posts';
+                  value: number | Post;
+                } | null);
+            url?: string | null;
+            customPage?: ('blog' | 'search') | null;
+            label?: string | null;
+          };
         };
         events?:
           | {
@@ -1983,8 +2469,22 @@ export interface Preset {
               location?: string | null;
               title?: string | null;
               description?: string | null;
-              cta?: string | null;
-              href?: string | null;
+              link?: {
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                newTab?: boolean | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+                label?: string | null;
+              };
               id?: string | null;
             }[]
           | null;
@@ -2005,7 +2505,21 @@ export interface Preset {
               includes?: string[] | null;
               latestHighlight?: string | null;
               latestCta?: string | null;
-              href?: string | null;
+              link?: {
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                newTab?: boolean | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+              };
               id?: string | null;
             }[]
           | null;
@@ -2016,16 +2530,44 @@ export interface Preset {
     | {
         eyebrow?: string | null;
         title?: string | null;
-        cta?: string | null;
-        ctaHref?: string | null;
+        cta?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
         featured?: {
           image?: (number | null) | Media;
           pill?: string | null;
           meta?: string | null;
           title?: string | null;
           excerpt?: string | null;
-          cta?: string | null;
-          href?: string | null;
+          link?: {
+            type?: ('reference' | 'custom' | 'customPage') | null;
+            newTab?: boolean | null;
+            reference?:
+              | ({
+                  relationTo: 'page';
+                  value: number | Page;
+                } | null)
+              | ({
+                  relationTo: 'posts';
+                  value: number | Post;
+                } | null);
+            url?: string | null;
+            customPage?: ('blog' | 'search') | null;
+            label?: string | null;
+          };
         };
         items?:
           | {
@@ -2033,8 +2575,22 @@ export interface Preset {
               type?: string | null;
               title?: string | null;
               desc?: string | null;
-              cta?: string | null;
-              href?: string | null;
+              link?: {
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                newTab?: boolean | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+                label?: string | null;
+              };
               id?: string | null;
             }[]
           | null;
@@ -2045,15 +2601,43 @@ export interface Preset {
     | {
         eyebrow?: string | null;
         title?: string | null;
-        cta?: string | null;
-        ctaHref?: string | null;
+        cta?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
         items?:
           | {
               date?: string | null;
               category?: string | null;
               region?: string | null;
               title?: string | null;
-              href?: string | null;
+              link?: {
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                newTab?: boolean | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+              };
               id?: string | null;
             }[]
           | null;
@@ -2064,8 +2648,22 @@ export interface Preset {
     | {
         eyebrow?: string | null;
         title?: string | null;
-        cta?: string | null;
-        ctaHref?: string | null;
+        cta?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
         items?:
           | {
               image?: (number | null) | Media;
@@ -2074,7 +2672,21 @@ export interface Preset {
               title?: string | null;
               description?: string | null;
               date?: string | null;
-              href?: string | null;
+              link?: {
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                newTab?: boolean | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+              };
               id?: string | null;
             }[]
           | null;
@@ -2085,17 +2697,45 @@ export interface Preset {
     | {
         eyebrow?: string | null;
         title?: string | null;
-        cta?: string | null;
-        ctaHref?: string | null;
+        cta?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
         featured?: {
           image?: (number | null) | Media;
           category?: string | null;
           date?: string | null;
           title?: string | null;
           description?: string | null;
-          cta?: string | null;
           byline?: string | null;
-          href?: string | null;
+          link?: {
+            type?: ('reference' | 'custom' | 'customPage') | null;
+            newTab?: boolean | null;
+            reference?:
+              | ({
+                  relationTo: 'page';
+                  value: number | Page;
+                } | null)
+              | ({
+                  relationTo: 'posts';
+                  value: number | Post;
+                } | null);
+            url?: string | null;
+            customPage?: ('blog' | 'search') | null;
+            label?: string | null;
+          };
         };
         items?:
           | {
@@ -2103,7 +2743,21 @@ export interface Preset {
               date?: string | null;
               title?: string | null;
               text?: string | null;
-              href?: string | null;
+              link?: {
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                newTab?: boolean | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+              };
               id?: string | null;
             }[]
           | null;
@@ -2114,16 +2768,44 @@ export interface Preset {
     | {
         eyebrow?: string | null;
         title?: string | null;
-        cta?: string | null;
-        ctaHref?: string | null;
+        cta?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
         featured?: {
           image?: (number | null) | Media;
           category?: string | null;
           date?: string | null;
           title?: string | null;
           excerpt?: string | null;
-          cta?: string | null;
-          href?: string | null;
+          link?: {
+            type?: ('reference' | 'custom' | 'customPage') | null;
+            newTab?: boolean | null;
+            reference?:
+              | ({
+                  relationTo: 'page';
+                  value: number | Page;
+                } | null)
+              | ({
+                  relationTo: 'posts';
+                  value: number | Post;
+                } | null);
+            url?: string | null;
+            customPage?: ('blog' | 'search') | null;
+            label?: string | null;
+          };
         };
         items?:
           | {
@@ -2131,7 +2813,21 @@ export interface Preset {
               date?: string | null;
               title?: string | null;
               description?: string | null;
-              href?: string | null;
+              link?: {
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                newTab?: boolean | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+              };
               id?: string | null;
             }[]
           | null;
@@ -2145,7 +2841,21 @@ export interface Preset {
           | {
               category?: string | null;
               title?: string | null;
-              href?: string | null;
+              link?: {
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                newTab?: boolean | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+              };
               id?: string | null;
             }[]
           | null;
@@ -2155,7 +2865,21 @@ export interface Preset {
               rank?: string | null;
               category?: string | null;
               title?: string | null;
-              href?: string | null;
+              link?: {
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                newTab?: boolean | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+              };
               id?: string | null;
             }[]
           | null;
@@ -2168,12 +2892,36 @@ export interface Preset {
         title?: string | null;
         description?: string | null;
         primaryCta?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
           label?: string | null;
-          href?: string | null;
         };
         secondaryCta?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
           label?: string | null;
-          href?: string | null;
         };
         trustedLabel?: string | null;
         partnerLogos?: string[] | null;
@@ -2182,8 +2930,22 @@ export interface Preset {
               title?: string | null;
               description?: string | null;
               includes?: string[] | null;
-              cta?: string | null;
-              href?: string | null;
+              link?: {
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                newTab?: boolean | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+                label?: string | null;
+              };
               id?: string | null;
             }[]
           | null;
@@ -2223,8 +2985,22 @@ export interface Preset {
         submitLabel?: string | null;
         errorMessage?: string | null;
         privacyText?: string | null;
-        privacyLinkLabel?: string | null;
-        privacyHref?: string | null;
+        privacyLink?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
         successTitle?: string | null;
         successBody?: string | null;
         successCtaLabel?: string | null;
@@ -3537,8 +4313,16 @@ export interface WbHeroBlockSelect<T extends boolean = true> {
         brand?: T;
         title?: T;
         excerpt?: T;
-        cta?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+            };
       };
   compactCards?:
     | T
@@ -3547,9 +4331,17 @@ export interface WbHeroBlockSelect<T extends boolean = true> {
         status?: T;
         title?: T;
         text?: T;
-        cta?: T;
         brand?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+            };
         id?: T;
       };
   todayLinks?:
@@ -3557,7 +4349,15 @@ export interface WbHeroBlockSelect<T extends boolean = true> {
     | {
         brand?: T;
         title?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+            };
         id?: T;
       };
   showTodayStrip?: T;
@@ -3571,16 +4371,32 @@ export interface WbHeroBlockSelect<T extends boolean = true> {
 export interface WbAwardsBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   title?: T;
-  cta?: T;
-  ctaHref?: T;
+  cta?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+      };
   items?:
     | T
     | {
         region?: T;
         title?: T;
         description?: T;
-        cta?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+            };
         id?: T;
       };
   id?: T;
@@ -3593,8 +4409,16 @@ export interface WbAwardsBlockSelect<T extends boolean = true> {
 export interface WbEventsBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   title?: T;
-  cta?: T;
-  ctaHref?: T;
+  cta?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+      };
   featured?:
     | T
     | {
@@ -3604,8 +4428,16 @@ export interface WbEventsBlockSelect<T extends boolean = true> {
         location?: T;
         title?: T;
         description?: T;
-        cta?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+            };
       };
   events?:
     | T
@@ -3615,8 +4447,16 @@ export interface WbEventsBlockSelect<T extends boolean = true> {
         location?: T;
         title?: T;
         description?: T;
-        cta?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+            };
         id?: T;
       };
   id?: T;
@@ -3640,7 +4480,15 @@ export interface WbBrandsBlockSelect<T extends boolean = true> {
         includes?: T;
         latestHighlight?: T;
         latestCta?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+            };
         id?: T;
       };
   id?: T;
@@ -3653,8 +4501,16 @@ export interface WbBrandsBlockSelect<T extends boolean = true> {
 export interface WbResearchBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   title?: T;
-  cta?: T;
-  ctaHref?: T;
+  cta?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+      };
   featured?:
     | T
     | {
@@ -3663,8 +4519,16 @@ export interface WbResearchBlockSelect<T extends boolean = true> {
         meta?: T;
         title?: T;
         excerpt?: T;
-        cta?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+            };
       };
   items?:
     | T
@@ -3673,8 +4537,16 @@ export interface WbResearchBlockSelect<T extends boolean = true> {
         type?: T;
         title?: T;
         desc?: T;
-        cta?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+            };
         id?: T;
       };
   id?: T;
@@ -3687,8 +4559,16 @@ export interface WbResearchBlockSelect<T extends boolean = true> {
 export interface WbPeopleBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   title?: T;
-  cta?: T;
-  ctaHref?: T;
+  cta?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+      };
   items?:
     | T
     | {
@@ -3696,7 +4576,15 @@ export interface WbPeopleBlockSelect<T extends boolean = true> {
         category?: T;
         region?: T;
         title?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+            };
         id?: T;
       };
   id?: T;
@@ -3709,8 +4597,16 @@ export interface WbPeopleBlockSelect<T extends boolean = true> {
 export interface WbFeaturedBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   title?: T;
-  cta?: T;
-  ctaHref?: T;
+  cta?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+      };
   items?:
     | T
     | {
@@ -3720,7 +4616,15 @@ export interface WbFeaturedBlockSelect<T extends boolean = true> {
         title?: T;
         description?: T;
         date?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+            };
         id?: T;
       };
   id?: T;
@@ -3733,8 +4637,16 @@ export interface WbFeaturedBlockSelect<T extends boolean = true> {
 export interface WbNewsBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   title?: T;
-  cta?: T;
-  ctaHref?: T;
+  cta?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+      };
   featured?:
     | T
     | {
@@ -3743,9 +4655,17 @@ export interface WbNewsBlockSelect<T extends boolean = true> {
         date?: T;
         title?: T;
         description?: T;
-        cta?: T;
         byline?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+            };
       };
   items?:
     | T
@@ -3754,7 +4674,15 @@ export interface WbNewsBlockSelect<T extends boolean = true> {
         date?: T;
         title?: T;
         text?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+            };
         id?: T;
       };
   id?: T;
@@ -3767,8 +4695,16 @@ export interface WbNewsBlockSelect<T extends boolean = true> {
 export interface WbAnalysisBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   title?: T;
-  cta?: T;
-  ctaHref?: T;
+  cta?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+      };
   featured?:
     | T
     | {
@@ -3777,8 +4713,16 @@ export interface WbAnalysisBlockSelect<T extends boolean = true> {
         date?: T;
         title?: T;
         excerpt?: T;
-        cta?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+            };
       };
   items?:
     | T
@@ -3787,7 +4731,15 @@ export interface WbAnalysisBlockSelect<T extends boolean = true> {
         date?: T;
         title?: T;
         description?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+            };
         id?: T;
       };
   id?: T;
@@ -3804,7 +4756,15 @@ export interface WbMoreReadBlockSelect<T extends boolean = true> {
     | {
         category?: T;
         title?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+            };
         id?: T;
       };
   mostReadHeading?: T;
@@ -3814,7 +4774,15 @@ export interface WbMoreReadBlockSelect<T extends boolean = true> {
         rank?: T;
         category?: T;
         title?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+            };
         id?: T;
       };
   id?: T;
@@ -3831,14 +4799,22 @@ export interface WbSponsorsBlockSelect<T extends boolean = true> {
   primaryCta?:
     | T
     | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
         label?: T;
-        href?: T;
       };
   secondaryCta?:
     | T
     | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
         label?: T;
-        href?: T;
       };
   trustedLabel?: T;
   partnerLogos?: T;
@@ -3848,8 +4824,16 @@ export interface WbSponsorsBlockSelect<T extends boolean = true> {
         title?: T;
         description?: T;
         includes?: T;
-        cta?: T;
-        href?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+            };
         id?: T;
       };
   id?: T;
@@ -3891,8 +4875,16 @@ export interface WbSubscribeBlockSelect<T extends boolean = true> {
   submitLabel?: T;
   errorMessage?: T;
   privacyText?: T;
-  privacyLinkLabel?: T;
-  privacyHref?: T;
+  privacyLink?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+      };
   successTitle?: T;
   successBody?: T;
   successCtaLabel?: T;
@@ -4687,8 +5679,16 @@ export interface PresetsSelect<T extends boolean = true> {
                     brand?: T;
                     title?: T;
                     excerpt?: T;
-                    cta?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          label?: T;
+                        };
                   };
               compactCards?:
                 | T
@@ -4697,9 +5697,17 @@ export interface PresetsSelect<T extends boolean = true> {
                     status?: T;
                     title?: T;
                     text?: T;
-                    cta?: T;
                     brand?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          label?: T;
+                        };
                     id?: T;
                   };
               todayLinks?:
@@ -4707,7 +5715,15 @@ export interface PresetsSelect<T extends boolean = true> {
                 | {
                     brand?: T;
                     title?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                        };
                     id?: T;
                   };
               showTodayStrip?: T;
@@ -4719,16 +5735,32 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               eyebrow?: T;
               title?: T;
-              cta?: T;
-              ctaHref?: T;
+              cta?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                  };
               items?:
                 | T
                 | {
                     region?: T;
                     title?: T;
                     description?: T;
-                    cta?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          label?: T;
+                        };
                     id?: T;
                   };
               id?: T;
@@ -4739,8 +5771,16 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               eyebrow?: T;
               title?: T;
-              cta?: T;
-              ctaHref?: T;
+              cta?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                  };
               featured?:
                 | T
                 | {
@@ -4750,8 +5790,16 @@ export interface PresetsSelect<T extends boolean = true> {
                     location?: T;
                     title?: T;
                     description?: T;
-                    cta?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          label?: T;
+                        };
                   };
               events?:
                 | T
@@ -4761,8 +5809,16 @@ export interface PresetsSelect<T extends boolean = true> {
                     location?: T;
                     title?: T;
                     description?: T;
-                    cta?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          label?: T;
+                        };
                     id?: T;
                   };
               id?: T;
@@ -4784,7 +5840,15 @@ export interface PresetsSelect<T extends boolean = true> {
                     includes?: T;
                     latestHighlight?: T;
                     latestCta?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                        };
                     id?: T;
                   };
               id?: T;
@@ -4795,8 +5859,16 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               eyebrow?: T;
               title?: T;
-              cta?: T;
-              ctaHref?: T;
+              cta?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                  };
               featured?:
                 | T
                 | {
@@ -4805,8 +5877,16 @@ export interface PresetsSelect<T extends boolean = true> {
                     meta?: T;
                     title?: T;
                     excerpt?: T;
-                    cta?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          label?: T;
+                        };
                   };
               items?:
                 | T
@@ -4815,8 +5895,16 @@ export interface PresetsSelect<T extends boolean = true> {
                     type?: T;
                     title?: T;
                     desc?: T;
-                    cta?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          label?: T;
+                        };
                     id?: T;
                   };
               id?: T;
@@ -4827,8 +5915,16 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               eyebrow?: T;
               title?: T;
-              cta?: T;
-              ctaHref?: T;
+              cta?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                  };
               items?:
                 | T
                 | {
@@ -4836,7 +5932,15 @@ export interface PresetsSelect<T extends boolean = true> {
                     category?: T;
                     region?: T;
                     title?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                        };
                     id?: T;
                   };
               id?: T;
@@ -4847,8 +5951,16 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               eyebrow?: T;
               title?: T;
-              cta?: T;
-              ctaHref?: T;
+              cta?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                  };
               items?:
                 | T
                 | {
@@ -4858,7 +5970,15 @@ export interface PresetsSelect<T extends boolean = true> {
                     title?: T;
                     description?: T;
                     date?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                        };
                     id?: T;
                   };
               id?: T;
@@ -4869,8 +5989,16 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               eyebrow?: T;
               title?: T;
-              cta?: T;
-              ctaHref?: T;
+              cta?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                  };
               featured?:
                 | T
                 | {
@@ -4879,9 +6007,17 @@ export interface PresetsSelect<T extends boolean = true> {
                     date?: T;
                     title?: T;
                     description?: T;
-                    cta?: T;
                     byline?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          label?: T;
+                        };
                   };
               items?:
                 | T
@@ -4890,7 +6026,15 @@ export interface PresetsSelect<T extends boolean = true> {
                     date?: T;
                     title?: T;
                     text?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                        };
                     id?: T;
                   };
               id?: T;
@@ -4901,8 +6045,16 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               eyebrow?: T;
               title?: T;
-              cta?: T;
-              ctaHref?: T;
+              cta?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                  };
               featured?:
                 | T
                 | {
@@ -4911,8 +6063,16 @@ export interface PresetsSelect<T extends boolean = true> {
                     date?: T;
                     title?: T;
                     excerpt?: T;
-                    cta?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          label?: T;
+                        };
                   };
               items?:
                 | T
@@ -4921,7 +6081,15 @@ export interface PresetsSelect<T extends boolean = true> {
                     date?: T;
                     title?: T;
                     description?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                        };
                     id?: T;
                   };
               id?: T;
@@ -4936,7 +6104,15 @@ export interface PresetsSelect<T extends boolean = true> {
                 | {
                     category?: T;
                     title?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                        };
                     id?: T;
                   };
               mostReadHeading?: T;
@@ -4946,7 +6122,15 @@ export interface PresetsSelect<T extends boolean = true> {
                     rank?: T;
                     category?: T;
                     title?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                        };
                     id?: T;
                   };
               id?: T;
@@ -4961,14 +6145,22 @@ export interface PresetsSelect<T extends boolean = true> {
               primaryCta?:
                 | T
                 | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
                     label?: T;
-                    href?: T;
                   };
               secondaryCta?:
                 | T
                 | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
                     label?: T;
-                    href?: T;
                   };
               trustedLabel?: T;
               partnerLogos?: T;
@@ -4978,8 +6170,16 @@ export interface PresetsSelect<T extends boolean = true> {
                     title?: T;
                     description?: T;
                     includes?: T;
-                    cta?: T;
-                    href?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          label?: T;
+                        };
                     id?: T;
                   };
               id?: T;
@@ -5019,8 +6219,16 @@ export interface PresetsSelect<T extends boolean = true> {
               submitLabel?: T;
               errorMessage?: T;
               privacyText?: T;
-              privacyLinkLabel?: T;
-              privacyHref?: T;
+              privacyLink?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                  };
               successTitle?: T;
               successBody?: T;
               successCtaLabel?: T;
