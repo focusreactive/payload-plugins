@@ -36,12 +36,12 @@ export async function getDocumentSearchData(
       return null;
     }
 
-    const hero = doc.blocks?.find((b) => b.blockType === "hero");
+    const heroBlock = doc.blocks?.find((b) => b.blockType === "wbHero");
     let imageUrl: string | null = null;
     let imageAlt: string | null = null;
 
-    if (hero && hero.blockType === "hero") {
-      const image = hero.image?.image;
+    if (heroBlock && heroBlock.blockType === "wbHero") {
+      const image = heroBlock.featured?.image;
 
       if (image && typeof image !== "number") {
         imageUrl = image.url ?? null;

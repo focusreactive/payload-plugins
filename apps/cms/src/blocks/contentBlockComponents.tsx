@@ -1,17 +1,5 @@
 import React from "react";
 
-import { CardsGridBlockComponent } from "./CardsGrid/Component";
-import { CarouselBlockComponent } from "./Carousel/Component";
-import { ChartBlockComponent } from "./Chart/Component";
-import { ContentBlockComponent } from "./Content/Component";
-import { CtaBandBlockComponent } from "./CtaBand/Component";
-import { FaqBlockComponent } from "./Faq/Component";
-import { HeroBlockComponent } from "./Hero/Component";
-import { LogosBlockComponent } from "./Logos/Component";
-import { NewsletterBlockComponent } from "./Newsletter/Component";
-import { RawHtmlBlockComponent } from "./RawHtml/Component";
-import { StatsBlockComponent } from "./Stats/Component";
-import { TestimonialsListBlockComponent } from "./TestimonialsList/Component";
 import { WbAwardsBlockComponent } from "./WbAwards/Component";
 import { WbBrandWorldsBlockComponent } from "./WbBrandWorlds/Component";
 import { WbCommentAnalysisBlockComponent } from "./WbCommentAnalysis/Component";
@@ -26,18 +14,6 @@ import { WbSponsorsBlockComponent } from "./WbSponsors/Component";
 import { WbSubscribeBlockComponent } from "./WbSubscribe/Component";
 
 export const contentBlockComponents = {
-  cardsGrid: CardsGridBlockComponent,
-  carousel: CarouselBlockComponent,
-  chart: ChartBlockComponent,
-  content: ContentBlockComponent,
-  ctaBand: CtaBandBlockComponent,
-  newsletter: NewsletterBlockComponent,
-  stats: StatsBlockComponent,
-  faq: FaqBlockComponent,
-  hero: HeroBlockComponent,
-  logos: LogosBlockComponent,
-  rawHtml: RawHtmlBlockComponent,
-  testimonialsList: TestimonialsListBlockComponent,
   wbHero: WbHeroBlockComponent,
   wbAwards: WbAwardsBlockComponent,
   wbEvents: WbEventsBlockComponent,

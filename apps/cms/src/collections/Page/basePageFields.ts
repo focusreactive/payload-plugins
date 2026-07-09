@@ -49,10 +49,7 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
               required: true,
               type: "blocks",
               ...(withBlocksDefaultValue && {
-                defaultValue: () =>
-                  ["hero", "content", "testimonialsList", "faq"].map((blockType) => ({
-                    blockType,
-                  })),
+                defaultValue: () => [{ blockType: "wbHero" }],
               }),
             },
           ],

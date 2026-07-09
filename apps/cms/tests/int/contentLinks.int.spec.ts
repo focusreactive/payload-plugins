@@ -11,7 +11,6 @@ import {
   linkToContentNode,
 } from "@/lib/contentExtraction";
 import type { LinkResolveCtx, LinkValue, ResolvedLinkDoc } from "@/lib/contentExtraction";
-import { extractPageBlockContent } from "@/collections/Page/extractPageContent";
 
 function ctx(docs: Array<[string, ResolvedLinkDoc]> = [], locale = "en"): LinkResolveCtx {
   const map = new Map(docs);
@@ -237,69 +236,10 @@ describe("buildRefQueries", () => {
 
 describe("empty array fields leaked from form state as a row-count number", () => {
   // Payload's form-state builder stores an EMPTY array field's `value` as its row
-  // count (the number 0) and does NOT set `disableFormData` (only set when length > 0).
-  // So `reduceFieldsToValues(formState, true)` reconstructs an empty `actions`/`items`
-  // field as `0`, not `[]`. A `?? []` guard does not catch `0`, so `.map`/`.flatMap`
-  // throws "0.map is not a function". The extractor must coerce non-arrays to empty.
-  const helpers = {
-    compact: (n: (unknown | null | undefined)[]) => n.filter(Boolean),
-  } as never;
-
+  // count (the number 0). A `?? []` guard does not catch `0`, so the link
+  // extractor must coerce non-arrays to empty rather than calling `.map` on `0`.
   it("actionLinks tolerates a non-array (0 / object) input", () => {
     expect(actionLinks(0 as never, ctx())).toEqual([]);
     expect(actionLinks({} as never, ctx())).toEqual([]);
-  });
-
-  it("does not throw for a content block with actions: 0 (the .map path)", () => {
-    expect(() =>
-      extractPageBlockContent(
-        { blockType: "content", heading: "H", actions: 0 } as never,
-        ctx(),
-        ctx().docs as never,
-        helpers
-      )
-    ).not.toThrow();
-  });
-
-  it("does not throw for a faq block with items: 0 (the .flatMap path)", () => {
-    expect(() =>
-      extractPageBlockContent(
-        { blockType: "faq", heading: "H", items: 0 } as never,
-        ctx(),
-        ctx().docs as never,
-        helpers
-      )
-    ).not.toThrow();
-  });
-
-  it("does not throw for a stats block with items: 0", () => {
-    expect(() =>
-      extractPageBlockContent(
-        { blockType: "stats", items: 0 } as never,
-        ctx(),
-        ctx().docs as never,
-        helpers
-      )
-    ).not.toThrow();
-  });
-});
-
-describe("testimonialsList resolves relation data via DocStore", () => {
-  it("reads testimonial content/author/role from the fetched doc when the value is an id", () => {
-    const store = {
-      get: (collection: string, id: string | number) =>
-        collection === "testimonials" && id === 9
-          ? { content: "Great product", author: "Jane Roe", position: "CEO", company: "Acme" }
-          : undefined,
-    };
-    const nodes = extractPageBlockContent(
-      { blockType: "testimonialsList", testimonialItems: [{ testimonial: 9 }] } as never,
-      { docs: store, locale: "en" } as never,
-      store as never,
-      { compact: (n: (unknown | null | undefined)[]) => n.filter(Boolean) } as never
-    );
-    expect(nodes).toContainEqual({ type: "paragraph", text: "Great product" });
-    expect(nodes).toContainEqual({ type: "paragraph", text: "Jane Roe" });
-    expect(nodes).toContainEqual({ type: "paragraph", text: "CEO, Acme" });
   });
 });
