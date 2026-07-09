@@ -10,6 +10,10 @@ import { getPayloadClient } from "@/dal/payload-client";
 
 import { getAllDocuments } from "./getAllDocuments";
 
+// Part of the page data-cache key. Bump to drop the persisted Data Cache on the
+// next deploy after page content is changed out-of-band (e.g. by a seed script).
+const PAGE_CACHE_VERSION = "wb1";
+
 export async function getPageBySlugQuery(
   payload: Payload,
   pathSegmentsNorm: string[],
@@ -58,8 +62,12 @@ export const getPageBySlug = cache(
 
     return unstable_cache(
       () => getPageBySlugQuery(payload, pathSegmentsNorm, resolvedLocale, false),
-      [pathKey, resolvedLocale],
+      [pathKey, resolvedLocale, PAGE_CACHE_VERSION],
       {
+        // Content edits revalidate this tag instantly via the Page afterChange
+        // hook; the time-based fallback recovers from out-of-band writes
+        // (e.g. seed scripts) that can't call revalidateTag in a request context.
+        revalidate: 300,
         tags: [res],
       }
     )();
