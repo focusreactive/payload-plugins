@@ -131,9 +131,12 @@ describe("TranslationPipeline", () => {
       });
 
       expect(result).not.toBeNull();
-      // Note: id is not included in result - Postgres rejects it on update
+      // Non-localized array → shared rows → id kept so Payload updates them in place.
       expect(result!.translatedData).toEqual({
-        items: [{ label: "TR_First" }, { label: "TR_Second" }],
+        items: [
+          { id: "1", label: "TR_First" },
+          { id: "2", label: "TR_Second" },
+        ],
       });
     });
   });
@@ -667,10 +670,10 @@ describe("TranslationPipeline", () => {
         targetLng: "ru",
       });
 
-      // Note: id is not included in result - Postgres rejects it on update
+      // Non-localized array → shared rows → id kept.
       expect(result!.translatedData.items).toEqual([
-        { label: "Translated" },
-        { label: "TR_Second" },
+        { id: "1", label: "Translated" },
+        { id: "2", label: "TR_Second" },
       ]);
     });
 
@@ -748,10 +751,10 @@ describe("TranslationPipeline", () => {
         targetLng: "ru",
       });
 
-      // Note: id is not included in result - Postgres rejects it on update
+      // Non-localized blocks → shared rows → id kept.
       expect(result!.translatedData.layout).toEqual([
-        { blockType: "text", content: "Translated" },
-        { blockType: "text", content: "TR_World" },
+        { id: "1", blockType: "text", content: "Translated" },
+        { id: "2", blockType: "text", content: "TR_World" },
       ]);
     });
   });
