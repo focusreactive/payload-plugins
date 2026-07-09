@@ -46,7 +46,6 @@ export const Footer: CollectionConfig<"footer"> = {
       defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
       name: "logo",
       relationTo: "media",
-      required: true,
       type: "upload",
     },
     {
@@ -138,7 +137,7 @@ export const Footer: CollectionConfig<"footer"> = {
         },
       ],
       localized: true,
-      maxRows: 4,
+      maxRows: 5,
       name: "linkGroups",
       type: "array",
     },
@@ -150,6 +149,44 @@ export const Footer: CollectionConfig<"footer"> = {
       maxRows: 4,
       name: "legalLinks",
       type: "array",
+    },
+    {
+      admin: { description: { en: "Contact details row", es: "Fila de contacto" } },
+      fields: [
+        {
+          type: "row",
+          fields: [
+            { admin: { width: "50%" }, localized: true, name: "companyName", type: "text" },
+            { admin: { width: "50%" }, localized: true, name: "address", type: "textarea" },
+          ],
+        },
+        {
+          type: "row",
+          fields: [
+            { admin: { width: "50%" }, localized: true, name: "phoneLabel", type: "text" },
+            { admin: { width: "50%" }, name: "phone", type: "text" },
+          ],
+        },
+      ],
+      label: { en: "Contact", es: "Contacto" },
+      name: "contact",
+      type: "group",
+    },
+    {
+      admin: { description: { en: "Footer newsletter sign-up", es: "Suscripción del pie" } },
+      fields: [
+        { localized: true, name: "heading", type: "text" },
+        {
+          type: "row",
+          fields: [
+            { admin: { width: "60%" }, localized: true, name: "placeholder", type: "text" },
+            { admin: { width: "40%" }, localized: true, name: "submitLabel", type: "text" },
+          ],
+        },
+      ],
+      label: { en: "Newsletter", es: "Boletín" },
+      name: "newsletter",
+      type: "group",
     },
     {
       admin: {

@@ -447,9 +447,13 @@ export interface Header {
    */
   name?: string | null;
   /**
+   * Text shown in the top region bar
+   */
+  tagline?: string | null;
+  /**
    * The logo to display in the header
    */
-  logo: number | Media;
+  logo?: (number | null) | Media;
   navItems?:
     | {
         label: string;
@@ -701,7 +705,7 @@ export interface Footer {
   /**
    * The logo to display in the footer
    */
-  logo: number | Media;
+  logo?: (number | null) | Media;
   description?: string | null;
   linkGroups?:
     | {
@@ -749,6 +753,23 @@ export interface Footer {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Contact details row
+   */
+  contact?: {
+    companyName?: string | null;
+    address?: string | null;
+    phoneLabel?: string | null;
+    phone?: string | null;
+  };
+  /**
+   * Footer newsletter sign-up
+   */
+  newsletter?: {
+    heading?: string | null;
+    placeholder?: string | null;
+    submitLabel?: string | null;
+  };
   /**
    * Copyright text shown at the bottom
    */
@@ -5506,6 +5527,7 @@ export interface TestimonialsSelect<T extends boolean = true> {
  */
 export interface HeaderSelect<T extends boolean = true> {
   name?: T;
+  tagline?: T;
   logo?: T;
   navItems?:
     | T
@@ -5620,6 +5642,21 @@ export interface FooterSelect<T extends boolean = true> {
               label?: T;
             };
         id?: T;
+      };
+  contact?:
+    | T
+    | {
+        companyName?: T;
+        address?: T;
+        phoneLabel?: T;
+        phone?: T;
+      };
+  newsletter?:
+    | T
+    | {
+        heading?: T;
+        placeholder?: T;
+        submitLabel?: T;
       };
   copyrightText?: T;
   updatedAt?: T;

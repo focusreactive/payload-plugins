@@ -1,46 +1,41 @@
-/**
- * Hardcoded WealthBriefing site footer. Static content for now (per brief).
- */
+// Presentational WealthBriefing footer. Content (columns, contact, newsletter,
+// copyright) is supplied by the CMS via collections/Footer. The logo is a fixed
+// brand asset; the newsletter form is visual-only for now.
 
-const FOOTER_COLUMNS: { title: string; links: string[] }[] = [
-  {
-    title: "Brands",
-    links: [
-      "WealthBriefing",
-      "WealthBriefingAsia",
-      "Family Wealth Report",
-      "ClearView Financial Media",
-    ],
-  },
-  {
-    title: "News & Intelligence",
-    links: [
-      "Comment & Analysis",
-      "News",
-      "Compliance Matters",
-      "People Moves",
-      "Market Reports",
-      "Technology",
-    ],
-  },
-  {
-    title: "Commercial",
-    links: [
-      "Awards",
-      "Events & Forums",
-      "Sponsors & Partners",
-      "Advertise",
-      "Download sponsorship pack",
-    ],
-  },
-  { title: "Company", links: ["About", "Contact", "Editorial Board", "Research", "WealthTalk"] },
-  {
-    title: "Legal",
-    links: ["Terms & Conditions", "Privacy Policy", "Disclaimer", "Reprint Rights"],
-  },
-];
+export interface WbFooterLink {
+  label: string;
+  href: string;
+}
 
-export function WbFooter() {
+export interface WbFooterColumn {
+  title: string;
+  links: WbFooterLink[];
+}
+
+export interface WbFooterProps {
+  description?: string;
+  columns?: WbFooterColumn[];
+  contact?: {
+    companyName?: string;
+    address?: string;
+    phoneLabel?: string;
+    phone?: string;
+  };
+  newsletter?: {
+    heading?: string;
+    placeholder?: string;
+    submitLabel?: string;
+  };
+  copyright?: string;
+}
+
+export function WbFooter({
+  description,
+  columns = [],
+  contact,
+  newsletter,
+  copyright,
+}: WbFooterProps) {
   return (
     <footer className="mt-24 bg-black text-white">
       <div className="mx-auto max-w-containerMaxW px-containerBase pt-[72px]">
@@ -52,12 +47,11 @@ export function WbFooter() {
               alt="WealthBriefing"
               className="block h-9 w-auto"
             />
-            <p className="mt-4 text-[13.5px] leading-[1.6] text-faint">
-              WealthBriefing is a global daily news and analysis service for the wealth management
-              industry, published by ClearView Financial Media.
-            </p>
+            {description ? (
+              <p className="mt-4 text-[13.5px] leading-[1.6] text-faint">{description}</p>
+            ) : null}
           </div>
-          {FOOTER_COLUMNS.map((col) => (
+          {columns.map((col) => (
             <div key={col.title}>
               <div className="mb-4 text-[12px] font-medium tracking-[0.06em] text-white">
                 {col.title}
@@ -65,11 +59,11 @@ export function WbFooter() {
               <div className="flex flex-col gap-[11px]">
                 {col.links.map((link) => (
                   <a
-                    key={link}
-                    href="#"
+                    key={link.label}
+                    href={link.href}
                     className="text-[13.5px] text-faint transition-colors hover:text-white"
                   >
-                    {link}
+                    {link.label}
                   </a>
                 ))}
               </div>
@@ -79,39 +73,33 @@ export function WbFooter() {
 
         <div className="grid grid-cols-1 gap-10 border-b border-white/16 py-10 md:grid-cols-3">
           <div>
-            <div className="mb-2 text-[12px] font-medium text-white">
-              ClearView Financial Media Ltd
-            </div>
-            <div className="text-[13px] leading-[1.6] text-faint">
-              Audley House, 13 Palace Street,
-              <br />
-              London SW1E 5HX
+            <div className="mb-2 text-[12px] font-medium text-white">{contact?.companyName}</div>
+            <div className="whitespace-pre-line text-[13px] leading-[1.6] text-faint">
+              {contact?.address}
             </div>
           </div>
           <div>
-            <div className="mb-2 text-[12px] font-medium text-white">Phone</div>
-            <div className="text-[13px] text-faint">+44 (0)207 148 0188</div>
+            <div className="mb-2 text-[12px] font-medium text-white">{contact?.phoneLabel}</div>
+            <div className="text-[13px] text-faint">{contact?.phone}</div>
           </div>
           <div>
-            <div className="mb-2 text-[12px] font-medium text-white">Subscribe to updates</div>
+            <div className="mb-2 text-[12px] font-medium text-white">{newsletter?.heading}</div>
             <div className="relative flex max-w-[340px]">
               <input
-                placeholder="Email address"
+                placeholder={newsletter?.placeholder}
                 className="w-full rounded-button border-none bg-white py-3 pl-4 pr-[130px] text-[13.5px] text-ink-900 outline-none"
               />
               <button
                 type="button"
                 className="absolute inset-y-1 right-1 rounded-[4px] bg-primary px-5 text-[13px] font-semibold text-white transition-colors hover:bg-primary-hover"
               >
-                Submit
+                {newsletter?.submitLabel}
               </button>
             </div>
           </div>
         </div>
 
-        <div className="py-6 text-[13px] text-faint">
-          © ClearView Financial Media Ltd. All rights reserved.
-        </div>
+        {copyright ? <div className="py-6 text-[13px] text-faint">{copyright}</div> : null}
       </div>
     </footer>
   );

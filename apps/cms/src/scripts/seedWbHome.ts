@@ -585,6 +585,114 @@ async function main() {
     },
   ];
 
+  // --- CMS-driven header + footer -----------------------------------------
+  // Upsert a single Header/Footer doc each (matched by name) and attach them to
+  // the home page's header/footer relationship fields. The WB header/footer UI
+  // renders this content; the brand logo stays a static asset.
+  async function upsertGlobalComponent(
+    collection: "header" | "footer",
+    name: string,
+    componentData: Record<string, unknown>
+  ): Promise<number> {
+    const found = await payload.find({
+      collection,
+      where: { name: { equals: name } },
+      limit: 1,
+      locale: "en",
+    });
+    const doc = found.docs[0]
+      ? await payload.update({
+          collection,
+          id: found.docs[0].id,
+          data: { name, ...componentData },
+          locale: "en",
+          context: { disableRevalidate: true },
+        })
+      : await payload.create({
+          collection,
+          data: { name, ...componentData },
+          locale: "en",
+          context: { disableRevalidate: true },
+        });
+
+    // WB is a single-site setup: keep exactly one header/footer, pruning any
+    // leftover demo docs.
+    const others = await payload.find({
+      collection,
+      where: { id: { not_equals: doc.id } },
+      limit: 100,
+    });
+    for (const stale of others.docs) {
+      await payload.delete({ collection, id: stale.id, context: { disableRevalidate: true } });
+    }
+
+    return doc.id as number;
+  }
+
+  const footerColumn = (label: string, links: string[]) => ({
+    label,
+    links: links.map((text) => ({ link: link("#", text) })),
+  });
+
+  const headerId = await upsertGlobalComponent("header", "WealthBriefing Header", {
+    tagline: "The global wealth management intelligence network",
+    navItems: [
+      { label: "News & Intelligence", type: "link", link: link("#news") },
+      { label: "Awards", type: "link", link: link("#awards") },
+      { label: "Events & Forums", type: "link", link: link("#events") },
+      { label: "Research", type: "link", link: link("#research") },
+      { label: "Sponsors & Partners", type: "link", link: link("#sponsors") },
+    ],
+    actions: [link("#subscribe", "Subscribe")],
+  });
+
+  const footerId = await upsertGlobalComponent("footer", "WealthBriefing Footer", {
+    description:
+      "WealthBriefing is a global daily news and analysis service for the wealth management industry, published by ClearView Financial Media.",
+    linkGroups: [
+      footerColumn("Brands", [
+        "WealthBriefing",
+        "WealthBriefingAsia",
+        "Family Wealth Report",
+        "ClearView Financial Media",
+      ]),
+      footerColumn("News & Intelligence", [
+        "Comment & Analysis",
+        "News",
+        "Compliance Matters",
+        "People Moves",
+        "Market Reports",
+        "Technology",
+      ]),
+      footerColumn("Commercial", [
+        "Awards",
+        "Events & Forums",
+        "Sponsors & Partners",
+        "Advertise",
+        "Download sponsorship pack",
+      ]),
+      footerColumn("Company", ["About", "Contact", "Editorial Board", "Research", "WealthTalk"]),
+      footerColumn("Legal", [
+        "Terms & Conditions",
+        "Privacy Policy",
+        "Disclaimer",
+        "Reprint Rights",
+      ]),
+    ],
+    contact: {
+      companyName: "ClearView Financial Media Ltd",
+      address: "Audley House, 13 Palace Street,\nLondon SW1E 5HX",
+      phoneLabel: "Phone",
+      phone: "+44 (0)207 148 0188",
+    },
+    newsletter: {
+      heading: "Subscribe to updates",
+      placeholder: "Email address",
+      submitLabel: "Submit",
+    },
+    copyrightText: "© ClearView Financial Media Ltd. All rights reserved.",
+  });
+
   // WealthBriefing is the site homepage: the root `/` resolves to the page with
   // slug "home", so we upsert onto that doc (replacing any prior home content).
   const slug = "home";
@@ -599,6 +707,8 @@ async function main() {
     title: "WealthBriefing",
     slug,
     _status: "published" as const,
+    header: headerId,
+    footer: footerId,
     // Set meta explicitly so the AI-SEO auto-fill hook doesn't run on create.
     meta: {
       title: "WealthBriefing - Intelligence for the global wealth management industry",

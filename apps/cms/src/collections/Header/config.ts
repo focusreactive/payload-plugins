@@ -36,6 +36,17 @@ export const Header: CollectionConfig<"header"> = {
     {
       admin: {
         description: {
+          en: "Text shown in the top region bar",
+          es: "Texto de la barra superior de región",
+        },
+      },
+      localized: true,
+      name: "tagline",
+      type: "text",
+    },
+    {
+      admin: {
+        description: {
           en: "The logo to display in the header",
           es: "El logo a mostrar en el header",
         },
@@ -43,7 +54,6 @@ export const Header: CollectionConfig<"header"> = {
       defaultValue: async () => getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT),
       name: "logo",
       relationTo: "media",
-      required: true,
       type: "upload",
     },
     {

@@ -1,37 +1,13 @@
-import { Footer as SharedFooter } from "./ui";
-import type { FooterLink, FooterLinkGroup, IFooterProps } from "./ui/types";
 import React from "react";
 
-import { resolveLocale } from "@/lib/utils/resolveLocale";
-import { prepareImageProps } from "@/lib/adapters/prepareImageProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
-import type { Footer as FooterType, Media } from "@/payload-types";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
+import type { Footer as FooterType } from "@/payload-types";
+import { WbFooter } from "@/components/wb/WbFooter";
+import type { WbFooterColumn } from "@/components/wb/WbFooter";
 
 interface Props {
   data: FooterType;
-}
-
-type PayloadLink = NonNullable<NonNullable<FooterType["legalLinks"]>[number]["link"]>;
-
-function resolveFooterLink(
-  link: PayloadLink | null | undefined,
-  locale: string
-): FooterLink | undefined {
-  if (!link) {
-    return undefined;
-  }
-
-  const { href } = prepareLinkProps(link, locale);
-
-  if (!href) {
-    return undefined;
-  }
-
-  return {
-    href,
-    label: link.label ?? "",
-    newTab: link.newTab ?? false,
-  };
 }
 
 export async function Footer({ data }: Props) {
@@ -41,32 +17,31 @@ export async function Footer({ data }: Props) {
 
   const locale = await resolveLocale();
 
-  const logo: Media | null = typeof data.logo === "object" ? data.logo : null;
-
-  const linkGroups: FooterLinkGroup[] = (data.linkGroups ?? []).map((group) => ({
-    label: group.label,
+  const columns: WbFooterColumn[] = (data.linkGroups ?? []).map((group) => ({
+    title: group.label,
     links: (group.links ?? []).flatMap((entry) => {
-      const resolved = resolveFooterLink(entry.link, locale);
-      return resolved ? [resolved] : [];
+      const href = prepareLinkProps(entry.link, locale).href;
+      const label = entry.link?.label;
+      return label && href ? [{ label, href }] : [];
     }),
   }));
 
-  const legalLinks: FooterLink[] = (data.legalLinks ?? []).flatMap((entry) => {
-    const resolved = resolveFooterLink(entry.link, locale);
-    return resolved ? [resolved] : [];
-  });
-
-  const props: IFooterProps = {
-    brand: {
-      href: "/",
-      label: data.name ?? "",
-      logo: logo ? prepareImageProps({ image: logo }) : null,
-    },
-    copywriteText: data.copyrightText ?? undefined,
-    description: data.description ?? undefined,
-    legalLinks,
-    linkGroups,
-  };
-
-  return <SharedFooter {...props} />;
+  return (
+    <WbFooter
+      description={data.description ?? undefined}
+      columns={columns}
+      contact={{
+        companyName: data.contact?.companyName ?? undefined,
+        address: data.contact?.address ?? undefined,
+        phoneLabel: data.contact?.phoneLabel ?? undefined,
+        phone: data.contact?.phone ?? undefined,
+      }}
+      newsletter={{
+        heading: data.newsletter?.heading ?? undefined,
+        placeholder: data.newsletter?.placeholder ?? undefined,
+        submitLabel: data.newsletter?.submitLabel ?? undefined,
+      }}
+      copyright={data.copyrightText ?? undefined}
+    />
+  );
 }

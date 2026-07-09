@@ -29,6 +29,7 @@ import * as migration_20260628_193856_create_and_wire_global_section_collection 
 import * as migration_20260630_154649_add_reading_time_to_posts from './20260630_154649_add_reading_time_to_posts';
 import * as migration_20260706_095438_add_section_visibility_to_global_section_slot from './20260706_095438_add_section_visibility_to_global_section_slot';
 import * as migration_20260709_112317_add_wb_homepage_blocks from './20260709_112317_add_wb_homepage_blocks';
+import * as migration_20260709_124931_wb_header_footer_fields from './20260709_124931_wb_header_footer_fields';
 
 export const migrations = [
   {
@@ -184,6 +185,11 @@ export const migrations = [
   {
     up: migration_20260709_112317_add_wb_homepage_blocks.up,
     down: migration_20260709_112317_add_wb_homepage_blocks.down,
-    name: '20260709_112317_add_wb_homepage_blocks'
+    name: '20260709_112317_add_wb_homepage_blocks',
+  },
+  {
+    up: migration_20260709_124931_wb_header_footer_fields.up,
+    down: migration_20260709_124931_wb_header_footer_fields.down,
+    name: '20260709_124931_wb_header_footer_fields'
   },
 ];
