@@ -31,6 +31,14 @@ export function createDatabaseAdapter(
     },
     prodMigrations: migrations,
     push: options.push ?? false,
+    // Disable transactions. On this serverless Neon setup, Payload's wrapped
+    // BEGIN/COMMIT silently fails to persist: writes (incl. version rows for
+    // draft saves and publishes) roll back with no error, so the admin shows
+    // "saved successfully" but the change vanishes on reload. Raw autocommitted
+    // writes persist fine, so disabling transactions makes every write commit.
+    // Trade-off: multi-row operations are no longer atomic, which is the
+    // accepted mode for Payload on serverless Postgres.
+    transactionOptions: false,
   });
 }
 
