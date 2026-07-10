@@ -13,14 +13,23 @@ export const WbSponsorsBlock: Block = {
     { name: "eyebrow", type: "text" },
     { name: "title", type: "text" },
     { name: "description", type: "textarea" },
-    wbLink({ name: "primaryCta", withLabel: true }),
-    wbLink({ name: "secondaryCta", withLabel: true }),
+    wbLink({
+      name: "primaryCta",
+      withLabel: true,
+      label: { en: "Primary CTA", es: "CTA principal" },
+    }),
+    wbLink({
+      name: "secondaryCta",
+      withLabel: true,
+      label: { en: "Secondary CTA", es: "CTA secundario" },
+    }),
     // Newlines render as line breaks in the ui, so keep this a textarea.
     { name: "trustedLabel", type: "textarea" },
     { name: "partnerLogos", type: "text", hasMany: true },
     {
       name: "cards",
       type: "array",
+      admin: { initCollapsed: true },
       fields: [
         { name: "title", type: "text" },
         { name: "description", type: "textarea" },

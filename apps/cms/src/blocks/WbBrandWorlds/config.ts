@@ -17,6 +17,7 @@ export const WbBrandsBlock: Block = {
     {
       name: "items",
       type: "array",
+      admin: { initCollapsed: true },
       fields: [
         { name: "number", type: "text" },
         { name: "brand", type: "text" },

@@ -12,7 +12,7 @@ export const WbResearchBlock: Block = {
   fields: [
     { name: "eyebrow", type: "text" },
     { name: "title", type: "text" },
-    wbLink({ name: "cta", withLabel: true }),
+    wbLink({ name: "cta", withLabel: true, label: { en: "CTA", es: "CTA" } }),
     {
       name: "featured",
       type: "group",
@@ -28,6 +28,7 @@ export const WbResearchBlock: Block = {
     {
       name: "items",
       type: "array",
+      admin: { initCollapsed: true },
       fields: [
         { name: "date", type: "text" },
         { name: "type", type: "text" },

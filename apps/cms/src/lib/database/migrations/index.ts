@@ -31,6 +31,7 @@ import * as migration_20260706_095438_add_section_visibility_to_global_section_s
 import * as migration_20260709_112317_add_wb_homepage_blocks from './20260709_112317_add_wb_homepage_blocks';
 import * as migration_20260709_124931_wb_header_footer_fields from './20260709_124931_wb_header_footer_fields';
 import * as migration_20260709_130242_remove_non_wb_blocks from './20260709_130242_remove_non_wb_blocks';
+import * as migration_20260710_092114_drop_custom_page_link_type from './20260710_092114_drop_custom_page_link_type';
 
 export const migrations = [
   {
@@ -196,6 +197,11 @@ export const migrations = [
   {
     up: migration_20260709_130242_remove_non_wb_blocks.up,
     down: migration_20260709_130242_remove_non_wb_blocks.down,
-    name: '20260709_130242_remove_non_wb_blocks'
+    name: '20260709_130242_remove_non_wb_blocks',
+  },
+  {
+    up: migration_20260710_092114_drop_custom_page_link_type.up,
+    down: migration_20260710_092114_drop_custom_page_link_type.down,
+    name: '20260710_092114_drop_custom_page_link_type'
   },
 ];

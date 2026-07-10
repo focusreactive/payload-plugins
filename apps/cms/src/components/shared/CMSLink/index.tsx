@@ -43,7 +43,7 @@ interface Props {
     value: Page | Post | string | number;
   } | null;
   size?: ButtonProps["size"] | null;
-  type?: "custom" | "reference" | "customPage" | null;
+  type?: "custom" | "reference" | null;
   url?: string | null;
 }
 

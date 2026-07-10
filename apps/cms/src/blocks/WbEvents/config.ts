@@ -12,7 +12,7 @@ export const WbEventsBlock: Block = {
   fields: [
     { name: "eyebrow", type: "text" },
     { name: "title", type: "text" },
-    wbLink({ name: "cta", withLabel: true }),
+    wbLink({ name: "cta", withLabel: true, label: { en: "CTA", es: "CTA" } }),
     {
       name: "featured",
       type: "group",
@@ -29,6 +29,7 @@ export const WbEventsBlock: Block = {
     {
       name: "events",
       type: "array",
+      admin: { initCollapsed: true },
       fields: [
         { name: "type", type: "text" },
         { name: "date", type: "text" },

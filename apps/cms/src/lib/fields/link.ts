@@ -2,8 +2,6 @@ import type { Field, GroupField } from "payload";
 import type { Option } from "payload";
 
 import { BLOG_CONFIG } from "@/lib/config/blog";
-import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
-import type { CustomPageKey } from "@/lib/config/customPages";
 import deepMerge from "@/lib/utils/deepMerge";
 
 export type LinkAppearances = "default" | "outline" | "accent" | "ghost" | "link";
@@ -48,7 +46,6 @@ export const appearanceOptions: Record<LinkAppearances, Option> = {
 
 type LinkType = (options?: {
   appearances?: LinkAppearances[] | false;
-  customPageDbName?: string;
   disableLabel?: boolean;
   required?: boolean;
   overrides?: Partial<GroupField>;
@@ -56,7 +53,6 @@ type LinkType = (options?: {
 
 export const link: LinkType = ({
   appearances,
-  customPageDbName,
   disableLabel = false,
   required = true,
   overrides = {},
@@ -89,13 +85,6 @@ export const link: LinkType = ({
                   es: "URL personalizada",
                 },
                 value: "custom",
-              },
-              {
-                label: {
-                  en: "Custom Page",
-                  es: "Página personalizada",
-                },
-                value: "customPage",
               },
             ],
             type: "radio",
@@ -147,23 +136,6 @@ export const link: LinkType = ({
       name: "url",
       required,
       type: "text",
-    },
-    {
-      admin: {
-        condition: (_, siblingData) => siblingData?.type === "customPage",
-      },
-      ...(customPageDbName ? { dbName: customPageDbName } : {}),
-      label: {
-        en: "Custom Page",
-        es: "Página personalizada",
-      },
-      name: "customPage",
-      options: Object.entries(CUSTOM_PAGES_CONFIG).map(([key, entry]) => ({
-        label: entry.label,
-        value: key as CustomPageKey,
-      })),
-      required,
-      type: "select",
     },
   ];
 

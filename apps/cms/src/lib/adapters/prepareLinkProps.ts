@@ -1,18 +1,15 @@
 import { ButtonVariant } from "@/components/button/types";
 import type { LinkProps } from "@/components/link/types";
 
-import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
-import type { CustomPageKey } from "@/lib/config/customPages";
 import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 
 interface PayloadLink {
-  type?: "reference" | "custom" | "customPage" | null;
+  type?: "reference" | "custom" | null;
   url?: string | null;
   reference?: {
     relationTo: string;
     value: unknown;
   } | null;
-  customPage?: string | null;
   label?: string | null;
   appearance?: string | null;
   newTab?: boolean | null;
@@ -33,12 +30,6 @@ export function prepareLinkProps(link: PayloadLink | null | undefined, locale: s
       const breadcrumbs = (value.breadcrumbs as { url?: string }[]) ?? [];
       const path = breadcrumbs.at(-1)?.url ?? (value.slug as string) ?? "";
       href = shouldIncludeLocalePrefix(locale) ? `/${locale}${path}` : path;
-    }
-  } else if (link.type === "customPage" && link.customPage) {
-    const entry = CUSTOM_PAGES_CONFIG[link.customPage as CustomPageKey];
-
-    if (entry) {
-      href = entry.resolver(locale);
     }
   }
 

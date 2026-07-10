@@ -15,6 +15,7 @@ export const WbSubscribeBlock: Block = {
     {
       name: "plans",
       type: "array",
+      admin: { initCollapsed: true },
       fields: [
         { name: "value", type: "text" },
         { name: "title", type: "text" },
@@ -42,6 +43,7 @@ export const WbSubscribeBlock: Block = {
     {
       name: "regions",
       type: "array",
+      admin: { initCollapsed: true },
       fields: [{ name: "region", type: "text" }],
     },
     { name: "defaultRegion", type: "text" },

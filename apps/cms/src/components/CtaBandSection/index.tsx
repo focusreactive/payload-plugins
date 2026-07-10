@@ -7,7 +7,7 @@ import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderPr
 import type { Page, Post } from "@/payload-types";
 
 export interface CtaBandSectionAction {
-  type?: ("reference" | "custom" | "customPage") | null;
+  type?: ("reference" | "custom") | null;
   newTab?: boolean | null;
   reference?:
     | ({

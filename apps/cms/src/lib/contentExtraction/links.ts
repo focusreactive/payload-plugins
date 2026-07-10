@@ -1,8 +1,6 @@
 import { link } from "@focus-reactive/payload-plugin-seo/content";
 import type { ContentNode, DocStore } from "@focus-reactive/payload-plugin-seo/content";
 
-import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
-import type { CustomPageKey } from "@/lib/config/customPages";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
 import type { Page } from "@/payload-types";
 
@@ -20,10 +18,9 @@ export interface LinkReference {
 }
 
 export interface LinkValue {
-  type?: "reference" | "custom" | "customPage" | null;
+  type?: "reference" | "custom" | null;
   reference?: LinkReference | null;
   url?: string | null;
-  customPage?: string | null;
   label?: string | null;
 }
 
@@ -37,7 +34,7 @@ export interface LinkResolveCtx {
   locale: string;
 }
 
-const LINK_TYPES = new Set(["reference", "custom", "customPage"]);
+const LINK_TYPES = new Set(["reference", "custom"]);
 
 export function isLinkValue(value: unknown): value is LinkValue {
   if (typeof value !== "object" || value === null) return false;
@@ -128,12 +125,6 @@ function resolveLinkHref(value: LinkValue, ctx: LinkResolveCtx): string {
   switch (value.type) {
     case "custom":
       return value.url ?? "";
-    case "customPage": {
-      const entry = value.customPage
-        ? CUSTOM_PAGES_CONFIG[value.customPage as CustomPageKey]
-        : undefined;
-      return entry ? entry.resolver(ctx.locale) : "";
-    }
     case "reference":
       return value.reference ? resolveReferenceHref(value.reference, ctx) : "";
     default:

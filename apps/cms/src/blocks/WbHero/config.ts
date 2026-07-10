@@ -28,6 +28,7 @@ export const WbHeroBlock: Block = {
     {
       name: "compactCards",
       type: "array",
+      admin: { initCollapsed: true },
       fields: [
         { name: "label", type: "text" },
         { name: "status", type: "text" },
@@ -40,6 +41,7 @@ export const WbHeroBlock: Block = {
     {
       name: "todayLinks",
       type: "array",
+      admin: { initCollapsed: true },
       fields: [{ name: "brand", type: "text" }, { name: "title", type: "text" }, wbLink()],
     },
     { name: "showTodayStrip", type: "checkbox", defaultValue: true },

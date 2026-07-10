@@ -146,7 +146,6 @@ export const Header: CollectionConfig<"header"> = {
                 },
                 link({
                   appearances: false,
-                  customPageDbName: "hdr_ni_dd_ft_lnk_cp",
                   required: false,
                   overrides: {
                     admin: { condition: (_, siblingData) => !!siblingData?.enabled },
@@ -182,7 +181,6 @@ export const Header: CollectionConfig<"header"> = {
                 },
                 link({
                   appearances: false,
-                  customPageDbName: "hdr_ni_dd_lnks_lnk_cp",
                   disableLabel: true,
                 }),
               ],

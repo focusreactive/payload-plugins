@@ -24,12 +24,12 @@ function ctx(docs: Array<[string, ResolvedLinkDoc]> = [], locale = "en"): LinkRe
 }
 
 describe("isLinkValue", () => {
-  it("accepts the three link types", () => {
+  it("accepts the two link types", () => {
     expect(isLinkValue({ type: "reference", label: "x" })).toBe(true);
     expect(isLinkValue({ type: "custom", url: "/x", label: "x" })).toBe(true);
-    expect(isLinkValue({ type: "customPage", customPage: "blog", label: "x" })).toBe(true);
   });
-  it("rejects non-links incl. lexical link nodes", () => {
+  it("rejects non-links incl. lexical link nodes and the removed customPage type", () => {
+    expect(isLinkValue({ type: "customPage", customPage: "blog", label: "x" })).toBe(false);
     expect(isLinkValue({ type: "link", fields: {} })).toBe(false);
     expect(isLinkValue({ type: "paragraph" })).toBe(false);
     expect(isLinkValue(null)).toBe(false);
@@ -63,10 +63,9 @@ describe("collectLinkRefs", () => {
       { collection: "posts", id: 7 },
     ]);
   });
-  it("ignores custom, customPage, and already-populated references", () => {
+  it("ignores custom and already-populated references", () => {
     const values = {
       a: { type: "custom", url: "/x", label: "c" },
-      b: { type: "customPage", customPage: "blog", label: "p" },
       c: {
         type: "reference",
         reference: { relationTo: "page", value: { slug: "about" } },
@@ -85,11 +84,6 @@ describe("linkToContentNode", () => {
       href: "https://example.com",
       text: "Site",
     });
-  });
-  it("resolves a customPage via the locale-aware resolver", () => {
-    const link: LinkValue = { type: "customPage", customPage: "search", label: "Find" };
-    const node = linkToContentNode(link, ctx([], "es"));
-    expect(node).toEqual({ type: "link", href: "/es/search", text: "Find" });
   });
   it("resolves a page reference from the fetched docs map (relative, locale-prefixed)", () => {
     const link: LinkValue = {

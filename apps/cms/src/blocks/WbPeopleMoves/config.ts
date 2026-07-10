@@ -12,10 +12,11 @@ export const WbPeopleBlock: Block = {
   fields: [
     { name: "eyebrow", type: "text" },
     { name: "title", type: "text" },
-    wbLink({ name: "cta", withLabel: true }),
+    wbLink({ name: "cta", withLabel: true, label: { en: "CTA", es: "CTA" } }),
     {
       name: "items",
       type: "array",
+      admin: { initCollapsed: true },
       fields: [
         { name: "date", type: "text" },
         { name: "category", type: "text" },

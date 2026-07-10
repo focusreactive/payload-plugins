@@ -15,12 +15,14 @@ export const WbMoreReadBlock: Block = {
     {
       name: "stories",
       type: "array",
+      admin: { initCollapsed: true },
       fields: [{ name: "category", type: "text" }, { name: "title", type: "text" }, wbLink()],
     },
     { name: "mostReadHeading", type: "text" },
     {
       name: "mostRead",
       type: "array",
+      admin: { initCollapsed: true },
       fields: [
         { name: "rank", type: "text" },
         { name: "category", type: "text" },
