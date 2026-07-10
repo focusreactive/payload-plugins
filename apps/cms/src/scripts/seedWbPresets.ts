@@ -97,7 +97,19 @@ async function main() {
     created += 1;
   }
 
-  payload.logger.info(`Seeded ${created} WealthBriefing block presets`);
+  // Prune stale presets left over from removed (non-WB) blocks.
+  const wbTypes = new Set(Object.keys(PRESET_LABELS));
+  const all = await payload.find({ collection: "presets", depth: 0, limit: 200 });
+  let pruned = 0;
+  for (const preset of all.docs) {
+    const blockType = (preset.presetBlock?.[0] as { blockType?: string })?.blockType;
+    if (!(blockType && wbTypes.has(blockType))) {
+      await payload.delete({ collection: "presets", id: preset.id });
+      pruned += 1;
+    }
+  }
+
+  payload.logger.info(`Seeded ${created} WealthBriefing block presets; pruned ${pruned} stale`);
 }
 
 try {
