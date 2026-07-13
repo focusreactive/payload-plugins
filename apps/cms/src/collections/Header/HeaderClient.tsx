@@ -7,9 +7,12 @@ import React from "react";
 
 import { computeActiveNavItems } from "./computeActive";
 
-export function HeaderClient(props: IHeaderProps) {
+export function HeaderClient({
+  disableActive,
+  ...props
+}: IHeaderProps & { disableActive?: boolean }) {
   const pathname = usePathname();
-  const navItems = computeActiveNavItems(props.navItems, pathname);
+  const navItems = disableActive ? props.navItems : computeActiveNavItems(props.navItems, pathname);
 
   return <HeaderUI {...props} navItems={navItems} />;
 }

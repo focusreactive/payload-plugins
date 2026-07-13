@@ -17,6 +17,7 @@ import { HeaderClient } from "./HeaderClient";
 
 interface Props {
   data: HeaderType;
+  disableActive?: boolean;
 }
 
 type PayloadNavItem = NonNullable<HeaderType["navItems"]>[number];
@@ -115,7 +116,7 @@ function mapAction(action: PayloadAction, locale: string): HeaderAction | null {
   };
 }
 
-export async function Header({ data }: Props) {
+export async function Header({ data, disableActive }: Props) {
   if (!data) {
     return null;
   }
@@ -138,5 +139,5 @@ export async function Header({ data }: Props) {
       .filter((action): action is HeaderAction => action !== null),
   };
 
-  return <HeaderClient {...props} />;
+  return <HeaderClient {...props} disableActive={disableActive} />;
 }
