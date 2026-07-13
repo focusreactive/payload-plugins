@@ -26,13 +26,13 @@ export async function BlogJsonLdWrapper({ searchParams, locale }: BlogJsonLdWrap
       <BlogJsonLd
         settings={blogSettings}
         posts={posts.docs}
-        siteName={siteSettings.siteName as string}
+        siteName={siteSettings.general?.siteName as string}
         locale={locale}
       />
       <BreadcrumbsJsonLd
         locale={locale}
         blog={{
-          title: blogSettings.blogTitle || "Blog",
+          title: blogSettings.title || "Blog",
           ...(pageNumber > 1 && { page: pageNumber }),
         }}
       />

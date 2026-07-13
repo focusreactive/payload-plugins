@@ -2,14 +2,14 @@ import Image from "next/image";
 import React from "react";
 
 import { Media } from "@/components/media";
-import { getSiteSettings } from "@/dal/getSiteSettings";
+import { getAdminSettings } from "@/dal/getAdminSettings";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import type { Media as MediaType } from "@/payload-types";
 
 export default async function Logo() {
-  const settings = await getSiteSettings({});
+  const settings = await getAdminSettings();
 
-  const logo = settings?.adminLogo as MediaType;
+  const logo = settings?.logo as MediaType;
 
   if (logo) {
     const media = prepareMediaProps({ image: logo });

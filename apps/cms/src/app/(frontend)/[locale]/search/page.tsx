@@ -27,7 +27,7 @@ export default async function SearchPage({ params, searchParams }: Args) {
   return (
     <div className="flex min-h-screen flex-col">
       <TrackPage pageRef={SYNTHETIC_REFS.search} locale={locale} enabled={!draft} />
-      <Header data={siteSettings.header as HeaderType} />
+      <Header data={siteSettings.blog.header as HeaderType} />
       <main className="grow">
         <div className="mx-auto max-w-2xl px-4 py-8">
           <SearchInput defaultValue={query ?? ""} />
@@ -37,7 +37,7 @@ export default async function SearchPage({ params, searchParams }: Args) {
           </Suspense>
         </div>
       </main>
-      <Footer data={siteSettings.footer as FooterType} />
+      <Footer data={siteSettings.blog.footer as FooterType} />
     </div>
   );
 }

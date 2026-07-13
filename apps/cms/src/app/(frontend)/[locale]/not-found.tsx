@@ -8,7 +8,7 @@ import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { Locale } from "@/lib/types";
 import { buttonVariants, ButtonVariant } from "@/components/button";
 import { Link } from "@/components/shared";
-import { getSiteSettings } from "@/dal/getSiteSettings";
+import { getNotFoundSettings } from "@/dal/getNotFoundSettings";
 import type { Header as HeaderType, Footer as FooterType } from "@/payload-types";
 import { Footer } from "@/collections/Footer/Component";
 import { Header } from "@/collections/Header/Component";
@@ -25,7 +25,7 @@ export default async function NotFound() {
   const locale = segments[0] as Locale;
 
   const [settings, t] = await Promise.all([
-    getSiteSettings({ locale }),
+    getNotFoundSettings({ locale }),
     getTranslations({ locale, namespace: "common" }),
   ]);
 
@@ -36,10 +36,10 @@ export default async function NotFound() {
         <section className="flex items-center justify-center min-h-[60vh] py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8 lg:py-24">
           <div className="mx-auto max-w-7xl text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              {settings.notFoundTitle || "404 - Page not found"}
+              {settings.title || "404 - Page not found"}
             </h1>
             <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
-              {settings.notFoundDescription ||
+              {settings.description ||
                 "Unfortunately, the requested page does not exist or has been deleted."}
             </p>
             <Link

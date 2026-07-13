@@ -361,10 +361,6 @@ export interface Page {
    * The header to display on the page
    */
   header?: (number | null) | Header;
-  /**
-   * The footer to display on the page
-   */
-  footer?: (number | null) | Footer;
   blocks: (
     | HeroBlock
     | ContentBlock
@@ -380,6 +376,10 @@ export interface Page {
     | RawHtmlBlock
     | GlobalSectionSlotBlock
   )[];
+  /**
+   * The footer to display on the page
+   */
+  footer?: (number | null) | Footer;
   meta?: {
     title?: string | null;
     /**
@@ -675,75 +675,6 @@ export interface Author {
   avatar?: (number | null) | Media;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "footer".
- */
-export interface Footer {
-  id: number;
-  /**
-   * The name of the footer
-   */
-  name: string;
-  /**
-   * The logo to display in the footer
-   */
-  logo: number | Media;
-  description?: string | null;
-  linkGroups?:
-    | {
-        label: string;
-        links: {
-          link: {
-            type?: ('reference' | 'custom' | 'customPage') | null;
-            newTab?: boolean | null;
-            reference?:
-              | ({
-                  relationTo: 'page';
-                  value: number | Page;
-                } | null)
-              | ({
-                  relationTo: 'posts';
-                  value: number | Post;
-                } | null);
-            url?: string | null;
-            customPage?: ('blog' | 'search') | null;
-            label: string;
-          };
-          id?: string | null;
-        }[];
-        id?: string | null;
-      }[]
-    | null;
-  legalLinks?:
-    | {
-        link: {
-          type?: ('reference' | 'custom' | 'customPage') | null;
-          newTab?: boolean | null;
-          reference?:
-            | ({
-                relationTo: 'page';
-                value: number | Page;
-              } | null)
-            | ({
-                relationTo: 'posts';
-                value: number | Post;
-              } | null);
-          url?: string | null;
-          customPage?: ('blog' | 'search') | null;
-          label: string;
-        };
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Copyright text shown at the bottom
-   */
-  copyrightText?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1438,6 +1369,75 @@ export interface GlobalSection {
     | StatsBlock
     | RawHtmlBlock
   )[];
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer".
+ */
+export interface Footer {
+  id: number;
+  /**
+   * The name of the footer
+   */
+  name: string;
+  /**
+   * The logo to display in the footer
+   */
+  logo: number | Media;
+  description?: string | null;
+  linkGroups?:
+    | {
+        label: string;
+        links: {
+          link: {
+            type?: ('reference' | 'custom' | 'customPage') | null;
+            newTab?: boolean | null;
+            reference?:
+              | ({
+                  relationTo: 'page';
+                  value: number | Page;
+                } | null)
+              | ({
+                  relationTo: 'posts';
+                  value: number | Post;
+                } | null);
+            url?: string | null;
+            customPage?: ('blog' | 'search') | null;
+            label: string;
+          };
+          id?: string | null;
+        }[];
+        id?: string | null;
+      }[]
+    | null;
+  legalLinks?:
+    | {
+        link: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label: string;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Copyright text shown at the bottom
+   */
+  copyrightText?: string | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -2733,7 +2733,6 @@ export interface PageSelect<T extends boolean = true> {
   _abPassPercentage?: T;
   title?: T;
   header?: T;
-  footer?: T;
   blocks?:
     | T
     | {
@@ -2751,6 +2750,7 @@ export interface PageSelect<T extends boolean = true> {
         rawHtml?: T | RawHtmlBlockSelect<T>;
         globalSectionSlot?: T | GlobalSectionSlotBlockSelect<T>;
       };
+  footer?: T;
   meta?:
     | T
     | {
@@ -4220,82 +4220,80 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  */
 export interface SiteSetting {
   id: number;
-  /**
-   * The name of your website
-   */
-  siteName?: string | null;
-  /**
-   * The header to display on the blog page
-   */
-  header?: (number | null) | Header;
-  /**
-   * The footer to display on the blog page
-   */
-  footer?: (number | null) | Footer;
-  /**
-   * Logo displayed in the admin panel sidebar (recommended: SVG or PNG, ~150x40px)
-   */
-  adminLogo?: (number | null) | Media;
-  /**
-   * Icon displayed when sidebar is collapsed (recommended: SVG or PNG, 32x32px)
-   */
-  adminIcon?: (number | null) | Media;
-  /**
-   * Character used to separate page title from site name
-   */
-  seoTitleSeparator?: ('|' | '-' | '•') | null;
-  /**
-   * Text added after separator (defaults to Site Name if empty)
-   */
-  seoTitleSuffix?: string | null;
-  /**
-   * Fallback title for Open Graph when page has no title
-   */
-  defaultOgTitle?: string | null;
-  /**
-   * Site name for Open Graph. Defaults to Site Name if empty
-   */
-  ogSiteName?: string | null;
-  /**
-   * Fallback description when page has no description
-   */
-  defaultDescription?: string | null;
-  /**
-   * Fallback description for Open Graph (uses Meta Description if empty)
-   */
-  defaultOgDescription?: string | null;
-  /**
-   * Fallback image for social media sharing
-   */
-  defaultOgImage?: (number | null) | Media;
-  /**
-   * Twitter/X username for the website (e.g., @yoursite)
-   */
-  twitterSite?: string | null;
-  /**
-   * Default Twitter/X username for content creator (e.g., @author)
-   */
-  twitterCreator?: string | null;
-  /**
-   * Type of Twitter Card to display
-   */
-  defaultTwitterCard?: ('summary_large_image' | 'summary') | null;
-  /**
-   * Heading displayed on 404 page
-   */
-  notFoundTitle?: string | null;
-  /**
-   * Text displayed on 404 page
-   */
-  notFoundDescription?: string | null;
+  general?: {
+    /**
+     * The name of your website
+     */
+    siteName?: string | null;
+  };
+  adminPanel?: {
+    /**
+     * Logo displayed in the admin panel sidebar (recommended: SVG or PNG, ~150x40px)
+     */
+    logo?: (number | null) | Media;
+    /**
+     * Icon displayed when sidebar is collapsed (recommended: SVG or PNG, 32x32px)
+     */
+    icon?: (number | null) | Media;
+  };
+  seo?: {
+    /**
+     * Character used to separate page title from site name
+     */
+    titleSeparator?: ('|' | '-' | '•') | null;
+    /**
+     * Text added after separator (defaults to Site Name if empty)
+     */
+    titleSuffix?: string | null;
+    /**
+     * Fallback title for Open Graph when page has no title
+     */
+    defaultOgTitle?: string | null;
+    /**
+     * Site name for Open Graph. Defaults to Site Name if empty
+     */
+    ogSiteName?: string | null;
+    /**
+     * Fallback description when page has no description
+     */
+    defaultDescription?: string | null;
+    /**
+     * Fallback description for Open Graph (uses Meta Description if empty)
+     */
+    defaultOgDescription?: string | null;
+    /**
+     * Fallback image for social media sharing
+     */
+    defaultOgImage?: (number | null) | Media;
+    /**
+     * Twitter/X username for the website (e.g., @yoursite)
+     */
+    twitterSite?: string | null;
+    /**
+     * Default Twitter/X username for content creator (e.g., @author)
+     */
+    twitterCreator?: string | null;
+    /**
+     * Type of Twitter Card to display
+     */
+    defaultTwitterCard?: ('summary_large_image' | 'summary') | null;
+  };
+  notFound?: {
+    header?: (number | null) | Header;
+    footer?: (number | null) | Footer;
+    title?: string | null;
+    description?: string | null;
+  };
   blog: {
+    header?: (number | null) | Header;
+    footer?: (number | null) | Footer;
     eyebrow?: string | null;
-    blogTitle: string;
-    blogDescription: string;
+    title: string;
+    description: string;
     readMoreLabel: string;
     relatedPostsLabel: string;
     searchPlaceholder?: string | null;
-    blogMeta?: {
+    meta?: {
       title?: string | null;
       /**
        * Image used when sharing this page on social media.
@@ -4338,33 +4336,51 @@ export interface _AbManifest {
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
-  siteName?: T;
-  header?: T;
-  footer?: T;
-  adminLogo?: T;
-  adminIcon?: T;
-  seoTitleSeparator?: T;
-  seoTitleSuffix?: T;
-  defaultOgTitle?: T;
-  ogSiteName?: T;
-  defaultDescription?: T;
-  defaultOgDescription?: T;
-  defaultOgImage?: T;
-  twitterSite?: T;
-  twitterCreator?: T;
-  defaultTwitterCard?: T;
-  notFoundTitle?: T;
-  notFoundDescription?: T;
+  general?:
+    | T
+    | {
+        siteName?: T;
+      };
+  adminPanel?:
+    | T
+    | {
+        logo?: T;
+        icon?: T;
+      };
+  seo?:
+    | T
+    | {
+        titleSeparator?: T;
+        titleSuffix?: T;
+        defaultOgTitle?: T;
+        ogSiteName?: T;
+        defaultDescription?: T;
+        defaultOgDescription?: T;
+        defaultOgImage?: T;
+        twitterSite?: T;
+        twitterCreator?: T;
+        defaultTwitterCard?: T;
+      };
+  notFound?:
+    | T
+    | {
+        header?: T;
+        footer?: T;
+        title?: T;
+        description?: T;
+      };
   blog?:
     | T
     | {
+        header?: T;
+        footer?: T;
         eyebrow?: T;
-        blogTitle?: T;
-        blogDescription?: T;
+        title?: T;
+        description?: T;
         readMoreLabel?: T;
         relatedPostsLabel?: T;
         searchPlaceholder?: T;
-        blogMeta?:
+        meta?:
           | T
           | {
               title?: T;

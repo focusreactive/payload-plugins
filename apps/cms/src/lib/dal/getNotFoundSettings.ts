@@ -6,22 +6,20 @@ import type { SiteSetting } from "@/payload-types";
 
 import { getCachedGlobal } from "./getGlobals";
 
-export type BlogPageSettingsData = NonNullable<SiteSetting["blog"]>;
-
-export const getBlogPageSettings = async ({
+export const getNotFoundSettings = async ({
   locale,
 }: {
   locale?: Locale;
-}): Promise<BlogPageSettingsData> => {
+}): Promise<NonNullable<SiteSetting["notFound"]>> => {
   const { isEnabled: draft } = await draftMode();
   const resolvedLocale = await resolveLocale(locale);
 
   const settings = (await getCachedGlobal(
     "site-settings",
-    1,
+    2,
     resolvedLocale,
     draft
   )()) as SiteSetting;
 
-  return settings.blog;
+  return settings.notFound ?? {};
 };

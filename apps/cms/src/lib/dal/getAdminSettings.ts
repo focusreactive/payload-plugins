@@ -6,13 +6,9 @@ import type { SiteSetting } from "@/payload-types";
 
 import { getCachedGlobal } from "./getGlobals";
 
-export type BlogPageSettingsData = NonNullable<SiteSetting["blog"]>;
-
-export const getBlogPageSettings = async ({
-  locale,
-}: {
-  locale?: Locale;
-}): Promise<BlogPageSettingsData> => {
+export const getAdminSettings = async ({ locale }: { locale?: Locale } = {}): Promise<
+  NonNullable<SiteSetting["adminPanel"]>
+> => {
   const { isEnabled: draft } = await draftMode();
   const resolvedLocale = await resolveLocale(locale);
 
@@ -23,5 +19,5 @@ export const getBlogPageSettings = async ({
     draft
   )()) as SiteSetting;
 
-  return settings.blog;
+  return settings.adminPanel ?? {};
 };

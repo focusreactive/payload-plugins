@@ -5,6 +5,9 @@ import { revalidatePageCache } from "@/lib/utils/revalidatePageCache";
 import { revalidateGlobalTags } from "@/dal/getGlobals";
 import type { Header } from "@/payload-types";
 
+const relationId = (rel: number | Header | null | undefined) =>
+  typeof rel === "object" ? rel?.id : rel;
+
 export const revalidateResourcesUsingHeader: CollectionAfterChangeHook<Header> = async ({
   doc,
   req,
@@ -19,9 +22,10 @@ export const revalidateResourcesUsingHeader: CollectionAfterChangeHook<Header> =
       slug: "site-settings",
     });
 
-    const headerId =
-      typeof siteSettings?.header === "object" ? siteSettings.header?.id : siteSettings?.header;
-    if (headerId === doc.id) {
+    if (
+      relationId(siteSettings?.blog?.header) === doc.id ||
+      relationId(siteSettings?.notFound?.header) === doc.id
+    ) {
       revalidateGlobalTags({ collection: "site-settings", locale });
       payload.logger?.info?.(`Revalidated site-settings for locale: ${locale}`);
     }

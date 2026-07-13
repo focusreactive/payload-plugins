@@ -28,7 +28,7 @@ export async function createBreadcrumbsSchema(options: CreateBreadcrumbsOptions)
 
   const breadcrumbs: BreadcrumbItem[] = [
     {
-      name: settings?.siteName || "Home",
+      name: settings?.general?.siteName || "Home",
       url: buildUrl({
         collection: "page",
         locale: options.locale,

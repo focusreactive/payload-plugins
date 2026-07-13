@@ -2,14 +2,14 @@ import Image from "next/image";
 import React from "react";
 
 import { Media } from "@/components/media";
-import { getSiteSettings } from "@/dal/getSiteSettings";
+import { getAdminSettings } from "@/dal/getAdminSettings";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import type { Media as MediaType } from "@/payload-types";
 
 export default async function Icon() {
-  const settings = await getSiteSettings({});
+  const settings = await getAdminSettings();
 
-  const icon = settings?.adminIcon as MediaType | null;
+  const icon = settings?.icon as MediaType | null;
 
   if (icon) {
     const media = prepareMediaProps({ image: icon });

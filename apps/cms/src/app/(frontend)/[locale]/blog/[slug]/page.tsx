@@ -44,9 +44,13 @@ export default async function Page({ params }: Args) {
   return (
     <>
       <TrackPage collection="posts" id={post.id} locale={locale} enabled={!draft} />
-      <Header data={siteSettings.header as HeaderType} />
+      <Header data={siteSettings.blog.header as HeaderType} />
       <main>
-        <ArticleJsonLd post={post} siteName={siteSettings.siteName as string} locale={locale} />
+        <ArticleJsonLd
+          post={post}
+          siteName={siteSettings.general?.siteName as string}
+          locale={locale}
+        />
         <BreadcrumbsJsonLd
           locale={locale}
           blog={{
@@ -54,7 +58,7 @@ export default async function Page({ params }: Args) {
               slug: post.slug ?? decodedSlug,
               title: post.title,
             },
-            title: blogSettings.blogTitle || "Blog",
+            title: blogSettings.title || "Blog",
           }}
         />
 
@@ -66,7 +70,7 @@ export default async function Page({ params }: Args) {
           relatedPostsLabel={blogSettings.relatedPostsLabel}
         />
       </main>
-      <Footer data={siteSettings.footer as FooterType} />
+      <Footer data={siteSettings.blog.footer as FooterType} />
     </>
   );
 }

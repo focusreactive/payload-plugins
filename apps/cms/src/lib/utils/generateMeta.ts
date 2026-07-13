@@ -49,26 +49,32 @@ export const generateMeta = async (args: {
 
   const settings = await getSiteSettings({ locale });
 
-  const siteName = settings?.siteName || "Site";
-  const separator = settings?.seoTitleSeparator || "|";
-  const suffix = settings?.seoTitleSuffix || siteName;
-  const ogSiteName = settings?.ogSiteName || siteName;
+  const siteName = settings?.general?.siteName || "Site";
+  const separator = settings?.seo?.titleSeparator || "|";
+  const suffix = settings?.seo?.titleSuffix || siteName;
+  const ogSiteName = settings?.seo?.ogSiteName || siteName;
 
-  const baseTitle = doc?.meta?.title || doc?.title || settings?.defaultOgTitle || siteName;
+  const baseTitle = doc?.meta?.title || doc?.title || settings?.seo?.defaultOgTitle || siteName;
 
   const title = buildPageTitle(baseTitle, separator, suffix, siteName);
 
   const description =
-    doc?.meta?.description || settings?.defaultDescription || settings?.defaultOgDescription || "";
+    doc?.meta?.description ||
+    settings?.seo?.defaultDescription ||
+    settings?.seo?.defaultOgDescription ||
+    "";
 
   const ogDescription =
-    doc?.meta?.description || settings?.defaultOgDescription || settings?.defaultDescription || "";
+    doc?.meta?.description ||
+    settings?.seo?.defaultOgDescription ||
+    settings?.seo?.defaultDescription ||
+    "";
 
   const ogImage = getImageURL(
-    (doc?.meta?.image || settings?.defaultOgImage) as Parameters<typeof getImageURL>[0]
+    (doc?.meta?.image || settings?.seo?.defaultOgImage) as Parameters<typeof getImageURL>[0]
   );
 
-  const ogTitle = doc?.meta?.title || doc?.title || settings?.defaultOgTitle || siteName;
+  const ogTitle = doc?.meta?.title || doc?.title || settings?.seo?.defaultOgTitle || siteName;
 
   let canonical: string;
   if (collection === "posts") {
@@ -86,9 +92,9 @@ export const generateMeta = async (args: {
     });
   }
 
-  const twitterCard = settings?.defaultTwitterCard || "summary_large_image";
-  const twitterSite = settings?.twitterSite;
-  const twitterCreator = settings?.twitterCreator;
+  const twitterCard = settings?.seo?.defaultTwitterCard || "summary_large_image";
+  const twitterSite = settings?.seo?.twitterSite;
+  const twitterCreator = settings?.seo?.twitterCreator;
 
   const shouldIndex = doc?.meta?.robots === "index";
 

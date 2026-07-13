@@ -19,7 +19,7 @@ export function createBlogSchema({ settings, posts, siteName, locale }: BlogSche
   const baseUrl = getServerSideURL();
   const blogUrl = buildUrl({ collection: "posts", locale });
 
-  const description = settings.blogMeta?.description || settings.blogDescription || "";
+  const description = settings.meta?.description || settings.description || "";
 
   const publisher = siteName
     ? {
@@ -71,7 +71,7 @@ export function createBlogSchema({ settings, posts, siteName, locale }: BlogSche
       "@type": "WebPage",
       inLanguage: locale,
     },
-    name: settings.blogTitle || "Blog",
+    name: settings.title || "Blog",
     url: blogUrl,
     ...(description && { description }),
     ...(publisher && { publisher }),

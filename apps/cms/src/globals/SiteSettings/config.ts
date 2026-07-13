@@ -34,40 +34,12 @@ export const SiteSettings: GlobalConfig = {
               },
               localized: true,
             },
-            {
-              type: "row",
-              fields: [
-                {
-                  name: "header",
-                  type: "relationship",
-                  relationTo: "header",
-                  admin: {
-                    width: "50%",
-                    description: {
-                      en: "The header to display on the blog page",
-                      es: "El header a mostrar en la página de blog",
-                    },
-                  },
-                },
-                {
-                  name: "footer",
-                  type: "relationship",
-                  relationTo: "footer",
-                  admin: {
-                    width: "50%",
-                    description: {
-                      en: "The footer to display on the blog page",
-                      es: "El footer a mostrar en la página de blog",
-                    },
-                  },
-                },
-              ],
-            },
           ],
           label: {
             en: "General",
             es: "General",
           },
+          name: "general",
         },
         {
           fields: [
@@ -75,7 +47,7 @@ export const SiteSettings: GlobalConfig = {
               type: "row",
               fields: [
                 {
-                  name: "adminLogo",
+                  name: "logo",
                   type: "upload",
                   relationTo: "media",
                   label: {
@@ -91,7 +63,7 @@ export const SiteSettings: GlobalConfig = {
                   },
                 },
                 {
-                  name: "adminIcon",
+                  name: "icon",
                   type: "upload",
                   relationTo: "media",
                   label: {
@@ -113,6 +85,7 @@ export const SiteSettings: GlobalConfig = {
             en: "Admin Panel",
             es: "Panel de administración",
           },
+          name: "adminPanel",
         },
         {
           fields: [
@@ -120,7 +93,7 @@ export const SiteSettings: GlobalConfig = {
               type: "row",
               fields: [
                 {
-                  name: "seoTitleSeparator",
+                  name: "titleSeparator",
                   type: "select",
                   label: {
                     en: "Title Separator",
@@ -141,7 +114,7 @@ export const SiteSettings: GlobalConfig = {
                   },
                 },
                 {
-                  name: "seoTitleSuffix",
+                  name: "titleSuffix",
                   type: "text",
                   label: {
                     en: "Title Suffix",
@@ -336,21 +309,37 @@ export const SiteSettings: GlobalConfig = {
             en: "SEO Defaults",
             es: "Valores por defecto de SEO",
           },
+          name: "seo",
         },
         {
           fields: [
             {
-              name: "notFoundTitle",
+              type: "row",
+              fields: [
+                {
+                  name: "header",
+                  type: "relationship",
+                  relationTo: "header",
+                  admin: {
+                    width: "50%",
+                  },
+                },
+                {
+                  name: "footer",
+                  type: "relationship",
+                  relationTo: "footer",
+                  admin: {
+                    width: "50%",
+                  },
+                },
+              ],
+            },
+            {
+              name: "title",
               type: "text",
               label: {
                 en: "404 Title",
                 es: "Título de la página 404",
-              },
-              admin: {
-                description: {
-                  en: "Heading displayed on 404 page",
-                  es: "Encabezado mostrado en la página 404",
-                },
               },
               localized: true,
               defaultValue: createLocalizedDefault(
@@ -358,7 +347,7 @@ export const SiteSettings: GlobalConfig = {
               ),
             },
             {
-              name: "notFoundDescription",
+              name: "description",
               type: "textarea",
               label: {
                 en: "404 Description",
@@ -367,12 +356,6 @@ export const SiteSettings: GlobalConfig = {
               defaultValue: createLocalizedDefault(
                 DEFAULT_VALUES.collections.siteSettings.notFoundDescription
               ),
-              admin: {
-                description: {
-                  en: "Text displayed on 404 page",
-                  es: "Texto mostrado en la página 404",
-                },
-              },
               localized: true,
             },
           ],
@@ -380,6 +363,7 @@ export const SiteSettings: GlobalConfig = {
             en: "404 Page",
             es: "Página 404",
           },
+          name: "notFound",
         },
         {
           fields: [
@@ -389,6 +373,27 @@ export const SiteSettings: GlobalConfig = {
                 {
                   label: { en: "Content", es: "Contenido" },
                   fields: [
+                    {
+                      type: "row",
+                      fields: [
+                        {
+                          name: "header",
+                          type: "relationship",
+                          relationTo: "header",
+                          admin: {
+                            width: "50%",
+                          },
+                        },
+                        {
+                          name: "footer",
+                          type: "relationship",
+                          relationTo: "footer",
+                          admin: {
+                            width: "50%",
+                          },
+                        },
+                      ],
+                    },
                     {
                       type: "row",
                       fields: [
@@ -405,7 +410,7 @@ export const SiteSettings: GlobalConfig = {
                         },
                         {
                           admin: { width: "60%" },
-                          name: "blogTitle",
+                          name: "title",
                           type: "text",
                           required: true,
                           defaultValue: createLocalizedDefault(
@@ -420,7 +425,7 @@ export const SiteSettings: GlobalConfig = {
                       ],
                     },
                     {
-                      name: "blogDescription",
+                      name: "description",
                       type: "textarea",
                       required: true,
                       localized: true,
@@ -482,7 +487,7 @@ export const SiteSettings: GlobalConfig = {
                   label: { en: "SEO", es: "SEO" },
                   fields: [
                     {
-                      name: "blogMeta",
+                      name: "meta",
                       type: "group",
                       label: false,
                       fields: generateSeoFields(),

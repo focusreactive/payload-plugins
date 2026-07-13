@@ -40,7 +40,7 @@ export default async function Page({ searchParams, params }: Props) {
   return (
     <>
       <TrackPage pageRef={SYNTHETIC_REFS.blogIndex} locale={locale} enabled={!draft} />
-      <Header data={siteSettings.header as HeaderType} />
+      <Header data={siteSettings.blog.header as HeaderType} />
       <main>
         <Suspense>
           <BlogJsonLdWrapper searchParams={searchParams} locale={locale} />
@@ -49,7 +49,7 @@ export default async function Page({ searchParams, params }: Props) {
           <BlogPageDynamic searchParams={searchParams} locale={locale} />
         </Suspense>
       </main>
-      <Footer data={siteSettings.footer as FooterType} />
+      <Footer data={siteSettings.blog.footer as FooterType} />
     </>
   );
 }
@@ -63,13 +63,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     collection: "posts",
     doc: {
       meta: {
-        description: blogSettings.blogMeta?.description || blogSettings.blogDescription,
-        image: blogSettings.blogMeta?.image,
-        robots: blogSettings.blogMeta?.robots,
-        title: blogSettings.blogMeta?.title,
+        description: blogSettings.meta?.description || blogSettings.description,
+        image: blogSettings.meta?.image,
+        robots: blogSettings.meta?.robots,
+        title: blogSettings.meta?.title,
       },
       slug: BLOG_CONFIG.slug,
-      title: blogSettings.blogTitle || "Blog",
+      title: blogSettings.title || "Blog",
     },
     locale,
   });

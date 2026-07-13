@@ -5,6 +5,9 @@ import { revalidatePageCache } from "@/lib/utils/revalidatePageCache";
 import { revalidateGlobalTags } from "@/dal/getGlobals";
 import type { Footer } from "@/payload-types";
 
+const relationId = (rel: number | Footer | null | undefined) =>
+  typeof rel === "object" ? rel?.id : rel;
+
 export const revalidateResourcesUsingFooter: CollectionAfterChangeHook<Footer> = async ({
   doc,
   req,
@@ -19,9 +22,10 @@ export const revalidateResourcesUsingFooter: CollectionAfterChangeHook<Footer> =
       slug: "site-settings",
     });
 
-    const footerId =
-      typeof siteSettings?.footer === "object" ? siteSettings.footer?.id : siteSettings?.footer;
-    if (footerId === doc.id) {
+    if (
+      relationId(siteSettings?.blog?.footer) === doc.id ||
+      relationId(siteSettings?.notFound?.footer) === doc.id
+    ) {
       revalidateGlobalTags({ collection: "site-settings", locale });
       payload.logger?.info?.(`Revalidated site-settings for locale: ${locale}`);
     }

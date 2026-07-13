@@ -27,6 +27,8 @@ export { getCachedGlobal, formatGlobalCacheTag, revalidateGlobalTags } from "./g
 export { getSiteSettings } from "./getSiteSettings";
 export { getBlogPageSettings } from "./getBlogPageSettings";
 export type { BlogPageSettingsData } from "./getBlogPageSettings";
+export { getAdminSettings } from "./getAdminSettings";
+export { getNotFoundSettings } from "./getNotFoundSettings";
 
 // Media
 export { getDefaultMediaId, DEFAULT_MEDIA_CACHE_TAG } from "./getDefaultMediaId";
