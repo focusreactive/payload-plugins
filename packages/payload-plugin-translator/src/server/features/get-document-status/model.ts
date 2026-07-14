@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { CollectionSlug } from "payload";
 
-import { JobIdSchema } from "../../shared";
+import { JobIdSchema, toClientErrorMessage } from "../../shared";
 import type { Task, TaskStatus } from "../../modules/task-runner";
 
 /**
@@ -76,7 +76,10 @@ export function taskToJobStatusOutput(task: Task): JobStatusOutput {
       target_lng: task.input.targetLng,
       strategy: task.input.strategy,
     },
-    error: task.error,
+    // Never ship the raw provider/runtime error to the browser outside development — it can leak
+    // implementation detail and secrets (e.g. a partial API key). The full error stays in the job
+    // record + server logs.
+    error: task.error ? { message: toClientErrorMessage(task.error.message) } : undefined,
     cancelled: task.cancelled,
   };
 }

@@ -1,5 +1,11 @@
 // HTTP utilities
-export { ServerResponse, withErrorHandler, withAccessCheck } from "./http";
+export {
+  ServerResponse,
+  withErrorHandler,
+  withAccessCheck,
+  toClientErrorMessage,
+  GENERIC_TRANSLATION_ERROR,
+} from "./http";
 
 // Access control
 export { AnyAccessGuard } from "./access";

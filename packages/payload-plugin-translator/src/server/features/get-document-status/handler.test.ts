@@ -3,6 +3,7 @@ import type { Payload, PayloadRequest, CollectionSlug } from "payload";
 import { GetDocumentStatusHandler } from "./handler";
 import type { GetDocumentStatusConfig } from "./model";
 import type { TaskRunnerFactory, TaskRunner, Task } from "../../modules/task-runner";
+import { GENERIC_TRANSLATION_ERROR } from "../../shared";
 
 describe("GetDocumentStatusHandler", () => {
   let handler: GetDocumentStatusHandler;
@@ -182,6 +183,28 @@ describe("GetDocumentStatusHandler", () => {
       const body = await response.json();
       expect(body.data.status).toBe("failed");
       expect(body.data.error).toEqual({ message: "Translation failed" });
+    });
+
+    it("does not leak the raw error to the client in production", async () => {
+      vi.stubEnv("NODE_ENV", "production");
+      try {
+        const task = createMockTask({
+          status: "failed",
+          error: { message: "401 Incorrect API key provided: sk-proj-abc123" },
+        });
+        (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue([task]);
+
+        const req = createMockRequest({
+          collection_slug: "posts",
+          collection_id: "doc-123",
+        });
+        const body = await (await handler.handle(req)).json();
+
+        expect(body.data.error).toEqual({ message: GENERIC_TRANSLATION_ERROR });
+        expect(JSON.stringify(body)).not.toContain("sk-proj");
+      } finally {
+        vi.unstubAllEnvs();
+      }
     });
 
     it("includes cancelled flag", async () => {
