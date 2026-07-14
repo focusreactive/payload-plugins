@@ -1,3 +1,15 @@
+# @focus-reactive/payload-plugin-translator [0.8.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.7.2...@focus-reactive/payload-plugin-translator@0.8.0) (2026-07-14)
+
+
+### Bug Fixes
+
+* **translator:** don't leak provider error details to the client outside development ([5f63d6d](https://github.com/focusreactive/payload-plugins/commit/5f63d6dbdba8678e0bb41599a03008958c22ac04))
+
+
+### Features
+
+* **translator:** stale-translation detection with a unified status panel ([d14ab90](https://github.com/focusreactive/payload-plugins/commit/d14ab90da05e5839d459ad8a4cab220aa886e94f))
+
 ## @focus-reactive/payload-plugin-translator [0.7.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.7.1...@focus-reactive/payload-plugin-translator@0.7.2) (2026-07-09)
 
 
