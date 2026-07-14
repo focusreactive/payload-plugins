@@ -28,26 +28,10 @@ export function CollectionTranslationForm({
     <FormProvider {...form}>
       <fieldset className={styles.fieldset}>
         <div className={styles.row}>
-          <div className={styles["locale-group"]}>
-            <FormSelectLocale
-              label="From"
-              className={styles["select-locale-field"]}
-              size="md"
-              name={FORM_FIELDS.SOURCE_LNG}
-            />
-            <FormSelectLocale
-              label="To"
-              className={styles["select-locale-field"]}
-              size="md"
-              name={FORM_FIELDS.TARGET_LNG}
-            />
-          </div>
-          <FormSelectStrategy
-            className={styles["strategy-field"]}
-            name={FORM_FIELDS.STRATEGY}
-            size="md"
-          />
+          <FormSelectLocale size="sm" label="From" name={FORM_FIELDS.SOURCE_LNG} />
+          <FormSelectLocale size="sm" label="To" name={FORM_FIELDS.TARGET_LNG} />
         </div>
+        <FormSelectStrategy size="sm" name={FORM_FIELDS.STRATEGY} />
         {hasDrafts && <FormCheckboxPublish name={FORM_FIELDS.PUBLISH_ON_TRANSLATION} />}
         <input {...form.register(FORM_FIELDS.HIDDEN_COLLECTION_SLUG)} type="hidden" />
         <Button
@@ -56,12 +40,15 @@ export function CollectionTranslationForm({
           className={styles["submit-button"]}
           onClick={form.handleSubmit(onSubmit)}
           type="submit"
-          $size="md"
+          $size="sm"
           $isLoading={form.formState.isSubmitting}
           $startContent={<SendIcon />}
         >
           {selectedCount ? `Queue ${selectedCount} translations` : "Queue translations"}
         </Button>
+        {selectedCount === 0 && (
+          <p className={styles.caption}>Select rows in the list to translate.</p>
+        )}
       </fieldset>
     </FormProvider>
   );

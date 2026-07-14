@@ -5,6 +5,7 @@ import type { RawPayloadComponentExport } from "../../../types/PayloadComponentE
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import type { TranslationProvider } from "../../../core/translation-providers";
 import type { TaskRunnerFactory } from "../task-runner";
+import type { ProvenanceStoreFactory } from "../provenance";
 
 export type CollectionAdminSlot = "beforeDocumentControls" | "beforeListTable";
 
@@ -44,6 +45,8 @@ export interface LevelContext {
   readonly schemaMap: CollectionSchemaMap;
   /** The configured translation backend (used by the synchronous field level). */
   readonly translationProvider: TranslationProvider;
+  /** Builds a provenance store; absent when provenance is disabled (staleness then reports empty). */
+  readonly provenanceStoreFactory?: ProvenanceStoreFactory;
 
   /** Register endpoints. Deduplicated by method + path when applied. */
   addEndpoints(endpoints: Endpoint[]): void;

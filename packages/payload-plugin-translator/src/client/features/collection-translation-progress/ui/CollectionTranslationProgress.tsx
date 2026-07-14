@@ -4,11 +4,12 @@ import { ShimmerEffect } from "@payloadcms/ui";
 import { TrashIcon } from "@payloadcms/ui/icons/Trash";
 
 import type { GroupedCollectionTranslationStatus } from "../../../entities/translation";
-import { TranslationsApi } from "../../../entities/translation";
-import { LanguageTranslateIcon } from "../../../shared/lib/assets/icons/LanguageTranslateIcon";
-import Button from "../../../shared/ui/Button";
-import StatusIndicator from "../../../shared/ui/StatusIndicator";
-import Tooltip from "../../../shared/ui/Tooltip";
+import {
+  ActionButton,
+  DocumentTranslationStatus,
+  TranslationsApi,
+} from "../../../entities/translation";
+import ColorIndicator from "../../../shared/ui/ColorIndicator";
 
 import styles from "./styles.module.scss";
 
@@ -18,6 +19,23 @@ type CollectionTranslationProgressProps = {
   isPending: boolean;
 };
 
+// Same colour + label vocabulary as the document status list (StatusBadge STATE_LABEL). Only the
+// actively-processing group pulses — Queued is waiting, not working, so it stays static.
+const ROWS: Array<{
+  key: DocumentTranslationStatus;
+  label: string;
+  color: "blue" | "gray" | "green" | "red";
+}> = [
+  { key: DocumentTranslationStatus.RUNNING, label: "Translating", color: "blue" },
+  { key: DocumentTranslationStatus.PENDING, label: "Queued", color: "gray" },
+  { key: DocumentTranslationStatus.COMPLETED, label: "Translated", color: "green" },
+  { key: DocumentTranslationStatus.FAILED, label: "Failed", color: "red" },
+];
+
+/**
+ * Collection status as a compact list of grouped counts — one `[dot] label … count` row per
+ * non-zero group, mirroring the document popup's per-locale list rhythm (dot vocabulary shared).
+ */
 export function CollectionTranslationProgress({
   collection,
   data,
@@ -25,76 +43,58 @@ export function CollectionTranslationProgress({
 }: CollectionTranslationProgressProps) {
   const cancelPendingTranslations = TranslationsApi.useCancelCollectionTranslations();
 
+  if (isPending) {
+    return (
+      <div className={styles["status-list"]}>
+        <ShimmerEffect width="100%" height={20} />
+        <ShimmerEffect width="100%" height={20} />
+        <ShimmerEffect width="100%" height={20} />
+      </div>
+    );
+  }
+
+  if (!data) {
+    return null;
+  }
+
   return (
-    <div className={styles.container}>
-      {isPending && (
-        <>
-          <ShimmerEffect width="100%" height={32}></ShimmerEffect>
-          <ShimmerEffect width="100%" height={32}></ShimmerEffect>
-          <ShimmerEffect width="100%" height={32}></ShimmerEffect>
-          <ShimmerEffect width="100%" height={32}></ShimmerEffect>
-        </>
-      )}
+    <ul className={styles["status-list"]}>
+      {ROWS.map(({ key, label, color }) => {
+        const count = data[key].length;
+        if (count === 0) {
+          return null;
+        }
 
-      {data && (
-        <>
-          <StatusIndicator
-            className={styles["status-indicator"]}
-            title="Completed"
-            key="completed"
-            $color="green"
-          >
-            <LanguageTranslateIcon />
-            <b>{data.completed.length}</b>
-          </StatusIndicator>
-
-          <StatusIndicator
-            className={styles["status-indicator"]}
-            title="Failed"
-            key="failed"
-            $color="red"
-          >
-            <LanguageTranslateIcon />
-            <b>{data.failed.length}</b>
-          </StatusIndicator>
-
-          <StatusIndicator
-            className={styles["status-indicator"]}
-            title="In progress"
-            $animated={data.running.length > 0}
-            key="running"
-            $color="blue"
-          >
-            <LanguageTranslateIcon />
-            <b>{data.running.length}</b>
-          </StatusIndicator>
-
-          <StatusIndicator
-            className={styles["status-indicator"]}
-            title="Pending"
-            $animated={data.pending.length > 0}
-            key="pending"
-            $color="gray"
-          >
-            <LanguageTranslateIcon />
-            <b>{data.pending.length}</b>
-            <Tooltip sideOffset={12} side="bottom" content="Cancel translations">
-              <Button
-                $variant="light"
-                $size="sm"
-                $isIconButton
-                aria-label="Cancel all queued translation"
-                type="button"
-                onClick={() => cancelPendingTranslations.mutateAsync({ collection })}
-                disabled={cancelPendingTranslations.isPending || !data.pending.length}
-                $isLoading={cancelPendingTranslations.isPending}
-              >
-                <TrashIcon />
-              </Button>
-            </Tooltip>
-          </StatusIndicator>
-        </>
-      )}
-    </div>
+        return (
+          <li key={key} className={styles["status-row"]}>
+            <div className={styles.top}>
+              <span className={styles.lead}>
+                <ColorIndicator
+                  $color={color}
+                  $animated={key === DocumentTranslationStatus.RUNNING}
+                />
+                <span className={styles.label}>{label}</span>
+              </span>
+              <span className={styles.right}>
+                <span className={styles.count}>{count}</span>
+                {key === DocumentTranslationStatus.PENDING && (
+                  <ActionButton
+                    icon={<TrashIcon />}
+                    title="Cancel translations"
+                    onClick={() => cancelPendingTranslations.mutateAsync({ collection })}
+                    disabled={cancelPendingTranslations.isPending}
+                    loading={cancelPendingTranslations.isPending}
+                  />
+                )}
+              </span>
+            </div>
+            {/* No per-doc error data in the grouped status API — point the user to where detail lives. */}
+            {key === DocumentTranslationStatus.FAILED && (
+              <p className={styles.meta}>Open a document to see why</p>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }

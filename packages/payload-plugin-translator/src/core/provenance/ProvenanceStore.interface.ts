@@ -92,6 +92,27 @@ export interface ProvenanceStore {
    */
   find(key: ProvenanceKey): Promise<TranslationProvenanceRecord | null>;
   /**
+   * List every record for a document — one per translated target locale. Backs #50's per-locale
+   * staleness read for a single document panel.
+   *
+   * @param collectionSlug - Slug of the translated document's collection.
+   * @param documentId - Stringified id of the translated document.
+   * @returns All provenance receipts for the document (empty when none exist).
+   */
+  findByDocument(
+    collectionSlug: string,
+    documentId: string
+  ): Promise<TranslationProvenanceRecord[]>;
+  /**
+   * Acknowledge the current source drift for one locale without re-translating (#50's dismiss):
+   * persist `dismissedFingerprint` so the indicator hides until the source changes again. No-op if
+   * the key has no record.
+   *
+   * @param key - The `(collectionSlug, documentId, targetLocale)` identity to dismiss.
+   * @param dismissedFingerprint - The current source fingerprint being acknowledged.
+   */
+  dismiss(key: ProvenanceKey, dismissedFingerprint: string): Promise<void>;
+  /**
    * Delete every record for a document (all target locales). Used to cascade-clean when the source
    * document is deleted.
    *

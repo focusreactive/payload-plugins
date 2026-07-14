@@ -210,6 +210,7 @@ export class TranslateCollectionPlugin {
         taskRunnerFactory,
         schemaMap,
         translationProvider,
+        provenanceStoreFactory,
       });
       for (const level of activeLevels) level.extend(builder);
 

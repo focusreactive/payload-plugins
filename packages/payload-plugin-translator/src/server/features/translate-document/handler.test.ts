@@ -270,6 +270,8 @@ describe("TranslateDocumentHandler", () => {
     let store: {
       upsert: ReturnType<typeof vi.fn>;
       find: ReturnType<typeof vi.fn>;
+      findByDocument: ReturnType<typeof vi.fn>;
+      dismiss: ReturnType<typeof vi.fn>;
       deleteByDocument: ReturnType<typeof vi.fn>;
     };
     let storeFactory: ReturnType<typeof vi.fn>;
@@ -282,7 +284,13 @@ describe("TranslateDocumentHandler", () => {
       );
 
     beforeEach(() => {
-      store = { upsert: vi.fn(), find: vi.fn(), deleteByDocument: vi.fn() };
+      store = {
+        upsert: vi.fn(),
+        find: vi.fn(),
+        findByDocument: vi.fn(),
+        dismiss: vi.fn(),
+        deleteByDocument: vi.fn(),
+      };
       storeFactory = vi.fn(() => store);
     });
 
@@ -330,6 +338,52 @@ describe("TranslateDocumentHandler", () => {
       );
       const record = store.upsert.mock.calls[0][0] as { translatedAt: string };
       expect(new Date(record.translatedAt).toISOString()).toBe(record.translatedAt);
+    });
+
+    it("fingerprints the PRISTINE source, before the pipeline can mutate it in place", async () => {
+      // Regression: the pipeline translates in place and shares object-valued source leaves (e.g.
+      // richText nodes) by reference with sourceData. If the handler fingerprints the source AFTER
+      // translateContent, the baseline captures the target translation and every fresh translation
+      // is instantly reported stale. The baseline must be the untranslated source.
+      const { translateContent } = await import("../../../core/translation-pipeline");
+      const { computeSourceFingerprint } =
+        await import("../../../core/content-projection/computeSourceFingerprint");
+
+      (mockPayload.findByID as ReturnType<typeof vi.fn>).mockImplementation(
+        ({ locale }: { locale: string }) =>
+          Promise.resolve(
+            locale === "en"
+              ? { id: "doc-123", title: "Original source" }
+              : { id: "doc-123", title: "Target" }
+          )
+      );
+
+      // Emulate the real pipeline: mutate the source argument, then return the translated shape.
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+        async ({ sourceData }: { sourceData: Record<string, unknown> }) => {
+          sourceData.title = "TRANSLATED (pipeline mutation)";
+          return { title: "TRANSLATED (pipeline mutation)" };
+        }
+      );
+
+      // Snapshot exactly what the fingerprint saw, at call time.
+      let fingerprintedDoc: unknown;
+      (computeSourceFingerprint as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+        (doc: unknown) => {
+          fingerprintedDoc = structuredClone(doc);
+          return "fp-fixed";
+        }
+      );
+
+      await makeHandlerWithProvenance().handle(
+        mockPayload,
+        createInput({ collection: "posts" as CollectionSlug, sourceLng: "en", targetLng: "de" })
+      );
+
+      expect(fingerprintedDoc).toEqual({ id: "doc-123", title: "Original source" });
+      expect(store.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ sourceFingerprint: "fp-fixed" })
+      );
     });
 
     it("does not record provenance when no store factory is supplied (disabled)", async () => {

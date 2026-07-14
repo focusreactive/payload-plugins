@@ -42,7 +42,7 @@ describe("documentLevel", () => {
     documentLevel().extend(ctx);
 
     expect(ctx.addEndpoints).toHaveBeenCalledTimes(1);
-    expect((ctx.addEndpoints as ReturnType<typeof vi.fn>).mock.calls[0][0]).toHaveLength(6);
+    expect((ctx.addEndpoints as ReturnType<typeof vi.fn>).mock.calls[0][0]).toHaveLength(8);
     expect(ctx.addCollectionComponent).toHaveBeenCalledWith(
       "beforeDocumentControls",
       expect.any(Function)
@@ -58,7 +58,7 @@ describe("collectionLevel", () => {
     collectionLevel().extend(ctx);
 
     expect(ctx.addEndpoints).toHaveBeenCalledTimes(1);
-    expect((ctx.addEndpoints as ReturnType<typeof vi.fn>).mock.calls[0][0]).toHaveLength(6);
+    expect((ctx.addEndpoints as ReturnType<typeof vi.fn>).mock.calls[0][0]).toHaveLength(8);
     expect(ctx.addCollectionComponent).toHaveBeenCalledWith(
       "beforeListTable",
       expect.any(Function)

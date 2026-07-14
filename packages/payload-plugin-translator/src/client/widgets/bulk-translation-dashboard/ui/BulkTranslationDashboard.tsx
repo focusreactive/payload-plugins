@@ -4,7 +4,7 @@ import { toast, useLocale, useSelection } from "@payloadcms/ui";
 import { SelectAllStatus } from "@payloadcms/ui/providers/Selection";
 import { useEffect, useMemo } from "react";
 
-import { TranslationsApi } from "../../../entities/translation";
+import { deriveCollectionPanelStatus, TranslationsApi } from "../../../entities/translation";
 import {
   CollectionTranslationForm,
   FORM_FIELDS,
@@ -15,6 +15,8 @@ import CollectionTranslationPopup from "../../../features/collection-translation
 import { CollectionTranslationProgress } from "../../../features/collection-translation-progress";
 import { handleFormError } from "../../../shared/lib/forms/handle-form-error";
 import { useCollectionDashboardUrlParams } from "../../../shared/lib/payload/hooks/useCollectionDashboardUrlParams";
+
+import styles from "./styles.module.scss";
 
 type BulkTranslationDashboardProps = {
   hasDrafts: boolean;
@@ -50,9 +52,16 @@ export default function BulkTranslationDashboard({ hasDrafts }: BulkTranslationD
   const selectAll = documentsSelection.selectAll === SelectAllStatus.AllAvailable;
   const selectedCount = selectAll ? documentsSelection.totalDocs : documentsSelection.count;
 
-  const translationInProgress = !!(
-    collectionTranslationApi.data?.pending.length || collectionTranslationApi.data?.running.length
+  const status = collectionTranslationApi.data;
+  const panelStatus = deriveCollectionPanelStatus(status);
+  const hasAnyCount = !!(
+    status &&
+    (status.completed.length ||
+      status.failed.length ||
+      status.running.length ||
+      status.pending.length)
   );
+  const showStatus = collectionTranslationApi.isPending || hasAnyCount;
 
   const handleSubmit = async (formData: FormValues) => {
     try {
@@ -67,26 +76,29 @@ export default function BulkTranslationDashboard({ hasDrafts }: BulkTranslationD
   };
 
   return (
-    <CollectionTranslationPopup
-      translationInProgress={translationInProgress}
-      selectedCount={selectedCount}
-    >
-      <h3>Bulk Translation Dashboard</h3>
-      <p>
-        Translate multiple documents at once using AI. Select the records you want to translate on
-        the collection dashboard, then configure your translation settings here.
-      </p>
-      <CollectionTranslationForm
-        form={form}
-        onSubmit={handleSubmit}
-        selectedCount={selectedCount}
-        hasDrafts={hasDrafts}
-      />
-      <CollectionTranslationProgress
-        collection={collection}
-        data={collectionTranslationApi.data}
-        isPending={collectionTranslationApi.isPending}
-      />
+    <CollectionTranslationPopup status={panelStatus} selectedCount={selectedCount}>
+      <h4 className={styles.title}>Bulk translation</h4>
+
+      <section className={styles.section}>
+        <h5 className={styles.eyebrow}>Translate</h5>
+        <CollectionTranslationForm
+          form={form}
+          onSubmit={handleSubmit}
+          selectedCount={selectedCount}
+          hasDrafts={hasDrafts}
+        />
+      </section>
+
+      {showStatus && (
+        <section className={`${styles.section} ${styles["section--status"]}`}>
+          <h5 className={styles.eyebrow}>Status</h5>
+          <CollectionTranslationProgress
+            collection={collection}
+            data={collectionTranslationApi.data}
+            isPending={collectionTranslationApi.isPending}
+          />
+        </section>
+      )}
     </CollectionTranslationPopup>
   );
 }

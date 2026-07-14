@@ -180,6 +180,22 @@ translatorPlugin({
 });
 ```
 
+### Stale-translation detection
+
+_Since v0.8.0._
+
+With `provenance` enabled, the document translation control shows an **"out of date"** marker (with a
+tooltip naming the affected locales) when a target locale's source content changed after it was
+translated. Open the translation popup to see the per-locale list, where each locale can be
+**re-translated** or its out-of-date notice **dismissed**.
+Staleness is derived on read by comparing the current source fingerprint against the one recorded at
+translation time — no extra configuration, and no write-side hook on your collections. Editing a
+source locale marks its already-translated locales stale on the next panel view; re-translating clears it.
+
+Dismiss acknowledges the drift without re-translating; the marker stays hidden until the source
+changes again. When `provenance` is disabled nothing is shown. Note the fingerprint is text-only, so
+formatting-only edits to rich text do not mark a locale stale.
+
 ### Lifecycle callbacks
 
 _Since v0.7.0._
@@ -382,11 +398,10 @@ Every public API is annotated with `@since x.y.z` in its JSDoc, and features car
 
 ## Roadmap
 
-Planned features building on the v0.7.0 provenance foundation:
+Planned features building on the provenance foundation:
 
-- **Stale-translation detection** — surface which target locales are out of sync with their source, using the recorded provenance fingerprint.
 - **Global translation dashboard** — translate across all collections from one place, with project-wide progress.
-- **Auto-translate on source change** — retranslate automatically when default-locale content changes.
+- **Auto-translate on source change** — retranslate automatically when default-locale content changes, driven by stale-translation detection.
 
 ## License
 

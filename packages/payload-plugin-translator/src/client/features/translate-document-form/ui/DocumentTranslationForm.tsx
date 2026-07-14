@@ -26,10 +26,10 @@ export function DocumentTranslationForm({
     <FormProvider {...form}>
       <fieldset className={styles.fieldset}>
         <div className={styles.row}>
-          <FormSelectLocale label="From" name={FORM_FIELDS.SOURCE_LNG} />
-          <FormSelectLocale label="To" name={FORM_FIELDS.TARGET_LNG} />
+          <FormSelectLocale size="sm" label="From" name={FORM_FIELDS.SOURCE_LNG} />
+          <FormSelectLocale size="sm" label="To" name={FORM_FIELDS.TARGET_LNG} />
         </div>
-        <FormSelectStrategy name={FORM_FIELDS.STRATEGY} />
+        <FormSelectStrategy size="sm" name={FORM_FIELDS.STRATEGY} />
         {hasDrafts && <FormCheckboxPublish name={FORM_FIELDS.PUBLISH_ON_TRANSLATION} />}
         <input {...form.register(FORM_FIELDS.HIDDEN_COLLECTION_SLUG)} type="hidden" />
         <input {...form.register(FORM_FIELDS.HIDDEN_COLLECTION_ID)} type="hidden" />
@@ -39,11 +39,11 @@ export function DocumentTranslationForm({
           className={styles["submit-button"]}
           onClick={form.handleSubmit(onSubmit)}
           type="submit"
-          $size="lg"
+          $size="sm"
           $isLoading={form.formState.isSubmitting}
           $startContent={<SendIcon />}
         >
-          Queue Translation
+          Queue translation
         </Button>
       </fieldset>
     </FormProvider>

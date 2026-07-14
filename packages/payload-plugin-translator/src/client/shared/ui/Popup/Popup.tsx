@@ -34,6 +34,9 @@ function Popup({
           sideOffset={8}
           side={$side}
           align={$align}
+          // Keep a gap from the viewport edges so the popup never sticks to the screen border —
+          // Radix shifts it inward to preserve this padding.
+          collisionPadding={12}
           className={style.popover}
           onOpenAutoFocus={onOpenAutoFocus}
         >

@@ -166,4 +166,86 @@ describe("PayloadProvenanceStore", () => {
       );
     });
   });
+
+  describe("findByDocument", () => {
+    it("queries every locale for the document (no targetLocale in the where)", async () => {
+      setFound([]);
+      await store.findByDocument("posts", "doc-1");
+      expect(payload.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          collection: SLUG,
+          where: {
+            and: [{ collectionSlug: { equals: "posts" } }, { documentId: { equals: "doc-1" } }],
+          },
+          pagination: false,
+        })
+      );
+    });
+
+    it("maps every found doc through toRecord", async () => {
+      setFound([
+        { id: 1, ...record },
+        {
+          id: 2,
+          ...record,
+          targetLocale: "fr",
+          translatedAt: new Date("2026-07-02T00:00:00.000Z"),
+          dismissedFingerprint: "fp-dismissed",
+        },
+      ]);
+      const result = await store.findByDocument("posts", "doc-1");
+      expect(result).toEqual([
+        record,
+        {
+          ...record,
+          targetLocale: "fr",
+          translatedAt: "2026-07-02T00:00:00.000Z",
+          dismissedFingerprint: "fp-dismissed",
+        },
+      ]);
+    });
+
+    it("returns an empty array when the document has no records", async () => {
+      setFound([]);
+      expect(await store.findByDocument("posts", "missing")).toEqual([]);
+    });
+  });
+
+  describe("dismiss", () => {
+    const key = { collectionSlug: "posts", documentId: "doc-1", targetLocale: "de" };
+
+    it("updates dismissedFingerprint on the matched record", async () => {
+      setFound([{ id: 7, ...record }]);
+      await store.dismiss(key, "fp-current");
+      expect(payload.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          collection: SLUG,
+          id: 7,
+          data: { dismissedFingerprint: "fp-current" },
+        })
+      );
+    });
+
+    it("matches the record by the composite key", async () => {
+      setFound([{ id: 7, ...record }]);
+      await store.dismiss(key, "fp-current");
+      expect(payload.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            and: [
+              { collectionSlug: { equals: "posts" } },
+              { documentId: { equals: "doc-1" } },
+              { targetLocale: { equals: "de" } },
+            ],
+          },
+        })
+      );
+    });
+
+    it("is a no-op when no record exists for the key", async () => {
+      setFound([]);
+      await store.dismiss(key, "fp-current");
+      expect(payload.update).not.toHaveBeenCalled();
+    });
+  });
 });

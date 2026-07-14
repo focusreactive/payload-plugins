@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ofetch } from "ofetch";
 import type { CollectionSlug } from "payload";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { useTranslateKitConfig } from "../../../../app/config";
 import { handleNextApiError } from "../../../../shared/lib/errors/handleApiError";
+import { DOCUMENT_STALENESS_QUERY_KEY } from "./useDocumentStaleness";
 import type { DocumentTranslation } from "../../model/types";
 
 type Props = {
@@ -52,6 +53,25 @@ export function useDocumentTranslation({ collection, id }: Props, options?: Opti
   const invalidate = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: getDocumentTranslationQueryKey({ collection, id }) });
   }, [collection, id, queryClient]);
+
+  // When a queued (async) translation transitions to "completed" in-session, the provenance
+  // record's sourceFingerprint has just been updated server-side — invalidate staleness so the
+  // "Out of date" notice clears without waiting for the next focus/remount refetch (#50).
+  // Seeded lazily (undefined) and gated on a *defined, non-completed → completed* transition, so a
+  // cold mount of an already-completed document does NOT fire a spurious extra refetch.
+  const previousStatusRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    const previousStatus = previousStatusRef.current;
+    const currentStatus = query.data?.status;
+    if (
+      currentStatus === "completed" &&
+      previousStatus !== undefined &&
+      previousStatus !== "completed"
+    ) {
+      queryClient.invalidateQueries({ queryKey: [DOCUMENT_STALENESS_QUERY_KEY] });
+    }
+    previousStatusRef.current = currentStatus;
+  }, [query.data?.status, queryClient]);
 
   return { ...query, invalidate };
 }

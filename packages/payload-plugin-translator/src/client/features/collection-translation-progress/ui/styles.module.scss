@@ -1,8 +1,57 @@
-.container {
+.status-list {
   display: flex;
+  flex-direction: column;
   gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.status-indicator {
-  flex-grow: 1;
+.status-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  font-size: 0.8125rem;
+}
+
+// The count line: [dot + label] left, count (+ action) right.
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 1.5rem; // same first-line height as the document status row
+}
+
+// Hint under a failed group: no per-doc error data here, so point to where detail lives.
+.meta {
+  margin: 0;
+  padding-left: calc(8px + 0.5rem); // align under the label, like the document meta line
+  font-size: 0.6875rem;
+  color: var(--theme-elevation-500, #8c8c8c);
+}
+
+// Dot + label share one flex line so the dot centres on the label.
+.lead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.label {
+  font-weight: 500;
+  color: var(--theme-text, #222);
+}
+
+.right {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.count {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }

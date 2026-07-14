@@ -6,6 +6,7 @@ import type { TranslationProvider } from "../../../core/translation-providers";
 import { translateContent } from "../../../core/translation-pipeline";
 import { computeSourceFingerprint } from "../../../core/content-projection/computeSourceFingerprint";
 import type { ProvenanceStoreFactory } from "../../modules/provenance";
+import { fetchSourceDocument } from "../_lib/sourceDocument";
 
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import type { TranslateDocumentInput, TranslateDocumentOutput } from "./model";
@@ -44,12 +45,27 @@ export class TranslateDocumentHandler implements Handler<
     const schema = this.schemaMap.get(collection);
     if (!schema) throw new APIError(`Collection "${collection}" not found in schemaMap`, 400);
 
-    const sourceData = await payload.findByID({
-      collection,
-      id: collectionId,
-      locale: sourceLng,
-      depth: 0,
-    });
+    const sourceData = await fetchSourceDocument(payload, collection, collectionId, sourceLng);
+
+    // Capture the staleness baseline from the PRISTINE source NOW, before the pipeline runs. The
+    // pipeline translates in place and shares object-valued source leaves (e.g. richText nodes) by
+    // reference with `sourceData`, so fingerprinting after `translateContent` would hash the target
+    // translation — making every fresh translation look immediately stale. Best-effort: a fingerprint
+    // failure logs and skips provenance rather than breaking the translation.
+    let sourceFingerprint: string | null = null;
+    if (this.provenanceStoreFactory) {
+      try {
+        sourceFingerprint = computeSourceFingerprint(sourceData, schema);
+      } catch (error) {
+        payload.logger.error({
+          err: error,
+          collection,
+          documentId: String(collectionId),
+          msg: "translator: failed to fingerprint source for provenance",
+        });
+      }
+    }
+
     const targetData = await payload.findByID({
       collection,
       id: collectionId,
@@ -81,7 +97,7 @@ export class TranslateDocumentHandler implements Handler<
       publishOnTranslation
     );
 
-    if (this.provenanceStoreFactory) {
+    if (this.provenanceStoreFactory && sourceFingerprint !== null) {
       const store = this.provenanceStoreFactory(payload);
       try {
         await store.upsert({
@@ -89,7 +105,7 @@ export class TranslateDocumentHandler implements Handler<
           documentId: String(collectionId),
           targetLocale: targetLng,
           sourceLocale: sourceLng,
-          sourceFingerprint: computeSourceFingerprint(sourceData, schema),
+          sourceFingerprint,
           translatedAt: new Date().toISOString(),
           dismissedFingerprint: null,
         });

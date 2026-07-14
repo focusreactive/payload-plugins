@@ -60,9 +60,9 @@ async function build(overrides: Partial<TranslatorPluginConfig> = {}) {
 }
 
 describe("translatorPlugin — default levels (behaviour-preserving)", () => {
-  it("registers the 6-route bundle once (document + collection share it)", async () => {
+  it("registers the shared route bundle once (document + collection share it)", async () => {
     const { result } = await build();
-    expect(result.endpoints).toHaveLength(6); // not 12 — deduped across the two doc levels
+    expect(result.endpoints).toHaveLength(8); // not 16 — deduped across the two doc levels
     expect(result.endpoints?.map((e) => e.path)).toContain("/translate/enqueue");
   });
 
@@ -81,7 +81,7 @@ describe("translatorPlugin — default levels (behaviour-preserving)", () => {
 
     // Endpoint seeding dedups against routes already on the config, so a second
     // registration on the same config doesn't double the 6-route bundle.
-    expect(twice.endpoints).toHaveLength(6);
+    expect(twice.endpoints).toHaveLength(8);
   });
 
   it("adds the cache provider and configures the runner once", async () => {
@@ -111,7 +111,7 @@ describe("translatorPlugin — default levels (behaviour-preserving)", () => {
 describe("translatorPlugin — explicit levels", () => {
   it("documentLevel only → bundle present, doc popup yes, bulk dashboard no", async () => {
     const { result, posts } = await build({ levels: [documentLevel()] });
-    expect(result.endpoints).toHaveLength(6);
+    expect(result.endpoints).toHaveLength(8);
     expect(posts.admin.components.edit.beforeDocumentControls).toHaveLength(1);
     expect(posts.admin.components.beforeListTable).toBeUndefined();
   });
