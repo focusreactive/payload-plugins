@@ -5,6 +5,7 @@ import type { RawPayloadComponentExport } from "../../../types/PayloadComponentE
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import type { TranslationProvider } from "../../../core/translation-providers";
 import type { TaskRunnerFactory } from "../task-runner";
+import type { ProvenanceStoreFactory } from "../provenance";
 
 import type { CollectionAdminSlot, LevelContext } from "./types";
 
@@ -22,6 +23,7 @@ export type PluginConfigBuilderDeps = {
   taskRunnerFactory: TaskRunnerFactory;
   schemaMap: CollectionSchemaMap;
   translationProvider: TranslationProvider;
+  provenanceStoreFactory?: ProvenanceStoreFactory;
 };
 
 const endpointKey = (endpoint: Endpoint): string => `${endpoint.method} ${endpoint.path}`;
@@ -70,6 +72,7 @@ export class PluginConfigBuilder implements LevelContext {
   readonly taskRunnerFactory: TaskRunnerFactory;
   readonly schemaMap: CollectionSchemaMap;
   readonly translationProvider: TranslationProvider;
+  readonly provenanceStoreFactory?: ProvenanceStoreFactory;
 
   private readonly endpoints: Endpoint[] = [];
   private readonly collectionComponents: CollectionComponent[] = [];
@@ -83,6 +86,7 @@ export class PluginConfigBuilder implements LevelContext {
     this.taskRunnerFactory = deps.taskRunnerFactory;
     this.schemaMap = deps.schemaMap;
     this.translationProvider = deps.translationProvider;
+    this.provenanceStoreFactory = deps.provenanceStoreFactory;
   }
 
   addEndpoints(endpoints: Endpoint[]): void {

@@ -3,16 +3,20 @@
 import { toast, useLocale } from "@payloadcms/ui";
 import { useEffect, useMemo } from "react";
 
-import { CompletedTranslationStatus, TranslationsApi } from "../../../entities/translation";
+import {
+  buildTranslationStatusRows,
+  derivePanelStatus,
+  TranslationsApi,
+  TranslationStatusList,
+} from "../../../entities/translation";
 import { OpenDocumentTranslationPopup } from "../../../features/open-document-translation-popup";
 import { DocumentTranslationForm, FORM_FIELDS } from "../../../features/translate-document-form";
 import type { FormValues } from "../../../features/translate-document-form";
 import { DocumentTranslationFormModel } from "../../../features/translate-document-form/index.client";
 import { handleFormError } from "../../../shared/lib/forms/handle-form-error";
 import { useCollectionDocumentUrlParams } from "../../../shared/lib/payload/hooks/useCollectionDocumentUrlParams";
-import { DocumentTranslationProgressFailed } from "../../../features/document-translation-progress-failed";
-import { DocumentTranslationProgressRunning } from "../../../features/document-translation-progress-running";
-import { DocumentTranslationProgressPending } from "../../../features/document-translation-progress-pending";
+
+import styles from "./styles.module.scss";
 
 type TranslateDocumentProps = {
   hasDrafts: boolean;
@@ -24,12 +28,27 @@ const TranslateDocument = ({ hasDrafts }: TranslateDocumentProps) => {
 
   const queueTranslationApi = TranslationsApi.useQueueDocumentTranslation();
   const { data, error, isLoading } = TranslationsApi.useDocumentTranslation(params);
+  const { data: staleness } = TranslationsApi.useDocumentStaleness(params);
 
   useEffect(() => {
     if (error) {
       toast.error(error.message);
     }
   }, [error]);
+
+  const staleLocales = useMemo(
+    () => (staleness?.locales ?? []).filter((l) => l.is_stale).map((l) => l.target_lng),
+    [staleness]
+  );
+  // The panel trigger shows one aggregate marker; the popup shows the full per-locale list.
+  const panelStatus = useMemo(
+    () => derivePanelStatus({ runStatus: data?.status, staleLocales }),
+    [data?.status, staleLocales]
+  );
+  const statusRows = useMemo(
+    () => buildTranslationStatusRows({ staleness, run: data }),
+    [staleness, data]
+  );
 
   const initialValues = useMemo(
     () => ({
@@ -54,32 +73,36 @@ const TranslateDocument = ({ hasDrafts }: TranslateDocumentProps) => {
     }
   };
 
+  // Vertical stack: title → Translate (form) → Status (unified per-locale list). No columns, no
+  // corner chip — one consistent system so the popup stays calm as the plugin grows.
   return (
-    <>
-      <OpenDocumentTranslationPopup isLoading={isLoading}>
-        {({ close }) => (
-          <>
-            <h4>Document Translation</h4>
+    <OpenDocumentTranslationPopup isLoading={isLoading} status={panelStatus}>
+      {({ close }) => (
+        <>
+          <h4 className={styles.title}>Document translation</h4>
+
+          <section className={styles.section}>
+            <h5 className={styles.eyebrow}>Translate</h5>
             <DocumentTranslationForm
               form={form}
-              onSubmit={(data) => handleSubmit(data, close)}
+              onSubmit={(formData) => handleSubmit(formData, close)}
               hasDrafts={hasDrafts}
             />
-          </>
-        )}
-      </OpenDocumentTranslationPopup>
+          </section>
 
-      {data?.status === "completed" && (
-        <CompletedTranslationStatus
-          sourceLocale={data.input.source_lng}
-          targetLocale={data.input.target_lng}
-          completed_at={data.completed_at}
-        />
+          {statusRows.length > 0 && (
+            <section className={`${styles.section} ${styles["section--status"]}`}>
+              <h5 className={styles.eyebrow}>Status</h5>
+              <TranslationStatusList
+                rows={statusRows}
+                collection={params.collection}
+                id={params.id}
+              />
+            </section>
+          )}
+        </>
       )}
-      {data?.status === "failed" && <DocumentTranslationProgressFailed data={data} />}
-      {data?.status === "running" && <DocumentTranslationProgressRunning data={data} />}
-      {data?.status === "pending" && <DocumentTranslationProgressPending data={data} />}
-    </>
+    </OpenDocumentTranslationPopup>
   );
 };
 

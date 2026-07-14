@@ -8,6 +8,8 @@ const makeStore = () =>
   ({
     upsert: vi.fn().mockResolvedValue(undefined),
     find: vi.fn().mockResolvedValue(null),
+    findByDocument: vi.fn().mockResolvedValue([]),
+    dismiss: vi.fn().mockResolvedValue(undefined),
     deleteByDocument: vi.fn().mockResolvedValue(undefined),
   }) satisfies ProvenanceStore;
 

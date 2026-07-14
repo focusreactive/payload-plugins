@@ -5,3 +5,4 @@ export type {
   ProvenanceStore,
   TranslationProvenanceRecord,
 } from "./ProvenanceStore.interface";
+export { isRecordStale } from "./staleness";

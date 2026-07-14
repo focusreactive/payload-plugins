@@ -3,6 +3,7 @@ import { ofetch } from "ofetch";
 
 import { useTranslateKitConfig } from "../../../../app/config";
 import { handleNextApiError } from "../../../../shared/lib/errors/handleApiError";
+import { DOCUMENT_STALENESS_QUERY_KEY } from "../queries/useDocumentStaleness";
 
 type TranslationStrategy = "overwrite" | "skip_existing";
 
@@ -33,6 +34,7 @@ export function useQueueDocumentTranslation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["document-translation-status"] });
       queryClient.invalidateQueries({ queryKey: ["collection-translation-status"] });
+      queryClient.invalidateQueries({ queryKey: [DOCUMENT_STALENESS_QUERY_KEY] });
     },
   });
 }

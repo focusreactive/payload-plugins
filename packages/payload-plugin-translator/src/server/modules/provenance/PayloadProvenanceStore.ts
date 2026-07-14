@@ -12,6 +12,12 @@ interface ProvenanceDoc extends Record<string, unknown> {
   id: string | number;
 }
 
+function documentWhere(collectionSlug: string, documentId: string): Where {
+  return {
+    and: [{ collectionSlug: { equals: collectionSlug } }, { documentId: { equals: documentId } }],
+  };
+}
+
 function keyWhere(key: ProvenanceKey): Where {
   return {
     and: [
@@ -74,15 +80,33 @@ export class PayloadProvenanceStore implements ProvenanceStore {
     return doc === null ? null : toRecord(doc);
   }
 
+  async findByDocument(
+    collectionSlug: string,
+    documentId: string
+  ): Promise<TranslationProvenanceRecord[]> {
+    const result = await this.payload.find({
+      collection: this.collection,
+      where: documentWhere(collectionSlug, documentId),
+      depth: 0,
+      pagination: false,
+    });
+    return (result.docs as ProvenanceDoc[]).map(toRecord);
+  }
+
+  async dismiss(key: ProvenanceKey, dismissedFingerprint: string): Promise<void> {
+    const existing = await this.findDoc(key);
+    if (existing === null) return;
+    await this.payload.update({
+      collection: this.collection,
+      id: existing.id,
+      data: { dismissedFingerprint },
+    });
+  }
+
   async deleteByDocument(collectionSlug: string, documentId: string): Promise<void> {
     await this.payload.delete({
       collection: this.collection,
-      where: {
-        and: [
-          { collectionSlug: { equals: collectionSlug } },
-          { documentId: { equals: documentId } },
-        ],
-      },
+      where: documentWhere(collectionSlug, documentId),
     });
   }
 

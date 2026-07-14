@@ -10,3 +10,14 @@
     padding-bottom: 5px;
   }
 }
+
+// Scale the caption text to the control size so a small field doesn't get an oversized label.
+.size-sm .label__text {
+  font-size: 0.75rem;
+  padding-bottom: 3px;
+}
+
+.size-lg .label__text {
+  font-size: 1.05rem;
+  padding-bottom: 6px;
+}

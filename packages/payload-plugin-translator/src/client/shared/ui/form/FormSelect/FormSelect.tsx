@@ -102,7 +102,7 @@ export default function FormSelect({
   }
 
   return (
-    <Label className={className} label={label}>
+    <Label className={className} label={label} $size={size}>
       {selectElement}
       {errorAndDescription}
     </Label>

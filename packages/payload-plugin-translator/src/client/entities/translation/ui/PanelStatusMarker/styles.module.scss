@@ -1,0 +1,12 @@
+// Aggregate status dot at the trigger's top-right corner. Positioning + a ring in the panel
+// background so the dot reads as a badge against the button fill.
+.marker {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  display: flex;
+}
+
+.marker > div {
+  box-shadow: 0 0 0 2px var(--theme-elevation-0, #fff);
+}

@@ -3,7 +3,7 @@ import classNames from "classnames";
 import styles from "./styles.module.scss";
 
 type ColorIndicatorProps = {
-  $color: "red" | "green" | "blue" | "gray";
+  $color: "red" | "green" | "blue" | "gray" | "amber";
   $animated?: boolean;
   title?: string;
   className?: string;

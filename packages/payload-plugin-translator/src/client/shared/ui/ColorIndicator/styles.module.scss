@@ -21,6 +21,10 @@
   background-color: var(--color-base-250);
 }
 
+.amber-indicator {
+  background-color: #b45309; // amber-700 — matches the panel trigger's out-of-date marker
+}
+
 .animated {
   animation: pulse 2s ease-in-out infinite;
 }

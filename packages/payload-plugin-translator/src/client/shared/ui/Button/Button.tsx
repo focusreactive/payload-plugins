@@ -69,7 +69,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
       {!$isLoading && $startContent && (
         <div className={styles["start-content"]}>{$startContent}</div>
       )}
-      {$isLoading ? <Loading size={$isIconButton ? "small" : "medium"} /> : children}
+      {$isLoading ? <Loading size={$size} compact={$isIconButton} /> : children}
     </button>
   );
 });

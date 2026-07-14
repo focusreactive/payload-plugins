@@ -1,0 +1,27 @@
+.title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--theme-text, #222);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+// One eyebrow style shared by every section header, so the sections read as one system.
+.eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--theme-elevation-500, #8c8c8c);
+}
+
+.section--status {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--theme-elevation-100, #e6e6e6);
+}

@@ -31,55 +31,48 @@
   }
 
   &__bars {
-    display: grid;
-    gap: 7px;
+    display: flex;
     align-items: center;
 
-    &_small {
-      grid-template-columns: 1fr 1fr;
+    // Gap tightens with size so a small control's bars don't read as scattered.
+    &_sm {
+      gap: 4px;
     }
 
-    &_medium {
-      grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    &_md {
+      gap: 6px;
+    }
+
+    &_lg {
+      gap: 7px;
     }
   }
 
   &__bar {
     background-color: currentColor;
+    width: 2px;
 
-    &_size-small {
-      height: 10px;
-      width: 2px;
+    &_size-sm {
+      height: 9px;
     }
 
-    &_size-medium {
+    &_size-md {
+      height: 12px;
+    }
+
+    &_size-lg {
       height: 15px;
-      width: 2px;
     }
 
-    &:nth-child(1) {
+    // Neighbouring bars swing in opposition, regardless of how many there are.
+    &:nth-child(odd) {
       transform: translateY(0);
       animation: animate-bar--odd 1.25s infinite;
     }
 
-    &:nth-child(2) {
+    &:nth-child(even) {
       transform: translateY(-2px);
       animation: animate-bar--even 1.25s infinite;
-    }
-
-    &:nth-child(3) {
-      transform: translateY(0);
-      animation: animate-bar--odd 1.25s infinite;
-    }
-
-    &:nth-child(4) {
-      transform: translateY(-2px);
-      animation: animate-bar--even 1.25s infinite;
-    }
-
-    &:nth-child(5) {
-      transform: translateY(0);
-      animation: animate-bar--odd 1.25s infinite;
     }
   }
 

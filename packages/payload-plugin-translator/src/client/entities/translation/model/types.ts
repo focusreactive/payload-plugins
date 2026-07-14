@@ -58,3 +58,16 @@ export type GroupedCollectionTranslationStatus = Record<
   DocumentTranslationStatus,
   CollectionTranslationStatusItem[]
 >;
+
+/** One translated target locale's staleness relative to its source (#50). */
+export type StalenessLocale = {
+  target_lng: string;
+  source_lng: string;
+  is_stale: boolean;
+  translated_at: string;
+};
+
+/** Per-locale staleness for a single document. */
+export type DocumentStaleness = {
+  locales: StalenessLocale[];
+};

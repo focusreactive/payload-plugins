@@ -17,7 +17,7 @@ type SelectProps = ComponentPropsWithRef<"select"> & {
 const sizes = {
   sm: {
     height: "24px",
-    paddingInline: "0.25rem",
+    paddingInline: "0.5rem",
     fontSize: "0.875rem",
   },
   md: {
