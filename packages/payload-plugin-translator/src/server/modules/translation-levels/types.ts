@@ -5,9 +5,28 @@ import type { RawPayloadComponentExport } from "../../../types/PayloadComponentE
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import type { TranslationProvider } from "../../../core/translation-providers";
 import type { TaskRunnerFactory } from "../task-runner";
-import type { ProvenanceStoreFactory } from "../provenance";
+import type { ProvenanceServiceFactory } from "../provenance";
 
 export type CollectionAdminSlot = "beforeDocumentControls" | "beforeListTable";
+
+/**
+ * The one bundle of config-time dependencies every translation surface / route / handler reads —
+ * the single source of truth that {@link LevelContext}, `PluginConfigBuilderDeps`, `StalenessConfig`
+ * and `TranslationRoutesDeps` all derive from (via `extends`/`Pick`), so a field can never drift
+ * between them.
+ */
+export type TranslationContext = {
+  readonly collections: CollectionConfig[];
+  readonly basePath: string;
+  readonly access?: AccessGuard;
+  readonly taskRunnerFactory: TaskRunnerFactory;
+  /** Deep-cloned localized field schema per managed collection slug. */
+  readonly schemaMap: CollectionSchemaMap;
+  /** The configured translation backend (used by the synchronous field level). */
+  readonly translationProvider: TranslationProvider;
+  /** Builds a provenance service; absent when provenance is disabled (staleness then reports empty). */
+  readonly provenanceServiceFactory?: ProvenanceServiceFactory;
+};
 
 /**
  * A composable translation surface (document / collection / field).
@@ -36,18 +55,7 @@ export interface TranslationLevel {
  * Payload config. The plugin deduplicates endpoints by method + path on apply.
  * @internal
  */
-export interface LevelContext {
-  readonly collections: CollectionConfig[];
-  readonly basePath: string;
-  readonly access?: AccessGuard;
-  readonly taskRunnerFactory: TaskRunnerFactory;
-  /** Deep-cloned localized field schema per managed collection slug. */
-  readonly schemaMap: CollectionSchemaMap;
-  /** The configured translation backend (used by the synchronous field level). */
-  readonly translationProvider: TranslationProvider;
-  /** Builds a provenance store; absent when provenance is disabled (staleness then reports empty). */
-  readonly provenanceStoreFactory?: ProvenanceStoreFactory;
-
+export interface LevelContext extends TranslationContext {
   /** Register endpoints. Deduplicated by method + path when applied. */
   addEndpoints(endpoints: Endpoint[]): void;
   /** Attach an admin component to a slot on every managed collection. */

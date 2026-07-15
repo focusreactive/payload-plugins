@@ -1,43 +1,16 @@
-import type { CollectionConfig, Config, Payload } from "payload";
+import type { CollectionConfig, Config } from "payload";
 
 import { CacheProviderExport } from "./client/app/cache/CacheProvider.export";
-import {
-  DEFAULT_PROVENANCE_SLUG,
-  PayloadProvenanceStore,
-  assertProvenanceSlugFree,
-  injectProvenanceCleanup,
-  isProvenanceCollection,
-  makeProvenanceCollection,
-} from "./server/modules/provenance";
+import { configureProvenance } from "./server/modules/provenance";
 import type { AccessGuard } from "./types/AccessGuard";
 import type { TranslationProvider } from "./core/translation-providers";
-import type {
-  TaskRunnerProvider,
-  TaskRunnerContext,
-  TaskRunnerFactory,
-} from "./server/modules/task-runner";
-import { TranslateDocumentHandler } from "./server/features/translate-document";
-import {
-  LifecycleNotifier,
-  taskFromHandlerInput,
-  withQueuedNotification,
-} from "./server/modules/lifecycle";
+import type { TaskRunnerProvider } from "./server/modules/task-runner";
+import { wireTranslateRunner } from "./server/features/translate-document";
 import type { TranslationLifecycleCallbacks } from "./server/modules/lifecycle";
 import { documentLevel, collectionLevel } from "./composition/levels";
 import type { TranslationLevel } from "./server/modules/translation-levels";
 import { PluginConfigBuilder } from "./server/modules/translation-levels/PluginConfigBuilder";
 import { normalizePath } from "./server/shared";
-
-/**
- * Resolve the opt-in `provenance` config to a sidecar slug, or `null` when disabled.
- * `false`/omitted → off; `true` or `{}` → on with the default slug; `{ slug }` → on with that slug.
- */
-function resolveProvenanceSlug(provenance: TranslatorPluginConfig["provenance"]): string | null {
-  if (!provenance) return null;
-  if (provenance === true) return DEFAULT_PROVENANCE_SLUG;
-  // `||` (not `??`) so an empty/blank slug falls back to the default instead of silently disabling.
-  return provenance.slug || DEFAULT_PROVENANCE_SLUG;
-}
 
 export type TranslatorPluginConfig = {
   /**
@@ -132,75 +105,30 @@ export class TranslateCollectionPlugin {
         basePath: rawBasePath = "/translate",
       } = this.pluginConfig;
 
-      const lifecycleCallbacks: TranslationLifecycleCallbacks = lifecycle ?? {};
-
-      // Build schema map from deep-cloned collections
-      // Deep clone is required because Payload mutates the original collection objects,
-      // removing `localized: true` from nested fields during sanitization.
-      // We use JSON round-trip instead of structuredClone because Lexical editor
-      // configs contain async functions that structuredClone cannot handle.
-      // TODO: Consider introducing a FieldLike interface with only the properties
-      // used by the pipeline (name, type, localized, fields, blocks, tabs, custom)
-      // to make the contract explicit and avoid reliance on JSON round-trip.
+      // Build schema map from deep-cloned collections.
+      // Deep clone is required because Payload mutates the original collection objects, removing
+      // `localized: true` from nested fields during sanitization. JSON round-trip (not
+      // structuredClone) because Lexical editor configs contain async functions structuredClone
+      // cannot handle.
+      // TODO: Consider introducing a FieldLike interface with only the properties used by the
+      // pipeline (name, type, localized, fields, blocks, tabs, custom) to make the contract explicit
+      // and avoid reliance on JSON round-trip.
       const schemaMap = new Map(
         collections.map((col) => [col.slug, JSON.parse(JSON.stringify(col.fields))])
       );
       const collectionSlugs = new Set(schemaMap.keys());
       const basePath = normalizePath(rawBasePath);
-      const provenanceSlug = resolveProvenanceSlug(provenance);
-      if (provenanceSlug) {
-        const existing = (config.collections ?? []).filter(
-          (collection) => !isProvenanceCollection(collection)
-        );
-        assertProvenanceSlugFree(provenanceSlug, existing);
-      }
-      const provenanceStoreFactory = provenanceSlug
-        ? (p: Payload) => new PayloadProvenanceStore(p, provenanceSlug)
-        : undefined;
 
-      const translateHandler = new TranslateDocumentHandler(
+      // Each concern owns its own config-time wiring and exposes it uniformly; init() just composes.
+      const provenanceModule = configureProvenance(provenance, schemaMap);
+      const { taskRunnerFactory, configModifier: runnerConfigModifier } = wireTranslateRunner({
         translationProvider,
         schemaMap,
-        provenanceStoreFactory
-      );
-
-      const runnerContext: TaskRunnerContext = {
-        handler: async (payload, input) => {
-          const notifier = new LifecycleNotifier(lifecycleCallbacks, payload.logger);
-          const task = taskFromHandlerInput(input);
-          try {
-            await translateHandler.handle(payload, {
-              collection: input.collection,
-              collectionId: input.collectionId,
-              sourceLng: input.sourceLng,
-              targetLng: input.targetLng,
-              strategy: input.strategy,
-              publishOnTranslation: input.publishOnTranslation,
-            });
-          } catch (error) {
-            await notifier.failed(task, error);
-            throw error; // rethrow so the runner marks the job failed
-          }
-          await notifier.completed(task);
-        },
+        provenanceServiceFactory: provenanceModule.serviceFactory,
+        runner,
+        lifecycle: lifecycle ?? {},
         collections: Array.from(collectionSlugs),
-      };
-      const runnerConfigModifier = runner.configure(runnerContext);
-
-      // Bind the context once so routes receive a self-sufficient factory: the
-      // runner needs no mutable per-instance handler state and create() has no
-      // "configure() must run first" ordering coupling (translator plan, 0c).
-      // When an `onQueued` callback is set, decorate the runner so `enqueue` fires it.
-      const taskRunnerFactory: TaskRunnerFactory = {
-        create: (payload) => {
-          const taskRunner = runner.create(payload, runnerContext.handler);
-          if (!lifecycleCallbacks.onQueued) return taskRunner;
-          return withQueuedNotification(
-            taskRunner,
-            new LifecycleNotifier(lifecycleCallbacks, payload.logger)
-          );
-        },
-      };
+      });
 
       const activeLevels = levels ?? [documentLevel(), collectionLevel()];
       const builder = new PluginConfigBuilder({
@@ -210,26 +138,12 @@ export class TranslateCollectionPlugin {
         taskRunnerFactory,
         schemaMap,
         translationProvider,
-        provenanceStoreFactory,
+        provenanceServiceFactory: provenanceModule.serviceFactory,
       });
       for (const level of activeLevels) level.extend(builder);
 
       builder.addConfigModifier(runnerConfigModifier);
-      if (provenanceSlug && provenanceStoreFactory) {
-        builder.addConfigModifier((cfg) => {
-          const alreadyAdded = cfg.collections?.some(
-            (collection) => collection.slug === provenanceSlug && isProvenanceCollection(collection)
-          );
-          if (!alreadyAdded) {
-            cfg.collections = [
-              ...(cfg.collections ?? []),
-              makeProvenanceCollection(provenanceSlug),
-            ];
-          }
-          injectProvenanceCleanup(cfg, collectionSlugs, provenanceStoreFactory, provenanceSlug);
-          return cfg;
-        });
-      }
+      builder.addConfigModifier(provenanceModule.configure(collectionSlugs));
       builder.addAdminProvider(new CacheProviderExport(basePath));
 
       // The single place the Payload config is mutated.

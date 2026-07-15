@@ -1,19 +1,12 @@
 import type { CollectionConfig } from "payload";
 
+import type { ManagedCollectionsConfig } from "./Provenance.shapes";
+
 /** Default slug for the provenance sidecar collection. Overridable via `provenance.slug`. */
 export const DEFAULT_PROVENANCE_SLUG = "translator-provenance";
 
 /** The `custom` marker tagging the plugin's own provenance sidecar (set + read in this module). */
 const PROVENANCE_MARKER = "translatorProvenance";
-
-/**
- * True for the plugin's own provenance sidecar collection. Recognised by the {@link PROVENANCE_MARKER}
- * on `custom` (not the slug, which is consumer-configurable), so plugin wiring can stay idempotent on
- * a repeated run and the slug-collision guard can ignore an already-added sidecar.
- */
-export function isProvenanceCollection(collection: { custom?: unknown }): boolean {
-  return (collection.custom as Record<string, unknown> | undefined)?.[PROVENANCE_MARKER] === true;
-}
 
 /**
  * Build the Payload config for the provenance sidecar collection.
@@ -24,7 +17,7 @@ export function isProvenanceCollection(collection: { custom?: unknown }): boolea
  * content. The composite index on `(collectionSlug, documentId, targetLocale)` is the upsert key.
  *
  * The plugin ships only this config; the consumer's Payload creates the table (see the design doc's
- * SQL-migration note). Enabled only when the consumer opts in via `provenance` (wired in slice B).
+ * SQL-migration note). Enabled only when the consumer opts in via `provenance`.
  */
 export function makeProvenanceCollection(slug: string = DEFAULT_PROVENANCE_SLUG): CollectionConfig {
   return {
@@ -44,4 +37,31 @@ export function makeProvenanceCollection(slug: string = DEFAULT_PROVENANCE_SLUG)
     ],
     indexes: [{ fields: ["collectionSlug", "documentId", "targetLocale"], unique: true }],
   };
+}
+
+/**
+ * True for the plugin's own provenance sidecar collection. Recognised by the {@link PROVENANCE_MARKER}
+ * on `custom` (not the slug, which is consumer-configurable), so plugin wiring can stay idempotent on
+ * a repeated run and the slug-collision guard can ignore an already-added sidecar.
+ */
+export function isProvenanceCollection(collection: { custom?: unknown }): boolean {
+  return (collection.custom as Record<string, unknown> | undefined)?.[PROVENANCE_MARKER] === true;
+}
+
+/**
+ * Idempotently register the provenance sidecar collection on `host`: add it once, skipping when a
+ * sidecar with this slug is already present, so a repeated `init()` never stacks a duplicate. Takes
+ * only the narrow {@link ManagedCollectionsConfig} slice — a real Payload `Config` is structurally
+ * assignable, and a test passes a plain `{ collections: [...] }` literal.
+ */
+export function ensureProvenanceCollectionRegistered(
+  host: ManagedCollectionsConfig,
+  slug: string
+): void {
+  const alreadyAdded = host.collections?.some(
+    (collection) => collection.slug === slug && isProvenanceCollection(collection)
+  );
+  if (!alreadyAdded) {
+    host.collections = [...(host.collections ?? []), makeProvenanceCollection(slug)];
+  }
 }

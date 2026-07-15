@@ -1,6 +1,7 @@
-import type { CollectionAfterDeleteHook, Config } from "payload";
+import type { CollectionAfterDeleteHook } from "payload";
 
-import type { ProvenanceStoreFactory } from "./PayloadProvenanceStore";
+import type { ManagedCollectionsConfig } from "./Provenance.shapes";
+import type { ProvenanceStoreFactory } from "./Provenance.store";
 
 /**
  * Marks the plugin's own provenance cleanup hook so a repeated `init()` can recognise an
@@ -49,7 +50,7 @@ export function makeProvenanceCleanupHook(
  * never in `managedSlugs`, so it is never hooked (no recursion).
  */
 export function injectProvenanceCleanup(
-  config: Config,
+  config: ManagedCollectionsConfig,
   managedSlugs: Set<string>,
   storeFactory: ProvenanceStoreFactory,
   provenanceSlug: string

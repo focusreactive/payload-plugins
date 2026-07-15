@@ -4,20 +4,16 @@ import { APIError } from "payload";
 import type { Handler } from "../../shared";
 import type { TranslationProvider } from "../../../core/translation-providers";
 import { translateContent } from "../../../core/translation-pipeline";
-import { computeSourceFingerprint } from "../../../core/content-projection/computeSourceFingerprint";
-import type { ProvenanceStoreFactory } from "../../modules/provenance";
-import { fetchSourceDocument } from "../_lib/sourceDocument";
+import type { ProvenanceServiceFactory } from "../../modules/provenance";
+import { fetchSourceDocument } from "../../shared/payload/sourceDocument";
 
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import type { TranslateDocumentInput, TranslateDocumentOutput } from "./model";
 
-export type TranslateDocumentDependencies = {
-  translationProvider: TranslationProvider;
-  schemaMap: CollectionSchemaMap;
-};
-
 /**
- * Translates a single document from source language to target language
+ * Translates a single document from source language to target language. Provenance is delegated to
+ * {@link ProvenanceService}: this handler only decides *when* to capture the source fingerprint
+ * (before the pipeline mutates the source in place) and *when* to record it (after the save).
  */
 export class TranslateDocumentHandler implements Handler<
   TranslateDocumentInput,
@@ -25,16 +21,16 @@ export class TranslateDocumentHandler implements Handler<
 > {
   private readonly translationProvider: TranslationProvider;
   private readonly schemaMap: CollectionSchemaMap;
-  private readonly provenanceStoreFactory?: ProvenanceStoreFactory;
+  private readonly provenanceServiceFactory?: ProvenanceServiceFactory;
 
   constructor(
     translationProvider: TranslationProvider,
     schemaMap: CollectionSchemaMap,
-    provenanceStoreFactory?: ProvenanceStoreFactory
+    provenanceServiceFactory?: ProvenanceServiceFactory
   ) {
     this.translationProvider = translationProvider;
     this.schemaMap = schemaMap;
-    this.provenanceStoreFactory = provenanceStoreFactory;
+    this.provenanceServiceFactory = provenanceServiceFactory;
   }
 
   async handle(payload: Payload, input: TranslateDocumentInput): Promise<TranslateDocumentOutput> {
@@ -47,24 +43,12 @@ export class TranslateDocumentHandler implements Handler<
 
     const sourceData = await fetchSourceDocument(payload, collection, collectionId, sourceLng);
 
-    // Capture the staleness baseline from the PRISTINE source NOW, before the pipeline runs. The
-    // pipeline translates in place and shares object-valued source leaves (e.g. richText nodes) by
-    // reference with `sourceData`, so fingerprinting after `translateContent` would hash the target
-    // translation — making every fresh translation look immediately stale. Best-effort: a fingerprint
-    // failure logs and skips provenance rather than breaking the translation.
-    let sourceFingerprint: string | null = null;
-    if (this.provenanceStoreFactory) {
-      try {
-        sourceFingerprint = computeSourceFingerprint(sourceData, schema);
-      } catch (error) {
-        payload.logger.error({
-          err: error,
-          collection,
-          documentId: String(collectionId),
-          msg: "translator: failed to fingerprint source for provenance",
-        });
-      }
-    }
+    // Capture the staleness baseline from the PRISTINE source NOW, before the pipeline runs — it
+    // translates in place and shares object-valued source leaves (e.g. richText nodes) by reference,
+    // so fingerprinting after `translateContent` would hash the target translation and make every
+    // fresh translation look instantly stale. The service is best-effort (a failure returns null).
+    const provenance = this.provenanceServiceFactory?.(payload);
+    const sourceFingerprint = provenance?.captureFingerprint(collection, sourceData) ?? null;
 
     const targetData = await payload.findByID({
       collection,
@@ -97,28 +81,16 @@ export class TranslateDocumentHandler implements Handler<
       publishOnTranslation
     );
 
-    if (this.provenanceStoreFactory && sourceFingerprint !== null) {
-      const store = this.provenanceStoreFactory(payload);
-      try {
-        await store.upsert({
+    if (provenance && sourceFingerprint !== null) {
+      await provenance.record(
+        {
           collectionSlug: collection,
           documentId: String(collectionId),
           targetLocale: targetLng,
           sourceLocale: sourceLng,
-          sourceFingerprint,
-          translatedAt: new Date().toISOString(),
-          dismissedFingerprint: null,
-        });
-      } catch (error) {
-        payload.logger.error({
-          err: error,
-          collection,
-          documentId: String(collectionId),
-          targetLocale: targetLng,
-          sourceLocale: sourceLng,
-          msg: "translator: failed to record translation provenance",
-        });
-      }
+        },
+        sourceFingerprint
+      );
     }
 
     return { success: true };

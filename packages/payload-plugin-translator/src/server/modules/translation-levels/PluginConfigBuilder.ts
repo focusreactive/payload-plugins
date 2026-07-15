@@ -3,28 +3,20 @@ import type { CollectionConfig, Config, Endpoint } from "payload";
 import type { AccessGuard } from "../../../types/AccessGuard";
 import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
+import type { ConfigModifier } from "../../../types/ConfigModifier";
 import type { TranslationProvider } from "../../../core/translation-providers";
 import type { TaskRunnerFactory } from "../task-runner";
-import type { ProvenanceStoreFactory } from "../provenance";
+import type { ProvenanceServiceFactory } from "../provenance";
 
-import type { CollectionAdminSlot, LevelContext } from "./types";
+import type { CollectionAdminSlot, LevelContext, TranslationContext } from "./types";
 
 type CollectionComponent = {
   slot: CollectionAdminSlot;
   make: (collection: CollectionConfig) => RawPayloadComponentExport;
 };
 
-type ConfigModifier = (config: Config) => Config;
-
-export type PluginConfigBuilderDeps = {
-  collections: CollectionConfig[];
-  basePath: string;
-  access?: AccessGuard;
-  taskRunnerFactory: TaskRunnerFactory;
-  schemaMap: CollectionSchemaMap;
-  translationProvider: TranslationProvider;
-  provenanceStoreFactory?: ProvenanceStoreFactory;
-};
+/** The builder's construction deps are exactly the shared {@link TranslationContext}. */
+export type PluginConfigBuilderDeps = TranslationContext;
 
 const endpointKey = (endpoint: Endpoint): string => `${endpoint.method} ${endpoint.path}`;
 
@@ -72,7 +64,7 @@ export class PluginConfigBuilder implements LevelContext {
   readonly taskRunnerFactory: TaskRunnerFactory;
   readonly schemaMap: CollectionSchemaMap;
   readonly translationProvider: TranslationProvider;
-  readonly provenanceStoreFactory?: ProvenanceStoreFactory;
+  readonly provenanceServiceFactory?: ProvenanceServiceFactory;
 
   private readonly endpoints: Endpoint[] = [];
   private readonly collectionComponents: CollectionComponent[] = [];
@@ -86,7 +78,7 @@ export class PluginConfigBuilder implements LevelContext {
     this.taskRunnerFactory = deps.taskRunnerFactory;
     this.schemaMap = deps.schemaMap;
     this.translationProvider = deps.translationProvider;
-    this.provenanceStoreFactory = deps.provenanceStoreFactory;
+    this.provenanceServiceFactory = deps.provenanceServiceFactory;
   }
 
   addEndpoints(endpoints: Endpoint[]): void {

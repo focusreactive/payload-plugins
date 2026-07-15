@@ -5,7 +5,6 @@ import { isCollectionAvailable } from "../_lib/collection-utils";
 
 import { DismissStalenessInputSchema } from "./model";
 import type { StalenessConfig } from "./model";
-import { dismissLocaleStaleness } from "./service";
 
 /** Dismisses (acknowledges) staleness of one target locale for a document. */
 export class DismissStalenessHandler {
@@ -23,13 +22,12 @@ export class DismissStalenessHandler {
       return ServerResponse.badRequest("Collection not available for translation");
     }
 
-    await dismissLocaleStaleness(
-      req.payload,
-      this.config,
-      collectionSlug,
-      collection_id,
-      target_lng
-    );
+    const service = this.config.provenanceServiceFactory?.(req.payload);
+    await service?.dismiss({
+      collectionSlug: collectionSlug,
+      documentId: collection_id,
+      targetLocale: target_lng,
+    });
     return ServerResponse.success({ success: true });
   }
 }
