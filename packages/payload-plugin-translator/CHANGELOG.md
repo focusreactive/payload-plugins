@@ -1,3 +1,11 @@
+## @focus-reactive/payload-plugin-translator [0.8.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.8.1...@focus-reactive/payload-plugin-translator@0.8.2) (2026-07-15)
+
+
+### Bug Fixes
+
+* **translator:** keep status rows in a stable source->target order ([b91a296](https://github.com/focusreactive/payload-plugins/commit/b91a2964057786409484a4ec51de230af99120fc))
+* **translator:** track concurrent per-locale translations independently ([15788b6](https://github.com/focusreactive/payload-plugins/commit/15788b6fdff3d48c0dc2ff88be68ece3d945094a)), closes [#50](https://github.com/focusreactive/payload-plugins/issues/50)
+
 ## @focus-reactive/payload-plugin-translator [0.8.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.8.0...@focus-reactive/payload-plugin-translator@0.8.1) (2026-07-15)
 
 # @focus-reactive/payload-plugin-translator [0.8.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.7.2...@focus-reactive/payload-plugin-translator@0.8.0) (2026-07-14)
