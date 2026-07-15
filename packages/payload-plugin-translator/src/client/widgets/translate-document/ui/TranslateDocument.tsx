@@ -5,6 +5,7 @@ import { useEffect, useMemo } from "react";
 
 import {
   buildTranslationStatusRows,
+  deriveDocumentRunStatus,
   derivePanelStatus,
   TranslationsApi,
   TranslationStatusList,
@@ -42,11 +43,11 @@ const TranslateDocument = ({ hasDrafts }: TranslateDocumentProps) => {
   );
   // The panel trigger shows one aggregate marker; the popup shows the full per-locale list.
   const panelStatus = useMemo(
-    () => derivePanelStatus({ runStatus: data?.status, staleLocales }),
-    [data?.status, staleLocales]
+    () => derivePanelStatus({ runStatus: deriveDocumentRunStatus(data), staleLocales }),
+    [data, staleLocales]
   );
   const statusRows = useMemo(
-    () => buildTranslationStatusRows({ staleness, run: data }),
+    () => buildTranslationStatusRows({ staleness, runs: data }),
     [staleness, data]
   );
 

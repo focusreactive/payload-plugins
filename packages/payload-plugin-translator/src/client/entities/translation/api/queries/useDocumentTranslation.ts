@@ -27,11 +27,11 @@ export function useDocumentTranslation({ collection, id }: Props, options?: Opti
   const queryClient = useQueryClient();
   const { basePath } = useTranslateKitConfig();
 
-  const query = useQuery<DocumentTranslation, Error, DocumentTranslation>({
+  const query = useQuery<DocumentTranslation[], Error, DocumentTranslation[]>({
     queryKey: getDocumentTranslationQueryKey({ collection, id }),
     queryFn: async ({ signal }) => {
       return handleNextApiError(async () => {
-        const response = await ofetch<{ data: DocumentTranslation }>(
+        const response = await ofetch<{ data: DocumentTranslation[] }>(
           `/api${basePath}/document/${collection}/${id}`,
           {
             method: "get",
@@ -39,14 +39,18 @@ export function useDocumentTranslation({ collection, id }: Props, options?: Opti
           }
         );
 
-        return response.data;
+        // Normalize to an array defensively: a stale admin tab from before the object→array response
+        // change (deploy skew) would otherwise feed a non-array here and break the polling callback.
+        return Array.isArray(response.data) ? response.data : [];
       });
     },
     enabled: options?.enabled,
+    // Keep polling while any locale's job is still in flight; stop once every job is terminal.
     refetchInterval: (query) => {
-      return query.state.data?.status === "failed" || query.state.data?.status === "completed"
-        ? false
-        : POLLING_INTERVAL_MILLISECONDS;
+      const active = (query.state.data ?? []).some(
+        (job) => job.status === "pending" || job.status === "running"
+      );
+      return active ? POLLING_INTERVAL_MILLISECONDS : false;
     },
   });
 
@@ -57,21 +61,27 @@ export function useDocumentTranslation({ collection, id }: Props, options?: Opti
   // When a queued (async) translation transitions to "completed" in-session, the provenance
   // record's sourceFingerprint has just been updated server-side — invalidate staleness so the
   // "Out of date" notice clears without waiting for the next focus/remount refetch (#50).
-  // Seeded lazily (undefined) and gated on a *defined, non-completed → completed* transition, so a
-  // cold mount of an already-completed document does NOT fire a spurious extra refetch.
-  const previousStatusRef = useRef<string | undefined>(undefined);
+  // Tracked as a *set* of completed target locales (the feed is now per-locale): fire whenever a
+  // locale newly reaches "completed". The snapshot is tagged with the document key and reset when
+  // the document changes, so a cold mount of an already-completed document — or navigating to a
+  // different document within the same component instance — does NOT fire a spurious extra refetch.
+  const docKey = `${collection}:${id}`;
+  const previousCompletedRef = useRef<{ docKey: string; locales: Set<string> } | undefined>(
+    undefined
+  );
   useEffect(() => {
-    const previousStatus = previousStatusRef.current;
-    const currentStatus = query.data?.status;
-    if (
-      currentStatus === "completed" &&
-      previousStatus !== undefined &&
-      previousStatus !== "completed"
-    ) {
+    const jobs = query.data;
+    if (!jobs) return;
+    const completed = new Set(
+      jobs.filter((job) => job.status === "completed").map((job) => job.input.target_lng)
+    );
+    const previous = previousCompletedRef.current;
+    const sameDoc = previous?.docKey === docKey;
+    if (sameDoc && [...completed].some((locale) => !previous.locales.has(locale))) {
       queryClient.invalidateQueries({ queryKey: [DOCUMENT_STALENESS_QUERY_KEY] });
     }
-    previousStatusRef.current = currentStatus;
-  }, [query.data?.status, queryClient]);
+    previousCompletedRef.current = { docKey, locales: completed };
+  }, [query.data, queryClient, docKey]);
 
   return { ...query, invalidate };
 }

@@ -101,7 +101,7 @@ describe("GetDocumentStatusHandler", () => {
   });
 
   describe("success responses", () => {
-    it("returns task status when task exists", async () => {
+    it("returns one task status entry per document, wrapped in an array", async () => {
       const task = createMockTask();
       (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue([task]);
 
@@ -113,7 +113,8 @@ describe("GetDocumentStatusHandler", () => {
 
       expect(response.status).toBe(200);
       const body = await response.json();
-      expect(body.data).toMatchObject({
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0]).toMatchObject({
         id: "task-123",
         status: "completed",
         input: {
@@ -127,7 +128,46 @@ describe("GetDocumentStatusHandler", () => {
       });
     });
 
-    it("returns null when no task exists", async () => {
+    it("returns one entry per target locale, keeping the latest job per locale", async () => {
+      // Two locales, and a superseded older job for `de` — the reduction keeps the newest per locale.
+      const deOld = createMockTask({
+        id: "de-old",
+        input: { ...createMockTask().input, targetLng: "de" },
+        createdAt: "2024-01-01T00:00:00Z",
+        status: "failed",
+      });
+      const deNew = createMockTask({
+        id: "de-new",
+        input: { ...createMockTask().input, targetLng: "de" },
+        createdAt: "2024-01-02T00:00:00Z",
+        status: "running",
+      });
+      const fr = createMockTask({
+        id: "fr-1",
+        input: { ...createMockTask().input, targetLng: "fr" },
+        createdAt: "2024-01-01T12:00:00Z",
+        status: "pending",
+      });
+      (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue([
+        deOld,
+        deNew,
+        fr,
+      ]);
+
+      const req = createMockRequest({ collection_slug: "posts", collection_id: "doc-123" });
+      const body = await (await handler.handle(req)).json();
+
+      const byLocale = Object.fromEntries(
+        (body.data as Array<{ id: string; status: string; input: { target_lng: string } }>).map(
+          (job) => [job.input.target_lng, job]
+        )
+      );
+      expect(Object.keys(byLocale).sort()).toEqual(["de", "fr"]);
+      expect(byLocale.de).toMatchObject({ id: "de-new", status: "running" });
+      expect(byLocale.fr).toMatchObject({ id: "fr-1", status: "pending" });
+    });
+
+    it("returns an empty array when no task exists", async () => {
       (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       const req = createMockRequest({
@@ -138,7 +178,7 @@ describe("GetDocumentStatusHandler", () => {
 
       expect(response.status).toBe(200);
       const body = await response.json();
-      expect(body.data).toBeNull();
+      expect(body.data).toEqual([]);
     });
 
     it("calls findByCollection with correct parameters", async () => {
@@ -181,8 +221,8 @@ describe("GetDocumentStatusHandler", () => {
       const response = await handler.handle(req);
 
       const body = await response.json();
-      expect(body.data.status).toBe("failed");
-      expect(body.data.error).toEqual({ message: "Translation failed" });
+      expect(body.data[0].status).toBe("failed");
+      expect(body.data[0].error).toEqual({ message: "Translation failed" });
     });
 
     it("does not leak the raw error to the client in production", async () => {
@@ -200,7 +240,7 @@ describe("GetDocumentStatusHandler", () => {
         });
         const body = await (await handler.handle(req)).json();
 
-        expect(body.data.error).toEqual({ message: GENERIC_TRANSLATION_ERROR });
+        expect(body.data[0].error).toEqual({ message: GENERIC_TRANSLATION_ERROR });
         expect(JSON.stringify(body)).not.toContain("sk-proj");
       } finally {
         vi.unstubAllEnvs();
@@ -218,7 +258,7 @@ describe("GetDocumentStatusHandler", () => {
       const response = await handler.handle(req);
 
       const body = await response.json();
-      expect(body.data.cancelled).toBe(true);
+      expect(body.data[0].cancelled).toBe(true);
     });
   });
 });

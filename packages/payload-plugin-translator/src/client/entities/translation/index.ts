@@ -38,6 +38,7 @@ export { DocumentTranslationStatus } from "./model/enums";
 export {
   derivePanelStatus,
   deriveCollectionPanelStatus,
+  deriveDocumentRunStatus,
   describePanelStatus,
 } from "./model/panelStatus";
 export type { PanelStatus, MarkerTone } from "./model/panelStatus";

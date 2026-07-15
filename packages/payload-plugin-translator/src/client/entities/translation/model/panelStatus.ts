@@ -1,6 +1,6 @@
 import { DocumentTranslationStatus } from "./enums";
 import type { StatusDotColor } from "./statusRows";
-import type { GroupedCollectionTranslationStatus } from "./types";
+import type { DocumentTranslation, GroupedCollectionTranslationStatus } from "./types";
 
 /**
  * The single aggregate signal shown on a translate trigger (document or collection). Detail lives in
@@ -54,8 +54,29 @@ export function describePanelStatus(
   }
 }
 
+// The most-urgent job status wins the single aggregate marker, in the order `derivePanelStatus`
+// itself ranks them: a failure to surface, then in-flight work, then a queued job, then completed.
+const RUN_STATUS_PRIORITY: DocumentTranslationStatus[] = [
+  DocumentTranslationStatus.FAILED,
+  DocumentTranslationStatus.RUNNING,
+  DocumentTranslationStatus.PENDING,
+  DocumentTranslationStatus.COMPLETED,
+];
+
+/**
+ * Collapse the per-locale job feed into the single most-urgent run status for the trigger marker.
+ * Returns `undefined` when there are no jobs. The panel shows one aggregate signal; the popup's list
+ * carries the full per-locale detail.
+ */
+export function deriveDocumentRunStatus(
+  runs: DocumentTranslation[] | undefined
+): DocumentTranslationStatus | undefined {
+  const present = new Set(runs?.map((run) => run.status));
+  return RUN_STATUS_PRIORITY.find((status) => present.has(status));
+}
+
 type PanelStatusInput = {
-  /** Status of the latest translation job, if any. */
+  /** Status of the most-urgent translation job across locales, if any (see `deriveDocumentRunStatus`). */
   runStatus?: DocumentTranslationStatus | null;
   /** Target locales whose translation is out of date (from staleness detection). */
   staleLocales: string[];

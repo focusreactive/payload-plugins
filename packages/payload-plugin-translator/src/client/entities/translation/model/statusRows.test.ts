@@ -31,16 +31,17 @@ const job = (
   }) as DocumentTranslation;
 
 describe("buildTranslationStatusRows", () => {
-  it("maps staleness into stale + translated rows, stale before translated", () => {
+  it("orders rows by the source→target locale pair, independent of state", () => {
     const rows = buildTranslationStatusRows({
       staleness: staleness([
-        { target: "de", stale: false },
         { target: "fr", stale: true },
+        { target: "de", stale: false },
       ]),
     });
+    // `de` before `fr` alphabetically, even though `fr` is stale and `de` is merely translated.
     expect(rows.map((r) => [r.targetLocale, r.state])).toEqual([
-      ["fr", "stale"],
       ["de", "translated"],
+      ["fr", "stale"],
     ]);
     expect(rows[0].sourceLocale).toBe("en");
   });
@@ -48,7 +49,7 @@ describe("buildTranslationStatusRows", () => {
   it("overlays a transient job (running) over the durable state and sets jobId", () => {
     const rows = buildTranslationStatusRows({
       staleness: staleness([{ target: "de", stale: true }]),
-      run: job(DocumentTranslationStatus.RUNNING, "de"),
+      runs: [job(DocumentTranslationStatus.RUNNING, "de")],
     });
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ targetLocale: "de", state: "running", jobId: "job-de" });
@@ -57,40 +58,70 @@ describe("buildTranslationStatusRows", () => {
   it("adds a row for a job whose target has no provenance record yet, carrying the failure reason", () => {
     const rows = buildTranslationStatusRows({
       staleness: staleness([{ target: "de", stale: false }]),
-      run: job(DocumentTranslationStatus.FAILED, "it"),
+      runs: [job(DocumentTranslationStatus.FAILED, "it")],
     });
+    // Ordered by locale pair (de before it), regardless of state.
     expect(rows.map((r) => [r.targetLocale, r.state])).toEqual([
-      ["it", "failed"],
       ["de", "translated"],
+      ["it", "failed"],
     ]);
-    expect(rows[0].jobId).toBe("job-it");
-    expect(rows[0].error).toBe("x");
+    const failed = rows.find((r) => r.targetLocale === "it");
+    expect(failed?.jobId).toBe("job-it");
+    expect(failed?.error).toBe("x");
   });
 
   it("does not override a durable row with a completed job (no duplicate, keeps provenance state)", () => {
     const rows = buildTranslationStatusRows({
       staleness: staleness([{ target: "de", stale: true }]),
-      run: job(DocumentTranslationStatus.COMPLETED, "de"),
+      runs: [job(DocumentTranslationStatus.COMPLETED, "de")],
     });
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ targetLocale: "de", state: "stale" });
     expect(rows[0].jobId).toBeUndefined();
   });
 
-  it("sorts by priority failed → running → pending → stale → translated", () => {
+  it("overlays every concurrent job onto its own locale — no job overwrites another", () => {
+    // Three locales stale; two are being re-translated concurrently, one still just stale.
     const rows = buildTranslationStatusRows({
       staleness: staleness([
-        { target: "de", stale: false },
+        { target: "de", stale: true },
         { target: "fr", stale: true },
+        { target: "it", stale: true },
       ]),
-      run: job(DocumentTranslationStatus.FAILED, "it"),
+      runs: [
+        job(DocumentTranslationStatus.RUNNING, "de"),
+        job(DocumentTranslationStatus.PENDING, "fr"),
+      ],
     });
-    expect(rows.map((r) => r.state)).toEqual(["failed", "stale", "translated"]);
+    const byLocale = Object.fromEntries(rows.map((r) => [r.targetLocale, r]));
+    expect(byLocale.de).toMatchObject({ state: "running", jobId: "job-de" });
+    expect(byLocale.fr).toMatchObject({ state: "pending", jobId: "job-fr" });
+    // The untouched locale keeps its durable stale state — it is not clobbered by the other jobs.
+    expect(byLocale.it).toMatchObject({ state: "stale" });
+    expect(byLocale.it.jobId).toBeUndefined();
+  });
+
+  it("keeps a row in the same position when its state changes (re-translate does not reorder)", () => {
+    const base = staleness([
+      { target: "de", stale: false },
+      { target: "fr", stale: true },
+      { target: "it", stale: true },
+    ]);
+    const orderBefore = buildTranslationStatusRows({ staleness: base }).map((r) => r.targetLocale);
+
+    // Re-translate `it` → its state flips stale → running; the order must be unchanged.
+    const orderAfter = buildTranslationStatusRows({
+      staleness: base,
+      runs: [job(DocumentTranslationStatus.RUNNING, "it")],
+    }).map((r) => r.targetLocale);
+
+    expect(orderBefore).toEqual(["de", "fr", "it"]);
+    expect(orderAfter).toEqual(orderBefore);
   });
 
   it("returns [] when there is nothing to show", () => {
     expect(buildTranslationStatusRows({})).toEqual([]);
-    expect(buildTranslationStatusRows({ staleness: { locales: [] }, run: null })).toEqual([]);
+    expect(buildTranslationStatusRows({ staleness: { locales: [] }, runs: [] })).toEqual([]);
   });
 });
 

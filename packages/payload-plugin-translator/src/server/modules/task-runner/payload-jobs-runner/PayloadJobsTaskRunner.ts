@@ -1,9 +1,15 @@
 import type { Payload, Where, CollectionSlug } from "payload";
 
 import type { TaskRunner } from "../TaskRunner.interface";
-import type { Task, TaskInput, RunResult } from "../types";
+import type { Task, TaskInput, RunResult, ID } from "../types";
 import type { PayloadJobsRunnerConfig, PayloadJob } from "./types";
 import { normalizeJob } from "./normalizeJob";
+
+// A translation job's supersession identity: same document AND same target locale. IDs are
+// String()-normalized to match the stored (string) form, so a number id compares equal to its
+// persisted job.
+const documentLocaleKey = (collectionId: ID, targetLng: string): string =>
+  `${String(collectionId)}:${targetLng}`;
 
 /**
  * TaskRunner implementation using Payload Jobs.
@@ -22,8 +28,17 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     for (const [collectionSlug, items] of byCollection) {
       const documentIds = items.map((t) => t.collectionId);
       const existing = await this.findByCollection(collectionSlug, documentIds);
-      if (existing.length > 0) {
-        await this.cancelInternal(existing.map((t) => t.id));
+      // Supersede only jobs for the SAME (document, target locale) being re-enqueued — never a
+      // concurrent job for a *different* locale of the same document. Cancelling per-document would
+      // kill an in-flight translation of another locale (the concurrent re-translate bug).
+      const supersededKeys = new Set(
+        items.map((t) => documentLocaleKey(t.collectionId, t.targetLng))
+      );
+      const toCancel = existing.filter((t) =>
+        supersededKeys.has(documentLocaleKey(t.input.collectionId, t.input.targetLng))
+      );
+      if (toCancel.length > 0) {
+        await this.cancelInternal(toCancel.map((t) => t.id));
       }
     }
 

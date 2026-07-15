@@ -3,12 +3,13 @@ import { describe, it, expect } from "vitest";
 import { DocumentTranslationStatus } from "./enums";
 import {
   deriveCollectionPanelStatus,
+  deriveDocumentRunStatus,
   derivePanelStatus,
   describePanelStatus,
   MARKER_DOT,
 } from "./panelStatus";
 import { STATE_DOT } from "./statusRows";
-import type { GroupedCollectionTranslationStatus } from "./types";
+import type { DocumentTranslation, GroupedCollectionTranslationStatus } from "./types";
 
 describe("derivePanelStatus", () => {
   it("failed outranks everything, including stale locales", () => {
@@ -49,6 +50,48 @@ describe("derivePanelStatus", () => {
   it("none when nothing has been translated and nothing is stale", () => {
     expect(derivePanelStatus({ runStatus: null, staleLocales: [] })).toEqual({ kind: "none" });
     expect(derivePanelStatus({ staleLocales: [] })).toEqual({ kind: "none" });
+  });
+});
+
+describe("deriveDocumentRunStatus", () => {
+  const jobWith = (status: DocumentTranslationStatus, target: string): DocumentTranslation =>
+    ({
+      id: `job-${target}`,
+      status,
+      created_at: "2026-07-14T00:00:00.000Z",
+      updated_at: "2026-07-14T00:00:00.000Z",
+      input: { source_lng: "en", target_lng: target },
+      ...(status === DocumentTranslationStatus.FAILED ? { error: { message: "x" } } : {}),
+      ...(status === DocumentTranslationStatus.COMPLETED
+        ? { completed_at: "2026-07-14T00:00:00.000Z" }
+        : {}),
+    }) as DocumentTranslation;
+
+  it("returns undefined when there are no jobs", () => {
+    expect(deriveDocumentRunStatus(undefined)).toBeUndefined();
+    expect(deriveDocumentRunStatus([])).toBeUndefined();
+  });
+
+  it("picks the most urgent status across locales: failed > running > pending > completed", () => {
+    expect(
+      deriveDocumentRunStatus([
+        jobWith(DocumentTranslationStatus.COMPLETED, "de"),
+        jobWith(DocumentTranslationStatus.RUNNING, "fr"),
+        jobWith(DocumentTranslationStatus.FAILED, "it"),
+      ])
+    ).toBe(DocumentTranslationStatus.FAILED);
+
+    expect(
+      deriveDocumentRunStatus([
+        jobWith(DocumentTranslationStatus.COMPLETED, "de"),
+        jobWith(DocumentTranslationStatus.PENDING, "fr"),
+        jobWith(DocumentTranslationStatus.RUNNING, "it"),
+      ])
+    ).toBe(DocumentTranslationStatus.RUNNING);
+
+    expect(deriveDocumentRunStatus([jobWith(DocumentTranslationStatus.COMPLETED, "de")])).toBe(
+      DocumentTranslationStatus.COMPLETED
+    );
   });
 });
 

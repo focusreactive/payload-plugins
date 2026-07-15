@@ -20,7 +20,7 @@ export class SyncTaskRunner implements TaskRunner {
 
   async enqueue(inputs: TaskInput[]): Promise<void> {
     for (const input of inputs) {
-      const key = this.getKey(input.collectionSlug, input.collectionId);
+      const key = this.getKey(input.collectionSlug, input.collectionId, input.targetLng);
       const now = new Date().toISOString();
 
       const task: Task = {
@@ -82,7 +82,9 @@ export class SyncTaskRunner implements TaskRunner {
     return results;
   }
 
-  private getKey(collectionSlug: CollectionSlug, collectionId: ID): string {
-    return `${collectionSlug}:${collectionId}`;
+  // Keyed by (document, target locale) so translating a second locale of the same document does not
+  // evict the first — findByCollection must be able to return one task per locale.
+  private getKey(collectionSlug: CollectionSlug, collectionId: ID, targetLng: string): string {
+    return `${collectionSlug}:${collectionId}:${targetLng}`;
   }
 }
