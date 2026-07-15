@@ -31,16 +31,17 @@ const job = (
   }) as DocumentTranslation;
 
 describe("buildTranslationStatusRows", () => {
-  it("maps staleness into stale + translated rows, stale before translated", () => {
+  it("orders rows by the source→target locale pair, independent of state", () => {
     const rows = buildTranslationStatusRows({
       staleness: staleness([
-        { target: "de", stale: false },
         { target: "fr", stale: true },
+        { target: "de", stale: false },
       ]),
     });
+    // `de` before `fr` alphabetically, even though `fr` is stale and `de` is merely translated.
     expect(rows.map((r) => [r.targetLocale, r.state])).toEqual([
-      ["fr", "stale"],
       ["de", "translated"],
+      ["fr", "stale"],
     ]);
     expect(rows[0].sourceLocale).toBe("en");
   });
@@ -59,12 +60,14 @@ describe("buildTranslationStatusRows", () => {
       staleness: staleness([{ target: "de", stale: false }]),
       runs: [job(DocumentTranslationStatus.FAILED, "it")],
     });
+    // Ordered by locale pair (de before it), regardless of state.
     expect(rows.map((r) => [r.targetLocale, r.state])).toEqual([
-      ["it", "failed"],
       ["de", "translated"],
+      ["it", "failed"],
     ]);
-    expect(rows[0].jobId).toBe("job-it");
-    expect(rows[0].error).toBe("x");
+    const failed = rows.find((r) => r.targetLocale === "it");
+    expect(failed?.jobId).toBe("job-it");
+    expect(failed?.error).toBe("x");
   });
 
   it("does not override a durable row with a completed job (no duplicate, keeps provenance state)", () => {
@@ -98,15 +101,22 @@ describe("buildTranslationStatusRows", () => {
     expect(byLocale.it.jobId).toBeUndefined();
   });
 
-  it("sorts by priority failed → running → pending → stale → translated", () => {
-    const rows = buildTranslationStatusRows({
-      staleness: staleness([
-        { target: "de", stale: false },
-        { target: "fr", stale: true },
-      ]),
-      runs: [job(DocumentTranslationStatus.FAILED, "it")],
-    });
-    expect(rows.map((r) => r.state)).toEqual(["failed", "stale", "translated"]);
+  it("keeps a row in the same position when its state changes (re-translate does not reorder)", () => {
+    const base = staleness([
+      { target: "de", stale: false },
+      { target: "fr", stale: true },
+      { target: "it", stale: true },
+    ]);
+    const orderBefore = buildTranslationStatusRows({ staleness: base }).map((r) => r.targetLocale);
+
+    // Re-translate `it` → its state flips stale → running; the order must be unchanged.
+    const orderAfter = buildTranslationStatusRows({
+      staleness: base,
+      runs: [job(DocumentTranslationStatus.RUNNING, "it")],
+    }).map((r) => r.targetLocale);
+
+    expect(orderBefore).toEqual(["de", "fr", "it"]);
+    expect(orderAfter).toEqual(orderBefore);
   });
 
   it("returns [] when there is nothing to show", () => {

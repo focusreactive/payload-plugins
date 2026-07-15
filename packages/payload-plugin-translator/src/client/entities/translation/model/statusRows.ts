@@ -37,16 +37,12 @@ export const STATE_DOT: Record<TranslationRowState, { color: StatusDotColor; ani
     translated: { color: "green" },
   };
 
-// Most urgent first. Transient job states outrank the durable stale/translated signal.
-const ORDER: Record<TranslationRowState, number> = {
-  failed: 0,
-  running: 1,
-  pending: 2,
-  stale: 3,
-  translated: 4,
-};
-
 const TRANSIENT: ReadonlySet<TranslationRowState> = new Set(["failed", "running", "pending"]);
+
+// A row's permanent identity for ordering: the source→target locale pair (unique per row, never
+// changes when the row's state does).
+const localePairKey = (row: TranslationStatusRow): string =>
+  `${row.sourceLocale}:${row.targetLocale}`;
 
 // Maps the closed 4-member job-status set to a row state. "completed" → "translated"; the transient
 // three pass through. If a new DocumentTranslationStatus is ever added, extend this explicitly —
@@ -64,8 +60,8 @@ const toRowState = (jobStatus: string): TranslationRowState =>
  * **transient** job state (failed/running/pending) wins over the durable signal for that locale, and a
  * job for a target with no provenance row yet adds a row. Overlaying *every* job (not just one) is what
  * lets several concurrent re-translations each show their own live state instead of the last one
- * appearing to overwrite the rest. Sorted `failed → running → pending → stale → translated`, newest
- * first within a group.
+ * appearing to overwrite the rest. Sorted by the fixed source→target locale pair (not by state), so a
+ * row keeps its place when its state changes — re-translating a locale never reorders the list.
  */
 export function buildTranslationStatusRows(input: {
   staleness?: DocumentStaleness | null;
@@ -100,7 +96,9 @@ export function buildTranslationStatusRows(input: {
     }
   }
 
-  return [...byTarget.values()].sort(
-    (a, b) => ORDER[a.state] - ORDER[b.state] || (b.at ?? "").localeCompare(a.at ?? "")
-  );
+  // Stable order by the source→target locale pair — the one thing about a row that never changes when
+  // its state does. Sorting by state/time instead would make a row jump (e.g. to the top) the moment
+  // you re-translate it; the locale pair keeps every row in a fixed place, and progress is conveyed by
+  // the badge/dot, not the position. The pair is unique (one row per target), so no tie-break needed.
+  return [...byTarget.values()].sort((a, b) => localePairKey(a).localeCompare(localePairKey(b)));
 }
