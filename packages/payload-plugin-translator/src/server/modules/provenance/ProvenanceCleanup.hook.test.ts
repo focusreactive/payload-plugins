@@ -1,8 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
-import type { Config, Payload } from "payload";
+import type { CollectionAfterDeleteHook, Payload } from "payload";
 
 import type { ProvenanceStore } from "../../../core/provenance";
-import { injectProvenanceCleanup, makeProvenanceCleanupHook } from "./provenanceCleanupHook";
+import type { ManagedCollectionsConfig } from "./Provenance.shapes";
+import { injectProvenanceCleanup, makeProvenanceCleanupHook } from "./ProvenanceCleanup.hook";
 
 const makeStore = () =>
   ({
@@ -52,8 +53,10 @@ describe("makeProvenanceCleanupHook", () => {
 });
 
 describe("injectProvenanceCleanup", () => {
-  const config = (slugs: string[]): Config =>
-    ({ collections: slugs.map((slug) => ({ slug })) }) as unknown as Config;
+  // No cast to Config: the narrow ManagedCollectionsConfig accepts a plain literal.
+  const config = (slugs: string[]): ManagedCollectionsConfig => ({
+    collections: slugs.map((slug) => ({ slug })),
+  });
 
   it("attaches the hook only to managed collections", () => {
     const store = makeStore();
@@ -66,10 +69,10 @@ describe("injectProvenanceCleanup", () => {
 
   it("appends to a consumer-supplied afterDelete array, preserving existing hooks", () => {
     const store = makeStore();
-    const existing = vi.fn();
-    const cfg = {
+    const existing = vi.fn() as unknown as CollectionAfterDeleteHook;
+    const cfg: ManagedCollectionsConfig = {
       collections: [{ slug: "posts", hooks: { afterDelete: [existing] } }],
-    } as unknown as Config;
+    };
     injectProvenanceCleanup(cfg, new Set(["posts"]), () => store, "translator-provenance");
     const posts = cfg.collections?.[0] as Record<string, any>;
     expect(posts.hooks.afterDelete).toHaveLength(2);

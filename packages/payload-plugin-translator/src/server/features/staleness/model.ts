@@ -2,8 +2,7 @@ import { z } from "zod";
 import type { CollectionSlug } from "payload";
 
 import { JobIdSchema } from "../../shared";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
-import type { ProvenanceStoreFactory } from "../../modules/provenance";
+import type { TranslationContext } from "../../modules/translation-levels";
 
 /**
  * Route params for reading a document's per-locale staleness.
@@ -23,22 +22,10 @@ export const DismissStalenessInputSchema = z.object({
 });
 
 /**
- * Per-locale staleness for one document (snake_case for client compatibility, matching the other
- * translation endpoints). One entry per target locale that has a provenance record.
- */
-export type StalenessLocaleOutput = {
-  target_lng: string;
-  source_lng: string;
-  is_stale: boolean;
-  translated_at: string;
-};
-
-/**
- * Handler configuration. `provenanceStoreFactory` is absent when provenance is disabled — the
+ * Handler configuration. `provenanceServiceFactory` is absent when provenance is disabled — the
  * handlers then report no staleness (empty), so the endpoint contract stays stable either way.
+ * The fingerprint policy + schema live inside {@link ProvenanceService}, so no `schemaMap` here.
  */
-export type StalenessConfig = {
+export type StalenessConfig = Pick<TranslationContext, "provenanceServiceFactory"> & {
   availableCollections: Set<CollectionSlug>;
-  schemaMap: CollectionSchemaMap;
-  provenanceStoreFactory?: ProvenanceStoreFactory;
 };

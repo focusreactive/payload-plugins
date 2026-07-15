@@ -4,6 +4,9 @@ import { APIError } from "payload";
 import { TranslateDocumentHandler } from "./handler";
 import type { TranslationProvider } from "../../../core/translation-providers";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
+import type { ProvenanceStore } from "../../../core/provenance";
+import { ProvenanceService } from "../../modules/provenance";
+import type { ProvenanceServiceFactory } from "../../modules/provenance";
 import type { TranslateDocumentInput } from "./model";
 
 // Mock the translation core — the handler's unit tests isolate its
@@ -274,13 +277,13 @@ describe("TranslateDocumentHandler", () => {
       dismiss: ReturnType<typeof vi.fn>;
       deleteByDocument: ReturnType<typeof vi.fn>;
     };
-    let storeFactory: ReturnType<typeof vi.fn>;
+    let serviceFactory: ReturnType<typeof vi.fn>;
 
     const makeHandlerWithProvenance = () =>
       new TranslateDocumentHandler(
         mockTranslationProvider,
         mockSchemaMap,
-        storeFactory as unknown as (payload: typeof mockPayload) => typeof store
+        serviceFactory as unknown as ProvenanceServiceFactory
       );
 
     beforeEach(() => {
@@ -291,7 +294,12 @@ describe("TranslateDocumentHandler", () => {
         dismiss: vi.fn(),
         deleteByDocument: vi.fn(),
       };
-      storeFactory = vi.fn(() => store);
+      // The fingerprint policy lives in ProvenanceService; the handler only delegates. Wrap the mock
+      // store in a real service so these tests still assert the record the store receives.
+      serviceFactory = vi.fn(
+        (payload) =>
+          new ProvenanceService(payload, store as unknown as ProvenanceStore, mockSchemaMap)
+      );
     });
 
     const withTranslatedData = async () => {
@@ -325,7 +333,7 @@ describe("TranslateDocumentHandler", () => {
       expect(computeSourceFingerprint).toHaveBeenCalledWith({ id: "doc-123", title: "Source" }, [
         { name: "title", type: "text", localized: true },
       ]);
-      expect(storeFactory).toHaveBeenCalledWith(mockPayload);
+      expect(serviceFactory).toHaveBeenCalledWith(mockPayload);
       expect(store.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           collectionSlug: "posts",
@@ -400,7 +408,8 @@ describe("TranslateDocumentHandler", () => {
 
       await makeHandlerWithProvenance().handle(mockPayload, createInput());
 
-      expect(storeFactory).not.toHaveBeenCalled();
+      // The service factory may be called (to attempt a fingerprint capture), but with nothing
+      // translated there is no record — the store is never written.
       expect(store.upsert).not.toHaveBeenCalled();
     });
 

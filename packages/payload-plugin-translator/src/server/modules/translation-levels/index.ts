@@ -1,1 +1,6 @@
-export type { TranslationLevel, LevelContext, CollectionAdminSlot } from "./types";
+export type {
+  TranslationLevel,
+  LevelContext,
+  TranslationContext,
+  CollectionAdminSlot,
+} from "./types";

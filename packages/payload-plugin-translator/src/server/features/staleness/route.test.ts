@@ -11,10 +11,11 @@ import type { StalenessConfig } from "./model";
 // and the shared wrappers have their own unit tests.
 const denyAccess: AccessGuard = { check: vi.fn().mockReturnValue(false) };
 
-const makeConfig = (): StalenessConfig & { provenanceStoreFactory: ReturnType<typeof vi.fn> } => ({
+const makeConfig = (): StalenessConfig & {
+  provenanceServiceFactory: ReturnType<typeof vi.fn>;
+} => ({
   availableCollections: new Set(),
-  schemaMap: new Map(),
-  provenanceStoreFactory: vi.fn(),
+  provenanceServiceFactory: vi.fn(),
 });
 
 describe("createGetDocumentStalenessRoute (contract)", () => {
@@ -37,7 +38,7 @@ describe("createGetDocumentStalenessRoute (contract)", () => {
 
     expect(response.status).toBe(403);
     expect(denyAccess.check).toHaveBeenCalled();
-    expect(config.provenanceStoreFactory).not.toHaveBeenCalled();
+    expect(config.provenanceServiceFactory).not.toHaveBeenCalled();
   });
 });
 
@@ -61,6 +62,6 @@ describe("createDismissStalenessRoute (contract)", () => {
 
     expect(response.status).toBe(403);
     expect(denyAccess.check).toHaveBeenCalled();
-    expect(config.provenanceStoreFactory).not.toHaveBeenCalled();
+    expect(config.provenanceServiceFactory).not.toHaveBeenCalled();
   });
 });

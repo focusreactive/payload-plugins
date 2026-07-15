@@ -3,6 +3,8 @@ import type { Field, Payload, PayloadRequest } from "payload";
 
 import { computeSourceFingerprint } from "../../../core/content-projection/computeSourceFingerprint";
 import type { ProvenanceStore, TranslationProvenanceRecord } from "../../../core/provenance";
+import { ProvenanceService } from "../../modules/provenance";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 
 import { GetDocumentStalenessHandler } from "./getDocumentStaleness.handler";
 import { DismissStalenessHandler } from "./dismissStaleness.handler";
@@ -51,11 +53,14 @@ beforeEach(() => {
   } as unknown as Payload;
 });
 
+const schemaMap = new Map([["posts", schema]]) as CollectionSchemaMap;
+
 function makeConfig(store: ProvenanceStore | null): StalenessConfig {
   return {
     availableCollections: new Set(["posts"]) as StalenessConfig["availableCollections"],
-    schemaMap: new Map([["posts", schema]]) as StalenessConfig["schemaMap"],
-    provenanceStoreFactory: store ? () => store : undefined,
+    // The fingerprint policy lives in ProvenanceService now; the handlers only delegate. Wrapping the
+    // mock store in a real service keeps this suite exercising the full fetch+fingerprint+compare path.
+    provenanceServiceFactory: store ? (p) => new ProvenanceService(p, store, schemaMap) : undefined,
   };
 }
 

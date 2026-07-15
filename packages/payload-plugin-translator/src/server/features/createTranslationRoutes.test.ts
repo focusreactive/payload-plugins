@@ -11,7 +11,6 @@ const deps = (basePath?: string): TranslationRoutesDeps => ({
   taskRunnerFactory: { create: vi.fn() },
   collectionConfig: { availableCollections: new Set() },
   basePath,
-  schemaMap: new Map(),
 });
 
 describe("createTranslationRoutes (bundle contract)", () => {

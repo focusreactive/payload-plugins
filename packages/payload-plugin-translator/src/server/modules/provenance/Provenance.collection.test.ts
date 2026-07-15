@@ -2,8 +2,10 @@ import { describe, it, expect } from "vitest";
 import {
   makeProvenanceCollection,
   isProvenanceCollection,
+  ensureProvenanceCollectionRegistered,
   DEFAULT_PROVENANCE_SLUG,
-} from "./provenanceCollection";
+} from "./Provenance.collection";
+import type { ManagedCollectionsConfig } from "./Provenance.shapes";
 
 describe("makeProvenanceCollection", () => {
   it("defaults to the translator-provenance slug", () => {
@@ -69,5 +71,36 @@ describe("isProvenanceCollection", () => {
 
   it("returns false for a non-boolean truthy marker value", () => {
     expect(isProvenanceCollection({ custom: { translatorProvenance: "true" } })).toBe(false);
+  });
+});
+
+describe("ensureProvenanceCollectionRegistered", () => {
+  // Narrow input — a plain literal, no Config mock needed (the testability win of the reshape).
+  it("adds the sidecar collection when it is absent", () => {
+    const host: ManagedCollectionsConfig = { collections: [{ slug: "posts" }] };
+    ensureProvenanceCollectionRegistered(host, "translator-provenance");
+    expect(host.collections).toHaveLength(2);
+    const sidecar = host.collections![1];
+    expect(sidecar.slug).toBe("translator-provenance");
+    expect(isProvenanceCollection(sidecar)).toBe(true);
+  });
+
+  it("is idempotent — a second call does not stack a duplicate", () => {
+    const host: ManagedCollectionsConfig = { collections: [{ slug: "posts" }] };
+    ensureProvenanceCollectionRegistered(host, "translator-provenance");
+    ensureProvenanceCollectionRegistered(host, "translator-provenance");
+    expect(host.collections).toHaveLength(2);
+  });
+
+  it("initialises collections when the host has none", () => {
+    const host: ManagedCollectionsConfig = {};
+    ensureProvenanceCollectionRegistered(host, "translator-provenance");
+    expect(host.collections).toHaveLength(1);
+  });
+
+  it("honours a custom slug", () => {
+    const host: ManagedCollectionsConfig = {};
+    ensureProvenanceCollectionRegistered(host, "my-provenance");
+    expect(host.collections![0].slug).toBe("my-provenance");
   });
 });
