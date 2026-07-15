@@ -41,12 +41,16 @@ export type DocumentTranslationCompleted = {
   input: InputData;
 };
 
+/**
+ * One translation job for a single target locale. The document status feed is an array of these —
+ * the latest job per target locale (see `useDocumentTranslation`), because re-translate queues an
+ * independent job per locale.
+ */
 export type DocumentTranslation =
   | DocumentTranslationCompleted
   | DocumentTranslationRunning
   | DocumentTranslationFailed
-  | DocumentTranslationPending
-  | null;
+  | DocumentTranslationPending;
 
 export type CollectionTranslationStatusItem = { id: string; status: DocumentTranslationStatus };
 

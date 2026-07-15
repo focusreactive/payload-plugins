@@ -57,18 +57,21 @@ const toRowState = (jobStatus: string): TranslationRowState =>
     : "translated";
 
 /**
- * Build the unified status rows from per-locale staleness + the single latest job.
+ * Build the unified status rows from per-locale staleness + the latest job per target locale.
  *
- * Rows come from `staleness.locales` (one per translated target: `stale` or `translated`). The latest
- * job is overlaid onto its target locale: a **transient** job state (failed/running/pending) wins over
- * the durable signal for that locale, and a job for a target with no provenance row yet adds a row.
- * Sorted `failed → running → pending → stale → translated`, newest first within a group.
+ * Rows come from `staleness.locales` (one per translated target: `stale` or `translated`). Each job in
+ * `runs` (one per target locale — see `useDocumentTranslation`) is overlaid onto its target locale: a
+ * **transient** job state (failed/running/pending) wins over the durable signal for that locale, and a
+ * job for a target with no provenance row yet adds a row. Overlaying *every* job (not just one) is what
+ * lets several concurrent re-translations each show their own live state instead of the last one
+ * appearing to overwrite the rest. Sorted `failed → running → pending → stale → translated`, newest
+ * first within a group.
  */
 export function buildTranslationStatusRows(input: {
   staleness?: DocumentStaleness | null;
-  run?: DocumentTranslation;
+  runs?: DocumentTranslation[];
 }): TranslationStatusRow[] {
-  const { staleness, run } = input;
+  const { staleness, runs } = input;
   const byTarget = new Map<string, TranslationStatusRow>();
 
   for (const locale of staleness?.locales ?? []) {
@@ -80,7 +83,7 @@ export function buildTranslationStatusRows(input: {
     });
   }
 
-  if (run) {
+  for (const run of runs ?? []) {
     const state = toRowState(run.status);
     const target = run.input.target_lng;
     const existing = byTarget.get(target);

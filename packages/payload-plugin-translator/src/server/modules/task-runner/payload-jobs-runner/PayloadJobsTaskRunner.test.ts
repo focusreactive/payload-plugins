@@ -115,6 +115,61 @@ describe("PayloadJobsTaskRunner", () => {
       });
     });
 
+    it("does not cancel a running job for a different target locale of the same document", async () => {
+      // A `de` job is in flight; the user re-translates `fr` on the same document. The `de` job must
+      // survive — cancelling it is the concurrent re-translate bug.
+      const runningDe = createJob({
+        id: "de-job",
+        processing: true,
+        input: {
+          collection: { relationTo: "posts" as CollectionSlug, value: "doc-123" },
+          source_lng: "en",
+          target_lng: "de",
+          strategy: "overwrite",
+        },
+      });
+      mockPayload.find.mockResolvedValueOnce({ docs: [runningDe] });
+
+      await runner.enqueue([createInput({ targetLng: "fr" })]);
+
+      expect(mockPayload.jobs.cancel).not.toHaveBeenCalled();
+      expect(mockPayload.delete).not.toHaveBeenCalled();
+      expect(mockPayload.jobs.queue).toHaveBeenCalledTimes(1);
+    });
+
+    it("supersedes only the same-locale job when several locales have jobs", async () => {
+      const deJob = createJob({
+        id: "de-job",
+        input: {
+          collection: { relationTo: "posts" as CollectionSlug, value: "doc-123" },
+          source_lng: "en",
+          target_lng: "de",
+          strategy: "overwrite",
+        },
+      });
+      const frJob = createJob({
+        id: "fr-job",
+        input: {
+          collection: { relationTo: "posts" as CollectionSlug, value: "doc-123" },
+          source_lng: "en",
+          target_lng: "fr",
+          strategy: "overwrite",
+        },
+      });
+      mockPayload.find.mockResolvedValueOnce({ docs: [deJob, frJob] });
+
+      await runner.enqueue([createInput({ targetLng: "fr" })]);
+
+      expect(mockPayload.jobs.cancel).toHaveBeenCalledWith({
+        where: { id: { in: ["fr-job"] } },
+        queue: "translations",
+      });
+      expect(mockPayload.delete).toHaveBeenCalledWith({
+        collection: "payload-jobs",
+        where: { id: { in: ["fr-job"] } },
+      });
+    });
+
     it("does not cancel when no existing jobs", async () => {
       mockPayload.find.mockResolvedValue({ docs: [] });
 

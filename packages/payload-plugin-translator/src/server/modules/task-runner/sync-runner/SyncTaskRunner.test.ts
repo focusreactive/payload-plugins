@@ -50,7 +50,7 @@ describe("SyncTaskRunner", () => {
       const input = createInput();
       await runner.enqueue([input]);
 
-      const task = tasks.get("posts:doc-123");
+      const task = tasks.get("posts:doc-123:de");
       expect(task).toBeDefined();
       expect(task?.status).toBe("completed");
       expect(task?.completedAt).toBeDefined();
@@ -63,7 +63,7 @@ describe("SyncTaskRunner", () => {
       const input = createInput();
       await runner.enqueue([input]);
 
-      const task = tasks.get("posts:doc-123");
+      const task = tasks.get("posts:doc-123:de");
       expect(task?.status).toBe("failed");
       expect(task?.error?.message).toBe("Translation failed");
     });
@@ -75,7 +75,7 @@ describe("SyncTaskRunner", () => {
       const input = createInput();
       await runner.enqueue([input]);
 
-      const task = tasks.get("posts:doc-123");
+      const task = tasks.get("posts:doc-123:de");
       expect(task?.status).toBe("failed");
       expect(task?.error?.message).toBe("Unknown error");
     });
@@ -90,9 +90,9 @@ describe("SyncTaskRunner", () => {
       await runner.enqueue(inputs);
 
       expect(mockHandler).toHaveBeenCalledTimes(3);
-      expect(tasks.get("posts:doc-1")?.status).toBe("completed");
-      expect(tasks.get("posts:doc-2")?.status).toBe("completed");
-      expect(tasks.get("posts:doc-3")?.status).toBe("completed");
+      expect(tasks.get("posts:doc-1:de")?.status).toBe("completed");
+      expect(tasks.get("posts:doc-2:de")?.status).toBe("completed");
+      expect(tasks.get("posts:doc-3:de")?.status).toBe("completed");
     });
 
     it("creates task with unique id", async () => {
@@ -103,8 +103,8 @@ describe("SyncTaskRunner", () => {
 
       await runner.enqueue(inputs);
 
-      const task1 = tasks.get("posts:doc-1");
-      const task2 = tasks.get("posts:doc-2");
+      const task1 = tasks.get("posts:doc-1:de");
+      const task2 = tasks.get("posts:doc-2:de");
       expect(task1?.id).not.toBe(task2?.id);
     });
 
@@ -112,20 +112,33 @@ describe("SyncTaskRunner", () => {
       const input = createInput();
       await runner.enqueue([input]);
 
-      const task = tasks.get("posts:doc-123");
+      const task = tasks.get("posts:doc-123:de");
       expect(task?.cancelled).toBe(false);
     });
 
-    it("overwrites existing task for same document", async () => {
+    it("overwrites the existing task for the same document AND locale", async () => {
       const input = createInput();
       await runner.enqueue([input]);
 
-      const firstTaskId = tasks.get("posts:doc-123")?.id;
+      const firstTaskId = tasks.get("posts:doc-123:de")?.id;
 
       await runner.enqueue([input]);
 
-      const secondTaskId = tasks.get("posts:doc-123")?.id;
+      const secondTaskId = tasks.get("posts:doc-123:de")?.id;
       expect(secondTaskId).not.toBe(firstTaskId);
+    });
+
+    it("keeps a separate task per target locale for the same document", async () => {
+      // Translating a second locale of the same document must not evict the first — otherwise
+      // findByCollection can only ever return one locale's task (the status-panel overwrite bug).
+      await runner.enqueue([createInput({ targetLng: "de" })]);
+      await runner.enqueue([createInput({ targetLng: "fr" })]);
+
+      expect(tasks.get("posts:doc-123:de")).toBeDefined();
+      expect(tasks.get("posts:doc-123:fr")).toBeDefined();
+
+      const found = await runner.findByCollection("posts" as CollectionSlug, ["doc-123"]);
+      expect(found.map((t) => t.input.targetLng).sort()).toEqual(["de", "fr"]);
     });
   });
 
@@ -134,11 +147,11 @@ describe("SyncTaskRunner", () => {
       const input = createInput();
       await runner.enqueue([input]);
 
-      const taskId = tasks.get("posts:doc-123")?.id;
+      const taskId = tasks.get("posts:doc-123:de")?.id;
       await runner.cancel([taskId!]);
 
       // Task should still exist and be completed
-      expect(tasks.get("posts:doc-123")?.status).toBe("completed");
+      expect(tasks.get("posts:doc-123:de")?.status).toBe("completed");
     });
   });
 

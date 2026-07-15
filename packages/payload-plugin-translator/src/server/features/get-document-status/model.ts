@@ -57,6 +57,31 @@ export type GetDocumentStatusConfig = {
   availableCollections: Set<CollectionSlug>;
 };
 
+// A job is "newer" by creation time, tie-broken by last update — both ISO-8601, so a lexicographic
+// string compare is a correct chronological compare (no Date parsing needed).
+const isNewerTask = (candidate: Task, current: Task): boolean =>
+  candidate.createdAt !== current.createdAt
+    ? candidate.createdAt > current.createdAt
+    : candidate.updatedAt > current.updatedAt;
+
+/**
+ * Reduce a document's jobs to the latest one per target locale.
+ *
+ * `findByCollection` returns every job for the document across all target locales (plus any superseded
+ * jobs not yet cancelled). The status panel shows one row per target locale, so we keep — per
+ * `targetLng` — the most recently created job (tie-break: most recently updated). Without this the
+ * caller sees a single arbitrary job and every other in-flight locale looks idle, which is the
+ * concurrent re-translate bug (a second re-translate appearing to overwrite the first's status).
+ */
+export function latestTaskPerTargetLocale(tasks: Task[]): Task[] {
+  const byLocale = new Map<string, Task>();
+  for (const task of tasks) {
+    const current = byLocale.get(task.input.targetLng);
+    if (!current || isNewerTask(task, current)) byLocale.set(task.input.targetLng, task);
+  }
+  return [...byLocale.values()];
+}
+
 /**
  * Transforms a Task to API output format (snake_case for client compatibility)
  */
