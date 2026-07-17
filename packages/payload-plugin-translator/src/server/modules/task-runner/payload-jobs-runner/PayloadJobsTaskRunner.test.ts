@@ -88,6 +88,22 @@ describe("PayloadJobsTaskRunner", () => {
       });
     });
 
+    it("passes waitUntil through to payload.jobs.queue when set (debounce)", async () => {
+      const when = new Date("2024-06-01T00:00:00Z");
+      await runner.enqueue([createInput({ waitUntil: when })]);
+
+      expect(mockPayload.jobs.queue).toHaveBeenCalledWith(
+        expect.objectContaining({ waitUntil: when })
+      );
+    });
+
+    it("leaves waitUntil undefined for the manual path (no debounce)", async () => {
+      await runner.enqueue([createInput()]);
+
+      const arg = (mockPayload.jobs.queue as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(arg.waitUntil).toBeUndefined();
+    });
+
     it("queues multiple tasks", async () => {
       const inputs = [
         createInput({ collectionId: "doc-1" }),

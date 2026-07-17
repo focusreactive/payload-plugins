@@ -196,6 +196,43 @@ Dismiss acknowledges the drift without re-translating; the marker stays hidden u
 changes again. When `provenance` is disabled nothing is shown. Note the fingerprint is text-only, so
 formatting-only edits to rich text do not mark a locale stale.
 
+### Auto-translate on source change
+
+_Since v0.9.0._
+
+Opt in per collection with `withAutoTranslate` and the plugin queues translations automatically when a
+document's source-locale content changes — no manual trigger. Off by default; a collection is enabled
+only by wrapping it.
+
+```ts
+import { translatorPlugin, withAutoTranslate, createOpenAIProvider, createPayloadJobsRunner } from "@focus-reactive/payload-plugin-translator";
+
+translatorPlugin({
+  collections: [withAutoTranslate(Posts, { targets: ["de", "fr"], debounceMs: 2000 })],
+  translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
+  runner: createPayloadJobsRunner(),
+});
+```
+
+| Option | Type | Default | Meaning |
+| ------ | ---- | ------- | ------- |
+| `targets` | `string[]` | — | Locales to translate into. The source locale is always excluded. |
+| `strategy` | `"overwrite" \| "skip_existing"` | `"overwrite"` | How target content is written. |
+| `debounceMs` | `number` | `0` | Delay before the job runs, coalescing rapid edits (see below). |
+| `sourceLocale` | `string` | `localization.defaultLocale` | Override the source locale for this collection. |
+
+Behaviour: fires only on a **published** source save (draft/autosave saves are ignored; a collection
+without drafts treats every save as published); skips when no translatable content actually changed
+(same fingerprint as stale-detection); coalesces rapid edits via `debounceMs`; the translation is saved
+with the source document's status (published source → published translation); never re-triggers on its
+own translation writes; and never fails the editor's save (best-effort — failures are logged).
+
+> **Requires a working job runner.** Auto-translate only **enqueues** jobs — they run via the task
+> runner (`createPayloadJobsRunner`) and its autorun loop. On serverless platforms such as **Vercel**,
+> cron-based autorun may not run automatically, so enqueued translations can sit unexecuted until
+> triggered — e.g. an external cron hitting the run endpoint, or a self-hosted worker. Make sure your
+> deployment actually executes queued jobs before relying on auto-translate.
+
 ### Lifecycle callbacks
 
 _Since v0.7.0._

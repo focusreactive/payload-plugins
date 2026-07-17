@@ -30,6 +30,12 @@ export type { TranslationLevel } from "./server/modules/translation-levels";
 export { withFieldTranslation } from "./field-config";
 export type { FieldTranslationConfig } from "./field-config";
 
+// Auto-translate — opt-in, per-collection auto-translation on source-locale change (#51). Wrap a
+// collection with `withAutoTranslate`; requires a working job runner/autorun to execute (see the
+// JSDoc for the Vercel/serverless caveat). Since v0.9.0.
+export { withAutoTranslate } from "./auto-translate-config";
+export type { AutoTranslateConfig, AutoTranslateStrategy } from "./auto-translate-config";
+
 // Deprecated exports (for backwards compatibility)
 export { createTranslatePlugin, TranslateCollectionPlugin } from "./plugin";
 export type { TranslateCollectionPluginConfig } from "./plugin";

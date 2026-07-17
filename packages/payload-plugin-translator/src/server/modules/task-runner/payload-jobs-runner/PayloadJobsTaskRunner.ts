@@ -47,6 +47,10 @@ export class PayloadJobsTaskRunner implements TaskRunner {
         this.payload.jobs.queue({
           task: this.config.taskName,
           queue: this.config.queueName,
+          // Debounce: when set, Payload holds the job until this instant. A superseding enqueue for
+          // the same (document, targetLng) cancels the pending delayed job first (see enqueue above),
+          // so rapid source edits coalesce to the final one. Undefined for the manual path.
+          waitUntil: task.waitUntil,
           input: {
             // Flat text reference (ID-agnostic). Stored as a string — no
             // relationship type validation against the collection's ID type,

@@ -46,6 +46,15 @@ describe("SyncTaskRunner", () => {
       });
     });
 
+    it("ignores waitUntil and runs immediately (dev runner — no debounce)", async () => {
+      const input = createInput({ waitUntil: new Date("2999-01-01T00:00:00Z") });
+      await runner.enqueue([input]);
+
+      // Executed now despite the far-future waitUntil; task is completed synchronously.
+      expect(mockHandler).toHaveBeenCalledTimes(1);
+      expect(tasks.get("posts:doc-123:de")?.status).toBe("completed");
+    });
+
     it("stores completed task in tasks map", async () => {
       const input = createInput();
       await runner.enqueue([input]);
