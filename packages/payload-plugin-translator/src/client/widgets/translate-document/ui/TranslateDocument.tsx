@@ -4,12 +4,14 @@ import { toast, useLocale } from "@payloadcms/ui";
 import { useEffect, useMemo } from "react";
 
 import {
+  AutoTranslateMarker,
   buildTranslationStatusRows,
   deriveDocumentRunStatus,
   derivePanelStatus,
   TranslationsApi,
   TranslationStatusList,
 } from "../../../entities/translation";
+import type { AutoTranslateSummary } from "../../../shared/lib/autoTranslate/resolveAutoTranslateSummary";
 import { OpenDocumentTranslationPopup } from "../../../features/open-document-translation-popup";
 import { DocumentTranslationForm, FORM_FIELDS } from "../../../features/translate-document-form";
 import type { FormValues } from "../../../features/translate-document-form";
@@ -21,9 +23,10 @@ import styles from "./styles.module.scss";
 
 type TranslateDocumentProps = {
   hasDrafts: boolean;
+  autoTranslate: AutoTranslateSummary | null;
 };
 
-const TranslateDocument = ({ hasDrafts }: TranslateDocumentProps) => {
+const TranslateDocument = ({ hasDrafts, autoTranslate }: TranslateDocumentProps) => {
   const locale = useLocale();
   const params = useCollectionDocumentUrlParams();
 
@@ -80,7 +83,15 @@ const TranslateDocument = ({ hasDrafts }: TranslateDocumentProps) => {
     <OpenDocumentTranslationPopup isLoading={isLoading} status={panelStatus}>
       {({ close }) => (
         <>
-          <h4 className={styles.title}>Document translation</h4>
+          <div className={styles.header}>
+            <h4 className={styles.title}>Document translation</h4>
+            {autoTranslate && (
+              <AutoTranslateMarker
+                targets={autoTranslate.targets}
+                sourceLocale={autoTranslate.sourceLocale}
+              />
+            )}
+          </div>
 
           <section className={styles.section}>
             <h5 className={styles.eyebrow}>Translate</h5>

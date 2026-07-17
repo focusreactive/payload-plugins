@@ -4,9 +4,14 @@ import type { CollectionSlug, Field } from "payload";
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 
+import {
+  AUTO_TRANSLATE_CUSTOM_KEY,
+  getAutoTranslateConfig,
+} from "../../../core/auto-translate-config";
+
 import { makeCollectionPolicyResolver } from "./AutoTranslate.policy";
 import type { NormalizedAutoTranslatePolicy } from "./AutoTranslate.policy";
-import { makeAutoTranslateHook } from "./AutoTranslateEnqueue.hook";
+import { makeAutoTranslateHook, propagateAutoTranslateCustom } from "./AutoTranslateEnqueue.hook";
 
 const schema: Field[] = [{ name: "title", type: "text", localized: true }];
 const schemaMap: CollectionSchemaMap = new Map([["posts" as CollectionSlug, schema]]);
@@ -155,5 +160,33 @@ describe("makeAutoTranslateHook", () => {
     const { hook, enqueue } = setup({ policies: new Map() });
     await hook(hookArgs());
     expect(enqueue).not.toHaveBeenCalled();
+  });
+});
+
+describe("propagateAutoTranslateCustom", () => {
+  const policies = new Map<string, NormalizedAutoTranslatePolicy>([["posts", policy]]);
+  type TestConfig = { collections: Array<{ slug: string; custom?: Record<string, unknown> }> };
+
+  it("stamps the opt-in onto a registered collection that has no custom yet (the dev scenario, D2)", () => {
+    // The REGISTERED collection is a different object than the wrapped one — starts with no custom.
+    const config: TestConfig = { collections: [{ slug: "posts" }] };
+    propagateAutoTranslateCustom(config, new Set(["posts"]), policies);
+    const read = getAutoTranslateConfig(config.collections[0]);
+    expect(read).not.toBeNull();
+    expect(read?.targets).toEqual(["de", "fr"]);
+  });
+
+  it("preserves other custom keys when stamping", () => {
+    const config: TestConfig = { collections: [{ slug: "posts", custom: { other: 1 } }] };
+    propagateAutoTranslateCustom(config, new Set(["posts"]), policies);
+    const stamped = config.collections[0].custom as Record<string, unknown>;
+    expect(stamped.other).toBe(1);
+    expect(stamped[AUTO_TRANSLATE_CUSTOM_KEY]).toBeDefined();
+  });
+
+  it("does not stamp a collection that is not in the enabled set", () => {
+    const config: TestConfig = { collections: [{ slug: "pages" }] };
+    propagateAutoTranslateCustom(config, new Set(["posts"]), policies);
+    expect(getAutoTranslateConfig(config.collections[0])).toBeNull();
   });
 });

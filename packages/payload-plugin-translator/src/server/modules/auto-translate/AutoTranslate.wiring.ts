@@ -5,7 +5,11 @@ import type { TaskRunnerFactory } from "../task-runner";
 
 import { makeCollectionPolicyResolver, normalizeAutoTranslateConfig } from "./AutoTranslate.policy";
 import type { NormalizedAutoTranslatePolicy } from "./AutoTranslate.policy";
-import { injectAutoTranslateHook, makeAutoTranslateHook } from "./AutoTranslateEnqueue.hook";
+import {
+  injectAutoTranslateHook,
+  makeAutoTranslateHook,
+  propagateAutoTranslateCustom,
+} from "./AutoTranslateEnqueue.hook";
 
 /** A collection as the plugin receives it — only `slug` + `custom` are read to resolve the opt-in. */
 type ConfigurableCollection = { slug: string; custom?: Record<string, unknown> };
@@ -47,6 +51,8 @@ export function configureAutoTranslate(
         // Inject only onto collections that both opted in AND are plugin-managed.
         const slugs = new Set([...enabledSlugs].filter((slug) => managedSlugs.has(slug)));
         injectAutoTranslateHook(config, slugs, hook);
+        // Mirror the opt-in onto the registered collection's `custom` so the admin UI can read it back.
+        propagateAutoTranslateCustom(config, slugs, policies);
         return config;
       },
   };

@@ -3,6 +3,7 @@ import type { BeforeDocumentControlsServerProps, CollectionConfig } from "payloa
 
 import type { AccessGuard } from "../../../../types/AccessGuard";
 import { collectionHasDrafts } from "../../../../server/shared/guards";
+import { resolveAutoTranslateSummary } from "../../../shared/lib/autoTranslate/resolveAutoTranslateSummary";
 
 import TranslateDocument from "./TranslateDocument";
 
@@ -21,8 +22,12 @@ async function TranslateDocumentServer(props: TranslateDocumentServerProps) {
   if (!props.id) return null;
 
   const hasDrafts = collectionHasDrafts(props.collection);
+  const autoTranslate = resolveAutoTranslateSummary(
+    props.collection,
+    props.payload.config.localization ? props.payload.config.localization.defaultLocale : undefined
+  );
 
-  return <TranslateDocument hasDrafts={hasDrafts} />;
+  return <TranslateDocument hasDrafts={hasDrafts} autoTranslate={autoTranslate} />;
 }
 
 export default TranslateDocumentServer;

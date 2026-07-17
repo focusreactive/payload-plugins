@@ -1,3 +1,12 @@
+// Title row: the section heading on the left, ambient markers (e.g. auto-translate) pushed to the
+// right edge so they stay out of the popup's main vertical flow.
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
 .title {
   margin: 0;
   font-size: 0.8125rem;

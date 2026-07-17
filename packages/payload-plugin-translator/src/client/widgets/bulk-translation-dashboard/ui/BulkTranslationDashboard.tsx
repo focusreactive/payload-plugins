@@ -4,7 +4,12 @@ import { toast, useLocale, useSelection } from "@payloadcms/ui";
 import { SelectAllStatus } from "@payloadcms/ui/providers/Selection";
 import { useEffect, useMemo } from "react";
 
-import { deriveCollectionPanelStatus, TranslationsApi } from "../../../entities/translation";
+import {
+  AutoTranslateMarker,
+  deriveCollectionPanelStatus,
+  TranslationsApi,
+} from "../../../entities/translation";
+import type { AutoTranslateSummary } from "../../../shared/lib/autoTranslate/resolveAutoTranslateSummary";
 import {
   CollectionTranslationForm,
   FORM_FIELDS,
@@ -20,9 +25,13 @@ import styles from "./styles.module.scss";
 
 type BulkTranslationDashboardProps = {
   hasDrafts: boolean;
+  autoTranslate: AutoTranslateSummary | null;
 };
 
-export default function BulkTranslationDashboard({ hasDrafts }: BulkTranslationDashboardProps) {
+export default function BulkTranslationDashboard({
+  hasDrafts,
+  autoTranslate,
+}: BulkTranslationDashboardProps) {
   const locale = useLocale();
   const { collection } = useCollectionDashboardUrlParams();
   const documentsSelection = useSelection();
@@ -77,7 +86,15 @@ export default function BulkTranslationDashboard({ hasDrafts }: BulkTranslationD
 
   return (
     <CollectionTranslationPopup status={panelStatus} selectedCount={selectedCount}>
-      <h4 className={styles.title}>Bulk translation</h4>
+      <div className={styles.header}>
+        <h4 className={styles.title}>Bulk translation</h4>
+        {autoTranslate && (
+          <AutoTranslateMarker
+            targets={autoTranslate.targets}
+            sourceLocale={autoTranslate.sourceLocale}
+          />
+        )}
+      </div>
 
       <section className={styles.section}>
         <h5 className={styles.eyebrow}>Translate</h5>

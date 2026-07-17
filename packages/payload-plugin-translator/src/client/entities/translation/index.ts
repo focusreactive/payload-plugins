@@ -8,6 +8,7 @@ import { useDocumentStaleness } from "./api/queries/useDocumentStaleness";
 import { useDocumentTranslation } from "./api/queries/useDocumentTranslation";
 
 export { TranslationStatusList } from "./ui/TranslationStatusList";
+export { AutoTranslateMarker } from "./ui/AutoTranslateMarker";
 
 export const TranslationsApi = {
   useRunDocumentTranslation,

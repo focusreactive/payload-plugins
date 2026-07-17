@@ -11,6 +11,9 @@ import type { CollectionAfterChangeHook } from "payload";
 export type AutoTranslateManagedEntry = {
   slug: string;
   hooks?: { afterChange?: CollectionAfterChangeHook[] };
+  /** The `custom` bag — the opt-in is propagated here so the admin UI can read it back off the
+   * REGISTERED collection (which may be a different object than the one `withAutoTranslate` wrapped). */
+  custom?: Record<string, unknown>;
 };
 
 /** The minimal config host: a mutable `collections` array. A real Payload `Config` plugs straight in. */

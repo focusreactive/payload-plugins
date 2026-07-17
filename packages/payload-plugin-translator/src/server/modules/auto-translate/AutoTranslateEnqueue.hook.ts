@@ -1,11 +1,15 @@
 import type { CollectionAfterChangeHook } from "payload";
 
 import { hasSourceContentChanged } from "../../../core/auto-translate";
+import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../core/auto-translate-config";
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import type { TaskRunnerFactory } from "../task-runner";
 
-import type { AutoTranslatePolicyResolver } from "./AutoTranslate.policy";
+import type {
+  AutoTranslatePolicyResolver,
+  NormalizedAutoTranslatePolicy,
+} from "./AutoTranslate.policy";
 import { buildAutoTranslateTasks, passesPublishGate } from "./AutoTranslate.policy";
 import type { AutoTranslateManagedConfig } from "./AutoTranslate.shapes";
 
@@ -109,5 +113,29 @@ export function injectAutoTranslateHook(
       (existing) => (existing as MarkedHook).__translatorAutoTranslate === true
     );
     if (!alreadyInjected) collection.hooks.afterChange.push(hook);
+  }
+}
+
+/**
+ * Propagate each enabled collection's resolved policy onto the REGISTERED collection's `custom` bag, so
+ * the admin UI can read the opt-in back via `getAutoTranslateConfig`. This is required because
+ * `withAutoTranslate` stamps `custom` on the object passed to the plugin's `collections` param, which
+ * can be a DIFFERENT object than the one registered in `buildConfig.collections` (the reader would
+ * otherwise see no config and the indicator would disagree with the behaviour). Idempotent + additive:
+ * re-stamping the same value is a no-op and the behaviour wiring still reads from the plugin param.
+ */
+export function propagateAutoTranslateCustom(
+  config: AutoTranslateManagedConfig,
+  enabledSlugs: Set<string>,
+  policies: Map<string, NormalizedAutoTranslatePolicy>
+): void {
+  for (const collection of config.collections ?? []) {
+    if (!enabledSlugs.has(collection.slug)) continue;
+    const policy = policies.get(collection.slug);
+    if (!policy) continue;
+    collection.custom = {
+      ...(collection.custom ?? {}),
+      [AUTO_TRANSLATE_CUSTOM_KEY]: policy,
+    };
   }
 }
