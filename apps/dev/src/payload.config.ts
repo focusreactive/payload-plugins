@@ -11,6 +11,7 @@ import {
   documentLevel,
   collectionLevel,
   fieldLevel,
+  withAutoTranslate,
 } from "@focus-reactive/payload-plugin-translator";
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { seoPlugin } from "@focus-reactive/payload-plugin-seo";
@@ -91,7 +92,13 @@ export default buildConfig({
       usernameFieldPath: "name",
     }),
     translatorPlugin({
-      collections: [Pages, Articles, Playground],
+      // Articles is opted in to auto-translate: editing + saving its source-locale (en) content
+      // auto-queues translations into de/fr/es. No drafts on this collection, so every save fires.
+      collections: [
+        Pages,
+        withAutoTranslate(Articles, { targets: ["de", "fr", "es"], debounceMs: 2000 }),
+        withAutoTranslate(Playground, { targets: ["de", "fr", "es"], debounceMs: 2000 }),
+      ],
       runner: resolveTranslatorRunner(),
       translationProvider: createOpenAIProvider({
         apiKey: process.env.OPENAI_API_KEY ?? "",
