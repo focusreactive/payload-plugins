@@ -26,6 +26,25 @@ export type AutoTranslateModule = {
 
 const NOOP: ConfigModifier = (config) => config;
 
+/** Emit one clear config-time warning per collection whose auto-translate config named unknown locales. */
+function warnDroppedLocales(
+  slug: string,
+  filtered: ReturnType<typeof filterPolicyToKnownLocales>,
+  knownLocales: Set<string>
+): void {
+  const known = [...knownLocales].join(", ");
+  if (filtered.droppedTargets.length > 0) {
+    console.warn(
+      `[payload-plugin-translator] auto-translate on "${slug}": ignoring unknown target locale(s) ${filtered.droppedTargets.join(", ")} (configured locales: ${known}).`
+    );
+  }
+  if (filtered.droppedSourceLocale) {
+    console.warn(
+      `[payload-plugin-translator] auto-translate on "${slug}": unknown sourceLocale "${filtered.droppedSourceLocale}" ignored, falling back to the default locale (configured locales: ${known}).`
+    );
+  }
+}
+
 /**
  * Turn the opt-in `withAutoTranslate` config (read from each collection's `custom`) into a
  * self-contained {@link AutoTranslateModule} — mirrors `configureProvenance`. Builds the per-collection
@@ -79,23 +98,4 @@ export function configureAutoTranslate(
         return config;
       },
   };
-}
-
-/** Emit one clear config-time warning per collection whose auto-translate config named unknown locales. */
-function warnDroppedLocales(
-  slug: string,
-  filtered: ReturnType<typeof filterPolicyToKnownLocales>,
-  knownLocales: Set<string>
-): void {
-  const known = [...knownLocales].join(", ");
-  if (filtered.droppedTargets.length > 0) {
-    console.warn(
-      `[payload-plugin-translator] auto-translate on "${slug}": ignoring unknown target locale(s) ${filtered.droppedTargets.join(", ")} (configured locales: ${known}).`
-    );
-  }
-  if (filtered.droppedSourceLocale) {
-    console.warn(
-      `[payload-plugin-translator] auto-translate on "${slug}": unknown sourceLocale "${filtered.droppedSourceLocale}" ignored, falling back to the default locale (configured locales: ${known}).`
-    );
-  }
 }
