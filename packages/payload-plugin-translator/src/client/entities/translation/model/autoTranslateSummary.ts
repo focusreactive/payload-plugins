@@ -1,14 +1,14 @@
 import { getAutoTranslateConfig } from "../../../../core/auto-translate-config";
 
-/** The auto-translate facts the Automation panel renders — resolved from a collection's opt-in config. */
+/** The auto-translate facts the marker renders — resolved from a collection's opt-in config. */
 export type AutoTranslateSummary = { targets: string[]; sourceLocale: string };
 
 /**
- * Resolve a collection's auto-translate summary for the Automation panel, or `null` when it should not
+ * Resolve a collection's auto-translate summary for the popup marker, or `null` when it should not
  * render. Reads the opt-in from the collection's `custom` (propagated onto the registered collection at
  * init), resolves the source locale (per-collection override else the config default), and drops the
  * source from the displayed targets. Returns `null` when off, when no source locale is resolvable, or
- * when no target remains — so the caller renders the panel only when it is both enabled and meaningful.
+ * when no target remains — so the caller renders the marker only when it is both enabled and meaningful.
  */
 export function resolveAutoTranslateSummary(
   collection: { custom?: Record<string, unknown> } | undefined,

@@ -112,9 +112,12 @@ rendered only when enabled. Same in both popups so the two surfaces read as one 
    the `ConfigModifier`. + unit test asserting the registered collection carries the config after init,
    even when only the plugin-param object was wrapped (the dev scenario).
 2. **Shared marker:** `entities/translation/ui/AutoTranslateMarker/` (component + styles + barrel). A pure
-   `resolveAutoTranslateSummary` helper (`client/shared/lib/autoTranslate/`) turns a collection + default
-   locale into `{ targets, sourceLocale } | null` — unit-tested (`.test.ts`). No render test: the package
-   has no client test infra (node env, `*.test.ts` only), so client UI is covered by type-check + manual.
+   `resolveAutoTranslateSummary` helper (`entities/translation/model/autoTranslateSummary.ts`, beside the
+   other `derive*` model fns) turns a collection + default locale into `{ targets, sourceLocale } | null`
+   — unit-tested (`.test.ts`). No render test: the package has no client test infra (node env, `*.test.ts`
+   only), so client UI is covered by type-check + manual. The opt-in reader `getAutoTranslateConfig`
+   validates the config shape (`targets` is a `string[]`) so a foreign `custom` key collision returns
+   `null` rather than crashing the readers.
 3. **Doc popup:** `TranslateDocument.server.tsx` resolves the summary and passes
    `autoTranslate={{ targets, sourceLocale }}` (or `null`); `TranslateDocument.tsx` renders the panel
    under the title when present.

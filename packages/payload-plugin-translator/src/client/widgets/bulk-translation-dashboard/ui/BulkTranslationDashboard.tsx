@@ -9,7 +9,7 @@ import {
   deriveCollectionPanelStatus,
   TranslationsApi,
 } from "../../../entities/translation";
-import type { AutoTranslateSummary } from "../../../shared/lib/autoTranslate/resolveAutoTranslateSummary";
+import type { AutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary";
 import {
   CollectionTranslationForm,
   FORM_FIELDS,

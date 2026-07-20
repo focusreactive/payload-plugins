@@ -6,7 +6,10 @@
 export const AUTO_TRANSLATE_CUSTOM_KEY = "translatorAutoTranslate";
 
 /**
- * Translation strategy for auto-enqueued jobs (matches the task-runner's strategy union).
+ * Translation strategy for auto-enqueued jobs (matches the task-runner's strategy union):
+ * - `"overwrite"` — (re)translate every target field, replacing any existing target-locale value.
+ * - `"skip_existing"` — only fill target fields that are currently empty, leaving existing translations
+ *   untouched.
  * @since 0.9.0
  */
 export type AutoTranslateStrategy = "overwrite" | "skip_existing";

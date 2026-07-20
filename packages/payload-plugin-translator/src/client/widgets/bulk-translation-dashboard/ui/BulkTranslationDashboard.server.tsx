@@ -3,7 +3,7 @@ import type { BeforeListTableServerProps } from "payload";
 
 import type { AccessGuard } from "../../../../types/AccessGuard";
 import { collectionHasDrafts } from "../../../../server/shared/guards";
-import { resolveAutoTranslateSummary } from "../../../shared/lib/autoTranslate/resolveAutoTranslateSummary";
+import { resolveAutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary";
 
 import BulkTranslationDashboard from "./BulkTranslationDashboard";
 

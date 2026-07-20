@@ -3,7 +3,7 @@ import type { BeforeDocumentControlsServerProps, CollectionConfig } from "payloa
 
 import type { AccessGuard } from "../../../../types/AccessGuard";
 import { collectionHasDrafts } from "../../../../server/shared/guards";
-import { resolveAutoTranslateSummary } from "../../../shared/lib/autoTranslate/resolveAutoTranslateSummary";
+import { resolveAutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary";
 
 import TranslateDocument from "./TranslateDocument";
 
