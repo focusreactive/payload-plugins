@@ -1,3 +1,16 @@
+# @focus-reactive/payload-plugin-translator [0.9.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.8.2...@focus-reactive/payload-plugin-translator@0.9.0) (2026-07-20)
+
+
+### Bug Fixes
+
+* **translator:** drop unknown auto-translate locales at config time with a warning ([8148d79](https://github.com/focusreactive/payload-plugins/commit/8148d798e8d9ec40fdb845827f562419b6cdf572))
+
+
+### Features
+
+* **translator:** auto-translate on source-locale content change ([#51](https://github.com/focusreactive/payload-plugins/issues/51)) ([e5c4a35](https://github.com/focusreactive/payload-plugins/commit/e5c4a351682c13daea3a5601f0cf553cf51d525f))
+* **translator:** show an auto-translate indicator in the translation popups ([9128ae7](https://github.com/focusreactive/payload-plugins/commit/9128ae7a81062c3da1c186c352790b64a385039f))
+
 ## @focus-reactive/payload-plugin-translator [0.8.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.8.1...@focus-reactive/payload-plugin-translator@0.8.2) (2026-07-15)
 
 
