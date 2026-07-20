@@ -1,3 +1,5 @@
+import { isObject } from "../utils/isObject";
+
 import type { AutoTranslateConfig } from "./types";
 import { AUTO_TRANSLATE_CUSTOM_KEY } from "./types";
 
@@ -9,8 +11,8 @@ import { AUTO_TRANSLATE_CUSTOM_KEY } from "./types";
  * `targets`.
  */
 function isAutoTranslateConfig(value: unknown): value is AutoTranslateConfig {
-  if (!value || typeof value !== "object") return false;
-  const { targets } = value as { targets?: unknown };
+  if (!isObject(value)) return false;
+  const { targets } = value;
   return Array.isArray(targets) && targets.every((target) => typeof target === "string");
 }
 
@@ -27,7 +29,7 @@ function isAutoTranslateConfig(value: unknown): value is AutoTranslateConfig {
 export function getAutoTranslateConfig(collection: {
   custom?: Record<string, unknown>;
 }): AutoTranslateConfig | null {
-  if (!collection.custom || typeof collection.custom !== "object") return null;
-  const value = (collection.custom as Record<string, unknown>)[AUTO_TRANSLATE_CUSTOM_KEY];
+  if (!isObject(collection.custom)) return null;
+  const value = collection.custom[AUTO_TRANSLATE_CUSTOM_KEY];
   return isAutoTranslateConfig(value) ? value : null;
 }
