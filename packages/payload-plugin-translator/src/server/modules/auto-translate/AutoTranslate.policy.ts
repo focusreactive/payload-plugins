@@ -37,6 +37,52 @@ export function normalizeAutoTranslateConfig(
 }
 
 /**
+ * A minimal localization shape — the set of configured locale codes, in either form Payload accepts
+ * (`"en"` or `{ code: "en" }`). Payload's `Config["localization"]` is structurally assignable, so the
+ * caller passes it straight in with no adapter and tests pass a tiny literal.
+ */
+export type LocalizationLike = false | { locales: Array<string | { code: string }> };
+
+/** Extract the configured locale codes, or `null` when localization is disabled/absent. */
+export function extractLocaleCodes(localization: LocalizationLike | undefined): Set<string> | null {
+  if (!localization) return null;
+  return new Set(
+    localization.locales.map((locale) => (typeof locale === "string" ? locale : locale.code))
+  );
+}
+
+/** Outcome of validating a policy's locales against the configured set — the filtered policy plus what
+ * was dropped, so the caller can warn precisely. */
+export type PolicyLocaleFilter = {
+  policy: NormalizedAutoTranslatePolicy;
+  droppedTargets: string[];
+  droppedSourceLocale: string | null;
+};
+
+/**
+ * Drop targets (and a `sourceLocale` override) that are not configured locales, so a mistyped locale in
+ * `withAutoTranslate` never reaches the pipeline — where it would silently burn a provider call and
+ * either error at the DB (Postgres locale enum) or write orphaned, invisible data (Mongo/SQLite). Pure:
+ * returns a new policy and reports the drops; the caller (config-time wiring) emits the warning.
+ */
+export function filterPolicyToKnownLocales(
+  policy: NormalizedAutoTranslatePolicy,
+  knownLocales: Set<string>
+): PolicyLocaleFilter {
+  const droppedTargets = policy.targets.filter((target) => !knownLocales.has(target));
+  const sourceUnknown = policy.sourceLocale !== undefined && !knownLocales.has(policy.sourceLocale);
+  return {
+    policy: {
+      ...policy,
+      targets: policy.targets.filter((target) => knownLocales.has(target)),
+      sourceLocale: sourceUnknown ? undefined : policy.sourceLocale,
+    },
+    droppedTargets,
+    droppedSourceLocale: sourceUnknown ? (policy.sourceLocale ?? null) : null,
+  };
+}
+
+/**
  * The v1 (collection-level) resolver. Ignores `doc` — see {@link AutoTranslatePolicyResolver}. This is
  * the single seam a future document-level manager replaces.
  */

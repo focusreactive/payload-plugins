@@ -74,8 +74,13 @@ server boundaries can uniformly call `getAutoTranslateConfig(payload.collections
 the truth. Propagation is idempotent (re-stamping the same value is a no-op) and additive (behaviour
 wiring still reads from the plugin param, unchanged).
 
-**Placement in the popup:** a thin row directly under the popup title, above the "Translate" section,
+**Placement in the popup:** the marker sits at the right edge of the title row (a `.header` flex row),
 rendered only when enabled. Same in both popups so the two surfaces read as one system.
+
+**Locale hygiene (review follow-up):** targets / a `sourceLocale` override that name locales not in
+`localization.locales` are dropped at config time with a clear `console.warn` (see D6) — so a mistyped
+locale can never reach the pipeline (where it would burn a provider call and either error at the DB or
+orphan data) nor show a phantom code in this marker.
 
 ## Decisions (ADRs)
 
@@ -104,6 +109,15 @@ rendered only when enabled. Same in both popups so the two surfaces read as one 
   e.g. *"Auto-translate is on for this collection. Publishing changes to the source (`en`) content
   automatically queues translations into de · fr · es."* Source/targets come from the config; keep it
   one or two sentences. (No serverless caveat in the tooltip — that lives in `withAutoTranslate` JSDoc/README.)
+- **D6 — validate target/source locales at config time = warn + drop** (review follow-up). Unknown
+  locales are filtered out of the effective policy in the `ConfigModifier` (which already holds the
+  Payload `Config`, so `config.localization` is in scope — no new coupling), with a `console.warn` per
+  collection. Chosen over: (a) throwing at init — too harsh, one typo would break `buildConfig`; (b)
+  validating in `getAutoTranslateConfig` — that reader is payload-free `core/` and has no locale list;
+  (c) leaving it — the silent failure this fixes (burned provider calls, DB enum error on Postgres, or
+  orphaned invisible data on Mongo/SQLite). The filter/extract logic is pure (`filterPolicyToKnownLocales`,
+  `extractLocaleCodes` over a `Set<string>` / a narrow `LocalizationLike`), unit-tested; the modifier
+  only reads `config.localization` and emits the warning.
 
 ## Build sequence
 

@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 
 import {
   buildAutoTranslateTasks,
+  extractLocaleCodes,
+  filterPolicyToKnownLocales,
   makeCollectionPolicyResolver,
   normalizeAutoTranslateConfig,
   passesPublishGate,
@@ -65,6 +67,48 @@ describe("resolvePublishOnTranslation (D9 — mirror source)", () => {
     expect(resolvePublishOnTranslation({ _status: "published" }, true)).toBe(true);
     expect(resolvePublishOnTranslation({ _status: "draft" }, true)).toBe(false);
     expect(resolvePublishOnTranslation({}, false)).toBe(true);
+  });
+});
+
+describe("extractLocaleCodes", () => {
+  it("returns null when localization is disabled/absent", () => {
+    expect(extractLocaleCodes(false)).toBeNull();
+    expect(extractLocaleCodes(undefined)).toBeNull();
+  });
+
+  it("reads codes from both the string and object locale forms", () => {
+    expect(extractLocaleCodes({ locales: ["en", "de"] })).toEqual(new Set(["en", "de"]));
+    expect(extractLocaleCodes({ locales: [{ code: "en" }, { code: "fr" }] })).toEqual(
+      new Set(["en", "fr"])
+    );
+  });
+});
+
+describe("filterPolicyToKnownLocales", () => {
+  const known = new Set(["en", "de", "fr"]);
+
+  it("keeps configured targets and reports the unknown ones", () => {
+    const result = filterPolicyToKnownLocales(policy({ targets: ["de", "xx", "fr"] }), known);
+    expect(result.policy.targets).toEqual(["de", "fr"]);
+    expect(result.droppedTargets).toEqual(["xx"]);
+    expect(result.droppedSourceLocale).toBeNull();
+  });
+
+  it("drops an unknown sourceLocale override so it falls back to the default", () => {
+    const result = filterPolicyToKnownLocales(
+      policy({ targets: ["de"], sourceLocale: "zz" }),
+      known
+    );
+    expect(result.policy.sourceLocale).toBeUndefined();
+    expect(result.droppedSourceLocale).toBe("zz");
+  });
+
+  it("leaves a fully-valid policy untouched (no drops)", () => {
+    const p = policy({ targets: ["de", "fr"], sourceLocale: "en" });
+    const result = filterPolicyToKnownLocales(p, known);
+    expect(result.policy).toEqual(p);
+    expect(result.droppedTargets).toEqual([]);
+    expect(result.droppedSourceLocale).toBeNull();
   });
 });
 
