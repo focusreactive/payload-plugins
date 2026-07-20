@@ -26,6 +26,13 @@ export type TaskInput = {
   targetLng: string;
   strategy: "overwrite" | "skip_existing";
   publishOnTranslation: boolean;
+  /**
+   * Optional scheduled-run time (debounce). When set, the job runs no earlier than this instant;
+   * omitted/`undefined` = run as soon as the runner picks it up (every existing caller). Honored by
+   * the Payload Jobs runner via `payload.jobs.queue({ waitUntil })`; the sync (dev) runner ignores it
+   * and runs immediately.
+   */
+  waitUntil?: Date;
 };
 
 /**

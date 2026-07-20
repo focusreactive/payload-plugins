@@ -8,6 +8,7 @@ import type { ProvenanceServiceFactory } from "../../modules/provenance";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument";
 
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
+import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext";
 import type { TranslateDocumentInput, TranslateDocumentOutput } from "./model";
 
 /**
@@ -123,6 +124,11 @@ export class TranslateDocumentHandler implements Handler<
       autosave: isAutosaveEnabled,
       locale: targetLng,
       fallbackLocale: sourceLng,
+      // Mark this as a translator-authored write so the auto-translate afterChange hook (#51) skips it
+      // — the loop guard's second barrier, alongside the source-locale check. This write always targets
+      // the TARGET locale, so it is already exempt by locale; the flag also covers any future write
+      // path that could touch the source locale.
+      context: { [AUTO_TRANSLATE_SKIP_CONTEXT_KEY]: true },
     });
   }
 }

@@ -3,6 +3,7 @@ import type { Config, Payload } from "payload";
 
 import { translatorPlugin } from "./plugin";
 import type { TranslatorPluginConfig } from "./plugin";
+import { withAutoTranslate } from "./auto-translate-config";
 import { documentLevel, fieldLevel } from "./composition/levels";
 import { TranslateDocumentExport } from "./client/widgets/translate-document";
 import { BulkDocumentTranslationDashboard } from "./client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.export";
@@ -257,6 +258,59 @@ describe("translatorPlugin — provenance (opt-in)", () => {
 
     const posts = twice.collections?.find((c) => c.slug === "posts") as Record<string, any>;
     expect(posts.hooks?.afterDelete).toHaveLength(1);
+  });
+});
+
+const markedAfterChange = (col: Record<string, any> | undefined) =>
+  (col?.hooks?.afterChange ?? []).filter(
+    (h: { __translatorAutoTranslate?: boolean }) => h.__translatorAutoTranslate === true
+  );
+
+describe("translatorPlugin — auto-translate (opt-in wiring)", () => {
+  // Run the plugin end-to-end with a caller-supplied collection set (same object used for the
+  // incoming config, mirroring how buildConfig passes collections), returning the built result.
+  const runWith = async (collections: unknown[]) => {
+    const pluginConfig = {
+      collections,
+      translationProvider: { translate: vi.fn() },
+      runner: makeRunner(),
+    } as unknown as TranslatorPluginConfig;
+    return translatorPlugin(pluginConfig)({ collections } as unknown as Config);
+  };
+
+  it("attaches exactly one marked afterChange hook to a collection wrapped with withAutoTranslate", async () => {
+    const posts = withAutoTranslate(makeCollection() as never, { targets: ["de", "fr"] });
+    const result = await runWith([posts]);
+    const built = result.collections?.find((c) => c.slug === "posts") as Record<string, any>;
+    expect(markedAfterChange(built)).toHaveLength(1);
+  });
+
+  it("does not attach the hook to a collection that was not wrapped", async () => {
+    const result = await runWith([makeCollection()]);
+    const built = result.collections?.find((c) => c.slug === "posts") as Record<string, any>;
+    expect(markedAfterChange(built)).toHaveLength(0);
+  });
+
+  it("does not attach the hook to any collection when none opted in", async () => {
+    const result = await runWith([makeCollection()]);
+    for (const c of result.collections ?? []) {
+      expect(markedAfterChange(c as Record<string, any>)).toHaveLength(0);
+    }
+  });
+
+  it("does not stack duplicate hooks when the same config is run through the plugin twice", async () => {
+    const posts = withAutoTranslate(makeCollection() as never, { targets: ["de"] });
+    const pluginConfig = {
+      collections: [posts],
+      translationProvider: { translate: vi.fn() },
+      runner: makeRunner(),
+    } as unknown as TranslatorPluginConfig;
+    const once = await translatorPlugin(pluginConfig)({
+      collections: [posts],
+    } as unknown as Config);
+    const twice = await translatorPlugin(pluginConfig)(once);
+    const built = twice.collections?.find((c) => c.slug === "posts") as Record<string, any>;
+    expect(markedAfterChange(built)).toHaveLength(1);
   });
 });
 

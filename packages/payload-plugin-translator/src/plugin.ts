@@ -1,6 +1,7 @@
 import type { CollectionConfig, Config } from "payload";
 
 import { CacheProviderExport } from "./client/app/cache/CacheProvider.export";
+import { configureAutoTranslate } from "./server/modules/auto-translate";
 import { configureProvenance } from "./server/modules/provenance";
 import type { AccessGuard } from "./types/AccessGuard";
 import type { TranslationProvider } from "./core/translation-providers";
@@ -129,6 +130,9 @@ export class TranslateCollectionPlugin {
         lifecycle: lifecycle ?? {},
         collections: Array.from(collectionSlugs),
       });
+      // Auto-translate (#51) reads its opt-in from each collection's `custom` (via `withAutoTranslate`);
+      // needs the runner's factory, so it wires after `wireTranslateRunner`.
+      const autoTranslateModule = configureAutoTranslate(collections, schemaMap, taskRunnerFactory);
 
       const activeLevels = levels ?? [documentLevel(), collectionLevel()];
       const builder = new PluginConfigBuilder({
@@ -144,6 +148,7 @@ export class TranslateCollectionPlugin {
 
       builder.addConfigModifier(runnerConfigModifier);
       builder.addConfigModifier(provenanceModule.configure(collectionSlugs));
+      builder.addConfigModifier(autoTranslateModule.configure(collectionSlugs));
       builder.addAdminProvider(new CacheProviderExport(basePath));
 
       // The single place the Payload config is mutated.

@@ -4,6 +4,7 @@ import { APIError } from "payload";
 import { TranslateDocumentHandler } from "./handler";
 import type { TranslationProvider } from "../../../core/translation-providers";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
+import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext";
 import type { ProvenanceStore } from "../../../core/provenance";
 import { ProvenanceService } from "../../modules/provenance";
 import type { ProvenanceServiceFactory } from "../../modules/provenance";
@@ -188,6 +189,18 @@ describe("TranslateDocumentHandler", () => {
           id: "doc-123",
           locale: "fr",
           fallbackLocale: "en",
+        })
+      );
+    });
+
+    it("marks its write with the auto-translate skip flag so the hook never re-triggers (loop guard set-side)", async () => {
+      const input = createInput();
+
+      await handler.handle(mockPayload, input);
+
+      expect(mockPayload.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          context: { [AUTO_TRANSLATE_SKIP_CONTEXT_KEY]: true },
         })
       );
     });
