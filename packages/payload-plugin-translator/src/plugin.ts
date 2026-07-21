@@ -4,6 +4,8 @@ import { CacheProviderExport } from "./client/app/cache/CacheProvider.export";
 import { configureAutoTranslate } from "./server/modules/auto-translate";
 import { configureProvenance } from "./server/modules/provenance";
 import type { AccessGuard } from "./types/AccessGuard";
+import type { CollectionSchemaMap } from "./types/CollectionSchemaMap";
+import { projectFieldsToFieldLike } from "./core/kernel/field-traversal";
 import type { TranslationProvider } from "./core/domain/translation-providers";
 import type { TaskRunnerProvider } from "./server/modules/task-runner";
 import { wireTranslateRunner } from "./server/features/translate-document";
@@ -106,16 +108,14 @@ export class TranslateCollectionPlugin {
         basePath: rawBasePath = "/translate",
       } = this.pluginConfig;
 
-      // Build schema map from deep-cloned collections.
-      // Deep clone is required because Payload mutates the original collection objects, removing
-      // `localized: true` from nested fields during sanitization. JSON round-trip (not
-      // structuredClone) because Lexical editor configs contain async functions structuredClone
-      // cannot handle.
-      // TODO: Consider introducing a FieldLike interface with only the properties used by the
-      // pipeline (name, type, localized, fields, blocks, tabs, custom) to make the contract explicit
-      // and avoid reliance on JSON round-trip.
-      const schemaMap = new Map(
-        collections.map((col) => [col.slug, JSON.parse(JSON.stringify(col.fields))])
+      // Snapshot each collection's schema as an independent FieldLike tree BEFORE Payload's sanitizer
+      // mutates the originals (it deletes `localized` from fields nested under a localized ancestor).
+      // `projectFieldsToFieldLike` deep-copies only the properties the pipeline reads — an explicit,
+      // typed contract, replacing the old JSON round-trip (which "worked" only by silently dropping the
+      // Lexical editor's async functions that structuredClone chokes on). Payload's `Field[]` is
+      // structurally assignable to `FieldLike[]`, so the projection happens right here at the boundary.
+      const schemaMap: CollectionSchemaMap = new Map(
+        collections.map((col) => [col.slug, projectFieldsToFieldLike(col.fields)])
       );
       const collectionSlugs = new Set(schemaMap.keys());
       const basePath = normalizePath(rawBasePath);
