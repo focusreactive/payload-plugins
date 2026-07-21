@@ -1,7 +1,6 @@
-import type { Field } from "payload";
-
 import { isTranslatableField } from "../../shared";
 import { findFieldByPath } from "../../../core/kernel/field-traversal";
+import type { FieldLike } from "../../../core/kernel/field-traversal";
 
 /**
  * Outcome of mapping a declared field path to a translatable subtree.
@@ -17,7 +16,12 @@ import { findFieldByPath } from "../../../core/kernel/field-traversal";
  *   locales → caller no-ops (translate the whole document instead).
  */
 export type FieldSubtreeResolution =
-  | { status: "resolved"; schema: Field[]; sourceData: Record<string, unknown>; fieldName: string }
+  | {
+      status: "resolved";
+      schema: FieldLike[];
+      sourceData: Record<string, unknown>;
+      fieldName: string;
+    }
   | { status: "not-found" }
   | { status: "not-translatable" }
   | { status: "inside-blocks" }
@@ -34,7 +38,7 @@ export type FieldSubtreeResolution =
  * `blocks` field returns `inside-blocks`.
  */
 export function resolveFieldSubtree(
-  rootFields: Field[],
+  rootFields: FieldLike[],
   fieldPath: string,
   value: unknown,
   doc?: unknown

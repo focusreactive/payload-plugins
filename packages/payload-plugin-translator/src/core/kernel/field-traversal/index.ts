@@ -2,6 +2,7 @@ export { findFieldByPath } from "./findFieldByPath";
 export type { FieldPathResult } from "./findFieldByPath";
 export { hasFields, isBlockItem, isTabsField } from "./guards";
 export { classifyField, matchElementById, resolveBlockFields, tabScopes } from "./kernel";
+export { projectFieldsToFieldLike } from "./projectFieldLike";
 export {
   fieldAffectsData,
   fieldIsArrayType,

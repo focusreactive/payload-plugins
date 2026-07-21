@@ -1,6 +1,7 @@
-import type { CollectionSlug, Field, Payload } from "payload";
+import type { CollectionSlug, Payload } from "payload";
 
 import { computeSourceFingerprint } from "../../../core/domain/content-projection/computeSourceFingerprint";
+import type { FieldLike } from "../../../core/kernel/field-traversal";
 import { isRecordStale } from "../../../core/domain/provenance";
 import type { ProvenanceKey, ProvenanceStore } from "../../../core/domain/provenance";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
@@ -150,7 +151,11 @@ export class ProvenanceService {
    * hash). Cached per source locale so a document translated from one source into N locales fetches
    * the source once.
    */
-  private makeCurrentFingerprint(collection: CollectionSlug, documentId: string, schema: Field[]) {
+  private makeCurrentFingerprint(
+    collection: CollectionSlug,
+    documentId: string,
+    schema: FieldLike[]
+  ) {
     const cache = new Map<string, string>();
     return async (sourceLocale: string): Promise<string> => {
       const cached = cache.get(sourceLocale);
