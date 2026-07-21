@@ -1,6 +1,6 @@
 import type { CollectionSlug } from "payload";
 
-import type { TranslationProvider } from "../../../core/translation-providers";
+import type { TranslationProvider } from "../../../core/domain/translation-providers";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import type { ConfigModifier } from "../../../types/ConfigModifier";
 import type { ProvenanceServiceFactory } from "../../modules/provenance";

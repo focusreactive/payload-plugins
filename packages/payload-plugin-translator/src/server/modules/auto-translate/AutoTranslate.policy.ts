@@ -1,6 +1,6 @@
 import type { CollectionSlug } from "payload";
 
-import type { AutoTranslateConfig } from "../../../core/auto-translate-config";
+import type { AutoTranslateConfig } from "../../../core/domain/auto-translate";
 import type { TaskInput } from "../task-runner/types";
 
 /** A collection's auto-translate rule with defaults resolved — the shape the hook consumes. */

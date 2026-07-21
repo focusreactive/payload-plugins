@@ -1,4 +1,4 @@
-import type { LeafFieldLike } from "../../field-traversal/types";
+import type { LeafFieldLike } from "../../kernel/field-traversal/types";
 
 /**
  * Represents a field-level chunk containing schema metadata.

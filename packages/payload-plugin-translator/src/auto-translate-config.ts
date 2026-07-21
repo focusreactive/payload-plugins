@@ -1,10 +1,10 @@
 import type { CollectionConfig } from "payload";
 
-import type { AutoTranslateConfig } from "./core/auto-translate-config";
-import { AUTO_TRANSLATE_CUSTOM_KEY } from "./core/auto-translate-config";
+import type { AutoTranslateConfig } from "./core/domain/auto-translate";
+import { AUTO_TRANSLATE_CUSTOM_KEY } from "./core/domain/auto-translate";
 
 export type { AutoTranslateConfig };
-export type { AutoTranslateStrategy } from "./core/auto-translate-config";
+export type { AutoTranslateStrategy } from "./core/domain/auto-translate";
 
 /**
  * Enable opt-in **auto-translate** for a collection: when a document's source-locale content changes

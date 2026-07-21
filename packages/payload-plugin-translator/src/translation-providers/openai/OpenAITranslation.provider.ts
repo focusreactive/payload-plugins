@@ -4,8 +4,8 @@ import type {
   TranslationProvider,
   TranslationInput,
   TranslationOutput,
-} from "../../core/translation-providers/TranslationProvider.interface";
-import { isObject } from "../../core/utils/isObject";
+} from "../../core/domain/translation-providers/TranslationProvider.interface";
+import { isObject } from "../../core/kernel/utils/isObject";
 import type { ChatModel } from "openai/resources/index.mjs";
 
 /**

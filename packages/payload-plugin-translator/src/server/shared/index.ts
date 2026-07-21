@@ -25,14 +25,14 @@ export {
 // Field guards
 export type { TranslatableField } from "./guards";
 export { isTranslatableField, isLocalizedField, isRelationshipField } from "./guards";
-export { isTabsField, isBlockItem, hasFields } from "../../core/field-traversal";
+export { isTabsField, isBlockItem, hasFields } from "../../core/kernel/field-traversal";
 
 // Field config
 export {
   isFieldExcludedFromTranslation,
   getTranslateKitFieldConfig,
-} from "../../core/field-config";
-export type { TranslateKitFieldConfig } from "../../core/field-config";
+} from "../../core/domain/field-config";
+export type { TranslateKitFieldConfig } from "../../core/domain/field-config";
 
 // Lexical utilities
 export {
@@ -40,8 +40,8 @@ export {
   isEmptyRichText,
   traverseLexicalTree,
   collectSerializedLexicalTextNodes,
-} from "../../core/lexical";
-export type { SerializedTextNodeRef } from "../../core/lexical";
+} from "../../core/kernel/lexical";
+export type { SerializedTextNodeRef } from "../../core/kernel/lexical";
 
 // Validation primitives
 export { JobIdSchema } from "./validation";

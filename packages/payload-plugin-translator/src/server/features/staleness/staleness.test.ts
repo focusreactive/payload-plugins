@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Field, Payload, PayloadRequest } from "payload";
 
-import { computeSourceFingerprint } from "../../../core/content-projection/computeSourceFingerprint";
-import type { ProvenanceStore, TranslationProvenanceRecord } from "../../../core/provenance";
+import { computeSourceFingerprint } from "../../../core/domain/content-projection/computeSourceFingerprint";
+import type { ProvenanceStore, TranslationProvenanceRecord } from "../../../core/domain/provenance";
 import { ProvenanceService } from "../../modules/provenance";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 

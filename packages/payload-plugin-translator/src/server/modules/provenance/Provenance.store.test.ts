@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload } from "payload";
-import type { TranslationProvenanceRecord } from "../../../core/provenance";
+import type { TranslationProvenanceRecord } from "../../../core/domain/provenance";
 import { PayloadProvenanceStore } from "./Provenance.store";
 
 const SLUG = "translator-provenance";

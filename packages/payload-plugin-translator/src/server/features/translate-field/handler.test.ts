@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CollectionSlug, Field, PayloadRequest } from "payload";
 
-import type { TranslationProvider } from "../../../core/translation-providers";
+import type { TranslationProvider } from "../../../core/domain/translation-providers";
 
 import { TranslateFieldHandler } from "./handler";
 import type { FieldTranslationConfig, FieldTranslationInput } from "./model";

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { FieldLike } from "../field-traversal";
+import type { FieldLike } from "../../kernel/field-traversal";
 import { computeSourceFingerprint } from "./computeSourceFingerprint";
 import { projectTranslatableContent } from "./contentProjector";
 import { fingerprint } from "./fingerprinter";

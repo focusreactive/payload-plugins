@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { Field } from "payload";
 
-import type { TranslationProvider } from "../translation-providers";
+import type { TranslationProvider } from "../domain/translation-providers";
 import { translateContent } from "./translateContent";
 
 // Deterministic fake provider: prefixes each collected text chunk with "T:".

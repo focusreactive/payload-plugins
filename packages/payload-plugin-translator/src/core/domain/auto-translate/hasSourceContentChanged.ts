@@ -1,5 +1,5 @@
 import { computeSourceFingerprint } from "../content-projection/computeSourceFingerprint";
-import type { FieldLike } from "../field-traversal";
+import type { FieldLike } from "../../kernel/field-traversal";
 
 /**
  * Whether a source-locale save actually changed translatable content — the auto-translate drift-gate,

@@ -1,4 +1,4 @@
-import { getAutoTranslateConfig } from "../../../core/auto-translate-config";
+import { getAutoTranslateConfig } from "../../../core/domain/auto-translate";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import type { ConfigModifier } from "../../../types/ConfigModifier";
 import type { TaskRunnerFactory } from "../task-runner";

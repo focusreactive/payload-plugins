@@ -1,8 +1,8 @@
 import type { Field } from "payload";
 import { describe, expect, it } from "vitest";
 
-import { projectTranslatableContent } from "../../../content-projection/contentProjector";
-import type { FieldLike } from "../../../field-traversal/types";
+import { projectTranslatableContent } from "../../../domain/content-projection/contentProjector";
+import type { FieldLike } from "../../../kernel/field-traversal/types";
 import { OverwriteStrategy } from "../../strategies";
 import type { FieldChunk } from "../../types";
 import { PlainTextExpander } from "../text-expander/PlainTextExpander";

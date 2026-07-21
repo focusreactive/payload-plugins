@@ -1,6 +1,6 @@
-import { isEmptyRichText } from "../../lexical/isEmptyRichText";
-import { isSerializedLexicalRoot } from "../../lexical/guards";
-import { isEmpty } from "../../utils/isEmpty";
+import { isEmptyRichText } from "../../kernel/lexical/isEmptyRichText";
+import { isSerializedLexicalRoot } from "../../kernel/lexical/guards";
+import { isEmpty } from "../../kernel/utils/isEmpty";
 import type { TranslationStrategy, StrategyContext } from "./TranslationStrategy.interface";
 
 /**

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { JobIdSchema } from "../../shared";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
-import type { TranslationProvider } from "../../../core/translation-providers";
+import type { TranslationProvider } from "../../../core/domain/translation-providers";
 
 /**
  * Max serialized size of the value the endpoint will translate — the value read from the

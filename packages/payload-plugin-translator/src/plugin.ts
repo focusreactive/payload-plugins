@@ -4,7 +4,7 @@ import { CacheProviderExport } from "./client/app/cache/CacheProvider.export";
 import { configureAutoTranslate } from "./server/modules/auto-translate";
 import { configureProvenance } from "./server/modules/provenance";
 import type { AccessGuard } from "./types/AccessGuard";
-import type { TranslationProvider } from "./core/translation-providers";
+import type { TranslationProvider } from "./core/domain/translation-providers";
 import type { TaskRunnerProvider } from "./server/modules/task-runner";
 import { wireTranslateRunner } from "./server/features/translate-document";
 import type { TranslationLifecycleCallbacks } from "./server/modules/lifecycle";

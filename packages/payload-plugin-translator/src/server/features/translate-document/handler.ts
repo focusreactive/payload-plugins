@@ -2,7 +2,7 @@ import type { Payload, SanitizedCollectionConfig } from "payload";
 import { APIError } from "payload";
 
 import type { Handler } from "../../shared";
-import type { TranslationProvider } from "../../../core/translation-providers";
+import type { TranslationProvider } from "../../../core/domain/translation-providers";
 import { translateContent } from "../../../core/translation-pipeline";
 import type { ProvenanceServiceFactory } from "../../modules/provenance";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument";

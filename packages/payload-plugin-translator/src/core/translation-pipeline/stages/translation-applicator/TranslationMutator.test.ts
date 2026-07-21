@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { PlainTextChunk, RichTextChunk, TextChunk } from "../../types";
-import type { SerializedTextNode } from "../../../lexical";
+import type { SerializedTextNode } from "../../../kernel/lexical";
 import { TranslationMutator } from "./TranslationMutator";
 
 // Helper to create a mock SerializedTextNode with required properties
