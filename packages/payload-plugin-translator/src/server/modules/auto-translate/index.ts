@@ -1,5 +1,5 @@
 // Auto-translate adapter (Payload-backed). The payload-free drift predicate + config reader live in
-// the core (src/core/auto-translate*, src/core/content-projection); this module is the config-time
+// the core (src/core/domain/auto-translate, src/core/domain/content-projection); this module is the config-time
 // wiring + the afterChange hook that enqueues translations on a source-locale change (#51).
 export { configureAutoTranslate } from "./AutoTranslate.wiring";
 export type { AutoTranslateModule } from "./AutoTranslate.wiring";

@@ -1,5 +1,5 @@
 // Provenance adapter (Payload-backed). The framework-agnostic port + record types live in the core
-// (src/core/provenance); this module is the plugin-side implementation + its config-time wiring.
+// (src/core/domain/provenance); this module is the plugin-side implementation + its config-time wiring.
 export {
   DEFAULT_PROVENANCE_SLUG,
   isProvenanceCollection,
