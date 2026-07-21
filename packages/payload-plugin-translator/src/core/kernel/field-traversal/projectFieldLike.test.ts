@@ -52,6 +52,22 @@ describe("projectFieldsToFieldLike", () => {
     expect(group.fields?.[0]).not.toBe(nested);
   });
 
+  it("recurses array element fields (array is handled via the generic `fields` branch, not a special case)", () => {
+    const nestedLeaf = { type: "text", name: "label", localized: true } as FieldLike;
+    const source: FieldLike[] = [{ type: "array", name: "items", fields: [nestedLeaf] }];
+
+    const projected = projectFieldsToFieldLike(source);
+
+    // Simulate Payload sanitize stripping `localized` off the nested element field in place.
+    delete (nestedLeaf as { localized?: boolean }).localized;
+
+    const arrayField = projected[0];
+    expect(arrayField.type).toBe("array");
+    expect(arrayField.name).toBe("items");
+    expect(arrayField.fields).toEqual([{ type: "text", name: "label", localized: true }]);
+    expect(arrayField.fields?.[0]).not.toBe(nestedLeaf);
+  });
+
   it("preserves block.slug and recurses block fields (slug is load-bearing for block dispatch)", () => {
     const source: FieldLike[] = [
       {
