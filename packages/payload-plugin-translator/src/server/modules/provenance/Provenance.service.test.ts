@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import type { Field, Payload } from "payload";
 
-import type { ProvenanceStore, TranslationProvenanceRecord } from "../../../core/provenance";
+import type { ProvenanceStore, TranslationProvenanceRecord } from "../../../core/domain/provenance";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 
 import { ProvenanceService } from "./Provenance.service";

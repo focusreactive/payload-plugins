@@ -31,8 +31,8 @@ export { isTabsField, isBlockItem, hasFields } from "../../core/kernel/field-tra
 export {
   isFieldExcludedFromTranslation,
   getTranslateKitFieldConfig,
-} from "../../core/field-config";
-export type { TranslateKitFieldConfig } from "../../core/field-config";
+} from "../../core/domain/field-config";
+export type { TranslateKitFieldConfig } from "../../core/domain/field-config";
 
 // Lexical utilities
 export {

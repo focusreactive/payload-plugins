@@ -1,5 +1,5 @@
 import type { PipelineContext, PipelineStage } from "../../types";
-import type { TranslationProvider } from "../../../translation-providers";
+import type { TranslationProvider } from "../../../domain/translation-providers";
 
 /**
  * Calls translation provider to translate text.

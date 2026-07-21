@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import type { CollectionAfterDeleteHook, Payload } from "payload";
 
-import type { ProvenanceStore } from "../../../core/provenance";
+import type { ProvenanceStore } from "../../../core/domain/provenance";
 import type { ManagedCollectionsConfig } from "./Provenance.shapes";
 import { injectProvenanceCleanup, makeProvenanceCleanupHook } from "./ProvenanceCleanup.hook";
 

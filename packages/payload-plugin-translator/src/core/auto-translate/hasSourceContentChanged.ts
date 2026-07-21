@@ -1,4 +1,4 @@
-import { computeSourceFingerprint } from "../content-projection/computeSourceFingerprint";
+import { computeSourceFingerprint } from "../domain/content-projection/computeSourceFingerprint";
 import type { FieldLike } from "../kernel/field-traversal";
 
 /**

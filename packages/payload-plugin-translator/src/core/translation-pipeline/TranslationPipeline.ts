@@ -1,4 +1,4 @@
-import type { TranslationProvider } from "../translation-providers";
+import type { TranslationProvider } from "../domain/translation-providers";
 import type { PipelineConfig, PipelineResult, PipelineContext, PipelineStage } from "./types";
 import type { TranslationStrategy } from "./strategies";
 import type { TextExpander } from "./stages";

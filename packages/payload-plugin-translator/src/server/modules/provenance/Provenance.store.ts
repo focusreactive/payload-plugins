@@ -3,7 +3,7 @@ import type {
   ProvenanceKey,
   ProvenanceStore,
   TranslationProvenanceRecord,
-} from "../../../core/provenance";
+} from "../../../core/domain/provenance";
 
 /** Builds a provenance store bound to a Payload instance; absent when provenance is disabled. */
 export type ProvenanceStoreFactory = (payload: Payload) => ProvenanceStore;

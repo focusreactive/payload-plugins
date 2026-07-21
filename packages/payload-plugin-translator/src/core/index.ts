@@ -8,22 +8,26 @@ export type {
   TranslationInput,
   TranslationOutput,
   TranslationIndex,
-} from "./translation-providers";
+} from "./domain/translation-providers";
 
 // Translation pipeline
 export { TranslationPipeline, translateContent } from "./translation-pipeline";
 export type { TranslateContentArgs, TranslationStrategy } from "./translation-pipeline";
 
 // Provenance (contracts only — payload-free port + record types)
-export type { ProvenanceKey, ProvenanceStore, TranslationProvenanceRecord } from "./provenance";
+export type {
+  ProvenanceKey,
+  ProvenanceStore,
+  TranslationProvenanceRecord,
+} from "./domain/provenance";
 
 // Content projection
-export { projectTranslatableContent } from "./content-projection/contentProjector";
-export type { ProjectionEntry } from "./content-projection/contentProjector";
-export { fingerprint } from "./content-projection/fingerprinter";
-export { computeSourceFingerprint } from "./content-projection/computeSourceFingerprint";
-export { makeIdPath } from "./content-projection/idPath";
-export type { IdPath, PathSegment } from "./content-projection/idPath";
+export { projectTranslatableContent } from "./domain/content-projection/contentProjector";
+export type { ProjectionEntry } from "./domain/content-projection/contentProjector";
+export { fingerprint } from "./domain/content-projection/fingerprinter";
+export { computeSourceFingerprint } from "./domain/content-projection/computeSourceFingerprint";
+export { makeIdPath } from "./domain/content-projection/idPath";
+export type { IdPath, PathSegment } from "./domain/content-projection/idPath";
 
 // Field traversal
 export {

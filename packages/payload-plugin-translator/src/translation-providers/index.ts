@@ -9,7 +9,7 @@ export type {
   TranslationProvider,
   TranslationInput,
   TranslationOutput,
-} from "../core/translation-providers";
+} from "../core/domain/translation-providers";
 
 // Vendor implementations.
 export * from "./openai";

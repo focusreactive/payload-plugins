@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { projectTranslatableContent } from "./contentProjector";
-import type { FieldLike } from "../kernel/field-traversal/types";
+import type { FieldLike } from "../../kernel/field-traversal/types";
 
 const richText = (...texts: string[]) => ({
   root: {

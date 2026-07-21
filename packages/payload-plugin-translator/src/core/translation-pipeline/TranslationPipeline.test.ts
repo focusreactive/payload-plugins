@@ -3,7 +3,7 @@ import type { Field } from "payload";
 import { TranslationPipeline } from "./TranslationPipeline";
 import { OverwriteStrategy } from "./strategies/Overwrite.strategy";
 import { SkipExistingStrategy } from "./strategies/SkipExisting.strategy";
-import type { TranslationProvider } from "../translation-providers";
+import type { TranslationProvider } from "../domain/translation-providers";
 
 const createMockProvider = (
   translationFn?: (textMap: Record<number, string>) => Record<number, string>

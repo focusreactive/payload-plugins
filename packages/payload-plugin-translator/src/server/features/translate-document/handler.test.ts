@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 import { APIError } from "payload";
 import { TranslateDocumentHandler } from "./handler";
-import type { TranslationProvider } from "../../../core/translation-providers";
+import type { TranslationProvider } from "../../../core/domain/translation-providers";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext";
-import type { ProvenanceStore } from "../../../core/provenance";
+import type { ProvenanceStore } from "../../../core/domain/provenance";
 import { ProvenanceService } from "../../modules/provenance";
 import type { ProvenanceServiceFactory } from "../../modules/provenance";
 import type { TranslateDocumentInput } from "./model";
@@ -20,7 +20,7 @@ vi.mock("../../../core/translation-pipeline", () => ({
 
 // Provenance fingerprinting is the core's job and tested there; here we pin a fixed hash so the
 // handler test asserts only the record the handler builds and hands to the store.
-vi.mock("../../../core/content-projection/computeSourceFingerprint", () => ({
+vi.mock("../../../core/domain/content-projection/computeSourceFingerprint", () => ({
   computeSourceFingerprint: vi.fn(() => "fp-fixed"),
 }));
 
@@ -325,7 +325,7 @@ describe("TranslateDocumentHandler", () => {
     it("upserts a provenance record after a successful translation", async () => {
       await withTranslatedData();
       const { computeSourceFingerprint } =
-        await import("../../../core/content-projection/computeSourceFingerprint");
+        await import("../../../core/domain/content-projection/computeSourceFingerprint");
       // Distinguish source vs. target findByID calls by locale so this assertion actually
       // proves the handler fingerprints the source document, not the target one.
       (mockPayload.findByID as ReturnType<typeof vi.fn>).mockImplementation(
@@ -368,7 +368,7 @@ describe("TranslateDocumentHandler", () => {
       // is instantly reported stale. The baseline must be the untranslated source.
       const { translateContent } = await import("../../../core/translation-pipeline");
       const { computeSourceFingerprint } =
-        await import("../../../core/content-projection/computeSourceFingerprint");
+        await import("../../../core/domain/content-projection/computeSourceFingerprint");
 
       (mockPayload.findByID as ReturnType<typeof vi.fn>).mockImplementation(
         ({ locale }: { locale: string }) =>

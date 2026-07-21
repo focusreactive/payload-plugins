@@ -1,4 +1,4 @@
-import { isTranslatableLeaf } from "../../../content-projection/translatableLeaf";
+import { isTranslatableLeaf } from "../../../domain/content-projection/translatableLeaf";
 import type { ChildCursor, FieldLike, FieldWalker } from "../../../kernel/field-traversal";
 import { matchElementById, resolveBlockFields, walkFields } from "../../../kernel/field-traversal";
 import { isObject } from "../../../kernel/utils/isObject";

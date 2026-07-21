@@ -1,8 +1,8 @@
 import type { CollectionSlug, Field, Payload } from "payload";
 
-import { computeSourceFingerprint } from "../../../core/content-projection/computeSourceFingerprint";
-import { isRecordStale } from "../../../core/provenance";
-import type { ProvenanceKey, ProvenanceStore } from "../../../core/provenance";
+import { computeSourceFingerprint } from "../../../core/domain/content-projection/computeSourceFingerprint";
+import { isRecordStale } from "../../../core/domain/provenance";
+import type { ProvenanceKey, ProvenanceStore } from "../../../core/domain/provenance";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument";
 

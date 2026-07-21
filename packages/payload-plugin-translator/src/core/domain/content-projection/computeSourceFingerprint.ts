@@ -1,4 +1,4 @@
-import type { FieldLike } from "../kernel/field-traversal";
+import type { FieldLike } from "../../kernel/field-traversal";
 import { projectTranslatableContent } from "./contentProjector";
 import { fingerprint } from "./fingerprinter";
 

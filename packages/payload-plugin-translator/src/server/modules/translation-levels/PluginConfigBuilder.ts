@@ -4,7 +4,7 @@ import type { AccessGuard } from "../../../types/AccessGuard";
 import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import type { ConfigModifier } from "../../../types/ConfigModifier";
-import type { TranslationProvider } from "../../../core/translation-providers";
+import type { TranslationProvider } from "../../../core/domain/translation-providers";
 import type { TaskRunnerFactory } from "../task-runner";
 import type { ProvenanceServiceFactory } from "../provenance";
 
