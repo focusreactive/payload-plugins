@@ -1,4 +1,4 @@
-import type { SerializedTextNode } from "../../lexical";
+import type { SerializedTextNode } from "../../kernel/lexical";
 
 /**
  * Text chunk for plain text/textarea fields.

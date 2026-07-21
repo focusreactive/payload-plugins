@@ -1,4 +1,4 @@
-import type { FieldLike } from "../field-traversal";
+import type { FieldLike } from "../kernel/field-traversal";
 import type { TranslationProvider } from "../translation-providers";
 import { TranslationPipeline } from "./TranslationPipeline";
 import { createTranslationStrategy } from "./strategies";

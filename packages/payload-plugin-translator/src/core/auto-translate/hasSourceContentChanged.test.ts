@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import type { FieldLike } from "../field-traversal";
+import type { FieldLike } from "../kernel/field-traversal";
 
 import { hasSourceContentChanged } from "./hasSourceContentChanged";
 

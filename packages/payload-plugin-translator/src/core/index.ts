@@ -36,7 +36,7 @@ export {
   resolveBlockFields,
   tabScopes,
   walkFields,
-} from "./field-traversal";
+} from "./kernel/field-traversal";
 export type {
   ArrayFieldLike,
   BlockLike,
@@ -50,4 +50,4 @@ export type {
   TabLike,
   TabScope,
   TabsFieldLike,
-} from "./field-traversal";
+} from "./kernel/field-traversal";

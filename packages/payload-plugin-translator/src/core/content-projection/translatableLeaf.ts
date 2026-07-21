@@ -9,9 +9,9 @@
  */
 
 import { isFieldExcludedFromTranslation } from "../field-config";
-import type { FieldLike, LeafFieldLike } from "../field-traversal/types";
-import { collectSerializedLexicalTextNodes } from "../lexical/collectTextNodes";
-import { isSerializedLexicalRoot } from "../lexical/guards";
+import type { FieldLike, LeafFieldLike } from "../kernel/field-traversal/types";
+import { collectSerializedLexicalTextNodes } from "../kernel/lexical/collectTextNodes";
+import { isSerializedLexicalRoot } from "../kernel/lexical/guards";
 
 /** The field types this package translates (mirrors `isTranslatableField`, payload-free). */
 const isTranslatableFieldType = (field: { type: string }): boolean =>

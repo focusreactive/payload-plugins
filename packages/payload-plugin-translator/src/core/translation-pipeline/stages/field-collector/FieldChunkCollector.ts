@@ -1,7 +1,7 @@
 import { isTranslatableLeaf } from "../../../content-projection/translatableLeaf";
-import type { ChildCursor, FieldLike, FieldWalker } from "../../../field-traversal";
-import { matchElementById, resolveBlockFields, walkFields } from "../../../field-traversal";
-import { isObject } from "../../../utils/isObject";
+import type { ChildCursor, FieldLike, FieldWalker } from "../../../kernel/field-traversal";
+import { matchElementById, resolveBlockFields, walkFields } from "../../../kernel/field-traversal";
+import { isObject } from "../../../kernel/utils/isObject";
 import type { TranslationStrategy } from "../../strategies";
 import type { FieldChunk } from "../../types";
 

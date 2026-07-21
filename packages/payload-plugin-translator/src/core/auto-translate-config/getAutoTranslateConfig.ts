@@ -1,4 +1,4 @@
-import { isObject } from "../utils/isObject";
+import { isObject } from "../kernel/utils/isObject";
 
 import type { AutoTranslateConfig } from "./types";
 import { AUTO_TRANSLATE_CUSTOM_KEY } from "./types";

@@ -10,10 +10,10 @@
  * it never mutates the document and never captures write handles.
  */
 
-import type { ChildCursor, FieldWalker } from "../field-traversal";
-import { resolveBlockFields, walkFields } from "../field-traversal";
-import type { FieldLike } from "../field-traversal/types";
-import { isObject } from "../utils/isObject";
+import type { ChildCursor, FieldWalker } from "../kernel/field-traversal";
+import { resolveBlockFields, walkFields } from "../kernel/field-traversal";
+import type { FieldLike } from "../kernel/field-traversal/types";
+import { isObject } from "../kernel/utils/isObject";
 import type { IdPath, PathSegment } from "./idPath";
 import { elementSegment, makeIdPath } from "./idPath";
 import { isTranslatableLeaf, leafSourceText } from "./translatableLeaf";
