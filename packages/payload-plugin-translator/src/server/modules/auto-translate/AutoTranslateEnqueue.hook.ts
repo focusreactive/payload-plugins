@@ -1,7 +1,7 @@
 import type { CollectionAfterChangeHook } from "payload";
 
-import { hasSourceContentChanged } from "../../../core/auto-translate";
-import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../core/auto-translate-config";
+import { hasSourceContentChanged } from "../../../core/domain/auto-translate";
+import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../core/domain/auto-translate";
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import type { TaskRunnerFactory } from "../task-runner";

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { CollectionConfig } from "payload";
 
-import { getAutoTranslateConfig } from "./core/auto-translate-config";
+import { getAutoTranslateConfig } from "./core/domain/auto-translate";
 import { withAutoTranslate } from "./auto-translate-config";
 
 const collection = (over: Partial<CollectionConfig> = {}): CollectionConfig =>

@@ -7,7 +7,7 @@ import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import {
   AUTO_TRANSLATE_CUSTOM_KEY,
   getAutoTranslateConfig,
-} from "../../../core/auto-translate-config";
+} from "../../../core/domain/auto-translate";
 
 import { makeCollectionPolicyResolver } from "./AutoTranslate.policy";
 import type { NormalizedAutoTranslatePolicy } from "./AutoTranslate.policy";

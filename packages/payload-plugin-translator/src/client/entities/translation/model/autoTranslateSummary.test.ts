@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
-import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../../core/auto-translate-config";
-import type { AutoTranslateConfig } from "../../../../core/auto-translate-config";
+import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../../core/domain/auto-translate";
+import type { AutoTranslateConfig } from "../../../../core/domain/auto-translate";
 
 import { resolveAutoTranslateSummary } from "./autoTranslateSummary";
 
