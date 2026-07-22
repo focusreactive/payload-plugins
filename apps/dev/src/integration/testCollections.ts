@@ -8,9 +8,16 @@ import type { Block, CollectionConfig } from "payload";
  * auto-translate publish-gate is testable.
  */
 
+// Each block/array element mixes a localized leaf with a NON-localized sibling — the exact shape of
+// the c0a49d1b data-loss bug (shared row: one row, per-locale leaf columns + shared non-localized
+// columns). The non-localized sibling must survive translation in every locale; the data-integrity
+// suite asserts it. `anchor`/`code` are optional, so fixtures that don't set them are unaffected.
 const heroBlock: Block = {
   slug: "hero",
-  fields: [{ name: "heading", type: "text", localized: true }],
+  fields: [
+    { name: "heading", type: "text", localized: true },
+    { name: "anchor", type: "text" }, // NOT localized — shared across locales, must survive
+  ],
 };
 
 const ctaBlock: Block = {
@@ -43,7 +50,10 @@ export function buildTestCollections(): CollectionConfig[] {
       {
         name: "items",
         type: "array",
-        fields: [{ name: "label", type: "text", localized: true }],
+        fields: [
+          { name: "label", type: "text", localized: true },
+          { name: "code", type: "text" }, // NOT localized — shared across locales, must survive
+        ],
       },
       {
         name: "sections",
