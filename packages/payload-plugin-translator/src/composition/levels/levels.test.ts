@@ -31,6 +31,7 @@ const makeCtx = (): LevelContext => ({
   taskRunnerFactory: { create: vi.fn() },
   schemaMap: new Map(),
   translationProvider: { translate: vi.fn() },
+  targetSelection: "single",
   addEndpoints: vi.fn(),
   addCollectionComponent: vi.fn(),
 });

@@ -3,6 +3,7 @@ import type { CollectionConfig, Config, Endpoint } from "payload";
 import type { AccessGuard } from "../../../types/AccessGuard";
 import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
+import type { TargetSelectionMode } from "../../../types/TargetSelection";
 import type { ConfigModifier } from "../../../types/ConfigModifier";
 import type { TranslationProvider } from "../../../core/domain/translation-providers";
 import type { TaskRunnerFactory } from "../task-runner";
@@ -65,6 +66,7 @@ export class PluginConfigBuilder implements LevelContext {
   readonly schemaMap: CollectionSchemaMap;
   readonly translationProvider: TranslationProvider;
   readonly provenanceServiceFactory?: ProvenanceServiceFactory;
+  readonly targetSelection: TargetSelectionMode;
 
   private readonly endpoints: Endpoint[] = [];
   private readonly collectionComponents: CollectionComponent[] = [];
@@ -79,6 +81,7 @@ export class PluginConfigBuilder implements LevelContext {
     this.schemaMap = deps.schemaMap;
     this.translationProvider = deps.translationProvider;
     this.provenanceServiceFactory = deps.provenanceServiceFactory;
+    this.targetSelection = deps.targetSelection;
   }
 
   addEndpoints(endpoints: Endpoint[]): void {

@@ -12,6 +12,7 @@ import {
   TranslationStatusList,
 } from "../../../entities/translation";
 import type { AutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary";
+import type { TargetSelectionMode } from "../../../../types/TargetSelection";
 import { OpenDocumentTranslationPopup } from "../../../features/open-document-translation-popup";
 import { DocumentTranslationForm, FORM_FIELDS } from "../../../features/translate-document-form";
 import type { FormValues } from "../../../features/translate-document-form";
@@ -24,9 +25,14 @@ import styles from "./styles.module.scss";
 type TranslateDocumentProps = {
   hasDrafts: boolean;
   autoTranslate: AutoTranslateSummary | null;
+  targetSelection: TargetSelectionMode;
 };
 
-const TranslateDocument = ({ hasDrafts, autoTranslate }: TranslateDocumentProps) => {
+const TranslateDocument = ({
+  hasDrafts,
+  autoTranslate,
+  targetSelection,
+}: TranslateDocumentProps) => {
   const locale = useLocale();
   const params = useCollectionDocumentUrlParams();
 
@@ -57,10 +63,12 @@ const TranslateDocument = ({ hasDrafts, autoTranslate }: TranslateDocumentProps)
   const initialValues = useMemo(
     () => ({
       [FORM_FIELDS.SOURCE_LNG]: locale.code,
+      // Multi mode binds an array; single mode a string. Seed the matching empty value.
+      [FORM_FIELDS.TARGET_LNG]: targetSelection === "multi" ? [] : "",
       [FORM_FIELDS.HIDDEN_COLLECTION_SLUG]: params.collection,
       [FORM_FIELDS.HIDDEN_COLLECTION_ID]: params.id,
     }),
-    [locale.code, params.collection, params.id]
+    [locale.code, params.collection, params.id, targetSelection]
   );
 
   const { form } = DocumentTranslationFormModel.useForm({ initialValues });
@@ -99,6 +107,7 @@ const TranslateDocument = ({ hasDrafts, autoTranslate }: TranslateDocumentProps)
               form={form}
               onSubmit={(formData) => handleSubmit(formData, close)}
               hasDrafts={hasDrafts}
+              targetSelection={targetSelection}
             />
           </section>
 

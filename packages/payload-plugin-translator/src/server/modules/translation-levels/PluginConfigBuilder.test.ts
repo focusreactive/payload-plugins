@@ -11,6 +11,7 @@ const deps = (collections: Array<{ slug: string }> = []) => ({
   taskRunnerFactory: { create: vi.fn() },
   schemaMap: new Map(),
   translationProvider: { translate: vi.fn() },
+  targetSelection: "single" as const,
 });
 
 const ep = (method: string, path: string): Endpoint =>

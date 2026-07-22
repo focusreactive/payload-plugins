@@ -3,6 +3,7 @@ import type { CollectionConfig, Endpoint } from "payload";
 import type { AccessGuard } from "../../../types/AccessGuard";
 import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
+import type { TargetSelectionMode } from "../../../types/TargetSelection";
 import type { TranslationProvider } from "../../../core/domain/translation-providers";
 import type { TaskRunnerFactory } from "../task-runner";
 import type { ProvenanceServiceFactory } from "../provenance";
@@ -26,6 +27,9 @@ export type TranslationContext = {
   readonly translationProvider: TranslationProvider;
   /** Builds a provenance service; absent when provenance is disabled (staleness then reports empty). */
   readonly provenanceServiceFactory?: ProvenanceServiceFactory;
+  /** Resolved target-language selection mode (`'single'` default) — drives which target control the
+   * admin forms render. */
+  readonly targetSelection: TargetSelectionMode;
 };
 
 /**

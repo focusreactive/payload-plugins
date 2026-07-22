@@ -2,8 +2,10 @@ import type { UseFormReturn } from "react-hook-form";
 import { FormProvider } from "react-hook-form";
 
 import { SendIcon } from "../../../shared/lib/assets/icons/SendIcon";
+import type { TargetSelectionMode } from "../../../../types/TargetSelection";
 import Button from "../../../shared/ui/Button";
 import FormSelectLocale from "../../../shared/ui/form/FormSelectLocale";
+import FormMultiSelectLocale from "../../../shared/ui/form/FormMultiSelectLocale";
 import { FormSelectStrategy } from "../../../shared/ui/form/FormSelectStrategy";
 import { FormCheckboxPublish } from "../../../shared/ui/form/FormCheckboxPublish";
 
@@ -16,6 +18,7 @@ type CollectionTranslationFormProps = {
   onSubmit: (values: FormValues) => Promise<void>;
   selectedCount: number;
   hasDrafts: boolean;
+  targetSelection: TargetSelectionMode;
 };
 
 export function CollectionTranslationForm({
@@ -23,13 +26,18 @@ export function CollectionTranslationForm({
   onSubmit,
   selectedCount,
   hasDrafts,
+  targetSelection,
 }: CollectionTranslationFormProps) {
   return (
     <FormProvider {...form}>
       <fieldset className={styles.fieldset}>
         <div className={styles.row}>
           <FormSelectLocale size="sm" label="From" name={FORM_FIELDS.SOURCE_LNG} />
-          <FormSelectLocale size="sm" label="To" name={FORM_FIELDS.TARGET_LNG} />
+          {targetSelection === "multi" ? (
+            <FormMultiSelectLocale size="sm" label="To" name={FORM_FIELDS.TARGET_LNG} />
+          ) : (
+            <FormSelectLocale size="sm" label="To" name={FORM_FIELDS.TARGET_LNG} />
+          )}
         </div>
         <FormSelectStrategy size="sm" name={FORM_FIELDS.STRATEGY} />
         {hasDrafts && <FormCheckboxPublish name={FORM_FIELDS.PUBLISH_ON_TRANSLATION} />}

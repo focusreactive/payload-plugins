@@ -10,6 +10,7 @@ import {
   TranslationsApi,
 } from "../../../entities/translation";
 import type { AutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary";
+import type { TargetSelectionMode } from "../../../../types/TargetSelection";
 import {
   CollectionTranslationForm,
   FORM_FIELDS,
@@ -26,11 +27,13 @@ import styles from "./styles.module.scss";
 type BulkTranslationDashboardProps = {
   hasDrafts: boolean;
   autoTranslate: AutoTranslateSummary | null;
+  targetSelection: TargetSelectionMode;
 };
 
 export default function BulkTranslationDashboard({
   hasDrafts,
   autoTranslate,
+  targetSelection,
 }: BulkTranslationDashboardProps) {
   const locale = useLocale();
   const { collection } = useCollectionDashboardUrlParams();
@@ -48,9 +51,12 @@ export default function BulkTranslationDashboard({
   const initialValues = useMemo(
     () => ({
       [FORM_FIELDS.SOURCE_LNG]: locale.code,
+      // Multi mode binds an array; single mode a string. Seed the matching empty value so the field
+      // starts with the right shape (and invalid until a target is chosen).
+      [FORM_FIELDS.TARGET_LNG]: targetSelection === "multi" ? [] : "",
       [FORM_FIELDS.HIDDEN_COLLECTION_SLUG]: collection,
     }),
-    [locale.code, collection]
+    [locale.code, collection, targetSelection]
   );
 
   const { form } = CollectionTranslationFormModel.useForm({
@@ -103,6 +109,7 @@ export default function BulkTranslationDashboard({
           onSubmit={handleSubmit}
           selectedCount={selectedCount}
           hasDrafts={hasDrafts}
+          targetSelection={targetSelection}
         />
       </section>
 

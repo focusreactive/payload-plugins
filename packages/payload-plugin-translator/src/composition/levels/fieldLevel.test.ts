@@ -18,6 +18,7 @@ const makeCtx = (): LevelContext => ({
     ["posts" as CollectionSlug, [{ name: "title", type: "text" }] as Field[]],
   ]) as CollectionSchemaMap,
   translationProvider: { translate: vi.fn() },
+  targetSelection: "single",
   addEndpoints: vi.fn(),
   addCollectionComponent: vi.fn(),
 });
