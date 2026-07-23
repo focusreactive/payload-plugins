@@ -23,7 +23,9 @@
     "seed": "bun run src/seed.ts",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:integration": "vitest run -c vitest.integration.config.ts",
+    "check-types": "tsgo --noEmit -p tsconfig.check.json"
   },
   "dependencies": {
     "@focus-reactive/payload-plugin-ab": "workspace:*",
