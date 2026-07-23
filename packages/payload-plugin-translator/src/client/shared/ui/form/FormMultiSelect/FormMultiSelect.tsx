@@ -48,6 +48,7 @@ export default function FormMultiSelect({
 
   const control = (
     <MultiSelect
+      ref={field.ref}
       value={value}
       onChange={field.onChange}
       onBlur={field.onBlur}

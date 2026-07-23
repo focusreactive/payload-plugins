@@ -1,0 +1,49 @@
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  line-height: 0;
+  // Cursor is chosen per usage (marker → pointer, `?` help icons → help) so it never loses to
+  // CSS-module source order.
+
+  &:focus-visible {
+    outline: 2px solid var(--theme-elevation-400);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+}
+
+// Same bubble as the Tooltip, so help text looks identical whether hovered (elsewhere) or tapped here.
+.content {
+  max-width: 280px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: var(--style-radius-s);
+  background: var(--theme-elevation-50);
+  color: var(--theme-elevation-900);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 9999;
+  animation: fadeIn 150ms ease-out;
+}
+
+.arrow {
+  fill: var(--theme-elevation-50);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
