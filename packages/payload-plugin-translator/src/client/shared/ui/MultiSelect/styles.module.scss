@@ -1,4 +1,4 @@
-// Trigger mirrors the shared Select so the single↔multi swap reads as native (same heights/tokens).
+// Trigger mirrors the shared Select so a single↔multi swap reads as native (same heights/tokens).
 .trigger {
   display: flex;
   align-items: center;
@@ -17,8 +17,12 @@
   }
 }
 
-.trigger--error {
+.triggerError {
   border-color: var(--theme-error-500);
+}
+
+.auto {
+  width: auto;
 }
 
 .size-sm {
