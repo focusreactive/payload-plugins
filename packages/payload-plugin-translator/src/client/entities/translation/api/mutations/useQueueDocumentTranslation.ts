@@ -9,7 +9,8 @@ type TranslationStrategy = "overwrite" | "skip_existing";
 
 type Variables = {
   source_lng: string;
-  target_lng: string;
+  // string (single mode) or string[] (multi mode) — the /enqueue endpoint accepts both and fans out.
+  target_lng: string | string[];
   collection_slug: string;
   collection_id: Array<string | number>;
   select_all?: boolean;

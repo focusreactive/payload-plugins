@@ -1,22 +1,13 @@
-// A muted, low-emphasis header marker — no border, no fill; it sits at the edge of the title row and
-// carries all detail in its tooltip, so it never competes with the popup's main flow.
+// A muted, low-emphasis header marker at the edge of the title row; the detail lives behind the icon,
+// so it never competes with the popup's main flow. (Button reset + focus come from InfoPopover.)
 .marker {
-  display: inline-flex;
-  align-items: center;
   flex-shrink: 0;
   color: var(--theme-elevation-400, #a5a5a5);
   cursor: help;
-  outline: none;
 }
 
 .marker:hover {
   color: var(--theme-elevation-600, #6d6d6d);
-}
-
-.marker:focus-visible {
-  outline: 2px solid var(--theme-elevation-400, #a5a5a5);
-  outline-offset: 2px;
-  border-radius: 3px;
 }
 
 .tip {

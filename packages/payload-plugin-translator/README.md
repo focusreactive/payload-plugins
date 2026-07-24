@@ -16,6 +16,7 @@ It works at three levels — translate the **document** you're editing, **bulk-t
 - **Deep translation** — every localized leaf field at any nesting level (groups, arrays, blocks, tabs).
 - **Rich text** — full Lexical translation, preserving formatting and structure.
 - **Three surfaces** — a per-document popup, a bulk-collection dashboard, and a per-field control, toggled via `levels`.
+- **Single or multi target** — translate into one locale, or pick several at once, via `targetSelection`.
 - **Async or sync** — queue-based background jobs (Payload Jobs) by default, or run inline.
 - **Pluggable providers** — OpenAI built in, or implement your own.
 - **Strategies** — overwrite everything or skip locales that already have content.
@@ -143,6 +144,7 @@ Allowed on **`text`, `textarea`, and `richText`** fields (a compile error on oth
 | `levels`              | `TranslationLevel[]`  | No       | `[documentLevel(), collectionLevel()]` | Which surfaces to enable — see [Translation surfaces](#translation-surfaces-levels).                           |
 | `provenance`          | `boolean \| { slug?: string }` | No | `false` (disabled) | Opt in to recording a provenance record per translation. _Since v0.7.0._ See [Provenance](#provenance-opt-in) below. |
 | `lifecycle`           | `{ onQueued?, onCompleted?, onFailed? }` | No | `undefined` | Server-side callbacks fired around each task. _Since v0.7.0._ See [Lifecycle callbacks](#lifecycle-callbacks). |
+| `targetSelection`     | `'single' \| 'multi'` | No       | `'single'`                             | Let an editor pick several target locales in one run. _Since v0.10.0._ See [Target-language selection](#target-language-selection) below. |
 
 ```typescript
 translatorPlugin({
@@ -152,6 +154,29 @@ translatorPlugin({
   access: { check: ({ req }) => req.user?.role === "admin" },
 });
 ```
+
+### Target-language selection
+
+_Since v0.10.0._
+
+By default the translation forms (per-document panel and bulk dashboard) translate into **one**
+target locale per run. Set `targetSelection: 'multi'` to let an editor pick **several** target
+locales at once — the "To" field becomes a compact multi-select and the run fans out one translation
+per _(document × target locale)_.
+
+```typescript
+translatorPlugin({
+  collections: [Posts, Pages],
+  translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
+  runner: createPayloadJobsRunner(),
+  targetSelection: "multi", // default is "single" (one target per run — unchanged)
+});
+```
+
+Fully backward-compatible and opt-in: the default `'single'` keeps today's behaviour exactly, and
+there is no schema or migration. Unknown or duplicate target locales are ignored, and the source
+locale is never translated into itself. The `/enqueue` endpoint accepts `target_lng` as either a
+single string or an array of strings, so existing API callers keep working.
 
 ### Provenance (opt-in)
 

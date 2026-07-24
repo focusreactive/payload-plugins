@@ -1,8 +1,7 @@
 import type { ReactElement } from "react";
 
 import FormSelect from "../FormSelect";
-import Tooltip from "../../Tooltip";
-import { QuestionCircleIcon } from "../../../lib/assets/icons/QuestionCircleIcon";
+import InfoPopover from "../../InfoPopover";
 
 import styles from "./styles.module.scss";
 
@@ -24,11 +23,12 @@ const STRATEGY_TOOLTIP = (
 const StrategyLabel: ReactElement = (
   <span className={styles.label}>
     {STRATEGY_LABEL}
-    <Tooltip content={STRATEGY_TOOLTIP} side="bottom">
-      <span className={styles.label__icon}>
-        <QuestionCircleIcon />
-      </span>
-    </Tooltip>
+    <InfoPopover
+      label="What is update mode?"
+      content={STRATEGY_TOOLTIP}
+      side="bottom"
+      className={styles.label__icon}
+    />
   </span>
 );
 

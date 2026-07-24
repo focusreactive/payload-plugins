@@ -1,6 +1,7 @@
 // Main plugin
 export { translatorPlugin } from "./plugin";
 export type { TranslatorPluginConfig } from "./plugin";
+export type { TargetSelectionMode } from "./types/TargetSelection";
 
 // Lifecycle callbacks — the task descriptor passed to onQueued/onCompleted/onFailed
 export type { TranslationTask, TranslationLifecycleCallbacks } from "./server/modules/lifecycle";

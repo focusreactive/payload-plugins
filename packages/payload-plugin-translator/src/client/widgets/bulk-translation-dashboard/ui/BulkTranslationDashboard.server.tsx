@@ -2,6 +2,7 @@ import { headers as getHeaders } from "next/headers";
 import type { BeforeListTableServerProps } from "payload";
 
 import type { AccessGuard } from "../../../../types/AccessGuard";
+import type { TargetSelectionMode } from "../../../../types/TargetSelection";
 import { collectionHasDrafts } from "../../../../server/shared/guards";
 import { resolveAutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary";
 
@@ -9,6 +10,7 @@ import BulkTranslationDashboard from "./BulkTranslationDashboard";
 
 type BulkTranslationDashboardServerProps = BeforeListTableServerProps & {
   access: AccessGuard;
+  targetSelection: TargetSelectionMode;
 };
 
 const BulkTranslationDashboardServer = async (props: BulkTranslationDashboardServerProps) => {
@@ -27,7 +29,13 @@ const BulkTranslationDashboardServer = async (props: BulkTranslationDashboardSer
     props.payload.config.localization ? props.payload.config.localization.defaultLocale : undefined
   );
 
-  return <BulkTranslationDashboard hasDrafts={hasDrafts} autoTranslate={autoTranslate} />;
+  return (
+    <BulkTranslationDashboard
+      hasDrafts={hasDrafts}
+      autoTranslate={autoTranslate}
+      targetSelection={props.targetSelection}
+    />
+  );
 };
 
 export default BulkTranslationDashboardServer;

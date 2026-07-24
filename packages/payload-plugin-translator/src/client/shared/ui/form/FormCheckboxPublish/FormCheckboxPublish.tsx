@@ -1,8 +1,7 @@
 import type { ReactElement } from "react";
 
 import { FormCheckbox } from "../FormCheckbox";
-import Tooltip from "../../Tooltip";
-import { QuestionCircleIcon } from "../../../lib/assets/icons/QuestionCircleIcon";
+import InfoPopover from "../../InfoPopover";
 
 import styles from "./styles.module.scss";
 
@@ -19,11 +18,12 @@ const PUBLISH_TOOLTIP = (
 const PublishLabel: ReactElement = (
   <span className={styles.label}>
     {PUBLISH_LABEL}
-    <Tooltip content={PUBLISH_TOOLTIP} side="bottom">
-      <span className={styles.label__icon}>
-        <QuestionCircleIcon />
-      </span>
-    </Tooltip>
+    <InfoPopover
+      label="What does publish after translation do?"
+      content={PUBLISH_TOOLTIP}
+      side="bottom"
+      className={styles.label__icon}
+    />
   </span>
 );
 

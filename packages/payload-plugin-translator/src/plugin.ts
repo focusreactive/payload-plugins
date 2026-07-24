@@ -5,6 +5,7 @@ import { configureAutoTranslate } from "./server/modules/auto-translate";
 import { configureProvenance } from "./server/modules/provenance";
 import type { AccessGuard } from "./types/AccessGuard";
 import type { CollectionSchemaMap } from "./types/CollectionSchemaMap";
+import type { TargetSelectionMode } from "./types/TargetSelection";
 import { projectFieldsToFieldLike } from "./core/kernel/field-traversal";
 import type { TranslationProvider } from "./core/domain/translation-providers";
 import type { TaskRunnerProvider } from "./server/modules/task-runner";
@@ -82,6 +83,15 @@ export type TranslatorPluginConfig = {
    * @since 0.7.0
    */
   lifecycle?: TranslationLifecycleCallbacks;
+  /**
+   * How the target-language field behaves in the translation forms. `'single'` (default) keeps
+   * today's one-locale-per-run behaviour, byte-identical. `'multi'` renders a compact multi-select so
+   * an editor can queue several target locales in one run — the run fans out one translation per
+   * `(document × target locale)`. Opt-in and fully backward-compatible; no schema, no migration.
+   * @default 'single'
+   * @since 0.10.0
+   */
+  targetSelection?: TargetSelectionMode;
 };
 
 /** @deprecated Use `TranslatorPluginConfig` instead */
@@ -105,6 +115,7 @@ export class TranslateCollectionPlugin {
         levels,
         provenance,
         lifecycle,
+        targetSelection = "single",
         basePath: rawBasePath = "/translate",
       } = this.pluginConfig;
 
@@ -143,6 +154,7 @@ export class TranslateCollectionPlugin {
         schemaMap,
         translationProvider,
         provenanceServiceFactory: provenanceModule.serviceFactory,
+        targetSelection,
       });
       for (const level of activeLevels) level.extend(builder);
 

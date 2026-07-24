@@ -8,3 +8,6 @@ export type {
   AutoTranslatePolicyResolver,
   NormalizedAutoTranslatePolicy,
 } from "./AutoTranslate.policy";
+// Generic locale-set extraction, reused by the manual enqueue path to validate multi-target input.
+export { extractLocaleCodes } from "./AutoTranslate.policy";
+export type { LocalizationLike } from "./AutoTranslate.policy";

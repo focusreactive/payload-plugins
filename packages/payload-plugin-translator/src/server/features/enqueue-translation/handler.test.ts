@@ -144,4 +144,121 @@ describe("EnqueueTranslationHandler", () => {
       expect(mockTaskRunnerFactory.create).toHaveBeenCalledWith(mockPayload);
     });
   });
+
+  describe("multi-target fan-out", () => {
+    const warn = vi.fn();
+    // A request whose payload carries a configured locale set + logger, so locale validation is active.
+    const createLocalizedRequest = (body: unknown): PayloadRequest =>
+      ({
+        payload: {
+          config: { localization: { locales: ["en", "de", "fr", "es"] } },
+          logger: { warn },
+        },
+        json: vi.fn().mockResolvedValue(body),
+      }) as unknown as PayloadRequest;
+
+    const enqueuedTasks = () => (mockTaskRunner.enqueue as any).mock.calls[0][0];
+
+    beforeEach(() => warn.mockClear());
+
+    it("fans out one task per (document x target) — 2 docs x 2 targets = 4 (AC3)", async () => {
+      const req = createLocalizedRequest({
+        source_lng: "en",
+        target_lng: ["de", "fr"],
+        collection_slug: "posts",
+        collection_id: ["doc-1", "doc-2"],
+      });
+
+      const response = await handler.handle(req);
+
+      expect(response.status).toBe(200);
+      expect((await response.json()).data.queued).toBe(4);
+      const tasks = enqueuedTasks();
+      expect(tasks).toHaveLength(4);
+      expect(tasks.map((t: any) => `${t.collectionId}:${t.targetLng}`)).toEqual([
+        "doc-1:de",
+        "doc-1:fr",
+        "doc-2:de",
+        "doc-2:fr",
+      ]);
+    });
+
+    it("drops an unknown target locale, logs it, and still runs the valid one (AC4)", async () => {
+      const req = createLocalizedRequest({
+        source_lng: "en",
+        target_lng: ["de", "xx"],
+        collection_slug: "posts",
+        collection_id: ["doc-1"],
+      });
+
+      await handler.handle(req);
+
+      const tasks = enqueuedTasks();
+      expect(tasks.map((t: any) => t.targetLng)).toEqual(["de"]);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0][0]).toContain("xx");
+    });
+
+    it("de-dups duplicate targets to one task per locale (AC5)", async () => {
+      const req = createLocalizedRequest({
+        source_lng: "en",
+        target_lng: ["de", "de", "fr"],
+        collection_slug: "posts",
+        collection_id: ["doc-1"],
+      });
+
+      await handler.handle(req);
+
+      expect(enqueuedTasks().map((t: any) => t.targetLng)).toEqual(["de", "fr"]);
+    });
+
+    it("excludes the source locale from targets (AC6)", async () => {
+      const req = createLocalizedRequest({
+        source_lng: "en",
+        target_lng: ["en", "de"],
+        collection_slug: "posts",
+        collection_id: ["doc-1"],
+      });
+
+      await handler.handle(req);
+
+      expect(enqueuedTasks().map((t: any) => t.targetLng)).toEqual(["de"]);
+    });
+
+    it("returns 400 when every requested locale is the source or unknown", async () => {
+      const req = createLocalizedRequest({
+        source_lng: "en",
+        target_lng: ["en", "xx"],
+        collection_slug: "posts",
+        collection_id: ["doc-1"],
+      });
+
+      const response = await handler.handle(req);
+
+      expect(response.status).toBe(400);
+      expect(mockTaskRunner.enqueue).not.toHaveBeenCalled();
+    });
+
+    it("keeps a scalar target working end-to-end when localization is configured (back-compat, AC1)", async () => {
+      const req = createLocalizedRequest({
+        source_lng: "en",
+        target_lng: "de",
+        collection_slug: "posts",
+        collection_id: ["doc-1"],
+      });
+
+      await handler.handle(req);
+
+      expect(enqueuedTasks()).toEqual([
+        {
+          collectionSlug: "posts",
+          collectionId: "doc-1",
+          sourceLng: "en",
+          targetLng: "de",
+          strategy: "overwrite",
+          publishOnTranslation: false,
+        },
+      ]);
+    });
+  });
 });

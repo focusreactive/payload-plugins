@@ -1,9 +1,14 @@
+import { useEffect, useMemo } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { FormProvider } from "react-hook-form";
 
 import { SendIcon } from "../../../shared/lib/assets/icons/SendIcon";
+import type { TargetSelectionMode } from "../../../../types/TargetSelection";
+import { pruneSourceFromTarget } from "../../../shared/lib/forms/pruneSourceFromTarget";
+import { useLocaleOptions } from "../../../shared/lib/payload/hooks/useLocaleOptions";
 import Button from "../../../shared/ui/Button";
-import FormSelectLocale from "../../../shared/ui/form/FormSelectLocale";
+import FormSelect from "../../../shared/ui/form/FormSelect";
+import FormMultiSelect from "../../../shared/ui/form/FormMultiSelect";
 import { FormSelectStrategy } from "../../../shared/ui/form/FormSelectStrategy";
 import { FormCheckboxPublish } from "../../../shared/ui/form/FormCheckboxPublish";
 
@@ -16,6 +21,7 @@ type CollectionTranslationFormProps = {
   onSubmit: (values: FormValues) => Promise<void>;
   selectedCount: number;
   hasDrafts: boolean;
+  targetSelection: TargetSelectionMode;
 };
 
 export function CollectionTranslationForm({
@@ -23,13 +29,50 @@ export function CollectionTranslationForm({
   onSubmit,
   selectedCount,
   hasDrafts,
+  targetSelection,
 }: CollectionTranslationFormProps) {
+  const localeOptions = useLocaleOptions();
+  const source = form.watch(FORM_FIELDS.SOURCE_LNG);
+
+  const targetOptions = useMemo(
+    () => localeOptions.filter((option) => option.value !== source),
+    [localeOptions, source]
+  );
+
+  useEffect(() => {
+    const pruned = pruneSourceFromTarget(form.getValues(FORM_FIELDS.TARGET_LNG), source);
+    if (pruned !== null) {
+      form.setValue(FORM_FIELDS.TARGET_LNG, pruned, { shouldValidate: false });
+    }
+  }, [source, form]);
+
   return (
     <FormProvider {...form}>
       <fieldset className={styles.fieldset}>
         <div className={styles.row}>
-          <FormSelectLocale size="sm" label="From" name={FORM_FIELDS.SOURCE_LNG} />
-          <FormSelectLocale size="sm" label="To" name={FORM_FIELDS.TARGET_LNG} />
+          <FormSelect
+            size="sm"
+            label="From"
+            name={FORM_FIELDS.SOURCE_LNG}
+            options={localeOptions}
+            placeholder="-"
+          />
+          {targetSelection === "multi" ? (
+            <FormMultiSelect
+              size="sm"
+              label="To"
+              name={FORM_FIELDS.TARGET_LNG}
+              options={targetOptions}
+            />
+          ) : (
+            <FormSelect
+              size="sm"
+              label="To"
+              name={FORM_FIELDS.TARGET_LNG}
+              options={targetOptions}
+              placeholder="-"
+            />
+          )}
         </div>
         <FormSelectStrategy size="sm" name={FORM_FIELDS.STRATEGY} />
         {hasDrafts && <FormCheckboxPublish name={FORM_FIELDS.PUBLISH_ON_TRANSLATION} />}
