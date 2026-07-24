@@ -1,3 +1,15 @@
+# @focus-reactive/payload-plugin-translator [0.10.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.9.2...@focus-reactive/payload-plugin-translator@0.10.0) (2026-07-24)
+
+
+### Bug Fixes
+
+* **translator:** use array .min(1) so the empty multi default type-checks ([717ec5f](https://github.com/focusreactive/payload-plugins/commit/717ec5f03ce8beaddfd56e666084b78c5f9495f8))
+
+
+### Features
+
+* **translator:** configurable single/multi target-language selection ([30565ce](https://github.com/focusreactive/payload-plugins/commit/30565ceb3da53347539a8b5fa8dc92054c362c90)), closes [#46](https://github.com/focusreactive/payload-plugins/issues/46)
+
 ## @focus-reactive/payload-plugin-translator [0.9.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.9.1...@focus-reactive/payload-plugin-translator@0.9.2) (2026-07-21)
 
 ## @focus-reactive/payload-plugin-translator [0.9.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.9.0...@focus-reactive/payload-plugin-translator@0.9.1) (2026-07-21)
