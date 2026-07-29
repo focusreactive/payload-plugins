@@ -21,6 +21,14 @@ export type PluginConfigBuilderDeps = TranslationContext;
 
 const endpointKey = (endpoint: Endpoint): string => `${endpoint.method} ${endpoint.path}`;
 
+/**
+ * Identity of a collection admin component for dedup: its slot plus its module path (+ export name).
+ * `serverProps` (per-collection data) are excluded, so the same control registered by a level declared
+ * twice collapses to one — while genuinely different controls (distinct path or slot) do not.
+ */
+const componentKey = (slot: CollectionAdminSlot, component: RawPayloadComponentExport): string =>
+  `${slot} ${component.path}#${component.exportName ?? ""}`;
+
 function attachToSlot(
   collection: CollectionConfig,
   slot: CollectionAdminSlot,
@@ -136,8 +144,13 @@ export class PluginConfigBuilder implements LevelContext {
     const managed = new Set(this.collections.map((collection) => collection.slug));
     config.collections?.forEach((collection) => {
       if (!managed.has(collection.slug)) return;
+      const seen = new Set<string>();
       for (const { slot, make } of this.collectionComponents) {
-        attachToSlot(collection, slot, make(collection));
+        const component = make(collection);
+        const key = componentKey(slot, component);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        attachToSlot(collection, slot, component);
       }
     });
   }

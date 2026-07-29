@@ -63,6 +63,44 @@ describe("PluginConfigBuilder", () => {
     expect(other.admin).toBeUndefined(); // unmanaged collection untouched
   });
 
+  it("deduplicates a collection component declared twice for the same slot + path (duplicate level)", () => {
+    const builder = new PluginConfigBuilder(deps([{ slug: "posts" }]));
+    // Two documentLevel()-style registrations: distinct `make` closures, same slot + component path.
+    builder.addCollectionComponent("beforeDocumentControls", () => component("doc"));
+    builder.addCollectionComponent("beforeDocumentControls", () => component("doc"));
+
+    const config = { collections: [{ slug: "posts" }] } as unknown as Config;
+    builder.applyTo(config);
+
+    const posts = config.collections![0] as Record<string, any>;
+    expect(posts.admin.components.edit.beforeDocumentControls).toHaveLength(1); // one control, not two
+  });
+
+  it("keeps distinct components on the same slot when their paths differ", () => {
+    const builder = new PluginConfigBuilder(deps([{ slug: "posts" }]));
+    builder.addCollectionComponent("beforeDocumentControls", () => component("a"));
+    builder.addCollectionComponent("beforeDocumentControls", () => component("b"));
+
+    const config = { collections: [{ slug: "posts" }] } as unknown as Config;
+    builder.applyTo(config);
+
+    const posts = config.collections![0] as Record<string, any>;
+    expect(posts.admin.components.edit.beforeDocumentControls).toHaveLength(2);
+  });
+
+  it("dedups per (slot + path): the same path on different slots is not collapsed", () => {
+    const builder = new PluginConfigBuilder(deps([{ slug: "posts" }]));
+    builder.addCollectionComponent("beforeDocumentControls", () => component("x"));
+    builder.addCollectionComponent("beforeListTable", () => component("x"));
+
+    const config = { collections: [{ slug: "posts" }] } as unknown as Config;
+    builder.applyTo(config);
+
+    const posts = config.collections![0] as Record<string, any>;
+    expect(posts.admin.components.edit.beforeDocumentControls).toHaveLength(1);
+    expect(posts.admin.components.beforeListTable).toHaveLength(1);
+  });
+
   it("registers admin providers into config.admin.components.providers", () => {
     const builder = new PluginConfigBuilder(deps());
     const provider = component("cache");
