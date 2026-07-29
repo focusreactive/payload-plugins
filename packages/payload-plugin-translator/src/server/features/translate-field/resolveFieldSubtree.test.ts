@@ -92,6 +92,40 @@ describe("resolveFieldSubtree", () => {
     expect(resolveFieldSubtree(schema, "meta", {}).status).toBe("not-translatable");
   });
 
+  it("returns excluded for a translatable leaf opted out via withFieldTranslation({ exclude }) (D1)", () => {
+    const excludedSchema: Field[] = [
+      f({
+        name: "secret",
+        type: "text",
+        localized: true,
+        custom: { translateKit: { exclude: true } },
+      }),
+      f({
+        name: "block",
+        type: "blocks",
+        blocks: [
+          {
+            slug: "hero",
+            fields: [
+              f({
+                name: "hidden",
+                type: "text",
+                localized: true,
+                custom: { translateKit: { exclude: true } },
+              }),
+            ],
+          },
+        ],
+      }),
+    ];
+
+    // top-level excluded leaf
+    expect(resolveFieldSubtree(excludedSchema, "secret", "x").status).toBe("excluded");
+    // excluded leaf resolved inside a block (exclude honored uniformly, not only at the top level)
+    const doc = { block: [{ blockType: "hero", hidden: "x" }] };
+    expect(resolveFieldSubtree(excludedSchema, "block.0.hidden", "x", doc).status).toBe("excluded");
+  });
+
   it("returns inside-blocks when the path descends through a blocks field with no document data", () => {
     expect(resolveFieldSubtree(schema, "layout.0.headline", "x").status).toBe("inside-blocks");
   });
