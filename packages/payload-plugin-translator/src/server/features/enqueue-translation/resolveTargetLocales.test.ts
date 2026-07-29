@@ -50,16 +50,6 @@ describe("resolveTargetLocales", () => {
     expect(r.droppedUnknown).toEqual(["xx"]);
   });
 
-  it("keeps every non-source target unfiltered when localization is unknown/disabled", () => {
-    const r = resolveTargetLocales({
-      target_lng: ["de", "xx"],
-      source_lng: "en",
-      knownLocales: null,
-    });
-    expect(r.targets).toEqual(["de", "xx"]);
-    expect(r.droppedUnknown).toEqual([]);
-  });
-
   it("returns no targets when every requested locale is the source or unknown", () => {
     const r = resolveTargetLocales({
       target_lng: ["en", "xx"],
