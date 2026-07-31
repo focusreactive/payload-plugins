@@ -17,15 +17,32 @@ describe("EnqueueTranslationHandler", () => {
   let mockTaskRunner: TaskRunner;
   let mockTaskRunnerFactory: TaskRunnerFactory;
   let config: EnqueueConfig;
+  const warn = vi.fn();
 
+  // Bare request: no localization configured. Used for the validation, collection-availability, and
+  // localization-guard paths — all of which reject before any locale resolution.
   const createMockRequest = (body: unknown): PayloadRequest =>
     ({
       payload: {} as Payload,
       json: vi.fn().mockResolvedValue(body),
     }) as unknown as PayloadRequest;
 
+  // Request whose payload carries a configured locale set + logger. Translation is meaningless without
+  // localization, so every success-path test runs against this.
+  const createLocalizedRequest = (body: unknown): PayloadRequest =>
+    ({
+      payload: {
+        config: { localization: { locales: ["en", "de", "fr", "es"] } },
+        logger: { warn },
+      },
+      json: vi.fn().mockResolvedValue(body),
+    }) as unknown as PayloadRequest;
+
+  const enqueuedTasks = () => (mockTaskRunner.enqueue as any).mock.calls[0][0];
+
   beforeEach(() => {
     vi.clearAllMocks();
+    warn.mockClear();
 
     mockTaskRunner = {
       enqueue: vi.fn().mockResolvedValue(undefined),
@@ -85,9 +102,30 @@ describe("EnqueueTranslationHandler", () => {
     });
   });
 
+  describe("localization guard (D2)", () => {
+    // Without localization there is no valid target locale: a phantom locale would either orphan rows
+    // or, with no localization at all, overwrite the single unlocalized field — wiping the source.
+    it("returns 400 and enqueues nothing when localization is not enabled", async () => {
+      const req = createMockRequest({
+        source_lng: "en",
+        target_lng: "de",
+        collection_slug: "posts",
+        collection_id: ["doc-1"],
+        strategy: "overwrite",
+      });
+
+      const response = await handler.handle(req);
+
+      expect(response.status).toBe(400);
+      const body = await response.json();
+      expect(body.message).toContain("Localization is not enabled");
+      expect(mockTaskRunner.enqueue).not.toHaveBeenCalled();
+    });
+  });
+
   describe("success responses", () => {
     it("enqueues tasks for specific documents", async () => {
-      const req = createMockRequest({
+      const req = createLocalizedRequest({
         source_lng: "en",
         target_lng: "de",
         collection_slug: "posts",
@@ -103,7 +141,7 @@ describe("EnqueueTranslationHandler", () => {
     });
 
     it("calls runner.enqueue with correct tasks", async () => {
-      const req = createMockRequest({
+      const req = createLocalizedRequest({
         source_lng: "en",
         target_lng: "fr",
         collection_slug: "posts",
@@ -129,8 +167,12 @@ describe("EnqueueTranslationHandler", () => {
     // This is a schema design decision that should be tested at integration level
 
     it("creates task runner with request payload", async () => {
-      const mockPayload = { collections: {} } as Payload;
-      const req = createMockRequest({
+      const mockPayload = {
+        collections: {},
+        config: { localization: { locales: ["en", "de", "fr", "es"] } },
+        logger: { warn },
+      } as unknown as Payload;
+      const req = createLocalizedRequest({
         source_lng: "en",
         target_lng: "de",
         collection_slug: "posts",
@@ -146,21 +188,6 @@ describe("EnqueueTranslationHandler", () => {
   });
 
   describe("multi-target fan-out", () => {
-    const warn = vi.fn();
-    // A request whose payload carries a configured locale set + logger, so locale validation is active.
-    const createLocalizedRequest = (body: unknown): PayloadRequest =>
-      ({
-        payload: {
-          config: { localization: { locales: ["en", "de", "fr", "es"] } },
-          logger: { warn },
-        },
-        json: vi.fn().mockResolvedValue(body),
-      }) as unknown as PayloadRequest;
-
-    const enqueuedTasks = () => (mockTaskRunner.enqueue as any).mock.calls[0][0];
-
-    beforeEach(() => warn.mockClear());
-
     it("fans out one task per (document x target) — 2 docs x 2 targets = 4 (AC3)", async () => {
       const req = createLocalizedRequest({
         source_lng: "en",

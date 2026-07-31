@@ -54,6 +54,12 @@ beforeEach(() => {
         f({ name: "title", type: "text", localized: true }),
         f({ name: "count", type: "number" }),
         f({
+          name: "secret",
+          type: "text",
+          localized: true,
+          custom: { translateKit: { exclude: true } },
+        }),
+        f({
           name: "layout",
           type: "blocks",
           blocks: [
@@ -203,6 +209,20 @@ describe("TranslateFieldHandler", () => {
     const res = await handler.handle(reqWithDoc({ id: "p1", count: 5 }, { field_path: "count" }));
     expect(res.status).toBe(200);
     expect((await res.json()).data.notice.level).toBe("info");
+    expect(translateContent).not.toHaveBeenCalled();
+  });
+
+  it("no-ops a field excluded via withFieldTranslation({ exclude }) — provider never called (D1)", async () => {
+    const translateContent = await importTranslateContent();
+
+    const res = await handler.handle(
+      reqWithDoc({ id: "p1", secret: "Hello" }, { field_path: "secret" })
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()).data;
+    expect(body.status).toBe("noop");
+    expect(body.notice.level).toBe("info");
+    expect(body.notice.message).toContain("excluded from translation");
     expect(translateContent).not.toHaveBeenCalled();
   });
 

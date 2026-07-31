@@ -1,4 +1,4 @@
-import { isTranslatableField } from "../../shared";
+import { isFieldExcludedFromTranslation, isTranslatableField } from "../../shared";
 import { findFieldByPath } from "../../../core/kernel/field-traversal";
 import type { FieldLike } from "../../../core/kernel/field-traversal";
 
@@ -9,6 +9,10 @@ import type { FieldLike } from "../../../core/kernel/field-traversal";
  *   are ready for `translateContent`, and `fieldName` is the key to unwrap the result.
  * - `not-found` — the path resolves to no field at all (a typo) → caller returns 400.
  * - `not-translatable` — resolves to a field that isn't a text-like leaf → caller no-ops.
+ * - `excluded` — resolves to a translatable leaf that opted out via `withFieldTranslation({ exclude })`
+ *   → caller no-ops. Kept distinct from `not-translatable` so the notice can say *why* (a deliberate
+ *   opt-out, not a wrong type), and because this route must honor the same exclude the whole-document
+ *   path honors via `isTranslatableLeaf` — otherwise naming the path directly bypasses the opt-out.
  * - `inside-blocks` — the path descends through a polymorphic `blocks` field that couldn't be
  *   resolved: no `doc` was supplied to read the element's `blockType` from → caller no-ops.
  * - `localized-list-ancestor` — the path descends through a `localized` `blocks`/`array` field,
@@ -24,6 +28,7 @@ export type FieldSubtreeResolution =
     }
   | { status: "not-found" }
   | { status: "not-translatable" }
+  | { status: "excluded" }
   | { status: "inside-blocks" }
   | { status: "localized-list-ancestor" };
 
@@ -52,14 +57,14 @@ export function resolveFieldSubtree(
   const result = findFieldByPath(rootFields, segments, doc);
   switch (result.status) {
     case "leaf":
-      return isTranslatableField(result.field)
-        ? {
-            status: "resolved",
-            schema: [result.field],
-            sourceData: { [result.field.name]: value },
-            fieldName: result.field.name,
-          }
-        : { status: "not-translatable" };
+      if (!isTranslatableField(result.field)) return { status: "not-translatable" };
+      if (isFieldExcludedFromTranslation(result.field)) return { status: "excluded" };
+      return {
+        status: "resolved",
+        schema: [result.field],
+        sourceData: { [result.field.name]: value },
+        fieldName: result.field.name,
+      };
     case "container":
       return { status: "not-translatable" };
     case "inside-blocks":

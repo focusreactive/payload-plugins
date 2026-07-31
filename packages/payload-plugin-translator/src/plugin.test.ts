@@ -425,7 +425,10 @@ describe("translatorPlugin — lifecycle callbacks", () => {
         collection_slug: "posts",
         collection_id: ["1", "2"],
       }),
-      payload: { logger: { error: vi.fn() } },
+      payload: {
+        config: { localization: { locales: ["en", "de", "fr"] } },
+        logger: { error: vi.fn() },
+      },
     };
     await enqueue?.handler?.(req as never);
 
@@ -459,7 +462,10 @@ describe("translatorPlugin — lifecycle callbacks", () => {
         collection_slug: "posts",
         collection_id: ["1", "2"],
       }),
-      payload: { logger: { error: vi.fn() } },
+      payload: {
+        config: { localization: { locales: ["en", "de", "fr"] } },
+        logger: { error: vi.fn() },
+      },
     };
     await enqueue?.handler?.(req as never);
 

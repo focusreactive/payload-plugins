@@ -40,13 +40,20 @@ export class EnqueueTranslationHandler {
         "Content of this collection is not available for translation"
       );
 
-    // Normalize the scalar-or-array target into the concrete locales to fan out to: de-dup, exclude the
-    // source, and drop locales that are not configured (unknown locales would burn a provider call and
-    // corrupt data — Postgres locale enum / orphaned Mongo rows). `config` is optional-chained because a
-    // localization-less (or minimally-mocked) payload has none, which correctly disables the filter.
+    // A localization-less config has no valid target locale: a phantom locale would burn a provider
+    // call and corrupt data — orphaned rows on Mongo/SQLite, a locale-enum error on Postgres, or (with
+    // no localization at all) overwrite the single unlocalized field and wipe the source. Reject before
+    // anything is enqueued.
     const knownLocales = extractLocaleCodes(
       req.payload.config?.localization as LocalizationLike | undefined
     );
+    if (!knownLocales)
+      return ServerResponse.badRequest(
+        "Localization is not enabled in this Payload config; there are no target locales to translate into"
+      );
+
+    // Normalize the scalar-or-array target into the concrete locales to fan out to: de-dup, exclude the
+    // source, and drop locales that are not configured.
     const { targets, droppedUnknown } = resolveTargetLocales({
       target_lng,
       source_lng,
@@ -56,7 +63,7 @@ export class EnqueueTranslationHandler {
       req.payload.logger?.warn(
         `[payload-plugin-translator] enqueue on "${collectionSlug}": ignoring unknown target locale(s) ${droppedUnknown.join(
           ", "
-        )} (configured locales: ${knownLocales ? [...knownLocales].join(", ") : "n/a"}).`
+        )} (configured locales: ${[...knownLocales].join(", ")}).`
       );
     }
     if (targets.length === 0)

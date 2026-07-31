@@ -106,6 +106,11 @@ export class TranslateFieldHandler {
         noop(sourceValue, "info", "Nothing to translate in this field")
       );
     }
+    if (resolution.status === "excluded") {
+      return ServerResponse.success(
+        noop(sourceValue, "info", "This field is excluded from translation")
+      );
+    }
 
     // No `strategy`/`targetData`: a per-field translate is an explicit "translate this field now",
     // so `translateContent` always overwrites (its default). skip_existing has no meaning here.
