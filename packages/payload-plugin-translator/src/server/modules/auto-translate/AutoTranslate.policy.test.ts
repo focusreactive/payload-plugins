@@ -40,6 +40,15 @@ describe("normalizeAutoTranslateConfig", () => {
       })
     ).toEqual({ targets: ["de"], strategy: "skip_existing", debounceMs: 1000, sourceLocale: "en" });
   });
+
+  // Guards the call site (not just the shared primitive): a duplicate in config.targets must collapse
+  // so one misconfigured [de, de] never enqueues two racing jobs for the same (doc, locale).
+  it("de-duplicates config targets", () => {
+    expect(normalizeAutoTranslateConfig({ targets: ["de", "de", "fr"] }).targets).toEqual([
+      "de",
+      "fr",
+    ]);
+  });
 });
 
 describe("makeCollectionPolicyResolver (v1 — doc ignored)", () => {
