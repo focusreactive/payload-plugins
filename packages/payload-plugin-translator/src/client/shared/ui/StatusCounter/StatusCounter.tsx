@@ -21,10 +21,10 @@ const statusColorMap = {
 };
 
 const statusLabelMap = {
-  pending: "В очереди",
-  running: "В процессе",
-  completed: "Завершено",
-  failed: "Ошибки",
+  pending: "Queued",
+  running: "Translating",
+  completed: "Translated",
+  failed: "Failed",
 };
 
 export default function StatusCounter({
