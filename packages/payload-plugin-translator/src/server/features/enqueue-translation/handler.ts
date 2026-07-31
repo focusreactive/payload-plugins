@@ -6,9 +6,10 @@ import { extractLocaleCodes } from "../../modules/auto-translate";
 import type { LocalizationLike } from "../../modules/auto-translate";
 import { isCollectionAvailable, getAllCollectionIds } from "../_lib/collection-utils";
 
+import { Locales } from "../../../core/domain/locales";
+
 import { EnqueueInputSchema } from "./model";
 import type { EnqueueConfig } from "./model";
-import { resolveTargetLocales } from "./resolveTargetLocales";
 
 /**
  * Enqueues translation tasks for documents
@@ -54,7 +55,7 @@ export class EnqueueTranslationHandler {
 
     // Normalize the scalar-or-array target into the concrete locales to fan out to: de-dup, exclude the
     // source, and drop locales that are not configured.
-    const { targets, droppedUnknown } = resolveTargetLocales({
+    const { targets, droppedUnknown } = Locales.resolveTargets({
       target_lng,
       source_lng,
       knownLocales,
