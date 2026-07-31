@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-translator [0.10.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.10.2...@focus-reactive/payload-plugin-translator@0.10.3) (2026-07-31)
+
+
+### Bug Fixes
+
+* **translator:** replace Russian status labels with English ([b47491b](https://github.com/focusreactive/payload-plugins/commit/b47491b49c3bd008fbbb5d2fa627f0a407baffce))
+
 ## @focus-reactive/payload-plugin-translator [0.10.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.10.1...@focus-reactive/payload-plugin-translator@0.10.2) (2026-07-31)
 
 
