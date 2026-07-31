@@ -1,5 +1,5 @@
 /**
- * PKCE: code_verifier и code_challenge для Authorization Code flow
+ * PKCE: code_verifier and code_challenge for the Authorization Code flow
  */
 function base64UrlEncode(bytes: Uint8Array): string {
   const b64 = Buffer.from(bytes).toString("base64");
