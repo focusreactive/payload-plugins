@@ -1,3 +1,12 @@
+## @focus-reactive/payload-plugin-translator [0.10.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.10.1...@focus-reactive/payload-plugin-translator@0.10.2) (2026-07-31)
+
+
+### Bug Fixes
+
+* **translator:** de-duplicate translation controls when a level is declared twice ([c283151](https://github.com/focusreactive/payload-plugins/commit/c2831515031375945c093d15492b2018a3d40048))
+* **translator:** honor field-level exclude on the single-field translation route ([2ef197e](https://github.com/focusreactive/payload-plugins/commit/2ef197e414faca7d353cdae33dc21e7f36db5bb7))
+* **translator:** reject manual enqueue when localization is disabled ([bcc7b9e](https://github.com/focusreactive/payload-plugins/commit/bcc7b9e366dfedc3ba02dd359995a46e0ea77922))
+
 ## @focus-reactive/payload-plugin-translator [0.10.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.10.0...@focus-reactive/payload-plugin-translator@0.10.1) (2026-07-29)
 
 # @focus-reactive/payload-plugin-translator [0.10.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.9.2...@focus-reactive/payload-plugin-translator@0.10.0) (2026-07-24)
