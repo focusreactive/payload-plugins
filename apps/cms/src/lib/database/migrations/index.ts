@@ -30,6 +30,7 @@ import * as migration_20260630_154649_add_reading_time_to_posts from './20260630
 import * as migration_20260706_095438_add_section_visibility_to_global_section_slot from './20260706_095438_add_section_visibility_to_global_section_slot';
 import * as migration_20260708_183318_remove_aspect_ratio_from_unneccesary_blocks from './20260708_183318_remove_aspect_ratio_from_unneccesary_blocks';
 import * as migration_20260713_155547_restructure_global_settings from './20260713_155547_restructure_global_settings';
+import * as migration_20260805_120053_group_seo_defaults_under_og_and_x from './20260805_120053_group_seo_defaults_under_og_and_x';
 
 export const migrations = [
   {
@@ -190,6 +191,11 @@ export const migrations = [
   {
     up: migration_20260713_155547_restructure_global_settings.up,
     down: migration_20260713_155547_restructure_global_settings.down,
-    name: '20260713_155547_restructure_global_settings'
+    name: '20260713_155547_restructure_global_settings',
+  },
+  {
+    up: migration_20260805_120053_group_seo_defaults_under_og_and_x.up,
+    down: migration_20260805_120053_group_seo_defaults_under_og_and_x.down,
+    name: '20260805_120053_group_seo_defaults_under_og_and_x'
   },
 ];

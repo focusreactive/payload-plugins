@@ -4246,37 +4246,41 @@ export interface SiteSetting {
      */
     titleSuffix?: string | null;
     /**
-     * Fallback title for Open Graph when page has no title
-     */
-    defaultOgTitle?: string | null;
-    /**
-     * Site name for Open Graph. Defaults to Site Name if empty
-     */
-    ogSiteName?: string | null;
-    /**
      * Fallback description when page has no description
      */
     defaultDescription?: string | null;
-    /**
-     * Fallback description for Open Graph (uses Meta Description if empty)
-     */
-    defaultOgDescription?: string | null;
-    /**
-     * Fallback image for social media sharing
-     */
-    defaultOgImage?: (number | null) | Media;
-    /**
-     * Twitter/X username for the website (e.g., @yoursite)
-     */
-    twitterSite?: string | null;
-    /**
-     * Default Twitter/X username for content creator (e.g., @author)
-     */
-    twitterCreator?: string | null;
-    /**
-     * Type of Twitter Card to display
-     */
-    defaultTwitterCard?: ('summary_large_image' | 'summary') | null;
+    og?: {
+      /**
+       * Fallback title for Open Graph when page has no title
+       */
+      title?: string | null;
+      /**
+       * Site name for Open Graph. Defaults to Site Name if empty
+       */
+      siteName?: string | null;
+      /**
+       * Fallback description for Open Graph (uses Meta Description if empty)
+       */
+      description?: string | null;
+      /**
+       * Fallback image for social media sharing
+       */
+      image?: (number | null) | Media;
+    };
+    x?: {
+      /**
+       * Twitter/X username for the website (e.g., @yoursite)
+       */
+      site?: string | null;
+      /**
+       * Default Twitter/X username for content creator (e.g., @author)
+       */
+      creator?: string | null;
+      /**
+       * Type of Twitter Card to display
+       */
+      card?: ('summary_large_image' | 'summary') | null;
+    };
   };
   notFound?: {
     header?: (number | null) | Header;
@@ -4352,14 +4356,22 @@ export interface SiteSettingsSelect<T extends boolean = true> {
     | {
         titleSeparator?: T;
         titleSuffix?: T;
-        defaultOgTitle?: T;
-        ogSiteName?: T;
         defaultDescription?: T;
-        defaultOgDescription?: T;
-        defaultOgImage?: T;
-        twitterSite?: T;
-        twitterCreator?: T;
-        defaultTwitterCard?: T;
+        og?:
+          | T
+          | {
+              title?: T;
+              siteName?: T;
+              description?: T;
+              image?: T;
+            };
+        x?:
+          | T
+          | {
+              site?: T;
+              creator?: T;
+              card?: T;
+            };
       };
   notFound?:
     | T
