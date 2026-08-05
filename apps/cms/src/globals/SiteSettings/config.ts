@@ -343,25 +343,9 @@ export const SiteSettings: GlobalConfig = {
         {
           fields: [
             {
-              type: "row",
-              fields: [
-                {
-                  name: "header",
-                  type: "relationship",
-                  relationTo: "header",
-                  admin: {
-                    width: "50%",
-                  },
-                },
-                {
-                  name: "footer",
-                  type: "relationship",
-                  relationTo: "footer",
-                  admin: {
-                    width: "50%",
-                  },
-                },
-              ],
+              name: "header",
+              type: "relationship",
+              relationTo: "header",
             },
             {
               name: "title",
@@ -386,6 +370,11 @@ export const SiteSettings: GlobalConfig = {
                 DEFAULT_VALUES.collections.siteSettings.notFoundDescription
               ),
               localized: true,
+            },
+            {
+              name: "footer",
+              type: "relationship",
+              relationTo: "footer",
             },
           ],
           label: {

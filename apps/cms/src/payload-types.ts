@@ -4284,9 +4284,9 @@ export interface SiteSetting {
   };
   notFound?: {
     header?: (number | null) | Header;
-    footer?: (number | null) | Footer;
     title?: string | null;
     description?: string | null;
+    footer?: (number | null) | Footer;
   };
   blog: {
     header?: (number | null) | Header;
@@ -4377,9 +4377,9 @@ export interface SiteSettingsSelect<T extends boolean = true> {
     | T
     | {
         header?: T;
-        footer?: T;
         title?: T;
         description?: T;
+        footer?: T;
       };
   blog?:
     | T
