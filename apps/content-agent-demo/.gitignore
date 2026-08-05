@@ -1,0 +1,5 @@
+.env
+.next
+node_modules
+media
+tsconfig.tsbuildinfo
