@@ -52,29 +52,29 @@ export const generateMeta = async (args: {
   const siteName = settings?.general?.siteName || "Site";
   const separator = settings?.seo?.titleSeparator || "|";
   const suffix = settings?.seo?.titleSuffix || siteName;
-  const ogSiteName = settings?.seo?.ogSiteName || siteName;
+  const ogSiteName = settings?.seo?.og?.siteName || siteName;
 
-  const baseTitle = doc?.meta?.title || doc?.title || settings?.seo?.defaultOgTitle || siteName;
+  const baseTitle = doc?.meta?.title || doc?.title || settings?.seo?.og?.title || siteName;
 
   const title = buildPageTitle(baseTitle, separator, suffix, siteName);
 
   const description =
     doc?.meta?.description ||
     settings?.seo?.defaultDescription ||
-    settings?.seo?.defaultOgDescription ||
+    settings?.seo?.og?.description ||
     "";
 
   const ogDescription =
     doc?.meta?.description ||
-    settings?.seo?.defaultOgDescription ||
+    settings?.seo?.og?.description ||
     settings?.seo?.defaultDescription ||
     "";
 
   const ogImage = getImageURL(
-    (doc?.meta?.image || settings?.seo?.defaultOgImage) as Parameters<typeof getImageURL>[0]
+    (doc?.meta?.image || settings?.seo?.og?.image) as Parameters<typeof getImageURL>[0]
   );
 
-  const ogTitle = doc?.meta?.title || doc?.title || settings?.seo?.defaultOgTitle || siteName;
+  const ogTitle = doc?.meta?.title || doc?.title || settings?.seo?.og?.title || siteName;
 
   let canonical: string;
   if (collection === "posts") {
@@ -92,9 +92,9 @@ export const generateMeta = async (args: {
     });
   }
 
-  const twitterCard = settings?.seo?.defaultTwitterCard || "summary_large_image";
-  const twitterSite = settings?.seo?.twitterSite;
-  const twitterCreator = settings?.seo?.twitterCreator;
+  const twitterCard = settings?.seo?.x?.card || "summary_large_image";
+  const twitterSite = settings?.seo?.x?.site;
+  const twitterCreator = settings?.seo?.x?.creator;
 
   const shouldIndex = doc?.meta?.robots === "index";
 

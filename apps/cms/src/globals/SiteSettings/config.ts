@@ -90,217 +90,246 @@ export const SiteSettings: GlobalConfig = {
         {
           fields: [
             {
-              type: "row",
+              type: "group",
+              label: {
+                en: "Title & Description",
+                es: "Título y descripción",
+              },
               fields: [
                 {
-                  name: "titleSeparator",
-                  type: "select",
-                  label: {
-                    en: "Title Separator",
-                    es: "Separador de título",
-                  },
-                  defaultValue: "|",
-                  options: [
-                    { label: { en: "| (pipe)", es: "| (pipe)" }, value: "|" },
-                    { label: { en: "- (dash)", es: "- (dash)" }, value: "-" },
-                    { label: { en: "• (bullet)", es: "• (bullet)" }, value: "•" },
-                  ],
-                  admin: {
-                    width: "50%",
-                    description: {
-                      en: "Character used to separate page title from site name",
-                      es: "Carácter usado para separar el título de la página del nombre del sitio",
+                  type: "row",
+                  fields: [
+                    {
+                      name: "titleSeparator",
+                      type: "select",
+                      label: {
+                        en: "Title Separator",
+                        es: "Separador de título",
+                      },
+                      defaultValue: "|",
+                      options: [
+                        { label: { en: "| (pipe)", es: "| (pipe)" }, value: "|" },
+                        { label: { en: "- (dash)", es: "- (dash)" }, value: "-" },
+                        { label: { en: "• (bullet)", es: "• (bullet)" }, value: "•" },
+                      ],
+                      admin: {
+                        width: "50%",
+                        description: {
+                          en: "Character used to separate page title from site name",
+                          es: "Carácter usado para separar el título de la página del nombre del sitio",
+                        },
+                      },
                     },
-                  },
+                    {
+                      name: "titleSuffix",
+                      type: "text",
+                      label: {
+                        en: "Title Suffix",
+                        es: "Sufijo de título",
+                      },
+                      admin: {
+                        width: "50%",
+                        description: {
+                          en: "Text added after separator (defaults to Site Name if empty)",
+                          es: "Texto agregado después del separador (por defecto el nombre del sitio si está vacío)",
+                        },
+                        placeholder: {
+                          en: "Leave empty to use Site Name",
+                          es: "Dejar vacío para usar el nombre del sitio",
+                        },
+                      },
+                      localized: true,
+                      defaultValue: createLocalizedDefault(
+                        DEFAULT_VALUES.collections.siteSettings.seoTitleSuffix
+                      ),
+                    },
+                  ],
                 },
                 {
-                  name: "titleSuffix",
-                  type: "text",
+                  name: "defaultDescription",
+                  type: "textarea",
                   label: {
-                    en: "Title Suffix",
-                    es: "Sufijo de título",
+                    en: "Default Meta Description",
+                    es: "Descripción de meta de respaldo",
                   },
                   admin: {
-                    width: "50%",
                     description: {
-                      en: "Text added after separator (defaults to Site Name if empty)",
-                      es: "Texto agregado después del separador (por defecto el nombre del sitio si está vacío)",
+                      en: "Fallback description when page has no description",
+                      es: "Descripción de respaldo cuando la página no tiene descripción",
                     },
-                    placeholder: {
-                      en: "Leave empty to use Site Name",
-                      es: "Dejar vacío para usar el nombre del sitio",
+                  },
+                  defaultValue: createLocalizedDefault(
+                    DEFAULT_VALUES.collections.siteSettings.defaultDescription
+                  ),
+                  localized: true,
+                },
+              ],
+            },
+            {
+              name: "og",
+              type: "group",
+              label: {
+                en: "Open Graph",
+                es: "Open Graph",
+              },
+              fields: [
+                {
+                  type: "row",
+                  fields: [
+                    {
+                      name: "title",
+                      type: "text",
+                      label: {
+                        en: "Default OG Title",
+                        es: "Título de respaldo de Open Graph",
+                      },
+                      admin: {
+                        width: "50%",
+                        description: {
+                          en: "Fallback title for Open Graph when page has no title",
+                          es: "Título de respaldo para Open Graph cuando la página no tiene título",
+                        },
+                      },
+                      localized: true,
+                    },
+                    {
+                      name: "siteName",
+                      type: "text",
+                      label: {
+                        en: "OG Site Name",
+                        es: "Nombre del sitio de Open Graph",
+                      },
+                      admin: {
+                        width: "50%",
+                        description: {
+                          en: "Site name for Open Graph. Defaults to Site Name if empty",
+                          es: "Nombre del sitio para Open Graph. Por defecto el nombre del sitio si está vacío",
+                        },
+                        placeholder: {
+                          en: "Leave empty to use Site Name",
+                          es: "Dejar vacío para usar el nombre del sitio",
+                        },
+                      },
+                      localized: true,
+                    },
+                  ],
+                },
+                {
+                  name: "description",
+                  type: "textarea",
+                  label: {
+                    en: "Default OG Description",
+                    es: "Descripción de respaldo de Open Graph",
+                  },
+                  admin: {
+                    description: {
+                      en: "Fallback description for Open Graph (uses Meta Description if empty)",
+                      es: "Descripción de respaldo para Open Graph (usa la descripción meta si está vacía)",
                     },
                   },
                   localized: true,
                   defaultValue: createLocalizedDefault(
-                    DEFAULT_VALUES.collections.siteSettings.seoTitleSuffix
+                    DEFAULT_VALUES.collections.siteSettings.defaultOgDescription
                   ),
                 },
-              ],
-            },
-            {
-              type: "row",
-              fields: [
                 {
-                  name: "defaultOgTitle",
-                  type: "text",
+                  name: "image",
+                  type: "upload",
+                  relationTo: "media",
                   label: {
-                    en: "Default OG Title",
-                    es: "Título de respaldo de Open Graph",
+                    en: "Default OG Image",
+                    es: "Imagen de respaldo de Open Graph",
                   },
                   admin: {
-                    width: "50%",
                     description: {
-                      en: "Fallback title for Open Graph when page has no title",
-                      es: "Título de respaldo para Open Graph cuando la página no tiene título",
+                      en: "Fallback image for social media sharing",
+                      es: "Imagen de respaldo para compartir en redes sociales",
                     },
                   },
-                  localized: true,
-                },
-                {
-                  name: "ogSiteName",
-                  type: "text",
-                  label: {
-                    en: "OG Site Name",
-                    es: "Nombre del sitio de Open Graph",
-                  },
-                  admin: {
-                    width: "50%",
-                    description: {
-                      en: "Site name for Open Graph. Defaults to Site Name if empty",
-                      es: "Nombre del sitio para Open Graph. Por defecto el nombre del sitio si está vacío",
-                    },
-                    placeholder: {
-                      en: "Leave empty to use Site Name",
-                      es: "Dejar vacío para usar el nombre del sitio",
-                    },
-                  },
-                  localized: true,
                 },
               ],
             },
             {
-              name: "defaultDescription",
-              type: "textarea",
+              name: "x",
+              type: "group",
               label: {
-                en: "Default Meta Description",
-                es: "Descripción de meta de respaldo",
+                en: "X (Twitter)",
+                es: "X (Twitter)",
               },
-              admin: {
-                description: {
-                  en: "Fallback description when page has no description",
-                  es: "Descripción de respaldo cuando la página no tiene descripción",
-                },
-              },
-              defaultValue: createLocalizedDefault(
-                DEFAULT_VALUES.collections.siteSettings.defaultDescription
-              ),
-              localized: true,
-            },
-            {
-              name: "defaultOgDescription",
-              type: "textarea",
-              label: {
-                en: "Default OG Description",
-                es: "Descripción de respaldo de Open Graph",
-              },
-              admin: {
-                description: {
-                  en: "Fallback description for Open Graph (uses Meta Description if empty)",
-                  es: "Descripción de respaldo para Open Graph (usa la descripción meta si está vacía)",
-                },
-              },
-              localized: true,
-              defaultValue: createLocalizedDefault(
-                DEFAULT_VALUES.collections.siteSettings.defaultOgDescription
-              ),
-            },
-            {
-              name: "defaultOgImage",
-              type: "upload",
-              relationTo: "media",
-              label: {
-                en: "Default OG Image",
-                es: "Imagen de respaldo de Open Graph",
-              },
-              admin: {
-                description: {
-                  en: "Fallback image for social media sharing",
-                  es: "Imagen de respaldo para compartir en redes sociales",
-                },
-              },
-            },
-            {
-              type: "row",
               fields: [
                 {
-                  name: "twitterSite",
-                  type: "text",
-                  label: {
-                    en: "Twitter Site Handle",
-                    es: "Handle de Twitter",
-                  },
-                  admin: {
-                    width: "33%",
-                    description: {
-                      en: "Twitter/X username for the website (e.g., @yoursite)",
-                      es: "Nombre de usuario de Twitter/X para el sitio web (ej., @yoursite)",
-                    },
-                    placeholder: {
-                      en: "@yoursite",
-                      es: "@yoursite",
-                    },
-                  },
-                  localized: true,
-                },
-                {
-                  name: "twitterCreator",
-                  type: "text",
-                  label: {
-                    en: "Default Twitter Creator Handle",
-                    es: "Handle de Twitter de respaldo",
-                  },
-                  admin: {
-                    width: "33%",
-                    description: {
-                      en: "Default Twitter/X username for content creator (e.g., @author)",
-                      es: "Nombre de usuario de Twitter/X de respaldo para el creador de contenido (ej., @author)",
-                    },
-                    placeholder: {
-                      en: "@author",
-                      es: "@author",
-                    },
-                  },
-                  localized: true,
-                },
-                {
-                  name: "defaultTwitterCard",
-                  type: "select",
-                  label: {
-                    en: "Default Twitter Card Type",
-                    es: "Tipo de tarjeta de Twitter de respaldo",
-                  },
-                  defaultValue: "summary_large_image",
-                  options: [
+                  type: "row",
+                  fields: [
                     {
+                      name: "site",
+                      type: "text",
                       label: {
-                        en: "Summary Card with Large Image",
-                        es: "Tarjeta de resumen con imagen grande",
+                        en: "Twitter Site Handle",
+                        es: "Handle de Twitter",
                       },
-                      value: "summary_large_image",
+                      admin: {
+                        width: "33%",
+                        description: {
+                          en: "Twitter/X username for the website (e.g., @yoursite)",
+                          es: "Nombre de usuario de Twitter/X para el sitio web (ej., @yoursite)",
+                        },
+                        placeholder: {
+                          en: "@yoursite",
+                          es: "@yoursite",
+                        },
+                      },
+                      localized: true,
                     },
                     {
-                      label: { en: "Summary Card", es: "Tarjeta de resumen" },
-                      value: "summary",
+                      name: "creator",
+                      type: "text",
+                      label: {
+                        en: "Default Twitter Creator Handle",
+                        es: "Handle de Twitter de respaldo",
+                      },
+                      admin: {
+                        width: "33%",
+                        description: {
+                          en: "Default Twitter/X username for content creator (e.g., @author)",
+                          es: "Nombre de usuario de Twitter/X de respaldo para el creador de contenido (ej., @author)",
+                        },
+                        placeholder: {
+                          en: "@author",
+                          es: "@author",
+                        },
+                      },
+                      localized: true,
+                    },
+                    {
+                      name: "card",
+                      type: "select",
+                      label: {
+                        en: "Default Twitter Card Type",
+                        es: "Tipo de tarjeta de Twitter de respaldo",
+                      },
+                      defaultValue: "summary_large_image",
+                      options: [
+                        {
+                          label: {
+                            en: "Summary Card with Large Image",
+                            es: "Tarjeta de resumen con imagen grande",
+                          },
+                          value: "summary_large_image",
+                        },
+                        {
+                          label: { en: "Summary Card", es: "Tarjeta de resumen" },
+                          value: "summary",
+                        },
+                      ],
+                      admin: {
+                        width: "34%",
+                        description: {
+                          en: "Type of Twitter Card to display",
+                          es: "Tipo de tarjeta de Twitter a mostrar",
+                        },
+                      },
                     },
                   ],
-                  admin: {
-                    width: "34%",
-                    description: {
-                      en: "Type of Twitter Card to display",
-                      es: "Tipo de tarjeta de Twitter a mostrar",
-                    },
-                  },
                 },
               ],
             },
@@ -314,25 +343,9 @@ export const SiteSettings: GlobalConfig = {
         {
           fields: [
             {
-              type: "row",
-              fields: [
-                {
-                  name: "header",
-                  type: "relationship",
-                  relationTo: "header",
-                  admin: {
-                    width: "50%",
-                  },
-                },
-                {
-                  name: "footer",
-                  type: "relationship",
-                  relationTo: "footer",
-                  admin: {
-                    width: "50%",
-                  },
-                },
-              ],
+              name: "header",
+              type: "relationship",
+              relationTo: "header",
             },
             {
               name: "title",
@@ -358,6 +371,11 @@ export const SiteSettings: GlobalConfig = {
               ),
               localized: true,
             },
+            {
+              name: "footer",
+              type: "relationship",
+              relationTo: "footer",
+            },
           ],
           label: {
             en: "404 Page",
@@ -374,25 +392,9 @@ export const SiteSettings: GlobalConfig = {
                   label: { en: "Content", es: "Contenido" },
                   fields: [
                     {
-                      type: "row",
-                      fields: [
-                        {
-                          name: "header",
-                          type: "relationship",
-                          relationTo: "header",
-                          admin: {
-                            width: "50%",
-                          },
-                        },
-                        {
-                          name: "footer",
-                          type: "relationship",
-                          relationTo: "footer",
-                          admin: {
-                            width: "50%",
-                          },
-                        },
-                      ],
+                      name: "header",
+                      type: "relationship",
+                      relationTo: "header",
                     },
                     {
                       type: "row",
@@ -441,7 +443,18 @@ export const SiteSettings: GlobalConfig = {
                       type: "row",
                       fields: [
                         {
-                          admin: { width: "33%" },
+                          admin: { width: "50%" },
+                          defaultValue: createLocalizedDefault({
+                            en: "Search articles…",
+                            es: "Buscar artículos…",
+                          }),
+                          label: { en: "Search placeholder", es: "Marcador de búsqueda" },
+                          localized: true,
+                          name: "searchPlaceholder",
+                          type: "text",
+                        },
+                        {
+                          admin: { width: "50%" },
                           name: "readMoreLabel",
                           type: "text",
                           required: true,
@@ -454,32 +467,25 @@ export const SiteSettings: GlobalConfig = {
                             DEFAULT_VALUES.collections.siteSettings.blog.readMoreLabel
                           ),
                         },
-                        {
-                          admin: { width: "33%" },
-                          name: "relatedPostsLabel",
-                          type: "text",
-                          required: true,
-                          label: {
-                            en: "Related Posts Label",
-                            es: "Etiqueta de publicaciones relacionadas",
-                          },
-                          localized: true,
-                          defaultValue: createLocalizedDefault(
-                            DEFAULT_VALUES.collections.siteSettings.blog.relatedPostsLabel
-                          ),
-                        },
-                        {
-                          admin: { width: "34%" },
-                          defaultValue: createLocalizedDefault({
-                            en: "Search articles…",
-                            es: "Buscar artículos…",
-                          }),
-                          label: { en: "Search placeholder", es: "Marcador de búsqueda" },
-                          localized: true,
-                          name: "searchPlaceholder",
-                          type: "text",
-                        },
                       ],
+                    },
+                    {
+                      name: "relatedPostsLabel",
+                      type: "text",
+                      required: true,
+                      label: {
+                        en: "Related Posts Label",
+                        es: "Etiqueta de publicaciones relacionadas",
+                      },
+                      localized: true,
+                      defaultValue: createLocalizedDefault(
+                        DEFAULT_VALUES.collections.siteSettings.blog.relatedPostsLabel
+                      ),
+                    },
+                    {
+                      name: "footer",
+                      type: "relationship",
+                      relationTo: "footer",
                     },
                   ],
                 },

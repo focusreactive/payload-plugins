@@ -71,13 +71,13 @@ export interface Config {
     users: User;
     media: Media;
     page: Page;
-    globalSection: GlobalSection;
     categories: Category;
     authors: Author;
     posts: Post;
     testimonials: Testimonial;
     header: Header;
     footer: Footer;
+    globalBlock: GlobalBlock;
     'document-embeddings': DocumentEmbedding;
     redirects: Redirect;
     presets: Preset;
@@ -101,13 +101,13 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     page: PageSelect<false> | PageSelect<true>;
-    globalSection: GlobalSectionSelect<false> | GlobalSectionSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     authors: AuthorsSelect<false> | AuthorsSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
+    globalBlock: GlobalBlockSelect<false> | GlobalBlockSelect<true>;
     'document-embeddings': DocumentEmbeddingsSelect<false> | DocumentEmbeddingsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     presets: PresetsSelect<false> | PresetsSelect<true>;
@@ -1334,9 +1334,9 @@ export interface RawHtmlBlock {
  */
 export interface GlobalSectionSlotBlock {
   /**
-   * Pick a global section to embed. Editing that section updates every page using it.
+   * Pick a global block to embed. Editing that block updates every page using it.
    */
-  reference: number | GlobalSection;
+  reference: number | GlobalBlock;
   _hidden?: boolean | null;
   id?: string | null;
   blockName?: string | null;
@@ -1344,16 +1344,16 @@ export interface GlobalSectionSlotBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "globalSection".
+ * via the `definition` "globalBlock".
  */
-export interface GlobalSection {
+export interface GlobalBlock {
   id: number;
   /**
-   * Internal name to identify this global section in the picker.
+   * Internal name to identify this global block in the picker.
    */
   title: string;
   /**
-   * The single section this global represents. Edit once, reuse on any page.
+   * The single block this global represents. Edit once, reuse on any page.
    */
   block: (
     | HeroBlock
@@ -2093,9 +2093,9 @@ export interface Preset {
       }
     | {
         /**
-         * Pick a global section to embed. Editing that section updates every page using it.
+         * Pick a global block to embed. Editing that block updates every page using it.
          */
-        reference: number | GlobalSection;
+        reference: number | GlobalBlock;
         _hidden?: boolean | null;
         id?: string | null;
         blockName?: string | null;
@@ -2495,10 +2495,6 @@ export interface PayloadLockedDocument {
         value: number | Page;
       } | null)
     | ({
-        relationTo: 'globalSection';
-        value: number | GlobalSection;
-      } | null)
-    | ({
         relationTo: 'categories';
         value: number | Category;
       } | null)
@@ -2521,6 +2517,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'footer';
         value: number | Footer;
+      } | null)
+    | ({
+        relationTo: 'globalBlock';
+        value: number | GlobalBlock;
       } | null)
     | ({
         relationTo: 'document-embeddings';
@@ -3254,32 +3254,6 @@ export interface GlobalSectionSlotBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "globalSection_select".
- */
-export interface GlobalSectionSelect<T extends boolean = true> {
-  title?: T;
-  block?:
-    | T
-    | {
-        hero?: T | HeroBlockSelect<T>;
-        content?: T | ContentBlockSelect<T>;
-        faq?: T | FaqBlockSelect<T>;
-        testimonialsList?: T | TestimonialsListBlockSelect<T>;
-        cardsGrid?: T | CardsGridBlockSelect<T>;
-        carousel?: T | CarouselBlockSelect<T>;
-        logos?: T | LogosBlockSelect<T>;
-        chart?: T | ChartBlockSelect<T>;
-        ctaBand?: T | CtaBandBlockSelect<T>;
-        newsletter?: T | NewsletterBlockSelect<T>;
-        stats?: T | StatsBlockSelect<T>;
-        rawHtml?: T | RawHtmlBlockSelect<T>;
-      };
-  updatedAt?: T;
-  createdAt?: T;
-  _status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories_select".
  */
 export interface CategoriesSelect<T extends boolean = true> {
@@ -3494,6 +3468,32 @@ export interface FooterSelect<T extends boolean = true> {
         id?: T;
       };
   copyrightText?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "globalBlock_select".
+ */
+export interface GlobalBlockSelect<T extends boolean = true> {
+  title?: T;
+  block?:
+    | T
+    | {
+        hero?: T | HeroBlockSelect<T>;
+        content?: T | ContentBlockSelect<T>;
+        faq?: T | FaqBlockSelect<T>;
+        testimonialsList?: T | TestimonialsListBlockSelect<T>;
+        cardsGrid?: T | CardsGridBlockSelect<T>;
+        carousel?: T | CarouselBlockSelect<T>;
+        logos?: T | LogosBlockSelect<T>;
+        chart?: T | ChartBlockSelect<T>;
+        ctaBand?: T | CtaBandBlockSelect<T>;
+        newsletter?: T | NewsletterBlockSelect<T>;
+        stats?: T | StatsBlockSelect<T>;
+        rawHtml?: T | RawHtmlBlockSelect<T>;
+      };
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -4246,53 +4246,57 @@ export interface SiteSetting {
      */
     titleSuffix?: string | null;
     /**
-     * Fallback title for Open Graph when page has no title
-     */
-    defaultOgTitle?: string | null;
-    /**
-     * Site name for Open Graph. Defaults to Site Name if empty
-     */
-    ogSiteName?: string | null;
-    /**
      * Fallback description when page has no description
      */
     defaultDescription?: string | null;
-    /**
-     * Fallback description for Open Graph (uses Meta Description if empty)
-     */
-    defaultOgDescription?: string | null;
-    /**
-     * Fallback image for social media sharing
-     */
-    defaultOgImage?: (number | null) | Media;
-    /**
-     * Twitter/X username for the website (e.g., @yoursite)
-     */
-    twitterSite?: string | null;
-    /**
-     * Default Twitter/X username for content creator (e.g., @author)
-     */
-    twitterCreator?: string | null;
-    /**
-     * Type of Twitter Card to display
-     */
-    defaultTwitterCard?: ('summary_large_image' | 'summary') | null;
+    og?: {
+      /**
+       * Fallback title for Open Graph when page has no title
+       */
+      title?: string | null;
+      /**
+       * Site name for Open Graph. Defaults to Site Name if empty
+       */
+      siteName?: string | null;
+      /**
+       * Fallback description for Open Graph (uses Meta Description if empty)
+       */
+      description?: string | null;
+      /**
+       * Fallback image for social media sharing
+       */
+      image?: (number | null) | Media;
+    };
+    x?: {
+      /**
+       * Twitter/X username for the website (e.g., @yoursite)
+       */
+      site?: string | null;
+      /**
+       * Default Twitter/X username for content creator (e.g., @author)
+       */
+      creator?: string | null;
+      /**
+       * Type of Twitter Card to display
+       */
+      card?: ('summary_large_image' | 'summary') | null;
+    };
   };
   notFound?: {
     header?: (number | null) | Header;
-    footer?: (number | null) | Footer;
     title?: string | null;
     description?: string | null;
+    footer?: (number | null) | Footer;
   };
   blog: {
     header?: (number | null) | Header;
-    footer?: (number | null) | Footer;
     eyebrow?: string | null;
     title: string;
     description: string;
+    searchPlaceholder?: string | null;
     readMoreLabel: string;
     relatedPostsLabel: string;
-    searchPlaceholder?: string | null;
+    footer?: (number | null) | Footer;
     meta?: {
       title?: string | null;
       /**
@@ -4352,34 +4356,42 @@ export interface SiteSettingsSelect<T extends boolean = true> {
     | {
         titleSeparator?: T;
         titleSuffix?: T;
-        defaultOgTitle?: T;
-        ogSiteName?: T;
         defaultDescription?: T;
-        defaultOgDescription?: T;
-        defaultOgImage?: T;
-        twitterSite?: T;
-        twitterCreator?: T;
-        defaultTwitterCard?: T;
+        og?:
+          | T
+          | {
+              title?: T;
+              siteName?: T;
+              description?: T;
+              image?: T;
+            };
+        x?:
+          | T
+          | {
+              site?: T;
+              creator?: T;
+              card?: T;
+            };
       };
   notFound?:
     | T
     | {
         header?: T;
-        footer?: T;
         title?: T;
         description?: T;
+        footer?: T;
       };
   blog?:
     | T
     | {
         header?: T;
-        footer?: T;
         eyebrow?: T;
         title?: T;
         description?: T;
+        searchPlaceholder?: T;
         readMoreLabel?: T;
         relatedPostsLabel?: T;
-        searchPlaceholder?: T;
+        footer?: T;
         meta?:
           | T
           | {

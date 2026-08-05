@@ -6,21 +6,21 @@ import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 export const GlobalSectionSlotBlock: Block = withSectionVisibility({
   slug: "globalSectionSlot",
   interfaceName: "GlobalSectionSlotBlock",
-  ...getBlockPreviewImage("Global Section"),
+  ...getBlockPreviewImage("Global Block"),
   labels: {
-    plural: { en: "Global Sections", es: "Secciones Globales" },
-    singular: { en: "Global Section", es: "Sección Global" },
+    plural: { en: "Global Blocks", es: "Bloques Globales" },
+    singular: { en: "Global Block", es: "Bloque Global" },
   },
   fields: [
     {
       admin: {
         description: {
-          en: "Pick a global section to embed. Editing that section updates every page using it.",
-          es: "Elige una sección global para insertar. Editarla actualiza todas las páginas que la usan.",
+          en: "Pick a global block to embed. Editing that block updates every page using it.",
+          es: "Elige un bloque global para insertar. Editarlo actualiza todas las páginas que lo usan.",
         },
       },
       name: "reference",
-      relationTo: "globalSection",
+      relationTo: "globalBlock",
       required: true,
       type: "relationship",
     },
