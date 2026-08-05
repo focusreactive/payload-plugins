@@ -14,7 +14,7 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
     update: or(superAdmin, user, author),
   },
   admin: {
-    defaultColumns: ["title", "updatedAt"],
+    defaultColumns: ["title", "block", "updatedAt"],
     group: "Global Components",
     useAsTitle: "title",
   },
@@ -35,6 +35,9 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
     },
     {
       admin: {
+        components: {
+          Cell: "/components/admin/BlockNameCell#BlockNameCell",
+        },
         description: {
           en: "The single block this global represents. Edit once, reuse on any page.",
           es: "El único bloque que representa este global. Edítalo una vez y reutilízalo en cualquier página.",

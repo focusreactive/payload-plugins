@@ -37,7 +37,7 @@ export const Posts: CollectionConfig<"posts"> = {
         PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
       },
     },
-    defaultColumns: ["title", "slug", "updatedAt"],
+    defaultColumns: ["title", "slug", "heroImage", "updatedAt"],
     group: "Blog",
     livePreview: {
       url: ({ data, locale: localeProp }) => {
