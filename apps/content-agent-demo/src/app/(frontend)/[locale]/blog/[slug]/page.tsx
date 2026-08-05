@@ -1,10 +1,12 @@
 import config from "@payload-config";
+import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 
 import type { Locale } from "@/lib/locales";
 import { LOCALES } from "@/lib/locales";
 
+import { LivePreviewListener } from "../../../_components/LivePreviewListener";
 import { RichText } from "../../../_components/RichText";
 import { SiteHeader } from "../../../_components/SiteHeader";
 
@@ -19,9 +21,13 @@ export default async function PostPage({
     notFound();
   }
 
+  const { isEnabled: draft } = await draftMode();
+
   const payload = await getPayload({ config });
   const result = await payload.find({
     collection: "posts",
+    draft,
+    overrideAccess: draft,
     where: { slug: { equals: slug } },
     locale: locale as Locale,
     depth: 1,
@@ -37,6 +43,11 @@ export default async function PostPage({
     <>
       <SiteHeader locale={locale as Locale} />
       <main className="wrap">
+        {draft ? (
+          <LivePreviewListener
+            serverURL={process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4042"}
+          />
+        ) : null}
         <h1>{post.title}</h1>
         <p className="muted">{post.excerpt}</p>
         <RichText data={post.content} />
