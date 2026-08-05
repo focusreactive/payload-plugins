@@ -4286,13 +4286,13 @@ export interface SiteSetting {
   };
   blog: {
     header?: (number | null) | Header;
-    footer?: (number | null) | Footer;
     eyebrow?: string | null;
     title: string;
     description: string;
+    searchPlaceholder?: string | null;
     readMoreLabel: string;
     relatedPostsLabel: string;
-    searchPlaceholder?: string | null;
+    footer?: (number | null) | Footer;
     meta?: {
       title?: string | null;
       /**
@@ -4373,13 +4373,13 @@ export interface SiteSettingsSelect<T extends boolean = true> {
     | T
     | {
         header?: T;
-        footer?: T;
         eyebrow?: T;
         title?: T;
         description?: T;
+        searchPlaceholder?: T;
         readMoreLabel?: T;
         relatedPostsLabel?: T;
-        searchPlaceholder?: T;
+        footer?: T;
         meta?:
           | T
           | {

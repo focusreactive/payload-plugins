@@ -374,25 +374,9 @@ export const SiteSettings: GlobalConfig = {
                   label: { en: "Content", es: "Contenido" },
                   fields: [
                     {
-                      type: "row",
-                      fields: [
-                        {
-                          name: "header",
-                          type: "relationship",
-                          relationTo: "header",
-                          admin: {
-                            width: "50%",
-                          },
-                        },
-                        {
-                          name: "footer",
-                          type: "relationship",
-                          relationTo: "footer",
-                          admin: {
-                            width: "50%",
-                          },
-                        },
-                      ],
+                      name: "header",
+                      type: "relationship",
+                      relationTo: "header",
                     },
                     {
                       type: "row",
@@ -441,7 +425,18 @@ export const SiteSettings: GlobalConfig = {
                       type: "row",
                       fields: [
                         {
-                          admin: { width: "33%" },
+                          admin: { width: "50%" },
+                          defaultValue: createLocalizedDefault({
+                            en: "Search articles…",
+                            es: "Buscar artículos…",
+                          }),
+                          label: { en: "Search placeholder", es: "Marcador de búsqueda" },
+                          localized: true,
+                          name: "searchPlaceholder",
+                          type: "text",
+                        },
+                        {
+                          admin: { width: "50%" },
                           name: "readMoreLabel",
                           type: "text",
                           required: true,
@@ -454,32 +449,25 @@ export const SiteSettings: GlobalConfig = {
                             DEFAULT_VALUES.collections.siteSettings.blog.readMoreLabel
                           ),
                         },
-                        {
-                          admin: { width: "33%" },
-                          name: "relatedPostsLabel",
-                          type: "text",
-                          required: true,
-                          label: {
-                            en: "Related Posts Label",
-                            es: "Etiqueta de publicaciones relacionadas",
-                          },
-                          localized: true,
-                          defaultValue: createLocalizedDefault(
-                            DEFAULT_VALUES.collections.siteSettings.blog.relatedPostsLabel
-                          ),
-                        },
-                        {
-                          admin: { width: "34%" },
-                          defaultValue: createLocalizedDefault({
-                            en: "Search articles…",
-                            es: "Buscar artículos…",
-                          }),
-                          label: { en: "Search placeholder", es: "Marcador de búsqueda" },
-                          localized: true,
-                          name: "searchPlaceholder",
-                          type: "text",
-                        },
                       ],
+                    },
+                    {
+                      name: "relatedPostsLabel",
+                      type: "text",
+                      required: true,
+                      label: {
+                        en: "Related Posts Label",
+                        es: "Etiqueta de publicaciones relacionadas",
+                      },
+                      localized: true,
+                      defaultValue: createLocalizedDefault(
+                        DEFAULT_VALUES.collections.siteSettings.blog.relatedPostsLabel
+                      ),
+                    },
+                    {
+                      name: "footer",
+                      type: "relationship",
+                      relationTo: "footer",
                     },
                   ],
                 },
