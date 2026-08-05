@@ -20,7 +20,7 @@ export const preventDeleteIfReferenced: CollectionBeforeDeleteHook = async ({ id
       .join(", ");
 
     throw new APIError(
-      `Cannot delete this global section: it is still used by ${pages.totalDocs} page(s): ${titles}. Remove those references first.`,
+      `Cannot delete this global block: it is still used by ${pages.totalDocs} page(s): ${titles}. Remove those references first.`,
       400,
       undefined,
       true
