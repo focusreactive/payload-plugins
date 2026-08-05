@@ -21,6 +21,7 @@
     "check-types": "tsgo --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "3.0.85",
     "@ai-sdk/openai": "3.0.85",
     "@payloadcms/db-postgres": "3.84.1",
     "@payloadcms/live-preview-react": "3.84.1",
