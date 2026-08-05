@@ -55,5 +55,14 @@
       "title": "Anuncios",
       "description": "{count, plural, =0 {No hay anuncios} =1 {1 anuncio} other {# anuncios}} para el tenant {tenant}"
     }
+  },
+  "onlineDoctor": {
+    "commonSymptoms": "Síntomas comunes",
+    "storyEyebrow": "La historia de un viajero",
+    "storyHeading": "Cómo fue en {city}",
+    "storyDisclaimer": "Una historia ilustrativa - no el relato de un paciente real.",
+    "faqHeading": "Preguntas frecuentes",
+    "provenanceWithModel": "Narrativa generada el {date} por {model} a partir de {inputs}. Revisada y publicada por un editor.",
+    "provenancePlain": "Narrativa generada el {date}. Revisada y publicada por un editor."
   }
 }

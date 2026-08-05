@@ -55,5 +55,14 @@
       "title": "Announcements",
       "description": "{count, plural, =0 {No announcements} =1 {1 announcement} other {# announcements}} for tenant {tenant}"
     }
+  },
+  "onlineDoctor": {
+    "commonSymptoms": "Common symptoms",
+    "storyEyebrow": "A traveller's story",
+    "storyHeading": "How it went in {city}",
+    "storyDisclaimer": "An illustrative story - not a real patient account.",
+    "faqHeading": "Frequently asked questions",
+    "provenanceWithModel": "Narrative generated {date} by {model} from {inputs}. Reviewed and published by an editor.",
+    "provenancePlain": "Narrative generated {date}. Reviewed and published by an editor."
   }
 }

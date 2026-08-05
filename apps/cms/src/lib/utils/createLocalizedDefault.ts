@@ -81,8 +81,10 @@ export function createRichTextState(heading: string, paragraph: string): RichTex
  * @example
  * defaultValue: createLocalizedDefault({ en: 'Hello', es: 'Hola' })
  */
+// Locales added later (e.g. "it") fall back to the default locale at runtime,
+// so call sites only have to provide the locales they actually translate.
 export function createLocalizedDefault<T>(
-  translations: Record<Locale, T>
+  translations: Partial<Record<Locale, T>> & { en: T }
 ): (args: DefaultValueArgs) => T {
   const fallback = translations[DEFAULT_LOCALE] ?? (Object.values(translations)[0] as T);
 
@@ -103,7 +105,9 @@ export function createLocalizedDefault<T>(
  * })
  */
 export function createLocalizedRichText(
-  translations: Record<Locale, { heading: string; paragraph: string }>
+  translations: Partial<Record<Locale, { heading: string; paragraph: string }>> & {
+    en: { heading: string; paragraph: string };
+  }
 ): (args: DefaultValueArgs) => RichTextState {
   const richTextRecord = {} as Record<Locale, RichTextState>;
 

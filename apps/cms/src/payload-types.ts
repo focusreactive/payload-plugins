@@ -76,6 +76,9 @@ export interface Config {
     authors: Author;
     posts: Post;
     testimonials: Testimonial;
+    conditions: Condition;
+    cities: City;
+    'generated-pages': GeneratedPage;
     header: Header;
     footer: Footer;
     'document-embeddings': DocumentEmbedding;
@@ -86,7 +89,6 @@ export interface Config {
     'ab-experiments': AbExperiment;
     'payload-mcp-api-keys': PayloadMcpApiKey;
     'payload-kv': PayloadKv;
-    'payload-jobs': PayloadJob;
     'payload-folders': FolderInterface;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -106,6 +108,9 @@ export interface Config {
     authors: AuthorsSelect<false> | AuthorsSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
+    conditions: ConditionsSelect<false> | ConditionsSelect<true>;
+    cities: CitiesSelect<false> | CitiesSelect<true>;
+    'generated-pages': GeneratedPagesSelect<false> | GeneratedPagesSelect<true>;
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
     'document-embeddings': DocumentEmbeddingsSelect<false> | DocumentEmbeddingsSelect<true>;
@@ -116,7 +121,6 @@ export interface Config {
     'ab-experiments': AbExperimentsSelect<false> | AbExperimentsSelect<true>;
     'payload-mcp-api-keys': PayloadMcpApiKeysSelect<false> | PayloadMcpApiKeysSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
-    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -125,7 +129,7 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('en' | 'es') | ('en' | 'es')[];
+  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('en' | 'es' | 'it') | ('en' | 'es' | 'it')[];
   globals: {
     'site-settings': SiteSetting;
     _abManifest: _AbManifest;
@@ -134,19 +138,13 @@ export interface Config {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     _abManifest: _AbManifestSelect<false> | _AbManifestSelect<true>;
   };
-  locale: 'en' | 'es';
+  locale: 'en' | 'es' | 'it';
   widgets: {
     collections: CollectionsWidget;
   };
   user: User | PayloadMcpApiKey;
   jobs: {
-    tasks: {
-      schedulePublish: TaskSchedulePublish;
-      inline: {
-        input: unknown;
-        output: unknown;
-      };
-    };
+    tasks: unknown;
     workflows: unknown;
   };
 }
@@ -1444,6 +1442,104 @@ export interface Footer {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "conditions".
+ */
+export interface Condition {
+  id: number;
+  title: string;
+  /**
+   * Shared introduction rendered on every city page for this condition.
+   */
+  intro: string;
+  symptoms?:
+    | {
+        symptom: string;
+        id?: string | null;
+      }[]
+    | null;
+  faq?:
+    | {
+        question: string;
+        answer: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cities".
+ */
+export interface City {
+  id: number;
+  title: string;
+  country: string;
+  /**
+   * Local color the AI weaves into generated narratives - landmarks, neighbourhoods, food.
+   */
+  narrativeHints?:
+    | {
+        hint: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "generated-pages".
+ */
+export interface GeneratedPage {
+  id: number;
+  title: string;
+  /**
+   * The AI-written traveller story - the only generated part of the page. Everything else assembles from the condition and city entities.
+   */
+  narrative?: string | null;
+  /**
+   * Per-page override: sections added here by hand are layered on top of the generated base and survive regeneration.
+   */
+  extraSections?: (FaqBlock | ContentBlock | StatsBlock | CtaBandBlock)[] | null;
+  /**
+   * The header to display on the page
+   */
+  header?: (number | null) | Header;
+  /**
+   * The footer to display on the page
+   */
+  footer?: (number | null) | Footer;
+  condition: number | Condition;
+  city: number | City;
+  /**
+   * Assembled from the condition and city slugs by Generate.
+   */
+  slug: string;
+  /**
+   * Provenance: who wrote what, with which model, from which inputs.
+   */
+  provenance?: {
+    generatedAt?: string | null;
+    generationModel?: string | null;
+    generationInputs?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "document-embeddings".
  */
 export interface DocumentEmbedding {
@@ -2385,98 +2481,6 @@ export interface PayloadKv {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-jobs".
- */
-export interface PayloadJob {
-  id: number;
-  /**
-   * Input data provided to the job
-   */
-  input?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  taskStatus?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  completedAt?: string | null;
-  totalTried?: number | null;
-  /**
-   * If hasError is true this job will not be retried
-   */
-  hasError?: boolean | null;
-  /**
-   * If hasError is true, this is the error that caused it
-   */
-  error?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  /**
-   * Task execution log
-   */
-  log?:
-    | {
-        executedAt: string;
-        completedAt: string;
-        taskSlug: 'inline' | 'schedulePublish';
-        taskID: string;
-        input?:
-          | {
-              [k: string]: unknown;
-            }
-          | unknown[]
-          | string
-          | number
-          | boolean
-          | null;
-        output?:
-          | {
-              [k: string]: unknown;
-            }
-          | unknown[]
-          | string
-          | number
-          | boolean
-          | null;
-        state: 'failed' | 'succeeded';
-        error?:
-          | {
-              [k: string]: unknown;
-            }
-          | unknown[]
-          | string
-          | number
-          | boolean
-          | null;
-        id?: string | null;
-      }[]
-    | null;
-  taskSlug?: ('inline' | 'schedulePublish') | null;
-  queue?: string | null;
-  waitUntil?: string | null;
-  processing?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -2513,6 +2517,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'testimonials';
         value: number | Testimonial;
+      } | null)
+    | ({
+        relationTo: 'conditions';
+        value: number | Condition;
+      } | null)
+    | ({
+        relationTo: 'cities';
+        value: number | City;
+      } | null)
+    | ({
+        relationTo: 'generated-pages';
+        value: number | GeneratedPage;
       } | null)
     | ({
         relationTo: 'header';
@@ -3374,6 +3390,80 @@ export interface TestimonialsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "conditions_select".
+ */
+export interface ConditionsSelect<T extends boolean = true> {
+  title?: T;
+  intro?: T;
+  symptoms?:
+    | T
+    | {
+        symptom?: T;
+        id?: T;
+      };
+  faq?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
+      };
+  generateSlug?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cities_select".
+ */
+export interface CitiesSelect<T extends boolean = true> {
+  title?: T;
+  country?: T;
+  narrativeHints?:
+    | T
+    | {
+        hint?: T;
+        id?: T;
+      };
+  generateSlug?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "generated-pages_select".
+ */
+export interface GeneratedPagesSelect<T extends boolean = true> {
+  title?: T;
+  narrative?: T;
+  extraSections?:
+    | T
+    | {
+        faq?: T | FaqBlockSelect<T>;
+        content?: T | ContentBlockSelect<T>;
+        stats?: T | StatsBlockSelect<T>;
+        ctaBand?: T | CtaBandBlockSelect<T>;
+      };
+  header?: T;
+  footer?: T;
+  condition?: T;
+  city?: T;
+  slug?: T;
+  provenance?:
+    | T
+    | {
+        generatedAt?: T;
+        generationModel?: T;
+        generationInputs?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
 export interface HeaderSelect<T extends boolean = true> {
@@ -4141,37 +4231,6 @@ export interface PayloadKvSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-jobs_select".
- */
-export interface PayloadJobsSelect<T extends boolean = true> {
-  input?: T;
-  taskStatus?: T;
-  completedAt?: T;
-  totalTried?: T;
-  hasError?: T;
-  error?: T;
-  log?:
-    | T
-    | {
-        executedAt?: T;
-        completedAt?: T;
-        taskSlug?: T;
-        taskID?: T;
-        input?: T;
-        output?: T;
-        state?: T;
-        error?: T;
-        id?: T;
-      };
-  taskSlug?: T;
-  queue?: T;
-  waitUntil?: T;
-  processing?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-folders_select".
  */
 export interface PayloadFoldersSelect<T extends boolean = true> {
@@ -4413,28 +4472,6 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: 'full';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskSchedulePublish".
- */
-export interface TaskSchedulePublish {
-  input: {
-    type?: ('publish' | 'unpublish') | null;
-    locale?: string | null;
-    doc?:
-      | ({
-          relationTo: 'page';
-          value: number | Page;
-        } | null)
-      | ({
-          relationTo: 'posts';
-          value: number | Post;
-        } | null);
-    global?: 'site-settings' | null;
-    user?: (number | null) | User;
-  };
-  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

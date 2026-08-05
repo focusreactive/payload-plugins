@@ -3,9 +3,10 @@
 This branch exists only to hold open a preview deployment of `apps/cms` that a
 prospect can log into and edit freely while they evaluate the CMS.
 
-**Do not merge this PR, and do not push code changes here.** It carries no code
-diff from `main` on purpose: what they see has to be stock Ideal CMS, not a work in
-progress.
+**Do not merge this PR.** On top of stock Ideal CMS, the branch adds a
+programmatic-content evaluation feature set (entity-driven generated pages, an AI
+generation/translation step with drafts as the review gate, and an extra content
+locale) built for this evaluation only. It is not intended for `main`.
 
 This repo is public, so the branch does not say which prospect it belongs to. The
 mapping, along with the login we hand out, lives in the deal record.

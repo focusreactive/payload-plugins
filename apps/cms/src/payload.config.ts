@@ -9,7 +9,10 @@ import sharp from "sharp";
 
 import { Authors } from "@/collections/Authors";
 import { Categories } from "@/collections/Categories";
+import { Cities } from "@/collections/programmatic/Cities";
+import { Conditions } from "@/collections/programmatic/Conditions";
 import { DocumentEmbeddings } from "@/collections/DocumentEmbeddings";
+import { GeneratedPages } from "@/collections/programmatic/GeneratedPages";
 import { Footer } from "@/collections/Footer/config";
 import { GlobalSection } from "@/collections/GlobalSection/config";
 import { Header } from "@/collections/Header/config";
@@ -71,6 +74,9 @@ export default buildConfig({
     Authors,
     Posts,
     Testimonials,
+    Conditions,
+    Cities,
+    GeneratedPages,
     Header,
     Footer,
     DocumentEmbeddings,

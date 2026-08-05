@@ -20,6 +20,8 @@ import { Categories } from "@/collections/Categories";
 import { Footer } from "@/collections/Footer/config";
 import { Header } from "@/collections/Header/config";
 import { Page as PageCollection } from "@/collections/Page/Page";
+import { Conditions } from "@/collections/programmatic/Conditions";
+import { GeneratedPages } from "@/collections/programmatic/GeneratedPages";
 import serverExtractPageContent from "@/collections/Page/serverExtractPageContent";
 import { Posts } from "@/collections/Posts";
 import serverExtractPostContent from "@/collections/Posts/serverExtractPostContent";
@@ -314,8 +316,18 @@ export const plugins: Plugin[] = [
   }),
 
   translatorPlugin({
-    collections: [PageCollection, Posts, Categories, Authors, Testimonials, Header, Footer].map(
-      (col) => JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
+    collections: [
+      PageCollection,
+      Posts,
+      Categories,
+      Authors,
+      Testimonials,
+      Header,
+      Footer,
+      Conditions,
+      GeneratedPages,
+    ].map((col) =>
+      JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
     ),
     runner: createSyncRunner(),
     translationProvider: createOpenAIProvider({

@@ -54,3 +54,6 @@ public/media/*
 !public/media/.gitkeep
 
 generated/
+# pulled Vercel env snapshots - carry live secrets, never commit
+.env.preview
+.env.production

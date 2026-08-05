@@ -4,6 +4,7 @@ export type CacheTagParams =
   | { type: "post"; slug: string; locale: Locale }
   | { type: "postsList"; locale: Locale }
   | { type: "page"; path: string; locale: Locale }
+  | { type: "generatedPage"; slug: string; locale: Locale }
   | { type: "redirect"; locale: Locale }
   | { type: "sitemap" };
 
@@ -20,6 +21,9 @@ export function cacheTag(params: CacheTagParams): string {
     }
     case "post": {
       return `post_${params.slug}_${locale}`;
+    }
+    case "generatedPage": {
+      return `generatedPage_${params.slug}_${locale}`;
     }
     case "postsList": {
       return `posts_${locale}`;

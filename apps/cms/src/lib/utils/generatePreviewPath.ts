@@ -1,7 +1,7 @@
 import type { BLOG_CONFIG } from "@/lib/config/blog";
 
 interface Props {
-  collection: "page" | typeof BLOG_CONFIG.collection;
+  collection: "page" | typeof BLOG_CONFIG.collection | "generated-pages";
   slug: string;
   path: string;
 }

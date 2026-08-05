@@ -1,0 +1,68 @@
+{
+  "common": {
+    "goToHomepage": "Vai alla pagina principale",
+    "page": "Pagina",
+    "exitPreview": "Esci dall'anteprima",
+    "returnToHome": "Torna alla pagina principale",
+    "somethingWentWrong": "Qualcosa è andato storto",
+    "anErrorOccurredWhileLoadingTheBlog": "Si è verificato un errore durante il caricamento del blog: {errorMessage}",
+    "anErrorOccurredWhileLoadingTheSite": "Si è verificato un errore durante il caricamento del sito: {errorMessage}"
+  },
+  "pageRange": {
+    "docs": {
+      "plural": "Documenti",
+      "singular": "Documento"
+    },
+    "posts": {
+      "plural": "Articoli",
+      "singular": "Articolo"
+    },
+    "noResults": "La ricerca non ha prodotto risultati.",
+    "showing": "Mostrando {start}{end} di {total} {label}",
+    "showingEnd": " - {end}"
+  },
+  "pagination": {
+    "previous": "Precedente",
+    "next": "Successiva",
+    "goToPreviousPage": "Vai alla pagina precedente",
+    "goToNextPage": "Vai alla pagina successiva",
+    "morePages": "Altre pagine"
+  },
+  "blog": {
+    "backToJournal": "Torna al Journal",
+    "noResults": "Nessun articolo corrisponde alla tua ricerca.",
+    "readTime": "{minutes} min",
+    "readTimeLong": "{minutes} min di lettura",
+    "search": {
+      "all": "Tutti",
+      "label": "Cerca articoli",
+      "open": "Cerca articoli",
+      "close": "Chiudi la ricerca",
+      "clear": "Cancella la ricerca"
+    },
+    "newsletter": {
+      "eyebrow": "The Journal, ogni mese",
+      "heading": "Una email al mese, pensata bene. Senza rumore.",
+      "placeholder": "tu@team.com",
+      "button": "Iscriviti",
+      "disclaimer": "Niente spam. Annulla l'iscrizione quando vuoi."
+    }
+  },
+  "announcements": {
+    "title": "Annunci",
+    "noAnnouncements": "Nessun annuncio disponibile.",
+    "metadata": {
+      "title": "Annunci",
+      "description": "{count, plural, =0 {Nessun annuncio} =1 {1 annuncio} other {# annunci}} per il tenant {tenant}"
+    }
+  },
+  "onlineDoctor": {
+    "commonSymptoms": "Sintomi comuni",
+    "storyEyebrow": "La storia di un viaggiatore",
+    "storyHeading": "Com'è andata a {city}",
+    "storyDisclaimer": "Una storia illustrativa - non il racconto di un paziente reale.",
+    "faqHeading": "Domande frequenti",
+    "provenanceWithModel": "Narrativa generata il {date} da {model} a partire da {inputs}. Revisionata e pubblicata da un editor.",
+    "provenancePlain": "Narrativa generata il {date}. Revisionata e pubblicata da un editor."
+  }
+}

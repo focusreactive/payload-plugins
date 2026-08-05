@@ -8,11 +8,11 @@ import {
   createRichTextState,
 } from "@/lib/utils/createLocalizedDefault";
 import { generateRichText } from "@/lib/utils/generateRichText";
-import type { Locale } from "@/lib/types";
 import { injectSection } from "@/lib/fields/section/injectSection";
 import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
 
-function buildFaqItems(locale: Locale) {
+// Only the locales with authored defaults - later locales fall back to "en".
+function buildFaqItems(locale: "en" | "es") {
   const { question, answer } = DEFAULT_VALUES.blocks.faq;
   return Array.from({ length: 3 }, () => ({
     answer: createRichTextState(answer[locale].heading, answer[locale].paragraph),
