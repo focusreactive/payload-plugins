@@ -35,6 +35,14 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Authenticate private git dependencies
+        env:
+          PRIVATE_REPO_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
+        run: |
+          git config --global --add \
+            "url.https://x-access-token:${PRIVATE_REPO_TOKEN}@github.com/.insteadOf" \
+            "https://www.github.com/"
+
       - name: Install dependencies
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
