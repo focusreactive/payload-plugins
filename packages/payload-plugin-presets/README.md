@@ -2,7 +2,7 @@
 
 A plugin for [Payload CMS](https://payloadcms.com/) that enables saving and applying reusable block presets in the admin panel.
 
-## Features
+## Features.   
 
 - Save block configurations as reusable presets
 - Apply presets to blocks with one click
