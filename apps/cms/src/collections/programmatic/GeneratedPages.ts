@@ -140,11 +140,13 @@ export const GeneratedPages: CollectionConfig = {
     },
     {
       admin: {
-        description: "Assembled from the condition and city slugs by Generate.",
+        description:
+          "Assembled from the condition and city slugs by Generate. Localized: each locale carries its own URL segment, so a translated page gets a translated address rather than the English one under a language prefix.",
         position: "sidebar",
       },
       index: true,
       label: "Slug",
+      localized: true,
       name: "slug",
       required: true,
       type: "text",

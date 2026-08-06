@@ -56,7 +56,9 @@ export const Cities: CollectionConfig = {
       name: "narrativeHints",
       type: "array",
     },
-    payloadSlugField({ required: true, useAsSlug: "title" }),
+    // Localized so the Italian slug regenerates from the Italian title: "Rome"
+    // gives /online-doctor/...-rome, "Roma" gives /it/online-doctor/...-roma.
+    payloadSlugField({ localized: true, required: true, useAsSlug: "title" }),
     {
       admin: {
         components: {

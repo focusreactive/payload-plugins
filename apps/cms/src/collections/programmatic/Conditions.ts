@@ -78,7 +78,9 @@ export const Conditions: CollectionConfig = {
       name: "faq",
       type: "array",
     },
-    payloadSlugField({ required: true, useAsSlug: "title" }),
+    // Localized: the slug follows the localized title, so the Italian condition
+    // name produces the Italian URL segment.
+    payloadSlugField({ localized: true, required: true, useAsSlug: "title" }),
     {
       admin: {
         components: {

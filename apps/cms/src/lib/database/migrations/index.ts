@@ -32,6 +32,7 @@ import * as migration_20260708_183318_remove_aspect_ratio_from_unneccesary_block
 import * as migration_20260713_155547_restructure_global_settings from './20260713_155547_restructure_global_settings';
 import * as migration_20260805_173816_add_programmatic_content_and_it_locale from './20260805_173816_add_programmatic_content_and_it_locale';
 import * as migration_20260806_081757_add_city_locales from './20260806_081757_add_city_locales';
+import * as migration_20260806_190152_add_localized_slugs from './20260806_190152_add_localized_slugs';
 
 export const migrations = [
   {
@@ -202,6 +203,11 @@ export const migrations = [
   {
     up: migration_20260806_081757_add_city_locales.up,
     down: migration_20260806_081757_add_city_locales.down,
-    name: '20260806_081757_add_city_locales'
+    name: '20260806_081757_add_city_locales',
+  },
+  {
+    up: migration_20260806_190152_add_localized_slugs.up,
+    down: migration_20260806_190152_add_localized_slugs.down,
+    name: '20260806_190152_add_localized_slugs'
   },
 ];
