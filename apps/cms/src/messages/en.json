@@ -67,6 +67,7 @@
     "ctaEyebrow": "Online consultation",
     "ctaHeading": "Speak to an *English-speaking* doctor now",
     "ctaDescription": "Video consultation usually within the hour, from about EUR 20, prescriptions included.",
-    "ctaButton": "Find a doctor"
+    "ctaButton": "Find a doctor",
+    "alsoAvailableIn": "Also available in"
   }
 }

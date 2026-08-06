@@ -1,10 +1,12 @@
 import { Check } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import React from "react";
 
 import { RenderBlocks } from "@/blocks/RenderBlocks";
+import { I18N_CONFIG } from "@/lib/config/i18n";
 import { Accordion } from "@/components/Accordion";
 import { CtaBandSection } from "@/components/CtaBandSection";
 import { DisplayHeading } from "@/components/DisplayHeading";
@@ -13,6 +15,7 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { SectionContainer } from "@/components/shared";
 import type { Locale } from "@/lib/types";
 import { getGeneratedPageBySlug } from "@/dal/getGeneratedPageBySlug";
+import { getGeneratedPageLocaleSlugs } from "@/dal/getGeneratedPageLocaleSlugs";
 import type {
   City,
   Condition,
@@ -62,6 +65,9 @@ export default async function GeneratedPageRoute({ params }: Args) {
     trigger: item.question,
   }));
   const provenance = page.provenance;
+  const otherLanguages = (page.id ? await getGeneratedPageLocaleSlugs(page.id) : []).filter(
+    (entry) => entry.locale !== locale
+  );
   // The repo is public: the platform's real URL stays out of code, same as
   // GENERATE_PLATFORM_NAME in the generation endpoint.
   const consultationUrl = process.env.PLATFORM_CTA_URL || "#";
@@ -77,6 +83,20 @@ export default async function GeneratedPageRoute({ params }: Args) {
               {`${city.title}, ${city.country}`}
             </Eyebrow>
             <DisplayHeading as="h1" size="display-2" text={page.title} />
+            {otherLanguages.length > 0 && (
+              <p className="text-muted-foreground text-sm">
+                {t("alsoAvailableIn")}{" "}
+                {otherLanguages.map((entry, index) => (
+                  <React.Fragment key={entry.locale}>
+                    {index > 0 && ", "}
+                    <Link className="underline underline-offset-4" href={entry.href}>
+                      {I18N_CONFIG.locales.find(({ code }) => code === entry.locale)?.endonym ??
+                        entry.locale}
+                    </Link>
+                  </React.Fragment>
+                ))}
+              </p>
+            )}
           </div>
           <div className="mt-10 grid grid-cols-1 gap-[clamp(32px,6vw,80px)] min-[861px]:grid-cols-[1.2fr_0.8fr]">
             <div className="flex flex-col gap-4">
@@ -181,7 +201,12 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
     return { title: "Not found" };
   }
 
+  const localeSlugs = page.id ? await getGeneratedPageLocaleSlugs(page.id) : [];
+
   return {
+    alternates: {
+      languages: Object.fromEntries(localeSlugs.map((entry) => [entry.locale, entry.href])),
+    },
     title: page.title,
     robots: { follow: false, index: false },
   };

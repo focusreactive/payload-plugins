@@ -67,6 +67,7 @@
     "ctaEyebrow": "Consulta online",
     "ctaHeading": "Habla ahora con un médico *online*",
     "ctaDescription": "Videoconsulta normalmente en menos de una hora, desde unos 20 EUR, receta incluida.",
-    "ctaButton": "Encuentra un médico"
+    "ctaButton": "Encuentra un médico",
+    "alsoAvailableIn": "También disponible en"
   }
 }
