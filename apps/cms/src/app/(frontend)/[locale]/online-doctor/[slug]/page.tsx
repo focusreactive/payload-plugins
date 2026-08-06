@@ -7,6 +7,8 @@ import React from "react";
 import { RenderBlocks } from "@/blocks/RenderBlocks";
 import { Accordion } from "@/components/Accordion";
 import { CtaBandSection } from "@/components/CtaBandSection";
+import { DisplayHeading } from "@/components/DisplayHeading";
+import { Eyebrow } from "@/components/Eyebrow";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SectionContainer } from "@/components/shared";
 import type { Locale } from "@/lib/types";
@@ -69,11 +71,13 @@ export default async function GeneratedPageRoute({ params }: Args) {
       <Header data={page.header as HeaderType} />
       <main>
         <SectionContainer sectionData={{ paddingY: "large" }}>
-          <SectionHeader
-            eyebrow={{ text: `${city.title}, ${city.country}` }}
-            title={page.title}
-            size="display-2"
-          />
+          {/* SectionHeader hardcodes h2; the page title must be the h1. */}
+          <div className="flex max-w-[720px] flex-col gap-5">
+            <Eyebrow prefix="dot" tone="accent">
+              {`${city.title}, ${city.country}`}
+            </Eyebrow>
+            <DisplayHeading as="h1" size="display-2" text={page.title} />
+          </div>
           <div className="mt-10 grid grid-cols-1 gap-[clamp(32px,6vw,80px)] min-[861px]:grid-cols-[1.2fr_0.8fr]">
             <div className="flex flex-col gap-4">
               {introParagraphs.map((paragraph, index) => (
