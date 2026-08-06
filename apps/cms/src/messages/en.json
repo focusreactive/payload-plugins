@@ -59,10 +59,14 @@
   "onlineDoctor": {
     "commonSymptoms": "Common symptoms",
     "storyEyebrow": "A traveller's story",
-    "storyHeading": "How it went in {city}",
+    "storyHeading": "How it went in *{city}*",
     "storyDisclaimer": "An illustrative story - not a real patient account.",
     "faqHeading": "Frequently asked questions",
     "provenanceWithModel": "Narrative generated {date} by {model} from {inputs}. Reviewed and published by an editor.",
-    "provenancePlain": "Narrative generated {date}. Reviewed and published by an editor."
+    "provenancePlain": "Narrative generated {date}. Reviewed and published by an editor.",
+    "ctaEyebrow": "Online consultation",
+    "ctaHeading": "Speak to an *English-speaking* doctor now",
+    "ctaDescription": "Video consultation usually within the hour, from about EUR 20, prescriptions included.",
+    "ctaButton": "Find a doctor"
   }
 }

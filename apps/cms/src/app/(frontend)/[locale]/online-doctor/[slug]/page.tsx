@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -5,6 +6,7 @@ import React from "react";
 
 import { RenderBlocks } from "@/blocks/RenderBlocks";
 import { Accordion } from "@/components/Accordion";
+import { CtaBandSection } from "@/components/CtaBandSection";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SectionContainer } from "@/components/shared";
 import type { Locale } from "@/lib/types";
@@ -58,6 +60,9 @@ export default async function GeneratedPageRoute({ params }: Args) {
     trigger: item.question,
   }));
   const provenance = page.provenance;
+  // The repo is public: the platform's real URL stays out of code, same as
+  // GENERATE_PLATFORM_NAME in the generation endpoint.
+  const consultationUrl = process.env.PLATFORM_CTA_URL || "#";
 
   return (
     <>
@@ -72,17 +77,18 @@ export default async function GeneratedPageRoute({ params }: Args) {
           <div className="mt-10 grid grid-cols-1 gap-[clamp(32px,6vw,80px)] min-[861px]:grid-cols-[1.2fr_0.8fr]">
             <div className="flex flex-col gap-4">
               {introParagraphs.map((paragraph, index) => (
-                <p className="text-body" key={index}>
+                <p className="text-body-lg" key={index}>
                   {paragraph}
                 </p>
               ))}
             </div>
             {symptoms.length > 0 && (
-              <div>
-                <h2 className="mb-4 font-medium text-h5">{t("commonSymptoms")}</h2>
-                <ul className="flex list-disc flex-col gap-2 pl-5">
+              <div className="h-fit rounded-md border border-border bg-surface p-[26px]">
+                <h2 className="mb-5 font-medium text-h5">{t("commonSymptoms")}</h2>
+                <ul className="flex flex-col gap-3">
                   {symptoms.map((symptom, index) => (
-                    <li className="text-body" key={index}>
+                    <li className="flex items-start gap-3 text-body" key={index}>
+                      <Check aria-hidden className="mt-[5px] size-[18px] shrink-0 text-primary" />
                       {symptom}
                     </li>
                   ))}
@@ -123,9 +129,28 @@ export default async function GeneratedPageRoute({ params }: Args) {
           </SectionContainer>
         )}
 
+        <SectionContainer sectionData={{ theme: "dark" }}>
+          <CtaBandSection
+            eyebrow={t("ctaEyebrow")}
+            heading={t("ctaHeading")}
+            description={t("ctaDescription")}
+            theme="dark"
+            actions={[
+              {
+                appearance: "accent",
+                id: "find-a-doctor",
+                label: t("ctaButton"),
+                newTab: true,
+                type: "custom",
+                url: consultationUrl,
+              },
+            ]}
+          />
+        </SectionContainer>
+
         {provenance?.generatedAt && (
           <SectionContainer sectionData={{ paddingY: "base" }}>
-            <p className="text-muted-foreground text-sm">
+            <p className="border-border border-t pt-4 font-mono text-muted-foreground text-xs">
               {provenance.generationModel && provenance.generationInputs
                 ? t("provenanceWithModel", {
                     date: new Date(provenance.generatedAt).toLocaleDateString("en-GB"),

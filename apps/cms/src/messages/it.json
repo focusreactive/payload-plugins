@@ -59,10 +59,14 @@
   "onlineDoctor": {
     "commonSymptoms": "Sintomi comuni",
     "storyEyebrow": "La storia di un viaggiatore",
-    "storyHeading": "Com'è andata a {city}",
+    "storyHeading": "Com'è andata a *{city}*",
     "storyDisclaimer": "Una storia illustrativa - non il racconto di un paziente reale.",
     "faqHeading": "Domande frequenti",
     "provenanceWithModel": "Narrativa generata il {date} da {model} a partire da {inputs}. Revisionata e pubblicata da un editor.",
-    "provenancePlain": "Narrativa generata il {date}. Revisionata e pubblicata da un editor."
+    "provenancePlain": "Narrativa generata il {date}. Revisionata e pubblicata da un editor.",
+    "ctaEyebrow": "Consulto online",
+    "ctaHeading": "Parla subito con un medico *online*",
+    "ctaDescription": "Videoconsulto di solito entro un'ora, a partire da circa 20 EUR, ricetta inclusa.",
+    "ctaButton": "Trova un medico"
   }
 }

@@ -31,6 +31,7 @@ import * as migration_20260706_095438_add_section_visibility_to_global_section_s
 import * as migration_20260708_183318_remove_aspect_ratio_from_unneccesary_blocks from './20260708_183318_remove_aspect_ratio_from_unneccesary_blocks';
 import * as migration_20260713_155547_restructure_global_settings from './20260713_155547_restructure_global_settings';
 import * as migration_20260805_173816_add_programmatic_content_and_it_locale from './20260805_173816_add_programmatic_content_and_it_locale';
+import * as migration_20260806_081757_add_city_locales from './20260806_081757_add_city_locales';
 
 export const migrations = [
   {
@@ -196,6 +197,11 @@ export const migrations = [
   {
     up: migration_20260805_173816_add_programmatic_content_and_it_locale.up,
     down: migration_20260805_173816_add_programmatic_content_and_it_locale.down,
-    name: '20260805_173816_add_programmatic_content_and_it_locale'
+    name: '20260805_173816_add_programmatic_content_and_it_locale',
+  },
+  {
+    up: migration_20260806_081757_add_city_locales.up,
+    down: migration_20260806_081757_add_city_locales.down,
+    name: '20260806_081757_add_city_locales'
   },
 ];

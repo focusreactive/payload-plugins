@@ -27,12 +27,14 @@ export const Cities: CollectionConfig = {
   fields: [
     {
       label: "City name",
+      localized: true,
       name: "title",
       required: true,
       type: "text",
     },
     {
       label: "Country",
+      localized: true,
       name: "country",
       required: true,
       type: "text",
