@@ -9,6 +9,7 @@ import { anyone, or, superAdmin, user } from "@/lib/access";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 
+import { batchGenerateEndpoint } from "./endpoints/batchGenerate";
 import { generateNarrativeEndpoint } from "./endpoints/generateNarrative";
 import {
   revalidateGeneratedPage,
@@ -59,7 +60,7 @@ export const GeneratedPages: CollectionConfig = {
       }),
     useAsTitle: "title",
   },
-  endpoints: [generateNarrativeEndpoint],
+  endpoints: [generateNarrativeEndpoint, batchGenerateEndpoint],
   fields: [
     {
       label: "Title",

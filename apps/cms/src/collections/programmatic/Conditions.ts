@@ -79,6 +79,15 @@ export const Conditions: CollectionConfig = {
       type: "array",
     },
     payloadSlugField({ required: true, useAsSlug: "title" }),
+    {
+      admin: {
+        components: {
+          Field: "/components/admin/BatchGenerateActions#BatchGenerateForCondition",
+        },
+      },
+      name: "batchGenerateActions",
+      type: "ui",
+    },
   ],
   hooks: {
     afterChange: [revalidateReferencingPages("condition")],

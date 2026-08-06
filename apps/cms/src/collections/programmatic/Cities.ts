@@ -57,6 +57,15 @@ export const Cities: CollectionConfig = {
       type: "array",
     },
     payloadSlugField({ required: true, useAsSlug: "title" }),
+    {
+      admin: {
+        components: {
+          Field: "/components/admin/BatchGenerateActions#BatchGenerateForCity",
+        },
+      },
+      name: "batchGenerateActions",
+      type: "ui",
+    },
   ],
   hooks: {
     afterChange: [revalidateReferencingPages("city")],

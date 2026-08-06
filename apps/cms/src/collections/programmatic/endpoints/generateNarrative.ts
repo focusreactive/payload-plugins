@@ -1,6 +1,9 @@
 import { generateText } from "ai";
 import type { Endpoint, PayloadRequest } from "payload";
 
+import { MINIMUM_NARRATIVE_WORDS, MODEL, countWords, englishPrompt, generationInputs, italianPrompt, italianTitlePrompt, pageSlug, pageTitle } from './narrativeGeneration';
+import type { CityData, ConditionData } from './narrativeGeneration';
+
 /**
  * The programmatic model's "basic generator": pages assemble deterministically
  * from the condition and city entities, AI writes only the traveller narrative.
@@ -12,14 +15,12 @@ import type { Endpoint, PayloadRequest } from "payload";
  * - "translate": translates the narrative and writes it to the document's
  *   Italian locale as a draft, so the review step covers translations too.
  *
+ * The batch runner in ./batchGenerate shares the prompts and the word floor
+ * from ./narrativeGeneration, so one page and a thousand are held to the same
+ * standard.
+ *
  * Model goes through the Vercel AI Gateway (AI_GATEWAY_API_KEY).
  */
-
-const MODEL = process.env.GENERATE_MODEL || "anthropic/claude-sonnet-4.5";
-// The consultation platform the stories are written around - env-provided so the
-// repo stays generic; the sandbox branch sets it per deployment.
-const PLATFORM = process.env.GENERATE_PLATFORM_NAME || "the online consultation platform";
-const MINIMUM_NARRATIVE_WORDS = 120;
 
 interface GenerateBody {
   mode?: "narrative" | "translate";
@@ -30,55 +31,8 @@ interface GenerateBody {
   title?: string;
 }
 
-interface ConditionData {
-  title?: string;
-  slug?: string;
-  symptoms?: Array<{ symptom?: string }> | null;
-}
-
-interface CityData {
-  title?: string;
-  slug?: string;
-  country?: string;
-  narrativeHints?: Array<{ hint?: string }> | null;
-}
-
 function json(data: unknown, status: number): Response {
   return Response.json(data, { status });
-}
-
-function englishPrompt(condition: ConditionData, city: CityData): string {
-  const hints = (city.narrativeHints ?? []).map((row) => row.hint).filter(Boolean);
-  const symptoms = (condition.symptoms ?? []).map((row) => row.symptom).filter(Boolean);
-
-  return [
-    `Write a first-person story (380-430 words) by a traveler who came down with ${condition.title} while visiting ${city.title}, ${city.country}, and solved it with an online video consultation on ${PLATFORM}.`,
-    ``,
-    `Shape: enjoying the trip -> symptoms start and threaten the plans -> reluctance about navigating local healthcare in a foreign language -> finds ${PLATFORM}, books a video visit -> consultation with an English-speaking local doctor -> prescription sorted at a nearby pharmacy -> back to the trip, closing thought.`,
-    ``,
-    `Local color to weave in naturally (pick 2-3): ${hints.join("; ") || `${city.title} city sights`}.`,
-    symptoms.length ? `Symptoms to mention plausibly: ${symptoms.slice(0, 4).join(", ")}.` : "",
-    ``,
-    `Rules: warm, concrete, specific; no exaggerated medical claims; the doctor listens, explains, and prescribes what is clinically appropriate; mention the visit took place within the hour and cost from about EUR 20; do not invent doctor names; no dates; plain paragraphs separated by blank lines; no headings, no markdown.`,
-  ]
-    .filter(Boolean)
-    .join("\n");
-}
-
-function italianPrompt(narrative: string): string {
-  return [
-    `Translate the following traveller story into natural, idiomatic Italian. Keep the first-person voice, the paragraph breaks, and the meaning. Do not add or remove content. Return only the translation.`,
-    ``,
-    narrative,
-  ].join("\n");
-}
-
-function italianTitlePrompt(title: string): string {
-  return [
-    `Translate this consumer health page title into natural Italian. Use the everyday consumer term for the condition (what people actually search for), not the clinical one. Return only the translated title, no quotes.`,
-    ``,
-    title,
-  ].join("\n");
 }
 
 async function handleNarrative(req: PayloadRequest, body: GenerateBody): Promise<Response> {
@@ -96,7 +50,7 @@ async function handleNarrative(req: PayloadRequest, body: GenerateBody): Promise
     return json({ error: "Condition or city not found" }, 404);
   }
 
-  const slug = `${condition.slug}-${city.slug}`;
+  const slug = pageSlug(condition as ConditionData, city as CityData);
 
   // A condition x city pair owns one page - block a duplicate before spending AI time.
   const collision = await req.payload.find({
@@ -124,18 +78,18 @@ async function handleNarrative(req: PayloadRequest, body: GenerateBody): Promise
   const narrative = text.trim();
 
   // Completeness validation before the editor sees anything (the point of a managed generator).
-  if (narrative.split(/\s+/u).length < MINIMUM_NARRATIVE_WORDS) {
+  if (countWords(narrative) < MINIMUM_NARRATIVE_WORDS) {
     return json({ error: "Generated narrative failed completeness validation - try again" }, 502);
   }
 
   return json(
     {
       generatedAt: new Date().toISOString(),
-      generationInputs: `condition: ${condition.title}, city: ${city.title} (${city.country})`,
+      generationInputs: generationInputs(condition as ConditionData, city as CityData),
       generationModel: MODEL,
       narrative,
       slug,
-      title: `${condition.title} Treatment Online in ${city.title}`,
+      title: pageTitle(condition as ConditionData, city as CityData),
     },
     200
   );
@@ -161,7 +115,7 @@ async function handleTranslate(req: PayloadRequest, body: GenerateBody): Promise
   const translated = narrativeResult.text.trim();
   const translatedTitle = titleResult?.text.trim().replace(/^["']|["']$/gu, "");
 
-  if (translated.split(/\s+/u).length < MINIMUM_NARRATIVE_WORDS) {
+  if (countWords(translated) < MINIMUM_NARRATIVE_WORDS) {
     return json({ error: "Translation failed completeness validation - try again" }, 502);
   }
 
