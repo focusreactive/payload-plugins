@@ -1,0 +1,23 @@
+name: Cleanup Neon preview branch
+
+# The Neon<->Vercel integration creates a `preview/<git-branch>` database branch
+# for each apps/cms preview deployment but never removes it. Delete it as soon as
+# the PR is closed (merged or not) so stale branches don't accumulate storage costs.
+on:
+  pull_request:
+    types: [closed]
+
+permissions: {}
+
+jobs:
+  delete-branch:
+    name: Delete preview/${{ github.head_ref }}
+    runs-on: ubuntu-latest
+    # Fork PRs get no Neon preview branch and cannot read repository secrets.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ secrets.NEON_PROJECT_ID }}
+          branch: preview/${{ github.head_ref }}
+          api_key: ${{ secrets.NEON_API_KEY }}
