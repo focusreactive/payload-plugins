@@ -6,6 +6,7 @@ import pc from "picocolors";
 import { collectAnswers } from "./prompts.js";
 import type { Answers, PackageManager } from "./prompts.js";
 import { fetchTemplate } from "./scaffold.js";
+import type { PluginVersions } from "./scaffold.js";
 import { applyTransforms } from "./transforms.js";
 
 function parseCliArgs(): { name?: string; ref?: string; fromLocal?: string } {
@@ -125,8 +126,9 @@ async function main(): Promise<void> {
 
   const s = spinner();
   s.start(`Fetching template from ${describeSource(answers)}`);
+  let pluginVersions: PluginVersions;
   try {
-    await fetchTemplate(answers.targetDir, answers.source);
+    pluginVersions = await fetchTemplate(answers.targetDir, answers.source);
     s.stop("Template fetched");
   } catch (err) {
     s.stop("Template fetch failed");
@@ -136,7 +138,7 @@ async function main(): Promise<void> {
 
   s.start("Applying configuration");
   try {
-    await applyTransforms(answers);
+    await applyTransforms(answers, pluginVersions);
     s.stop("Configuration applied");
   } catch (err) {
     s.stop("Configuration failed");

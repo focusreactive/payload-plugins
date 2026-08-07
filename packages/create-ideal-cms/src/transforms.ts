@@ -1,17 +1,13 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Answers } from "./prompts.js";
+import type { PluginVersions } from "./scaffold.js";
+import { PRIVATE_PLUGIN_STUBS, PRIVATE_SCOPE_LINE_FILES, STRIPPED_DEP_SCOPE } from "./stubs.js";
 
-// Plugins that ship as `workspace:*` in the source monorepo and need a real
-// version range in the scaffold output. Pinned exactly to match the source's
-// "exact-version" style. Bump when a new plugin version ships.
-const PLUGIN_VERSIONS: Record<string, string> = {
-  "@focus-reactive/payload-plugin-ab": "2.6.0",
-  "@focus-reactive/payload-plugin-comments": "1.8.0",
-  "@focus-reactive/payload-plugin-presets": "0.11.0",
-  "@focus-reactive/payload-plugin-scheduling": "1.2.0",
-  "@focus-reactive/payload-plugin-translator": "0.2.0",
-};
+// Workspace packages that survive the prune and stay as `workspace:*` in the
+// scaffolded monorepo. Anything else still on `workspace:*` after the rewrite
+// points at source we deleted, so it's a hard error rather than a broken install.
+const KEPT_WORKSPACE_PREFIX = "@repo/";
 
 type Pkg = Record<string, unknown> & {
   name?: string;
@@ -28,13 +24,23 @@ async function writeJson(file: string, data: unknown): Promise<void> {
   await writeFile(file, `${JSON.stringify(data, null, 2)}\n`);
 }
 
-function rewritePluginRefs(deps: Record<string, string> | undefined): void {
-  if (!deps) return;
+function rewritePluginRefs(
+  deps: Record<string, string> | undefined,
+  versions: PluginVersions
+): string[] {
+  if (!deps) return [];
+  const unresolved: string[] = [];
   for (const [name, range] of Object.entries(deps)) {
-    if (range === "workspace:*" && PLUGIN_VERSIONS[name]) {
-      deps[name] = PLUGIN_VERSIONS[name];
+    if (!range.startsWith("workspace:")) continue;
+    const version = versions[name];
+    if (version) {
+      // Pinned exactly, matching the source monorepo's exact-version style.
+      deps[name] = version;
+    } else if (!name.startsWith(KEPT_WORKSPACE_PREFIX)) {
+      unresolved.push(name);
     }
   }
+  return unresolved;
 }
 
 async function transformRootPackageJson(targetDir: string, answers: Answers): Promise<void> {
@@ -61,11 +67,60 @@ async function transformRootPackageJson(targetDir: string, answers: Answers): Pr
   await writeJson(file, pkg);
 }
 
-async function transformCmsPackageJson(targetDir: string): Promise<void> {
+function dropPrivateScopeDeps(deps: Record<string, string> | undefined): void {
+  if (!deps) return;
+  for (const name of Object.keys(deps)) {
+    if (name.startsWith(STRIPPED_DEP_SCOPE)) {
+      // oxlint-disable-next-line typescript/no-dynamic-delete
+      delete deps[name];
+    }
+  }
+}
+
+/**
+ * Removes the private-scope plugins a scaffolded project cannot install:
+ * their deps, their wiring (via whole-file stubs), and their lines in
+ * generated / documentation files.
+ */
+async function stripPrivateScopePlugins(targetDir: string): Promise<void> {
+  await Promise.all(
+    Object.entries(PRIVATE_PLUGIN_STUBS).map(([path, contents]) =>
+      writeFile(join(targetDir, path), contents)
+    )
+  );
+
+  await Promise.all(
+    PRIVATE_SCOPE_LINE_FILES.map(async (path) => {
+      const file = join(targetDir, path);
+      let contents: string;
+      try {
+        contents = await readFile(file, "utf-8");
+      } catch {
+        return;
+      }
+      const kept = contents.split("\n").filter((line) => !line.includes(STRIPPED_DEP_SCOPE));
+      await writeFile(file, kept.join("\n"));
+    })
+  );
+}
+
+async function transformCmsPackageJson(
+  targetDir: string,
+  pluginVersions: PluginVersions
+): Promise<void> {
   const file = join(targetDir, "apps/cms/package.json");
   const pkg = await readJson<Pkg>(file);
-  rewritePluginRefs(pkg.dependencies);
-  rewritePluginRefs(pkg.devDependencies);
+  dropPrivateScopeDeps(pkg.dependencies);
+  dropPrivateScopeDeps(pkg.devDependencies);
+  const unresolved = [
+    ...rewritePluginRefs(pkg.dependencies, pluginVersions),
+    ...rewritePluginRefs(pkg.devDependencies, pluginVersions),
+  ];
+  if (unresolved.length > 0) {
+    throw new Error(
+      `apps/cms/package.json still depends on pruned workspace packages with no published version: ${unresolved.join(", ")}`
+    );
+  }
   await writeJson(file, pkg);
 }
 
@@ -118,9 +173,13 @@ async function overrideThemeColor(targetDir: string, hex: string): Promise<void>
   await writeFile(file, `${css.trimEnd()}\n${overlay}`);
 }
 
-export async function applyTransforms(answers: Answers): Promise<void> {
+export async function applyTransforms(
+  answers: Answers,
+  pluginVersions: PluginVersions
+): Promise<void> {
   await transformRootPackageJson(answers.targetDir, answers);
-  await transformCmsPackageJson(answers.targetDir);
+  await transformCmsPackageJson(answers.targetDir, pluginVersions);
+  await stripPrivateScopePlugins(answers.targetDir);
   await writeEnvFile(answers.targetDir, answers);
   await overrideThemeColor(answers.targetDir, answers.primaryColor);
 }
