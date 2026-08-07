@@ -4,7 +4,7 @@ import { getMessages } from "next-intl/server";
 import { draftMode } from "next/headers";
 import React from "react";
 
-import { VisualEditing } from "@fr-private/payload-plugin-visual-editing/client";
+import { VisualEditing } from "@/lib/plugins/visual-editing/client";
 
 import { Providers } from "@/lib/context";
 import { AnalyticsProviderClient } from "@/lib/plugins/analytics/AnalyticsProviderClient";

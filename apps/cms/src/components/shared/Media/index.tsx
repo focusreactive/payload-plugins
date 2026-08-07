@@ -1,4 +1,4 @@
-import { withVisualEditingPath } from "@fr-private/payload-plugin-visual-editing/client";
+import { withVisualEditingPath } from "@/lib/plugins/visual-editing/client";
 import type { StaticImageData } from "next/image";
 import React, { Fragment } from "react";
 import type { ElementType, Ref } from "react";

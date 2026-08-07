@@ -55,6 +55,12 @@ import { VisualEditingBridgeProvider as VisualEditingBridgeProvider_673e524fc3ed
 import { default as default_7772b5ceb4db588e7e8d7d6ad669ce76 } from '@focus-reactive/payload-plugin-analytics/components/AnalyticsView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { SectionVisibilityLabel as SectionVisibilityLabel_5f6b8b6dd39e89e57e0c331f9970bb73 } from '@/lib/fields/section/SectionVisibilityLabel'
+import { ReleaseActionsField as ReleaseActionsField_d4c3d017c88ed2f967dd1e95a97cd750 } from '@fr-private/payload-plugin-releases/client'
+import { ReleaseSidebarField as ReleaseSidebarField_d4c3d017c88ed2f967dd1e95a97cd750 } from '@fr-private/payload-plugin-releases/client'
+import { ReleaseStatusField as ReleaseStatusField_d4c3d017c88ed2f967dd1e95a97cd750 } from '@fr-private/payload-plugin-releases/client'
+import { ReleaseItemStatusField as ReleaseItemStatusField_d4c3d017c88ed2f967dd1e95a97cd750 } from '@fr-private/payload-plugin-releases/client'
+import { TargetDocCell as TargetDocCell_d4c3d017c88ed2f967dd1e95a97cd750 } from '@fr-private/payload-plugin-releases/client'
+import { ReleaseActionCell as ReleaseActionCell_d4c3d017c88ed2f967dd1e95a97cd750 } from '@fr-private/payload-plugin-releases/client'
 
 /** @type import('payload').ImportMap */
 export const importMap = {
@@ -114,5 +120,11 @@ export const importMap = {
   "@fr-private/payload-plugin-visual-editing/admin#VisualEditingBridgeProvider": VisualEditingBridgeProvider_673e524fc3ed2dc6764c4e182a583baf,
   "@focus-reactive/payload-plugin-analytics/components/AnalyticsView#default": default_7772b5ceb4db588e7e8d7d6ad669ce76,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1,
-  "@/lib/fields/section/SectionVisibilityLabel#SectionVisibilityLabel": SectionVisibilityLabel_5f6b8b6dd39e89e57e0c331f9970bb73
+  "@/lib/fields/section/SectionVisibilityLabel#SectionVisibilityLabel": SectionVisibilityLabel_5f6b8b6dd39e89e57e0c331f9970bb73,
+  "@fr-private/payload-plugin-releases/client#ReleaseActionsField": ReleaseActionsField_d4c3d017c88ed2f967dd1e95a97cd750,
+  "@fr-private/payload-plugin-releases/client#ReleaseSidebarField": ReleaseSidebarField_d4c3d017c88ed2f967dd1e95a97cd750,
+  "@fr-private/payload-plugin-releases/client#ReleaseStatusField": ReleaseStatusField_d4c3d017c88ed2f967dd1e95a97cd750,
+  "@fr-private/payload-plugin-releases/client#ReleaseItemStatusField": ReleaseItemStatusField_d4c3d017c88ed2f967dd1e95a97cd750,
+  "@fr-private/payload-plugin-releases/client#TargetDocCell": TargetDocCell_d4c3d017c88ed2f967dd1e95a97cd750,
+  "@fr-private/payload-plugin-releases/client#ReleaseActionCell": ReleaseActionCell_d4c3d017c88ed2f967dd1e95a97cd750
 }

@@ -111,7 +111,10 @@ so a deeply nested field inside a block can overflow and make `payload migrate:c
 - `@focus-reactive/payload-plugin-scheduling` — scheduled publishing on serverless
 - `@focus-reactive/payload-plugin-translator` — AI translation (OpenAI provider)
 - `@focus-reactive/payload-plugin-ab` — A/B testing with middleware-driven variant rewrites
+- `@fr-private/payload-plugin-releases` — batch content publishing (`releases` + `release-items` collections); scheduled releases not wired (built-in poller disabled via `schedulerInterval: false`)
 - MCP plugin — exposes content tools to AI agents
+
+Plugins from the private `@fr-private` scope are registered in `src/lib/plugins/private.ts` (spread into the list as `...privatePlugins`), and their client surface is re-exported from `src/lib/plugins/visual-editing/client.ts` so no component imports `@fr-private/*` directly. Both files exist to be **replaced wholesale** by `create-ideal-cms`, which strips the private scope when scaffolding a project — keep the private-scope imports confined to them.
 
 A plugin's **app-side wiring** (config, adapters, provider components) lives under `src/lib/plugins/<name>/` — e.g. `lib/plugins/ab/` (middleware adapter, cookies, variant data) and `lib/plugins/analytics/` (GA4 provider). The published feature itself lives in the monorepo `packages/payload-plugin-<name>/`.
 

@@ -9,7 +9,6 @@ import {
   createOpenAIProvider,
   createSyncRunner,
 } from "@focus-reactive/payload-plugin-translator";
-import { visualEditingPlugin } from "@fr-private/payload-plugin-visual-editing";
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
 import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
@@ -40,6 +39,7 @@ import { revalidateRedirects } from "@/lib/hooks/revalidateRedirects";
 import type { Page } from "@/payload-types";
 
 import { mcpPluginConfig } from "./mcp";
+import { privatePlugins } from "./private";
 
 const resolveAnalyticsPagePath = async (ref: string, req: PayloadRequest): Promise<string> => {
   const { defaultLocale } = I18N_CONFIG;
@@ -372,26 +372,7 @@ export const plugins: Plugin[] = [
     },
   }),
 
-  visualEditingPlugin({
-    adminBasePath: "/admin",
-    skipCollections: [
-      "users",
-      "media",
-      "categories",
-      "authors",
-      "testimonials",
-      "header",
-      "footer",
-      "document-embeddings",
-      "redirects",
-      "presets",
-      "comments",
-      "comment-reads",
-      "ab-experiments",
-      "payload-mcp-api-keys",
-    ],
-    skipGlobals: ["site-settings"],
-  }),
+  ...privatePlugins,
 
   mcpPluginConfig,
 ];
