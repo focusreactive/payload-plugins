@@ -2,7 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Answers } from "./prompts.js";
 import type { PluginVersions } from "./scaffold.js";
-import { PRIVATE_PLUGIN_STUBS, PRIVATE_SCOPE_LINE_FILES, STRIPPED_DEP_SCOPE } from "./stubs.js";
+import { LINE_STRIP_FILES, PRIVATE_PLUGIN_STUBS, STRIPPED_DEP_SCOPE } from "./stubs.js";
 
 // Workspace packages that survive the prune and stay as `workspace:*` in the
 // scaffolded monorepo. Anything else still on `workspace:*` after the rewrite
@@ -90,7 +90,7 @@ async function stripPrivateScopePlugins(targetDir: string): Promise<void> {
   );
 
   await Promise.all(
-    PRIVATE_SCOPE_LINE_FILES.map(async (path) => {
+    LINE_STRIP_FILES.map(async ({ path, patterns }) => {
       const file = join(targetDir, path);
       let contents: string;
       try {
@@ -98,7 +98,9 @@ async function stripPrivateScopePlugins(targetDir: string): Promise<void> {
       } catch {
         return;
       }
-      const kept = contents.split("\n").filter((line) => !line.includes(STRIPPED_DEP_SCOPE));
+      const kept = contents
+        .split("\n")
+        .filter((line) => !patterns.some((pattern) => line.includes(pattern)));
       await writeFile(file, kept.join("\n"));
     })
   );

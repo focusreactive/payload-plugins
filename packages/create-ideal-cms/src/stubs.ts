@@ -7,7 +7,11 @@
 //
 // Keep each stub's exported surface identical to the file it replaces.
 
-export const STRIPPED_DEP_SCOPE = "@fr-private/";
+/** Bare scope name — matches any mention, e.g. `@fr-private:registry=…` in `.npmrc`. */
+export const STRIPPED_SCOPE = "@fr-private";
+
+/** Scope as a dependency-name prefix; the slash keeps `@fr-privateX/…` from matching. */
+export const STRIPPED_DEP_SCOPE = `${STRIPPED_SCOPE}/`;
 
 /** Replaces `apps/cms/src/lib/plugins/private.ts`. */
 const PRIVATE_PLUGINS_STUB = `import type { Plugin } from "payload";
@@ -50,10 +54,17 @@ export const PRIVATE_PLUGIN_STUBS: Record<string, string> = {
   "apps/cms/src/lib/plugins/visual-editing/client.ts": VISUAL_EDITING_CLIENT_STUB,
 };
 
-// Generated / documentation files where every line mentioning the private scope
-// can simply be dropped: the Payload import map (one `import` line plus one map
-// entry per component) and the plugin list in the app's agent guide.
-export const PRIVATE_SCOPE_LINE_FILES = [
-  "apps/cms/src/app/(payload)/admin/importMap.js",
-  "apps/cms/CLAUDE.md",
+// Files where the private-scope references are whole lines that can simply be
+// dropped, rather than code needing a rewrite.
+export const LINE_STRIP_FILES: { path: string; patterns: string[] }[] = [
+  // Payload's generated import map: one `import` line plus one map entry per
+  // registered component.
+  { path: "apps/cms/src/app/(payload)/admin/importMap.js", patterns: [STRIPPED_SCOPE] },
+  // The plugin list in the app's agent guide.
+  { path: "apps/cms/CLAUDE.md", patterns: [STRIPPED_SCOPE] },
+  // The source repo's `.npmrc` points the private scope at npm and reads a CI
+  // token: `//registry.npmjs.org/:_authToken=${NPM_TOKEN}`. Left in place that
+  // sends an empty token on EVERY registry request, so install fails for anyone
+  // without `NPM_TOKEN` set — the private deps being gone doesn't save it.
+  { path: ".npmrc", patterns: [STRIPPED_SCOPE, "_authToken"] },
 ];
