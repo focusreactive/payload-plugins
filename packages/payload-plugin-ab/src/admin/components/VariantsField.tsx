@@ -310,8 +310,10 @@ export function VariantsField({
         .ab-variant-icon-btn:hover {
           background: var(--theme-elevation-100); color: var(--theme-elevation-800);
         }
-        .ab-variant-icon-btn--danger { color: #dc2626; }
-        .ab-variant-icon-btn--danger:hover { background: #fef2f2; color: #b91c1c; }
+        .ab-variant-icon-btn--danger { color: var(--theme-error-500); }
+        .ab-variant-icon-btn--danger:hover {
+          background: var(--theme-elevation-100); color: var(--theme-error-600);
+        }
         .ab-percent-input-wrapper {
           position: relative; display: inline-flex; align-items: center;
         }
