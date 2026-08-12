@@ -1,4 +1,5 @@
-import type { CollectionSlug, TypedLocale } from "payload";
+import type { CollectionSlug, TypedLocale, Where } from "payload";
+import { hasDraftsEnabled } from "payload/shared";
 import type { AbTestingPluginConfig, CollectionABConfig } from "../types/config";
 import { AB_PASS_PERCENTAGE_FIELD, AB_VARIANT_OF_FIELD, DEFAULT_SLUG_FIELD } from "../constants";
 import { getLocales } from "./getLocales";
@@ -30,15 +31,17 @@ export async function recomputeManifestForParent<TVariantData extends object>(
     const manifestKey = abConfig.generatePath({ doc: parentDoc, locale });
     if (!manifestKey) continue;
 
-    const whereClause =
-      options?.excludeId !== undefined
-        ? {
-            and: [
-              { [AB_VARIANT_OF_FIELD]: { equals: parentId } },
-              { id: { not_equals: options.excludeId } },
-            ],
-          }
-        : { [AB_VARIANT_OF_FIELD]: { equals: parentId } };
+    const conditions: Where[] = [{ [AB_VARIANT_OF_FIELD]: { equals: parentId } }];
+
+    if (options?.excludeId !== undefined) {
+      conditions.push({ id: { not_equals: options.excludeId } });
+    }
+
+    if (hasDraftsEnabled(payload.collections?.[parentCollectionSlug]?.config)) {
+      conditions.push({ _status: { equals: "published" } });
+    }
+
+    const whereClause: Where = conditions.length === 1 ? conditions[0]! : { and: conditions };
 
     const { docs: variantDocs } = await payload.find({
       collection: parentCollectionSlug as CollectionSlug,

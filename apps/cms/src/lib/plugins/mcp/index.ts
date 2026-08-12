@@ -78,7 +78,7 @@ const registry: McpToolsRegistry = {
         "folder",
         "_abPassPercentage",
         "_abVariantOf",
-        "_abVariantPercentages",
+        "_abPendingPercentages",
       ],
       tableFields: ["slug", "_status"],
       titleField: "title",
