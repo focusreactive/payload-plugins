@@ -3,7 +3,7 @@ import type { CollectionABConfig } from "../types/config";
 import {
   AB_PASS_PERCENTAGE_FIELD,
   AB_VARIANT_OF_FIELD,
-  AB_VARIANT_PERCENTAGES_FIELD,
+  AB_PENDING_PERCENTAGES_FIELD,
   DEFAULT_SLUG_FIELD,
 } from "../constants";
 
@@ -79,14 +79,13 @@ export function injectAdminFields<TVariantData extends object>(
     },
   };
 
-  // 5. _abVariantPercentages — hidden JSON buffer on original documents only.
-  //    Stores { [variantId]: percentage } pending changes until parent is saved.
-  //    The afterChange hook reads this and applies values to variant docs.
-  const variantPercentagesField: Field = {
-    name: AB_VARIANT_PERCENTAGES_FIELD,
+  const pendingPercentagesField: Field = {
+    name: AB_PENDING_PERCENTAGES_FIELD,
     type: "json",
+    virtual: true,
     admin: {
       hidden: true,
+      readOnly: false,
       condition: (data: Record<string, unknown>) => !isVariant(data),
     },
   };
@@ -105,7 +104,7 @@ export function injectAdminFields<TVariantData extends object>(
     passPercentageField,
     ...patchedFields,
     variantOfField,
-    variantPercentagesField,
+    pendingPercentagesField,
     variantsUiField,
   ];
 
