@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button, toast, useDocumentInfo, useField } from "@payloadcms/ui";
 import {
+  AB_MAX_VARIANT_TOTAL,
   AB_PASS_PERCENTAGE_FIELD,
+  AB_PENDING_PERCENTAGES_FIELD,
   AB_VARIANT_OF_FIELD,
-  AB_VARIANT_PERCENTAGES_FIELD,
 } from "../../constants";
 import { VariantRow } from "./VariantRow";
 
@@ -35,7 +36,7 @@ export function VariantsField({
   const { value: pendingPercentages, setValue: setPendingPercentages } = useField<
     Record<string, number>
   >({
-    path: AB_VARIANT_PERCENTAGES_FIELD,
+    path: AB_PENDING_PERCENTAGES_FIELD,
   });
 
   const [loading, setLoading] = useState(true);
@@ -45,14 +46,15 @@ export function VariantsField({
     if (!id || !slug) return;
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/${slug}?where[${AB_VARIANT_OF_FIELD}][equals]=${id}&limit=100&depth=0&draft=true`
-      );
-      if (!res.ok) throw new Error("Failed to fetch variants");
-      const data = await res.json();
+      const query = `where[${AB_VARIANT_OF_FIELD}][equals]=${id}&limit=100&depth=0`;
+      const draftRes = await fetch(`/api/${slug}?${query}&draft=true`);
+      if (!draftRes.ok) throw new Error("Failed to fetch variants");
+
+      const draftData = await draftRes.json();
+
       setVariants(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (data.docs ?? []).map((doc: any) => ({
+        (draftData.docs ?? []).map((doc: any) => ({
           id: doc.id,
           title: doc[titleField] ?? doc[slugField] ?? doc.id,
           slug: doc[slugField],
@@ -171,7 +173,7 @@ export function VariantsField({
     }
     const raw = Number(rawStr);
     if (isNaN(raw)) return;
-    const maxAllowed = Math.max(1, 99 - sumOthers(variantId));
+    const maxAllowed = Math.max(1, AB_MAX_VARIANT_TOTAL - sumOthers(variantId));
     const clamped = Math.min(raw, maxAllowed);
     setVariants((prev) =>
       prev.map((v) => (v.id === variantId ? { ...v, passPercentage: clamped } : v))
@@ -182,7 +184,7 @@ export function VariantsField({
   const handlePercentageBlur = (variantId: string) => {
     const variant = variants.find((v) => v.id === variantId);
     if (!variant) return;
-    const maxAllowed = Math.max(1, 99 - sumOthers(variantId));
+    const maxAllowed = Math.max(1, AB_MAX_VARIANT_TOTAL - sumOthers(variantId));
     const lastValid = pendingPercentages?.[variantId] ?? 1;
     const enforced = Math.max(1, Math.min(variant.passPercentage ?? lastValid, maxAllowed));
     if (enforced === variant.passPercentage) return;
@@ -269,7 +271,7 @@ export function VariantsField({
                 key={variant.id}
                 variant={variant}
                 collectionSlug={slug!}
-                maxPercentage={99 - sumOthers(variant.id)}
+                maxPercentage={AB_MAX_VARIANT_TOTAL - sumOthers(variant.id)}
                 onPercentageChange={(value) => handlePercentageChange(variant.id, value)}
                 onPercentageBlur={() => handlePercentageBlur(variant.id)}
                 onDelete={() => handleDeleteVariant(variant.id)}
