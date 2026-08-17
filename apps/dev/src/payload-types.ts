@@ -257,7 +257,7 @@ export interface Page {
    * The original page this variant belongs to.
    */
   _abVariantOf?: (number | null) | Page;
-  _abVariantPercentages?:
+  _abPendingPercentages?:
     | {
         [k: string]: unknown;
       }
@@ -1029,7 +1029,7 @@ export interface PagesSelect<T extends boolean = true> {
             };
       };
   _abVariantOf?: T;
-  _abVariantPercentages?: T;
+  _abPendingPercentages?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;

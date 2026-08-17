@@ -1,3 +1,18 @@
+# @focus-reactive/payload-plugin-ab [2.10.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.9.0...@focus-reactive/payload-plugin-ab@2.10.0) (2026-08-12)
+
+
+### Bug Fixes
+
+* **ab:** keep the variant delete button hover dark-theme aware ([183d292](https://github.com/focusreactive/payload-plugins/commit/183d292819f6b83204454c638105fdbbeadc2bed))
+
+
+### Features
+
+* **ab:** drive variant percentage writes from a validated plan ([a37e44e](https://github.com/focusreactive/payload-plugins/commit/a37e44e81c25ae46630eaf94a4316ad665b9ba47))
+* **ab:** drop the persisted variant percentages buffer ([f67de64](https://github.com/focusreactive/payload-plugins/commit/f67de640bdfc67a8defff2448330f6597c7c8275))
+* **ab:** make variants the single owner of their traffic percentage ([85be211](https://github.com/focusreactive/payload-plugins/commit/85be211eac86f08ca841e4f4bc0da50781dd0294))
+* **ab:** stage variant percentages from the panel via the virtual field ([d0042b9](https://github.com/focusreactive/payload-plugins/commit/d0042b92ab84f06ccf5fdefbc7769ce32d5e46bd))
+
 # @focus-reactive/payload-plugin-ab [2.9.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-ab@2.8.0...@focus-reactive/payload-plugin-ab@2.9.0) (2026-06-18)
 
 

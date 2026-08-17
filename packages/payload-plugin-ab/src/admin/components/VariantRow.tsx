@@ -2,6 +2,7 @@ import type { VariantData } from "./VariantsField";
 
 import { useDocumentDrawer, EditIcon } from "@payloadcms/ui";
 import { TrashIcon } from "@payloadcms/ui/icons/Trash";
+import { AB_MAX_VARIANT_TOTAL } from "../../constants";
 
 interface VariantRowProps {
   variant: VariantData;
@@ -58,7 +59,7 @@ export function VariantRow({
           onChange={(e) => onPercentageChange(e.target.value)}
           onBlur={onPercentageBlur}
           className="ab-percent-input"
-          title="Traffic percentage (1–99)"
+          title={`Traffic percentage (1–${AB_MAX_VARIANT_TOTAL})`}
         />
         <span className="ab-percent-suffix">%</span>
       </div>

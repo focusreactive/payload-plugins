@@ -6,7 +6,7 @@ import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 
 import { preventDeleteIfReferenced } from "./hooks/preventDeleteIfReferenced";
 
-export const GlobalSection: CollectionConfig<"globalSection"> = {
+export const GlobalBlock: CollectionConfig<"globalBlock"> = {
   access: {
     create: or(superAdmin, user, author),
     delete: or(superAdmin, user, author),
@@ -14,8 +14,8 @@ export const GlobalSection: CollectionConfig<"globalSection"> = {
     update: or(superAdmin, user, author),
   },
   admin: {
-    defaultColumns: ["title", "updatedAt"],
-    group: "Content",
+    defaultColumns: ["title", "block", "updatedAt"],
+    group: "Global Components",
     useAsTitle: "title",
   },
   dbName: "gsec",
@@ -23,11 +23,11 @@ export const GlobalSection: CollectionConfig<"globalSection"> = {
     {
       admin: {
         description: {
-          en: "Internal name to identify this global section in the picker.",
-          es: "Nombre interno para identificar esta sección global en el selector.",
+          en: "Internal name to identify this global block in the picker.",
+          es: "Nombre interno para identificar este bloque global en el selector.",
         },
       },
-      defaultValue: createLocalizedDefault({ en: "Global Section", es: "Sección Global" }),
+      defaultValue: createLocalizedDefault({ en: "Global Block", es: "Bloque Global" }),
       localized: true,
       name: "title",
       required: true,
@@ -35,9 +35,12 @@ export const GlobalSection: CollectionConfig<"globalSection"> = {
     },
     {
       admin: {
+        components: {
+          Cell: "/components/admin/BlockNameCell#BlockNameCell",
+        },
         description: {
-          en: "The single section this global represents. Edit once, reuse on any page.",
-          es: "La única sección que representa este global. Edítala una vez y reutilízala en cualquier página.",
+          en: "The single block this global represents. Edit once, reuse on any page.",
+          es: "El único bloque que representa este global. Edítalo una vez y reutilízalo en cualquier página.",
         },
         initCollapsed: true,
       },
@@ -54,10 +57,10 @@ export const GlobalSection: CollectionConfig<"globalSection"> = {
     beforeDelete: [preventDeleteIfReferenced],
   },
   labels: {
-    plural: { en: "Global Sections", es: "Secciones Globales" },
-    singular: { en: "Global Section", es: "Sección Global" },
+    plural: { en: "Global Blocks", es: "Bloques Globales" },
+    singular: { en: "Global Block", es: "Bloque Global" },
   },
-  slug: "globalSection",
+  slug: "globalBlock",
   versions: {
     drafts: true,
     maxPerDoc: 50,

@@ -173,6 +173,24 @@ The plugin injects into every configured collection:
 - `admin.baseListFilter` to hide variant documents from the list view
 - `beforeChange` / `afterChange` / `afterDelete` hooks
 
+### Traffic percentages
+
+Each variant owns its own `_abPassPercentage`, versioned together with the variant document:
+the draft version holds the value you are editing, the published version holds the value the
+manifest serves. The original page has no stored copy of it.
+
+Editing percentages in the Variants panel stages them in `_abPendingPercentages` — a virtual
+field with no database column, sent with the original's own save:
+
+- **Save draft** on the original writes the new percentages to each variant's draft. Live
+  traffic keeps using the previously published split.
+- **Publish** on the original applies them to the published variants. Only the percentage is
+  published — a variant's unpublished content stays unpublished, and goes live when you publish
+  that variant itself.
+- A variant that has never been published takes no traffic, whatever its percentage says.
+
+Variant percentages must total 99% or less, leaving the original at least 1%.
+
 ### Step 2 — Wire up middleware
 
 ```ts

@@ -18,10 +18,10 @@ import {
   uploadImage,
 } from "@/lib/contentExtraction";
 import type { ImageGroup, LinkResolveCtx, LinkValue, Upload } from "@/lib/contentExtraction";
-import type { GlobalSection, Page } from "@/payload-types";
+import type { GlobalBlock, Page } from "@/payload-types";
 
 type Block = Page["blocks"][number];
-type GlobalBlock = NonNullable<GlobalSection["block"]>[number];
+type GlobalBlockContent = NonNullable<GlobalBlock["block"]>[number];
 
 export function extractPageBlockContent(
   block: Block,
@@ -153,7 +153,7 @@ export function extractPageBlockContent(
       const gid = relationId(b.reference);
       const resolved =
         gid != null
-          ? (docs.get("globalSection", gid) as { block?: GlobalBlock[] } | undefined)
+          ? (docs.get("globalBlock", gid) as { block?: GlobalBlockContent[] } | undefined)
           : undefined;
       const inner = resolved?.block?.[0];
 
@@ -164,7 +164,7 @@ export function extractPageBlockContent(
   }
 }
 
-function collectGlobalSectionIds(blocks: Block[]): (string | number)[] {
+function collectGlobalBlockIds(blocks: Block[]): (string | number)[] {
   const ids = new Set<string | number>();
 
   for (const block of blocks) {
@@ -193,11 +193,11 @@ const extractPageContent: ContentExtractor = async (values, ctx, { resolveDocs, 
   const blocks = asArray<Block>((values as { blocks?: unknown }).blocks);
   const locale = ctx.locale ?? I18N_CONFIG.defaultLocale;
 
-  const globalIds = collectGlobalSectionIds(blocks);
+  const globalIds = collectGlobalBlockIds(blocks);
   const phase1Queries: DocQuery[] = [...buildRefQueries(values)];
   if (globalIds.length > 0) {
     phase1Queries.push({
-      collection: "globalSection",
+      collection: "globalBlock",
       ids: globalIds,
       select: ["block"],
       depth: 0,
@@ -205,9 +205,10 @@ const extractPageContent: ContentExtractor = async (values, ctx, { resolveDocs, 
   }
   const docs1: DocStore = await resolveDocs(phase1Queries);
 
-  const globalDocs = globalIds
-    .map((id) => docs1.get("globalSection", id))
-    .filter(Boolean) as Record<string, unknown>[];
+  const globalDocs = globalIds.map((id) => docs1.get("globalBlock", id)).filter(Boolean) as Record<
+    string,
+    unknown
+  >[];
   const phase2Queries: DocQuery[] = globalDocs.flatMap((doc) => buildRefQueries(doc));
   const docs2: DocStore | null = phase2Queries.length > 0 ? await resolveDocs(phase2Queries) : null;
 

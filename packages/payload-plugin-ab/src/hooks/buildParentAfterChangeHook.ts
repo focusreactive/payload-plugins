@@ -1,12 +1,10 @@
-import type { CollectionAfterChangeHook, CollectionSlug } from "payload";
+import type { CollectionAfterChangeHook } from "payload";
 import type { AbTestingPluginConfig, CollectionABConfig } from "../types/config";
-import {
-  AB_PASS_PERCENTAGE_FIELD,
-  AB_VARIANT_OF_FIELD,
-  AB_VARIANT_PERCENTAGES_FIELD,
-} from "../constants";
-import { resolveId } from "../utils/resolveId";
+import { AB_CASCADE_CONTEXT_KEY, AB_PENDING_CONTEXT_KEY, AB_VARIANT_OF_FIELD } from "../constants";
+import { applyVariantPercentage } from "../utils/applyVariantPercentage";
+import type { VariantPercentageEntry } from "../utils/buildPercentagePlan";
 import { recomputeManifestForParent } from "../utils/recomputeManifest";
+import { resolveId } from "../utils/resolveId";
 import { ensureExperimentRecords } from "./ensureExperimentRecords";
 
 export function buildParentAfterChangeHook<TVariantData extends object>(
@@ -15,49 +13,45 @@ export function buildParentAfterChangeHook<TVariantData extends object>(
   pluginConfig: AbTestingPluginConfig<TVariantData>
 ): CollectionAfterChangeHook {
   return async ({ doc, req }) => {
-    const { payload } = req;
+    const { payload, context } = req;
     if (!payload) return;
+    if (context?.[AB_CASCADE_CONTEXT_KEY]) return;
 
-    const variantOfValue = doc[AB_VARIANT_OF_FIELD];
     const isDraft = doc._status === "draft";
+    const variantOfValue = doc[AB_VARIANT_OF_FIELD];
 
     if (variantOfValue) {
-      // This doc is a variant — recompute manifest for its parent
       if (isDraft) return;
       const parentId = resolveId(variantOfValue);
       if (!parentId) return;
       await recomputeManifestForParent(parentId, parentCollectionSlug, abConfig, pluginConfig, req);
       await ensureExperimentRecords(parentId, parentCollectionSlug, abConfig, pluginConfig, req);
-    } else {
-      // This doc is an original — apply pending % changes to variant docs, then recompute.
-      const pending = doc[AB_VARIANT_PERCENTAGES_FIELD] as
-        | Record<string, number>
-        | undefined
-        | null;
+      return;
+    }
 
-      if (pending && typeof pending === "object" && Object.keys(pending).length > 0) {
-        await Promise.all(
-          Object.entries(pending).map(([variantId, percentage]) => {
-            if (typeof percentage !== "number") return Promise.resolve();
-            return payload
-              .update({
-                collection: parentCollectionSlug as CollectionSlug,
-                id: variantId,
-                data: { [AB_PASS_PERCENTAGE_FIELD]: percentage },
-                ...(isDraft ? { draft: true } : {}),
-                overrideAccess: true,
-                req,
-              })
-              .catch(() => {
-                // non-fatal: variant may have been deleted between edit and save
-              });
-          })
-        );
-      }
+    const entries = context?.[AB_PENDING_CONTEXT_KEY] as VariantPercentageEntry[] | undefined;
+    if (context) delete context[AB_PENDING_CONTEXT_KEY];
 
-      if (!isDraft) {
-        await recomputeManifestForParent(doc.id, parentCollectionSlug, abConfig, pluginConfig, req);
+    if (entries && entries.length > 0) {
+      context[AB_CASCADE_CONTEXT_KEY] = true;
+
+      try {
+        for (const entry of entries) {
+          await applyVariantPercentage({
+            collectionSlug: parentCollectionSlug,
+            entry,
+            isPublish: !isDraft,
+            req,
+          });
+        }
+      } finally {
+        delete context[AB_CASCADE_CONTEXT_KEY];
       }
     }
+
+    if (isDraft) return;
+
+    await recomputeManifestForParent(doc.id, parentCollectionSlug, abConfig, pluginConfig, req);
+    await ensureExperimentRecords(doc.id, parentCollectionSlug, abConfig, pluginConfig, req);
   };
 }

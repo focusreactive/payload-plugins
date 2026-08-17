@@ -41,6 +41,25 @@ import type { Page } from "@/payload-types";
 
 import { mcpPluginConfig } from "./mcp";
 
+const withBlockNameCell = (field: Field): Field => {
+  if (field.type !== "blocks" || field.name !== "presetBlock") return field;
+
+  return {
+    ...field,
+    admin: {
+      ...field.admin,
+      components: {
+        ...field.admin?.components,
+        Cell: "/components/admin/BlockNameCell#BlockNameCell",
+      },
+    },
+    label: {
+      en: "Block",
+      es: "Bloque",
+    },
+  };
+};
+
 const resolveAnalyticsPagePath = async (ref: string, req: PayloadRequest): Promise<string> => {
   const { defaultLocale } = I18N_CONFIG;
 
@@ -254,10 +273,10 @@ export const plugins: Plugin[] = [
         update: or(superAdmin, user),
       },
       admin: {
-        defaultColumns: ["name", "preview", "type", "updatedAt"],
+        defaultColumns: ["name", "preview", "presetBlock", "updatedAt"],
         group: "Settings",
       },
-      fields: (defaultFields: Field[]) => defaultFields,
+      fields: (defaultFields: Field[]) => defaultFields.map(withBlockNameCell),
     },
     packageName: "@focus-reactive/payload-plugin-presets",
   }),
