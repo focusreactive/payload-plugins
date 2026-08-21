@@ -1,6 +1,7 @@
 import type { CollectionSlug } from "payload";
 
 import type { AutoTranslateConfig } from "../../../core/domain/auto-translate";
+import { Locales } from "../../../core/domain/locales";
 import type { TaskInput } from "../task-runner/types";
 
 /** A collection's auto-translate rule with defaults resolved — the shape the hook consumes. */
@@ -29,7 +30,7 @@ export function normalizeAutoTranslateConfig(
   config: AutoTranslateConfig
 ): NormalizedAutoTranslatePolicy {
   return {
-    targets: [...new Set(config.targets)],
+    targets: Locales.dedupe(config.targets),
     strategy: config.strategy ?? "overwrite",
     debounceMs: config.debounceMs ?? 0,
     sourceLocale: config.sourceLocale,
@@ -69,15 +70,16 @@ export function filterPolicyToKnownLocales(
   policy: NormalizedAutoTranslatePolicy,
   knownLocales: Set<string>
 ): PolicyLocaleFilter {
-  const droppedTargets = policy.targets.filter((target) => !knownLocales.has(target));
-  const sourceUnknown = policy.sourceLocale !== undefined && !knownLocales.has(policy.sourceLocale);
+  const { kept, dropped } = Locales.dropUnknown(policy.targets, knownLocales);
+  const sourceUnknown =
+    policy.sourceLocale !== undefined && !Locales.isKnown(policy.sourceLocale, knownLocales);
   return {
     policy: {
       ...policy,
-      targets: policy.targets.filter((target) => knownLocales.has(target)),
+      targets: kept,
       sourceLocale: sourceUnknown ? undefined : policy.sourceLocale,
     },
-    droppedTargets,
+    droppedTargets: dropped,
     droppedSourceLocale: sourceUnknown ? (policy.sourceLocale ?? null) : null,
   };
 }
@@ -133,15 +135,13 @@ export function buildAutoTranslateTasks(args: {
   const { policy, collectionSlug, documentId, sourceLocale, doc, hasDrafts, now } = args;
   const publishOnTranslation = resolvePublishOnTranslation(doc, hasDrafts);
   const waitUntil = policy.debounceMs > 0 ? new Date(now + policy.debounceMs) : undefined;
-  return policy.targets
-    .filter((target) => target !== sourceLocale)
-    .map((target) => ({
-      collectionSlug,
-      collectionId: documentId,
-      sourceLng: sourceLocale,
-      targetLng: target,
-      strategy: policy.strategy,
-      publishOnTranslation,
-      waitUntil,
-    }));
+  return Locales.excludeSource(policy.targets, sourceLocale).kept.map((target) => ({
+    collectionSlug,
+    collectionId: documentId,
+    sourceLng: sourceLocale,
+    targetLng: target,
+    strategy: policy.strategy,
+    publishOnTranslation,
+    waitUntil,
+  }));
 }
