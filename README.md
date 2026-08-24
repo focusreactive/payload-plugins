@@ -195,7 +195,14 @@ The steps below cover the `apps/dev` sandbox.
 
 Let's grow the Payload CMS ecosystem together. Issues, discussions, and PRs are all welcome.
 
-
 ## About
 
 Built and maintained by [FocusReactive](https://focusreactive.com/), a headless CMS and eCommerce engineering agency. We build on Payload for clients and ship what we needed on those projects back here - see [Ideal CMS](https://focusreactive.com/ideal-cms/) for the full picture, or [talk to us](https://focusreactive.com/#contacts) about a Payload build or migration.
+
+## Maintainers
+
+Maintained by [FocusReactive](https://github.com/focusreactive). [@ChiefCreator](https://github.com/ChiefCreator) and [@SearheiParkhamchuk](https://github.com/SearheiParkhamchuk) are the main maintainers; [@dogfrogfog](https://github.com/dogfrogfog) is a secondary maintainer. See [CODEOWNERS](.github/CODEOWNERS) for reviewers on pull requests.
+
+## License
+
+[MIT](./LICENSE)
