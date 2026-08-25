@@ -6,9 +6,7 @@
 export type SystemPromptContext = {
   /** Source language code (e.g. 'en', 'de'). Empty when the provider should auto-detect. */
   sourceLang: string;
-  /** Target language code (e.g. 'fr', 'es'). */
   targetLang: string;
-  /** The prompt this package would send. Extend it, or replace it entirely. */
   defaultPrompt: string;
 };
 
@@ -22,13 +20,8 @@ export type SystemPromptBuilder = (context: SystemPromptContext) => string;
 /**
  * Produces the system prompt sent with a translation request.
  *
- * The default text is the wording this package has always used; it is kept verbatim because the
- * `systemPrompt` option hands it to callers as `defaultPrompt`, so consumers extend a string they
- * already depend on.
- *
- * The instruction to preserve keys is the *textual* half of key preservation. The structural half is
- * {@link buildResponseSchema}, and the guarantee is `parseAndValidateReply` — a model that ignores
- * both is caught there rather than trusted here.
+ * The default wording is handed to `systemPrompt` builders as `defaultPrompt`, so consumers extend
+ * this exact string — changing it changes every custom prompt built on it.
  *
  * @since 0.11.0
  */

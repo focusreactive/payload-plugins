@@ -125,8 +125,6 @@ describe("createTranslationProvider", () => {
     expect((failure as TransportError).cause).toBe(boom);
   });
 
-  // A consumer of this factory supplies only the transport, so there is no way for them to hand back
-  // an already-parsed object and have their parsing stand in for ours.
   it("parses the reply itself rather than trusting the transport", async () => {
     const { complete } = recordingComplete('{"0":"Startseite"}');
 
@@ -166,8 +164,6 @@ describe("createTranslationProvider", () => {
     });
   });
 
-  // Consumer callbacks are the one place an untyped throw could escape the taxonomy. They are
-  // classified as configuration failures, not transport ones — nothing was sent.
   describe("consumer callbacks cannot escape the taxonomy", () => {
     it("reports a throwing dry-run transformer as a configuration failure", async () => {
       const { complete } = recordingComplete("unused");
@@ -207,7 +203,6 @@ describe("createTranslationProvider", () => {
     expect(warn).toHaveBeenCalledTimes(1);
     const warned = String(warn.mock.calls[0].join(" "));
     expect(warned).not.toContain("Untranslated indices");
-    // The headline must not claim missing coverage either — this reply covered every field.
     expect(warned).not.toContain("did not cover every field");
   });
 

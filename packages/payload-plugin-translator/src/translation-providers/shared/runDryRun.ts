@@ -19,7 +19,6 @@ export type DryRunConfig = {
   timeout?: number;
 };
 
-/** Reverses the text — recognisably "translated" without resembling any real language. */
 const reverse: DryRunTransformer = (text) => text.split("").reverse().join("");
 
 function transformerOf(config: boolean | DryRunConfig): DryRunTransformer {
@@ -31,10 +30,7 @@ function delayOf(config: boolean | DryRunConfig): number {
 }
 
 /**
- * Simulates a translation without calling anything.
- *
- * Blank values pass through untouched, so a dry run leaves empty fields empty rather than filling
- * them with transformed whitespace.
+ * Simulates a translation without calling anything. Blank values pass through untouched.
  *
  * @since 0.11.0
  */
@@ -42,9 +38,6 @@ export async function runDryRun(
   input: TranslationInput,
   config: boolean | DryRunConfig
 ): Promise<TranslationOutput> {
-  // Before v0.11.0 a dry run logged the whole document. That leaked content into shared logs, so it is
-  // gone — but the *signal* it carried was worth keeping: an operator watching a staging deployment
-  // used it to confirm nothing was being billed. This says the same thing without the content.
   console.info(
     `[payload-plugin-translator] Dry run: simulated ${Object.keys(input).length} field(s), no API call made.`
   );

@@ -27,10 +27,7 @@ export type CompletionRequest = {
    * mechanism the service offers — this is what stops a compliant model dropping a field.
    */
   responseSchema: JsonSchemaObject;
-  /**
-   * Cancellation, when the caller supplied one. Honour it if the transport can; the port itself
-   * gains its own signal parameter in a later change.
-   */
+  /** Cancellation, when the caller supplied one. Honour it if the transport can. */
   signal?: AbortSignal;
 };
 
@@ -62,33 +59,28 @@ export type TranslationProviderConfig = {
 };
 
 /**
- * A partial reply is applied rather than rejected, so without this line the loss would be silent —
- * which is the defect this whole change exists to remove. It reaches a log, not the editor's screen;
- * surfacing it in the admin UI needs a channel the wire format does not have and is tracked
- * separately.
+ * A partial reply is applied rather than rejected, so the gap has to be reported somewhere. This
+ * reaches the server log only, not the editor's screen.
  */
-function warnAboutPartialReply(missing: number[], unexpected: string[]): void {
-  // The headline has to match the case too: a reply that merely carried an extra key DID cover every
-  // field, and announcing otherwise would be the same false claim one level up.
+function warnAboutPartialReply(missingInputKeys: number[], unrequestedReplyKeys: string[]): void {
   const parts = [
-    missing.length > 0
+    missingInputKeys.length > 0
       ? "[payload-plugin-translator] The provider's reply did not cover every field."
       : "[payload-plugin-translator] The provider's reply carried keys that were not requested.",
   ];
 
-  if (missing.length > 0) parts.push(`Untranslated indices: ${missing.join(", ")}.`);
-  if (unexpected.length > 0) parts.push(`Unexpected keys ignored: ${unexpected.join(", ")}.`);
+  if (missingInputKeys.length > 0) {
+    parts.push(`Untranslated indices: ${missingInputKeys.join(", ")}.`);
+  }
+  if (unrequestedReplyKeys.length > 0) {
+    parts.push(`Unexpected keys ignored: ${unrequestedReplyKeys.join(", ")}.`);
+  }
 
   console.warn(parts.join(" "));
 }
 
 /**
  * Builds a complete {@link TranslationProvider} from a single request function.
- *
- * Everything that is true of a translation regardless of vendor lives here — the prompt, the
- * response schema, parsing, key-set validation, dry-run simulation, and normalizing whatever the
- * transport threw into this package's failure taxonomy. What is left for the caller is the call
- * itself: the endpoint, the credentials, the timeout, the retry policy.
  *
  * Use it when you need a service this package does not ship an adapter for, or when you need full
  * control of the request body. If you only need a different endpoint or client options for OpenAI,
@@ -115,17 +107,12 @@ export function createTranslationProvider(config: TranslationProviderConfig): Tr
       sourceLng: string,
       targetLng: string
     ): Promise<TranslationOutput | null> {
-      // Before anything else, including anything a transport might lazily set up: a dry run must
-      // reach no service at all. Consumers rely on this to build a provider with an empty API key.
-      // Wrapped because `dryRun.transform` is consumer code — an unwrapped throw here would be the
-      // one failure that escapes this taxonomy.
+      // A dry run must precede everything a transport might lazily set up: consumers build providers
+      // with an empty API key for it.
       if (dryRun) {
         try {
           return await runDryRun(input, dryRun);
         } catch (cause) {
-          // A throwing `dryRun.transform` is broken *configuration*, not a transport failure — no
-          // service was contacted. Calling it transport would repeat the mistake the SDK
-          // constructor's own handler was corrected for.
           throw new ProviderConfigurationError(
             "The dry-run transformer threw. See this error's `cause`.",
             { cause }
@@ -137,14 +124,12 @@ export function createTranslationProvider(config: TranslationProviderConfig): Tr
 
       let request: CompletionRequest;
       try {
-        // `systemPrompt` is a consumer callback too, so building the request is inside the guard.
         request = {
           systemPrompt: buildSystemPrompt({ sourceLng, targetLng, override: systemPrompt }),
           userContent: JSON.stringify(input),
           responseSchema: buildResponseSchema(input),
         };
       } catch (cause) {
-        // Same reasoning: a throwing `systemPrompt` builder is configuration the caller supplied.
         throw new ProviderConfigurationError(
           "The systemPrompt builder threw. See this error's `cause`.",
           { cause }
@@ -162,10 +147,13 @@ export function createTranslationProvider(config: TranslationProviderConfig): Tr
         throw new NoContentError("The provider returned an empty reply.");
       }
 
-      const { translations, missing, unexpected } = parseAndValidateReply(input, raw);
+      const { translations, missingInputKeys, unrequestedReplyKeys } = parseAndValidateReply(
+        input,
+        raw
+      );
 
-      if (missing.length > 0 || unexpected.length > 0) {
-        warnAboutPartialReply(missing, unexpected);
+      if (missingInputKeys.length > 0 || unrequestedReplyKeys.length > 0) {
+        warnAboutPartialReply(missingInputKeys, unrequestedReplyKeys);
       }
 
       return translations;

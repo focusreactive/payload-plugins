@@ -1,23 +1,16 @@
 import type { TranslationInput } from "../../core/domain/translation-providers";
 
 /**
- * A JSON Schema document, as a plain object.
- *
- * Deliberately not a rich schema type: this crosses the `complete` boundary to a consumer who will
- * hand it to some vendor's API, and every vendor spells the surrounding envelope differently. A
- * plain object is the only shape they all accept.
+ * A JSON Schema document, as a plain object — deliberately untyped beyond that, so it can be dropped
+ * into any vendor's response-format envelope.
  *
  * @since 0.11.0
  */
 export type JsonSchemaObject = Record<string, unknown>;
 
 /**
- * Builds the response schema for a translation request: an object whose properties are exactly the
- * input's keys, all required, with no extras allowed.
- *
- * This is the structural half of key preservation. Where the prompt *asks* a model to keep the keys,
- * a schema sent as a strict response format leaves a compliant model unable to drop one — which is
- * what turns "the model usually keeps them" into "the model cannot silently lose a field".
+ * Builds the response schema for a translation request: exactly the input's keys, all required, no
+ * extras. Sent as a strict response format, this is what stops a compliant model dropping a field.
  *
  * @since 0.11.0
  */

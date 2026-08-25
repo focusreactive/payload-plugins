@@ -4,10 +4,6 @@ import { isModuleNotFound, loadOpenAIClient } from "./loadOpenAIClient";
 
 type ThrownError = Error & { code?: string };
 
-/**
- * One class literal, reused for every SDK stub — the repo allows a single class per file, and two
- * hand-written stub classes would break that for no gain.
- */
 function sdkStub(construct: (options: unknown) => object) {
   return {
     default: class {
@@ -19,14 +15,9 @@ function sdkStub(construct: (options: unknown) => object) {
 }
 
 /**
- * One row per runtime wording, each in both shapes: openai itself missing, and openai installed with
- * a missing dependency of its own. The second column is the one that matters — every wording names
- * the importer too, and that path contains "openai", so a guard that searches the whole message gets
- * it backwards and tells the user to install a package they already have.
- *
- * Table-driven on purpose: the guard reads a list of wordings and a list of importer separators, and
- * the two can only stay in step if every wording is exercised in both directions. An earlier version
- * handled exactly one of these four — and not the one `openai`'s CommonJS packaging actually produces.
+ * One row per runtime wording, in both shapes: openai missing, and openai present with a missing
+ * dependency of its own. The second column is the trap — every wording names the importer too, and
+ * that path contains "openai".
  */
 const WORDINGS = [
   {
@@ -99,9 +90,6 @@ describe("loadOpenAIClient", () => {
     expect(client.options).toEqual({ apiKey: "sk-test", timeout: 60_000, maxRetries: 2 });
   });
 
-  // The importer is substituted rather than the specifier: the specifier has to stay a module-level
-  // constant so deployment file-tracers can follow it (see importOpenAISdk). The failure handed in
-  // here is the real shape Node raises for a missing package.
   it("turns a missing package into ProviderConfigurationError naming the fix", async () => {
     const failure = (await loadOpenAIClient({ apiKey: "sk-test" }, () => {
       throw Object.assign(
@@ -114,7 +102,6 @@ describe("loadOpenAIClient", () => {
     expect(failure.code).toBe("config");
     expect(failure.message).toContain("openai");
     expect(failure.message).toContain("client");
-    // Never the raw resolution failure — that tells a consumer nothing about what to do.
     expect(failure.message).not.toContain("Cannot find");
   });
 
@@ -133,8 +120,6 @@ describe("loadOpenAIClient", () => {
     expect(failure.cause).toBe(original);
   });
 
-  // Installed but broken is a different problem with a different fix; telling the consumer to install
-  // it again would send them after the wrong thing.
   it("distinguishes an installed-but-failing package from a missing one", async () => {
     const failure = (await loadOpenAIClient({ apiKey: "sk-test" }, () => {
       throw new Error("boom while evaluating the module");
@@ -145,9 +130,6 @@ describe("loadOpenAIClient", () => {
     expect(failure.message).not.toContain("Install it");
   });
 
-  // The SDK validates some options in its constructor. Left unwrapped this would be the one failure
-  // on this path that escapes the taxonomy — and it is a *configuration* failure, not a transport
-  // one: no request was attempted, so calling it transport would be untrue.
   it("reports a constructor throw as a configuration failure", async () => {
     const failure = (await loadOpenAIClient({ apiKey: "sk-test-abcdef123456" }, () =>
       Promise.resolve(

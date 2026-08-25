@@ -80,9 +80,6 @@ describe("createOpenAIProvider", () => {
       });
     });
 
-    // Rung 01 exists to admit Azure, OpenRouter and self-hosted gateways, and several of those reject
-    // `json_schema` with a 400. Without this escape hatch the headline new capability would fail on
-    // every call for them.
     it("can fall back to the json_object envelope for gateways that reject a schema", async () => {
       const { client, calls } = stubClient('{"0":"Hallo"}');
 
@@ -95,9 +92,6 @@ describe("createOpenAIProvider", () => {
       expect(calls[0].response_format).toEqual({ type: "json_object" });
     });
 
-    // OpenAI rejects json_object unless "json" appears in the prompt. The built-in prompt contains it,
-    // so this can only bite someone who *replaces* the prompt — and the resulting 400 reads as
-    // unrelated to the prompt, which is why it is caught here with a message that names the cause.
     it("refuses json_object when a systemPrompt override dropped the word json", async () => {
       const { client } = stubClient('{"0":"Hallo"}');
 
@@ -113,10 +107,6 @@ describe("createOpenAIProvider", () => {
       expect((failure as Error).message).toContain("json");
     });
 
-    // Before v0.11.0 every request went out as json_object, which all models accept. gpt-4-turbo,
-    // gpt-4, gpt-3.5-turbo and the o1 family reject the schema envelope — and because the vendor's own
-    // explanation never reaches the surfaced message, without this the consumer would see a generic
-    // transport failure with no route to the option that fixes it.
     it("names the fix when the model rejects the schema envelope", async () => {
       const { client } = stubClient(() => {
         throw new Error(
@@ -171,7 +161,6 @@ describe("createOpenAIProvider", () => {
       expect(calls[1].model).toBe("gpt-4o-mini");
     });
 
-    // Sampling parameters used to be hardcoded on every request, which several models reject.
     it("omits sampling parameters unless they are configured", async () => {
       const { client, calls } = stubClient('{"0":"Hallo"}');
 
@@ -217,8 +206,6 @@ describe("createOpenAIProvider", () => {
     });
   });
 
-  // These three replaced the cases that asserted `translate` resolves to `null`. The value carried no
-  // information: an editor saw one generic message for four unrelated causes.
   describe("failures name their cause", () => {
     it("throws NoContentError when the reply has no content", async () => {
       const { client } = stubClient("");
@@ -266,7 +253,6 @@ describe("createOpenAIProvider", () => {
       expect((failure as TransportError).cause).toBe(boom);
     });
 
-    // The message reaches an HTTP response body; a vendor error can carry the API key.
     it("does not copy the SDK error's text into the message it surfaces", async () => {
       const { client } = stubClient(() => {
         throw new Error("401 — key sk-test-abcdef123456");
@@ -313,8 +299,6 @@ describe("createOpenAIProvider", () => {
       expect(loadClient).not.toHaveBeenCalled();
     });
 
-    // The memo holds the import promise, not its result: two concurrent first calls would otherwise
-    // each find an unset cache and start their own import.
     it("loads the SDK once even when two first calls run concurrently", async () => {
       const { client } = stubClient('{"0":"Hallo"}');
       loadClient.mockImplementation(
@@ -330,9 +314,6 @@ describe("createOpenAIProvider", () => {
       expect(loadClient).toHaveBeenCalledTimes(1);
     });
 
-    // The provider is built once at config time and lives for the whole process. Memoizing a rejected
-    // promise would leave one transient failure — an HMR race, a cold serverless start — breaking
-    // every later translation, with the job runner's retries replaying the same stale error.
     it("retries the load after a failure instead of caching the rejection", async () => {
       const { client } = stubClient('{"0":"Hallo"}');
       loadClient.mockRejectedValueOnce(new Error("transient")).mockResolvedValue(client);
@@ -344,8 +325,6 @@ describe("createOpenAIProvider", () => {
       expect(loadClient).toHaveBeenCalledTimes(2);
     });
 
-    // The SDK's own guard is `apiKey === undefined`, so defaulting to "" would construct a client that
-    // 401s on every request instead of saying the key is missing.
     it("passes a missing apiKey through as undefined rather than an empty string", async () => {
       const { client } = stubClient('{"0":"Hallo"}');
       loadClient.mockResolvedValue(client);
@@ -425,9 +404,8 @@ describe("createOpenAIProvider", () => {
   });
 
   describe("configuration is exclusive", () => {
-    // Without the `?: never` members on each branch, TypeScript accepts an object carrying members of
-    // both — one of the two would then be silently ignored at runtime. The directive below is the
-    // assertion: if the union ever stops rejecting this, the now-unused directive fails the check.
+    // The @ts-expect-error below is the assertion: if the union ever stops rejecting
+    // `{ apiKey, client }`, the unused directive fails the type-check.
     it("rejects an object carrying both apiKey and client", () => {
       const { client } = stubClient('{"0":"Hallo"}');
 

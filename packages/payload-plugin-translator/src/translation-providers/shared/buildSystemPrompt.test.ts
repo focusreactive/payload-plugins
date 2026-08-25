@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { buildSystemPrompt } from "./buildSystemPrompt";
 
-// The literal this package has shipped since the provider was written. Pinned here verbatim because
-// `systemPrompt` hands it to consumers as `defaultPrompt` — they extend this exact string, so a
-// silent reword would change every custom prompt built on it.
+// Pinned verbatim: consumers extend this exact string via `defaultPrompt`, so a reword is breaking.
 const EXPECTED_EN_DE = `Translate the values from the JSON that the user will send you from en into de. Keep all JSON keys exactly as they are, only translate the values.
 The response should be a valid JSON object with the same structure and keys as the input, but with translated values.
 Maintain any special formatting, placeholders, or variables within the values if they exist.`;
+
+const SOURCE_LANGUAGE_CLAUSE = "send you from";
 
 describe("buildSystemPrompt", () => {
   it("produces the shipped default text unchanged", () => {
@@ -17,10 +17,8 @@ describe("buildSystemPrompt", () => {
   it("omits the source clause when the source language is empty (auto-detect)", () => {
     const prompt = buildSystemPrompt({ sourceLng: "", targetLng: "de" });
 
-    // "from the JSON" stays — it is part of the fixed wording. What must disappear is the
-    // "from <lang>" clause naming a source language.
     expect(prompt).toContain("send you into de");
-    expect(prompt).not.toContain("send you from");
+    expect(prompt).not.toContain(SOURCE_LANGUAGE_CLAUSE);
   });
 
   it("hands the default to an override and returns what the override builds", () => {

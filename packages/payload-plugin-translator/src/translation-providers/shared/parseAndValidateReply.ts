@@ -8,24 +8,16 @@ import { KeySetMismatchError, UnparseableReplyError } from "./errors";
  * @since 0.11.0
  */
 export type ParsedReply = {
-  /** Only the entries whose keys were asked for. */
   translations: TranslationOutput;
-  /** Input keys the reply did not answer. */
-  missing: number[];
-  /** Keys the reply invented. */
-  unexpected: string[];
+  missingInputKeys: number[];
+  unrequestedReplyKeys: string[];
 };
 
 /**
- * Parses an untrusted reply into a trusted {@link TranslationOutput} and reports the key-set gap.
+ * Parses an untrusted reply into a {@link TranslationOutput} and reports the key-set gap.
  *
- * This is the one place a model's output crosses from "some text a service returned" into data this
- * package will write to a document, so it is where the reply is checked rather than trusted.
- *
- * A *partial* answer is applied, not rejected: dropping good translations because one field is
- * missing helps nobody. The gap is returned so the caller can say so out loud. Only a reply that
- * answers nothing at all is a failure, because that is indistinguishable from the model having
- * ignored the request.
+ * A partial answer is applied, not rejected — the gap is returned so the caller can report it. Only
+ * a reply that answers nothing is a failure ({@link KeySetMismatchError}).
  *
  * @since 0.11.0
  */
@@ -44,31 +36,28 @@ export function parseAndValidateReply(input: TranslationInput, raw: string): Par
     throw new UnparseableReplyError("The provider's reply was JSON, but not an object.");
   }
 
-  const expected = Object.keys(input);
+  const expectedKeys = new Set(Object.keys(input));
   const translations: TranslationOutput = {};
-  const missing: number[] = [];
+  const missingInputKeys: number[] = [];
 
-  for (const key of expected) {
+  for (const key of expectedKeys) {
     const value = parsed[key];
     if (typeof value === "string") {
       translations[Number(key)] = value;
     } else {
-      missing.push(Number(key));
+      missingInputKeys.push(Number(key));
     }
   }
 
-  // `Object.hasOwn`, not `key in input`: `in` walks the prototype chain, so a reply inventing keys
-  // named after Object.prototype members ("toString", "constructor") would be counted as expected and
-  // silently vanish from the report.
-  const unexpected = Object.keys(parsed).filter((key) => !Object.hasOwn(input, key));
+  const unrequestedReplyKeys = Object.keys(parsed).filter((key) => !expectedKeys.has(key));
 
-  if (expected.length > 0 && Object.keys(translations).length === 0) {
+  if (expectedKeys.size > 0 && Object.keys(translations).length === 0) {
     throw new KeySetMismatchError(
-      `The provider's reply answered none of the ${expected.length} requested keys.`,
-      missing,
-      unexpected
+      `The provider's reply answered none of the ${expectedKeys.size} requested keys.`,
+      missingInputKeys,
+      unrequestedReplyKeys
     );
   }
 
-  return { translations, missing, unexpected };
+  return { translations, missingInputKeys, unrequestedReplyKeys };
 }

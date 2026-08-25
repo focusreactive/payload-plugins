@@ -1,11 +1,3 @@
-// Vendor-neutral half of the provider stack: a complete `TranslationProvider` built from one
-// consumer-supplied request function, plus the failure taxonomy every built-in provider throws.
-//
-// The pure helpers behind it (prompt, schema, parsing, dry run) stay internal on purpose. Their only
-// caller is the factory: anyone needing their own transport to a language model wants
-// `createTranslationProvider`, and anyone whose service is not a language model has no use for a
-// system prompt or a JSON schema. Exporting them later is easy; un-exporting them would not be.
-
 export { createTranslationProvider } from "./CompletionProvider.provider";
 export type {
   CompletionFn,

@@ -27,7 +27,6 @@ const DEFAULT_MODEL = "gpt-4o";
  */
 const DEFAULT_TIMEOUT_MS = 60_000;
 
-/** Options shared by both ways of configuring the provider. */
 type OpenAIProviderBase = {
   /**
    * Model used for translation.
@@ -69,10 +68,7 @@ type OpenAIProviderBase = {
   maxRetries?: number;
   /**
    * Sampling parameters. Omitted from the request entirely unless set — several models reject them.
-   *
-   * Note that before v0.11.0 this package always sent `temperature: 0, top_p: 1,
-   * frequency_penalty: 0, presence_penalty: 0`. Translations were therefore deterministic by default
-   * and now follow the model's own defaults; set `{ temperature: 0 }` to restore the old behaviour.
+   * Unset means the model's own defaults; pass `{ temperature: 0 }` for deterministic output.
    *
    * @since 0.11.0
    */
@@ -93,10 +89,8 @@ type OpenAIProviderBase = {
 
 /**
  * Configuration for {@link createOpenAIProvider}: an API key **or** a ready-made client, never both.
- *
- * The `?: never` members are what make that exclusive. Without them TypeScript accepts an object
- * carrying members of either branch, so `{ apiKey, client }` would type-check and one of the two
- * would be silently ignored.
+ * The `?: never` members are what make the union exclusive — without them `{ apiKey, client }`
+ * type-checks.
  */
 export type OpenAIProviderConfig = OpenAIProviderBase &
   (
@@ -107,13 +101,8 @@ export type OpenAIProviderConfig = OpenAIProviderBase &
       }
     | {
         /**
-         * A ready-made client. Anything with a `chat.completions.create` of the right shape fits —
-         * the real OpenAI SDK client, an Azure client, an OpenRouter-pointed client, a proxy.
-         *
-         * On this path the `openai` package is never loaded, and `timeout` / `maxRetries` are yours
-         * rather than ours. Note that an error thrown by your client can carry its own request
-         * metadata; this package never copies an error's text into a message it surfaces, but it
-         * cannot scrub what it did not construct.
+         * A ready-made client — the OpenAI SDK client, Azure, OpenRouter, a proxy. On this path the
+         * `openai` package is never loaded and `timeout` / `maxRetries` are yours, not ours.
          *
          * @since 0.11.0
          */
@@ -124,10 +113,6 @@ export type OpenAIProviderConfig = OpenAIProviderBase &
 
 /**
  * Creates an OpenAI translation provider.
- *
- * Thin sugar over {@link createTranslationProvider}: the prompt, the response schema, reply parsing,
- * key-set validation and the failure taxonomy all come from there. What this adds is the OpenAI call
- * itself.
  *
  * @example
  * ```ts
@@ -144,10 +129,9 @@ export type OpenAIProviderConfig = OpenAIProviderBase &
 export function createOpenAIProvider(config: OpenAIProviderConfig): TranslationProvider {
   const { model = DEFAULT_MODEL, systemPrompt, dryRun, sampling, structuredOutput } = config;
 
-  // Memoizes the *promise*, not the client. Two concurrent first calls would otherwise both find an
-  // unset cache and each start their own import. Per provider instance, never module-level: a
-  // module-level cache would hand one consumer's client to a differently-configured provider in the
-  // same process, and would leak between test cases.
+  // The promise, not the client: two concurrent first calls would otherwise each start their own
+  // import. Per instance, never module-level — one consumer's client must not reach a differently
+  // configured provider in the same process.
   let clientPromise: Promise<OpenAIClientShape> | undefined;
 
   const loadClientAndForgetOnFailure = async (): Promise<OpenAIClientShape> => {
@@ -189,9 +173,6 @@ export function createOpenAIProvider(config: OpenAIProviderConfig): TranslationP
 /**
  * @deprecated Use {@link createOpenAIProvider} instead.
  * See docs/DEPRECATIONS.md#openai-translation-provider-class
- *
- * Kept as a thin wrapper so existing `new OpenAITranslationProvider(...)` call sites keep working. It
- * delegates rather than re-implementing: two copies of this logic would be free to drift apart.
  */
 export class OpenAITranslationProvider implements TranslationProvider {
   private readonly inner: TranslationProvider;

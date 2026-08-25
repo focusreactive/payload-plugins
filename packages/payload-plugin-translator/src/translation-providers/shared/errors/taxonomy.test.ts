@@ -36,8 +36,6 @@ describe("the failure taxonomy", () => {
 });
 
 describe("wrapTransportError", () => {
-  // The message reaches an HTTP response body, and a vendor SDK error can carry request metadata
-  // including the API key. Quoting it would publish the key on an error page.
   it("never quotes the original error's text in its own message", () => {
     const secretive = new Error("401 Unauthorized — key sk-test-abcdef123456");
 
@@ -60,7 +58,6 @@ describe("wrapTransportError", () => {
     expect(wrapped.cause).toBe("just a string");
   });
 
-  // Re-wrapping would bury a specific cause under a generic transport failure.
   it("passes one of our own errors through unchanged", () => {
     const ours = new KeySetMismatchError("nothing matched", [0], []);
 
@@ -69,10 +66,6 @@ describe("wrapTransportError", () => {
 });
 
 describe("the cause cannot be serialized into a response body", () => {
-  // The one route around the no-quoting rule. Assigning `this.cause` creates an ENUMERABLE property,
-  // so `JSON.stringify` — and every structured logger, Payload's pino included — walks into the vendor
-  // error and publishes its headers, which carry the API key. `super(message, options)` installs it
-  // non-enumerably, the way the platform does.
   it("keeps the cause out of JSON.stringify", () => {
     const vendorError = Object.assign(new Error("401 Unauthorized"), {
       status: 401,

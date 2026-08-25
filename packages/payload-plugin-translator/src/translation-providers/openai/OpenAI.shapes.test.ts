@@ -3,12 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import type { OpenAIClientShape } from "./OpenAI.shapes";
 
-// Conformance test. `OpenAI.shapes.ts` describes the SDK's client without importing it, which is what
-// keeps the SDK out of this package's emitted declarations — but a hand-written description can drift
-// from the thing it describes. This file is the tripwire: it imports the real type (in type position
-// only, and only here, in a file the build excludes) and asserts the real client still satisfies the
-// slice. If OpenAI reshapes `chat.completions.create`, this fails in our CI on an SDK bump rather than
-// in a consumer's production.
+// The one file allowed to import the real SDK type (type position, excluded from the build): it
+// asserts the hand-written slice still accepts the real client, so an SDK reshape fails here.
 describe("OpenAIClientShape", () => {
   it("is satisfied by the real OpenAI client type", () => {
     const conformance: OpenAIClientShape = {} as OpenAI;

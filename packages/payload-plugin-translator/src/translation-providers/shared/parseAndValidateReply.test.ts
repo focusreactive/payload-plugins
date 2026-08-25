@@ -11,12 +11,10 @@ describe("parseAndValidateReply", () => {
     );
 
     expect(result.translations).toEqual({ 0: "Startseite", 1: "Über uns" });
-    expect(result.missing).toEqual([]);
-    expect(result.unexpected).toEqual([]);
+    expect(result.missingInputKeys).toEqual([]);
+    expect(result.unrequestedReplyKeys).toEqual([]);
   });
 
-  // The defect this whole change exists to remove: a reply that drops an index used to be applied
-  // silently, leaving one field in the source language with no error anywhere.
   it("applies the matching subset and names what the reply dropped", () => {
     const result = parseAndValidateReply(
       { 0: "Home", 1: "About us", 2: "Contact" },
@@ -24,22 +22,22 @@ describe("parseAndValidateReply", () => {
     );
 
     expect(result.translations).toEqual({ 0: "Startseite", 2: "Kontakt" });
-    expect(result.missing).toEqual([1]);
-    expect(result.unexpected).toEqual([]);
+    expect(result.missingInputKeys).toEqual([1]);
+    expect(result.unrequestedReplyKeys).toEqual([]);
   });
 
   it("reports keys the reply invented, and ignores their values", () => {
     const result = parseAndValidateReply({ 0: "Home" }, '{"0":"Startseite","7":"Erfunden"}');
 
     expect(result.translations).toEqual({ 0: "Startseite" });
-    expect(result.unexpected).toEqual(["7"]);
+    expect(result.unrequestedReplyKeys).toEqual(["7"]);
   });
 
   it("treats a non-string value as a missing key rather than coercing it", () => {
     const result = parseAndValidateReply({ 0: "Home", 1: "About" }, '{"0":"Startseite","1":42}');
 
     expect(result.translations).toEqual({ 0: "Startseite" });
-    expect(result.missing).toEqual([1]);
+    expect(result.missingInputKeys).toEqual([1]);
   });
 
   it("throws UnparseableReplyError when the reply is not JSON", () => {
@@ -66,8 +64,8 @@ describe("parseAndValidateReply", () => {
       expect.unreachable("should have thrown");
     } catch (error) {
       expect(error).toBeInstanceOf(KeySetMismatchError);
-      expect((error as KeySetMismatchError).missing).toEqual([0, 1]);
-      expect((error as KeySetMismatchError).unexpected).toEqual(["9"]);
+      expect((error as KeySetMismatchError).missingInputKeys).toEqual([0, 1]);
+      expect((error as KeySetMismatchError).unrequestedReplyKeys).toEqual(["9"]);
     }
   });
 
@@ -80,8 +78,6 @@ describe("parseAndValidateReply", () => {
     }
   });
 
-  // `key in input` walks the prototype chain, so these would be counted as expected and vanish from
-  // the report instead of being flagged as invented.
   it("reports invented keys that shadow Object.prototype members", () => {
     const result = parseAndValidateReply(
       { 0: "Home" },
@@ -89,13 +85,15 @@ describe("parseAndValidateReply", () => {
     );
 
     expect(result.translations).toEqual({ 0: "Startseite" });
-    expect(result.unexpected).toEqual(expect.arrayContaining(["toString", "constructor"]));
+    expect(result.unrequestedReplyKeys).toEqual(
+      expect.arrayContaining(["toString", "constructor"])
+    );
   });
 
   it("returns an empty result for empty input rather than treating it as a mismatch", () => {
     const result = parseAndValidateReply({}, "{}");
 
     expect(result.translations).toEqual({});
-    expect(result.missing).toEqual([]);
+    expect(result.missingInputKeys).toEqual([]);
   });
 });
