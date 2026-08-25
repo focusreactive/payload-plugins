@@ -288,20 +288,34 @@ translatorPlugin({
 
 #### OpenAI (built in) — `createOpenAIProvider(config)`
 
-| Property       | Type                      | Required | Default              | Description                                                                                                     |
-| -------------- | ------------------------- | -------- | -------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `apiKey`       | `string`                  | Yes      | —                    | OpenAI API key.                                                                                                 |
-| `model`        | `string \| ChatModel`     | No       | `'gpt-4o'`           | Model used for translation.                                                                                     |
-| `systemPrompt` | `SystemPromptBuilder`     | No       | Built-in prompt      | Custom system-prompt builder.                                                                                   |
-| `dryRun`       | `boolean \| DryRunConfig` | No       | `false`              | Simulate translations without API calls.                                                                        |
-| `timeout`      | `number`                  | No       | SDK default (10 min) | Per-request timeout (ms). A job blocks on this call, so the 10-min default is usually too long. _Since v0.6.0._ |
-| `maxRetries`   | `number`                  | No       | SDK default (2)      | Max automatic retries on transient errors (429/5xx/network). `0` disables. _Since v0.6.0._                      |
+Pass **either** an `apiKey` **or** a ready-made `client` — never both; the types enforce it.
+
+| Property       | Type                      | Required           | Default              | Description                                                                                                     |
+| -------------- | ------------------------- | ------------------ | -------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `apiKey`       | `string`                  | Unless `client`    | —                    | OpenAI API key. The `openai` package is loaded on first translation, not at config load. _Since v0.11.0: optional when `client` is given._ |
+| `client`       | `OpenAIClientShape`       | Unless `apiKey`    | —                    | Your own client — Azure OpenAI, a corporate proxy, OpenRouter, anything with a matching `chat.completions.create`. On this path the `openai` package is never loaded. _Since v0.11.0._ |
+| `model`        | `string`                  | No                 | `'gpt-4o'`           | Model used for translation. **The default may change in a minor release** — pin it if you need reproducible output and cost. |
+| `systemPrompt` | `SystemPromptBuilder`     | No                 | Built-in prompt      | Custom system-prompt builder.                                                                                   |
+| `dryRun`       | `boolean \| DryRunConfig` | No                 | `false`              | Simulate translations without API calls. Reaches no network and loads no SDK, so it works with an empty `apiKey`. |
+| `sampling`     | `OpenAISamplingParams`    | No                 | not sent             | `temperature`, `top_p`, `frequency_penalty`, `presence_penalty`. Omitted entirely unless set — several models reject them. **Before v0.11.0 this package always sent `temperature: 0, top_p: 1, frequency_penalty: 0, presence_penalty: 0`**, so translations were deterministic; they now follow the model's defaults. Set `{ temperature: 0 }` to restore that. _Since v0.11.0._ |
+| `structuredOutput` | `"json_schema" \| "json_object"` | No | `"json_schema"` | Which structured-output envelope to send. The default makes a compliant model unable to drop a field. **Before v0.11.0 this package always sent `json_object`**, which every model accepts — the new default is rejected by `gpt-4-turbo`, `gpt-4`, `gpt-3.5-turbo`, the `o1` family, older `gpt-4o` snapshots, and some gateways (OpenRouter with certain upstream models, older Azure deployments, proxies). Set `"json_object"` for those; key preservation then rests on this package's key-set check, which *reports* a partial reply rather than preventing one. A rejection is surfaced with a message naming this option. _Since v0.11.0._ |
+| `timeout`      | `number`                  | No                 | `60000`              | Per-request timeout (ms) for the client this package builds. Ignored when you pass your own `client`. _Since v0.6.0; the default dropped from the SDK's 10 minutes to 60 s in v0.11.0._ |
+| `maxRetries`   | `number`                  | No                 | SDK default (2)      | Max automatic retries on transient errors (429/5xx/network) for the client this package builds. `0` disables. Ignored when you pass your own `client`. _Since v0.6.0._ |
 
 ```typescript
+// Quick start
 createOpenAIProvider({
   apiKey: process.env.OPENAI_API_KEY,
   model: "gpt-4o-mini",
   systemPrompt: ({ sourceLang, targetLang, defaultPrompt }) => `${defaultPrompt}\nUse formal language. Keep brand names unchanged.`,
+});
+
+// Your own client — Azure, a proxy, OpenRouter. Since v0.11.0.
+import OpenAI from "openai";
+
+createOpenAIProvider({
+  client: new OpenAI({ apiKey: process.env.AZURE_KEY, baseURL: process.env.AZURE_ENDPOINT }),
+  model: "gpt-4o",
 });
 ```
 
@@ -313,6 +327,56 @@ type DryRunConfig = {
   timeout?: number; // ms, simulates API latency
 };
 ```
+
+#### Another service — `createTranslationProvider(config)`
+
+_Since v0.11.0._
+
+Need a different model provider, or full control of the request body? Supply one function — "send this text, give me the reply" — and keep everything else. The prompt, the response schema, reply parsing, key-set validation, dry-run simulation and the failure taxonomy all stay on our side, so you cannot accidentally skip them.
+
+```typescript
+import { createTranslationProvider } from "@focus-reactive/payload-plugin-translator";
+
+const provider = createTranslationProvider({
+  complete: async ({ systemPrompt, userContent, responseSchema, signal }) => {
+    const reply = await myService.chat({
+      system: systemPrompt,
+      user: userContent,
+      schema: responseSchema, // hand this to whatever structured-output mechanism your service offers
+      signal,
+    });
+    return reply.text; // raw text, not a parsed object — we parse it
+  },
+});
+```
+
+> `signal` is reserved and currently always `undefined` — the port does not carry cancellation yet, so wiring it into your client is harmless but has no effect today. It is in the request shape so that adding cancellation later is a pure addition rather than a breaking change.
+
+| Property       | Type                      | Required | Default         | Description                                        |
+| -------------- | ------------------------- | -------- | --------------- | -------------------------------------------------- |
+| `complete`     | `CompletionFn`            | Yes      | —               | Sends one request, returns the reply as raw text.  |
+| `systemPrompt` | `SystemPromptBuilder`     | No       | Built-in prompt | Custom system-prompt builder.                      |
+| `dryRun`       | `boolean \| DryRunConfig` | No       | `false`         | Simulate translations without calling anything.    |
+
+Your `complete` owns the timeout, the retry policy and the credentials — this package adds no retry of its own and imposes no timeout on your call.
+
+#### Failure causes
+
+_Since v0.11.0._
+
+Every built-in provider throws a typed error naming what went wrong, instead of returning `null`:
+
+| Error                       | `code`               | Means                                                                  |
+| --------------------------- | -------------------- | ---------------------------------------------------------------------- |
+| `NoContentError`            | `no-content`         | The reply was empty, or the service filtered it.                       |
+| `UnparseableReplyError`     | `unparseable-reply`  | The reply was not JSON, or not an object.                              |
+| `KeySetMismatchError`       | `key-set-mismatch`   | The reply answered none of the requested fields.                       |
+| `TransportError`            | `transport`          | The call failed — network, auth, rate limit, timeout.                  |
+| `ProviderConfigurationError`| `config`             | The provider cannot work as configured (usually a missing optional SDK). |
+
+All extend `TranslationProviderError`, so one `catch` covers them. The original failure is on the standard `cause` property — never copied into `message`, because that text can reach an HTTP response body and a vendor error may carry your API key.
+
+A **partial** reply is not an error: the fields that came back are applied, and the ones that did not are named in a warning. That is deliberate — dropping good translations because one field is missing helps nobody — but it does mean a partial translation still completes.
 
 #### Custom provider
 
@@ -341,8 +405,10 @@ class DeepLProvider implements TranslationProvider {
         result[key] = data.translations[i].text;
       });
       return result;
-    } catch {
-      return null; // null aborts the translation for this chunk
+    } catch (cause) {
+      // Throwing is preferred — the cause reaches the log and the editor sees why it failed.
+      // Returning `null` still works and still aborts the whole run, but it says nothing about why.
+      throw new Error("DeepL translation failed", { cause });
     }
   }
 }

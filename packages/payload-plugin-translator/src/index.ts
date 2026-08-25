@@ -15,9 +15,40 @@ export type { AccessGuard, AccessGuardRequest } from "./types/AccessGuard";
 
 // Translation provider port (from the dependency-free core)
 export type { TranslationProvider, TranslationInput, TranslationOutput } from "./core";
-// Built-in OpenAI provider (opt-in; pulls `openai`) — lives in the plugin's src/providers, outside core
+
+// Built-in OpenAI provider. Takes an `apiKey` (the SDK is loaded on first use) or a ready-made
+// `client` — Azure, a proxy, OpenRouter — in which case the `openai` package is never loaded.
 export { createOpenAIProvider } from "./translation-providers";
-export type { OpenAIProviderConfig, DryRunConfig } from "./translation-providers";
+export type {
+  OpenAIProviderConfig,
+  OpenAIClientShape,
+  OpenAISamplingParams,
+  OpenAIStructuredOutput,
+  DryRunConfig,
+} from "./translation-providers";
+
+// Build a provider for any other service from a single request function: the prompt, the response
+// schema, reply parsing, key-set validation and dry-run simulation stay ours. Since v0.11.0.
+export { createTranslationProvider } from "./translation-providers";
+export type {
+  CompletionFn,
+  CompletionRequest,
+  TranslationProviderConfig,
+  JsonSchemaObject,
+  SystemPromptBuilder,
+  SystemPromptContext,
+} from "./translation-providers";
+
+// Failure taxonomy — every built-in provider throws one of these, each naming its cause. Since v0.11.0.
+export {
+  TranslationProviderError,
+  NoContentError,
+  UnparseableReplyError,
+  KeySetMismatchError,
+  TransportError,
+  ProviderConfigurationError,
+} from "./translation-providers";
+export type { TranslationFailureCode } from "./translation-providers";
 
 // Task runners
 export { createPayloadJobsRunner, createSyncRunner } from "./server/modules/task-runner";
