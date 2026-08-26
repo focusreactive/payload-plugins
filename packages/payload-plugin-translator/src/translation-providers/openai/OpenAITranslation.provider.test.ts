@@ -123,6 +123,64 @@ describe("createOpenAIProvider", () => {
       expect((failure as Error).message).toContain("gpt-4-turbo");
     });
 
+    it("advises a smaller subtree when the schema itself is rejected", async () => {
+      const { client } = stubClient(() => {
+        throw new Error(
+          "400 Invalid schema for response_format 'translation': object has too many properties."
+        );
+      });
+
+      const failure = await createOpenAIProvider({ client })
+        .translate({ 0: "Hello" }, "en", "de")
+        .catch((e: unknown) => e);
+
+      expect(failure).toBeInstanceOf(ProviderConfigurationError);
+      expect((failure as Error).message).toContain('structuredOutput: "json_object"');
+      expect((failure as Error).message).toContain("smaller subtree");
+    });
+
+    // A gateway that echoes the request body into its error text puts `response_format` into
+    // messages that have nothing to do with the schema.
+    const ECHOED_ENVELOPE = [
+      {
+        case: "a rate limit",
+        message:
+          '429 Rate limit exceeded for request {"model":"gpt-4o","response_format":{"type":"json_schema"}}',
+      },
+      {
+        case: "an unrelated invalid parameter",
+        message:
+          '400 Invalid parameter: \'temperature\' must be between 0 and 2. request: {"response_format":{"type":"json_schema"}}',
+      },
+    ];
+
+    for (const { case: label, message } of ECHOED_ENVELOPE) {
+      it(`leaves ${label} that merely mentions the envelope as a transport failure`, async () => {
+        const { client } = stubClient(() => {
+          throw new Error(message);
+        });
+
+        const failure = await createOpenAIProvider({ client })
+          .translate({ 0: "Hello" }, "en", "de")
+          .catch((e: unknown) => e);
+
+        expect(failure).toBeInstanceOf(TransportError);
+        expect(failure).not.toBeInstanceOf(ProviderConfigurationError);
+      });
+    }
+
+    it("does not reinterpret a rejection when json_object was configured", async () => {
+      const { client } = stubClient(() => {
+        throw new Error("400 Invalid schema for response_format 'translation'.");
+      });
+
+      const failure = await createOpenAIProvider({ client, structuredOutput: "json_object" })
+        .translate({ 0: "Hello" }, "en", "de")
+        .catch((e: unknown) => e);
+
+      expect(failure).toBeInstanceOf(TransportError);
+    });
+
     it("still reports an ordinary API failure as transport", async () => {
       const { client } = stubClient(() => {
         throw new Error("429 rate limit exceeded");

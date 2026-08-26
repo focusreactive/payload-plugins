@@ -1,8 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { runDryRun } from "./runDryRun";
 
 describe("runDryRun", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("reverses every value by default", async () => {
     expect(await runDryRun({ 0: "Hello", 1: "World" }, true)).toEqual({
       0: "olleH",
@@ -50,6 +54,29 @@ describe("runDryRun", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  describe("logging", () => {
+    it("reports how many fields were simulated", async () => {
+      const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+      await runDryRun({ 0: "Hello", 1: "World" }, true);
+
+      expect(info).toHaveBeenCalledTimes(1);
+      expect(String(info.mock.calls[0].join(" "))).toContain("2 field(s)");
+    });
+
+    it("never puts field content in the log", async () => {
+      const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+      await runDryRun({ 0: "Hello", 1: "World" }, { transform: (t) => `[T] ${t}` });
+
+      const logged = String(info.mock.calls[0].join(" "));
+      expect(logged).toContain("2 field(s)");
+      expect(logged).not.toContain("Hello");
+      expect(logged).not.toContain("World");
+      expect(logged).not.toContain("[T] ");
+    });
   });
 
   it("returns immediately when no delay is configured", async () => {

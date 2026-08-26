@@ -32,6 +32,8 @@ function delayOf(config: boolean | DryRunConfig): number {
 /**
  * Simulates a translation without calling anything. Blank values pass through untouched.
  *
+ * Logs the field count and never field content: the log reaches shared infrastructure.
+ *
  * @since 0.11.0
  */
 export async function runDryRun(

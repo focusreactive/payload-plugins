@@ -47,6 +47,10 @@ function classifySchemaRejection(cause: unknown): SchemaRejection | null {
  * The vendor boundary: the only place OpenAI's response shape is read and the only place its errors
  * are converted into this package's failure taxonomy.
  *
+ * A rejection of the schema envelope itself becomes a {@link ProviderConfigurationError} naming
+ * `structuredOutput`; every other failure — including one whose text merely mentions the envelope —
+ * stays a transport failure.
+ *
  * @since 0.11.0
  */
 export function openAIComplete(args: {
