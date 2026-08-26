@@ -14,11 +14,6 @@ function sdkStub(construct: (options: unknown) => object) {
   };
 }
 
-/**
- * One row per runtime wording, in both shapes: openai missing, and openai present with a missing
- * dependency of its own. The second column is the trap — every wording names the importer too, and
- * that path contains "openai".
- */
 const WORDINGS = [
   {
     runtime: "Node ESM",

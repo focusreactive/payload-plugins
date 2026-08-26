@@ -18,16 +18,12 @@ import type { DryRunConfig } from "./runDryRun";
  * @since 0.11.0
  */
 export type CompletionRequest = {
-  /** The system prompt to send. Already built — including any `systemPrompt` override. */
+  /** Already includes any `systemPrompt` override — send it verbatim, do not rebuild it. */
   systemPrompt: string;
   /** The user message: the input serialized as JSON. */
   userContent: string;
-  /**
-   * A JSON Schema requiring exactly the input's keys. Hand it to whatever structured-output
-   * mechanism the service offers — this is what stops a compliant model dropping a field.
-   */
+  /** A JSON Schema requiring exactly the input's keys. Feed it to the service's structured-output mechanism. */
   responseSchema: JsonSchemaObject;
-  /** Cancellation, when the caller supplied one. Honour it if the transport can. */
   signal?: AbortSignal;
 };
 
@@ -47,9 +43,7 @@ export type CompletionFn = (request: CompletionRequest) => Promise<string>;
  * @since 0.11.0
  */
 export type TranslationProviderConfig = {
-  /** The one thing you supply: how to reach your service. */
   complete: CompletionFn;
-  /** Replace or extend the built-in system prompt. */
   systemPrompt?: SystemPromptBuilder;
   /**
    * Simulate translations without calling anything. `true` reverses the text; an object supplies a
@@ -58,25 +52,42 @@ export type TranslationProviderConfig = {
   dryRun?: boolean | DryRunConfig;
 };
 
-/**
- * A partial reply is applied rather than rejected, so the gap has to be reported somewhere. This
- * reaches the server log only, not the editor's screen.
- */
 function warnAboutPartialReply(missingInputKeys: number[], unrequestedReplyKeys: string[]): void {
-  const parts = [
-    missingInputKeys.length > 0
-      ? "[payload-plugin-translator] The provider's reply did not cover every field."
-      : "[payload-plugin-translator] The provider's reply carried keys that were not requested.",
-  ];
+  const parts: string[] = [];
 
   if (missingInputKeys.length > 0) {
-    parts.push(`Untranslated indices: ${missingInputKeys.join(", ")}.`);
+    parts.push(
+      "[payload-plugin-translator] The provider's reply did not cover every field.",
+      `Untranslated indices: ${missingInputKeys.join(", ")}.`
+    );
+  } else {
+    parts.push(
+      "[payload-plugin-translator] The provider's reply carried keys that were not requested."
+    );
   }
+
   if (unrequestedReplyKeys.length > 0) {
     parts.push(`Unexpected keys ignored: ${unrequestedReplyKeys.join(", ")}.`);
   }
 
   console.warn(parts.join(" "));
+}
+
+async function asConfigurationFailure<T>(what: string, run: () => T | Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (cause) {
+    throw new ProviderConfigurationError(`The ${what} threw. See this error's \`cause\`.`, {
+      cause,
+    });
+  }
+}
+
+function createDryRunProvider(dryRun: boolean | DryRunConfig): TranslationProvider {
+  return {
+    translate: (input: TranslationInput): Promise<TranslationOutput> =>
+      asConfigurationFailure("dry-run transformer", () => runDryRun(input, dryRun)),
+  };
 }
 
 /**
@@ -101,40 +112,23 @@ function warnAboutPartialReply(missingInputKeys: number[], unrequestedReplyKeys:
 export function createTranslationProvider(config: TranslationProviderConfig): TranslationProvider {
   const { complete, systemPrompt, dryRun } = config;
 
+  if (dryRun) return createDryRunProvider(dryRun);
+
   return {
     async translate(
       input: TranslationInput,
       sourceLng: string,
       targetLng: string
-    ): Promise<TranslationOutput | null> {
-      // A dry run must precede everything a transport might lazily set up: consumers build providers
-      // with an empty API key for it.
-      if (dryRun) {
-        try {
-          return await runDryRun(input, dryRun);
-        } catch (cause) {
-          throw new ProviderConfigurationError(
-            "The dry-run transformer threw. See this error's `cause`.",
-            { cause }
-          );
-        }
-      }
-
+    ): Promise<TranslationOutput> {
       if (Object.keys(input).length === 0) return {};
 
-      let request: CompletionRequest;
-      try {
-        request = {
-          systemPrompt: buildSystemPrompt({ sourceLng, targetLng, override: systemPrompt }),
-          userContent: JSON.stringify(input),
-          responseSchema: buildResponseSchema(input),
-        };
-      } catch (cause) {
-        throw new ProviderConfigurationError(
-          "The systemPrompt builder threw. See this error's `cause`.",
-          { cause }
-        );
-      }
+      const request: CompletionRequest = {
+        systemPrompt: await asConfigurationFailure("systemPrompt builder", () =>
+          buildSystemPrompt({ sourceLng, targetLng, override: systemPrompt })
+        ),
+        userContent: JSON.stringify(input),
+        responseSchema: buildResponseSchema(input),
+      };
 
       let raw: string;
       try {

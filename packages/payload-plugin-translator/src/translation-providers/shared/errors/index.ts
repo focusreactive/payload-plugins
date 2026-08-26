@@ -6,3 +6,4 @@ export { KeySetMismatchError } from "./KeySetMismatchError";
 export { TransportError } from "./TransportError";
 export { ProviderConfigurationError } from "./ProviderConfigurationError";
 export { wrapTransportError } from "./wrapTransportError";
+export { errorMessageLower } from "./errorMessageLower";

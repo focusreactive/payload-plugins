@@ -1,6 +1,5 @@
 import type { CompletionFn } from "../shared";
-import { NoContentError, ProviderConfigurationError } from "../shared";
-import { wrapTransportError } from "../shared/errors";
+import { errorMessageLower, NoContentError, ProviderConfigurationError } from "../shared";
 import type { OpenAIChatParams, OpenAIClientShape } from "./OpenAI.shapes";
 
 export type OpenAISamplingParams = Pick<
@@ -16,6 +15,9 @@ export type OpenAISamplingParams = Pick<
  */
 export type OpenAIStructuredOutput = "json_schema" | "json_object";
 
+/** Echoed back by the vendor in a rejection — see the sample message on `classifySchemaRejection`. */
+const SCHEMA_NAME = "translation";
+
 type SchemaRejection = "model-does-not-support" | "schema-rejected";
 
 /**
@@ -24,12 +26,9 @@ type SchemaRejection = "model-does-not-support" | "schema-rejected";
  * limit into a configuration problem.
  */
 function classifySchemaRejection(cause: unknown): SchemaRejection | null {
-  if (typeof cause !== "object" || cause === null) return null;
+  const text = errorMessageLower(cause);
+  if (text === null) return null;
 
-  const message = (cause as { message?: unknown }).message;
-  if (typeof message !== "string") return null;
-
-  const text = message.toLowerCase();
   if (!text.includes("response_format") && !text.includes("json_schema")) return null;
 
   // "…'response_format' of type 'json_schema' is not supported with this model."
@@ -44,12 +43,7 @@ function classifySchemaRejection(cause: unknown): SchemaRejection | null {
 }
 
 /**
- * The vendor boundary: the only place OpenAI's response shape is read and the only place its errors
- * are converted into this package's failure taxonomy.
- *
- * A rejection of the schema envelope itself becomes a {@link ProviderConfigurationError} naming
- * `structuredOutput`; every other failure — including one whose text merely mentions the envelope —
- * stays a transport failure.
+ * The vendor boundary: the only place OpenAI's response shape is read.
  *
  * @since 0.11.0
  */
@@ -78,7 +72,7 @@ export function openAIComplete(args: {
         structuredOutput === "json_schema"
           ? {
               type: "json_schema",
-              json_schema: { name: "translation", strict: true, schema: responseSchema },
+              json_schema: { name: SCHEMA_NAME, strict: true, schema: responseSchema },
             }
           : { type: "json_object" },
       ...sampling,
@@ -88,25 +82,23 @@ export function openAIComplete(args: {
     try {
       result = await client.chat.completions.create(params, signal ? { signal } : undefined);
     } catch (cause) {
-      if (structuredOutput === "json_schema") {
-        const rejection = classifySchemaRejection(cause);
+      const rejection = structuredOutput === "json_schema" ? classifySchemaRejection(cause) : null;
 
-        if (rejection === "model-does-not-support") {
-          throw new ProviderConfigurationError(
-            `The model "${model}" does not support the json_schema response format. Pass structuredOutput: "json_object" to createOpenAIProvider, or choose a model that supports structured outputs.`,
-            { cause }
-          );
-        }
-
-        if (rejection === "schema-rejected") {
-          throw new ProviderConfigurationError(
-            `OpenAI rejected the generated response schema. This usually means the document has more translatable fields than a strict schema allows. Pass structuredOutput: "json_object" to createOpenAIProvider, or translate a smaller subtree.`,
-            { cause }
-          );
-        }
+      if (rejection === "model-does-not-support") {
+        throw new ProviderConfigurationError(
+          `The model "${model}" does not support the json_schema response format. Pass structuredOutput: "json_object" to createOpenAIProvider, or choose a model that supports structured outputs.`,
+          { cause }
+        );
       }
 
-      throw wrapTransportError(cause);
+      if (rejection === "schema-rejected") {
+        throw new ProviderConfigurationError(
+          `OpenAI rejected the generated response schema. This usually means the document has more translatable fields than a strict schema allows. Pass structuredOutput: "json_object" to createOpenAIProvider, or translate a smaller subtree.`,
+          { cause }
+        );
+      }
+
+      throw cause;
     }
 
     const content = result.choices[0]?.message?.content;

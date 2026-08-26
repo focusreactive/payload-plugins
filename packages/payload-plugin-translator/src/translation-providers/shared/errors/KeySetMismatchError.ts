@@ -2,7 +2,7 @@ import { TranslationProviderError } from "./TranslationProviderError";
 
 /**
  * The reply's keys did not overlap the input's at all, so nothing could be applied. A partial
- * mismatch is not an error — see {@link parseAndValidateReply}.
+ * mismatch is not an error — see `parseAndValidateReply`.
  *
  * @since 0.11.0
  */

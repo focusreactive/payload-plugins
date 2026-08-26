@@ -2,11 +2,6 @@ import type { TranslationInput, TranslationOutput } from "../../core/domain/tran
 import { isObject } from "../../core/kernel/utils/isObject";
 import { KeySetMismatchError, UnparseableReplyError } from "./errors";
 
-/**
- * What a reply turned into, plus what did not line up.
- *
- * @since 0.11.0
- */
 export type ParsedReply = {
   translations: TranslationOutput;
   missingInputKeys: number[];
@@ -29,9 +24,7 @@ export function parseAndValidateReply(input: TranslationInput, raw: string): Par
     throw new UnparseableReplyError("The provider's reply was not valid JSON.", { cause });
   }
 
-  // `isObject` admits arrays, and an array would sometimes *look* right: `["a"]` has key "0", so an
-  // input starting at index 0 would quietly accept it while an input starting anywhere else would
-  // not. Reject the shape outright rather than let that coincidence decide.
+  // `isObject` admits arrays: `["a"]` has key "0", so a 0-based input would accept it by coincidence.
   if (!isObject(parsed) || Array.isArray(parsed)) {
     throw new UnparseableReplyError("The provider's reply was JSON, but not an object.");
   }

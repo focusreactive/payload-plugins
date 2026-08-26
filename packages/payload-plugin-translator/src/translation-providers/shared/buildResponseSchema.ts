@@ -10,7 +10,7 @@ export type JsonSchemaObject = Record<string, unknown>;
 
 /**
  * Builds the response schema for a translation request: exactly the input's keys, all required, no
- * extras. Sent as a strict response format, this is what stops a compliant model dropping a field.
+ * extras.
  *
  * @since 0.11.0
  */
@@ -22,6 +22,8 @@ export function buildResponseSchema(input: TranslationInput): JsonSchemaObject {
     properties[key] = { type: "string" };
   }
 
+  // Strict structured-output modes reject a schema unless every property is listed in `required`
+  // and extras are forbidden.
   return {
     type: "object",
     properties,

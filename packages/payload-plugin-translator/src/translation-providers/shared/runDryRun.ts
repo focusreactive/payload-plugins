@@ -1,10 +1,5 @@
 import type { TranslationInput, TranslationOutput } from "../../core/domain/translation-providers";
 
-/**
- * Transforms one string in dry-run mode.
- *
- * @since 0.11.0
- */
 export type DryRunTransformer = (text: string) => string | Promise<string>;
 
 /**
@@ -15,18 +10,14 @@ export type DryRunTransformer = (text: string) => string | Promise<string>;
 export type DryRunConfig = {
   /** Applied to every non-blank value. */
   transform: DryRunTransformer;
-  /** Milliseconds to wait before returning, so a caller can see its own loading states. */
+  /** Milliseconds to wait before returning. */
   timeout?: number;
 };
 
 const reverse: DryRunTransformer = (text) => text.split("").reverse().join("");
 
-function transformerOf(config: boolean | DryRunConfig): DryRunTransformer {
-  return typeof config === "object" && config.transform ? config.transform : reverse;
-}
-
-function delayOf(config: boolean | DryRunConfig): number {
-  return typeof config === "object" && config.timeout ? config.timeout : 0;
+function optionsOf(config: boolean | DryRunConfig): Partial<DryRunConfig> {
+  return typeof config === "object" ? config : {};
 }
 
 /**
@@ -44,10 +35,10 @@ export async function runDryRun(
     `[payload-plugin-translator] Dry run: simulated ${Object.keys(input).length} field(s), no API call made.`
   );
 
-  const delay = delayOf(config);
-  if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
+  const { transform = reverse, timeout = 0 } = optionsOf(config);
 
-  const transform = transformerOf(config);
+  if (timeout > 0) await new Promise((resolve) => setTimeout(resolve, timeout));
+
   const output: TranslationOutput = {};
 
   for (const [key, value] of Object.entries(input)) {

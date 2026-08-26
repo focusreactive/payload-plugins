@@ -11,11 +11,8 @@ import { openAIComplete } from "./openAIComplete";
 import type { OpenAISamplingParams, OpenAIStructuredOutput } from "./openAIComplete";
 
 /**
- * The model used when a consumer does not name one.
- *
- * **This default may change in a minor release.** It is a quick-start convenience, not a promise: as
- * models are superseded the default follows. Pin `model` yourself if you need reproducible output and
- * predictable cost.
+ * The model used when a consumer does not name one; may change in a minor release — see `model` on
+ * {@link OpenAIProviderConfig}.
  */
 const DEFAULT_MODEL = "gpt-4o";
 
@@ -89,13 +86,10 @@ type OpenAIProviderBase = {
 
 /**
  * Configuration for {@link createOpenAIProvider}: an API key **or** a ready-made client, never both.
- * The `?: never` members are what make the union exclusive — without them `{ apiKey, client }`
- * type-checks.
  */
 export type OpenAIProviderConfig = OpenAIProviderBase &
   (
     | {
-        /** OpenAI API key. Read it from an environment variable — never hard-code it. */
         apiKey: string;
         client?: never;
       }
@@ -145,9 +139,8 @@ export function createOpenAIProvider(config: OpenAIProviderConfig): TranslationP
         maxRetries: config.maxRetries,
       });
     } catch (error) {
-      // Drop the memo so a transient failure — an HMR race, a cold serverless start — does not leave
-      // this provider permanently broken. Without it one bad first call rejects every later
-      // translate() with the same stale error, and the job runner's retries replay it unchanged.
+      // A cached rejected promise makes one bad first call permanent — the job runner's retries
+      // would replay the same stale error.
       clientPromise = undefined;
       throw error;
     }

@@ -1,4 +1,4 @@
-import { ProviderConfigurationError } from "../shared";
+import { errorMessageLower, ProviderConfigurationError } from "../shared";
 import type { OpenAIClientShape } from "./OpenAI.shapes";
 
 /**
@@ -59,18 +59,13 @@ function whatCouldNotBeFound(text: string): string {
 }
 
 /**
- * Was `moduleSpecifier` itself missing, or one of its dependencies? The importer half of the message
- * contains the openai path, so it is cut before searching.
- *
- * Exported for its own test. Not re-exported from any barrel and not public API.
+ * Was `moduleSpecifier` itself missing, or one of its dependencies? Exported for its own test; not
+ * public API.
  */
 export function isModuleNotFound(cause: unknown, moduleSpecifier: string): boolean {
-  if (typeof cause !== "object" || cause === null) return false;
+  const text = errorMessageLower(cause);
+  if (text === null) return false;
 
-  const message = (cause as { message?: unknown }).message;
-  if (typeof message !== "string") return false;
-
-  const text = message.toLowerCase();
   if (!whatCouldNotBeFound(text).includes(moduleSpecifier.toLowerCase())) return false;
 
   const code = (cause as { code?: unknown }).code;
@@ -80,8 +75,9 @@ export function isModuleNotFound(cause: unknown, moduleSpecifier: string): boole
 }
 
 /**
- * Constructs an OpenAI SDK client, loading the `openai` package on first use. Reached only when a
- * consumer passed `apiKey`; a consumer who injects a `client` never runs this module.
+ * Constructs an OpenAI SDK client, importing the `openai` package on every call — callers memoize.
+ * Reached only when a consumer passed `apiKey`; a consumer who injects a `client` never runs this
+ * module.
  *
  * @throws ProviderConfigurationError for a missing package, a broken install, or rejected options.
  *

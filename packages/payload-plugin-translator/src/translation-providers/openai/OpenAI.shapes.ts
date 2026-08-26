@@ -8,8 +8,8 @@ export type OpenAIChatMessage = {
 };
 
 /**
- * Not `unknown`: a widened field is not assignable to the SDK's closed union, which breaks the
- * conformance test in OpenAI.shapes.test.ts.
+ * `schema` is `Record<string, unknown>`, not `unknown`: a widened field is not assignable to the
+ * SDK's closed union and OpenAI.shapes.test.ts stops compiling.
  */
 export type OpenAIResponseFormat =
   | { type: "json_object" }

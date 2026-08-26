@@ -17,7 +17,6 @@ vi.mock("./loadOpenAIClient", () => ({
 
 const loadClient = vi.mocked(loadOpenAIClient);
 
-/** A client that records what it was asked and replies with whatever the test supplies. */
 function stubClient(reply: string | (() => never)) {
   const calls: OpenAIChatParams[] = [];
   const client: OpenAIClientShape = {
@@ -139,8 +138,6 @@ describe("createOpenAIProvider", () => {
       expect((failure as Error).message).toContain("smaller subtree");
     });
 
-    // A gateway that echoes the request body into its error text puts `response_format` into
-    // messages that have nothing to do with the schema.
     const ECHOED_ENVELOPE = [
       {
         case: "a rate limit",

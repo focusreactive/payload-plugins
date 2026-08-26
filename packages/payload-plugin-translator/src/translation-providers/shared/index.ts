@@ -9,6 +9,7 @@ export type { JsonSchemaObject } from "./buildResponseSchema";
 export type { SystemPromptBuilder, SystemPromptContext } from "./buildSystemPrompt";
 export type { DryRunConfig, DryRunTransformer } from "./runDryRun";
 
+export { errorMessageLower } from "./errors";
 export {
   TranslationProviderError,
   NoContentError,
