@@ -52,12 +52,6 @@ inventing a parallel scheme.
 | Translation-pipeline stage | `.stage.ts` | `DataReconciler.stage.ts` |
 | Pluggable strategy / provider / factory | `.strategy.ts` · `.provider.ts` · `.factory.ts` | `Overwrite.strategy.ts` |
 | Client RSC / admin boundary | `.export.tsx` · `.server.tsx` · `.client.ts` | `TranslateDocument.server.tsx` |
-| Deprecated surface awaiting removal | `.deprecated.ts` | `OpenAITranslationProvider.deprecated.ts` |
-
-The `.deprecated.ts` tag carries its own rule: a file with it holds **only** deprecated surface, so
-its entry in [docs/DEPRECATIONS.md](docs/DEPRECATIONS.md) can name the file and the next-major
-removal is a deletion rather than surgery. A directory listing then shows what dies at the next
-major without opening the ledger.
 
 Not everything is tagged: `index.ts` barrels, and small **pure helpers** named by topic
 (`slugGuard.ts`, `staleness.ts`) stay untagged. The tag is for role-bearing units, not every file.

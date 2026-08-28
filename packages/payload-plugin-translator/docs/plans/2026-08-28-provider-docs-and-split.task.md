@@ -13,6 +13,23 @@ stale comment inside it.
 
 **Changes 1–3 carry no design decision** — they are documentation and one ledger line.
 
+> **Reversed 2026-08-28 by the final architecture pass.** The `.deprecated.ts` tag was dropped and
+> the file renamed to `OpenAITranslationLegacy.provider.ts`. The reason: a dotted suffix has one
+> slot, and "deprecated" is a lifecycle attribute orthogonal to role, so the two compete and role
+> always wins. Measured on this branch — the ledger names five files in the provider layer and
+> exactly one could carry the tag; `OpenAITranslation.provider.ts`, `loadOpenAIClient.ts` and
+> `runDryRun.ts` all die at the next major and none of them can be tagged, because each already has
+> a role or is an untagged topic helper. The promised benefit ("a listing shows what dies without
+> opening the ledger") therefore fails *systematically*, not occasionally: only files with no other
+> role can carry it, which are the least significant ones. Lifecycle stays where it already is and
+> is machine-readable — `@deprecated` on every symbol, `Code refs` in the ledger, and the
+> `// Deprecated exports` block in `src/index.ts`. If a listing-level signal is ever wanted, the
+> right level is a directory, not a suffix.
+>
+> The residual imperfection, stated rather than hidden: `OpenAITranslationLegacy.provider.ts` does
+> not compose to the symbol it exports (`OpenAITranslationProvider`), which the convention's other
+> files do. Accepted — the name that would compose is taken by the factory file.
+
 **Change 4 — where the deprecated class lives.** Chosen: `openai/OpenAITranslationProvider.deprecated.ts`,
 adding `.deprecated.ts` to the role-tag vocabulary in the package `CLAUDE.md`.
 
@@ -57,8 +74,9 @@ block already pins the class's behaviour and moves with it — no separate snaps
 
 ## Risks
 
-- The `.deprecated.ts` tag is a package-level convention change decided for a single file's sake.
+- ~~The `.deprecated.ts` tag is a package-level convention change decided for a single file's sake.
   Accepted deliberately: it pays off across all five live deprecations, and the alternative breaks a
-  stronger rule.
+  stronger rule.~~ **This risk landed.** It paid off across one of the five, not all of them — see
+  the reversal note above.
 - Documentation is the deliverable for three of four changes, so "done" is a judgement about
   wording. Criterion 1 is written to be checkable by content, not by feel.

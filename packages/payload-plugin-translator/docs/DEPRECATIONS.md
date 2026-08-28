@@ -106,7 +106,7 @@ the single source of truth — code annotations link here by anchor instead of d
 - **Deprecated:** pre-ledger
 - **Replacement:** `createOpenAIProvider()` factory.
 - **Remove in:** next major
-- **Code refs:** `src/translation-providers/openai/OpenAITranslationProvider.deprecated.ts`
+- **Code refs:** `src/translation-providers/openai/OpenAITranslationLegacy.provider.ts`
 
 ### provider-dry-run
 
@@ -174,4 +174,4 @@ the single source of truth — code annotations link here by anchor instead of d
   maintain themselves, which is the opposite of the point.
 - **Code refs:** `src/translation-providers/openai/OpenAITranslation.provider.ts`,
   `src/translation-providers/openai/loadOpenAIClient.ts`,
-  `src/translation-providers/openai/OpenAITranslationProvider.deprecated.ts`
+  `src/translation-providers/openai/OpenAITranslationLegacy.provider.ts`

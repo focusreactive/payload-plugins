@@ -1,5 +1,5 @@
 export { createOpenAIProvider } from "./OpenAITranslation.provider";
-export { OpenAITranslationProvider } from "./OpenAITranslationProvider.deprecated";
+export { OpenAITranslationProvider } from "./OpenAITranslationLegacy.provider";
 export type { OpenAIProviderConfig } from "./OpenAITranslation.provider";
 
 export type { OpenAIClientShape } from "./OpenAI.shapes";

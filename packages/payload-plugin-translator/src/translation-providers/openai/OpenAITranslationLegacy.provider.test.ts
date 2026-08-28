@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createOpenAIProvider } from "./OpenAITranslation.provider";
-import { OpenAITranslationProvider } from "./OpenAITranslationProvider.deprecated";
+import { OpenAITranslationProvider } from "./OpenAITranslationLegacy.provider";
 import type { OpenAIChatParams, OpenAIClientShape } from "./OpenAI.shapes";
 import { loadOpenAIClient } from "./loadOpenAIClient";
 
