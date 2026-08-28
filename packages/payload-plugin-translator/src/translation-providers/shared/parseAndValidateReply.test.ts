@@ -58,6 +58,37 @@ describe("parseAndValidateReply", () => {
     );
   });
 
+  it("names wrong value types rather than a key mismatch when the keys did match", () => {
+    try {
+      parseAndValidateReply({ 0: "Home", 1: "About" }, '{"0":42,"1":true}');
+      expect.unreachable("should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(KeySetMismatchError);
+      expect((error as Error).message).toContain("none of the 2 values was a string");
+      expect((error as Error).message).not.toContain("answered none of");
+    }
+  });
+
+  it("still names a key mismatch when no requested key came back at all", () => {
+    try {
+      parseAndValidateReply({ 0: "Home" }, '{"9":"x"}');
+      expect.unreachable("should have thrown");
+    } catch (error) {
+      expect((error as Error).message).toContain("answered none of the 1 requested keys");
+    }
+  });
+
+  it("keeps model-invented keys out of a serialized error", () => {
+    try {
+      parseAndValidateReply({ 0: "Home" }, '{"leaked-by-the-model":"x"}');
+      expect.unreachable("should have thrown");
+    } catch (error) {
+      expect((error as KeySetMismatchError).unrequestedReplyKeys).toEqual(["leaked-by-the-model"]);
+      expect(JSON.stringify(error)).not.toContain("leaked-by-the-model");
+      expect(Object.keys(error as object)).not.toContain("unrequestedReplyKeys");
+    }
+  });
+
   it("carries the missing and unexpected keys on the mismatch error", () => {
     try {
       parseAndValidateReply({ 0: "Home", 1: "About" }, '{"9":"x"}');

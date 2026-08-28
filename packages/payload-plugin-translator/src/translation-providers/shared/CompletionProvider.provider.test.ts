@@ -180,6 +180,15 @@ describe("createTranslationProvider", () => {
       ).rejects.toThrow(ProviderConfigurationError);
     });
 
+    it("reports an input that cannot be serialized as a configuration failure", async () => {
+      const { complete } = recordingComplete('{"0":"x"}');
+      const unserializable = { 0: BigInt(1) } as unknown as Record<number, string>;
+
+      await expect(
+        createTranslationProvider({ complete }).translate(unserializable, "en", "de")
+      ).rejects.toThrow(ProviderConfigurationError);
+    });
+
     it("reports a throwing systemPrompt builder as a configuration failure", async () => {
       const { complete } = recordingComplete('{"0":"x"}');
 
@@ -204,6 +213,21 @@ describe("createTranslationProvider", () => {
     const warned = String(warn.mock.calls[0].join(" "));
     expect(warned).not.toContain("Untranslated indices");
     expect(warned).not.toContain("did not cover every field");
+  });
+
+  it("quotes and caps model-invented keys in the warning", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const invented = Object.fromEntries(
+      Array.from({ length: 12 }, (_, i) => [`k${i}\ninjected`, "x"])
+    );
+    const { complete } = recordingComplete(JSON.stringify({ 0: "Startseite", ...invented }));
+
+    await createTranslationProvider({ complete }).translate({ 0: "Home" }, "en", "de");
+
+    const warned = String(warn.mock.calls[0].join(" "));
+    expect(warned).toContain("and 2 more");
+    expect(warned).not.toContain("\ninjected");
+    expect(warned).toContain('"k0\\ninjected"');
   });
 
   it("short-circuits empty input without calling the transport", async () => {

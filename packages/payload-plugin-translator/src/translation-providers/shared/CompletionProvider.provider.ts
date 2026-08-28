@@ -24,6 +24,7 @@ export type CompletionRequest = {
   userContent: string;
   /** A JSON Schema requiring exactly the input's keys. Feed it to the service's structured-output mechanism. */
   responseSchema: JsonSchemaObject;
+  /** Reserved: the port carries no cancellation yet, so this is always `undefined` today. */
   signal?: AbortSignal;
 };
 
@@ -48,9 +49,26 @@ export type TranslationProviderConfig = {
   /**
    * Simulate translations without calling anything. `true` reverses the text; an object supplies a
    * transformer and an optional delay.
+   *
+   * @deprecated Supply your own fake `complete` instead. Remove in next major.
+   * See docs/DEPRECATIONS.md#provider-dry-run
    */
   dryRun?: boolean | DryRunConfig;
 };
+
+/** How many model-invented keys a single warning may name. */
+const MAX_LOGGED_REPLY_KEYS = 10;
+
+/**
+ * Renders reply keys for a log line. They are model output, so each is quoted — an unquoted key
+ * containing a newline would forge log entries — and the list is capped.
+ */
+function describeReplyKeys(keys: string[]): string {
+  const shown = keys.slice(0, MAX_LOGGED_REPLY_KEYS).map((key) => JSON.stringify(key));
+  const rest = keys.length - shown.length;
+
+  return rest > 0 ? `${shown.join(", ")} and ${rest} more` : shown.join(", ");
+}
 
 function warnAboutPartialReply(missingInputKeys: number[], unrequestedReplyKeys: string[]): void {
   const parts: string[] = [];
@@ -67,7 +85,7 @@ function warnAboutPartialReply(missingInputKeys: number[], unrequestedReplyKeys:
   }
 
   if (unrequestedReplyKeys.length > 0) {
-    parts.push(`Unexpected keys ignored: ${unrequestedReplyKeys.join(", ")}.`);
+    parts.push(`Unexpected keys ignored: ${describeReplyKeys(unrequestedReplyKeys)}.`);
   }
 
   console.warn(parts.join(" "));
@@ -83,10 +101,22 @@ async function asConfigurationFailure<T>(what: string, run: () => T | Promise<T>
   }
 }
 
-function createDryRunProvider(dryRun: boolean | DryRunConfig): TranslationProvider {
+/** Wraps the consumer's transformer so its throw is classified, leaving our own loop unguarded. */
+function guardTransformer(dryRun: boolean | DryRunConfig): boolean | DryRunConfig {
+  if (typeof dryRun !== "object" || !dryRun.transform) return dryRun;
+
+  const { transform } = dryRun;
   return {
-    translate: (input: TranslationInput): Promise<TranslationOutput> =>
-      asConfigurationFailure("dry-run transformer", () => runDryRun(input, dryRun)),
+    ...dryRun,
+    transform: (text) => asConfigurationFailure("dry-run transformer", () => transform(text)),
+  };
+}
+
+function createDryRunProvider(dryRun: boolean | DryRunConfig): TranslationProvider {
+  const guarded = guardTransformer(dryRun);
+
+  return {
+    translate: (input: TranslationInput): Promise<TranslationOutput> => runDryRun(input, guarded),
   };
 }
 
@@ -122,13 +152,17 @@ export function createTranslationProvider(config: TranslationProviderConfig): Tr
     ): Promise<TranslationOutput> {
       if (Object.keys(input).length === 0) return {};
 
-      const request: CompletionRequest = {
-        systemPrompt: await asConfigurationFailure("systemPrompt builder", () =>
-          buildSystemPrompt({ sourceLng, targetLng, override: systemPrompt })
-        ),
+      const systemPromptText = await asConfigurationFailure("systemPrompt builder", () =>
+        buildSystemPrompt({ sourceLng, targetLng, override: systemPrompt })
+      );
+
+      // Ours, not the caller's — but an input that cannot be serialized still came from the caller,
+      // and a raw throw here would be the one failure that escapes this taxonomy.
+      const request = await asConfigurationFailure("translation request", () => ({
+        systemPrompt: systemPromptText,
         userContent: JSON.stringify(input),
         responseSchema: buildResponseSchema(input),
-      };
+      }));
 
       let raw: string;
       try {

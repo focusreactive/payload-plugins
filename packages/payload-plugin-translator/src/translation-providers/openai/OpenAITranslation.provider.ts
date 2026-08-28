@@ -41,9 +41,13 @@ type OpenAIProviderBase = {
    * Simulate translations without calling OpenAI. `true` reverses the text; an object supplies your
    * own transformer and an optional delay.
    *
-   * A dry run reaches no network and loads no SDK, so it works with an empty `apiKey`.
+   * A dry run reaches no network and loads no SDK, so it works with an empty `apiKey`. It still
+   * writes the result to the target locale, publishes it when `publishOnTranslation` is set, and
+   * records provenance — it rehearses the request, not the operation.
    *
    * @default false
+   * @deprecated Pass your own `client`, or build a provider with `createTranslationProvider({
+   * complete })`. Remove in next major. See docs/DEPRECATIONS.md#provider-dry-run
    */
   dryRun?: boolean | DryRunConfig;
   /**

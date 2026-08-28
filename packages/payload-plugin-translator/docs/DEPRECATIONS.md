@@ -107,3 +107,34 @@ the single source of truth — code annotations link here by anchor instead of d
 - **Replacement:** `createOpenAIProvider()` factory.
 - **Remove in:** next major
 - **Code refs:** `src/server/modules/translation-providers/OpenAITranslation.provider.ts`
+
+### provider-dry-run
+
+- **What:** the `dryRun` option on `TranslationProviderConfig` and `OpenAIProviderConfig`, and with
+  it the exported `DryRunConfig` / `DryRunTransformer` types.
+- **Status:** live
+- **Deprecated:** 2026-08-28 / PR #101
+- **Replacement:** supply your own fake request function —
+  `createTranslationProvider({ complete })`, or `createOpenAIProvider({ client })` with a stub
+  client. Both reach no network and need no API key. The README carries the recipe; the package
+  deliberately does **not** ship a ready-made fake, because that would be this option again under a
+  new name.
+- **Remove in:** next major
+- **Why:** the name promises a rehearsal the option cannot deliver. It lives on the provider, so it
+  can only skip the network call. Everything downstream runs as in a real translation: the
+  transformed strings are written to the target locale, published when `publishOnTranslation` is
+  set, and recorded as provenance. The recorded fingerprint then matches the source, so
+  `isRecordStale` reports the locale as up to date — the staleness indicator stays hidden and a
+  later real translation is not prompted. The source locale is never touched.
+
+  Two use cases hid under one name. "Run without an API key or network" is replaced today, by the
+  injection points above. "See what would happen without changing anything" never existed here; a
+  genuine dry run belongs at the operation level — run the pipeline, skip the write and the
+  provenance record, return the would-be result — and is separate work. Removal does not wait for
+  it, because the second use case never worked.
+
+  Known wart, left as is for the same reason: the built-in transformer reverses by UTF-16 code unit
+  (`split("")`), so text outside the basic plane comes back mangled.
+- **Code refs:** `src/translation-providers/shared/runDryRun.ts`,
+  `src/translation-providers/shared/CompletionProvider.provider.ts`,
+  `src/translation-providers/openai/OpenAITranslation.provider.ts`

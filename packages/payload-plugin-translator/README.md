@@ -296,7 +296,7 @@ Pass **either** an `apiKey` **or** a ready-made `client` — never both; the typ
 | `client`       | `OpenAIClientShape`       | Unless `apiKey`    | —                    | Your own client — Azure OpenAI, a corporate proxy, OpenRouter, anything with a matching `chat.completions.create`. On this path the `openai` package is never loaded. _Since v0.11.0._ |
 | `model`        | `string`                  | No                 | `'gpt-4o'`           | Model used for translation. **The default may change in a minor release** — pin it if you need reproducible output and cost. |
 | `systemPrompt` | `SystemPromptBuilder`     | No                 | Built-in prompt      | Custom system-prompt builder.                                                                                   |
-| `dryRun`       | `boolean \| DryRunConfig` | No                 | `false`              | Simulate translations without API calls. Reaches no network and loads no SDK, so it works with an empty `apiKey`. |
+| `dryRun`       | `boolean \| DryRunConfig` | No                 | `false`              | **Deprecated** — see the note below. Simulates translations without API calls, but still writes, publishes and records provenance. |
 | `sampling`     | `OpenAISamplingParams`    | No                 | not sent             | `temperature`, `top_p`, `frequency_penalty`, `presence_penalty`. Omitted entirely unless set — several models reject them. **Before v0.11.0 this package always sent `temperature: 0, top_p: 1, frequency_penalty: 0, presence_penalty: 0`**, so translations were deterministic; they now follow the model's defaults. Set `{ temperature: 0 }` to restore that. _Since v0.11.0._ |
 | `structuredOutput` | `"json_schema" \| "json_object"` | No | `"json_schema"` | Which structured-output envelope to send. The default makes a compliant model unable to drop a field. **Before v0.11.0 this package always sent `json_object`**, which every model accepts — the new default is rejected by `gpt-4-turbo`, `gpt-4`, `gpt-3.5-turbo`, the `o1` family, older `gpt-4o` snapshots, and some gateways (OpenRouter with certain upstream models, older Azure deployments, proxies). Set `"json_object"` for those; key preservation then rests on this package's key-set check, which *reports* a partial reply rather than preventing one. A rejection is surfaced with a message naming this option. _Since v0.11.0._ |
 | `timeout`      | `number`                  | No                 | `60000`              | Per-request timeout (ms) for the client this package builds. Ignored when you pass your own `client`. _Since v0.6.0; the default dropped from the SDK's 10 minutes to 60 s in v0.11.0._ |
@@ -328,6 +328,30 @@ type DryRunConfig = {
 };
 ```
 
+> **`dryRun` is deprecated and will be removed in the next major.** It skips the network call and
+> nothing else: the transformed strings are still written to the target locale, still published when
+> `publishOnTranslation` is set, and still recorded as provenance — after which the locale reads as
+> up to date and no re-translation is prompted. Use your own fake instead, which is explicit about
+> being one:
+>
+> ```typescript
+> import { createTranslationProvider } from "@focus-reactive/payload-plugin-translator";
+>
+> const fakeProvider = createTranslationProvider({
+>   complete: async ({ userContent }) => {
+>     const input = JSON.parse(userContent) as Record<string, string>;
+>     const reversed: Record<string, string> = {};
+>     for (const [key, value] of Object.entries(input)) {
+>       reversed[key] = value.trim() ? [...value].reverse().join("") : value;
+>     }
+>     return JSON.stringify(reversed);
+>   },
+> });
+> ```
+>
+> `complete` returns the reply as raw text, exactly as a service would; parsing and validation stay
+> on our side. See [docs/DEPRECATIONS.md](docs/DEPRECATIONS.md#provider-dry-run).
+
 #### Another service — `createTranslationProvider(config)`
 
 _Since v0.11.0._
@@ -356,7 +380,7 @@ const provider = createTranslationProvider({
 | -------------- | ------------------------- | -------- | --------------- | -------------------------------------------------- |
 | `complete`     | `CompletionFn`            | Yes      | —               | Sends one request, returns the reply as raw text.  |
 | `systemPrompt` | `SystemPromptBuilder`     | No       | Built-in prompt | Custom system-prompt builder.                      |
-| `dryRun`       | `boolean \| DryRunConfig` | No       | `false`         | Simulate translations without calling anything.    |
+| `dryRun`       | `boolean \| DryRunConfig` | No       | `false`         | **Deprecated** — supply your own fake `complete`.  |
 
 Your `complete` owns the timeout, the retry policy and the credentials — this package adds no retry of its own and imposes no timeout on your call.
 

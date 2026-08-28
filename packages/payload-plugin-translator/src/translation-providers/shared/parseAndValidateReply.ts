@@ -45,8 +45,14 @@ export function parseAndValidateReply(input: TranslationInput, raw: string): Par
   const unrequestedReplyKeys = Object.keys(parsed).filter((key) => !expectedKeys.has(key));
 
   if (expectedKeys.size > 0 && Object.keys(translations).length === 0) {
+    // Two different failures reach this point and they need different advice: a reply about other
+    // keys entirely, and a reply about the right keys whose values are not text.
+    const answeredAnyKey = [...expectedKeys].some((key) => Object.hasOwn(parsed, key));
+
     throw new KeySetMismatchError(
-      `The provider's reply answered none of the ${expectedKeys.size} requested keys.`,
+      answeredAnyKey
+        ? `The provider's reply carried the requested keys, but none of the ${expectedKeys.size} values was a string.`
+        : `The provider's reply answered none of the ${expectedKeys.size} requested keys.`,
       missingInputKeys,
       unrequestedReplyKeys
     );
