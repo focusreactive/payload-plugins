@@ -78,6 +78,11 @@ describe("document translation (manual enqueue, en -> de/fr)", () => {
 
   it("leaves non-localized fields untouched (not reversed) in the target locale", async () => {
     const de = await ctx.payload.findByID({ collection: "docs", id, locale: "de" });
+
+    // The control: without it a provider that translated nothing at all would satisfy the two
+    // assertions below, because "unchanged" is what it returns for every field.
+    expect(de.title).toBe(rev(EN.title));
+
     expect(de.ref).toBe("REF-123");
     expect((de.meta as { sku: string }).sku).toBe("SKU-9");
   });
