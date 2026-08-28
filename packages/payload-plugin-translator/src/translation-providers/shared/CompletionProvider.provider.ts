@@ -130,8 +130,8 @@ function createDryRunProvider(dryRun: boolean | DryRunConfig): TranslationProvid
  * @example
  * ```ts
  * const provider = createTranslationProvider({
- *   complete: async ({ systemPrompt, userContent, responseSchema, signal }) => {
- *     const reply = await myService.chat({ systemPrompt, userContent, schema: responseSchema, signal })
+ *   complete: async ({ systemPrompt, userContent, responseSchema }) => {
+ *     const reply = await myService.chat({ systemPrompt, userContent, schema: responseSchema })
  *     return reply.text
  *   },
  * })

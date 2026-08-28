@@ -137,6 +137,33 @@ Needed: the real ceiling for the model and account in use, checked against the l
 the CMS installations. If it is close, the fix is an automatic fallback to `json_object` on a
 schema rejection rather than surfacing the error.
 
+**Which models rejected `json_schema`, as of 2026-08-28.** A snapshot, deliberately not in the
+README: `gpt-4-turbo`, `gpt-4`, `gpt-3.5-turbo`, the `o1` family and older `gpt-4o` snapshots, plus
+OpenRouter with certain upstream models, older Azure deployments and self-hosted proxies. Vendors add
+structured-output support over time, so a list like this decays into advice to switch where switching
+is no longer needed. Consumer docs therefore say only that older models and some gateways reject it
+and that the error names the option; the enumeration lives here, dated.
+
+**Unverified, and therefore not stated to consumers:** a rejection for an oversized schema appears to
+arrive at request validation, before generation, which would mean an oversized document costs nothing
+but the failure. That is the vendor's behaviour and its billing, neither of which this package can
+promise. Confirm it by experiment before repeating it anywhere a consumer reads.
+
+**Why the limit exists, kept here rather than in the README.** Strict mode constrains generation
+itself: the service compiles the schema into a grammar before the model writes anything, which is
+both why a compliant model cannot deviate and why the schema has a size limit — and why a rejection
+arrives at request validation rather than after tokens are spent. That is OpenAI's mechanism, not
+ours, and it has already changed once (the limits were raised). Consumer-facing docs therefore state
+the *consequences* — a ceiling exists, it counts pieces of text not fields, measure it, a failure is
+free — and never the mechanism or a number, so they cannot go stale into a lie.
+
+**An automatic fallback was considered and is not the obvious answer.** The research doc settled the
+same question for a different case and decided against silent degradation: "fail with a named error,
+do not silently degrade to prompt-only JSON. Silent degradation would return exactly the class of
+defect this issue exists to remove." If a fallback is added it has to be loud — a log line at
+minimum, and arguably a mark on the document — or it re-creates the silent half-translation on
+exactly the largest documents.
+
 ## Follow-ups, agreed but out of this PR
 
 - **Migrate `apps/dev` off `dryRun`** (`payload.config.ts`, `integration/translator/

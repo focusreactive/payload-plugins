@@ -1,8 +1,4 @@
-import type {
-  TranslationInput,
-  TranslationOutput,
-  TranslationProvider,
-} from "../../core/domain/translation-providers";
+import type { TranslationProvider } from "../../core/domain/translation-providers";
 import type { DryRunConfig, SystemPromptBuilder } from "../shared";
 import { createTranslationProvider } from "../shared";
 import { loadOpenAIClient } from "./loadOpenAIClient";
@@ -75,13 +71,26 @@ type OpenAIProviderBase = {
    */
   sampling?: OpenAISamplingParams;
   /**
-   * Which structured-output envelope to send.
+   * Which structured-output envelope to send. The two carry different risks — this is a choice
+   * between them, not a right answer and a fallback.
    *
-   * `json_schema` (the default) makes a compliant model structurally unable to drop a requested
-   * field. It is OpenAI-specific, though: some gateways — OpenRouter with certain upstream models,
-   * older Azure deployments, self-hosted proxies — reject it with a 400. Switch to `json_object` for
-   * those; key preservation then rests on this package's key-set validation instead of on the API,
-   * which reports a partial reply rather than preventing one.
+   * **`json_schema`** (the default) sends the request with a schema the reply must satisfy, so a
+   * compliant model cannot drop a requested field. Two costs come with that.
+   *
+   * - Older models, and some gateways (OpenRouter with certain upstream models, older Azure
+   *   deployments, self-hosted proxies), reject it with a 400. The error names this option as the fix.
+   * - The schema has a size limit, so **there is a ceiling on how many pieces of text one request
+   *   may carry**, and past it the whole document fails. The schema names one property per
+   *   translatable piece, and rich text is split one piece per text node — a sentence with two
+   *   emphasised spans is already four — so the count climbs faster than "one per field" suggests,
+   *   and nothing splits a document across requests. The ceiling differs by model and moves over
+   *   time; measure it against your largest documents rather than guessing.
+   *
+   * **`json_object`** asks only for valid JSON. No schema means no ceiling — but key preservation
+   * falls back to this package's key-set validation, which *detects* a drop instead of preventing
+   * it: a reply missing one key of two hundred still writes the other 199, the gap goes to the
+   * server log, and only a reply matching nothing at all fails. An editor never sees that log, so a
+   * dropped field looks translated in the admin UI.
    *
    * @since 0.11.0
    */
@@ -90,6 +99,10 @@ type OpenAIProviderBase = {
 
 /**
  * Configuration for {@link createOpenAIProvider}: an API key **or** a ready-made client, never both.
+ *
+ * @deprecated The built-in OpenAI adapter is going away. Build your own with
+ * `createTranslationProvider({ complete })` — see the recipe in the README. Remove in next major.
+ * See docs/DEPRECATIONS.md#built-in-openai-adapter
  */
 export type OpenAIProviderConfig = OpenAIProviderBase &
   (
@@ -123,6 +136,11 @@ export type OpenAIProviderConfig = OpenAIProviderBase &
  *
  * @since 0.11.0 — accepts `client` as an alternative to `apiKey`, and returns the
  * `TranslationProvider` interface rather than the deprecated concrete class.
+ *
+ * @deprecated Build the provider yourself with `createTranslationProvider({ complete })` and your
+ * own `openai` client — a dozen lines, and the SDK version becomes yours. The whole built-in
+ * adapter, this option surface included, goes in the next major. See the recipe in the README and
+ * docs/DEPRECATIONS.md#built-in-openai-adapter
  */
 export function createOpenAIProvider(config: OpenAIProviderConfig): TranslationProvider {
   const { model = DEFAULT_MODEL, systemPrompt, dryRun, sampling, structuredOutput } = config;
@@ -165,24 +183,4 @@ export function createOpenAIProvider(config: OpenAIProviderConfig): TranslationP
       return openAIComplete({ client, model, sampling, structuredOutput })(request);
     },
   });
-}
-
-/**
- * @deprecated Use {@link createOpenAIProvider} instead.
- * See docs/DEPRECATIONS.md#openai-translation-provider-class
- */
-export class OpenAITranslationProvider implements TranslationProvider {
-  private readonly inner: TranslationProvider;
-
-  constructor(config: OpenAIProviderConfig) {
-    this.inner = createOpenAIProvider(config);
-  }
-
-  translate(
-    input: TranslationInput,
-    sourceLng: string,
-    targetLng: string
-  ): Promise<TranslationOutput | null> {
-    return this.inner.translate(input, sourceLng, targetLng);
-  }
 }

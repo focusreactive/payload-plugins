@@ -298,9 +298,74 @@ Pass **either** an `apiKey` **or** a ready-made `client` — never both; the typ
 | `systemPrompt` | `SystemPromptBuilder`     | No                 | Built-in prompt      | Custom system-prompt builder.                                                                                   |
 | `dryRun`       | `boolean \| DryRunConfig` | No                 | `false`              | **Deprecated** — see the note below. Simulates translations without API calls, but still writes, publishes and records provenance. |
 | `sampling`     | `OpenAISamplingParams`    | No                 | not sent             | `temperature`, `top_p`, `frequency_penalty`, `presence_penalty`. Omitted entirely unless set — several models reject them. **Before v0.11.0 this package always sent `temperature: 0, top_p: 1, frequency_penalty: 0, presence_penalty: 0`**, so translations were deterministic; they now follow the model's defaults. Set `{ temperature: 0 }` to restore that. _Since v0.11.0._ |
-| `structuredOutput` | `"json_schema" \| "json_object"` | No | `"json_schema"` | Which structured-output envelope to send. The default makes a compliant model unable to drop a field. **Before v0.11.0 this package always sent `json_object`**, which every model accepts — the new default is rejected by `gpt-4-turbo`, `gpt-4`, `gpt-3.5-turbo`, the `o1` family, older `gpt-4o` snapshots, and some gateways (OpenRouter with certain upstream models, older Azure deployments, proxies). Set `"json_object"` for those; key preservation then rests on this package's key-set check, which *reports* a partial reply rather than preventing one. A rejection is surfaced with a message naming this option. _Since v0.11.0._ |
+| `structuredOutput` | `"json_schema" \| "json_object"` | No | `"json_schema"` | Which structured-output envelope to send. See the note below — the two carry different risks. _Since v0.11.0._ |
 | `timeout`      | `number`                  | No                 | `60000`              | Per-request timeout (ms) for the client this package builds. Ignored when you pass your own `client`. _Since v0.6.0; the default dropped from the SDK's 10 minutes to 60 s in v0.11.0._ |
 | `maxRetries`   | `number`                  | No                 | SDK default (2)      | Max automatic retries on transient errors (429/5xx/network) for the client this package builds. `0` disables. Ignored when you pass your own `client`. _Since v0.6.0._ |
+
+> **The built-in OpenAI adapter is deprecated and goes away in the next major.** It exists only to
+> carry a dependency that is not ours, and carrying it *optionally* is what makes it costly — a lazy
+> import shaped around deployment file-tracers, a hand-written structural slice of the SDK client,
+> and a conformance test to catch drift. None of that is needed by someone who simply imports the
+> SDK they already chose. Build the provider yourself:
+>
+> ```typescript
+> import OpenAI from "openai";
+> import { createTranslationProvider } from "@focus-reactive/payload-plugin-translator";
+>
+> const client = new OpenAI({
+>   apiKey: process.env.OPENAI_API_KEY,
+>   timeout: 60_000, // the SDK's own default is ten minutes — far too long for a live edit
+> });
+>
+> const translationProvider = createTranslationProvider({
+>   complete: async ({ systemPrompt, userContent, responseSchema }) => {
+>     const reply = await client.chat.completions.create({
+>       model: "gpt-4o",
+>       messages: [
+>         { role: "system", content: systemPrompt },
+>         { role: "user", content: userContent },
+>       ],
+>       // Swap for `{ type: "json_object" }` if your model or gateway rejects a strict schema —
+>       // see the trade-off below. With json_object the prompt must contain the word "json".
+>       response_format: {
+>         type: "json_schema",
+>         json_schema: { name: "translation", strict: true, schema: responseSchema },
+>       },
+>     });
+>
+>     return reply.choices[0]?.message?.content ?? "";
+>   },
+> });
+> ```
+>
+> The prompt, the response schema, reply parsing, key-set validation and the failure taxonomy stay
+> on our side either way. What you gain is your own SDK version and an envelope choice you can see.
+> See [docs/DEPRECATIONS.md](docs/DEPRECATIONS.md#built-in-openai-adapter).
+
+#### Choosing a structured-output envelope
+
+`json_schema` (the default) sends the request with a schema the reply must satisfy, so a compliant
+model **cannot** drop a requested field. That is what closed the silent half-translation defect. It
+costs two things:
+
+- Older models, and some gateways (OpenRouter with certain upstream models, older Azure
+  deployments, self-hosted proxies), reject it with a 400. You do not need to know which: the error
+  names this option as the fix.
+- The schema has a size limit, so **one request carries a limited number of pieces of text**, and a
+  document past that ceiling fails as a whole. The schema names one property per translatable piece,
+  and rich text is split one piece per text node — a sentence with two emphasised spans is already
+  four pieces — so the count grows faster than "one per field" suggests, and a document is never
+  split across requests. The ceiling differs by model and moves over time; measure it against your
+  largest documents rather than assuming headroom.
+
+`json_object` asks only for valid JSON. There is no schema, so no ceiling — but key preservation
+falls back to this package's key-set check, which **detects** a dropped key instead of preventing
+it. A reply missing one key out of two hundred still writes the other 199, the gap is reported to
+the server log, and only a reply matching nothing at all fails. Your editors never see that log, so
+a dropped field looks translated in the admin UI.
+
+Pick by which risk you would rather carry: a hard failure on very large documents, or a quiet gap on
+any document.
 
 ```typescript
 // Quick start
