@@ -28,6 +28,12 @@ the ledger has been failing at, evidenced by the dangling reference this task fi
 **No new abstraction. No public surface change** — every export keeps its name and its path as seen
 from outside the package.
 
+> **Superseded the same day by `ab0fb528`.** That commit narrowed the deprecation this task recorded
+> and added `openAIComplete` as a new public export — additive, so nothing here broke, but the claim
+> above no longer describes the branch. Reasoning in
+> [2026-08-28-provider-review-findings.md](./2026-08-28-provider-review-findings.md), and criterion 5
+> below should be read as "no export was renamed or removed".
+
 ## Acceptance criteria
 
 1. `OpenAIProviderBase.structuredOutput`'s docblock names **both** risks of the strict schema —
