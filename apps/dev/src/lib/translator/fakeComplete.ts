@@ -21,5 +21,5 @@ export const reverseComplete: CompletionFn = ({ userContent }) => {
 
 /** A stand-in that always fails, for exercising the onFailed lifecycle callback. */
 export const failingComplete: CompletionFn = () => {
-  throw new Error("forced translation failure (TRANSLATOR_DRY_RUN=fail)");
+  throw new Error("forced translation failure");
 };

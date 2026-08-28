@@ -71,24 +71,16 @@ function describeReplyKeys(keys: string[]): string {
 }
 
 function warnAboutPartialReply(missingInputKeys: number[], unrequestedReplyKeys: string[]): void {
-  const parts: string[] = [];
+  const lead =
+    missingInputKeys.length > 0
+      ? `The provider's reply did not cover every field. Untranslated indices: ${missingInputKeys.join(", ")}.`
+      : "The provider's reply carried keys that were not requested.";
+  const extra =
+    unrequestedReplyKeys.length > 0
+      ? ` Unexpected keys ignored: ${describeReplyKeys(unrequestedReplyKeys)}.`
+      : "";
 
-  if (missingInputKeys.length > 0) {
-    parts.push(
-      "[payload-plugin-translator] The provider's reply did not cover every field.",
-      `Untranslated indices: ${missingInputKeys.join(", ")}.`
-    );
-  } else {
-    parts.push(
-      "[payload-plugin-translator] The provider's reply carried keys that were not requested."
-    );
-  }
-
-  if (unrequestedReplyKeys.length > 0) {
-    parts.push(`Unexpected keys ignored: ${describeReplyKeys(unrequestedReplyKeys)}.`);
-  }
-
-  console.warn(parts.join(" "));
+  console.warn(`[payload-plugin-translator] ${lead}${extra}`);
 }
 
 async function asConfigurationFailure<T>(what: string, run: () => T | Promise<T>): Promise<T> {
@@ -109,14 +101,6 @@ function guardTransformer(dryRun: boolean | DryRunConfig): boolean | DryRunConfi
   return {
     ...dryRun,
     transform: (text) => asConfigurationFailure("dry-run transformer", () => transform(text)),
-  };
-}
-
-function createDryRunProvider(dryRun: boolean | DryRunConfig): TranslationProvider {
-  const guarded = guardTransformer(dryRun);
-
-  return {
-    translate: (input: TranslationInput): Promise<TranslationOutput> => runDryRun(input, guarded),
   };
 }
 
@@ -142,7 +126,10 @@ function createDryRunProvider(dryRun: boolean | DryRunConfig): TranslationProvid
 export function createTranslationProvider(config: TranslationProviderConfig): TranslationProvider {
   const { complete, systemPrompt, dryRun } = config;
 
-  if (dryRun) return createDryRunProvider(dryRun);
+  if (dryRun) {
+    const guarded = guardTransformer(dryRun);
+    return { translate: (input) => runDryRun(input, guarded) };
+  }
 
   return {
     async translate(

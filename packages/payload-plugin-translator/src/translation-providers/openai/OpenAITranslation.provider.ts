@@ -64,33 +64,14 @@ type OpenAIProviderBase = {
    */
   maxRetries?: number;
   /**
-   * Sampling parameters. Omitted from the request entirely unless set — several models reject them.
-   * Unset means the model's own defaults; pass `{ temperature: 0 }` for deterministic output.
+   * Sampling parameters — see {@link OpenAISamplingParams}, which survives this option.
    *
    * @since 0.11.0
    */
   sampling?: OpenAISamplingParams;
   /**
-   * Which structured-output envelope to send. The two carry different risks — this is a choice
-   * between them, not a right answer and a fallback.
-   *
-   * **`json_schema`** (the default) sends the request with a schema the reply must satisfy, so a
-   * compliant model cannot drop a requested field. Two costs come with that.
-   *
-   * - Older models, and some gateways (OpenRouter with certain upstream models, older Azure
-   *   deployments, self-hosted proxies), reject it with a 400. The error names this option as the fix.
-   * - The schema has a size limit, so **there is a ceiling on how many pieces of text one request
-   *   may carry**, and past it the whole document fails. The schema names one property per
-   *   translatable piece, and rich text is split one piece per text node — a sentence with two
-   *   emphasised spans is already four — so the count climbs faster than "one per field" suggests,
-   *   and nothing splits a document across requests. The ceiling differs by model and moves over
-   *   time; measure it against your largest documents rather than guessing.
-   *
-   * **`json_object`** asks only for valid JSON. No schema means no ceiling — but key preservation
-   * falls back to this package's key-set validation, which *detects* a drop instead of preventing
-   * it: a reply missing one key of two hundred still writes the other 199, the gap goes to the
-   * server log, and only a reply matching nothing at all fails. An editor never sees that log, so a
-   * dropped field looks translated in the admin UI.
+   * Which structured-output envelope to send — see {@link OpenAIStructuredOutput}, which documents
+   * the trade-off and survives this option.
    *
    * @since 0.11.0
    */

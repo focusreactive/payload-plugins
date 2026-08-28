@@ -45,9 +45,9 @@ export type TestPayload = {
  * - **Fresh unique sqlite file** under the OS temp dir per boot, so schema `push` is a clean CREATE with
  *   no data-loss branch — Payload never drops to the interactive "accept data loss?" prompt that would
  *   hang an unattended/headless run. `cleanup()` removes the temp dir even on failure.
- * - **Dry-run provider** (deterministic transform, no network / API spend) + **sync runner** (translation
- *   runs INLINE inside the triggering `afterChange`, so a translation is complete when the awaited
- *   `payload.update`/`create` resolves — no job autorun, no polling, no async race in the specs).
+ * - **Sync runner:** a translation runs INLINE inside the triggering `afterChange`, so it is complete
+ *   when the awaited `payload.update`/`create` resolves — no job autorun, no polling, no async race
+ *   in the specs.
  * - **Auto-translate is the in-process trigger:** publishing source-locale content fires the plugin's
  *   `afterChange` hook which (sync) runs the full pipeline and writes the target locales — the same real
  *   path production uses, reachable through the local API without any HTTP layer.

@@ -16,10 +16,6 @@ export type DryRunConfig = {
 
 const reverse: DryRunTransformer = (text) => text.split("").reverse().join("");
 
-function optionsOf(config: boolean | DryRunConfig): Partial<DryRunConfig> {
-  return typeof config === "object" ? config : {};
-}
-
 /**
  * Simulates a translation without calling anything. Blank values pass through untouched.
  *
@@ -35,7 +31,7 @@ export async function runDryRun(
     `[payload-plugin-translator] Dry run: simulated ${Object.keys(input).length} field(s), no API call made.`
   );
 
-  const { transform = reverse, timeout = 0 } = optionsOf(config);
+  const { transform = reverse, timeout = 0 } = typeof config === "object" ? config : {};
 
   if (timeout > 0) await new Promise((resolve) => setTimeout(resolve, timeout));
 

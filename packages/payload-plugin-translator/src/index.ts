@@ -16,9 +16,8 @@ export type { AccessGuard, AccessGuardRequest } from "./types/AccessGuard";
 // Translation provider port (from the dependency-free core)
 export type { TranslationProvider, TranslationInput, TranslationOutput } from "./core";
 
-export { createOpenAIProvider, openAIComplete } from "./translation-providers";
+export { openAIComplete } from "./translation-providers";
 export type {
-  OpenAIProviderConfig,
   OpenAIClientShape,
   OpenAISamplingParams,
   OpenAIStructuredOutput,
@@ -66,6 +65,7 @@ export type { AutoTranslateConfig, AutoTranslateStrategy } from "./auto-translat
 // Deprecated exports (for backwards compatibility)
 export { createTranslatePlugin, TranslateCollectionPlugin } from "./plugin";
 export type { TranslateCollectionPluginConfig } from "./plugin";
-export { OpenAITranslationProvider } from "./translation-providers";
+export { createOpenAIProvider, OpenAITranslationProvider } from "./translation-providers";
+export type { OpenAIProviderConfig } from "./translation-providers";
 export { translateKitField } from "./field-config";
 export type { TranslateKitFieldConfig } from "./field-config";
