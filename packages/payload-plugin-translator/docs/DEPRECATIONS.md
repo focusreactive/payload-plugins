@@ -106,4 +106,72 @@ the single source of truth — code annotations link here by anchor instead of d
 - **Deprecated:** pre-ledger
 - **Replacement:** `createOpenAIProvider()` factory.
 - **Remove in:** next major
-- **Code refs:** `src/server/modules/translation-providers/OpenAITranslation.provider.ts`
+- **Code refs:** `src/translation-providers/openai/OpenAITranslationLegacy.provider.ts`
+
+### provider-dry-run
+
+- **What:** the `dryRun` option on `TranslationProviderConfig` and `OpenAIProviderConfig`, and with
+  it the exported `DryRunConfig` / `DryRunTransformer` types.
+- **Status:** live
+- **Deprecated:** 2026-08-28 / PR #101
+- **Replacement:** supply your own fake request function —
+  `createTranslationProvider({ complete })`, or `createOpenAIProvider({ client })` with a stub
+  client. Both reach no network and need no API key. The README carries the recipe; the package
+  deliberately does **not** ship a ready-made fake, because that would be this option again under a
+  new name.
+- **Remove in:** next major
+- **Why:** the name promises a rehearsal the option cannot deliver. It lives on the provider, so it
+  can only skip the network call. Everything downstream runs as in a real translation: the
+  transformed strings are written to the target locale, published when `publishOnTranslation` is
+  set, and recorded as provenance. The recorded fingerprint then matches the source, so
+  `isRecordStale` reports the locale as up to date — the staleness indicator stays hidden and a
+  later real translation is not prompted. The source locale is never touched.
+
+  Two use cases hid under one name. "Run without an API key or network" is replaced today, by the
+  injection points above. "See what would happen without changing anything" never existed here; a
+  genuine dry run belongs at the operation level — run the pipeline, skip the write and the
+  provenance record, return the would-be result — and is separate work. Removal does not wait for
+  it, because the second use case never worked.
+
+  Known wart, left as is for the same reason: the built-in transformer reverses by UTF-16 code unit
+  (`split("")`), so text outside the basic plane comes back mangled.
+- **Code refs:** `src/translation-providers/shared/runDryRun.ts`,
+  `src/translation-providers/shared/CompletionProvider.provider.ts`,
+  `src/translation-providers/openai/OpenAITranslation.provider.ts`
+
+### openai-client-construction
+
+- **What:** the layer that builds an OpenAI SDK client for you — `createOpenAIProvider`,
+  `OpenAIProviderConfig`, the `loadOpenAIClient` module behind them, and the already-deprecated
+  `OpenAITranslationProvider` class that delegates to `createOpenAIProvider`. The `openai` entry in
+  `optionalDependencies` goes with them.
+- **Status:** live
+- **Deprecated:** 2026-08-28 / PR #101
+- **Replacement:** construct the client yourself and hand it to `openAIComplete`, which stays:
+
+  ```ts
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 60_000 });
+
+  translationProvider: createTranslationProvider({
+    complete: openAIComplete({ client, model: "gpt-4o" }),
+  }),
+  ```
+- **Remove in:** next major
+- **Why:** what makes this layer expensive is not knowing how to call OpenAI — it is carrying the
+  SDK as an *optional* dependency of ours. `loadOpenAIClient` imports it through a module-level
+  specifier constant because deployment file-tracers resolve `import()` statically and silently
+  prune anything else; `importOpenAISdk.test.ts` exists to guard that exact source shape after the
+  defect it caused reached production-shaped code; `isModuleNotFound` tells "not installed" from
+  "installed but broken" across four runtimes' wordings. Every line of that exists so a package the
+  consumer may not have can be absent safely. A consumer who imports the SDK they already chose
+  needs none of it, and gains their own SDK version.
+
+  **What is *not* deprecated, and why the first cut of this entry was wrong:** `openAIComplete`,
+  `OpenAIClientShape` and the `OpenAI.shapes.ts` types stay. They carry vendor *knowledge* with no
+  vendor *dependency* — `OpenAI.shapes.ts` bans the import in its first line, and `openAIComplete`
+  never names the package, taking a structural client slice instead. Deprecating them would have
+  handed every consumer the request body, the envelope choice and the schema-rejection advice to
+  maintain themselves, which is the opposite of the point.
+- **Code refs:** `src/translation-providers/openai/OpenAITranslation.provider.ts`,
+  `src/translation-providers/openai/loadOpenAIClient.ts`,
+  `src/translation-providers/openai/OpenAITranslationLegacy.provider.ts`

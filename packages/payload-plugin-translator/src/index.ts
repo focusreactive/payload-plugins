@@ -15,9 +15,34 @@ export type { AccessGuard, AccessGuardRequest } from "./types/AccessGuard";
 
 // Translation provider port (from the dependency-free core)
 export type { TranslationProvider, TranslationInput, TranslationOutput } from "./core";
-// Built-in OpenAI provider (opt-in; pulls `openai`) — lives in the plugin's src/providers, outside core
-export { createOpenAIProvider } from "./translation-providers";
-export type { OpenAIProviderConfig, DryRunConfig } from "./translation-providers";
+
+export { openAIComplete } from "./translation-providers";
+export type {
+  OpenAIClientShape,
+  OpenAISamplingParams,
+  OpenAIStructuredOutput,
+  DryRunConfig,
+} from "./translation-providers";
+
+export { createTranslationProvider } from "./translation-providers";
+export type {
+  CompletionFn,
+  CompletionRequest,
+  TranslationProviderConfig,
+  JsonSchemaObject,
+  SystemPromptBuilder,
+  SystemPromptContext,
+} from "./translation-providers";
+
+export {
+  TranslationProviderError,
+  NoContentError,
+  UnparseableReplyError,
+  KeySetMismatchError,
+  TransportError,
+  ProviderConfigurationError,
+} from "./translation-providers";
+export type { TranslationFailureCode } from "./translation-providers";
 
 // Task runners
 export { createPayloadJobsRunner, createSyncRunner } from "./server/modules/task-runner";
@@ -40,6 +65,7 @@ export type { AutoTranslateConfig, AutoTranslateStrategy } from "./auto-translat
 // Deprecated exports (for backwards compatibility)
 export { createTranslatePlugin, TranslateCollectionPlugin } from "./plugin";
 export type { TranslateCollectionPluginConfig } from "./plugin";
-export { OpenAITranslationProvider } from "./translation-providers";
+export { createOpenAIProvider, OpenAITranslationProvider } from "./translation-providers";
+export type { OpenAIProviderConfig } from "./translation-providers";
 export { translateKitField } from "./field-config";
 export type { TranslateKitFieldConfig } from "./field-config";

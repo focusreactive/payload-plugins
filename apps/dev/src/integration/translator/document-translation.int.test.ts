@@ -76,8 +76,10 @@ describe("document translation (manual enqueue, en -> de/fr)", () => {
     expect((fr.seo as { seoTitle: string }).seoTitle).toBe(rev("Seo source"));
   });
 
-  it("leaves non-localized fields untouched (not reversed) in the target locale", async () => {
+  it("translates localized fields but leaves non-localized ones untouched", async () => {
     const de = await ctx.payload.findByID({ collection: "docs", id, locale: "de" });
+
+    expect(de.title).toBe(rev(EN.title));
     expect(de.ref).toBe("REF-123");
     expect((de.meta as { sku: string }).sku).toBe("SKU-9");
   });

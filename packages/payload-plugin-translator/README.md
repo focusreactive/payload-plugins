@@ -288,20 +288,85 @@ translatorPlugin({
 
 #### OpenAI (built in) — `createOpenAIProvider(config)`
 
-| Property       | Type                      | Required | Default              | Description                                                                                                     |
-| -------------- | ------------------------- | -------- | -------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `apiKey`       | `string`                  | Yes      | —                    | OpenAI API key.                                                                                                 |
-| `model`        | `string \| ChatModel`     | No       | `'gpt-4o'`           | Model used for translation.                                                                                     |
-| `systemPrompt` | `SystemPromptBuilder`     | No       | Built-in prompt      | Custom system-prompt builder.                                                                                   |
-| `dryRun`       | `boolean \| DryRunConfig` | No       | `false`              | Simulate translations without API calls.                                                                        |
-| `timeout`      | `number`                  | No       | SDK default (10 min) | Per-request timeout (ms). A job blocks on this call, so the 10-min default is usually too long. _Since v0.6.0._ |
-| `maxRetries`   | `number`                  | No       | SDK default (2)      | Max automatic retries on transient errors (429/5xx/network). `0` disables. _Since v0.6.0._                      |
+Pass **either** an `apiKey` **or** a ready-made `client` — never both; the types enforce it.
+
+| Property       | Type                      | Required           | Default              | Description                                                                                                     |
+| -------------- | ------------------------- | ------------------ | -------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `apiKey`       | `string`                  | Unless `client`    | —                    | OpenAI API key. The `openai` package is loaded on first translation, not at config load. _Since v0.11.0: optional when `client` is given._ |
+| `client`       | `OpenAIClientShape`       | Unless `apiKey`    | —                    | Your own client — Azure OpenAI, a corporate proxy, OpenRouter, anything with a matching `chat.completions.create`. On this path the `openai` package is never loaded. _Since v0.11.0._ |
+| `model`        | `string`                  | No                 | `'gpt-4o'`           | Model used for translation. **The default may change in a minor release** — pin it if you need reproducible output and cost. |
+| `systemPrompt` | `SystemPromptBuilder`     | No                 | Built-in prompt      | Custom system-prompt builder.                                                                                   |
+| `dryRun`       | `boolean \| DryRunConfig` | No                 | `false`              | **Deprecated** — see the note below. Simulates translations without API calls, but still writes, publishes and records provenance. |
+| `sampling`     | `OpenAISamplingParams`    | No                 | not sent             | `temperature`, `top_p`, `frequency_penalty`, `presence_penalty`. Omitted entirely unless set — several models reject them. **Before v0.11.0 this package always sent `temperature: 0, top_p: 1, frequency_penalty: 0, presence_penalty: 0`**, so translations were deterministic; they now follow the model's defaults. Set `{ temperature: 0 }` to restore that. _Since v0.11.0._ |
+| `structuredOutput` | `"json_schema" \| "json_object"` | No | `"json_schema"` | Which structured-output envelope to send. See the note below — the two carry different risks. _Since v0.11.0._ |
+| `timeout`      | `number`                  | No                 | `60000`              | Per-request timeout (ms) for the client this package builds. Ignored when you pass your own `client`. _Since v0.6.0; the default dropped from the SDK's 10 minutes to 60 s in v0.11.0._ |
+| `maxRetries`   | `number`                  | No                 | SDK default (2)      | Max automatic retries on transient errors (429/5xx/network) for the client this package builds. `0` disables. Ignored when you pass your own `client`. _Since v0.6.0._ |
+
+> **`createOpenAIProvider` is deprecated and goes away in the next major.** What it adds over
+> `openAIComplete` is building the SDK client for you — and carrying `openai` as an optional
+> dependency of ours to do it, which is where the cost is: a lazy import shaped around deployment
+> file-tracers, and a classifier telling "not installed" from "installed but broken" across four
+> runtimes. Construct the client yourself instead and keep everything else:
+>
+> ```typescript
+> import OpenAI from "openai";
+> import {
+>   createTranslationProvider,
+>   openAIComplete,
+> } from "@focus-reactive/payload-plugin-translator";
+>
+> // The SDK's own default timeout is ten minutes — far too long for a live edit.
+> const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 60_000 });
+>
+> const translationProvider = createTranslationProvider({
+>   complete: openAIComplete({ client, model: "gpt-4o" }),
+> });
+> ```
+>
+> `openAIComplete` stays: the request body, the `structuredOutput` choice below, and the message
+> naming that option when a gateway rejects a strict schema are all still ours. What becomes yours
+> is the SDK version and the client's own settings, the timeout most of all.
+> See [docs/DEPRECATIONS.md](docs/DEPRECATIONS.md#openai-client-construction).
+
+#### Choosing a structured-output envelope
+
+`json_schema` (the default) sends the request with a schema the reply must satisfy, so a compliant
+model **cannot** drop a requested field. That is what closed the silent half-translation defect. It
+costs two things:
+
+- Older models, and some gateways (OpenRouter with certain upstream models, older Azure
+  deployments, self-hosted proxies), reject it with a 400. You do not need to know which: the error
+  names this option as the fix.
+- The schema has a size limit, so **one request carries a limited number of pieces of text**, and a
+  document past that ceiling fails as a whole. The schema names one property per translatable piece,
+  and rich text is split one piece per text node — a sentence with two emphasised spans is already
+  four pieces — so the count grows faster than "one per field" suggests, and a document is never
+  split across requests. The ceiling differs by model and moves over time; measure it against your
+  largest documents rather than assuming headroom.
+
+`json_object` asks only for valid JSON. There is no schema, so no ceiling — but key preservation
+falls back to this package's key-set check, which **detects** a dropped key instead of preventing
+it. A reply missing one key out of two hundred still writes the other 199, the gap is reported to
+the server log, and only a reply matching nothing at all fails. Your editors never see that log, so
+a dropped field looks translated in the admin UI.
+
+Pick by which risk you would rather carry: a hard failure on very large documents, or a quiet gap on
+any document.
 
 ```typescript
+// Quick start
 createOpenAIProvider({
   apiKey: process.env.OPENAI_API_KEY,
   model: "gpt-4o-mini",
   systemPrompt: ({ sourceLang, targetLang, defaultPrompt }) => `${defaultPrompt}\nUse formal language. Keep brand names unchanged.`,
+});
+
+// Your own client — Azure, a proxy, OpenRouter. Since v0.11.0.
+import OpenAI from "openai";
+
+createOpenAIProvider({
+  client: new OpenAI({ apiKey: process.env.AZURE_KEY, baseURL: process.env.AZURE_ENDPOINT }),
+  model: "gpt-4o",
 });
 ```
 
@@ -313,6 +378,81 @@ type DryRunConfig = {
   timeout?: number; // ms, simulates API latency
 };
 ```
+
+> **`dryRun` is deprecated and will be removed in the next major.** It skips the network call and
+> nothing else: the transformed strings are still written to the target locale, still published when
+> `publishOnTranslation` is set, and still recorded as provenance — after which the locale reads as
+> up to date and no re-translation is prompted. Use your own fake instead, which is explicit about
+> being one:
+>
+> ```typescript
+> import { createTranslationProvider } from "@focus-reactive/payload-plugin-translator";
+>
+> const fakeProvider = createTranslationProvider({
+>   complete: async ({ userContent }) => {
+>     const input = JSON.parse(userContent) as Record<string, string>;
+>     const reversed: Record<string, string> = {};
+>     for (const [key, value] of Object.entries(input)) {
+>       reversed[key] = value.trim() ? [...value].reverse().join("") : value;
+>     }
+>     return JSON.stringify(reversed);
+>   },
+> });
+> ```
+>
+> `complete` returns the reply as raw text, exactly as a service would; parsing and validation stay
+> on our side. See [docs/DEPRECATIONS.md](docs/DEPRECATIONS.md#provider-dry-run).
+
+#### Another service — `createTranslationProvider(config)`
+
+_Since v0.11.0._
+
+Need a different model provider, or full control of the request body? Supply one function — "send this text, give me the reply" — and keep everything else. The prompt, the response schema, reply parsing, key-set validation, dry-run simulation and the failure taxonomy all stay on our side, so you cannot accidentally skip them.
+
+For OpenAI specifically you do not have to write that function: `openAIComplete({ client, model })` is one, built from a client you constructed. _Since v0.11.0._
+
+```typescript
+import { createTranslationProvider } from "@focus-reactive/payload-plugin-translator";
+
+const provider = createTranslationProvider({
+  complete: async ({ systemPrompt, userContent, responseSchema }) => {
+    const reply = await myService.chat({
+      system: systemPrompt,
+      user: userContent,
+      schema: responseSchema, // hand this to whatever structured-output mechanism your service offers
+    });
+    return reply.text; // raw text, not a parsed object — we parse it
+  },
+});
+```
+
+> `signal` is reserved and currently always `undefined` — the port does not carry cancellation yet, so wiring it into your client is harmless but has no effect today. It is in the request shape so that adding cancellation later is a pure addition rather than a breaking change.
+
+| Property       | Type                      | Required | Default         | Description                                        |
+| -------------- | ------------------------- | -------- | --------------- | -------------------------------------------------- |
+| `complete`     | `CompletionFn`            | Yes      | —               | Sends one request, returns the reply as raw text.  |
+| `systemPrompt` | `SystemPromptBuilder`     | No       | Built-in prompt | Custom system-prompt builder.                      |
+| `dryRun`       | `boolean \| DryRunConfig` | No       | `false`         | **Deprecated** — supply your own fake `complete`.  |
+
+Your `complete` owns the timeout, the retry policy and the credentials — this package adds no retry of its own and imposes no timeout on your call.
+
+#### Failure causes
+
+_Since v0.11.0._
+
+Every built-in provider throws a typed error naming what went wrong, instead of returning `null`:
+
+| Error                       | `code`               | Means                                                                  |
+| --------------------------- | -------------------- | ---------------------------------------------------------------------- |
+| `NoContentError`            | `no-content`         | The reply was empty, or the service filtered it.                       |
+| `UnparseableReplyError`     | `unparseable-reply`  | The reply was not JSON, or not an object.                              |
+| `KeySetMismatchError`       | `key-set-mismatch`   | The reply answered none of the requested fields.                       |
+| `TransportError`            | `transport`          | The call failed — network, auth, rate limit, timeout.                  |
+| `ProviderConfigurationError`| `config`             | The provider cannot work as configured (usually a missing optional SDK). |
+
+All extend `TranslationProviderError`, so one `catch` covers them. The original failure is on the standard `cause` property — never copied into `message`, because that text can reach an HTTP response body and a vendor error may carry your API key.
+
+A **partial** reply is not an error: the fields that came back are applied, and the ones that did not are named in a warning. That is deliberate — dropping good translations because one field is missing helps nobody — but it does mean a partial translation still completes.
 
 #### Custom provider
 
@@ -341,8 +481,10 @@ class DeepLProvider implements TranslationProvider {
         result[key] = data.translations[i].text;
       });
       return result;
-    } catch {
-      return null; // null aborts the translation for this chunk
+    } catch (cause) {
+      // Throwing is preferred — the cause reaches the log and the editor sees why it failed.
+      // Returning `null` still works and still aborts the whole run, but it says nothing about why.
+      throw new Error("DeepL translation failed", { cause });
     }
   }
 }

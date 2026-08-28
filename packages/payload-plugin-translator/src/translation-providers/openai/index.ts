@@ -1,9 +1,8 @@
-// OpenAI translation provider — one vendor implementation of the core `TranslationProvider`
-// port. Payload-free; pulls the `openai` SDK (opt-in).
-export {
-  OpenAITranslationProvider,
-  createOpenAIProvider,
-  type OpenAIProviderConfig,
-  type DryRunConfig,
-  type SystemPromptContext,
-} from "./OpenAITranslation.provider";
+export { createOpenAIProvider } from "./OpenAITranslation.provider";
+export { OpenAITranslationProvider } from "./OpenAITranslationLegacy.provider";
+export type { OpenAIProviderConfig } from "./OpenAITranslation.provider";
+
+export type { OpenAIClientShape } from "./OpenAI.shapes";
+
+export { openAIComplete } from "./openAIComplete";
+export type { OpenAISamplingParams, OpenAIStructuredOutput } from "./openAIComplete";

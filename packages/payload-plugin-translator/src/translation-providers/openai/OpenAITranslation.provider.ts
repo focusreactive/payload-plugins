@@ -1,278 +1,139 @@
-import OpenAI from "openai";
+import type { TranslationProvider } from "../../core/domain/translation-providers";
+import type { DryRunConfig, SystemPromptBuilder } from "../shared";
+import { createTranslationProvider } from "../shared";
+import { loadOpenAIClient } from "./loadOpenAIClient";
+import type { OpenAIClientShape } from "./OpenAI.shapes";
+import { openAIComplete } from "./openAIComplete";
+import type { OpenAISamplingParams, OpenAIStructuredOutput } from "./openAIComplete";
 
-import type {
-  TranslationProvider,
-  TranslationInput,
-  TranslationOutput,
-} from "../../core/domain/translation-providers/TranslationProvider.interface";
-import { isObject } from "../../core/kernel/utils/isObject";
-import type { ChatModel } from "openai/resources/index.mjs";
+const DEFAULT_MODEL = "gpt-4o";
 
-/**
- * Function to transform text in dry run mode.
- * Receives the original text and returns the transformed text.
- */
-type DryRunTransformer = (text: string) => string | Promise<string>;
+/** The SDK's own default is ten minutes — far too long when a translation blocks a live editor request. */
+const DEFAULT_TIMEOUT_MS = 60_000;
 
-/**
- * Configuration for dry run mode with custom transformer.
- */
-export type DryRunConfig = {
-  /** Custom transformer function for text */
-  transform: DryRunTransformer;
-  /** Delay in milliseconds before returning mock translation (simulates API latency) */
-  timeout?: number;
-};
-
-/**
- * Context passed to the system prompt builder function.
- */
-export type SystemPromptContext = {
-  /** Source language code (e.g., 'en', 'de') */
-  sourceLang: string;
-  /** Target language code (e.g., 'fr', 'es') */
-  targetLang: string;
-  /** Default system prompt that can be extended or replaced */
-  defaultPrompt: string;
-};
-
-/**
- * Function to build a custom system prompt for translation.
- */
-type SystemPromptBuilder = (context: SystemPromptContext) => string;
-
-export type OpenAIProviderConfig = {
-  /** OpenAI API key (required). Read it from an env var — never hard-code it. */
-  apiKey: string;
+type OpenAIProviderBase = {
   /**
-   * OpenAI model to use for translation.
+   * Model used for translation.
    *
-   * @default 'gpt-4o'
-   *
-   * @example
-   * model: 'gpt-4o-mini'
+   * @default 'gpt-4o' — may move in a minor release; pin it if you need reproducibility.
    */
-  model?: (string & {}) | ChatModel;
+  model?: string;
   /**
-   * Custom system prompt builder for translation.
-   * Receives context with source/target languages and the default prompt.
-   *
-   * @example
-   * // Add custom instructions
-   * systemPrompt: ({ sourceLang, targetLang, defaultPrompt }) =>
-   *   `${defaultPrompt}\nUse formal language. Keep brand names unchanged.`
-   *
-   * @example
-   * // Completely custom prompt
-   * systemPrompt: ({ sourceLang, targetLang }) =>
-   *   `Translate JSON values from ${sourceLang} to ${targetLang}. Be concise.`
+   * Custom system-prompt builder. Receives the source and target languages plus the prompt this
+   * package would otherwise send, so you can extend it rather than rewrite it.
    */
   systemPrompt?: SystemPromptBuilder;
   /**
-   * When enabled, simulates translations without making actual API calls to OpenAI.
-   *
-   * - `true` — uses default transformer that reverses the text
-   * - `{ transform, timeout? }` — custom transformer with optional delay
-   *
-   * @example
-   * // Default behavior (reverse text, no delay)
-   * dryRun: true
-   *
-   * @example
-   * // Custom transformer with delay
-   * dryRun: {
-   *   transform: (text) => `[TRANSLATED] ${text}`,
-   *   timeout: 1000, // 1 second delay
-   * }
+   * Simulate translations without calling OpenAI — see {@link DryRunConfig}.
    *
    * @default false
+   * @deprecated Pass your own `client`, or build a provider with `createTranslationProvider({
+   * complete })`. Remove in next major. See docs/DEPRECATIONS.md#provider-dry-run
    */
   dryRun?: boolean | DryRunConfig;
   /**
-   * Per-request timeout in milliseconds for the OpenAI client. A translation job blocks on this
-   * call, so the OpenAI SDK default (10 minutes) is usually too long. Omit to keep the SDK default.
+   * Per-request timeout in milliseconds for the client this package builds.
    *
-   * @example
-   * timeout: 60_000 // 60s
+   * Ignored when you pass your own `client` — then the timeout is whatever you configured on it.
    *
+   * @default 60000
    * @since 0.6.0
    */
   timeout?: number;
   /**
-   * Maximum automatic retries the OpenAI client performs on transient errors (429, 5xx, network).
-   * Omit to keep the SDK default (2). Set `0` to disable retries.
+   * Maximum automatic retries on transient errors (429, 5xx, network) for the client this package
+   * builds. Ignored when you pass your own `client`.
    *
+   * @default the SDK's own default (2)
    * @since 0.6.0
    */
   maxRetries?: number;
+  /**
+   * Sampling parameters — see {@link OpenAISamplingParams}, which survives this option.
+   *
+   * @since 0.11.0
+   */
+  sampling?: OpenAISamplingParams;
+  /**
+   * Which structured-output envelope to send — see {@link OpenAIStructuredOutput}, which documents
+   * the trade-off and survives this option.
+   *
+   * @since 0.11.0
+   */
+  structuredOutput?: OpenAIStructuredOutput;
 };
 
-/** @deprecated Use `createOpenAIProvider` function instead */
-export class OpenAITranslationProvider implements TranslationProvider {
-  private openAiClient: OpenAI;
-  private readonly config: OpenAIProviderConfig;
-
-  constructor(config: OpenAIProviderConfig) {
-    // `timeout`/`maxRetries` are passed through to the OpenAI SDK; `undefined` keeps the SDK
-    // defaults (10 min timeout, 2 retries). A blocking translation job rarely wants the full 10 min.
-    this.openAiClient = new OpenAI({
-      apiKey: config.apiKey,
-      timeout: config.timeout,
-      maxRetries: config.maxRetries,
-    });
-    this.config = config;
-  }
-
-  async translate(
-    content: TranslationInput,
-    souceLng: string,
-    targetLng: string
-  ): Promise<TranslationOutput | null> {
-    if (this.config.dryRun) {
-      console.info("[DRY RUN] Translation simulation:", {
-        content,
-        sourceLang: souceLng,
-        targetLang: targetLng,
-        provider: "OpenAI",
-      });
-
-      const timeout = this.getDryRunTimeout();
-      if (timeout > 0) await new Promise((resolve) => setTimeout(resolve, timeout));
-
-      const transformer = this.getDryRunTransformer();
-      return this.createMockTranslation(content, transformer);
-    }
-
-    const systemPrompt = this.buildSystemPrompt(souceLng, targetLng);
-
-    const chatCompletion = await this.openAiClient.chat.completions.create({
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: JSON.stringify(content) },
-      ],
-      model: this.config.model ?? "gpt-4o",
-      temperature: 0,
-      top_p: 1,
-      frequency_penalty: 0,
-      presence_penalty: 0,
-      response_format: { type: "json_object" },
-    });
-
-    // Guard `choices[0]`: an empty `choices` array (e.g. content-filtered response) would otherwise
-    // throw a TypeError instead of the intended graceful `null`.
-    const translatedContent = chatCompletion.choices[0]?.message?.content;
-    if (!translatedContent) return null;
-
-    try {
-      return JSON.parse(translatedContent);
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Builds the system prompt for translation.
-   */
-  private buildSystemPrompt(sourceLang: string, targetLang: string): string {
-    const defaultPrompt = `Translate the values from the JSON that the user will send you${
-      sourceLang ? ` from ${sourceLang}` : ""
-    } into ${targetLang}. Keep all JSON keys exactly as they are, only translate the values.
-The response should be a valid JSON object with the same structure and keys as the input, but with translated values.
-Maintain any special formatting, placeholders, or variables within the values if they exist.`;
-
-    if (this.config.systemPrompt) {
-      return this.config.systemPrompt({
-        sourceLang,
-        targetLang,
-        defaultPrompt,
-      });
-    }
-
-    return defaultPrompt;
-  }
-
-  /**
-   * Returns the transformer function for dry run mode.
-   * If dryRun is an object with transform, returns it.
-   * If dryRun is true, returns the default transformer that reverses text.
-   */
-  private getDryRunTransformer(): DryRunTransformer {
-    if (typeof this.config.dryRun === "object" && this.config.dryRun.transform) {
-      return this.config.dryRun.transform;
-    }
-    return (text: string) => text.split("").reverse().join("");
-  }
-
-  /**
-   * Returns the timeout for dry run mode.
-   * If dryRun is an object with timeout, returns it.
-   * Otherwise returns 0 (no delay).
-   */
-  private getDryRunTimeout(): number {
-    if (typeof this.config.dryRun === "object" && this.config.dryRun.timeout) {
-      return this.config.dryRun.timeout;
-    }
-    return 0;
-  }
-
-  private async createMockTranslation(
-    content: TranslationInput,
-    transformer: DryRunTransformer
-  ): Promise<TranslationOutput | null> {
-    try {
-      const mockTranslation = await this.transformObjectValues(content, async (value) => {
-        if (typeof value === "string" && value.trim()) return transformer(value);
-        return value;
-      });
-
-      return mockTranslation as TranslationOutput;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Recursively transforms the values of an object or array using the provided transformer function.
-   * @param obj The object or value to transform.
-   * @param transformer The function to apply to each value.
-   * @returns The transformed object, array, or value.
-   */
-  private async transformObjectValues(
-    obj: unknown,
-    transformer: (value: unknown) => unknown | Promise<unknown>
-  ): Promise<unknown> {
-    if (Array.isArray(obj)) {
-      return Promise.all(obj.map((item) => this.transformObjectValues(item, transformer)));
-    }
-
-    if (isObject(obj)) {
-      const result: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(obj)) {
-        result[key] = await this.transformObjectValues(value, transformer);
+/**
+ * Configuration for {@link createOpenAIProvider}: an API key **or** a ready-made client, never both.
+ *
+ * @deprecated Construct the client yourself and pass it to `openAIComplete`, which stays.
+ * Remove in next major. See docs/DEPRECATIONS.md#openai-client-construction
+ */
+export type OpenAIProviderConfig = OpenAIProviderBase &
+  (
+    | {
+        apiKey: string;
+        client?: never;
       }
-      return result;
-    }
-
-    return transformer(obj);
-  }
-}
+    | {
+        /**
+         * A ready-made client — the OpenAI SDK client, Azure, OpenRouter, a proxy. On this path the
+         * `openai` package is never loaded and `timeout` / `maxRetries` are yours, not ours.
+         *
+         * @since 0.11.0
+         */
+        client: OpenAIClientShape;
+        apiKey?: never;
+      }
+  );
 
 /**
  * Creates an OpenAI translation provider.
  *
- * @example
- * ```ts
- * // Basic usage
- * createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY })
- *
- * // With options
- * createOpenAIProvider({
- *   apiKey: process.env.OPENAI_API_KEY,
- *   model: 'gpt-4o-mini',
- *   systemPrompt: ({ defaultPrompt }) => `${defaultPrompt}\nUse formal language.`,
- * })
- * ```
+ * @deprecated What this adds over `openAIComplete` is building the SDK client for you, and
+ * carrying `openai` as an optional dependency to do it. Construct the client yourself instead:
+ * `createTranslationProvider({ complete: openAIComplete({ client, model }) })`. Remove in next
+ * major. See the recipe in the README and docs/DEPRECATIONS.md#openai-client-construction
  */
-export function createOpenAIProvider(config: OpenAIProviderConfig): OpenAITranslationProvider {
-  return new OpenAITranslationProvider(config);
+export function createOpenAIProvider(config: OpenAIProviderConfig): TranslationProvider {
+  const { model = DEFAULT_MODEL, systemPrompt, dryRun, sampling, structuredOutput } = config;
+
+  // The promise, not the client: two concurrent first calls would otherwise each start their own
+  // import. Per instance, never module-level — one consumer's client must not reach a differently
+  // configured provider in the same process.
+  let clientPromise: Promise<OpenAIClientShape> | undefined;
+
+  const loadClientAndForgetOnFailure = async (): Promise<OpenAIClientShape> => {
+    try {
+      // `apiKey` goes through unchanged — never defaulted to "". The SDK checks for `undefined`, so an
+      // empty string would build a client that 401s on every request instead of saying the key is
+      // missing.
+      return await loadOpenAIClient({
+        apiKey: config.apiKey,
+        timeout: config.timeout ?? DEFAULT_TIMEOUT_MS,
+        maxRetries: config.maxRetries,
+      });
+    } catch (error) {
+      // A cached rejected promise makes one bad first call permanent — the job runner's retries
+      // would replay the same stale error.
+      clientPromise = undefined;
+      throw error;
+    }
+  };
+
+  const resolveClient = (): Promise<OpenAIClientShape> => {
+    if (config.client) return Promise.resolve(config.client);
+
+    clientPromise ??= loadClientAndForgetOnFailure();
+    return clientPromise;
+  };
+
+  return createTranslationProvider({
+    systemPrompt,
+    dryRun,
+    complete: async (request) => {
+      const client = await resolveClient();
+      return openAIComplete({ client, model, sampling, structuredOutput })(request);
+    },
+  });
 }
