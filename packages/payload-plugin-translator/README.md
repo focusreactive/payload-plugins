@@ -302,45 +302,31 @@ Pass **either** an `apiKey` **or** a ready-made `client` — never both; the typ
 | `timeout`      | `number`                  | No                 | `60000`              | Per-request timeout (ms) for the client this package builds. Ignored when you pass your own `client`. _Since v0.6.0; the default dropped from the SDK's 10 minutes to 60 s in v0.11.0._ |
 | `maxRetries`   | `number`                  | No                 | SDK default (2)      | Max automatic retries on transient errors (429/5xx/network) for the client this package builds. `0` disables. Ignored when you pass your own `client`. _Since v0.6.0._ |
 
-> **The built-in OpenAI adapter is deprecated and goes away in the next major.** It exists only to
-> carry a dependency that is not ours, and carrying it *optionally* is what makes it costly — a lazy
-> import shaped around deployment file-tracers, a hand-written structural slice of the SDK client,
-> and a conformance test to catch drift. None of that is needed by someone who simply imports the
-> SDK they already chose. Build the provider yourself:
+> **`createOpenAIProvider` is deprecated and goes away in the next major.** What it adds over
+> `openAIComplete` is building the SDK client for you — and carrying `openai` as an optional
+> dependency of ours to do it, which is where the cost is: a lazy import shaped around deployment
+> file-tracers, and a classifier telling "not installed" from "installed but broken" across four
+> runtimes. Construct the client yourself instead and keep everything else:
 >
 > ```typescript
 > import OpenAI from "openai";
-> import { createTranslationProvider } from "@focus-reactive/payload-plugin-translator";
+> import {
+>   createTranslationProvider,
+>   openAIComplete,
+> } from "@focus-reactive/payload-plugin-translator";
 >
-> const client = new OpenAI({
->   apiKey: process.env.OPENAI_API_KEY,
->   timeout: 60_000, // the SDK's own default is ten minutes — far too long for a live edit
-> });
+> // The SDK's own default timeout is ten minutes — far too long for a live edit.
+> const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 60_000 });
 >
 > const translationProvider = createTranslationProvider({
->   complete: async ({ systemPrompt, userContent, responseSchema }) => {
->     const reply = await client.chat.completions.create({
->       model: "gpt-4o",
->       messages: [
->         { role: "system", content: systemPrompt },
->         { role: "user", content: userContent },
->       ],
->       // Swap for `{ type: "json_object" }` if your model or gateway rejects a strict schema —
->       // see the trade-off below. With json_object the prompt must contain the word "json".
->       response_format: {
->         type: "json_schema",
->         json_schema: { name: "translation", strict: true, schema: responseSchema },
->       },
->     });
->
->     return reply.choices[0]?.message?.content ?? "";
->   },
+>   complete: openAIComplete({ client, model: "gpt-4o" }),
 > });
 > ```
 >
-> The prompt, the response schema, reply parsing, key-set validation and the failure taxonomy stay
-> on our side either way. What you gain is your own SDK version and an envelope choice you can see.
-> See [docs/DEPRECATIONS.md](docs/DEPRECATIONS.md#built-in-openai-adapter).
+> `openAIComplete` stays: the request body, the `structuredOutput` choice below, and the message
+> naming that option when a gateway rejects a strict schema are all still ours. What becomes yours
+> is the SDK version and the client's own settings, the timeout most of all.
+> See [docs/DEPRECATIONS.md](docs/DEPRECATIONS.md#openai-client-construction).
 
 #### Choosing a structured-output envelope
 
@@ -423,16 +409,17 @@ _Since v0.11.0._
 
 Need a different model provider, or full control of the request body? Supply one function — "send this text, give me the reply" — and keep everything else. The prompt, the response schema, reply parsing, key-set validation, dry-run simulation and the failure taxonomy all stay on our side, so you cannot accidentally skip them.
 
+For OpenAI specifically you do not have to write that function: `openAIComplete({ client, model })` is one, built from a client you constructed. _Since v0.11.0._
+
 ```typescript
 import { createTranslationProvider } from "@focus-reactive/payload-plugin-translator";
 
 const provider = createTranslationProvider({
-  complete: async ({ systemPrompt, userContent, responseSchema, signal }) => {
+  complete: async ({ systemPrompt, userContent, responseSchema }) => {
     const reply = await myService.chat({
       system: systemPrompt,
       user: userContent,
       schema: responseSchema, // hand this to whatever structured-output mechanism your service offers
-      signal,
     });
     return reply.text; // raw text, not a parsed object — we parse it
   },

@@ -16,7 +16,7 @@ export type { AccessGuard, AccessGuardRequest } from "./types/AccessGuard";
 // Translation provider port (from the dependency-free core)
 export type { TranslationProvider, TranslationInput, TranslationOutput } from "./core";
 
-export { createOpenAIProvider } from "./translation-providers";
+export { createOpenAIProvider, openAIComplete } from "./translation-providers";
 export type {
   OpenAIProviderConfig,
   OpenAIClientShape,

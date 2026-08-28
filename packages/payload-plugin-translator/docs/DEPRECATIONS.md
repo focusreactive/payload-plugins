@@ -139,35 +139,39 @@ the single source of truth — code annotations link here by anchor instead of d
   `src/translation-providers/shared/CompletionProvider.provider.ts`,
   `src/translation-providers/openai/OpenAITranslation.provider.ts`
 
-### built-in-openai-adapter
+### openai-client-construction
 
-- **What:** the whole built-in OpenAI adapter — `createOpenAIProvider`, `OpenAIProviderConfig`,
-  `OpenAIClientShape`, `OpenAISamplingParams`, `OpenAIStructuredOutput`, and the already-deprecated
-  `OpenAITranslationProvider` class that delegates to it. Everything under
-  `src/translation-providers/openai/` goes as a unit, and the `openai` optional dependency goes with
-  it.
+- **What:** the layer that builds an OpenAI SDK client for you — `createOpenAIProvider`,
+  `OpenAIProviderConfig`, the `loadOpenAIClient` module behind them, and the already-deprecated
+  `OpenAITranslationProvider` class that delegates to `createOpenAIProvider`. The `openai` entry in
+  `optionalDependencies` goes with them.
 - **Status:** live
 - **Deprecated:** 2026-08-28 / PR #101
-- **Replacement:** `createTranslationProvider({ complete })` plus your own `openai` client — about a
-  dozen lines, recipe in the README. The SDK version becomes yours, and the envelope choice sits in
-  your own code where you can see it.
+- **Replacement:** construct the client yourself and hand it to `openAIComplete`, which stays:
+
+  ```ts
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 60_000 });
+
+  translationProvider: createTranslationProvider({
+    complete: openAIComplete({ client, model: "gpt-4o" }),
+  }),
+  ```
 - **Remove in:** next major
-- **Why:** the adapter exists to carry someone else's dependency, and carrying it optionally is what
-  makes it expensive. `loadOpenAIClient` lazily imports the SDK through a module-level constant
-  because deployment file-tracers resolve `import()` statically and silently prune anything else;
-  `OpenAI.shapes.ts` hand-writes a structural slice of the SDK's client, with a conformance test to
-  catch drift, so no vendor type enters the emitted declarations. None of that machinery is needed
-  by a consumer who simply imports the SDK they already chose.
+- **Why:** what makes this layer expensive is not knowing how to call OpenAI — it is carrying the
+  SDK as an *optional* dependency of ours. `loadOpenAIClient` imports it through a module-level
+  specifier constant because deployment file-tracers resolve `import()` statically and silently
+  prune anything else; `importOpenAISdk.test.ts` exists to guard that exact source shape after the
+  defect it caused reached production-shaped code; `isModuleNotFound` tells "not installed" from
+  "installed but broken" across four runtimes' wordings. Every line of that exists so a package the
+  consumer may not have can be absent safely. A consumer who imports the SDK they already chose
+  needs none of it, and gains their own SDK version.
 
-  The 0.11.0 layering made this possible: once `createTranslationProvider({ complete })` exists and
-  `createOpenAIProvider` accepts an injected `client`, the wrapper's remaining job is defaults and a
-  request body — a dozen lines the consumer is better placed to own.
-
-  What a consumer gives up, stated plainly so the README recipe can cover it: the message that names
-  `structuredOutput: "json_object"` when a gateway rejects a strict schema, the guard against
-  `json_object` with a prompt that never says "json", and the 60 s default timeout in place of the
-  SDK's ten minutes.
-
-  This also settles the shape of the planned Anthropic / Gemini / OpenRouter work (issue #100): the
-  package ships recipes, not adapters.
-- **Code refs:** `src/translation-providers/openai/` (the directory as a whole)
+  **What is *not* deprecated, and why the first cut of this entry was wrong:** `openAIComplete`,
+  `OpenAIClientShape` and the `OpenAI.shapes.ts` types stay. They carry vendor *knowledge* with no
+  vendor *dependency* — `OpenAI.shapes.ts` bans the import in its first line, and `openAIComplete`
+  never names the package, taking a structural client slice instead. Deprecating them would have
+  handed every consumer the request body, the envelope choice and the schema-rejection advice to
+  maintain themselves, which is the opposite of the point.
+- **Code refs:** `src/translation-providers/openai/OpenAITranslation.provider.ts`,
+  `src/translation-providers/openai/loadOpenAIClient.ts`,
+  `src/translation-providers/openai/OpenAITranslationProvider.deprecated.ts`

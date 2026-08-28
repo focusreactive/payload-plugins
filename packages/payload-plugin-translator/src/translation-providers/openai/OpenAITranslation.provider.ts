@@ -100,9 +100,8 @@ type OpenAIProviderBase = {
 /**
  * Configuration for {@link createOpenAIProvider}: an API key **or** a ready-made client, never both.
  *
- * @deprecated The built-in OpenAI adapter is going away. Build your own with
- * `createTranslationProvider({ complete })` — see the recipe in the README. Remove in next major.
- * See docs/DEPRECATIONS.md#built-in-openai-adapter
+ * @deprecated Construct the client yourself and pass it to `openAIComplete`, which stays.
+ * Remove in next major. See docs/DEPRECATIONS.md#openai-client-construction
  */
 export type OpenAIProviderConfig = OpenAIProviderBase &
   (
@@ -137,10 +136,10 @@ export type OpenAIProviderConfig = OpenAIProviderBase &
  * @since 0.11.0 — accepts `client` as an alternative to `apiKey`, and returns the
  * `TranslationProvider` interface rather than the deprecated concrete class.
  *
- * @deprecated Build the provider yourself with `createTranslationProvider({ complete })` and your
- * own `openai` client — a dozen lines, and the SDK version becomes yours. The whole built-in
- * adapter, this option surface included, goes in the next major. See the recipe in the README and
- * docs/DEPRECATIONS.md#built-in-openai-adapter
+ * @deprecated What this adds over `openAIComplete` is building the SDK client for you, and
+ * carrying `openai` as an optional dependency to do it. Construct the client yourself instead:
+ * `createTranslationProvider({ complete: openAIComplete({ client, model }) })`. Remove in next
+ * major. See the recipe in the README and docs/DEPRECATIONS.md#openai-client-construction
  */
 export function createOpenAIProvider(config: OpenAIProviderConfig): TranslationProvider {
   const { model = DEFAULT_MODEL, systemPrompt, dryRun, sampling, structuredOutput } = config;

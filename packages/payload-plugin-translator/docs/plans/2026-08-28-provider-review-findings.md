@@ -164,6 +164,51 @@ defect this issue exists to remove." If a fallback is added it has to be loud �
 minimum, and arguably a mark on the document — or it re-creates the silent half-translation on
 exactly the largest documents.
 
+## The OpenAI deprecation, and where its boundary actually is
+
+Deprecating the built-in adapter was first drawn around the whole `openai/` directory. That was
+wrong, and the corrected boundary is worth recording because the mistake is easy to repeat.
+
+The dependency on the `openai` package lives in **one file**: `loadOpenAIClient.ts`, which holds the
+module-level specifier constant and the lazy `import()`. `OpenAI.shapes.ts` bans the import in its
+first line; `openAIComplete.ts` never names the package at all, taking a structural client slice.
+
+So the adapter is two things, and only one of them is expensive:
+
+- **Vendor dependency** — `createOpenAIProvider`, `OpenAIProviderConfig`, `loadOpenAIClient`. All the
+  machinery that makes an *optional* SDK safe to be absent: the file-tracer-safe import shape, the
+  missing-versus-broken classification across four runtimes' wordings, the tests guarding both.
+  **Deprecated.**
+- **Vendor knowledge** — `openAIComplete`, `OpenAIClientShape`, `OpenAISamplingParams`,
+  `OpenAIStructuredOutput`. The request body, the envelope choice, reading the reply, turning a
+  schema rejection into advice. Costs no dependency. **Stays, and `openAIComplete` becomes public**:
+  it is what keeps the consumer's replacement three lines rather than forty.
+
+## Is imitating a vendor's interface a sound pattern?
+
+`OpenAI.shapes.ts` hand-writes a slice of the SDK's client so a real `new OpenAI()` satisfies it with
+no adapter. The question matters beyond this file: issue #100 would repeat it for Anthropic and
+Gemini.
+
+Sound as a *convenience*; it would be unsound as the only path. The shape is not our contract with
+the consumer — `CompletionFn` is. The slice lives inside a convenience that saves them writing a
+request body, and the escape hatch (`createTranslationProvider({ complete })` with a hand-written
+body) needs no slice at all. The deciding constraint is whether that escape hatch exists. It does.
+
+Three signals that would make it wrong later, worth watching:
+
+1. The conformance test starts failing on routine SDK bumps. Rare drift is a cheap test; frequent
+   drift is a maintenance stream.
+2. OpenAI deprecates Chat Completions — the slice pins it, and the vendor is moving to the Responses
+   API.
+3. Sharpest and most checkable: a consumer has to *construct* something to satisfy the slice rather
+   than passing a client they already have. The seamlessness argument is then gone, and the seam
+   should move to our own vocabulary.
+
+What is not known: how often that method's shape actually changes. One data point is not a rate.
+Therefore **do not repeat the pattern by default** for the next vendors — decide per vendor on
+signal 3.
+
 ## Follow-ups, agreed but out of this PR
 
 - **Migrate `apps/dev` off `dryRun`** (`payload.config.ts`, `integration/translator/

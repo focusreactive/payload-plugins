@@ -45,6 +45,10 @@ function classifySchemaRejection(cause: unknown): SchemaRejection | null {
 /**
  * The vendor boundary: the only place OpenAI's response shape is read.
  *
+ * Takes a client you constructed — it never loads the `openai` package — so pair it with
+ * `createTranslationProvider` to build a provider on an SDK version of your own choosing:
+ * `createTranslationProvider({ complete: openAIComplete({ client, model }) })`.
+ *
  * @since 0.11.0
  */
 export function openAIComplete(args: {
