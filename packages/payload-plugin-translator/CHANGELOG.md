@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-translator [0.11.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.10.4...@focus-reactive/payload-plugin-translator@0.11.0) (2026-08-28)
+
+
+### Features
+
+* **translator:** layer the provider stack and lift the OpenAI SDK out of it ([#101](https://github.com/focusreactive/payload-plugins/issues/101)) ([d5595ff](https://github.com/focusreactive/payload-plugins/commit/d5595ff97e1f5ad8f21379eac457e145f8d8c60c)), closes [#99](https://github.com/focusreactive/payload-plugins/issues/99)
+
 ## @focus-reactive/payload-plugin-translator [0.10.4](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.10.3...@focus-reactive/payload-plugin-translator@0.10.4) (2026-08-21)
 
 ## @focus-reactive/payload-plugin-translator [0.10.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.10.2...@focus-reactive/payload-plugin-translator@0.10.3) (2026-07-31)
