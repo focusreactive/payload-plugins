@@ -7,7 +7,6 @@ import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
 import { schedulePublicationPlugin } from "@focus-reactive/payload-plugin-scheduling";
 import {
   translatorPlugin,
-  createOpenAIProvider,
   documentLevel,
   collectionLevel,
   fieldLevel,
@@ -28,7 +27,7 @@ import { Header } from "./globals/Header";
 import { abAdapter } from "./lib/ab-testing/dbAdapter";
 import { resolveDbAdapter } from "./lib/database/resolveAdapter";
 import { loggingLifecycle } from "./lib/translator/lifecycleLogging";
-import { resolveDryRun, resolveTranslatorRunner } from "./lib/translator/devToggles";
+import { resolveTranslationProvider, resolveTranslatorRunner } from "./lib/translator/devToggles";
 
 const baseDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -100,10 +99,7 @@ export default buildConfig({
         withAutoTranslate(Playground, { targets: ["de", "fr", "es"], debounceMs: 2000 }),
       ],
       runner: resolveTranslatorRunner(),
-      translationProvider: createOpenAIProvider({
-        apiKey: process.env.OPENAI_API_KEY ?? "",
-        dryRun: resolveDryRun(),
-      }),
+      translationProvider: resolveTranslationProvider(),
       levels: [documentLevel(), collectionLevel(), fieldLevel()],
       provenance: true,
       lifecycle: loggingLifecycle,

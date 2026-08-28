@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { sqliteAdapter } from "@payloadcms/db-sqlite";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import {
-  createOpenAIProvider,
+  createTranslationProvider,
   createSyncRunner,
   documentLevel,
   translatorPlugin,
@@ -16,6 +16,7 @@ import { buildConfig } from "payload";
 import type { CollectionConfig, Payload } from "payload";
 import { getPayload } from "payload";
 
+import { reverseComplete } from "../../lib/translator/fakeComplete";
 import { buildTestCollections } from "./testCollections";
 
 /**
@@ -67,8 +68,8 @@ export async function bootTestPayload(opts?: {
     ? collections.map((c) => (c.slug === "docs" ? withAutoTranslate(docs, opts.autoTranslate!) : c))
     : collections;
 
-  // Wrap the dry-run provider so every real translate() call is counted (see `translateCount` above).
-  const baseProvider = createOpenAIProvider({ apiKey: "", dryRun: true });
+  // Wrap the fake so every real translate() call is counted (see `translateCount` above).
+  const baseProvider = createTranslationProvider({ complete: reverseComplete });
   let translateCalls = 0;
   const countingProvider: TranslationProvider = {
     translate: (input, sourceLng, targetLng) => {
