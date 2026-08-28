@@ -22,8 +22,6 @@ export type SystemPromptBuilder = (context: SystemPromptContext) => string;
  *
  * The default wording is handed to `systemPrompt` builders as `defaultPrompt`, so consumers extend
  * this exact string — changing it changes every custom prompt built on it.
- *
- * @since 0.11.0
  */
 export function buildSystemPrompt(args: {
   sourceLng: string;

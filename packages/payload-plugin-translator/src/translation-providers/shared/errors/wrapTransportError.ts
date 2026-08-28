@@ -5,8 +5,6 @@ import { TranslationProviderError } from "./TranslationProviderError";
  * Turns anything a transport threw into a {@link TransportError}, keeping the original on `cause`.
  * A value that is already one of ours passes through: re-wrapping would bury a specific cause under
  * a generic transport failure.
- *
- * @since 0.11.0
  */
 export function wrapTransportError(cause: unknown): TranslationProviderError {
   if (cause instanceof TranslationProviderError) return cause;

@@ -6,26 +6,16 @@ import type { OpenAIClientShape } from "./OpenAI.shapes";
 import { openAIComplete } from "./openAIComplete";
 import type { OpenAISamplingParams, OpenAIStructuredOutput } from "./openAIComplete";
 
-/**
- * The model used when a consumer does not name one; may change in a minor release — see `model` on
- * {@link OpenAIProviderConfig}.
- */
 const DEFAULT_MODEL = "gpt-4o";
 
-/**
- * Per-request timeout for the client this package builds, in milliseconds.
- *
- * The SDK's own default is ten minutes, which is far too long here: a translation blocks a job, and at
- * field level it blocks a live HTTP request the editor is waiting on.
- */
+/** The SDK's own default is ten minutes — far too long when a translation blocks a live editor request. */
 const DEFAULT_TIMEOUT_MS = 60_000;
 
 type OpenAIProviderBase = {
   /**
    * Model used for translation.
    *
-   * @default 'gpt-4o' — and see {@link DEFAULT_MODEL}: the default may move in a minor release, so
-   * pin this if you need reproducibility.
+   * @default 'gpt-4o' — may move in a minor release; pin it if you need reproducibility.
    */
   model?: string;
   /**
@@ -34,12 +24,7 @@ type OpenAIProviderBase = {
    */
   systemPrompt?: SystemPromptBuilder;
   /**
-   * Simulate translations without calling OpenAI. `true` reverses the text; an object supplies your
-   * own transformer and an optional delay.
-   *
-   * A dry run reaches no network and loads no SDK, so it works with an empty `apiKey`. It still
-   * writes the result to the target locale, publishes it when `publishOnTranslation` is set, and
-   * records provenance — it rehearses the request, not the operation.
+   * Simulate translations without calling OpenAI — see {@link DryRunConfig}.
    *
    * @default false
    * @deprecated Pass your own `client`, or build a provider with `createTranslationProvider({
@@ -104,18 +89,6 @@ export type OpenAIProviderConfig = OpenAIProviderBase &
 
 /**
  * Creates an OpenAI translation provider.
- *
- * @example
- * ```ts
- * // Quick start — the SDK is loaded on first use
- * createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY })
- *
- * // Your own client: Azure, a proxy, OpenRouter — the `openai` package is never loaded
- * createOpenAIProvider({ client: myClient, model: "gpt-4o-mini" })
- * ```
- *
- * @since 0.11.0 — accepts `client` as an alternative to `apiKey`, and returns the
- * `TranslationProvider` interface rather than the deprecated concrete class.
  *
  * @deprecated What this adds over `openAIComplete` is building the SDK client for you, and
  * carrying `openai` as an optional dependency to do it. Construct the client yourself instead:

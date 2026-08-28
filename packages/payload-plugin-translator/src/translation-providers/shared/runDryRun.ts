@@ -5,7 +5,8 @@ export type DryRunTransformer = (text: string) => string | Promise<string>;
 /**
  * Dry-run configuration: a transformer, and optionally a delay that imitates network latency.
  *
- * @since 0.11.0
+ * @deprecated Supply your own fake `complete` instead. Remove in next major.
+ * See docs/DEPRECATIONS.md#provider-dry-run
  */
 export type DryRunConfig = {
   /** Applied to every non-blank value. */
@@ -20,8 +21,6 @@ const reverse: DryRunTransformer = (text) => text.split("").reverse().join("");
  * Simulates a translation without calling anything. Blank values pass through untouched.
  *
  * Logs the field count and never field content: the log reaches shared infrastructure.
- *
- * @since 0.11.0
  */
 export async function runDryRun(
   input: TranslationInput,

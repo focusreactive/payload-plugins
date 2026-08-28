@@ -80,8 +80,6 @@ export function isModuleNotFound(cause: unknown, moduleSpecifier: string): boole
  * module.
  *
  * @throws ProviderConfigurationError for a missing package, a broken install, or rejected options.
- *
- * @since 0.11.0
  */
 export async function loadOpenAIClient(
   options: OpenAIClientOptions,

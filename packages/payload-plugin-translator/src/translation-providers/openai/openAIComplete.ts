@@ -14,27 +14,21 @@ export type OpenAISamplingParams = Pick<
 >;
 
 /**
- * Which structured-output envelope to send. The two carry different risks — this is a choice between
- * them, not a right answer and a fallback.
+ * Which structured-output envelope to send.
  *
- * **`json_schema`** (the default) sends a schema the reply must satisfy, so a compliant model cannot
- * drop a requested field. Two costs: older models and some gateways reject it with a 400 (the error
- * names this option as the fix), and the schema has a size limit, so one request carries a limited
- * number of pieces of text and a document past that ceiling fails as a whole. One property per
- * translatable piece, and rich text splits one piece per text node — a sentence with two emphasised
- * spans is already four — so the count climbs faster than "one per field" suggests, and nothing
- * splits a document across requests. The ceiling differs by model and moves over time; measure it
- * against your largest documents.
+ * `json_schema` (the default): the reply must satisfy a schema, so a compliant model cannot drop a
+ * field. Older models and some gateways reject it with a 400, and the schema has a per-model
+ * property ceiling a large document can exceed.
  *
- * **`json_object`** asks only for valid JSON. No ceiling — but a dropped key is then *detected* by
- * this package's key-set validation rather than prevented: the rest of the reply is still applied,
- * the gap reaches the server log, and an editor sees a field that looks translated.
+ * `json_object`: asks only for valid JSON. No ceiling, but a dropped key is then detected by
+ * key-set validation after the fact rather than prevented.
+ *
+ * The README weighs the two and explains how to size a document against the ceiling.
  *
  * @since 0.11.0
  */
 export type OpenAIStructuredOutput = "json_schema" | "json_object";
 
-/** Echoed back by the vendor in a rejection — see the sample message on `classifySchemaRejection`. */
 const SCHEMA_NAME = "translation";
 
 type SchemaRejection = "model-does-not-support" | "schema-rejected";
@@ -103,7 +97,7 @@ export function openAIComplete(args: {
 
     let result: OpenAIChatResult;
     try {
-      result = await client.chat.completions.create(params, signal ? { signal } : undefined);
+      result = await client.chat.completions.create(params, { signal });
     } catch (cause) {
       const rejection = structuredOutput === "json_schema" ? classifySchemaRejection(cause) : null;
 

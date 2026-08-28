@@ -56,13 +56,9 @@ export type TranslationProviderConfig = {
   dryRun?: boolean | DryRunConfig;
 };
 
-/** How many model-invented keys a single warning may name. */
 const MAX_LOGGED_REPLY_KEYS = 10;
 
-/**
- * Renders reply keys for a log line. They are model output, so each is quoted — an unquoted key
- * containing a newline would forge log entries — and the list is capped.
- */
+/** Keys are model output: quoting them stops a newline inside a key from forging log entries. */
 function describeReplyKeys(keys: string[]): string {
   const shown = keys.slice(0, MAX_LOGGED_REPLY_KEYS).map((key) => JSON.stringify(key));
   const rest = keys.length - shown.length;
@@ -93,7 +89,7 @@ async function asConfigurationFailure<T>(what: string, run: () => T | Promise<T>
   }
 }
 
-/** Wraps the consumer's transformer so its throw is classified, leaving our own loop unguarded. */
+/** Only the consumer's transform is wrapped — our own loop must not report its bugs as configuration failures. */
 function guardTransformer(dryRun: boolean | DryRunConfig): boolean | DryRunConfig {
   if (typeof dryRun !== "object" || !dryRun.transform) return dryRun;
 
@@ -108,8 +104,8 @@ function guardTransformer(dryRun: boolean | DryRunConfig): boolean | DryRunConfi
  * Builds a complete {@link TranslationProvider} from a single request function.
  *
  * Use it when you need a service this package does not ship an adapter for, or when you need full
- * control of the request body. If you only need a different endpoint or client options for OpenAI,
- * `createOpenAIProvider` already accepts a ready-made client.
+ * control of the request body. For OpenAI, `openAIComplete({ client, model })` is a ready-made
+ * `complete` — construct the client yourself.
  *
  * @example
  * ```ts
@@ -137,15 +133,15 @@ export function createTranslationProvider(config: TranslationProviderConfig): Tr
       sourceLng: string,
       targetLng: string
     ): Promise<TranslationOutput> {
+      // A strict response schema with no properties is rejected by the service, so an empty
+      // document must not reach the transport at all.
       if (Object.keys(input).length === 0) return {};
 
       const systemPromptText = await asConfigurationFailure("systemPrompt builder", () =>
         buildSystemPrompt({ sourceLng, targetLng, override: systemPrompt })
       );
 
-      // Ours, not the caller's — but an input that cannot be serialized still came from the caller,
-      // and a raw throw here would be the one failure that escapes this taxonomy.
-      const request = await asConfigurationFailure("translation request", () => ({
+      const request = await asConfigurationFailure("serialization of the input", () => ({
         systemPrompt: systemPromptText,
         userContent: JSON.stringify(input),
         responseSchema: buildResponseSchema(input),

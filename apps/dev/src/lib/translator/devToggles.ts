@@ -11,8 +11,7 @@ import type {
 
 import { failingComplete, reverseComplete } from "./fakeComplete";
 
-// Dev-only env toggles for exercising the translator (kept out of payload.config.ts so the plugin
-// wiring there stays declarative). See docs/multi-db-verification.md.
+// See apps/dev/docs/multi-db-verification.md.
 
 /**
  * `TRANSLATOR_SYNC=1` → the sync runner: translations run inline on enqueue, so lifecycle callbacks
@@ -27,10 +26,6 @@ export function resolveTranslatorRunner(): TaskRunnerProvider {
  * The provider this sandbox runs on, driven by `TRANSLATOR_DRY_RUN`: `"1"` → a local fake, no API
  * spend; `"fail"` → a fake that throws, so the translation fails and `onFailed` fires. The fake is
  * also the default when no `OPENAI_API_KEY` is set.
- *
- * The fake is built here rather than through a provider option on purpose: it is what the plugin's
- * own README recommends now that `dryRun` is deprecated, so this sandbox exercises the path we tell
- * consumers to take.
  */
 export function resolveTranslationProvider(): TranslationProvider {
   if (process.env.TRANSLATOR_DRY_RUN === "fail") {

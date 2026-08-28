@@ -48,13 +48,12 @@ export type TestPayload = {
  * - **Sync runner:** a translation runs INLINE inside the triggering `afterChange`, so it is complete
  *   when the awaited `payload.update`/`create` resolves — no job autorun, no polling, no async race
  *   in the specs.
- * - **Auto-translate is the in-process trigger:** publishing source-locale content fires the plugin's
- *   `afterChange` hook which (sync) runs the full pipeline and writes the target locales — the same real
- *   path production uses, reachable through the local API without any HTTP layer.
+ * - **Two in-process triggers:** the `/translate/enqueue` route via `callEndpoint`, and — when
+ *   `opts.autoTranslate` is set — a source-locale publish firing the plugin's `afterChange` hook.
+ *   Both run the real pipeline through the local API, with no HTTP layer.
  *
- * @param opts.autoTranslate - per-collection auto-translate config to stamp on the `docs` collection
- *   (targets + strategy). Omit to leave auto-translate off (still translatable via a published change
- *   only when set — specs that need a trigger pass it).
+ * @param opts.autoTranslate - stamped onto the `docs` collection. Omit it and nothing translates on
+ *   publish; the enqueue route still works.
  */
 export async function bootTestPayload(opts?: {
   autoTranslate?: { targets: string[]; strategy?: "overwrite" | "skip_existing" };
@@ -68,7 +67,6 @@ export async function bootTestPayload(opts?: {
     ? collections.map((c) => (c.slug === "docs" ? withAutoTranslate(docs, opts.autoTranslate!) : c))
     : collections;
 
-  // Wrap the fake so every real translate() call is counted (see `translateCount` above).
   const baseProvider = createTranslationProvider({ complete: reverseComplete });
   let translateCalls = 0;
   const countingProvider: TranslationProvider = {
@@ -80,7 +78,6 @@ export async function bootTestPayload(opts?: {
 
   const config = await buildConfig({
     secret: "integration-test-secret",
-    // A fresh file per boot → push is a clean create, never the interactive data-loss prompt.
     db: sqliteAdapter({ client: { url: `file:${dbPath}` } }),
     editor: lexicalEditor(),
     // Quiet the boot: no telemetry, no admin bundle needed for local-API tests.

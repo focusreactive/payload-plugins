@@ -13,8 +13,6 @@ export type ParsedReply = {
  *
  * A partial answer is applied, not rejected — the gap is returned so the caller can report it. Only
  * a reply that answers nothing is a failure ({@link KeySetMismatchError}).
- *
- * @since 0.11.0
  */
 export function parseAndValidateReply(input: TranslationInput, raw: string): ParsedReply {
   let parsed: unknown;
@@ -45,8 +43,6 @@ export function parseAndValidateReply(input: TranslationInput, raw: string): Par
   const unrequestedReplyKeys = Object.keys(parsed).filter((key) => !expectedKeys.has(key));
 
   if (expectedKeys.size > 0 && Object.keys(translations).length === 0) {
-    // Two different failures reach this point and they need different advice: a reply about other
-    // keys entirely, and a reply about the right keys whose values are not text.
     const answeredAnyKey = [...expectedKeys].some((key) => Object.hasOwn(parsed, key));
 
     throw new KeySetMismatchError(

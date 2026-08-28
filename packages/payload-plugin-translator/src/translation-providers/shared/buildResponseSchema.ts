@@ -11,8 +11,6 @@ export type JsonSchemaObject = Record<string, unknown>;
 /**
  * Builds the response schema for a translation request: exactly the input's keys, all required, no
  * extras.
- *
- * @since 0.11.0
  */
 export function buildResponseSchema(input: TranslationInput): JsonSchemaObject {
   const keys = Object.keys(input);
