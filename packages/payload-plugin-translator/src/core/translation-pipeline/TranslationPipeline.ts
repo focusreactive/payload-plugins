@@ -54,6 +54,7 @@ export class TranslationPipeline {
       schema: config.schema,
       sourceData: config.sourceData,
       targetData: config.targetData,
+      existingTranslation: config.existingTranslation ?? config.targetData,
       sourceLng: config.sourceLng,
       targetLng: config.targetLng,
     };
@@ -61,12 +62,16 @@ export class TranslationPipeline {
     for (const stage of this.stages) {
       ctx = await stage.execute(ctx);
 
-      // Early exit checks
-      if (ctx.fieldChunks !== undefined && ctx.fieldChunks.length === 0) {
-        return null;
-      }
-      if (ctx.textMap !== undefined && Object.keys(ctx.textMap).length === 0) {
-        return null;
+      // Nothing left to translate — but that is not the same as nothing to write. When the
+      // strategy declined a leaf whose translation lives in a layer the write cannot see, that
+      // value was carried into `filteredData` and still owes a write. Either way the remaining
+      // stages are skipped: there is no text to send and nothing to apply.
+      const done =
+        (ctx.fieldChunks !== undefined && ctx.fieldChunks.length === 0) ||
+        (ctx.textMap !== undefined && Object.keys(ctx.textMap).length === 0);
+      if (done) {
+        const carried = (ctx.carriedCount ?? 0) > 0;
+        return carried && ctx.filteredData ? { translatedData: ctx.filteredData } : null;
       }
     }
 

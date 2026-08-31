@@ -106,6 +106,54 @@ version of the same defect — a publish that silently unpublishes. R5 is the ca
 N1/N2 show the scoping holds even when the document has never been published, where there is no prior
 live state to scope against.
 
+## The rules
+
+A collection with drafts has two layers, and a translation run has to decide which one answers which
+question. Four rules, in the order they matter:
+
+**1. The publish flag picks the layer, the strategy never does.** Without publish-on-translation the
+run reads and writes the draft layer. With it, the run writes the published one, scoped to the
+translated locale.
+
+**2. The write is assembled from the layer being written.** The reconciler copies every leaf it does
+not translate straight through, so those values must come from the write layer. Taking them from the
+draft carries a colleague's pending edits into production; taking them from the published row while
+writing a draft discards work that was already there.
+
+**3. "Already translated" means "exists in either layer", not "exists in the layer being written."**
+This is the strategy's question, and it is a different question from rule 2. A translation awaiting
+review lives only in the draft; a publish-mode run that judged `skip_existing` against the published
+row would find it empty, translate again, and overwrite a text a human approved.
+
+**4. A leaf skipped under rule 3 is carried into the write.** Having decided not to re-translate it,
+the run must still publish it — otherwise the editor asked to publish a translation and nothing
+happened, with a 200 and no error. Carrying applies only when the write layer does not already hold
+the value, so a draft-mode run where both layers are the same object stays a no-op rather than
+writing a version that changes nothing.
+
+Rules 3 and 4 are why `existingTranslation` is separate from `targetData` in the pipeline: one field
+answering both questions is correct only while the two layers coincide, which is exactly the case
+that is not interesting.
+
+### What the eight combinations do
+
+Measured, and pinned by `apps/dev/src/integration/translator/strategy-publish-matrix.int.test.ts`.
+`REVIEWED` is a translation already present; `MACHINE` is what the provider returns.
+
+| Existing translation is | Strategy | Publish | Live | Draft |
+| --- | --- | --- | --- | --- |
+| published | overwrite | no | `REVIEWED` | `MACHINE` |
+| published | overwrite | yes | `MACHINE` | `MACHINE` |
+| published | skip_existing | no | `REVIEWED` | `REVIEWED` |
+| published | skip_existing | yes | `REVIEWED` | `REVIEWED` |
+| draft only | overwrite | no | — | `MACHINE` |
+| draft only | overwrite | yes | `MACHINE` | `MACHINE` |
+| draft only | skip_existing | no | — | `REVIEWED` |
+| draft only | skip_existing | yes | `REVIEWED` | `REVIEWED` |
+
+Only the last row needed rules 3 and 4. Before them it read `MACHINE` / `MACHINE` — the reviewer's
+text destroyed in both layers ([#116](https://github.com/focusreactive/payload-plugins/issues/116)).
+
 ## Behaviour change
 
 This ships as a fix and changes what existing installs do, deliberately: a draft-mode translation now

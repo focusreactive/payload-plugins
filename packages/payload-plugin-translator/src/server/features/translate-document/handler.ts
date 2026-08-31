@@ -61,19 +61,28 @@ export class TranslateDocumentHandler implements Handler<
       targetLng,
     });
 
-    const targetData = await payload.findByID({
-      collection,
-      id: collectionId,
-      locale: targetLng,
-      fallbackLocale: false,
-      depth: 0,
-      draft: layer.readDraft,
-    });
+    const readTarget = (draft: boolean) =>
+      payload.findByID({
+        collection,
+        id: collectionId,
+        locale: targetLng,
+        fallbackLocale: false,
+        depth: 0,
+        draft,
+      });
+
+    const targetData = await readTarget(layer.readDraft);
+    // `skip_existing` asks "is this already translated", and a translation awaiting review lives in
+    // the draft — so when the write layer is the published one, the two questions need different
+    // reads. Publishing must still carry over the PUBLISHED values, or it takes someone's pending
+    // edits live (#102); it just must not re-translate over a draft it cannot see (#116).
+    const existingTranslation = layer.readDraft ? targetData : await readTarget(true);
 
     const translatedData = await translateContent({
       schema,
       sourceData,
       targetData,
+      existingTranslation,
       sourceLng,
       targetLng,
       translationProvider: this.translationProvider,

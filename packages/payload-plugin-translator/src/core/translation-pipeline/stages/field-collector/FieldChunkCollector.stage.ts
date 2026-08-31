@@ -19,12 +19,10 @@ export class FieldChunkCollectorStage implements PipelineStage {
       ctx.schema,
       ctx.filteredData,
       ctx.sourceData,
-      ctx.targetData,
+      ctx.existingTranslation,
       this.strategy
     );
-    return {
-      ...ctx,
-      fieldChunks: collector.collect(),
-    };
+    const fieldChunks = collector.collect();
+    return { ...ctx, fieldChunks, carriedCount: collector.carriedCount };
   }
 }

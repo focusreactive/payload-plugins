@@ -1,6 +1,7 @@
 import { isTranslatableLeaf } from "../../../domain/content-projection/translatableLeaf";
 import type { ChildCursor, FieldLike, FieldWalker } from "../../../kernel/field-traversal";
 import { matchElementById, resolveBlockFields, walkFields } from "../../../kernel/field-traversal";
+import { isEmpty } from "../../../kernel/utils/isEmpty";
 import { isObject } from "../../../kernel/utils/isObject";
 import type { TranslationStrategy } from "../../strategies";
 import type { FieldChunk } from "../../types";
@@ -34,20 +35,29 @@ export class FieldChunkCollector {
   private readonly schema: FieldLike[];
   private readonly filteredData: Record<string, unknown>;
   private readonly sourceData: Record<string, unknown>;
-  private readonly targetData: Record<string, unknown>;
+  /**
+   * What already counts as translated. Usually the same object the reconciler was given, and
+   * deliberately separate: the reconciler fills the write from the layer being written, while the
+   * skip decision has to consider a translation that exists anywhere — including a layer the write
+   * cannot see.
+   */
+  private readonly existing: Record<string, unknown>;
   private readonly strategy: TranslationStrategy;
+
+  /** Leaves filled from `existing` because the strategy declined to re-translate them. */
+  carriedCount = 0;
 
   constructor(
     schema: FieldLike[],
     filteredData: Record<string, unknown>,
     sourceData: Record<string, unknown>,
-    targetData: Record<string, unknown>,
+    existing: Record<string, unknown>,
     strategy: TranslationStrategy
   ) {
     this.schema = schema;
     this.filteredData = filteredData;
     this.sourceData = sourceData;
-    this.targetData = targetData;
+    this.existing = existing;
     this.strategy = strategy;
   }
 
@@ -57,6 +67,9 @@ export class FieldChunkCollector {
     // selected leaf, the source value to translate plus its write target. The mutation is applied
     // in a separate explicit pass below — read and write are no longer fused inside the walk.
     const selected: { dataRef: Record<string, unknown>; key: string; sourceValue: unknown }[] = [];
+    // A leaf the strategy declined because a translation already exists somewhere the write
+    // layer cannot see — the value is carried into the write rather than left behind.
+    const carried: { dataRef: Record<string, unknown>; key: string; value: unknown }[] = [];
     const chunks: FieldChunk[] = [];
     const { strategy } = this;
 
@@ -109,7 +122,9 @@ export class FieldChunkCollector {
 
         const sourceValue = cursor.source[field.name];
         const targetValue = cursor.target[field.name];
-        if (isTranslatableLeaf(field) && strategy.shouldTranslate({ sourceValue, targetValue })) {
+        if (!isTranslatableLeaf(field)) return undefined;
+
+        if (strategy.shouldTranslate({ sourceValue, targetValue })) {
           selected.push({ dataRef: cursor.data, key: field.name, sourceValue });
           chunks.push({
             schema: field,
@@ -117,6 +132,11 @@ export class FieldChunkCollector {
             key: field.name,
             path: [...cursor.path, field.name],
           });
+        } else if (!isEmpty(targetValue) && value !== targetValue) {
+          // Only when the write layer does not already hold it: in the common case the reconciler
+          // was given this same layer and already put the value here, so there is nothing to carry
+          // and the run must stay a no-op rather than writing a version that changes nothing.
+          carried.push({ dataRef: cursor.data, key: field.name, value: targetValue });
         }
         return undefined;
       },
@@ -128,12 +148,16 @@ export class FieldChunkCollector {
 
     walkFields(
       this.schema,
-      { data: this.filteredData, source: this.sourceData, target: this.targetData, path: [] },
+      { data: this.filteredData, source: this.sourceData, target: this.existing, path: [] },
       walker
     );
 
     // Apply pass: write each selected leaf's source value into filteredData — this is what gets
     // translated. Kept separate from the read walk above so selection stays read-only.
+    this.carriedCount = carried.length;
+    for (const { dataRef, key, value } of carried) {
+      dataRef[key] = value;
+    }
     for (const { dataRef, key, sourceValue } of selected) {
       dataRef[key] = sourceValue;
     }

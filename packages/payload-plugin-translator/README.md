@@ -221,13 +221,11 @@ is not currently published does make the document live, with just that locale's 
 
 Two consequences worth knowing before you rely on them:
 
-- **`skip_existing` means something different in each mode.** Without publishing it skips what is in
-  the draft, so a reviewer's corrections there are preserved. With publishing it skips what is
-  already **published** — a translation sitting unpublished in a draft is not seen, so the field is
-  translated again and the machine result replaces the correction in the draft as well as going live
-  ([#116](https://github.com/focusreactive/payload-plugins/issues/116)). To ship a translation a
-  reviewer has corrected, publish the document from the Payload admin rather than re-running the
-  translation.
+- **`skip_existing` counts a translation as existing wherever it lives.** A translation sitting
+  unpublished in a draft is still an existing translation, so the field is not translated again —
+  in either mode. With publish-on-translation the existing text is published as it stands, which
+  makes "translate what is missing and publish the lot" do what it sounds like: a reviewer's
+  corrected text goes live untouched, and only the empty fields are sent to the provider.
 - **A locale can read as translated while the public site shows nothing.** Stale-detection records a
   translation as soon as it is written, including into a draft. That is deliberate — the work exists
   and is waiting on a human, so re-translating would be wrong — but "up to date" is not the same

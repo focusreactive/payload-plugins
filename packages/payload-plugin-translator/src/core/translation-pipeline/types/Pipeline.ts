@@ -8,6 +8,7 @@ export type PipelineConfig = {
   schema: FieldLike[];
   sourceData: Record<string, unknown>;
   targetData: Record<string, unknown>;
+  existingTranslation?: Record<string, unknown>;
   sourceLng: string;
   targetLng: string;
 };
