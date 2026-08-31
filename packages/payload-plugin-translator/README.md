@@ -233,10 +233,9 @@ Two consequences worth knowing before you rely on them:
   and is waiting on a human, so re-translating would be wrong — but "up to date" is not the same
   statement as "live".
 
-> **Changed in 0.12.0.** Before this, a draft-mode translation was written to the main table without a
-> draft flag, which unpublished the whole document in every locale; and a publish-mode translation set
-> the document-wide status, which published every locale at once. If you built around either, see
-> [#102](https://github.com/focusreactive/payload-plugins/issues/102).
+> **Changed in 0.12.0.** Before this, translating one locale as a draft unpublished the document in
+> every locale, and translating one locale with publishing pushed every other locale's unpublished
+> draft live. See [#102](https://github.com/focusreactive/payload-plugins/issues/102).
 
 ### Stale-translation detection
 
@@ -282,10 +281,8 @@ translatorPlugin({
 Behaviour: fires only on a **published** source save (draft/autosave saves are ignored; a collection
 without drafts treats every save as published); skips when no translatable content actually changed
 (same fingerprint as stale-detection); coalesces rapid edits via `debounceMs`; the translation is saved
-with the source document's status, and publishing is scoped to **only the translated locale** — other
-locales keep whatever state they were in, and their unpublished drafts stay unpublished; never
-re-triggers on its own translation writes; and never fails the editor's save (best-effort — failures
-are logged).
+with the source document's status, scoped to **only the translated locale**; never re-triggers on its
+own translation writes; and never fails the editor's save (best-effort — failures are logged).
 
 > See [Drafts and publishing](#drafts-and-publishing) for what a translation does to a document's
 > published state.

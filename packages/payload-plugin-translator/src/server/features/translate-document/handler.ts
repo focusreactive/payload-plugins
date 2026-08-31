@@ -1,4 +1,4 @@
-import type { Payload, SanitizedCollectionConfig } from "payload";
+import type { Payload } from "payload";
 import { APIError } from "payload";
 
 import type { Handler } from "../../shared";
@@ -10,6 +10,8 @@ import { fetchSourceDocument } from "../../shared/payload/sourceDocument";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext";
 import type { TranslateDocumentInput, TranslateDocumentOutput } from "./model";
+import { resolveTargetLayer } from "./targetLayer";
+import type { TargetLayer } from "./targetLayer";
 
 /**
  * Translates a single document from source language to target language. Provenance is delegated to
@@ -51,27 +53,21 @@ export class TranslateDocumentHandler implements Handler<
     const provenance = this.provenanceServiceFactory?.(payload);
     const sourceFingerprint = provenance?.captureFingerprint(collection, sourceData) ?? null;
 
-    // Optional-chained on purpose: the config is REQUIRED further down, at the save, but this read
-    // happens before the "nothing to translate" early return, and widening what the handler needs
-    // that early would break callers that never reach a save.
-    const hasDrafts = Boolean(payload.collections?.[collection]?.config?.versions?.drafts);
+    // Optional-chained because this runs before the "nothing to translate" early return; callers
+    // that never reach a save do not stub the config.
+    const layer = resolveTargetLayer({
+      versions: payload.collections?.[collection]?.config?.versions,
+      publishOnTranslation,
+      targetLng,
+    });
 
-    // READ FROM THE LAYER WE ARE ABOUT TO WRITE TO. The reconciler carries every leaf it does not
-    // translate — non-localized fields, non-text localized ones — straight from this read into the
-    // write, so the two must come from the same layer or the write promotes content across it:
-    //   - draft mode writes a version row, so read the draft. A published-only read would show an
-    //     empty target, and `skip_existing` would skip nothing and re-translate over a human's
-    //     corrections.
-    //   - publish mode writes the live document, so read the published row. Reading the draft here
-    //     would carry a colleague's pending edits to untranslated fields live — the same class of
-    //     leak this whole change exists to close (#102).
     const targetData = await payload.findByID({
       collection,
       id: collectionId,
       locale: targetLng,
       fallbackLocale: false,
       depth: 0,
-      draft: hasDrafts && !publishOnTranslation,
+      draft: layer.readDraft,
     });
 
     const translatedData = await translateContent({
@@ -85,7 +81,6 @@ export class TranslateDocumentHandler implements Handler<
     });
     if (!translatedData) return { success: true };
 
-    const collectionConfig = payload.collections[collection].config;
     await this.saveTranslatedDocument(
       payload,
       collection,
@@ -93,8 +88,7 @@ export class TranslateDocumentHandler implements Handler<
       translatedData,
       targetLng,
       sourceLng,
-      collectionConfig,
-      publishOnTranslation
+      layer
     );
 
     if (provenance && sourceFingerprint !== null) {
@@ -119,40 +113,15 @@ export class TranslateDocumentHandler implements Handler<
     translatedData: Record<string, unknown>,
     targetLng: string,
     sourceLng: string,
-    collectionConfig: SanitizedCollectionConfig,
-    publishOnTranslation: boolean
+    layer: TargetLayer
   ): Promise<void> {
-    const drafts = collectionConfig.versions?.drafts;
-
-    let isAutosaveEnabled = false;
-    let draft: true | undefined;
-    let publishSpecificLocale: string | undefined;
-
-    if (drafts) {
-      if (publishOnTranslation) {
-        // Scope the publish to the locale we translated, instead of publishing the whole document
-        // and every other locale's pending draft with it (#102).
-        publishSpecificLocale = targetLng;
-        // Load-bearing despite looking redundant: `publishSpecificLocale` alone drops the document to
-        // `draft` whenever ANY other locale holds a pending draft. Measured — see
-        // docs/plans/2026-08-31-draft-safe-locale-writes.md.
-        translatedData["_status"] = "published";
-      } else {
-        // Route the write to a version row instead of the main table. `_status` is deliberately NOT
-        // set: because Payload stores it as ONE non-localized column per document, writing it here
-        // without `draft` is what used to unpublish the whole document, in every locale (#102).
-        draft = true;
-        if (drafts.autosave) isAutosaveEnabled = true;
-      }
-    }
+    if (layer.status) translatedData["_status"] = layer.status;
 
     await payload.update({
       collection: collection,
       id: collectionId,
       data: translatedData,
-      autosave: isAutosaveEnabled,
-      draft,
-      publishSpecificLocale,
+      ...layer.write,
       locale: targetLng,
       fallbackLocale: sourceLng,
       // Mark this as a translator-authored write so the auto-translate afterChange hook (#51) skips it

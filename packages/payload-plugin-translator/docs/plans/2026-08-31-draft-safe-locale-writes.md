@@ -75,35 +75,29 @@ longer promises that pending drafts survive a publish-mode run untouched.
 
 ## The fix
 
-```ts
-if (drafts) {
-  if (publishOnTranslation) {
-    publishSpecificLocale = targetLng;
-    translatedData["_status"] = "published";
-  } else {
-    draft = true;
-    if (drafts.autosave) isAutosaveEnabled = true;
-  }
-}
-```
+`resolveTargetLayer` (`src/server/features/translate-document/targetLayer.ts`) answers one question —
+which layer of the document this translation reads from and writes to — and returns both sides of the
+answer together. Three shapes: no drafts is a plain update, as it always was; drafts without
+publishing reads and writes the draft layer; drafts with publishing reads the published row and writes
+through `publishSpecificLocale` with an explicit `_status: "published"`.
 
-A collection without drafts keeps the plain update it always had.
-
-**The read has to move with the write.** The target document is read before translating, and the
-reconciler copies every leaf it does *not* translate — non-localized fields, localized non-text ones —
-straight from that read into the write. So the read and the write must come from the same layer, or
-the write carries content across the boundary between them:
-
-```ts
-draft: hasDrafts && !publishOnTranslation
-```
+**The read has to move with the write, which is why one function returns both.** The target document
+is read before translating, and the reconciler copies every leaf it does *not* translate —
+non-localized fields, localized non-text ones — straight from that read into the write. So the two
+must come from the same layer, or the write carries content across the boundary between them.
 
 Getting this wrong is not symmetrical, and both directions were measured. Reading the published row
 while writing a draft makes every field look empty, so `skip_existing` skips nothing and re-translates
 over a reviewer's corrections. Reading the draft while writing live does the opposite and worse: it
 takes a colleague's pending edits to untranslated fields into production — the same "publish mode ships
-unreviewed work" failure the whole change exists to remove. An adversarial pass found the second one
-after the first had been fixed in isolation.
+unreviewed work" failure the whole change exists to remove.
+
+That second failure was introduced by the fix for the first, and an adversarial pass caught it. The
+two sides were then two expressions eighty lines apart, kept in step by comments; a later review
+pointed at the precedent already in this package — `shared/payload/sourceDocument.ts` was extracted for
+exactly this reason, "so the fingerprint baseline can never drift between the two" — and the decision
+became a single unit. Its table test asserts the invariant directly: the layer read is always the
+layer written.
 
 **The explicit `_status: "published"` looks redundant next to `publishSpecificLocale` and is not.**
 R2 is the reason: on its own, `publishSpecificLocale` scopes the publish correctly but lets any other

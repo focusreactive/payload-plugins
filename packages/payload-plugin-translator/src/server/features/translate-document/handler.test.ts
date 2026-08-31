@@ -42,6 +42,11 @@ describe("TranslateDocumentHandler", () => {
     ...overrides,
   });
 
+  /** The fixture's `posts` collection ships without versions; this opts it into drafts. */
+  const enableDrafts = (drafts: unknown = true) => {
+    (mockPayload.collections["posts"].config as { versions: unknown }).versions = { drafts };
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -119,9 +124,7 @@ describe("TranslateDocumentHandler", () => {
     });
 
     it("reads the target through drafts when translating in draft mode", async () => {
-      (mockPayload.collections["posts"].config as { versions: unknown }).versions = {
-        drafts: true,
-      };
+      enableDrafts();
 
       await handler.handle(mockPayload, createInput({ targetLng: "de" }));
 
@@ -133,9 +136,7 @@ describe("TranslateDocumentHandler", () => {
     });
 
     it("reads the target from the published row when publishing", async () => {
-      (mockPayload.collections["posts"].config as { versions: unknown }).versions = {
-        drafts: true,
-      };
+      enableDrafts();
 
       await handler.handle(
         mockPayload,
@@ -251,67 +252,38 @@ describe("TranslateDocumentHandler", () => {
       );
     });
 
-    // These pin the ARGUMENTS handed to `payload.update`, which is all a mock can see. The
-    // behaviour they stand for — a draft-mode translation not unpublishing the document, a
-    // publish-mode one not publishing other locales — is only observable against a real database,
-    // and is proven in apps/dev's `draft-safe-writes.int.test.ts`. Mock assertions of exactly this
-    // shape are what let #102 reach production: the old pair asserted `_status` was placed in the
-    // data and passed happily, because a stub models neither the versions table nor the fact that
-    // `_status` is one non-localized column for the whole document.
-    it("routes a draft-mode translation to a version row and sends no _status", async () => {
-      (mockPayload.collections["posts"].config as { versions: unknown }).versions = {
-        drafts: true,
-      };
+    // `resolveTargetLayer` decides the read and write layers; its own table test proves the three
+    // shapes and the invariant that binds them. These two only check that the handler spreads that
+    // decision onto the update rather than re-deriving it.
+    it("spreads the draft-mode layer onto the update and sends no _status", async () => {
+      enableDrafts();
 
-      const input = createInput();
-      await handler.handle(mockPayload, input);
+      await handler.handle(mockPayload, createInput());
 
       expect(mockPayload.update).toHaveBeenCalledWith(
         expect.objectContaining({
           draft: true,
-          publishSpecificLocale: undefined,
           data: expect.not.objectContaining({ _status: expect.anything() }),
         })
       );
     });
 
-    it("scopes a publish-mode translation to the target locale and asserts the published status", async () => {
-      (mockPayload.collections["posts"].config as { versions: unknown }).versions = {
-        drafts: true,
-      };
+    it("spreads the publish-mode layer onto the update, target locale and status included", async () => {
+      enableDrafts();
 
-      const input = createInput({ publishOnTranslation: true });
-      await handler.handle(mockPayload, input);
+      await handler.handle(mockPayload, createInput({ publishOnTranslation: true }));
 
       expect(mockPayload.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          draft: undefined,
           // `de` is the target locale from createInput().
           publishSpecificLocale: "de",
-          // Redundant-looking, load-bearing: without it a foreign pending draft drags the whole
-          // document back to `draft`.
           data: expect.objectContaining({ _status: "published" }),
         })
       );
     });
 
-    it("leaves a collection without drafts on the plain update path", async () => {
-      const input = createInput();
-      await handler.handle(mockPayload, input);
-
-      expect(mockPayload.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          draft: undefined,
-          publishSpecificLocale: undefined,
-          data: expect.not.objectContaining({ _status: expect.anything() }),
-        })
-      );
-    });
-
     it("uses autosave when drafts with autosave enabled and not publishing", async () => {
-      (mockPayload.collections["posts"].config as { versions: unknown }).versions = {
-        drafts: { autosave: true },
-      };
+      enableDrafts({ autosave: true });
 
       const input = createInput();
       await handler.handle(mockPayload, input);
@@ -324,9 +296,7 @@ describe("TranslateDocumentHandler", () => {
     });
 
     it("does not use autosave when publishing", async () => {
-      (mockPayload.collections["posts"].config as { versions: unknown }).versions = {
-        drafts: { autosave: true },
-      };
+      enableDrafts({ autosave: true });
 
       const input = createInput({ publishOnTranslation: true });
       await handler.handle(mockPayload, input);
