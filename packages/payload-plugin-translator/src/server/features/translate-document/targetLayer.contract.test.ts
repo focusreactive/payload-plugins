@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { resolveTargetLayer } from "./targetLayer";
+import type { TargetLayer } from "./targetLayer";
 import type { VersionsSlice } from "./targetLayer";
+
+// The layer is a discriminated union, so a field that belongs to one variant cannot be read off
+// another. These widen it back for assertions that deliberately span every variant — "no publish
+// scope here" is exactly the kind of thing this suite must be able to say about all of them.
+const statusOf = (layer: TargetLayer): "published" | undefined =>
+  layer.kind === "publish" ? layer.status : undefined;
+const draftOf = (layer: TargetLayer): true | undefined =>
+  layer.kind === "draft" ? layer.write.draft : undefined;
+const publishLocaleOf = (layer: TargetLayer): string | undefined =>
+  layer.kind === "publish" ? layer.write.publishSpecificLocale : undefined;
 
 type Case = { name: string; versions: VersionsSlice | undefined };
 
@@ -67,7 +78,7 @@ describe("resolveTargetLayer", () => {
 
         it(`sends no _status (${when})`, () => {
           const layer = resolveTargetLayer({ versions, publishOnTranslation, targetLng: LNG });
-          expect(layer.status).toBeUndefined();
+          expect(statusOf(layer)).toBeUndefined();
         });
       }
     }
@@ -101,7 +112,7 @@ describe("resolveTargetLayer", () => {
           publishOnTranslation: false,
           targetLng: LNG,
         });
-        expect(layer.write.draft).toBe(true);
+        expect(draftOf(layer)).toBe(true);
       });
 
       it(`sends no publishSpecificLocale, because it is not publishing (${name})`, () => {
@@ -119,7 +130,7 @@ describe("resolveTargetLayer", () => {
           publishOnTranslation: false,
           targetLng: LNG,
         });
-        expect(layer.status).toBeUndefined();
+        expect(statusOf(layer)).toBeUndefined();
       });
     }
 
@@ -170,7 +181,7 @@ describe("resolveTargetLayer", () => {
 
       it(`sends _status "published" alongside publishSpecificLocale (${name})`, () => {
         const layer = resolveTargetLayer({ versions, publishOnTranslation: true, targetLng: LNG });
-        expect(layer.status).toBe("published");
+        expect(statusOf(layer)).toBe("published");
       });
 
       it(`scopes the publish to the locale being translated (${name})`, () => {
@@ -179,7 +190,26 @@ describe("resolveTargetLayer", () => {
           publishOnTranslation: true,
           targetLng: "pt-BR",
         });
-        expect(layer.write.publishSpecificLocale).toBe("pt-BR");
+        expect(publishLocaleOf(layer)).toBe("pt-BR");
+      });
+    }
+  });
+
+  // Measured on Payload 3.84.1: `publishSpecificLocale` on a collection with `versions: true` but
+  // no drafts drops every other locale from the live row — `{en, de}` became `{de}`, with no error
+  // and no log. The union makes that combination unbuildable; this is the regression net under it.
+  describe("the destructive combination is never produced", () => {
+    for (const c of MATRIX) {
+      it(`no publish scope without a draft layer (${labelOf(c)})`, () => {
+        const layer = resolveTargetLayer({
+          versions: c.versions,
+          publishOnTranslation: c.publishOnTranslation,
+          targetLng: LNG,
+        });
+        if (layer.kind === "no-drafts") {
+          expect(layer.write).not.toHaveProperty("publishSpecificLocale");
+        }
+        expect(publishLocaleOf(layer) === undefined || layer.kind === "publish").toBe(true);
       });
     }
   });
@@ -192,7 +222,7 @@ describe("resolveTargetLayer", () => {
           publishOnTranslation: c.publishOnTranslation,
           targetLng: LNG,
         });
-        expect(layer.readDraft).toBe(layer.write.draft === true);
+        expect(layer.readDraft).toBe(draftOf(layer) === true);
       });
     }
 
@@ -203,7 +233,7 @@ describe("resolveTargetLayer", () => {
           publishOnTranslation: c.publishOnTranslation,
           targetLng: LNG,
         });
-        expect(layer.write.draft, labelOf(c)).not.toBe(false);
+        expect(draftOf(layer), labelOf(c)).not.toBe(false);
       }
     });
   });
@@ -247,7 +277,7 @@ describe("resolveTargetLayer", () => {
             readDraft: layer.readDraft,
             isDraftWrite: "draft" in layer.write,
             autosave: layer.write.autosave,
-            status: layer.status,
+            status: statusOf(layer),
           };
         };
         expect(shape("pt-BR"), labelOf(c)).toStrictEqual(shape("de"));

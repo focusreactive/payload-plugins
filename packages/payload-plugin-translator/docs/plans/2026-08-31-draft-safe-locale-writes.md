@@ -154,6 +154,29 @@ Measured, and pinned by `apps/dev/src/integration/translator/strategy-publish-ma
 Only the last row needed rules 3 and 4. Before them it read `MACHINE` / `MACHINE` — the reviewer's
 text destroyed in both layers ([#116](https://github.com/focusreactive/payload-plugins/issues/116)).
 
+## What we inherit from `publishSpecificLocale`
+
+Adopting Payload's own mechanism means adopting its edges. Three are known and none is fixed here.
+
+**It is destructive on a collection with versions but no drafts.** Measured on 3.84.1: a document
+holding `{en, de}` became `{de}` after `publishSpecificLocale` — the other locale gone from the live
+row, no error, no log. The union in `targetLayer.ts` makes that combination unbuildable, which is why
+it is a type and not an `if`.
+
+**It merges against the last *published* version, and nothing protects that version from rotation.**
+`enforceMaxVersions` prunes strictly by age. On a document published long ago with a busy draft
+history, its published version can be pruned; the merge then has an empty base and can truncate the
+other locales in the live row. The same exposure applies to the admin's own "Publish in <locale>"
+button, so this is Payload's edge rather than the plugin's — but taking the mechanism takes the edge.
+
+**`mergeLocalizedData` merges non-localized arrays by index**, while this plugin's reconciler matches
+elements by id. While the element order agrees between the source and published locales there is no
+difference; if it diverges, non-localized siblings can shift.
+
+Separately, the draft path **weakens validation**: Payload skips validation for a draft write unless
+`versions.drafts.validate` is on, so an incomplete translation that previously failed loudly now
+lands quietly as a draft.
+
 ## Behaviour change
 
 This ships as a fix and changes what existing installs do, deliberately: a draft-mode translation now

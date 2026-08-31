@@ -124,7 +124,7 @@ export class TranslateDocumentHandler implements Handler<
     sourceLng: string,
     layer: TargetLayer
   ): Promise<void> {
-    if (layer.status) translatedData["_status"] = layer.status;
+    if (layer.kind === "publish") translatedData["_status"] = layer.status;
 
     await payload.update({
       collection: collection,

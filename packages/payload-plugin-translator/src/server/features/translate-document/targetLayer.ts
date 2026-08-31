@@ -1,26 +1,40 @@
-/** Which layer of a document a translation reads from and writes to. */
+import type { CollectionConfig } from "payload";
+import { hasAutosaveEnabled, hasDraftsEnabled } from "payload/shared";
 
-export type VersionsSlice = {
-  /** Payload accepts `autosave: true` and `autosave: { interval }` — hence the `object` arm. */
-  drafts?: boolean | { autosave?: boolean | object };
-};
+/** The slice of a collection config this decision reads. */
+export type VersionsSlice = CollectionConfig["versions"];
 
-export type TargetLayer = {
-  /** `payload.findByID`'s `draft` argument. */
-  readDraft: boolean;
-  /** Spread verbatim into `payload.update`. Absent keys must stay absent, never `undefined`. */
-  write: {
-    draft?: true;
-    publishSpecificLocale?: string;
-    autosave: boolean;
-  };
-  /**
-   * Merged into the written data. Looks redundant beside `publishSpecificLocale` and is not:
-   * without it, any other locale holding a pending draft drags the whole document back to
-   * `draft` (#102).
-   */
-  status?: "published";
-};
+/**
+ * Which layer of a document a translation reads from and writes to.
+ *
+ * A discriminated union rather than one shape with optional fields, because one combination is
+ * destructive: `publishSpecificLocale` on a collection with versions but NO drafts silently drops
+ * every other locale from the live row — measured, no error, no log. Here that combination cannot
+ * be built: the field exists only on `publish`, and `publish` is only ever returned for a
+ * collection that has drafts.
+ */
+export type TargetLayer =
+  | {
+      kind: "no-drafts";
+      readDraft: false;
+      write: { autosave: false };
+    }
+  | {
+      kind: "draft";
+      readDraft: true;
+      write: { draft: true; autosave: boolean };
+    }
+  | {
+      kind: "publish";
+      readDraft: false;
+      write: { publishSpecificLocale: string; autosave: false };
+      /**
+       * Merged into the written data. Looks redundant beside `publishSpecificLocale` and is not:
+       * without it, any other locale holding a pending draft drags the whole document back to
+       * `draft` (#102).
+       */
+      status: "published";
+    };
 
 /**
  * Invariant callers depend on: `readDraft` is true exactly when `write.draft` is true. The
@@ -28,17 +42,19 @@ export type TargetLayer = {
  * moves content across the draft/live boundary (#102).
  */
 export function resolveTargetLayer(args: {
-  versions: VersionsSlice | undefined;
+  versions: VersionsSlice;
   publishOnTranslation: boolean;
   targetLng: string;
 }): TargetLayer {
   const { versions, publishOnTranslation, targetLng } = args;
-  const drafts = versions?.drafts;
+  const config = { versions };
 
-  if (!drafts) return { readDraft: false, write: { autosave: false } };
+  if (!hasDraftsEnabled(config))
+    return { kind: "no-drafts", readDraft: false, write: { autosave: false } };
 
   if (publishOnTranslation) {
     return {
+      kind: "publish",
       readDraft: false,
       write: { publishSpecificLocale: targetLng, autosave: false },
       status: "published",
@@ -46,7 +62,8 @@ export function resolveTargetLayer(args: {
   }
 
   return {
+    kind: "draft",
     readDraft: true,
-    write: { draft: true, autosave: typeof drafts === "object" && Boolean(drafts.autosave) },
+    write: { draft: true, autosave: hasAutosaveEnabled(config) },
   };
 }
