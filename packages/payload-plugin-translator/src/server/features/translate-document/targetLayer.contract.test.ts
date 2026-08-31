@@ -1,0 +1,262 @@
+import { describe, expect, it } from "vitest";
+import { resolveTargetLayer } from "./targetLayer";
+import type { VersionsSlice } from "./targetLayer";
+
+/**
+ * Written from `resolveTargetLayer`'s documented contract alone, never from its body: every check
+ * below traces to a sentence of that contract, and a check that survives an empty implementation
+ * would be guarding nothing.
+ */
+
+type Case = { name: string; versions: VersionsSlice | undefined };
+
+const LNG = "de";
+
+const NO_DRAFTS: Case[] = [
+  { name: "versions absent", versions: undefined },
+  { name: "a versions config without drafts", versions: {} },
+  { name: "drafts: false", versions: { drafts: false } },
+];
+
+const DRAFTS_WITHOUT_AUTOSAVE: Case[] = [
+  { name: "drafts: true", versions: { drafts: true } },
+  { name: "drafts: {}", versions: { drafts: {} } },
+  { name: "drafts: { autosave: false }", versions: { drafts: { autosave: false } } },
+];
+
+const DRAFTS_WITH_AUTOSAVE: Case[] = [
+  { name: "drafts: { autosave: true }", versions: { drafts: { autosave: true } } },
+  {
+    name: "drafts: { autosave: { interval: 800 } }",
+    versions: { drafts: { autosave: { interval: 800 } } },
+  },
+];
+
+const WITH_DRAFTS = [...DRAFTS_WITHOUT_AUTOSAVE, ...DRAFTS_WITH_AUTOSAVE];
+const ALL_CASES = [...NO_DRAFTS, ...WITH_DRAFTS];
+
+const MATRIX = ALL_CASES.flatMap((c) =>
+  [true, false].map((publishOnTranslation) => ({ ...c, publishOnTranslation }))
+);
+
+const labelOf = (c: { name: string; publishOnTranslation: boolean }) =>
+  `${c.name} / publishOnTranslation=${c.publishOnTranslation}`;
+
+describe("resolveTargetLayer", () => {
+  describe("a collection with no draft layer", () => {
+    for (const { name, versions } of NO_DRAFTS) {
+      for (const publishOnTranslation of [false, true]) {
+        const when = `${name}, publishOnTranslation=${publishOnTranslation}`;
+
+        it(`reads the only layer there is (${when})`, () => {
+          const layer = resolveTargetLayer({ versions, publishOnTranslation, targetLng: LNG });
+          expect(layer.readDraft).toBe(false);
+        });
+
+        it(`sends no draft key, because the write is not a draft-layer write (${when})`, () => {
+          const layer = resolveTargetLayer({ versions, publishOnTranslation, targetLng: LNG });
+          expect("draft" in layer.write).toBe(false);
+        });
+
+        it(`never autosaves, because the write is not a draft-layer write (${when})`, () => {
+          const layer = resolveTargetLayer({ versions, publishOnTranslation, targetLng: LNG });
+          expect(layer.write.autosave).toBe(false);
+        });
+
+        // The exact-object check also pins `publishSpecificLocale` absent. For
+        // publishOnTranslation=true that is an interpretation, not a quoted rule — see the report.
+        it(`sends exactly the single-layer write args (${when})`, () => {
+          const layer = resolveTargetLayer({ versions, publishOnTranslation, targetLng: LNG });
+          expect(layer.write).toStrictEqual({ autosave: false });
+        });
+
+        it(`sends no _status (${when})`, () => {
+          const layer = resolveTargetLayer({ versions, publishOnTranslation, targetLng: LNG });
+          expect(layer.status).toBeUndefined();
+        });
+      }
+    }
+
+    for (const { name, versions } of NO_DRAFTS) {
+      it(`sends no publishSpecificLocale when not publishing (${name})`, () => {
+        const layer = resolveTargetLayer({
+          versions,
+          publishOnTranslation: false,
+          targetLng: LNG,
+        });
+        expect("publishSpecificLocale" in layer.write).toBe(false);
+      });
+    }
+  });
+
+  describe("drafts enabled, leaving the result as a draft", () => {
+    for (const { name, versions } of WITH_DRAFTS) {
+      it(`reads the draft layer (${name})`, () => {
+        const layer = resolveTargetLayer({
+          versions,
+          publishOnTranslation: false,
+          targetLng: LNG,
+        });
+        expect(layer.readDraft).toBe(true);
+      });
+
+      it(`marks the write as a draft-layer write (${name})`, () => {
+        const layer = resolveTargetLayer({
+          versions,
+          publishOnTranslation: false,
+          targetLng: LNG,
+        });
+        expect(layer.write.draft).toBe(true);
+      });
+
+      it(`sends no publishSpecificLocale, because it is not publishing (${name})`, () => {
+        const layer = resolveTargetLayer({
+          versions,
+          publishOnTranslation: false,
+          targetLng: LNG,
+        });
+        expect("publishSpecificLocale" in layer.write).toBe(false);
+      });
+
+      it(`sends no _status on a draft-layer write (${name})`, () => {
+        const layer = resolveTargetLayer({
+          versions,
+          publishOnTranslation: false,
+          targetLng: LNG,
+        });
+        expect(layer.status).toBeUndefined();
+      });
+    }
+
+    for (const { name, versions } of DRAFTS_WITHOUT_AUTOSAVE) {
+      it(`sends exactly the draft write args, without autosave (${name})`, () => {
+        const layer = resolveTargetLayer({
+          versions,
+          publishOnTranslation: false,
+          targetLng: LNG,
+        });
+        expect(layer.write).toStrictEqual({ draft: true, autosave: false });
+      });
+    }
+
+    for (const { name, versions } of DRAFTS_WITH_AUTOSAVE) {
+      it(`sends exactly the draft write args, with autosave (${name})`, () => {
+        const layer = resolveTargetLayer({
+          versions,
+          publishOnTranslation: false,
+          targetLng: LNG,
+        });
+        expect(layer.write).toStrictEqual({ draft: true, autosave: true });
+      });
+    }
+  });
+
+  describe("drafts enabled, publishing the result", () => {
+    for (const { name, versions } of WITH_DRAFTS) {
+      it(`reads the published layer (${name})`, () => {
+        const layer = resolveTargetLayer({ versions, publishOnTranslation: true, targetLng: LNG });
+        expect(layer.readDraft).toBe(false);
+      });
+
+      it(`sends no draft key, because publishing is not a draft-layer write (${name})`, () => {
+        const layer = resolveTargetLayer({ versions, publishOnTranslation: true, targetLng: LNG });
+        expect("draft" in layer.write).toBe(false);
+      });
+
+      it(`never autosaves a published-layer write (${name})`, () => {
+        const layer = resolveTargetLayer({ versions, publishOnTranslation: true, targetLng: LNG });
+        expect(layer.write.autosave).toBe(false);
+      });
+
+      it(`sends exactly the publish write args (${name})`, () => {
+        const layer = resolveTargetLayer({ versions, publishOnTranslation: true, targetLng: LNG });
+        expect(layer.write).toStrictEqual({ publishSpecificLocale: LNG, autosave: false });
+      });
+
+      it(`sends _status "published" alongside publishSpecificLocale (${name})`, () => {
+        const layer = resolveTargetLayer({ versions, publishOnTranslation: true, targetLng: LNG });
+        expect(layer.status).toBe("published");
+      });
+
+      it(`scopes the publish to the locale being translated (${name})`, () => {
+        const layer = resolveTargetLayer({
+          versions,
+          publishOnTranslation: true,
+          targetLng: "pt-BR",
+        });
+        expect(layer.write.publishSpecificLocale).toBe("pt-BR");
+      });
+    }
+  });
+
+  describe("the invariant callers depend on", () => {
+    for (const c of MATRIX) {
+      it(`readDraft is true exactly when write.draft is true (${labelOf(c)})`, () => {
+        const layer = resolveTargetLayer({
+          versions: c.versions,
+          publishOnTranslation: c.publishOnTranslation,
+          targetLng: LNG,
+        });
+        expect(layer.readDraft).toBe(layer.write.draft === true);
+      });
+    }
+
+    it("never says 'not a draft' with draft: false", () => {
+      for (const c of MATRIX) {
+        const layer = resolveTargetLayer({
+          versions: c.versions,
+          publishOnTranslation: c.publishOnTranslation,
+          targetLng: LNG,
+        });
+        expect(layer.write.draft, labelOf(c)).not.toBe(false);
+      }
+    });
+  });
+
+  describe("pure and total", () => {
+    it("never throws, for any combination of inputs", () => {
+      for (const c of MATRIX) {
+        expect(
+          () =>
+            resolveTargetLayer({
+              versions: c.versions,
+              publishOnTranslation: c.publishOnTranslation,
+              targetLng: LNG,
+            }),
+          labelOf(c)
+        ).not.toThrow();
+      }
+    });
+
+    it("returns a layer for every combination of inputs", () => {
+      for (const c of MATRIX) {
+        const layer = resolveTargetLayer({
+          versions: c.versions,
+          publishOnTranslation: c.publishOnTranslation,
+          targetLng: LNG,
+        });
+        expect(typeof layer.readDraft, labelOf(c)).toBe("boolean");
+        expect(typeof layer.write.autosave, labelOf(c)).toBe("boolean");
+      }
+    });
+
+    it("chooses the same layer whatever the targetLng", () => {
+      for (const c of MATRIX) {
+        const shape = (targetLng: string) => {
+          const layer = resolveTargetLayer({
+            versions: c.versions,
+            publishOnTranslation: c.publishOnTranslation,
+            targetLng,
+          });
+          return {
+            readDraft: layer.readDraft,
+            isDraftWrite: "draft" in layer.write,
+            autosave: layer.write.autosave,
+            status: layer.status,
+          };
+        };
+        expect(shape("pt-BR"), labelOf(c)).toStrictEqual(shape("de"));
+      }
+    });
+  });
+});
