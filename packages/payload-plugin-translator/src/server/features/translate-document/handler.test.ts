@@ -30,19 +30,20 @@ describe("TranslateDocumentHandler", () => {
   let mockSchemaMap: CollectionSchemaMap;
   let mockPayload: Payload;
 
+  const TARGET_LNG = "de";
+
   const createInput = (
     overrides: Partial<TranslateDocumentInput> = {}
   ): TranslateDocumentInput => ({
     collection: "posts" as CollectionSlug,
     collectionId: "doc-123",
     sourceLng: "en",
-    targetLng: "de",
+    targetLng: TARGET_LNG,
     strategy: "overwrite",
     publishOnTranslation: false,
     ...overrides,
   });
 
-  /** The fixture's `posts` collection ships without versions; this opts it into drafts. */
   const enableDrafts = (drafts: unknown = true) => {
     (mockPayload.collections["posts"].config as { versions: unknown }).versions = { drafts };
   };
@@ -118,7 +119,6 @@ describe("TranslateDocumentHandler", () => {
         locale: "de",
         fallbackLocale: false,
         depth: 0,
-        // No drafts on this fixture, so the latest state IS the main table.
         draft: false,
       });
     });
@@ -128,8 +128,6 @@ describe("TranslateDocumentHandler", () => {
 
       await handler.handle(mockPayload, createInput({ targetLng: "de" }));
 
-      // A draft-mode translation is written to a version row, so the read has to look there too —
-      // otherwise `skip_existing` sees an empty target and re-translates over a human's corrections.
       expect(mockPayload.findByID).toHaveBeenCalledWith(
         expect.objectContaining({ locale: "de", draft: true })
       );
@@ -143,9 +141,6 @@ describe("TranslateDocumentHandler", () => {
         createInput({ targetLng: "de", publishOnTranslation: true })
       );
 
-      // The reconciler copies every untranslated leaf from this read into the write. A publish-mode
-      // write goes live, so reading the draft here would take a colleague's pending edits live with
-      // it. Behaviour proof is in apps/dev's draft-safe-writes.int.test.ts.
       expect(mockPayload.findByID).toHaveBeenCalledWith(
         expect.objectContaining({ locale: "de", draft: false })
       );
@@ -252,9 +247,6 @@ describe("TranslateDocumentHandler", () => {
       );
     });
 
-    // `resolveTargetLayer` decides the read and write layers; its own table test proves the three
-    // shapes and the invariant that binds them. These two only check that the handler spreads that
-    // decision onto the update rather than re-deriving it.
     it("spreads the draft-mode layer onto the update and sends no _status", async () => {
       enableDrafts();
 
@@ -275,8 +267,7 @@ describe("TranslateDocumentHandler", () => {
 
       expect(mockPayload.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          // `de` is the target locale from createInput().
-          publishSpecificLocale: "de",
+          publishSpecificLocale: TARGET_LNG,
           data: expect.objectContaining({ _status: "published" }),
         })
       );

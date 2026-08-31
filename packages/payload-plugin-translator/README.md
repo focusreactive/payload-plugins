@@ -233,7 +233,7 @@ Two consequences worth knowing before you rely on them:
   and is waiting on a human, so re-translating would be wrong — but "up to date" is not the same
   statement as "live".
 
-> **Changed in 0.12.0.** Before this, translating one locale as a draft unpublished the document in
+> **Changed in 0.11.1.** Before this, translating one locale as a draft unpublished the document in
 > every locale, and translating one locale with publishing pushed every other locale's unpublished
 > draft live. See [#102](https://github.com/focusreactive/payload-plugins/issues/102).
 

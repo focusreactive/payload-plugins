@@ -2,12 +2,6 @@ import { describe, expect, it } from "vitest";
 import { resolveTargetLayer } from "./targetLayer";
 import type { VersionsSlice } from "./targetLayer";
 
-/**
- * Written from `resolveTargetLayer`'s documented contract alone, never from its body: every check
- * below traces to a sentence of that contract, and a check that survives an empty implementation
- * would be guarding nothing.
- */
-
 type Case = { name: string; versions: VersionsSlice | undefined };
 
 const LNG = "de";
@@ -63,8 +57,9 @@ describe("resolveTargetLayer", () => {
           expect(layer.write.autosave).toBe(false);
         });
 
-        // The exact-object check also pins `publishSpecificLocale` absent. For
-        // publishOnTranslation=true that is an interpretation, not a quoted rule — see the report.
+        // `toStrictEqual` also pins `publishSpecificLocale` absent when publishing a collection
+        // with no drafts. That is an interpretation of the contract, not a stated rule: a red here
+        // may mean the contract needs deciding, not that the code is wrong.
         it(`sends exactly the single-layer write args (${when})`, () => {
           const layer = resolveTargetLayer({ versions, publishOnTranslation, targetLng: LNG });
           expect(layer.write).toStrictEqual({ autosave: false });
