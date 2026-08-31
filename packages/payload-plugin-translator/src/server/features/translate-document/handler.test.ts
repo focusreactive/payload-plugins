@@ -113,7 +113,41 @@ describe("TranslateDocumentHandler", () => {
         locale: "de",
         fallbackLocale: false,
         depth: 0,
+        // No drafts on this fixture, so the latest state IS the main table.
+        draft: false,
       });
+    });
+
+    it("reads the target through drafts when translating in draft mode", async () => {
+      (mockPayload.collections["posts"].config as { versions: unknown }).versions = {
+        drafts: true,
+      };
+
+      await handler.handle(mockPayload, createInput({ targetLng: "de" }));
+
+      // A draft-mode translation is written to a version row, so the read has to look there too —
+      // otherwise `skip_existing` sees an empty target and re-translates over a human's corrections.
+      expect(mockPayload.findByID).toHaveBeenCalledWith(
+        expect.objectContaining({ locale: "de", draft: true })
+      );
+    });
+
+    it("reads the target from the published row when publishing", async () => {
+      (mockPayload.collections["posts"].config as { versions: unknown }).versions = {
+        drafts: true,
+      };
+
+      await handler.handle(
+        mockPayload,
+        createInput({ targetLng: "de", publishOnTranslation: true })
+      );
+
+      // The reconciler copies every untranslated leaf from this read into the write. A publish-mode
+      // write goes live, so reading the draft here would take a colleague's pending edits live with
+      // it. Behaviour proof is in apps/dev's draft-safe-writes.int.test.ts.
+      expect(mockPayload.findByID).toHaveBeenCalledWith(
+        expect.objectContaining({ locale: "de", draft: false })
+      );
     });
   });
 
@@ -217,7 +251,14 @@ describe("TranslateDocumentHandler", () => {
       );
     });
 
-    it("sets _status to draft when versions with drafts enabled", async () => {
+    // These pin the ARGUMENTS handed to `payload.update`, which is all a mock can see. The
+    // behaviour they stand for — a draft-mode translation not unpublishing the document, a
+    // publish-mode one not publishing other locales — is only observable against a real database,
+    // and is proven in apps/dev's `draft-safe-writes.int.test.ts`. Mock assertions of exactly this
+    // shape are what let #102 reach production: the old pair asserted `_status` was placed in the
+    // data and passed happily, because a stub models neither the versions table nor the fact that
+    // `_status` is one non-localized column for the whole document.
+    it("routes a draft-mode translation to a version row and sends no _status", async () => {
       (mockPayload.collections["posts"].config as { versions: unknown }).versions = {
         drafts: true,
       };
@@ -227,14 +268,14 @@ describe("TranslateDocumentHandler", () => {
 
       expect(mockPayload.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({
-            _status: "draft",
-          }),
+          draft: true,
+          publishSpecificLocale: undefined,
+          data: expect.not.objectContaining({ _status: expect.anything() }),
         })
       );
     });
 
-    it("sets _status to published when publishOnTranslation is true", async () => {
+    it("scopes a publish-mode translation to the target locale and asserts the published status", async () => {
       (mockPayload.collections["posts"].config as { versions: unknown }).versions = {
         drafts: true,
       };
@@ -244,9 +285,25 @@ describe("TranslateDocumentHandler", () => {
 
       expect(mockPayload.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({
-            _status: "published",
-          }),
+          draft: undefined,
+          // `de` is the target locale from createInput().
+          publishSpecificLocale: "de",
+          // Redundant-looking, load-bearing: without it a foreign pending draft drags the whole
+          // document back to `draft`.
+          data: expect.objectContaining({ _status: "published" }),
+        })
+      );
+    });
+
+    it("leaves a collection without drafts on the plain update path", async () => {
+      const input = createInput();
+      await handler.handle(mockPayload, input);
+
+      expect(mockPayload.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          draft: undefined,
+          publishSpecificLocale: undefined,
+          data: expect.not.objectContaining({ _status: expect.anything() }),
         })
       );
     });

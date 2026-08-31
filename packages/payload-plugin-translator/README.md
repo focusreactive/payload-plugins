@@ -205,6 +205,39 @@ translatorPlugin({
 });
 ```
 
+### Drafts and publishing
+
+Applies to every way a translation is triggered — the admin controls, `POST /translate/enqueue`, and
+auto-translate. It matters most if your collections have `versions.drafts` enabled.
+
+**Without publish-on-translation**, the translation is written as a **draft version**. The document's
+published state is left alone: a live page stays live, an unpublished one stays unpublished, and the
+translated locale does not appear on the public site until someone publishes it.
+
+**With publish-on-translation**, the translation is published — and only the locale that was
+translated. Other locales keep whatever state they were in, and their pending drafts are not carried
+live alongside it. Note that this publishes the *translated content*, so translating a document that
+is not currently published does make the document live, with just that locale's content in it.
+
+Two consequences worth knowing before you rely on them:
+
+- **`skip_existing` means something different in each mode.** Without publishing it skips what is in
+  the draft, so a reviewer's corrections there are preserved. With publishing it skips what is
+  already **published** — a translation sitting unpublished in a draft is not seen, so the field is
+  translated again and the machine result replaces the correction in the draft as well as going live
+  ([#116](https://github.com/focusreactive/payload-plugins/issues/116)). To ship a translation a
+  reviewer has corrected, publish the document from the Payload admin rather than re-running the
+  translation.
+- **A locale can read as translated while the public site shows nothing.** Stale-detection records a
+  translation as soon as it is written, including into a draft. That is deliberate — the work exists
+  and is waiting on a human, so re-translating would be wrong — but "up to date" is not the same
+  statement as "live".
+
+> **Changed in 0.12.0.** Before this, a draft-mode translation was written to the main table without a
+> draft flag, which unpublished the whole document in every locale; and a publish-mode translation set
+> the document-wide status, which published every locale at once. If you built around either, see
+> [#102](https://github.com/focusreactive/payload-plugins/issues/102).
+
 ### Stale-translation detection
 
 _Since v0.8.0._
@@ -249,8 +282,13 @@ translatorPlugin({
 Behaviour: fires only on a **published** source save (draft/autosave saves are ignored; a collection
 without drafts treats every save as published); skips when no translatable content actually changed
 (same fingerprint as stale-detection); coalesces rapid edits via `debounceMs`; the translation is saved
-with the source document's status (published source → published translation); never re-triggers on its
-own translation writes; and never fails the editor's save (best-effort — failures are logged).
+with the source document's status, and publishing is scoped to **only the translated locale** — other
+locales keep whatever state they were in, and their unpublished drafts stay unpublished; never
+re-triggers on its own translation writes; and never fails the editor's save (best-effort — failures
+are logged).
+
+> See [Drafts and publishing](#drafts-and-publishing) for what a translation does to a document's
+> published state.
 
 > **Requires a working job runner.** Auto-translate only **enqueues** jobs — they run via the task
 > runner (`createPayloadJobsRunner`) and its autorun loop. On serverless platforms such as **Vercel**,
