@@ -1,25 +1,8 @@
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-
-import { sqliteAdapter } from "@payloadcms/db-sqlite";
-import { lexicalEditor } from "@payloadcms/richtext-lexical";
-import {
-  createSyncRunner,
-  createTranslationProvider,
-  documentLevel,
-  translatorPlugin,
-} from "@focus-reactive/payload-plugin-translator";
-import { buildConfig, getPayload } from "payload";
 import type { CollectionConfig, Payload } from "payload";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { reverseComplete } from "../../lib/translator/fakeComplete";
+import { bootTestPayload } from "./bootTestPayload";
 import { callEndpoint } from "./callEndpoint";
-
-// One Payload boot per file: `getPayload` caches its instance globally, so a second boot returns
-// the first and any collection declared after it is missing. Hence the local config, not
-// `bootTestPayload`.
 
 const rev = (s: string) => [...s].reverse().join("");
 const SOURCE = "Draft safety";
@@ -48,72 +31,33 @@ const docsFields: CollectionConfig["fields"] = [
 ];
 
 let payload: Payload;
-let tmpDir: string;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  tmpDir = mkdtempSync(join(tmpdir(), "draft-safe-"));
   const collections: CollectionConfig[] = [
     { slug: "users", auth: true, fields: [] },
     { slug: "docs", versions: { drafts: true }, fields: docsFields },
     { slug: "plain", fields: localizedTitle },
     { slug: "auto", versions: { drafts: { autosave: true } }, fields: localizedTitle },
   ];
-
-  const config = await buildConfig({
-    secret: "draft-safe-secret",
-    db: sqliteAdapter({ client: { url: `file:${join(tmpDir, "test.db")}` } }),
-    editor: lexicalEditor(),
-    telemetry: false,
-    localization: {
-      defaultLocale: "en",
-      // Load-bearing: with fallbacks on, an unpublished locale reads back as the source text and
-      // every "this locale is not live" assertion below passes vacuously.
-      fallback: false,
-      locales: [
-        { code: "en", label: "English" },
-        { code: "de", label: "Deutsch" },
-        { code: "fr", label: "Français" },
-      ],
-    },
-    collections,
-    plugins: [
-      translatorPlugin({
-        collections,
-        translationProvider: createTranslationProvider({ complete: reverseComplete }),
-        runner: createSyncRunner(),
-        levels: [documentLevel()],
-      }),
-    ],
-  });
-
-  payload = await getPayload({ config });
+  ({ payload, cleanup } = await bootTestPayload({ collections }));
 });
 
 afterAll(async () => {
-  try {
-    await payload?.db?.destroy?.();
-  } finally {
-    rmSync(tmpDir, { recursive: true, force: true });
-  }
+  await cleanup();
 });
 
-const live = (collection: Slug, id: string, locale: Locale) =>
+const readAt = (draft: boolean) => (collection: Slug, id: string, locale: Locale) =>
   payload.findByID({
     collection: collection as "docs",
     id,
     locale: locale as "en",
-    draft: false,
+    draft,
     fallbackLocale: false,
   }) as Promise<Record<string, unknown>>;
 
-const asDraft = (collection: Slug, id: string, locale: Locale) =>
-  payload.findByID({
-    collection: collection as "docs",
-    id,
-    locale: locale as "en",
-    draft: true,
-    fallbackLocale: false,
-  }) as Promise<Record<string, unknown>>;
+const live = readAt(false);
+const asDraft = readAt(true);
 
 async function translate(
   collection: Slug,
@@ -198,10 +142,11 @@ describe("draft-safe and per-locale-safe writes (#102)", () => {
 
     await translate("docs", id, { publish: true });
 
-    expect((await live("docs", id, "en"))._status).toBe("published");
+    const en = await live("docs", id, "en");
+    expect(en._status).toBe("published");
+    expect(en.title).toBeUndefined();
     expect((await live("docs", id, "de")).title).toBe(TRANSLATED);
     expect((await live("docs", id, "fr")).title).toBeUndefined();
-    expect((await live("docs", id, "en")).title).toBeUndefined();
   });
 
   it("publish mode on a collection with autosave drafts is scoped too", async () => {
@@ -248,8 +193,9 @@ describe("draft-safe and per-locale-safe writes (#102)", () => {
     await translate("docs", id, { publish: true });
 
     expect((await live("docs", id, "en")).nonLocalizedNote).toBe(PUBLISHED_NOTE);
-    expect((await live("docs", id, "de")).localizedPrice).toBe(PUBLISHED_PRICE);
-    expect((await live("docs", id, "de")).title).toBe(TRANSLATED);
+    const de = await live("docs", id, "de");
+    expect(de.localizedPrice).toBe(PUBLISHED_PRICE);
+    expect(de.title).toBe(TRANSLATED);
   });
 
   it("publish mode with skip_existing actually publishes", async () => {

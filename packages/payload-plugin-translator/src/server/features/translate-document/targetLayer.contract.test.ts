@@ -52,7 +52,7 @@ describe("resolveTargetLayer", () => {
 
         it(`reads the only layer there is (${when})`, () => {
           const layer = resolveTargetLayer({ versions, publishOnTranslation, targetLng: LNG });
-          expect(layer.readDraft).toBe(false);
+          expect(layer.kind).toBe("no-drafts");
         });
 
         it(`sends no draft key, because the write is not a draft-layer write (${when})`, () => {
@@ -100,7 +100,7 @@ describe("resolveTargetLayer", () => {
           publishOnTranslation: false,
           targetLng: LNG,
         });
-        expect(layer.readDraft).toBe(true);
+        expect(layer.kind).toBe("draft");
       });
 
       it(`marks the write as a draft-layer write (${name})`, () => {
@@ -158,7 +158,7 @@ describe("resolveTargetLayer", () => {
     for (const { name, versions } of WITH_DRAFTS) {
       it(`reads the published layer (${name})`, () => {
         const layer = resolveTargetLayer({ versions, publishOnTranslation: true, targetLng: LNG });
-        expect(layer.readDraft).toBe(false);
+        expect(layer.kind).toBe("publish");
       });
 
       it(`sends no draft key, because publishing is not a draft-layer write (${name})`, () => {
@@ -206,33 +206,8 @@ describe("resolveTargetLayer", () => {
         if (layer.kind === "no-drafts") {
           expect(layer.write).not.toHaveProperty("publishSpecificLocale");
         }
-        expect(publishLocaleOf(layer) === undefined || layer.kind === "publish").toBe(true);
       });
     }
-  });
-
-  describe("the invariant callers depend on", () => {
-    for (const c of MATRIX) {
-      it(`readDraft is true exactly when write.draft is true (${labelOf(c)})`, () => {
-        const layer = resolveTargetLayer({
-          versions: c.versions,
-          publishOnTranslation: c.publishOnTranslation,
-          targetLng: LNG,
-        });
-        expect(layer.readDraft).toBe(draftOf(layer) === true);
-      });
-    }
-
-    it("never says 'not a draft' with draft: false", () => {
-      for (const c of MATRIX) {
-        const layer = resolveTargetLayer({
-          versions: c.versions,
-          publishOnTranslation: c.publishOnTranslation,
-          targetLng: LNG,
-        });
-        expect(draftOf(layer), labelOf(c)).not.toBe(false);
-      }
-    });
   });
 
   describe("pure and total", () => {
@@ -257,7 +232,6 @@ describe("resolveTargetLayer", () => {
           publishOnTranslation: c.publishOnTranslation,
           targetLng: LNG,
         });
-        expect(typeof layer.readDraft, labelOf(c)).toBe("boolean");
         expect(typeof layer.write.autosave, labelOf(c)).toBe("boolean");
       }
     });
@@ -271,7 +245,7 @@ describe("resolveTargetLayer", () => {
             targetLng,
           });
           return {
-            readDraft: layer.readDraft,
+            kind: layer.kind,
             isDraftWrite: "draft" in layer.write,
             autosave: layer.write.autosave,
             status: statusOf(layer),

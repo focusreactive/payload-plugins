@@ -23,6 +23,6 @@ export class FieldChunkCollectorStage implements PipelineStage {
       this.strategy
     );
     const fieldChunks = collector.collect();
-    return { ...ctx, fieldChunks, hasCarriedValues: collector.hasCarried };
+    return { ...ctx, fieldChunks, hasCarriedValues: collector.hasCarriedValues };
   }
 }

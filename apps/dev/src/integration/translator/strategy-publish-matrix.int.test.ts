@@ -1,23 +1,8 @@
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-
-import { sqliteAdapter } from "@payloadcms/db-sqlite";
-import { lexicalEditor } from "@payloadcms/richtext-lexical";
-import {
-  createSyncRunner,
-  createTranslationProvider,
-  documentLevel,
-  translatorPlugin,
-} from "@focus-reactive/payload-plugin-translator";
-import { buildConfig, getPayload } from "payload";
 import type { CollectionConfig, Payload } from "payload";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { reverseComplete } from "../../lib/translator/fakeComplete";
+import { bootTestPayload } from "./bootTestPayload";
 import { callEndpoint } from "./callEndpoint";
-
-// ONE boot per file: `getPayload` caches its instance globally.
 
 // Narrower than Payload's generated unions, which know nothing about a spec-local config — but
 // narrow enough that a mistyped slug or locale is a type error rather than a runtime one.
@@ -29,10 +14,9 @@ const MACHINE = [...SOURCE].reverse().join("");
 const REVIEWED = "REVIEWED BY A HUMAN";
 
 let payload: Payload;
-let tmpDir: string;
+let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
-  tmpDir = mkdtempSync(join(tmpdir(), "matrix-"));
   const collections: CollectionConfig[] = [
     { slug: "users", auth: true, fields: [] },
     {
@@ -40,46 +24,19 @@ beforeAll(async () => {
       versions: { drafts: true },
       fields: [{ name: "title", type: "text", localized: true }],
     },
+    // Versions on, drafts off: it shares the publish flag with the drafts collections but has only
+    // one layer to write to.
     {
       slug: "versioned",
       versions: true,
       fields: [{ name: "title", type: "text", localized: true }],
     },
   ];
-  const config = await buildConfig({
-    secret: "matrix-secret",
-    db: sqliteAdapter({ client: { url: `file:${join(tmpDir, "test.db")}` } }),
-    editor: lexicalEditor(),
-    telemetry: false,
-    localization: {
-      defaultLocale: "en",
-      // Load-bearing: with fallbacks on, an unpublished locale reads back as the source text and
-      // "not live" cannot be told from "translated".
-      fallback: false,
-      locales: [
-        { code: "en", label: "English" },
-        { code: "de", label: "Deutsch" },
-      ],
-    },
-    collections,
-    plugins: [
-      translatorPlugin({
-        collections,
-        translationProvider: createTranslationProvider({ complete: reverseComplete }),
-        runner: createSyncRunner(),
-        levels: [documentLevel()],
-      }),
-    ],
-  });
-  payload = await getPayload({ config });
+  ({ payload, cleanup } = await bootTestPayload({ collections }));
 });
 
 afterAll(async () => {
-  try {
-    await payload?.db?.destroy?.();
-  } finally {
-    rmSync(tmpDir, { recursive: true, force: true });
-  }
+  await cleanup();
 });
 
 const findDoc = (collection: Slug, id: string, locale: Locale, draft: boolean) =>
@@ -116,13 +73,14 @@ async function seedReviewedTranslation(layer: "published" | "draft"): Promise<st
 const translate = async (
   id: string,
   strategy: "overwrite" | "skip_existing",
-  publish: boolean
+  publish: boolean,
+  collection: Slug = "docs"
 ): Promise<void> => {
   const res = await callEndpoint(payload, "post", "/translate/enqueue", {
     body: {
       source_lng: "en",
       target_lng: "de",
-      collection_slug: "docs",
+      collection_slug: collection,
       collection_id: [id],
       strategy,
       publish_on_translation: publish,
@@ -223,17 +181,7 @@ describe("strategy x publish-on-translation", () => {
       await updateDoc("versioned", id, "de", { title: REVIEWED });
       const before = await findDoc("versioned", id, "de", false);
 
-      const res = await callEndpoint(payload, "post", "/translate/enqueue", {
-        body: {
-          source_lng: "en",
-          target_lng: "de",
-          collection_slug: "versioned",
-          collection_id: [id],
-          strategy: "skip_existing",
-          publish_on_translation: false,
-        },
-      });
-      expect(res.status).toBe(200);
+      await translate(id, "skip_existing", false, "versioned");
 
       const after = await findDoc("versioned", id, "de", false);
 

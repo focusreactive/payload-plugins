@@ -136,17 +136,12 @@ describe("TranslateDocumentHandler", () => {
     // A second read returns a distinct object graph, and the collector's carry compares leaves by
     // reference.
     it.each([
-      ["a collection with no drafts", undefined, false],
-      ["a draft-mode translation", { drafts: true }, false],
-    ])("reads the target exactly once for %s", async (_name, versions, publish) => {
-      if (versions) {
-        (mockPayload.collections["posts"].config as { versions: unknown }).versions = versions;
-      }
+      ["a collection with no drafts", false],
+      ["a draft-mode translation", true],
+    ])("reads the target exactly once for %s", async (_name, drafts) => {
+      if (drafts) enableDrafts();
 
-      await handler.handle(
-        mockPayload,
-        createInput({ targetLng: "de", publishOnTranslation: publish })
-      );
+      await handler.handle(mockPayload, createInput());
 
       const targetReads = (
         mockPayload.findByID as unknown as { mock: { calls: [{ locale: string }][] } }

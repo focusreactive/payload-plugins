@@ -54,14 +54,17 @@ export type TestPayload = {
  *
  * @param opts.autoTranslate - stamped onto the `docs` collection. Omit it and nothing translates on
  *   publish; the enqueue route still works.
+ * @param opts.collections - replaces the shared fixture set for a spec that needs collection shapes
+ *   it does not carry (no versions at all, autosave drafts, versions without drafts).
  */
 export async function bootTestPayload(opts?: {
   autoTranslate?: { targets: string[]; strategy?: "overwrite" | "skip_existing" };
+  collections?: CollectionConfig[];
 }): Promise<TestPayload> {
   const dir = mkdtempSync(join(tmpdir(), "translator-int-"));
   const dbPath = join(dir, "test.db");
 
-  const collections = buildTestCollections();
+  const collections = opts?.collections ?? buildTestCollections();
   const docs = collections.find((c) => c.slug === "docs") as CollectionConfig;
   const managed: CollectionConfig[] = opts?.autoTranslate
     ? collections.map((c) => (c.slug === "docs" ? withAutoTranslate(docs, opts.autoTranslate!) : c))

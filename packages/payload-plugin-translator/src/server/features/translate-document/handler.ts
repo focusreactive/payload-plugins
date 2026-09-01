@@ -70,11 +70,10 @@ export class TranslateDocumentHandler implements Handler<
         draft,
       });
 
-    const targetData = await readTarget(layer.readDraft);
+    const targetData = await readTarget(layer.kind === "draft");
     // Publish mode alone reads twice: it writes the published layer but must not re-translate over
-    // a draft translation. Branch on the variant, not `readDraft` — `no-drafts` shares
-    // `readDraft: false`, and a second read there returns a distinct object graph that the
-    // collector compares by reference.
+    // a draft translation. Elsewhere the two reads must be the SAME object — the collector's carry
+    // compares leaves by reference.
     const existingTranslation = layer.kind === "publish" ? await readTarget(true) : targetData;
 
     const translatedData = await translateContent({

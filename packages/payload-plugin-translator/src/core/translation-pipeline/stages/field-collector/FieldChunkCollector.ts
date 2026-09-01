@@ -38,7 +38,7 @@ export class FieldChunkCollector {
   private readonly existing: Record<string, unknown>;
   private readonly strategy: TranslationStrategy;
 
-  hasCarried = false;
+  hasCarriedValues = false;
 
   constructor(
     schema: FieldLike[],
@@ -112,12 +112,6 @@ export class FieldChunkCollector {
         const targetValue = cursor.target[field.name];
         if (!isTranslatableLeaf(field)) return undefined;
 
-        // A strategy also declines when the SOURCE is empty, which says nothing about the target.
-        const declinedBecauseAlreadyTranslated = !isEmpty(sourceValue) && !isEmpty(targetValue);
-        // Identity, not deep equality: outside publish mode the caller passes one object as both
-        // the write layer and the existing translation, so an unchanged leaf is the same reference.
-        const writeLayerAlreadyHasIt = value === targetValue;
-
         if (strategy.shouldTranslate({ sourceValue, targetValue })) {
           selected.push({ dataRef: cursor.data, key: field.name, sourceValue });
           chunks.push({
@@ -126,8 +120,16 @@ export class FieldChunkCollector {
             key: field.name,
             path: [...cursor.path, field.name],
           });
-        } else if (declinedBecauseAlreadyTranslated && !writeLayerAlreadyHasIt) {
-          carried.push({ dataRef: cursor.data, key: field.name, value: targetValue });
+        } else {
+          // A strategy also declines when the SOURCE is empty, which says nothing about the target.
+          const declinedBecauseAlreadyTranslated = !isEmpty(sourceValue) && !isEmpty(targetValue);
+          // Identity, not deep equality: outside publish mode the caller passes one object as both
+          // the write layer and the existing translation, so an unchanged leaf is the same
+          // reference.
+          const writeLayerAlreadyHasIt = value === targetValue;
+          if (declinedBecauseAlreadyTranslated && !writeLayerAlreadyHasIt) {
+            carried.push({ dataRef: cursor.data, key: field.name, value: targetValue });
+          }
         }
         return undefined;
       },
@@ -143,7 +145,7 @@ export class FieldChunkCollector {
       walker
     );
 
-    this.hasCarried = carried.length > 0;
+    this.hasCarriedValues = carried.length > 0;
     for (const { dataRef, key, value } of carried) {
       dataRef[key] = value;
     }
