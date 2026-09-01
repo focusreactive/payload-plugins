@@ -17,11 +17,9 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { reverseComplete } from "../../lib/translator/fakeComplete";
 import { callEndpoint } from "./callEndpoint";
 
-// Boots its own Payload rather than reusing `bootTestPayload`, which has no no-versions and no
-// autosave-drafts collection.
-//
-// ONE boot per file: `getPayload` caches its instance globally, so a second boot returns the first
-// and every collection declared after it is missing.
+// One Payload boot per file: `getPayload` caches its instance globally, so a second boot returns
+// the first and any collection declared after it is missing. Hence the local config, not
+// `bootTestPayload`.
 
 const rev = (s: string) => [...s].reverse().join("");
 const SOURCE = "Draft safety";
@@ -31,6 +29,7 @@ const PUBLISHED_NOTE = "PUBLISHED NOTE";
 const PUBLISHED_PRICE = 200;
 const DRAFT_PRICE = 999;
 const FOREIGN_DRAFT = "FR SECRET DRAFT";
+const CLEARED_TO_GIVE_THE_RERUN_WORK = "";
 
 // Narrower than Payload's generated unions, which know nothing about a spec-local config —
 // but narrow enough that a mistyped slug or locale is a type error rather than a runtime one.
@@ -41,13 +40,11 @@ const localizedTitle: CollectionConfig["fields"] = [
   { name: "title", type: "text", localized: true },
 ];
 
-// `note` (non-localized) and `price` (localized, non-text) are never translated — they are what
-// exposes a target read taken from the wrong layer.
 const docsFields: CollectionConfig["fields"] = [
   { name: "title", type: "text", localized: true },
   { name: "subtitle", type: "text", localized: true },
-  { name: "note", type: "text" },
-  { name: "price", type: "number", localized: true },
+  { name: "nonLocalizedNote", type: "text" },
+  { name: "localizedPrice", type: "number", localized: true },
 ];
 
 let payload: Payload;
@@ -145,10 +142,23 @@ const seedForeignDraft = (collection: Slug, id: string) =>
     data: { title: FOREIGN_DRAFT },
   });
 
+const giveDeItsOwnPublishedPrice = (id: string) =>
+  payload.update({
+    collection: "docs",
+    id,
+    locale: "de",
+    data: { localizedPrice: PUBLISHED_PRICE },
+  });
+
 const create = async (collection: Slug, status?: "published" | "draft") => {
   const base: Record<string, unknown> =
     collection === "docs"
-      ? { title: SOURCE, subtitle: SUBTITLE, note: PUBLISHED_NOTE, price: PUBLISHED_PRICE }
+      ? {
+          title: SOURCE,
+          subtitle: SUBTITLE,
+          nonLocalizedNote: PUBLISHED_NOTE,
+          localizedPrice: PUBLISHED_PRICE,
+        }
       : { title: SOURCE };
   const doc = await payload.create({
     collection: collection as "docs",
@@ -178,8 +188,6 @@ describe("draft-safe and per-locale-safe writes (#102)", () => {
     await translate("docs", id, { publish: true });
 
     expect((await live("docs", id, "fr")).title).toBeUndefined();
-    // Guards the explicit `_status`: without it the pending `fr` draft pulls the document back
-    // to `draft`.
     expect((await live("docs", id, "en"))._status).toBe("published");
     expect((await live("docs", id, "de")).title).toBe(TRANSLATED);
   });
@@ -198,7 +206,6 @@ describe("draft-safe and per-locale-safe writes (#102)", () => {
 
   it("publish mode on a collection with autosave drafts is scoped too", async () => {
     const id = await create("auto", "published");
-    // Load-bearing: without this seed the assertions below also hold on the broken implementation.
     await seedForeignDraft("auto", id);
 
     await translate("auto", id, { publish: true });
@@ -212,14 +219,12 @@ describe("draft-safe and per-locale-safe writes (#102)", () => {
     const id = await create("docs", "published");
     await translate("docs", id, { publish: false });
 
-    // `subtitle: ""` is load-bearing: with nothing left to translate the run writes nothing and
-    // the case passes vacuously.
     await payload.update({
       collection: "docs",
       id,
       locale: "de",
       draft: true,
-      data: { title: "HUMAN FIX", subtitle: "" },
+      data: { title: "HUMAN FIX", subtitle: CLEARED_TO_GIVE_THE_RERUN_WORK },
     });
 
     await translate("docs", id, { publish: false, strategy: "skip_existing" });
@@ -231,26 +236,19 @@ describe("draft-safe and per-locale-safe writes (#102)", () => {
 
   it("publish mode does not take a colleague's pending edits live with the translation", async () => {
     const id = await create("docs", "published");
-    // `de` needs a published `price` of its own, or the assertion below cannot tell a surviving
-    // published value from a copied source value.
-    await payload.update({
-      collection: "docs",
-      id,
-      locale: "de",
-      data: { price: PUBLISHED_PRICE },
-    });
+    await giveDeItsOwnPublishedPrice(id);
     await payload.update({
       collection: "docs",
       id,
       locale: "de",
       draft: true,
-      data: { note: "SECRET DRAFT NOTE", price: DRAFT_PRICE },
+      data: { nonLocalizedNote: "SECRET DRAFT NOTE", localizedPrice: DRAFT_PRICE },
     });
 
     await translate("docs", id, { publish: true });
 
-    expect((await live("docs", id, "en")).note).toBe(PUBLISHED_NOTE);
-    expect((await live("docs", id, "de")).price).toBe(PUBLISHED_PRICE);
+    expect((await live("docs", id, "en")).nonLocalizedNote).toBe(PUBLISHED_NOTE);
+    expect((await live("docs", id, "de")).localizedPrice).toBe(PUBLISHED_PRICE);
     expect((await live("docs", id, "de")).title).toBe(TRANSLATED);
   });
 
@@ -270,8 +268,6 @@ describe("draft-safe and per-locale-safe writes (#102)", () => {
 
     await translate("plain", id, { publish: false });
 
-    // Control case: the no-drafts path is deliberately unchanged, so this must stay green against
-    // the old implementation too. A red here means the fix leaked into a collection it must not touch.
     const de = await live("plain", id, "de");
     expect(de.title).toBe(TRANSLATED);
     expect(de).not.toHaveProperty("_status");

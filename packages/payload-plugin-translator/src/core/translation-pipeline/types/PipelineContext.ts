@@ -11,13 +11,8 @@ export type PipelineContext = {
   readonly sourceData: Record<string, unknown>;
   readonly targetData: Record<string, unknown>;
   /**
-   * What the caller considers ALREADY TRANSLATED, for the strategy's skip decision.
-   *
-   * Usually the same object as `targetData`, and the two are separate because they answer
-   * different questions: `targetData` is the layer being written, and a value copied from it
-   * lands verbatim in the result; this is merely consulted. A caller whose storage keeps
-   * drafts apart from published content has to point them at different layers, or a
-   * translation that exists only as a draft reads as missing and gets redone.
+   * Where an already-existing translation may live, for the skip decision — a different layer
+   * from `targetData` when drafts and published content are stored apart.
    */
   readonly existingTranslation: Record<string, unknown>;
   readonly sourceLng: string;
@@ -26,12 +21,7 @@ export type PipelineContext = {
   /** Full document shape with reconciled source/target values */
   filteredData?: Record<string, unknown>;
   fieldChunks?: FieldChunk[];
-  /**
-   * How many leaves were filled from `existingTranslation` rather than translated. Nonzero
-   * means the result differs from the write layer even when nothing needed translating, so
-   * the run must not be short-circuited as empty.
-   */
-  carriedCount?: number;
+  hasCarriedValues?: boolean;
   textChunks?: TextChunk[];
   textMap?: Record<number, string>;
   translations?: Record<number, string>;

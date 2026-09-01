@@ -1,17 +1,14 @@
 import type { CollectionConfig } from "payload";
 import { hasAutosaveEnabled, hasDraftsEnabled } from "payload/shared";
 
-/** The slice of a collection config this decision reads. */
 export type VersionsSlice = CollectionConfig["versions"];
 
 /**
  * Which layer of a document a translation reads from and writes to.
  *
- * A discriminated union rather than one shape with optional fields, because one combination is
- * destructive: `publishSpecificLocale` on a collection with versions but NO drafts silently drops
- * every other locale from the live row — measured, no error, no log. Here that combination cannot
- * be built: the field exists only on `publish`, and `publish` is only ever returned for a
- * collection that has drafts.
+ * A union, not one shape with optional fields: `publishSpecificLocale` on a collection with
+ * versions but no drafts drops every other locale from the live row (Payload 3.84.1, silent).
+ * The union makes that pair unbuildable — see `targetLayer.contract.test.ts`.
  */
 export type TargetLayer =
   | {
@@ -37,9 +34,8 @@ export type TargetLayer =
     };
 
 /**
- * Invariant callers depend on: `readDraft` is true exactly when `write.draft` is true. The
- * reconciler copies every untranslated leaf from the read into the write, so a mismatched pair
- * moves content across the draft/live boundary (#102).
+ * Chooses the layer a translation reads from and writes to. Read and write must agree: the
+ * reconciler copies every untranslated leaf from one into the other (#102).
  */
 export function resolveTargetLayer(args: {
   versions: VersionsSlice;

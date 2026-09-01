@@ -35,17 +35,10 @@ export class FieldChunkCollector {
   private readonly schema: FieldLike[];
   private readonly filteredData: Record<string, unknown>;
   private readonly sourceData: Record<string, unknown>;
-  /**
-   * What already counts as translated. Usually the same object the reconciler was given, and
-   * deliberately separate: the reconciler fills the write from the layer being written, while the
-   * skip decision has to consider a translation that exists anywhere — including a layer the write
-   * cannot see.
-   */
   private readonly existing: Record<string, unknown>;
   private readonly strategy: TranslationStrategy;
 
-  /** Leaves filled from `existing` because the strategy declined to re-translate them. */
-  carriedCount = 0;
+  hasCarried = false;
 
   constructor(
     schema: FieldLike[],
@@ -63,12 +56,7 @@ export class FieldChunkCollector {
 
   /** Collects translatable field chunks that need translation. */
   collect(): FieldChunk[] {
-    // The read walk SELECTS translatable leaves (via the shared selection core) and records, per
-    // selected leaf, the source value to translate plus its write target. The mutation is applied
-    // in a separate explicit pass below — read and write are no longer fused inside the walk.
     const selected: { dataRef: Record<string, unknown>; key: string; sourceValue: unknown }[] = [];
-    // A leaf the strategy declined because a translation already exists somewhere the write
-    // layer cannot see — the value is carried into the write rather than left behind.
     const carried: { dataRef: Record<string, unknown>; key: string; value: unknown }[] = [];
     const chunks: FieldChunk[] = [];
     const { strategy } = this;
@@ -124,6 +112,12 @@ export class FieldChunkCollector {
         const targetValue = cursor.target[field.name];
         if (!isTranslatableLeaf(field)) return undefined;
 
+        // A strategy also declines when the SOURCE is empty, which says nothing about the target.
+        const declinedBecauseAlreadyTranslated = !isEmpty(sourceValue) && !isEmpty(targetValue);
+        // Identity, not deep equality: outside publish mode the caller passes one object as both
+        // the write layer and the existing translation, so an unchanged leaf is the same reference.
+        const writeLayerAlreadyHasIt = value === targetValue;
+
         if (strategy.shouldTranslate({ sourceValue, targetValue })) {
           selected.push({ dataRef: cursor.data, key: field.name, sourceValue });
           chunks.push({
@@ -132,15 +126,7 @@ export class FieldChunkCollector {
             key: field.name,
             path: [...cursor.path, field.name],
           });
-          // `!isEmpty(sourceValue)` is what keeps this to the case it is for. A strategy can refuse
-          // for two unrelated reasons: `skip_existing` because a translation already exists — the
-          // case worth carrying — and `overwrite` because the SOURCE is empty, which says nothing
-          // about the target. Without this guard an emptied source would promote an unreviewed
-          // draft over a published translation, which is the #102 leak in a new place.
-        } else if (!isEmpty(sourceValue) && !isEmpty(targetValue) && value !== targetValue) {
-          // Only when the write layer does not already hold it: in the common case the reconciler
-          // was given this same layer and already put the value here, so there is nothing to carry
-          // and the run must stay a no-op rather than writing a version that changes nothing.
+        } else if (declinedBecauseAlreadyTranslated && !writeLayerAlreadyHasIt) {
           carried.push({ dataRef: cursor.data, key: field.name, value: targetValue });
         }
         return undefined;
@@ -157,9 +143,7 @@ export class FieldChunkCollector {
       walker
     );
 
-    // Apply pass: write each selected leaf's source value into filteredData — this is what gets
-    // translated. Kept separate from the read walk above so selection stays read-only.
-    this.carriedCount = carried.length;
+    this.hasCarried = carried.length > 0;
     for (const { dataRef, key, value } of carried) {
       dataRef[key] = value;
     }

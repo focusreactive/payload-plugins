@@ -133,10 +133,8 @@ describe("TranslateDocumentHandler", () => {
       );
     });
 
-    // Only publishing needs a second look at the target, and only because its write layer and the
-    // "does this already exist" layer differ. Sending any other shape down that path costs a query
-    // and — worse — hands the collector a second object graph, whose leaves are then unequal by
-    // reference to the first even when identical, which reads as a change that never happened.
+    // A second read returns a distinct object graph, and the collector's carry compares leaves by
+    // reference.
     it.each([
       ["a collection with no drafts", undefined, false],
       ["a draft-mode translation", { drafts: true }, false],

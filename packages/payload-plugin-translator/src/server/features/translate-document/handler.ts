@@ -53,8 +53,7 @@ export class TranslateDocumentHandler implements Handler<
     const provenance = this.provenanceServiceFactory?.(payload);
     const sourceFingerprint = provenance?.captureFingerprint(collection, sourceData) ?? null;
 
-    // Optional-chained because this runs before the "nothing to translate" early return; callers
-    // that never reach a save do not stub the config.
+    // Optional-chained for handler unit tests, which do not all stub `collections[slug].config`.
     const layer = resolveTargetLayer({
       versions: payload.collections?.[collection]?.config?.versions,
       publishOnTranslation,
@@ -72,13 +71,10 @@ export class TranslateDocumentHandler implements Handler<
       });
 
     const targetData = await readTarget(layer.readDraft);
-    // `skip_existing` asks "is this already translated", and a translation awaiting review lives in
-    // the draft — so when the write layer is the published one, the two questions need different
-    // reads. Publishing must still carry over the PUBLISHED values, or it takes someone's pending
-    // edits live (#102); it just must not re-translate over a draft it cannot see (#116).
-    // Switch on the variant, not on `readDraft` — `no-drafts` also has it false, and sending that
-    // collection down the second-read path both costs a query it does not need and hands the
-    // collector a different object graph, which its reference comparison then reads as a change.
+    // Publish mode alone reads twice: it writes the published layer but must not re-translate over
+    // a draft translation. Branch on the variant, not `readDraft` — `no-drafts` shares
+    // `readDraft: false`, and a second read there returns a distinct object graph that the
+    // collector compares by reference.
     const existingTranslation = layer.kind === "publish" ? await readTarget(true) : targetData;
 
     const translatedData = await translateContent({

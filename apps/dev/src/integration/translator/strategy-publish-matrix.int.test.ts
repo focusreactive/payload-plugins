@@ -17,15 +17,12 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { reverseComplete } from "../../lib/translator/fakeComplete";
 import { callEndpoint } from "./callEndpoint";
 
-// The two per-run choices an editor makes in the same form — `strategy` and publish-on-translation —
-// are independent, so all four combinations are reachable in two clicks. They interact, because a
-// collection with drafts has two layers and an existing translation may sit in either one. This
-// walks that full matrix; before it existed, only the four published-layer rows were covered and
-// every defect of #102 and #116 lived in the uncovered half.
-//
 // ONE boot per file: `getPayload` caches its instance globally.
-// Fallbacks OFF: otherwise an unpublished locale reads back as the source text and "not live"
-// cannot be told from "translated".
+
+// Narrower than Payload's generated unions, which know nothing about a spec-local config — but
+// narrow enough that a mistyped slug or locale is a type error rather than a runtime one.
+type Slug = "docs" | "versioned";
+type Locale = "en" | "de";
 
 const SOURCE = "Hello world";
 const MACHINE = [...SOURCE].reverse().join("");
@@ -43,8 +40,6 @@ beforeAll(async () => {
       versions: { drafts: true },
       fields: [{ name: "title", type: "text", localized: true }],
     },
-    // Versions ON, drafts OFF — the shape whose "unchanged" promise is easiest to break, since it
-    // shares the publish flag with the drafts collections but has only one layer to write to.
     {
       slug: "versioned",
       versions: true,
@@ -58,6 +53,8 @@ beforeAll(async () => {
     telemetry: false,
     localization: {
       defaultLocale: "en",
+      // Load-bearing: with fallbacks on, an unpublished locale reads back as the source text and
+      // "not live" cannot be told from "translated".
       fallback: false,
       locales: [
         { code: "en", label: "English" },
@@ -85,30 +82,34 @@ afterAll(async () => {
   }
 });
 
-const read = (id: string, draft: boolean) =>
+const findDoc = (collection: Slug, id: string, locale: Locale, draft: boolean) =>
   payload.findByID({
-    collection: "docs",
+    collection: collection as "docs",
     id,
-    locale: "de" as "en",
+    locale: locale as "en",
     draft,
     fallbackLocale: false,
   }) as Promise<Record<string, unknown>>;
 
-/** Create a published document whose German locale already holds `REVIEWED`, in one layer or the other. */
-async function seed(where: "published" | "draft"): Promise<string> {
-  const doc = await payload.create({
-    collection: "docs",
-    locale: "en",
-    data: { title: SOURCE, _status: "published" },
-  });
-  const id = String(doc.id);
-  await payload.update({
-    collection: "docs",
-    id,
-    locale: "de" as "en",
-    ...(where === "draft" ? { draft: true } : {}),
-    data: { title: REVIEWED },
-  });
+const updateDoc = (
+  collection: Slug,
+  id: string,
+  locale: Locale,
+  data: Record<string, unknown>,
+  opts: { draft?: boolean } = {}
+) =>
+  payload.update({ collection: collection as "docs", id, locale: locale as "en", ...opts, data });
+
+const createDoc = async (collection: Slug, data: Record<string, unknown>): Promise<string> => {
+  const doc = await payload.create({ collection: collection as "docs", locale: "en", data });
+  return String(doc.id);
+};
+
+const read = (id: string, draft: boolean) => findDoc("docs", id, "de", draft);
+
+async function seedReviewedTranslation(layer: "published" | "draft"): Promise<string> {
+  const id = await createDoc("docs", { title: SOURCE, _status: "published" });
+  await updateDoc("docs", id, "de", { title: REVIEWED }, layer === "draft" ? { draft: true } : {});
   return id;
 }
 
@@ -133,7 +134,7 @@ const translate = async (
 describe("strategy x publish-on-translation", () => {
   describe("the existing translation is published", () => {
     it("overwrite without publishing: replaces it in the draft, leaves the live value alone", async () => {
-      const id = await seed("published");
+      const id = await seedReviewedTranslation("published");
       await translate(id, "overwrite", false);
 
       expect((await read(id, false)).title).toBe(REVIEWED);
@@ -141,7 +142,7 @@ describe("strategy x publish-on-translation", () => {
     });
 
     it("overwrite with publishing: replaces it in both layers", async () => {
-      const id = await seed("published");
+      const id = await seedReviewedTranslation("published");
       await translate(id, "overwrite", true);
 
       expect((await read(id, false)).title).toBe(MACHINE);
@@ -149,7 +150,7 @@ describe("strategy x publish-on-translation", () => {
     });
 
     it("skip_existing without publishing: leaves it alone", async () => {
-      const id = await seed("published");
+      const id = await seedReviewedTranslation("published");
       await translate(id, "skip_existing", false);
 
       expect((await read(id, false)).title).toBe(REVIEWED);
@@ -157,7 +158,7 @@ describe("strategy x publish-on-translation", () => {
     });
 
     it("skip_existing with publishing: leaves it alone", async () => {
-      const id = await seed("published");
+      const id = await seedReviewedTranslation("published");
       await translate(id, "skip_existing", true);
 
       expect((await read(id, false)).title).toBe(REVIEWED);
@@ -165,12 +166,9 @@ describe("strategy x publish-on-translation", () => {
     });
   });
 
-  // The half nothing covered before. An existing translation that lives only in the draft is
-  // invisible to the published layer, so every rule about which layer answers which question
-  // shows up here and nowhere else.
   describe("the existing translation is a draft awaiting review", () => {
     it("overwrite without publishing: replaces it, and nothing goes live", async () => {
-      const id = await seed("draft");
+      const id = await seedReviewedTranslation("draft");
       await translate(id, "overwrite", false);
 
       expect((await read(id, false)).title).toBeUndefined();
@@ -178,7 +176,7 @@ describe("strategy x publish-on-translation", () => {
     });
 
     it("overwrite with publishing: replaces it and publishes the replacement", async () => {
-      const id = await seed("draft");
+      const id = await seedReviewedTranslation("draft");
       await translate(id, "overwrite", true);
 
       expect((await read(id, false)).title).toBe(MACHINE);
@@ -186,19 +184,15 @@ describe("strategy x publish-on-translation", () => {
     });
 
     it("skip_existing without publishing: keeps the reviewer's text, publishes nothing", async () => {
-      const id = await seed("draft");
+      const id = await seedReviewedTranslation("draft");
       await translate(id, "skip_existing", false);
 
       expect((await read(id, false)).title).toBeUndefined();
       expect((await read(id, true)).title).toBe(REVIEWED);
     });
 
-    // The case both #102 and #116 were about. "Already translated" has to mean "exists anywhere",
-    // not "exists in the layer being written" — otherwise publishing re-translates over a text a
-    // human approved. And having skipped it, the run must still carry it into the publish, or the
-    // editor's request does nothing at all.
     it("skip_existing with publishing: publishes the reviewer's text rather than re-translating it", async () => {
-      const id = await seed("draft");
+      const id = await seedReviewedTranslation("draft");
       await translate(id, "skip_existing", true);
 
       expect((await read(id, false)).title).toBe(REVIEWED);
@@ -206,40 +200,16 @@ describe("strategy x publish-on-translation", () => {
     });
   });
 
-  // Carrying a value the write layer cannot see is right only when the strategy declined BECAUSE a
-  // translation already exists. `overwrite` declines for an unrelated reason — an empty source —
-  // and treating that as the same case promotes an unreviewed draft over a published translation.
   describe("an emptied source does not promote the draft", () => {
     it("overwrite with publishing leaves the published translation alone", async () => {
-      const doc = await payload.create({
-        collection: "docs",
-        locale: "en",
-        data: { title: SOURCE, _status: "published" },
-      });
-      const id = String(doc.id);
+      const id = await createDoc("docs", { title: SOURCE, _status: "published" });
       // Order matters here. A plain `payload.update` on a drafts collection is itself a publishing
       // write — it takes the latest version as its base — so the English source has to be cleared
       // BEFORE the German draft exists, or the setup publishes that draft on its own and the case
       // would pass for a reason that has nothing to do with the translation run.
-      await payload.update({
-        collection: "docs",
-        id,
-        locale: "de" as "en",
-        data: { title: "PUBLISHED DE" },
-      });
-      await payload.update({
-        collection: "docs",
-        id,
-        locale: "en",
-        data: { title: "" },
-      });
-      await payload.update({
-        collection: "docs",
-        id,
-        locale: "de" as "en",
-        draft: true,
-        data: { title: "UNREVIEWED DRAFT DE" },
-      });
+      await updateDoc("docs", id, "de", { title: "PUBLISHED DE" });
+      await updateDoc("docs", id, "en", { title: "" });
+      await updateDoc("docs", id, "de", { title: "UNREVIEWED DRAFT DE" }, { draft: true });
 
       await translate(id, "overwrite", true);
 
@@ -247,28 +217,11 @@ describe("strategy x publish-on-translation", () => {
     });
   });
 
-  // The plan promises this shape behaves exactly as it did before the change. It has no draft
-  // layer, so nothing may be carried and no write may happen when there is nothing to translate.
   describe("a collection with versions but no drafts", () => {
     it("skip_existing writes nothing when the target is already translated", async () => {
-      const doc = await payload.create({
-        collection: "versioned" as "docs",
-        locale: "en",
-        data: { title: SOURCE },
-      });
-      const id = String(doc.id);
-      await payload.update({
-        collection: "versioned" as "docs",
-        id,
-        locale: "de" as "en",
-        data: { title: REVIEWED },
-      });
-      const before = (await payload.findByID({
-        collection: "versioned" as "docs",
-        id,
-        locale: "de" as "en",
-        fallbackLocale: false,
-      })) as Record<string, unknown>;
+      const id = await createDoc("versioned", { title: SOURCE });
+      await updateDoc("versioned", id, "de", { title: REVIEWED });
+      const before = await findDoc("versioned", id, "de", false);
 
       const res = await callEndpoint(payload, "post", "/translate/enqueue", {
         body: {
@@ -282,16 +235,10 @@ describe("strategy x publish-on-translation", () => {
       });
       expect(res.status).toBe(200);
 
-      const after = (await payload.findByID({
-        collection: "versioned" as "docs",
-        id,
-        locale: "de" as "en",
-        fallbackLocale: false,
-      })) as Record<string, unknown>;
+      const after = await findDoc("versioned", id, "de", false);
 
       expect(after.title).toBe(REVIEWED);
-      // No write happened at all: an untouched document keeps its timestamp.
-      expect(after.updatedAt).toBe(before.updatedAt);
+      expect(after.updatedAt, "no write happened").toBe(before.updatedAt);
     });
   });
 });

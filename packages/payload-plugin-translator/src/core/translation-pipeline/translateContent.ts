@@ -16,9 +16,8 @@ export type TranslateContentArgs = {
    */
   targetData?: Record<string, unknown>;
   /**
-   * What counts as already translated for `skip_existing`. Defaults to `targetData`.
-   * Pass a different object when the values to skip over live somewhere other than the
-   * ones being written — a draft layer versus a published one, say.
+   * Where an already-existing translation may live, for `skip_existing`. Point at a different
+   * layer than `targetData` when drafts and published content are stored apart.
    */
   existingTranslation?: Record<string, unknown>;
   /** Source language code, or `''` for provider auto-detect. */
@@ -46,7 +45,7 @@ export async function translateContent({
   schema,
   sourceData,
   targetData = {},
-  existingTranslation,
+  existingTranslation = targetData,
   sourceLng,
   targetLng,
   translationProvider,
@@ -61,7 +60,7 @@ export async function translateContent({
     schema,
     sourceData,
     targetData,
-    existingTranslation: existingTranslation ?? targetData,
+    existingTranslation,
     sourceLng,
     targetLng,
   });

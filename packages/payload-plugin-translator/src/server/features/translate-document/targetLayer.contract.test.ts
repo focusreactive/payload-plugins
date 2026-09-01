@@ -3,9 +3,6 @@ import { resolveTargetLayer } from "./targetLayer";
 import type { TargetLayer } from "./targetLayer";
 import type { VersionsSlice } from "./targetLayer";
 
-// The layer is a discriminated union, so a field that belongs to one variant cannot be read off
-// another. These widen it back for assertions that deliberately span every variant — "no publish
-// scope here" is exactly the kind of thing this suite must be able to say about all of them.
 const statusOf = (layer: TargetLayer): "published" | undefined =>
   layer.kind === "publish" ? layer.status : undefined;
 const draftOf = (layer: TargetLayer): true | undefined =>
