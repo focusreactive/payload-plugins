@@ -30,17 +30,23 @@ describe("TranslateDocumentHandler", () => {
   let mockSchemaMap: CollectionSchemaMap;
   let mockPayload: Payload;
 
+  const TARGET_LNG = "de";
+
   const createInput = (
     overrides: Partial<TranslateDocumentInput> = {}
   ): TranslateDocumentInput => ({
     collection: "posts" as CollectionSlug,
     collectionId: "doc-123",
     sourceLng: "en",
-    targetLng: "de",
+    targetLng: TARGET_LNG,
     strategy: "overwrite",
     publishOnTranslation: false,
     ...overrides,
   });
+
+  const enableDrafts = (drafts: unknown = true) => {
+    (mockPayload.collections["posts"].config as { versions: unknown }).versions = { drafts };
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -113,7 +119,19 @@ describe("TranslateDocumentHandler", () => {
         locale: "de",
         fallbackLocale: false,
         depth: 0,
+        draft: true,
       });
+    });
+
+    it("reads the target exactly once, even on the publish path", async () => {
+      enableDrafts();
+
+      await handler.handle(mockPayload, createInput({ publishOnTranslation: true }));
+
+      const targetReads = vi
+        .mocked(mockPayload.findByID)
+        .mock.calls.filter(([args]) => args.locale === TARGET_LNG);
+      expect(targetReads).toHaveLength(1);
     });
   });
 
@@ -217,44 +235,34 @@ describe("TranslateDocumentHandler", () => {
       );
     });
 
-    it("sets _status to draft when versions with drafts enabled", async () => {
-      (mockPayload.collections["posts"].config as { versions: unknown }).versions = {
-        drafts: true,
-      };
+    it("spreads the draft-mode layer onto the update and sends no _status", async () => {
+      enableDrafts();
 
-      const input = createInput();
-      await handler.handle(mockPayload, input);
+      await handler.handle(mockPayload, createInput());
 
       expect(mockPayload.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({
-            _status: "draft",
-          }),
+          draft: true,
+          data: expect.not.objectContaining({ _status: expect.anything() }),
         })
       );
     });
 
-    it("sets _status to published when publishOnTranslation is true", async () => {
-      (mockPayload.collections["posts"].config as { versions: unknown }).versions = {
-        drafts: true,
-      };
+    it("spreads the publish-mode layer onto the update, target locale and status included", async () => {
+      enableDrafts();
 
-      const input = createInput({ publishOnTranslation: true });
-      await handler.handle(mockPayload, input);
+      await handler.handle(mockPayload, createInput({ publishOnTranslation: true }));
 
       expect(mockPayload.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({
-            _status: "published",
-          }),
+          publishSpecificLocale: TARGET_LNG,
+          data: expect.objectContaining({ _status: "published" }),
         })
       );
     });
 
     it("uses autosave when drafts with autosave enabled and not publishing", async () => {
-      (mockPayload.collections["posts"].config as { versions: unknown }).versions = {
-        drafts: { autosave: true },
-      };
+      enableDrafts({ autosave: true });
 
       const input = createInput();
       await handler.handle(mockPayload, input);
@@ -266,19 +274,65 @@ describe("TranslateDocumentHandler", () => {
       );
     });
 
-    it("does not use autosave when publishing", async () => {
-      (mockPayload.collections["posts"].config as { versions: unknown }).versions = {
-        drafts: { autosave: true },
-      };
+    it("keeps the collection's autosave setting on the translation write when publishing", async () => {
+      enableDrafts({ autosave: true });
 
       const input = createInput({ publishOnTranslation: true });
       await handler.handle(mockPayload, input);
 
       expect(mockPayload.update).toHaveBeenCalledWith(
+        expect.objectContaining({ draft: true, autosave: true })
+      );
+    });
+  });
+
+  describe("publishing", () => {
+    const nothingToTranslate = async () => {
+      const { translateContent } = await import("../../../core/translation-pipeline");
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    };
+
+    const publishCalls = () =>
+      vi.mocked(mockPayload.update).mock.calls.filter(([args]) => "publishSpecificLocale" in args);
+
+    it("publishes the target locale even when there was nothing to translate", async () => {
+      enableDrafts();
+      await nothingToTranslate();
+
+      await handler.handle(mockPayload, createInput({ publishOnTranslation: true }));
+
+      expect(publishCalls()).toHaveLength(1);
+      expect(mockPayload.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          autosave: false,
+          data: { _status: "published" },
+          publishSpecificLocale: "de",
+          locale: "de",
         })
       );
+    });
+
+    it("marks the publish write as translator-authored, so the auto-translate hook skips it", async () => {
+      enableDrafts();
+      await nothingToTranslate();
+
+      await handler.handle(mockPayload, createInput({ publishOnTranslation: true }));
+
+      const [args] = publishCalls()[0];
+      expect(args.context).toEqual({ [AUTO_TRANSLATE_SKIP_CONTEXT_KEY]: true });
+    });
+
+    it("does not publish when the flag is off", async () => {
+      enableDrafts();
+
+      await handler.handle(mockPayload, createInput({ publishOnTranslation: false }));
+
+      expect(publishCalls()).toHaveLength(0);
+    });
+
+    it("does not scope a publish on a collection without drafts", async () => {
+      await handler.handle(mockPayload, createInput({ publishOnTranslation: true }));
+
+      expect(publishCalls()).toHaveLength(0);
     });
   });
 

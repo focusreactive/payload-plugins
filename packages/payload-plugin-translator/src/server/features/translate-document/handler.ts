@@ -1,4 +1,4 @@
-import type { Payload, SanitizedCollectionConfig } from "payload";
+import type { Payload } from "payload";
 import { APIError } from "payload";
 
 import type { Handler } from "../../shared";
@@ -10,6 +10,11 @@ import { fetchSourceDocument } from "../../shared/payload/sourceDocument";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext";
 import type { TranslateDocumentInput, TranslateDocumentOutput } from "./model";
+import { resolveTargetLayer } from "./targetLayer";
+import type { PublishScope, TargetLayer } from "./targetLayer";
+
+/** Loop guard: the auto-translate afterChange hook (#51) skips writes carrying this key. */
+const translatorWriteContext = () => ({ [AUTO_TRANSLATE_SKIP_CONTEXT_KEY]: true });
 
 /**
  * Translates a single document from source language to target language. Provenance is delegated to
@@ -38,60 +43,60 @@ export class TranslateDocumentHandler implements Handler<
     const { collection, collectionId, sourceLng, targetLng, strategy, publishOnTranslation } =
       input;
 
-    // Get original schema (preserves localized: true on nested fields)
     const schema = this.schemaMap.get(collection);
     if (!schema) throw new APIError(`Collection "${collection}" not found in schemaMap`, 400);
 
-    const sourceData = await fetchSourceDocument(payload, collection, collectionId, sourceLng);
+    const layer = resolveTargetLayer({
+      versions: payload.collections[collection].config.versions,
+      targetLng,
+    });
 
-    // Capture the staleness baseline from the PRISTINE source NOW, before the pipeline runs — it
-    // translates in place and shares object-valued source leaves (e.g. richText nodes) by reference,
-    // so fingerprinting after `translateContent` would hash the target translation and make every
-    // fresh translation look instantly stale. The service is best-effort (a failure returns null).
+    // `draft: true` is unconditional: on a collection without drafts Payload has no version to
+    // substitute, so it returns the only row. The WRITE cannot be so relaxed — the `no-drafts`
+    // layer omits `draft` entirely, because that is the argument shape `main` sent.
+    const [sourceData, currentTargetVersion] = await Promise.all([
+      fetchSourceDocument(payload, collection, collectionId, sourceLng),
+      payload.findByID({
+        collection,
+        id: collectionId,
+        locale: targetLng,
+        fallbackLocale: false,
+        depth: 0,
+        draft: true,
+      }),
+    ]);
+
     const provenance = this.provenanceServiceFactory?.(payload);
     const sourceFingerprint = provenance?.captureFingerprint(collection, sourceData) ?? null;
-
-    const targetData = await payload.findByID({
-      collection,
-      id: collectionId,
-      locale: targetLng,
-      fallbackLocale: false,
-      depth: 0,
-    });
 
     const translatedData = await translateContent({
       schema,
       sourceData,
-      targetData,
+      targetData: currentTargetVersion,
       sourceLng,
       targetLng,
       translationProvider: this.translationProvider,
       strategy,
     });
-    if (!translatedData) return { success: true };
 
-    const collectionConfig = payload.collections[collection].config;
-    await this.saveTranslatedDocument(
-      payload,
-      collection,
-      collectionId,
-      translatedData,
-      targetLng,
-      sourceLng,
-      collectionConfig,
-      publishOnTranslation
-    );
+    if (translatedData) {
+      await this.saveTranslatedDocument(payload, input, translatedData, layer.write);
 
-    if (provenance && sourceFingerprint !== null) {
-      await provenance.record(
-        {
-          collectionSlug: collection,
-          documentId: String(collectionId),
-          targetLocale: targetLng,
-          sourceLocale: sourceLng,
-        },
-        sourceFingerprint
-      );
+      if (provenance && sourceFingerprint !== null) {
+        await provenance.record(
+          {
+            collectionSlug: collection,
+            documentId: String(collectionId),
+            targetLocale: targetLng,
+            sourceLocale: sourceLng,
+          },
+          sourceFingerprint
+        );
+      }
+    }
+
+    if (publishOnTranslation && layer.kind === "drafts") {
+      await this.publishTargetLocale(payload, input, layer.publish);
     }
 
     return { success: true };
@@ -99,36 +104,33 @@ export class TranslateDocumentHandler implements Handler<
 
   private async saveTranslatedDocument(
     payload: Payload,
-    collection: string,
-    collectionId: string,
+    input: TranslateDocumentInput,
     translatedData: Record<string, unknown>,
-    targetLng: string,
-    sourceLng: string,
-    collectionConfig: SanitizedCollectionConfig,
-    publishOnTranslation: boolean
+    write: TargetLayer["write"]
   ): Promise<void> {
-    let isAutosaveEnabled = false;
-    const versions = collectionConfig.versions;
-
-    if (versions && versions.drafts) {
-      translatedData["_status"] = publishOnTranslation ? "published" : "draft";
-
-      const drafts = versions.drafts;
-      if (!publishOnTranslation && drafts.autosave) isAutosaveEnabled = true;
-    }
-
     await payload.update({
-      collection: collection,
-      id: collectionId,
+      collection: input.collection,
+      id: input.collectionId,
       data: translatedData,
-      autosave: isAutosaveEnabled,
-      locale: targetLng,
-      fallbackLocale: sourceLng,
-      // Mark this as a translator-authored write so the auto-translate afterChange hook (#51) skips it
-      // — the loop guard's second barrier, alongside the source-locale check. This write always targets
-      // the TARGET locale, so it is already exempt by locale; the flag also covers any future write
-      // path that could touch the source locale.
-      context: { [AUTO_TRANSLATE_SKIP_CONTEXT_KEY]: true },
+      ...write,
+      locale: input.targetLng,
+      fallbackLocale: input.sourceLng,
+      context: translatorWriteContext(),
+    });
+  }
+
+  private async publishTargetLocale(
+    payload: Payload,
+    input: TranslateDocumentInput,
+    publish: PublishScope
+  ): Promise<void> {
+    await payload.update({
+      collection: input.collection,
+      id: input.collectionId,
+      data: { _status: publish.status },
+      publishSpecificLocale: publish.publishSpecificLocale,
+      locale: publish.publishSpecificLocale,
+      context: translatorWriteContext(),
     });
   }
 }

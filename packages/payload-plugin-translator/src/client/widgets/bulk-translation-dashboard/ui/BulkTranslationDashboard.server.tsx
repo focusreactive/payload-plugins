@@ -3,7 +3,7 @@ import type { BeforeListTableServerProps } from "payload";
 
 import type { AccessGuard } from "../../../../types/AccessGuard";
 import type { TargetSelectionMode } from "../../../../types/TargetSelection";
-import { collectionHasDrafts } from "../../../../server/shared/guards";
+import { hasDraftsEnabled } from "payload/shared";
 import { resolveAutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary";
 
 import BulkTranslationDashboard from "./BulkTranslationDashboard";
@@ -23,7 +23,7 @@ const BulkTranslationDashboardServer = async (props: BulkTranslationDashboardSer
   if (!props.collectionSlug) return null;
 
   const collection = props.payload.collections[props.collectionSlug]?.config;
-  const hasDrafts = collection ? collectionHasDrafts(collection) : false;
+  const hasDrafts = collection ? hasDraftsEnabled(collection) : false;
   const autoTranslate = resolveAutoTranslateSummary(
     collection,
     props.payload.config.localization ? props.payload.config.localization.defaultLocale : undefined

@@ -54,17 +54,23 @@ export type TestPayload = {
  *
  * @param opts.autoTranslate - stamped onto the `docs` collection. Omit it and nothing translates on
  *   publish; the enqueue route still works.
+ * @param opts.collections - replaces the shared fixture set entirely (not merged). The set must
+ *   still contain a `docs` collection when `autoTranslate` is passed.
  */
 export async function bootTestPayload(opts?: {
   autoTranslate?: { targets: string[]; strategy?: "overwrite" | "skip_existing" };
+  collections?: CollectionConfig[];
 }): Promise<TestPayload> {
   const dir = mkdtempSync(join(tmpdir(), "translator-int-"));
   const dbPath = join(dir, "test.db");
 
-  const collections = buildTestCollections();
-  const docs = collections.find((c) => c.slug === "docs") as CollectionConfig;
-  const managed: CollectionConfig[] = opts?.autoTranslate
-    ? collections.map((c) => (c.slug === "docs" ? withAutoTranslate(docs, opts.autoTranslate!) : c))
+  const collections = opts?.collections ?? buildTestCollections();
+  const autoTranslate = opts?.autoTranslate;
+  if (autoTranslate && !collections.some((c) => c.slug === "docs")) {
+    throw new Error("bootTestPayload: autoTranslate needs a `docs` collection in the set");
+  }
+  const managed: CollectionConfig[] = autoTranslate
+    ? collections.map((c) => (c.slug === "docs" ? withAutoTranslate(c, autoTranslate) : c))
     : collections;
 
   const baseProvider = createTranslationProvider({ complete: reverseComplete });
