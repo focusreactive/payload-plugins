@@ -43,6 +43,13 @@ beforeAll(async () => {
       versions: { drafts: true },
       fields: [{ name: "title", type: "text", localized: true }],
     },
+    // Versions ON, drafts OFF — the shape whose "unchanged" promise is easiest to break, since it
+    // shares the publish flag with the drafts collections but has only one layer to write to.
+    {
+      slug: "versioned",
+      versions: true,
+      fields: [{ name: "title", type: "text", localized: true }],
+    },
   ];
   const config = await buildConfig({
     secret: "matrix-secret",
@@ -196,6 +203,95 @@ describe("strategy x publish-on-translation", () => {
 
       expect((await read(id, false)).title).toBe(REVIEWED);
       expect((await read(id, true)).title).toBe(REVIEWED);
+    });
+  });
+
+  // Carrying a value the write layer cannot see is right only when the strategy declined BECAUSE a
+  // translation already exists. `overwrite` declines for an unrelated reason — an empty source —
+  // and treating that as the same case promotes an unreviewed draft over a published translation.
+  describe("an emptied source does not promote the draft", () => {
+    it("overwrite with publishing leaves the published translation alone", async () => {
+      const doc = await payload.create({
+        collection: "docs",
+        locale: "en",
+        data: { title: SOURCE, _status: "published" },
+      });
+      const id = String(doc.id);
+      // Order matters here. A plain `payload.update` on a drafts collection is itself a publishing
+      // write — it takes the latest version as its base — so the English source has to be cleared
+      // BEFORE the German draft exists, or the setup publishes that draft on its own and the case
+      // would pass for a reason that has nothing to do with the translation run.
+      await payload.update({
+        collection: "docs",
+        id,
+        locale: "de" as "en",
+        data: { title: "PUBLISHED DE" },
+      });
+      await payload.update({
+        collection: "docs",
+        id,
+        locale: "en",
+        data: { title: "" },
+      });
+      await payload.update({
+        collection: "docs",
+        id,
+        locale: "de" as "en",
+        draft: true,
+        data: { title: "UNREVIEWED DRAFT DE" },
+      });
+
+      await translate(id, "overwrite", true);
+
+      expect((await read(id, false)).title).toBe("PUBLISHED DE");
+    });
+  });
+
+  // The plan promises this shape behaves exactly as it did before the change. It has no draft
+  // layer, so nothing may be carried and no write may happen when there is nothing to translate.
+  describe("a collection with versions but no drafts", () => {
+    it("skip_existing writes nothing when the target is already translated", async () => {
+      const doc = await payload.create({
+        collection: "versioned" as "docs",
+        locale: "en",
+        data: { title: SOURCE },
+      });
+      const id = String(doc.id);
+      await payload.update({
+        collection: "versioned" as "docs",
+        id,
+        locale: "de" as "en",
+        data: { title: REVIEWED },
+      });
+      const before = (await payload.findByID({
+        collection: "versioned" as "docs",
+        id,
+        locale: "de" as "en",
+        fallbackLocale: false,
+      })) as Record<string, unknown>;
+
+      const res = await callEndpoint(payload, "post", "/translate/enqueue", {
+        body: {
+          source_lng: "en",
+          target_lng: "de",
+          collection_slug: "versioned",
+          collection_id: [id],
+          strategy: "skip_existing",
+          publish_on_translation: false,
+        },
+      });
+      expect(res.status).toBe(200);
+
+      const after = (await payload.findByID({
+        collection: "versioned" as "docs",
+        id,
+        locale: "de" as "en",
+        fallbackLocale: false,
+      })) as Record<string, unknown>;
+
+      expect(after.title).toBe(REVIEWED);
+      // No write happened at all: an untouched document keeps its timestamp.
+      expect(after.updatedAt).toBe(before.updatedAt);
     });
   });
 });

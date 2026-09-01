@@ -76,7 +76,10 @@ export class TranslateDocumentHandler implements Handler<
     // the draft — so when the write layer is the published one, the two questions need different
     // reads. Publishing must still carry over the PUBLISHED values, or it takes someone's pending
     // edits live (#102); it just must not re-translate over a draft it cannot see (#116).
-    const existingTranslation = layer.readDraft ? targetData : await readTarget(true);
+    // Switch on the variant, not on `readDraft` — `no-drafts` also has it false, and sending that
+    // collection down the second-read path both costs a query it does not need and hands the
+    // collector a different object graph, which its reference comparison then reads as a change.
+    const existingTranslation = layer.kind === "publish" ? await readTarget(true) : targetData;
 
     const translatedData = await translateContent({
       schema,

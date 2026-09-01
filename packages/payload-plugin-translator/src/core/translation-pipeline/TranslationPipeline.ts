@@ -66,12 +66,16 @@ export class TranslationPipeline {
       // strategy declined a leaf whose translation lives in a layer the write cannot see, that
       // value was carried into `filteredData` and still owes a write. Either way the remaining
       // stages are skipped: there is no text to send and nothing to apply.
-      const done =
-        (ctx.fieldChunks !== undefined && ctx.fieldChunks.length === 0) ||
-        (ctx.textMap !== undefined && Object.keys(ctx.textMap).length === 0);
-      if (done) {
+      // Nothing was selected to translate — but a carried leaf still owes a write.
+      if (ctx.fieldChunks !== undefined && ctx.fieldChunks.length === 0) {
         const carried = (ctx.carriedCount ?? 0) > 0;
         return carried && ctx.filteredData ? { translatedData: ctx.filteredData } : null;
+      }
+      // Leaves WERE selected and produced no text. The collector has already written their raw
+      // source values into `filteredData`, so returning it here would persist untranslated source
+      // as if it were a translation — a carry elsewhere in the document does not license that.
+      if (ctx.textMap !== undefined && Object.keys(ctx.textMap).length === 0) {
+        return null;
       }
     }
 

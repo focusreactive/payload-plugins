@@ -132,7 +132,12 @@ export class FieldChunkCollector {
             key: field.name,
             path: [...cursor.path, field.name],
           });
-        } else if (!isEmpty(targetValue) && value !== targetValue) {
+          // `!isEmpty(sourceValue)` is what keeps this to the case it is for. A strategy can refuse
+          // for two unrelated reasons: `skip_existing` because a translation already exists — the
+          // case worth carrying — and `overwrite` because the SOURCE is empty, which says nothing
+          // about the target. Without this guard an emptied source would promote an unreviewed
+          // draft over a published translation, which is the #102 leak in a new place.
+        } else if (!isEmpty(sourceValue) && !isEmpty(targetValue) && value !== targetValue) {
           // Only when the write layer does not already hold it: in the common case the reconciler
           // was given this same layer and already put the value here, so there is nothing to carry
           // and the run must stay a no-op rather than writing a version that changes nothing.

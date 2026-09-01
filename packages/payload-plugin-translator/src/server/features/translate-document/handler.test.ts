@@ -133,6 +133,29 @@ describe("TranslateDocumentHandler", () => {
       );
     });
 
+    // Only publishing needs a second look at the target, and only because its write layer and the
+    // "does this already exist" layer differ. Sending any other shape down that path costs a query
+    // and — worse — hands the collector a second object graph, whose leaves are then unequal by
+    // reference to the first even when identical, which reads as a change that never happened.
+    it.each([
+      ["a collection with no drafts", undefined, false],
+      ["a draft-mode translation", { drafts: true }, false],
+    ])("reads the target exactly once for %s", async (_name, versions, publish) => {
+      if (versions) {
+        (mockPayload.collections["posts"].config as { versions: unknown }).versions = versions;
+      }
+
+      await handler.handle(
+        mockPayload,
+        createInput({ targetLng: "de", publishOnTranslation: publish })
+      );
+
+      const targetReads = (
+        mockPayload.findByID as unknown as { mock: { calls: [{ locale: string }][] } }
+      ).mock.calls.filter(([args]) => args.locale === "de");
+      expect(targetReads).toHaveLength(1);
+    });
+
     it("reads the target from the published row when publishing", async () => {
       enableDrafts();
 
