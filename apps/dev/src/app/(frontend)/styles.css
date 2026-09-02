@@ -1,5 +1,30 @@
 :root {
   --font-mono: "Roboto Mono", monospace;
+
+  /* Payload's own design tokens, copied by value from
+     node_modules/@payloadcms/ui/dist/scss/{colors,app,vars}.scss. Importing
+     @payloadcms/ui/dist/styles.css instead would pull 253 KB of admin theme that restyles
+     html/body and overrides this site. These are the DARK-theme resolutions, which is what this
+     sandbox uses; the light ones live in the same file if the site ever gains a light mode. */
+  --base-px: 20;
+  --base-body-size: 13;
+  --base: calc((var(--base-px) / var(--base-body-size)) * 1rem);
+
+  --color-base-100: rgb(235, 235, 235);
+  --color-base-650: rgb(87, 87, 87);
+  --color-base-750: rgb(60, 60, 60);
+  --color-base-800: rgb(47, 47, 47);
+  --color-base-900: rgb(20, 20, 20);
+
+  --theme-elevation-0: var(--color-base-900);
+  --theme-elevation-100: var(--color-base-800);
+  --theme-elevation-150: var(--color-base-750);
+  --theme-elevation-250: var(--color-base-650);
+  --theme-elevation-800: var(--color-base-100);
+  --theme-border-color: var(--theme-elevation-150);
+
+  --style-radius-s: 3px;
+  --style-radius-m: 4px;
 }
 
 * {
