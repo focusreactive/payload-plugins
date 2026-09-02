@@ -220,10 +220,9 @@ Only the locale that was translated is published; other locales keep whatever st
 Translating a document that is not currently published does make the document live, with just that
 locale's content in it.
 
-A translation is taken from **the source locale's own current content** — the newer draft when
-one exists, else the published row, and never a value Payload substitutes from another locale.
-So translating *from* a locale you have not filled in translates nothing, rather than quietly
-translating the default locale's text and recording it as that locale's.
+A translation is taken from **the source locale's own current content** — the newer draft when one
+exists, else the published row, never a value Payload substitutes from another locale. Translating
+*from* a locale you have not filled in therefore translates nothing.
 
 Two consequences worth knowing before you rely on them:
 
@@ -241,18 +240,13 @@ Two consequences worth knowing before you rely on them:
 
 > **Changed in 0.11.1.** Before this, translating one locale as a draft unpublished the document in
 > every locale, and translating one locale with publishing pushed every other locale's unpublished
-> draft live. See [#102](https://github.com/focusreactive/payload-plugins/issues/102).
+> draft live ([#102](https://github.com/focusreactive/payload-plugins/issues/102)). The source was
+> also read from the published row with fallbacks, so translating from an empty locale translated
+> the default locale's text.
 
 ### Stale-translation detection
 
 _Since v0.8.0._
-
-> **Upgrading with existing provenance records.** Staleness compares a stored fingerprint of the
-> source against a freshly computed one. Both are now taken from the source locale's own current
-> content; records written before that change were fingerprinted from the published row with locale
-> fallbacks applied. Where those two differ — an unpublished source edit, or a locale that was empty
-> and fell back — the locale reads **out of date once** after upgrading, even though nothing needs
-> re-translating. Dismissing the marker, or re-translating, settles it.
 
 With `provenance` enabled, the document translation control shows an **"out of date"** marker (with a
 tooltip naming the affected locales) when a target locale's source content changed after it was
@@ -265,6 +259,10 @@ source locale marks its already-translated locales stale on the next panel view;
 Dismiss acknowledges the drift without re-translating; the marker stays hidden until the source
 changes again. When `provenance` is disabled nothing is shown. Note the fingerprint is text-only, so
 formatting-only edits to rich text do not mark a locale stale.
+
+> **Upgrading to 0.11.1.** Records written earlier fingerprinted the source differently, so a locale
+> can read out of date once after upgrading with nothing actually needing re-translation. Dismissing
+> the marker or re-translating settles it.
 
 ### Auto-translate on source change
 
