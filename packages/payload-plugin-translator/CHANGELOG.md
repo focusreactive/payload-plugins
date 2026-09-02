@@ -1,3 +1,11 @@
+## @focus-reactive/payload-plugin-translator [0.11.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.11.0...@focus-reactive/payload-plugin-translator@0.11.1) (2026-09-02)
+
+
+### Bug Fixes
+
+* **translator:** separate translating a locale from publishing it ([29bf09e](https://github.com/focusreactive/payload-plugins/commit/29bf09eeeb9f1e6da32970696ca414133464aeea)), closes [#102](https://github.com/focusreactive/payload-plugins/issues/102) [#116](https://github.com/focusreactive/payload-plugins/issues/116)
+* **translator:** take the source from the locale's own current version ([b825c4a](https://github.com/focusreactive/payload-plugins/commit/b825c4a655cead5f7b9f06e9b39fac88b48a407a))
+
 # @focus-reactive/payload-plugin-translator [0.11.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.10.4...@focus-reactive/payload-plugin-translator@0.11.0) (2026-08-28)
 
 
