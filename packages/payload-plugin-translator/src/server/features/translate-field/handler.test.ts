@@ -106,6 +106,7 @@ describe("TranslateFieldHandler", () => {
       id: "p1",
       locale: "en",
       fallbackLocale: false,
+      draft: true,
       depth: 0,
     });
     expect(await importTranslateContent()).toHaveBeenCalledWith(

@@ -337,6 +337,7 @@ describe("translatorPlugin — lifecycle callbacks", () => {
     ({
       findByID: vi.fn().mockResolvedValue({ id: "doc-1" }),
       logger: { error: vi.fn() },
+      collections: { posts: { config: { versions: undefined } } },
     }) as unknown as Payload;
 
   it("fires lifecycle.onCompleted after a successful task", async () => {

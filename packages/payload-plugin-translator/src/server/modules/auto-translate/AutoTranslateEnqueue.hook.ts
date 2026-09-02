@@ -1,4 +1,5 @@
 import type { CollectionAfterChangeHook } from "payload";
+import { hasDraftsEnabled } from "payload/shared";
 
 import { hasSourceContentChanged } from "../../../core/domain/auto-translate";
 import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../core/domain/auto-translate";
@@ -62,7 +63,7 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
 
       if (req.locale !== sourceLocale) return doc;
 
-      const hasDrafts = Boolean(collection.versions && collection.versions.drafts);
+      const hasDrafts = hasDraftsEnabled(collection);
       if (!passesPublishGate(doc, hasDrafts)) return doc;
 
       const schema = schemaMap.get(collection.slug);

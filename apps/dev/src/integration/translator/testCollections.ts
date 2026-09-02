@@ -25,6 +25,15 @@ const ctaBlock: Block = {
   fields: [{ name: "caption", type: "text", localized: true }],
 };
 
+/**
+ * A collection with no versions: every read and write resolves against the single live row, so
+ * there is no draft layer to translate into.
+ */
+export const plainCollection: CollectionConfig = {
+  slug: "plain",
+  fields: [{ name: "title", type: "text", localized: true }],
+};
+
 export function buildTestCollections(): CollectionConfig[] {
   const users: CollectionConfig = {
     slug: "users",

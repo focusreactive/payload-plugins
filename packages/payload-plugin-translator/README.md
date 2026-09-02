@@ -205,6 +205,45 @@ translatorPlugin({
 });
 ```
 
+### Drafts and publishing
+
+Applies to every way a translation is triggered — the admin controls, `POST /translate/enqueue`, and
+auto-translate. It matters most if your collections have `versions.drafts` enabled.
+
+**Without publish-on-translation**, the translation is written as a **draft version**. The document's
+published state is left alone: a live page stays live, an unpublished one stays unpublished, and the
+translated locale does not appear on the public site until someone publishes it.
+
+**With publish-on-translation**, the translation is written as a draft and the target locale is then
+published — a separate step, so it happens whether or not any field actually needed translating.
+Only the locale that was translated is published; other locales keep whatever state they were in.
+Translating a document that is not currently published does make the document live, with just that
+locale's content in it.
+
+A translation is taken from **the source locale's own current content** — the newer draft when one
+exists, else the published row, never a value Payload substitutes from another locale. Translating
+*from* a locale you have not filled in therefore translates nothing.
+
+Two consequences worth knowing before you rely on them:
+
+- **Publishing publishes the current draft, whatever is in it.** A translation is based on the
+  version the editor sees, and publishing puts that live — including pending edits nobody made for
+  the translation's sake, and including non-localized fields, which Payload stores once per document
+  and so cannot scope to a locale. That is what the flag asks for, but it is worth remembering
+  before running "translate and publish" over a long list of documents: every unpublished draft
+  among them goes live.
+- **`skip_existing` counts anything non-empty as translated.** A translation waiting unpublished in
+  a draft counts, so a reviewer's corrected text is published as it stands rather than
+  re-translated. It has no notion of *reviewed*, and it does not consult stale-detection — a locale
+  the admin marks out of date is still skipped
+  ([#118](https://github.com/focusreactive/payload-plugins/issues/118)).
+
+> **Changed in 0.11.1.** Before this, translating one locale as a draft unpublished the document in
+> every locale, and translating one locale with publishing pushed every other locale's unpublished
+> draft live ([#102](https://github.com/focusreactive/payload-plugins/issues/102)). The source was
+> also read from the published row with fallbacks, so translating from an empty locale translated
+> the default locale's text.
+
 ### Stale-translation detection
 
 _Since v0.8.0._
@@ -220,6 +259,10 @@ source locale marks its already-translated locales stale on the next panel view;
 Dismiss acknowledges the drift without re-translating; the marker stays hidden until the source
 changes again. When `provenance` is disabled nothing is shown. Note the fingerprint is text-only, so
 formatting-only edits to rich text do not mark a locale stale.
+
+> **Upgrading to 0.11.1.** Records written earlier fingerprinted the source differently, so a locale
+> can read out of date once after upgrading with nothing actually needing re-translation. Dismissing
+> the marker or re-translating settles it.
 
 ### Auto-translate on source change
 
@@ -249,8 +292,11 @@ translatorPlugin({
 Behaviour: fires only on a **published** source save (draft/autosave saves are ignored; a collection
 without drafts treats every save as published); skips when no translatable content actually changed
 (same fingerprint as stale-detection); coalesces rapid edits via `debounceMs`; the translation is saved
-with the source document's status (published source → published translation); never re-triggers on its
+with the source document's status, scoped to **only the translated locale**; never re-triggers on its
 own translation writes; and never fails the editor's save (best-effort — failures are logged).
+
+> See [Drafts and publishing](#drafts-and-publishing) for what a translation does to a document's
+> published state.
 
 > **Requires a working job runner.** Auto-translate only **enqueues** jobs — they run via the task
 > runner (`createPayloadJobsRunner`) and its autorun loop. On serverless platforms such as **Vercel**,
