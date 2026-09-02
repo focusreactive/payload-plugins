@@ -164,12 +164,13 @@ export default buildConfig({
       ],
       site: {
         name: "Dev Site",
-        baseUrl: process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3000",
+        baseUrl: process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4040",
       },
       supportedLocales: ["en", "de", "fr", "es"],
     }),
   ],
   secret: process.env.PAYLOAD_SECRET || "",
+  serverURL: process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4040",
   sharp,
   typescript: {
     outputFile: path.resolve(baseDir, "payload-types.ts"),
