@@ -1,10 +1,8 @@
 import type { CollectionSlug, Payload } from "payload";
 
 /**
- * Fetch a document's source-locale data with the exact shape the provenance fingerprint depends on
- * (`depth: 0`, the given locale). Used by the translation **write** path (fingerprints the source it
- * just translated) and, through {@link ProvenanceService}, by the staleness **read** path
- * (re-fingerprints the live source), so the fingerprint baseline can never drift between the two.
+ * The single source read: what "translate from X" resolves to. Both translation write paths and
+ * the staleness recompute must go through here, or the fingerprints they compare drift apart.
  */
 export function fetchSourceDocument(
   payload: Payload,
@@ -12,5 +10,17 @@ export function fetchSourceDocument(
   id: string,
   locale: string
 ) {
-  return payload.findByID({ collection, id, locale, depth: 0 });
+  return payload.findByID({
+    collection,
+    id,
+    locale,
+    depth: 0,
+    // The current version, as the editor sees it. A published-row read is empty whenever the source
+    // locale is unpublished — which is exactly what a publish scoped to the target locale leaves
+    // behind — and then every fresh translation fingerprints as stale.
+    draft: true,
+    // Payload's locale fallback resolves an empty source locale to the default locale's text, so
+    // "translate from fr" would translate English and fingerprint English as the French source.
+    fallbackLocale: false,
+  });
 }

@@ -61,9 +61,13 @@ const TranslateFieldControl = () => {
   // `config.localization` is `false | {…}`, so the truthy check is load-bearing (not just a nil guard).
   const defaultLocale = config.localization ? config.localization.defaultLocale : undefined;
 
+  // `useLocale()` is typed `Locale` but actually returns `false | {} | Locale` until the admin's
+  // locale provider resolves (see the V4 TODO on the hook in @payloadcms/ui), so `code` can be absent.
+  const targetCode = locale?.code ?? "";
+
   const [isOpen, popup] = useToggle();
   const [sourceLng, setSourceLng] = useState(() =>
-    defaultLocale && defaultLocale !== locale.code ? defaultLocale : ""
+    defaultLocale && defaultLocale !== targetCode ? defaultLocale : ""
   );
   // `null` = no undo available; an object wraps the value so a legitimately `undefined` field value
   // (a real pre-translation state) stays distinguishable from "nothing to undo".
@@ -75,7 +79,7 @@ const TranslateFieldControl = () => {
   if (id === undefined || id === null) return null;
 
   // Source options: every locale except the one being edited (it's the fixed target).
-  const sourceLocaleOptions = localeOptions.filter((option) => option.value !== locale.code);
+  const sourceLocaleOptions = localeOptions.filter((option) => option.value !== targetCode);
   const canTranslate = sourceLng !== "" && !isPending;
 
   // One write path for every supported field type: a form UPDATE bumping value AND initialValue.
@@ -95,7 +99,7 @@ const TranslateFieldControl = () => {
       const { data } = await mutateAsync({
         collectionSlug,
         fieldPath: path,
-        targetLng: locale.code, // always the current edit locale — never derived from the source picker
+        targetLng: targetCode, // always the current edit locale — never derived from the source picker
         sourceLng,
         docId: id, // non-null here: the control early-returns on create (no document id)
       });
@@ -152,7 +156,7 @@ const TranslateFieldControl = () => {
           {/* The from → to pair as one labeled unit, so a screen reader announces the direction
               together (mirrors the TranslationDirection entity used at the doc/collection level). */}
           <div
-            aria-label={`Translation direction: from ${sourceLng || "a source locale"} into ${locale.code}`}
+            aria-label={`Translation direction: from ${sourceLng || "a source locale"} into ${targetCode}`}
             className={styles.direction}
             role="group"
           >
@@ -180,10 +184,10 @@ const TranslateFieldControl = () => {
               →
             </span>
             <span
-              aria-label={`Target locale: ${locale.code} (the locale you're editing)`}
+              aria-label={`Target locale: ${targetCode} (the locale you're editing)`}
               className={styles.current}
             >
-              {locale.code.toLowerCase()}
+              {targetCode.toLowerCase()}
             </span>
           </div>
 
@@ -195,7 +199,7 @@ const TranslateFieldControl = () => {
               $isIconButton
               $isLoading={isPending}
               disabled={!canTranslate}
-              aria-label={`Translate from ${sourceLng || "the selected locale"} into ${locale.code}`}
+              aria-label={`Translate from ${sourceLng || "the selected locale"} into ${targetCode}`}
               onClick={handleTranslate}
             >
               <SendIcon />

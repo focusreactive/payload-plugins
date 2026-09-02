@@ -56,10 +56,13 @@ export type TestPayload = {
  *   publish; the enqueue route still works.
  * @param opts.collections - replaces the shared fixture set entirely (not merged). The set must
  *   still contain a `docs` collection when `autoTranslate` is passed.
+ * @param opts.fallback - localization fallback, off by default: an unwritten locale reads as
+ *   empty, not as the default locale's text. Localization-level, so it applies to the whole boot.
  */
 export async function bootTestPayload(opts?: {
   autoTranslate?: { targets: string[]; strategy?: "overwrite" | "skip_existing" };
   collections?: CollectionConfig[];
+  fallback?: boolean;
 }): Promise<TestPayload> {
   const dir = mkdtempSync(join(tmpdir(), "translator-int-"));
   const dbPath = join(dir, "test.db");
@@ -90,7 +93,7 @@ export async function bootTestPayload(opts?: {
     telemetry: false,
     localization: {
       defaultLocale: "en",
-      fallback: false,
+      fallback: opts?.fallback ?? false,
       locales: [
         { code: "en", label: "English" },
         { code: "de", label: "Deutsch" },

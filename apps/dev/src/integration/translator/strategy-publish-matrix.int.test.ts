@@ -5,7 +5,7 @@ import { bootTestPayload } from "./bootTestPayload";
 import { callEndpoint } from "./callEndpoint";
 
 type Slug = "docs" | "versioned";
-type Locale = "en" | "de";
+type Locale = "en" | "de" | "fr";
 
 const SOURCE = "Hello world";
 const MACHINE = [...SOURCE].reverse().join("");
@@ -214,6 +214,27 @@ describe("strategy x publish-on-translation", () => {
 
       expect(after.title).toBe(REVIEWED);
       expect(after.updatedAt, "no write happened").toBe(before.updatedAt);
+    });
+
+    it("overwrite replaces the translation in the only row there is", async () => {
+      const id = await createDoc("versioned", { title: SOURCE });
+      await updateDoc("versioned", id, "de", { title: REVIEWED });
+
+      await translate(id, "overwrite", false, "versioned");
+
+      expect((await findDoc("versioned", id, "de", false)).title).toBe(MACHINE);
+    });
+
+    // `publishSpecificLocale` on a versions-without-drafts collection drops every other locale from
+    // the live row — which is what the `fr` assertion is guarding.
+    it("the publish flag changes nothing, and leaves other locales alone", async () => {
+      const id = await createDoc("versioned", { title: SOURCE });
+      await updateDoc("versioned", id, "fr", { title: "FR UNTOUCHED" });
+
+      await translate(id, "overwrite", true, "versioned");
+
+      expect((await findDoc("versioned", id, "de", false)).title).toBe(MACHINE);
+      expect((await findDoc("versioned", id, "fr", false)).title).toBe("FR UNTOUCHED");
     });
   });
 });

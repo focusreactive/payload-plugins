@@ -95,7 +95,7 @@ describe("TranslateDocumentHandler", () => {
   });
 
   describe("document fetching", () => {
-    it("fetches source document with source locale", async () => {
+    it("reads the source as the current version of that locale only", async () => {
       const input = createInput({ sourceLng: "en" });
 
       await handler.handle(mockPayload, input);
@@ -105,6 +105,8 @@ describe("TranslateDocumentHandler", () => {
         id: "doc-123",
         locale: "en",
         depth: 0,
+        draft: true,
+        fallbackLocale: false,
       });
     });
 

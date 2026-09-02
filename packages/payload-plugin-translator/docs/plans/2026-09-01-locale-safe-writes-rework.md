@@ -25,6 +25,14 @@ translating one locale changed the publish state of the **whole document in ever
 locale**, and published **other locales'** drafts. Both are cured by
 `publishSpecificLocale` plus an explicit `_status: "published"`.
 
+## The rule, in one sentence
+
+Mirror what Payload shows the editor. The **source** is the current version of the source
+locale — the newer draft when one exists, else the published row — and only that locale's
+own content, never a fallback. The **translation** is written to the draft layer, so
+switching locale in the admin shows it at once. **Publishing** is a separate step that the
+flag alone gates.
+
 ## The shape
 
 **Translation always writes to the draft layer.** No layer choice, no second
@@ -149,10 +157,11 @@ criterion 9 promises that shape is unchanged.
   refuses to re-translate the same field. Independent of this rework — filed as
   #118, which also records why the obvious fix (calling `isRecordStale` from the
   strategy) destroys corrections.
-- **Source is read from the published row** with fallbacks on
-  (`fetchSourceDocument` passes neither `draft` nor `fallbackLocale`), so editing
-  a source as a draft and translating silently uses the published source.
-  Independent; needs its own decision.
+- **The source read is now settled** (2026-09-02): it takes the current version of the
+  source locale and only that locale's own content — `draft: true, fallbackLocale: false`.
+  Measured: with `fallback` on, translating *from* an empty locale translated the default
+  locale's text and fingerprinted it as the source. See
+  [2026-09-02-translation-chain-coverage.task.md](./2026-09-02-translation-chain-coverage.task.md).
 - **Still open, unchanged:** access control on translated writes (#113), the
   concurrent multi-locale publish race (#114), draft-only block deletion (#115).
 

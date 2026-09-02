@@ -10,6 +10,7 @@ import type {
 import { FieldTranslationInputSchema, MAX_FIELD_VALUE_BYTES } from "./model";
 import type { FieldTranslationConfig } from "./model";
 import { resolveFieldSubtree } from "./resolveFieldSubtree";
+import { fetchSourceDocument } from "../../shared/payload/sourceDocument";
 
 const byteLength = (value: unknown): number =>
   new TextEncoder().encode(JSON.stringify(value) ?? "").length;
@@ -53,16 +54,14 @@ export class TranslateFieldHandler {
         `Collection "${collection_slug}" is not available for translation`
       );
 
-    // Read the source value from the saved document in `source_lng` (fallbackLocale: false so an
-    // empty source reads as empty → noop, not a fallback). The doc also lets the resolver
-    // disambiguate `blocks` — their `blockType` lives in the data.
-    const sourceDoc = await req.payload.findByID({
-      collection: collection_slug as CollectionSlug,
-      id: doc_id, // JobIdSchema normalizes to a string; Payload coerces per the collection's id type
-      locale: source_lng,
-      fallbackLocale: false,
-      depth: 0,
-    });
+    // The whole document, not just the field: the resolver needs it to disambiguate `blocks`, whose
+    // `blockType` lives in the data.
+    const sourceDoc = await fetchSourceDocument(
+      req.payload,
+      collection_slug as CollectionSlug,
+      doc_id, // JobIdSchema normalizes to a string; Payload coerces per the collection's id type
+      source_lng
+    );
     const sourceValue = getByPath(sourceDoc as Record<string, unknown>, field_path);
 
     // Guard the *translated* payload (held synchronously through the provider call), not the

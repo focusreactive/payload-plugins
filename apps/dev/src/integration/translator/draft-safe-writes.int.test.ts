@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { bootTestPayload } from "./bootTestPayload";
 import { callEndpoint } from "./callEndpoint";
+import { plainCollection } from "./testCollections";
 
 const rev = (s: string) => [...s].reverse().join("");
 const SOURCE = "Draft safety";
@@ -35,7 +36,7 @@ beforeAll(async () => {
   const collections: CollectionConfig[] = [
     { slug: "users", auth: true, fields: [] },
     { slug: "docs", versions: { drafts: true }, fields: docsFields },
-    { slug: "plain", fields: localizedTitle },
+    plainCollection,
     { slug: "auto", versions: { drafts: { autosave: true } }, fields: localizedTitle },
   ];
   ({ payload, cleanup } = await bootTestPayload({ collections }));
