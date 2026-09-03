@@ -2,7 +2,6 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { sqliteAdapter } from "@payloadcms/db-sqlite";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import {
   createTranslationProvider,
@@ -16,6 +15,7 @@ import { buildConfig } from "payload";
 import type { CollectionConfig, Payload } from "payload";
 import { getPayload } from "payload";
 
+import { createTestDatabase } from "../../lib/database/resolveAdapter";
 import { reverseComplete } from "../../lib/translator/fakeComplete";
 import { buildTestCollections } from "./testCollections";
 
@@ -38,13 +38,14 @@ export type TestPayload = {
 };
 
 /**
- * Boot a real Payload for integration tests — translator-scoped (one caller today; the sqlite-headless
- * boot mechanics are structured to lift into a shared helper if a second plugin ever needs them).
+ * Boot a real Payload for integration tests — translator-scoped (one caller today; the headless boot
+ * mechanics are structured to lift into a shared helper if a second plugin ever needs them).
  *
  * Design decisions that make the boot deterministic and headless (the load-bearing part):
- * - **Fresh unique sqlite file** under the OS temp dir per boot, so schema `push` is a clean CREATE with
- *   no data-loss branch — Payload never drops to the interactive "accept data loss?" prompt that would
- *   hang an unattended/headless run. `cleanup()` removes the temp dir even on failure.
+ * - **Fresh namespace per boot** — a temp SQLite file, a Postgres schema or a Mongo database keyed by
+ *   `runId` (see `resolveTestDbAdapter`), so schema `push` is a clean CREATE with no data-loss branch
+ *   — Payload never drops to the interactive "accept data loss?" prompt that would hang an
+ *   unattended/headless run. `cleanup()` drops the namespace and removes the temp dir even on failure.
  * - **Sync runner:** a translation runs INLINE inside the triggering `afterChange`, so it is complete
  *   when the awaited `payload.update`/`create` resolves — no job autorun, no polling, no async race
  *   in the specs.
@@ -65,7 +66,7 @@ export async function bootTestPayload(opts?: {
   fallback?: boolean;
 }): Promise<TestPayload> {
   const dir = mkdtempSync(join(tmpdir(), "translator-int-"));
-  const dbPath = join(dir, "test.db");
+  const { db, drop } = createTestDatabase(join(dir, "test.db"));
 
   const collections = opts?.collections ?? buildTestCollections();
   const autoTranslate = opts?.autoTranslate;
@@ -87,10 +88,12 @@ export async function bootTestPayload(opts?: {
 
   const config = await buildConfig({
     secret: "integration-test-secret",
-    db: sqliteAdapter({ client: { url: `file:${dbPath}` } }),
+    db,
     editor: lexicalEditor(),
     // Quiet the boot: no telemetry, no admin bundle needed for local-API tests.
     telemetry: false,
+    // A Mongo boot regenerates the committed `src/payload-types.ts` with string ids, dirtying the tree.
+    typescript: { autoGenerate: false },
     localization: {
       defaultLocale: "en",
       fallback: opts?.fallback ?? false,
@@ -115,6 +118,16 @@ export async function bootTestPayload(opts?: {
   const payload = await getPayload({ config });
 
   const cleanup = async () => {
+    // Before `payload.db.destroy()` below: dropping the namespace needs the connection destroy closes.
+    try {
+      await drop(payload);
+    } catch (error) {
+      // Loud on purpose. A silent failure here leaks a schema or database per boot, and with one
+      // boot per spec file that is invisible until the server is full of them.
+      console.warn(
+        `[bootTestPayload] could not drop the test namespace: ${(error as Error).message}`
+      );
+    }
     try {
       await payload.db.destroy?.();
     } catch {
