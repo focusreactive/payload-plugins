@@ -618,6 +618,40 @@ Payload lets a wrapper field (group, array, blocks, tabs) be `localized`, which 
 
 See the `deleteJobOnComplete: false` note under [Runners](#createpayloadjobsrunneroptions-recommended).
 
+Keeping them means they accumulate: nothing in the plugin removes a completed translation job, and the
+status panels read a collection's jobs on every open. How long that history is worth keeping is your
+call, not the plugin's, so pruning is left to you — the same way `deleteJobOnComplete` is.
+
+_Applies only to `createPayloadJobsRunner`._ `createSyncRunner` translates inline and writes no jobs at
+all, so there is nothing to prune.
+
+```ts
+// Run from your own cron / scheduled task.
+// Must match the `taskName` you passed to createPayloadJobsRunner — "translate_document" by default.
+const TRANSLATOR_TASK = "translate_document";
+
+const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+await payload.delete({
+  collection: "payload-jobs",
+  where: {
+    and: [
+      { taskSlug: { equals: TRANSLATOR_TASK } },
+      { completedAt: { exists: true } },
+      { completedAt: { less_than: cutoff } },
+    ],
+  },
+});
+```
+
+Three things the clauses buy you, in order: only this plugin's jobs, only finished ones — so nothing
+queued or in flight is touched — and only those older than your cutoff, so a run someone may still want
+to look at survives. Keep a cutoff of at least a day for that last reason; deleting everything
+completed would erase a translation that finished minutes ago.
+
+All three filter on real columns rather than paths inside the job's JSON input, so this behaves the same
+on SQLite, Postgres and MongoDB.
+
 ## TypeScript
 
 The package ships its types. Besides the factories, the following are exported for typing your own code:

@@ -42,8 +42,9 @@ contract and has no life without it. Both runners implement it; `withQueuedNotif
 **New surface:** `TaskFilter`. Callers: `PayloadJobsTaskRunner.enqueue` and — through the union —
 every existing caller of `findByCollection`. It is a type, not an abstraction over behaviour.
 
-**`@since`:** `TaskFilter` carries `@since 0.12.0` — 0.11.1 plus the minor this ships as, per
-DEPRECATIONS.md's policy that deprecations ship as `feat`. It is not re-exported from `src/index.ts`,
+**`@since`:** `TaskFilter` carries `@since 0.11.2`. The user's call: this ships as a patch, so the
+three commits stay `fix` / `docs` / `refactor` rather than being retyped to `feat` for the sake of the
+new export or the new deprecation entry. It is not re-exported from `src/index.ts`,
 but `TaskRunnerProvider.create(): TaskRunner` is, so a third-party runner must satisfy this type.
 
 **Written contract owed:** yes — which fields reach the database and which are applied in memory, and
