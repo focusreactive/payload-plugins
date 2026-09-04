@@ -60,6 +60,8 @@ export type TestPayload = {
  *   publish; the enqueue route still works.
  * @param opts.collections - replaces the shared fixture set entirely (not merged). The set must
  *   still contain a `docs` collection when `autoTranslate` is passed.
+ * @param opts.failFor - target locales the fake provider should throw for, so a spec can exercise a
+ *   partial failure. Every other locale translates normally.
  * @param opts.runner - defaults to the sync runner. `createPayloadJobsRunner({ autoRun: false })`
  *   leaves queued jobs unprocessed in `payload-jobs`, so a spec can read the rows.
  * @param opts.fallback - localization fallback, off by default: an unwritten locale reads as
@@ -69,6 +71,7 @@ export async function bootTestPayload(opts?: {
   autoTranslate?: { targets: string[]; strategy?: "overwrite" | "skip_existing" };
   collections?: CollectionConfig[];
   fallback?: boolean;
+  failFor?: string[];
   runner?: TaskRunnerProvider;
 }): Promise<TestPayload> {
   const dir = mkdtempSync(join(tmpdir(), "translator-int-"));
@@ -84,10 +87,12 @@ export async function bootTestPayload(opts?: {
     : collections;
 
   const baseProvider = createTranslationProvider({ complete: reverseComplete });
+  const failFor = new Set(opts?.failFor);
   let translateCalls = 0;
   const countingProvider: TranslationProvider = {
     translate: (input, sourceLng, targetLng) => {
       translateCalls += 1;
+      if (failFor.has(targetLng)) throw new Error(`provider unavailable for ${targetLng}`);
       return baseProvider.translate(input, sourceLng, targetLng);
     },
   };
@@ -110,6 +115,9 @@ export async function bootTestPayload(opts?: {
       ],
     },
     collections,
+    // Matches the dev app: a host that wants translation history keeps completed jobs. Payload
+    // deletes them by default, which would leave the status panels with nothing to read.
+    jobs: { deleteJobOnComplete: false },
     plugins: [
       translatorPlugin({
         collections: managed,

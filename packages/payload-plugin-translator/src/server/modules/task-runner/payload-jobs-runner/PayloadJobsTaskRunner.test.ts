@@ -35,6 +35,7 @@ describe("PayloadJobsTaskRunner", () => {
     };
     config = {
       taskName: "translate_document",
+      workflowName: "translate_document_locales",
       queueName: "translations",
       jobsCollection: "payload-jobs",
       autoRun: {
@@ -75,22 +76,31 @@ describe("PayloadJobsTaskRunner", () => {
 
       const whereArg = mockPayload.find.mock.calls[0][0].where;
       expect(whereArg).toEqual({
-        and: [{ taskSlug: { equals: "translate_document" } }, { completedAt: { exists: false } }],
+        and: [
+          {
+            or: [
+              { workflowSlug: { equals: "translate_document_locales" } },
+              { taskSlug: { equals: "translate_document" } },
+            ],
+          },
+          { completedAt: { exists: false } },
+        ],
       });
     });
 
-    it("queues tasks with correct input", async () => {
-      const input = createInput();
-      await runner.enqueue([input]);
+    it("queues one workflow per document, carrying its locales", async () => {
+      await runner.enqueue([createInput({ targetLng: "de" }), createInput({ targetLng: "fr" })]);
 
+      expect(mockPayload.jobs.queue).toHaveBeenCalledTimes(1);
       expect(mockPayload.jobs.queue).toHaveBeenCalledWith({
-        task: "translate_document",
+        workflow: "translate_document_locales",
         queue: "translations",
+        waitUntil: undefined,
         input: {
           collection_slug: "posts",
           collection_id: "doc-123",
           source_lng: "en",
-          target_lng: "de",
+          target_lngs: ["de", "fr"],
           strategy: "overwrite",
           publish_on_translation: false,
         },
@@ -113,12 +123,12 @@ describe("PayloadJobsTaskRunner", () => {
       expect(arg.waitUntil).toBeUndefined();
     });
 
-    it("queues multiple tasks", async () => {
-      const inputs = [
-        createInput({ collectionId: "doc-1" }),
-        createInput({ collectionId: "doc-2" }),
-      ];
-      await runner.enqueue(inputs);
+    it("queues one workflow per document, not one per task", async () => {
+      await runner.enqueue([
+        createInput({ collectionId: "doc-1", targetLng: "de" }),
+        createInput({ collectionId: "doc-1", targetLng: "fr" }),
+        createInput({ collectionId: "doc-2", targetLng: "de" }),
+      ]);
 
       expect(mockPayload.jobs.queue).toHaveBeenCalledTimes(2);
     });
@@ -162,69 +172,36 @@ describe("PayloadJobsTaskRunner", () => {
       expect(mockPayload.jobs.queue).toHaveBeenCalledTimes(1);
     });
 
-    it("supersedes only the same-locale job when several locales have jobs", async () => {
-      const deJob = createJob({
-        id: "de-job",
-        input: {
-          collection: { relationTo: "posts" as CollectionSlug, value: "doc-123" },
-          source_lng: "en",
-          target_lng: "de",
-          strategy: "overwrite",
-        },
+    it("supersedes a job that has not started, and leaves a running one alone", async () => {
+      // Narrowed deliberately: a running workflow holds the locales it has already translated, and
+      // cancelling it would discard them — the loss this whole change exists to stop. See issue #114.
+      const pending = createJob({
+        id: "pending-job",
+        input: { collection_slug: "posts", collection_id: "doc-123", source_lng: "en" },
       });
-      const frJob = createJob({
-        id: "fr-job",
-        input: {
-          collection: { relationTo: "posts" as CollectionSlug, value: "doc-123" },
-          source_lng: "en",
-          target_lng: "fr",
-          strategy: "overwrite",
-        },
+      const running = createJob({
+        id: "running-job",
+        processing: true,
+        input: { collection_slug: "posts", collection_id: "doc-123", source_lng: "en" },
       });
-      mockPayload.find.mockResolvedValueOnce({ docs: [deJob, frJob] });
+      mockPayload.find.mockResolvedValueOnce({ docs: [pending, running] });
 
-      await runner.enqueue([createInput({ targetLng: "fr" })]);
+      await runner.enqueue([createInput()]);
 
       expect(mockPayload.jobs.cancel).toHaveBeenCalledWith({
-        where: { id: { in: ["fr-job"] } },
+        where: { id: { in: ["pending-job"] } },
         queue: "translations",
       });
-      expect(mockPayload.delete).toHaveBeenCalledWith({
-        collection: "payload-jobs",
-        where: { id: { in: ["fr-job"] } },
-      });
     });
 
-    it("does not cancel when no existing jobs", async () => {
-      mockPayload.find.mockResolvedValue({ docs: [] });
+    it("looks for existing jobs once per document", async () => {
+      await runner.enqueue([
+        createInput({ collectionSlug: "posts" as CollectionSlug, collectionId: "post-1" }),
+        createInput({ collectionSlug: "posts" as CollectionSlug, collectionId: "post-2" }),
+        createInput({ collectionSlug: "pages" as CollectionSlug, collectionId: "page-1" }),
+      ]);
 
-      const input = createInput();
-      await runner.enqueue([input]);
-
-      expect(mockPayload.jobs.cancel).not.toHaveBeenCalled();
-      expect(mockPayload.delete).not.toHaveBeenCalled();
-    });
-
-    it("groups tasks by collection", async () => {
-      const inputs = [
-        createInput({
-          collectionSlug: "posts" as CollectionSlug,
-          collectionId: "post-1",
-        }),
-        createInput({
-          collectionSlug: "posts" as CollectionSlug,
-          collectionId: "post-2",
-        }),
-        createInput({
-          collectionSlug: "pages" as CollectionSlug,
-          collectionId: "page-1",
-        }),
-      ];
-
-      await runner.enqueue(inputs);
-
-      // Should check for existing jobs per collection
-      expect(mockPayload.find).toHaveBeenCalledTimes(2);
+      expect(mockPayload.find).toHaveBeenCalledTimes(3);
     });
 
     it("stores the reference as flat text, coercing the id to a string", async () => {
@@ -387,11 +364,19 @@ describe("PayloadJobsTaskRunner", () => {
       });
       // a pending job (processing:false) needs no lock reset
       expect(mockPayload.update).not.toHaveBeenCalled();
-      // findJobsInternal must narrow by taskSlug AND the given id
+      // findJobsInternal must narrow by the job's own slugs AND the given id
       expect(mockPayload.find).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
-            and: [{ taskSlug: { equals: "translate_document" } }, { id: { equals: "job-123" } }],
+            and: [
+              {
+                or: [
+                  { workflowSlug: { equals: "translate_document_locales" } },
+                  { taskSlug: { equals: "translate_document" } },
+                ],
+              },
+              { id: { equals: "job-123" } },
+            ],
           },
         })
       );
@@ -524,7 +509,7 @@ describe("PayloadJobsTaskRunner", () => {
       });
     });
 
-    it("narrows the SQL where clause by taskSlug only", async () => {
+    it("narrows the SQL where clause by the job's own slugs only", async () => {
       // Slug and id are matched in memory (see PayloadJobsTaskRunner.findByCollection
       // for the full reasoning), spanning both the new flat-text shape and the
       // legacy relationship shape. The WHERE sent to Payload must narrow only by
@@ -534,7 +519,14 @@ describe("PayloadJobsTaskRunner", () => {
 
       const whereArg = mockPayload.find.mock.calls[0][0].where;
       expect(whereArg).toEqual({
-        and: [{ taskSlug: { equals: "translate_document" } }],
+        and: [
+          {
+            or: [
+              { workflowSlug: { equals: "translate_document_locales" } },
+              { taskSlug: { equals: "translate_document" } },
+            ],
+          },
+        ],
       });
       expect(JSON.stringify(whereArg)).not.toContain("collection_id");
       expect(JSON.stringify(whereArg)).not.toContain("collection.value");
@@ -545,7 +537,15 @@ describe("PayloadJobsTaskRunner", () => {
 
       const whereArg = mockPayload.find.mock.calls[0][0].where;
       expect(whereArg).toEqual({
-        and: [{ taskSlug: { equals: "translate_document" } }, { completedAt: { exists: false } }],
+        and: [
+          {
+            or: [
+              { workflowSlug: { equals: "translate_document_locales" } },
+              { taskSlug: { equals: "translate_document" } },
+            ],
+          },
+          { completedAt: { exists: false } },
+        ],
       });
       expect(JSON.stringify(whereArg)).not.toContain("collection_id");
     });

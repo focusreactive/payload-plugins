@@ -26,6 +26,11 @@ export type PayloadJobsRunnerOptions = {
    */
   taskName?: string;
   /**
+   * Name of the Payload workflow that walks a document's target locales.
+   * @default 'translate_document_locales'
+   */
+  workflowName?: string;
+  /**
    * Name of the job queue.
    * @default 'translations'
    */
@@ -72,6 +77,7 @@ export type PayloadJobsRunnerOptions = {
  */
 export type PayloadJobsRunnerConfig = {
   taskName: string;
+  workflowName: string;
   queueName: string;
   jobsCollection: CollectionSlug;
   autoRun: false | Required<AutoRunConfig>;
@@ -83,6 +89,7 @@ export type PayloadJobsRunnerConfig = {
  * Raw Payload job structure
  */
 export type PayloadJob = {
+  log?: JobLogEntry[];
   id: string;
   completedAt?: string | null;
   createdAt: string;
@@ -104,7 +111,15 @@ export type PayloadJob = {
     };
     source_lng?: string;
     target_lng?: string;
+    target_lngs?: string[];
     strategy?: string;
     publish_on_translation?: boolean;
   };
+};
+
+/** One entry Payload writes to a job's `log` as each task inside a workflow settles. */
+export type JobLogEntry = {
+  state: "succeeded" | "failed";
+  completedAt?: string | null;
+  input?: { target_lng?: string };
 };

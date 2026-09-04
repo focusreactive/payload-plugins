@@ -2,21 +2,11 @@ import type { Payload, Where, CollectionSlug } from "payload";
 
 import type { TaskFilter, TaskRunner } from "../TaskRunner.interface";
 import { toTaskFilter } from "../toTaskFilter";
-import type { Task, TaskInput, RunResult, ID } from "../types";
+import type { Task, TaskInput, RunResult } from "../types";
 import type { PayloadJobsRunnerConfig, PayloadJob } from "./types";
-import { normalizeJob } from "./normalizeJob";
+import { normalizeJobLocales } from "./normalizeJob";
 
-// A translation job's supersession identity: same document AND same target locale. IDs are
-// String()-normalized to match the stored (string) form, so a number id compares equal to its
-// persisted job.
-const documentLocaleKey = (collectionId: ID, targetLng: string): string =>
-  `${String(collectionId)}:${targetLng}`;
-
-/**
- * TaskRunner implementation using Payload Jobs.
- *
- * Handles queuing, cancellation, status tracking, and execution of translation tasks.
- */
+/** {@link TaskRunner} backed by Payload's job queue (`payload-jobs`). */
 export class PayloadJobsTaskRunner implements TaskRunner {
   constructor(
     private readonly payload: Payload,
@@ -24,56 +14,50 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   ) {}
 
   async enqueue(tasks: TaskInput[]): Promise<void> {
-    const byCollection = this.groupByCollection(tasks);
+    // One workflow per document, carrying its locales, rather than one job per locale. Payload runs a
+    // batch of jobs through `Promise.all`, and every write it makes is a whole-document version
+    // snapshot — so two locales translated in parallel build their snapshots from the same base and
+    // the second silently drops the first's work. Measured at one translation of two landing, on all
+    // three adapters. See issue #114.
+    const byDocument = new Map<string, TaskInput[]>();
+    for (const task of tasks) {
+      const key = `${task.collectionSlug}:${task.collectionId}`;
+      byDocument.set(key, [...(byDocument.get(key) ?? []), task]);
+    }
 
-    for (const [collectionSlug, items] of byCollection) {
-      const documentIds = items.map((t) => t.collectionId);
-      // Finished jobs must stay out of this set: superseding deletes (`cancelAndDeleteJobs` reaches
-      // `payload.delete`), so a completed job for the same (document, locale) would be erased along
-      // with the pending one.
-      const existing = await this.findByCollection(collectionSlug, {
-        documentIds,
+    for (const group of byDocument.values()) {
+      const [first] = group;
+      const existing = await this.findByCollection(first.collectionSlug, {
+        documentIds: [first.collectionId],
         excludeCompleted: true,
       });
-      // Supersede only jobs for the SAME (document, target locale) being re-enqueued — never a
-      // concurrent job for a *different* locale of the same document. Cancelling per-document would
-      // kill an in-flight translation of another locale (the concurrent re-translate bug).
-      const supersededKeys = new Set(
-        items.map((t) => documentLocaleKey(t.collectionId, t.targetLng))
-      );
-      const toCancel = existing.filter((t) =>
-        supersededKeys.has(documentLocaleKey(t.input.collectionId, t.input.targetLng))
+      // Only work that has not begun. A workflow already running keeps the locales it has finished
+      // and completes; the new request queues behind it. Cancelling it would discard translations
+      // that already landed — the very loss this change exists to stop.
+      const toCancel = existing.filter(
+        (t) => t.input.collectionId === String(first.collectionId) && t.status === "pending"
       );
       if (toCancel.length > 0) {
         await this.cancelAndDeleteJobs(toCancel.map((t) => t.id));
       }
-    }
 
-    await Promise.all(
-      tasks.map((task) =>
-        this.payload.jobs.queue({
-          task: this.config.taskName,
-          queue: this.config.queueName,
-          // Debounce: when set, Payload holds the job until this instant. A superseding enqueue for
-          // the same (document, targetLng) cancels the pending delayed job first (see enqueue above),
-          // so rapid source edits coalesce to the final one. Undefined for the manual path.
-          waitUntil: task.waitUntil,
-          input: {
-            // Flat text reference (ID-agnostic). Stored as a string — no
-            // relationship type validation against the collection's ID type,
-            // which is what previously left number-id jobs stuck in processing.
-            // This is the single write boundary, so `String(...)` here is the
-            // one place IDs are normalized for storage.
-            collection_slug: task.collectionSlug,
-            collection_id: String(task.collectionId),
-            source_lng: task.sourceLng,
-            target_lng: task.targetLng,
-            strategy: task.strategy,
-            publish_on_translation: task.publishOnTranslation,
-          },
-        })
-      )
-    );
+      await this.payload.jobs.queue({
+        workflow: this.config.workflowName as never,
+        queue: this.config.queueName,
+        // Debounce: Payload holds the job until this instant, so rapid source edits coalesce.
+        waitUntil: first.waitUntil,
+        input: {
+          collection_slug: first.collectionSlug,
+          // The one place an id is normalized for storage; the stored shape is text so a job stays
+          // ID-agnostic. See docs/DEPRECATIONS.md#jobs-input-collection-field
+          collection_id: String(first.collectionId),
+          source_lng: first.sourceLng,
+          target_lngs: group.map((t) => t.targetLng),
+          strategy: first.strategy,
+          publish_on_translation: first.publishOnTranslation,
+        } as never,
+      });
+    }
   }
 
   async cancel(taskIds: string[]): Promise<void> {
@@ -202,7 +186,17 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     where?: Where,
     params?: { limit?: number; pagination?: boolean }
   ): Promise<Task[]> {
-    const and: Where[] = [{ taskSlug: { equals: this.config.taskName } }];
+    // Both shapes: a document's work is a workflow now, but jobs queued before that change — and
+    // still sitting in the table — carry the per-locale task slug. Same expand/contract as
+    // `readCollectionRef` does for the collection reference.
+    const and: Where[] = [
+      {
+        or: [
+          { workflowSlug: { equals: this.config.workflowName } },
+          { taskSlug: { equals: this.config.taskName } },
+        ],
+      },
+    ];
     if (where) and.push(where);
 
     const response = await this.payload.find({
@@ -212,6 +206,6 @@ export class PayloadJobsTaskRunner implements TaskRunner {
       where: { and },
     });
 
-    return (response.docs as PayloadJob[]).map(normalizeJob);
+    return (response.docs as PayloadJob[]).flatMap(normalizeJobLocales);
   }
 }

@@ -16,6 +16,7 @@ const DEFAULT_STALE_JOB_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
 const defaultValues = {
   taskName: "translate_document",
+  workflowName: "translate_document_locales",
   queueName: "translations",
   jobsCollection: "payload-jobs",
   autoRun: defaultAutoRun,
@@ -54,6 +55,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
 
     this.config = {
       taskName: options?.taskName ?? defaultValues.taskName,
+      workflowName: options?.workflowName ?? defaultValues.workflowName,
       queueName: options?.queueName ?? defaultValues.queueName,
       jobsCollection: options?.jobsCollection ?? defaultValues.jobsCollection,
       autoRun,
@@ -67,7 +69,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
   }
 
   configure(context: TaskRunnerContext): (config: Config) => Config {
-    const { taskName, queueName, retries, autoRun } = this.config;
+    const { taskName, workflowName, queueName, retries, autoRun } = this.config;
     const { handler, collections } = context;
 
     return (config) => {
@@ -128,6 +130,12 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
         },
       ];
 
+      // Same fields as the task, except the single target locale becomes the list the workflow walks.
+      const workflowInputSchema: Field[] = [
+        ...inputSchema.filter((f) => "name" in f && f.name !== "target_lng"),
+        { type: "json", name: "target_lngs", required: true },
+      ];
+
       const task = {
         slug: taskName,
         inputSchema,
@@ -158,9 +166,32 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
         },
       };
 
+      // One workflow per document, awaiting one task per locale. The tasks run in sequence, which is
+      // the whole point: every write Payload makes is a whole-document version snapshot, so two
+      // locales translated in parallel build their snapshots from the same base and the second one
+      // silently drops the first's work. See issue #114.
+      const workflow = {
+        slug: workflowName,
+        inputSchema: workflowInputSchema,
+        retries,
+        handler: async (args: {
+          job: { input: { target_lngs?: string[] } & Record<string, unknown> };
+          tasks: Record<string, (id: string, args: { input: unknown }) => Promise<unknown>>;
+        }) => {
+          const { target_lngs: targets = [], ...shared } = args.job.input;
+          for (const target of targets) {
+            // The locale is the task id, so Payload's own restoration skips a locale already logged
+            // as succeeded when a failed workflow is retried.
+            await args.tasks[taskName](target, { input: { ...shared, target_lng: target } });
+          }
+        },
+      };
+
       if (!config.jobs) config.jobs = {};
       if (!config.jobs.tasks) config.jobs.tasks = [];
       config.jobs.tasks.push(task);
+      if (!config.jobs.workflows) config.jobs.workflows = [];
+      config.jobs.workflows.push(workflow as never);
 
       // Skip autoRun configuration when disabled (e.g., for Vercel/serverless deployments)
       if (autoRun) {
