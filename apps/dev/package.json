@@ -25,6 +25,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run -c vitest.integration.config.ts",
+    "test:integration:sqlite": "cross-env DB_ADAPTER=sqlite bun run test:integration",
+    "test:integration:postgres": "cross-env DB_ADAPTER=postgres bun run test:integration",
+    "test:integration:mongo": "cross-env DB_ADAPTER=mongo bun run test:integration",
+    "test:integration:all": "bun run test:integration:sqlite; bun run test:integration:postgres; bun run test:integration:mongo",
     "check-types": "tsgo --noEmit -p tsconfig.check.json"
   },
   "dependencies": {
