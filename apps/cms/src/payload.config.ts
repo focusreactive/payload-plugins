@@ -16,7 +16,9 @@ import { Header } from "@/collections/Header/config";
 import { Media } from "@/collections/Media";
 import { Page } from "@/collections/Page/Page";
 import { Posts } from "@/collections/Posts";
+import { Talk } from "@/collections/Talk";
 import { Testimonials } from "@/collections/Testimonials";
+import { Topic } from "@/collections/Topic";
 import { Users } from "@/collections/Users";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { createDatabaseAdapter } from "@/lib/database";
@@ -70,6 +72,8 @@ export default buildConfig({
     Authors,
     Posts,
     Testimonials,
+    Talk,
+    Topic,
     Header,
     Footer,
     GlobalBlock,

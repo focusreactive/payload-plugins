@@ -10,8 +10,11 @@ import { HeroBlockComponent } from "./Hero/Component";
 import { LogosBlockComponent } from "./Logos/Component";
 import { NewsletterBlockComponent } from "./Newsletter/Component";
 import { RawHtmlBlockComponent } from "./RawHtml/Component";
+import { ShopifyProductBlockComponent } from "./ShopifyProduct/Component";
 import { StatsBlockComponent } from "./Stats/Component";
+import { TalkGridBlockComponent } from "./TalkGrid/Component";
 import { TestimonialsListBlockComponent } from "./TestimonialsList/Component";
+import { TopicChipsBlockComponent } from "./TopicChips/Component";
 
 export const contentBlockComponents = {
   cardsGrid: CardsGridBlockComponent,
@@ -26,6 +29,9 @@ export const contentBlockComponents = {
   logos: LogosBlockComponent,
   rawHtml: RawHtmlBlockComponent,
   testimonialsList: TestimonialsListBlockComponent,
+  shopifyProduct: ShopifyProductBlockComponent,
+  talkGrid: TalkGridBlockComponent,
+  topicChips: TopicChipsBlockComponent,
 };
 
 export type ContentBlockType = keyof typeof contentBlockComponents;
