@@ -103,6 +103,32 @@ settles the question, and #108 holds the detail. A dangling reference to it in `
 repointed. Verified and kept: `excludeCompleted` really is wider than the `pending` status, because a
 job that exhausts its retries keeps `completedAt` null.
 
+**2026-09-04 — whole-file comment audit of `PayloadJobsTaskRunner.ts`.** 88 comment lines over 147 of
+code — 6.0 per ten. Deleted 6, rewrote 8, rewrote code twice, kept 1, added 1; the file is now at 49.
+The diagnosis was not unreadable code but design-doc prose migrated into it: three of the four largest
+blocks duplicated something with a canonical home (the deprecation ledger, issue #108, this file).
+
+Two code changes came out of it. `cancelInternal` is renamed `cancelAndDeleteJobs` — it calls
+`payload.jobs.cancel` **and** `payload.delete`, and the old name is what forced a comment defending
+`excludeCompleted`. And the `jobs.cancel` + `delete` pair now says why both and why in that order:
+`jobs.cancel` only writes `{ error: { cancelled: true }, hasError: true, processing: false }`, which is
+the abort signal to a running handler, so a reader who sees the delete would otherwise conclude the
+cancel is dead code.
+
+**A second stale claim, found in the same file on the same day.** The eleven-line comment justifying
+`jobs.run({ where })` over `payload.jobs.runByID({ id })` said the id path "writes `processing: true`
+but returns no rows … leaving the job stuck forever". Checked against the installed payload 3.84.1:
+`@payloadcms/drizzle/dist/updateJobs.js` takes the optimized upsert branch for `{ processing: true }`
+and returns `[result]`, and the non-optimized branch findMany's by id and returns rows — neither
+returns zero. **The deviation is still correct, for a different reason:** in
+`payload/dist/queues/operations/runJobs/index.js` the guard block (`processing: false`, `hasError` not
+true, `waitUntil` due) is built only for the non-id branch, so `runByID` would re-run a job that had
+exhausted its retries. The comment now says that instead.
+
+Worth recording as a pattern rather than two incidents: both stale claims described Payload's
+internals, and both aged silently within a single minor version. A comment that transcribes another
+package's implementation is a maintenance liability even when it is right on the day it is written.
+
 **2026-09-04 — reuse, simplification, altitude.** Nothing re-implemented; no existing normalizer fits.
 Five findings taken. `toTaskFilter` moved out of `TaskRunner.interface.ts` — five of the package's six
 `*.interface.ts` files are types-only, and it was the one carrying runtime code — and is now exported

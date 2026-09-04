@@ -28,7 +28,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
 
     for (const [collectionSlug, items] of byCollection) {
       const documentIds = items.map((t) => t.collectionId);
-      // Finished jobs must stay out of this set: superseding deletes (`cancelInternal` reaches
+      // Finished jobs must stay out of this set: superseding deletes (`cancelAndDeleteJobs` reaches
       // `payload.delete`), so a completed job for the same (document, locale) would be erased along
       // with the pending one.
       const existing = await this.findByCollection(collectionSlug, {
@@ -45,7 +45,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
         supersededKeys.has(documentLocaleKey(t.input.collectionId, t.input.targetLng))
       );
       if (toCancel.length > 0) {
-        await this.cancelInternal(toCancel.map((t) => t.id));
+        await this.cancelAndDeleteJobs(toCancel.map((t) => t.id));
       }
     }
 
@@ -78,7 +78,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
 
   async cancel(taskIds: string[]): Promise<void> {
     if (taskIds.length === 0) return;
-    await this.cancelInternal(taskIds);
+    await this.cancelAndDeleteJobs(taskIds);
   }
 
   async run(taskId: string): Promise<RunResult> {
@@ -92,26 +92,17 @@ export class PayloadJobsTaskRunner implements TaskRunner {
       return { success: false, error: "already_completed" };
     }
     if (task.status === "running") {
-      // A genuinely in-flight job is refused. A stale processing lock (left by
-      // a process killed mid-run) is reclaimable: clear it first so the queue
-      // picker below — which only selects `processing: false` — can re-run it.
+      // The picker below selects only `processing: false`, so a stale lock must be cleared first.
       if (!this.isStale(task.updatedAt)) {
         return { success: false, error: "already_running" };
       }
       await this.resetProcessing({ id: { equals: taskId } });
     }
 
-    // Execute synchronously via the queue + `where` picker so the job runs to
-    // completion within this request (nothing is abandoned after the HTTP
-    // response — reliable on serverless too).
-    //
-    // NOT `payload.jobs.runByID({ id })`: on the drizzle adapter the id-path
-    // (`db.updateJobs({ id })`) writes `processing: true` but returns no rows,
-    // so `runJobs` reports `noJobsRemaining` and the handler never runs —
-    // leaving the job stuck at `processing: true` forever. The `where`-based
-    // picker selects, runs, and finalizes the job correctly (verified against
-    // sqlite). The picker also enforces processing:false / no-error / no
-    // pending waitUntil, so a failed (max-retries) job is not re-run here.
+    // `where` picker, not `payload.jobs.runByID({ id })`: in `runJobs` the guard block
+    // (processing:false, hasError not true, waitUntil due) is built only for the non-id branch, so
+    // the id path would re-run a job that already exhausted its retries. Checked against payload
+    // 3.84.1.
     await this.payload.jobs.run({
       queue: this.config.queueName,
       where: { id: { equals: taskId } },
@@ -121,20 +112,11 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   }
 
   /**
-   * Reset stale processing locks so abandoned jobs become eligible for the
-   * autorun picker again. The picker requires processing:false, no error, and
-   * no pending waitUntil; a job abandoned mid-run (no error, no waitUntil)
-   * satisfies the rest, so clearing processing is sufficient for that case.
-   * A job that already exhausted retries (hasError:true) stays excluded from
-   * autorun and is only recoverable via a manual run().
-   *
-   * A job is stale when it is still `processing: true`, not yet completed, and
-   * its `updatedAt` is older than `staleJobTimeoutMs` — i.e. a process was
-   * killed mid-run (deploy/crash/timeout). Threshold-based, so a job genuinely
-   * in flight on another live instance (fresh `updatedAt`) is left alone.
-   * Filters on real `payload-jobs` columns only (no JSON-path traversal), so
-   * the in-memory filtering in `findByCollection` (issue #108) does not apply here.
-   * @returns the number of jobs reclaimed.
+   * Clear stale `processing` locks — still processing, not completed, `updatedAt` older than
+   * `staleJobTimeoutMs` — so abandoned jobs are eligible for the autorun picker again. A job that
+   * exhausted its retries carries `hasError: true` and stays excluded from autorun even after its
+   * lock is cleared; only a manual `run()` recovers it.
+   * @returns how many locks were cleared.
    */
   async reclaimStaleJobs(): Promise<number> {
     const cutoff = new Date(Date.now() - this.config.staleJobTimeoutMs).toISOString();
@@ -148,12 +130,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     });
   }
 
-  /**
-   * Clear the `processing` lock on every job matching `where`, returning how
-   * many were reset. Shared by the per-job reset in `run()` (a stale lock) and
-   * the bulk boot/recovery reset in `reclaimStaleJobs()`. `depth: 0` because
-   * only the count is needed — no relationships to populate.
-   */
+  /** Clears the `processing` lock on every job matching `where`. `depth: 0` — only the count is read. */
   private async resetProcessing(where: Where): Promise<number> {
     const result = await this.payload.update({
       collection: this.config.jobsCollection,
@@ -164,10 +141,6 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     return result.docs.length;
   }
 
-  /**
-   * A processing lock is stale once `updatedAt` is older than the configured
-   * timeout — the owning run is presumed dead.
-   */
   private isStale(updatedAt: string): boolean {
     const parsed = Date.parse(updatedAt);
     // Unknown/corrupt timestamp → treat as stale so the job can be recovered
@@ -179,17 +152,10 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   /**
    * Find translation jobs for a collection.
    *
-   * Only `taskSlug` and — when asked — `completedAt` reach the database; both are real columns. The
-   * collection slug and the document ids are matched in memory, because `readCollectionRef` reads a
-   * job's collection reference from the current flat-text fields OR from the relationship shape that
-   * predates the ID-agnostic migration (docs/DEPRECATIONS.md#jobs-input-collection-field) — a `where`
-   * on `input.collection_slug` sees only the first and would silently drop every job queued before
-   * that migration.
-   *
-   * `excludeCompleted` is what bounds the read for the callers that pass it: under
-   * `jobs.deleteJobOnComplete: false` completed jobs are never removed, so an unfiltered scan grows
-   * with the whole translation history. Narrowing by collection on top of it measured no better —
-   * see issue #108.
+   * Only `taskSlug` and `completedAt` reach the database; slug and document ids are matched in memory
+   * because a job's collection reference may sit in either the flat-text fields or the legacy
+   * relationship shape (`readCollectionRef`), so a `where` on `input.collection_slug` would silently
+   * drop every pre-migration job. `excludeCompleted` is what bounds the read — see issue #108.
    */
   async findByCollection(
     collectionSlug: CollectionSlug,
@@ -204,9 +170,6 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     return bySlug.filter((t) => wanted.has(t.input.collectionId));
   }
 
-  /**
-   * Group tasks by collection slug
-   */
   private groupByCollection(tasks: TaskInput[]): Map<CollectionSlug, TaskInput[]> {
     const map = new Map<CollectionSlug, TaskInput[]>();
     for (const task of tasks) {
@@ -217,12 +180,13 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     return map;
   }
 
-  /**
-   * Internal cancel implementation
-   */
-  private async cancelInternal(taskIds: string[]): Promise<void> {
+  private async cancelAndDeleteJobs(taskIds: string[]): Promise<void> {
     if (taskIds.length === 0) return;
 
+    // Both, in this order: `jobs.cancel` only writes `{ error: { cancelled: true }, hasError: true,
+    // processing: false }`, which is what signals a running handler to abort. The delete then removes
+    // the row — under `deleteJobOnComplete: false` a cancelled job would otherwise sit in the status
+    // feed forever.
     await this.payload.jobs.cancel({
       where: { id: { in: taskIds } },
       queue: this.config.queueName,
@@ -234,9 +198,6 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     });
   }
 
-  /**
-   * Internal method to find jobs with where clause
-   */
   private async findJobsInternal(
     where?: Where,
     params?: { limit?: number; pagination?: boolean }
