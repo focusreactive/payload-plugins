@@ -75,6 +75,8 @@ export interface Config {
     authors: Author;
     posts: Post;
     testimonials: Testimonial;
+    talk: Talk;
+    topic: Topic;
     header: Header;
     footer: Footer;
     globalBlock: GlobalBlock;
@@ -105,6 +107,8 @@ export interface Config {
     authors: AuthorsSelect<false> | AuthorsSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
+    talk: TalkSelect<false> | TalkSelect<true>;
+    topic: TopicSelect<false> | TopicSelect<true>;
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
     globalBlock: GlobalBlockSelect<false> | GlobalBlockSelect<true>;
@@ -364,6 +368,9 @@ export interface Page {
   blocks: (
     | HeroBlock
     | ContentBlock
+    | TalkGridBlock
+    | TopicChipsBlock
+    | ShopifyProductBlock
     | FaqBlock
     | TestimonialsListBlock
     | CardsGridBlock
@@ -820,6 +827,299 @@ export interface ContentBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'content';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TalkGridBlock".
+ */
+export interface TalkGridBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  source: 'recent' | 'topic' | 'kind' | 'selected';
+  topic?: (number | null) | Topic;
+  kind?:
+    | (
+        | 'featured-talk'
+        | 'short-talk'
+        | 'special-lesson'
+        | 'student-qa'
+        | 'study-group-discussion'
+        | 'article'
+        | 'blog'
+        | 'letter'
+        | 'insight-timer-talk'
+      )
+    | null;
+  talkItems?:
+    | {
+        talk: number | Talk;
+        id?: string | null;
+      }[]
+    | null;
+  limit?: number | null;
+  showKind?: boolean | null;
+  /**
+   * Shows a lock and the tier needed. Rows are listed at every tier either way - the gate is on the body, not the listing, so a gated talk stays indexable.
+   */
+  showTier?: boolean | null;
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'talkGrid';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "topic".
+ */
+export interface Topic {
+  id: number;
+  title: string;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  description?: string | null;
+  meta?: {
+    title?: string | null;
+    /**
+     * Image used when sharing this page on social media.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+    /**
+     * Allow search engines to index this page
+     */
+    robots?: ('index' | 'noindex') | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "talk".
+ */
+export interface Talk {
+  id: number;
+  title: string;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  kind:
+    | 'featured-talk'
+    | 'short-talk'
+    | 'special-lesson'
+    | 'student-qa'
+    | 'study-group-discussion'
+    | 'article'
+    | 'blog'
+    | 'letter'
+    | 'insight-timer-talk';
+  /**
+   * What a reader needs in order to read this item's body. Editorial metadata about the ITEM - never a record of who paid. Entitlement lives in Braintree and reaches the app through the identity layer; the CMS must not store it.
+   */
+  requiredTier: 'visitor' | 'basic' | 'premium' | 'all-access';
+  /**
+   * Shown to readers below the tier, and indexed. Their site already ships this - the anonymous view of a gated talk carries about 41% of the member text - so a teaser is a rewrite of something that exists, not a new feature.
+   */
+  teaser?: string | null;
+  body: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  publishedAt?: string | null;
+  /**
+   * Real length in seconds. Never read this from their JSON-LD, which says T1M15S on every talk on the site.
+   */
+  durationSeconds?: number | null;
+  /**
+   * Streams from the foundation's own S3 bucket. The objects are public-read once the decorative SigV2 query string is stripped, so no key and no client action is needed. Do not store a presigned URL - theirs expire the day they are generated.
+   */
+  audioUrl?: string | null;
+  topics?: (number | Topic)[] | null;
+  /**
+   * Advisory, not a gate. A first batch is worth eyeballing, but hand-reviewing 7,000 items is not a workflow a two-person office can run, and the client has never asked for one.
+   */
+  aiStatus?: ('awaiting-review' | 'approved') | null;
+  /**
+   * Two or three sentences. Rendered above the body and used as the meta description fallback.
+   */
+  aiSummary?: string | null;
+  aiTakeaways?:
+    | {
+        takeaway: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Phrase these as a reader would actually ask them, not as headings. This is what an answer engine lifts.
+   */
+  aiQuestions?:
+    | {
+        question: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * startSeconds is DERIVED by locating the quote in the transcript segments - never entered by hand and never produced by a model. A model asked for a plausible timecode returns a round number that is wrong by 16 to 400 seconds, and this field is rendered as a seek link into the client's own audio.
+   */
+  aiPullQuotes?:
+    | {
+        quote: string;
+        speakerName?: string | null;
+        startSeconds?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Full ASR text. Rendered behind the same tier as the body.
+   */
+  transcript?: string | null;
+  /**
+   * [{start, end, text}] from the ASR pass. This is what makes a pull-quote timestamp derivable, so it is stored even though nothing renders it directly. JSON rather than an array field: 113 segments on a 7-minute talk means roughly 8,000 rows per hour of audio, and an array field would make the admin document unusable.
+   */
+  transcriptSegments?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Where this item came from in their Magento, kept so any figure in the demo can be traced back.
+   */
+  sourceUrl?: string | null;
+  meta?: {
+    title?: string | null;
+    /**
+     * Image used when sharing this page on social media.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+    /**
+     * Allow search engines to index this page
+     */
+    robots?: ('index' | 'noindex') | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TopicChipsBlock".
+ */
+export interface TopicChipsBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  /**
+   * Leave empty to show the topics carrying the most talks.
+   */
+  topicItems?:
+    | {
+        topic: number | Topic;
+        id?: string | null;
+      }[]
+    | null;
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'topicChips';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ShopifyProductBlock".
+ */
+export interface ShopifyProductBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  /**
+   * The product's handle in Shopify - the last path segment of its storefront URL, e.g. my-first-product. Not the numeric id.
+   */
+  productHandle: string;
+  showPrice?: boolean | null;
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'shopifyProduct';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1358,6 +1658,9 @@ export interface GlobalBlock {
   block: (
     | HeroBlock
     | ContentBlock
+    | TalkGridBlock
+    | TopicChipsBlock
+    | ShopifyProductBlock
     | FaqBlock
     | TestimonialsListBlock
     | CardsGridBlock
@@ -1638,6 +1941,134 @@ export interface Preset {
         id?: string | null;
         blockName?: string | null;
         blockType: 'content';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        source: 'recent' | 'topic' | 'kind' | 'selected';
+        topic?: (number | null) | Topic;
+        kind?:
+          | (
+              | 'featured-talk'
+              | 'short-talk'
+              | 'special-lesson'
+              | 'student-qa'
+              | 'study-group-discussion'
+              | 'article'
+              | 'blog'
+              | 'letter'
+              | 'insight-timer-talk'
+            )
+          | null;
+        talkItems?:
+          | {
+              talk: number | Talk;
+              id?: string | null;
+            }[]
+          | null;
+        limit?: number | null;
+        showKind?: boolean | null;
+        /**
+         * Shows a lock and the tier needed. Rows are listed at every tier either way - the gate is on the body, not the listing, so a gated talk stays indexable.
+         */
+        showTier?: boolean | null;
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'talkGrid';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        /**
+         * Leave empty to show the topics carrying the most talks.
+         */
+        topicItems?:
+          | {
+              topic: number | Topic;
+              id?: string | null;
+            }[]
+          | null;
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'topicChips';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        /**
+         * The product's handle in Shopify - the last path segment of its storefront URL, e.g. my-first-product. Not the numeric id.
+         */
+        productHandle: string;
+        showPrice?: boolean | null;
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'shopifyProduct';
       }
     | {
         eyebrow?: string | null;
@@ -2511,6 +2942,14 @@ export interface PayloadLockedDocument {
         value: number | Testimonial;
       } | null)
     | ({
+        relationTo: 'talk';
+        value: number | Talk;
+      } | null)
+    | ({
+        relationTo: 'topic';
+        value: number | Topic;
+      } | null)
+    | ({
         relationTo: 'header';
         value: number | Header;
       } | null)
@@ -2738,6 +3177,9 @@ export interface PageSelect<T extends boolean = true> {
     | {
         hero?: T | HeroBlockSelect<T>;
         content?: T | ContentBlockSelect<T>;
+        talkGrid?: T | TalkGridBlockSelect<T>;
+        topicChips?: T | TopicChipsBlockSelect<T>;
+        shopifyProduct?: T | ShopifyProductBlockSelect<T>;
         faq?: T | FaqBlockSelect<T>;
         testimonialsList?: T | TestimonialsListBlockSelect<T>;
         cardsGrid?: T | CardsGridBlockSelect<T>;
@@ -2846,6 +3288,107 @@ export interface ContentBlockSelect<T extends boolean = true> {
         appearance?: T;
         id?: T;
       };
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TalkGridBlock_select".
+ */
+export interface TalkGridBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  source?: T;
+  topic?: T;
+  kind?: T;
+  talkItems?:
+    | T
+    | {
+        talk?: T;
+        id?: T;
+      };
+  limit?: T;
+  showKind?: T;
+  showTier?: T;
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TopicChipsBlock_select".
+ */
+export interface TopicChipsBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  topicItems?:
+    | T
+    | {
+        topic?: T;
+        id?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ShopifyProductBlock_select".
+ */
+export interface ShopifyProductBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  productHandle?: T;
+  showPrice?: T;
   section?:
     | T
     | {
@@ -3348,6 +3891,79 @@ export interface TestimonialsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "talk_select".
+ */
+export interface TalkSelect<T extends boolean = true> {
+  title?: T;
+  generateSlug?: T;
+  slug?: T;
+  kind?: T;
+  requiredTier?: T;
+  teaser?: T;
+  body?: T;
+  publishedAt?: T;
+  durationSeconds?: T;
+  audioUrl?: T;
+  topics?: T;
+  aiStatus?: T;
+  aiSummary?: T;
+  aiTakeaways?:
+    | T
+    | {
+        takeaway?: T;
+        id?: T;
+      };
+  aiQuestions?:
+    | T
+    | {
+        question?: T;
+        id?: T;
+      };
+  aiPullQuotes?:
+    | T
+    | {
+        quote?: T;
+        speakerName?: T;
+        startSeconds?: T;
+        id?: T;
+      };
+  transcript?: T;
+  transcriptSegments?: T;
+  sourceUrl?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
+        robots?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "topic_select".
+ */
+export interface TopicSelect<T extends boolean = true> {
+  title?: T;
+  generateSlug?: T;
+  slug?: T;
+  description?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
+        robots?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
 export interface HeaderSelect<T extends boolean = true> {
@@ -3483,6 +4099,9 @@ export interface GlobalBlockSelect<T extends boolean = true> {
     | {
         hero?: T | HeroBlockSelect<T>;
         content?: T | ContentBlockSelect<T>;
+        talkGrid?: T | TalkGridBlockSelect<T>;
+        topicChips?: T | TopicChipsBlockSelect<T>;
+        shopifyProduct?: T | ShopifyProductBlockSelect<T>;
         faq?: T | FaqBlockSelect<T>;
         testimonialsList?: T | TestimonialsListBlockSelect<T>;
         cardsGrid?: T | CardsGridBlockSelect<T>;
@@ -3602,6 +4221,101 @@ export interface PresetsSelect<T extends boolean = true> {
                     appearance?: T;
                     id?: T;
                   };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        talkGrid?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              source?: T;
+              topic?: T;
+              kind?: T;
+              talkItems?:
+                | T
+                | {
+                    talk?: T;
+                    id?: T;
+                  };
+              limit?: T;
+              showKind?: T;
+              showTier?: T;
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        topicChips?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              topicItems?:
+                | T
+                | {
+                    topic?: T;
+                    id?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        shopifyProduct?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              productHandle?: T;
+              showPrice?: T;
               section?:
                 | T
                 | {

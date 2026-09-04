@@ -18,6 +18,13 @@ export { getRelatedPosts } from "./getRelatedPosts";
 export { searchPosts } from "./searchPosts";
 export type { SearchPostsOptions } from "./searchPosts";
 
+// Talks
+export { getTalkBySlug, getTalks } from "./getTalks";
+export type { GetTalksOptions } from "./getTalks";
+
+// Shopify
+export { createCheckoutUrl, getProductByHandle, getStorefrontConfig } from "./getProductByHandle";
+
 // Documents (generic)
 export { getCachedDocument, getCachedDocumentByID } from "./getDocument";
 export { getAllDocuments } from "./getAllDocuments";
