@@ -58,16 +58,25 @@ describe("withQueuedNotification", () => {
     expect(calls).toEqual(["queued", "enqueue"]);
   });
 
-  it("delegates cancel / run / findByCollection unchanged", async () => {
+  it("delegates cancel and run unchanged", async () => {
     const runner = makeRunner();
     const wrapped = withQueuedNotification(runner, new LifecycleNotifier({}, { error: vi.fn() }));
 
     await wrapped.cancel(["a"]);
     await wrapped.run("b");
-    await wrapped.findByCollection("posts" as CollectionSlug, ["c"]);
 
     expect(runner.cancel).toHaveBeenCalledWith(["a"]);
     expect(runner.run).toHaveBeenCalledWith("b");
-    expect(runner.findByCollection).toHaveBeenCalledWith("posts", ["c"]);
+  });
+
+  it("hands findByCollection's filter on, normalizing the deprecated array form", async () => {
+    const runner = makeRunner();
+    const wrapped = withQueuedNotification(runner, new LifecycleNotifier({}, { error: vi.fn() }));
+
+    await wrapped.findByCollection("posts" as CollectionSlug, ["c"]);
+    expect(runner.findByCollection).toHaveBeenCalledWith("posts", { documentIds: ["c"] });
+
+    await wrapped.findByCollection("posts" as CollectionSlug, { excludeCompleted: true });
+    expect(runner.findByCollection).toHaveBeenLastCalledWith("posts", { excludeCompleted: true });
   });
 });

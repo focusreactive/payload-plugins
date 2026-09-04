@@ -29,10 +29,29 @@ export interface TaskRunner {
   run(taskId: string): Promise<RunResult>;
 
   /**
-   * Find tasks by collection and optionally filter by document IDs.
+   * @deprecated Pass `{ documentIds }` instead. Removed in the next major.
+   * See docs/DEPRECATIONS.md#find-by-collection-document-ids-array
    */
   findByCollection(
     collectionSlug: CollectionSlug,
-    documentIds?: Array<string | number>
+    documentIds: Array<string | number>
   ): Promise<Task[]>;
+  /** Find tasks for a collection, optionally narrowed by a {@link TaskFilter}. */
+  findByCollection(collectionSlug: CollectionSlug, filter?: TaskFilter): Promise<Task[]>;
 }
+
+/**
+ * How a {@link TaskRunner.findByCollection} call is narrowed. Each field says whether it reaches the
+ * database or is applied in memory over everything the database returned.
+ *
+ * @since 0.12.0
+ */
+export type TaskFilter = {
+  /** Keep only tasks for these documents. Applied in memory — see `PayloadJobsTaskRunner.findByCollection`. */
+  documentIds?: Array<string | number>;
+  /**
+   * Drop tasks that have finished. Keeps running and failed ones — everything a re-enqueue can still
+   * supersede — so it is wider than the `pending` status.
+   */
+  excludeCompleted?: boolean;
+};

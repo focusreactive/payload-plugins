@@ -10,7 +10,10 @@ import {
   translatorPlugin,
   withAutoTranslate,
 } from "@focus-reactive/payload-plugin-translator";
-import type { TranslationProvider } from "@focus-reactive/payload-plugin-translator";
+import type {
+  TaskRunnerProvider,
+  TranslationProvider,
+} from "@focus-reactive/payload-plugin-translator";
 import { buildConfig } from "payload";
 import type { CollectionConfig, Payload } from "payload";
 import { getPayload } from "payload";
@@ -57,6 +60,8 @@ export type TestPayload = {
  *   publish; the enqueue route still works.
  * @param opts.collections - replaces the shared fixture set entirely (not merged). The set must
  *   still contain a `docs` collection when `autoTranslate` is passed.
+ * @param opts.runner - defaults to the sync runner. `createPayloadJobsRunner({ autoRun: false })`
+ *   leaves queued jobs unprocessed in `payload-jobs`, so a spec can read the rows.
  * @param opts.fallback - localization fallback, off by default: an unwritten locale reads as
  *   empty, not as the default locale's text. Localization-level, so it applies to the whole boot.
  */
@@ -64,6 +69,7 @@ export async function bootTestPayload(opts?: {
   autoTranslate?: { targets: string[]; strategy?: "overwrite" | "skip_existing" };
   collections?: CollectionConfig[];
   fallback?: boolean;
+  runner?: TaskRunnerProvider;
 }): Promise<TestPayload> {
   const dir = mkdtempSync(join(tmpdir(), "translator-int-"));
   const { db, drop } = createTestDatabase(join(dir, "test.db"));
@@ -108,7 +114,7 @@ export async function bootTestPayload(opts?: {
       translatorPlugin({
         collections: managed,
         translationProvider: countingProvider,
-        runner: createSyncRunner(),
+        runner: opts?.runner ?? createSyncRunner(),
         levels: [documentLevel()],
         provenance: true,
       }),

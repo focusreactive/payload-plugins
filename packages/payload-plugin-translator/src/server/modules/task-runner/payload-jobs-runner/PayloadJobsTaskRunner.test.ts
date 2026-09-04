@@ -70,6 +70,15 @@ describe("PayloadJobsTaskRunner", () => {
   });
 
   describe("enqueue", () => {
+    it("looks for superseded jobs among unfinished ones only", async () => {
+      await runner.enqueue([createInput()]);
+
+      const whereArg = mockPayload.find.mock.calls[0][0].where;
+      expect(whereArg).toEqual({
+        and: [{ taskSlug: { equals: "translate_document" } }, { completedAt: { exists: false } }],
+      });
+    });
+
     it("queues tasks with correct input", async () => {
       const input = createInput();
       await runner.enqueue([input]);
@@ -529,6 +538,32 @@ describe("PayloadJobsTaskRunner", () => {
       });
       expect(JSON.stringify(whereArg)).not.toContain("collection_id");
       expect(JSON.stringify(whereArg)).not.toContain("collection.value");
+    });
+
+    it("adds completedAt to the where clause when asked to exclude finished jobs", async () => {
+      await runner.findByCollection("posts" as CollectionSlug, { excludeCompleted: true });
+
+      const whereArg = mockPayload.find.mock.calls[0][0].where;
+      expect(whereArg).toEqual({
+        and: [{ taskSlug: { equals: "translate_document" } }, { completedAt: { exists: false } }],
+      });
+      expect(JSON.stringify(whereArg)).not.toContain("collection_id");
+    });
+
+    it("reads the deprecated array form as documentIds", async () => {
+      const jobs = [
+        createJob({ id: "job-1", input: { collection_slug: "posts", collection_id: "doc-1" } }),
+        createJob({ id: "job-2", input: { collection_slug: "posts", collection_id: "doc-2" } }),
+      ];
+      mockPayload.find.mockResolvedValue({ docs: jobs });
+
+      const positional = await runner.findByCollection("posts" as CollectionSlug, ["doc-1"]);
+      const object = await runner.findByCollection("posts" as CollectionSlug, {
+        documentIds: ["doc-1"],
+      });
+
+      expect(positional.map((t) => t.id)).toEqual(["job-1"]);
+      expect(object.map((t) => t.id)).toEqual(positional.map((t) => t.id));
     });
 
     it("matches jobs stored in both the legacy and the new shape", async () => {

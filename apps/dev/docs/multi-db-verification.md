@@ -79,10 +79,11 @@ schema creation on Postgres does not measurably change the total.
 **Leftovers.** A namespace leaks if a boot throws before `cleanup()` exists, or if the process is
 killed mid-run. Both land in the dedicated test database, away from the app's data.
 
-**One database survives a full Mongo run.** `auto-translate-unknown-locale.int.test.ts` leaves a
-`t…`-prefixed database holding a single `_docs_versions` collection: the namespace is dropped, and a
-late write from the auto-translate path recreates it after teardown. It is ~12 KB and one per full
-run, not per boot. Suspected to be the same "the hook's work outlives the operation that triggered
+**A database or two survives a full Mongo run.** Usually one, from
+`auto-translate-unknown-locale.int.test.ts`: the namespace is dropped, and a late write from the
+auto-translate path recreates it after teardown. Because it is a race, a busy machine can leave
+another — a spec that runs alone without leaking has been seen to leak inside a full run. Each is
+~12 KB. Suspected to be the same "the hook's work outlives the operation that triggered
 it" family as [#124](https://github.com/focusreactive/payload-plugins/issues/124); left alone here
 because this work changes no plugin source. To clear leftovers:
 

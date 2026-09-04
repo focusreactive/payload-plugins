@@ -50,6 +50,28 @@ the single source of truth — code annotations link here by anchor instead of d
   - `src/server/modules/task-runner/payload-jobs-runner/normalizeJob.ts` (read fallback)
   - `src/server/modules/task-runner/payload-jobs-runner/types.ts` (`PayloadJob.input` shape)
 
+### find-by-collection-document-ids-array
+
+- **What:** passing a bare `Array<string | number>` of document ids as the second argument to
+  `TaskRunner.findByCollection`.
+- **Status:** live
+- **Deprecated:** 2026-09-04 / PR #TBD
+- **Replacement:** `TaskFilter` — `findByCollection(slug, { documentIds })`.
+- **Remove in:** next major
+- **Why:** a positional argument cannot grow. The second filter this method needed —
+  `excludeCompleted`, which bounds the read on the enqueue path (#108) — had nowhere to go without
+  either a third positional parameter or an object. The object also lets the type say which fields
+  reach the database and which are matched in memory, a distinction that is invisible at the call
+  site and was previously carried only by a comment.
+- **Migration:** the parameter is a union, so both forms compile and behave identically;
+  `toTaskFilter` normalizes them at the top of each implementation. Removing the array form is a
+  one-line change to that helper plus the two runner signatures.
+- **Code refs:**
+  - `src/server/modules/task-runner/TaskRunner.interface.ts` (the union, `TaskFilter`, `toTaskFilter`)
+  - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsTaskRunner.ts`
+  - `src/server/modules/task-runner/sync-runner/SyncTaskRunner.ts`
+  - `src/server/features/get-document-status/handler.ts` (a remaining array-form caller)
+
 ### cancel-by-collection-route
 
 - **What:** `POST {basePath}/cancel-by-collection` endpoint.

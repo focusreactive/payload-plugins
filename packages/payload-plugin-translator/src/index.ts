@@ -45,8 +45,16 @@ export {
 export type { TranslationFailureCode } from "./translation-providers";
 
 // Task runners
-export { createPayloadJobsRunner, createSyncRunner } from "./server/modules/task-runner";
-export type { TaskRunnerProvider, PayloadJobsRunnerOptions } from "./server/modules/task-runner";
+export {
+  createPayloadJobsRunner,
+  createSyncRunner,
+  toTaskFilter,
+} from "./server/modules/task-runner";
+export type {
+  TaskRunnerProvider,
+  PayloadJobsRunnerOptions,
+  TaskFilter,
+} from "./server/modules/task-runner";
 
 // Translation levels
 export { documentLevel, collectionLevel, fieldLevel } from "./composition/levels";

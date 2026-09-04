@@ -1,6 +1,7 @@
 import type { Payload, Where, CollectionSlug } from "payload";
 
-import type { TaskRunner } from "../TaskRunner.interface";
+import type { TaskFilter, TaskRunner } from "../TaskRunner.interface";
+import { toTaskFilter } from "../toTaskFilter";
 import type { Task, TaskInput, RunResult, ID } from "../types";
 import type { PayloadJobsRunnerConfig, PayloadJob } from "./types";
 import { normalizeJob } from "./normalizeJob";
@@ -27,7 +28,13 @@ export class PayloadJobsTaskRunner implements TaskRunner {
 
     for (const [collectionSlug, items] of byCollection) {
       const documentIds = items.map((t) => t.collectionId);
-      const existing = await this.findByCollection(collectionSlug, documentIds);
+      // Finished jobs must stay out of this set: superseding deletes (`cancelInternal` reaches
+      // `payload.delete`), so a completed job for the same (document, locale) would be erased along
+      // with the pending one.
+      const existing = await this.findByCollection(collectionSlug, {
+        documentIds,
+        excludeCompleted: true,
+      });
       // Supersede only jobs for the SAME (document, target locale) being re-enqueued — never a
       // concurrent job for a *different* locale of the same document. Cancelling per-document would
       // kill an in-flight translation of another locale (the concurrent re-translate bug).
@@ -126,7 +133,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
    * killed mid-run (deploy/crash/timeout). Threshold-based, so a job genuinely
    * in flight on another live instance (fresh `updatedAt`) is left alone.
    * Filters on real `payload-jobs` columns only (no JSON-path traversal), so
-   * the drizzle SQLite issue in `findByCollection` does not apply here.
+   * the in-memory filtering in `findByCollection` (issue #108) does not apply here.
    * @returns the number of jobs reclaimed.
    */
   async reclaimStaleJobs(): Promise<number> {
@@ -170,56 +177,29 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   }
 
   /**
-   * Find translation jobs for a collection, optionally narrowed by document IDs.
+   * Find translation jobs for a collection.
    *
-   * Narrowing is by `taskSlug` only in SQL; the collection slug and document
-   * IDs are matched in memory (via the normalized `Task`, which reads both the
-   * current flat-text shape and the legacy relationship shape). This is the
-   * one path that must transparently span both stored shapes during the
-   * ID-agnostic migration — see docs/DEPRECATIONS.md#jobs-input-collection-field.
+   * Only `taskSlug` and — when asked — `completedAt` reach the database; both are real columns. The
+   * collection slug and the document ids are matched in memory, because `readCollectionRef` reads a
+   * job's collection reference from the current flat-text fields OR from the relationship shape that
+   * predates the ID-agnostic migration (docs/DEPRECATIONS.md#jobs-input-collection-field) — a `where`
+   * on `input.collection_slug` sees only the first and would silently drop every job queued before
+   * that migration.
    *
-   * IMPORTANT — why slug/id are matched in memory, not in the SQL WHERE
-   * ------------------------------------------------------------------------
-   * The "natural" implementation would push `input.collection_id` into the
-   * where clause. This DOES NOT work on SQLite (and is unreliable on any
-   * adapter) because of two compounding bugs in Payload's drizzle layer.
-   *
-   * 1. The `input` field on `payload-jobs` is declared `type: 'json'`. The
-   *    drizzle path resolver (`@payloadcms/drizzle/queries/getTableColumnFromPath`)
-   *    has no `case 'json'` branch, so the value is left as a raw column and
-   *    the path segments are passed through to `parseParams.js`, which on
-   *    SQLite builds raw SQL using `convertPathToJSONTraversal` — generating
-   *    expressions like `input->>'collection_id'`.
-   *
-   * 2. When `parseParams.js` formats the right-hand side of `in`/`not_in`
-   *    (and even `equals` when `!isNaN(val)`), it inlines values via JS
-   *    template literals WITHOUT wrapping strings in quotes. The string
-   *    `'1'` from our WHERE becomes raw `1` in the SQL. Drizzle therefore
-   *    emits queries like `WHERE input->>'collection_id' IN (1)` even though
-   *    the caller passed `['1']` (an array of strings).
-   *
-   * On SQLite, `->>` preserves the JSON value's type and `IN (...)` does NOT
-   * coerce between TEXT and INTEGER, so a numeric-looking string id never
-   * matches once bug #2 strips its quotes. Storing the id as text (this
-   * migration) does not fix the SQL path — drizzle re-numbers it anyway — so
-   * we keep matching in memory.
-   *
-   * Why in-memory filtering is acceptable here
-   * ------------------------------------------
-   * Per-task job sets are small (typically <100 rows; the plugin actively
-   * cancels superseded jobs so they don't accumulate), so the JS filtering
-   * is effectively free. If/when the upstream drizzle bug is fixed, this can
-   * collapse back to a single SQL query.
+   * `excludeCompleted` is what bounds the read for the callers that pass it: under
+   * `jobs.deleteJobOnComplete: false` completed jobs are never removed, so an unfiltered scan grows
+   * with the whole translation history. Narrowing by collection on top of it measured no better —
+   * see issue #108.
    */
   async findByCollection(
     collectionSlug: CollectionSlug,
-    documentIds?: Array<string | number>
+    filter?: Array<string | number> | TaskFilter
   ): Promise<Task[]> {
-    const all = await this.findJobsInternal(undefined, { pagination: false });
+    const { documentIds, excludeCompleted } = toTaskFilter(filter);
+    const where = excludeCompleted ? { completedAt: { exists: false } } : undefined;
+    const all = await this.findJobsInternal(where, { pagination: false });
     const bySlug = all.filter((t) => t.input.collectionSlug === collectionSlug);
     if (!documentIds?.length) return bySlug;
-    // `documentIds` is the public `Array<string | number>` param, so normalize
-    // it here; `t.input.collectionId` is already `ID` (string) via normalizeJob.
     const wanted = new Set(documentIds.map(String));
     return bySlug.filter((t) => wanted.has(t.input.collectionId));
   }
