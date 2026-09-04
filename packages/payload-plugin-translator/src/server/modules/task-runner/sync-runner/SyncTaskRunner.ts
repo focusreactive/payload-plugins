@@ -1,6 +1,7 @@
 import type { Payload, CollectionSlug } from "payload";
 
-import type { TaskRunner } from "../TaskRunner.interface";
+import type { TaskFilter, TaskRunner } from "../TaskRunner.interface";
+import { toTaskFilter } from "../toTaskFilter";
 import type { TaskHandler } from "../TaskRunnerProvider.interface";
 import type { Task, TaskInput, RunResult, ID } from "../types";
 import type { LazyMap } from "../../../shared/utils";
@@ -68,14 +69,19 @@ export class SyncTaskRunner implements TaskRunner {
 
   async findByCollection(
     collectionSlug: CollectionSlug,
-    documentIds?: Array<string | number>
+    filter?: Array<string | number> | TaskFilter
   ): Promise<Task[]> {
+    const { documentIds, excludeCompleted } = toTaskFilter(filter);
     const results: Task[] = [];
     const wanted = documentIds ? new Set(documentIds.map(String)) : undefined;
 
     for (const [, task] of this.tasks) {
       if (task.input.collectionSlug !== collectionSlug) continue;
       if (wanted && !wanted.has(task.input.collectionId)) continue;
+      // Keyed on `completedAt`, the same field the jobs runner pushes into its where clause. Keying
+      // on `status` instead would agree only by accident: `getJobStatus` happens to check
+      // `completedAt` before `error`, and reordering it would silently split the two runners.
+      if (excludeCompleted && task.completedAt) continue;
       results.push(task);
     }
 

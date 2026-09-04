@@ -1,4 +1,5 @@
 import type { TaskRunner } from "../task-runner/TaskRunner.interface";
+import { toTaskFilter } from "../task-runner/toTaskFilter";
 import type { LifecycleNotifier } from "./LifecycleNotifier";
 import { taskFromInput } from "./taskMapping";
 
@@ -19,7 +20,9 @@ export function withQueuedNotification(
     },
     cancel: (taskIds) => runner.cancel(taskIds),
     run: (taskId) => runner.run(taskId),
-    findByCollection: (collectionSlug, documentIds) =>
-      runner.findByCollection(collectionSlug, documentIds),
+    // Normalized rather than forwarded as-is: the wrapper's own signature comes from the overload
+    // pair, so it cannot pass the deprecated array form straight through.
+    findByCollection: (collectionSlug, filter) =>
+      runner.findByCollection(collectionSlug, toTaskFilter(filter)),
   };
 }

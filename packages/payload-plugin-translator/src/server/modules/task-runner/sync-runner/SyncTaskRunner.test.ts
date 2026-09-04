@@ -199,6 +199,18 @@ describe("SyncTaskRunner", () => {
       expect(filteredTasks.map((t) => t.input.collectionId).sort()).toEqual(["doc-1", "doc-3"]);
     });
 
+    it("drops finished tasks when asked to exclude them", async () => {
+      await runner.enqueue([createInput({ collectionId: "doc-1" })]);
+
+      const all = await runner.findByCollection("posts" as CollectionSlug);
+      const unfinished = await runner.findByCollection("posts" as CollectionSlug, {
+        excludeCompleted: true,
+      });
+
+      expect(all.map((t) => t.status)).toEqual(["completed"]);
+      expect(unfinished).toEqual([]);
+    });
+
     it("returns empty array when no tasks match", async () => {
       await runner.enqueue([createInput()]);
 
