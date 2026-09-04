@@ -44,7 +44,7 @@ export interface TaskRunner {
  * How a {@link TaskRunner.findByCollection} call is narrowed. Each field says whether it reaches the
  * database or is applied in memory over everything the database returned.
  *
- * @since 0.12.0
+ * @since 0.11.2
  */
 export type TaskFilter = {
   /** Keep only tasks for these documents. Applied in memory — see `PayloadJobsTaskRunner.findByCollection`. */

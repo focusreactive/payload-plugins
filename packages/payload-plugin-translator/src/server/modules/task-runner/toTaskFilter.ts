@@ -7,7 +7,7 @@ import type { TaskFilter } from "./TaskRunner.interface";
  * than being re-derived: the array form is deprecated and will be removed, and a hand-written
  * `Array.isArray` branch in someone else's runner would outlive it.
  *
- * @since 0.12.0
+ * @since 0.11.2
  */
 export function toTaskFilter(filter?: Array<string | number> | TaskFilter): TaskFilter {
   return Array.isArray(filter) ? { documentIds: filter } : (filter ?? {});
