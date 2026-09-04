@@ -55,7 +55,7 @@ the single source of truth — code annotations link here by anchor instead of d
 - **What:** passing a bare `Array<string | number>` of document ids as the second argument to
   `TaskRunner.findByCollection`.
 - **Status:** live
-- **Deprecated:** 2026-09-04 / PR #TBD
+- **Deprecated:** 2026-09-04 / PR #126
 - **Replacement:** `TaskFilter` — `findByCollection(slug, { documentIds })`.
 - **Remove in:** next major
 - **Why:** a positional argument cannot grow. The second filter this method needed —
