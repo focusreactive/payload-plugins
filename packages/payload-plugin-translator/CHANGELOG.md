@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-translator [0.11.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.11.1...@focus-reactive/payload-plugin-translator@0.11.2) (2026-09-04)
+
+
+### Bug Fixes
+
+* **translator:** bound the job scan on enqueue, and stop it deleting finished jobs ([2c92472](https://github.com/focusreactive/payload-plugins/commit/2c92472e224c13c54a0bb4ecdd8afa434078766a)), closes [#122](https://github.com/focusreactive/payload-plugins/issues/122) [#123](https://github.com/focusreactive/payload-plugins/issues/123) [#108](https://github.com/focusreactive/payload-plugins/issues/108)
+
 ## @focus-reactive/payload-plugin-translator [0.11.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.11.0...@focus-reactive/payload-plugin-translator@0.11.1) (2026-09-02)
 
 
