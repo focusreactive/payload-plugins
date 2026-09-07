@@ -12,9 +12,11 @@ const PRIVATE_PLUGIN_DEPENDENCY = "@fr-private/payload-plugin-visual-editing";
 // "exact-version" style. Bump when a new plugin version ships.
 const PLUGIN_VERSIONS: Record<string, string> = {
   "@focus-reactive/payload-plugin-ab": "2.6.0",
+  "@focus-reactive/payload-plugin-analytics": "1.2.2",
   "@focus-reactive/payload-plugin-comments": "1.8.0",
   "@focus-reactive/payload-plugin-presets": "0.11.0",
   "@focus-reactive/payload-plugin-scheduling": "1.2.0",
+  "@focus-reactive/payload-plugin-seo": "1.10.1",
   "@focus-reactive/payload-plugin-translator": "0.2.0",
 };
 
