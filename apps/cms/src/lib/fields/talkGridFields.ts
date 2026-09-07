@@ -1,8 +1,3 @@
-/**
- * STAGED SOURCE - not yet applied. Destination on the sandbox branch:
- *   apps/cms/src/lib/fields/talkGridFields.ts
- */
-
 import type { Field } from "payload";
 
 import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";

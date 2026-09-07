@@ -1,7 +1,4 @@
 /**
- * STAGED SOURCE - not yet applied. Destination on the sandbox branch:
- *   apps/cms/src/blocks/TopicChips/config.ts
- *
  * "Start where you are" - a row of topic links. Small block, but it carries the navigation
  * argument: their archive sits 94 to 224 clicks from the homepage on 12-per-page pagination with
  * no jump link, which is one of the two independent reasons Google cannot see it. Topic chips on

@@ -1,8 +1,3 @@
-/**
- * STAGED SOURCE - not yet applied. Destination on the sandbox branch:
- *   apps/cms/src/blocks/TopicChips/Component.tsx
- */
-
 import Link from "next/link";
 
 import { getPayloadClient } from "@/dal";

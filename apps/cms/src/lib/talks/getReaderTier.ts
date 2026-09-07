@@ -1,7 +1,4 @@
 /**
- * STAGED SOURCE - not yet applied. Destination on the sandbox branch:
- *   apps/cms/src/lib/talks/getReaderTier.ts
- *
  * Reads the tier the "view as" switch has selected, on the server.
  *
  * Why a helper and not a prop: RenderBlocks/renderContentBlock spreads a block's own fields into

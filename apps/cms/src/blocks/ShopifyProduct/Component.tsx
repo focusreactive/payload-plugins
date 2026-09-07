@@ -1,7 +1,4 @@
 /**
- * STAGED SOURCE - not yet applied. Destination on the sandbox branch:
- *   apps/cms/src/blocks/ShopifyProduct/Component.tsx
- *
  * A server component, which is the acceptance criterion for this piece: "The Shopify card is in
  * the server-rendered HTML, not injected by client-side JavaScript." Verify it with
  *   curl -s <url> | grep -i "<product title>"

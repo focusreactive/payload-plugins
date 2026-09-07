@@ -1,12 +1,9 @@
 /**
- * STAGED SOURCE - not yet applied. Destination on the sandbox branch:
- *   apps/cms/src/lib/fields/talkAiFields.ts
- *
  * The derived layer on a Talk: a transcript with real timings, and the sections the client does
  * not have today. Field shape follows projects/ai-council-demo/studio/src/schemaTypes/documents/
  * talk.ts, which is Sanity - so it is a reference for the shape, not code to lift.
  *
- * `aiQuestions` is the field aimed at Jeff. Answer engines are what he asked about by name, and
+ * `aiQuestions` is the field aimed at answer engines, which is what the evaluation asked about, and
  * "questions this talk answers" is the shape an answer engine can actually quote.
  */
 
@@ -21,7 +18,7 @@ export const talkAiFields: Field[] = [
       {
         admin: {
           description:
-            "Advisory, not a gate. A first batch is worth eyeballing, but hand-reviewing 7,000 items is not a workflow a two-person office can run, and the client has never asked for one.",
+            "Advisory, not a gate. A first batch is worth eyeballing, but hand-reviewing a whole archive is not a workflow a small team can run, and it has never been asked for.",
         },
         defaultValue: "awaiting-review",
         label: "AI status",

@@ -1,7 +1,4 @@
 /**
- * STAGED SOURCE - not yet applied. Destination on the sandbox branch:
- *   apps/cms/src/blocks/TalkGrid/Component.tsx
- *
  * Every row is rendered at every tier, with a lock badge where the body is gated. That is not a
  * shortcut - it is the model the deal is about. A gated talk still needs a crawlable page with a
  * real title, a teaser and topics, because "the archive is invisible to Google" is the problem

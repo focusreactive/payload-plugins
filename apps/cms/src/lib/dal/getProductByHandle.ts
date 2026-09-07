@@ -1,7 +1,4 @@
 /**
- * STAGED SOURCE - not yet applied. Destination on the sandbox branch:
- *   apps/cms/src/lib/dal/getProductByHandle.ts
- *
  * demo-plan.md §9 is right that the fetch belongs in `src/lib/dal/`. Two conventions that
  * directory enforces (see its README): application code imports from the `@/dal` barrel rather
  * than from a file inside it, so this must be re-exported from `lib/dal/index.ts`; and the alias
@@ -66,7 +63,7 @@ const CART_CREATE_MUTATION = /* GraphQL */ `
   }
 `;
 
-interface StorefrontConfig {
+export interface StorefrontConfig {
   domain: string;
   token: string;
 }
@@ -97,7 +94,11 @@ function authHeader(token: string): Record<string, string> {
     : { "X-Shopify-Storefront-Access-Token": token };
 }
 
-async function storefront<T>(
+/**
+ * Exported for `./getProductsByHandles`, which needs the same transport. Keep it the only place
+ * the token-prefix rule and the HTTP-200-with-GraphQL-errors check are written down.
+ */
+export async function storefront<T>(
   config: StorefrontConfig,
   query: string,
   variables: Record<string, unknown>

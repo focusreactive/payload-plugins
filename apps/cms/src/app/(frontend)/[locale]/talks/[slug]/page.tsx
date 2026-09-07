@@ -1,7 +1,4 @@
 /**
- * STAGED SOURCE - not yet applied. Destination on the sandbox branch:
- *   apps/cms/src/app/(frontend)/[locale]/talks/[slug]/page.tsx
- *
  * The talk page - the one screen the call is built around. Modelled on the existing
  * app/(frontend)/[locale]/blog/[slug] route.
  *
@@ -11,7 +8,7 @@
  *   -> body -> transcript
  *
  * Everything above `audio` is visible at every tier and is what a crawler or an answer engine
- * reads. Jeff asked for AI visibility driving people to a paywall landing page; this is that page,
+ * reads. AI visibility driving people to a paywall landing page - this is that page,
  * with the derived layer public and the archive material gated.
  *
  * Route placement note: this sits under [locale] because proxy.ts rewrites every top-level path
@@ -203,7 +200,7 @@ export default async function TalkPage({ params }: PageProps) {
       ) : (
         <>
           <section style={{ lineHeight: 1.65 }}>
-            {/* Their bodies are ordinary prose markup - 92% of 16,099 items are covered by twelve
+            {/* Bodies are ordinary prose markup - the overwhelming majority of items are covered by a dozen
                 tag shapes and the whole catalogue holds 12 Magento directives - which is why this
                 migrates by script and renders as plain HTML. */}
             <div dangerouslySetInnerHTML={{ __html: String(talk.body ?? "") }} />

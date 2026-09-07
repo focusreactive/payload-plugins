@@ -1,7 +1,4 @@
 /**
- * STAGED SOURCE - not yet applied. Destination on the sandbox branch:
- *   apps/cms/src/blocks/TalkGrid/config.ts
- *
  * Lists Talks. The nearest existing pattern for "a section that references a thing" is
  * TestimonialsList, but this block resolves its items by QUERY rather than by hand-picked
  * relationships, because that is the behaviour the client needs: a topic page cannot be

@@ -1,7 +1,4 @@
 /**
- * STAGED SOURCE - not yet applied. Destination on the sandbox branch:
- *   apps/cms/src/blocks/ShopifyProduct/config.ts
- *
  * A CMS section whose only real field is a Shopify product handle (demo-plan.md §9). Everything
  * else about the product - title, price, image, availability - is fetched server-side at render
  * time, so the bookstore stays the source of truth for its own catalogue and an editor never

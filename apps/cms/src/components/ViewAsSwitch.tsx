@@ -1,7 +1,4 @@
 /**
- * STAGED SOURCE - not yet applied. Destination on the sandbox branch:
- *   apps/cms/src/components/ViewAsSwitch.tsx
- *
  * "View as: visitor / Basic / Premium / All Access" instead of a login (demo-plan.md §8).
  *
  * Two reasons this beats building sign-in for a demo: on a live call a switch flips instantly

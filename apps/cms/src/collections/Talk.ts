@@ -1,7 +1,4 @@
 /**
- * STAGED SOURCE - not yet applied. Destination on the sandbox branch:
- *   apps/cms/src/collections/Talk.ts
- *
  * One collection for what their Magento models as five separate attribute sets (thirty in total).
  * That collapse IS the argument being made on the call: their content was never thirty different
  * things, a product catalogue only forced it to be. So `kind` is a field, not a collection.
@@ -96,7 +93,7 @@ export const Talk: CollectionConfig<"talk"> = {
         {
           admin: {
             description:
-              "What a reader needs in order to read this item's body. Editorial metadata about the ITEM - never a record of who paid. Entitlement lives in Braintree and reaches the app through the identity layer; the CMS must not store it.",
+              "What a reader needs in order to read this item's body. Editorial metadata about the ITEM - never a record of who paid. Entitlement lives in the payment provider and reaches the app through the identity layer; the CMS must not store it.",
             width: "50%",
           },
           defaultValue: "visitor",

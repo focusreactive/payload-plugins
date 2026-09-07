@@ -1,7 +1,4 @@
 /**
- * STAGED SOURCE - not yet applied. Destination on the sandbox branch:
- *   apps/cms/src/lib/talks/applyTier.ts
- *
  * The paywall. Two rules, and the second is the one that matters commercially.
  *
  *   1. A reader sees the body when the tier they hold is at least the tier the item requires.
@@ -9,14 +6,14 @@
  *      the AI summary, the takeaways and "questions this talk answers". Only the body, the
  *      transcript and the audio are withheld.
  *
- * Rule 2 is the NYT-style teaser Jeff asked for by name, and it is why the gate lives here at
+ * Rule 2 is the NYT-style teaser pattern, and it is why the gate lives here at
  * render time rather than in the collection's access control. Hiding the document would hide the
  * page from Google, which is the exact problem the engagement exists to fix. Their current
  * Magento already does the right thing by accident - the anonymous view of a gated talk carries
  * about 41% of the member text as real indexable HTML - so this preserves a behaviour they have
  * rather than inventing one.
  *
- * What this is NOT: entitlement. In the real build a person's tier comes from Braintree through
+ * What this is NOT: entitlement. In the real build a person's tier comes from the payment provider through
  * the identity layer, refreshed at login and invalidated by webhooks. The CMS never stores who
  * paid. The demo has no auth at all, so the tier arrives from the "view as" switch instead.
  */

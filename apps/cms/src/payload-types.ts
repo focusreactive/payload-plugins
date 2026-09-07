@@ -370,7 +370,9 @@ export interface Page {
     | ContentBlock
     | TalkGridBlock
     | TopicChipsBlock
+    | SidebarSectionBlock
     | ShopifyProductBlock
+    | ShopifyCarouselBlock
     | FaqBlock
     | TestimonialsListBlock
     | CardsGridBlock
@@ -939,7 +941,7 @@ export interface Talk {
     | 'letter'
     | 'insight-timer-talk';
   /**
-   * What a reader needs in order to read this item's body. Editorial metadata about the ITEM - never a record of who paid. Entitlement lives in Braintree and reaches the app through the identity layer; the CMS must not store it.
+   * What a reader needs in order to read this item's body. Editorial metadata about the ITEM - never a record of who paid. Entitlement lives in the payment provider and reaches the app through the identity layer; the CMS must not store it.
    */
   requiredTier: 'visitor' | 'basic' | 'premium' | 'all-access';
   /**
@@ -972,7 +974,7 @@ export interface Talk {
   audioUrl?: string | null;
   topics?: (number | Topic)[] | null;
   /**
-   * Advisory, not a gate. A first batch is worth eyeballing, but hand-reviewing 7,000 items is not a workflow a two-person office can run, and the client has never asked for one.
+   * Advisory, not a gate. A first batch is worth eyeballing, but hand-reviewing a whole archive is not a workflow a small team can run, and it has never been asked for.
    */
   aiStatus?: ('awaiting-review' | 'approved') | null;
   /**
@@ -1085,6 +1087,75 @@ export interface TopicChipsBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SidebarSectionBlock".
+ */
+export interface SidebarSectionBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  body: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  sidebarHeading?: string | null;
+  sidebarLinks?:
+    | {
+        type?: ('reference' | 'custom' | 'customPage') | null;
+        newTab?: boolean | null;
+        reference?:
+          | ({
+              relationTo: 'page';
+              value: number | Page;
+            } | null)
+          | ({
+              relationTo: 'posts';
+              value: number | Post;
+            } | null);
+        url?: string | null;
+        customPage?: ('blog' | 'search') | null;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  sidebarPosition: 'left' | 'right';
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'sidebarSection';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ShopifyProductBlock".
  */
 export interface ShopifyProductBlock {
@@ -1120,6 +1191,47 @@ export interface ShopifyProductBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'shopifyProduct';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ShopifyCarouselBlock".
+ */
+export interface ShopifyCarouselBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  /**
+   * One row per product, in the order they should appear. A handle is the last path segment of the product's storefront URL, e.g. my-first-product - not the numeric id.
+   */
+  productHandles: {
+    handle: string;
+    id?: string | null;
+  }[];
+  showPrice?: boolean | null;
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'shopifyCarousel';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1660,7 +1772,9 @@ export interface GlobalBlock {
     | ContentBlock
     | TalkGridBlock
     | TopicChipsBlock
+    | SidebarSectionBlock
     | ShopifyProductBlock
+    | ShopifyCarouselBlock
     | FaqBlock
     | TestimonialsListBlock
     | CardsGridBlock
@@ -2043,6 +2157,71 @@ export interface Preset {
          */
         heading?: string | null;
         description?: string | null;
+        body: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        };
+        sidebarHeading?: string | null;
+        sidebarLinks?:
+          | {
+              type?: ('reference' | 'custom' | 'customPage') | null;
+              newTab?: boolean | null;
+              reference?:
+                | ({
+                    relationTo: 'page';
+                    value: number | Page;
+                  } | null)
+                | ({
+                    relationTo: 'posts';
+                    value: number | Post;
+                  } | null);
+              url?: string | null;
+              customPage?: ('blog' | 'search') | null;
+              label?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        sidebarPosition: 'left' | 'right';
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'sidebarSection';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
         /**
          * The product's handle in Shopify - the last path segment of its storefront URL, e.g. my-first-product. Not the numeric id.
          */
@@ -2069,6 +2248,43 @@ export interface Preset {
         id?: string | null;
         blockName?: string | null;
         blockType: 'shopifyProduct';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        /**
+         * One row per product, in the order they should appear. A handle is the last path segment of the product's storefront URL, e.g. my-first-product - not the numeric id.
+         */
+        productHandles: {
+          handle: string;
+          id?: string | null;
+        }[];
+        showPrice?: boolean | null;
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'shopifyCarousel';
       }
     | {
         eyebrow?: string | null;
@@ -3179,7 +3395,9 @@ export interface PageSelect<T extends boolean = true> {
         content?: T | ContentBlockSelect<T>;
         talkGrid?: T | TalkGridBlockSelect<T>;
         topicChips?: T | TopicChipsBlockSelect<T>;
+        sidebarSection?: T | SidebarSectionBlockSelect<T>;
         shopifyProduct?: T | ShopifyProductBlockSelect<T>;
+        shopifyCarousel?: T | ShopifyCarouselBlockSelect<T>;
         faq?: T | FaqBlockSelect<T>;
         testimonialsList?: T | TestimonialsListBlockSelect<T>;
         cardsGrid?: T | CardsGridBlockSelect<T>;
@@ -3381,6 +3599,47 @@ export interface TopicChipsBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SidebarSectionBlock_select".
+ */
+export interface SidebarSectionBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  body?: T;
+  sidebarHeading?: T;
+  sidebarLinks?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+        id?: T;
+      };
+  sidebarPosition?: T;
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ShopifyProductBlock_select".
  */
 export interface ShopifyProductBlockSelect<T extends boolean = true> {
@@ -3388,6 +3647,40 @@ export interface ShopifyProductBlockSelect<T extends boolean = true> {
   heading?: T;
   description?: T;
   productHandle?: T;
+  showPrice?: T;
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ShopifyCarouselBlock_select".
+ */
+export interface ShopifyCarouselBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  productHandles?:
+    | T
+    | {
+        handle?: T;
+        id?: T;
+      };
   showPrice?: T;
   section?:
     | T
@@ -4101,7 +4394,9 @@ export interface GlobalBlockSelect<T extends boolean = true> {
         content?: T | ContentBlockSelect<T>;
         talkGrid?: T | TalkGridBlockSelect<T>;
         topicChips?: T | TopicChipsBlockSelect<T>;
+        sidebarSection?: T | SidebarSectionBlockSelect<T>;
         shopifyProduct?: T | ShopifyProductBlockSelect<T>;
+        shopifyCarousel?: T | ShopifyCarouselBlockSelect<T>;
         faq?: T | FaqBlockSelect<T>;
         testimonialsList?: T | TestimonialsListBlockSelect<T>;
         cardsGrid?: T | CardsGridBlockSelect<T>;
@@ -4308,6 +4603,45 @@ export interface PresetsSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
+        sidebarSection?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              body?: T;
+              sidebarHeading?: T;
+              sidebarLinks?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                    id?: T;
+                  };
+              sidebarPosition?: T;
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
         shopifyProduct?:
           | T
           | {
@@ -4315,6 +4649,38 @@ export interface PresetsSelect<T extends boolean = true> {
               heading?: T;
               description?: T;
               productHandle?: T;
+              showPrice?: T;
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        shopifyCarousel?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              productHandles?:
+                | T
+                | {
+                    handle?: T;
+                    id?: T;
+                  };
               showPrice?: T;
               section?:
                 | T

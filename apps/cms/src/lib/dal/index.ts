@@ -22,8 +22,13 @@ export type { SearchPostsOptions } from "./searchPosts";
 export { getTalkBySlug, getTalks } from "./getTalks";
 export type { GetTalksOptions } from "./getTalks";
 
+// Topics
+export { getTopicBySlug } from "./getTopicBySlug";
+
 // Shopify
 export { createCheckoutUrl, getProductByHandle, getStorefrontConfig } from "./getProductByHandle";
+export { getProductsByHandles } from "./getProductsByHandles";
+export type { ShopifyProductCard } from "./getProductsByHandles";
 
 // Documents (generic)
 export { getCachedDocument, getCachedDocumentByID } from "./getDocument";

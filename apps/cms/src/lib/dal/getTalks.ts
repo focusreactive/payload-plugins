@@ -1,7 +1,4 @@
 /**
- * STAGED SOURCE - not yet applied. Destination on the sandbox branch:
- *   apps/cms/src/lib/dal/getTalks.ts   (re-export both from lib/dal/index.ts)
- *
  * Reads for the Talk collection. Modelled on getPosts.ts, including its unstable_cache +
  * react cache pairing, so a page rendering three TalkGrid blocks issues one query per distinct
  * argument set rather than three.

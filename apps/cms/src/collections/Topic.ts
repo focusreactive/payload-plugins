@@ -1,7 +1,4 @@
 /**
- * STAGED SOURCE - not yet applied. Destination on the sandbox branch:
- *   apps/cms/src/collections/Topic.ts
- *
  * Topics are a collection, not a string array on Talk, for one reason that matters to this deal:
  * a topic needs its own indexable URL. Their 335 `/browse-topics/*` pages currently emit no
  * structured data at all, and a topic page is the natural landing page for the search and answer

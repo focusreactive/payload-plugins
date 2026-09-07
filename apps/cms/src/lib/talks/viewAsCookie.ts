@@ -1,7 +1,4 @@
 /**
- * STAGED SOURCE - not yet applied. Destination on the sandbox branch:
- *   apps/cms/src/lib/talks/viewAsCookie.ts
- *
  * The cookie name for the "view as" switch, alone in its own module on purpose.
  *
  * It is needed by a client component (ViewAsSwitch, which writes it) and by a server helper

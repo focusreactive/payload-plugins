@@ -33,6 +33,7 @@ import * as migration_20260713_155547_restructure_global_settings from './202607
 import * as migration_20260805_120053_group_seo_defaults_under_og_and_x from './20260805_120053_group_seo_defaults_under_og_and_x';
 import * as migration_20260812_125336_add_ab_pending_percentages_to_pages from './20260812_125336_add_ab_pending_percentages_to_pages';
 import * as migration_20260904_133003_add_talk_and_topic_collections from './20260904_133003_add_talk_and_topic_collections';
+import * as migration_20260907_123617_add_shopify_carousel_and_sidebar_blocks from './20260907_123617_add_shopify_carousel_and_sidebar_blocks';
 
 export const migrations = [
   {
@@ -208,6 +209,11 @@ export const migrations = [
   {
     up: migration_20260904_133003_add_talk_and_topic_collections.up,
     down: migration_20260904_133003_add_talk_and_topic_collections.down,
-    name: '20260904_133003_add_talk_and_topic_collections'
+    name: '20260904_133003_add_talk_and_topic_collections',
+  },
+  {
+    up: migration_20260907_123617_add_shopify_carousel_and_sidebar_blocks.up,
+    down: migration_20260907_123617_add_shopify_carousel_and_sidebar_blocks.down,
+    name: '20260907_123617_add_shopify_carousel_and_sidebar_blocks'
   },
 ];

@@ -10,7 +10,9 @@ import { HeroBlockComponent } from "./Hero/Component";
 import { LogosBlockComponent } from "./Logos/Component";
 import { NewsletterBlockComponent } from "./Newsletter/Component";
 import { RawHtmlBlockComponent } from "./RawHtml/Component";
+import { ShopifyCarouselBlockComponent } from "./ShopifyCarousel/Component";
 import { ShopifyProductBlockComponent } from "./ShopifyProduct/Component";
+import { SidebarSectionBlockComponent } from "./SidebarSection/Component";
 import { StatsBlockComponent } from "./Stats/Component";
 import { TalkGridBlockComponent } from "./TalkGrid/Component";
 import { TestimonialsListBlockComponent } from "./TestimonialsList/Component";
@@ -29,7 +31,9 @@ export const contentBlockComponents = {
   logos: LogosBlockComponent,
   rawHtml: RawHtmlBlockComponent,
   testimonialsList: TestimonialsListBlockComponent,
+  shopifyCarousel: ShopifyCarouselBlockComponent,
   shopifyProduct: ShopifyProductBlockComponent,
+  sidebarSection: SidebarSectionBlockComponent,
   talkGrid: TalkGridBlockComponent,
   topicChips: TopicChipsBlockComponent,
 };
