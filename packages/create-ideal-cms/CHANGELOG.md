@@ -1,3 +1,10 @@
+# create-ideal-cms [1.1.0](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.0.0...create-ideal-cms@1.1.0) (2026-09-07)
+
+
+### Features
+
+* **create-ideal-cms:** gate premium plugins behind a private-registry token ([e4c5cc3](https://github.com/focusreactive/payload-plugins/commit/e4c5cc395fd6a19fbc3a9b36cf75faf122155680))
+
 # create-ideal-cms 1.0.0 (2026-09-07)
 
 
