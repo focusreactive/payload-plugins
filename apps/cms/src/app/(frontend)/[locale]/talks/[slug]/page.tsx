@@ -20,11 +20,14 @@ import { notFound } from "next/navigation";
 
 import { RichText } from "@/components/shared";
 import { getPayloadClient, getTalkBySlug } from "@/dal";
+import { getSiteSettings } from "@/dal/getSiteSettings";
 import { ViewAsSwitch } from "@/components/ViewAsSwitch";
 import { applyTier } from "@/lib/talks/applyTier";
 import { getReaderTier } from "@/lib/talks/getReaderTier";
 import type { Locale } from "@/lib/types";
-import type { Topic } from "@/payload-types";
+import type { Footer as FooterType, Header as HeaderType, Topic } from "@/payload-types";
+import { Footer } from "@/collections/Footer/Component";
+import { Header } from "@/collections/Header/Component";
 
 interface PageProps {
   params: Promise<{ locale: Locale; slug: string }>;
@@ -61,6 +64,7 @@ export default async function TalkPage({ params }: PageProps) {
 
   const readerTier = await getReaderTier();
   const { isLocked, requiredTier, talk } = applyTier(document, readerTier);
+  const siteSettings = await getSiteSettings({ locale });
 
   // `topics` is (number | Topic)[] - a relationship comes back as an id when the query depth did
   // not reach it, so the objects have to be picked out rather than assumed.
@@ -69,159 +73,167 @@ export default async function TalkPage({ params }: PageProps) {
   );
 
   return (
-    <article style={{ margin: "0 auto", maxWidth: 760, padding: "40px 20px 120px" }}>
-      <p style={{ color: "#888", fontSize: 12, textTransform: "uppercase" }}>
-        {String(talk.kind ?? "").replace(/-/gu, " ")}
-        {talk.durationSeconds ? ` · ${Math.round(Number(talk.durationSeconds) / 60)} min` : ""}
-      </p>
-      <h1 style={{ fontSize: 30, lineHeight: 1.2, margin: "0 0 12px" }}>{talk.title}</h1>
+    <div className="flex min-h-screen flex-col">
+      <Header data={siteSettings.blog.header as HeaderType} />
+      <main className="grow">
+        <article style={{ margin: "0 auto", maxWidth: 760, padding: "40px 20px 120px" }}>
+          <p style={{ color: "#888", fontSize: 12, textTransform: "uppercase" }}>
+            {String(talk.kind ?? "").replace(/-/gu, " ")}
+            {talk.durationSeconds ? ` · ${Math.round(Number(talk.durationSeconds) / 60)} min` : ""}
+          </p>
+          <h1 style={{ fontSize: 30, lineHeight: 1.2, margin: "0 0 12px" }}>{talk.title}</h1>
 
-      {topics.length ? (
-        <ul
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 6,
-            listStyle: "none",
-            margin: "0 0 24px",
-            padding: 0,
-          }}
-        >
-          {topics.map((topic) => (
-            <li key={topic.slug}>
-              <a
-                href={`/topics/${topic.slug}`}
+          {topics.length ? (
+            <ul
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 6,
+                listStyle: "none",
+                margin: "0 0 24px",
+                padding: 0,
+              }}
+            >
+              {topics.map((topic) => (
+                <li key={topic.slug}>
+                  <a
+                    href={`/browse-topics/${topic.slug}`}
+                    style={{
+                      border: "1px solid #d4d4d4",
+                      borderRadius: 999,
+                      color: "#111",
+                      fontSize: 12,
+                      padding: "3px 10px",
+                      textDecoration: "none",
+                    }}
+                  >
+                    {topic.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {talk.aiSummary ? (
+            <section
+              style={{ background: "#f7f7f7", borderRadius: 8, marginBottom: 24, padding: 20 }}
+            >
+              <h2
                 style={{
-                  border: "1px solid #d4d4d4",
-                  borderRadius: 999,
-                  color: "#111",
-                  fontSize: 12,
-                  padding: "3px 10px",
-                  textDecoration: "none",
+                  fontSize: 13,
+                  letterSpacing: 0.4,
+                  margin: "0 0 8px",
+                  textTransform: "uppercase",
                 }}
               >
-                {topic.title}
-              </a>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      {talk.aiSummary ? (
-        <section style={{ background: "#f7f7f7", borderRadius: 8, marginBottom: 24, padding: 20 }}>
-          <h2
-            style={{
-              fontSize: 13,
-              letterSpacing: 0.4,
-              margin: "0 0 8px",
-              textTransform: "uppercase",
-            }}
-          >
-            Summary
-          </h2>
-          <p style={{ margin: 0 }}>{talk.aiSummary as string}</p>
-        </section>
-      ) : null}
-
-      {Array.isArray(talk.aiQuestions) && talk.aiQuestions.length ? (
-        <section style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 18 }}>Questions this talk answers</h2>
-          <ul>
-            {(talk.aiQuestions as { question: string }[]).map((entry) => (
-              <li key={entry.question} style={{ marginBottom: 4 }}>
-                {entry.question}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {Array.isArray(talk.aiTakeaways) && talk.aiTakeaways.length ? (
-        <section style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 18 }}>Key takeaways</h2>
-          <ul>
-            {(talk.aiTakeaways as { takeaway: string }[]).map((entry) => (
-              <li key={entry.takeaway} style={{ marginBottom: 6 }}>
-                {entry.takeaway}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {talk.audioUrl ? (
-        <section style={{ marginBottom: 24 }}>
-          {/* Streams straight from the foundation's own S3 bucket - public-read, no signature. */}
-          <audio
-            controls
-            preload="metadata"
-            src={talk.audioUrl as string}
-            style={{ width: "100%" }}
-          >
-            <track kind="captions" />
-          </audio>
-        </section>
-      ) : null}
-
-      {Array.isArray(talk.aiPullQuotes) && talk.aiPullQuotes.length && talk.audioUrl ? (
-        <section style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 18 }}>Moments</h2>
-          {(talk.aiPullQuotes as { quote: string; startSeconds?: number | null }[]).map(
-            (pullQuote) => (
-              <blockquote
-                key={pullQuote.quote}
-                style={{ borderLeft: "3px solid #111", margin: "0 0 14px", paddingLeft: 14 }}
-              >
-                <p style={{ margin: "0 0 4px" }}>&ldquo;{pullQuote.quote}&rdquo;</p>
-                {/* #t= is a media fragment, so the browser seeks without any JavaScript. The number
-                  is derived from the transcript segments, never generated - see derive-ai.mjs. */}
-                <a
-                  href={`${talk.audioUrl as string}#t=${Math.floor(pullQuote.startSeconds ?? 0)}`}
-                  style={{ color: "#666", fontSize: 12 }}
-                >
-                  Listen at {formatTimestamp(pullQuote.startSeconds)}
-                </a>
-              </blockquote>
-            )
-          )}
-        </section>
-      ) : null}
-
-      {isLocked ? (
-        <section style={{ border: "1px solid #e8c97a", borderRadius: 8, padding: 24 }}>
-          <h2 style={{ fontSize: 18, marginTop: 0 }}>The rest of this talk is for members</h2>
-          <p style={{ color: "#555" }}>
-            {talk.teaser ?? "This item is part of the members' archive."}
-          </p>
-          <p style={{ fontSize: 13 }}>
-            Needs <strong>{requiredTier === "visitor" ? "no membership" : requiredTier}</strong>.
-            You are viewing as <strong>{readerTier}</strong> - use the switch to change it.
-          </p>
-        </section>
-      ) : (
-        <>
-          <section style={{ lineHeight: 1.65 }}>
-            {/* `body` is a richText field, so it arrives as a Lexical document, not a string.
-                Interpolating it rendered the literal text "[object Object]" on every unlocked item
-                - and no check caught it, because the paywall tests only asserted that the locked
-                notice was ABSENT, never that the prose was present. */}
-            {talk.body ? <RichText content={talk.body} variant="content" /> : null}
-          </section>
-
-          {talk.transcript ? (
-            <details style={{ marginTop: 32 }}>
-              <summary style={{ cursor: "pointer", fontSize: 15, fontWeight: 600 }}>
-                Full transcript
-              </summary>
-              <p style={{ color: "#333", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
-                {talk.transcript as string}
-              </p>
-            </details>
+                Summary
+              </h2>
+              <p style={{ margin: 0 }}>{talk.aiSummary as string}</p>
+            </section>
           ) : null}
-        </>
-      )}
 
-      <ViewAsSwitch current={readerTier} />
-    </article>
+          {Array.isArray(talk.aiQuestions) && talk.aiQuestions.length ? (
+            <section style={{ marginBottom: 24 }}>
+              <h2 style={{ fontSize: 18 }}>Questions this talk answers</h2>
+              <ul>
+                {(talk.aiQuestions as { question: string }[]).map((entry) => (
+                  <li key={entry.question} style={{ marginBottom: 4 }}>
+                    {entry.question}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {Array.isArray(talk.aiTakeaways) && talk.aiTakeaways.length ? (
+            <section style={{ marginBottom: 24 }}>
+              <h2 style={{ fontSize: 18 }}>Key takeaways</h2>
+              <ul>
+                {(talk.aiTakeaways as { takeaway: string }[]).map((entry) => (
+                  <li key={entry.takeaway} style={{ marginBottom: 6 }}>
+                    {entry.takeaway}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {talk.audioUrl ? (
+            <section style={{ marginBottom: 24 }}>
+              {/* Streams straight from the foundation's own S3 bucket - public-read, no signature. */}
+              <audio
+                controls
+                preload="metadata"
+                src={talk.audioUrl as string}
+                style={{ width: "100%" }}
+              >
+                <track kind="captions" />
+              </audio>
+            </section>
+          ) : null}
+
+          {Array.isArray(talk.aiPullQuotes) && talk.aiPullQuotes.length && talk.audioUrl ? (
+            <section style={{ marginBottom: 24 }}>
+              <h2 style={{ fontSize: 18 }}>Moments</h2>
+              {(talk.aiPullQuotes as { quote: string; startSeconds?: number | null }[]).map(
+                (pullQuote) => (
+                  <blockquote
+                    key={pullQuote.quote}
+                    style={{ borderLeft: "3px solid #111", margin: "0 0 14px", paddingLeft: 14 }}
+                  >
+                    <p style={{ margin: "0 0 4px" }}>&ldquo;{pullQuote.quote}&rdquo;</p>
+                    {/* #t= is a media fragment, so the browser seeks without any JavaScript. The number
+                      is derived from the transcript segments, never generated - see derive-ai.mjs. */}
+                    <a
+                      href={`${talk.audioUrl as string}#t=${Math.floor(pullQuote.startSeconds ?? 0)}`}
+                      style={{ color: "#666", fontSize: 12 }}
+                    >
+                      Listen at {formatTimestamp(pullQuote.startSeconds)}
+                    </a>
+                  </blockquote>
+                )
+              )}
+            </section>
+          ) : null}
+
+          {isLocked ? (
+            <section style={{ border: "1px solid #e8c97a", borderRadius: 8, padding: 24 }}>
+              <h2 style={{ fontSize: 18, marginTop: 0 }}>The rest of this talk is for members</h2>
+              <p style={{ color: "#555" }}>
+                {talk.teaser ?? "This item is part of the members' archive."}
+              </p>
+              <p style={{ fontSize: 13 }}>
+                Needs <strong>{requiredTier === "visitor" ? "no membership" : requiredTier}</strong>
+                . You are viewing as <strong>{readerTier}</strong> - use the switch to change it.
+              </p>
+            </section>
+          ) : (
+            <>
+              <section style={{ lineHeight: 1.65 }}>
+                {/* `body` is a richText field, so it arrives as a Lexical document, not a string.
+                    Interpolating it rendered the literal text "[object Object]" on every unlocked item
+                    - and no check caught it, because the paywall tests only asserted that the locked
+                    notice was ABSENT, never that the prose was present. */}
+                {talk.body ? <RichText content={talk.body} variant="content" /> : null}
+              </section>
+
+              {talk.transcript ? (
+                <details style={{ marginTop: 32 }}>
+                  <summary style={{ cursor: "pointer", fontSize: 15, fontWeight: 600 }}>
+                    Full transcript
+                  </summary>
+                  <p style={{ color: "#333", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+                    {talk.transcript as string}
+                  </p>
+                </details>
+              ) : null}
+            </>
+          )}
+
+          <ViewAsSwitch current={readerTier} />
+        </article>
+      </main>
+      <Footer data={siteSettings.blog.footer as FooterType} />
+    </div>
   );
 }

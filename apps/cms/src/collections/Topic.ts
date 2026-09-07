@@ -1,12 +1,12 @@
 /**
- * Topics are a collection, not a string array on Talk, for one reason that matters to this deal:
- * a topic needs its own indexable URL. Their 335 `/browse-topics/*` pages currently emit no
+ * Topics are a collection, not a string array on Talk, for one reason that matters on a content
+ * archive: a topic needs its own indexable URL. The topic listings this replaces emit no
  * structured data at all, and a topic page is the natural landing page for the search and answer
- * engine traffic the whole engagement is about.
+ * engine traffic such an archive should be earning.
  *
- * Their live topic vocabulary is real and already curated - "Fear / Fearlessness",
- * "Addiction / Codependency" - so `title` carries the slash. Note the catalogue export escapes
- * these as "Fear \/ Fearlessness"; seed-payload.mjs unescapes before writing.
+ * A curated vocabulary tends to pair its terms - "Doubt / Certainty" - so `title` carries the
+ * slash, and a legacy catalogue export tends to escape it as "Doubt \/ Certainty". Unescape on
+ * the way in; the seed script does.
  */
 
 import type { CollectionConfig } from "payload";

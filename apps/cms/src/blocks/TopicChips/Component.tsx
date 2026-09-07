@@ -52,7 +52,7 @@ async function TopicChipsBlockContent({ description, heading, topicItems }: Prop
         {topics.map((topic) => (
           <li key={topic.slug ?? topic.title}>
             <Link
-              href={`/topics/${topic.slug}`}
+              href={`/browse-topics/${topic.slug}`}
               style={{
                 border: "1px solid #d4d4d4",
                 borderRadius: 999,
