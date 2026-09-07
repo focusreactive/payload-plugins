@@ -1,6 +1,11 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Answers } from "./prompts.js";
+
+// Premium plugins that require a FocusReactive private-registry token. Without one,
+// the scaffold strips them out entirely rather than shipping a project that fails
+// `bun install` for anyone without @fr-private access.
+const PRIVATE_PLUGIN_DEPENDENCY = "@fr-private/payload-plugin-visual-editing";
 
 // Plugins that ship as `workspace:*` in the source monorepo and need a real
 // version range in the scaffold output. Pinned exactly to match the source's
@@ -69,6 +74,163 @@ async function transformCmsPackageJson(targetDir: string): Promise<void> {
   await writeJson(file, pkg);
 }
 
+async function applyTextReplacements(
+  file: string,
+  replacements: [string, string][]
+): Promise<void> {
+  let content = await readFile(file, "utf-8");
+  for (const [find, replace] of replacements) {
+    if (!content.includes(find)) {
+      throw new Error(`create-ideal-cms: expected to find this in ${file}:\n${find}`);
+    }
+    content = content.replace(find, replace);
+  }
+  await writeFile(file, content);
+}
+
+async function stripPrivatePlugins(targetDir: string): Promise<void> {
+  const cmsPkgFile = join(targetDir, "apps/cms/package.json");
+  const cmsPkg = await readJson<Pkg>(cmsPkgFile);
+  if (cmsPkg.dependencies) {
+    // oxlint-disable-next-line typescript/no-dynamic-delete
+    delete cmsPkg.dependencies[PRIVATE_PLUGIN_DEPENDENCY];
+  }
+  await writeJson(cmsPkgFile, cmsPkg);
+
+  await applyTextReplacements(join(targetDir, "apps/cms/src/lib/plugins/index.ts"), [
+    ['import { visualEditingPlugin } from "@fr-private/payload-plugin-visual-editing";\n', ""],
+    [
+      `
+  visualEditingPlugin({
+    adminBasePath: "/admin",
+    skipCollections: [
+      "users",
+      "media",
+      "categories",
+      "authors",
+      "testimonials",
+      "header",
+      "footer",
+      "document-embeddings",
+      "redirects",
+      "presets",
+      "comments",
+      "comment-reads",
+      "ab-experiments",
+      "payload-mcp-api-keys",
+    ],
+    skipGlobals: ["site-settings"],
+  }),
+`,
+      "",
+    ],
+  ]);
+
+  await applyTextReplacements(join(targetDir, "apps/cms/src/app/(frontend)/[locale]/layout.tsx"), [
+    ['import { VisualEditing } from "@fr-private/payload-plugin-visual-editing/client";\n\n', ""],
+    ['import { VisualEditingEditRouter } from "@/components/VisualEditingEditRouter";\n', ""],
+    [
+      `            {draft ? (
+              <VisualEditing.Provider available adminBasePath="/admin">
+                <VisualEditing.Toggle />
+                <VisualEditing.Overlay locale={locale}>{children}</VisualEditing.Overlay>
+                <LivePreviewListener />
+                <VisualEditingEditRouter />
+              </VisualEditing.Provider>
+            ) : (
+              children
+            )}`,
+      `            {draft ? (
+              <>
+                <LivePreviewListener />
+                {children}
+              </>
+            ) : (
+              children
+            )}`,
+    ],
+  ]);
+
+  await applyTextReplacements(
+    join(targetDir, "apps/cms/src/components/shared/RichText/index.tsx"),
+    [
+      [
+        'import { withVisualEditingPath } from "@fr-private/payload-plugin-visual-editing/client";\n',
+        "",
+      ],
+      [
+        `  return (
+    <div {...withVisualEditingPath(content)}>
+      <RichTextReact
+        className={cn(proseVariants({ variant }), className)}
+        converters={createJsxConverters(variant)}
+        data={content}
+      />
+    </div>
+  );`,
+        `  return (
+    <RichTextReact
+      className={cn(proseVariants({ variant }), className)}
+      converters={createJsxConverters(variant)}
+      data={content}
+    />
+  );`,
+      ],
+    ]
+  );
+
+  await applyTextReplacements(join(targetDir, "apps/cms/src/lib/adapters/prepareMediaProps.ts"), [
+    [
+      'import { withVisualEditingPath } from "@fr-private/payload-plugin-visual-editing/client";\n\n',
+      "",
+    ],
+    [
+      `  const visualEditing = withVisualEditingPath(image);
+  const media = image && typeof image === "object" ? image : null;`,
+      `  const media = image && typeof image === "object" ? image : null;`,
+    ],
+    [
+      `      data: { kind: "video", src: getMediaUrl(src) },
+      visualEditing,
+    };`,
+      `      data: { kind: "video", src: getMediaUrl(src) },
+    };`,
+    ],
+    [
+      `    },
+    visualEditing,
+    imageProps,
+  };`,
+      `    },
+    imageProps,
+  };`,
+    ],
+  ]);
+
+  await applyTextReplacements(join(targetDir, "apps/cms/src/app/(payload)/admin/importMap.js"), [
+    [
+      "import { VisualEditingBridgeProvider as VisualEditingBridgeProvider_673e524fc3ed2dc6764c4e182a583baf } from '@fr-private/payload-plugin-visual-editing/admin'\n",
+      "",
+    ],
+    [
+      '  "@fr-private/payload-plugin-visual-editing/admin#VisualEditingBridgeProvider": VisualEditingBridgeProvider_673e524fc3ed2dc6764c4e182a583baf,\n',
+      "",
+    ],
+  ]);
+
+  await rm(join(targetDir, "apps/cms/src/components/VisualEditingEditRouter"), {
+    recursive: true,
+    force: true,
+  });
+}
+
+async function writePrivateRegistryNpmrc(targetDir: string): Promise<void> {
+  // References NPM_TOKEN rather than embedding the token literally, so `git init && git add .`
+  // downstream (initGit) can't commit the secret into the scaffolded project's history.
+  const content = `@fr-private:registry=https://registry.npmjs.org/\n//registry.npmjs.org/:_authToken=\${NPM_TOKEN}\n`;
+  await writeFile(join(targetDir, ".npmrc"), content);
+}
+
 function escapeEnvValue(value: string): string {
   if (value === "") return "";
   return `'${value.replace(/'/gu, "'\\''")}'`;
@@ -121,6 +283,11 @@ async function overrideThemeColor(targetDir: string, hex: string): Promise<void>
 export async function applyTransforms(answers: Answers): Promise<void> {
   await transformRootPackageJson(answers.targetDir, answers);
   await transformCmsPackageJson(answers.targetDir);
+  if (answers.privateRegistryToken) {
+    await writePrivateRegistryNpmrc(answers.targetDir);
+  } else {
+    await stripPrivatePlugins(answers.targetDir);
+  }
   await writeEnvFile(answers.targetDir, answers);
   await overrideThemeColor(answers.targetDir, answers.primaryColor);
 }

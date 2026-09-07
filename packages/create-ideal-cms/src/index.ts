@@ -43,9 +43,19 @@ ${pc.bold("Options:")}
   };
 }
 
-function runCommand(cmd: string, args: string[], cwd: string): Promise<void> {
+function runCommand(
+  cmd: string,
+  args: string[],
+  cwd: string,
+  env?: NodeJS.ProcessEnv
+): Promise<void> {
   return new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, { cwd, stdio: "inherit", shell: false });
+    const child = spawn(cmd, args, {
+      cwd,
+      stdio: "inherit",
+      shell: false,
+      env: env ? { ...process.env, ...env } : process.env,
+    });
     child.on("error", reject);
     child.on("close", (code) => {
       if (code === 0) {
@@ -63,9 +73,14 @@ function pmRunArgs(pm: PackageManager, script: string, args: string[] = []): str
   return ["run", script, ...args];
 }
 
-async function installDeps(targetDir: string, pm: PackageManager): Promise<void> {
+async function installDeps(
+  targetDir: string,
+  pm: PackageManager,
+  privateRegistryToken: string
+): Promise<void> {
   if (pm === "skip") return;
-  await runCommand(pm, ["install"], targetDir);
+  const env = privateRegistryToken ? { NPM_TOKEN: privateRegistryToken } : undefined;
+  await runCommand(pm, ["install"], targetDir, env);
 }
 
 async function runInitialMigration(targetDir: string, pm: PackageManager): Promise<void> {
@@ -110,6 +125,19 @@ function printNextSteps(answers: Answers, migrationRan: boolean): void {
   lines.push(`  ${run} run dev                 ${pc.dim("# starts on port 3333")}`);
   lines.push("");
   lines.push(pc.dim("Edit apps/cms/.env to add OpenAI / OIDC / Blob tokens later."));
+  if (answers.privateRegistryToken) {
+    lines.push(
+      pc.dim(
+        "Export NPM_TOKEN in your shell before future installs (needed for @fr-private packages)."
+      )
+    );
+  } else {
+    lines.push(
+      pc.dim(
+        "Skipped premium plugins (no private registry token) — re-run with one to include them."
+      )
+    );
+  }
   outro(lines.join("\n"));
 }
 
@@ -153,7 +181,7 @@ async function main(): Promise<void> {
   if (answers.packageManager !== "skip") {
     log.step(`Installing dependencies with ${answers.packageManager}…`);
     try {
-      await installDeps(answers.targetDir, answers.packageManager);
+      await installDeps(answers.targetDir, answers.packageManager, answers.privateRegistryToken);
     } catch (err) {
       log.error(`Install failed: ${(err as Error).message}`);
       log.message(`You can finish setup manually with: ${answers.packageManager} install`);
