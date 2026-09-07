@@ -1,3 +1,10 @@
+# create-ideal-cms [1.2.0](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.1.5...create-ideal-cms@1.2.0) (2026-09-07)
+
+
+### Features
+
+* **create-ideal-cms:** generate a project-specific root README ([60101e2](https://github.com/focusreactive/payload-plugins/commit/60101e2cdcfc2886d7e8b171c452ee54e944eb10))
+
 ## create-ideal-cms [1.1.5](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.1.4...create-ideal-cms@1.1.5) (2026-09-07)
 
 
