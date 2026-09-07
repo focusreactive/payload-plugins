@@ -25,7 +25,7 @@ function parseCliArgs(): { name?: string; ref?: string; fromLocal?: string } {
 ${pc.bold("create-ideal-cms")} — scaffold a Payload CMS monorepo
 
 ${pc.bold("Usage:")}
-  npx @focus-reactive/create-ideal-cms [name] [--ref <git-ref>] [--from-local <path>]
+  npx create-ideal-cms [name] [--ref <git-ref>] [--from-local <path>]
 
 ${pc.bold("Options:")}
   --ref           GitHub ref of focusreactive/payload-plugins to template from (default: main)
