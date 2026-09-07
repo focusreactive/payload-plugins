@@ -1,3 +1,10 @@
+## create-ideal-cms [1.1.4](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.1.3...create-ideal-cms@1.1.4) (2026-09-07)
+
+
+### Bug Fixes
+
+* **create-ideal-cms:** pin and prune the analytics and seo plugins too ([397b6fe](https://github.com/focusreactive/payload-plugins/commit/397b6fefe3c156081e72a2aa2f78c693ac4f0376))
+
 ## create-ideal-cms [1.1.3](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.1.2...create-ideal-cms@1.1.3) (2026-09-07)
 
 
