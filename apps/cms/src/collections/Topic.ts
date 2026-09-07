@@ -29,16 +29,26 @@ export const Topic: CollectionConfig<"topic"> = {
   },
   fields: [
     { label: "Title", localized: true, name: "title", required: true, type: "text" },
-    slugField({ required: true, useAsSlug: "title" }),
-    { label: "Description", localized: true, name: "description", type: "textarea" },
     {
-      // generateSeoFields() MUST be nested in a named tab, not spread at the collection root.
-      // It emits its own `title` and `description`, so spreading it next to the collection's own
-      // `title` throws DuplicateFieldName at config build - a runtime failure that typechecks
-      // clean, so it is only ever found by starting Payload. `name: "meta"` also matches how the
-      // renderer reads it (talk.meta?.title) and how Posts and Page both do it.
+      // Two tabs, matching a Page document: the editor lands on Content and finds SEO beside it.
+      // The Content tab is UNNAMED, which in Payload is presentational - every field inside it is
+      // still stored at the top level of the document, so this is layout only, with no schema
+      // delta and no migration.
+      //
+      // generateSeoFields() MUST stay nested in the NAMED tab. It emits its own `title` and
+      // `description`, so spreading it next to the collection's own `title` throws
+      // DuplicateFieldName at config build - a runtime failure that typechecks clean, so it is
+      // only ever found by starting Payload. `name: "meta"` also matches how the renderer reads
+      // it (topic.meta?.title) and how Posts and Page both do it.
       type: "tabs",
       tabs: [
+        {
+          fields: [
+            slugField({ required: true, useAsSlug: "title" }),
+            { label: "Description", localized: true, name: "description", type: "textarea" },
+          ],
+          label: { en: "Content", es: "Contenido" },
+        },
         {
           fields: generateSeoFields({ generation: true }),
           label: { en: "SEO", es: "SEO" },

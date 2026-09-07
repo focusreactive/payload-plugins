@@ -69,120 +69,133 @@ export const Talk: CollectionConfig<"talk"> = {
       required: true,
       type: "text",
     },
-    // NOT createSharedSlugField, which is typed ("page" | "posts") and cross-validates a slug
-    // against the other of those two collections. Talks live under /talks/<slug>, so they cannot
-    // collide with a page or a post path and need only per-collection uniqueness.
-    //
-    // Not spread: slugField returns a single RowField (a text input plus a "generate" checkbox),
-    // not an array. `useAsSlug` rather than the deprecated `fieldToUse`.
-    slugField({ required: true, useAsSlug: "title" }),
     {
-      type: "row",
-      fields: [
-        {
-          admin: { width: "50%" },
-          label: "Kind",
-          name: "kind",
-          options: TALK_KINDS.map((value) => ({
-            label: value.replace(/-/gu, " ").replace(/\b\w/gu, (letter) => letter.toUpperCase()),
-            value,
-          })),
-          required: true,
-          type: "select",
-        },
-        {
-          admin: {
-            description:
-              "What a reader needs in order to read this item's body. Editorial metadata about the ITEM - never a record of who paid. Entitlement lives in the payment provider and reaches the app through the identity layer; the CMS must not store it.",
-            width: "50%",
-          },
-          defaultValue: "visitor",
-          label: "Required tier",
-          name: "requiredTier",
-          options: TALK_TIERS.map((value) => ({
-            label: value === "visitor" ? "Free - no membership" : value,
-            value,
-          })),
-          required: true,
-          type: "select",
-        },
-      ],
-    },
-    {
-      admin: {
-        description:
-          "Shown to readers below the tier, and indexed. Their site already ships this - the anonymous view of a gated talk carries about 41% of the member text - so a teaser is a rewrite of something that exists, not a new feature.",
-      },
-      label: "Teaser",
-      localized: true,
-      name: "teaser",
-      type: "textarea",
-    },
-    {
-      label: "Body",
-      localized: true,
-      name: "body",
-      required: true,
-      type: "richText",
-    },
-    {
-      type: "row",
-      fields: [
-        {
-          admin: { width: "50%" },
-          label: "Published at",
-          name: "publishedAt",
-          type: "date",
-        },
-        {
-          admin: {
-            description:
-              "Real length in seconds. Never read this from their JSON-LD, which says T1M15S on every talk on the site.",
-            width: "50%",
-          },
-          label: "Duration (seconds)",
-          min: 0,
-          name: "durationSeconds",
-          type: "number",
-        },
-      ],
-    },
-    {
-      admin: {
-        description:
-          "Streams from the client's own S3 bucket. The objects are public-read once the decorative SigV2 query string is stripped, so no key and no client action is needed. Do not store a presigned URL - theirs expire the day they are generated.",
-      },
-      label: "Audio URL",
-      name: "audioUrl",
-      type: "text",
-    },
-    {
-      hasMany: true,
-      label: "Topics",
-      name: "topics",
-      relationTo: "topic",
-      type: "relationship",
-    },
-    ...talkAiFields,
-    {
-      admin: {
-        description:
-          "Where this item came from in their Magento, kept so any figure in the demo can be traced back.",
-        position: "sidebar",
-        readOnly: true,
-      },
-      label: "Source URL",
-      name: "sourceUrl",
-      type: "text",
-    },
-    {
-      // generateSeoFields() MUST be nested in a named tab, not spread at the collection root.
-      // It emits its own `title` and `description`, so spreading it next to the collection's own
-      // `title` throws DuplicateFieldName at config build - a runtime failure that typechecks
-      // clean, so it is only ever found by starting Payload. `name: "meta"` also matches how the
-      // renderer reads it (talk.meta?.title) and how Posts and Page both do it.
+      // Two tabs so the document reads the way a Page document does - the editor lands on
+      // Content and finds SEO beside it, rather than meeting a lone SEO tab under a long form.
+      // The Content tab is UNNAMED, which in Payload is presentational: every field inside it
+      // is still stored at the top level of the document, so this is a layout change with no
+      // schema delta and no migration.
+      //
+      // generateSeoFields() MUST stay nested in the NAMED tab. It emits its own `title` and
+      // `description`, so spreading it next to the collection's own `title` throws
+      // DuplicateFieldName at config build - a runtime failure that typechecks clean, so it is
+      // only ever found by starting Payload. `name: "meta"` also matches how the renderer reads
+      // it (talk.meta?.title) and how Posts and Page both do it.
       type: "tabs",
       tabs: [
+        {
+          fields: [
+            // NOT createSharedSlugField, which is typed ("page" | "posts") and cross-validates a slug
+            // against the other of those two collections. Talks live under /talks/<slug>, so they cannot
+            // collide with a page or a post path and need only per-collection uniqueness.
+            //
+            // Not spread: slugField returns a single RowField (a text input plus a "generate" checkbox),
+            // not an array. `useAsSlug` rather than the deprecated `fieldToUse`.
+            slugField({ required: true, useAsSlug: "title" }),
+            {
+              type: "row",
+              fields: [
+                {
+                  admin: { width: "50%" },
+                  label: "Kind",
+                  name: "kind",
+                  options: TALK_KINDS.map((value) => ({
+                    label: value
+                      .replace(/-/gu, " ")
+                      .replace(/\b\w/gu, (letter) => letter.toUpperCase()),
+                    value,
+                  })),
+                  required: true,
+                  type: "select",
+                },
+                {
+                  admin: {
+                    description:
+                      "What a reader needs in order to read this item's body. Editorial metadata about the ITEM - never a record of who paid. Entitlement lives in the payment provider and reaches the app through the identity layer; the CMS must not store it.",
+                    width: "50%",
+                  },
+                  defaultValue: "visitor",
+                  label: "Required tier",
+                  name: "requiredTier",
+                  options: TALK_TIERS.map((value) => ({
+                    label: value === "visitor" ? "Free - no membership" : value,
+                    value,
+                  })),
+                  required: true,
+                  type: "select",
+                },
+              ],
+            },
+            {
+              admin: {
+                description:
+                  "Shown to readers below the tier, and indexed. Their site already ships this - the anonymous view of a gated talk carries about 41% of the member text - so a teaser is a rewrite of something that exists, not a new feature.",
+              },
+              label: "Teaser",
+              localized: true,
+              name: "teaser",
+              type: "textarea",
+            },
+            {
+              label: "Body",
+              localized: true,
+              name: "body",
+              required: true,
+              type: "richText",
+            },
+            {
+              type: "row",
+              fields: [
+                {
+                  admin: { width: "50%" },
+                  label: "Published at",
+                  name: "publishedAt",
+                  type: "date",
+                },
+                {
+                  admin: {
+                    description:
+                      "Real length in seconds. Never read this from their JSON-LD, which says T1M15S on every talk on the site.",
+                    width: "50%",
+                  },
+                  label: "Duration (seconds)",
+                  min: 0,
+                  name: "durationSeconds",
+                  type: "number",
+                },
+              ],
+            },
+            {
+              admin: {
+                description:
+                  "Streams from the client's own S3 bucket. The objects are public-read once the decorative SigV2 query string is stripped, so no key and no client action is needed. Do not store a presigned URL - theirs expire the day they are generated.",
+              },
+              label: "Audio URL",
+              name: "audioUrl",
+              type: "text",
+            },
+            {
+              hasMany: true,
+              label: "Topics",
+              name: "topics",
+              relationTo: "topic",
+              type: "relationship",
+            },
+            ...talkAiFields,
+            {
+              admin: {
+                description:
+                  "Where this item came from in their Magento, kept so any figure in the demo can be traced back.",
+                position: "sidebar",
+                readOnly: true,
+              },
+              label: "Source URL",
+              name: "sourceUrl",
+              type: "text",
+            },
+          ],
+          label: { en: "Content", es: "Contenido" },
+        },
         {
           fields: generateSeoFields({ generation: true }),
           label: { en: "SEO", es: "SEO" },
