@@ -83,7 +83,7 @@ async function copyLocal(src: string, dest: string): Promise<void> {
 }
 
 async function resetMigrations(targetDir: string): Promise<void> {
-  const dir = join(targetDir, "apps/cms/src/database/migrations");
+  const dir = join(targetDir, "apps/cms/src/lib/database/migrations");
   let entries: string[];
   try {
     entries = await readdir(dir);
