@@ -1,3 +1,5 @@
+## create-ideal-cms [1.1.2](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.1.1...create-ideal-cms@1.1.2) (2026-09-07)
+
 ## create-ideal-cms [1.1.1](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.1.0...create-ideal-cms@1.1.1) (2026-09-07)
 
 # create-ideal-cms [1.1.0](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.0.0...create-ideal-cms@1.1.0) (2026-09-07)
