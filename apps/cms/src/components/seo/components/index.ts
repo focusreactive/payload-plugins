@@ -3,3 +3,4 @@ export { ArticleJsonLd } from "./ArticleJsonLd";
 export { BlogJsonLd } from "./BlogJsonLd";
 export { BreadcrumbsJsonLd } from "./BreadcrumbsJsonLd";
 export { FaqJsonLd } from "./FaqJsonLd";
+export { TalkJsonLd } from "./TalkJsonLd";

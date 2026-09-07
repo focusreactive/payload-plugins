@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { getAlternateLocales } from "@/dal/getAlternateLocales";
 import { getSiteSettings } from "@/dal/getSiteSettings";
-import type { Media, Page, Post } from "@/payload-types";
+import type { Media, Page, Post, Talk, Topic } from "@/payload-types";
 
 import type { Locale } from "../types";
 import { buildUrl } from "../utils/path/buildUrl";
@@ -31,11 +31,19 @@ const getImageURL = (image: Media | null | undefined) => {
   return url;
 };
 
+/**
+ * `talk` and `topic` render from hand-written routes under a fixed base path, so they take the
+ * same title/description/OG/Twitter/robots treatment as a Page but resolve their canonical from
+ * that base path instead of from a breadcrumb chain. Routing them through here rather than letting
+ * each route hand-roll a two-field object is what makes the SEO tab's stored values reach the page.
+ */
+type MetaCollection = "page" | "posts" | "talk" | "topic";
+
 export const generateMeta = async (args: {
-  doc: Partial<Page | Post> | null;
+  doc: Partial<Page | Post | Talk | Topic> | null;
   overrides?: Partial<Metadata>;
   locale: Locale;
-  collection: "page" | "posts";
+  collection: MetaCollection;
   page?: number;
 }): Promise<Metadata> => {
   const { doc, overrides, locale, collection, page } = args;
@@ -83,9 +91,15 @@ export const generateMeta = async (args: {
       locale,
       slug: doc?.slug || null,
     });
+  } else if (collection === "talk" || collection === "topic") {
+    canonical = buildUrl({
+      collection,
+      locale,
+      slug: doc?.slug || null,
+    });
   } else {
     canonical = buildUrl({
-      breadcrumbs: (doc as Page)?.breadcrumbs,
+      breadcrumbs: (doc as Partial<Page> | null)?.breadcrumbs,
       collection: "page",
       locale,
       slug: doc?.slug || null,
@@ -116,12 +130,16 @@ export const generateMeta = async (args: {
     }
   } else if (collection === "page") {
     languages = await getAlternateLocales({
-      breadcrumbs: (doc as Page)?.breadcrumbs,
+      breadcrumbs: (doc as Partial<Page> | null)?.breadcrumbs,
       collection: "page",
       currentLocale: locale,
       slug: doc?.slug || undefined,
     });
   }
+  // `talk` and `topic` deliberately emit no hreflang set. getAlternateLocales resolves a
+  // per-locale path by querying the pages or posts collection, and neither answers for these two;
+  // guessing the sibling URL instead would publish an alternate that may 404. Canonical is what
+  // the two routes were missing, and it is correct without this.
 
   const alternateLocalesForOG: string[] = [];
   if (languages) {
@@ -132,9 +150,9 @@ export const generateMeta = async (args: {
     }
   }
 
-  const isArticle = collection === "posts";
+  const isArticle = collection === "posts" || collection === "talk";
   const publishedTime = isArticle
-    ? ((doc as Partial<Post> | null)?.publishedAt ?? undefined)
+    ? ((doc as Partial<Post | Talk> | null)?.publishedAt ?? undefined)
     : undefined;
 
   return {

@@ -23,6 +23,9 @@ is that the archive collapses into one collection rather than thirty attribute s
   the twelve already in Ideal CMS
 - a talk route with a "view as" tier switch, so the gated and ungated states can be
   shown on a call without building sign-in
+- metadata parity on the two hand-written routes and talk-level structured data — an
+  `Article` carrying its audio as an `AudioObject` and Google's paywalled-content
+  pattern, so a gated item is indexable and marked as metered rather than truncated
 - a server-rendered Shopify product card, reading one product handle through the
   Storefront API
 

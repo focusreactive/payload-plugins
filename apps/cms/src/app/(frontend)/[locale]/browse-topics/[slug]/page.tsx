@@ -15,6 +15,7 @@
  * cache at the DAL, so a newly published item or topic is reachable without a rebuild.
  */
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -23,7 +24,10 @@ import { getPayloadClient, getTalks } from "@/dal";
 // does, so application code keeps a single DAL entry point.
 import { getTopicBySlug } from "@/dal/getTopicBySlug";
 import { getSiteSettings } from "@/dal/getSiteSettings";
+import { BreadcrumbsJsonLd } from "@/components/seo/components";
 import type { Locale } from "@/lib/types";
+import { generateMeta } from "@/lib/utils/generateMeta";
+import { buildUrl } from "@/lib/utils/path/buildUrl";
 import type { Footer as FooterType, Header as HeaderType } from "@/payload-types";
 import { Footer } from "@/collections/Footer/Component";
 import { Header } from "@/collections/Header/Component";
@@ -51,16 +55,32 @@ const formatDuration = (seconds?: number | null) => {
   return minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 };
 
-export async function generateMetadata({ params }: PageProps) {
+/**
+ * Same shared helper as the Page catch-all and the blog route, so a topic page ships the canonical,
+ * robots, og:* and twitter:* set a Page ships. The route used to return a title and a description
+ * and nothing else, which left the SEO tab's stored meta image and robots choice unread.
+ *
+ * The topic-level fallback (meta.description -> the topic's own description) is resolved into the
+ * doc rather than lost, exactly as the sibling talk route does it; generateMeta continues from
+ * there into the site-level default.
+ */
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale, slug } = await params;
   const payload = await getPayloadClient();
   const topic = await getTopicBySlug(payload, slug, locale);
   if (!topic) return {};
 
-  return {
-    description: topic.meta?.description ?? topic.description ?? undefined,
-    title: topic.meta?.title ?? topic.title,
-  };
+  return generateMeta({
+    collection: "topic",
+    doc: {
+      ...topic,
+      meta: {
+        ...topic.meta,
+        description: topic.meta?.description ?? topic.description ?? undefined,
+      },
+    },
+    locale,
+  });
 }
 
 export default async function TopicPage({ params }: PageProps) {
@@ -87,6 +107,20 @@ export default async function TopicPage({ params }: PageProps) {
         className="grow"
         style={{ margin: "0 auto", maxWidth: 760, padding: "40px 20px 120px" }}
       >
+        {/* Breadcrumbs only, on purpose. The one listing schema this repo owns, createBlogSchema,
+            is typed to Post and resolves every URL through the blog base path, so it cannot
+            describe a topic; an ItemList written here would be new markup invented for one page
+            rather than a shared component, so it waits for a reason to exist. */}
+        <BreadcrumbsJsonLd
+          items={[
+            {
+              label: topic.title,
+              url: buildUrl({ collection: "topic", locale, slug: topic.slug }),
+            },
+          ]}
+          locale={locale}
+        />
+
         <p style={{ color: "#888", fontSize: 12, textTransform: "uppercase" }}>Topic</p>
         <h1 style={{ fontSize: 30, lineHeight: 1.2, margin: "0 0 12px" }}>{topic.title}</h1>
 
