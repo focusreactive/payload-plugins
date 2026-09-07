@@ -19,6 +19,11 @@ export const ShopifyProductBlock: Block = injectSection({
     }),
     {
       admin: {
+        components: {
+          // The stored value is still the handle in this same text field - the picker replaces how
+          // an editor arrives at it, not what is saved - so nothing about the schema moves.
+          Field: "@/components/admin/ProductHandlePicker#ProductHandlePicker",
+        },
         description:
           "The product's handle in Shopify - the last path segment of its storefront URL, e.g. my-first-product. Not the numeric id.",
         placeholder: "my-first-product",

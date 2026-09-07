@@ -25,6 +25,7 @@ import { FolderTableCell as FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1 } f
 import { FolderField as FolderField_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { RowLabel as RowLabel_7f4fa5fc68fb5a0a92393f6444a57fbd } from '@/components/admin/RowLabel'
 import { BlockLabelServerWrapper as BlockLabelServerWrapper_ad8f8fdcc54c2df5d561bf1e2721dc58 } from '@focus-reactive/payload-plugin-presets/rsc'
+import { ProductHandlePicker as ProductHandlePicker_a91b5e433ec3244de0f39f294aad8f73 } from '@/components/admin/ProductHandlePicker'
 import { CopyAiPromptButton as CopyAiPromptButton_9694d9e75b2ba68d2307fd533ed819ca } from '@/components/admin/CopyAiPromptButton'
 import { BlocksFieldWithPresets as BlocksFieldWithPresets_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { SeoField as SeoField_8b0de638b8c4dbaba7d1d35a3b22b14d } from '@focus-reactive/payload-plugin-seo/components/SeoField'
@@ -88,6 +89,7 @@ export const importMap = {
   "@payloadcms/next/rsc#FolderField": FolderField_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@/components/admin/RowLabel#RowLabel": RowLabel_7f4fa5fc68fb5a0a92393f6444a57fbd,
   "@focus-reactive/payload-plugin-presets/rsc#BlockLabelServerWrapper": BlockLabelServerWrapper_ad8f8fdcc54c2df5d561bf1e2721dc58,
+  "@/components/admin/ProductHandlePicker#ProductHandlePicker": ProductHandlePicker_a91b5e433ec3244de0f39f294aad8f73,
   "@/components/admin/CopyAiPromptButton#CopyAiPromptButton": CopyAiPromptButton_9694d9e75b2ba68d2307fd533ed819ca,
   "@focus-reactive/payload-plugin-presets/client#BlocksFieldWithPresets": BlocksFieldWithPresets_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-seo/components/SeoField#SeoField": SeoField_8b0de638b8c4dbaba7d1d35a3b22b14d,

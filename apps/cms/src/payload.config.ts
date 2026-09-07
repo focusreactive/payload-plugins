@@ -20,6 +20,7 @@ import { Talk } from "@/collections/Talk";
 import { Testimonials } from "@/collections/Testimonials";
 import { Topic } from "@/collections/Topic";
 import { Users } from "@/collections/Users";
+import { createStoreProductsEndpoint } from "@/endpoints/storeProducts";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { createDatabaseAdapter } from "@/lib/database";
 import { SiteSettings } from "@/globals/SiteSettings/config";
@@ -83,6 +84,9 @@ export default buildConfig({
     connectionString: process.env.DATABASE_URL,
   }),
   editor: lexicalEditor(),
+  // Serves the admin product picker only. Registered here rather than as a Next route handler so
+  // it inherits Payload's auth and can guard on `req.user`.
+  endpoints: [createStoreProductsEndpoint()],
   globals: [SiteSettings],
   i18n: {
     fallbackLanguage: "en",

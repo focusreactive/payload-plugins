@@ -34,6 +34,7 @@ export {
 } from "./getProductByHandle";
 export { getProductsByHandles } from "./getProductsByHandles";
 export type { ShopifyProductCard } from "./getProductsByHandles";
+export { getStoreProductOptions } from "./getStoreProductOptions";
 
 // Documents (generic)
 export { getCachedDocument, getCachedDocumentByID } from "./getDocument";

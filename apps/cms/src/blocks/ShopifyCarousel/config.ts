@@ -35,7 +35,14 @@ const fields: Field[] = [
     },
     fields: [
       {
-        admin: { placeholder: "my-first-product" },
+        admin: {
+          components: {
+            // The stored value is still the handle in this same text field, so the eight handles
+            // already seeded keep resolving and no migration follows from adding this.
+            Field: "@/components/admin/ProductHandlePicker#ProductHandlePicker",
+          },
+          placeholder: "my-first-product",
+        },
         label: { en: "Product handle", es: "Identificador del producto" },
         name: "handle",
         required: true,
