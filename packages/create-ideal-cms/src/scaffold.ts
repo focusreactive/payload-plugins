@@ -13,8 +13,12 @@ const PRUNE_PATHS = [
   "packages/payload-plugin-translator",
   // The CLI itself — its source lives inside the monorepo and must not bleed into scaffolded projects.
   "packages/create-ideal-cms",
-  // The plugin dev sandbox app — only useful inside the source monorepo.
+  // Internal example/demo apps — only useful inside the source monorepo. Some
+  // (e.g. multi-tenancy-demo) carry their own @fr-private deps that would
+  // otherwise 404 for anyone scaffolding without private-registry access.
   "apps/dev",
+  "apps/multi-tenancy-demo",
+  "apps/content-agent-demo",
   // Release machinery — not relevant downstream.
   ".releaserc.json",
   ".github",
