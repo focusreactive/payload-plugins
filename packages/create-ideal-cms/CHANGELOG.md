@@ -1,3 +1,10 @@
+## create-ideal-cms [1.1.5](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.1.4...create-ideal-cms@1.1.5) (2026-09-07)
+
+
+### Bug Fixes
+
+* **create-ideal-cms:** reset migrations at the real path ([188e820](https://github.com/focusreactive/payload-plugins/commit/188e8208245e7821d20e25554a39702f5ae91fe0))
+
 ## create-ideal-cms [1.1.4](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.1.3...create-ideal-cms@1.1.4) (2026-09-07)
 
 
