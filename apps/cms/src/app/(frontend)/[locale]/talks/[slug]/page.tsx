@@ -23,6 +23,7 @@ import { RichText } from "@/components/shared";
 import { getPayloadClient, getTalkBySlug } from "@/dal";
 import { getSiteSettings } from "@/dal/getSiteSettings";
 import { BreadcrumbsJsonLd, TalkJsonLd } from "@/components/seo/components";
+import { AudioSeekButton } from "@/components/AudioSeekButton";
 import { ViewAsSwitch } from "@/components/ViewAsSwitch";
 import { applyTier } from "@/lib/talks/applyTier";
 import { TALK_GATED_REGION_CLASS } from "@/lib/talks/gatedRegion";
@@ -51,6 +52,12 @@ const formatTimestamp = (totalSeconds?: number | null) => {
   const seconds = Math.max(0, Math.floor(totalSeconds ?? 0));
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 };
+
+/**
+ * The "Moments" buttons seek this element, so it needs an id that is ours rather than a tag
+ * selector - a second player added to the page later would otherwise be seeked instead.
+ */
+const AUDIO_ELEMENT_ID = "talk-audio";
 
 /**
  * SEO metadata is built from the UNGATED document on purpose. A gated talk still needs a real
@@ -214,9 +221,10 @@ export default async function TalkPage({ params }: PageProps) {
 
           {talk.audioUrl ? (
             <section style={{ marginBottom: 24 }}>
-              {/* Streams straight from the foundation's own S3 bucket - public-read, no signature. */}
+              {/* Streams straight from the client's own S3 bucket - public-read, no signature. */}
               <audio
                 controls
+                id={AUDIO_ELEMENT_ID}
                 preload="metadata"
                 src={talk.audioUrl as string}
                 style={{ width: "100%" }}
@@ -236,14 +244,14 @@ export default async function TalkPage({ params }: PageProps) {
                     style={{ borderLeft: "3px solid #111", margin: "0 0 14px", paddingLeft: 14 }}
                   >
                     <p style={{ margin: "0 0 4px" }}>&ldquo;{pullQuote.quote}&rdquo;</p>
-                    {/* #t= is a media fragment, so the browser seeks without any JavaScript. The number
-                      is derived from the transcript segments, never generated - see derive-ai.mjs. */}
-                    <a
-                      href={`${talk.audioUrl as string}#t=${Math.floor(pullQuote.startSeconds ?? 0)}`}
-                      style={{ color: "#666", fontSize: 12 }}
-                    >
-                      Listen at {formatTimestamp(pullQuote.startSeconds)}
-                    </a>
+                    {/* Seeking the player in place needs JavaScript - see AudioSeekButton for why a
+                      media fragment cannot do it. The number is derived from the transcript
+                      segments, never generated - see derive-ai.mjs. */}
+                    <AudioSeekButton
+                      audioElementId={AUDIO_ELEMENT_ID}
+                      startSeconds={Math.floor(pullQuote.startSeconds ?? 0)}
+                      timestampLabel={formatTimestamp(pullQuote.startSeconds)}
+                    />
                   </blockquote>
                 )
               )}

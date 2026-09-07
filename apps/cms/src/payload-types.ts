@@ -969,7 +969,7 @@ export interface Talk {
    */
   durationSeconds?: number | null;
   /**
-   * Streams from the foundation's own S3 bucket. The objects are public-read once the decorative SigV2 query string is stripped, so no key and no client action is needed. Do not store a presigned URL - theirs expire the day they are generated.
+   * Streams from the client's own S3 bucket. The objects are public-read once the decorative SigV2 query string is stripped, so no key and no client action is needed. Do not store a presigned URL - theirs expire the day they are generated.
    */
   audioUrl?: string | null;
   topics?: (number | Topic)[] | null;
