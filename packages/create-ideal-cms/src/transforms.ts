@@ -270,6 +270,84 @@ async function writeEnvFile(targetDir: string, answers: Answers): Promise<void> 
   await writeFile(join(targetDir, "apps/cms/.env"), `${lines.join("\n")}\n`);
 }
 
+const PLUGINS: { name: string; detail: string }[] = [
+  {
+    name: "A/B Testing",
+    detail: "native experiments with a dynamic percentage of traffic per variant",
+  },
+  {
+    name: "Analytics",
+    detail: "GA4 dashboard in the admin, client tracking, optional A/B tab",
+  },
+  { name: "SEO", detail: "live Yoast analysis in the editor, SERP preview" },
+  { name: "Presets", detail: "save and apply reusable block configurations" },
+  { name: "Comments", detail: "inline field comments, mentions, and annotations" },
+  {
+    name: "AI Translation",
+    detail: "one-click translations on top of Payload's localization",
+  },
+  {
+    name: "Scheduled Publishing",
+    detail: "schedule documents to publish at a future date, serverless-friendly",
+  },
+];
+
+async function writeRootReadme(answers: Answers): Promise<void> {
+  const pm = answers.packageManager === "skip" ? "bun" : answers.packageManager;
+  const plugins = [...PLUGINS];
+  if (answers.privateRegistryToken) {
+    plugins.push({
+      name: "Visual Editing",
+      detail: "click-to-edit overlay over your content in preview mode",
+    });
+  }
+
+  const setupSteps: string[] = [];
+  if (answers.packageManager === "skip") {
+    setupSteps.push(`${pm} install`);
+  }
+  if (!answers.runInitialMigration) {
+    setupSteps.push(`${pm} --cwd apps/cms run payload migrate:create init`);
+    setupSteps.push(`${pm} --cwd apps/cms run payload migrate`);
+  }
+  setupSteps.push(`${pm} run dev`);
+
+  const lines = [
+    `# ${answers.projectName}`,
+    "",
+    "Built with **Ideal CMS** — a Payload CMS 3 + Next.js starter bundling the",
+    "[FocusReactive Payload plugins](https://github.com/focusreactive/payload-plugins).",
+    "",
+    "## Quick Start",
+    "",
+    setupSteps.length > 1 ? "Finish setup and start the dev server:" : "Start the dev server:",
+    "",
+    "```bash",
+    ...setupSteps,
+    "```",
+    "",
+    "Then open [http://localhost:3333/admin](http://localhost:3333/admin) and create your first admin user.",
+    "",
+    "## Environment",
+    "",
+    "Configuration lives in `apps/cms/.env` (already generated). Edit it to add OpenAI, Vercel Blob, or OIDC SSO credentials later.",
+    "",
+    "## Plugins",
+    "",
+    "This project ships with:",
+    "",
+    ...plugins.map((p) => `- **${p.name}** — ${p.detail}`),
+    "",
+    "See [focusreactive/payload-plugins](https://github.com/focusreactive/payload-plugins) for full plugin docs, or to add more.",
+    "",
+    "## License",
+    "",
+    "MIT",
+    "",
+  ];
+  await writeFile(join(answers.targetDir, "README.md"), lines.join("\n"));
+}
+
 async function overrideThemeColor(targetDir: string, hex: string): Promise<void> {
   const file = join(targetDir, "packages/tailwind-config/base.css");
   const css = await readFile(file, "utf-8");
@@ -292,4 +370,5 @@ export async function applyTransforms(answers: Answers): Promise<void> {
   }
   await writeEnvFile(answers.targetDir, answers);
   await overrideThemeColor(answers.targetDir, answers.primaryColor);
+  await writeRootReadme(answers);
 }
