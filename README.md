@@ -1,6 +1,10 @@
 # Payload CMS Plugins
 
-Open-source Payload CMS plugins for A/B testing, GA4 analytics, live SEO analysis, content presets, inline comments, AI translation, and scheduled publishing on serverless. Drop any of them into an existing Payload project, or get all of them pre-wired into a production setup — Payload 3, Next.js 16, Postgres, page builder, SSO, semantic search — in the **Ideal CMS** starter that lives in this repo at [`apps/cms`](./apps/cms).
+Open-source Payload CMS plugins for A/B testing, analytics, SEO, presets, comments, AI translation, and scheduled publishing. Drop one into an existing project, or start from **Ideal CMS** - the full starter at [`apps/cms`](./apps/cms), pre-wired on Payload 3 + Next.js 16 + Postgres.
+
+## About the Ideal CMS Project
+
+Headless CMS SaaS gets expensive fast - you pay per seat, per language, per request, and hit limits as you grow. Ideal CMS is a self-hosted alternative: Payload as the foundation, extended with the plugins in this repo, plus the boilerplate every project needs - a block-based page builder, locale-scoped semantic search, SSO, deployment config. No license, no vendor lock-in. Use one plugin standalone, or the whole starter - same code either way.
 
 ## Quick Start
 
@@ -13,12 +17,6 @@ npx create-ideal-cms new-cms-project
 Interactive prompts collect a project name, brand color, Postgres URL, and optional OpenAI / Vercel Blob tokens. The scaffolder copies [`apps/cms`](./apps/cms), installs dependencies, and initializes git.
 
 To add an individual plugin to an existing Payload project, see the install command under each plugin below. To try the plugins locally first, see [Run Demo Locally](#run-demo-locally).
-
-## About the Ideal CMS Project
-
-At FocusReactive we build projects on different CMSs — Sanity, Storyblok, Strapi, and Payload. Each platform has its own unique features and limitations, and sometimes a project needs a feature one CMS has but another doesn't.
-
-So we decided to build all of that into one open-source project — we call it **Ideal CMS**. Best features from every CMS we've worked with, available as Payload plugins, plus the boilerplate setup we'd write anyway on every project: a block-based page builder, locale-scoped semantic search, SSO, deployment configuration. Pick individual plugins for an existing Payload project, or start from the full starter — same plugins either way. This often helps our clients free up budget for things we believe should be included from day one.
 
 ## Packages Overview
 
