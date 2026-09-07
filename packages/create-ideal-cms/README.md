@@ -2,6 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/create-ideal-cms)](https://www.npmjs.com/package/create-ideal-cms)
 
+
 Scaffold a production-ready Payload CMS monorepo preconfigured with the
 `@focus-reactive` plugin suite.
 
