@@ -1,3 +1,5 @@
+import type { ComponentProps } from "react";
+import { SectionContainer } from "@/components/shared";
 /**
  * A server component, which is the whole point of the section: the products have to be in the
  * server-rendered HTML, not injected once JavaScript runs. Verify it the only way that can tell
@@ -18,6 +20,10 @@ interface ProductHandleRow {
 }
 
 interface Props {
+  /** Added by injectSection. Ignoring it is what made this block render flush to the
+   *  viewport edge while every stock block sat inside the page's measure. */
+  section?: ComponentProps<typeof SectionContainer>["sectionData"];
+  id?: string | null;
   eyebrow?: string | null;
   heading?: string | null;
   description?: string | null;
@@ -30,7 +36,6 @@ const FALLBACK_HEADING = "Featured products";
 const noticeStyle = {
   border: "1px dashed #b8b8b8",
   borderRadius: 8,
-  margin: "32px 0",
   padding: 24,
 } as const;
 
@@ -56,7 +61,7 @@ function buildCartPermalink(storeDomain: string, variantId: string): string | nu
   return `https://${storeDomain}/cart/${numericVariantId}:1`;
 }
 
-export async function ShopifyCarouselBlockComponent({
+async function ShopifyCarouselBlockContent({
   description,
   eyebrow,
   heading,
@@ -111,7 +116,7 @@ export async function ShopifyCarouselBlockComponent({
   }
 
   return (
-    <section style={{ margin: "32px 0" }}>
+    <section>
       {eyebrow ? (
         <p
           style={{
@@ -176,12 +181,25 @@ export async function ShopifyCarouselBlockComponent({
                 <img
                   alt={product.featuredImage.altText ?? product.title}
                   src={product.featuredImage.url}
-                  style={{ borderRadius: 4, height: 200, objectFit: "cover", width: "100%" }}
+                  style={{ borderRadius: 4, height: 150, objectFit: "cover", width: "100%" }}
                   width={188}
                 />
               ) : null}
 
-              <h3 style={{ fontSize: 16, margin: 0 }}>{product.title}</h3>
+              <h3
+                style={{
+                  WebkitBoxOrient: "vertical",
+                  WebkitLineClamp: 2,
+                  display: "-webkit-box",
+                  fontSize: 15,
+                  lineHeight: 1.3,
+                  margin: 0,
+                  overflow: "hidden",
+                }}
+                title={product.title}
+              >
+                {product.title}
+              </h3>
 
               {showPrice !== false && product.price ? (
                 <p style={{ margin: 0 }}>
@@ -219,5 +237,13 @@ export async function ShopifyCarouselBlockComponent({
         })}
       </ul>
     </section>
+  );
+}
+
+export async function ShopifyCarouselBlockComponent(props: Props) {
+  return (
+    <SectionContainer sectionData={{ ...props.section, id: props.id }}>
+      {await ShopifyCarouselBlockContent(props)}
+    </SectionContainer>
   );
 }

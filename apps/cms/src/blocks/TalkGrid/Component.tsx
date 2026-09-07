@@ -1,3 +1,5 @@
+import type { ComponentProps } from "react";
+import { SectionContainer } from "@/components/shared";
 /**
  * Every row is rendered at every tier, with a lock badge where the body is gated. That is not a
  * shortcut - it is the model the deal is about. A gated talk still needs a crawlable page with a
@@ -13,6 +15,10 @@ import { tierGrantsAccess } from "@/lib/talks/applyTier";
 import { getReaderTier } from "@/lib/talks/getReaderTier";
 
 interface Props {
+  /** Added by injectSection. Ignoring it is what made this block render flush to the
+   *  viewport edge while every stock block sat inside the page's measure. */
+  section?: ComponentProps<typeof SectionContainer>["sectionData"];
+  id?: string | null;
   heading?: string | null;
   description?: string | null;
   source?: "recent" | "topic" | "kind" | "selected" | null;
@@ -50,7 +56,7 @@ const relationId = (value: unknown): number | string | null => {
   return null;
 };
 
-export async function TalkGridBlockComponent({
+async function TalkGridBlockContent({
   description,
   heading,
   kind,
@@ -81,7 +87,7 @@ export async function TalkGridBlockComponent({
 
   if (!docs.length) {
     return (
-      <section style={{ margin: "32px 0" }}>
+      <section>
         <h2 style={{ fontSize: 20 }}>{heading ?? "Talks"}</h2>
         <p style={{ color: "#888", fontSize: 14 }}>No published talks match this section yet.</p>
       </section>
@@ -89,7 +95,7 @@ export async function TalkGridBlockComponent({
   }
 
   return (
-    <section style={{ margin: "32px 0" }}>
+    <section>
       <h2 style={{ fontSize: 20, marginBottom: 4 }}>{heading ?? "Talks"}</h2>
       {description ? (
         <p style={{ color: "#666", fontSize: 14, marginTop: 0 }}>{description}</p>
@@ -161,5 +167,13 @@ export async function TalkGridBlockComponent({
         })}
       </ul>
     </section>
+  );
+}
+
+export async function TalkGridBlockComponent(props: Props) {
+  return (
+    <SectionContainer sectionData={{ ...props.section, id: props.id }}>
+      {await TalkGridBlockContent(props)}
+    </SectionContainer>
   );
 }

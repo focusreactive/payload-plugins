@@ -1,8 +1,14 @@
+import type { ComponentProps } from "react";
+import { SectionContainer } from "@/components/shared";
 import Link from "next/link";
 
 import { getPayloadClient } from "@/dal";
 
 interface Props {
+  /** Added by injectSection. Ignoring it is what made this block render flush to the
+   *  viewport edge while every stock block sat inside the page's measure. */
+  section?: ComponentProps<typeof SectionContainer>["sectionData"];
+  id?: string | null;
   heading?: string | null;
   description?: string | null;
   topicItems?:
@@ -10,7 +16,7 @@ interface Props {
     | null;
 }
 
-export async function TopicChipsBlockComponent({ description, heading, topicItems }: Props) {
+async function TopicChipsBlockContent({ description, heading, topicItems }: Props) {
   // A relationship only arrives populated when the query asked for enough depth. The blocks on a
   // Page come back at the depth the page query chose, so an id here is normal rather than an
   // error - fall back to fetching the topics directly.
@@ -36,7 +42,7 @@ export async function TopicChipsBlockComponent({ description, heading, topicItem
   if (!topics.length) return null;
 
   return (
-    <section style={{ margin: "32px 0" }}>
+    <section>
       <h2 style={{ fontSize: 20, marginBottom: 4 }}>{heading ?? "Start where you are"}</h2>
       {description ? (
         <p style={{ color: "#666", fontSize: 14, marginTop: 0 }}>{description}</p>
@@ -63,5 +69,13 @@ export async function TopicChipsBlockComponent({ description, heading, topicItem
         ))}
       </ul>
     </section>
+  );
+}
+
+export async function TopicChipsBlockComponent(props: Props) {
+  return (
+    <SectionContainer sectionData={{ ...props.section, id: props.id }}>
+      {await TopicChipsBlockContent(props)}
+    </SectionContainer>
   );
 }

@@ -1,3 +1,5 @@
+import type { ComponentProps } from "react";
+import { SectionContainer } from "@/components/shared";
 /**
  * A server component, which is the acceptance criterion for this piece: "The Shopify card is in
  * the server-rendered HTML, not injected by client-side JavaScript." Verify it with
@@ -11,6 +13,10 @@
 import { createCheckoutUrl, getProductByHandle, getStorefrontConfig } from "@/dal";
 
 interface Props {
+  /** Added by injectSection. Ignoring it is what made this block render flush to the
+   *  viewport edge while every stock block sat inside the page's measure. */
+  section?: ComponentProps<typeof SectionContainer>["sectionData"];
+  id?: string | null;
   heading?: string | null;
   description?: string | null;
   productHandle?: string | null;
@@ -28,7 +34,7 @@ async function checkout(formData: FormData) {
   if (url) redirect(url);
 }
 
-export async function ShopifyProductBlockComponent({
+async function ShopifyProductBlockContent({
   description,
   heading,
   productHandle,
@@ -74,7 +80,7 @@ export async function ShopifyProductBlockComponent({
   }
 
   return (
-    <section style={{ margin: "32px 0" }}>
+    <section>
       <h2 style={{ fontSize: 20, marginBottom: 4 }}>{heading ?? "From the bookstore"}</h2>
       {description ? (
         <p style={{ color: "#666", fontSize: 14, marginTop: 0 }}>{description}</p>
@@ -139,5 +145,13 @@ export async function ShopifyProductBlockComponent({
         </div>
       </article>
     </section>
+  );
+}
+
+export async function ShopifyProductBlockComponent(props: Props) {
+  return (
+    <SectionContainer sectionData={{ ...props.section, id: props.id }}>
+      {await ShopifyProductBlockContent(props)}
+    </SectionContainer>
   );
 }

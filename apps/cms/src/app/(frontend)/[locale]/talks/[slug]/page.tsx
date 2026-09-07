@@ -18,6 +18,7 @@
 
 import { notFound } from "next/navigation";
 
+import { RichText } from "@/components/shared";
 import { getPayloadClient, getTalkBySlug } from "@/dal";
 import { ViewAsSwitch } from "@/components/ViewAsSwitch";
 import { applyTier } from "@/lib/talks/applyTier";
@@ -200,10 +201,11 @@ export default async function TalkPage({ params }: PageProps) {
       ) : (
         <>
           <section style={{ lineHeight: 1.65 }}>
-            {/* Bodies are ordinary prose markup - the overwhelming majority of items are covered by a dozen
-                tag shapes and the whole catalogue holds 12 Magento directives - which is why this
-                migrates by script and renders as plain HTML. */}
-            <div dangerouslySetInnerHTML={{ __html: String(talk.body ?? "") }} />
+            {/* `body` is a richText field, so it arrives as a Lexical document, not a string.
+                Interpolating it rendered the literal text "[object Object]" on every unlocked item
+                - and no check caught it, because the paywall tests only asserted that the locked
+                notice was ABSENT, never that the prose was present. */}
+            {talk.body ? <RichText content={talk.body} variant="content" /> : null}
           </section>
 
           {talk.transcript ? (
