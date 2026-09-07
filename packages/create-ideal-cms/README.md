@@ -18,9 +18,14 @@ You'll be prompted for:
 - Postgres connection string (`DATABASE_URL`)
 - Public server URL (`NEXT_PUBLIC_SERVER_URL`)
 - Optional: OpenAI key, Vercel Blob token, OIDC SSO credentials
+- Optional: a FocusReactive private-plugin registry token
 - Package manager (`bun` / `pnpm` / `npm` / skip)
 
 `PAYLOAD_SECRET` is auto-generated.
+
+## Premium plugins
+
+`apps/cms` in the source monorepo includes FocusReactive-only premium plugins (currently Visual Editing) behind the `@fr-private` npm scope. Without a private-registry token, the scaffolder strips their dependency and wiring entirely so `install` doesn't 404 on a scope you can't reach. With a token, it instead writes a `.npmrc` that reads the token from an `NPM_TOKEN` environment variable (never written to disk or committed) and installs normally — export `NPM_TOKEN` in your shell before future installs.
 
 ## What you get
 

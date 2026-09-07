@@ -33,6 +33,7 @@ export type Answers = {
   packageManager: PackageManager;
   source: TemplateSource;
   runInitialMigration: boolean;
+  privateRegistryToken: string;
 };
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/u;
@@ -165,6 +166,22 @@ export async function collectAnswers(argv: {
     );
   }
 
+  const hasPrivateRegistryToken = unwrap(
+    await confirm({
+      message:
+        "Do you have a FocusReactive private-plugin registry token? (enables premium plugins like Visual Editing)",
+      initialValue: false,
+    })
+  );
+  const privateRegistryToken = hasPrivateRegistryToken
+    ? unwrap(
+        await password({
+          message: "Private registry token (NPM_TOKEN)",
+          mask: "*",
+        })
+      )
+    : "";
+
   const runInitialMigration = unwrap(
     await confirm({
       message:
@@ -213,6 +230,7 @@ export async function collectAnswers(argv: {
     packageManager,
     source,
     runInitialMigration,
+    privateRegistryToken,
   };
 }
 
