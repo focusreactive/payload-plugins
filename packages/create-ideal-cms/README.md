@@ -6,9 +6,9 @@ Scaffold a production-ready Payload CMS monorepo preconfigured with the
 ## Usage
 
 ```bash
-npx @focus-reactive/create-ideal-cms my-app
+npx create-ideal-cms my-app
 # or
-npm create @focus-reactive/ideal-cms my-app
+npm create ideal-cms my-app
 ```
 
 You'll be prompted for:
@@ -47,7 +47,7 @@ The published `@focus-reactive/payload-plugin-*` packages are added to
 ## Flags
 
 ```
-npx @focus-reactive/create-ideal-cms [name] [--ref <git-ref>] [--from-local <path>]
+npx create-ideal-cms [name] [--ref <git-ref>] [--from-local <path>]
 ```
 
 - `--ref` — GitHub branch/tag/sha of the source monorepo to template from.

@@ -7,7 +7,7 @@ Open-source Payload CMS plugins for A/B testing, GA4 analytics, live SEO analysi
 Scaffold the **Ideal CMS** starter into a standalone repo:
 
 ```bash
-npx @focus-reactive/create-ideal-cms new-cms-project
+npx create-ideal-cms new-cms-project
 ```
 
 Interactive prompts collect a project name, brand color, Postgres URL, and optional OpenAI / Vercel Blob tokens. The scaffolder copies [`apps/cms`](./apps/cms), installs dependencies, and initializes git.
@@ -146,7 +146,7 @@ bun add @focus-reactive/payload-plugin-scheduling
 This repo ships two ready-to-run Payload apps:
 
 - [`apps/dev`](./apps/dev) — minimal sandbox with every plugin wired up, backed by SQLite. Use this to try the plugins or hack on them.
-- [`apps/cms`](./apps/cms) — full **Ideal CMS** starter on Postgres (block-based page builder, SSO, semantic search, AI translations). See [`apps/cms/README.md`](./apps/cms/README.md) for setup, or scaffold a standalone copy with `npx @focus-reactive/create-ideal-cms`.
+- [`apps/cms`](./apps/cms) — full **Ideal CMS** starter on Postgres (block-based page builder, SSO, semantic search, AI translations). See [`apps/cms/README.md`](./apps/cms/README.md) for setup, or scaffold a standalone copy with `npx create-ideal-cms`.
 
 The steps below cover the `apps/dev` sandbox.
 
