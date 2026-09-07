@@ -26,7 +26,12 @@ export type { GetTalksOptions } from "./getTalks";
 export { getTopicBySlug } from "./getTopicBySlug";
 
 // Shopify
-export { createCheckoutUrl, getProductByHandle, getStorefrontConfig } from "./getProductByHandle";
+export {
+  buildCartPermalink,
+  createCheckoutUrl,
+  getProductByHandle,
+  getStorefrontConfig,
+} from "./getProductByHandle";
 export { getProductsByHandles } from "./getProductsByHandles";
 export type { ShopifyProductCard } from "./getProductsByHandles";
 

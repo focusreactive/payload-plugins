@@ -12,7 +12,12 @@ import { SectionContainer } from "@/components/shared";
  * fetching its own slides.
  */
 
-import { getProductsByHandles, getStorefrontConfig } from "@/dal";
+import {
+  buildCartPermalink,
+  createCheckoutUrl,
+  getProductsByHandles,
+  getStorefrontConfig,
+} from "@/dal";
 
 interface ProductHandleRow {
   handle?: string | null;
@@ -47,18 +52,45 @@ function formatMoney(money: { amount: string; currencyCode: string }): string {
 }
 
 /**
- * Shopify's cart permalink - a plain URL that adds the variant and lands on hosted checkout. The
- * single-product block posts to a server action instead, which is a better fit there; in a rail it
- * would mean one form and one round-trip per card for the same destination, and a link keeps the
- * section entirely static.
+ * One action for the whole rail, not one closure per card: the variant id travels in a hidden
+ * input, so nothing has to be bound per render. A bound closure would work - Next encrypts bound
+ * arguments - but it pays an encrypt on every render and a decrypt on every submit, per card.
  *
- * The variant id arrives as `gid://shopify/ProductVariant/<numeric>`, and the permalink wants the
- * numeric tail only.
+ * Kept at module scope for the same reason the single-product block does it (ShopifyProduct/
+ * Component.tsx), and because a nested action trips `unicorn/consistent-function-scoping`.
  */
-function buildCartPermalink(storeDomain: string, variantId: string): string | null {
-  const numericVariantId = variantId.split("/").pop();
-  if (!numericVariantId || !/^\d+$/u.test(numericVariantId)) return null;
-  return `https://${storeDomain}/cart/${numericVariantId}:1`;
+async function checkout(formData: FormData) {
+  "use server";
+
+  const { redirect } = await import("next/navigation");
+  const variantId = formData.get("variantId");
+  if (typeof variantId !== "string") return;
+
+  // cartCreate throws when Shopify reports userErrors and returns null on a success carrying no
+  // cart. On a live walkthrough neither may surface as a Next error overlay or as a button that
+  // visibly does nothing, so both fall back to the cart permalink - the one destination that needs
+  // no API call and therefore cannot fail here.
+  let hostedCheckoutUrl: string | null = null;
+  let failure: unknown = null;
+  try {
+    hostedCheckoutUrl = await createCheckoutUrl(variantId);
+  } catch (cause) {
+    failure = cause;
+  }
+
+  if (!hostedCheckoutUrl) {
+    // The button quietly changes destination, so the server log is the only place an expired token
+    // or a Shopify-side rejection is visible at all - and afterwards the only record it happened.
+    console.error(
+      `[checkout] ${variantId}: no hosted checkout URL, falling back to the cart permalink.`,
+      failure ?? "cartCreate returned no cart"
+    );
+  }
+
+  // redirect() navigates by throwing a NEXT_REDIRECT error, which is why it sits outside the try:
+  // a catch that did not rethrow would swallow the navigation and the click would do nothing.
+  const destination = hostedCheckoutUrl ?? buildCartPermalink(variantId);
+  if (destination) redirect(destination);
 }
 
 async function ShopifyCarouselBlockContent({
@@ -152,89 +184,85 @@ async function ShopifyCarouselBlockContent({
         }}
         tabIndex={0}
       >
-        {products.map((product) => {
-          const cartPermalink =
-            product.variantId && product.availableForSale
-              ? buildCartPermalink(storefrontConfig.domain, product.variantId)
-              : null;
+        {products.map((product) => (
+          <li
+            key={product.handle}
+            style={{
+              border: "1px solid #e0e0e0",
+              borderRadius: 8,
+              display: "flex",
+              // Fixed basis with no shrink: the cards have to overflow the section for the rail
+              // to scroll at all, so they must not compress to fit.
+              flex: "0 0 220px",
+              flexDirection: "column",
+              gap: 8,
+              padding: 16,
+              scrollSnapAlign: "start",
+            }}
+          >
+            {product.featuredImage ? (
+              // Plain <img>: next/image would need the Shopify CDN added to next.config.ts
+              // remotePatterns, which is a config change on a shared public repo for one card.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                alt={product.featuredImage.altText ?? product.title}
+                src={product.featuredImage.url}
+                style={{ borderRadius: 4, height: 150, objectFit: "cover", width: "100%" }}
+                width={188}
+              />
+            ) : null}
 
-          return (
-            <li
-              key={product.handle}
+            <h3
               style={{
-                border: "1px solid #e0e0e0",
-                borderRadius: 8,
-                display: "flex",
-                // Fixed basis with no shrink: the cards have to overflow the section for the rail
-                // to scroll at all, so they must not compress to fit.
-                flex: "0 0 220px",
-                flexDirection: "column",
-                gap: 8,
-                padding: 16,
-                scrollSnapAlign: "start",
+                WebkitBoxOrient: "vertical",
+                WebkitLineClamp: 2,
+                display: "-webkit-box",
+                fontSize: 15,
+                lineHeight: 1.3,
+                margin: 0,
+                overflow: "hidden",
               }}
+              title={product.title}
             >
-              {product.featuredImage ? (
-                // Plain <img>: next/image would need the Shopify CDN added to next.config.ts
-                // remotePatterns, which is a config change on a shared public repo for one card.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  alt={product.featuredImage.altText ?? product.title}
-                  src={product.featuredImage.url}
-                  style={{ borderRadius: 4, height: 150, objectFit: "cover", width: "100%" }}
-                  width={188}
-                />
-              ) : null}
+              {product.title}
+            </h3>
 
-              <h3
-                style={{
-                  WebkitBoxOrient: "vertical",
-                  WebkitLineClamp: 2,
-                  display: "-webkit-box",
-                  fontSize: 15,
-                  lineHeight: 1.3,
-                  margin: 0,
-                  overflow: "hidden",
-                }}
-                title={product.title}
-              >
-                {product.title}
-              </h3>
+            {showPrice !== false && product.price ? (
+              <p style={{ margin: 0 }}>
+                <span style={{ fontWeight: 600 }}>{formatMoney(product.price)}</span>
+                {product.compareAtPrice ? (
+                  <span style={{ color: "#888", marginLeft: 8, textDecoration: "line-through" }}>
+                    {formatMoney(product.compareAtPrice)}
+                  </span>
+                ) : null}
+              </p>
+            ) : null}
 
-              {showPrice !== false && product.price ? (
-                <p style={{ margin: 0 }}>
-                  <span style={{ fontWeight: 600 }}>{formatMoney(product.price)}</span>
-                  {product.compareAtPrice ? (
-                    <span style={{ color: "#888", marginLeft: 8, textDecoration: "line-through" }}>
-                      {formatMoney(product.compareAtPrice)}
-                    </span>
-                  ) : null}
-                </p>
-              ) : null}
-
-              <div style={{ marginTop: "auto" }}>
-                {cartPermalink ? (
-                  <a
-                    href={cartPermalink}
+            <div style={{ marginTop: "auto" }}>
+              {product.variantId && product.availableForSale ? (
+                <form action={checkout}>
+                  <input name="variantId" type="hidden" value={product.variantId} />
+                  <button
                     style={{
                       background: "#111",
+                      border: 0,
                       borderRadius: 4,
                       color: "#fff",
-                      display: "inline-block",
+                      cursor: "pointer",
                       fontSize: 14,
                       padding: "8px 16px",
-                      textDecoration: "none",
                     }}
+                    type="submit"
                   >
                     Buy on Shopify
-                  </a>
-                ) : (
-                  <p style={{ color: "#888", fontSize: 13, margin: 0 }}>Currently unavailable</p>
-                )}
-              </div>
-            </li>
-          );
-        })}
+                  </button>
+                </form>
+              ) : (
+                <p style={{ color: "#888", fontSize: 13, margin: 0 }}>Currently unavailable</p>
+              )}
+            </div>
+          </li>
+        ))}
       </ul>
     </section>
   );

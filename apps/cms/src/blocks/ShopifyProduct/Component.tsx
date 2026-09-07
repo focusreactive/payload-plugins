@@ -7,10 +7,15 @@ import { SectionContainer } from "@/components/shared";
  * and not by looking at the rendered page in a browser, which cannot tell the two apart.
  *
  * The Buy button is a form posting to a server action, so the only client-side work is the
- * navigation to Shopify's hosted checkout. Nothing about the card itself needs JavaScript.
+ * navigation to Shopify. Nothing about the card itself needs JavaScript.
  */
 
-import { createCheckoutUrl, getProductByHandle, getStorefrontConfig } from "@/dal";
+import {
+  buildCartPermalink,
+  createCheckoutUrl,
+  getProductByHandle,
+  getStorefrontConfig,
+} from "@/dal";
 
 interface Props {
   /** Added by injectSection. Ignoring it is what made this block render flush to the
@@ -30,8 +35,31 @@ async function checkout(formData: FormData) {
   const variantId = formData.get("variantId");
   if (typeof variantId !== "string") return;
 
-  const url = await createCheckoutUrl(variantId);
-  if (url) redirect(url);
+  // cartCreate throws when Shopify reports userErrors and returns null on a success carrying no
+  // cart. On a live walkthrough neither may surface as a Next error overlay or as a button that
+  // visibly does nothing, so both fall back to the cart permalink - the one destination that needs
+  // no API call and therefore cannot fail here.
+  let hostedCheckoutUrl: string | null = null;
+  let failure: unknown = null;
+  try {
+    hostedCheckoutUrl = await createCheckoutUrl(variantId);
+  } catch (cause) {
+    failure = cause;
+  }
+
+  if (!hostedCheckoutUrl) {
+    // The button quietly changes destination, so the server log is the only place an expired token
+    // or a Shopify-side rejection is visible at all - and afterwards the only record it happened.
+    console.error(
+      `[checkout] ${variantId}: no hosted checkout URL, falling back to the cart permalink.`,
+      failure ?? "cartCreate returned no cart"
+    );
+  }
+
+  // redirect() navigates by throwing a NEXT_REDIRECT error, which is why it sits outside the try:
+  // a catch that did not rethrow would swallow the navigation and the click would do nothing.
+  const destination = hostedCheckoutUrl ?? buildCartPermalink(variantId);
+  if (destination) redirect(destination);
 }
 
 async function ShopifyProductBlockContent({

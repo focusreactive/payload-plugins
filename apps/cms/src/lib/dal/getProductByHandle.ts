@@ -95,14 +95,40 @@ function authHeader(token: string): Record<string, string> {
 }
 
 /**
+ * The demo is a preview deployment, so ISR is what keeps a walkthrough from hitting Shopify on
+ * every render while still letting a price change appear without a redeploy.
+ */
+const READ_REVALIDATE_SECONDS = 300;
+
+export interface StorefrontRequestOptions {
+  /**
+   * Mutations must pass "no-store". Every Storefront call is an HTTP POST, and Next only skips the
+   * Data Cache for a POST when the fetch carries no explicit cache config at all - an explicit
+   * `revalidate > 0` opts it back in (patch-fetch.js: `hasNoExplicitCacheConfig` is false once
+   * `next.revalidate` is set, so `autoNoCache` never becomes true and `isCacheableRevalidate` is).
+   * The cache key hashes the request body, so a cached `cartCreate` is keyed per variant: two
+   * buyers clicking the same product inside the window would be handed the same cart.
+   */
+  cache?: "no-store";
+}
+
+/**
  * Exported for `./getProductsByHandles`, which needs the same transport. Keep it the only place
  * the token-prefix rule and the HTTP-200-with-GraphQL-errors check are written down.
  */
 export async function storefront<T>(
   config: StorefrontConfig,
   query: string,
-  variables: Record<string, unknown>
+  variables: Record<string, unknown>,
+  options: StorefrontRequestOptions = {}
 ): Promise<T> {
+  // Next warns and then ignores one of them if `cache` and `next.revalidate` are both set, so the
+  // two are mutually exclusive here rather than merged.
+  const cacheInit: RequestInit =
+    options.cache === "no-store"
+      ? { cache: "no-store" }
+      : { next: { revalidate: READ_REVALIDATE_SECONDS } };
+
   const response = await fetch(`https://${config.domain}/api/${API_VERSION}/graphql.json`, {
     body: JSON.stringify({ query, variables }),
     headers: {
@@ -110,9 +136,7 @@ export async function storefront<T>(
       ...authHeader(config.token),
     },
     method: "POST",
-    // The demo is a preview deployment, so ISR is what keeps a walkthrough from hitting Shopify on
-    // every render while still letting a price change appear without a redeploy.
-    next: { revalidate: 300 },
+    ...cacheInit,
   });
 
   if (!response.ok) {
@@ -160,8 +184,37 @@ export async function getProductByHandle(handle: string): Promise<ShopifyProduct
 }
 
 /**
+ * Shopify's cart permalink: a plain URL that adds the variant and lands on the store's own cart
+ * page, one click short of the hosted checkout `createCheckoutUrl` returns.
+ *
+ * This is the fallback destination for a Buy click, and is only ever reached from inside a Buy
+ * action. Two properties earn it that job: it needs no API call, so unlike `cartCreate` it cannot
+ * fail server-side, and it puts the buyer on the same store rather than on a Next error overlay -
+ * which is the one failure mode worth spending code on during a live walkthrough.
+ *
+ * It must never reach an `href`. A rendered `/cart/...` link is a crawlable path to checkout, the
+ * opposite of what this demo argues, and the verify suite asserts that no card ships one.
+ *
+ * The variant id arrives as `gid://shopify/ProductVariant/<numeric>`, and the permalink wants the
+ * numeric tail only.
+ */
+export function buildCartPermalink(variantId: string): string | null {
+  const config = getStorefrontConfig();
+  if (!config) return null;
+
+  const numericVariantId = variantId.split("/").pop();
+  if (!numericVariantId || !/^\d+$/u.test(numericVariantId)) return null;
+  return `https://${config.domain}/cart/${numericVariantId}:1`;
+}
+
+/**
  * Creates a cart and returns Shopify's hosted checkout URL. This is the whole of commerce in this
  * demo - render a product, hand off to checkout - and deliberately nothing past it (§2).
+ *
+ * Three outcomes, and a caller has to handle all of them: the URL, a throw when Shopify reports
+ * `userErrors`, and null both when no store is configured and when `cartCreate` succeeds with no
+ * cart. Either Shopify block's `checkout` action is the worked example - it falls back to
+ * `buildCartPermalink`.
  */
 export async function createCheckoutUrl(variantId: string): Promise<string | null> {
   const config = getStorefrontConfig();
@@ -171,9 +224,12 @@ export async function createCheckoutUrl(variantId: string): Promise<string | nul
     cartCreate: { cart: { checkoutUrl: string } | null; userErrors: { message: string }[] };
   };
 
-  const { cartCreate } = await storefront<Response>(config, CART_CREATE_MUTATION, {
-    lines: [{ merchandiseId: variantId, quantity: 1 }],
-  });
+  const { cartCreate } = await storefront<Response>(
+    config,
+    CART_CREATE_MUTATION,
+    { lines: [{ merchandiseId: variantId, quantity: 1 }] },
+    { cache: "no-store" }
+  );
 
   if (cartCreate.userErrors.length) {
     throw new Error(`cartCreate: ${cartCreate.userErrors.map((e) => e.message).join("; ")}`);
