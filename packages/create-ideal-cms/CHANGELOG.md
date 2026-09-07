@@ -1,3 +1,10 @@
+## create-ideal-cms [1.1.3](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.1.2...create-ideal-cms@1.1.3) (2026-09-07)
+
+
+### Bug Fixes
+
+* **create-ideal-cms:** prune the multi-tenancy and content-agent demo apps ([ebfd771](https://github.com/focusreactive/payload-plugins/commit/ebfd771484ba77b8f6e45bbd77ecdd239d011691))
+
 ## create-ideal-cms [1.1.2](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.1.1...create-ideal-cms@1.1.2) (2026-09-07)
 
 ## create-ideal-cms [1.1.1](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.1.0...create-ideal-cms@1.1.1) (2026-09-07)
