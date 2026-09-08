@@ -5,8 +5,8 @@ import { bootTestPayload, CRON_BATCH_LIMIT } from "./bootTestPayload";
 import type { TestPayload } from "./bootTestPayload";
 import { callEndpoint } from "./callEndpoint";
 
-// A locale whose provider fails mid-run. Its own file because the failing provider is a property of
-// the boot, and `getPayload` caches per process — a second boot in one file returns the first.
+// Its own file: the failing provider is fixed at boot, and a boot is per process (see
+// `bootTestPayload`).
 
 const rev = (s: string) => [...s].reverse().join("");
 

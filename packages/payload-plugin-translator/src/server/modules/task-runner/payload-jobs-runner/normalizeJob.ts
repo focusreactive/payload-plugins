@@ -31,9 +31,6 @@ export function isCancelled(error: unknown): boolean {
   );
 }
 
-/**
- * Transform Payload job to normalized Task
- */
 export function normalizeJob(job: PayloadJob): Task {
   const { collectionSlug, collectionId } = readCollectionRef(job.input);
 
@@ -83,8 +80,8 @@ export function normalizeJobLocales(job: PayloadJob): Task[] {
 }
 
 /**
- * Each target locale's most recent log entry: Payload appends to `log` chronologically, so
- * last-write-wins leaves the latest attempt. An absent entry means that locale has not run.
+ * Each locale's most recent log entry: Payload appends to `log` chronologically, so last-write-wins
+ * leaves the latest attempt.
  */
 export function latestLogByLocale(job: PayloadJob): Map<string, JobLogEntry> {
   const byLocale = new Map<string, JobLogEntry>();

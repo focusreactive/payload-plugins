@@ -98,7 +98,11 @@ describe("PayloadJobsRunnerProvider", () => {
       const config = createPayloadJobsRunner().configure(minimalContext)(makeConfig());
 
       expect(workflowOf(config).concurrency).toBeUndefined();
-      // The plugin must not turn the flag on for the host — it is a schema decision, see the README.
+    });
+
+    it("does not enable the host's concurrency control on its behalf", () => {
+      const config = createPayloadJobsRunner().configure(minimalContext)(makeConfig());
+
       expect(config.jobs?.enableConcurrencyControl).toBeUndefined();
     });
 

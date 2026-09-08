@@ -95,20 +95,6 @@ describe("CancelByCollectionHandler", () => {
       expect(response.body).toBeNull();
     });
 
-    it("returns 204 when every job is in flight", async () => {
-      const tasks = [
-        createMockTask({ id: "task-1", status: "running" }),
-        createMockTask({ id: "task-2", status: "running" }),
-      ];
-      (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue(tasks);
-
-      const req = createMockRequest({ collection_slug: "posts" });
-      const response = await handler.handle(req);
-
-      expect(response.status).toBe(204);
-      expect(mockTaskRunner.cancel).not.toHaveBeenCalled();
-    });
-
     it("returns 204 when all tasks are running (not pending)", async () => {
       const tasks = [
         createMockTask({ id: "task-1", status: "running" }),
@@ -124,7 +110,7 @@ describe("CancelByCollectionHandler", () => {
     });
   });
 
-  describe("cancelling pending tasks", () => {
+  describe("cancelling queued jobs", () => {
     it("cancels every queued job and leaves the one in flight alone", async () => {
       const tasks = [
         createMockTask({ id: "task-1", status: "pending" }),

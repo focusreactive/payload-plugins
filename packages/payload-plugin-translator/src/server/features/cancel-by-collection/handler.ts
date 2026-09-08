@@ -7,9 +7,7 @@ import { isCollectionAvailable } from "../_lib/collection-utils";
 import { CancelByCollectionInputSchema } from "./model";
 import type { CancelConfig } from "./model";
 
-/**
- * Cancels all pending translation tasks for a collection
- */
+/** Cancels every queued job for a collection; jobs in flight are left alone. */
 export class CancelByCollectionHandler {
   constructor(
     private readonly config: CancelConfig,
@@ -32,9 +30,8 @@ export class CancelByCollectionHandler {
     const rows = await runner.findByCollection(collectionSlug, { excludeCompleted: true });
     if (rows.length === 0) return ServerResponse.noContent();
 
-    // Rows are per locale, cancel addresses jobs. Filtering rows by `pending` misses a job waiting
-    // to retry: all of its locales are logged, so it has no pending row, yet the picker takes it
-    // again.
+    // A job waiting to retry has every locale logged, so it has no `pending` row — filter by *not
+    // running* instead.
     const running = new Set(rows.filter((row) => row.status === "running").map((row) => row.id));
     const queuedJobIds = [...new Set(rows.map((row) => row.id))].filter((id) => !running.has(id));
     if (queuedJobIds.length === 0) return ServerResponse.noContent();

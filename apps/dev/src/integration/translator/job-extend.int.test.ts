@@ -30,7 +30,6 @@ const enqueue = async (id: string, targets: string[] = ["de"]) => {
   return body.data.queued;
 };
 
-// The cases share one boot, so the table also holds every earlier case's jobs.
 const jobs = async (documentId: string): Promise<Job[]> => {
   const { docs } = await ctx.payload.find({
     collection: "payload-jobs" as "pages",

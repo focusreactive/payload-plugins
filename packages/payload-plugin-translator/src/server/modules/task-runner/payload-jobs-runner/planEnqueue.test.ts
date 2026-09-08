@@ -68,7 +68,6 @@ describe("planEnqueue", () => {
     ["oldest first", ["old", "new"]],
     ["newest first", ["new", "old"]],
   ])("extends the newest live job, %s", (_label, order) => {
-    // Both orders, because "take the last element" and "sort the other way" each pass on one of them.
     const byId = {
       old: job({ id: "old", createdAt: "2026-01-01T00:00:00Z" }),
       new: job({ id: "new", createdAt: "2026-01-02T00:00:00Z" }),

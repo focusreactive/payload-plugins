@@ -7,8 +7,7 @@ import { callEndpoint } from "./callEndpoint";
 
 // Guards an undocumented Payload behaviour: after each task settles it re-reads the job row onto the
 // live `job` object, which is how a locale appended mid-run reaches the handler. Measured on 3.84.1;
-// the plugin's peer floor is ^3.76.0. If a future version stops doing it, this file goes red instead
-// of translations going missing.
+// peer floor is ^3.76.0.
 
 type Job = {
   id: string | number;
@@ -78,8 +77,7 @@ describe("adding a locale to a running job", () => {
     const run = ctx.payload.jobs.run({ queue: "translations", limit: CRON_BATCH_LIMIT });
     await heldReached;
 
-    // Mid-flight on `fr`. Without this the surviving-log claim is untested: if the log were still
-    // empty when the second request lands, nothing could be lost from it.
+    // The surviving-log claim is vacuous unless the log is non-empty when the second request lands.
     const before = await readJob();
     expect(
       (before.log ?? []).map((e) => e.input?.target_lng),

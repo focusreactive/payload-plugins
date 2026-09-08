@@ -21,8 +21,7 @@ export type EnqueuePlan = {
 };
 
 /**
- * One live job per document: a later request extends that job's locale list rather than replacing
- * it, because replacing drops whatever locales it still owed.
+ * One live job per document: a later request extends that job's locale list rather than replacing it.
  *
  * @param live - non-completed jobs for **this document only**; the caller filters by document.
  * @param requested - target locales in request order; duplicates ignored.
@@ -53,10 +52,9 @@ export function planEnqueue(args: {
 }
 
 /**
- * A job carries one source locale, one strategy and one publish flag for all of its locales, so it
- * can only take locales from a request that chose the same three — otherwise the request would run
- * under settings the user did not pick. Pre-workflow jobs (a single `target_lng`) and cancelled jobs
- * are skipped outright.
+ * A job carries one source locale, one strategy and one publish flag for all of its locales, so it can
+ * host only a request that chose the same three — otherwise the request runs under settings the user
+ * did not pick.
  */
 function pickHost(live: PayloadJob[], request: RequestShape): PayloadJob | null {
   const usable = live.filter(
@@ -67,5 +65,6 @@ function pickHost(live: PayloadJob[], request: RequestShape): PayloadJob | null 
       job.input?.strategy === request.strategy &&
       (job.input?.publish_on_translation ?? false) === request.publishOnTranslation
   );
-  return usable.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0] ?? null;
+  const newestFirst = usable.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  return newestFirst[0] ?? null;
 }

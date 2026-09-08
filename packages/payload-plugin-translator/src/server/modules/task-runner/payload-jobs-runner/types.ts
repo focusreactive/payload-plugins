@@ -72,7 +72,7 @@ export type PayloadJobsRunnerOptions = {
  */
 export type PayloadJobsRunnerConfig = {
   taskName: string;
-  /** Derived from `taskName`, not configurable — see `createPayloadJobsRunner`. */
+  /** Derived from `taskName`; deliberately not a plugin option. */
   workflowName: string;
   queueName: string;
   jobsCollection: CollectionSlug;
@@ -81,9 +81,6 @@ export type PayloadJobsRunnerConfig = {
   retries?: PayloadJobsRunnerOptions["retries"];
 };
 
-/**
- * Raw Payload job structure
- */
 export type PayloadJob = {
   log?: JobLogEntry[];
   id: string;

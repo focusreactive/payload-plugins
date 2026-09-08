@@ -31,7 +31,6 @@ describe("PayloadJobsTaskRunner", () => {
       jobs: {
         queue: vi.fn().mockResolvedValue(undefined),
         cancel: vi.fn().mockResolvedValue(undefined),
-        // A non-empty `jobStatus` is how Payload reports that the picker actually took a job.
         run: vi
           .fn()
           .mockResolvedValue({ jobStatus: { "job-123": {} }, remainingJobsFromQueried: 0 }),
@@ -92,7 +91,7 @@ describe("PayloadJobsTaskRunner", () => {
     });
 
   describe("enqueue", () => {
-    it("looks for superseded jobs among unfinished ones only", async () => {
+    it("reads only unfinished jobs when planning an enqueue", async () => {
       await runner.enqueue([createInput()]);
 
       const whereArg = mockPayload.find.mock.calls[0][0].where;
@@ -156,8 +155,7 @@ describe("PayloadJobsTaskRunner", () => {
 
     it("adds the locale to a live job instead of queuing a second one", async () => {
       const live = createLiveJob({ id: "live-job" });
-      // First read builds the plan; the second is the check that the write landed, so it answers
-      // with the row as the write leaves it.
+      // First `find` builds the plan, the second verifies the write.
       mockPayload.find.mockResolvedValueOnce({ docs: [live] }).mockResolvedValueOnce({
         docs: [{ ...live, input: { ...live.input, target_lngs: ["de", "fr"] } }],
       });
@@ -237,7 +235,6 @@ describe("PayloadJobsTaskRunner", () => {
     });
 
     it("retries the write once when a concurrent append replaced the list", async () => {
-      // Not finished, unlike the case above — the locale is simply missing from the stored row.
       const live = createLiveJob({ id: "live-job" });
       const clobbered = { ...live, input: { ...live.input, target_lngs: ["de", "es"] } };
       mockPayload.find
@@ -509,7 +506,6 @@ describe("PayloadJobsTaskRunner", () => {
         where: { id: { equals: "job-123" } },
         data: { processing: false, hasError: false, error: null, waitUntil: null },
       });
-      // run via the where-based picker, NOT runByID
       expect(mockPayload.jobs.run).toHaveBeenCalledWith({
         queue: "translations",
         where: { id: { equals: "job-123" } },
@@ -553,7 +549,6 @@ describe("PayloadJobsTaskRunner", () => {
         where: { id: { equals: "job-123" } },
         limit: 1,
       });
-      // a pending job (processing:false) needs no lock reset
       expect(mockPayload.update).not.toHaveBeenCalled();
       expect(mockPayload.find).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -705,8 +700,7 @@ describe("PayloadJobsTaskRunner", () => {
     });
 
     it("narrows the SQL where clause by the job's own slugs only", async () => {
-      // Narrowing by the collection slug or id would re-introduce the SQLite coercion bug and drop
-      // the legacy shape — see `findByCollection`'s docblock.
+      // See `findByCollection`'s docblock: a `where` on slug or id drops every pre-migration job.
       await runner.findByCollection("posts" as CollectionSlug, [5, 6]);
 
       const whereArg = mockPayload.find.mock.calls[0][0].where;

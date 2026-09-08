@@ -134,8 +134,7 @@ describe("translating one document into several locales", () => {
     await enqueue(id, ["de", "fr"]);
     await runQueue();
 
-    // Without this the check passes for the wrong reason: a job left *failed* is also skipped on the
-    // second run, because the retry backoff pushes its `waitUntil` into the future.
+    // A *failed* job is skipped on the second run too (backoff), so prove it completed first.
     expect((await workflowJob(id))?.completedAt, "the workflow did not complete").toBeTruthy();
 
     const before = ctx.translateCount();

@@ -5,8 +5,7 @@ import { bootTestPayload, CRON_BATCH_LIMIT } from "./bootTestPayload";
 import type { TestPayload } from "./bootTestPayload";
 import { callEndpoint } from "./callEndpoint";
 
-// Booted with `enableConcurrencyControl`. Its own file because the setting is fixed at boot and
-// `getPayload` caches per process.
+// Its own file: the setting is fixed at boot, and a boot is per process (see `bootTestPayload`).
 
 type RunResult = { jobStatus?: Record<string, unknown> };
 
@@ -100,9 +99,8 @@ describe("with the host's concurrency control on", () => {
 
     await enqueue(id, ["fr"]);
 
-    // Without this the check below is satisfied by "there was nothing to pick": if the request had
-    // extended the running job instead of getting one of its own, the picker would also take
-    // nothing and `fr` would still translate.
+    // The picker check below also passes when there was nothing to take, so first prove the second
+    // job exists.
     const queued = await jobsFor(id);
     expect(queued.length, "the request did not get a job of its own").toBe(2);
     expect(

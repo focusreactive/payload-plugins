@@ -9,6 +9,8 @@ import { planEnqueue } from "./planEnqueue";
 import type { RequestShape } from "./planEnqueue";
 import { readCollectionRef } from "./readCollectionRef";
 
+const APPEND_ATTEMPTS = 2;
+
 type QueueWorkflow = (args: {
   workflow: string;
   queue: string;
@@ -25,7 +27,6 @@ type StoredWorkflowInput = {
   publish_on_translation: boolean;
 };
 
-/** Ids are stringified here: the stored `collection_id` is text, so a number id must coerce to match. */
 function requestShape(task: TaskInput): RequestShape {
   return {
     collectionSlug: task.collectionSlug,
@@ -38,8 +39,7 @@ function requestShape(task: TaskInput): RequestShape {
 
 function requestKey(task: TaskInput): string {
   const r = requestShape(task);
-  // NUL separates: no slug, id, locale or strategy can contain it, so no two different requests can
-  // collide on one key.
+  // NUL: no stored field value can contain it, so two different requests cannot produce one key.
   return [
     r.collectionSlug,
     r.collectionId,
@@ -61,7 +61,6 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   ) {}
 
   async enqueue(tasks: TaskInput[]): Promise<void> {
-    // Keyed by everything a job carries one of, not by document alone — see `pickHost`.
     const byRequest = new Map<string, TaskInput[]>();
     for (const task of tasks) {
       const key = requestKey(task);
@@ -70,8 +69,6 @@ export class PayloadJobsTaskRunner implements TaskRunner {
       byRequest.set(key, group);
     }
 
-    // `findRawJobs` is unpaginated and filters in memory, so narrowing per document would re-read the
-    // whole table once per document.
     const live = await this.findRawJobs({ completedAt: { exists: false } }, { pagination: false });
     const exclusiveQueue = Boolean(this.payload.config.jobs?.enableConcurrencyControl);
 
@@ -106,16 +103,13 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   /** @returns the locales that did not reach the job and need one of their own. */
   private async extendJob(job: PayloadJob, locales: string[], waitUntil?: Date): Promise<string[]> {
     let current: PayloadJob | undefined = job;
-    // Two attempts: `input` is one JSON column, so a concurrent append replaces the whole list and
-    // ours can be lost. Adding a locale is a set union, which makes retrying from the stored row
-    // harmless. Anything still missing after that gets a job of its own rather than being dropped.
-    for (let attempt = 0; attempt < 2; attempt++) {
+    // `input` is one JSON column, so a concurrent append replaces the whole list; the union makes a
+    // retry from the stored row harmless.
+    for (let attempt = 0; attempt < APPEND_ATTEMPTS; attempt++) {
       if (!current || current.completedAt) return locales;
 
       const listed = current.input?.target_lngs ?? [];
       const missing = locales.filter((locale) => !listed.includes(locale));
-      // Keep the debounce: a job that has not started is still coalescing rapid source edits, and
-      // this request is the latest of them. A running job's schedule is not ours to move.
       const debounce = waitUntil && !current.processing ? waitUntil.toISOString() : undefined;
       if (missing.length === 0 && !debounce) return [];
 
@@ -124,9 +118,8 @@ export class PayloadJobsTaskRunner implements TaskRunner {
         ...(debounce ? { waitUntil: debounce } : {}),
       };
 
-      // Adapter write, not `payload.update`: the document operation re-reads and rewrites the whole
-      // row, reverting log entries written in between. Measured — see D2 of
-      // docs/plans/2026-09-08-one-live-job-per-document.task.md.
+      // Not `payload.update`: it rewrites the whole row and reverts log entries written in between.
+      // See D2 of docs/plans/2026-09-08-one-live-job-per-document.task.md.
       await this.payload.db.updateOne({
         collection: this.config.jobsCollection,
         id: job.id,
@@ -135,8 +128,6 @@ export class PayloadJobsTaskRunner implements TaskRunner {
       });
 
       [current] = await this.findRawJobs({ id: { equals: job.id } }, { limit: 1 });
-      // Finished between the plan's read and this write: the locales are stored but nobody will run
-      // them, so they need a job of their own.
       if (!current || current.completedAt) return locales;
       const stored = new Set(current.input?.target_lngs);
       if (locales.every((locale) => stored.has(locale))) return [];
@@ -159,8 +150,8 @@ export class PayloadJobsTaskRunner implements TaskRunner {
       publish_on_translation: request.publishOnTranslation,
     };
 
-    // `jobs.queue` is generic over the host's generated job slugs; this workflow is registered at
-    // config time, so the call goes through a signature naming what it actually accepts.
+    // Cast: `jobs.queue` is typed over the host's generated slugs, which cannot include a workflow
+    // registered at config time.
     const queueJob = this.payload.jobs.queue as unknown as QueueWorkflow;
     await queueJob({
       workflow: this.config.workflowName,
@@ -180,8 +171,6 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     if (!job) {
       return { success: false, error: "not_found" };
     }
-    // The job's own state, not a locale row's: a locale row carries the log entry's `completedAt`,
-    // which Payload stamps on failures too.
     const task = normalizeJob(job);
     if (task.completedAt) {
       return { success: false, error: "already_completed" };
@@ -203,19 +192,17 @@ export class PayloadJobsTaskRunner implements TaskRunner {
       limit: 1,
     })) as { jobStatus?: Record<string, unknown> };
 
-    // An empty `jobStatus` is Payload reporting that the picker took nothing — usually a document
-    // already running under the host's concurrency control.
-    if (Object.keys(result?.jobStatus ?? {}).length === 0) {
+    const pickerTookNothing = Object.keys(result?.jobStatus ?? {}).length === 0;
+    if (pickerTookNothing) {
       return { success: false, error: "already_running" };
     }
     return { success: true };
   }
 
   /**
-   * Clear stale `processing` locks — still processing, not completed, `updatedAt` older than
-   * `staleJobTimeoutMs` — so abandoned jobs are eligible for the autorun picker again. A job that
-   * exhausted its retries carries `hasError: true` and stays excluded from autorun even after its
-   * lock is cleared; only a manual `run()` recovers it.
+   * Clears stale `processing` locks so abandoned jobs are eligible for the autorun picker again.
+   * A job that exhausted its retries carries `hasError: true` and stays excluded even after its lock
+   * is cleared; only a manual `run()` recovers it.
    * @returns how many locks were cleared.
    */
   async reclaimStaleJobs(): Promise<number> {
@@ -231,11 +218,8 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   }
 
   /**
-   * Clears the processing lock, a spent retry budget and a pending backoff — the three things that
-   * make the picker skip a job, so a manual run really is the retry.
-   *
-   * Goes through `payload.update` rather than the adapter, unlike `extendJob`, so the jobs
-   * collection's own `beforeChange` hook still runs — it is what keeps a cancelled job cancelled.
+   * `payload.update`, not the adapter write `extendJob` uses, so the jobs collection's `beforeChange`
+   * hook still runs — it is what keeps a cancelled job cancelled.
    */
   private async clearPickerBlockers(taskId: string): Promise<void> {
     await this.payload.update({
@@ -246,7 +230,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     });
   }
 
-  /** Clears the `processing` lock on every job matching `where`. `depth: 0` — only the count is read. */
+  /** `depth: 0` — only the row count is read. */
   private async resetProcessing(where: Where): Promise<number> {
     const result = await this.payload.update({
       collection: this.config.jobsCollection,
@@ -266,13 +250,10 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   }
 
   /**
-   * Find translation jobs for a collection.
-   *
-   * Only `workflowSlug`/`taskSlug` and `completedAt` reach the database; the collection slug and
-   * document ids are matched in memory
-   * because a job's collection reference may sit in either the flat-text fields or the legacy
-   * relationship shape (`readCollectionRef`), so a `where` on `input.collection_slug` would silently
-   * drop every pre-migration job. `excludeCompleted` is what bounds the read — see issue #108.
+   * Only the job slugs and `completedAt` reach the database; the collection slug and document ids are
+   * matched in memory, because a job's collection reference may sit in the flat-text fields or in the
+   * legacy relationship shape (`readCollectionRef`) — a `where` on `input.collection_slug` would
+   * silently drop every pre-migration job. `excludeCompleted` bounds the read (#108).
    */
   async findByCollection(
     collectionSlug: CollectionSlug,
@@ -291,17 +272,14 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   private async cancelAndDeleteJobs(taskIds: string[]): Promise<void> {
     if (taskIds.length === 0) return;
 
-    // Both, in this order: `jobs.cancel` only writes `{ error: { cancelled: true }, hasError: true,
-    // processing: false }`, which is what signals a running handler to abort. The delete then removes
-    // the row — under `deleteJobOnComplete: false` a cancelled job would otherwise sit in the status
-    // feed forever.
+    // Both, in order: `jobs.cancel` only marks the row (`error.cancelled`), which is the signal a
+    // running handler aborts on; the delete then keeps it out of the status feed under
+    // `deleteJobOnComplete: false`.
     await this.payload.jobs.cancel({
       where: { id: { in: taskIds } },
       queue: this.config.queueName,
     });
 
-    // Narrowed to our own jobs: the ids arrive straight from the request body, and `payload-jobs` is
-    // shared with whatever else the host queues there.
     await this.payload.delete({
       collection: this.config.jobsCollection,
       where: { and: [this.ownJobs(), { id: { in: taskIds } }] },
@@ -309,7 +287,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   }
 
   private ownJobs(): Where {
-    // Jobs queued before the workflow change are still in the table and carry the per-locale task slug.
+    // Pre-workflow jobs are still in the table: docs/DEPRECATIONS.md#jobs-per-locale-task-shape
     return {
       or: [
         { workflowSlug: { equals: this.config.workflowName } },

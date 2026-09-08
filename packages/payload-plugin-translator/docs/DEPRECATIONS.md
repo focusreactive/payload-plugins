@@ -50,6 +50,27 @@ the single source of truth — code annotations link here by anchor instead of d
   - `src/server/modules/task-runner/payload-jobs-runner/normalizeJob.ts` (read fallback)
   - `src/server/modules/task-runner/payload-jobs-runner/types.ts` (`PayloadJob.input` shape)
 
+### jobs-per-locale-task-shape
+
+- **What:** jobs queued as a bare task (`taskSlug: 'translate_document'`, one `target_lng` in the
+  input) rather than as the locale-walking workflow.
+- **Status:** live
+- **Deprecated:** 2026-09-04 / PR #133
+- **Replacement:** one workflow job per document (`workflowSlug: 'translate_document_locales'`,
+  `target_lngs` list).
+- **Remove in:** next major
+- **Why:** a job per locale meant Payload ran a document's locales through `Promise.all`, and every
+  write it makes is a whole-document version snapshot — so the second locale's snapshot dropped the
+  first's work. See [locale workflow](./plans/2026-09-04-locale-workflow.task.md).
+- **Migration:** expand/contract. Nothing writes the task shape any more, but rows queued before the
+  upgrade are still in `payload-jobs`, so every read keeps a fallback for them. Removing the fallback
+  strands those rows: cancel, stale-lock reclaim and the status panels stop finding them, silently.
+- **Code refs:**
+  - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsTaskRunner.ts` (`ownJobs()`)
+  - `src/server/modules/task-runner/payload-jobs-runner/planEnqueue.ts` (`pickHost` skips it)
+  - `src/server/modules/task-runner/payload-jobs-runner/normalizeJob.ts` (`normalizeJobLocales`
+    expands it to itself)
+
 ### find-by-collection-document-ids-array
 
 - **What:** passing a bare `Array<string | number>` of document ids as the second argument to
