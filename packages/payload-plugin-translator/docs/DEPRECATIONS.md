@@ -46,7 +46,7 @@ the single source of truth — code annotations link here by anchor instead of d
   remain readable. Removed (along with the fallback read path) in the next major.
 - **Code refs:**
   - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsRunnerProvider.ts` (inputSchema, handler input type/unpacking)
-  - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsTaskRunner.ts` (enqueue write, `findByCollection` / `findJobsInternal` query + in-memory filter)
+  - `src/server/modules/task-runner/payload-jobs-runner/PayloadJobsTaskRunner.ts` (enqueue write, `findByCollection` / `findRawJobs` query + in-memory filter)
   - `src/server/modules/task-runner/payload-jobs-runner/normalizeJob.ts` (read fallback)
   - `src/server/modules/task-runner/payload-jobs-runner/types.ts` (`PayloadJob.input` shape)
 
