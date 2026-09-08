@@ -26,11 +26,6 @@ export type PayloadJobsRunnerOptions = {
    */
   taskName?: string;
   /**
-   * Name of the Payload workflow that walks a document's target locales.
-   * @default 'translate_document_locales'
-   */
-  workflowName?: string;
-  /**
    * Name of the job queue.
    * @default 'translations'
    */
@@ -77,6 +72,7 @@ export type PayloadJobsRunnerOptions = {
  */
 export type PayloadJobsRunnerConfig = {
   taskName: string;
+  /** Derived from `taskName`, not configurable — see `createPayloadJobsRunner`. */
   workflowName: string;
   queueName: string;
   jobsCollection: CollectionSlug;
@@ -117,7 +113,7 @@ export type PayloadJob = {
   };
 };
 
-/** One entry Payload writes to a job's `log` as each task inside a workflow settles. */
+/** Written by Payload only once a task settles — an absent entry means that locale has not run. */
 export type JobLogEntry = {
   state: "succeeded" | "failed";
   completedAt?: string | null;

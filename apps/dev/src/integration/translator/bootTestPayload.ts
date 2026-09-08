@@ -25,6 +25,9 @@ import { buildTestCollections } from "./testCollections";
 /**
  * A booted test Payload plus the throwaway resources to tear down after the suite.
  */
+/** Payload's `autoRun.limit` default — these specs reproduce the cron's batching, not a run of one. */
+export const CRON_BATCH_LIMIT = 50;
+
 export type TestPayload = {
   payload: Payload;
   cleanup: () => Promise<void>;
@@ -64,6 +67,9 @@ export type TestPayload = {
  *   partial failure. Every other locale translates normally.
  * @param opts.runner - defaults to the sync runner. `createPayloadJobsRunner({ autoRun: false })`
  *   leaves queued jobs unprocessed in `payload-jobs`, so a spec can read the rows.
+ * @param opts.onTranslate - awaited before each provider call, so a spec can hold a locale mid-run.
+ * @param opts.exclusiveQueue - Payload's `enableConcurrencyControl` for this boot; `EXCLUSIVE_QUEUE=1`
+ *   sets it for every boot, which is how the suite is run in that mode without touching a spec.
  * @param opts.fallback - localization fallback, off by default: an unwritten locale reads as
  *   empty, not as the default locale's text. Localization-level, so it applies to the whole boot.
  */
@@ -71,7 +77,9 @@ export async function bootTestPayload(opts?: {
   autoTranslate?: { targets: string[]; strategy?: "overwrite" | "skip_existing" };
   collections?: CollectionConfig[];
   fallback?: boolean;
+  exclusiveQueue?: boolean;
   failFor?: string[];
+  onTranslate?: (targetLng: string) => Promise<void> | void;
   runner?: TaskRunnerProvider;
 }): Promise<TestPayload> {
   const dir = mkdtempSync(join(tmpdir(), "translator-int-"));
@@ -90,10 +98,11 @@ export async function bootTestPayload(opts?: {
   const failFor = new Set(opts?.failFor);
   let translateCalls = 0;
   const countingProvider: TranslationProvider = {
-    translate: (input, sourceLng, targetLng) => {
+    translate: async (input, sourceLng, targetLng) => {
       translateCalls += 1;
+      await opts?.onTranslate?.(targetLng);
       if (failFor.has(targetLng)) throw new Error(`provider unavailable for ${targetLng}`);
-      return baseProvider.translate(input, sourceLng, targetLng);
+      return await baseProvider.translate(input, sourceLng, targetLng);
     },
   };
 
@@ -112,12 +121,17 @@ export async function bootTestPayload(opts?: {
         { code: "en", label: "English" },
         { code: "de", label: "Deutsch" },
         { code: "fr", label: "Français" },
+        // A third target so a spec can tell "the run stopped at the failure" from "the run carried
+        // on and one locale threw" — with two locales the failing one is always the last.
+        { code: "es", label: "Español" },
       ],
     },
     collections,
-    // Matches the dev app: a host that wants translation history keeps completed jobs. Payload
-    // deletes them by default, which would leave the status panels with nothing to read.
-    jobs: { deleteJobOnComplete: false },
+    // Payload deletes completed jobs by default, which would leave the status panels nothing to read.
+    jobs: {
+      deleteJobOnComplete: false,
+      enableConcurrencyControl: opts?.exclusiveQueue ?? process.env.EXCLUSIVE_QUEUE === "1",
+    },
     plugins: [
       translatorPlugin({
         collections: managed,

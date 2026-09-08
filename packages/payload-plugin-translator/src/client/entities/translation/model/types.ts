@@ -19,7 +19,12 @@ export type DocumentTranslationFailed = {
   created_at: string;
   updated_at: string;
   input: InputData;
-  error: {
+  /**
+   * Absent while the job itself carries no final error. A locale's failure is recorded in the job
+   * log as soon as it happens, but the job keeps `error` unset until it stops retrying — so a row
+   * can read `failed` with nothing to show yet.
+   */
+  error?: {
     message: string;
   };
 };

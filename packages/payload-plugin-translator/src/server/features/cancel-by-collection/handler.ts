@@ -29,13 +29,17 @@ export class CancelByCollectionHandler {
       return ServerResponse.badRequest("Collection not available for translation");
 
     const runner = this.taskRunnerFactory.create(req.payload);
-    const tasks = await runner.findByCollection(collectionSlug);
-    if (tasks.length === 0) return ServerResponse.noContent();
+    const rows = await runner.findByCollection(collectionSlug, { excludeCompleted: true });
+    if (rows.length === 0) return ServerResponse.noContent();
 
-    const pendingTaskIds = tasks.filter((task) => task.status === "pending").map((task) => task.id);
-    if (pendingTaskIds.length === 0) return ServerResponse.noContent();
+    // Rows are per locale, cancel addresses jobs. Filtering rows by `pending` misses a job waiting
+    // to retry: all of its locales are logged, so it has no pending row, yet the picker takes it
+    // again.
+    const running = new Set(rows.filter((row) => row.status === "running").map((row) => row.id));
+    const queuedJobIds = [...new Set(rows.map((row) => row.id))].filter((id) => !running.has(id));
+    if (queuedJobIds.length === 0) return ServerResponse.noContent();
 
-    await runner.cancel(pendingTaskIds);
+    await runner.cancel(queuedJobIds);
 
     return ServerResponse.noContent();
   }

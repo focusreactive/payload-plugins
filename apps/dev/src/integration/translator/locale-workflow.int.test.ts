@@ -1,13 +1,12 @@
 import { createPayloadJobsRunner } from "@focus-reactive/payload-plugin-translator";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { bootTestPayload } from "./bootTestPayload";
+import { bootTestPayload, CRON_BATCH_LIMIT } from "./bootTestPayload";
 import type { TestPayload } from "./bootTestPayload";
 import { callEndpoint } from "./callEndpoint";
 
-// Every requested locale must be translated. Booted with the REAL jobs runner — the production
-// default — because the parallel fan-out this guards against exists only there: `createSyncRunner`
-// translates inline and in order, which is why the rest of the suite never saw the defect.
+// Must boot the real jobs runner: `createSyncRunner` translates inline and in order, so the fan-out
+// this file guards against cannot occur under it.
 
 const rev = (s: string) => [...s].reverse().join("");
 
@@ -43,8 +42,7 @@ const enqueue = async (id: string, targets: string[]) => {
   expect(res.status, "the enqueue endpoint rejected the request").toBe(200);
 };
 
-// The same call the autorun cron makes, so the batching behaviour under test is the real one.
-const runQueue = () => ctx.payload.jobs.run({ queue: "translations", limit: 50 });
+const runQueue = () => ctx.payload.jobs.run({ queue: "translations", limit: CRON_BATCH_LIMIT });
 
 const titleIn = async (id: string, locale: string) =>
   (
@@ -64,7 +62,11 @@ const workflowJob = async (id: string) => {
     where: { workflowSlug: { equals: "translate_document_locales" } } as never,
   });
   return (
-    docs as Array<{ input?: { collection_id?: string }; log?: Array<Record<string, unknown>> }>
+    docs as Array<{
+      completedAt?: string | null;
+      input?: { collection_id?: string };
+      log?: Array<Record<string, unknown>>;
+    }>
   ).find((j) => j.input?.collection_id === id);
 };
 
@@ -80,19 +82,28 @@ describe("translating one document into several locales", () => {
     expect(await titleIn(id, "fr"), "fr was not translated").toBe(rev(source));
   });
 
-  it("records one log entry per locale, in the order they were requested", async () => {
+  it("runs the locales one after another, never overlapping", async () => {
     const id = await createDoc("Ordered source");
 
-    await enqueue(id, ["de", "fr"]);
+    await enqueue(id, ["de", "fr", "es"]);
     await runQueue();
 
     const job = await workflowJob(id);
     expect(job, "no workflow job was written").toBeDefined();
+    const log = job?.log ?? [];
     expect(
-      job?.log?.map((e) => (e.input as { target_lng?: string })?.target_lng),
+      log.map((e) => (e.input as { target_lng?: string })?.target_lng),
       "the log should carry a row per locale, in request order"
-    ).toEqual(["de", "fr"]);
-    expect(job?.log?.map((e) => e.state)).toEqual(["succeeded", "succeeded"]);
+    ).toEqual(["de", "fr", "es"]);
+    expect(log.map((e) => e.state)).toEqual(["succeeded", "succeeded", "succeeded"]);
+
+    // The order assertion above would also pass under `Promise.all`; only non-overlap rules it out.
+    for (let i = 1; i < log.length; i++) {
+      expect(
+        Date.parse(log[i].executedAt as string),
+        `locale ${i} started before locale ${i - 1} finished`
+      ).toBeGreaterThanOrEqual(Date.parse(log[i - 1].completedAt as string));
+    }
   });
 
   it("the status endpoint still reports a row per target locale", async () => {
@@ -122,6 +133,10 @@ describe("translating one document into several locales", () => {
 
     await enqueue(id, ["de", "fr"]);
     await runQueue();
+
+    // Without this the check passes for the wrong reason: a job left *failed* is also skipped on the
+    // second run, because the retry backoff pushes its `waitUntil` into the future.
+    expect((await workflowJob(id))?.completedAt, "the workflow did not complete").toBeTruthy();
 
     const before = ctx.translateCount();
     await runQueue();

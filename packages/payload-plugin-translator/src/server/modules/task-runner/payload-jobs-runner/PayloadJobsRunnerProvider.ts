@@ -16,7 +16,6 @@ const DEFAULT_STALE_JOB_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
 const defaultValues = {
   taskName: "translate_document",
-  workflowName: "translate_document_locales",
   queueName: "translations",
   jobsCollection: "payload-jobs",
   autoRun: defaultAutoRun,
@@ -55,7 +54,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
 
     this.config = {
       taskName: options?.taskName ?? defaultValues.taskName,
-      workflowName: options?.workflowName ?? defaultValues.workflowName,
+      workflowName: `${options?.taskName ?? defaultValues.taskName}_locales`,
       queueName: options?.queueName ?? defaultValues.queueName,
       jobsCollection: options?.jobsCollection ?? defaultValues.jobsCollection,
       autoRun,
@@ -130,9 +129,9 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
         },
       ];
 
-      // Same fields as the task, except the single target locale becomes the list the workflow walks.
       const workflowInputSchema: Field[] = [
         ...inputSchema.filter((f) => "name" in f && f.name !== "target_lng"),
+        // json, not an array field: the input stays one column, so no migration is needed
         { type: "json", name: "target_lngs", required: true },
       ];
 
@@ -166,20 +165,34 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
         },
       };
 
-      // One workflow per document, awaiting one task per locale. The tasks run in sequence, which is
-      // the whole point: every write Payload makes is a whole-document version snapshot, so two
-      // locales translated in parallel build their snapshots from the same base and the second one
-      // silently drops the first's work. See issue #114.
+      // Locales run in sequence: every Payload write is a whole-document version snapshot, so two
+      // translated in parallel build from the same base and the second drops the first (issue #114).
       const workflow = {
         slug: workflowName,
         inputSchema: workflowInputSchema,
         retries,
+        // Conditional because Payload refuses to boot when a workflow declares `concurrency` while
+        // `enableConcurrencyControl` is off. The flag is the host's to set — see the README.
+        ...(config.jobs?.enableConcurrencyControl
+          ? {
+              concurrency: {
+                key: ({ input }: { input: { collection_slug?: string; collection_id?: string } }) =>
+                  `${input.collection_slug}:${input.collection_id}`,
+                exclusive: true,
+              },
+            }
+          : {}),
         handler: async (args: {
           job: { input: { target_lngs?: string[] } & Record<string, unknown> };
           tasks: Record<string, (id: string, args: { input: unknown }) => Promise<unknown>>;
         }) => {
-          const { target_lngs: targets = [], ...shared } = args.job.input;
-          for (const target of targets) {
+          // Re-read the list every turn instead of destructuring it once. Payload replaces
+          // `job.input` with a freshly-read row after each task settles, so a locale appended to the
+          // stored job while this one runs is picked up here rather than being lost.
+          for (let i = 0; ; i++) {
+            const { target_lngs: targets, ...shared } = args.job.input;
+            const target = targets?.[i];
+            if (target === undefined) return;
             // The locale is the task id, so Payload's own restoration skips a locale already logged
             // as succeeded when a failed workflow is retried.
             await args.tasks[taskName](target, { input: { ...shared, target_lng: target } });

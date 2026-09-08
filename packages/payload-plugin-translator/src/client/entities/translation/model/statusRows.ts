@@ -91,7 +91,7 @@ export function buildTranslationStatusRows(input: {
         state: existing && !TRANSIENT.has(state) ? existing.state : state,
         at: run.updated_at,
         jobId: TRANSIENT.has(state) ? run.id : existing?.jobId,
-        error: run.status === "failed" ? run.error.message : undefined,
+        error: run.status === "failed" ? run.error?.message : undefined,
       });
     }
   }

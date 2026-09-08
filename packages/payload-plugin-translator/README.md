@@ -562,6 +562,43 @@ createPayloadJobsRunner({ taskName: "translate_document", queueName: "translatio
 
 > By default Payload deletes a job as soon as it completes, so the "Completed" status never shows in the UI. Set `jobs: { deleteJobOnComplete: false }` in your Payload config to keep it.
 
+##### One job per document
+
+A document's target locales are queued as a **single job** that translates them one after another.
+Every write Payload makes is a whole-document version snapshot, so two locales translated in parallel
+build from the same base and the second silently drops the first's work.
+
+A later request for the same document adds its locales to that job rather than replacing it — the
+locales the job still owes are never lost. Two cases get a job of their own instead: re-translating a
+locale the live job has already finished (its log records it as done, so it would be skipped), and a
+request that picked a different source locale, strategy or publish flag — a job carries one of each
+for all its locales, so it cannot take work that chose differently.
+
+##### Optional: strict one-at-a-time per document
+
+Two requests landing at the same instant, or a re-translation of an already-finished locale, can still
+put two jobs on one document. If your content is edited often enough for that to matter, enable
+Payload's own concurrency control:
+
+```typescript
+// payload.config.ts
+export default buildConfig({
+  jobs: { enableConcurrencyControl: true },
+  // ...
+});
+```
+
+The plugin picks this up on its own — there is no option to set here. With it on, the queue holds a
+second job for a document until the running one finishes, so two jobs can never write the same
+document at once. Jobs for *different* documents still run in parallel.
+
+The cost is yours to weigh: the setting adds an indexed `concurrencyKey` column to the jobs
+collection, so a SQL database needs a migration (`payload migrate:create` then `payload migrate`);
+MongoDB needs none. A second job also waits for the next queue run rather than starting immediately.
+
+> With the setting on, a job stuck at `processing: true` blocks every other job for that document
+> until its lock is reclaimed. The plugin clears stale locks on boot — see `staleJobTimeoutMs`.
+
 #### `createSyncRunner()`
 
 Runs translations inline (no queue) — handy for development or small datasets.

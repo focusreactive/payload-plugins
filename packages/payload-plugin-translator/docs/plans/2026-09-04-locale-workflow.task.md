@@ -50,11 +50,17 @@ groups them by collection. Grouping by document and queueing one workflow is a c
 that class. Rejected: changing `TaskInput` to carry a locale array — it would touch both callers, the
 sync runner, the lifecycle wrapper and the endpoint, for no gain, since the array already arrives.
 
-**D3 — supersession cancels only jobs that have not started.**
-The user's decision. A workflow already running keeps its already-translated locales and finishes;
-the new request queues behind it. Rejected: cancelling the whole workflow, which is closer to today's
-semantics but discards locales that were already translated in the current run — the very work this
-change exists to stop losing.
+**D3 — a re-enqueue supersedes every live job for the document, the one in flight included.**
+The user's decision, taken twice. The first version spared a running workflow so it could keep its
+already-translated locales; review showed that premise does not hold — Payload has no "queue behind",
+its picker takes any job that is not currently processing, so the spared job and the new one write the
+document at once on the next cron tick. That is the lost update at workflow granularity. Rejected on
+the second pass: leaving the running job and dropping the new request, which loses no work but also
+never translates the edit the user just asked for.
+
+What a cancelled run actually costs: nothing that was translated, because those locales are already
+written to the documents. Only the job's log and its unfinished locale go, and the new workflow
+redoes that locale against the newer source — which is what the user asked for by re-enqueueing.
 
 **D4 — the panel reads per-locale state from the job log.**
 The user's decision. Payload writes an entry per task, so the detail survives the collapse from N jobs
@@ -85,7 +91,9 @@ completion after a failure. Neither is expressible in a signature.
    failed. *Check: integration test with a provider that throws for one locale.*
 5. **A retry resumes rather than restarting** — a locale already translated is not sent to the provider
    again. *Check: integration test using the boot's `translateCount()`.*
-6. **Supersession cancels only jobs that have not started.** *Check: unit test on the runner.*
+6. **A re-enqueue leaves exactly one live job on the document**, whatever state the old one was in —
+   not started, queued for retry with every locale logged, or in flight. *Check: unit tests on the
+   runner plus `job-extend.int.test.ts`.*
 7. **The status endpoints still report per-locale state**, now from the job log. *Check: integration
    test through the real endpoints.*
 8. **The sync runner is unaffected.** *Check: the existing 73 integration tests stay green on SQLite.*
@@ -93,7 +101,8 @@ completion after a failure. Neither is expressible in a signature.
 
 ## Human choices
 
-- **Supersede only not-yet-started jobs** (D3). Rejected alternative recorded above.
+- **Supersede every live job for the document** (D3), after the first version's premise was
+  disproved. Rejected alternative recorded above.
 - **Panel reads the job log** (D4). Rejected alternative recorded above.
 - **Fix this under #114** rather than opening a separate issue, with #114's description extended by a
   comment to cover the wider defect.
@@ -127,6 +136,53 @@ panel reading per-locale state from the job log only works for hosts that keep c
 **A retry is delayed by backoff.** Payload backs a failed job off exponentially, so a retry cannot be
 observed by simply running the queue again; the spec clears `waitUntil` rather than waiting.
 
+
 ## Review log
 
-_(appended by review runs)_
+**2026-09-04 — three review passes over the first implementation.** All findings were checked against
+Payload 3.84.1's source before being acted on; four were real defects and are fixed here.
+
+- **`reclaimStaleJobs` had gone dead.** It narrowed by `taskSlug`, and `jobs.queue({ workflow })`
+  writes `workflowSlug` and leaves `taskSlug` null (`queues/localAPI.js:51-54`), so after this change
+  no job matched it. Boot-time stale-lock recovery would have reported zero reclaimed, forever,
+  without erroring. Both slug predicates now come from one `ownJobs()`.
+- **`run()` read a locale row instead of the job.** `handleTaskError.js:43` stamps `completedAt` on a
+  *failed* log entry too, so a partially-failed workflow presented rows that all carried one, and the
+  Retry button answered `already_completed` → 404 for exactly the jobs a user presses it on. The
+  runner's internal reads now go through `findRawJobs` + `normalizeJob`; only `findByCollection`,
+  which feeds the panels, expands to locale rows.
+- **The supersession predicate reopened #114.** It filtered on an expanded row's `status`, and a job
+  whose locales are all logged has no `pending` row — yet a non-final task failure leaves it queued
+  (`hasError: false`, `processing: false`). Two live jobs on one document, picked into one
+  `Promise.all` batch. See D3 above for how this was settled.
+- **N reads of the job table.** The lookup sat inside the per-document loop while `findRawJobs` is
+  unpaginated and filters in memory, so `select_all` meant one full scan per document. One read now
+  serves the whole batch, and the orphaned `groupByCollection` is gone.
+
+**Test findings, and what closed them.** The audit's central result was that D4 was not tested at all:
+`normalizeJobLocales` could have its entire `job.log` branch deleted and the suite stayed green — in
+production that is the panel reporting "completed" for a locale that failed. Seven unit cases now
+cover it, and the audit's own empty implementation was pasted in to confirm four of them go red.
+Three more gaps closed: the sequencing check asserted order, which survives `Promise.all`, and now
+asserts non-overlap (`executedAt` of each locale against the previous locale's `completedAt`) —
+verified by mutating the handler to `Promise.all`, which reddens it; the failure spec failed the
+*last* locale, so "stops there" was unobservable, and now runs three locales failing the middle one;
+and "does not re-run a completed workflow" passed equally for a job left failed, so it now asserts the
+workflow reached `completedAt` first. A third locale (`es`) was added to the shared harness for this.
+
+**Comment audit.** 110 comment lines over 569 lines of code, judged too dense. The #114 lost-update
+story had been written out in five places; `PayloadJobsTaskRunner.enqueue` now owns it and the others
+point at it or are gone. Twenty-two comments deleted or shortened, mostly narration of the line below.
+What was kept is measured Payload behaviour a reader cannot recover without opening `node_modules`:
+`completedAt` on failed log entries, the locale-as-task-id restoration, the retry backoff, the
+`getPayload` per-process cache.
+
+**Verification.** Unit 1332 in the plugin; integration 15/15 on SQLite and MongoDB, 13/15 on Postgres
+— the two failing files are the known #124 auto-translate cases, red on `main` as well. check-types
+clean in both packages; lint at the repo baseline.
+
+**Left open, deliberately.** `enqueue` cancels the old job and queues the new one without a
+transaction, so a batch spanning several documents can leave one document's old job deleted and its
+new workflow unqueued if a later document throws. _Closed by
+[2026-09-08-one-live-job-per-document](./2026-09-08-one-live-job-per-document.task.md): `enqueue` no
+longer cancels or deletes anything._
