@@ -1,7 +1,12 @@
 import type { Config, Field, Payload, WorkflowConfig } from "payload";
 
 import type { TaskRunner } from "../TaskRunner.interface";
-import type { PayloadJobsRunnerOptions, PayloadJobsRunnerConfig, AutoRunConfig } from "./types";
+import type {
+  PayloadJobsRunnerOptions,
+  PayloadJobsRunnerConfig,
+  AutoRunConfig,
+  StoredWorkflowInput,
+} from "./types";
 import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner";
 import { readCollectionRef } from "./readCollectionRef";
 import type { TaskRunnerContext, TaskRunnerProvider } from "../TaskRunnerProvider.interface";
@@ -12,11 +17,7 @@ const defaultAutoRun: Required<AutoRunConfig> = {
   limit: 50,
 };
 
-type StoredWorkflowInput = {
-  collection_slug?: string;
-  collection_id?: string;
-  target_lngs?: string[];
-} & Record<string, unknown>;
+type StoredJobInput = Partial<StoredWorkflowInput> & Record<string, unknown>;
 type RunLocaleTask = (taskID: string, args: { input: Record<string, unknown> }) => Promise<unknown>;
 
 const DEFAULT_STALE_JOB_TIMEOUT_MS = 5 * 60 * 1000;
@@ -154,7 +155,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
         },
       };
 
-      const workflow: WorkflowConfig<StoredWorkflowInput> = {
+      const workflow: WorkflowConfig<StoredJobInput> = {
         slug: workflowName,
         inputSchema: workflowInputSchema,
         retries,

@@ -110,6 +110,16 @@ export type PayloadJob = {
   };
 };
 
+/** Snake_case because Payload persists these keys verbatim in the job row. */
+export type StoredWorkflowInput = {
+  collection_slug: CollectionSlug;
+  collection_id: string;
+  source_lng: string;
+  target_lngs: string[];
+  strategy: string;
+  publish_on_translation: boolean;
+};
+
 /** Written by Payload only once a task settles — an absent entry means that locale has not run. */
 export type JobLogEntry = {
   state: "succeeded" | "failed";

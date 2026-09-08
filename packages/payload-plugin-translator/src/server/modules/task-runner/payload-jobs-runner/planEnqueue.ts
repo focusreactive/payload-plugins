@@ -1,9 +1,11 @@
+import type { CollectionSlug } from "payload";
+
 import { isCancelled, latestLogByLocale } from "./normalizeJob";
 import type { PayloadJob } from "./types";
 
 /** The part of a request that every locale in it shares. */
 export type RequestShape = {
-  collectionSlug: string;
+  collectionSlug: CollectionSlug;
   collectionId: string;
   sourceLng: string;
   strategy: string;
