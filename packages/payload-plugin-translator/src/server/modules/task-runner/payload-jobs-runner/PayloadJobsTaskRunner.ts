@@ -9,6 +9,13 @@ import { planEnqueue } from "./planEnqueue";
 import type { RequestShape } from "./planEnqueue";
 import { readCollectionRef } from "./readCollectionRef";
 
+type QueueWorkflow = (args: {
+  workflow: string;
+  queue: string;
+  waitUntil?: Date;
+  input: StoredWorkflowInput;
+}) => Promise<unknown>;
+
 type StoredWorkflowInput = {
   collection_slug: CollectionSlug;
   collection_id: string;
@@ -152,11 +159,14 @@ export class PayloadJobsTaskRunner implements TaskRunner {
       publish_on_translation: request.publishOnTranslation,
     };
 
-    await this.payload.jobs.queue({
-      workflow: this.config.workflowName as never,
+    // `jobs.queue` is generic over the host's generated job slugs; this workflow is registered at
+    // config time, so the call goes through a signature naming what it actually accepts.
+    const queueJob = this.payload.jobs.queue as unknown as QueueWorkflow;
+    await queueJob({
+      workflow: this.config.workflowName,
       queue: this.config.queueName,
       waitUntil,
-      input: input as never,
+      input,
     });
   }
 

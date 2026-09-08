@@ -1,4 +1,4 @@
-import type { Config, Field, Payload } from "payload";
+import type { Config, Field, Payload, WorkflowConfig } from "payload";
 
 import type { TaskRunner } from "../TaskRunner.interface";
 import type { PayloadJobsRunnerOptions, PayloadJobsRunnerConfig, AutoRunConfig } from "./types";
@@ -12,7 +12,14 @@ const defaultAutoRun: Required<AutoRunConfig> = {
   limit: 50,
 };
 
-const DEFAULT_STALE_JOB_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+type StoredWorkflowInput = {
+  collection_slug?: string;
+  collection_id?: string;
+  target_lngs?: string[];
+} & Record<string, unknown>;
+type RunLocaleTask = (taskID: string, args: { input: Record<string, unknown> }) => Promise<unknown>;
+
+const DEFAULT_STALE_JOB_TIMEOUT_MS = 5 * 60 * 1000;
 
 const defaultValues = {
   taskName: "translate_document",
@@ -24,16 +31,11 @@ const defaultValues = {
     attempts: 3,
     backoff: {
       type: "exponential" as const,
-      delay: 5000, // 5s, 10s, 20s
+      delay: 5000,
     },
   },
 };
 
-/**
- * TaskRunnerProvider implementation using Payload Jobs.
- *
- * Configures Payload jobs, tasks, and autorun for translation processing.
- */
 export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
   private readonly config: PayloadJobsRunnerConfig;
 
@@ -73,9 +75,6 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
 
     return (config) => {
       const inputSchema: Field[] = [
-        // Flat text reference (ID-agnostic). Current shape that jobs are
-        // written with — no relationship type validation against the target
-        // collection's ID type, so string IDs work for number-id collections.
         {
           type: "text",
           name: "collection_slug",
@@ -86,14 +85,6 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
           name: "collection_id",
           required: true,
         },
-        /**
-         * Legacy relationship reference, kept as a read-only fallback so jobs
-         * queued before the ID-agnostic migration stay readable. No longer
-         * written; demoted to `required: false` so new jobs (which omit it)
-         * pass validation. Removed in the next major.
-         * See docs/DEPRECATIONS.md#jobs-input-collection-field
-         * @deprecated
-         */
         {
           type: "relationship",
           name: "collection",
@@ -131,7 +122,6 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
 
       const workflowInputSchema: Field[] = [
         ...inputSchema.filter((f) => "name" in f && f.name !== "target_lng"),
-        // json, not an array field: the input stays one column, so no migration is needed
         { type: "json", name: "target_lngs", required: true },
       ];
 
@@ -144,7 +134,6 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
           input: {
             collection_slug?: string;
             collection_id?: string;
-            // Legacy fallback shape, see docs/DEPRECATIONS.md#jobs-input-collection-field
             collection?: { relationTo: string; value: string | number };
             source_lng: string;
             target_lng: string;
@@ -165,37 +154,25 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
         },
       };
 
-      // Locales run in sequence: every Payload write is a whole-document version snapshot, so two
-      // translated in parallel build from the same base and the second drops the first (issue #114).
-      const workflow = {
+      const workflow: WorkflowConfig<StoredWorkflowInput> = {
         slug: workflowName,
         inputSchema: workflowInputSchema,
         retries,
-        // Conditional because Payload refuses to boot when a workflow declares `concurrency` while
-        // `enableConcurrencyControl` is off. The flag is the host's to set — see the README.
         ...(config.jobs?.enableConcurrencyControl
           ? {
               concurrency: {
-                key: ({ input }: { input: { collection_slug?: string; collection_id?: string } }) =>
-                  `${input.collection_slug}:${input.collection_id}`,
+                key: ({ input }) => `${input.collection_slug}:${input.collection_id}`,
                 exclusive: true,
               },
             }
           : {}),
-        handler: async (args: {
-          job: { input: { target_lngs?: string[] } & Record<string, unknown> };
-          tasks: Record<string, (id: string, args: { input: unknown }) => Promise<unknown>>;
-        }) => {
-          // Re-read the list every turn instead of destructuring it once. Payload replaces
-          // `job.input` with a freshly-read row after each task settles, so a locale appended to the
-          // stored job while this one runs is picked up here rather than being lost.
+        handler: async ({ job, tasks }) => {
+          const runLocale = (tasks as Record<string, RunLocaleTask>)[taskName];
           for (let i = 0; ; i++) {
-            const { target_lngs: targets, ...shared } = args.job.input;
+            const { target_lngs: targets, ...shared } = job.input;
             const target = targets?.[i];
             if (target === undefined) return;
-            // The locale is the task id, so Payload's own restoration skips a locale already logged
-            // as succeeded when a failed workflow is retried.
-            await args.tasks[taskName](target, { input: { ...shared, target_lng: target } });
+            await runLocale(target, { input: { ...shared, target_lng: target } });
           }
         },
       };
@@ -204,9 +181,8 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
       if (!config.jobs.tasks) config.jobs.tasks = [];
       config.jobs.tasks.push(task);
       if (!config.jobs.workflows) config.jobs.workflows = [];
-      config.jobs.workflows.push(workflow as never);
+      config.jobs.workflows.push(workflow);
 
-      // Skip autoRun configuration when disabled (e.g., for Vercel/serverless deployments)
       if (autoRun) {
         const autoRunConfig = {
           queue: queueName,
@@ -227,13 +203,6 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
         }
       }
 
-      // Reset stale locks on boot so jobs abandoned by a killed process
-      // (deploy/crash/timeout) become eligible for the autorun picker again.
-      // The picker requires processing:false, no error, and no pending waitUntil;
-      // a mid-run casualty (no error, no waitUntil) satisfies the rest, so
-      // clearing processing is sufficient for that case. Threshold-based, so a
-      // job genuinely in flight on another live instance (fresh updatedAt) is
-      // left alone. Wrapped so a reclaim failure never blocks startup.
       const existingOnInit = config.onInit;
       config.onInit = async (payload) => {
         if (existingOnInit) await existingOnInit(payload);
@@ -252,24 +221,6 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
   }
 }
 
-/**
- * Creates the **recommended** task runner: translations run as Payload Jobs
- * (queued, executed by autoRun cron or a manual run, with stale-lock recovery).
- * Durable across restarts and suited to production/serverless. Pass the result
- * as `translatorPlugin({ runner })`.
- *
- * @param options - Queue/task names, `autoRun` cron (or `false` to disable),
- *   `staleJobTimeoutMs`, and retry policy. See {@link PayloadJobsRunnerOptions}.
- * @returns A {@link TaskRunnerProvider} for the plugin's `runner` option.
- * @example
- * ```ts
- * translatorPlugin({
- *   collections: [Posts],
- *   translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY! }),
- *   runner: createPayloadJobsRunner({ autoRun: { cron: '* * * * *' } }),
- * })
- * ```
- */
 export function createPayloadJobsRunner(options?: PayloadJobsRunnerOptions): TaskRunnerProvider {
   return new PayloadJobsRunnerProvider(options);
 }
