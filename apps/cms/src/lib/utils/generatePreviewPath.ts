@@ -1,7 +1,7 @@
-import type { BLOG_CONFIG } from "@/lib/config/blog";
+import type { CollectionSlug } from "payload";
 
 interface Props {
-  collection: "page" | typeof BLOG_CONFIG.collection;
+  collection: CollectionSlug;
   slug: string;
   path: string;
 }

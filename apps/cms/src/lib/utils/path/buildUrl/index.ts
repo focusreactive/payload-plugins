@@ -1,4 +1,5 @@
 import { BLOG_CONFIG } from "@/lib/config/blog";
+import { TALKS_CONFIG, TOPICS_CONFIG } from "@/lib/config/talks";
 import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 import { routing } from "@/lib/i18n/routing";
 import type { Page } from "@/payload-types";
@@ -18,10 +19,23 @@ type BuildUrlOptions = (
       breadcrumbs?: never;
       page?: number;
     }
+  // The two archive collections render from hand-written routes rather than from Page documents,
+  // so they have a fixed base path and no breadcrumb chain and no pagination of their own.
+  | {
+      collection: "talk" | "topic";
+      breadcrumbs?: never;
+      page?: never;
+    }
 ) & {
   absolute?: boolean;
   slug?: string | null;
   locale: string;
+};
+
+const BASE_PATHS: Record<Exclude<BuildUrlOptions["collection"], "page">, string> = {
+  posts: BLOG_CONFIG.basePath,
+  talk: TALKS_CONFIG.basePath,
+  topic: TOPICS_CONFIG.basePath,
 };
 
 export function buildUrl({
@@ -39,7 +53,7 @@ export function buildUrl({
   const breadcrumbsPath = breadcrumbs ? getPathFromBreadcrumbs(breadcrumbs) : undefined;
 
   const relativePath = resolvePath({
-    basePath: collection === "posts" ? BLOG_CONFIG.basePath : undefined,
+    basePath: collection === "page" ? undefined : BASE_PATHS[collection],
     breadcrumbsPath,
     page,
     slug,

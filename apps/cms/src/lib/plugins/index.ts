@@ -24,6 +24,8 @@ import serverExtractPageContent from "@/collections/Page/serverExtractPageConten
 import { Posts } from "@/collections/Posts";
 import serverExtractPostContent from "@/collections/Posts/serverExtractPostContent";
 import { Testimonials } from "@/collections/Testimonials";
+import extractTalkContent from "@/collections/extractTalkContent";
+import extractTopicContent from "@/collections/extractTopicContent";
 import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { abAdapter } from "@/lib/plugins/ab/abAdapter";
@@ -245,6 +247,31 @@ export const plugins: Plugin[] = [
         },
         extractContentPath: "@/collections/Posts/extractPostContent#default",
         serverExtractContent: serverExtractPostContent,
+      },
+      // A collection that renders generateSeoFields({ generation: true }) has to be listed here as
+      // well, or its Generate button has no contract behind it and clicking it does nothing at all.
+      // The same function serves both sides: it reads ids and calls the injected resolveDocs, so it
+      // is runtime-agnostic, and the on-publish hook needs the function value while the button
+      // needs the path string.
+      {
+        slug: "talk",
+        fields: {
+          seoTitle: "meta.title",
+          metaDescription: "meta.description",
+          slug: "slug",
+        },
+        extractContentPath: "@/collections/extractTalkContent#default",
+        serverExtractContent: extractTalkContent,
+      },
+      {
+        slug: "topic",
+        fields: {
+          seoTitle: "meta.title",
+          metaDescription: "meta.description",
+          slug: "slug",
+        },
+        extractContentPath: "@/collections/extractTopicContent#default",
+        serverExtractContent: extractTopicContent,
       },
     ],
     site: {

@@ -1,0 +1,106 @@
+// Payload's elevation scale inverts between the light and dark admin themes, so every surface,
+// border and muted text colour here is taken from it rather than written as a literal. That is the
+// whole reason this file uses no hex values at all.
+
+.product-handle-picker {
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--base) * 0.4);
+    margin-top: calc(var(--base) * 0.25);
+  }
+
+  // This field sits in an array row that can be a third of the screen wide, and Payload's .btn
+  // wraps its label there - which leaves a two-line button beside a one-line Clear.
+  &__actions .btn {
+    white-space: nowrap;
+  }
+
+  &__filter {
+    margin-block-end: var(--base);
+    max-width: calc(var(--base) * 18);
+  }
+
+  &__status {
+    color: var(--theme-elevation-600);
+    padding-block: calc(var(--base) * 0.5);
+  }
+
+  &__grid {
+    display: grid;
+    // Cards, not a list: the cover image is the fastest way to recognise a product, so the column
+    // is sized to give it room and the grid reflows rather than scrolling sideways.
+    grid-template-columns: repeat(auto-fill, minmax(calc(var(--base) * 9), 1fr));
+    gap: var(--base);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__card {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--base) * 0.25);
+    width: 100%;
+    height: 100%;
+    padding: calc(var(--base) * 0.5);
+    background: var(--theme-input-bg);
+    border: 1px solid var(--theme-elevation-150);
+    border-radius: calc(var(--base) * 0.2);
+    color: var(--theme-elevation-1000);
+    cursor: pointer;
+    text-align: start;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--theme-elevation-400);
+    }
+  }
+
+  &__card--current {
+    border-color: var(--theme-success-500);
+  }
+
+  &__thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    // A fixed box keeps every card the same height whatever aspect ratio the store's covers use,
+    // so the grid does not go ragged.
+    aspect-ratio: 4 / 3;
+    background: var(--theme-elevation-50);
+    border-radius: calc(var(--base) * 0.15);
+    overflow: hidden;
+    width: 100%;
+  }
+
+  &__thumb img {
+    height: 100%;
+    object-fit: contain;
+    width: 100%;
+  }
+
+  &__thumb-empty {
+    color: var(--theme-elevation-500);
+    font-size: 0.75rem;
+  }
+
+  &__card-title {
+    font-weight: 600;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  &__card-handle {
+    color: var(--theme-elevation-600);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+  }
+
+  &__card-price {
+    color: var(--theme-elevation-800);
+    font-size: 0.8rem;
+    margin-block-start: auto;
+  }
+}
