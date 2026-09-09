@@ -1,5 +1,7 @@
 "use client";
 
+import { Button, ButtonVariant } from "@/components/button";
+
 /**
  * Seeks an <audio> element already rendered on the same page and starts it playing.
  *
@@ -15,8 +17,6 @@
  * element on the page would otherwise silently win.
  */
 
-import { useState } from "react";
-
 interface AudioSeekButtonProps {
   audioElementId: string;
   startSeconds: number;
@@ -28,8 +28,6 @@ export function AudioSeekButton({
   startSeconds,
   timestampLabel,
 }: AudioSeekButtonProps) {
-  const [hasVisibleFocus, setHasVisibleFocus] = useState(false);
-
   const handleClick = async () => {
     const audioElement = document.querySelector(`#${audioElementId}`);
     // A gated talk has no audioUrl and so renders no player. Being absent is a normal state, not
@@ -46,30 +44,13 @@ export function AudioSeekButton({
   };
 
   return (
-    <button
+    <Button
       aria-label={`Play the audio from ${timestampLabel}`}
-      onBlur={() => setHasVisibleFocus(false)}
       onClick={handleClick}
-      onFocus={(event) => setHasVisibleFocus(event.currentTarget.matches(":focus-visible"))}
-      style={{
-        background: "transparent",
-        border: "1px solid #d4d4d4",
-        borderRadius: 4,
-        color: "#444",
-        cursor: "pointer",
-        // A bare <button> would otherwise fall back to the browser's UI font next to the prose.
-        fontFamily: "inherit",
-        fontSize: 12,
-        // Strengthened for keyboard focus only, and left unset otherwise so the browser's own
-        // focus ring stays the floor - never `outline: none`, which would leave nothing at all if
-        // `:focus-visible` did not match.
-        outline: hasVisibleFocus ? "2px solid #111" : undefined,
-        outlineOffset: 2,
-        padding: "2px 8px",
-      }}
       type="button"
+      variant={ButtonVariant.Badge}
     >
       Listen at {timestampLabel}
-    </button>
+    </Button>
   );
 }

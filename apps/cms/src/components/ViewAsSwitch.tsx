@@ -20,6 +20,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 
+import { Button, ButtonSize, ButtonVariant } from "@/components/button";
 import { TALK_TIERS } from "@/collections/Talk";
 import type { TalkTier } from "@/lib/talks/applyTier";
 import { isTalkTier } from "@/lib/talks/applyTier";
@@ -56,40 +57,21 @@ export function ViewAsSwitch({ current }: { current: TalkTier }) {
   return (
     <div
       aria-label="Preview this page as a different membership tier"
+      className="fixed right-4 bottom-4 z-50 flex items-center gap-1.5 rounded-pill border border-border bg-card p-1.5 shadow-lg"
       role="group"
-      style={{
-        alignItems: "center",
-        background: "#fff",
-        border: "1px solid #d4d4d4",
-        borderRadius: 6,
-        bottom: 16,
-        display: "flex",
-        gap: 4,
-        padding: 6,
-        position: "fixed",
-        right: 16,
-        zIndex: 50,
-      }}
     >
-      <span style={{ fontSize: 12, paddingInline: 6 }}>View as</span>
+      <span className="text-eyebrow px-2 text-muted-foreground">View as</span>
       {TALK_TIERS.map((tier) => (
         <form action={chooseTier} key={tier}>
           <input name="tier" type="hidden" value={tier} />
-          <button
+          <Button
             aria-pressed={tier === current}
-            style={{
-              background: tier === current ? "#111" : "transparent",
-              border: "1px solid #d4d4d4",
-              borderRadius: 4,
-              color: tier === current ? "#fff" : "#111",
-              cursor: "pointer",
-              fontSize: 12,
-              padding: "4px 8px",
-            }}
+            size={ButtonSize.Small}
             type="submit"
+            variant={tier === current ? ButtonVariant.Primary : ButtonVariant.Ghost}
           >
             {LABELS[tier]}
-          </button>
+          </Button>
         </form>
       ))}
     </div>

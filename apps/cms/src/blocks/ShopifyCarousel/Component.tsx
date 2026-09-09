@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { SectionContainer } from "@/components/shared";
 /**
  * A server component, which is the whole point of the section: the products have to be in the
@@ -7,9 +7,11 @@ import { SectionContainer } from "@/components/shared";
  *   curl -s <url> | grep -i "<a product title>"
  * - and never by looking at the rendered page in a browser.
  *
- * That constraint is also why the rail is CSS-only (overflow-x plus scroll-snap) instead of a
- * carousel library: a slider would hydrate, and a hydrated slider is one refactor away from
- * fetching its own slides.
+ * That constraint is also why the rail stays CSS - overflow-x plus scroll-snap - instead of a
+ * carousel library: a library owns its slides, and slides it owns are one refactor away from being
+ * fetched client-side. The only hydrated thing here is the pair of arrows in ShopifyCarouselRail,
+ * which page an already-rendered scroll container and render nothing until they have measured it.
+ * The cards are passed into it as children, so they are still emitted by this file.
  */
 
 import {
@@ -18,6 +20,11 @@ import {
   getProductsByHandles,
   getStorefrontConfig,
 } from "@/dal";
+import { Button, ButtonVariant } from "@/components/button";
+import { DisplayHeading } from "@/components/DisplayHeading";
+import { SectionHeader } from "@/components/SectionHeader";
+import { ShopifyCarouselRail } from "@/components/ShopifyCarouselRail";
+import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 
 interface ProductHandleRow {
   handle?: string | null;
@@ -38,11 +45,18 @@ interface Props {
 
 const FALLBACK_HEADING = "Featured products";
 
-const noticeStyle = {
-  border: "1px dashed #b8b8b8",
-  borderRadius: 8,
-  padding: 24,
-} as const;
+/**
+ * How wide one card is, as a fraction of the rail. Whole cards only, at every breakpoint: a card
+ * sliced by the container edge is what made the previous fixed-220px rail look broken, and because
+ * these fractions leave no remainder the rail's maximum scroll offset also lands exactly on a card
+ * boundary - so `snap-start` has a reachable snap point at both ends of the rail.
+ *
+ * The subtracted amounts are the `gap-6` (1.5rem) between cards: n cards across a full-width rail
+ * leave n-1 gaps. The underscores are Tailwind's escape for the spaces CSS `calc()` requires around
+ * a minus sign - without them the declaration is invalid and every card falls back to its content
+ * width.
+ */
+const CARD_WIDTH = "w-full sm:w-[calc((100%_-_1.5rem)/2)] lg:w-[calc((100%_-_3rem)/3)]";
 
 function formatMoney(money: { amount: string; currencyCode: string }): string {
   return new Intl.NumberFormat("en-US", {
@@ -93,6 +107,28 @@ async function checkout(formData: FormData) {
   if (destination) redirect(destination);
 }
 
+interface NoticeProps {
+  children: ReactNode;
+  heading: string;
+}
+
+/**
+ * An unconfigured or empty section must never look like a broken page during a walkthrough, so it
+ * says plainly what is missing instead of rendering an empty rail. The dashed border marks it as a
+ * message to whoever is building the page rather than as content - the one panel in this block that
+ * is deliberately not a card.
+ */
+function CarouselNotice({ children, heading }: NoticeProps) {
+  return (
+    <div className="flex max-w-[720px] flex-col gap-6">
+      <DisplayHeading as="h2" size="display-2" text={heading} />
+      <p className="text-body-lg rounded-lg border border-border-strong border-dashed p-6 text-muted-foreground">
+        {children}
+      </p>
+    </div>
+  );
+}
+
 async function ShopifyCarouselBlockContent({
   description,
   eyebrow,
@@ -100,19 +136,15 @@ async function ShopifyCarouselBlockContent({
   productHandles,
   showPrice,
 }: Props) {
+  const resolvedHeading = heading ?? FALLBACK_HEADING;
   const storefrontConfig = getStorefrontConfig();
 
-  // An unconfigured store must never look like a broken page during a walkthrough, so say plainly
-  // what is missing instead of rendering an empty section.
   if (!storefrontConfig) {
     return (
-      <section style={noticeStyle}>
-        <h2 style={{ fontSize: 20, margin: 0 }}>{heading ?? FALLBACK_HEADING}</h2>
-        <p style={{ color: "#666", fontSize: 14 }}>
-          Shopify is not wired up on this deployment. Set SHOPIFY_STORE_DOMAIN and
-          SHOPIFY_STOREFRONT_TOKEN to render live products here.
-        </p>
-      </section>
+      <CarouselNotice heading={resolvedHeading}>
+        Shopify is not wired up on this deployment. Set SHOPIFY_STORE_DOMAIN and
+        SHOPIFY_STOREFRONT_TOKEN to render live products here.
+      </CarouselNotice>
     );
   }
 
@@ -122,12 +154,9 @@ async function ShopifyCarouselBlockContent({
 
   if (requestedHandles.length === 0) {
     return (
-      <section style={noticeStyle}>
-        <h2 style={{ fontSize: 20, margin: 0 }}>{heading ?? FALLBACK_HEADING}</h2>
-        <p style={{ color: "#666", fontSize: 14 }}>
-          No product handles are configured for this section yet.
-        </p>
-      </section>
+      <CarouselNotice heading={resolvedHeading}>
+        No product handles are configured for this section yet.
+      </CarouselNotice>
     );
   }
 
@@ -137,134 +166,75 @@ async function ShopifyCarouselBlockContent({
 
   if (products.length === 0) {
     return (
-      <section style={noticeStyle}>
-        <h2 style={{ fontSize: 20, margin: 0 }}>{heading ?? FALLBACK_HEADING}</h2>
-        <p style={{ color: "#666", fontSize: 14 }}>
-          No products found in Shopify for{" "}
-          {requestedHandles.map((productHandle) => `"${productHandle}"`).join(", ")}.
-        </p>
-      </section>
+      <CarouselNotice heading={resolvedHeading}>
+        No products found in Shopify for{" "}
+        {requestedHandles.map((productHandle) => `"${productHandle}"`).join(", ")}.
+      </CarouselNotice>
     );
   }
 
-  return (
-    <section>
-      {eyebrow ? (
-        <p
-          style={{
-            color: "#888",
-            fontSize: 13,
-            letterSpacing: "0.06em",
-            margin: "0 0 4px",
-            textTransform: "uppercase",
-          }}
-        >
-          {eyebrow}
-        </p>
-      ) : null}
-      <h2 style={{ fontSize: 20, marginBottom: 4 }}>{heading ?? FALLBACK_HEADING}</h2>
-      {description ? (
-        <p style={{ color: "#666", fontSize: 14, marginTop: 0 }}>{description}</p>
-      ) : null}
+  const header = prepareSectionHeaderProps({ description, eyebrow, heading: resolvedHeading });
 
-      {/*
-        tabIndex makes the rail reachable by keyboard, because a scroll container that only
-        responds to a trackpad is unusable without one - and there is no script here to move it.
-      */}
-      <ul
-        aria-label={heading ?? FALLBACK_HEADING}
-        style={{
-          display: "flex",
-          gap: 16,
-          listStyle: "none",
-          margin: 0,
-          overflowX: "auto",
-          padding: "4px 0 12px",
-          scrollSnapType: "x mandatory",
-        }}
-        tabIndex={0}
-      >
+  return (
+    <>
+      {header ? <SectionHeader {...header} className="mb-12" /> : null}
+
+      <ShopifyCarouselRail label={resolvedHeading}>
         {products.map((product) => (
           <li
+            className={`flex shrink-0 snap-start flex-col gap-5 rounded-lg border border-border bg-card p-6 text-card-foreground ${CARD_WIDTH}`}
             key={product.handle}
-            style={{
-              border: "1px solid #e0e0e0",
-              borderRadius: 8,
-              display: "flex",
-              // Fixed basis with no shrink: the cards have to overflow the section for the rail
-              // to scroll at all, so they must not compress to fit.
-              flex: "0 0 220px",
-              flexDirection: "column",
-              gap: 8,
-              padding: 16,
-              scrollSnapAlign: "start",
-            }}
           >
             {product.featuredImage ? (
               // Plain <img>: next/image would need the Shopify CDN added to next.config.ts
               // remotePatterns, which is a config change on a shared public repo for one card.
+              // object-contain rather than cover: a crop cuts the part of the product that
+              // identifies it, and the muted panel behind absorbs whatever band is left over.
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 alt={product.featuredImage.altText ?? product.title}
+                className="aspect-[4/3] w-full rounded-md bg-surface-muted object-contain p-4"
+                height={300}
                 src={product.featuredImage.url}
-                style={{ borderRadius: 4, height: 150, objectFit: "cover", width: "100%" }}
-                width={188}
+                width={400}
               />
-            ) : null}
+            ) : (
+              // Keeps a card with no cover the same height as its neighbours, so a card boundary
+              // stays where the rail's snap positions expect it.
+              <div aria-hidden className="aspect-[4/3] w-full rounded-md bg-surface-muted" />
+            )}
 
-            <h3
-              style={{
-                WebkitBoxOrient: "vertical",
-                WebkitLineClamp: 2,
-                display: "-webkit-box",
-                fontSize: 15,
-                lineHeight: 1.3,
-                margin: 0,
-                overflow: "hidden",
-              }}
-              title={product.title}
-            >
+            <h3 className="text-h-card line-clamp-2 text-balance" title={product.title}>
               {product.title}
             </h3>
 
             {showPrice !== false && product.price ? (
-              <p style={{ margin: 0 }}>
-                <span style={{ fontWeight: 600 }}>{formatMoney(product.price)}</span>
+              <p className="text-body-lg flex flex-wrap items-baseline gap-2">
+                <span className="font-semibold">{formatMoney(product.price)}</span>
                 {product.compareAtPrice ? (
-                  <span style={{ color: "#888", marginLeft: 8, textDecoration: "line-through" }}>
+                  <span className="text-small text-muted-foreground line-through">
                     {formatMoney(product.compareAtPrice)}
                   </span>
                 ) : null}
               </p>
             ) : null}
 
-            <div style={{ marginTop: "auto" }}>
+            <div className="mt-auto pt-1">
               {product.variantId && product.availableForSale ? (
                 <form action={checkout}>
                   <input name="variantId" type="hidden" value={product.variantId} />
-                  <button
-                    style={{
-                      background: "#111",
-                      border: 0,
-                      borderRadius: 4,
-                      color: "#fff",
-                      cursor: "pointer",
-                      fontSize: 14,
-                      padding: "8px 16px",
-                    }}
-                    type="submit"
-                  >
+                  <Button className="w-full" type="submit" variant={ButtonVariant.Primary}>
                     Buy on Shopify
-                  </button>
+                  </Button>
                 </form>
               ) : (
-                <p style={{ color: "#888", fontSize: 13, margin: 0 }}>Currently unavailable</p>
+                <p className="text-small text-muted-foreground">Currently unavailable</p>
               )}
             </div>
           </li>
         ))}
-      </ul>
-    </section>
+      </ShopifyCarouselRail>
+    </>
   );
 }
 

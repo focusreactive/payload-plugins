@@ -7,6 +7,11 @@
  * so the route existing is what keeps those links alive. The path is /browse-topics/[slug], which
  * is the segment the client's live site already uses.
  *
+ * It is a LISTING, not a reading page, so it sits in the same measure every other listing sits in:
+ * max-w-containerMaxW with px-containerBase, which is the column the header logo aligns to. The
+ * first version borrowed the blog article's 720px reading column, and the content jumped about
+ * 165px sideways when a visitor clicked from /browse-topics into a topic.
+ *
  * Route placement note: this sits under [locale] because proxy.ts rewrites every top-level path
  * except api|admin|_next|_vercel into the locale catch-all. A route at /browse-topics/[slug]
  * outside [locale] would build, appear in the route table, and 404 in production.
@@ -16,21 +21,24 @@
  */
 
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { BreadcrumbsJsonLd } from "@/components/seo/components";
+import { DisplayHeading } from "@/components/DisplayHeading";
 import { getPayloadClient, getTalks } from "@/dal";
+import { getSiteSettings } from "@/dal/getSiteSettings";
 // Deep import: the "@/dal" barrel does not re-export this one yet. Switch to the barrel once it
 // does, so application code keeps a single DAL entry point.
 import { getTopicBySlug } from "@/dal/getTopicBySlug";
-import { getSiteSettings } from "@/dal/getSiteSettings";
-import { BreadcrumbsJsonLd } from "@/components/seo/components";
 import type { Locale } from "@/lib/types";
 import { generateMeta } from "@/lib/utils/generateMeta";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
 import type { Footer as FooterType, Header as HeaderType } from "@/payload-types";
 import { Footer } from "@/collections/Footer/Component";
 import { Header } from "@/collections/Header/Component";
+// The same card the TalkGrid block renders. Sharing it is what keeps the tier label, the lock and
+// the teaser cut identical on two pages that are walked one after the other.
+import { TalkList } from "@/blocks/TalkGrid/ui";
 
 interface PageProps {
   params: Promise<{ locale: Locale; slug: string }>;
@@ -38,22 +46,6 @@ interface PageProps {
 
 /** A topic page lists its whole topic, so the listing default of 6 would silently truncate it. */
 const MAX_ITEMS_LISTED = 100;
-
-const TIER_LABELS: Record<string, string> = {
-  "all-access": "All Access",
-  basic: "Basic",
-  premium: "Premium",
-  visitor: "Free",
-};
-
-const formatKind = (kind?: string | null) =>
-  kind ? kind.replace(/-/gu, " ").replace(/\b\w/gu, (letter) => letter.toUpperCase()) : null;
-
-const formatDuration = (seconds?: number | null) => {
-  if (!seconds) return null;
-  const minutes = Math.round(seconds / 60);
-  return minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
-};
 
 /**
  * Same shared helper as the Page catch-all and the blog route, so a topic page ships the canonical,
@@ -103,10 +95,7 @@ export default async function TopicPage({ params }: PageProps) {
   return (
     <div className="flex min-h-screen flex-col">
       <Header data={siteSettings.blog.header as HeaderType} />
-      <main
-        className="grow"
-        style={{ margin: "0 auto", maxWidth: 760, padding: "40px 20px 120px" }}
-      >
+      <main className="grow">
         {/* Breadcrumbs only, on purpose. The one listing schema this repo owns, createBlogSchema,
             is typed to Post and resolves every URL through the blog base path, so it cannot
             describe a topic; an ItemList written here would be new markup invented for one page
@@ -121,86 +110,35 @@ export default async function TopicPage({ params }: PageProps) {
           locale={locale}
         />
 
-        <p style={{ color: "#888", fontSize: 12, textTransform: "uppercase" }}>Topic</p>
-        <h1 style={{ fontSize: 30, lineHeight: 1.2, margin: "0 0 12px" }}>{topic.title}</h1>
+        {/* The band and its bottom border are the separator the header needs. Without one the
+            header floated over the page with nothing under it. Padding matches PostHero. */}
+        <header className="border-b border-border bg-surface-muted pb-[clamp(28px,4vw,44px)] pt-[clamp(40px,6vw,72px)]">
+          <div className="mx-auto w-full max-w-containerMaxW px-containerBase">
+            <div className="flex max-w-[720px] flex-col gap-5">
+              <p className="text-eyebrow text-muted-foreground">Topic</p>
+              <DisplayHeading as="h1" size="display-2" text={topic.title} />
+              {topic.description && (
+                <p className="text-lead text-muted-foreground">{topic.description}</p>
+              )}
+            </div>
+          </div>
+        </header>
 
-        {topic.description ? (
-          <p style={{ color: "#555", fontSize: 16, lineHeight: 1.6, margin: "0 0 28px" }}>
-            {topic.description}
-          </p>
-        ) : null}
+        <div className="mx-auto w-full max-w-containerMaxW px-containerBase py-sectionBase">
+          <div>
+            <h2 className="text-h-card mb-12">
+              {docs.length === 1 ? "1 item" : `${docs.length} items`} on this topic
+            </h2>
 
-        <h2 style={{ fontSize: 20, margin: "0 0 4px" }}>
-          {docs.length === 1 ? "1 item" : `${docs.length} items`} on this topic
-        </h2>
-
-        {docs.length ? (
-          <ul style={{ listStyle: "none", margin: "16px 0 0", padding: 0 }}>
-            {docs.map((talk) => {
-              const duration = formatDuration(talk.durationSeconds);
-              const requiredTier = talk.requiredTier ?? "visitor";
-
-              return (
-                <li
-                  key={talk.id}
-                  style={{
-                    borderBottom: "1px solid #e0e0e0",
-                    padding: "14px 0",
-                  }}
-                >
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
-                    {talk.kind ? (
-                      <span
-                        style={{
-                          background: "#f0f0f0",
-                          borderRadius: 3,
-                          fontSize: 11,
-                          padding: "2px 6px",
-                        }}
-                      >
-                        {formatKind(talk.kind)}
-                      </span>
-                    ) : null}
-                    {/* The tier the ITEM requires, not what the reader holds. A gated item is listed
-                        and indexed here in full - the gate belongs on the body, which is where
-                        applyTier() puts it. Stating the requirement instead of the reader's state
-                        also keeps this page free of per-reader cookies, so it caches for everyone. */}
-                    <span
-                      style={{
-                        background: requiredTier === "visitor" ? "#eaf6ea" : "#fdf0d5",
-                        borderRadius: 3,
-                        fontSize: 11,
-                        padding: "2px 6px",
-                      }}
-                    >
-                      {TIER_LABELS[requiredTier]}
-                    </span>
-                    {duration ? (
-                      <span style={{ color: "#888", fontSize: 11 }}>{duration}</span>
-                    ) : null}
-                    {talk.audioUrl ? (
-                      <span style={{ color: "#888", fontSize: 11 }}>audio</span>
-                    ) : null}
-                  </div>
-
-                  <h3 style={{ fontSize: 16, lineHeight: 1.35, margin: "0 0 6px" }}>
-                    <Link href={`/talks/${talk.slug}`} style={{ color: "#111" }}>
-                      {talk.title}
-                    </Link>
-                  </h3>
-
-                  {talk.teaser ? (
-                    <p style={{ color: "#555", fontSize: 13, margin: 0 }}>
-                      {talk.teaser.slice(0, 200)}
-                    </p>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p style={{ color: "#888", fontSize: 14 }}>Nothing is published under this topic yet.</p>
-        )}
+            {docs.length > 0 ? (
+              <TalkList talks={docs} />
+            ) : (
+              <p className="text-body-lg text-muted-foreground">
+                Nothing is published under this topic yet.
+              </p>
+            )}
+          </div>
+        </div>
       </main>
       <Footer data={siteSettings.blog.footer as FooterType} />
     </div>

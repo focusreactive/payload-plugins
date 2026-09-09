@@ -2,9 +2,12 @@
  * Reads the tier the "view as" switch has selected, on the server.
  *
  * Why a helper and not a prop: RenderBlocks/renderContentBlock spreads a block's own fields into
- * its component and nothing else, so threading a `readerTier` prop down to TalkGrid would mean
+ * its component and nothing else, so threading a `readerTier` prop through the tree would mean
  * editing the shared block renderer for one demo. Reading the cookie where it is needed keeps the
  * change additive, which is also what packages/ui and the block registry expect.
+ *
+ * Only the talk route and the "view as" switch call it. No listing block does, deliberately: a
+ * listing badge states what the ITEM requires, so the page carrying it caches for everyone.
  *
  * Server-side by design. If the tier were read in the browser the gated body would already have
  * been sent, and "the paid body never leaves the server" is the property being demonstrated.
