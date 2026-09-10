@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { Field } from "payload";
 
 import type { TranslationProvider } from "../domain/translation-providers";
+import { computeSourceFingerprint } from "../domain/content-projection/computeSourceFingerprint";
 import { translateContent } from "./translateContent";
 
 // Deterministic fake provider: prefixes each collected text chunk with "T:".
@@ -24,6 +25,38 @@ const run = (schema: Field[], sourceData: Record<string, unknown>) =>
     targetLng: "de",
     translationProvider: fakeProvider,
   });
+
+const richTextNode = (value: string) => ({
+  type: "text",
+  text: value,
+  format: 0,
+  detail: 0,
+  mode: "normal",
+  style: "",
+  version: 1,
+});
+
+const richTextValue = (values: string[]) => ({
+  root: {
+    type: "root",
+    children: [
+      {
+        type: "paragraph",
+        children: values.map(richTextNode),
+        format: "",
+        indent: 0,
+        version: 1,
+        direction: "ltr",
+      },
+    ],
+    format: "",
+    indent: 0,
+    version: 1,
+    direction: "ltr",
+  },
+});
+
+const richSchema: Field[] = [{ name: "body", type: "richText", localized: true }];
 
 describe("translateContent", () => {
   it("translates a localized leaf field", async () => {
@@ -112,5 +145,48 @@ describe("translateContent", () => {
       strategy: "skip_existing",
     });
     expect(result).toEqual({ title: "T:hello" });
+  });
+
+  describe("the caller's source document", () => {
+    it("is unchanged after a plain-text translation", async () => {
+      const sourceData = { title: "hello" };
+      const before = structuredClone(sourceData);
+
+      await run([{ name: "title", type: "text", localized: true }], sourceData);
+
+      expect(sourceData).toEqual(before);
+    });
+
+    it("is unchanged after a rich-text translation", async () => {
+      const sourceData = { body: richTextValue(["Hello ", "world"]) };
+      const before = structuredClone(sourceData);
+
+      const result = await run(richSchema, sourceData);
+
+      // Both halves: without the second, a pipeline that translated nothing would pass.
+      expect(sourceData).toEqual(before);
+      expect(result).not.toEqual(before);
+    });
+
+    it("leaves the source fingerprint identical either side of a translation", async () => {
+      const sourceData = { body: richTextValue(["Hello ", "world"]) };
+      const before = computeSourceFingerprint(sourceData, richSchema);
+
+      await run(richSchema, sourceData);
+
+      expect(computeSourceFingerprint(sourceData, richSchema)).toBe(before);
+    });
+
+    it("shares no object with the translated result", async () => {
+      const sourceData = { body: richTextValue(["Hello "]) };
+      const sourceNode = sourceData.body.root.children[0]?.children[0];
+
+      const result = await run(richSchema, sourceData);
+      const resultBody = (result as { body: { root: { children: { children: unknown[] }[] } } })
+        .body;
+
+      expect(resultBody.root.children[0]?.children[0]).not.toBe(sourceNode);
+      expect(resultBody.root).not.toBe(sourceData.body.root);
+    });
   });
 });

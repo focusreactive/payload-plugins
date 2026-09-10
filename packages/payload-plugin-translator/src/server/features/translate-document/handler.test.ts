@@ -417,11 +417,10 @@ describe("TranslateDocumentHandler", () => {
       expect(new Date(record.translatedAt).toISOString()).toBe(record.translatedAt);
     });
 
-    it("fingerprints the PRISTINE source, before the pipeline can mutate it in place", async () => {
-      // Regression: the pipeline translates in place and shares object-valued source leaves (e.g.
-      // richText nodes) by reference with sourceData. If the handler fingerprints the source AFTER
-      // translateContent, the baseline captures the target translation and every fresh translation
-      // is instantly reported stale. The baseline must be the untranslated source.
+    it("fingerprints the source document, not whatever the pipeline hands back", async () => {
+      // The stub below mutates its `sourceData` argument on purpose. The real pipeline no longer
+      // does — it detaches object-valued leaves — so this stands as the handler-level guard that a
+      // regression there cannot silently poison the staleness baseline.
       const { translateContent } = await import("../../../core/translation-pipeline");
       const { computeSourceFingerprint } =
         await import("../../../core/domain/content-projection/computeSourceFingerprint");
@@ -435,7 +434,7 @@ describe("TranslateDocumentHandler", () => {
           )
       );
 
-      // Emulate the real pipeline: mutate the source argument, then return the translated shape.
+      // Deliberately hostile: writes into the argument it was given.
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockImplementation(
         async ({ sourceData }: { sourceData: Record<string, unknown> }) => {
           sourceData.title = "TRANSLATED (pipeline mutation)";
