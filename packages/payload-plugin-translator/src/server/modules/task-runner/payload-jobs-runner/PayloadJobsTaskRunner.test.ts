@@ -9,6 +9,8 @@ describe("PayloadJobsTaskRunner", () => {
     find: ReturnType<typeof vi.fn>;
     delete: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
+    db: { updateOne: ReturnType<typeof vi.fn> };
+    config: { jobs?: { enableConcurrencyControl?: boolean } };
     jobs: {
       queue: ReturnType<typeof vi.fn>;
       cancel: ReturnType<typeof vi.fn>;
@@ -24,10 +26,14 @@ describe("PayloadJobsTaskRunner", () => {
       find: vi.fn().mockResolvedValue({ docs: [] }),
       delete: vi.fn().mockResolvedValue(undefined),
       update: vi.fn().mockResolvedValue({ docs: [] }),
+      db: { updateOne: vi.fn().mockResolvedValue(undefined) },
+      config: { jobs: {} },
       jobs: {
         queue: vi.fn().mockResolvedValue(undefined),
         cancel: vi.fn().mockResolvedValue(undefined),
-        run: vi.fn().mockResolvedValue({ jobStatus: {}, remainingJobsFromQueried: 0 }),
+        run: vi
+          .fn()
+          .mockResolvedValue({ jobStatus: { "job-123": {} }, remainingJobsFromQueried: 0 }),
         // kept only so tests can assert run() never falls back to the broken
         // runByID id-path — production code does not call it.
         runByID: vi.fn().mockResolvedValue(undefined),
@@ -35,6 +41,7 @@ describe("PayloadJobsTaskRunner", () => {
     };
     config = {
       taskName: "translate_document",
+      workflowName: "translate_document_locales",
       queueName: "translations",
       jobsCollection: "payload-jobs",
       autoRun: {
@@ -69,28 +76,51 @@ describe("PayloadJobsTaskRunner", () => {
     ...overrides,
   });
 
+  /** A live workflow job whose settings match `createInput()`'s, so `pickHost` accepts it. */
+  const createLiveJob = (overrides: Partial<PayloadJob> = {}): PayloadJob =>
+    createJob({
+      input: {
+        collection_slug: "posts",
+        collection_id: "doc-123",
+        source_lng: "en",
+        strategy: "overwrite",
+        publish_on_translation: false,
+        target_lngs: ["de"],
+      },
+      ...overrides,
+    });
+
   describe("enqueue", () => {
-    it("looks for superseded jobs among unfinished ones only", async () => {
+    it("reads only unfinished jobs when planning an enqueue", async () => {
       await runner.enqueue([createInput()]);
 
       const whereArg = mockPayload.find.mock.calls[0][0].where;
       expect(whereArg).toEqual({
-        and: [{ taskSlug: { equals: "translate_document" } }, { completedAt: { exists: false } }],
+        and: [
+          {
+            or: [
+              { workflowSlug: { equals: "translate_document_locales" } },
+              { taskSlug: { equals: "translate_document" } },
+            ],
+          },
+          { completedAt: { exists: false } },
+        ],
       });
     });
 
-    it("queues tasks with correct input", async () => {
-      const input = createInput();
-      await runner.enqueue([input]);
+    it("queues one workflow per document, carrying its locales", async () => {
+      await runner.enqueue([createInput({ targetLng: "de" }), createInput({ targetLng: "fr" })]);
 
+      expect(mockPayload.jobs.queue).toHaveBeenCalledTimes(1);
       expect(mockPayload.jobs.queue).toHaveBeenCalledWith({
-        task: "translate_document",
+        workflow: "translate_document_locales",
         queue: "translations",
+        waitUntil: undefined,
         input: {
           collection_slug: "posts",
           collection_id: "doc-123",
           source_lng: "en",
-          target_lng: "de",
+          target_lngs: ["de", "fr"],
           strategy: "overwrite",
           publish_on_translation: false,
         },
@@ -113,118 +143,179 @@ describe("PayloadJobsTaskRunner", () => {
       expect(arg.waitUntil).toBeUndefined();
     });
 
-    it("queues multiple tasks", async () => {
-      const inputs = [
-        createInput({ collectionId: "doc-1" }),
-        createInput({ collectionId: "doc-2" }),
-      ];
-      await runner.enqueue(inputs);
+    it("queues one workflow per document, not one per task", async () => {
+      await runner.enqueue([
+        createInput({ collectionId: "doc-1", targetLng: "de" }),
+        createInput({ collectionId: "doc-1", targetLng: "fr" }),
+        createInput({ collectionId: "doc-2", targetLng: "de" }),
+      ]);
 
       expect(mockPayload.jobs.queue).toHaveBeenCalledTimes(2);
     });
 
-    it("cancels existing jobs before queuing new ones", async () => {
-      const existingJob = createJob({ id: "existing-job" });
-      mockPayload.find.mockResolvedValueOnce({ docs: [existingJob] });
-
-      const input = createInput();
-      await runner.enqueue([input]);
-
-      expect(mockPayload.jobs.cancel).toHaveBeenCalledWith({
-        where: { id: { in: ["existing-job"] } },
-        queue: "translations",
+    it("adds the locale to a live job instead of queuing a second one", async () => {
+      const live = createLiveJob({ id: "live-job" });
+      // First `find` builds the plan, the second verifies the write.
+      mockPayload.find.mockResolvedValueOnce({ docs: [live] }).mockResolvedValueOnce({
+        docs: [{ ...live, input: { ...live.input, target_lngs: ["de", "fr"] } }],
       });
-      expect(mockPayload.delete).toHaveBeenCalledWith({
-        collection: "payload-jobs",
-        where: { id: { in: ["existing-job"] } },
-      });
-    });
-
-    it("does not cancel a running job for a different target locale of the same document", async () => {
-      // A `de` job is in flight; the user re-translates `fr` on the same document. The `de` job must
-      // survive — cancelling it is the concurrent re-translate bug.
-      const runningDe = createJob({
-        id: "de-job",
-        processing: true,
-        input: {
-          collection: { relationTo: "posts" as CollectionSlug, value: "doc-123" },
-          source_lng: "en",
-          target_lng: "de",
-          strategy: "overwrite",
-        },
-      });
-      mockPayload.find.mockResolvedValueOnce({ docs: [runningDe] });
 
       await runner.enqueue([createInput({ targetLng: "fr" })]);
 
-      expect(mockPayload.jobs.cancel).not.toHaveBeenCalled();
-      expect(mockPayload.delete).not.toHaveBeenCalled();
+      const write = mockPayload.db.updateOne.mock.calls[0][0];
+      expect(write.collection).toBe("payload-jobs");
+      expect(write.id).toBe("live-job");
+      expect(write.data.input).toEqual({
+        collection_slug: "posts",
+        collection_id: "doc-123",
+        source_lng: "en",
+        strategy: "overwrite",
+        publish_on_translation: false,
+        target_lngs: ["de", "fr"],
+      });
+      expect(mockPayload.jobs.queue).not.toHaveBeenCalled();
+    });
+
+    it("does not extend a live job that belongs to a different document", async () => {
+      mockPayload.find.mockResolvedValue({
+        docs: [
+          createJob({
+            id: "other-doc-job",
+            input: {
+              collection_slug: "posts",
+              collection_id: "doc-999",
+              source_lng: "en",
+              strategy: "overwrite",
+              target_lngs: ["de"],
+            },
+          }),
+        ],
+      });
+
+      await runner.enqueue([createInput({ targetLng: "fr" })]);
+
+      expect(mockPayload.db.updateOne).not.toHaveBeenCalled();
       expect(mockPayload.jobs.queue).toHaveBeenCalledTimes(1);
     });
 
-    it("supersedes only the same-locale job when several locales have jobs", async () => {
-      const deJob = createJob({
-        id: "de-job",
-        input: {
-          collection: { relationTo: "posts" as CollectionSlug, value: "doc-123" },
-          source_lng: "en",
-          target_lng: "de",
-          strategy: "overwrite",
-        },
+    it("never cancels or deletes a job when enqueuing", async () => {
+      const live = createLiveJob({
+        id: "live-job",
       });
-      const frJob = createJob({
-        id: "fr-job",
-        input: {
-          collection: { relationTo: "posts" as CollectionSlug, value: "doc-123" },
-          source_lng: "en",
-          target_lng: "fr",
-          strategy: "overwrite",
-        },
+      mockPayload.find.mockResolvedValueOnce({ docs: [live] }).mockResolvedValueOnce({
+        docs: [{ ...live, input: { ...live.input, target_lngs: ["de", "fr"] } }],
       });
-      mockPayload.find.mockResolvedValueOnce({ docs: [deJob, frJob] });
 
       await runner.enqueue([createInput({ targetLng: "fr" })]);
-
-      expect(mockPayload.jobs.cancel).toHaveBeenCalledWith({
-        where: { id: { in: ["fr-job"] } },
-        queue: "translations",
-      });
-      expect(mockPayload.delete).toHaveBeenCalledWith({
-        collection: "payload-jobs",
-        where: { id: { in: ["fr-job"] } },
-      });
-    });
-
-    it("does not cancel when no existing jobs", async () => {
-      mockPayload.find.mockResolvedValue({ docs: [] });
-
-      const input = createInput();
-      await runner.enqueue([input]);
 
       expect(mockPayload.jobs.cancel).not.toHaveBeenCalled();
       expect(mockPayload.delete).not.toHaveBeenCalled();
     });
 
-    it("groups tasks by collection", async () => {
-      const inputs = [
-        createInput({
-          collectionSlug: "posts" as CollectionSlug,
-          collectionId: "post-1",
-        }),
-        createInput({
-          collectionSlug: "posts" as CollectionSlug,
-          collectionId: "post-2",
-        }),
-        createInput({
-          collectionSlug: "pages" as CollectionSlug,
-          collectionId: "page-1",
-        }),
-      ];
+    it("gives the locale its own job when the live one finished after the write landed", async () => {
+      const live = createLiveJob({ id: "live-job" });
+      mockPayload.find.mockResolvedValueOnce({ docs: [live] }).mockResolvedValueOnce({
+        docs: [
+          {
+            ...live,
+            completedAt: "2026-01-01T00:00:01Z",
+            input: { ...live.input, target_lngs: ["de", "fr"] },
+          },
+        ],
+      });
 
-      await runner.enqueue(inputs);
+      await runner.enqueue([createInput({ targetLng: "fr" })]);
 
-      // Should check for existing jobs per collection
-      expect(mockPayload.find).toHaveBeenCalledTimes(2);
+      expect(mockPayload.jobs.queue).toHaveBeenCalledTimes(1);
+      expect(mockPayload.jobs.queue).toHaveBeenCalledWith(
+        expect.objectContaining({
+          input: expect.objectContaining({ target_lngs: ["fr"] }),
+        })
+      );
+    });
+
+    it("retries the write once when a concurrent append replaced the list", async () => {
+      const live = createLiveJob({ id: "live-job" });
+      const clobbered = { ...live, input: { ...live.input, target_lngs: ["de", "es"] } };
+      mockPayload.find
+        .mockResolvedValueOnce({ docs: [live] })
+        .mockResolvedValueOnce({ docs: [clobbered] })
+        .mockResolvedValueOnce({
+          docs: [{ ...live, input: { ...live.input, target_lngs: ["de", "es", "fr"] } }],
+        });
+
+      await runner.enqueue([createInput({ targetLng: "fr" })]);
+
+      expect(mockPayload.db.updateOne).toHaveBeenCalledTimes(2);
+      expect(mockPayload.jobs.queue).not.toHaveBeenCalled();
+    });
+
+    it("gives the locale its own job when even the retry does not land it", async () => {
+      const live = createLiveJob({ id: "live-job" });
+      const withoutIt = { ...live, input: { ...live.input, target_lngs: ["de", "es"] } };
+      mockPayload.find
+        .mockResolvedValueOnce({ docs: [live] })
+        .mockResolvedValueOnce({ docs: [withoutIt] })
+        .mockResolvedValueOnce({ docs: [withoutIt] });
+
+      await runner.enqueue([createInput({ targetLng: "fr" })]);
+
+      expect(mockPayload.jobs.queue).toHaveBeenCalledWith(
+        expect.objectContaining({
+          input: expect.objectContaining({ target_lngs: ["fr"] }),
+        })
+      );
+    });
+
+    it("pushes a not-yet-started job's debounce out to this request's", async () => {
+      const live = createLiveJob({ id: "live-job" });
+      mockPayload.find.mockResolvedValue({ docs: [live] });
+      const waitUntil = new Date("2026-02-02T00:00:00.000Z");
+
+      await runner.enqueue([createInput({ targetLng: "de", waitUntil })]);
+
+      expect(mockPayload.db.updateOne.mock.calls[0][0].data).toMatchObject({
+        waitUntil: "2026-02-02T00:00:00.000Z",
+      });
+    });
+
+    it("leaves a running job's schedule alone", async () => {
+      const running = createLiveJob({ id: "live-job", processing: true });
+      mockPayload.find.mockResolvedValue({ docs: [running] });
+
+      await runner.enqueue([
+        createInput({ targetLng: "de", waitUntil: new Date("2026-02-02T00:00:00.000Z") }),
+      ]);
+
+      expect(mockPayload.db.updateOne).not.toHaveBeenCalled();
+    });
+
+    it("queues alongside a running job when the host enabled concurrency control", async () => {
+      mockPayload.config.jobs = { enableConcurrencyControl: true };
+      mockPayload.find.mockResolvedValue({
+        docs: [
+          createLiveJob({
+            id: "running-job",
+            processing: true,
+          }),
+        ],
+      });
+
+      await runner.enqueue([createInput({ targetLng: "fr" })]);
+
+      expect(mockPayload.db.updateOne).not.toHaveBeenCalled();
+      expect(mockPayload.jobs.queue).toHaveBeenCalledTimes(1);
+    });
+
+    it("reads the job table once for the whole batch, however many documents it spans", async () => {
+      await runner.enqueue([
+        createInput({ collectionSlug: "posts" as CollectionSlug, collectionId: "post-1" }),
+        createInput({ collectionSlug: "posts" as CollectionSlug, collectionId: "post-2" }),
+        createInput({ collectionSlug: "pages" as CollectionSlug, collectionId: "page-1" }),
+      ]);
+
+      expect(mockPayload.find).toHaveBeenCalledTimes(1);
+      expect(mockPayload.jobs.queue).toHaveBeenCalledTimes(3);
     });
 
     it("stores the reference as flat text, coercing the id to a string", async () => {
@@ -274,7 +365,29 @@ describe("PayloadJobsTaskRunner", () => {
       });
       expect(mockPayload.delete).toHaveBeenCalledWith({
         collection: "payload-jobs",
-        where: { id: { in: ["job-1", "job-2"] } },
+        where: {
+          and: [
+            {
+              or: [
+                { workflowSlug: { equals: "translate_document_locales" } },
+                { taskSlug: { equals: "translate_document" } },
+              ],
+            },
+            { id: { in: ["job-1", "job-2"] } },
+          ],
+        },
+      });
+    });
+
+    it("deletes only this plugin's jobs, whatever ids it is handed", async () => {
+      await runner.cancel(["someone-elses-job"]);
+
+      const where = mockPayload.delete.mock.calls[0][0].where as { and?: unknown[] };
+      expect(where.and?.[0]).toEqual({
+        or: [
+          { workflowSlug: { equals: "translate_document_locales" } },
+          { taskSlug: { equals: "translate_document" } },
+        ],
       });
     });
 
@@ -308,6 +421,58 @@ describe("PayloadJobsTaskRunner", () => {
       expect(result).toEqual({ success: false, error: "already_completed" });
     });
 
+    it("retries a workflow whose locales are logged but whose run failed", async () => {
+      const partiallyFailed = createJob({
+        input: {
+          collection_slug: "posts",
+          collection_id: "doc-123",
+          source_lng: "en",
+          target_lngs: ["de", "fr"],
+          strategy: "overwrite",
+        },
+        log: [
+          { state: "succeeded", completedAt: "2024-01-01T00:01:00Z", input: { target_lng: "de" } },
+          { state: "failed", completedAt: "2024-01-01T00:02:00Z", input: { target_lng: "fr" } },
+        ],
+      });
+      mockPayload.find.mockResolvedValue({ docs: [partiallyFailed] });
+
+      const result = await runner.run("job-123");
+
+      expect(result).toEqual({ success: true });
+      expect(mockPayload.jobs.run).toHaveBeenCalledWith({
+        queue: "translations",
+        where: { id: { equals: "job-123" } },
+        limit: 1,
+      });
+    });
+
+    it("reports failure when the picker took nothing", async () => {
+      mockPayload.find.mockResolvedValue({ docs: [createJob()] });
+      mockPayload.jobs.run.mockResolvedValue({ jobStatus: {}, remainingJobsFromQueried: 0 });
+
+      expect(await runner.run("job-123")).toEqual({
+        success: false,
+        error: "already_running",
+      });
+    });
+
+    it("clears what blocks the picker before retrying a failed job", async () => {
+      mockPayload.find.mockResolvedValue({
+        docs: [createJob({ error: { message: "provider down" } })],
+      });
+
+      await runner.run("job-123");
+
+      expect(mockPayload.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          collection: "payload-jobs",
+          where: { id: { equals: "job-123" } },
+          data: { processing: false, hasError: false, error: null, waitUntil: null },
+        })
+      );
+    });
+
     it("returns already_running when a job is genuinely in flight (fresh lock)", async () => {
       const runningJob = createJob({
         processing: true,
@@ -339,9 +504,8 @@ describe("PayloadJobsTaskRunner", () => {
         collection: "payload-jobs",
         depth: 0,
         where: { id: { equals: "job-123" } },
-        data: { processing: false },
+        data: { processing: false, hasError: false, error: null, waitUntil: null },
       });
-      // run via the where-based picker, NOT runByID
       expect(mockPayload.jobs.run).toHaveBeenCalledWith({
         queue: "translations",
         where: { id: { equals: "job-123" } },
@@ -369,7 +533,7 @@ describe("PayloadJobsTaskRunner", () => {
         collection: "payload-jobs",
         depth: 0,
         where: { id: { equals: "job-123" } },
-        data: { processing: false },
+        data: { processing: false, hasError: false, error: null, waitUntil: null },
       });
     });
 
@@ -385,13 +549,19 @@ describe("PayloadJobsTaskRunner", () => {
         where: { id: { equals: "job-123" } },
         limit: 1,
       });
-      // a pending job (processing:false) needs no lock reset
       expect(mockPayload.update).not.toHaveBeenCalled();
-      // findJobsInternal must narrow by taskSlug AND the given id
       expect(mockPayload.find).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
-            and: [{ taskSlug: { equals: "translate_document" } }, { id: { equals: "job-123" } }],
+            and: [
+              {
+                or: [
+                  { workflowSlug: { equals: "translate_document_locales" } },
+                  { taskSlug: { equals: "translate_document" } },
+                ],
+              },
+              { id: { equals: "job-123" } },
+            ],
           },
         })
       );
@@ -426,7 +596,7 @@ describe("PayloadJobsTaskRunner", () => {
       vi.useRealTimers();
     });
 
-    it("resets stale processing locks via a real-column where clause", async () => {
+    it("narrows the stale-lock reset to both stored slugs", async () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
 
@@ -448,7 +618,12 @@ describe("PayloadJobsTaskRunner", () => {
       ).toISOString();
       expect(arg.where).toEqual({
         and: [
-          { taskSlug: { equals: "translate_document" } },
+          {
+            or: [
+              { workflowSlug: { equals: "translate_document_locales" } },
+              { taskSlug: { equals: "translate_document" } },
+            ],
+          },
           { processing: { equals: true } },
           { completedAt: { exists: false } },
           { updatedAt: { less_than: expectedCutoff } },
@@ -524,17 +699,20 @@ describe("PayloadJobsTaskRunner", () => {
       });
     });
 
-    it("narrows the SQL where clause by taskSlug only", async () => {
-      // Slug and id are matched in memory (see PayloadJobsTaskRunner.findByCollection
-      // for the full reasoning), spanning both the new flat-text shape and the
-      // legacy relationship shape. The WHERE sent to Payload must narrow only by
-      // taskSlug — never by the collection slug or id — otherwise we both
-      // re-introduce the SQLite type-coercion bug and drop one of the two shapes.
+    it("narrows the SQL where clause by the job's own slugs only", async () => {
+      // See `findByCollection`'s docblock: a `where` on slug or id drops every pre-migration job.
       await runner.findByCollection("posts" as CollectionSlug, [5, 6]);
 
       const whereArg = mockPayload.find.mock.calls[0][0].where;
       expect(whereArg).toEqual({
-        and: [{ taskSlug: { equals: "translate_document" } }],
+        and: [
+          {
+            or: [
+              { workflowSlug: { equals: "translate_document_locales" } },
+              { taskSlug: { equals: "translate_document" } },
+            ],
+          },
+        ],
       });
       expect(JSON.stringify(whereArg)).not.toContain("collection_id");
       expect(JSON.stringify(whereArg)).not.toContain("collection.value");
@@ -545,7 +723,15 @@ describe("PayloadJobsTaskRunner", () => {
 
       const whereArg = mockPayload.find.mock.calls[0][0].where;
       expect(whereArg).toEqual({
-        and: [{ taskSlug: { equals: "translate_document" } }, { completedAt: { exists: false } }],
+        and: [
+          {
+            or: [
+              { workflowSlug: { equals: "translate_document_locales" } },
+              { taskSlug: { equals: "translate_document" } },
+            ],
+          },
+          { completedAt: { exists: false } },
+        ],
       });
       expect(JSON.stringify(whereArg)).not.toContain("collection_id");
     });

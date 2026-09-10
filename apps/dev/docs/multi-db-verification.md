@@ -54,6 +54,13 @@ is knowingly red (see below) and `&&` would stop the chain before Mongo ever ran
 `bootTestPayload` picks its adapter from `DB_ADAPTER` through `resolveTestDbAdapter()`, the test-side
 sibling of `resolveDbAdapter()` in `src/lib/database/resolveAdapter.ts`.
 
+**Two queue modes, not one.** `EXCLUSIVE_QUEUE=1` turns on Payload's `enableConcurrencyControl` for
+every boot, which is the setting a host enables to have the queue itself hold a second job for a
+document. `test:integration:all` runs the three adapters in both modes — six runs — because the
+plugin behaves differently under it: without the flag a second request extends the live job, with it
+the request gets a job of its own and waits. Two specs pin their own mode rather than following the
+env var (`locale-append` needs it off, `exclusive-queue` needs it on); everything else runs in both.
+
 **Isolation.** Each boot needs a database of its own: the twelve spec files run serially but share
 one server, so without it they would read each other's rows. SQLite gets this for free — a throwaway
 file per boot. Postgres and MongoDB do not, so each boot is given a namespace named by a random run

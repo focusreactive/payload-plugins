@@ -72,6 +72,8 @@ export type PayloadJobsRunnerOptions = {
  */
 export type PayloadJobsRunnerConfig = {
   taskName: string;
+  /** Derived from `taskName`; deliberately not a plugin option. */
+  workflowName: string;
   queueName: string;
   jobsCollection: CollectionSlug;
   autoRun: false | Required<AutoRunConfig>;
@@ -79,10 +81,8 @@ export type PayloadJobsRunnerConfig = {
   retries?: PayloadJobsRunnerOptions["retries"];
 };
 
-/**
- * Raw Payload job structure
- */
 export type PayloadJob = {
+  log?: JobLogEntry[];
   id: string;
   completedAt?: string | null;
   createdAt: string;
@@ -104,7 +104,25 @@ export type PayloadJob = {
     };
     source_lng?: string;
     target_lng?: string;
+    target_lngs?: string[];
     strategy?: string;
     publish_on_translation?: boolean;
   };
+};
+
+/** Snake_case because Payload persists these keys verbatim in the job row. */
+export type StoredWorkflowInput = {
+  collection_slug: CollectionSlug;
+  collection_id: string;
+  source_lng: string;
+  target_lngs: string[];
+  strategy: string;
+  publish_on_translation: boolean;
+};
+
+/** Written by Payload only once a task settles — an absent entry means that locale has not run. */
+export type JobLogEntry = {
+  state: "succeeded" | "failed";
+  completedAt?: string | null;
+  input?: { target_lng?: string };
 };

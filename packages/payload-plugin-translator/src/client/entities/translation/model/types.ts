@@ -19,7 +19,8 @@ export type DocumentTranslationFailed = {
   created_at: string;
   updated_at: string;
   input: InputData;
-  error: {
+  /** Unset until the job stops retrying, so a row can read `failed` with nothing to show. */
+  error?: {
     message: string;
   };
 };
@@ -42,9 +43,8 @@ export type DocumentTranslationCompleted = {
 };
 
 /**
- * One translation job for a single target locale. The document status feed is an array of these —
- * the latest job per target locale (see `useDocumentTranslation`), because re-translate queues an
- * independent job per locale.
+ * One row per target locale in the document status feed. Several rows can share one job id — a job
+ * carries all of a document's locales.
  */
 export type DocumentTranslation =
   | DocumentTranslationCompleted

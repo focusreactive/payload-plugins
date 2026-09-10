@@ -2,21 +2,49 @@ import type { Payload, Where, CollectionSlug } from "payload";
 
 import type { TaskFilter, TaskRunner } from "../TaskRunner.interface";
 import { toTaskFilter } from "../toTaskFilter";
-import type { Task, TaskInput, RunResult, ID } from "../types";
-import type { PayloadJobsRunnerConfig, PayloadJob } from "./types";
-import { normalizeJob } from "./normalizeJob";
+import type { Task, TaskInput, RunResult } from "../types";
+import type { PayloadJobsRunnerConfig, PayloadJob, StoredWorkflowInput } from "./types";
+import { normalizeJobLocales } from "./normalizeJob";
+import { planEnqueue } from "./planEnqueue";
+import type { RequestShape } from "./planEnqueue";
+import { readCollectionRef } from "./readCollectionRef";
 
-// A translation job's supersession identity: same document AND same target locale. IDs are
-// String()-normalized to match the stored (string) form, so a number id compares equal to its
-// persisted job.
-const documentLocaleKey = (collectionId: ID, targetLng: string): string =>
-  `${String(collectionId)}:${targetLng}`;
+const APPEND_ATTEMPTS = 2;
 
 /**
- * TaskRunner implementation using Payload Jobs.
- *
- * Handles queuing, cancellation, status tracking, and execution of translation tasks.
+ * Groups served at once: a `select_all` enqueue can span thousands, each costing two writes and a
+ * read, and the ceiling is the database pool rather than the CPU.
  */
+const ENQUEUE_CONCURRENCY = 10;
+
+type QueueWorkflow = (args: {
+  workflow: string;
+  queue: string;
+  waitUntil?: Date;
+  input: StoredWorkflowInput;
+}) => Promise<unknown>;
+
+function requestShape(task: TaskInput): RequestShape {
+  return {
+    collectionSlug: task.collectionSlug,
+    collectionId: String(task.collectionId),
+    sourceLng: task.sourceLng,
+    strategy: task.strategy,
+    publishOnTranslation: task.publishOnTranslation,
+  };
+}
+
+/** `pickHost` matches on the same shape, so no two groups can pick the same host job — which is what
+ * makes the parallel `serve` calls safe. */
+function requestKey(task: TaskInput): string {
+  return JSON.stringify(requestShape(task));
+}
+
+function documentKey(collectionSlug: string, collectionId: string): string {
+  // NUL: no slug or id can contain it, so two different documents cannot produce one key.
+  return `${collectionSlug}\u0000${collectionId}`;
+}
+
 export class PayloadJobsTaskRunner implements TaskRunner {
   constructor(
     private readonly payload: Payload,
@@ -24,169 +52,119 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   ) {}
 
   async enqueue(tasks: TaskInput[]): Promise<void> {
-    const byCollection = this.groupByCollection(tasks);
-
-    for (const [collectionSlug, items] of byCollection) {
-      const documentIds = items.map((t) => t.collectionId);
-      // Finished jobs must stay out of this set: superseding deletes (`cancelAndDeleteJobs` reaches
-      // `payload.delete`), so a completed job for the same (document, locale) would be erased along
-      // with the pending one.
-      const existing = await this.findByCollection(collectionSlug, {
-        documentIds,
-        excludeCompleted: true,
-      });
-      // Supersede only jobs for the SAME (document, target locale) being re-enqueued — never a
-      // concurrent job for a *different* locale of the same document. Cancelling per-document would
-      // kill an in-flight translation of another locale (the concurrent re-translate bug).
-      const supersededKeys = new Set(
-        items.map((t) => documentLocaleKey(t.collectionId, t.targetLng))
-      );
-      const toCancel = existing.filter((t) =>
-        supersededKeys.has(documentLocaleKey(t.input.collectionId, t.input.targetLng))
-      );
-      if (toCancel.length > 0) {
-        await this.cancelAndDeleteJobs(toCancel.map((t) => t.id));
-      }
+    const byRequest = new Map<string, TaskInput[]>();
+    for (const task of tasks) {
+      const key = requestKey(task);
+      const group = byRequest.get(key) ?? [];
+      group.push(task);
+      byRequest.set(key, group);
     }
 
-    await Promise.all(
-      tasks.map((task) =>
-        this.payload.jobs.queue({
-          task: this.config.taskName,
-          queue: this.config.queueName,
-          // Debounce: when set, Payload holds the job until this instant. A superseding enqueue for
-          // the same (document, targetLng) cancels the pending delayed job first (see enqueue above),
-          // so rapid source edits coalesce to the final one. Undefined for the manual path.
-          waitUntil: task.waitUntil,
-          input: {
-            // Flat text reference (ID-agnostic). Stored as a string — no
-            // relationship type validation against the collection's ID type,
-            // which is what previously left number-id jobs stuck in processing.
-            // This is the single write boundary, so `String(...)` here is the
-            // one place IDs are normalized for storage.
-            collection_slug: task.collectionSlug,
-            collection_id: String(task.collectionId),
-            source_lng: task.sourceLng,
-            target_lng: task.targetLng,
-            strategy: task.strategy,
-            publish_on_translation: task.publishOnTranslation,
-          },
-        })
-      )
-    );
+    const live = await this.findRawJobs({ completedAt: { exists: false } });
+    const liveByDocument = new Map<string, PayloadJob[]>();
+    for (const job of live) {
+      const { collectionSlug, collectionId } = readCollectionRef(job.input);
+      const key = documentKey(collectionSlug, collectionId);
+      liveByDocument.set(key, [...(liveByDocument.get(key) ?? []), job]);
+    }
+    const exclusiveQueue = Boolean(this.payload.config.jobs?.enableConcurrencyControl);
+
+    const groups = [...byRequest.values()];
+    for (let i = 0; i < groups.length; i += ENQUEUE_CONCURRENCY) {
+      await Promise.all(
+        groups
+          .slice(i, i + ENQUEUE_CONCURRENCY)
+          .map((group) => this.serve(group, liveByDocument, exclusiveQueue))
+      );
+    }
+  }
+
+  private async serve(
+    group: TaskInput[],
+    liveByDocument: Map<string, PayloadJob[]>,
+    exclusiveQueue: boolean
+  ): Promise<void> {
+    const [first] = group;
+    const request = requestShape(first);
+    const plan = planEnqueue({
+      live: liveByDocument.get(documentKey(request.collectionSlug, request.collectionId)) ?? [],
+      request,
+      requested: group.map((t) => t.targetLng),
+      exclusiveQueue,
+    });
+
+    const undelivered = plan.host
+      ? await this.extendJob(plan.host, plan.append, first.waitUntil)
+      : [];
+    const queue = [...plan.queue, ...undelivered];
+    if (queue.length > 0) await this.queueWorkflow(request, queue, first.waitUntil);
+  }
+
+  private async extendJob(job: PayloadJob, locales: string[], waitUntil?: Date): Promise<string[]> {
+    let current = job;
+    let undelivered = locales;
+    // `input` is one JSON column, so a concurrent append replaces the whole list; the union makes a
+    // retry from the stored row harmless.
+    for (let attempt = 0; attempt < APPEND_ATTEMPTS; attempt++) {
+      const listed = current.input?.target_lngs ?? [];
+      const missing = locales.filter((locale) => !listed.includes(locale));
+      const debounce = waitUntil && !current.processing ? waitUntil.toISOString() : undefined;
+      if (missing.length === 0 && !debounce) return [];
+
+      // Not `payload.update`: it rewrites the whole row and reverts log entries written in between.
+      // See D2 of docs/plans/2026-09-08-one-live-job-per-document.task.md.
+      await this.payload.db.updateOne({
+        collection: this.config.jobsCollection,
+        id: job.id,
+        data: {
+          input: { ...current.input, target_lngs: [...listed, ...missing] },
+          ...(debounce ? { waitUntil: debounce } : {}),
+        },
+        returning: false,
+      });
+
+      const reread = await this.findJobById(job.id);
+      if (!reread || reread.completedAt) return locales;
+      current = reread;
+
+      const stored = new Set(current.input?.target_lngs);
+      undelivered = locales.filter((locale) => !stored.has(locale));
+      if (undelivered.length === 0) return [];
+    }
+    return undelivered;
+  }
+
+  private async queueWorkflow(
+    request: RequestShape,
+    targetLngs: string[],
+    waitUntil?: Date
+  ): Promise<void> {
+    const input: StoredWorkflowInput = {
+      collection_slug: request.collectionSlug,
+      collection_id: request.collectionId,
+      source_lng: request.sourceLng,
+      target_lngs: targetLngs,
+      strategy: request.strategy,
+      publish_on_translation: request.publishOnTranslation,
+    };
+
+    // Cast: `jobs.queue` is typed over the host's generated slugs, which cannot include a workflow
+    // registered at config time.
+    const queueJob = this.payload.jobs.queue as unknown as QueueWorkflow;
+    await queueJob({
+      workflow: this.config.workflowName,
+      queue: this.config.queueName,
+      waitUntil,
+      input,
+    });
   }
 
   async cancel(taskIds: string[]): Promise<void> {
     if (taskIds.length === 0) return;
-    await this.cancelAndDeleteJobs(taskIds);
-  }
 
-  async run(taskId: string): Promise<RunResult> {
-    const tasks = await this.findJobsInternal({ id: { equals: taskId } }, { limit: 1 });
-    const task = tasks[0];
-
-    if (!task) {
-      return { success: false, error: "not_found" };
-    }
-    if (task.completedAt) {
-      return { success: false, error: "already_completed" };
-    }
-    if (task.status === "running") {
-      // The picker below selects only `processing: false`, so a stale lock must be cleared first.
-      if (!this.isStale(task.updatedAt)) {
-        return { success: false, error: "already_running" };
-      }
-      await this.resetProcessing({ id: { equals: taskId } });
-    }
-
-    // `where` picker, not `payload.jobs.runByID({ id })`: in `runJobs` the guard block
-    // (processing:false, hasError not true, waitUntil due) is built only for the non-id branch, so
-    // the id path would re-run a job that already exhausted its retries. Checked against payload
-    // 3.84.1.
-    await this.payload.jobs.run({
-      queue: this.config.queueName,
-      where: { id: { equals: taskId } },
-      limit: 1,
-    });
-    return { success: true };
-  }
-
-  /**
-   * Clear stale `processing` locks — still processing, not completed, `updatedAt` older than
-   * `staleJobTimeoutMs` — so abandoned jobs are eligible for the autorun picker again. A job that
-   * exhausted its retries carries `hasError: true` and stays excluded from autorun even after its
-   * lock is cleared; only a manual `run()` recovers it.
-   * @returns how many locks were cleared.
-   */
-  async reclaimStaleJobs(): Promise<number> {
-    const cutoff = new Date(Date.now() - this.config.staleJobTimeoutMs).toISOString();
-    return this.resetProcessing({
-      and: [
-        { taskSlug: { equals: this.config.taskName } },
-        { processing: { equals: true } },
-        { completedAt: { exists: false } },
-        { updatedAt: { less_than: cutoff } },
-      ],
-    });
-  }
-
-  /** Clears the `processing` lock on every job matching `where`. `depth: 0` — only the count is read. */
-  private async resetProcessing(where: Where): Promise<number> {
-    const result = await this.payload.update({
-      collection: this.config.jobsCollection,
-      depth: 0,
-      where,
-      data: { processing: false },
-    });
-    return result.docs.length;
-  }
-
-  private isStale(updatedAt: string): boolean {
-    const parsed = Date.parse(updatedAt);
-    // Unknown/corrupt timestamp → treat as stale so the job can be recovered
-    // rather than permanently refused as already-running.
-    if (Number.isNaN(parsed)) return true;
-    return Date.now() - parsed > this.config.staleJobTimeoutMs;
-  }
-
-  /**
-   * Find translation jobs for a collection.
-   *
-   * Only `taskSlug` and `completedAt` reach the database; slug and document ids are matched in memory
-   * because a job's collection reference may sit in either the flat-text fields or the legacy
-   * relationship shape (`readCollectionRef`), so a `where` on `input.collection_slug` would silently
-   * drop every pre-migration job. `excludeCompleted` is what bounds the read — see issue #108.
-   */
-  async findByCollection(
-    collectionSlug: CollectionSlug,
-    filter?: Array<string | number> | TaskFilter
-  ): Promise<Task[]> {
-    const { documentIds, excludeCompleted } = toTaskFilter(filter);
-    const where = excludeCompleted ? { completedAt: { exists: false } } : undefined;
-    const all = await this.findJobsInternal(where, { pagination: false });
-    const bySlug = all.filter((t) => t.input.collectionSlug === collectionSlug);
-    if (!documentIds?.length) return bySlug;
-    const wanted = new Set(documentIds.map(String));
-    return bySlug.filter((t) => wanted.has(t.input.collectionId));
-  }
-
-  private groupByCollection(tasks: TaskInput[]): Map<CollectionSlug, TaskInput[]> {
-    const map = new Map<CollectionSlug, TaskInput[]>();
-    for (const task of tasks) {
-      const existing = map.get(task.collectionSlug) ?? [];
-      existing.push(task);
-      map.set(task.collectionSlug, existing);
-    }
-    return map;
-  }
-
-  private async cancelAndDeleteJobs(taskIds: string[]): Promise<void> {
-    if (taskIds.length === 0) return;
-
-    // Both, in this order: `jobs.cancel` only writes `{ error: { cancelled: true }, hasError: true,
-    // processing: false }`, which is what signals a running handler to abort. The delete then removes
-    // the row — under `deleteJobOnComplete: false` a cancelled job would otherwise sit in the status
-    // feed forever.
+    // Mark then delete: the delete alone would take the row out of the status feed under
+    // `deleteJobOnComplete: false` without recording why it went. The mark does not reach a running
+    // handler — see D1 of docs/plans/2026-09-08-one-live-job-per-document.task.md.
     await this.payload.jobs.cancel({
       where: { id: { in: taskIds } },
       queue: this.config.queueName,
@@ -194,24 +172,131 @@ export class PayloadJobsTaskRunner implements TaskRunner {
 
     await this.payload.delete({
       collection: this.config.jobsCollection,
-      where: { id: { in: taskIds } },
+      where: { and: [this.ownJobs(), { id: { in: taskIds } }] },
     });
   }
 
-  private async findJobsInternal(
-    where?: Where,
-    params?: { limit?: number; pagination?: boolean }
+  async run(taskId: string): Promise<RunResult> {
+    const job = await this.findJobById(taskId);
+    if (!job) {
+      return { success: false, error: "not_found" };
+    }
+    if (job.completedAt) {
+      return { success: false, error: "already_completed" };
+    }
+    if (job.processing && !this.isStale(job.updatedAt)) {
+      return { success: false, error: "already_running" };
+    }
+    if (job.processing || job.error) {
+      await this.clearPickerBlockers(taskId);
+    }
+
+    // Not `jobs.runByID`: payload 3.84.1 builds the picker guard (processing / hasError / waitUntil)
+    // only on the `where` path, so the id path re-runs a job that exhausted its retries.
+    const result = (await this.payload.jobs.run({
+      queue: this.config.queueName,
+      where: { id: { equals: taskId } },
+      limit: 1,
+    })) as { jobStatus?: Record<string, unknown> };
+
+    const pickerTookNothing = Object.keys(result?.jobStatus ?? {}).length === 0;
+    if (pickerTookNothing) {
+      return { success: false, error: "already_running" };
+    }
+    return { success: true };
+  }
+
+  /**
+   * A job that exhausted its retries carries `hasError: true` and stays excluded from the picker even
+   * after its lock is cleared; only a manual `run()` recovers it.
+   * @returns how many locks were cleared.
+   */
+  async reclaimStaleJobs(): Promise<number> {
+    const cutoff = new Date(Date.now() - this.config.staleJobTimeoutMs).toISOString();
+    const result = await this.payload.update({
+      collection: this.config.jobsCollection,
+      depth: 0,
+      where: {
+        and: [
+          this.ownJobs(),
+          { processing: { equals: true } },
+          { completedAt: { exists: false } },
+          { updatedAt: { less_than: cutoff } },
+        ],
+      },
+      data: { processing: false },
+    });
+    return result.docs.length;
+  }
+
+  /**
+   * `payload.update`, not the adapter write `extendJob` uses, so the jobs collection's `beforeChange`
+   * hook still runs — it is what keeps a cancelled job cancelled.
+   */
+  private async clearPickerBlockers(taskId: string): Promise<void> {
+    await this.payload.update({
+      collection: this.config.jobsCollection,
+      depth: 0,
+      where: { id: { equals: taskId } },
+      data: { processing: false, hasError: false, error: null, waitUntil: null },
+    });
+  }
+
+  private isStale(updatedAt: string): boolean {
+    const parsed = Date.parse(updatedAt);
+    if (Number.isNaN(parsed)) return true;
+    return Date.now() - parsed > this.config.staleJobTimeoutMs;
+  }
+
+  /**
+   * Matched in memory, not in a `where`: a job's collection reference sits either in the flat text
+   * fields or in the legacy relationship shape (see `readCollectionRef`), so `input.collection_slug`
+   * as a filter would silently drop every pre-migration job.
+   */
+  async findByCollection(
+    collectionSlug: CollectionSlug,
+    filter?: Array<string | number> | TaskFilter
   ): Promise<Task[]> {
-    const and: Where[] = [{ taskSlug: { equals: this.config.taskName } }];
+    const { documentIds, excludeCompleted } = toTaskFilter(filter);
+    const where = excludeCompleted ? { completedAt: { exists: false } } : undefined;
+    const wanted = documentIds?.length ? new Set(documentIds.map(String)) : undefined;
+    const jobs = await this.findRawJobs(where);
+    return jobs
+      .filter((job) => {
+        const ref = readCollectionRef(job.input);
+        return ref.collectionSlug === collectionSlug && (!wanted || wanted.has(ref.collectionId));
+      })
+      .flatMap(normalizeJobLocales);
+  }
+
+  private ownJobs(): Where {
+    // Pre-workflow jobs are still in the table: docs/DEPRECATIONS.md#jobs-per-locale-task-shape
+    return {
+      or: [
+        { workflowSlug: { equals: this.config.workflowName } },
+        { taskSlug: { equals: this.config.taskName } },
+      ],
+    };
+  }
+
+  private async findJobById(id: string): Promise<PayloadJob | undefined> {
+    const [job] = await this.findRawJobs({ id: { equals: id } });
+    return job;
+  }
+
+  private async findRawJobs(where?: Where): Promise<PayloadJob[]> {
+    const and: Where[] = [this.ownJobs()];
     if (where) and.push(where);
 
     const response = await this.payload.find({
       collection: this.config.jobsCollection,
-      limit: params?.limit,
-      pagination: params?.pagination,
+      // The legacy `input.collection` is a declared relationship; at the default depth Payload
+      // populates it, and `readCollectionRef` would then read a document where it wants an id.
+      depth: 0,
+      pagination: false,
       where: { and },
     });
 
-    return (response.docs as PayloadJob[]).map(normalizeJob);
+    return response.docs as PayloadJob[];
   }
 }

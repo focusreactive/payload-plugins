@@ -7,9 +7,7 @@ import { isCollectionAvailable } from "../_lib/collection-utils";
 import { CancelByCollectionInputSchema } from "./model";
 import type { CancelConfig } from "./model";
 
-/**
- * Cancels all pending translation tasks for a collection
- */
+/** Cancels every queued job for a collection; jobs in flight are left alone. */
 export class CancelByCollectionHandler {
   constructor(
     private readonly config: CancelConfig,
@@ -29,13 +27,16 @@ export class CancelByCollectionHandler {
       return ServerResponse.badRequest("Collection not available for translation");
 
     const runner = this.taskRunnerFactory.create(req.payload);
-    const tasks = await runner.findByCollection(collectionSlug);
-    if (tasks.length === 0) return ServerResponse.noContent();
+    const rows = await runner.findByCollection(collectionSlug, { excludeCompleted: true });
+    if (rows.length === 0) return ServerResponse.noContent();
 
-    const pendingTaskIds = tasks.filter((task) => task.status === "pending").map((task) => task.id);
-    if (pendingTaskIds.length === 0) return ServerResponse.noContent();
+    // A job waiting to retry has every locale logged, so it has no `pending` row — filter by *not
+    // running* instead.
+    const running = new Set(rows.filter((row) => row.status === "running").map((row) => row.id));
+    const queuedJobIds = [...new Set(rows.map((row) => row.id))].filter((id) => !running.has(id));
+    if (queuedJobIds.length === 0) return ServerResponse.noContent();
 
-    await runner.cancel(pendingTaskIds);
+    await runner.cancel(queuedJobIds);
 
     return ServerResponse.noContent();
   }

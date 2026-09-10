@@ -22,6 +22,9 @@ import { createTestDatabase } from "../../lib/database/resolveAdapter";
 import { reverseComplete } from "../../lib/translator/fakeComplete";
 import { buildTestCollections } from "./testCollections";
 
+/** Payload's `autoRun.limit` default — these specs reproduce the cron's batching, not a run of one. */
+export const CRON_BATCH_LIMIT = 50;
+
 /**
  * A booted test Payload plus the throwaway resources to tear down after the suite.
  */
@@ -49,6 +52,8 @@ export type TestPayload = {
  *   `runId` (see `resolveTestDbAdapter`), so schema `push` is a clean CREATE with no data-loss branch
  *   — Payload never drops to the interactive "accept data loss?" prompt that would hang an
  *   unattended/headless run. `cleanup()` drops the namespace and removes the temp dir even on failure.
+ * - **One boot per process:** `getPayload` caches, so a second `bootTestPayload` in the same spec
+ *   file returns the first — a case that needs its own boot needs its own file.
  * - **Sync runner:** a translation runs INLINE inside the triggering `afterChange`, so it is complete
  *   when the awaited `payload.update`/`create` resolves — no job autorun, no polling, no async race
  *   in the specs.
@@ -60,8 +65,13 @@ export type TestPayload = {
  *   publish; the enqueue route still works.
  * @param opts.collections - replaces the shared fixture set entirely (not merged). The set must
  *   still contain a `docs` collection when `autoTranslate` is passed.
+ * @param opts.failFor - target locales the fake provider should throw for, so a spec can exercise a
+ *   partial failure. Every other locale translates normally.
  * @param opts.runner - defaults to the sync runner. `createPayloadJobsRunner({ autoRun: false })`
  *   leaves queued jobs unprocessed in `payload-jobs`, so a spec can read the rows.
+ * @param opts.onTranslate - awaited before each provider call, so a spec can hold a locale mid-run.
+ * @param opts.exclusiveQueue - Payload's `enableConcurrencyControl` for this boot; defaults to
+ *   `EXCLUSIVE_QUEUE=1`.
  * @param opts.fallback - localization fallback, off by default: an unwritten locale reads as
  *   empty, not as the default locale's text. Localization-level, so it applies to the whole boot.
  */
@@ -69,6 +79,9 @@ export async function bootTestPayload(opts?: {
   autoTranslate?: { targets: string[]; strategy?: "overwrite" | "skip_existing" };
   collections?: CollectionConfig[];
   fallback?: boolean;
+  exclusiveQueue?: boolean;
+  failFor?: string[];
+  onTranslate?: (targetLng: string) => Promise<void> | void;
   runner?: TaskRunnerProvider;
 }): Promise<TestPayload> {
   const dir = mkdtempSync(join(tmpdir(), "translator-int-"));
@@ -84,11 +97,14 @@ export async function bootTestPayload(opts?: {
     : collections;
 
   const baseProvider = createTranslationProvider({ complete: reverseComplete });
+  const failFor = new Set(opts?.failFor);
   let translateCalls = 0;
   const countingProvider: TranslationProvider = {
-    translate: (input, sourceLng, targetLng) => {
+    translate: async (input, sourceLng, targetLng) => {
       translateCalls += 1;
-      return baseProvider.translate(input, sourceLng, targetLng);
+      await opts?.onTranslate?.(targetLng);
+      if (failFor.has(targetLng)) throw new Error(`provider unavailable for ${targetLng}`);
+      return await baseProvider.translate(input, sourceLng, targetLng);
     },
   };
 
@@ -107,9 +123,17 @@ export async function bootTestPayload(opts?: {
         { code: "en", label: "English" },
         { code: "de", label: "Deutsch" },
         { code: "fr", label: "Français" },
+        // Three targets, not two: with two, the failing locale is always the last and "stopped at
+        // the failure" is unobservable.
+        { code: "es", label: "Español" },
       ],
     },
     collections,
+    jobs: {
+      // Payload deletes completed jobs by default, leaving the status panels nothing to read.
+      deleteJobOnComplete: false,
+      enableConcurrencyControl: opts?.exclusiveQueue ?? process.env.EXCLUSIVE_QUEUE === "1",
+    },
     plugins: [
       translatorPlugin({
         collections: managed,

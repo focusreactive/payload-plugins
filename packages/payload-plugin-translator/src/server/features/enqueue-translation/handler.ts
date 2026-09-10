@@ -77,8 +77,6 @@ export class EnqueueTranslationHandler {
       : collection_id;
 
     const runner = this.taskRunnerFactory.create(req.payload);
-    // One task per (document x target locale). The runner keys/supersedes per (document, targetLng),
-    // so N concurrent targets of one document coexist (PR #75) — no runner change needed.
     const tasks = collectionIds.flatMap((id) =>
       targets.map((targetLng) => ({
         collectionSlug,

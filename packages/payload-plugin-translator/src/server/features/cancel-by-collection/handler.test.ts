@@ -95,20 +95,6 @@ describe("CancelByCollectionHandler", () => {
       expect(response.body).toBeNull();
     });
 
-    it("returns 204 when all tasks are already completed", async () => {
-      const tasks = [
-        createMockTask({ id: "task-1", status: "completed" }),
-        createMockTask({ id: "task-2", status: "failed" }),
-      ];
-      (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue(tasks);
-
-      const req = createMockRequest({ collection_slug: "posts" });
-      const response = await handler.handle(req);
-
-      expect(response.status).toBe(204);
-      expect(mockTaskRunner.cancel).not.toHaveBeenCalled();
-    });
-
     it("returns 204 when all tasks are running (not pending)", async () => {
       const tasks = [
         createMockTask({ id: "task-1", status: "running" }),
@@ -124,13 +110,12 @@ describe("CancelByCollectionHandler", () => {
     });
   });
 
-  describe("cancelling pending tasks", () => {
-    it("cancels only pending tasks", async () => {
+  describe("cancelling queued jobs", () => {
+    it("cancels every queued job and leaves the one in flight alone", async () => {
       const tasks = [
         createMockTask({ id: "task-1", status: "pending" }),
         createMockTask({ id: "task-2", status: "running" }),
         createMockTask({ id: "task-3", status: "pending" }),
-        createMockTask({ id: "task-4", status: "completed" }),
       ];
       (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue(tasks);
 
@@ -141,12 +126,39 @@ describe("CancelByCollectionHandler", () => {
       expect(mockTaskRunner.cancel).toHaveBeenCalledWith(["task-1", "task-3"]);
     });
 
+    it("cancels a job waiting to retry after a failure", async () => {
+      const tasks = [
+        createMockTask({ id: "task-1", status: "completed" }),
+        createMockTask({ id: "task-1", status: "failed" }),
+      ];
+      (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue(tasks);
+
+      const req = createMockRequest({ collection_slug: "posts" });
+      await handler.handle(req);
+
+      expect(mockTaskRunner.cancel).toHaveBeenCalledWith(["task-1"]);
+    });
+
+    it("names each job once, however many locale rows it has", async () => {
+      const tasks = [
+        createMockTask({ id: "task-1", status: "pending" }),
+        createMockTask({ id: "task-1", status: "pending" }),
+      ];
+      (mockTaskRunner.findByCollection as ReturnType<typeof vi.fn>).mockResolvedValue(tasks);
+
+      await handler.handle(createMockRequest({ collection_slug: "posts" }));
+
+      expect(mockTaskRunner.cancel).toHaveBeenCalledWith(["task-1"]);
+    });
+
     it("calls findByCollection with correct collection slug", async () => {
       const req = createMockRequest({ collection_slug: "pages" });
 
       await handler.handle(req);
 
-      expect(mockTaskRunner.findByCollection).toHaveBeenCalledWith("pages");
+      expect(mockTaskRunner.findByCollection).toHaveBeenCalledWith("pages", {
+        excludeCompleted: true,
+      });
     });
 
     it("creates task runner with request payload", async () => {

@@ -28,8 +28,12 @@
     "test:integration:sqlite": "cross-env DB_ADAPTER=sqlite bun run test:integration",
     "test:integration:postgres": "cross-env DB_ADAPTER=postgres bun run test:integration",
     "test:integration:mongo": "cross-env DB_ADAPTER=mongo bun run test:integration",
-    "test:integration:all": "bun run test:integration:sqlite; bun run test:integration:postgres; bun run test:integration:mongo",
-    "check-types": "tsgo --noEmit -p tsconfig.check.json"
+    "test:integration:all": "bun run test:integration:sqlite; bun run test:integration:postgres; bun run test:integration:mongo; bun run test:integration:exclusive:sqlite; bun run test:integration:exclusive:postgres; bun run test:integration:exclusive:mongo",
+    "check-types": "tsgo --noEmit -p tsconfig.check.json",
+    "test:integration:exclusive": "cross-env EXCLUSIVE_QUEUE=1 bun run test:integration",
+    "test:integration:exclusive:sqlite": "cross-env DB_ADAPTER=sqlite bun run test:integration:exclusive",
+    "test:integration:exclusive:postgres": "cross-env DB_ADAPTER=postgres bun run test:integration:exclusive",
+    "test:integration:exclusive:mongo": "cross-env DB_ADAPTER=mongo bun run test:integration:exclusive"
   },
   "dependencies": {
     "@focus-reactive/payload-plugin-ab": "workspace:*",

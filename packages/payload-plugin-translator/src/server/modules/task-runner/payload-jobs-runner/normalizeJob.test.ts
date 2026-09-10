@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { CollectionSlug } from "payload";
-import { normalizeJob } from "./normalizeJob";
+import { normalizeJob, normalizeJobLocales } from "./normalizeJob";
 import type { PayloadJob } from "./types";
 
 describe("normalizeJob", () => {
@@ -263,5 +263,95 @@ describe("normalizeJob", () => {
       const task = normalizeJob(job);
       expect(task.completedAt).toBe("2024-01-02T00:00:00Z");
     });
+  });
+});
+
+describe("normalizeJobLocales", () => {
+  const workflowJob: PayloadJob = {
+    id: "job-999",
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:05:00Z",
+    input: {
+      collection_slug: "posts",
+      collection_id: "doc-456",
+      source_lng: "en",
+      target_lngs: ["de", "fr", "es"],
+      strategy: "overwrite",
+    },
+  };
+
+  it("expands a pre-workflow job to itself", () => {
+    const legacy: PayloadJob = {
+      id: "job-1",
+      createdAt: "2024-01-01T00:00:00Z",
+      updatedAt: "2024-01-01T00:00:00Z",
+      input: { collection_slug: "posts", collection_id: "doc-1", target_lng: "de" },
+    };
+    const rows = normalizeJobLocales(legacy);
+    expect(rows).toEqual([normalizeJob(legacy)]);
+  });
+
+  it("gives every requested locale a row, in the requested order", () => {
+    const rows = normalizeJobLocales(workflowJob);
+    expect(rows.map((r) => r.input.targetLng)).toEqual(["de", "fr", "es"]);
+  });
+
+  it("reports each locale's own outcome from the job log, not the job's status", () => {
+    const rows = normalizeJobLocales({
+      ...workflowJob,
+      processing: true,
+      log: [
+        { state: "succeeded", completedAt: "2024-01-01T00:01:00Z", input: { target_lng: "de" } },
+        { state: "failed", completedAt: "2024-01-01T00:02:00Z", input: { target_lng: "fr" } },
+      ],
+    });
+    expect(rows.map((r) => [r.input.targetLng, r.status])).toEqual([
+      ["de", "completed"],
+      ["fr", "failed"],
+      ["es", "running"],
+    ]);
+  });
+
+  it("stamps completedAt only on a locale that succeeded", () => {
+    const rows = normalizeJobLocales({
+      ...workflowJob,
+      log: [
+        { state: "succeeded", completedAt: "2024-01-01T00:01:00Z", input: { target_lng: "de" } },
+        { state: "failed", completedAt: "2024-01-01T00:02:00Z", input: { target_lng: "fr" } },
+      ],
+    });
+    expect(rows[0].completedAt).toBe("2024-01-01T00:01:00Z");
+    expect(rows[1].completedAt).toBeUndefined();
+  });
+
+  it("keeps the failure on the locale that failed, off the ones that landed", () => {
+    const rows = normalizeJobLocales({
+      ...workflowJob,
+      error: { message: "provider refused fr" },
+      log: [
+        { state: "succeeded", completedAt: "2024-01-01T00:01:00Z", input: { target_lng: "de" } },
+        { state: "failed", completedAt: "2024-01-01T00:02:00Z", input: { target_lng: "fr" } },
+      ],
+    });
+    expect(rows[0].error).toBeUndefined();
+    expect(rows[1].error).toEqual({ message: "provider refused fr" });
+  });
+
+  it("takes a retried locale's most recent log entry", () => {
+    const rows = normalizeJobLocales({
+      ...workflowJob,
+      input: { ...workflowJob.input, target_lngs: ["de"] },
+      log: [
+        { state: "failed", completedAt: "2024-01-01T00:01:00Z", input: { target_lng: "de" } },
+        { state: "succeeded", completedAt: "2024-01-01T00:03:00Z", input: { target_lng: "de" } },
+      ],
+    });
+    expect(rows[0].status).toBe("completed");
+    expect(rows[0].completedAt).toBe("2024-01-01T00:03:00Z");
+  });
+
+  it("keeps the real job id on every row, because cancelling one cancels the job", () => {
+    const rows = normalizeJobLocales(workflowJob);
+    expect(rows.map((r) => r.id)).toEqual(["job-999", "job-999", "job-999"]);
   });
 });

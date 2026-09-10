@@ -18,6 +18,13 @@ const makePayload = (overrides?: { update?: ReturnType<typeof vi.fn> }) => ({
   logger: { error: vi.fn() },
 });
 
+const workflowOf = (config: Config) =>
+  (config.jobs?.workflows ?? []).find(
+    (w) => w.slug === "translate_document_locales"
+  ) as unknown as {
+    concurrency?: { key: (a: never) => string; exclusive?: boolean };
+  };
+
 describe("PayloadJobsRunnerProvider", () => {
   describe("configure().onInit", () => {
     it("returns a config whose onInit is a function that triggers reclaim", async () => {
@@ -83,6 +90,32 @@ describe("PayloadJobsRunnerProvider", () => {
 
     it("does not throw with a valid positive finite value", () => {
       expect(() => createPayloadJobsRunner({ staleJobTimeoutMs: 60_000 })).not.toThrow();
+    });
+  });
+
+  describe("the workflow's concurrency declaration", () => {
+    it("is absent when the host has not enabled concurrency control", () => {
+      const config = createPayloadJobsRunner().configure(minimalContext)(makeConfig());
+
+      expect(workflowOf(config).concurrency).toBeUndefined();
+    });
+
+    it("does not enable the host's concurrency control on its behalf", () => {
+      const config = createPayloadJobsRunner().configure(minimalContext)(makeConfig());
+
+      expect(config.jobs?.enableConcurrencyControl).toBeUndefined();
+    });
+
+    it("keys on the document when the host has enabled it", () => {
+      const config = createPayloadJobsRunner().configure(minimalContext)(
+        makeConfig({ jobs: { enableConcurrencyControl: true } })
+      );
+
+      const concurrency = workflowOf(config).concurrency;
+      expect(concurrency?.exclusive).toBe(true);
+      expect(
+        concurrency?.key({ input: { collection_slug: "posts", collection_id: "7" } } as never)
+      ).toBe("posts:7");
     });
   });
 });

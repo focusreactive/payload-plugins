@@ -123,6 +123,21 @@ describe("buildTranslationStatusRows", () => {
     expect(buildTranslationStatusRows({})).toEqual([]);
     expect(buildTranslationStatusRows({ staleness: { locales: [] }, runs: [] })).toEqual([]);
   });
+  it("renders a failed locale whose job carries no error yet", () => {
+    const failedWithoutError = {
+      id: "job-de",
+      status: DocumentTranslationStatus.FAILED,
+      created_at: "2026-07-06T00:00:00.000Z",
+      updated_at: "2026-07-07T00:00:00.000Z",
+      input: { source_lng: "en", target_lng: "de" },
+    } as DocumentTranslation;
+
+    const rows = buildTranslationStatusRows({ runs: [failedWithoutError] });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].state).toBe("failed");
+    expect(rows[0].error).toBeUndefined();
+  });
 });
 
 describe("STATE_DOT", () => {
