@@ -1,3 +1,11 @@
+## @focus-reactive/payload-plugin-translator [0.11.4](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.11.3...@focus-reactive/payload-plugin-translator@0.11.4) (2026-09-10)
+
+
+### Bug Fixes
+
+* **translator:** extend a document's live job instead of replacing it ([69274e0](https://github.com/focusreactive/payload-plugins/commit/69274e0191e5d05aa967a520016df546a953c25c)), closes [#114](https://github.com/focusreactive/payload-plugins/issues/114)
+* **translator:** translate a document's locales in one workflow, not parallel jobs ([3ecc2c8](https://github.com/focusreactive/payload-plugins/commit/3ecc2c893dc4ea6907937ecd958f3154a231af06)), closes [#114](https://github.com/focusreactive/payload-plugins/issues/114)
+
 ## @focus-reactive/payload-plugin-translator [0.11.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.11.2...@focus-reactive/payload-plugin-translator@0.11.3) (2026-09-04)
 
 ## @focus-reactive/payload-plugin-translator [0.11.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.11.1...@focus-reactive/payload-plugin-translator@0.11.2) (2026-09-04)
