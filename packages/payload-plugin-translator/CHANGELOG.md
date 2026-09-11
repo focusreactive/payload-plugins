@@ -1,3 +1,11 @@
+# @focus-reactive/payload-plugin-translator [0.12.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.11.5...@focus-reactive/payload-plugin-translator@0.12.0) (2026-09-11)
+
+
+### Features
+
+* **translator:** default the OpenAI provider to gpt-5.4-mini ([0d76bdc](https://github.com/focusreactive/payload-plugins/commit/0d76bdc6a0b300262bb8c61f1ffa9a7924a65114))
+* **translator:** name an unusable model instead of failing generically ([0d6cc04](https://github.com/focusreactive/payload-plugins/commit/0d6cc04a00af280498149303888ee87fd09c71e5))
+
 ## @focus-reactive/payload-plugin-translator [0.11.5](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.11.4...@focus-reactive/payload-plugin-translator@0.11.5) (2026-09-11)
 
 
