@@ -1,6 +1,7 @@
 import type { FieldLike } from "../kernel/field-traversal";
 import type { TranslationProvider } from "../domain/translation-providers";
 import { TranslationPipeline } from "./TranslationPipeline";
+import { PlainTextExpander, RichContainerExpander } from "./stages";
 import { createTranslationStrategy } from "./strategies";
 import type { TranslationStrategyName } from "./strategies";
 
@@ -21,6 +22,16 @@ export type TranslateContentArgs = {
   translationProvider: TranslationProvider;
   /** @default 'overwrite' */
   strategy?: TranslationStrategyName;
+  /**
+   * Translate each rich-text container (paragraph, heading, list item) as one marked string
+   * instead of node by node, so the model may reorder its pieces.
+   *
+   * Ignored unless the provider declares `capabilities.inlineMarks`: a provider that is not a
+   * language model would mangle the marks.
+   *
+   * @default false
+   */
+  inlineMarks?: boolean;
 };
 
 /**
@@ -44,10 +55,14 @@ export async function translateContent({
   targetLng,
   translationProvider,
   strategy = "overwrite",
+  inlineMarks = false,
 }: TranslateContentArgs): Promise<Record<string, unknown> | null> {
+  const marksUsable = inlineMarks && translationProvider.capabilities?.inlineMarks === true;
+
   const pipeline = new TranslationPipeline({
     translationProvider,
     translationStrategy: createTranslationStrategy(strategy),
+    textExpanders: marksUsable ? [new RichContainerExpander(), new PlainTextExpander()] : undefined,
   });
 
   const result = await pipeline.execute({

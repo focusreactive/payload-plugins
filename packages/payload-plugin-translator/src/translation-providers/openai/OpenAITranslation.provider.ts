@@ -131,6 +131,7 @@ export function createOpenAIProvider(config: OpenAIProviderConfig): TranslationP
   return createTranslationProvider({
     systemPrompt,
     dryRun,
+    capabilities: { inlineMarks: true },
     complete: async (request) => {
       const client = await resolveClient();
       return openAIComplete({ client, model, sampling, structuredOutput })(request);

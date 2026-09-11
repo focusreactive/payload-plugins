@@ -75,6 +75,7 @@ export class PluginConfigBuilder implements LevelContext {
   readonly translationProvider: TranslationProvider;
   readonly provenanceServiceFactory?: ProvenanceServiceFactory;
   readonly targetSelection: TargetSelectionMode;
+  readonly inlineMarks?: boolean;
 
   private readonly endpoints: Endpoint[] = [];
   private readonly collectionComponents: CollectionComponent[] = [];
@@ -90,6 +91,7 @@ export class PluginConfigBuilder implements LevelContext {
     this.translationProvider = deps.translationProvider;
     this.provenanceServiceFactory = deps.provenanceServiceFactory;
     this.targetSelection = deps.targetSelection;
+    this.inlineMarks = deps.inlineMarks;
   }
 
   addEndpoints(endpoints: Endpoint[]): void {

@@ -218,3 +218,24 @@ the single source of truth — code annotations link here by anchor instead of d
 - **Code refs:** `src/translation-providers/openai/OpenAITranslation.provider.ts`,
   `src/translation-providers/openai/loadOpenAIClient.ts`,
   `src/translation-providers/openai/OpenAITranslationLegacy.provider.ts`
+
+### experimental-inline-marks
+
+- **What:** `translatorPlugin({ experimental: { inlineMarks } })`.
+- **Status:** live (`@deprecated` in code from the day it shipped)
+- **Deprecated:** 2026-09-09 / #134
+- **Replacement:** none — the behaviour becomes the only mode, so the switch simply goes away.
+- **Scope:** this entry only. The `experimental` option itself is permanent — it is where the
+  next transitional switch will live, so removing `inlineMarks` does not remove the object.
+- **Remove in:** next major
+- **Why:** a transitional switch, not a supported choice. Translating rich text node by node pins
+  every word to its source position, which is a defect, not a preference — so there is nothing to
+  keep choosing between. The flag exists only so an install can adopt the change on its own
+  schedule and step back if its provider misbehaves. The next major removes **the flag**, not the
+  per-node code: that stays as the internal fallback for a mark-shaped source, a single-fragment
+  container, and a corrupt reply.
+- **Code refs:**
+  - `src/plugin.ts` (the option)
+  - `src/core/translation-pipeline/translateContent.ts` (the single switch between the two paths)
+  - `src/core/translation-pipeline/stages/text-expander/RichContainerExpander.ts`
+  - `docs/plans/2026-09-08-richtext-container-granularity-design.md` (D8, D8a)

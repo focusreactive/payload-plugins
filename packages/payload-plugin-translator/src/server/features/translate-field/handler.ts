@@ -119,6 +119,7 @@ export class TranslateFieldHandler {
       sourceLng: source_lng,
       targetLng: target_lng,
       translationProvider: this.config.translationProvider,
+      inlineMarks: this.config.inlineMarks,
     });
 
     if (!translated) {

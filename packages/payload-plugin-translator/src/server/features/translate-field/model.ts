@@ -36,4 +36,5 @@ export type FieldTranslationInput = z.infer<typeof FieldTranslationInputSchema>;
 export type FieldTranslationConfig = {
   schemaMap: CollectionSchemaMap;
   translationProvider: TranslationProvider;
+  inlineMarks?: boolean;
 };

@@ -1,4 +1,5 @@
 import type {
+  TranslationRequestOptions,
   TranslationInput,
   TranslationOutput,
   TranslationProvider,
@@ -17,11 +18,16 @@ export class OpenAITranslationProvider implements TranslationProvider {
     this.inner = createOpenAIProvider(config);
   }
 
+  get capabilities(): TranslationProvider["capabilities"] {
+    return this.inner.capabilities;
+  }
+
   translate(
     input: TranslationInput,
     sourceLng: string,
-    targetLng: string
+    targetLng: string,
+    options?: TranslationRequestOptions
   ): Promise<TranslationOutput | null> {
-    return this.inner.translate(input, sourceLng, targetLng);
+    return this.inner.translate(input, sourceLng, targetLng, options);
   }
 }

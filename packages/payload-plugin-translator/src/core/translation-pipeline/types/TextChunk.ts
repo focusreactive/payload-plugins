@@ -1,4 +1,5 @@
-import type { SerializedTextNode } from "../../kernel/lexical";
+import type { InlineFragment } from "../../kernel/lexical/collectInlineFragments";
+import type { SerializedLexicalNode, SerializedTextNode } from "../../kernel/lexical";
 
 /**
  * Text chunk for plain text/textarea fields.
@@ -31,10 +32,33 @@ export type RichTextChunk = {
 };
 
 /**
+ * Text chunk for a whole rich-text container (paragraph, heading, list item).
+ *
+ * One chunk per container rather than per text node, so the model receives a connected sentence
+ * and may reorder its pieces.
+ */
+export type RichContainerChunk = {
+  type: "richContainer";
+  index: number;
+  /** The marked string sent for translation, not source prose — never hash or display it */
+  text: string;
+  /** The container whose `children` are rebuilt when the reply reorders marks */
+  containerRef: SerializedLexicalNode;
+  /** Fragments in document order, as collected */
+  fragments: InlineFragment[];
+  /** Where this container lives, for reporting it when its reply cannot be used. */
+  place: { path: string[]; container: number };
+};
+
+/**
  * Union type for all text chunks.
  * Schema-independent - contains only data references for mutation.
  */
-export type TextChunk = PlainTextChunk | RichTextChunk;
+export type TextChunk = PlainTextChunk | RichTextChunk | RichContainerChunk;
+
+export function isRichContainerChunk(chunk: TextChunk): chunk is RichContainerChunk {
+  return chunk.type === "richContainer";
+}
 
 /**
  * Type guard for PlainTextChunk.

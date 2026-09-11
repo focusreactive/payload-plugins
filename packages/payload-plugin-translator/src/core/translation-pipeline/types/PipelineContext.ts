@@ -1,4 +1,5 @@
 import type { FieldLike } from "../../kernel/field-traversal";
+import type { ParsedMark } from "../../kernel/lexical/inlineMarks";
 import type { FieldChunk } from "./FieldChunk";
 import type { TextChunk } from "./TextChunk";
 
@@ -19,6 +20,11 @@ export type PipelineContext = {
   textChunks?: TextChunk[];
   textMap?: Record<number, string>;
   translations?: Record<number, string>;
+  /**
+   * Parsed marked replies, keyed by chunk index. A container missing here had a corrupt reply and
+   * must be left in its source language.
+   */
+  containerFragments?: Record<number, ParsedMark[]>;
 };
 
 /**

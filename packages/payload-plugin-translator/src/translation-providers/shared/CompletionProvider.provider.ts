@@ -2,6 +2,7 @@ import type {
   TranslationInput,
   TranslationOutput,
   TranslationProvider,
+  TranslationRequestOptions,
 } from "../../core/domain/translation-providers";
 import { buildResponseSchema } from "./buildResponseSchema";
 import type { JsonSchemaObject } from "./buildResponseSchema";
@@ -44,6 +45,14 @@ export type CompletionFn = (request: CompletionRequest) => Promise<string>;
  * @since 0.11.0
  */
 export type TranslationProviderConfig = {
+  /**
+   * What the transport can be asked to do beyond plain translation — passed through to the
+   * provider unchanged. A transport that is not a language model must leave `inlineMarks` unset:
+   * the core then keeps translating rich text node by node.
+   *
+   * @since 0.12.0
+   */
+  capabilities?: TranslationProvider["capabilities"];
   complete: CompletionFn;
   systemPrompt?: SystemPromptBuilder;
   /**
@@ -120,7 +129,7 @@ function guardTransformer(dryRun: boolean | DryRunConfig): boolean | DryRunConfi
  * @since 0.11.0
  */
 export function createTranslationProvider(config: TranslationProviderConfig): TranslationProvider {
-  const { complete, systemPrompt, dryRun } = config;
+  const { complete, systemPrompt, dryRun, capabilities } = config;
 
   if (dryRun) {
     const guarded = guardTransformer(dryRun);
@@ -128,17 +137,24 @@ export function createTranslationProvider(config: TranslationProviderConfig): Tr
   }
 
   return {
+    capabilities,
     async translate(
       input: TranslationInput,
       sourceLng: string,
-      targetLng: string
+      targetLng: string,
+      options?: TranslationRequestOptions
     ): Promise<TranslationOutput> {
       // A strict response schema with no properties is rejected by the service, so an empty
       // document must not reach the transport at all.
       if (Object.keys(input).length === 0) return {};
 
       const systemPromptText = await asConfigurationFailure("systemPrompt builder", () =>
-        buildSystemPrompt({ sourceLng, targetLng, override: systemPrompt })
+        buildSystemPrompt({
+          sourceLng,
+          targetLng,
+          override: systemPrompt,
+          hasInlineMarks: options?.inlineMarks === true,
+        })
       );
 
       const request = await asConfigurationFailure("serialization of the input", () => ({

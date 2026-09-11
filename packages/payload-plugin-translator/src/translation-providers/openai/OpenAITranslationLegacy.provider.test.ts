@@ -58,4 +58,10 @@ describe("OpenAITranslationProvider (deprecated class)", () => {
     expect(result).toEqual({ 0: "olleH" });
     expect(loadClient).not.toHaveBeenCalled();
   });
+
+  it("reports the same capabilities as the factory it wraps", () => {
+    const provider = new OpenAITranslationProvider({ apiKey: "sk-test" });
+
+    expect(provider.capabilities?.inlineMarks).toBe(true);
+  });
 });
