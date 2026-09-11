@@ -1,28 +1,17 @@
 import { parseInlineMarks } from "../../../kernel/lexical/inlineMarks";
-import type { ParsedMark } from "../../../kernel/lexical/inlineMarks";
 import type { PipelineContext, PipelineStage } from "../../types";
 import { isRichContainerChunk } from "../../types";
 import type { TranslationProvider } from "../../../domain/translation-providers";
 
-/** A container missing from the result had a corrupt reply and keeps its source text. */
-function parseContainerReplies(
-  ctx: PipelineContext,
-  translations: Record<number, string>
-): Record<number, ParsedMark[]> | undefined {
-  const containers = (ctx.textChunks ?? []).filter(isRichContainerChunk);
-  if (containers.length === 0) return undefined;
-
-  const parsed: Record<number, ParsedMark[]> = {};
-
-  for (const chunk of containers) {
+/** Writes onto chunks the expander created, rather than returning — see `RichContainerChunk.reply`. */
+function parseContainerReplies(ctx: PipelineContext, translations: Record<number, string>): void {
+  for (const chunk of (ctx.textChunks ?? []).filter(isRichContainerChunk)) {
     const reply = translations[chunk.index];
     if (reply === undefined) continue;
 
     const result = parseInlineMarks(reply, chunk.fragments);
-    if (result.ok) parsed[chunk.index] = result.fragments;
+    if (result.ok) chunk.reply = result.fragments;
   }
-
-  return parsed;
 }
 
 /**
@@ -50,10 +39,8 @@ export class TranslationStage implements PipelineStage {
       throw new Error("Translation provider returned null");
     }
 
-    return {
-      ...ctx,
-      translations,
-      containerFragments: parseContainerReplies(ctx, translations),
-    };
+    parseContainerReplies(ctx, translations);
+
+    return { ...ctx, translations };
   }
 }

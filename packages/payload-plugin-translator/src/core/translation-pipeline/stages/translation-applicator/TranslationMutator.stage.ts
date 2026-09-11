@@ -11,7 +11,7 @@ export class TranslationMutatorStage implements PipelineStage {
     }
 
     const mutator = new TranslationMutator();
-    mutator.apply(ctx.textChunks, ctx.translations, ctx.containerFragments);
+    mutator.apply(ctx.textChunks, ctx.translations);
 
     return ctx;
   }

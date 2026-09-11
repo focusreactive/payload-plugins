@@ -45,15 +45,10 @@ export class TranslationMutator {
    * @param translations - Map of index -> translated text
    * @returns Mutation result with count of translated chunks
    */
-  apply(
-    textChunks: TextChunk[],
-    translations: Record<number, string>,
-    containerFragments?: Record<number, ParsedMark[]>
-  ): void {
+  apply(textChunks: TextChunk[], translations: Record<number, string>): void {
     for (const chunk of textChunks) {
       if (isRichContainerChunk(chunk)) {
-        const parsed = containerFragments?.[chunk.index];
-        if (parsed) applyContainer(chunk, parsed);
+        if (chunk.reply) applyContainer(chunk, chunk.reply);
         continue;
       }
 

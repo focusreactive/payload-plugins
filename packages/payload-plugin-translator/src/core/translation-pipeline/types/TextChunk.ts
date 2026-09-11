@@ -1,4 +1,5 @@
 import type { InlineFragment } from "../../kernel/lexical/collectInlineFragments";
+import type { ParsedMark } from "../../kernel/lexical/inlineMarks";
 import type { SerializedLexicalNode, SerializedTextNode } from "../../kernel/lexical";
 
 /**
@@ -46,6 +47,12 @@ export type RichContainerChunk = {
   containerRef: SerializedLexicalNode;
   /** Fragments in document order, as collected */
   fragments: InlineFragment[];
+  /**
+   * The reply's marks, once the translation stage has parsed a usable one. Absent means this
+   * container keeps its source text — the same outcome whether no reply came back or it could not
+   * be parsed, and the applicator must not tell the two apart.
+   */
+  reply?: ParsedMark[];
 };
 
 /**
