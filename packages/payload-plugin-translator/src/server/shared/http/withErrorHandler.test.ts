@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { APIError } from "payload";
+import { markFailureReason } from "../../../core/domain/translation-providers/failureReason";
 import { withErrorHandler } from "./withErrorHandler";
 import { ServerResponse } from "./ServerResponse";
 
@@ -90,5 +91,20 @@ describe("withErrorHandler", () => {
     // TypeScript should allow these calls
     const result = await wrappedHandler("test-id", { force: true });
     expect(result.status).toBe(200);
+  });
+
+  it("renders a marked failure reason as its own copy, not the raw message", async () => {
+    const marked = markFailureReason(
+      "model-unavailable",
+      'The model "gpt-5.4-mini" is not available to this API key.'
+    );
+    const handler = vi.fn().mockRejectedValue(new Error(marked));
+
+    const result = await withErrorHandler(handler)();
+    const { message } = (await result.json()) as { message: string };
+
+    expect(message).not.toContain("gpt-5.4-mini");
+    expect(message).not.toContain("[translator:");
+    expect(message).toContain("`model`");
   });
 });
