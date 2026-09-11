@@ -54,11 +54,8 @@ export class RichContainerExpander implements TextExpander {
       index += 1;
     };
 
-    let ordinal = 0;
-
     for (const container of containers) {
       if (container.skip) {
-        ordinal += 1;
         const nodes = new Set(
           collectSerializedLexicalTextNodes(container.node).map((ref) => ref.node)
         );
@@ -70,8 +67,6 @@ export class RichContainerExpander implements TextExpander {
       }
 
       const text = serializeInlineMarks(container.fragments);
-      const place = { path: chunk.path, container: ordinal };
-      ordinal += 1;
 
       emit(text, (at) => ({
         type: "richContainer",
@@ -79,7 +74,6 @@ export class RichContainerExpander implements TextExpander {
         text,
         containerRef: container.node,
         fragments: container.fragments,
-        place,
       }));
     }
 

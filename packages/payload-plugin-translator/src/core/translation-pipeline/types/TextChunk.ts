@@ -46,8 +46,6 @@ export type RichContainerChunk = {
   containerRef: SerializedLexicalNode;
   /** Fragments in document order, as collected */
   fragments: InlineFragment[];
-  /** Where this container lives, for reporting it when its reply cannot be used. */
-  place: { path: string[]; container: number };
 };
 
 /**
