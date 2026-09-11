@@ -6,7 +6,7 @@ import type { TestPayload } from "./bootTestPayload";
 // R5 — auto-translate (#51), one dedicated case per behavior. Trigger is the real afterChange hook:
 // publishing source-locale content runs the sync pipeline inline and writes the targets.
 
-const rev = (s: string) => [...s].reverse().join("");
+const tr = (locale: string, s: string) => (s.trim() ? `${locale}:${s}` : s);
 const PROVENANCE = "translator-provenance";
 
 const provenanceFor = async (ctx: TestPayload, id: string) => {
@@ -36,8 +36,8 @@ describe("auto-translate — targets de, fr", () => {
     const id = String(created.id);
     const de = await ctx.payload.findByID({ collection: "docs", id, locale: "de" });
     const fr = await ctx.payload.findByID({ collection: "docs", id, locale: "fr" });
-    expect(de.title).toBe(rev("Auto src"));
-    expect(fr.title).toBe(rev("Auto src"));
+    expect(de.title).toBe(tr("de", "Auto src"));
+    expect(fr.title).toBe(tr("fr", "Auto src"));
   });
 
   it("publish-gate: a draft (unpublished) save is NOT auto-translated", async () => {

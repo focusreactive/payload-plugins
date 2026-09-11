@@ -11,7 +11,7 @@ import { callEndpoint } from "./callEndpoint";
 // without cross-contaminating leaves or corrupting an already-translated locale, and skip_existing
 // respects per-block edits — matched by id even when only some blocks are filled ("partially differ").
 
-const rev = (s: string) => [...s].reverse().join("");
+const tr = (locale: string, s: string) => (s.trim() ? `${locale}:${s}` : s);
 
 type Block = { id?: string; blockType: string; heading?: string; caption?: string };
 
@@ -65,7 +65,11 @@ describe("blocks — id-based pairing, ordering, partial differences", () => {
     await enqueue(ctx, id, "de");
 
     const de = await sectionsOf(ctx, id, "de");
-    expect(de.map((b) => b.heading)).toEqual([rev("Alpha"), rev("Bravo"), rev("Charlie")]);
+    expect(de.map((b) => b.heading)).toEqual([
+      tr("de", "Alpha"),
+      tr("de", "Bravo"),
+      tr("de", "Charlie"),
+    ]);
   });
 
   it("re-mirrors SOURCE order on reorder+edit, without corrupting an already-translated locale", async () => {
@@ -112,9 +116,9 @@ describe("blocks — id-based pairing, ordering, partial differences", () => {
     const de = await sectionsOf(ctx, id, "de");
     expect(de.map((b) => b.id)).toEqual([three.id, one.id, two.id]); // ids stable, reordered
     expect(de.map((b) => b.heading ?? b.caption)).toEqual([
-      rev("Three"),
-      rev("One EDITED"),
-      rev("Two"),
+      tr("de", "Three"),
+      tr("de", "One EDITED"),
+      tr("de", "Two"),
     ]);
 
     // Source survives the reorder+re-translate.
@@ -125,7 +129,11 @@ describe("blocks — id-based pairing, ordering, partial differences", () => {
     // previously-translated leaves are intact (not wiped by the DE pass) — old "One" translation kept.
     const fr = await sectionsOf(ctx, id, "fr");
     expect(fr.map((b) => b.id)).toEqual([three.id, one.id, two.id]);
-    expect(fr.map((b) => b.heading ?? b.caption)).toEqual([rev("Three"), rev("One"), rev("Two")]);
+    expect(fr.map((b) => b.heading ?? b.caption)).toEqual([
+      tr("fr", "Three"),
+      tr("fr", "One"),
+      tr("fr", "Two"),
+    ]);
   });
 
   it("skip_existing fills empty block leaves but keeps a manually-edited one (matched by id)", async () => {
@@ -163,6 +171,6 @@ describe("blocks — id-based pairing, ordering, partial differences", () => {
 
     const de = await sectionsOf(ctx, id, "de");
     // Empty siblings filled from source; the manually-edited middle block kept — paired by id.
-    expect(de.map((b) => b.heading)).toEqual([rev("Src A"), "MANUAL B", rev("Src C")]);
+    expect(de.map((b) => b.heading)).toEqual([tr("de", "Src A"), "MANUAL B", tr("de", "Src C")]);
   });
 });

@@ -10,7 +10,7 @@ import { callEndpoint } from "./callEndpoint";
 // existing spec.
 
 // The fake provider translates by reversing the string.
-const machineTranslated = (s: string) => [...s].reverse().join("");
+const machineTranslated = (s: string, locale = "de") => `${locale}:${s}`;
 const EN = "Hello from EN";
 
 type Locale = "en" | "de" | "fr";

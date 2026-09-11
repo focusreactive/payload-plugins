@@ -5,9 +5,9 @@ import { bootTestPayload } from "./bootTestPayload";
 import { callEndpoint } from "./callEndpoint";
 import { plainCollection } from "./testCollections";
 
-const rev = (s: string) => [...s].reverse().join("");
+const tr = (locale: string, s: string) => (s.trim() ? `${locale}:${s}` : s);
 const SOURCE = "Draft safety";
-const TRANSLATED = rev(SOURCE);
+const TRANSLATED = tr("de", SOURCE);
 const SUBTITLE = "Second field";
 const PUBLISHED_NOTE = "PUBLISHED NOTE";
 const PUBLISHED_PRICE = 200;
@@ -175,7 +175,7 @@ describe("draft-safe and per-locale-safe writes (#102)", () => {
 
     const de = await asDraft("docs", id, "de");
     expect(de.title).toBe("HUMAN FIX");
-    expect(de.subtitle).toBe(rev(SUBTITLE));
+    expect(de.subtitle).toBe(tr("de", SUBTITLE));
   });
 
   it("publish mode takes the current draft live, including edits the translation did not touch", async () => {

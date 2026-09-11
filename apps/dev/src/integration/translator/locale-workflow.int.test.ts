@@ -8,7 +8,7 @@ import { callEndpoint } from "./callEndpoint";
 // Must boot the real jobs runner: `createSyncRunner` translates inline and in order, so the fan-out
 // this file guards against cannot occur under it.
 
-const rev = (s: string) => [...s].reverse().join("");
+const tr = (locale: string, s: string) => (s.trim() ? `${locale}:${s}` : s);
 
 let ctx: TestPayload;
 
@@ -78,8 +78,8 @@ describe("translating one document into several locales", () => {
     await enqueue(id, ["de", "fr"]);
     await runQueue();
 
-    expect(await titleIn(id, "de"), "de was not translated").toBe(rev(source));
-    expect(await titleIn(id, "fr"), "fr was not translated").toBe(rev(source));
+    expect(await titleIn(id, "de"), "de was not translated").toBe(tr("de", source));
+    expect(await titleIn(id, "fr"), "fr was not translated").toBe(tr("fr", source));
   });
 
   it("runs the locales one after another, never overlapping", async () => {

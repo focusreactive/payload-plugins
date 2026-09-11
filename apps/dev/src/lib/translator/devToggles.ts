@@ -9,7 +9,7 @@ import type {
   TranslationProvider,
 } from "@focus-reactive/payload-plugin-translator";
 
-import { failingComplete, reverseComplete } from "./fakeComplete";
+import { fakeComplete, failingComplete } from "./fakeComplete";
 
 // See apps/dev/docs/multi-db-verification.md.
 
@@ -33,7 +33,7 @@ export function resolveTranslationProvider(): TranslationProvider {
   }
 
   if (process.env.TRANSLATOR_DRY_RUN === "1" || !process.env.OPENAI_API_KEY) {
-    return createTranslationProvider({ complete: reverseComplete });
+    return createTranslationProvider({ complete: fakeComplete() });
   }
 
   return createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY });
