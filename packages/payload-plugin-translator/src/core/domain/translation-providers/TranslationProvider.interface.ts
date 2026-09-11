@@ -29,7 +29,7 @@ export type TranslationOutput = Record<TranslationIndex, string>;
  *
  * Optional, so every implementation written before it keeps compiling and working.
  *
- * @since 0.12.0
+ * @since 0.13.0
  */
 export type TranslationRequestOptions = {
   /**
@@ -68,7 +68,7 @@ export interface TranslationProvider {
    * What this provider can be asked to do beyond plain translation. Absent means "nothing extra" —
    * every provider written before a capability existed keeps working unchanged.
    *
-   * @since 0.12.0
+   * @since 0.13.0
    */
   capabilities?: {
     /**

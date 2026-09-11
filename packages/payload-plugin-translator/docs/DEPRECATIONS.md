@@ -223,7 +223,7 @@ the single source of truth — code annotations link here by anchor instead of d
 
 - **What:** `translatorPlugin({ experimental: { inlineMarks } })`.
 - **Status:** live (`@deprecated` in code from the day it shipped)
-- **Deprecated:** 2026-09-09 / #134
+- **Deprecated:** 2026-09-11 / PR #139 (issue #134)
 - **Replacement:** none — the behaviour becomes the only mode, so the switch simply goes away.
 - **Scope:** this entry only. The `experimental` option itself is permanent — it is where the
   next transitional switch will live, so removing `inlineMarks` does not remove the object.

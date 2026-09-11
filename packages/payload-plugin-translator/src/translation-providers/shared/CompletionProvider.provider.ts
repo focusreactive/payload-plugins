@@ -50,7 +50,7 @@ export type TranslationProviderConfig = {
    * provider unchanged. A transport that is not a language model must leave `inlineMarks` unset:
    * the core then keeps translating rich text node by node.
    *
-   * @since 0.12.0
+   * @since 0.13.0
    */
   capabilities?: TranslationProvider["capabilities"];
   complete: CompletionFn;

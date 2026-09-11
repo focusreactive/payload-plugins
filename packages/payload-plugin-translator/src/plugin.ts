@@ -97,7 +97,7 @@ export type TranslatorPluginConfig = {
    * permanent; each **entry** is deprecated the day it ships, because it exists only so you can
    * adopt a change early and the next major removes the switch, not the behaviour.
    *
-   * @since 0.12.0
+   * @since 0.13.0
    */
   experimental?: {
     /**
