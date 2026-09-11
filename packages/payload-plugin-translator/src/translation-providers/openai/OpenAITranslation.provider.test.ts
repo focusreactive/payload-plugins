@@ -7,6 +7,7 @@ import {
   TransportError,
   UnparseableReplyError,
 } from "../shared";
+import { readFailureReason } from "../../core/domain/translation-providers/failureReason";
 import { createOpenAIProvider } from "./OpenAITranslation.provider";
 import type { OpenAIChatParams, OpenAIClientShape } from "./OpenAI.shapes";
 import { loadOpenAIClient } from "./loadOpenAIClient";
@@ -145,6 +146,10 @@ describe("createOpenAIProvider", () => {
           '429 Rate limit exceeded for request {"model":"gpt-4o","response_format":{"type":"json_schema"}}',
       },
       {
+        case: "a rate limit echoing the model name",
+        message: '429 Rate limit exceeded for request {"model":"gpt-5.4-mini"}',
+      },
+      {
         case: "an unrelated invalid parameter",
         message:
           '400 Invalid parameter: \'temperature\' must be between 0 and 2. request: {"response_format":{"type":"json_schema"}}',
@@ -176,6 +181,98 @@ describe("createOpenAIProvider", () => {
         .catch((e: unknown) => e);
 
       expect(failure).toBeInstanceOf(TransportError);
+    });
+
+    const MODEL_ACCESS = [
+      {
+        case: "the SDK's own error code, whatever the message says",
+        // The code is what the classifier must key on: OpenAI is free to reword `message`, and a
+        // non-English or future wording must not stop the reason reaching the admin.
+        throws: (): never => {
+          throw Object.assign(new Error("404 unrecognisable wording"), {
+            code: "model_not_found",
+            status: 404,
+          });
+        },
+      },
+      {
+        case: "a gateway that forwards only the text",
+        throws: (): never => {
+          throw new Error(
+            "404 The model `gpt-5.4-mini` does not exist or you do not have access to it."
+          );
+        },
+      },
+    ];
+
+    for (const { case: label, throws } of MODEL_ACCESS) {
+      it(`reports ${label} as a configuration failure naming the model option`, async () => {
+        const { client } = stubClient(throws);
+
+        const failure = await createOpenAIProvider({ client, model: "gpt-5.4-mini" })
+          .translate({ 0: "Hello" }, "en", "de")
+          .catch((e: unknown) => e);
+
+        expect(failure).toBeInstanceOf(ProviderConfigurationError);
+        expect((failure as Error).message).toContain("gpt-5.4-mini");
+        expect((failure as Error).message).toContain("`model`");
+      });
+    }
+
+    const OTHER_CODES = ["rate_limit_exceeded", "unsupported_model_parameter"];
+
+    for (const code of OTHER_CODES) {
+      it(`matches the code exactly — "${code}" stays a transport failure`, async () => {
+        const { client } = stubClient((): never => {
+          throw Object.assign(new Error("400 something about model gpt-5.4-mini"), { code });
+        });
+
+        const failure = await createOpenAIProvider({ client })
+          .translate({ 0: "Hello" }, "en", "de")
+          .catch((e: unknown) => e);
+
+        expect(failure).toBeInstanceOf(TransportError);
+        expect(failure).not.toBeInstanceOf(ProviderConfigurationError);
+      });
+    }
+
+    it("classifies a model-access failure on the json_object path too", async () => {
+      const { client } = stubClient((): never => {
+        throw new Error("404 The model `x` does not exist or you do not have access to it.");
+      });
+
+      const failure = await createOpenAIProvider({ client, structuredOutput: "json_object" })
+        .translate({ 0: "Hello" }, "en", "de")
+        .catch((e: unknown) => e);
+
+      expect(failure).toBeInstanceOf(ProviderConfigurationError);
+    });
+
+    it("marks a model-access failure so the admin panel can name the reason", async () => {
+      const { client } = stubClient((): never => {
+        throw new Error("404 The model `x` does not exist or you do not have access to it.");
+      });
+
+      const failure = (await createOpenAIProvider({ client })
+        .translate({ 0: "Hello" }, "en", "de")
+        .catch((e: unknown) => e)) as Error;
+
+      expect(readFailureReason(failure.message)).toBe("model-unavailable");
+    });
+
+    it("leaves the schema rejections unmarked — the panel has no copy for them", async () => {
+      const { client } = stubClient((): never => {
+        throw new Error(
+          "400 'response_format' of type 'json_schema' is not supported with this model."
+        );
+      });
+
+      const failure = (await createOpenAIProvider({ client })
+        .translate({ 0: "Hello" }, "en", "de")
+        .catch((e: unknown) => e)) as Error;
+
+      expect(failure).toBeInstanceOf(ProviderConfigurationError);
+      expect(readFailureReason(failure.message)).toBeNull();
     });
 
     it("still reports an ordinary API failure as transport", async () => {

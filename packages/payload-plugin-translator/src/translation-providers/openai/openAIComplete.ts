@@ -1,3 +1,5 @@
+import { markFailureReason } from "../../core/domain/translation-providers/failureReason";
+import { isObject } from "../../core/kernel/utils/isObject";
 import type { CompletionFn } from "../shared";
 import { errorMessageLower, NoContentError, ProviderConfigurationError } from "../shared";
 import type { OpenAIChatParams, OpenAIChatResult, OpenAIClientShape } from "./OpenAI.shapes";
@@ -55,6 +57,22 @@ function classifySchemaRejection(cause: unknown): SchemaRejection | null {
   return null;
 }
 
+const MODEL_ACCESS_CODE = "model_not_found";
+
+/**
+ * Only for a gateway that forwards the text and no `code` — Azure, OpenRouter, a corporate proxy.
+ * A full phrase rather than the word `model`, which such a gateway also echoes in rate limits.
+ * Wording as observed 2026-09; the code above is what carries this when OpenAI rewords it.
+ */
+const MODEL_ACCESS_PHRASE = "does not exist or you do not have access";
+
+function isModelAccessFailure(cause: unknown): boolean {
+  if (isObject(cause) && cause.code === MODEL_ACCESS_CODE) return true;
+
+  const text = errorMessageLower(cause);
+  return text !== null && text.includes(MODEL_ACCESS_PHRASE);
+}
+
 /**
  * The vendor boundary: the only place OpenAI's response shape is read.
  *
@@ -99,6 +117,16 @@ export function openAIComplete(args: {
     try {
       result = await client.chat.completions.create(params, { signal });
     } catch (cause) {
+      if (isModelAccessFailure(cause)) {
+        throw new ProviderConfigurationError(
+          markFailureReason(
+            "model-unavailable",
+            `The model "${model}" is not available to this API key. Pass \`model\` in the provider configuration to pin one your key can use.`
+          ),
+          { cause }
+        );
+      }
+
       const rejection = structuredOutput === "json_schema" ? classifySchemaRejection(cause) : null;
 
       if (rejection === "model-does-not-support") {

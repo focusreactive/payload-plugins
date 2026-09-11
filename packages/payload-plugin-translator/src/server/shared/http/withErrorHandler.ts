@@ -1,6 +1,7 @@
 import { APIError } from "payload";
 
 import { ServerResponse } from "./ServerResponse";
+import { failureReasonText } from "./toClientErrorMessage";
 
 /**
  * Wraps async handler with error handling.
@@ -17,7 +18,7 @@ export function withErrorHandler<T extends (...args: any[]) => Promise<Response>
         return ServerResponse.custom(e.message, e.status);
       }
       if (e instanceof Error) {
-        return ServerResponse.internalServerError(e.message);
+        return ServerResponse.internalServerError(failureReasonText(e.message) ?? e.message);
       }
       return ServerResponse.internalServerError();
     }
