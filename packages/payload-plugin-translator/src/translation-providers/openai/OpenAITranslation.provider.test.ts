@@ -299,7 +299,7 @@ describe("createOpenAIProvider", () => {
       expect(result).toEqual({ 0: "Hallo" });
     });
 
-    it("defaults the model to gpt-4o and honours an override", async () => {
+    it("defaults the model to gpt-5.4-mini and honours an override", async () => {
       const { client, calls } = stubClient('{"0":"Hallo"}');
 
       await createOpenAIProvider({ client }).translate({ 0: "Hello" }, "en", "de");
@@ -309,7 +309,7 @@ describe("createOpenAIProvider", () => {
         "de"
       );
 
-      expect(calls[0].model).toBe("gpt-4o");
+      expect(calls[0].model).toBe("gpt-5.4-mini");
       expect(calls[1].model).toBe("gpt-4o-mini");
     });
 

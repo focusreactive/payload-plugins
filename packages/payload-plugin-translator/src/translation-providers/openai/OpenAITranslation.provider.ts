@@ -6,7 +6,7 @@ import type { OpenAIClientShape } from "./OpenAI.shapes";
 import { openAIComplete } from "./openAIComplete";
 import type { OpenAISamplingParams, OpenAIStructuredOutput } from "./openAIComplete";
 
-const DEFAULT_MODEL = "gpt-4o";
+const DEFAULT_MODEL = "gpt-5.4-mini";
 
 /** The SDK's own default is ten minutes — far too long when a translation blocks a live editor request. */
 const DEFAULT_TIMEOUT_MS = 60_000;
@@ -15,7 +15,7 @@ type OpenAIProviderBase = {
   /**
    * Model used for translation.
    *
-   * @default 'gpt-4o' — may move in a minor release; pin it if you need reproducibility.
+   * @default 'gpt-5.4-mini' — may move in a minor release; pin it if you need reproducibility.
    */
   model?: string;
   /**
