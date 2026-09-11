@@ -1,16 +1,8 @@
 /**
- * Container-level collection: groups a Lexical tree into the units that get translated as one
- * string each, and the fragments inside them.
+ * Groups a Lexical tree into containers and the fragments inside them.
  *
- * Reads only `type`, `text` and `children` — the surface `types.ts` declares. Formatting
- * (`format`, `style`, a link's `fields`) is never read: it travels inside the nodes themselves,
- * which is what lets this layer reorder formatted pieces without understanding formatting.
- *
- * The existing per-node walk (`collectTextNodes.ts`) is left alone: it feeds the per-node
- * translation path and the provenance fingerprint, and widening it would change stored
- * fingerprint values.
- *
- * Design: `docs/plans/2026-09-08-richtext-container-granularity-design.md` §4 (D1, D3, D6, D15, D17).
+ * Formatting (`format`, `style`, a link's `fields`) is deliberately never read: it travels inside
+ * the nodes themselves, which is what lets this layer reorder formatted pieces at all.
  */
 
 import { hasChildren, isSerializedLexicalTextNode } from "./guards";
@@ -20,43 +12,32 @@ import type { SerializedLexicalNode, SerializedTextNode } from "./types";
  * One translatable piece of a container.
  *
  * `node` is where the translation is written; `top` is what goes into the container's rebuilt
- * `children`. They are usually two views of the same subtree — `node` the leaf, `top` the
- * container's direct child above it.
- *
- * When the container's direct child holds more than one leaf (a link with an emphasised word
- * inside), `top` is instead a **copy** of that child holding only this fragment's leaf, and
- * `node` points into that copy. Pushing one shared wrapper once per leaf would duplicate its
- * whole text rather than reorder it.
- *
- * `text` and `node` are `null` together, for a fragment that carries no text at all.
+ * `children`. For a multi-leaf wrapper `top` is a copy holding only this leaf — pushing one
+ * shared wrapper once per leaf would duplicate its whole text instead of reordering it.
  */
-export type InlineFragment = {
-  markId: number;
-  text: string | null;
-  node: SerializedTextNode | null;
-  top: SerializedLexicalNode;
-};
+export type InlineFragment = { markId: number; top: SerializedLexicalNode } & (
+  | { text: string; node: SerializedTextNode }
+  | { text: null; node: null }
+);
 
-/** Why a container cannot use the marked format, when it cannot. */
+/** A fragment that carries text, so `node` is present — what `glueWhitespace` can append to. */
+type TextFragment = Extract<InlineFragment, { text: string }>;
+
 export type ContainerSkipReason =
-  /** Its source text contains a mark-shaped sequence, so parsing a reply would be ambiguous. */
+  /** Parsing the reply would be ambiguous — see `MARK_SHAPED`. */
   | "mark-shaped-source"
-  /** A single text leaf: nothing to reorder, so marks would be pure cost. */
+  /** Nothing to reorder, so marks would be pure cost — not a failure. */
   | "single-leaf"
   | "no-translatable-text"
   /**
-   * A wrapper holds several leaves *and* a node that is neither: copying the wrapper once per
-   * leaf keeps only the path down to that leaf, so the odd node would be dropped from every copy
-   * — silently, with no fragment of its own. Skipping is honest where a copy is not.
+   * A multi-leaf wrapper also holding a non-text node: the per-leaf copy keeps only the path down
+   * to its leaf, so that node would vanish from every copy with no fragment and no signal.
    */
   | "unsupported-wrapper";
 
 /**
- * A container and its fragments.
- *
- * `node` is the node whose `children` the caller will rebuild. When `skip` is set the caller
- * translates this container the per-node way instead, and `fragments` is still populated so
- * the decision needs no second walk.
+ * `node` is the node whose `children` the caller rebuilds. `fragments` is populated even when
+ * `skip` is set.
  */
 export type InlineContainer = {
   node: SerializedLexicalNode;
@@ -64,6 +45,7 @@ export type InlineContainer = {
   skip?: ContainerSkipReason;
 };
 
+// Must stay as wide as MARK_TOKEN in ./inlineMarks — a source this misses is a reply that mis-parses.
 const MARK_SHAPED = /<\s*\/?\s*\d+\s*\/?\s*>/u;
 
 const isBlank = (text: string): boolean => text.trim().length === 0;
@@ -71,7 +53,6 @@ const isBlank = (text: string): boolean => text.trim().length === 0;
 const hasDirectTextChild = (node: SerializedLexicalNode): boolean =>
   hasChildren(node) && node.children.some((child) => isSerializedLexicalTextNode(child));
 
-/** A node with no children that is not text: a line break, an inline block, an upload. */
 const hasNonTextLeafInside = (node: SerializedLexicalNode): boolean => {
   if (isSerializedLexicalTextNode(node)) return false;
   if (!hasChildren(node)) return true;
@@ -84,7 +65,6 @@ const leavesOf = (node: SerializedLexicalNode): SerializedTextNode[] => {
   return node.children.flatMap(leavesOf);
 };
 
-/** Copies never share a mutable node: each leaf gets its own chain down from the container's child. */
 const copyChainToLeaf = (
   node: SerializedLexicalNode,
   leaf: SerializedTextNode
@@ -106,12 +86,10 @@ const copyChainToLeaf = (
 };
 
 type Draft =
-  | {
-      kind: "fragment";
-      text: string | null;
-      node: SerializedTextNode | null;
-      top: SerializedLexicalNode;
-    }
+  | ({ kind: "fragment"; top: SerializedLexicalNode } & (
+      | { text: string; node: SerializedTextNode }
+      | { text: null; node: null }
+    ))
   | { kind: "glue"; text: string }
   | { kind: "unsupported" };
 
@@ -152,7 +130,7 @@ const glueWhitespace = (drafts: Draft[]): InlineFragment[] => {
 
   // Searching backwards has to skip text-free fragments: a line break between the text and the
   // whitespace must not send the glue forwards, and at the end of a container it would drop it.
-  const lastWithText = (): InlineFragment | undefined => {
+  const lastWithText = (): TextFragment | undefined => {
     for (let index = fragments.length - 1; index >= 0; index -= 1) {
       const candidate = fragments[index];
       if (candidate && candidate.text !== null) return candidate;
@@ -169,17 +147,27 @@ const glueWhitespace = (drafts: Draft[]): InlineFragment[] => {
       continue;
     }
 
-    const text =
-      draft.text !== null && carried.length > 0
-        ? carried.splice(0).join("") + draft.text
-        : draft.text;
-    fragments.push({ markId: fragments.length + 1, text, node: draft.node, top: draft.top });
+    const markId = fragments.length + 1;
+    if (draft.text === null) {
+      fragments.push({ markId, text: null, node: null, top: draft.top });
+      continue;
+    }
+
+    const text = carried.length > 0 ? carried.splice(0).join("") + draft.text : draft.text;
+    fragments.push({ markId, text, node: draft.node, top: draft.top });
   }
 
   return fragments;
 };
 
-const skipReasonFor = (fragments: InlineFragment[]): ContainerSkipReason | undefined => {
+// Ordered: an unsupported shape and an ambiguous source are correctness problems, so they outrank
+// the last two, which only decide whether marks would pay for themselves.
+const skipReasonFor = (
+  drafts: Draft[],
+  fragments: InlineFragment[]
+): ContainerSkipReason | undefined => {
+  if (drafts.some((draft) => draft.kind === "unsupported")) return "unsupported-wrapper";
+
   const texts = fragments.flatMap((fragment) => (fragment.text === null ? [] : [fragment.text]));
 
   if (texts.some((text) => MARK_SHAPED.test(text))) return "mark-shaped-source";
@@ -191,26 +179,16 @@ const skipReasonFor = (fragments: InlineFragment[]): ContainerSkipReason | undef
 /**
  * Walks a serialized Lexical tree and returns its containers, in document order.
  *
- * A **container** is the nearest node with at least one direct text child. The walk descends
- * until it finds one, then stops: everything below belongs to that container as its content.
+ * A **container** is the nearest node with at least one direct text child; the walk stops there.
  * Naming no node types is deliberate — the rule holds for paragraphs, headings, list items and
- * quotes alike, and for whatever is added later. The cost is that a node holding both its own
- * inline text and a nested block cannot be told apart from a paragraph holding a link, so the
- * nested block is treated as content. Real Lexical trees do not mix the two.
+ * whatever is added later. The cost: a node mixing its own inline text with a nested block is
+ * treated as a container, and the block becomes content. Real Lexical trees do not mix the two.
  *
- * Guarantees:
- * - fragments are in document order, numbered from 1 within each container — the container is
- *   one string, so numbering restarts;
- * - a leaf holding only whitespace (or nothing) never becomes a fragment: its text is glued
- *   onto the nearest fragment that carries text, searching backwards first, then forwards, so
- *   the gap between two words survives and its node drops out. Such a leaf still counts as a
- *   direct text child when deciding whether a node is a container;
- * - copies duplicate the whole chain from the container's direct child down to the leaf, so two
- *   copies never share a mutable node;
- * - **the input tree is not mutated** — the source nodes are read only;
- * - a root with no `children` yields an empty list rather than throwing.
+ * Fragments are numbered from 1 within each container — the container is one string, so the
+ * numbering restarts.
  *
- * @param root - the root node of a serialized Lexical value
+ * The input tree is not mutated, but a fragment's `node` may BE a source node: writing to it
+ * writes into the caller's tree.
  */
 export function collectInlineFragments(root: SerializedLexicalNode): InlineContainer[] {
   const containers: InlineContainer[] = [];
@@ -223,9 +201,7 @@ export function collectInlineFragments(root: SerializedLexicalNode): InlineConta
 
     const drafts = draftsOf(node);
     const fragments = glueWhitespace(drafts);
-    const skip = drafts.some((draft) => draft.kind === "unsupported")
-      ? "unsupported-wrapper"
-      : skipReasonFor(fragments);
+    const skip = skipReasonFor(drafts, fragments);
 
     containers.push({
       node,

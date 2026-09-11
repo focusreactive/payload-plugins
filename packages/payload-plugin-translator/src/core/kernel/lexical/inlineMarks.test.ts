@@ -1,17 +1,9 @@
-/**
- * Contract tests for the numbered inline mark format, written from
- * `docs/plans/2026-09-08-richtext-container-granularity-design.md` §4 (Emitting, Accepting a
- * reply, Marks are flat, Whitespace) and the JSDoc in `inlineMarks.ts` — not from any
- * implementation. Every assertion below quotes a sentence of that contract.
- */
-
 import { describe, it, expect } from "vitest";
 import type { MarkableFragment, MarkFailure, ParsedMark, ParseResult } from "./inlineMarks";
 import { serializeInlineMarks, parseInlineMarks } from "./inlineMarks";
 
 const fragment = (markId: number, text: string | null): MarkableFragment => ({ markId, text });
 
-/** Narrows an accepted reply, so an assertion below fails for its own reason and not for `ok`. */
 const acceptedFragments = (result: ParseResult): ParsedMark[] => {
   if (!result.ok) {
     throw new Error(`expected an accepted reply, got the failure "${result.reason}"`);
@@ -19,7 +11,6 @@ const acceptedFragments = (result: ParseResult): ParsedMark[] => {
   return result.fragments;
 };
 
-/** Narrows a rejected reply the same way. */
 const rejectionReason = (result: ParseResult): MarkFailure => {
   if (result.ok) {
     throw new Error("expected a rejected reply, got an accepted one");
@@ -38,7 +29,6 @@ describe("serializeInlineMarks", () => {
     expect(marked).toBe("<1>a </1><2>red</2><3> car</3>");
   });
 
-  // D4: "Every fragment is wrapped, including ones carrying no formatting."
   it("serialize wraps a lone fragment as well", () => {
     const marked = serializeInlineMarks([fragment(1, "a car")]);
 
@@ -51,8 +41,6 @@ describe("serializeInlineMarks", () => {
     expect(marked).toBe("<2/>");
   });
 
-  // §4 Emitting, "non-text inline node (line break, inline block, upload) | `<n/>`" —
-  // a line break mid-paragraph.
   it("serialize renders a line break between two texts as a self-closing mark", () => {
     const marked = serializeInlineMarks([
       fragment(1, "first line"),
@@ -63,8 +51,6 @@ describe("serializeInlineMarks", () => {
     expect(marked).toBe("<1>first line</1><2/><3>second line</3>");
   });
 
-  // §4 Marks are flat: a link with an emphasised word inside "emits two flat, adjacent marks:
-  // `<4>read the </4><5>docs</5>`" — the number comes from the fragment, not its position.
   it("serialize uses the numbers it was given, not the positions", () => {
     const marked = serializeInlineMarks([fragment(4, "read the "), fragment(5, "docs")]);
 
@@ -80,8 +66,6 @@ describe("serializeInlineMarks", () => {
 
 describe("parseInlineMarks", () => {
   describe("reply order", () => {
-    // §1: sent `<1>a </1><2>red</2><3> car</3>`, returned
-    // `<1>une </1><3>voiture </3><2>rouge</2>` — "fragments come back in the reply's order".
     const frenchSent = [fragment(1, "a "), fragment(2, "red"), fragment(3, " car")];
     const frenchReply = "<1>une </1><3>voiture </3><2>rouge</2>";
 
@@ -103,7 +87,6 @@ describe("parseInlineMarks", () => {
       expect(acceptedFragments(result).map((f) => f.text)).toEqual(["une ", "voiture ", "rouge"]);
     });
 
-    // Same principle, another permutation: a German subordinate clause sends the verb to the end.
     it("reorder: a German subordinate clause comes back in its own order", () => {
       const sent = [
         fragment(1, "I know "),
@@ -194,17 +177,15 @@ describe("parseInlineMarks", () => {
       expect(rejectionReason(result)).toBe("nested-marks");
     });
 
-    it("verdict is crossed-marks when a mark closes with another number", () => {
+    it("verdict is mismatched-close when a mark closes with another number", () => {
       const result = parseInlineMarks("<1>une voiture rouge</2>", [
         fragment(1, "a "),
         fragment(2, "red"),
       ]);
 
-      expect(rejectionReason(result)).toBe("crossed-marks");
+      expect(rejectionReason(result)).toBe("mismatched-close");
     });
 
-    // Same row: "Unclosed ... marks | corrupt" → `unclosed-mark`
-    // ("A mark opened and never closed").
     it("verdict is unclosed-mark when a mark is never closed", () => {
       const result = parseInlineMarks("<1>une </1><2>rouge", [
         fragment(1, "a "),
@@ -312,7 +293,6 @@ describe("parseInlineMarks", () => {
       expect(acceptedFragments(result)[0]?.text).toBe("une ");
     });
 
-    // The rule fires only for a source that "began or ended with a space".
     it("edge whitespace: a fragment whose source had no edge space gains none", () => {
       const result = parseInlineMarks("<1>une</1><2>voiture</2>", [
         fragment(1, "a"),

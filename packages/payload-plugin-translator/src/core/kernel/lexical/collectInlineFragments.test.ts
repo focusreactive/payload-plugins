@@ -1,17 +1,9 @@
-/**
- * Contract tests for the container walk, written from
- * `docs/plans/2026-09-08-richtext-container-granularity-design.md` §4 (Emitting, Finding the
- * container, Whitespace, Plain values) and the JSDoc in `collectInlineFragments.ts` — not from
- * any implementation. Every assertion below quotes a sentence of that contract.
- */
-
 import { describe, it, expect } from "vitest";
 import { collectInlineFragments } from "./collectInlineFragments";
 
 const createNode = (type: string, props?: Record<string, any>, children?: any[]) =>
   ({ type, ...props, ...(children && { children }) }) as any;
 
-/** The children of a rebuilt-array entry, for the wrapper-copy assertions. */
 const childrenOf = (node: unknown): unknown[] =>
   ((node as { children?: unknown[] }).children ?? []) as unknown[];
 
@@ -65,8 +57,6 @@ describe("collectInlineFragments", () => {
       ]);
     });
 
-    // §4 diagram: "list ← no direct text, descend / listitem ← container (each item on its own,
-    // as it must be)".
     it("takes each list item as its own container", () => {
       const firstItem = createNode("listitem", {}, [createNode("text", { text: "first" })]);
       const secondItem = createNode("listitem", {}, [createNode("text", { text: "second" })]);
@@ -78,7 +68,6 @@ describe("collectInlineFragments", () => {
       ]);
     });
 
-    // §4 diagram: "quote → paragraph → text ← the paragraph is the container".
     it("takes a quote's paragraph as the container, not the quote", () => {
       const paragraph = createNode("paragraph", {}, [createNode("text", { text: "quoted" })]);
       const root = createNode("root", {}, [createNode("quote", {}, [paragraph])]);
@@ -86,7 +75,6 @@ describe("collectInlineFragments", () => {
       expect(collectInlineFragments(root).map((container) => container.node)).toEqual([paragraph]);
     });
 
-    // A node with no text child anywhere below never qualifies, so it yields no container.
     it("yields no container for a node with no text children at all", () => {
       const root = createNode("root", {}, [
         createNode("paragraph", {}, [createNode("upload", { relationTo: "media" })]),
@@ -95,7 +83,6 @@ describe("collectInlineFragments", () => {
       expect(collectInlineFragments(root)).toEqual([]);
     });
 
-    // §4 diagram: "block (fields, not children) — no text children, walked past".
     it("walks past a block that carries fields instead of children", () => {
       const first = createNode("paragraph", {}, [createNode("text", { text: "before" })]);
       const second = createNode("paragraph", {}, [createNode("text", { text: "after" })]);
@@ -215,7 +202,6 @@ describe("collectInlineFragments", () => {
       ]);
     });
 
-    // Emitting table, row 1: "text leaf, direct child of the container | the leaf | the same node".
     it("points a direct text leaf's node at that very leaf", () => {
       const leaf = createNode("text", { text: "Buy " });
       const root = createNode("root", {}, [
@@ -238,8 +224,6 @@ describe("collectInlineFragments", () => {
       expect(fragment?.top).toBe(fragment?.node);
     });
 
-    // Emitting table, row 2: "the container's direct child holds exactly one leaf | the leaf |
-    // that direct child — any chain above the leaf rides along inside it".
     it("uses the container's direct child as top when that wrapper holds one leaf", () => {
       const link = createNode("link", { url: "https://example.com" }, [
         createNode("text", { text: "our product" }),
@@ -276,7 +260,6 @@ describe("collectInlineFragments", () => {
       expect(collectInlineFragments(root)[0]?.fragments[1]?.top).toBe(mark);
     });
 
-    // Emitting table, row 3 + §4 Marks are flat: a link containing an emphasised word
     const linkWithTwoLeaves = () => {
       const emphasised = createNode("text", { text: "docs", format: 1 });
       const plain = createNode("text", { text: "read the " });
@@ -323,8 +306,6 @@ describe("collectInlineFragments", () => {
       expect(childrenOf(fragment?.top)[0]).toBe(fragment?.node);
     });
 
-    // Emitting table, row 4: "non-text inline node (line break, inline block, upload) | `<n/>`",
-    // with no node of its own — a line break mid-paragraph.
     const lineBreakMidParagraph = () => {
       const lineBreak = createNode("linebreak");
       const root = createNode("root", {}, [
@@ -365,7 +346,6 @@ describe("collectInlineFragments", () => {
   });
 
   describe("whitespace-only nodes", () => {
-    // §4 Whitespace: "Buy" / " " / "our product" formatted.
     const spaceBetweenWords = () => {
       const buy = createNode("text", { text: "Buy" });
       const space = createNode("text", { text: " " });
@@ -430,8 +410,6 @@ describe("collectInlineFragments", () => {
       expect(fragments?.map((fragment) => fragment.text)).toEqual(["Hello ", null, "World"]);
     });
 
-    // Same guarantee at the end of a container: with nothing following, the glue has nowhere to
-    // go forwards, and dropping it would lose a character with no signal.
     it("whitespace: does not lose trailing glue after a text-free fragment", () => {
       const root = createNode("root", {}, [
         createNode("paragraph", {}, [
@@ -462,8 +440,6 @@ describe("collectInlineFragments", () => {
   });
 
   describe("containers that cannot use marks", () => {
-    // D3 / "mark-shaped-source": "Its source text contains a mark-shaped sequence, so parsing a
-    // reply would be ambiguous." The shapes named are `<12>`, `</12>`, `<12/>`.
     it("mark-shaped: an opening-shaped sequence in the source skips the container", () => {
       const root = createNode("root", {}, [
         createNode("paragraph", {}, [
@@ -516,7 +492,6 @@ describe("collectInlineFragments", () => {
       expect(collectInlineFragments(root)[0]?.fragments).toHaveLength(2);
     });
 
-    // D3: "Plain `<div>` ... unaffected — only digits between angle brackets collide".
     it("mark-shaped: a plain tag like <div> is not mark-shaped", () => {
       const root = createNode("root", {}, [
         createNode("paragraph", {}, [
@@ -530,7 +505,6 @@ describe("collectInlineFragments", () => {
       expect(collectInlineFragments(root)[0]?.skip).toBeUndefined();
     });
 
-    // D3: "or `5 < 10` are unaffected".
     it("mark-shaped: a comparison like 5 < 10 is not mark-shaped", () => {
       const root = createNode("root", {}, [
         createNode("paragraph", {}, [
@@ -544,8 +518,6 @@ describe("collectInlineFragments", () => {
       expect(collectInlineFragments(root)[0]?.skip).toBeUndefined();
     });
 
-    // D6 / "single-leaf": "A single unformatted leaf: there is nothing to reorder and
-    // marks would be pure cost."
     it("skips a container that is one plain text leaf", () => {
       const root = createNode("root", {}, [
         createNode("paragraph", {}, [createNode("text", { text: "A plain paragraph." })]),
@@ -605,7 +577,7 @@ describe("collectInlineFragments", () => {
 
       const containers = collectInlineFragments(root);
 
-      // Same reason as above, plus the copy itself: `top` must not be the wrapper from the tree.
+      // Length assertion as above: without it a collector returning [] would pass this test.
       expect(containers[0]?.fragments).toHaveLength(3);
       expect(containers[0]?.fragments[1]?.top).not.toBe(
         (root as { children: { children: unknown[] }[] }).children[0]?.children[1]
@@ -615,9 +587,6 @@ describe("collectInlineFragments", () => {
   });
 
   describe("wrapper shapes the copy cannot carry", () => {
-    // Copying a wrapper keeps only the path down to one leaf, so a sibling that is neither a leaf
-    // nor on that path — a line break between two formatted words inside one link — would vanish
-    // from every copy with no fragment and no warning. Skipping the container is the honest answer.
     it("wrapper: skips a container whose multi-leaf wrapper holds a node the copy would drop", () => {
       const root = createNode("root", {}, [
         createNode("paragraph", {}, [
