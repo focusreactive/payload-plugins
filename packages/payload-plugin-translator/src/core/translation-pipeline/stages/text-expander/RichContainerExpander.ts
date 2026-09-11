@@ -71,7 +71,6 @@ export class RichContainerExpander implements TextExpander {
       emit(text, (at) => ({
         type: "richContainer",
         index: at,
-        text,
         containerRef: container.node,
         fragments: container.fragments,
       }));

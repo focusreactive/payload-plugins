@@ -137,8 +137,8 @@ describe("RichTextExpander", () => {
 
       expect(result.chunks).toHaveLength(2);
       expect(result.chunks[0].type).toBe("richText");
-      expect(result.chunks[0].text).toBe("Hello");
-      expect(result.chunks[1].text).toBe("World");
+      expect(result.textMap[0]).toBe("Hello");
+      expect(result.textMap[1]).toBe("World");
     });
 
     it("assigns sequential indices", () => {
@@ -190,7 +190,7 @@ describe("RichTextExpander", () => {
       const result = expander.expand(chunk, value, 0);
 
       expect(result.chunks).toHaveLength(1);
-      expect(result.chunks[0].text).toBe("Title");
+      expect(result.textMap[0]).toBe("Title");
     });
 
     it("expands list with multiple items", () => {
@@ -224,9 +224,9 @@ describe("RichTextExpander", () => {
       const result = expander.expand(chunk, value, 0);
 
       expect(result.chunks).toHaveLength(3);
-      expect(result.chunks[0].text).toBe("Click ");
-      expect(result.chunks[1].text).toBe("here");
-      expect(result.chunks[2].text).toBe(" to continue");
+      expect(result.textMap[0]).toBe("Click ");
+      expect(result.textMap[1]).toBe("here");
+      expect(result.textMap[2]).toBe(" to continue");
     });
 
     it("expands quote with nested paragraph", () => {
@@ -240,7 +240,7 @@ describe("RichTextExpander", () => {
       const result = expander.expand(chunk, value, 0);
 
       expect(result.chunks).toHaveLength(1);
-      expect(result.chunks[0].text).toBe("Famous quote");
+      expect(result.textMap[0]).toBe("Famous quote");
     });
 
     it("expands paragraph with multiple formatted text nodes", () => {
@@ -385,7 +385,7 @@ describe("RichTextExpander", () => {
       const result = expander.expand(chunk, value, 0);
 
       expect(result.chunks).toHaveLength(1);
-      expect(result.chunks[0].text).toBe("Text content");
+      expect(result.textMap[0]).toBe("Text content");
     });
 
     it("only collects text nodes from mixed content", () => {

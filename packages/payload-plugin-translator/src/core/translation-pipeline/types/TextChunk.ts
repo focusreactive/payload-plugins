@@ -41,8 +41,6 @@ export type RichTextChunk = {
 export type RichContainerChunk = {
   type: "richContainer";
   index: number;
-  /** The marked string sent for translation, not source prose — never hash or display it */
-  text: string;
   /** The container whose `children` are rebuilt when the reply reorders marks */
   containerRef: SerializedLexicalNode;
   /** Fragments in document order, as collected */

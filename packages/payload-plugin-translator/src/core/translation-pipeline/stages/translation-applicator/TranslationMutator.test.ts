@@ -37,7 +37,6 @@ const chunkOf = (
 ): RichContainerChunk => ({
   type: "richContainer",
   index: 0,
-  text: "<1>a </1><2>red</2><3> car</3>",
   containerRef: container,
   fragments,
   ...(reply ? { reply } : {}),

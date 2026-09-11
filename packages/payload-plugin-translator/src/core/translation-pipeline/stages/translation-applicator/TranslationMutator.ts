@@ -59,6 +59,10 @@ export class TranslationMutator {
         chunk.dataRef[chunk.key] = translation;
       } else if (isRichTextChunk(chunk)) {
         chunk.nodeRef.text = translation;
+      } else {
+        // Exhaustiveness: a new TextChunk kind must be written here, not silently skipped.
+        const exhaustive: never = chunk;
+        throw new Error(`unhandled text chunk: ${String(exhaustive)}`);
       }
     }
   }

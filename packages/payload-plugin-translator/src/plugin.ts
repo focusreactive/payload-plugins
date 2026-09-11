@@ -108,6 +108,10 @@ export type TranslatorPluginConfig = {
      * translating node by node. A container whose reply comes back with damaged marks is left in
      * its source language rather than half-written.
      *
+     * Turning it back off stops future translations from splitting wrappers; documents already
+     * translated under it stay split. And the next major removes the flag itself, so it is a
+     * schedule, not a permanent safety valve.
+     *
      * @default false
      * @deprecated Transitional. Removed in the next major, when this becomes the only mode.
      * @see docs/DEPRECATIONS.md#experimental-inline-marks — why this exists and when it goes
