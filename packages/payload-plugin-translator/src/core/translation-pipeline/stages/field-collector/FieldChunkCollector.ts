@@ -129,8 +129,11 @@ export class FieldChunkCollector {
       walker
     );
 
+    // A detached copy, because write-back mutates an object-valued leaf (a rich-text tree) in
+    // place: seating the caller's own object here would translate their source document. Scalars
+    // are immutable, so they are seated as they are.
     for (const { dataRef, key, sourceValue } of selected) {
-      dataRef[key] = sourceValue;
+      dataRef[key] = isObject(sourceValue) ? structuredClone(sourceValue) : sourceValue;
     }
 
     return chunks;

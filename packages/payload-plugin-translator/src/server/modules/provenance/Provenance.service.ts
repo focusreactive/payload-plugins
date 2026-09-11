@@ -39,9 +39,12 @@ export class ProvenanceService {
   }
 
   /**
-   * Hash the PRISTINE source. The caller MUST pass source fetched **before** the translation pipeline
-   * runs — the pipeline mutates object-valued leaves (e.g. richText nodes) in place, so hashing after
-   * it would capture the target translation and make every fresh translation look instantly stale.
+   * Hash the source the translation was made from — the baseline staleness is later measured against.
+   *
+   * Ordering used to matter: the pipeline wrote into object-valued leaves it shared with the caller's
+   * source, so hashing afterwards captured the translation and reported every fresh translation as
+   * stale. It now detaches those leaves, so this may be called on either side of the pipeline.
+   *
    * Returns `null` on any failure (no schema, hashing error) so provenance is skipped, not the translation.
    */
   captureFingerprint(
