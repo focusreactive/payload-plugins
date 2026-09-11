@@ -1,8 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { collectInlineFragments } from "./collectInlineFragments";
+import type { SerializedLexicalNode } from "./types";
 
-const createNode = (type: string, props?: Record<string, any>, children?: any[]) =>
-  ({ type, ...props, ...(children && { children }) }) as any;
+const createNode = (
+  type: string,
+  props?: Record<string, unknown>,
+  children?: unknown[]
+): SerializedLexicalNode =>
+  ({ type, ...props, ...(children && { children }) }) as SerializedLexicalNode;
 
 const childrenOf = (node: unknown): unknown[] =>
   ((node as { children?: unknown[] }).children ?? []) as unknown[];
@@ -43,6 +48,7 @@ describe("collectInlineFragments", () => {
 
       const containers = collectInlineFragments(root);
 
+      expect(containers).toHaveLength(1);
       expect(containers.some((container) => container.node === link)).toBe(false);
     });
 
@@ -146,9 +152,10 @@ describe("collectInlineFragments", () => {
         ]),
       ]);
 
-      expect(collectInlineFragments(root).every((container) => container.skip !== undefined)).toBe(
-        true
-      );
+      const containers = collectInlineFragments(root);
+
+      expect(containers).toHaveLength(2);
+      expect(containers.every((container) => container.skip !== undefined)).toBe(true);
     });
   });
 
@@ -221,6 +228,7 @@ describe("collectInlineFragments", () => {
 
       const fragment = collectInlineFragments(root)[0]?.fragments[0];
 
+      expect(fragment).toBeDefined();
       expect(fragment?.top).toBe(fragment?.node);
     });
 
@@ -278,8 +286,10 @@ describe("collectInlineFragments", () => {
 
     it("gives a multi-leaf wrapper's fragment a copy of the wrapper as top, not the wrapper", () => {
       const { root, link } = linkWithTwoLeaves();
+      const fragment = collectInlineFragments(root)[0]?.fragments[1];
 
-      expect(collectInlineFragments(root)[0]?.fragments[1]?.top).not.toBe(link);
+      expect(fragment).toBeDefined();
+      expect(fragment?.top).not.toBe(link);
     });
 
     it("gives each leaf of a multi-leaf wrapper its own separate copy", () => {
@@ -378,6 +388,7 @@ describe("collectInlineFragments", () => {
 
       const fragments = collectInlineFragments(root)[0]?.fragments ?? [];
 
+      expect(fragments).toHaveLength(2);
       expect(fragments.some((piece) => piece.node === space || piece.top === space)).toBe(false);
     });
 
@@ -502,7 +513,10 @@ describe("collectInlineFragments", () => {
         ]),
       ]);
 
-      expect(collectInlineFragments(root)[0]?.skip).toBeUndefined();
+      const containers = collectInlineFragments(root);
+
+      expect(containers).toHaveLength(1);
+      expect(containers[0]?.skip).toBeUndefined();
     });
 
     it("mark-shaped: a comparison like 5 < 10 is not mark-shaped", () => {
@@ -515,7 +529,10 @@ describe("collectInlineFragments", () => {
         ]),
       ]);
 
-      expect(collectInlineFragments(root)[0]?.skip).toBeUndefined();
+      const containers = collectInlineFragments(root);
+
+      expect(containers).toHaveLength(1);
+      expect(containers[0]?.skip).toBeUndefined();
     });
 
     it("skips a container that is one plain text leaf", () => {
@@ -536,7 +553,10 @@ describe("collectInlineFragments", () => {
         ]),
       ]);
 
-      expect(collectInlineFragments(root)[0]?.skip).toBeUndefined();
+      const containers = collectInlineFragments(root);
+
+      expect(containers).toHaveLength(1);
+      expect(containers[0]?.skip).toBeUndefined();
     });
   });
 
@@ -579,9 +599,7 @@ describe("collectInlineFragments", () => {
 
       // Length assertion as above: without it a collector returning [] would pass this test.
       expect(containers[0]?.fragments).toHaveLength(3);
-      expect(containers[0]?.fragments[1]?.top).not.toBe(
-        (root as { children: { children: unknown[] }[] }).children[0]?.children[1]
-      );
+      expect(containers[0]?.fragments[1]?.top).not.toBe(childrenOf(childrenOf(root)[0])[1]);
       expect(root).toEqual(before);
     });
   });
@@ -613,7 +631,10 @@ describe("collectInlineFragments", () => {
         ]),
       ]);
 
-      expect(collectInlineFragments(root)[0]?.skip).toBeUndefined();
+      const containers = collectInlineFragments(root);
+
+      expect(containers).toHaveLength(1);
+      expect(containers[0]?.skip).toBeUndefined();
     });
   });
 });
