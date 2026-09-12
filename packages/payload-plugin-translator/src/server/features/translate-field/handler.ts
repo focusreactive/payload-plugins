@@ -5,6 +5,7 @@ import { translateContent } from "../../../core/translation-pipeline";
 
 import type {
   FieldTranslationNotice,
+  FieldTranslationReason,
   FieldTranslationResult,
 } from "../../../types/wire/field-translation";
 import { FieldTranslationInputSchema, MAX_FIELD_VALUE_BYTES } from "./model";
@@ -18,11 +19,12 @@ const byteLength = (value: unknown): number =>
 const noop = (
   value: unknown,
   level: FieldTranslationNotice["level"],
+  reason: FieldTranslationReason,
   message: string
 ): FieldTranslationResult => ({
   status: "noop",
   value,
-  notice: { level, message },
+  notice: { level, reason, message },
 });
 
 /**
@@ -39,17 +41,17 @@ const noop = (
  * **It always overwrites.** A per-field translate is an explicit "translate this one now", so
  * there is no strategy to choose and `skip_existing` has no meaning on this surface.
  *
- * **"I cannot translate this" is a success, not an error.** Six situations come back `200` with
- * `status: "noop"`, the source value unchanged, and a notice explaining which:
+ * **"I cannot translate this" is a success, not an error.** Five situations come back `200` with
+ * `status: "noop"`, the source value unchanged, and a notice naming which. `reason` is what tells
+ * them apart: two of the five carry the same `message` word for word.
  *
- * | Situation | Notice level |
- * |---|---|
- * | the field holds nothing in the source locale | `info` |
- * | the field's type is not one this plugin translates | `info` |
- * | the field is excluded via `withFieldTranslation({ exclude: true })` | `info` |
- * | the path runs into `blocks` and the saved document does not say which block | `info` |
- * | the path runs through a **localized** `blocks` or `array` | `warning` |
- * | nothing translatable was found once the subtree was walked | `info` |
+ * | `reason` | When | level |
+ * |---|---|---|
+ * | `block-unresolved` | the path runs into `blocks` and the saved document does not say which block sits there | `info` |
+ * | `localized-list` | the path runs through a **localized** `blocks` or `array` | `warning` |
+ * | `not-translatable` | the path lands on a field whose type this plugin does not translate — a container named directly is judged by its own type, not by what it holds | `info` |
+ * | `excluded` | the field opted out via `withFieldTranslation({ exclude: true })` | `info` |
+ * | `nothing-translatable` | the path landed on a translatable leaf that held no translatable text: empty in the source locale, or not localized, so there is one value for every locale | `info` |
  *
  * The one `warning` is the case where the request is answerable but the answer would be wrong:
  * a localized list has its own order per locale, so an index in the path cannot be matched across
@@ -120,6 +122,7 @@ export class TranslateFieldHandler {
         noop(
           sourceValue,
           "info",
+          "block-unresolved",
           "Couldn't resolve the block for this field in the source document"
         )
       );
@@ -131,18 +134,19 @@ export class TranslateFieldHandler {
         noop(
           sourceValue,
           "warning",
+          "localized-list",
           "This field is inside a localized block — translate the whole document instead, so blocks stay aligned across locales"
         )
       );
     }
     if (resolution.status === "not-translatable") {
       return ServerResponse.success(
-        noop(sourceValue, "info", "Nothing to translate in this field")
+        noop(sourceValue, "info", "not-translatable", "Nothing to translate in this field")
       );
     }
     if (resolution.status === "excluded") {
       return ServerResponse.success(
-        noop(sourceValue, "info", "This field is excluded from translation")
+        noop(sourceValue, "info", "excluded", "This field is excluded from translation")
       );
     }
 
@@ -159,7 +163,7 @@ export class TranslateFieldHandler {
 
     if (!translated) {
       return ServerResponse.success(
-        noop(sourceValue, "info", "Nothing to translate in this field")
+        noop(sourceValue, "info", "nothing-translatable", "Nothing to translate in this field")
       );
     }
 

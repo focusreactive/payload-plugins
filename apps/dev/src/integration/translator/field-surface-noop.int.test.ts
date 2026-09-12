@@ -6,11 +6,11 @@ import { bootTestPayload } from "./bootTestPayload";
 import type { TestPayload } from "./bootTestPayload";
 import { callEndpoint } from "./callEndpoint";
 
-// The six situations `POST /translate/field` answers with `200` + `status: "noop"` instead of an
-// error. One collection carries all six, because a spec file may boot Payload only once and each
-// situation needs its own field shape.
+// The five reasons `POST /translate/field` answers with `200` + `status: "noop"` instead of an
+// error. One collection carries every shape that produces one, because a spec file may boot
+// Payload only once.
 
-type Notice = { level: string; message: string };
+type Notice = { level: string; reason: string; message: string };
 type Reply = { status: string; value: unknown; notice?: Notice };
 
 /**
@@ -94,7 +94,7 @@ const CASES = {
 type CaseName = keyof typeof CASES;
 type Sent = { status: number; reply: Reply };
 
-describe("per-field translation — the six answers that are a noop, not an error", () => {
+describe("per-field translation — the reasons a noop is a noop", () => {
   let ctx: TestPayload;
   let id: string;
   let replies: Record<CaseName, Sent>;
@@ -138,7 +138,11 @@ describe("per-field translation — the six answers that are a noop, not an erro
     const { status, reply } = replies.empty;
     expect(status).toBe(200);
     expect(reply.status).toBe("noop");
-    expect(reply.notice).toEqual({ level: "info", message: expect.any(String) });
+    expect(reply.notice).toEqual({
+      level: "info",
+      reason: "nothing-translatable",
+      message: expect.any(String),
+    });
   });
 
   it("a field whose type is not one the plugin translates is a noop with an info notice", () => {
@@ -147,7 +151,7 @@ describe("per-field translation — the six answers that are a noop, not an erro
     expect(reply).toEqual({
       status: "noop",
       value: 42,
-      notice: { level: "info", message: expect.any(String) },
+      notice: { level: "info", reason: "not-translatable", message: expect.any(String) },
     });
   });
 
@@ -157,7 +161,7 @@ describe("per-field translation — the six answers that are a noop, not an erro
     expect(reply).toEqual({
       status: "noop",
       value: "classified",
-      notice: { level: "info", message: expect.any(String) },
+      notice: { level: "info", reason: "excluded", message: expect.any(String) },
     });
   });
 
@@ -165,7 +169,11 @@ describe("per-field translation — the six answers that are a noop, not an erro
     const { status, reply } = replies.blocksWithoutRow;
     expect(status).toBe(200);
     expect(reply.status).toBe("noop");
-    expect(reply.notice).toEqual({ level: "info", message: expect.any(String) });
+    expect(reply.notice).toEqual({
+      level: "info",
+      reason: "block-unresolved",
+      message: expect.any(String),
+    });
   });
 
   it("a path through a localized blocks field is a noop with a warning notice", () => {
@@ -174,7 +182,7 @@ describe("per-field translation — the six answers that are a noop, not an erro
     expect(reply).toEqual({
       status: "noop",
       value: "Card one",
-      notice: { level: "warning", message: expect.any(String) },
+      notice: { level: "warning", reason: "localized-list", message: expect.any(String) },
     });
   });
 
@@ -184,15 +192,21 @@ describe("per-field translation — the six answers that are a noop, not an erro
     expect(reply).toEqual({
       status: "noop",
       value: "Row one",
-      notice: { level: "warning", message: expect.any(String) },
+      notice: { level: "warning", reason: "localized-list", message: expect.any(String) },
     });
   });
 
-  it("a subtree holding nothing translatable is a noop with an info notice", () => {
+  // A container named directly by the path is judged by its own type, not by what it holds — so a
+  // group whose only leaf is excluded answers `not-translatable`, the same as a number field would.
+  it("a container named by the path is judged by its own type", () => {
     const { status, reply } = replies.nothingInTheSubtree;
     expect(status).toBe(200);
     expect(reply.status).toBe("noop");
-    expect(reply.notice).toEqual({ level: "info", message: expect.any(String) });
+    expect(reply.notice).toEqual({
+      level: "info",
+      reason: "not-translatable",
+      message: expect.any(String),
+    });
   });
 
   it("writes nothing — the document is unchanged in every locale", async () => {
