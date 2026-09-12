@@ -1,3 +1,16 @@
+# @focus-reactive/payload-plugin-translator [0.13.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.12.0...@focus-reactive/payload-plugin-translator@0.13.0) (2026-09-12)
+
+
+### Bug Fixes
+
+* **translator:** let the per-field control translate rich text by container ([1b9066c](https://github.com/focusreactive/payload-plugins/commit/1b9066cc47a292326179a28082d9203c9a0af3e0))
+
+
+### Features
+
+* **translator:** name why a per-field translation declined, for code not just for a reader ([5ded8b4](https://github.com/focusreactive/payload-plugins/commit/5ded8b4151f7a8c4a0e1f27076999e9c545b4402))
+* **translator:** translate rich text one container at a time, behind a flag ([487d046](https://github.com/focusreactive/payload-plugins/commit/487d046daaf5a813623912e9ea32a7f57a6a0d1b))
+
 # @focus-reactive/payload-plugin-translator [0.12.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.11.5...@focus-reactive/payload-plugin-translator@0.12.0) (2026-09-11)
 
 
