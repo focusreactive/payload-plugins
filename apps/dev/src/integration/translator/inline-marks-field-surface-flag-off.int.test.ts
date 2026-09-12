@@ -3,18 +3,20 @@ import { bootTestPayload } from "./bootTestPayload";
 import { SOURCE_ORDER, translateField } from "./fieldSurfaceFixture";
 import type { TestPayload } from "./bootTestPayload";
 
-describe("per-field translation, the mode off", () => {
+describe("per-field translation, the provider able but the mode off", () => {
   let ctx: TestPayload;
 
   beforeAll(async () => {
-    ctx = await bootTestPayload({ fieldSurface: true });
+    ctx = await bootTestPayload({ declareCapability: true, fieldSurface: true });
   });
 
   afterAll(async () => {
     await ctx.cleanup();
   });
 
-  it("keeps source order, translating node by node", async () => {
+  // The fourth corner of (flag × capability), and the only one that separates "forwards the
+  // configured flag" from "reads the provider's capability": in the other three the two agree.
+  it("keeps the per-node path, because the option is what decides", async () => {
     expect(await translateField(ctx)).toEqual(SOURCE_ORDER);
   });
 });

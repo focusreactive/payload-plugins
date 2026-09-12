@@ -2,6 +2,10 @@
  * Wording validated against 396 live translations (French, German, Japanese × four models) before
  * it shipped: the fallback rate was ~1% on gpt-4o and zero on newer models. Reword it only with
  * the same measurement in hand.
+ *
+ * A rule telling the model to keep each mark around the same words was measured and rejected: it
+ * tightens mark boundaries at the cost of target word order. See
+ * `docs/plans/2026-09-12-field-surface-inline-marks.task.md`.
  */
 const INLINE_MARKS_INSTRUCTION = `Some values contain numbered inline marks, written as <1>text</1> or <5/>. They carry formatting, not content.
 Return every mark exactly once, keeping its number, and put each mark where the translated sentence needs it — the order of marks may change.
