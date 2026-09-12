@@ -27,7 +27,11 @@ import { Header } from "./globals/Header";
 import { abAdapter } from "./lib/ab-testing/dbAdapter";
 import { resolveDbAdapter } from "./lib/database/resolveAdapter";
 import { loggingLifecycle } from "./lib/translator/lifecycleLogging";
-import { resolveTranslationProvider, resolveTranslatorRunner } from "./lib/translator/devToggles";
+import {
+  resolveInlineMarks,
+  resolveTranslationProvider,
+  resolveTranslatorRunner,
+} from "./lib/translator/devToggles";
 
 const baseDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -103,6 +107,7 @@ export default buildConfig({
       levels: [documentLevel(), collectionLevel(), fieldLevel()],
       provenance: true,
       lifecycle: loggingLifecycle,
+      experimental: { inlineMarks: resolveInlineMarks() },
     }),
     analyticsPlugin({
       ga4: {
