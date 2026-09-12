@@ -30,6 +30,7 @@ export type TranslationContext = {
   /** Resolved target-language selection mode (`'single'` default) — drives which target control the
    * admin forms render. */
   readonly targetSelection: TargetSelectionMode;
+  readonly inlineMarks: boolean;
 };
 
 /**

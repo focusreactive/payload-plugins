@@ -36,4 +36,6 @@ export type FieldTranslationInput = z.infer<typeof FieldTranslationInputSchema>;
 export type FieldTranslationConfig = {
   schemaMap: CollectionSchemaMap;
   translationProvider: TranslationProvider;
+  /** Not optional: an omitted flag would silently select per-node translation instead of failing to compile. */
+  inlineMarks: boolean;
 };

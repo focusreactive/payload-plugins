@@ -16,12 +16,12 @@ export type CreateFieldRouteArgs = FieldTranslationConfig & {
  * Wired with the same access + error-envelope plumbing as the document routes.
  */
 export function createFieldRoute({
-  schemaMap,
-  translationProvider,
   access,
   basePath = "/translate",
+  ...config
 }: CreateFieldRouteArgs): Endpoint {
-  const handler = new TranslateFieldHandler({ schemaMap, translationProvider });
+  // Passed through whole: naming the fields here is how one gets dropped without the build noticing.
+  const handler = new TranslateFieldHandler(config);
 
   return {
     path: `${basePath}/field`,

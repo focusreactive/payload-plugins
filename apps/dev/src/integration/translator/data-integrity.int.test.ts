@@ -14,7 +14,7 @@ import { callEndpoint } from "./callEndpoint";
 //   3. non-localized data inside a shared row survives in every locale,
 //   4. re-translating the same locale is non-destructive.
 
-const rev = (s: string) => [...s].reverse().join("");
+const tr = (locale: string, s: string) => (s.trim() ? `${locale}:${s}` : s);
 
 type Block = {
   id?: string;
@@ -99,13 +99,13 @@ describe("data integrity — translation never destroys content", () => {
     // DE is fully populated before the FR pass.
     const deBefore = await read(ctx, id, "de");
     expect((deBefore.sections as Block[]).map((b) => b.heading ?? b.caption)).toEqual([
-      rev("Hero one"),
-      rev("Cta two"),
-      rev("Hero three"),
+      tr("de", "Hero one"),
+      tr("de", "Cta two"),
+      tr("de", "Hero three"),
     ]);
     expect((deBefore.items as Item[]).map((i) => i.label)).toEqual([
-      rev("Item one"),
-      rev("Item two"),
+      tr("de", "Item one"),
+      tr("de", "Item two"),
     ]);
 
     // Translate a second locale — this is what deleted+recreated the shared rows under the bug.
@@ -114,11 +114,14 @@ describe("data integrity — translation never destroys content", () => {
     // DE must be UNCHANGED (the bug wiped it here).
     const de = await read(ctx, id, "de");
     expect((de.sections as Block[]).map((b) => b.heading ?? b.caption)).toEqual([
-      rev("Hero one"),
-      rev("Cta two"),
-      rev("Hero three"),
+      tr("de", "Hero one"),
+      tr("de", "Cta two"),
+      tr("de", "Hero three"),
     ]);
-    expect((de.items as Item[]).map((i) => i.label)).toEqual([rev("Item one"), rev("Item two")]);
+    expect((de.items as Item[]).map((i) => i.label)).toEqual([
+      tr("de", "Item one"),
+      tr("de", "Item two"),
+    ]);
 
     // Source (EN) intact; FR populated.
     const en = await read(ctx, id, "en");
@@ -128,7 +131,10 @@ describe("data integrity — translation never destroys content", () => {
       "Hero three",
     ]);
     const fr = await read(ctx, id, "fr");
-    expect((fr.items as Item[]).map((i) => i.label)).toEqual([rev("Item one"), rev("Item two")]);
+    expect((fr.items as Item[]).map((i) => i.label)).toEqual([
+      tr("fr", "Item one"),
+      tr("fr", "Item two"),
+    ]);
   });
 
   it("keeps block/array ids stable across translation (in-place update, no recreate)", async () => {
@@ -153,9 +159,9 @@ describe("data integrity — translation never destroys content", () => {
     // Everything above is an ABSENCE of change, which a run that translated nothing satisfies just
     // as well. The claim is "translated in place", so the run has to be shown doing the translating.
     expect((de.sections as Block[]).map((b) => b.heading ?? b.caption)).toEqual([
-      rev("Hero one"),
-      rev("Cta two"),
-      rev("Hero three"),
+      tr("de", "Hero one"),
+      tr("de", "Cta two"),
+      tr("de", "Hero three"),
     ]);
   });
 
@@ -177,9 +183,9 @@ describe("data integrity — translation never destroys content", () => {
     // it the case says only "nothing changed", which is true of a run that did nothing.
     const de = await read(ctx, id, "de");
     expect((de.sections as Block[]).map((b) => b.heading ?? b.caption)).toEqual([
-      rev("Hero one"),
-      rev("Cta two"),
-      rev("Hero three"),
+      tr("de", "Hero one"),
+      tr("de", "Cta two"),
+      tr("de", "Hero three"),
     ]);
   });
 
@@ -233,10 +239,10 @@ describe("data integrity — translation never destroys content", () => {
       // Positive control: "nothing was deleted" is also what a pipeline that did nothing produces.
       const de = await readDraft(ctx, id, "de");
       expect(headings(de)).toEqual([
-        rev("Hero one"),
-        rev("Cta two"),
-        rev("Hero three"),
-        rev("Draft-only hero"),
+        tr("de", "Hero one"),
+        tr("de", "Cta two"),
+        tr("de", "Hero three"),
+        tr("de", "Draft-only hero"),
       ]);
     });
 
@@ -250,8 +256,8 @@ describe("data integrity — translation never destroys content", () => {
         "Hero three",
       ]);
       expect(headings(await readDraft(ctx, id, "de"))).toEqual([
-        rev("Hero one"),
-        rev("Hero three"),
+        tr("de", "Hero one"),
+        tr("de", "Hero three"),
       ]);
     });
 
@@ -266,9 +272,9 @@ describe("data integrity — translation never destroys content", () => {
         "Hero one",
       ]);
       expect(headings(await readDraft(ctx, id, "de"))).toEqual([
-        rev("Hero three"),
-        rev("Cta two"),
-        rev("Hero one"),
+        tr("de", "Hero three"),
+        tr("de", "Cta two"),
+        tr("de", "Hero one"),
       ]);
     });
 
@@ -289,10 +295,10 @@ describe("data integrity — translation never destroys content", () => {
         "Draft-only hero",
       ]);
       expect(headings(await read(ctx, id, "de")), "the locale did not go live").toEqual([
-        rev("Hero one"),
-        rev("Cta two"),
-        rev("Hero three"),
-        rev("Draft-only hero"),
+        tr("de", "Hero one"),
+        tr("de", "Cta two"),
+        tr("de", "Hero three"),
+        tr("de", "Draft-only hero"),
       ]);
     });
   });
@@ -305,9 +311,9 @@ describe("data integrity — translation never destroys content", () => {
     // Pin what the first run PRODUCED before comparing the second to it: "both runs agree" is
     // satisfied by "both runs produced nothing".
     expect((first.sections as Block[]).map((b) => b.heading ?? b.caption)).toEqual([
-      rev("Hero one"),
-      rev("Cta two"),
-      rev("Hero three"),
+      tr("de", "Hero one"),
+      tr("de", "Cta two"),
+      tr("de", "Hero three"),
     ]);
 
     await enqueue(ctx, id, "de"); // run it again

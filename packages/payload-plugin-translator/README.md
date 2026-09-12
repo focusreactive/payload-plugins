@@ -145,6 +145,7 @@ Allowed on **`text`, `textarea`, and `richText`** fields (a compile error on oth
 | `provenance`          | `boolean \| { slug?: string }` | No | `false` (disabled) | Opt in to recording a provenance record per translation. _Since v0.7.0._ See [Provenance](#provenance-opt-in) below. |
 | `lifecycle`           | `{ onQueued?, onCompleted?, onFailed? }` | No | `undefined` | Server-side callbacks fired around each task. _Since v0.7.0._ See [Lifecycle callbacks](#lifecycle-callbacks). |
 | `targetSelection`     | `'single' \| 'multi'` | No       | `'single'`                             | Let an editor pick several target locales in one run. _Since v0.10.0._ See [Target-language selection](#target-language-selection) below. |
+| `experimental`        | `{ inlineMarks?: boolean }` | No | `{}` | Transitional switches, adopted per install. See [Rich text, one container at a time](#rich-text-one-container-at-a-time) below. _Since v0.13.0._ |
 
 ```typescript
 translatorPlugin({
@@ -154,6 +155,46 @@ translatorPlugin({
   access: { check: ({ req }) => req.user?.role === "admin" },
 });
 ```
+
+### Rich text, one container at a time
+
+`experimental.inlineMarks` changes how rich text is translated. Off, each text node goes to the
+translation service on its own, so every word stays in the slot its English counterpart occupied —
+which is wrong the moment the target language wants a different order, and it pins formatting to a
+position rather than to a word. On, the whole container — a paragraph, a heading, one list item —
+goes as a single string with its formatting written as numbered marks:
+
+```
+<1>The team has </1><2>published</2><3> the </3><4>new documentation</4><5>.</5>
+```
+
+The service returns the same marks, translated and in whatever order the target language needs, and
+the container is rebuilt from that reply. Emphasis and links travel with their words.
+
+```typescript
+translatorPlugin({
+  collections: [Posts],
+  translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
+  runner: createPayloadJobsRunner(),
+  experimental: { inlineMarks: true },
+});
+```
+
+Two things gate it, both silent by design — a translation still happens either way:
+
+- **The provider must declare it can keep marks** (`capabilities.inlineMarks`).
+  `createOpenAIProvider` does; a provider built from your own `complete` function declares it only
+  if you pass `capabilities: { inlineMarks: true }`. A transport that is not a language model
+  would mangle the marks, so the default is to assume it cannot.
+- **A reply whose marks cannot be used** — one missing, one repeated, one left unclosed — leaves
+  that container in its source language rather than writing half of it. The rest of the document
+  still translates.
+
+`experimental` is permanent; **this entry is deprecated the day it ships**. The next major removes
+the switch, not the behaviour: translating node by node stays as the internal fall-back for a
+source that already contains marks, a single-fragment container, and an unusable reply. Turning the
+switch back off stops future translations from splitting formatting wrappers; documents already
+translated under it keep the shape they were given. _Since v0.13.0._
 
 ### Target-language selection
 

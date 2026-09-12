@@ -8,7 +8,7 @@ import { callEndpoint } from "./callEndpoint";
 //   overwrite     → replaces an existing target value with the new translation.
 //   skip_existing → keeps an already-filled target value, but still fills an EMPTY sibling.
 
-const rev = (s: string) => [...s].reverse().join("");
+const tr = (locale: string, s: string) => (s.trim() ? `${locale}:${s}` : s);
 
 const enqueue = (ctx: TestPayload, id: string, strategy: "overwrite" | "skip_existing") =>
   callEndpoint(ctx.payload, "post", "/translate/enqueue", {
@@ -49,7 +49,7 @@ describe("translation strategies", () => {
     await enqueue(ctx, id, "overwrite");
 
     const de = await ctx.payload.findByID({ collection: "docs", id, locale: "de" });
-    expect(de.title).toBe(rev("En title")); // replaced
+    expect(de.title).toBe(tr("de", "En title")); // replaced
     expect(de.title).not.toBe("Manual DE");
   });
 
@@ -72,6 +72,6 @@ describe("translation strategies", () => {
 
     const de = await ctx.payload.findByID({ collection: "docs", id, locale: "de" });
     expect(de.title).toBe("Keep DE"); // existing kept
-    expect((de.meta as { subtitle?: string }).subtitle).toBe(rev("En sub")); // empty filled
+    expect((de.meta as { subtitle?: string }).subtitle).toBe(tr("de", "En sub")); // empty filled
   });
 });

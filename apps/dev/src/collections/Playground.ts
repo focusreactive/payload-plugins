@@ -7,6 +7,8 @@ import { DeepNestBlock } from "../blocks/DeepNest";
 // The top-level `layout` blocks field is intentionally NOT localized (the leaves inside DeepNest
 // are) — see blocks/DeepNest.ts for the rationale. Create a doc, fill the fields in `en`, save,
 // switch locale, then use the per-field translate control at any depth.
+// Drafts are on here and nowhere else with this depth: `pages` has versions but a flat
+// shape, so this is the only place where an unpublished draft meets nested blocks.
 export const Playground: CollectionConfig = {
   slug: "playground",
   admin: {
@@ -25,4 +27,7 @@ export const Playground: CollectionConfig = {
       type: "blocks",
     },
   ],
+  versions: {
+    drafts: true,
+  },
 };

@@ -118,8 +118,8 @@ describe("with the host's concurrency control on", () => {
     await first;
     await runQueue();
 
-    expect(await titleIn(id, "de"), "de was lost").toBe("ecruos evisulcxE");
-    expect(await titleIn(id, "fr"), "fr was lost").toBe("ecruos evisulcxE");
+    expect(await titleIn(id, "de"), "de was lost").toBe("de:Exclusive source");
+    expect(await titleIn(id, "fr"), "fr was lost").toBe("fr:Exclusive source");
   });
 
   it("still runs jobs for different documents together", async () => {

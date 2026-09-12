@@ -53,4 +53,30 @@ describe("buildSystemPrompt", () => {
       buildSystemPrompt({ sourceLng: "en", targetLng: "fr", override: () => "only this" })
     ).toBe("only this");
   });
+
+  describe("inline marks", () => {
+    it("appends the mark instruction when the values carry marks", () => {
+      const prompt = buildSystemPrompt({ sourceLng: "en", targetLng: "de", hasInlineMarks: true });
+
+      expect(prompt).toContain("Return every mark exactly once");
+    });
+
+    it("says nothing about marks when no value carries one", () => {
+      const prompt = buildSystemPrompt({ sourceLng: "en", targetLng: "de" });
+
+      expect(prompt).not.toContain("mark");
+    });
+
+    it("appends the mark instruction after an override that ignores defaultPrompt", () => {
+      const prompt = buildSystemPrompt({
+        sourceLng: "en",
+        targetLng: "de",
+        hasInlineMarks: true,
+        override: () => "Translate to German. Be formal.",
+      });
+
+      expect(prompt.startsWith("Translate to German. Be formal.")).toBe(true);
+      expect(prompt).toContain("Return every mark exactly once");
+    });
+  });
 });

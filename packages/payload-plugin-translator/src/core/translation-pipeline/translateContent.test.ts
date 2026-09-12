@@ -168,6 +168,28 @@ describe("translateContent", () => {
       expect(result).not.toEqual(before);
     });
 
+    it("is unchanged after a rich-text translation in container mode", async () => {
+      const sourceData = { body: richTextValue(["Hello ", "world"]) };
+      const before = structuredClone(sourceData);
+
+      const marksProvider = {
+        capabilities: { inlineMarks: true },
+        translate: async () => ({ 0: "<2>Welt</2><1>Hallo </1>" }),
+      } as TranslationProvider;
+
+      const result = await translateContent({
+        schema: richSchema,
+        sourceData,
+        sourceLng: "en",
+        targetLng: "de",
+        translationProvider: marksProvider,
+        inlineMarks: true,
+      });
+
+      expect(sourceData).toEqual(before);
+      expect(result).not.toEqual(before);
+    });
+
     it("leaves the source fingerprint identical either side of a translation", async () => {
       const sourceData = { body: richTextValue(["Hello ", "world"]) };
       const before = computeSourceFingerprint(sourceData, richSchema);

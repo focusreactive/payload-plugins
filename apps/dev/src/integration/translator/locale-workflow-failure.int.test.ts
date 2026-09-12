@@ -8,7 +8,7 @@ import { callEndpoint } from "./callEndpoint";
 // Its own file: the failing provider is fixed at boot, and a boot is per process (see
 // `bootTestPayload`).
 
-const rev = (s: string) => [...s].reverse().join("");
+const tr = (locale: string, s: string) => (s.trim() ? `${locale}:${s}` : s);
 
 let failing: TestPayload;
 
@@ -57,7 +57,9 @@ describe("when one locale's provider fails", () => {
         })) as Record<string, unknown>
       ).title;
 
-    expect(await read("de"), "the locale before the failure should have landed").toBe(rev(source));
+    expect(await read("de"), "the locale before the failure should have landed").toBe(
+      tr("de", source)
+    );
     expect(await read("fr"), "the failing locale should not have landed").toBeUndefined();
     expect(await read("es"), "the locale after the failure should be untouched").toBeUndefined();
 

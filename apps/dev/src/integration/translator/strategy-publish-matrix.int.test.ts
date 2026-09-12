@@ -8,7 +8,7 @@ type Slug = "docs" | "versioned";
 type Locale = "en" | "de" | "fr";
 
 const SOURCE = "Hello world";
-const MACHINE = [...SOURCE].reverse().join("");
+const MACHINE = `de:${SOURCE}`;
 const REVIEWED = "REVIEWED BY A HUMAN";
 
 let payload: Payload;

@@ -7,7 +7,7 @@ import type { TestPayload } from "./bootTestPayload";
 // (multiple boots per process collide on Payload's module singletons). "xx" is not a configured
 // locale → dropped at config time with a warning; "de" still translates.
 
-const rev = (s: string) => [...s].reverse().join("");
+const tr = (locale: string, s: string) => (s.trim() ? `${locale}:${s}` : s);
 const PROVENANCE = "translator-provenance";
 
 describe("auto-translate — unknown target locale dropped", () => {
@@ -27,7 +27,7 @@ describe("auto-translate — unknown target locale dropped", () => {
     });
     const id = String(created.id);
     const de = await ctx.payload.findByID({ collection: "docs", id, locale: "de" });
-    expect(de.title).toBe(rev("Unknown-locale src"));
+    expect(de.title).toBe(tr("de", "Unknown-locale src"));
     const records = await ctx.payload.find({
       collection: PROVENANCE,
       where: { documentId: { equals: id } },

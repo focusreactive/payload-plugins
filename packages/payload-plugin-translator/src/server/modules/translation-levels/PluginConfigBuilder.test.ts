@@ -12,6 +12,7 @@ const deps = (collections: Array<{ slug: string }> = []) => ({
   schemaMap: new Map(),
   translationProvider: { translate: vi.fn() },
   targetSelection: "single" as const,
+  inlineMarks: false,
 });
 
 const ep = (method: string, path: string): Endpoint =>

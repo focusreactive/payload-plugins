@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
-import type { PlainTextChunk, RichTextChunk, TextChunk } from "../../types";
+import type { PlainTextChunk, RichContainerChunk, RichTextChunk, TextChunk } from "../../types";
+import type { InlineFragment } from "../../../kernel/lexical/collectInlineFragments";
+import type { SerializedLexicalNode } from "../../../kernel/lexical";
 import type { SerializedTextNode } from "../../../kernel/lexical";
 import { TranslationMutator } from "./TranslationMutator";
 
@@ -14,6 +16,34 @@ const createTextNode = (text: string): SerializedTextNode =>
     mode: "normal",
     style: "",
   }) as SerializedTextNode;
+
+/** Direct text leaves, so `top` and `node` are one object — what the collector emits for them. */
+const paragraph = () => {
+  const leaves = [createTextNode("a "), createTextNode("red"), createTextNode(" car")];
+  const container = { type: "paragraph", children: [...leaves] } as SerializedLexicalNode;
+  const fragments: InlineFragment[] = leaves.map((leaf, at) => ({
+    markId: at + 1,
+    text: leaf.text,
+    node: leaf,
+    top: leaf,
+  }));
+  return { container, leaves, fragments };
+};
+
+const chunkOf = (
+  container: SerializedLexicalNode,
+  fragments: InlineFragment[],
+  reply?: { markId: number; text: string }[]
+): RichContainerChunk => ({
+  type: "richContainer",
+  index: 0,
+  containerRef: container,
+  fragments,
+  ...(reply ? { reply } : {}),
+});
+
+const textsOf = (container: SerializedLexicalNode) =>
+  ((container as unknown as { children?: { text?: string }[] }).children ?? []).map((c) => c.text);
 
 describe("TranslationMutator", () => {
   const mutator = new TranslationMutator();
@@ -150,6 +180,43 @@ describe("TranslationMutator", () => {
       mutator.apply(chunks, translations);
 
       expect(data).toEqual({ title: "Привет", slug: "hello", count: 42 });
+    });
+  });
+
+  describe("apply with a RichContainerChunk", () => {
+    it("rebuilds children in the reply's order", () => {
+      const { container, fragments } = paragraph();
+      const chunk = chunkOf(container, fragments, [
+        { markId: 1, text: "une " },
+        { markId: 3, text: "voiture " },
+        { markId: 2, text: "rouge" },
+      ]);
+
+      mutator.apply([chunk], {});
+
+      expect(textsOf(container)).toEqual(["une ", "voiture ", "rouge"]);
+    });
+
+    it("drops the node of a mark that came back empty", () => {
+      const { container, fragments } = paragraph();
+      const chunk = chunkOf(container, fragments, [
+        { markId: 1, text: "une voiture rouge" },
+        { markId: 2, text: "" },
+        { markId: 3, text: "" },
+      ]);
+
+      mutator.apply([chunk], {});
+
+      expect(textsOf(container)).toEqual(["une voiture rouge"]);
+    });
+
+    it("leaves the container untouched when no reply was parsed", () => {
+      const { container, fragments } = paragraph();
+      const chunk = chunkOf(container, fragments);
+
+      mutator.apply([chunk], { 0: "<1>une </1><2>rouge</2><3> voiture</3>" });
+
+      expect(textsOf(container)).toEqual(["a ", "red", " car"]);
     });
   });
 });

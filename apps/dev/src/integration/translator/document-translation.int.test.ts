@@ -10,7 +10,7 @@ import { callEndpoint } from "./callEndpoint";
 // nesting container + a non-localized field, with >=2 blocks and >=2 array items so id reconciliation
 // (the c0a49d1b failure mode) is exercised and the source-not-wiped lock is meaningful.
 
-const rev = (s: string) => [...s].reverse().join("");
+const tr = (locale: string, s: string) => (s.trim() ? `${locale}:${s}` : s);
 
 const EN = {
   _status: "published" as const,
@@ -56,30 +56,30 @@ describe("document translation (manual enqueue, en -> de/fr)", () => {
 
   it("translates every localized leaf across group / array / blocks / tabs into de", async () => {
     const de = await ctx.payload.findByID({ collection: "docs", id, locale: "de" });
-    expect(de.title).toBe(rev("Title source"));
-    expect((de.meta as { subtitle: string }).subtitle).toBe(rev("Subtitle source"));
+    expect(de.title).toBe(tr("de", "Title source"));
+    expect((de.meta as { subtitle: string }).subtitle).toBe(tr("de", "Subtitle source"));
     const items = de.items as { label: string }[];
-    expect(items.map((i) => i.label)).toEqual([rev("Item one"), rev("Item two")]);
+    expect(items.map((i) => i.label)).toEqual([tr("de", "Item one"), tr("de", "Item two")]);
     const sections = de.sections as { blockType: string; heading?: string; caption?: string }[];
     expect(sections.map((b) => b.heading ?? b.caption)).toEqual([
-      rev("Hero one"),
-      rev("Cta text"),
-      rev("Hero two"),
+      tr("de", "Hero one"),
+      tr("de", "Cta text"),
+      tr("de", "Hero two"),
     ]);
-    expect((de.seo as { seoTitle: string }).seoTitle).toBe(rev("Seo source"));
-    expect(de.note).toBe(rev("Note source"));
+    expect((de.seo as { seoTitle: string }).seoTitle).toBe(tr("de", "Seo source"));
+    expect(de.note).toBe(tr("de", "Note source"));
   });
 
   it("populates fr as well (both configured targets)", async () => {
     const fr = await ctx.payload.findByID({ collection: "docs", id, locale: "fr" });
-    expect(fr.title).toBe(rev("Title source"));
-    expect((fr.seo as { seoTitle: string }).seoTitle).toBe(rev("Seo source"));
+    expect(fr.title).toBe(tr("fr", "Title source"));
+    expect((fr.seo as { seoTitle: string }).seoTitle).toBe(tr("fr", "Seo source"));
   });
 
   it("translates localized fields but leaves non-localized ones untouched", async () => {
     const de = await ctx.payload.findByID({ collection: "docs", id, locale: "de" });
 
-    expect(de.title).toBe(rev(EN.title));
+    expect(de.title).toBe(tr("de", EN.title));
     expect(de.ref).toBe("REF-123");
     expect((de.meta as { sku: string }).sku).toBe("SKU-9");
   });

@@ -256,6 +256,83 @@ const run = async () => {
       ),
     },
     {
+      // Every sentence here is one German forces out of English order: the participle or the
+      // infinitive lands at the end of the clause, and negation moves behind the object. The
+      // formatting and the links sit on exactly those travelling words, so a translation that
+      // keeps each piece in its source slot produces visibly broken German — which is what
+      // separates translating a container as one string from translating node by node.
+      title: "Word order",
+      content: doc(
+        heading("h2", "Why word order ", txt("matters", BOLD)),
+        para(
+          txt("The team has "),
+          txt("published", BOLD),
+          txt(" the "),
+          txt("new documentation", ITALIC),
+          txt(".")
+        ),
+        para(
+          txt("We can "),
+          txt("send", BOLD),
+          txt(" you the "),
+          link("full report", "https://payloadcms.com"),
+          txt(" tomorrow.")
+        ),
+        para(
+          txt("She did "),
+          txt("not", BOLD),
+          txt(" read the "),
+          txt("manual", ITALIC),
+          txt(" before she started.")
+        ),
+        para(
+          txt("If you "),
+          txt("register", BOLD),
+          txt(" today, you will receive the "),
+          txt("early access", ITALIC),
+          txt(".")
+        ),
+        para(
+          txt("An editor must be able to "),
+          txt("reorder", BOLD),
+          txt(" the "),
+          link("inline links", "https://payloadcms.com/docs"),
+          txt(" freely.")
+        ),
+        list(
+          "bullet",
+          li(
+            txt("You have "),
+            txt("already", BOLD),
+            txt(" translated this "),
+            txt("page", ITALIC),
+            txt(".")
+          ),
+          li(
+            txt("We will "),
+            txt("not", BOLD),
+            txt(" publish it "),
+            txt("today", ITALIC),
+            txt(".")
+          ),
+          li(
+            txt("The reviewer has "),
+            txt("approved", BOLD),
+            txt(" every "),
+            link("open change", "https://payloadcms.com"),
+            txt(".")
+          )
+        ),
+        quote(
+          txt("Nobody can "),
+          txt("guarantee", BOLD),
+          txt(" that the "),
+          txt("source order", ITALIC),
+          txt(" survives a translation.")
+        )
+      ),
+    },
+    {
       title: "Second article",
       content: doc(
         heading("h2", "A shorter piece"),

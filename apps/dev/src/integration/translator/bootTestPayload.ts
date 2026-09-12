@@ -7,6 +7,7 @@ import {
   createTranslationProvider,
   createSyncRunner,
   documentLevel,
+  fieldLevel,
   translatorPlugin,
   withAutoTranslate,
 } from "@focus-reactive/payload-plugin-translator";
@@ -19,7 +20,8 @@ import type { CollectionConfig, Payload } from "payload";
 import { getPayload } from "payload";
 
 import { createTestDatabase } from "../../lib/database/resolveAdapter";
-import { reverseComplete } from "../../lib/translator/fakeComplete";
+import { fakeComplete } from "../../lib/translator/fakeComplete";
+import type { FakeTranslationOptions } from "../../lib/translator/fakeComplete";
 import { buildTestCollections } from "./testCollections";
 
 /** Payload's `autoRun.limit` default — these specs reproduce the cron's batching, not a run of one. */
@@ -83,6 +85,17 @@ export async function bootTestPayload(opts?: {
   failFor?: string[];
   onTranslate?: (targetLng: string) => Promise<void> | void;
   runner?: TaskRunnerProvider;
+  /** Turn on container-granular rich-text translation, and declare the provider able to keep marks. */
+  inlineMarks?: boolean;
+  /**
+   * Whether the provider declares `capabilities.inlineMarks`. Defaults to `inlineMarks`; set it to
+   * `false` with the flag on to stand in for a third-party provider that cannot keep marks.
+   */
+  declareCapability?: boolean;
+  /** How the fake answers a marked value — reorder by default, keep order, or corrupt it. */
+  fake?: FakeTranslationOptions;
+  /** Also register the synchronous per-field surface, `POST {basePath}/field`. */
+  fieldSurface?: boolean;
 }): Promise<TestPayload> {
   const dir = mkdtempSync(join(tmpdir(), "translator-int-"));
   const { db, drop } = createTestDatabase(join(dir, "test.db"));
@@ -96,15 +109,20 @@ export async function bootTestPayload(opts?: {
     ? collections.map((c) => (c.slug === "docs" ? withAutoTranslate(c, autoTranslate) : c))
     : collections;
 
-  const baseProvider = createTranslationProvider({ complete: reverseComplete });
+  const declaresMarks = opts?.declareCapability ?? opts?.inlineMarks ?? false;
+  const baseProvider = createTranslationProvider({
+    complete: fakeComplete(opts?.fake),
+    ...(declaresMarks ? { capabilities: { inlineMarks: true } } : {}),
+  });
   const failFor = new Set(opts?.failFor);
   let translateCalls = 0;
   const countingProvider: TranslationProvider = {
-    translate: async (input, sourceLng, targetLng) => {
+    ...(declaresMarks ? { capabilities: { inlineMarks: true } } : {}),
+    translate: async (input, sourceLng, targetLng, options) => {
       translateCalls += 1;
       await opts?.onTranslate?.(targetLng);
       if (failFor.has(targetLng)) throw new Error(`provider unavailable for ${targetLng}`);
-      return await baseProvider.translate(input, sourceLng, targetLng);
+      return await baseProvider.translate(input, sourceLng, targetLng, options);
     },
   };
 
@@ -139,8 +157,9 @@ export async function bootTestPayload(opts?: {
         collections: managed,
         translationProvider: countingProvider,
         runner: opts?.runner ?? createSyncRunner(),
-        levels: [documentLevel()],
+        levels: opts?.fieldSurface ? [documentLevel(), fieldLevel()] : [documentLevel()],
         provenance: true,
+        ...(opts?.inlineMarks ? { experimental: { inlineMarks: true } } : {}),
       }),
     ],
   });

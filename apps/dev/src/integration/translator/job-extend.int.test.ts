@@ -92,7 +92,7 @@ describe("a second request extends the live job rather than replacing it", () =>
         fallbackLocale: false,
         draft: true,
       })) as Record<string, unknown>;
-      expect(doc.title, `${locale} was not translated`).toBe("crS");
+      expect(doc.title, `${locale} was not translated`).toBe(`${locale}:Src`);
     }
   });
 

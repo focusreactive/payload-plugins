@@ -16,7 +16,7 @@ type Job = {
   log?: Array<{ state: string; input?: { target_lng?: string } }>;
 };
 
-const rev = (value: string) => [...value].reverse().join("");
+const tr = (locale: string, value: string) => (value.trim() ? `${locale}:${value}` : value);
 
 let ctx: TestPayload;
 let held: (() => void) | undefined;
@@ -115,7 +115,7 @@ describe("adding a locale to a running job", () => {
       logged.map((l) => l[0]),
       "the appended locale never ran"
     ).toEqual(["de", "fr", "es"]);
-    expect(esTitle, "the appended locale was not translated").toBe(rev("Append source"));
+    expect(esTitle, "the appended locale was not translated").toBe(tr("es", "Append source"));
 
     const { totalDocs } = await ctx.payload.count({
       collection: "payload-jobs" as "pages",

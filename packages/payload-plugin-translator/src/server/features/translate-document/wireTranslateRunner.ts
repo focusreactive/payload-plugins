@@ -25,6 +25,7 @@ type WireTranslateRunnerParams = {
   runner: TaskRunnerProvider;
   lifecycle: TranslationLifecycleCallbacks;
   collections: CollectionSlug[];
+  inlineMarks?: boolean;
 };
 
 /**
@@ -42,6 +43,7 @@ export function wireTranslateRunner({
   runner,
   lifecycle,
   collections,
+  inlineMarks = false,
 }: WireTranslateRunnerParams): {
   taskRunnerFactory: TaskRunnerFactory;
   configModifier: ConfigModifier;
@@ -49,7 +51,8 @@ export function wireTranslateRunner({
   const translateHandler = new TranslateDocumentHandler(
     translationProvider,
     schemaMap,
-    provenanceServiceFactory
+    provenanceServiceFactory,
+    inlineMarks
   );
 
   const runnerContext: TaskRunnerContext = {

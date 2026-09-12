@@ -83,7 +83,11 @@ beforeEach(() => {
       ] as Field[],
     ],
   ]);
-  const config: FieldTranslationConfig = { schemaMap, translationProvider: provider };
+  const config: FieldTranslationConfig = {
+    schemaMap,
+    translationProvider: provider,
+    inlineMarks: false,
+  };
   handler = new TranslateFieldHandler(config);
 });
 
@@ -122,6 +126,7 @@ describe("TranslateFieldHandler", () => {
     const body = (await res.json()).data;
     expect(body.status).toBe("noop");
     expect(body.notice.level).toBe("info");
+    expect(body.notice.reason).toBe("nothing-translatable");
     expect(await importTranslateContent()).toHaveBeenCalledWith(
       expect.objectContaining({ sourceData: { title: "Hello" } })
     );
@@ -173,6 +178,7 @@ describe("TranslateFieldHandler", () => {
     const body = (await res.json()).data;
     expect(body.status).toBe("noop");
     expect(body.notice.level).toBe("info");
+    expect(body.notice.reason).toBe("block-unresolved");
     expect(translateContent).not.toHaveBeenCalled();
   });
 
@@ -189,6 +195,7 @@ describe("TranslateFieldHandler", () => {
     const body = (await res.json()).data;
     expect(body.status).toBe("noop");
     expect(body.notice.level).toBe("warning");
+    expect(body.notice.reason).toBe("localized-list");
     expect(translateContent).not.toHaveBeenCalled();
   });
 
@@ -201,6 +208,7 @@ describe("TranslateFieldHandler", () => {
     const body = (await res.json()).data;
     expect(body.status).toBe("noop");
     expect(body.notice.level).toBe("warning");
+    expect(body.notice.reason).toBe("localized-list");
     expect(translateContent).not.toHaveBeenCalled();
   });
 
@@ -209,8 +217,27 @@ describe("TranslateFieldHandler", () => {
 
     const res = await handler.handle(reqWithDoc({ id: "p1", count: 5 }, { field_path: "count" }));
     expect(res.status).toBe(200);
-    expect((await res.json()).data.notice.level).toBe("info");
+    const body = (await res.json()).data;
+    expect(body.notice.level).toBe("info");
+    expect(body.notice.reason).toBe("not-translatable");
     expect(translateContent).not.toHaveBeenCalled();
+  });
+
+  it("tells apart the two no-ops that share a message word for word", async () => {
+    const translateContent = await importTranslateContent();
+
+    const wrongType = await handler.handle(
+      reqWithDoc({ id: "p1", count: 5 }, { field_path: "count" })
+    );
+    translateContent.mockResolvedValue(null);
+    const nothingInside = await handler.handle(reqWithDoc({ id: "p1", title: "Hello" }));
+
+    const a = (await wrongType.json()).data.notice;
+    const b = (await nothingInside.json()).data.notice;
+
+    expect(a.message).toBe(b.message);
+    expect(a.reason).toBe("not-translatable");
+    expect(b.reason).toBe("nothing-translatable");
   });
 
   it("no-ops a field excluded via withFieldTranslation({ exclude }) — provider never called (D1)", async () => {
@@ -224,6 +251,7 @@ describe("TranslateFieldHandler", () => {
     expect(body.status).toBe("noop");
     expect(body.notice.level).toBe("info");
     expect(body.notice.message).toContain("excluded from translation");
+    expect(body.notice.reason).toBe("excluded");
     expect(translateContent).not.toHaveBeenCalled();
   });
 

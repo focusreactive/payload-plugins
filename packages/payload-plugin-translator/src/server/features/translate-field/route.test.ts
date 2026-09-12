@@ -17,7 +17,11 @@ const denyAccess: AccessGuard = { check: vi.fn().mockReturnValue(false) };
 
 describe("createFieldRoute (contract)", () => {
   it("registers POST at {basePath}/field with the default basePath", () => {
-    const endpoint = createFieldRoute({ schemaMap, translationProvider: provider });
+    const endpoint = createFieldRoute({
+      schemaMap,
+      translationProvider: provider,
+      inlineMarks: false,
+    });
     expect(endpoint.path).toBe("/translate/field");
     expect(endpoint.method).toBe("post");
   });
@@ -26,6 +30,7 @@ describe("createFieldRoute (contract)", () => {
     const endpoint = createFieldRoute({
       schemaMap,
       translationProvider: provider,
+      inlineMarks: false,
       basePath: "/i18n",
     });
     expect(endpoint.path).toBe("/i18n/field");
@@ -35,6 +40,7 @@ describe("createFieldRoute (contract)", () => {
     const endpoint = createFieldRoute({
       schemaMap,
       translationProvider: provider,
+      inlineMarks: false,
       access: denyAccess,
     });
 

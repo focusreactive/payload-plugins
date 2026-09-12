@@ -4,6 +4,7 @@ export {
   TextChunkExpander,
   PlainTextExpander,
   RichTextExpander,
+  RichContainerExpander,
   TextChunkExpanderStage,
 } from "./text-expander";
 export type { TextExpansionResult, TextExpander, ExpansionResult } from "./text-expander";

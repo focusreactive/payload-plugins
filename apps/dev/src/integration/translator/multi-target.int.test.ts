@@ -10,7 +10,7 @@ import { callEndpoint } from "./callEndpoint";
 // UI `targetSelection` mode. Provenance (one row per target) is the durable per-target record, so it
 // doubles as the assertion that every queued target is tracked independently.
 
-const rev = (s: string) => [...s].reverse().join("");
+const tr = (locale: string, s: string) => (s.trim() ? `${locale}:${s}` : s);
 const PROV = "translator-provenance";
 
 type ProvRow = { targetLocale: string; sourceLocale: string };
@@ -67,8 +67,8 @@ describe("multi-target enqueue fan-out (#46)", () => {
 
     expect(res.status).toBe(200);
     expect(queuedOf(res)).toBe(2); // 1 doc × 2 targets
-    expect(await titleIn(ctx, id, "de")).toBe(rev("Fanout src"));
-    expect(await titleIn(ctx, id, "fr")).toBe(rev("Fanout src"));
+    expect(await titleIn(ctx, id, "de")).toBe(tr("de", "Fanout src"));
+    expect(await titleIn(ctx, id, "fr")).toBe(tr("fr", "Fanout src"));
     expect(await titleIn(ctx, id, "en")).toBe("Fanout src"); // source intact
     expect(await provTargets(ctx, id)).toEqual(["de", "fr"]); // independent per-target rows
   });
@@ -83,8 +83,8 @@ describe("multi-target enqueue fan-out (#46)", () => {
     for (const id of [a, b]) {
       expect(await provTargets(ctx, id)).toEqual(["de", "fr"]);
     }
-    expect(await titleIn(ctx, a, "fr")).toBe(rev("Doc A"));
-    expect(await titleIn(ctx, b, "de")).toBe(rev("Doc B"));
+    expect(await titleIn(ctx, a, "fr")).toBe(tr("fr", "Doc A"));
+    expect(await titleIn(ctx, b, "de")).toBe(tr("de", "Doc B"));
   });
 
   it("drops an unknown target locale and still runs the valid ones (AC4)", async () => {
@@ -94,7 +94,7 @@ describe("multi-target enqueue fan-out (#46)", () => {
 
     expect(queuedOf(res)).toBe(1); // only the configured "de" survives
     expect(await provTargets(ctx, id)).toEqual(["de"]); // no phantom "xx" row
-    expect(await titleIn(ctx, id, "de")).toBe(rev("Unknown src"));
+    expect(await titleIn(ctx, id, "de")).toBe(tr("de", "Unknown src"));
   });
 
   it("de-dups duplicate target locales to one task per locale (AC5)", async () => {
@@ -130,7 +130,7 @@ describe("multi-target enqueue fan-out (#46)", () => {
     const res = await enqueue(ctx, [id], "de");
 
     expect(queuedOf(res)).toBe(1);
-    expect(await titleIn(ctx, id, "de")).toBe(rev("Scalar src"));
+    expect(await titleIn(ctx, id, "de")).toBe(tr("de", "Scalar src"));
     expect(await provTargets(ctx, id)).toEqual(["de"]);
   });
 });

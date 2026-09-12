@@ -132,7 +132,9 @@ export interface Config {
         output: unknown;
       };
     };
-    workflows: unknown;
+    workflows: {
+      translate_document_locales: WorkflowTranslateDocumentLocales;
+    };
   };
 }
 export interface UserAuthOperations {
@@ -417,6 +419,7 @@ export interface Playground {
     | null;
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -849,6 +852,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
+  workflowSlug?: 'translate_document_locales' | null;
   taskSlug?: ('inline' | 'translate_document' | 'schedulePublish') | null;
   queue?: string | null;
   waitUntil?: string | null;
@@ -1108,6 +1112,7 @@ export interface PlaygroundSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1327,6 +1332,7 @@ export interface PayloadJobsSelect<T extends boolean = true> {
         error?: T;
         id?: T;
       };
+  workflowSlug?: T;
   taskSlug?: T;
   queue?: T;
   waitUntil?: T;
@@ -1479,6 +1485,44 @@ export interface TaskSchedulePublish {
     user?: (number | null) | User;
   };
   output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WorkflowTranslate_document_locales".
+ */
+export interface WorkflowTranslateDocumentLocales {
+  input: {
+    collection_slug: string;
+    collection_id: string;
+    /**
+     * Deprecated. See docs/DEPRECATIONS.md#jobs-input-collection-field
+     */
+    collection?:
+      | ({
+          relationTo: 'pages';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'articles';
+          value: number | Article;
+        } | null)
+      | ({
+          relationTo: 'playground';
+          value: number | Playground;
+        } | null);
+    source_lng: string;
+    strategy: string;
+    publish_on_translation?: boolean | null;
+    target_lngs:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

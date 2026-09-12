@@ -37,6 +37,13 @@ the single source of truth — code annotations link here by anchor instead of d
 - **Deprecated:** 2026-06-05 / PR #18 (shipped in 0.3.0)
 - **Replacement:** flat text reference — `collection_slug` + `collection_id`.
 - **Remove in:** next major
+- **What removal takes with it:** the flag is also the only way to turn the behaviour off, so an
+  install that adopted it to guard against a misbehaving provider has no code-level guard after the
+  next major — pinning the previous major is the only remaining step-back. Say so before an install
+  relies on the flag as a safety valve.
+- **What turning it back off does not undo:** it stops future translations from splitting wrappers;
+  documents already translated under it stay split. The one-way door is the first translated
+  document, not the flag.
 - **Why:** the relationship field validates the stored value's type against the target collection's
   ID type, so a string id for a number-id collection silently fails validation and the job hangs in
   `processing`. Flat text fields make the job input ID-agnostic. See
@@ -218,3 +225,28 @@ the single source of truth — code annotations link here by anchor instead of d
 - **Code refs:** `src/translation-providers/openai/OpenAITranslation.provider.ts`,
   `src/translation-providers/openai/loadOpenAIClient.ts`,
   `src/translation-providers/openai/OpenAITranslationLegacy.provider.ts`
+
+### experimental-inline-marks
+
+- **What:** `translatorPlugin({ experimental: { inlineMarks } })`.
+- **Status:** live (`@deprecated` in code from the day it shipped)
+- **Deprecated:** 2026-09-11 / PR #139 (issue #134)
+- **Replacement:** none — the behaviour becomes the only mode, so the switch simply goes away.
+- **Scope:** this entry only. The `experimental` option itself is permanent — it is where the
+  next transitional switch will live, so removing `inlineMarks` does not remove the object.
+- **Remove in:** next major
+- **Why:** a transitional switch, not a supported choice. Translating rich text node by node pins
+  every word to its source position, which is a defect, not a preference — so there is nothing to
+  keep choosing between. The flag exists only so an install can adopt the change on its own
+  schedule and step back if its provider misbehaves. The next major removes **the flag**, not the
+  per-node code: that stays as the internal fallback for a mark-shaped source, a single-fragment
+  container, and a corrupt reply.
+- **After removal, a provider still decides:** `capabilities.inlineMarks` is core logic, not part of
+  the flag, and survives it. A third-party `TranslationProvider` that never declares the capability
+  therefore keeps translating node by node indefinitely — the mode this entry calls a defect — with
+  no warning surface. Provider authors need telling, separately from this flag's own removal.
+- **Code refs:**
+  - `src/plugin.ts` (the option)
+  - `src/core/translation-pipeline/translateContent.ts` (the single switch between the two paths)
+  - `src/core/translation-pipeline/stages/text-expander/RichContainerExpander.ts`
+  - `docs/plans/2026-09-08-richtext-container-granularity-design.md` (D8, D8a)

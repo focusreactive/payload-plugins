@@ -2,6 +2,7 @@
 // src/providers (outside core) so the core barrel stays dependency-free (no `openai`).
 export type {
   TranslationProvider,
+  TranslationRequestOptions,
   TranslationInput,
   TranslationOutput,
   TranslationIndex,
