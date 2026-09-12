@@ -83,7 +83,11 @@ beforeEach(() => {
       ] as Field[],
     ],
   ]);
-  const config: FieldTranslationConfig = { schemaMap, translationProvider: provider };
+  const config: FieldTranslationConfig = {
+    schemaMap,
+    translationProvider: provider,
+    inlineMarks: false,
+  };
   handler = new TranslateFieldHandler(config);
 });
 

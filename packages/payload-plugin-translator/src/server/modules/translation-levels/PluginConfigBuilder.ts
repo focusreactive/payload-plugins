@@ -75,7 +75,7 @@ export class PluginConfigBuilder implements LevelContext {
   readonly translationProvider: TranslationProvider;
   readonly provenanceServiceFactory?: ProvenanceServiceFactory;
   readonly targetSelection: TargetSelectionMode;
-  readonly inlineMarks?: boolean;
+  readonly inlineMarks: boolean;
 
   private readonly endpoints: Endpoint[] = [];
   private readonly collectionComponents: CollectionComponent[] = [];

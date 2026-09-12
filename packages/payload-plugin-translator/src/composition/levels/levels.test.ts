@@ -32,6 +32,7 @@ const makeCtx = (): LevelContext => ({
   schemaMap: new Map(),
   translationProvider: { translate: vi.fn() },
   targetSelection: "single",
+  inlineMarks: false,
   addEndpoints: vi.fn(),
   addCollectionComponent: vi.fn(),
 });

@@ -18,10 +18,11 @@ export type CreateFieldRouteArgs = FieldTranslationConfig & {
 export function createFieldRoute({
   schemaMap,
   translationProvider,
+  inlineMarks,
   access,
   basePath = "/translate",
 }: CreateFieldRouteArgs): Endpoint {
-  const handler = new TranslateFieldHandler({ schemaMap, translationProvider });
+  const handler = new TranslateFieldHandler({ schemaMap, translationProvider, inlineMarks });
 
   return {
     path: `${basePath}/field`,

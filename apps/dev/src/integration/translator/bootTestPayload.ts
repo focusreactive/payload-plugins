@@ -7,6 +7,7 @@ import {
   createTranslationProvider,
   createSyncRunner,
   documentLevel,
+  fieldLevel,
   translatorPlugin,
   withAutoTranslate,
 } from "@focus-reactive/payload-plugin-translator";
@@ -93,6 +94,8 @@ export async function bootTestPayload(opts?: {
   declareCapability?: boolean;
   /** How the fake answers a marked value — reorder by default, keep order, or corrupt it. */
   fake?: FakeTranslationOptions;
+  /** Also register the synchronous per-field surface, `POST {basePath}/field`. */
+  fieldSurface?: boolean;
 }): Promise<TestPayload> {
   const dir = mkdtempSync(join(tmpdir(), "translator-int-"));
   const { db, drop } = createTestDatabase(join(dir, "test.db"));
@@ -154,7 +157,7 @@ export async function bootTestPayload(opts?: {
         collections: managed,
         translationProvider: countingProvider,
         runner: opts?.runner ?? createSyncRunner(),
-        levels: [documentLevel()],
+        levels: opts?.fieldSurface ? [documentLevel(), fieldLevel()] : [documentLevel()],
         provenance: true,
         ...(opts?.inlineMarks ? { experimental: { inlineMarks: true } } : {}),
       }),

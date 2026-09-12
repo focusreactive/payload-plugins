@@ -36,5 +36,10 @@ export type FieldTranslationInput = z.infer<typeof FieldTranslationInputSchema>;
 export type FieldTranslationConfig = {
   schemaMap: CollectionSchemaMap;
   translationProvider: TranslationProvider;
-  inlineMarks?: boolean;
+  /**
+   * Required rather than optional, though `false` is the common value: the plugin always knows
+   * this at config time, so an absent one could only ever mean a caller forgot to pass it — and
+   * that read as "translate node by node" instead of failing to build.
+   */
+  inlineMarks: boolean;
 };
