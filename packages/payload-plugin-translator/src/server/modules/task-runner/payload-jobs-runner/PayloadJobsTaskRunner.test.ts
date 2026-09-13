@@ -473,6 +473,27 @@ describe("PayloadJobsTaskRunner", () => {
       );
     });
 
+    it("lifts the debounce so a queued job really does run now", async () => {
+      // Auto-translate queues with a `waitUntil` to coalesce rapid edits. The picker skips a job
+      // whose delay has not elapsed, so without clearing it the "Run now" button runs nothing and
+      // the caller is told the job is already in progress — which it is not.
+      const queued = createJob({
+        processing: false,
+        waitUntil: new Date(Date.now() + 60_000).toISOString(),
+      });
+      mockPayload.find.mockResolvedValue({ docs: [queued] });
+
+      const result = await runner.run("job-123");
+
+      expect(mockPayload.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: { equals: "job-123" } },
+          data: { processing: false, hasError: false, error: null, waitUntil: null },
+        })
+      );
+      expect(result).toEqual({ success: true });
+    });
+
     it("returns already_running when a job is genuinely in flight (fresh lock)", async () => {
       const runningJob = createJob({
         processing: true,
@@ -549,7 +570,11 @@ describe("PayloadJobsTaskRunner", () => {
         where: { id: { equals: "job-123" } },
         limit: 1,
       });
-      expect(mockPayload.update).not.toHaveBeenCalled();
+      // The clear runs first even for a job with nothing blocking it: see "lifts the debounce so a
+      // queued job really does run now" for why it is unconditional.
+      expect(mockPayload.update.mock.invocationCallOrder[0]).toBeLessThan(
+        mockPayload.jobs.run.mock.invocationCallOrder[0]
+      );
       expect(mockPayload.find).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {

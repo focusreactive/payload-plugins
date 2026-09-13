@@ -187,17 +187,18 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     if (job.processing && !this.isStale(job.updatedAt)) {
       return { success: false, error: "already_running" };
     }
-    if (job.processing || job.error) {
-      await this.clearPickerBlockers(taskId);
-    }
+    // Unconditionally: a manual run is "now", so it lifts the debounce a queued job is still waiting
+    // out as well as the lock and the spent retry budget. Without that the picker takes nothing and
+    // the caller is told the job is already running, which it is not.
+    await this.clearPickerBlockers(taskId);
 
     // Not `jobs.runByID`: payload 3.84.1 builds the picker guard (processing / hasError / waitUntil)
     // only on the `where` path, so the id path re-runs a job that exhausted its retries.
-    const result = (await this.payload.jobs.run({
+    const result = await this.payload.jobs.run({
       queue: this.config.queueName,
       where: { id: { equals: taskId } },
       limit: 1,
-    })) as { jobStatus?: Record<string, unknown> };
+    });
 
     const pickerTookNothing = Object.keys(result?.jobStatus ?? {}).length === 0;
     if (pickerTookNothing) {
