@@ -9,6 +9,10 @@
  * Every description here is written for the person editing, not for us. The reasons a field exists,
  * the failure modes we designed around and the numbers behind a storage choice are comments, which
  * is where they belong - a description is panel UI and gets read out loud on a screen share.
+ *
+ * Field labels below stay bare strings, not { en, es } objects - this array is spliced into the
+ * Talk collection, and Talk.ts (lines 6-9) explains why an object label breaks there. Descriptions
+ * are unaffected and are localized as everywhere else.
  */
 
 import type { Field } from "payload";
@@ -22,15 +26,19 @@ export const talkAiFields: Field[] = [
     // timed quotes - push the SEO tab and everything under it off a laptop screen, and the document
     // reads as a form with no end.
     admin: {
-      description:
-        "Written from the recording, then yours to edit. This is what search engines and AI assistants read when someone asks a question this teaching answers.",
+      description: {
+        en: "Written from the recording, then yours to edit. This is what search engines and AI assistants read when someone asks a question this teaching answers.",
+        es: "Se redacta a partir de la grabación y después es tuyo para editar. Esto es lo que los buscadores y los asistentes de IA leen cuando alguien hace una pregunta que esta enseñanza responde.",
+      },
       initCollapsed: true,
     },
     fields: [
       {
         admin: {
-          description:
-            "Whether someone has read the text below and is happy with it. Readers see it either way - this is a note for your team.",
+          description: {
+            en: "Whether someone has read the text below and is happy with it. Readers see it either way - this is a note for your team.",
+            es: "Indica si alguien ha leído el texto de abajo y está conforme con él. Los lectores lo ven de todos modos - esto es una nota para tu equipo.",
+          },
         },
         defaultValue: "awaiting-review",
         label: "Checked by a person",
@@ -43,8 +51,10 @@ export const talkAiFields: Field[] = [
       },
       {
         admin: {
-          description:
-            "Two or three sentences, shown above the teaching. Also used as the search description when the SEO tab is left empty.",
+          description: {
+            en: "Two or three sentences, shown above the teaching. Also used as the search description when the SEO tab is left empty.",
+            es: "Dos o tres frases que se muestran encima de la enseñanza. También se usa como descripción de búsqueda cuando la pestaña de SEO se deja vacía.",
+          },
         },
         label: "Summary",
         localized: true,
@@ -53,8 +63,10 @@ export const talkAiFields: Field[] = [
       },
       {
         admin: {
-          description:
-            "The few points a reader should come away with. Shown as a short list under the summary.",
+          description: {
+            en: "The few points a reader should come away with. Shown as a short list under the summary.",
+            es: "Los pocos puntos con los que un lector debería quedarse. Se muestran como una lista breve debajo del resumen.",
+          },
           initCollapsed: true,
         },
         fields: [{ label: "Takeaway", name: "takeaway", required: true, type: "textarea" }],
@@ -65,8 +77,10 @@ export const talkAiFields: Field[] = [
       },
       {
         admin: {
-          description:
-            "Phrased the way a reader would actually ask them out loud, not as headings. These are the lines an AI assistant quotes when it answers with this teaching.",
+          description: {
+            en: "Phrased the way a reader would actually ask them out loud, not as headings. These are the lines an AI assistant quotes when it answers with this teaching.",
+            es: "Formuladas tal como un lector las diría en voz alta, no como titulares. Son las frases que un asistente de IA cita cuando responde con esta enseñanza.",
+          },
           initCollapsed: true,
         },
         fields: [{ label: "Question", name: "question", required: true, type: "text" }],
@@ -77,8 +91,10 @@ export const talkAiFields: Field[] = [
       },
       {
         admin: {
-          description:
-            "Lines worth lifting out. Each one becomes a button that jumps the audio to the moment it was said.",
+          description: {
+            en: "Lines worth lifting out. Each one becomes a button that jumps the audio to the moment it was said.",
+            es: "Frases que merece la pena destacar. Cada una se convierte en un botón que salta el audio al momento en que se dijo.",
+          },
           initCollapsed: true,
         },
         fields: [
@@ -93,7 +109,10 @@ export const talkAiFields: Field[] = [
                 // round number wrong by 16 to 400 seconds, and this value is rendered as a seek
                 // link into real audio, so a wrong one is audible.
                 admin: {
-                  description: "Set automatically by finding the quote in the recording.",
+                  description: {
+                    en: "Set automatically by finding the quote in the recording.",
+                    es: "Se calcula automáticamente al localizar la cita dentro de la grabación.",
+                  },
                   readOnly: true,
                   width: "50%",
                 },
@@ -111,8 +130,10 @@ export const talkAiFields: Field[] = [
       },
       {
         admin: {
-          description:
-            "The full text of the recording, word for word. Behind the same membership as the body.",
+          description: {
+            en: "The full text of the recording, word for word. Behind the same membership as the body.",
+            es: "El texto completo de la grabación, palabra por palabra. Está protegido por la misma membresía que el cuerpo.",
+          },
         },
         label: "Transcript",
         localized: true,

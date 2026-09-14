@@ -214,7 +214,7 @@ export const ProductHandlePicker: TextFieldClientComponent = ({ field, path, rea
           <div className={`${baseClass}__status`}>
             <Banner type="error">{error}</Banner>
             <p>
-              Nothing has been lost — the product saved on this block is still there. Try the store
+              Nothing has been lost. The product already saved here is still there. Try the store
               again.
             </p>
             <Button

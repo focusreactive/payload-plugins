@@ -7,6 +7,11 @@
  * A curated vocabulary tends to pair its terms - "Doubt / Certainty" - so `title` carries the
  * slash, and a legacy catalogue export tends to escape it as "Doubt \/ Certainty". Unescape on
  * the way in; the seed script does.
+ *
+ * Field labels here are plain strings, not the { en, es } objects the rest of the repo uses on
+ * collections. That is deliberate: Payload 3.84 renders an object label as "[object Object]" in
+ * list-view sort buttons and create tooltips (see Talk.ts). Tabs are unaffected and keep the
+ * localized form.
  */
 
 import type { CollectionConfig } from "payload";
@@ -28,7 +33,19 @@ export const Topic: CollectionConfig<"topic"> = {
     useAsTitle: "title",
   },
   fields: [
-    { label: "Title", localized: true, name: "title", required: true, type: "text" },
+    {
+      admin: {
+        description: {
+          en: "What this subject is called. It becomes the heading of its own page and the label wherever this topic is listed.",
+          es: "Cómo se llama este tema. Se convierte en el encabezado de su propia página y en la etiqueta en cualquier lugar donde se liste este tema.",
+        },
+      },
+      label: "Title",
+      localized: true,
+      name: "title",
+      required: true,
+      type: "text",
+    },
     {
       // Two tabs, matching a Page document: the editor lands on Content and finds SEO beside it.
       // The Content tab is UNNAMED, which in Payload is presentational - every field inside it is
@@ -45,7 +62,18 @@ export const Topic: CollectionConfig<"topic"> = {
         {
           fields: [
             slugField({ required: true, useAsSlug: "title" }),
-            { label: "Description", localized: true, name: "description", type: "textarea" },
+            {
+              admin: {
+                description: {
+                  en: "The introduction shown under the heading on this topic's own page. Also used as the search description when the SEO tab is left empty.",
+                  es: "La introducción que se muestra bajo el encabezado en la página propia de este tema. También se usa como descripción de búsqueda cuando la pestaña de SEO se deja vacía.",
+                },
+              },
+              label: "Description",
+              localized: true,
+              name: "description",
+              type: "textarea",
+            },
           ],
           label: { en: "Content", es: "Contenido" },
         },

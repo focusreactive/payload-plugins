@@ -6,7 +6,13 @@
   --section-margin-base: clamp(56px, 8vw, 104px);
   --section-margin-large: clamp(96px, 14vw, 180px);
   --container-padding-base: clamp(20px, 5vw, 64px);
-  --container-max-width: 1180px;
+  /*
+   * The concept draws every one of its seven sections inside `max-width:1520px`, and this was 1180
+   * for the design system it replaced. Reading measure does not ride on this: a talk sets its own
+   * `max-w-[720px]` and the Content block its own `max-w-[520px]`, both inside the container, so
+   * widening the shell widens the header, footer and grids and leaves body text where it was.
+   */
+  --container-max-width: 1520px;
 }
 
 @theme {
@@ -20,8 +26,11 @@ body {
   background: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
-  font-size: 18px;
-  line-height: 1.65;
+  /* 16/1.6, the design's own body setting. It was 18/1.65 for the serif system this replaced. */
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 

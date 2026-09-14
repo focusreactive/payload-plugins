@@ -33,6 +33,12 @@ export const ShopifyProductBlock: Block = injectSection({
       type: "text",
     },
     {
+      admin: {
+        description: {
+          en: "Show the price under the product's name.",
+          es: "Muestra el precio debajo del nombre del producto.",
+        },
+      },
       defaultValue: true,
       label: { en: "Show price", es: "Mostrar precio" },
       name: "showPrice",

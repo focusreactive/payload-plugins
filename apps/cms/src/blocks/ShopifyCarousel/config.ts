@@ -41,6 +41,10 @@ const fields: Field[] = [
             // already seeded keep resolving and no migration follows from adding this.
             Field: "@/components/admin/ProductHandlePicker#ProductHandlePicker",
           },
+          description: {
+            en: "The product this row shows. Its name, cover, price and availability all come from the store, so there is nothing to retype here.",
+            es: "El producto de esta fila. Su nombre, portada, precio y disponibilidad vienen de la tienda, así que no hay nada que volver a escribir aquí.",
+          },
         },
         label: { en: "Product", es: "Producto" },
         name: "handle",
@@ -59,6 +63,12 @@ const fields: Field[] = [
     type: "array",
   },
   {
+    admin: {
+      description: {
+        en: "Show the price under each product's name.",
+        es: "Muestra el precio debajo del nombre de cada producto.",
+      },
+    },
     defaultValue: true,
     label: { en: "Show price", es: "Mostrar precio" },
     name: "showPrice",

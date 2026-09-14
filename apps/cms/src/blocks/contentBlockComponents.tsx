@@ -1,14 +1,19 @@
 import React from "react";
 
+import { BookOfferBlockComponent } from "./BookOffer/Component";
 import { CardsGridBlockComponent } from "./CardsGrid/Component";
 import { CarouselBlockComponent } from "./Carousel/Component";
 import { ChartBlockComponent } from "./Chart/Component";
 import { ContentBlockComponent } from "./Content/Component";
+import { CourseRailBlockComponent } from "./CourseRail/Component";
 import { CtaBandBlockComponent } from "./CtaBand/Component";
 import { FaqBlockComponent } from "./Faq/Component";
 import { HeroBlockComponent } from "./Hero/Component";
+import { HeroSpotlightBlockComponent } from "./HeroSpotlight/Component";
 import { LogosBlockComponent } from "./Logos/Component";
+import { MembershipTiersBlockComponent } from "./MembershipTiers/Component";
 import { NewsletterBlockComponent } from "./Newsletter/Component";
+import { PortraitFeatureBlockComponent } from "./PortraitFeature/Component";
 import { RawHtmlBlockComponent } from "./RawHtml/Component";
 import { ShopifyCarouselBlockComponent } from "./ShopifyCarousel/Component";
 import { ShopifyProductBlockComponent } from "./ShopifyProduct/Component";
@@ -19,16 +24,21 @@ import { TestimonialsListBlockComponent } from "./TestimonialsList/Component";
 import { TopicChipsBlockComponent } from "./TopicChips/Component";
 
 export const contentBlockComponents = {
+  bookOffer: BookOfferBlockComponent,
   cardsGrid: CardsGridBlockComponent,
   carousel: CarouselBlockComponent,
   chart: ChartBlockComponent,
   content: ContentBlockComponent,
+  courseRail: CourseRailBlockComponent,
   ctaBand: CtaBandBlockComponent,
   newsletter: NewsletterBlockComponent,
   stats: StatsBlockComponent,
   faq: FaqBlockComponent,
   hero: HeroBlockComponent,
+  heroSpotlight: HeroSpotlightBlockComponent,
+  membershipTiers: MembershipTiersBlockComponent,
   logos: LogosBlockComponent,
+  portraitFeature: PortraitFeatureBlockComponent,
   rawHtml: RawHtmlBlockComponent,
   testimonialsList: TestimonialsListBlockComponent,
   shopifyCarousel: ShopifyCarouselBlockComponent,

@@ -34,6 +34,7 @@ import * as migration_20260805_120053_group_seo_defaults_under_og_and_x from './
 import * as migration_20260812_125336_add_ab_pending_percentages_to_pages from './20260812_125336_add_ab_pending_percentages_to_pages';
 import * as migration_20260904_133003_add_talk_and_topic_collections from './20260904_133003_add_talk_and_topic_collections';
 import * as migration_20260907_123617_add_shopify_carousel_and_sidebar_blocks from './20260907_123617_add_shopify_carousel_and_sidebar_blocks';
+import * as migration_20260914_191756_add_showcase_design_blocks from './20260914_191756_add_showcase_design_blocks';
 
 export const migrations = [
   {
@@ -214,6 +215,11 @@ export const migrations = [
   {
     up: migration_20260907_123617_add_shopify_carousel_and_sidebar_blocks.up,
     down: migration_20260907_123617_add_shopify_carousel_and_sidebar_blocks.down,
-    name: '20260907_123617_add_shopify_carousel_and_sidebar_blocks'
+    name: '20260907_123617_add_shopify_carousel_and_sidebar_blocks',
+  },
+  {
+    up: migration_20260914_191756_add_showcase_design_blocks.up,
+    down: migration_20260914_191756_add_showcase_design_blocks.down,
+    name: '20260914_191756_add_showcase_design_blocks'
   },
 ];

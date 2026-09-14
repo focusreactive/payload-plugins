@@ -3,6 +3,7 @@ import NextLink from "next/link";
 
 import { cn } from "@/components/utils";
 import type { HeaderNavItem } from "../types";
+import { DESKTOP_NAV_VISIBLE } from "../constants";
 import { Chevron } from "./Chevron";
 import { DropdownContent } from "./DropdownContent";
 
@@ -11,14 +12,18 @@ interface DesktopNavProps {
 }
 
 const itemLinkClassName =
-  "inline-flex items-center rounded-pill px-3.5 py-2 text-[0.95rem] font-medium text-muted-foreground transition-colors duration-150 hover:bg-surface-muted hover:text-foreground focus-visible:bg-surface-muted focus-visible:text-foreground focus-visible:outline-none";
+  "inline-flex h-[clamp(40px,3.4vw,46px)] items-center whitespace-nowrap rounded-lg px-[clamp(6px,0.8vw,12px)] text-small font-medium text-foreground transition-colors duration-[250ms] ease-[ease] hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:outline-none motion-reduce:transition-none";
 
-const activeItemClassName = "font-bold text-foreground";
+/** The design draws no active state, so the current page simply keeps the mint ground hover gives. */
+const activeItemClassName = "bg-surface-muted";
 
 export function DesktopNav({ navItems }: DesktopNavProps) {
   return (
-    <NavigationMenu.Root className="hidden items-center min-[860px]:flex" delayDuration={0}>
-      <NavigationMenu.List className="flex list-none items-center gap-1">
+    <NavigationMenu.Root
+      className={cn("hidden items-center", DESKTOP_NAV_VISIBLE)}
+      delayDuration={0}
+    >
+      <NavigationMenu.List className="flex list-none items-center gap-[clamp(2px,0.4vw,8px)]">
         {navItems.map((item, index) => {
           if (item.kind === "link") {
             const newTabProps = item.newTab ? { rel: "noopener noreferrer", target: "_blank" } : {};
@@ -45,7 +50,7 @@ export function DesktopNav({ navItems }: DesktopNavProps) {
                 className={cn(
                   "group",
                   itemLinkClassName,
-                  "gap-1.5 data-[state=open]:bg-surface-muted data-[state=open]:text-foreground",
+                  "gap-[5px] data-[state=open]:bg-surface-muted",
                   item.active && activeItemClassName
                 )}
               >
@@ -54,7 +59,7 @@ export function DesktopNav({ navItems }: DesktopNavProps) {
               </NavigationMenu.Trigger>
               <NavigationMenu.Content
                 className={cn(
-                  "absolute left-0 top-full z-50 mt-3 rounded-lg border border-border bg-surface p-3.5 shadow-[0_30px_70px_-30px_rgba(10,19,20,0.42)]",
+                  "absolute left-0 top-full z-50 mt-3 rounded-lg border border-border bg-surface p-3.5 shadow-float",
                   "data-[state=open]:animate-in data-[state=open]:fade-in data-[state=closed]:animate-out data-[state=closed]:fade-out motion-reduce:animate-none"
                 )}
               >
