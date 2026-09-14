@@ -37,7 +37,7 @@ export async function SearchResults({ query, locale }: SearchResultsProps) {
     <div className="mt-6 space-y-8">
       {result.data.map((group) => (
         <section key={group.collection}>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+          <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-gray-400">
             {group.collection === "post" ? "Posts" : "Pages"}
           </h2>
 

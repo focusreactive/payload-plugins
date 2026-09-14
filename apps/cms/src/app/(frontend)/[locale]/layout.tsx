@@ -16,16 +16,16 @@ import { VisualEditingEditRouter } from "@/components/VisualEditingEditRouter";
  * One family for the whole site, which is the design system's own decision - display and body
  * differ by size and tracking, never by face.
  *
- * 400 and 500 are the only weights the design uses. 600 is loaded anyway because components
- * written before this system still reach for `font-semibold`, and a missing 600 makes the browser
- * synthesise one, which on Poppins smears the letterforms rather than thickening them.
+ * 400 and 500 are the only weights, and only those two are loaded. The public components that
+ * still reached for a 600 were moved to 500 rather than kept alive by shipping a third weight -
+ * there is no bold in this design, so a face that can render one is a face that will.
  */
 const poppins = Poppins({
   display: "swap",
   style: ["normal", "italic"],
   subsets: ["latin"],
   variable: "--font-poppins",
-  weight: ["400", "500", "600"],
+  weight: ["400", "500"],
 });
 
 export const viewport: Viewport = {

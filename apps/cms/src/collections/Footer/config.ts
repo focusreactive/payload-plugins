@@ -154,13 +154,15 @@ export const Footer: CollectionConfig<"footer"> = {
     {
       admin: {
         description: {
-          en: "Copyright text shown at the bottom",
-          es: "Texto de copyright al pie",
+          en: "The line along the very bottom of every page. Put your own organisation's name here - it is the last thing a visitor reads, and it is shown exactly as you type it.",
+          es: "La línea al pie de cada página. Pon aquí el nombre de tu organización: es lo último que lee un visitante y se muestra tal como lo escribas.",
         },
       },
+      // A named placeholder brand reads as someone else's site until an editor notices it, so the
+      // default says what to replace rather than standing in for a company nobody here is.
       defaultValue: createLocalizedDefault({
-        en: "© 2026 Cadence Labs, Inc.",
-        es: "© 2026 Cadence Labs, Inc.",
+        en: "© 2026 Your organisation",
+        es: "© 2026 Tu organización",
       }),
       localized: true,
       name: "copyrightText",

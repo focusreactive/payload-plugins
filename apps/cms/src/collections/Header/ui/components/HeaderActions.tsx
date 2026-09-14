@@ -11,8 +11,8 @@ interface HeaderActionsProps {
 }
 
 /**
- * Styled here rather than through the shared Button because every one of its variants is a pill at
- * font-semibold, and this design is a 12px rectangle at weight 500 with no bold anywhere.
+ * Styled here rather than through the shared Button because every one of its variants is a pill,
+ * and this design is a 12px rectangle.
  */
 const actionClassName =
   "inline-flex h-[clamp(40px,3.4vw,46px)] items-center whitespace-nowrap rounded-lg px-[clamp(14px,1.7vw,24px)] text-small font-medium transition-colors duration-[250ms] ease-[ease] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none";

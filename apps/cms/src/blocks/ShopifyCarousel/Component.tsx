@@ -210,7 +210,7 @@ async function ShopifyCarouselBlockContent({
 
             {showPrice !== false && product.price ? (
               <p className="text-body-lg flex flex-wrap items-baseline gap-2">
-                <span className="font-semibold">{formatMoney(product.price)}</span>
+                <span className="font-medium">{formatMoney(product.price)}</span>
                 {product.compareAtPrice ? (
                   <span className="text-small text-muted-foreground line-through">
                     {formatMoney(product.compareAtPrice)}

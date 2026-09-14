@@ -9,8 +9,8 @@ interface FeaturedCardProps {
 }
 
 /**
- * The shared Eyebrow chip is deliberately not used here: it sets a mono face at font-semibold in a
- * pill, and this design has one family, two weights and a 12px corner.
+ * The shared Eyebrow chip is deliberately not used here: it sets its label in a pill, and this
+ * design wants a 12px corner.
  */
 const cardClassName =
   "flex min-h-[196px] flex-col gap-[9px] rounded-lg bg-primary-soft p-5 text-foreground";

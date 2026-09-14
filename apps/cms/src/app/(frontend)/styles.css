@@ -102,7 +102,7 @@ body {
   }
 
   .prose figcaption {
-    font-family: var(--font-mono);
+    font-family: var(--font-display);
     font-size: 0.75rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -159,7 +159,7 @@ body {
 
   .prose-copy strong {
     color: var(--color-foreground);
-    font-weight: 600;
+    font-weight: 500;
   }
 
   .prose-copy em {
@@ -240,7 +240,7 @@ body {
   }
 
   .prose-copy figcaption {
-    font-family: var(--font-mono);
+    font-family: var(--font-display);
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -386,7 +386,7 @@ body {
   }
 
   .prose-embedded-block__label {
-    font-family: var(--font-mono);
+    font-family: var(--font-display);
     font-size: 0.7rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;

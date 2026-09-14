@@ -77,8 +77,8 @@ const fields: Field[] = [
     ...imageField("portrait", { required: false, withAspectRatio: false }),
     admin: {
       description: {
-        en: "The photograph beside the text. It fills a tall rounded frame and is cropped from the centre, a little above the middle, so a face sits best in the upper half of the picture. Leave it empty and the photograph shown by default stays in place.",
-        es: "La fotografía junto al texto. Llena un marco alto y redondeado y se recorta desde el centro, algo por encima de la mitad, así que una cara queda mejor en la mitad superior de la imagen. Si lo dejas vacío, se mantiene la fotografía que se muestra por defecto.",
+        en: "The photograph beside the text. It fills a tall rounded frame and is cropped from the centre, a little above the middle, so a face sits best in the upper half of the picture. Leave it empty and the frame stays but shows nothing.",
+        es: "La fotografía junto al texto. Llena un marco alto y redondeado y se recorta desde el centro, algo por encima de la mitad, así que una cara queda mejor en la mitad superior de la imagen. Si lo dejas vacío, el marco se mantiene pero no muestra nada.",
       },
     },
     label: { en: "Photograph", es: "Fotografía" },

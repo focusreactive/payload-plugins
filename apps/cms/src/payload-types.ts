@@ -1239,7 +1239,7 @@ export interface PortraitFeatureBlock {
     label?: string | null;
   };
   /**
-   * The photograph beside the text. It fills a tall rounded frame and is cropped from the centre, a little above the middle, so a face sits best in the upper half of the picture. Leave it empty and the photograph shown by default stays in place.
+   * The photograph beside the text. It fills a tall rounded frame and is cropped from the centre, a little above the middle, so a face sits best in the upper half of the picture. Leave it empty and the frame stays but shows nothing.
    */
   portrait?: {
     image?: (number | null) | Media;
@@ -2780,7 +2780,7 @@ export interface Footer {
       }[]
     | null;
   /**
-   * Copyright text shown at the bottom
+   * The line along the very bottom of every page. Put your own organisation's name here - it is the last thing a visitor reads, and it is shown exactly as you type it.
    */
   copyrightText?: string | null;
   updatedAt: string;
@@ -3365,7 +3365,7 @@ export interface Preset {
           label?: string | null;
         };
         /**
-         * The photograph beside the text. It fills a tall rounded frame and is cropped from the centre, a little above the middle, so a face sits best in the upper half of the picture. Leave it empty and the photograph shown by default stays in place.
+         * The photograph beside the text. It fills a tall rounded frame and is cropped from the centre, a little above the middle, so a face sits best in the upper half of the picture. Leave it empty and the frame stays but shows nothing.
          */
         portrait?: {
           image?: (number | null) | Media;
