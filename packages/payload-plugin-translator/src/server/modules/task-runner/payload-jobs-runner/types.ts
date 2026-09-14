@@ -89,6 +89,7 @@ export type PayloadJob = {
   updatedAt: string;
   error?: unknown;
   processing?: boolean | null;
+  waitUntil?: string | null;
   input?: {
     /** Document reference (flat text, ID-agnostic). Current shape. */
     collection_slug?: string;

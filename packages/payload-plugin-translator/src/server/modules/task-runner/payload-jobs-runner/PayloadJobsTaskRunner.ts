@@ -187,17 +187,16 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     if (job.processing && !this.isStale(job.updatedAt)) {
       return { success: false, error: "already_running" };
     }
-    if (job.processing || job.error) {
-      await this.clearPickerBlockers(taskId);
-    }
+    // Unconditional: a manual run also lifts the auto-translate debounce, not just the lock.
+    await this.clearPickerBlockers(taskId);
 
     // Not `jobs.runByID`: payload 3.84.1 builds the picker guard (processing / hasError / waitUntil)
     // only on the `where` path, so the id path re-runs a job that exhausted its retries.
-    const result = (await this.payload.jobs.run({
+    const result = await this.payload.jobs.run({
       queue: this.config.queueName,
       where: { id: { equals: taskId } },
       limit: 1,
-    })) as { jobStatus?: Record<string, unknown> };
+    });
 
     const pickerTookNothing = Object.keys(result?.jobStatus ?? {}).length === 0;
     if (pickerTookNothing) {

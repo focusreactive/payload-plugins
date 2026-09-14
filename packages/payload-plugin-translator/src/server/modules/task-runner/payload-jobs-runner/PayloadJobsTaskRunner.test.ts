@@ -457,20 +457,20 @@ describe("PayloadJobsTaskRunner", () => {
       });
     });
 
-    it("clears what blocks the picker before retrying a failed job", async () => {
-      mockPayload.find.mockResolvedValue({
-        docs: [createJob({ error: { message: "provider down" } })],
-      });
+    it("clears the blockers even for a job that is neither running nor failed", async () => {
+      const stillDebounced = new Date(Date.now() + 60_000).toISOString();
+      const queued = createJob({ processing: false, waitUntil: stillDebounced });
+      mockPayload.find.mockResolvedValue({ docs: [queued] });
 
-      await runner.run("job-123");
+      const result = await runner.run("job-123");
 
       expect(mockPayload.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          collection: "payload-jobs",
           where: { id: { equals: "job-123" } },
           data: { processing: false, hasError: false, error: null, waitUntil: null },
         })
       );
+      expect(result).toEqual({ success: true });
     });
 
     it("returns already_running when a job is genuinely in flight (fresh lock)", async () => {
@@ -484,6 +484,9 @@ describe("PayloadJobsTaskRunner", () => {
 
       expect(result).toEqual({ success: false, error: "already_running" });
       expect(mockPayload.jobs.run).not.toHaveBeenCalled();
+      // Clearing above this guard would reset `processing` on a live job and let a second worker
+      // take the same document.
+      expect(mockPayload.update).not.toHaveBeenCalled();
     });
 
     it("re-runs a job whose processing lock is stale (killed mid-run)", async () => {
@@ -549,7 +552,9 @@ describe("PayloadJobsTaskRunner", () => {
         where: { id: { equals: "job-123" } },
         limit: 1,
       });
-      expect(mockPayload.update).not.toHaveBeenCalled();
+      expect(mockPayload.update.mock.invocationCallOrder[0]).toBeLessThan(
+        mockPayload.jobs.run.mock.invocationCallOrder[0]
+      );
       expect(mockPayload.find).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
