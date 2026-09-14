@@ -57,7 +57,9 @@ export function ViewAsSwitch({ current }: { current: TalkTier }) {
   return (
     <div
       aria-label="Preview this page as a different membership tier"
-      className="fixed right-4 bottom-4 z-50 flex items-center gap-1.5 rounded-pill border border-border bg-card p-1.5 shadow-lg"
+      // Bottom LEFT on purpose: the visual-editing plugin parks its own toolbar in the bottom-right
+      // corner, and in the admin's preview iframe the two overlapped.
+      className="fixed bottom-4 left-4 z-50 flex items-center gap-1.5 rounded-pill border border-border bg-card p-1.5 shadow-lg"
       role="group"
     >
       <span className="text-eyebrow px-2 text-muted-foreground">View as</span>

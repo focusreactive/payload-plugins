@@ -9,6 +9,7 @@
  */
 
 import { unstable_cache } from "next/cache";
+import { draftMode } from "next/headers";
 import type { Payload, Where } from "payload";
 import { cache } from "react";
 
@@ -41,9 +42,12 @@ async function getTalksQuery(
   locale: Locale,
   kind: string | undefined,
   topicSlug: string | undefined,
-  ids: (number | string)[] | undefined
+  ids: (number | string)[] | undefined,
+  draft: boolean
 ) {
-  const where: Where = { _status: { equals: "published" } };
+  // A draft preview has to see unpublished work, and the published filter would hide exactly the
+  // document the editor is looking at.
+  const where: Where = draft ? {} : { _status: { equals: "published" } };
   if (kind) where.kind = { equals: kind };
   if (topicSlug) where["topics.slug"] = { equals: topicSlug };
   if (ids?.length) where.id = { in: ids };
@@ -51,6 +55,11 @@ async function getTalksQuery(
   return payload.find({
     collection: "talk",
     depth: 1,
+    // `draft` is not only about which version is returned. The visual-editing plugin gates its
+    // whole enrichment pass on it (`shouldEnrich` reads the draft flag off the request context),
+    // so a query without it returns values carrying no edit paths and the preview has nothing to
+    // click. That is why this is threaded through rather than left to the caller.
+    draft,
     limit,
     locale,
     // Read is `anyone` on this collection anyway; overrideAccess keeps the listing independent of
@@ -72,7 +81,7 @@ const getTalksCached = cache(
     ids: (number | string)[] | undefined
   ) =>
     unstable_cache(
-      () => getTalksQuery(payload, limit, locale, kind, topicSlug, ids),
+      () => getTalksQuery(payload, limit, locale, kind, topicSlug, ids, false),
       [limit.toString(), locale, kind ?? "", topicSlug ?? "", (ids ?? []).join(",")],
       { tags: ["talks"] }
     )()
@@ -80,7 +89,17 @@ const getTalksCached = cache(
 
 export const getTalks = async (payload: Payload, options: GetTalksOptions = {}) => {
   const { limit = 6, locale, kind, topicSlug, ids } = options;
-  return getTalksCached(payload, limit, await resolveLocale(locale), kind, topicSlug, ids);
+  const resolvedLocale = await resolveLocale(locale);
+  const { isEnabled: draft } = await draftMode();
+
+  // Draft reads go straight to the database, exactly as getPageBySlug does. Caching them would
+  // serve one editor's unpublished work to the next request, and would let a draft overwrite the
+  // published entry under the same cache key.
+  if (draft) {
+    return getTalksQuery(payload, limit, resolvedLocale, kind, topicSlug, ids, true);
+  }
+
+  return getTalksCached(payload, limit, resolvedLocale, kind, topicSlug, ids);
 };
 
 /**
@@ -89,9 +108,15 @@ export const getTalks = async (payload: Payload, options: GetTalksOptions = {}) 
  * document even when the body is withheld from the reader.
  */
 export const getTalkBySlug = async (payload: Payload, slug: string, locale?: Locale) => {
+  const { isEnabled: draft } = await draftMode();
+
   const result = await payload.find({
     collection: "talk",
     depth: 2,
+    // Without this the visual-editing plugin never enriches the document, so click-to-edit does
+    // nothing on a talk while it works on every Page - the plugin is enabled for this collection,
+    // it just never sees a draft request to act on.
+    draft,
     limit: 1,
     locale: await resolveLocale(locale),
     overrideAccess: true,
