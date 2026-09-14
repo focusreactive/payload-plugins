@@ -96,16 +96,13 @@ describe("when one locale's provider fails", () => {
       ["fr", "failed"],
     ]);
 
-    // Payload backs a failed job off exponentially, so the picker would skip it for the next few
-    // seconds. Clearing the delay lets the retry happen now rather than making the spec wait.
-    await failing.payload.update({
-      collection: "payload-jobs" as "pages",
-      id: (docs[0] as { id: string | number }).id,
-      data: { waitUntil: null, processing: false } as never,
-    });
-
+    // Payload backs a failed job off exponentially; only the manual-run endpoint lifts that, so the
+    // retry has to go through it.
     const before = failing.translateCount();
-    await failing.payload.jobs.run({ queue: "translations", limit: CRON_BATCH_LIMIT });
+    const retry = await callEndpoint(failing.payload, "post", "/translate/run/:id", {
+      routeParams: { id: String((docs[0] as { id: string | number }).id) },
+    });
+    expect(retry.status, "the retry endpoint did not accept the job").toBe(204);
 
     expect(
       failing.translateCount() - before,

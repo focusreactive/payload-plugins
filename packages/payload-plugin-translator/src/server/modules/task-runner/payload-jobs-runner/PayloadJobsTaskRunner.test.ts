@@ -457,30 +457,9 @@ describe("PayloadJobsTaskRunner", () => {
       });
     });
 
-    it("clears what blocks the picker before retrying a failed job", async () => {
-      mockPayload.find.mockResolvedValue({
-        docs: [createJob({ error: { message: "provider down" } })],
-      });
-
-      await runner.run("job-123");
-
-      expect(mockPayload.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          collection: "payload-jobs",
-          where: { id: { equals: "job-123" } },
-          data: { processing: false, hasError: false, error: null, waitUntil: null },
-        })
-      );
-    });
-
-    it("lifts the debounce so a queued job really does run now", async () => {
-      // Auto-translate queues with a `waitUntil` to coalesce rapid edits. The picker skips a job
-      // whose delay has not elapsed, so without clearing it the "Run now" button runs nothing and
-      // the caller is told the job is already in progress — which it is not.
-      const queued = createJob({
-        processing: false,
-        waitUntil: new Date(Date.now() + 60_000).toISOString(),
-      });
+    it("clears the blockers even for a job that is neither running nor failed", async () => {
+      const stillDebounced = new Date(Date.now() + 60_000).toISOString();
+      const queued = createJob({ processing: false, waitUntil: stillDebounced });
       mockPayload.find.mockResolvedValue({ docs: [queued] });
 
       const result = await runner.run("job-123");
@@ -505,6 +484,9 @@ describe("PayloadJobsTaskRunner", () => {
 
       expect(result).toEqual({ success: false, error: "already_running" });
       expect(mockPayload.jobs.run).not.toHaveBeenCalled();
+      // Clearing above this guard would reset `processing` on a live job and let a second worker
+      // take the same document.
+      expect(mockPayload.update).not.toHaveBeenCalled();
     });
 
     it("re-runs a job whose processing lock is stale (killed mid-run)", async () => {
@@ -570,8 +552,6 @@ describe("PayloadJobsTaskRunner", () => {
         where: { id: { equals: "job-123" } },
         limit: 1,
       });
-      // The clear runs first even for a job with nothing blocking it: see "lifts the debounce so a
-      // queued job really does run now" for why it is unconditional.
       expect(mockPayload.update.mock.invocationCallOrder[0]).toBeLessThan(
         mockPayload.jobs.run.mock.invocationCallOrder[0]
       );

@@ -9,7 +9,8 @@ import type { Payload, PayloadRequest } from "payload";
  * handler code path. This is the faithful way to trigger a manual translation (`POST /translate/enqueue`)
  * or read staleness (`GET /translate/stale/:collection_slug/:collection_id`) from a local-API test.
  *
- * @returns the endpoint's HTTP status + parsed JSON body.
+ * @returns the endpoint's HTTP status, and the parsed JSON body — `undefined` when the response
+ * has no body (204).
  */
 export async function callEndpoint(
   payload: Payload,
@@ -31,6 +32,6 @@ export async function callEndpoint(
   } as unknown as PayloadRequest;
 
   const res = await endpoint.handler(req);
-  const data = await res.json();
-  return { status: res.status, data };
+  const text = await res.text();
+  return { status: res.status, data: text ? JSON.parse(text) : undefined };
 }

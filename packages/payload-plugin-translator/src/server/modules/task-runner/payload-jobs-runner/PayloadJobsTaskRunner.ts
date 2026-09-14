@@ -187,9 +187,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     if (job.processing && !this.isStale(job.updatedAt)) {
       return { success: false, error: "already_running" };
     }
-    // Unconditionally: a manual run is "now", so it lifts the debounce a queued job is still waiting
-    // out as well as the lock and the spent retry budget. Without that the picker takes nothing and
-    // the caller is told the job is already running, which it is not.
+    // Unconditional: a manual run also lifts the auto-translate debounce, not just the lock.
     await this.clearPickerBlockers(taskId);
 
     // Not `jobs.runByID`: payload 3.84.1 builds the picker guard (processing / hasError / waitUntil)
