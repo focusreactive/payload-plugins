@@ -25,10 +25,9 @@ export const ShopifyProductBlock: Block = injectSection({
           Field: "@/components/admin/ProductHandlePicker#ProductHandlePicker",
         },
         description:
-          "The product's handle in Shopify - the last path segment of its storefront URL, e.g. my-first-product. Not the numeric id.",
-        placeholder: "my-first-product",
+          "The book or product this section shows. Its name, cover, price and availability all come from the store, so there is nothing to retype here.",
       },
-      label: { en: "Product handle", es: "Identificador del producto" },
+      label: { en: "Product", es: "Producto" },
       name: "productHandle",
       required: true,
       type: "text",

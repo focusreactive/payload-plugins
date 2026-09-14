@@ -6,8 +6,9 @@
  * page, and two different character budgets cut the same teaser at two different points.
  */
 
-export const formatTalkKind = (kind?: string | null): string | null =>
-  kind ? kind.replace(/-/gu, " ").replace(/\b\w/gu, (letter) => letter.toUpperCase()) : null;
+// Title-casing the stored value is what this used to do, and it rendered "student-qa" as
+// "Student Qa" on every card. The words now come from the same map the admin dropdown reads.
+export { kindLabel as formatTalkKind } from "./taxonomy";
 
 export const formatTalkDuration = (seconds?: number | null): string | null => {
   if (!seconds) return null;

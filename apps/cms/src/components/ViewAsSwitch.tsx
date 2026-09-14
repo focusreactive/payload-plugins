@@ -21,7 +21,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 
 import { Button, ButtonSize, ButtonVariant } from "@/components/button";
-import { TALK_TIERS } from "@/collections/Talk";
+import { TALK_TIERS } from "@/lib/talks/taxonomy";
 import type { TalkTier } from "@/lib/talks/applyTier";
 import { isTalkTier } from "@/lib/talks/applyTier";
 import { VIEW_AS_COOKIE, VIEW_AS_MAX_AGE_SECONDS } from "@/lib/talks/viewAsCookie";

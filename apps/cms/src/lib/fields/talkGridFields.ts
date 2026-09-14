@@ -1,7 +1,7 @@
 import type { Field } from "payload";
 
 import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
-import { TALK_KINDS } from "@/collections/Talk";
+import { talkKindOptions } from "@/lib/talks/taxonomy";
 
 export const talkGridFields: Field[] = [
   ...sectionHeaderFields({ headingDefault: { en: "Talks", es: "Charlas" } }),
@@ -29,10 +29,7 @@ export const talkGridFields: Field[] = [
     admin: { condition: (_, siblingData) => siblingData?.source === "kind" },
     label: { en: "Kind", es: "Tipo" },
     name: "kind",
-    options: TALK_KINDS.map((value) => ({
-      label: value.replace(/-/gu, " ").replace(/\b\w/gu, (letter) => letter.toUpperCase()),
-      value,
-    })),
+    options: talkKindOptions(),
     type: "select",
   },
   {

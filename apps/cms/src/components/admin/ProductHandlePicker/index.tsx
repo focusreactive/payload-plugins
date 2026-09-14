@@ -1,16 +1,23 @@
 "use client";
 
 /**
- * The editing experience for a Shopify product handle: click, see the store's products as cards,
- * filter, click one, done. It replaces only the *editor's* half of the field - the stored value
- * stays the handle in the same text field, so the eight handles already seeded in the sandbox keep
- * working and there is no schema change and no migration behind this.
+ * The editing experience for a Shopify product reference: click, see the store's products as cards,
+ * filter, click one, done. The stored value is still the product's handle in the same text field,
+ * so the handles already seeded keep working and there is no schema change behind this.
  *
- * That constraint is why the field is still literally a Payload `TextInput`. The handle is always
- * visible, always typeable and always clearable, and the picker is a drawer hanging off it. An
- * editor who cannot reach the store - no token, a 502, an expired scope - loses the convenience
- * and keeps the field, which is the only acceptable failure mode for a control that sits on a
- * required field.
+ * The handle input is READ-ONLY, and that is the whole design. A handle is a machine address an
+ * editor has no way to verify by eye: a typo saves clean, passes validation, and surfaces later as
+ * a section that renders nothing, on a page nobody thought to re-check. Removing the keyboard from
+ * the field removes that failure. What replaces it is the product's real title and a link straight
+ * to it in Shopify, so the editor confirms the choice against the thing itself rather than against
+ * a string.
+ *
+ * There is no Clear button for the same reason. Both fields using this picker are `required`, so an
+ * empty value is not a state an editor can usefully reach - clearing only produces an invalid block
+ * they must then fix. The two valid moves are pick and replace, so those are the two on offer.
+ *
+ * When the store cannot be reached the saved handle still renders and the block still works; only
+ * the title and the link are missing. The cost of a 502 is confirmation, never the value.
  */
 
 import {
@@ -25,9 +32,10 @@ import {
 } from "@payloadcms/ui";
 import type { TextFieldClientComponent } from "payload";
 import type { ChangeEvent } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { StoreProductOption } from "@/lib/config/storeProducts";
+import { storeProductUrl } from "@/lib/config/storeProducts";
 
 import { useStoreProducts } from "./useStoreProducts";
 
@@ -66,17 +74,29 @@ export const ProductHandlePicker: TextFieldClientComponent = ({ field, path, rea
   const { customComponents, setValue, showError, value } = useField<string>({ path });
   const drawerSlug = useDrawerSlug(baseClass);
   const { closeModal, openModal } = useModal();
-  const { error, load, products, status } = useStoreProducts();
+  const { error, load, products, status, storeDomain } = useStoreProducts();
   const [filter, setFilter] = useState("");
+
+  // Resolving the saved handle into a title needs the catalogue, so a document that already has
+  // products asks for it once on mount. `useStoreProducts` shares one promise at module scope, so
+  // a carousel with eight rows still issues exactly one request - and a document with no product
+  // saved yet still issues none.
+  useEffect(() => {
+    if (value) void load();
+  }, [load, value]);
 
   const matches = useMemo(() => {
     const needle = filter.trim().toLowerCase();
     return needle ? products.filter((product) => matchesFilter(product, needle)) : products;
   }, [filter, products]);
 
-  // The fetch is bound to this click and nothing else. No effect, no fetch on mount: a document
-  // with eight carousel rows renders eight of these fields and issues no request at all until an
-  // editor opens one.
+  const selected = useMemo(
+    () => (value ? (products.find((product) => product.handle === value) ?? null) : null),
+    [products, value]
+  );
+
+  const selectedUrl = selected ? storeProductUrl(selected, storeDomain) : null;
+
   const openPicker = useCallback(async () => {
     openModal(drawerSlug);
     await load();
@@ -98,17 +118,64 @@ export const ProductHandlePicker: TextFieldClientComponent = ({ field, path, rea
         Error={customComponents?.Error}
         label={field.label}
         Label={customComponents?.Label}
-        onChange={(event: ChangeEvent<HTMLInputElement>) => setValue(event.target.value)}
         path={path}
-        placeholder={field.admin?.placeholder}
-        readOnly={readOnly}
+        // Always read-only, whatever the document's own lock state. See the note at the top.
+        readOnly
         required={field.required}
         showError={showError}
         value={value ?? ""}
       />
 
-      {/* Deliberately no echo of the value here: the input above already shows the handle in full,
-          so a second, truncated copy would be strictly less useful than the field it duplicates. */}
+      {value ? (
+        <div className={`${baseClass}__selected`}>
+          {status === "loading" ? (
+            <ShimmerEffect height="calc(var(--base) * 2.5)" />
+          ) : selected ? (
+            <>
+              <span className={`${baseClass}__selected-thumb`}>
+                {selected.featuredImage ? (
+                  // Plain <img>: next/image would need the Shopify CDN added to next.config.mjs
+                  // remotePatterns, which is a config change on a shared public repo for one
+                  // admin thumbnail.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    alt={selected.featuredImage.altText ?? selected.title}
+                    src={selected.featuredImage.url}
+                  />
+                ) : null}
+              </span>
+              <span className={`${baseClass}__selected-text`}>
+                <strong>{selected.title}</strong>
+                {formatPrice(selected.price) ? <span>{formatPrice(selected.price)}</span> : null}
+              </span>
+              {selectedUrl ? (
+                <a
+                  className={`${baseClass}__selected-link`}
+                  href={selectedUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Open in the store ↗
+                </a>
+              ) : null}
+            </>
+          ) : status === "ready" ? (
+            // The catalogue answered and does not contain this handle. Nearly always a product
+            // that was renamed or unpublished in Shopify after the block was built, which is the
+            // one failure a read-only field cannot prevent - so it has to be said out loud rather
+            // than left as a section that renders nothing.
+            <Banner type="error">
+              No product in the store has this address any more. Choose it again.
+            </Banner>
+          ) : status === "error" ? (
+            <p className={`${baseClass}__selected-muted`}>
+              The store could not be reached, so the product’s name is not shown. The saved product
+              is unaffected.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className={`${baseClass}__actions`}>
         <Button
           buttonStyle="secondary"
@@ -118,27 +185,14 @@ export const ProductHandlePicker: TextFieldClientComponent = ({ field, path, rea
           size="small"
           type="button"
         >
-          Browse the store
+          {value ? "Change product" : "Choose a product"}
         </Button>
-
-        {value ? (
-          <Button
-            buttonStyle="subtle"
-            disabled={readOnly}
-            margin={false}
-            onClick={() => setValue("")}
-            size="small"
-            type="button"
-          >
-            Clear
-          </Button>
-        ) : null}
       </div>
 
       <Drawer slug={drawerSlug} title="Choose a product">
         <div className={`${baseClass}__filter`}>
           <TextInput
-            label="Filter by title or handle"
+            label="Filter by name"
             onChange={(event: ChangeEvent<HTMLInputElement>) => setFilter(event.target.value)}
             path={`${path}__store-filter`}
             placeholder="Start typing…"
@@ -160,8 +214,8 @@ export const ProductHandlePicker: TextFieldClientComponent = ({ field, path, rea
           <div className={`${baseClass}__status`}>
             <Banner type="error">{error}</Banner>
             <p>
-              The handle field above still works — type the product’s handle by hand, or try the
-              store again.
+              Nothing has been lost — the product saved on this block is still there. Try the store
+              again.
             </p>
             <Button
               buttonStyle="secondary"
@@ -178,9 +232,7 @@ export const ProductHandlePicker: TextFieldClientComponent = ({ field, path, rea
 
         {status === "ready" && products.length === 0 ? (
           <div className={`${baseClass}__status`}>
-            <Banner type="info">
-              The store answered but has no products to show. Type the handle by hand above.
-            </Banner>
+            <Banner type="info">The store answered but has no products to show.</Banner>
           </div>
         ) : null}
 
@@ -207,9 +259,6 @@ export const ProductHandlePicker: TextFieldClientComponent = ({ field, path, rea
                   >
                     <span className={`${baseClass}__thumb`}>
                       {product.featuredImage ? (
-                        // Plain <img>: next/image would need the Shopify CDN added to
-                        // next.config.mjs remotePatterns, which is a config change on a shared
-                        // public repo for one admin thumbnail.
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           alt={product.featuredImage.altText ?? product.title}
@@ -221,7 +270,6 @@ export const ProductHandlePicker: TextFieldClientComponent = ({ field, path, rea
                     </span>
 
                     <span className={`${baseClass}__card-title`}>{product.title}</span>
-                    <span className={`${baseClass}__card-handle`}>{product.handle}</span>
                     {price ? <span className={`${baseClass}__card-price`}>{price}</span> : null}
                   </button>
                 </li>

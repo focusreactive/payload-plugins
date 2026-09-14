@@ -18,12 +18,13 @@
  * paid. The demo has no auth at all, so the tier arrives from the "view as" switch instead.
  */
 
-import { TALK_TIERS } from "@/collections/Talk";
+// From taxonomy.ts rather than from the collection config, so a client component that only needs to
+// know the tiers does not pull the Payload config into its bundle.
+import type { TalkTier } from "./taxonomy";
+import { isTalkTier, TALK_TIERS } from "./taxonomy";
 
-export type TalkTier = (typeof TALK_TIERS)[number];
-
-export const isTalkTier = (value: unknown): value is TalkTier =>
-  typeof value === "string" && (TALK_TIERS as readonly string[]).includes(value);
+export { isTalkTier, TALK_TIERS } from "./taxonomy";
+export type { TalkTier } from "./taxonomy";
 
 /** Ascending, so a numeric comparison answers "does this reader reach that tier". */
 const rank = (tier: TalkTier) => TALK_TIERS.indexOf(tier);

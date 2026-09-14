@@ -30,6 +30,7 @@ const STORE_PRODUCTS_QUERY = /* GraphQL */ `
       nodes {
         handle
         title
+        onlineStoreUrl
         featuredImage {
           url
           altText
@@ -50,6 +51,7 @@ interface StoreProductsResponse {
     nodes: {
       handle: string;
       title: string;
+      onlineStoreUrl: string | null;
       featuredImage: { url: string; altText: string | null } | null;
       priceRange: { minVariantPrice: { amount: string; currencyCode: string } };
     }[];
@@ -74,6 +76,7 @@ export async function getStoreProductOptions(
   return data.products.nodes.map((product) => ({
     featuredImage: product.featuredImage,
     handle: product.handle,
+    onlineStoreUrl: product.onlineStoreUrl,
     price: product.priceRange.minVariantPrice,
     title: product.title,
   }));

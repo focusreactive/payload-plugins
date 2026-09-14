@@ -11,9 +11,70 @@
   }
 
   // This field sits in an array row that can be a third of the screen wide, and Payload's .btn
-  // wraps its label there - which leaves a two-line button beside a one-line Clear.
+  // wraps its label there, which reads as a broken control rather than a long one.
   &__actions .btn {
     white-space: nowrap;
+  }
+
+  // The confirmation strip under the read-only handle: cover, name, price, and the way out to
+  // Shopify. It carries the whole burden of telling an editor they picked the right thing, which
+  // is why it sits directly under the value rather than inside the drawer.
+  &__selected {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--base) * 0.5);
+    margin-top: calc(var(--base) * 0.4);
+    padding: calc(var(--base) * 0.4);
+    border: 1px solid var(--theme-elevation-150);
+    border-radius: var(--style-radius-s);
+    background: var(--theme-elevation-50);
+  }
+
+  &__selected-thumb {
+    flex: 0 0 auto;
+    width: calc(var(--base) * 1.6);
+    height: calc(var(--base) * 1.6);
+    overflow: hidden;
+    border-radius: var(--style-radius-s);
+    background: var(--theme-elevation-100);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  &__selected-text {
+    display: flex;
+    flex-direction: column;
+    // Without this a long product name pushes the link off the row instead of wrapping.
+    min-width: 0;
+    gap: calc(var(--base) * 0.1);
+
+    strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    span {
+      color: var(--theme-elevation-600);
+      font-size: 0.85em;
+    }
+  }
+
+  &__selected-link {
+    margin-inline-start: auto;
+    white-space: nowrap;
+    font-size: 0.85em;
+  }
+
+  &__selected-muted {
+    color: var(--theme-elevation-600);
+    margin: 0;
+    font-size: 0.85em;
   }
 
   &__filter {

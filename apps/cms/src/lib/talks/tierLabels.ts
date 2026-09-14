@@ -11,23 +11,9 @@
  * notice used to interpolate the raw enum value ("all-access") next to title-cased switch buttons.
  */
 
-import type { TalkTier } from "./applyTier";
-import { isTalkTier } from "./applyTier";
+import { isTalkTier, TIER_LABELS } from "./taxonomy";
 
-/**
- * `visitor` is the absence of a membership rather than a tier the client sells, so it is named for
- * what the reader gets instead of for a product that does not exist.
- */
-const TIER_LABELS: Record<TalkTier, string> = {
-  "all-access": "All Access",
-  basic: "Basic",
-  premium: "Premium",
-  visitor: "Free",
-};
-
-/** An unknown or missing value falls back to the least, the same way getReaderTier() does. */
-export const tierLabel = (tier: unknown): string =>
-  TIER_LABELS[isTalkTier(tier) ? tier : "visitor"];
+export { tierLabel } from "./taxonomy";
 
 export interface TierBadge {
   label: string;

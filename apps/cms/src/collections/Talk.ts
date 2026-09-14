@@ -17,24 +17,14 @@ import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { generateSeoFields } from "@/lib/utils/seoFields";
 
 import { talkAiFields } from "@/lib/fields/talkAiFields";
+import { talkKindOptions, talkTierOptions } from "@/lib/talks/taxonomy";
 
 /**
- * Their live tiers, in ascending order. `visitor` is not one of the client's tiers - it is the
- * absence of a membership, and it exists here so a document can be marked freely readable.
+ * Both lists and the words shown for each now live in lib/talks/taxonomy.ts, so the dropdown in the
+ * panel and the badge on the page cannot drift apart. Re-exported here because the renderer, the
+ * seed script and the "view as" switch all import them from this path.
  */
-export const TALK_TIERS = ["visitor", "basic", "premium", "all-access"] as const;
-
-export const TALK_KINDS = [
-  "featured-talk",
-  "short-talk",
-  "special-lesson",
-  "student-qa",
-  "study-group-discussion",
-  "article",
-  "blog",
-  "letter",
-  "insight-timer-talk",
-] as const;
+export { TALK_KINDS, TALK_TIERS } from "@/lib/talks/taxonomy";
 
 export const Talk: CollectionConfig<"talk"> = {
   access: {
@@ -63,6 +53,10 @@ export const Talk: CollectionConfig<"talk"> = {
   },
   fields: [
     {
+      admin: {
+        description:
+          "What this teaching is called. Used as the page heading, on every listing card, and as the link title when someone shares it.",
+      },
       label: "Title",
       localized: true,
       name: "title",
@@ -96,31 +90,27 @@ export const Talk: CollectionConfig<"talk"> = {
               type: "row",
               fields: [
                 {
-                  admin: { width: "50%" },
+                  admin: {
+                    description:
+                      "Which part of the archive this belongs to. Decides the label on the card and which listings it appears in.",
+                    width: "50%",
+                  },
                   label: "Kind",
                   name: "kind",
-                  options: TALK_KINDS.map((value) => ({
-                    label: value
-                      .replace(/-/gu, " ")
-                      .replace(/\b\w/gu, (letter) => letter.toUpperCase()),
-                    value,
-                  })),
+                  options: talkKindOptions(),
                   required: true,
                   type: "select",
                 },
                 {
                   admin: {
                     description:
-                      "What a reader needs in order to read this item's body. Editorial metadata about the ITEM - never a record of who paid. Entitlement lives in the payment provider and reaches the app through the identity layer; the CMS must not store it.",
+                      "The membership someone needs before the body unlocks. The title, teaser, topics and summary stay public whichever you pick, so the page is still found in search.",
                     width: "50%",
                   },
                   defaultValue: "visitor",
-                  label: "Required tier",
+                  label: "Members only from",
                   name: "requiredTier",
-                  options: TALK_TIERS.map((value) => ({
-                    label: value === "visitor" ? "Free - no membership" : value,
-                    value,
-                  })),
+                  options: talkTierOptions(),
                   required: true,
                   type: "select",
                 },
@@ -129,7 +119,7 @@ export const Talk: CollectionConfig<"talk"> = {
             {
               admin: {
                 description:
-                  "Shown to readers below the tier, and indexed. Their site already ships this - the anonymous view of a gated talk carries about 41% of the member text - so a teaser is a rewrite of something that exists, not a new feature.",
+                  "The opening someone reads before the membership gate. It also appears on listing cards and in search results, so write it to stand on its own. Two or three sentences.",
               },
               label: "Teaser",
               localized: true,
@@ -137,6 +127,10 @@ export const Talk: CollectionConfig<"talk"> = {
               type: "textarea",
             },
             {
+              admin: {
+                description:
+                  "The full teaching. Everything here is hidden from anyone below the membership set above.",
+              },
               label: "Body",
               localized: true,
               name: "body",
@@ -147,7 +141,11 @@ export const Talk: CollectionConfig<"talk"> = {
               type: "row",
               fields: [
                 {
-                  admin: { width: "50%" },
+                  admin: {
+                    description:
+                      "The date shown on the page. Listings are ordered newest first by this, not by when you created the item.",
+                    width: "50%",
+                  },
                   label: "Published at",
                   name: "publishedAt",
                   type: "date",
@@ -155,10 +153,10 @@ export const Talk: CollectionConfig<"talk"> = {
                 {
                   admin: {
                     description:
-                      "Real length in seconds. Never read this from their JSON-LD, which says T1M15S on every talk on the site.",
+                      "How long the audio runs, counted in seconds. Readers see it as “7 min”. A 7 minute 15 second recording is 435.",
                     width: "50%",
                   },
-                  label: "Duration (seconds)",
+                  label: "Length of the audio, in seconds",
                   min: 0,
                   name: "durationSeconds",
                   type: "number",
@@ -168,13 +166,17 @@ export const Talk: CollectionConfig<"talk"> = {
             {
               admin: {
                 description:
-                  "Streams from the client's own S3 bucket. The objects are public-read once the decorative SigV2 query string is stripped, so no key and no client action is needed. Do not store a presigned URL - theirs expire the day they are generated.",
+                  "Web address of the recording. Use the permanent link to the file - a temporary or expiring share link stops playing within a day. Leave empty for an item with no audio.",
               },
-              label: "Audio URL",
+              label: "Link to the audio",
               name: "audioUrl",
               type: "text",
             },
             {
+              admin: {
+                description:
+                  "The subjects this teaching covers. Each one gives the item a place in Browse Topics, and a reader who finishes it is offered the rest of that topic. Two or three is usually right.",
+              },
               hasMany: true,
               label: "Topics",
               name: "topics",
@@ -185,11 +187,11 @@ export const Talk: CollectionConfig<"talk"> = {
             {
               admin: {
                 description:
-                  "Where this item came from in their Magento, kept so any figure in the demo can be traced back.",
+                  "The page this item was brought over from. Filled in automatically and kept for reference - nothing to edit here.",
                 position: "sidebar",
                 readOnly: true,
               },
-              label: "Source URL",
+              label: "Brought over from",
               name: "sourceUrl",
               type: "text",
             },

@@ -28,8 +28,8 @@ const fields: Field[] = [
         },
       },
       description: {
-        en: "One row per product, in the order they should appear. A handle is the last path segment of the product's storefront URL, e.g. my-first-product - not the numeric id.",
-        es: "Una fila por producto, en el orden en que deben aparecer. El identificador es el último segmento de la URL del producto en la tienda, p. ej. my-first-product, no el id numérico.",
+        en: "One row per product, shown left to right in this order. Drag a row to move it.",
+        es: "Una fila por producto, mostrados de izquierda a derecha en este orden. Arrastra una fila para moverla.",
       },
       initCollapsed: true,
     },
@@ -41,9 +41,8 @@ const fields: Field[] = [
             // already seeded keep resolving and no migration follows from adding this.
             Field: "@/components/admin/ProductHandlePicker#ProductHandlePicker",
           },
-          placeholder: "my-first-product",
         },
-        label: { en: "Product handle", es: "Identificador del producto" },
+        label: { en: "Product", es: "Producto" },
         name: "handle",
         required: true,
         type: "text",

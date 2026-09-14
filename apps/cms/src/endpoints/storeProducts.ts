@@ -12,7 +12,7 @@
 
 import type { Endpoint, PayloadRequest } from "payload";
 
-import { getStoreProductOptions } from "@/dal";
+import { getStorefrontConfig, getStoreProductOptions } from "@/dal";
 import { STORE_PRODUCTS_ENDPOINT_PATH } from "@/lib/config/storeProducts";
 
 function json(data: unknown, status: number): Response {
@@ -38,7 +38,10 @@ export function createStoreProductsEndpoint(): Endpoint {
         // shows a different message for each, so they must not collapse into one response.
         if (products === null) return json({ error: "No store is configured." }, 503);
 
-        return json({ products }, 200);
+        // The host travels with the list so the picker can build a link to a product Shopify gave
+        // no `onlineStoreUrl` for, which is every product on a catalogue that is not published to
+        // the Online Store channel.
+        return json({ products, storeDomain: getStorefrontConfig()?.domain ?? "" }, 200);
       } catch (cause) {
         // The message can carry a Shopify error body, so it goes to the server log and the client
         // gets a generic one. The picker always leaves the handle field typeable, so a 502 here

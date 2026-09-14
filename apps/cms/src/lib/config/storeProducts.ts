@@ -24,4 +24,30 @@ export interface StoreProductOption {
   title: string;
   featuredImage: { url: string; altText: string | null } | null;
   price: { amount: string; currencyCode: string } | null;
+  /**
+   * Shopify answers null here for any product not published to the Online Store channel, which is
+   * the normal state of a headless catalogue. `storeProductUrl` below is the fallback, so the field
+   * is a preference rather than the source.
+   */
+  onlineStoreUrl: string | null;
 }
+
+export interface StoreProductsPayload {
+  products: StoreProductOption[];
+  /** The `*.myshopify.com` host, so the picker can build a product link when Shopify gives none. */
+  storeDomain: string;
+}
+
+/**
+ * Where an editor goes to edit the product itself. Not a credential: the host is already visible in
+ * every product image URL the storefront serves, and the route is only ever rendered for a
+ * signed-in admin.
+ */
+export const storeProductUrl = (
+  product: Pick<StoreProductOption, "handle" | "onlineStoreUrl">,
+  storeDomain: string
+): string | null => {
+  if (product.onlineStoreUrl) return product.onlineStoreUrl;
+  if (!storeDomain) return null;
+  return `https://${storeDomain}/products/${product.handle}`;
+};
