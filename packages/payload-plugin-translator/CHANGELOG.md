@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-translator [0.13.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.13.0...@focus-reactive/payload-plugin-translator@0.13.1) (2026-09-14)
+
+
+### Bug Fixes
+
+* **translator:** let a manual run lift the debounce it is waiting on ([bde4f6f](https://github.com/focusreactive/payload-plugins/commit/bde4f6fddafa4f472593386a8b371de52f4907f2)), closes [#127](https://github.com/focusreactive/payload-plugins/issues/127)
+
 # @focus-reactive/payload-plugin-translator [0.13.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.12.0...@focus-reactive/payload-plugin-translator@0.13.0) (2026-09-12)
 
 
