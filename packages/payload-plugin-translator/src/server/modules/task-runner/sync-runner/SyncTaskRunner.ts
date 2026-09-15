@@ -5,6 +5,8 @@ import { toTaskFilter } from "../toTaskFilter";
 import type { TaskHandler } from "../TaskRunnerProvider.interface";
 import type { Task, TaskInput, RunResult, ID } from "../types";
 import type { LazyMap } from "../../../shared/utils";
+import type { TransactionScope } from "../../../shared/payload/TransactionScope.shapes";
+import { killedTheCallersTransaction } from "../../../shared/payload/TransactionScope.shapes";
 
 /**
  * Synchronous TaskRunner implementation.
@@ -19,7 +21,7 @@ export class SyncTaskRunner implements TaskRunner {
     private readonly tasks: LazyMap<string, Task>
   ) {}
 
-  async enqueue(inputs: TaskInput[]): Promise<void> {
+  async enqueue(inputs: TaskInput[], scope: TransactionScope = {}): Promise<void> {
     for (const input of inputs) {
       const key = this.getKey(input.collectionSlug, input.collectionId, input.targetLng);
       const now = new Date().toISOString();
@@ -36,14 +38,18 @@ export class SyncTaskRunner implements TaskRunner {
       this.tasks.set(key, task);
 
       try {
-        await this.handler(this.payload, {
-          collection: input.collectionSlug,
-          collectionId: input.collectionId,
-          sourceLng: input.sourceLng,
-          targetLng: input.targetLng,
-          strategy: input.strategy,
-          publishOnTranslation: input.publishOnTranslation,
-        });
+        await this.handler(
+          this.payload,
+          {
+            collection: input.collectionSlug,
+            collectionId: input.collectionId,
+            sourceLng: input.sourceLng,
+            targetLng: input.targetLng,
+            strategy: input.strategy,
+            publishOnTranslation: input.publishOnTranslation,
+          },
+          scope
+        );
 
         task.status = "completed";
         task.completedAt = new Date().toISOString();
@@ -52,9 +58,14 @@ export class SyncTaskRunner implements TaskRunner {
         task.error = {
           message: error instanceof Error ? error.message : "Unknown error",
         };
+        // Abandon the remaining locales: with the caller's transaction already rolled back they
+        // would only pile up errors against a dead one.
+        if (killedTheCallersTransaction(scope, error)) throw error;
+      } finally {
+        // `finally`, not after the `try`: the rethrow above must still leave a timestamp, or
+        // `LazyMap` never evicts the failed task.
+        task.updatedAt = new Date().toISOString();
       }
-
-      task.updatedAt = new Date().toISOString();
     }
   }
 

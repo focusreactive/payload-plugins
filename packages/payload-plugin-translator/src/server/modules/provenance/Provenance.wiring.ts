@@ -52,10 +52,10 @@ export function configureProvenance(
   const slug = resolveProvenanceSlug(option);
   if (!slug) return { configure: () => NOOP };
 
-  const storeFactory: ProvenanceStoreFactory = (payload) =>
-    new PayloadProvenanceStore(payload, slug);
-  const serviceFactory: ProvenanceServiceFactory = (payload) =>
-    new ProvenanceService(payload, storeFactory(payload), schemaMap);
+  const storeFactory: ProvenanceStoreFactory = (payload, scope) =>
+    new PayloadProvenanceStore(payload, slug, scope);
+  const serviceFactory: ProvenanceServiceFactory = (payload, scope) =>
+    new ProvenanceService(payload, storeFactory(payload, scope), schemaMap, scope);
 
   const configure =
     (managedSlugs: Set<string>): ConfigModifier =>

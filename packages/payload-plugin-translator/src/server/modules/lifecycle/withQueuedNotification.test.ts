@@ -35,7 +35,7 @@ describe("withQueuedNotification", () => {
       expect.objectContaining({ collection: "posts", id: "1", sourceLng: "en", targetLng: "de" })
     );
     expect(onQueued).toHaveBeenNthCalledWith(2, expect.objectContaining({ id: "2" }));
-    expect(runner.enqueue).toHaveBeenCalledWith([input("1"), input("2")]);
+    expect(runner.enqueue).toHaveBeenCalledWith([input("1"), input("2")], undefined);
   });
 
   it("fires queued BEFORE delegating to the runner (ordering vs a synchronous runner)", async () => {

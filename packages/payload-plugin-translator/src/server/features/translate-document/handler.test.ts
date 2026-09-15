@@ -101,6 +101,7 @@ describe("TranslateDocumentHandler", () => {
       await handler.handle(mockPayload, input);
 
       expect(mockPayload.findByID).toHaveBeenCalledWith({
+        req: {},
         collection: "posts",
         id: "doc-123",
         locale: "en",
@@ -116,6 +117,7 @@ describe("TranslateDocumentHandler", () => {
       await handler.handle(mockPayload, input);
 
       expect(mockPayload.findByID).toHaveBeenCalledWith({
+        req: {},
         collection: "posts",
         id: "doc-123",
         locale: "de",
@@ -402,7 +404,7 @@ describe("TranslateDocumentHandler", () => {
       expect(computeSourceFingerprint).toHaveBeenCalledWith({ id: "doc-123", title: "Source" }, [
         { name: "title", type: "text", localized: true },
       ]);
-      expect(serviceFactory).toHaveBeenCalledWith(mockPayload);
+      expect(serviceFactory).toHaveBeenCalledWith(mockPayload, {});
       expect(store.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           collectionSlug: "posts",

@@ -4,6 +4,8 @@ import { computeSourceFingerprint } from "../../../core/domain/content-projectio
 import type { FieldLike } from "../../../core/kernel/field-traversal";
 import { isRecordStale } from "../../../core/domain/provenance";
 import type { ProvenanceKey, ProvenanceStore } from "../../../core/domain/provenance";
+import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes";
+import { killedTheCallersTransaction } from "../../shared/payload/TransactionScope.shapes";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument";
 
@@ -16,7 +18,10 @@ export type StalenessLocale = {
 };
 
 /** Builds a {@link ProvenanceService} bound to a Payload instance; absent when provenance is disabled. */
-export type ProvenanceServiceFactory = (payload: Payload) => ProvenanceService;
+export type ProvenanceServiceFactory = (
+  payload: Payload,
+  scope?: TransactionScope
+) => ProvenanceService;
 
 /**
  * The single owner of provenance fingerprint policy — how the source is hashed on write, re-hashed on
@@ -31,11 +36,18 @@ export class ProvenanceService {
   private readonly payload: Payload;
   private readonly store: ProvenanceStore;
   private readonly schemaMap: CollectionSchemaMap;
+  private readonly scope: TransactionScope;
 
-  constructor(payload: Payload, store: ProvenanceStore, schemaMap: CollectionSchemaMap) {
+  constructor(
+    payload: Payload,
+    store: ProvenanceStore,
+    schemaMap: CollectionSchemaMap,
+    scope: TransactionScope = {}
+  ) {
     this.payload = payload;
     this.store = store;
     this.schemaMap = schemaMap;
+    this.scope = scope;
   }
 
   /**
@@ -89,6 +101,7 @@ export class ProvenanceService {
         sourceLocale: key.sourceLocale,
         msg: "translator: failed to record translation provenance",
       });
+      if (killedTheCallersTransaction(this.scope, error)) throw error;
     }
   }
 

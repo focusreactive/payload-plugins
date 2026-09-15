@@ -6,6 +6,8 @@ import type { TranslationProvider } from "../../../core/domain/translation-provi
 import { translateContent } from "../../../core/translation-pipeline";
 import type { ProvenanceServiceFactory } from "../../modules/provenance";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument";
+import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes";
+import { freshReq } from "../../shared/payload/TransactionScope.shapes";
 
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext";
@@ -42,7 +44,11 @@ export class TranslateDocumentHandler implements Handler<
     this.inlineMarks = inlineMarks;
   }
 
-  async handle(payload: Payload, input: TranslateDocumentInput): Promise<TranslateDocumentOutput> {
+  async handle(
+    payload: Payload,
+    input: TranslateDocumentInput,
+    scope: TransactionScope = {}
+  ): Promise<TranslateDocumentOutput> {
     const { collection, collectionId, sourceLng, targetLng, strategy, publishOnTranslation } =
       input;
 
@@ -55,11 +61,12 @@ export class TranslateDocumentHandler implements Handler<
     });
 
     // `draft: true` is unconditional: on a collection without drafts Payload has no version to
-    // substitute, so it returns the only row. The WRITE cannot be so relaxed — the `no-drafts`
-    // layer omits `draft` entirely, because that is the argument shape `main` sent.
+    // substitute, so it returns the only row. The write cannot be as relaxed — the `no-drafts`
+    // layer omits `draft` entirely.
     const [sourceData, currentTargetVersion] = await Promise.all([
-      fetchSourceDocument(payload, collection, collectionId, sourceLng),
+      fetchSourceDocument(payload, collection, collectionId, sourceLng, scope),
       payload.findByID({
+        req: freshReq(scope),
         collection,
         id: collectionId,
         locale: targetLng,
@@ -69,7 +76,7 @@ export class TranslateDocumentHandler implements Handler<
       }),
     ]);
 
-    const provenance = this.provenanceServiceFactory?.(payload);
+    const provenance = this.provenanceServiceFactory?.(payload, scope);
     const sourceFingerprint = provenance?.captureFingerprint(collection, sourceData) ?? null;
 
     const translatedData = await translateContent({
@@ -84,7 +91,7 @@ export class TranslateDocumentHandler implements Handler<
     });
 
     if (translatedData) {
-      await this.saveTranslatedDocument(payload, input, translatedData, layer.write);
+      await this.saveTranslatedDocument(payload, input, translatedData, layer.write, scope);
 
       if (provenance && sourceFingerprint !== null) {
         await provenance.record(
@@ -100,7 +107,7 @@ export class TranslateDocumentHandler implements Handler<
     }
 
     if (publishOnTranslation && layer.kind === "drafts") {
-      await this.publishTargetLocale(payload, input, layer.publish);
+      await this.publishTargetLocale(payload, input, layer.publish, scope);
     }
 
     return { success: true };
@@ -110,9 +117,11 @@ export class TranslateDocumentHandler implements Handler<
     payload: Payload,
     input: TranslateDocumentInput,
     translatedData: Record<string, unknown>,
-    write: TargetLayer["write"]
+    write: TargetLayer["write"],
+    scope: TransactionScope
   ): Promise<void> {
     await payload.update({
+      req: freshReq(scope),
       collection: input.collection,
       id: input.collectionId,
       data: translatedData,
@@ -126,9 +135,11 @@ export class TranslateDocumentHandler implements Handler<
   private async publishTargetLocale(
     payload: Payload,
     input: TranslateDocumentInput,
-    publish: PublishScope
+    publish: PublishScope,
+    scope: TransactionScope
   ): Promise<void> {
     await payload.update({
+      req: freshReq(scope),
       collection: input.collection,
       id: input.collectionId,
       data: { _status: publish.status },

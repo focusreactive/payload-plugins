@@ -28,9 +28,19 @@ export class LifecycleNotifier {
     return this.safe("lifecycle.onCompleted", callback && (() => callback(task)));
   }
 
-  failed(task: TranslationTask, error: unknown): Promise<void> {
+  async failed(task: TranslationTask, error: unknown): Promise<void> {
     const callback = this.callbacks.onFailed;
-    return this.safe("lifecycle.onFailed", callback && (() => callback(task, error)));
+    if (!callback) {
+      this.logger.error({
+        err: error,
+        collection: task.collection,
+        id: task.id,
+        targetLng: task.targetLng,
+        msg: "translator: translation failed",
+      });
+      return;
+    }
+    await this.safe("lifecycle.onFailed", () => callback(task, error));
   }
 
   private async safe(name: string, thunk?: () => void | Promise<void>): Promise<void> {
