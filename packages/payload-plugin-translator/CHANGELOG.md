@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-translator [0.13.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.13.1...@focus-reactive/payload-plugin-translator@0.13.2) (2026-09-15)
+
+
+### Bug Fixes
+
+* **translator:** run auto-translate inside the save that triggered it ([0270df4](https://github.com/focusreactive/payload-plugins/commit/0270df420868f976f1d2ee871db64f11d435aa09)), closes [#124](https://github.com/focusreactive/payload-plugins/issues/124)
+
 ## @focus-reactive/payload-plugin-translator [0.13.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.13.0...@focus-reactive/payload-plugin-translator@0.13.1) (2026-09-14)
 
 
