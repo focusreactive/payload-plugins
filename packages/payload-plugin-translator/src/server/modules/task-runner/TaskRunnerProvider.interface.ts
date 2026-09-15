@@ -2,6 +2,7 @@ import type { CollectionSlug, Config, Payload } from "payload";
 import type { TaskRunner } from "./TaskRunner.interface";
 import type { ID } from "./types";
 import type { TranslationStrategyName } from "../../../core/translation-pipeline/strategies";
+import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes";
 
 /**
  * Input for task handler callback
@@ -18,7 +19,11 @@ export type TaskHandlerInput = {
 /**
  * Task handler callback — plugin passes its internal logic
  */
-export type TaskHandler = (payload: Payload, input: TaskHandlerInput) => Promise<void>;
+export type TaskHandler = (
+  payload: Payload,
+  input: TaskHandlerInput,
+  scope?: TransactionScope
+) => Promise<void>;
 
 /**
  * Context for runner configuration

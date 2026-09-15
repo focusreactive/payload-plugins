@@ -1,4 +1,7 @@
 import type { CollectionSlug, Payload, Where } from "payload";
+
+import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes";
+import { freshReq } from "../../shared/payload/TransactionScope.shapes";
 import type {
   ProvenanceKey,
   ProvenanceStore,
@@ -6,7 +9,10 @@ import type {
 } from "../../../core/domain/provenance";
 
 /** Builds a provenance store bound to a Payload instance; absent when provenance is disabled. */
-export type ProvenanceStoreFactory = (payload: Payload) => ProvenanceStore;
+export type ProvenanceStoreFactory = (
+  payload: Payload,
+  scope?: TransactionScope
+) => ProvenanceStore;
 
 interface ProvenanceDoc extends Record<string, unknown> {
   id: string | number;
@@ -54,24 +60,40 @@ function toRecord(doc: ProvenanceDoc): TranslationProvenanceRecord {
 export class PayloadProvenanceStore implements ProvenanceStore {
   private readonly payload: Payload;
   private readonly collection: CollectionSlug;
+  private readonly scope: TransactionScope;
 
-  constructor(payload: Payload, slug: string) {
+  constructor(payload: Payload, slug: string, scope: TransactionScope = {}) {
     this.payload = payload;
     this.collection = slug as CollectionSlug;
+    this.scope = scope;
+  }
+
+  private req(): TransactionScope {
+    return freshReq(this.scope);
   }
 
   async upsert(record: TranslationProvenanceRecord): Promise<void> {
     const existing = await this.findDoc(record);
     if (existing === null) {
       try {
-        await this.payload.create({ collection: this.collection, data: record });
+        await this.payload.create({ req: this.req(), collection: this.collection, data: record });
       } catch (error) {
         const raceWinner = await this.findDoc(record);
         if (raceWinner === null) throw error;
-        await this.payload.update({ collection: this.collection, id: raceWinner.id, data: record });
+        await this.payload.update({
+          req: this.req(),
+          collection: this.collection,
+          id: raceWinner.id,
+          data: record,
+        });
       }
     } else {
-      await this.payload.update({ collection: this.collection, id: existing.id, data: record });
+      await this.payload.update({
+        req: this.req(),
+        collection: this.collection,
+        id: existing.id,
+        data: record,
+      });
     }
   }
 
@@ -85,6 +107,7 @@ export class PayloadProvenanceStore implements ProvenanceStore {
     documentId: string
   ): Promise<TranslationProvenanceRecord[]> {
     const result = await this.payload.find({
+      req: this.req(),
       collection: this.collection,
       where: documentWhere(collectionSlug, documentId),
       depth: 0,
@@ -97,12 +120,17 @@ export class PayloadProvenanceStore implements ProvenanceStore {
     const existing = await this.findDoc(key);
     if (existing === null) return;
     await this.payload.update({
+      req: this.req(),
       collection: this.collection,
       id: existing.id,
       data: { dismissedFingerprint },
     });
   }
 
+  /**
+   * Deliberately outside the caller's transaction, unlike every other write here: a failed sidecar
+   * delete must never roll back the document delete that triggered it.
+   */
   async deleteByDocument(collectionSlug: string, documentId: string): Promise<void> {
     await this.payload.delete({
       collection: this.collection,
@@ -112,6 +140,7 @@ export class PayloadProvenanceStore implements ProvenanceStore {
 
   private async findDoc(key: ProvenanceKey): Promise<ProvenanceDoc | null> {
     const result = await this.payload.find({
+      req: this.req(),
       collection: this.collection,
       where: keyWhere(key),
       limit: 1,

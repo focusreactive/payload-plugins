@@ -103,3 +103,34 @@ describe("LifecycleNotifier", () => {
     expect(done).toBe(true);
   });
 });
+
+describe("LifecycleNotifier — a failure with no onFailed configured", () => {
+  it("logs the failure", async () => {
+    const logger = makeLogger();
+    const error = new Error("provider unreachable");
+
+    await new LifecycleNotifier({}, logger).failed(task, error);
+
+    expect(logger.error).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith(expect.objectContaining({ err: error }));
+  });
+
+  it("names the document and the locale it failed for", async () => {
+    const logger = makeLogger();
+
+    await new LifecycleNotifier({}, logger).failed(task, new Error("boom"));
+
+    const logged = logger.error.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(logged).toMatchObject({ collection: "posts", id: "doc-1", targetLng: "de" });
+  });
+
+  it("does not log when a configured onFailed handled it", async () => {
+    const logger = makeLogger();
+    const onFailed = vi.fn();
+
+    await new LifecycleNotifier({ onFailed }, logger).failed(task, new Error("boom"));
+
+    expect(onFailed).toHaveBeenCalledTimes(1);
+    expect(logger.error).not.toHaveBeenCalled();
+  });
+});

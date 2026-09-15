@@ -1,6 +1,8 @@
 import type { CollectionAfterChangeHook } from "payload";
 import { hasDraftsEnabled } from "payload/shared";
 
+import { killedTheCallersTransaction } from "../../shared/payload/TransactionScope.shapes";
+
 import { hasSourceContentChanged } from "../../../core/domain/auto-translate";
 import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../core/domain/auto-translate";
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext";
@@ -43,6 +45,9 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
   const { resolvePolicy, schemaMap, taskRunnerFactory } = deps;
 
   const hook: MarkedHook = async ({ doc, previousDoc, req, collection }) => {
+    // Declared outside the `try` so the catch can tell a failure that reached a Payload operation
+    // from one raised before the id was settled — only the former can have killed the transaction.
+    let transactionID: string | number | undefined;
     try {
       if (req.context?.[AUTO_TRANSLATE_SKIP_CONTEXT_KEY]) return doc;
 
@@ -80,7 +85,12 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
       });
       if (tasks.length === 0) return doc;
 
-      await taskRunnerFactory.create(req.payload).enqueue(tasks);
+      // Settled first: Payload parks a promise in this field while the transaction opens, and a
+      // promise reaching the adapter as a transaction key is silently wrong.
+      transactionID = await req.transactionID;
+      await taskRunnerFactory
+        .create(req.payload)
+        .enqueue(tasks, transactionID == null ? {} : { transactionID });
     } catch (error) {
       req.payload.logger.error({
         err: error,
@@ -88,6 +98,7 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
         documentId: String(doc.id),
         msg: "translator: auto-translate hook failed",
       });
+      if (killedTheCallersTransaction({ transactionID }, error)) throw error;
     }
     return doc;
   };

@@ -36,14 +36,18 @@ describe("SyncTaskRunner", () => {
       const input = createInput();
       await runner.enqueue([input]);
 
-      expect(mockHandler).toHaveBeenCalledWith(mockPayload, {
-        collection: "posts",
-        collectionId: "doc-123",
-        sourceLng: "en",
-        targetLng: "de",
-        strategy: "overwrite",
-        publishOnTranslation: false,
-      });
+      expect(mockHandler).toHaveBeenCalledWith(
+        mockPayload,
+        {
+          collection: "posts",
+          collectionId: "doc-123",
+          sourceLng: "en",
+          targetLng: "de",
+          strategy: "overwrite",
+          publishOnTranslation: false,
+        },
+        {}
+      );
     });
 
     it("ignores waitUntil and runs immediately (dev runner — no debounce)", async () => {

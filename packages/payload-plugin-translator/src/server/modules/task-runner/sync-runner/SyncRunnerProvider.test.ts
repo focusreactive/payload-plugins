@@ -47,7 +47,8 @@ describe("SyncRunnerProvider", () => {
         targetLng: "de",
         strategy: "overwrite",
         publishOnTranslation: false,
-      })
+      }),
+      {}
     );
   });
 

@@ -1,6 +1,7 @@
 import type { CollectionSlug } from "payload";
 
 import type { Task, TaskInput, RunResult } from "./types";
+import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes";
 
 /**
  * Interface for task execution backends.
@@ -14,8 +15,11 @@ export interface TaskRunner {
   /**
    * Queue translation tasks for execution.
    * Implementation handles cancellation of existing tasks for the same documents.
+   *
+   * `scope` joins the reads and writes this makes to the caller's transaction; omit it outside one —
+   * an HTTP route — and each operation opens its own.
    */
-  enqueue(tasks: TaskInput[]): Promise<void>;
+  enqueue(tasks: TaskInput[], scope?: TransactionScope): Promise<void>;
 
   /**
    * Cancel tasks by IDs.

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import type { Field, Payload } from "payload";
+import { APIError } from "payload";
 
 import type { ProvenanceStore, TranslationProvenanceRecord } from "../../../core/domain/provenance";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
@@ -99,6 +100,32 @@ describe("ProvenanceService", () => {
       )
     ).resolves.toBeUndefined();
     expect(payload.logger.error as ReturnType<typeof vi.fn>).toHaveBeenCalled();
+  });
+
+  it("record rethrows a Payload failure raised inside the caller's transaction", async () => {
+    const payload = makePayload(async () => sourceDoc);
+    const store = makeStore({ upsert: vi.fn().mockRejectedValue(new APIError("rejected")) });
+    const service = new ProvenanceService(payload, store, schemaMap, { transactionID: "tx-1" });
+
+    await expect(
+      service.record(
+        { collectionSlug: COLLECTION, documentId: "1", targetLocale: "de", sourceLocale: "en" },
+        "fp"
+      )
+    ).rejects.toThrow(APIError);
+  });
+
+  it("record stays best-effort inside a transaction when the failure reached no Payload operation", async () => {
+    const payload = makePayload(async () => sourceDoc);
+    const store = makeStore({ upsert: vi.fn().mockRejectedValue(new Error("table down")) });
+    const service = new ProvenanceService(payload, store, schemaMap, { transactionID: "tx-1" });
+
+    await expect(
+      service.record(
+        { collectionSlug: COLLECTION, documentId: "1", targetLocale: "de", sourceLocale: "en" },
+        "fp"
+      )
+    ).resolves.toBeUndefined();
   });
 
   it("dismiss persists the current source fingerprint for a locale that has a record", async () => {

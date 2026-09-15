@@ -1,5 +1,8 @@
 import type { CollectionSlug, Payload } from "payload";
 
+import type { TransactionScope } from "./TransactionScope.shapes";
+import { freshReq } from "./TransactionScope.shapes";
+
 /**
  * The single source read: what "translate from X" resolves to. Both translation write paths and
  * the staleness recompute must go through here, or the fingerprints they compare drift apart.
@@ -8,9 +11,11 @@ export function fetchSourceDocument(
   payload: Payload,
   collection: CollectionSlug,
   id: string,
-  locale: string
+  locale: string,
+  scope: TransactionScope = {}
 ) {
   return payload.findByID({
+    req: freshReq(scope),
     collection,
     id,
     locale,

@@ -14,9 +14,9 @@ export function withQueuedNotification(
   notifier: LifecycleNotifier
 ): TaskRunner {
   return {
-    async enqueue(tasks) {
+    async enqueue(tasks, scope) {
       await Promise.all(tasks.map((task) => notifier.queued(taskFromInput(task))));
-      await runner.enqueue(tasks);
+      await runner.enqueue(tasks, scope);
     },
     cancel: (taskIds) => runner.cancel(taskIds),
     run: (taskId) => runner.run(taskId),

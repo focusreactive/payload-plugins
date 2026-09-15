@@ -106,6 +106,7 @@ describe("TranslateFieldHandler", () => {
     expect(res.status).toBe(200);
     expect((await res.json()).data).toEqual({ status: "translated", value: "Hallo" });
     expect(findByID).toHaveBeenCalledWith({
+      req: {},
       collection: "posts",
       id: "p1",
       locale: "en",

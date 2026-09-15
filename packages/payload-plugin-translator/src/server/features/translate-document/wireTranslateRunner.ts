@@ -56,18 +56,22 @@ export function wireTranslateRunner({
   );
 
   const runnerContext: TaskRunnerContext = {
-    handler: async (payload, input) => {
+    handler: async (payload, input, scope) => {
       const notifier = new LifecycleNotifier(lifecycle, payload.logger);
       const task = taskFromHandlerInput(input);
       try {
-        await translateHandler.handle(payload, {
-          collection: input.collection,
-          collectionId: input.collectionId,
-          sourceLng: input.sourceLng,
-          targetLng: input.targetLng,
-          strategy: input.strategy,
-          publishOnTranslation: input.publishOnTranslation,
-        });
+        await translateHandler.handle(
+          payload,
+          {
+            collection: input.collection,
+            collectionId: input.collectionId,
+            sourceLng: input.sourceLng,
+            targetLng: input.targetLng,
+            strategy: input.strategy,
+            publishOnTranslation: input.publishOnTranslation,
+          },
+          scope
+        );
       } catch (error) {
         await notifier.failed(task, error);
         throw error; // rethrow so the runner marks the job failed
