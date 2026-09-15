@@ -7,8 +7,8 @@
 Pick a source locale and one or more targets; a background job fills in every localized text, textarea and rich-text field.
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@focus-reactive/payload-plugin-translator"><img src="https://img.shields.io/npm/v/@focus-reactive/payload-plugin-translator?style=flat&labelColor=000000&color=000000" alt="npm version" /></a>
-  <a href="https://github.com/focusreactive/payload-plugins/blob/main/packages/payload-plugin-translator/LICENSE"><img src="https://img.shields.io/badge/license-MIT-000000?style=flat&labelColor=000000" alt="MIT license" /></a>
+  <a href="https://www.npmjs.com/package/@focus-reactive/payload-plugin-translator"><img src="https://img.shields.io/npm/v/@focus-reactive/payload-plugin-translator" alt="npm version" /></a>
+  <a href="https://github.com/focusreactive/payload-plugins/blob/main/packages/payload-plugin-translator/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
 </p>
 
 </div>
