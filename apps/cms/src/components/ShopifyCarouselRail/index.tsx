@@ -32,6 +32,20 @@ import { Button, ButtonVariant } from "@/components/button";
  */
 const SCROLL_EDGE_TOLERANCE_PX = 4;
 
+/**
+ * Cards render at `ContentCard`'s own course-variant width, a fluid `clamp()` with no fixed
+ * breakpoints - there is no single number for "one card" to hardcode here the way the old
+ * per-breakpoint rail could. Measuring the first rendered `<li>` (and the rail's own gap, the same
+ * way) gets the true on-screen card width at whatever viewport this runs at, instead of drifting
+ * out of sync with it.
+ */
+function measureCardStep(rail: HTMLElement): number {
+  const firstCard = rail.firstElementChild;
+  const cardWidth = firstCard instanceof HTMLElement ? firstCard.getBoundingClientRect().width : 0;
+  const gap = Number.parseFloat(getComputedStyle(rail).columnGap || "0") || 0;
+  return cardWidth + gap;
+}
+
 interface RailState {
   atEnd: boolean;
   atStart: boolean;
@@ -109,14 +123,13 @@ export function ShopifyCarouselRail({ children, label }: ShopifyCarouselRailProp
     };
   }, []);
 
-  const scrollByPage = useCallback((direction: -1 | 1) => {
+  const scrollByCard = useCallback((direction: -1 | 1) => {
     const rail = railRef.current;
     if (!rail) return;
-    // One visible width of cards, deliberately not an exact card multiple: `snap-mandatory` pulls
-    // the landing position onto the nearest card boundary, so this only has to be close, and no
-    // card ends up sliced by the container edge. Passing no `behavior` leaves the choice to the
-    // element's CSS `scroll-behavior`, which is smooth only under `motion-safe`.
-    rail.scrollBy({ left: direction * rail.clientWidth });
+    // One card plus the gap, not a whole rail width: a viewport-width jump skipped whole rows of
+    // cards on a wide screen, where several cards fit per press. Passing no `behavior` leaves the
+    // choice to the element's CSS `scroll-behavior`, which is smooth only under `motion-safe`.
+    rail.scrollBy({ left: direction * measureCardStep(rail) });
   }, []);
 
   return (
@@ -127,7 +140,11 @@ export function ShopifyCarouselRail({ children, label }: ShopifyCarouselRailProp
       */}
       <ul
         aria-label={label}
-        className="flex list-none snap-x snap-mandatory gap-6 overflow-x-auto overscroll-x-contain pb-3 motion-safe:scroll-smooth"
+        // This gap is not a free choice: ContentCard's course-variant width bakes in the same
+        // `clamp(16px,1.6vw,24px)` as the gap it divides against (CourseRail's rail uses the
+        // identical value for the identical reason), so a different gap here would make the cards
+        // overflow their row instead of landing exactly 3.28-to-a-line.
+        className="flex list-none snap-x snap-mandatory gap-[clamp(16px,1.6vw,24px)] overflow-x-auto overscroll-x-contain pb-3 motion-safe:scroll-smooth"
         id={railElementId}
         ref={railRef}
         tabIndex={0}
@@ -140,13 +157,13 @@ export function ShopifyCarouselRail({ children, label }: ShopifyCarouselRailProp
           <RailButton
             direction="prev"
             disabled={railState.atStart}
-            onClick={() => scrollByPage(-1)}
+            onClick={() => scrollByCard(-1)}
             railElementId={railElementId}
           />
           <RailButton
             direction="next"
             disabled={railState.atEnd}
-            onClick={() => scrollByPage(1)}
+            onClick={() => scrollByCard(1)}
             railElementId={railElementId}
           />
         </div>

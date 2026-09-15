@@ -74,6 +74,18 @@ const fields: Field[] = [
     name: "showPrice",
     type: "checkbox",
   },
+  {
+    admin: {
+      description: {
+        en: "Off by default, to match the design: the whole card links to the product page. Turning this on adds a buy button under each card that checks out the product directly.",
+        es: "Desactivado por defecto, según el diseño: toda la tarjeta enlaza a la página del producto. Activarlo añade un botón de compra debajo de cada tarjeta que lleva directamente al pago del producto.",
+      },
+    },
+    defaultValue: false,
+    label: { en: "Show buy button", es: "Mostrar botón de compra" },
+    name: "showBuyButton",
+    type: "checkbox",
+  },
 ];
 
 export const ShopifyCarouselBlock: Block = injectSection({

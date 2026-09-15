@@ -20,9 +20,11 @@ import {
   getProductsByHandles,
   getStorefrontConfig,
 } from "@/dal";
-import { Button, ButtonVariant } from "@/components/button";
+import { Button } from "@/components/ui/Button";
 import { DisplayHeading } from "@/components/DisplayHeading";
+import type { PreparedMedia } from "@/components/media";
 import { SectionHeader } from "@/components/SectionHeader";
+import { ContentCard } from "@/components/ui/ContentCard";
 import { ShopifyCarouselRail } from "@/components/ShopifyCarouselRail";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 
@@ -41,28 +43,31 @@ interface Props {
   description?: string | null;
   productHandles?: (ProductHandleRow | null)[] | null;
   showPrice?: boolean | null;
+  showBuyButton?: boolean | null;
 }
 
 const FALLBACK_HEADING = "Featured products";
-
-/**
- * How wide one card is, as a fraction of the rail. Whole cards only, at every breakpoint: a card
- * sliced by the container edge is what made the previous fixed-220px rail look broken, and because
- * these fractions leave no remainder the rail's maximum scroll offset also lands exactly on a card
- * boundary - so `snap-start` has a reachable snap point at both ends of the rail.
- *
- * The subtracted amounts are the `gap-6` (1.5rem) between cards: n cards across a full-width rail
- * leave n-1 gaps. The underscores are Tailwind's escape for the spaces CSS `calc()` requires around
- * a minus sign - without them the declaration is invalid and every card falls back to its content
- * width.
- */
-const CARD_WIDTH = "w-full sm:w-[calc((100%_-_1.5rem)/2)] lg:w-[calc((100%_-_3rem)/3)]";
 
 function formatMoney(money: { amount: string; currencyCode: string }): string {
   return new Intl.NumberFormat("en-US", {
     currency: money.currencyCode,
     style: "currency",
   }).format(Number(money.amount));
+}
+
+/**
+ * Product images come from Shopify's CDN, which is allowed in `next.config.mjs`'s
+ * `images.remotePatterns` so these go through the real image pipeline rather than shipping the
+ * original asset. Adding a new storefront host means adding it there too.
+ */
+function buildProductCover(
+  featuredImage: { url: string; altText: string | null } | null,
+  title: string
+): PreparedMedia | undefined {
+  if (!featuredImage) return undefined;
+  return {
+    data: { alt: featuredImage.altText ?? title, kind: "image", src: featuredImage.url },
+  };
 }
 
 /**
@@ -134,6 +139,7 @@ async function ShopifyCarouselBlockContent({
   eyebrow,
   heading,
   productHandles,
+  showBuyButton,
   showPrice,
 }: Props) {
   const resolvedHeading = heading ?? FALLBACK_HEADING;
@@ -180,59 +186,44 @@ async function ShopifyCarouselBlockContent({
       {header ? <SectionHeader {...header} className="mb-12" /> : null}
 
       <ShopifyCarouselRail label={resolvedHeading}>
-        {products.map((product) => (
-          <li
-            className={`flex shrink-0 snap-start flex-col gap-5 rounded-lg border border-border bg-card p-6 text-card-foreground ${CARD_WIDTH}`}
-            key={product.handle}
-          >
-            {product.featuredImage ? (
-              // Plain <img>: next/image would need the Shopify CDN added to next.config.ts
-              // remotePatterns, which is a config change on a shared public repo for one card.
-              // object-contain rather than cover: a crop cuts the part of the product that
-              // identifies it, and the muted panel behind absorbs whatever band is left over.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                alt={product.featuredImage.altText ?? product.title}
-                className="aspect-[4/3] w-full rounded-md bg-surface-muted object-contain p-4"
-                height={300}
-                src={product.featuredImage.url}
-                width={400}
+        {products.map((product) => {
+          const canBuy = Boolean(product.variantId) && product.availableForSale;
+          const productHref = `https://${storefrontConfig.domain}/products/${product.handle}`;
+
+          return (
+            // flex-col + gap holds the buy button (or the unavailable note) under the card; the
+            // card's own width comes from ContentCard's inline style, so the button below stretches
+            // to match it rather than needing that width duplicated here.
+            <li className="flex flex-none flex-col gap-4 snap-start" key={product.handle}>
+              <ContentCard
+                cover={buildProductCover(product.featuredImage, product.title)}
+                href={productHref}
+                price={
+                  showPrice !== false && product.price ? formatMoney(product.price) : undefined
+                }
+                priceBefore={
+                  showPrice !== false && product.compareAtPrice
+                    ? formatMoney(product.compareAtPrice)
+                    : undefined
+                }
+                title={product.title}
               />
-            ) : (
-              // Keeps a card with no cover the same height as its neighbours, so a card boundary
-              // stays where the rail's snap positions expect it.
-              <div aria-hidden className="aspect-[4/3] w-full rounded-md bg-surface-muted" />
-            )}
 
-            <h3 className="text-h-card line-clamp-2 text-balance" title={product.title}>
-              {product.title}
-            </h3>
-
-            {showPrice !== false && product.price ? (
-              <p className="text-body-lg flex flex-wrap items-baseline gap-2">
-                <span className="font-medium">{formatMoney(product.price)}</span>
-                {product.compareAtPrice ? (
-                  <span className="text-small text-muted-foreground line-through">
-                    {formatMoney(product.compareAtPrice)}
-                  </span>
-                ) : null}
-              </p>
-            ) : null}
-
-            <div className="mt-auto pt-1">
-              {product.variantId && product.availableForSale ? (
-                <form action={checkout}>
-                  <input name="variantId" type="hidden" value={product.variantId} />
-                  <Button className="w-full" type="submit" variant={ButtonVariant.Primary}>
-                    Buy on Shopify
-                  </Button>
-                </form>
-              ) : (
-                <p className="text-small text-muted-foreground">Currently unavailable</p>
-              )}
-            </div>
-          </li>
-        ))}
+              {showBuyButton ? (
+                canBuy ? (
+                  <form action={checkout}>
+                    <input name="variantId" type="hidden" value={product.variantId ?? ""} />
+                    <Button className="w-full" tone="primary" type="submit">
+                      Buy on Shopify
+                    </Button>
+                  </form>
+                ) : (
+                  <p className="text-small text-muted-foreground">Currently unavailable</p>
+                )
+              ) : null}
+            </li>
+          );
+        })}
       </ShopifyCarouselRail>
     </>
   );

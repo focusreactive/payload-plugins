@@ -44,6 +44,18 @@ export const ShopifyProductBlock: Block = injectSection({
       name: "showPrice",
       type: "checkbox",
     },
+    {
+      admin: {
+        description: {
+          en: "On by default here, because a section built around one product is usually there to sell it. Turning it off leaves the card itself as the link to the product page.",
+          es: "Activado por defecto aquí, porque una sección centrada en un solo producto suele existir para venderlo. Desactivarlo deja la tarjeta como enlace a la página del producto.",
+        },
+      },
+      defaultValue: true,
+      label: { en: "Show buy button", es: "Mostrar botón de compra" },
+      name: "showBuyButton",
+      type: "checkbox",
+    },
   ],
   interfaceName: "ShopifyProductBlock",
   labels: {

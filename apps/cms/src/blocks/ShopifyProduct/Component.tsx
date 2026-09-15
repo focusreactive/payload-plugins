@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { SectionContainer } from "@/components/shared";
 /**
  * A server component, which is the acceptance criterion for this piece: "The Shopify card is in
@@ -16,6 +16,12 @@ import {
   getProductByHandle,
   getStorefrontConfig,
 } from "@/dal";
+import { Button } from "@/components/ui/Button";
+import { DisplayHeading } from "@/components/DisplayHeading";
+import type { PreparedMedia } from "@/components/media";
+import { SectionHeader } from "@/components/SectionHeader";
+import { ContentCard } from "@/components/ui/ContentCard";
+import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 
 interface Props {
   /** Added by injectSection. Ignoring it is what made this block render flush to the
@@ -25,7 +31,40 @@ interface Props {
   heading?: string | null;
   description?: string | null;
   productHandle?: string | null;
+  showBuyButton?: boolean | null;
   showPrice?: boolean | null;
+}
+
+const FALLBACK_HEADING = "From the bookstore";
+
+/**
+ * ContentCard's own width formula (clamp(260px, calc((100% - 2 * clamp(16px,1.6vw,24px)) / 3.28),
+ * 460px)) sizes the card itself, but a lone card and its buy button need the same width to read as
+ * one unit - matching that width here is what keeps the button from stretching full-section-wide.
+ */
+const PRODUCT_CARD_WIDTH =
+  "clamp(260px, calc((100% - 2 * clamp(16px, 1.6vw, 24px)) / 3.28), 460px)";
+
+function formatMoney(money: { amount: string; currencyCode: string }): string {
+  return new Intl.NumberFormat("en-US", {
+    currency: money.currencyCode,
+    style: "currency",
+  }).format(Number(money.amount));
+}
+
+/**
+ * Product images come from Shopify's CDN, which is allowed in `next.config.mjs`'s
+ * `images.remotePatterns` so these go through the real image pipeline rather than shipping the
+ * original asset. Adding a new storefront host means adding it there too.
+ */
+function buildProductCover(
+  featuredImage: { url: string; altText: string | null } | null,
+  title: string
+): PreparedMedia | undefined {
+  if (!featuredImage) return undefined;
+  return {
+    data: { alt: featuredImage.altText ?? title, kind: "image", src: featuredImage.url },
+  };
 }
 
 async function checkout(formData: FormData) {
@@ -62,25 +101,45 @@ async function checkout(formData: FormData) {
   if (destination) redirect(destination);
 }
 
+interface NoticeProps {
+  children: ReactNode;
+  heading: string;
+}
+
+/**
+ * Mirrors ShopifyCarousel's CarouselNotice (the two blocks are not allowed to share a file - see
+ * this block's task notes): an unconfigured store or a bad handle must read as a message to
+ * whoever is building the page, not as a blank or crashed section.
+ */
+function ProductNotice({ children, heading }: NoticeProps) {
+  return (
+    <div className="flex max-w-[720px] flex-col gap-6">
+      <DisplayHeading as="h2" size="display-2" text={heading} />
+      <p className="text-body-lg rounded-lg border border-border-strong border-dashed p-6 text-muted-foreground">
+        {children}
+      </p>
+    </div>
+  );
+}
+
 async function ShopifyProductBlockContent({
   description,
   heading,
   productHandle,
+  showBuyButton,
   showPrice,
 }: Props) {
+  const resolvedHeading = heading ?? FALLBACK_HEADING;
+  const storefrontConfig = getStorefrontConfig();
+
   // An unconfigured store must never look like a broken page during a walkthrough, so say plainly
   // what is missing instead of rendering an empty section.
-  if (!getStorefrontConfig()) {
+  if (!storefrontConfig) {
     return (
-      <section
-        style={{ border: "1px dashed #b8b8b8", borderRadius: 8, margin: "32px 0", padding: 24 }}
-      >
-        <h2 style={{ fontSize: 20, margin: 0 }}>{heading ?? "From the bookstore"}</h2>
-        <p style={{ color: "#666", fontSize: 14 }}>
-          Shopify is not wired up on this deployment. Set SHOPIFY_STORE_DOMAIN and
-          SHOPIFY_STOREFRONT_TOKEN to render a live product here.
-        </p>
-      </section>
+      <ProductNotice heading={resolvedHeading}>
+        Shopify is not wired up on this deployment. Set SHOPIFY_STORE_DOMAIN and
+        SHOPIFY_STOREFRONT_TOKEN to render a live product here.
+      </ProductNotice>
     );
   }
 
@@ -96,83 +155,43 @@ async function ShopifyProductBlockContent({
 
   if (error || !product) {
     return (
-      <section
-        style={{ border: "1px dashed #b8b8b8", borderRadius: 8, margin: "32px 0", padding: 24 }}
-      >
-        <h2 style={{ fontSize: 20, margin: 0 }}>{heading ?? "From the bookstore"}</h2>
-        <p style={{ color: "#666", fontSize: 14 }}>
-          {error ? `Shopify error: ${error}` : `No product found for handle "${productHandle}".`}
-        </p>
-      </section>
+      <ProductNotice heading={resolvedHeading}>
+        {error ? `Shopify error: ${error}` : `No product found for handle "${productHandle}".`}
+      </ProductNotice>
     );
   }
 
+  const header = prepareSectionHeaderProps({ description, heading: resolvedHeading });
+  const canBuy = Boolean(product.variantId) && product.availableForSale;
+
   return (
-    <section>
-      <h2 style={{ fontSize: 20, marginBottom: 4 }}>{heading ?? "From the bookstore"}</h2>
-      {description ? (
-        <p style={{ color: "#666", fontSize: 14, marginTop: 0 }}>{description}</p>
-      ) : null}
+    <>
+      {header ? <SectionHeader {...header} className="mb-12" /> : null}
 
-      <article
-        style={{
-          border: "1px solid #e0e0e0",
-          borderRadius: 8,
-          display: "flex",
-          gap: 20,
-          maxWidth: 640,
-          padding: 20,
-        }}
-      >
-        {product.featuredImage ? (
-          // Plain <img>: next/image would need the Shopify CDN added to next.config.ts
-          // remotePatterns, which is a config change on a shared public repo for one demo card.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            alt={product.featuredImage.altText ?? product.title}
-            src={product.featuredImage.url}
-            style={{ height: "auto", objectFit: "cover", width: 140 }}
-            width={140}
-          />
-        ) : null}
+      <div className="flex flex-col gap-4" style={{ width: PRODUCT_CARD_WIDTH }}>
+        <ContentCard
+          cover={buildProductCover(product.featuredImage, product.title)}
+          description={product.description}
+          href={`https://${storefrontConfig.domain}/products/${product.handle}`}
+          price={showPrice !== false && product.price ? formatMoney(product.price) : undefined}
+          title={product.title}
+        />
 
-        <div>
-          <h3 style={{ fontSize: 17, margin: "0 0 6px" }}>{product.title}</h3>
-          {showPrice !== false && product.price ? (
-            <p style={{ fontWeight: 600, margin: "0 0 8px" }}>
-              {new Intl.NumberFormat("en-US", {
-                currency: product.price.currencyCode,
-                style: "currency",
-              }).format(Number(product.price.amount))}
-            </p>
-          ) : null}
-          <p style={{ color: "#444", fontSize: 14, margin: "0 0 12px" }}>
-            {product.description.slice(0, 220)}
-          </p>
-
-          {product.variantId && product.availableForSale ? (
+        {/* The toggle governs the whole purchase affordance, so turning it off also drops the
+            out-of-stock note - with no way to buy, stock is not something a reader can act on. */}
+        {showBuyButton !== false &&
+          (canBuy ? (
             <form action={checkout}>
-              <input name="variantId" type="hidden" value={product.variantId} />
-              <button
-                style={{
-                  background: "#111",
-                  border: 0,
-                  borderRadius: 4,
-                  color: "#fff",
-                  cursor: "pointer",
-                  padding: "8px 16px",
-                }}
-                type="submit"
-              >
+              <input name="variantId" type="hidden" value={product.variantId ?? ""} />
+              <Button className="w-full" tone="primary" type="submit">
                 Buy on Shopify
-              </button>
+              </Button>
             </form>
           ) : (
-            <p style={{ color: "#888", fontSize: 13 }}>Currently unavailable</p>
-          )}
-        </div>
-      </article>
-    </section>
+            <p className="text-small text-muted-foreground">Currently unavailable</p>
+          ))}
+      </div>
+    </>
   );
 }
 
