@@ -17,15 +17,12 @@ export function MegaLink({ link }: MegaLinkProps) {
         href={link.href}
         aria-current={link.active ? "page" : undefined}
         className={cn(
-          "flex flex-col gap-[3px] rounded-sm px-[13px] py-[11px] transition-colors duration-150 hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:outline-none"
+          "flex flex-col gap-[3px] rounded-lg px-[13px] py-[11px] transition-colors duration-[250ms] ease-[ease] hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:outline-none motion-reduce:transition-none"
         )}
         {...newTabProps}
       >
         <span
-          className={cn(
-            "text-[0.92rem] font-semibold",
-            link.active ? "text-primary" : "text-foreground"
-          )}
+          className={cn("text-small font-medium", link.active ? "text-primary" : "text-foreground")}
         >
           {link.label}
         </span>

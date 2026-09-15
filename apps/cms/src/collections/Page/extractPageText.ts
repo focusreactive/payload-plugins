@@ -1,7 +1,12 @@
+import { extractBookOfferText } from "@/blocks/BookOffer/extractText";
 import { extractCardsGridText } from "@/blocks/CardsGrid/extractText";
 import { extractCarouselText } from "@/blocks/Carousel/extractText";
 import { extractChartText } from "@/blocks/Chart/extractText";
+import { extractCourseRailText } from "@/blocks/CourseRail/extractText";
 import { extractCtaBandText } from "@/blocks/CtaBand/extractText";
+import { extractHeroSpotlightText } from "@/blocks/HeroSpotlight/extractText";
+import { extractMembershipTiersText } from "@/blocks/MembershipTiers/extractText";
+import { extractPortraitFeatureText } from "@/blocks/PortraitFeature/extractText";
 import { extractNewsletterText } from "@/blocks/Newsletter/extractText";
 import { extractStatsText } from "@/blocks/Stats/extractText";
 import { extractFaqText } from "@/blocks/Faq/extractText";
@@ -51,6 +56,27 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
     case "stats": {
       return extractStatsText(block);
     }
+    case "heroSpotlight": {
+      return extractHeroSpotlightText(block);
+    }
+    case "courseRail": {
+      return extractCourseRailText(block);
+    }
+    case "membershipTiers": {
+      return extractMembershipTiersText(block);
+    }
+    case "portraitFeature": {
+      return extractPortraitFeatureText(block);
+    }
+    case "bookOffer": {
+      return extractBookOfferText(block);
+    }
+    /*
+     * A block with no case here contributes nothing to the page's text, which is what SEO and the
+     * search index read - and it does so silently, because an unmatched blockType is indistinguishable
+     * from a block that genuinely has no words in it. A new block is not finished until it appears
+     * above.
+     */
     default: {
       return "";
     }

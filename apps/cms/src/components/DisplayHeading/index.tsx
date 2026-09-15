@@ -49,7 +49,12 @@ export function DisplayHeading({
   return (
     <Tag
       className={cn(
-        "font-display text-balance text-primary",
+        // `text-foreground` rather than `text-primary`: the concept sets its headings in the
+        // page ink, black on a light section and white on a dark one, which is what the token
+        // resolves to per theme zone. This read `text-primary` from the palette that came
+        // before, where primary was a pale cream - against the brand green it painted every
+        // heading on the site green.
+        "font-display text-balance text-foreground",
         sizeMap[size],
         !TOKEN_SIZES.has(size) && [
           "tracking-tight",

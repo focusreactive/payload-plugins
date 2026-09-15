@@ -45,7 +45,7 @@ export async function PostHero({ post, locale }: PostHeroProps) {
           <div className="mb-[26px]">
             <Link
               href={BLOG_CONFIG.basePath}
-              className="inline-flex items-center gap-2 text-[0.95rem] font-semibold text-foreground transition-colors hover:text-primary motion-reduce:transition-none"
+              className="inline-flex items-center gap-2 text-[0.95rem] font-medium text-foreground transition-colors hover:text-primary motion-reduce:transition-none"
             >
               <span aria-hidden>←</span> {t("backToJournal")}
             </Link>

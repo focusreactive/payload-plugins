@@ -53,6 +53,15 @@ const nextConfig = {
         hostname: "payload-cms-ideal-cms.vercel.app",
         protocol: "https",
       },
+      /*
+       * Every product image the storefront API returns is served from this host. Without it the
+       * commerce blocks have to pass `unoptimized`, which ships the original full-size asset and
+       * drops the whole image pipeline on the one part of the page that is all photography.
+       */
+      {
+        hostname: "cdn.shopify.com",
+        protocol: "https",
+      },
     ],
   },
 };

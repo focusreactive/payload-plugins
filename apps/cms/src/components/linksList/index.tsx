@@ -22,7 +22,7 @@ export function LinksList({ links, alignVariant }: ILinksListProps) {
           href={link.href ?? "#"}
           className={cn(
             "group inline-flex items-center gap-2 py-1",
-            "font-mono text-sm leading-relaxed tracking-wide text-foreground/80",
+            "text-sm leading-relaxed tracking-wide text-foreground/80",
             "transition-colors hover:text-primary",
             alignVariant === AlignVariant.Center && "justify-center",
             alignVariant === AlignVariant.Right && "justify-end"
