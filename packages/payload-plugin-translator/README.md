@@ -1,770 +1,537 @@
-# @focus-reactive/payload-plugin-translator
+<div align="center">
 
-[![npm version](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-translator)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-translator)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/focusreactive/payload-plugins/blob/main/LICENSE)
+# Payload Translator
 
-Translate localized content in **Payload CMS 3** with any provider — a whole document, a whole collection, or a single field — straight from the admin UI.
+**Translate localized [Payload CMS](https://payloadcms.com/) content with an AI provider, without leaving the admin panel**
 
-## About
+Pick a source locale and one or more targets; a background job fills in every localized text, textarea and rich-text field.
 
-Payload localizes your content, but it doesn't translate it — you still copy text between locales by hand. This plugin closes that gap: it walks every localized field (including deeply nested groups, arrays, blocks, tabs, and Lexical rich text), sends the text to a translation provider, and writes the result back to the target locale.
+<p align="center">
+  <a href="https://www.npmjs.com/package/@focus-reactive/payload-plugin-translator"><img src="https://img.shields.io/npm/v/@focus-reactive/payload-plugin-translator?style=flat&labelColor=000000&color=000000" alt="npm version" /></a>
+  <a href="https://github.com/focusreactive/payload-plugins/blob/main/packages/payload-plugin-translator/LICENSE"><img src="https://img.shields.io/badge/license-MIT-000000?style=flat&labelColor=000000" alt="MIT license" /></a>
+</p>
 
-It works at three levels — translate the **document** you're editing, **bulk-translate** a collection from its list view, or translate a **single field** in place. Providers are pluggable (OpenAI is built in), and translation runs through a configurable runner (async Payload Jobs by default, or synchronously).
+</div>
 
-## Features
+Payload localizes your content but does not translate it — an editor still copies text between locales by hand. This plugin closes that gap: every localized field gets translated, however deeply it sits inside groups, arrays, blocks and tabs, by a translation service you choose.
 
-- **Deep translation** — every localized leaf field at any nesting level (groups, arrays, blocks, tabs).
-- **Rich text** — full Lexical translation, preserving formatting and structure.
-- **Three surfaces** — a per-document popup, a bulk-collection dashboard, and a per-field control, toggled via `levels`.
-- **Single or multi target** — translate into one locale, or pick several at once, via `targetSelection`.
-- **Async or sync** — queue-based background jobs (Payload Jobs) by default, or run inline.
-- **Pluggable providers** — OpenAI built in, or implement your own.
-- **Strategies** — overwrite everything or skip locales that already have content.
-- **Field control** — add a per-field Translate button, or exclude a field from translation.
-
-## Requirements
-
-| Peer dependency                | Version        |
-| ------------------------------ | -------------- |
-| `payload`                      | `^3.76.0`      |
-| `@payloadcms/ui`               | `^3.76.0`      |
-| `@payloadcms/richtext-lexical` | `^3.76.0`      |
-| `react`                        | `^18` or `^19` |
-
-Your Payload config must have [localization](https://payloadcms.com/docs/configuration/localization) enabled.
-
-## Installation
+## Install
 
 ```bash
-npm install @focus-reactive/payload-plugin-translator
-# pnpm add @focus-reactive/payload-plugin-translator
-# bun add  @focus-reactive/payload-plugin-translator
-# yarn add @focus-reactive/payload-plugin-translator
+npm install @focus-reactive/payload-plugin-translator openai
 ```
 
-## Quick Start
+`openai` is optional — it backs the recipe below, and any OpenAI-compatible endpoint works in its place.
 
-```typescript
-import { buildConfig } from "payload";
-import { translatorPlugin, createOpenAIProvider, createPayloadJobsRunner } from "@focus-reactive/payload-plugin-translator";
-import { Posts } from "./collections/Posts";
-import { Pages } from "./collections/Pages";
+| Requirement | Version |
+| --- | --- |
+| `payload` | `^3.76.0` |
+| `@payloadcms/ui` | `^3.76.0` |
+| `@payloadcms/richtext-lexical` | `^3.76.0` |
+| `react` | `^19` — the plugin accepts `^18` too, but current `@payloadcms/ui` and `@payloadcms/richtext-lexical` builds require 19 |
+| `openai` | `^4.50.0` (optional) |
+
+Your Payload config must have [localization](https://payloadcms.com/docs/configuration/localization) enabled, and the fields you want translated must be marked `localized: true`.
+
+> [!NOTE]
+> Still on `0.x`: contracts change between minor releases, and the next major removes a good deal — never without deprecating it first. [Versioning](#versioning) has the terms and the list of what is already going.
+
+## Quickstart
+
+Hand the plugin the same collection objects you pass to `buildConfig`, not the sanitized ones from `payload.collections`. The originals still carry `localized: true` on nested fields.
+
+This is a whole config so that it runs as shown; in your project keep your own database adapter, and set `PAYLOAD_SECRET` in the environment before starting.
+
+```ts
+// payload.config.ts
+import { sqliteAdapter } from '@payloadcms/db-sqlite'
+import OpenAI from 'openai'
+import { buildConfig } from 'payload'
+import type { CollectionConfig } from 'payload'
+import {
+  createPayloadJobsRunner,
+  createTranslationProvider,
+  openAIComplete,
+  translatorPlugin,
+} from '@focus-reactive/payload-plugin-translator'
+
+const Posts: CollectionConfig = {
+  slug: 'posts',
+  fields: [
+    { name: 'title', type: 'text', localized: true },
+    { name: 'summary', type: 'textarea', localized: true },
+  ],
+}
 
 export default buildConfig({
-  collections: [Posts, Pages],
-  localization: {
-    locales: ["en", "de", "fr"],
-    defaultLocale: "en",
-  },
+  collections: [Posts],
+  db: sqliteAdapter({ client: { url: 'file:./payload.db' } }),
+  localization: { defaultLocale: 'en', locales: ['en', 'de', 'fr'] },
+  secret: process.env.PAYLOAD_SECRET ?? '',
   plugins: [
     translatorPlugin({
-      collections: [Posts, Pages], // the same config objects you pass to buildConfig
-      translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
+      collections: [Posts],
+      translationProvider: createTranslationProvider({
+        complete: openAIComplete({
+          client: new OpenAI({ apiKey: process.env.OPENAI_API_KEY }),
+          model: 'gpt-5.4-mini',
+        }),
+      }),
       runner: createPayloadJobsRunner(),
     }),
   ],
-});
+})
 ```
 
-Open a localized document in the admin — a **Translate** control appears, and the collection list view gains a **bulk** dashboard.
+Regenerate the admin import map so Payload picks up the plugin's components:
 
-## Translation surfaces (`levels`)
-
-_Since v0.5.0._
-
-`levels` controls which translation surfaces the plugin exposes. Each entry is a factory you import and list:
-
-| Level               | Surface                                                                                                         | Runs                   |
-| ------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------- |
-| `documentLevel()`   | A **Translate** popup on the document edit view (one document).                                                 | via `runner`           |
-| `collectionLevel()` | A **bulk dashboard** on the collection list view (many at once).                                                | via `runner`           |
-| `fieldLevel()`      | A per-field **Translate** control + a synchronous `POST {basePath}/field` endpoint (one field). _Since v0.6.0._ | synchronous, no runner |
-
-Omit `levels` for the default `[documentLevel(), collectionLevel()]` — adopting the option is non-breaking.
-
-```typescript
-import { translatorPlugin, collectionLevel, createOpenAIProvider, createPayloadJobsRunner } from "@focus-reactive/payload-plugin-translator";
-
-translatorPlugin({
-  collections: [Posts],
-  translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
-  runner: createPayloadJobsRunner(),
-  levels: [collectionLevel()], // bulk dashboard only — no per-document popup
-});
+```bash
+npx payload generate:importmap
 ```
 
-The document and collection levels show a real-time **progress indicator** while jobs run.
+Open a `posts` document. A Translate control now sits beside the document controls: choose `en` as the source and `de` as the target, and the German locale is filled in within a minute.
 
-### Field-level translation
+> [!TIP]
+> Rerun `payload generate:importmap` after adding or removing `documentLevel()` or `collectionLevel()`, or the admin renders without their controls. `fieldLevel()` adds no admin component, so it needs no regeneration.
 
-_Since v0.6.0._
+## What you can do
 
-`fieldLevel()` adds a per-field **Translate** control. Two steps:
+- **Translate one document** — the control on the edit view queues a job for the target locale you pick, choosing a strategy and whether to publish the locale once it is filled in.
+- **Translate a whole collection** — a dashboard above the list view runs the selected documents, or all of them, and reports progress per locale.
+- **Translate into several locales at once** — `targetSelection: 'multi'` turns the target field on both the document and the collection surfaces into a multi-select, and every selected document is translated into every locale you picked. The default is one locale per run.
+- **Translate a single field** — a control on the field itself, answering in place without queueing anything. Needs both `fieldLevel()` in `levels` and `withFieldTranslation` on the field.
+- **Auto-translate on save** — wrap a collection in `withAutoTranslate(collection, { targets })` and editing the source locale queues its own translations, with no one pressing anything. On a collection with drafts enabled it waits until the document is published; without drafts it fires on every save. Rapid edits are coalesced into one run.
+- **Protect hand-written copy** — the `skip_existing` strategy fills only empty target fields, and `withFieldTranslation(field, { exclude: true })` keeps a field out of translation entirely.
+- **Steer how it translates** — `systemPrompt` replaces the instruction sent with every request, so tone, register, a glossary, or brand names that must stay untranslated are yours to set.
+- **Bring any translation service** — an OpenAI-compatible adapter ships in the box; anything else is a single function you write, which receives the text and returns the reply. You do not parse it or check it back — that is the plugin's job.
+- **Run it in the background or inline** — Payload Jobs by default, so an editor is not left waiting and a run can be cancelled or retried. `createSyncRunner()` translates inline instead, for tests and scripts.
+- **Keep rich text intact** — the structure of a rich-text field survives translation, and so do block types. Blocks and array items keep their ids too, except inside a `localized` container, where each locale owns its own rows and gets fresh ones.
+- **Spot stale translations** — with `provenance` on, the admin flags the locales whose source has changed since they were translated, and an editor can dismiss a flag without re-translating.
 
-1. Add `fieldLevel()` to `levels` (registers the endpoint).
-2. Wrap the fields that should get a control with `withFieldTranslation(field)`.
+**What travels:** localized `text`, `textarea` and `richText` fields, at any depth inside groups, arrays, tabs and blocks. Every other field type reaches the target locale unchanged.
 
-```typescript
-import { translatorPlugin, documentLevel, fieldLevel, withFieldTranslation, createOpenAIProvider, createPayloadJobsRunner } from "@focus-reactive/payload-plugin-translator";
+> [!NOTE]
+> Inside a rich-text paragraph, word order follows the source language and inline emphasis can land on the wrong word once the target language reorders the sentence. [Container mode](#experimental-rich-text-one-container-at-a-time), available since `0.13.0` behind an opt-in flag, fixes both.
 
-// In a collection:
-const Posts = {
-  slug: "posts",
-  fields: [withFieldTranslation({ name: "title", type: "text", localized: true })],
-};
+> [!IMPORTANT]
+> Mark each **leaf** field `localized: true` yourself. Payload lets a wrapper (group, array, blocks, tabs) carry `localized` and have nested fields inherit it, and a leaf without it of its own is left alone.
+>
+> ```ts
+> // Skipped — the nested title is not explicitly localized
+> { name: 'meta', type: 'group', localized: true, fields: [{ name: 'title', type: 'text' }] }
+>
+> // Translated
+> { name: 'meta', type: 'group', localized: true, fields: [{ name: 'title', type: 'text', localized: true }] }
+> ```
 
-// In the plugin:
-translatorPlugin({
-  collections: [Posts],
-  translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
-  runner: createPayloadJobsRunner(),
-  levels: [documentLevel(), fieldLevel()],
-});
-```
+## Contents
 
-The control is an icon button (just above the input) that opens a compact popup with the translation **direction**: a source-locale `Select`, an arrow, then the **current locale** (the fixed target) — `en → fr`. You pick the **source**; the **target is always the locale you're editing**. The server reads the source locale's _saved_ value and translates it into the current locale, so the control needs a **saved document** (it's hidden while creating one). The result is written straight to form state — no save, no queue — and an **Undo** restores the previous value.
-
-Allowed on **`text`, `textarea`, and `richText`** fields (a compile error on other types — pass `{ exclude: true }` for those). For `richText` the Lexical editor re-mounts with the translated content. Fields **inside blocks** are supported: the server reads the source document's `blockType` to resolve the right block schema.
-
-> **Localized `blocks`/`array` containers.** Per-field translation works when the **container is not localized** — the structure is then shared across locales and only the leaf values differ, so wrap the leaves, not the container. If a `blocks`/`array` field is itself `localized`, each locale has an independent structure (different order/content), so a field inside it can't be matched to the source locale by position — the control no-ops with a notice to translate the whole document instead (whole-document translation handles this by matching elements by `id`).
-
-> This direction is intentionally the reverse of the document/collection level (which translates _from_ the current locale _to_ chosen targets): the field control pulls content _into_ the locale you're standing in.
+- [Install](#install)
+- [Quickstart](#quickstart)
+- [What you can do](#what-you-can-do)
+- [Configuration](#configuration)
+- [Drafts and publishing](#drafts-and-publishing)
+- [Translation providers](#translation-providers)
+- [Task runners](#task-runners)
+- [Access control](#access-control)
+- [Lifecycle callbacks](#lifecycle-callbacks)
+- [Provenance and staleness](#provenance-and-staleness)
+- [HTTP endpoints you can call](#http-endpoints-you-can-call)
+- [Exports reference](#exports-reference)
+- [Experimental: rich text one container at a time](#experimental-rich-text-one-container-at-a-time)
+- [Versioning](#versioning)
+- [Deprecated aliases](#deprecated-aliases)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
 ## Configuration
 
-### `translatorPlugin(config)`
-
-| Property              | Type                  | Required | Default                                | Description                                                                                                    |
-| --------------------- | --------------------- | -------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `collections`         | `CollectionConfig[]`  | Yes      | —                                      | Collection configs to enable translation for. Must be the **same objects** passed to `buildConfig`, not slugs. |
-| `translationProvider` | `TranslationProvider` | Yes      | —                                      | Provider instance (e.g. `createOpenAIProvider(...)`).                                                          |
-| `runner`              | `TaskRunnerProvider`  | Yes      | —                                      | Runner for background processing (e.g. `createPayloadJobsRunner()`).                                           |
-| `access`              | `AccessGuard`         | No       | `undefined`                            | Access guard (`{ check }`) for the translation endpoints; omit to leave them open.                             |
-| `basePath`            | `string`              | No       | `'/translate'`                         | Base path for the plugin's API endpoints.                                                                      |
-| `levels`              | `TranslationLevel[]`  | No       | `[documentLevel(), collectionLevel()]` | Which surfaces to enable — see [Translation surfaces](#translation-surfaces-levels).                           |
-| `provenance`          | `boolean \| { slug?: string }` | No | `false` (disabled) | Opt in to recording a provenance record per translation. _Since v0.7.0._ See [Provenance](#provenance-opt-in) below. |
-| `lifecycle`           | `{ onQueued?, onCompleted?, onFailed? }` | No | `undefined` | Server-side callbacks fired around each task. _Since v0.7.0._ See [Lifecycle callbacks](#lifecycle-callbacks). |
-| `targetSelection`     | `'single' \| 'multi'` | No       | `'single'`                             | Let an editor pick several target locales in one run. _Since v0.10.0._ See [Target-language selection](#target-language-selection) below. |
-| `experimental`        | `{ inlineMarks?: boolean }` | No | `{}` | Transitional switches, adopted per install. See [Rich text, one container at a time](#rich-text-one-container-at-a-time) below. _Since v0.13.0._ |
-
-```typescript
-translatorPlugin({
-  collections: [Posts, Pages],
-  translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
-  runner: createPayloadJobsRunner(),
-  access: { check: ({ req }) => req.user?.role === "admin" },
-});
+```
+translatorPlugin(config: TranslatorPluginConfig)
 ```
 
-### Rich text, one container at a time
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `collections` | `CollectionConfig[]` | — | **Required.** Original collection configs to make translatable. |
+| `translationProvider` | `TranslationProvider` | — | **Required.** What actually translates the text. |
+| `runner` | `TaskRunnerProvider` | — | **Required.** What runs the translation — in the background, or inline. |
+| `levels` | `TranslationLevel[]` | `[documentLevel(), collectionLevel()]` | Which translation surfaces to enable. |
+| `access` | `AccessGuard` | — | Gate for every translation endpoint. Omit to leave them open. |
+| `basePath` | `string` | `'/translate'` | Base path for the plugin's endpoints. |
+| `targetSelection` | `'single' \| 'multi'` | `'single'` | `'multi'` lets an editor pick several target locales for one run. _Since v0.10.0._ |
+| `provenance` | `boolean \| { slug?: string }` | `false` | Adds a collection recording what each locale was translated from, so the admin can flag stale ones. Default slug `translator-provenance`. |
+| `lifecycle` | `TranslationLifecycleCallbacks` | `{}` | Server-side `onQueued` / `onCompleted` / `onFailed` callbacks. |
 
-`experimental.inlineMarks` changes how rich text is translated. Off, each text node goes to the
-translation service on its own, so every word stays in the slot its English counterpart occupied —
-which is wrong the moment the target language wants a different order, and it pins formatting to a
-position rather than to a word. On, the whole container — a paragraph, a heading, one list item —
-goes as a single string with its formatting written as numbered marks:
+### Translation levels
 
-```
-<1>The team has </1><2>published</2><3> the </3><4>new documentation</4><5>.</5>
-```
+_Since v0.5.0; `fieldLevel()` since v0.6.0._
 
-The service returns the same marks, translated and in whatever order the target language needs, and
-the container is rebuilt from that reply. Emphasis and links travel with their words.
+Levels are the surfaces the plugin adds. List the ones you want; each should appear at most once.
 
-```typescript
+| Level | What it adds |
+| --- | --- |
+| `documentLevel()` | A Translate popup on the document edit view. |
+| `collectionLevel()` | A bulk translation dashboard above the list table. |
+| `fieldLevel()` | Turns on the per-field control. Not in the default set. |
+
+```ts
+import { documentLevel, collectionLevel, fieldLevel } from '@focus-reactive/payload-plugin-translator'
+
 translatorPlugin({
   collections: [Posts],
-  translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
-  runner: createPayloadJobsRunner(),
-  experimental: { inlineMarks: true },
-});
+  translationProvider,
+  runner,
+  levels: [documentLevel(), collectionLevel(), fieldLevel()],
+})
 ```
 
-Two things gate it, both silent by design — a translation still happens either way:
+`fieldLevel()` on its own shows nothing: the control appears only on the fields you wrap with `withFieldTranslation`.
 
-- **The provider must declare it can keep marks** (`capabilities.inlineMarks`).
-  `createOpenAIProvider` does; a provider built from your own `complete` function declares it only
-  if you pass `capabilities: { inlineMarks: true }`. A transport that is not a language model
-  would mangle the marks, so the default is to assume it cannot.
-- **A reply whose marks cannot be used** — one missing, one repeated, one left unclosed — leaves
-  that container in its source language rather than writing half of it. The rest of the document
-  still translates.
+### Per-field control and exclusion
 
-`experimental` is permanent; **this entry is deprecated the day it ships**. The next major removes
-the switch, not the behaviour: translating node by node stays as the internal fall-back for a
-source that already contains marks, a single-fragment container, and an unusable reply. Turning the
-switch back off stops future translations from splitting formatting wrappers; documents already
-translated under it keep the shape they were given. _Since v0.13.0._
+```ts
+import { withFieldTranslation } from '@focus-reactive/payload-plugin-translator'
 
-### Target-language selection
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  fields: [
+    // A Translate control appears above this input (text, textarea, richText)
+    withFieldTranslation({ name: 'title', type: 'text', localized: true }),
 
-_Since v0.10.0._
-
-By default the translation forms (per-document panel and bulk dashboard) translate into **one**
-target locale per run. Set `targetSelection: 'multi'` to let an editor pick **several** target
-locales at once — the "To" field becomes a compact multi-select and the run fans out one translation
-per _(document × target locale)_.
-
-```typescript
-translatorPlugin({
-  collections: [Posts, Pages],
-  translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
-  runner: createPayloadJobsRunner(),
-  targetSelection: "multi", // default is "single" (one target per run — unchanged)
-});
+    // Never sent to the translation provider (any field type)
+    withFieldTranslation({ name: 'sku', type: 'text', localized: true }, { exclude: true }),
+  ],
+}
 ```
 
-Fully backward-compatible and opt-in: the default `'single'` keeps today's behaviour exactly, and
-there is no schema or migration. Unknown or duplicate target locales are ignored, and the source
-locale is never translated into itself. The `/enqueue` endpoint accepts `target_lng` as either a
-single string or an array of strings, so existing API callers keep working.
+The control translates from a source locale you pick, reading the **saved** document's value in that locale and writing the result into the locale you are editing. Unsaved edits in the form are invisible to it.
 
-### Provenance (opt-in)
+The control is an icon button above the input. It opens a small popup showing the direction — a source-locale select, an arrow, then the locale you are editing as the fixed target (`en → fr`). You choose the source; the target is always where you stand. Note this is the opposite direction from the document and collection controls, which translate *out of* the locale you are in.
 
-_Since v0.7.0._
+The control needs a saved document, so it stays hidden while you are creating one. The result lands in the form unsaved — no save, no queue — and an Undo restores the previous value.
 
-Set `provenance: true` (or `{}`) to record, after each successful translation, a durable per-locale
-provenance entry — what source state a translation was derived from. Use `{ slug }` to customise the
-sidecar collection's slug (default `'translator-provenance'`), e.g. to resolve a name collision with
-one of your own collections. Omit (or set `false`) to leave everything as-is: no collection, no
-migration, no behavior change.
+`withFieldTranslation` accepts `text`, `textarea` and `richText`; any other type is a compile error, so pass `{ exclude: true }` for those. Fields inside blocks are supported.
 
-Enabling it adds a plugin-managed, hidden sidecar collection to your config. **On a SQL database
-(Postgres/SQLite) this requires a migration** — run `payload migrate:create` then `payload migrate`
-(or let dev push apply it in development). MongoDB infers the collection with no migration step.
+> [!WARNING]
+> **A localized `blocks` or `array` container has no per-field translation.** Wrap the leaves, not the container. When the container itself is localized, each locale holds its own order and content, so there is no single field to translate across them: the control answers with a notice telling you to translate the whole document instead, which handles this case.
 
-When a translated document is deleted, its provenance rows are cleaned up automatically (across all
-locales). The cleanup is best-effort — a failure is logged and never blocks the delete. The exported
-`TranslationProvenanceRecord` type describes a stored row if you query the sidecar collection directly.
-
-```typescript
-translatorPlugin({
-  collections: [Posts, Pages],
-  translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
-  runner: createPayloadJobsRunner(),
-  provenance: true, // or { slug: "my-provenance" }
-});
-```
-
-### Drafts and publishing
-
-Applies to every way a translation is triggered — the admin controls, `POST /translate/enqueue`, and
-auto-translate. It matters most if your collections have `versions.drafts` enabled.
-
-**Without publish-on-translation**, the translation is written as a **draft version**. The document's
-published state is left alone: a live page stays live, an unpublished one stays unpublished, and the
-translated locale does not appear on the public site until someone publishes it.
-
-**With publish-on-translation**, the translation is written as a draft and the target locale is then
-published — a separate step, so it happens whether or not any field actually needed translating.
-Only the locale that was translated is published; other locales keep whatever state they were in.
-Translating a document that is not currently published does make the document live, with just that
-locale's content in it.
-
-A translation is taken from **the source locale's own current content** — the newer draft when one
-exists, else the published row, never a value Payload substitutes from another locale. Translating
-*from* a locale you have not filled in therefore translates nothing.
-
-Two consequences worth knowing before you rely on them:
-
-- **Publishing publishes the current draft, whatever is in it.** A translation is based on the
-  version the editor sees, and publishing puts that live — including pending edits nobody made for
-  the translation's sake, and including non-localized fields, which Payload stores once per document
-  and so cannot scope to a locale. That is what the flag asks for, but it is worth remembering
-  before running "translate and publish" over a long list of documents: every unpublished draft
-  among them goes live.
-- **`skip_existing` counts anything non-empty as translated.** A translation waiting unpublished in
-  a draft counts, so a reviewer's corrected text is published as it stands rather than
-  re-translated. It has no notion of *reviewed*, and it does not consult stale-detection — a locale
-  the admin marks out of date is still skipped
-  ([#118](https://github.com/focusreactive/payload-plugins/issues/118)).
-
-> **Changed in 0.11.1.** Before this, translating one locale as a draft unpublished the document in
-> every locale, and translating one locale with publishing pushed every other locale's unpublished
-> draft live ([#102](https://github.com/focusreactive/payload-plugins/issues/102)). The source was
-> also read from the published row with fallbacks, so translating from an empty locale translated
-> the default locale's text.
-
-### Stale-translation detection
-
-_Since v0.8.0._
-
-With `provenance` enabled, the document translation control shows an **"out of date"** marker (with a
-tooltip naming the affected locales) when a target locale's source content changed after it was
-translated. Open the translation popup to see the per-locale list, where each locale can be
-**re-translated** or its out-of-date notice **dismissed**.
-Staleness is derived on read by comparing the current source fingerprint against the one recorded at
-translation time — no extra configuration, and no write-side hook on your collections. Editing a
-source locale marks its already-translated locales stale on the next panel view; re-translating clears it.
-
-Dismiss acknowledges the drift without re-translating; the marker stays hidden until the source
-changes again. When `provenance` is disabled nothing is shown. Note the fingerprint is text-only, so
-formatting-only edits to rich text do not mark a locale stale.
-
-> **Upgrading to 0.11.1.** Records written earlier fingerprinted the source differently, so a locale
-> can read out of date once after upgrading with nothing actually needing re-translation. Dismissing
-> the marker or re-translating settles it.
+`{ exclude: true }` means *never send this field to the provider* — not *leave it untouched*. An excluded field keeps its target value when it has one, is filled from the source locale when the target is empty (so a required field does not fail validation on save), and is never sent for translation. Exclusion wins over the `overwrite` strategy.
 
 ### Auto-translate on source change
 
 _Since v0.9.0._
 
-Opt in per collection with `withAutoTranslate` and the plugin queues translations automatically when a
-document's source-locale content changes — no manual trigger. Off by default; a collection is enabled
-only by wrapping it.
+Wrap a collection and edits to the source locale queue their own translations. On a collection with `versions.drafts` enabled this waits until the document is published; without drafts every save triggers it. Off unless you opt in, and a save that touched no translatable content queues nothing.
 
 ```ts
-import { translatorPlugin, withAutoTranslate, createOpenAIProvider, createPayloadJobsRunner } from "@focus-reactive/payload-plugin-translator";
+import { withAutoTranslate } from '@focus-reactive/payload-plugin-translator'
 
 translatorPlugin({
-  collections: [withAutoTranslate(Posts, { targets: ["de", "fr"], debounceMs: 2000 })],
-  translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
-  runner: createPayloadJobsRunner(),
-});
+  collections: [withAutoTranslate(Articles, { targets: ['de', 'fr'], debounceMs: 2000 })],
+  translationProvider,
+  runner,
+})
 ```
 
-| Option | Type | Default | Meaning |
-| ------ | ---- | ------- | ------- |
-| `targets` | `string[]` | — | Locales to translate into. The source locale is always excluded. |
-| `strategy` | `"overwrite" \| "skip_existing"` | `"overwrite"` | How target content is written. |
-| `debounceMs` | `number` | `0` | Delay before the job runs, coalescing rapid edits (see below). |
-| `sourceLocale` | `string` | `localization.defaultLocale` | Override the source locale for this collection. |
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `targets` | `string[]` | — | **Required.** Locales to translate into. The source locale is always excluded. |
+| `strategy` | `'overwrite' \| 'skip_existing'` | `'overwrite'` | Replace every target field, or only fill empty ones. |
+| `debounceMs` | `number` | `0` | Delay before the queued job runs, coalescing rapid edits. |
+| `sourceLocale` | `string` | `localization.defaultLocale` | Source locale override for this collection. |
 
-Behaviour: fires only on a **published** source save (draft/autosave saves are ignored; a collection
-without drafts treats every save as published); skips when no translatable content actually changed
-(same fingerprint as stale-detection); coalesces rapid edits via `debounceMs`; the translation is saved
-with the source document's status, scoped to **only the translated locale**; never re-triggers on its
-own translation writes; and never fails the editor's save (best-effort — failures are logged).
+> [!IMPORTANT]
+> Auto-translate only schedules the work. Nothing is translated unless your runner actually runs it — see [Task runners](#task-runners).
 
-> See [Drafts and publishing](#drafts-and-publishing) for what a translation does to a document's
-> published state.
+> [!WARNING]
+> **Auto-translate publishes what it writes.** A translation it queues off a published save is published in turn, not left as a draft, and there is no setting to hold it back. If translations need review before they go live, trigger them from the admin controls with publish-on-translation off instead.
 
-> **Requires a working job runner.** Auto-translate only **enqueues** jobs — they run via the task
-> runner (`createPayloadJobsRunner`) and its autorun loop. On serverless platforms such as **Vercel**,
-> cron-based autorun may not run automatically, so enqueued translations can sit unexecuted until
-> triggered — e.g. an external cron hitting the run endpoint, or a self-hosted worker. Make sure your
-> deployment actually executes queued jobs before relying on auto-translate.
+## Drafts and publishing
 
-### Lifecycle callbacks
+Applies to every trigger — the admin controls, `POST {basePath}/enqueue`, and auto-translate.
 
-_Since v0.7.0._
+Everything below describes a collection with `versions.drafts` enabled. **Without drafts there is nothing to stage:** a translation is written straight to the live document, and asking to publish on translation does nothing, silently.
 
-Optional server-side hooks fired around each translation task — for logging, notifications, cache
-invalidation, or feeding a dashboard. They need no schema or migration and are independent of the
-`provenance` opt-in. Each receives a `TranslationTask` descriptor
-(`{ collection, id, sourceLng, targetLng, strategy }`); `onFailed` also receives the error.
+**Without publish-on-translation** the translation is written as a draft version. The document's published state is untouched: a live page stays live, an unpublished one stays unpublished, and the new locale does not reach the public site until someone publishes it.
 
-A callback that throws is caught and logged — it never fails the translation. `onCompleted` /
-`onFailed` fire per execution attempt (the Payload Jobs runner may retry a failed task); `onQueued`
-fires once at enqueue.
+**With publish-on-translation** the translation is written as a draft and the target locale is then published — which happens whether or not any field actually needed translating. Only the translated locale is published; other locales keep the state they were in. Translating a document that is not currently published does make it live, carrying just that locale's content.
 
-```typescript
-translatorPlugin({
-  collections: [Posts, Pages],
-  translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
-  runner: createPayloadJobsRunner(),
-  lifecycle: {
-    onQueued: (task) => console.log("queued", task),
-    onCompleted: (task) => console.log("done", task),
-    onFailed: (task, error) => console.error("failed", task, error),
-  },
-});
-```
+The source is the source locale's **own current content** — the newer draft when one exists, otherwise the published version, never a value Payload substitutes from another locale. Translating *from* a locale you have not filled in therefore translates nothing.
 
-### Providers
+Two consequences worth knowing before relying on it:
 
-#### OpenAI (built in) — `createOpenAIProvider(config)`
+- **Publishing publishes the current draft, whatever is in it.** That includes pending edits nobody made for the translation's sake, and non-localized fields, which Payload stores once per document and cannot scope to a locale. Worth remembering before running translate-and-publish over a long list: every unpublished draft among them goes live.
+- **`skip_existing` counts anything non-empty as translated.** A translation waiting unpublished in a draft counts, so a reviewer's corrected text is published as it stands rather than re-translated. It has no notion of *reviewed*, and a locale the admin flags as out of date is still skipped ([#118](https://github.com/focusreactive/payload-plugins/issues/118)).
 
-Pass **either** an `apiKey` **or** a ready-made `client` — never both; the types enforce it.
-
-| Property       | Type                      | Required           | Default              | Description                                                                                                     |
-| -------------- | ------------------------- | ------------------ | -------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `apiKey`       | `string`                  | Unless `client`    | —                    | OpenAI API key. The `openai` package is loaded on first translation, not at config load. _Since v0.11.0: optional when `client` is given._ |
-| `client`       | `OpenAIClientShape`       | Unless `apiKey`    | —                    | Your own client — Azure OpenAI, a corporate proxy, OpenRouter, anything with a matching `chat.completions.create`. On this path the `openai` package is never loaded. _Since v0.11.0._ |
-| `model`        | `string`                  | No                 | `'gpt-5.4-mini'`     | Model used for translation. **The default may change in a minor release** — pin it if you need reproducible output and cost. |
-| `systemPrompt` | `SystemPromptBuilder`     | No                 | Built-in prompt      | Custom system-prompt builder.                                                                                   |
-| `dryRun`       | `boolean \| DryRunConfig` | No                 | `false`              | **Deprecated** — see the note below. Simulates translations without API calls, but still writes, publishes and records provenance. |
-| `sampling`     | `OpenAISamplingParams`    | No                 | not sent             | `temperature`, `top_p`, `frequency_penalty`, `presence_penalty`. Omitted entirely unless set — several models reject them. **Before v0.11.0 this package always sent `temperature: 0, top_p: 1, frequency_penalty: 0, presence_penalty: 0`**, so translations were deterministic; they now follow the model's defaults. Set `{ temperature: 0 }` to restore that. _Since v0.11.0._ |
-| `structuredOutput` | `"json_schema" \| "json_object"` | No | `"json_schema"` | Which structured-output envelope to send. See the note below — the two carry different risks. _Since v0.11.0._ |
-| `timeout`      | `number`                  | No                 | `60000`              | Per-request timeout (ms) for the client this package builds. Ignored when you pass your own `client`. _Since v0.6.0; the default dropped from the SDK's 10 minutes to 60 s in v0.11.0._ |
-| `maxRetries`   | `number`                  | No                 | SDK default (2)      | Max automatic retries on transient errors (429/5xx/network) for the client this package builds. `0` disables. Ignored when you pass your own `client`. _Since v0.6.0._ |
-
-> **`createOpenAIProvider` is deprecated and goes away in the next major.** What it adds over
-> `openAIComplete` is building the SDK client for you — and carrying `openai` as an optional
-> dependency of ours to do it, which is where the cost is: a lazy import shaped around deployment
-> file-tracers, and a classifier telling "not installed" from "installed but broken" across four
-> runtimes. Construct the client yourself instead and keep everything else:
->
-> ```typescript
-> import OpenAI from "openai";
-> import {
->   createTranslationProvider,
->   openAIComplete,
-> } from "@focus-reactive/payload-plugin-translator";
->
-> // The SDK's own default timeout is ten minutes — far too long for a live edit.
-> const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 60_000 });
->
-> const translationProvider = createTranslationProvider({
->   complete: openAIComplete({ client, model: "gpt-4o" }),
-> });
-> ```
->
-> `openAIComplete` stays: the request body, the `structuredOutput` choice below, and the message
-> naming that option when a gateway rejects a strict schema are all still ours. What becomes yours
-> is the SDK version and the client's own settings, the timeout most of all.
-> See [docs/DEPRECATIONS.md](docs/DEPRECATIONS.md#openai-client-construction).
-
-#### Choosing a structured-output envelope
-
-`json_schema` (the default) sends the request with a schema the reply must satisfy, so a compliant
-model **cannot** drop a requested field. That is what closed the silent half-translation defect. It
-costs two things:
-
-- Older models, and some gateways (OpenRouter with certain upstream models, older Azure
-  deployments, self-hosted proxies), reject it with a 400. You do not need to know which: the error
-  names this option as the fix.
-- The schema has a size limit, so **one request carries a limited number of pieces of text**, and a
-  document past that ceiling fails as a whole. The schema names one property per translatable piece,
-  and rich text is split one piece per text node — a sentence with two emphasised spans is already
-  four pieces — so the count grows faster than "one per field" suggests, and a document is never
-  split across requests. The ceiling differs by model and moves over time; measure it against your
-  largest documents rather than assuming headroom.
-
-`json_object` asks only for valid JSON. There is no schema, so no ceiling — but key preservation
-falls back to this package's key-set check, which **detects** a dropped key instead of preventing
-it. A reply missing one key out of two hundred still writes the other 199, the gap is reported to
-the server log, and only a reply matching nothing at all fails. Your editors never see that log, so
-a dropped field looks translated in the admin UI.
-
-Pick by which risk you would rather carry: a hard failure on very large documents, or a quiet gap on
-any document.
-
-```typescript
-// Quick start
-createOpenAIProvider({
-  apiKey: process.env.OPENAI_API_KEY,
-  model: "gpt-4o-mini",
-  systemPrompt: ({ sourceLang, targetLang, defaultPrompt }) => `${defaultPrompt}\nUse formal language. Keep brand names unchanged.`,
-});
-
-// Your own client — Azure, a proxy, OpenRouter. Since v0.11.0.
-import OpenAI from "openai";
-
-createOpenAIProvider({
-  client: new OpenAI({ apiKey: process.env.AZURE_KEY, baseURL: process.env.AZURE_ENDPOINT }),
-  model: "gpt-4o",
-});
-```
-
-`systemPrompt` receives `{ sourceLang, targetLang, defaultPrompt }` and returns the prompt string. When `dryRun` is an object it can transform text locally with an optional delay:
-
-```typescript
-type DryRunConfig = {
-  transform: (text: string) => string | Promise<string>;
-  timeout?: number; // ms, simulates API latency
-};
-```
-
-> **`dryRun` is deprecated and will be removed in the next major.** It skips the network call and
-> nothing else: the transformed strings are still written to the target locale, still published when
-> `publishOnTranslation` is set, and still recorded as provenance — after which the locale reads as
-> up to date and no re-translation is prompted. Use your own fake instead, which is explicit about
-> being one:
->
-> ```typescript
-> import { createTranslationProvider } from "@focus-reactive/payload-plugin-translator";
->
-> const fakeProvider = createTranslationProvider({
->   complete: async ({ userContent }) => {
->     const input = JSON.parse(userContent) as Record<string, string>;
->     const reversed: Record<string, string> = {};
->     for (const [key, value] of Object.entries(input)) {
->       reversed[key] = value.trim() ? [...value].reverse().join("") : value;
->     }
->     return JSON.stringify(reversed);
->   },
-> });
-> ```
->
-> `complete` returns the reply as raw text, exactly as a service would; parsing and validation stay
-> on our side. See [docs/DEPRECATIONS.md](docs/DEPRECATIONS.md#provider-dry-run).
-
-#### Another service — `createTranslationProvider(config)`
+## Translation providers
 
 _Since v0.11.0._
 
-Need a different model provider, or full control of the request body? Supply one function — "send this text, give me the reply" — and keep everything else. The prompt, the response schema, reply parsing, key-set validation, dry-run simulation and the failure taxonomy all stay on our side, so you cannot accidentally skip them.
+A provider is one method: take `{ 0: "Hello", 1: "World" }` plus a source and target language, and return the same keys translated. Build one from a single request function with `createTranslationProvider`:
 
-For OpenAI specifically you do not have to write that function: `openAIComplete({ client, model })` is one, built from a client you constructed. _Since v0.11.0._
-
-```typescript
-import { createTranslationProvider } from "@focus-reactive/payload-plugin-translator";
+```ts
+import { createTranslationProvider } from '@focus-reactive/payload-plugin-translator'
 
 const provider = createTranslationProvider({
   complete: async ({ systemPrompt, userContent, responseSchema }) => {
-    const reply = await myService.chat({
-      system: systemPrompt,
-      user: userContent,
-      schema: responseSchema, // hand this to whatever structured-output mechanism your service offers
-    });
-    return reply.text; // raw text, not a parsed object — we parse it
+    const reply = await myService.chat({ systemPrompt, userContent, schema: responseSchema })
+    return reply.text // return the reply as it came; the plugin reads it
   },
-});
+})
 ```
 
-> `signal` is reserved and currently always `undefined` — the port does not carry cancellation yet, so wiring it into your client is harmless but has no effect today. It is in the request shape so that adding cancellation later is a pure addition rather than a breaking change.
+Or implement the `TranslationProvider` interface directly if you need full control.
 
-| Property       | Type                      | Required | Default         | Description                                        |
-| -------------- | ------------------------- | -------- | --------------- | -------------------------------------------------- |
-| `complete`     | `CompletionFn`            | Yes      | —               | Sends one request, returns the reply as raw text.  |
-| `systemPrompt` | `SystemPromptBuilder`     | No       | Built-in prompt | Custom system-prompt builder.                      |
-| `dryRun`       | `boolean \| DryRunConfig` | No       | `false`         | **Deprecated** — supply your own fake `complete`.  |
+### Steering the prompt
 
-Your `complete` owns the timeout, the retry policy and the credentials — this package adds no retry of its own and imposes no timeout on your call.
-
-#### Failure causes
-
-_Since v0.11.0._
-
-Every built-in provider throws a typed error naming what went wrong, instead of returning `null`:
-
-| Error                       | `code`               | Means                                                                  |
-| --------------------------- | -------------------- | ---------------------------------------------------------------------- |
-| `NoContentError`            | `no-content`         | The reply was empty, or the service filtered it.                       |
-| `UnparseableReplyError`     | `unparseable-reply`  | The reply was not JSON, or not an object.                              |
-| `KeySetMismatchError`       | `key-set-mismatch`   | The reply answered none of the requested fields.                       |
-| `TransportError`            | `transport`          | The call failed — network, auth, rate limit, timeout.                  |
-| `ProviderConfigurationError`| `config`             | The provider cannot work as configured (usually a missing optional SDK). |
-
-All extend `TranslationProviderError`, so one `catch` covers them. The original failure is on the standard `cause` property — never copied into `message`, because that text can reach an HTTP response body and a vendor error may carry your API key.
-
-A **partial** reply is not an error: the fields that came back are applied, and the ones that did not are named in a warning. That is deliberate — dropping good translations because one field is missing helps nobody — but it does mean a partial translation still completes.
-
-#### Custom provider
-
-Implement the `TranslationProvider` interface — a single `translate` method:
-
-```typescript
-import type { TranslationProvider, TranslationInput, TranslationOutput } from "@focus-reactive/payload-plugin-translator";
-
-// TranslationInput / TranslationOutput are Record<number, string> — a map of
-// numeric indices to text. The indices map to positions in the document; the
-// provider MUST return the same keys with translated values.
-class DeepLProvider implements TranslationProvider {
-  constructor(private apiKey: string) {}
-
-  async translate(content: TranslationInput, sourceLng: string, targetLng: string): Promise<TranslationOutput | null> {
-    try {
-      const response = await fetch("https://api.deepl.com/v2/translate", {
-        method: "POST",
-        headers: { Authorization: `DeepL-Auth-Key ${this.apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ text: Object.values(content), source_lang: sourceLng.toUpperCase(), target_lang: targetLng.toUpperCase() }),
-      });
-      const data = await response.json();
-
-      const result: TranslationOutput = {};
-      Object.keys(content).forEach((key, i) => {
-        result[key] = data.translations[i].text;
-      });
-      return result;
-    } catch (cause) {
-      // Throwing is preferred — the cause reaches the log and the editor sees why it failed.
-      // Returning `null` still works and still aborts the whole run, but it says nothing about why.
-      throw new Error("DeepL translation failed", { cause });
-    }
-  }
-}
-
-translatorPlugin({
-  collections: [Posts],
-  translationProvider: new DeepLProvider(process.env.DEEPL_API_KEY),
-  runner: createPayloadJobsRunner(),
-});
-```
-
-### Runners
-
-Document- and collection-level translation run through a **runner**.
-
-#### `createPayloadJobsRunner(options)` (recommended)
-
-Background processing via Payload's job queue.
-
-| Property    | Type                       | Required | Default                            | Description                                                                                           |
-| ----------- | -------------------------- | -------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `taskName`  | `string`                   | No       | `'translate_document'`             | Task name in the Payload jobs collection.                                                             |
-| `queueName` | `string`                   | No       | `'translations'`                   | Queue name for grouping jobs.                                                                         |
-| `autoRun`   | `false \| { cron, limit }` | No       | `{ cron: '* * * * *', limit: 50 }` | Auto-run schedule, or `false` to disable (e.g. for serverless, where you trigger the queue yourself). |
-
-```typescript
-createPayloadJobsRunner({ taskName: "translate_document", queueName: "translations", autoRun: { cron: "* * * * *", limit: 50 } });
-```
-
-> By default Payload deletes a job as soon as it completes, so the "Completed" status never shows in the UI. Set `jobs: { deleteJobOnComplete: false }` in your Payload config to keep it.
-
-##### One job per document
-
-A document's target locales are queued as a **single job** that translates them one after another.
-Every write Payload makes is a whole-document version snapshot, so two locales translated in parallel
-build from the same base and the second silently drops the first's work.
-
-A later request for the same document adds its locales to that job rather than replacing it — the
-locales the job still owes are never lost. Two cases get a job of their own instead: re-translating a
-locale the live job has already finished (its log records it as done, so it would be skipped), and a
-request that picked a different source locale, strategy or publish flag — a job carries one of each
-for all its locales, so it cannot take work that chose differently.
-
-##### Optional: strict one-at-a-time per document
-
-Two requests landing at the same instant, or a re-translation of an already-finished locale, can still
-put two jobs on one document. If your content is edited often enough for that to matter, enable
-Payload's own concurrency control:
-
-```typescript
-// payload.config.ts
-export default buildConfig({
-  jobs: { enableConcurrencyControl: true },
-  // ...
-});
-```
-
-The plugin picks this up on its own — there is no option to set here. With it on, the queue holds a
-second job for a document until the running one finishes, so two jobs can never write the same
-document at once. Jobs for *different* documents still run in parallel.
-
-The cost is yours to weigh: the setting adds an indexed `concurrencyKey` column to the jobs
-collection, so a SQL database needs a migration (`payload migrate:create` then `payload migrate`);
-MongoDB needs none. A second job also waits for the next queue run rather than starting immediately.
-
-> With the setting on, a job stuck at `processing: true` blocks every other job for that document
-> until its lock is reclaimed. The plugin clears stale locks on boot — see `staleJobTimeoutMs`.
-
-#### `createSyncRunner()`
-
-Runs translations inline (no queue) — handy for development or small datasets.
-
-```typescript
-import { createSyncRunner } from "@focus-reactive/payload-plugin-translator";
-
-translatorPlugin({ collections: [Posts], translationProvider, runner: createSyncRunner() });
-```
-
-### Field config — `withFieldTranslation(field, config?)`
-
-A plain wrap on a `text` / `textarea` / `richText` field adds the per-field Translate control (requires `fieldLevel()`); `{ exclude: true }` opts a field out of translation entirely.
-
-| Property  | Type      | Required | Default | Description                          |
-| --------- | --------- | -------- | ------- | ------------------------------------ |
-| `exclude` | `boolean` | No       | `false` | Exclude this field from translation. |
-
-```typescript
-import { withFieldTranslation } from "@focus-reactive/payload-plugin-translator";
-
-withFieldTranslation({ name: "title", type: "text", localized: true }); // adds the control
-withFieldTranslation({ name: "sku", type: "text", localized: true }, { exclude: true }); // never translated
-```
-
-### Strategies
-
-How existing target-locale content is treated when translating:
-
-| Strategy          | Behavior                                                   |
-| ----------------- | ---------------------------------------------------------- |
-| `'overwrite'`     | _(Default)_ Replace all existing translated content.       |
-| `'skip_existing'` | Only translate fields that are empty in the target locale. |
-
-## Notes & gotchas
-
-### Mark nested fields `localized: true` explicitly
-
-Payload lets a wrapper field (group, array, blocks, tabs) be `localized`, which makes nested fields inherit localization. The plugin, however, only translates **leaf** fields (text, textarea, richText), so each one you want translated must carry `localized: true` itself:
-
-```typescript
-// ❌ nested title is not explicitly localized — skipped
-{ name: "meta", type: "group", localized: true, fields: [{ name: "title", type: "text" }] }
-
-// ✅ title is explicitly localized — translated
-{ name: "meta", type: "group", localized: true, fields: [{ name: "title", type: "text", localized: true }] }
-```
-
-### Excluded fields are still backfilled
-
-`{ exclude: true }` means "never send this field to the provider" — not "leave it untouched." If an excluded field is empty in the target locale, it's filled from the source locale (so required fields don't fail validation on save). Exclusion takes priority over the `overwrite` strategy: an excluded field keeps its target value if present, copies the source value only when target is empty, and is never sent to the provider.
-
-### Keeping completed-job status
-
-See the `deleteJobOnComplete: false` note under [Runners](#createpayloadjobsrunneroptions-recommended).
-
-Keeping them means they accumulate: nothing in the plugin removes a completed translation job, and the
-status panels read a collection's jobs on every open. How long that history is worth keeping is your
-call, not the plugin's, so pruning is left to you — the same way `deleteJobOnComplete` is.
-
-_Applies only to `createPayloadJobsRunner`._ `createSyncRunner` translates inline and writes no jobs at
-all, so there is nothing to prune.
+`systemPrompt` replaces the instruction sent with every translation request — the place for tone, register, a glossary, or brand terms that must survive untranslated. It receives the source and target language codes plus the prompt the plugin would have sent, so you can extend rather than replace:
 
 ```ts
-// Run from your own cron / scheduled task.
-// Must match the `taskName` you passed to createPayloadJobsRunner — "translate_document" by default.
-const TRANSLATOR_TASK = "translate_document";
+createTranslationProvider({
+  complete: openAIComplete({ client, model: 'gpt-5.4-mini' }),
+  systemPrompt: ({ sourceLang, targetLang, defaultPrompt }) =>
+    `${defaultPrompt}\nUse formal register. Leave product names in ${sourceLang} unchanged.`,
+})
+```
 
-const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+`sourceLang` is empty when the provider is expected to detect the language itself.
 
-await payload.delete({
-  collection: "payload-jobs",
-  where: {
-    and: [
-      { taskSlug: { equals: TRANSLATOR_TASK } },
-      { completedAt: { exists: true } },
-      { completedAt: { less_than: cutoff } },
-    ],
+### OpenAI and OpenAI-compatible gateways
+
+`openAIComplete` works with any client exposing a Chat Completions `chat.completions.create` — the OpenAI SDK, Azure OpenAI, OpenRouter, a corporate proxy. You construct the client, so the SDK version is yours to choose.
+
+```ts
+createTranslationProvider({
+  complete: openAIComplete({
+    client: new OpenAI({
+      apiKey: process.env.OPENROUTER_API_KEY,
+      baseURL: 'https://openrouter.ai/api/v1',
+    }),
+    model: 'anthropic/claude-sonnet-4.5',
+    sampling: { temperature: 0 },
+    structuredOutput: 'json_object',
+  }),
+})
+```
+
+`structuredOutput` picks how the reply is asked for:
+
+- `'json_schema'` (default) — the reply must satisfy a schema, so a compliant model cannot drop a field. Older models and some gateways reject it with a 400, and the schema has a per-model property ceiling that a very large document can exceed.
+- `'json_object'` — asks only for valid JSON. No ceiling, but a field the model drops surfaces as a failed translation afterwards instead of being prevented.
+
+`sampling` is sent only if you set it — several models reject the parameters outright. Pass `{ temperature: 0 }` when you want translations to come out the same way twice.
+
+> [!NOTE]
+> `createOpenAIProvider({ apiKey })` still exists and builds the client for you. It is deprecated in favour of the two lines above — see [Deprecated aliases](#deprecated-aliases).
+
+### Provider errors
+
+Provider failures arrive as typed errors, each with a `code` and the original failure on `cause`.
+
+| Error | `code` |
+| --- | --- |
+| `NoContentError` | `no-content` |
+| `UnparseableReplyError` | `unparseable-reply` |
+| `KeySetMismatchError` | `key-set-mismatch` |
+| `TransportError` | `transport` |
+| `ProviderConfigurationError` | `config` |
+
+All extend `TranslationProviderError`; the union of codes is exported as `TranslationFailureCode`.
+
+### Testing without a network
+
+There is no built-in fake — supply your own `complete`, which reaches nothing and needs no API key:
+
+```ts
+const fake = createTranslationProvider({
+  complete: async ({ userContent }) => {
+    const input: Record<string, string> = JSON.parse(userContent)
+    return JSON.stringify(
+      Object.fromEntries(Object.entries(input).map(([k, v]) => [k, `[de] ${v}`]))
+    )
   },
-});
+})
 ```
 
-Three things the clauses buy you, in order: only this plugin's jobs, only finished ones — so nothing
-queued or in flight is touched — and only those older than your cutoff, so a run someone may still want
-to look at survives. Keep a cutoff of at least a day for that last reason; deleting everything
-completed would erase a translation that finished minutes ago.
+## Task runners
 
-All three filter on real columns rather than paths inside the job's JSON input, so this behaves the same
-on SQLite, Postgres and MongoDB.
+| Runner | Behaviour |
+| --- | --- |
+| `createPayloadJobsRunner(options?)` | Translates in the background, one Payload Job per document. The normal choice. |
+| `createSyncRunner(options?)` | Translates immediately, before the call returns. No queue to run — handy in tests and scripts. |
 
-## TypeScript
+`PayloadJobsRunnerOptions`:
 
-The package ships its types. Besides the factories, the following are exported for typing your own code:
+| Option | Type | Default |
+| --- | --- | --- |
+| `taskName` | `string` | `'translate_document'` |
+| `queueName` | `string` | `'translations'` |
+| `jobsCollection` | `CollectionSlug` | `'payload-jobs'` |
+| `autoRun` | `false \| { cron?: string; limit?: number }` | `{ cron: '* * * * *', limit: 50 }` |
+| `staleJobTimeoutMs` | `number` | `300000` |
+| `retries` | `{ attempts?: number; backoff?: { delay?: number; type: 'exponential' \| 'fixed' } }` | `{ attempts: 3, backoff: { type: 'exponential', delay: 5000 } }` |
 
-```typescript
-import type {
-  TranslatorPluginConfig,
-  TranslationProvider,
-  TranslationInput,
-  TranslationOutput,
-  OpenAIProviderConfig,
-  DryRunConfig,
-  TaskRunnerProvider,
-  PayloadJobsRunnerOptions,
-  TranslationLevel,
-  FieldTranslationConfig,
-  AccessGuard,
-  AccessGuardRequest,
-  TranslationTask, // descriptor passed to the lifecycle callbacks — Since v0.7.0
-  TranslationLifecycleCallbacks, // shape of the `lifecycle` config — Since v0.7.0
-  TranslationProvenanceRecord, // a stored provenance row — Since v0.7.0
-} from "@focus-reactive/payload-plugin-translator";
+> [!WARNING]
+> `staleJobTimeoutMs` must exceed the longest a single document translation can legitimately take. Set it too low and a translation still running is started again — the document is translated twice, and billed twice.
+
+> [!IMPORTANT]
+> Cron autorun does not fire on serverless hosts such as Vercel, so jobs queue and wait. Pass `createPayloadJobsRunner({ autoRun: false })` and drive the queue from your own cron or worker via `POST {basePath}/run/:id`.
+
+`createSyncRunner` keeps the status of what it ran in memory — the last 100 tasks, for an hour, adjustable with `maxSize` and `ttlMs`. A restart forgets them. Nothing is lost but the reporting: the translations themselves are already written.
+
+### Seeing finished jobs
+
+Payload deletes a job the moment it completes, so the "Completed" state never appears in the status panels. Set `jobs: { deleteJobOnComplete: false }` in your **Payload** config to keep them — it is Payload's option, not the plugin's, and pruning what accumulates is yours to manage the same way.
+
+## Access control
+
+```ts
+import type { AccessGuard } from '@focus-reactive/payload-plugin-translator'
+
+const signedInOnly: AccessGuard = {
+  check: ({ req }) => Boolean(req.user),
+}
+
+translatorPlugin({ collections, translationProvider, runner, access: signedInOnly })
 ```
+
+Return `false` and the request is rejected with `403 Forbidden`. The guard receives the request headers, the authenticated user and the Payload instance, and may be async — so a role or permission check is a lookup away, shaped by your own generated `TypedUser`.
+
+## Lifecycle callbacks
+
+_Since v0.7.0._
+
+Nothing to set up beyond the config — no collection, no migration. A callback that throws is logged and never fails the translation.
+
+```ts
+translatorPlugin({
+  collections,
+  translationProvider,
+  runner,
+  lifecycle: {
+    onQueued: (task) => log.info(task, 'translation queued'),
+    onCompleted: (task) => log.info(task, 'translation done'),
+    onFailed: (task, error) => log.error({ task, error }, 'translation failed'),
+  },
+})
+```
+
+Each `task` carries `{ collection, id, sourceLng, targetLng, strategy }`. `onQueued` fires once; `onCompleted` / `onFailed` fire per execution attempt, so a retried task can emit `onFailed` more than once.
+
+## Provenance and staleness
+
+_Since v0.7.0._
+
+Set `provenance: true` and the plugin adds a collection that records, for each document and target locale, what the source looked like when that locale was translated. The admin uses it to flag locales whose source has changed since, and an editor can dismiss a flag without re-translating. The record type is exported as `TranslationProvenanceRecord` if you want to read it yourself.
+
+> [!IMPORTANT]
+> On a SQL database this adds a table. Generate and run a migration (`payload migrate:create`, then `payload migrate`; dev push works in development). MongoDB infers it with no migration. Leaving `provenance` off means no collection, no migration and no behaviour change.
+
+> [!NOTE]
+> **Upgrading from below 0.11.1.** A locale can read as out of date once after the upgrade with nothing actually needing re-translation. Dismissing the flag or re-translating settles it.
+
+## HTTP endpoints you can call
+
+Three endpoints are meant for you. They mount under your Payload API route plus `basePath` — `/api/translate/...` by default — and all go through the `access` guard.
+
+| Method | Path | When you need it |
+| --- | --- | --- |
+| `POST` | `/enqueue` | Start translations from your own code — a migration, an import, any script. |
+| `POST` | `/run/:id` | Run a queued job now. Required wherever cron autorun does not fire, such as Vercel. |
+| `POST` | `/field` | Translate one field and get the result back. Mounted only when `levels` includes `fieldLevel()`. |
+
+`POST /enqueue` takes `source_lng`, `target_lng` (one locale or a list), `collection_slug` and `collection_id[]`, plus optional `select_all`, `strategy` (`'overwrite' | 'skip_existing'`, default `'overwrite'`) and `publish_on_translation` (default `false`). Field names are snake_case.
+
+> [!NOTE]
+> The plugin mounts further routes under the same `basePath` to serve its own admin panels — status, cancel and staleness. They are not part of the published contract and may change in any release; drive the plugin through the three above.
+
+## Exports reference
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `translatorPlugin` | function | The plugin itself. |
+| `documentLevel`, `collectionLevel`, `fieldLevel` | functions | Translation surfaces for `levels`. |
+| `withFieldTranslation` | function | Attach a per-field control, or exclude a field. |
+| `withAutoTranslate` | function | Opt a collection into auto-translation. |
+| `createTranslationProvider` | function | Build a provider from one `complete` function. |
+| `openAIComplete` | function | Chat Completions `complete` for a client you construct. |
+| `createPayloadJobsRunner`, `createSyncRunner` | functions | The two ways to run a translation. |
+| `toTaskFilter` | function | Builds the document filter a runner accepts. |
+| `TranslationProviderError` and subclasses | classes | Typed provider failures. |
+| `TranslatorPluginConfig`, `AccessGuard`, `AccessGuardRequest` | types | Plugin configuration. |
+| `TranslationProvider`, `TranslationInput`, `TranslationOutput` | types | The provider contract. |
+| `CompletionFn`, `CompletionRequest`, `TranslationProviderConfig` | types | The `complete` contract. |
+| `SystemPromptBuilder`, `SystemPromptContext`, `JsonSchemaObject` | types | Prompt and schema customization. |
+| `OpenAIClientShape`, `OpenAISamplingParams`, `OpenAIStructuredOutput` | types | OpenAI adapter. |
+| `TaskRunnerProvider`, `PayloadJobsRunnerOptions`, `TaskFilter` | types | Task runners. |
+| `TranslationLevel`, `TargetSelectionMode` | types | Surfaces and target selection. |
+| `AutoTranslateConfig`, `AutoTranslateStrategy`, `FieldTranslationConfig` | types | Collection and field configuration. |
+| `TranslationTask`, `TranslationLifecycleCallbacks` | types | Lifecycle callbacks. |
+| `TranslationProvenanceRecord` | type | One stored provenance record. |
+
+## Experimental: rich text one container at a time
+
+> [!WARNING]
+> Shipped in `0.13.0` behind `experimental: { inlineMarks: true }`, off by default, and deprecated on arrival — the next major removes the flag and makes container mode the only mode. Treat it as a schedule, not a permanent switch: do not build on the option itself.
+
+With the flag off, a translated sentence keeps the source language's word order, and bold or a link can end up on the wrong word. `a **red** car` into French comes back as un **rouge** voiture — ungrammatical, with the emphasis misplaced.
+
+With the flag on, the whole container — a paragraph, a heading, one list item — goes as a single string with its formatting written as numbered marks:
+
+```
+<1>a </1><2>red</2><3> car</3>
+```
+
+Your provider must return those markers intact — translated and reordered as the target language needs, but neither translated themselves nor dropped. The same sentence then comes back as une voiture **rouge**: the emphasis stays on the word it belonged to, and links travel with theirs.
+
+The flag does nothing unless your provider declares that it can handle the markers:
+
+```ts
+createTranslationProvider({
+  complete: openAIComplete({ client, model: 'gpt-5.4-mini' }),
+  capabilities: { inlineMarks: true },
+})
+```
+
+Declare it only for a service you trust to return the markers untouched — a plain machine-translation API would translate or drop them. A container whose reply comes back with broken markers is left in its source language rather than written back half-translated.
+
+Switching the flag back off changes only future translations; documents already translated under it keep the structure they have.
 
 ## Versioning
 
-Every public API is annotated with `@since x.y.z` in its JSDoc, and features carry a `Since vX.Y.Z` note here — so you can tell at a glance whether your installed version has a given capability without cross-referencing the changelog. Releases follow semver.
+This package is on `0.x`, and that is not a formality. The surface still moves, contracts still change, and the next major will take a fair amount away. What it will not do is move silently — the terms are:
 
-## Roadmap
+- **Nothing is removed without a deprecation first.** The old name keeps working until the next major, and [`docs/DEPRECATIONS.md`](https://github.com/focusreactive/payload-plugins/blob/main/packages/payload-plugin-translator/docs/DEPRECATIONS.md) records why each one is going.
+- **Releases follow semver**, so a breaking change never arrives as a patch.
+- **Anything added since `0.5.0` says which release it arrived in** — as a _Since_ note beside the feature here, and as an `@since` tag in its JSDoc, so your editor answers the question too. Older API predates the convention and carries no marker.
 
-Planned features building on the provenance foundation:
+Already scheduled for the next major: everything in [Deprecated aliases](#deprecated-aliases), and the `experimental.inlineMarks` flag, when container mode becomes the only mode. Use none of those and the upgrade is a version bump.
 
-- **Global translation dashboard** — translate across all collections from one place, with project-wide progress.
-- **Auto-translate on source change** — retranslate automatically when default-locale content changes, driven by stale-translation detection.
+## Deprecated aliases
+
+Still exported, removed in the next major. The reasoning behind each is in [`docs/DEPRECATIONS.md`](https://github.com/focusreactive/payload-plugins/blob/main/packages/payload-plugin-translator/docs/DEPRECATIONS.md).
+
+| Deprecated | Use instead |
+| --- | --- |
+| `createTranslatePlugin`, `TranslateCollectionPlugin` | `translatorPlugin` |
+| `TranslateCollectionPluginConfig` | `TranslatorPluginConfig` |
+| `translateKitField` | `withFieldTranslation` |
+| `TranslateKitFieldConfig` | `FieldTranslationConfig` |
+| `OpenAITranslationProvider`, `createOpenAIProvider` | `createTranslationProvider` + `openAIComplete` |
+| `dryRun` on a provider config | Your own `complete` function |
+
+## Troubleshooting
+
+**The Translate control does not appear.** Run `payload generate:importmap` after registering the plugin, and restart the dev server.
+
+**Nested localized fields are skipped.** You passed sanitized configs. `collections` must receive the same objects you give `buildConfig` — Payload's sanitizer strips `localized` from fields nested under a localized ancestor.
+
+**Jobs stay queued forever.** Nothing is draining the queue. Check that autorun is enabled, or trigger `POST /api/translate/run/:id` yourself on platforms where cron does not run.
+
+**`ProviderConfigurationError` saying the model does not support the json_schema response format, or that the schema was rejected.** The model or gateway would not accept the schema request, or the document was too large for it. Switch to `structuredOutput: 'json_object'`.
+
+**A per-field control on a field that is not text.** `withFieldTranslation` adds a control only to `text`, `textarea` and `richText`; any other field type must be passed `{ exclude: true }`.
 
 ## License
 
-[MIT](https://github.com/focusreactive/payload-plugins/blob/main/LICENSE) © Focus Reactive.
+MIT © [Focus Reactive](https://focusreactive.com/)
