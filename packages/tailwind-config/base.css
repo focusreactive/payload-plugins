@@ -61,9 +61,19 @@
   --radius-sm: 5px;
   --radius-md: 7px;
   --radius-lg: 12px;
+  /* Anything nested inside a card: its cover well, a feature box. Five uses in the concept. */
+  --radius-inner: clamp(10px, 1vw, 14px);
   --radius-xl: clamp(14px, 1.4vw, 20px);
   --radius-2xl: clamp(20px, 2.5vw, 40px);
   --radius-pill: 999px;
+
+  /*
+   * One height for every interactive control the concept draws - button, icon button, topic chip,
+   * rail arrow - twenty-three uses. A control that sets its own height will not line up with the
+   * row it sits in, so reach for this rather than a fresh clamp.
+   */
+  --spacing-control: clamp(40px, 3.4vw, 46px);
+  --spacing-control-sm: clamp(28px, 2.2vw, 32px);
 
   --shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.08);
   --shadow-lift: 0 18px 40px rgba(0, 0, 0, 0.18);

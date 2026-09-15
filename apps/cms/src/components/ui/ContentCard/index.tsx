@@ -1,0 +1,268 @@
+import Link from "next/link";
+
+import { Media } from "@/components/media";
+import { cn } from "@/components/utils";
+
+import { RatingGlyph, StarRating } from "../StarRating";
+import type { ContentCardProps, ContentCardVariant } from "./types";
+
+/**
+ * Both widths are `clamp()`s with a nested `calc()` (course) or `min()` (featured), so they stay
+ * inline styles rather than Tailwind arbitrary values: the spaces CSS requires around a
+ * `calc()`/`min()` minus or comma collide with Tailwind's underscore escape inside the outer
+ * clamp's own comma list. `CourseRail/ui/index.tsx` carries the same reasoning for the `course`
+ * value, lifted unchanged from there.
+ */
+const CONTENT_CARD_WIDTH: Record<ContentCardVariant, string> = {
+  course: "clamp(260px, calc((100% - 2 * clamp(16px, 1.6vw, 24px)) / 3.28), 460px)",
+  featured: "clamp(200px, min(19vw, 26vh), 300px)",
+};
+
+const FOCUS_RING =
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+
+interface ContentCardCoverProps {
+  cover: ContentCardProps["cover"];
+  variant: ContentCardVariant;
+}
+
+function ContentCardCover({ cover, variant }: ContentCardCoverProps) {
+  const isFeatured = variant === "featured";
+
+  return (
+    <div
+      className={cn(
+        "relative w-full flex-none overflow-hidden rounded-inner bg-primary-soft",
+        isFeatured ? "aspect-[300/148]" : "aspect-[485/300]"
+      )}
+    >
+      {cover && (
+        <Media
+          {...cover.data}
+          imageProps={{
+            ...cover.imageProps,
+            className: cn(
+              "size-full object-cover",
+              // Replaces the concept's `onMouseEnter`/`onMouseLeave` state (which drove this same
+              // zoom): a `group-hover` scale gets the identical effect without an event handler,
+              // which is what keeps this a server component.
+              isFeatured &&
+                "transition-transform duration-[600ms] ease-[cubic-bezier(.2,.7,.3,1)] group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+            ),
+            fill: true,
+            fit: "cover",
+            sizes: isFeatured
+              ? "(max-width: 640px) 45vw, (max-width: 1024px) 22vw, 300px"
+              : "(max-width: 640px) 80vw, (max-width: 1024px) 45vw, 380px",
+          }}
+          visualEditing={cover.visualEditing}
+        />
+      )}
+    </div>
+  );
+}
+
+type ContentCardBodyProps = Omit<ContentCardProps, "className" | "href" | "variant"> & {
+  variant: ContentCardVariant;
+};
+
+function FeaturedCardBody({
+  cover,
+  dateLabel,
+  eyebrow,
+  price,
+  priceBefore,
+  rating,
+  title,
+}: ContentCardBodyProps) {
+  const hasMetaRow = rating != null || Boolean(dateLabel);
+
+  return (
+    <>
+      {eyebrow && (
+        <div className="flex items-center justify-between gap-2 px-1 pt-0.5 pb-[clamp(8px,0.9vw,12px)]">
+          {/* 11px/0.14em in the concept - the two-value exception the corrected brief calls out.
+              Reusing `text-eyebrow` (12px/0.1em) over adding a one-off utility for a single label. */}
+          <span className="text-eyebrow whitespace-nowrap text-ink-62">{eyebrow}</span>
+          <span
+            aria-hidden
+            className="flex size-[22px] flex-none items-center justify-center rounded-pill bg-primary-soft opacity-0 transition-opacity duration-[250ms] ease-out group-hover:opacity-100 motion-reduce:transition-none"
+          >
+            <svg className="text-primary" fill="none" height="9" viewBox="0 0 16 10" width="11">
+              <path
+                d="M1 5h13M10 1l4 4-4 4"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+              />
+            </svg>
+          </span>
+        </div>
+      )}
+
+      <ContentCardCover cover={cover} variant="featured" />
+
+      {hasMetaRow && (
+        <div className="mb-2 flex items-center gap-2 px-1 pt-[clamp(10px,1vw,14px)]">
+          {rating != null && <RatingGlyph rating={rating} />}
+          {rating != null && dateLabel && (
+            <span aria-hidden className="size-[3px] flex-none rounded-pill bg-ink-24" />
+          )}
+          {dateLabel && (
+            <span className="text-eyebrow whitespace-nowrap text-ink-42">{dateLabel}</span>
+          )}
+        </div>
+      )}
+
+      <h3
+        className={cn(
+          "m-0 px-1 text-[16px] leading-[1.35] font-normal text-pretty text-foreground",
+          !hasMetaRow && "pt-[clamp(10px,1vw,14px)]",
+          price ? "mb-[clamp(8px,1vw,12px)]" : "mb-1"
+        )}
+      >
+        {title}
+      </h3>
+
+      {price && (
+        <div className="flex flex-wrap items-baseline gap-2 px-1 pb-1">
+          <span className="text-body-lg font-medium text-primary">{price}</span>
+          {priceBefore && (
+            <span className="text-[13px] text-ink-42 line-through">{priceBefore}</span>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+function CourseCardBody({
+  cover,
+  dateLabel,
+  description,
+  price,
+  priceBefore,
+  rating,
+  title,
+}: ContentCardBodyProps) {
+  return (
+    <>
+      <ContentCardCover cover={cover} variant="course" />
+
+      {(rating != null || dateLabel) && (
+        <div
+          className={cn(
+            "flex items-center gap-3 px-1 pt-[clamp(12px,1.2vw,18px)] pb-[clamp(8px,0.9vw,12px)]",
+            // With no rating there is nothing on the left, so the date keeps its own corner
+            // instead of sliding across to where the stars would have been.
+            rating == null ? "justify-end" : "justify-between"
+          )}
+        >
+          {rating != null && <StarRating rating={rating} />}
+          {dateLabel && (
+            <span className="text-eyebrow whitespace-nowrap text-ink-42">{dateLabel}</span>
+          )}
+        </div>
+      )}
+
+      <h3 className="m-0 mb-[clamp(8px,0.9vw,12px)] px-1 text-h-card text-pretty text-foreground">
+        {title}
+      </h3>
+
+      {description && (
+        <p className="m-0 mb-[clamp(14px,1.6vw,22px)] px-1 text-small text-pretty text-muted-foreground">
+          {description}
+        </p>
+      )}
+
+      {price && (
+        <div className="mt-auto flex flex-wrap items-baseline gap-2.5 px-1 pb-1">
+          <span className="text-lead font-medium text-primary">{price}</span>
+          {priceBefore && (
+            <span className="text-small text-ink-42 line-through">{priceBefore}</span>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+/**
+ * The one card the concept draws twice: a "featured" hero spotlight and a "course" rail card,
+ * sharing a surface, a padding, a media well and a price row but differing in enough structural
+ * places - edge treatment, hover, header row, rating cluster, type scale - that a `variant` reads
+ * true and a `size` prop would not.
+ */
+export function ContentCard({
+  className,
+  cover,
+  dateLabel,
+  description,
+  eyebrow,
+  href,
+  price,
+  priceBefore,
+  rating,
+  title,
+  variant = "course",
+}: ContentCardProps) {
+  const isFeatured = variant === "featured";
+
+  const cardClassName = cn(
+    "group relative box-border flex flex-col rounded-xl bg-card p-[clamp(10px,1vw,14px)] text-foreground",
+    FOCUS_RING,
+    isFeatured
+      ? [
+          "flex-initial min-w-min shadow-lift",
+          "transition-shadow duration-300 ease-out hover:shadow-float",
+          "motion-reduce:transition-none",
+        ]
+      : [
+          "flex-none border border-ink-08",
+          "transition-[transform,border-color] duration-300 ease-out hover:-translate-y-0.5 hover:border-ink-16",
+          "motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+        ],
+    className
+  );
+
+  const style = { width: CONTENT_CARD_WIDTH[variant] };
+
+  const body = isFeatured ? (
+    <FeaturedCardBody
+      cover={cover}
+      dateLabel={dateLabel}
+      eyebrow={eyebrow}
+      price={price}
+      priceBefore={priceBefore}
+      rating={rating}
+      title={title}
+      variant={variant}
+    />
+  ) : (
+    <CourseCardBody
+      cover={cover}
+      dateLabel={dateLabel}
+      description={description}
+      price={price}
+      priceBefore={priceBefore}
+      rating={rating}
+      title={title}
+      variant={variant}
+    />
+  );
+
+  if (!href) {
+    return (
+      <article className={cardClassName} style={style}>
+        {body}
+      </article>
+    );
+  }
+
+  return (
+    <Link className={cardClassName} href={href} style={style}>
+      {body}
+    </Link>
+  );
+}
