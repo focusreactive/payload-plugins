@@ -24,8 +24,14 @@ export interface GetTalksOptions {
   ids?: (number | string)[];
 }
 
+/*
+ * A field missing here is invisible rather than broken: the document comes back without it and a
+ * card silently renders its empty state, whatever an editor set in the admin. `coverImage` is the
+ * one that costs the most, because it is the card's whole top half.
+ */
 const LISTING_SELECT = {
   audioUrl: true,
+  coverImage: true,
   durationSeconds: true,
   kind: true,
   publishedAt: true,

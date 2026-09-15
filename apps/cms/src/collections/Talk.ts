@@ -9,13 +9,14 @@
  * branch"). Blocks are unaffected and keep the localized form.
  */
 
-import type { CollectionConfig } from "payload";
+import type { CollectionConfig, Field } from "payload";
 
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { slugField } from "payload";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { generateSeoFields } from "@/lib/utils/seoFields";
 
+import { imageField } from "@/lib/fields/imageField";
 import { talkAiFields } from "@/lib/fields/talkAiFields";
 import { talkKindOptions, talkTierOptions } from "@/lib/talks/taxonomy";
 
@@ -25,6 +26,23 @@ import { talkKindOptions, talkTierOptions } from "@/lib/talks/taxonomy";
  * seed script and the "view as" switch all import them from this path.
  */
 export { TALK_KINDS, TALK_TIERS } from "@/lib/talks/taxonomy";
+
+/**
+ * `imageField` takes no description argument, so the group it returns is re-wrapped with one here -
+ * the same reason `courseRailFields` re-wraps it in src/blocks/CourseRail/fields.ts. The label is
+ * overridden too, to a plain string: this collection's own field labels are plain strings rather
+ * than the `{ en, es }` objects blocks use, for the reason given in the file-level comment above
+ * (Payload 3.84 renders an object label as "[object Object]" in list-view sort buttons and create
+ * tooltips). Optional, unlike most image fields here, because 16 talks already exist without one.
+ */
+const talkCoverImageField: Field = {
+  ...imageField("coverImage", { required: false, withAspectRatio: false }),
+  admin: {
+    description:
+      "The picture shown on this talk's card wherever it is listed - grids, rails, topic pages. Left empty, the card is simply shown with no picture up top; nothing else about the listing changes.",
+  },
+  label: "Cover image",
+};
 
 export const Talk: CollectionConfig<"talk"> = {
   access: {
@@ -126,6 +144,7 @@ export const Talk: CollectionConfig<"talk"> = {
               name: "teaser",
               type: "textarea",
             },
+            talkCoverImageField,
             {
               admin: {
                 description:

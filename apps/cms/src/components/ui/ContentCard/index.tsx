@@ -141,25 +141,39 @@ function CourseCardBody({
   cover,
   dateLabel,
   description,
+  eyebrow,
   price,
   priceBefore,
   rating,
   title,
 }: ContentCardBodyProps) {
+  /*
+   * The concept only ever fills this slot with stars, because every card it draws is a rated
+   * course. A feed with no ratings - talks, products - leaves it empty and the date sits alone
+   * against the right edge, so a short label (the kind of talk, say) takes the space the stars
+   * would have had rather than needing a row of its own. A rating still wins it when both exist.
+   */
+  const leadingMeta =
+    rating == null ? (
+      eyebrow ? (
+        <span className="text-eyebrow whitespace-nowrap text-foreground">{eyebrow}</span>
+      ) : null
+    ) : (
+      <StarRating rating={rating} />
+    );
+
   return (
     <>
       <ContentCardCover cover={cover} variant="course" />
 
-      {(rating != null || dateLabel) && (
+      {(leadingMeta || dateLabel) && (
         <div
           className={cn(
             "flex items-center gap-3 px-1 pt-[clamp(12px,1.2vw,18px)] pb-[clamp(8px,0.9vw,12px)]",
-            // With no rating there is nothing on the left, so the date keeps its own corner
-            // instead of sliding across to where the stars would have been.
-            rating == null ? "justify-end" : "justify-between"
+            leadingMeta ? "justify-between" : "justify-end"
           )}
         >
-          {rating != null && <StarRating rating={rating} />}
+          {leadingMeta}
           {dateLabel && (
             <span className="text-eyebrow whitespace-nowrap text-ink-42">{dateLabel}</span>
           )}
@@ -244,6 +258,7 @@ export function ContentCard({
       cover={cover}
       dateLabel={dateLabel}
       description={description}
+      eyebrow={eyebrow}
       price={price}
       priceBefore={priceBefore}
       rating={rating}

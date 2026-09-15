@@ -51,6 +51,23 @@ export const talkGridFields: Field[] = [
     type: "array",
   },
   {
+    admin: {
+      description: {
+        en: "How the cards are arranged. Grid wraps them across as many rows as needed. Rail puts them in one row that scrolls sideways, which suits a short, curated set best.",
+        es: "Cómo se organizan las tarjetas. Cuadrícula las reparte en tantas filas como haga falta. Fila las coloca en una sola fila que se desplaza de lado, lo que conviene mejor a un conjunto corto y seleccionado.",
+      },
+    },
+    defaultValue: "grid",
+    label: { en: "Layout", es: "Diseño" },
+    name: "layout",
+    options: [
+      { label: { en: "Grid", es: "Cuadrícula" }, value: "grid" },
+      { label: { en: "Rail (scrolls sideways)", es: "Fila (se desplaza de lado)" }, value: "rail" },
+    ],
+    required: true,
+    type: "select",
+  },
+  {
     type: "row",
     fields: [
       {

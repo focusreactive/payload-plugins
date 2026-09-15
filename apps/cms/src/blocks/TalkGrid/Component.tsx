@@ -1,10 +1,11 @@
 /**
- * Every row is rendered at every tier, with a lock badge where the body is gated. That is not a
- * shortcut - it is the model the deal is about. A gated talk still needs a crawlable page with a
- * real title, a teaser and topics, because "the archive is invisible to Google" is the problem
- * being solved. Hiding rows from visitors would rebuild the invisibility in a new stack.
+ * Every row is rendered at every tier, with its tier named in the card's price slot where the body
+ * is gated. That is not a shortcut - it is the model the deal is about. A gated talk still needs a
+ * crawlable page with a real title, a teaser and topics, because "the archive is invisible to
+ * Google" is the problem being solved. Hiding rows from visitors would rebuild the invisibility in a
+ * new stack.
  *
- * The badge says what the ITEM requires rather than what the current reader holds, which is what
+ * The label says what the ITEM requires rather than what the current reader holds, which is what
  * the "Show tier" field already promised in the admin ("Shows a lock and the tier needed"). Two
  * things follow: this block reads no cookie, so a page carrying it caches for everyone, and one
  * document cannot read "Readable" here and "Free" on the topic page.
@@ -31,6 +32,7 @@ interface Props {
   topic?: { slug?: string | null } | number | string | null;
   kind?: string | null;
   limit?: number | null;
+  layout?: "grid" | "rail" | null;
   showKind?: boolean | null;
   showTier?: boolean | null;
   talkItems?: { talk?: { id?: number | string } | number | string | null }[] | null;
@@ -51,6 +53,7 @@ async function TalkGridBlockContent({
   eyebrow,
   heading,
   kind,
+  layout,
   limit,
   showKind,
   showTier,
@@ -98,7 +101,12 @@ async function TalkGridBlockContent({
   return (
     <div>
       {header && <SectionHeader {...header} className="mb-12" />}
-      <TalkList showKind={showKind !== false} showTier={showTier !== false} talks={docs} />
+      <TalkList
+        layout={layout ?? "grid"}
+        showKind={showKind !== false}
+        showTier={showTier !== false}
+        talks={docs}
+      />
     </div>
   );
 }
