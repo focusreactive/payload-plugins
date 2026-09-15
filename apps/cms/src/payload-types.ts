@@ -866,6 +866,10 @@ export interface CourseRailBlock {
    */
   heading: string;
   /**
+   * Whether the cards below are typed in by hand, or pulled live from the Talk archive with chips that filter them.
+   */
+  source: 'typed' | 'talks';
+  /**
    * The small capitalised buttons above the courses. When more are added than fit on one line, the row slides sideways.
    */
   topics?:
@@ -902,6 +906,10 @@ export interface CourseRailBlock {
         id?: string | null;
       }[]
     | null;
+  /**
+   * The first button in the row, which clears the filter and shows every talk. The rest of the buttons are the topics found on the talks themselves - nothing to type in here.
+   */
+  allTeachingsLabel?: string | null;
   /**
    * The last button in the topic row, the one with the small arrow.
    */
@@ -1011,6 +1019,10 @@ export interface CourseRailBlock {
         id?: string | null;
       }[]
     | null;
+  /**
+   * How many talks to pull in. The chips above still only offer the topics found among these.
+   */
+  limit?: number | null;
   section?: {
     /**
      * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
@@ -1554,6 +1566,10 @@ export interface TalkGridBlock {
         id?: string | null;
       }[]
     | null;
+  /**
+   * How the cards are arranged. Grid wraps them across as many rows as needed. Rail puts them in one row that scrolls sideways, which suits a short, curated set best.
+   */
+  layout: 'grid' | 'rail';
   limit?: number | null;
   showKind?: boolean | null;
   /**
@@ -1664,6 +1680,12 @@ export interface Talk {
    * The opening someone reads before the membership gate. It also appears on listing cards and in search results, so write it to stand on its own. Two or three sentences.
    */
   teaser?: string | null;
+  /**
+   * The picture shown on this talk's card wherever it is listed - grids, rails, topic pages. Left empty, the card is simply shown with no picture up top; nothing else about the listing changes.
+   */
+  coverImage?: {
+    image?: (number | null) | Media;
+  };
   /**
    * The full teaching. Everything here is hidden from anyone below the membership set above.
    */
@@ -1928,6 +1950,10 @@ export interface ShopifyProductBlock {
    * Show the price under the product's name.
    */
   showPrice?: boolean | null;
+  /**
+   * On by default here, because a section built around one product is usually there to sell it. Turning it off leaves the card itself as the link to the product page.
+   */
+  showBuyButton?: boolean | null;
   section?: {
     /**
      * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
@@ -1987,6 +2013,10 @@ export interface ShopifyCarouselBlock {
    * Show the price under each product's name.
    */
   showPrice?: boolean | null;
+  /**
+   * Off by default, to match the design: the whole card links to the product page. Turning this on adds a buy button under each card that checks out the product directly.
+   */
+  showBuyButton?: boolean | null;
   section?: {
     /**
      * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
@@ -3000,6 +3030,10 @@ export interface Preset {
          */
         heading: string;
         /**
+         * Whether the cards below are typed in by hand, or pulled live from the Talk archive with chips that filter them.
+         */
+        source: 'typed' | 'talks';
+        /**
          * The small capitalised buttons above the courses. When more are added than fit on one line, the row slides sideways.
          */
         topics?:
@@ -3036,6 +3070,10 @@ export interface Preset {
               id?: string | null;
             }[]
           | null;
+        /**
+         * The first button in the row, which clears the filter and shows every talk. The rest of the buttons are the topics found on the talks themselves - nothing to type in here.
+         */
+        allTeachingsLabel?: string | null;
         /**
          * The last button in the topic row, the one with the small arrow.
          */
@@ -3145,6 +3183,10 @@ export interface Preset {
               id?: string | null;
             }[]
           | null;
+        /**
+         * How many talks to pull in. The chips above still only offer the topics found among these.
+         */
+        limit?: number | null;
         section?: {
           /**
            * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
@@ -3664,6 +3706,10 @@ export interface Preset {
               id?: string | null;
             }[]
           | null;
+        /**
+         * How the cards are arranged. Grid wraps them across as many rows as needed. Rail puts them in one row that scrolls sideways, which suits a short, curated set best.
+         */
+        layout: 'grid' | 'rail';
         limit?: number | null;
         showKind?: boolean | null;
         /**
@@ -3849,6 +3895,10 @@ export interface Preset {
          * Show the price under the product's name.
          */
         showPrice?: boolean | null;
+        /**
+         * On by default here, because a section built around one product is usually there to sell it. Turning it off leaves the card itself as the link to the product page.
+         */
+        showBuyButton?: boolean | null;
         section?: {
           /**
            * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
@@ -3904,6 +3954,10 @@ export interface Preset {
          * Show the price under each product's name.
          */
         showPrice?: boolean | null;
+        /**
+         * Off by default, to match the design: the whole card links to the product page. Turning this on adds a buy button under each card that checks out the product directly.
+         */
+        showBuyButton?: boolean | null;
         section?: {
           /**
            * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
@@ -5299,6 +5353,7 @@ export interface HeroSpotlightBlockSelect<T extends boolean = true> {
 export interface CourseRailBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   heading?: T;
+  source?: T;
   topics?:
     | T
     | {
@@ -5315,6 +5370,7 @@ export interface CourseRailBlockSelect<T extends boolean = true> {
         isSelected?: T;
         id?: T;
       };
+  allTeachingsLabel?: T;
   allTopicsLabel?: T;
   allTopicsLink?:
     | T
@@ -5360,6 +5416,7 @@ export interface CourseRailBlockSelect<T extends boolean = true> {
             };
         id?: T;
       };
+  limit?: T;
   section?:
     | T
     | {
@@ -5631,6 +5688,7 @@ export interface TalkGridBlockSelect<T extends boolean = true> {
         talk?: T;
         id?: T;
       };
+  layout?: T;
   limit?: T;
   showKind?: T;
   showTier?: T;
@@ -5737,6 +5795,7 @@ export interface ShopifyProductBlockSelect<T extends boolean = true> {
   description?: T;
   productHandle?: T;
   showPrice?: T;
+  showBuyButton?: T;
   section?:
     | T
     | {
@@ -5771,6 +5830,7 @@ export interface ShopifyCarouselBlockSelect<T extends boolean = true> {
         id?: T;
       };
   showPrice?: T;
+  showBuyButton?: T;
   section?:
     | T
     | {
@@ -6282,6 +6342,11 @@ export interface TalkSelect<T extends boolean = true> {
   kind?: T;
   requiredTier?: T;
   teaser?: T;
+  coverImage?:
+    | T
+    | {
+        image?: T;
+      };
   body?: T;
   publishedAt?: T;
   durationSeconds?: T;
@@ -6617,6 +6682,7 @@ export interface PresetsSelect<T extends boolean = true> {
           | {
               eyebrow?: T;
               heading?: T;
+              source?: T;
               topics?:
                 | T
                 | {
@@ -6633,6 +6699,7 @@ export interface PresetsSelect<T extends boolean = true> {
                     isSelected?: T;
                     id?: T;
                   };
+              allTeachingsLabel?: T;
               allTopicsLabel?: T;
               allTopicsLink?:
                 | T
@@ -6678,6 +6745,7 @@ export interface PresetsSelect<T extends boolean = true> {
                         };
                     id?: T;
                   };
+              limit?: T;
               section?:
                 | T
                 | {
@@ -6937,6 +7005,7 @@ export interface PresetsSelect<T extends boolean = true> {
                     talk?: T;
                     id?: T;
                   };
+              layout?: T;
               limit?: T;
               showKind?: T;
               showTier?: T;
@@ -7037,6 +7106,7 @@ export interface PresetsSelect<T extends boolean = true> {
               description?: T;
               productHandle?: T;
               showPrice?: T;
+              showBuyButton?: T;
               section?:
                 | T
                 | {
@@ -7069,6 +7139,7 @@ export interface PresetsSelect<T extends boolean = true> {
                     id?: T;
                   };
               showPrice?: T;
+              showBuyButton?: T;
               section?:
                 | T
                 | {

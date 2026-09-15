@@ -36,12 +36,9 @@ interface PopulatedCoverImage {
  * - see the note on GatedTalkFields in lib/talks/applyTier.ts for what an index signature here
  * would do to the error messages three files away.
  *
- * `coverImage` is typed by hand for the same reason: the collection gained this field in this same
- * change, and the generated type has not been regenerated to know about it (payload generate:types
- * is off-limits here - see the task brief). The DAL's own select list (src/lib/dal/getTalks.ts
- * LISTING_SELECT) does not request this field yet either, so until that is added there a real cover
- * image cannot reach this card even though the schema now carries one - flagged in the report on
- * this change, not fixed here, because that file belongs to another agent's task.
+ * `coverImage` is typed by hand for the same reason, and has to be: oxlint bans Payload imports
+ * inside a block's `ui/` folder, so the generated type is unavailable here whatever its state.
+ * `getTalks`'s LISTING_SELECT requests the field, so it does arrive populated.
  */
 export interface TalkCardTalk {
   slug: string;

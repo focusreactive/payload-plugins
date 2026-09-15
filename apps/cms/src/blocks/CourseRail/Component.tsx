@@ -18,17 +18,6 @@ import type {
 } from "./ui/types";
 
 /**
- * `source`, `allTeachingsLabel` and `limit` are new fields this pass added; `payload-types.ts` has
- * not been regenerated to know about them (`payload generate:types` is off-limits here - see the
- * task brief), so they are declared here until that regeneration lands centrally.
- */
-interface CourseRailBlockWithSource extends CourseRailBlock {
-  source?: "typed" | "talks" | null;
-  allTeachingsLabel?: string | null;
-  limit?: number | null;
-}
-
-/**
  * The concept's own course covers, cycled by row position so the section renders as designed
  * against an empty media library. They are public files rather than uploaded documents, so an
  * editor's own picture always wins - but nothing here will ever replace one of these with an
@@ -60,9 +49,9 @@ function buildCover(
 }
 
 /**
- * `getTalks`'s `LISTING_SELECT` returns `coverImage`, `kind`, `teaser` and `publishedAt`, but the
- * generated `Talk` interface hasn't caught up with the collection (same regeneration gap as
- * `CourseRailBlockWithSource` above) - so this stands in for it rather than importing `Talk`.
+ * The narrow shape `getTalks` actually returns. It is not the generated `Talk`, and should not
+ * become it: that query passes a `select` list, so most of `Talk` is absent at runtime and typing
+ * against the full interface would promise fields this code can never read.
  */
 interface TalkForCourseRail {
   id: number;
@@ -118,7 +107,7 @@ function formatPublishedDate(publishedAt: string | null | undefined): string | u
 }
 
 function buildTypedRail(
-  block: CourseRailBlockWithSource,
+  block: CourseRailBlock,
   locale: Locale
 ): { topics: CourseRailTopics; courses: CourseRailCourse[] } {
   const staticTopics: CourseRailStaticTopic[] = (block.topics ?? []).map((topic) => ({
@@ -184,7 +173,7 @@ async function buildTalkRail(
   return { courses, topics: { mode: "filter", topics: filterTopics } };
 }
 
-export async function CourseRailBlockComponent(props: CourseRailBlockWithSource) {
+export async function CourseRailBlockComponent(props: CourseRailBlock) {
   const {
     allTeachingsLabel,
     allTopicsLabel,
