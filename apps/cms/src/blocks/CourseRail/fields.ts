@@ -55,6 +55,27 @@ export const courseRailFields: Field[] = [
   {
     admin: {
       description: {
+        en: "Whether the cards below are typed in by hand, or pulled live from the Talk archive with chips that filter them.",
+        es: "Si las tarjetas de abajo se escriben a mano o se toman en vivo del archivo de charlas, con botones que las filtran.",
+      },
+    },
+    defaultValue: "typed",
+    label: { en: "Which cards", es: "Qué tarjetas" },
+    name: "source",
+    options: [
+      { label: { en: "Hand-entered courses", es: "Cursos escritos a mano" }, value: "typed" },
+      {
+        label: { en: "Real talks, with filter chips", es: "Charlas reales, con botones de filtro" },
+        value: "talks",
+      },
+    ],
+    required: true,
+    type: "select",
+  },
+  {
+    admin: {
+      condition: (_, siblingData) => siblingData?.source === "typed",
+      description: {
         en: "The small capitalised buttons above the courses. When more are added than fit on one line, the row slides sideways.",
         es: "Los botones pequeños en mayúsculas encima de los cursos. Si añades más de los que caben en una línea, la fila se desplaza de lado.",
       },
@@ -126,6 +147,20 @@ export const courseRailFields: Field[] = [
   },
   {
     admin: {
+      condition: (_, siblingData) => siblingData?.source === "talks",
+      description: {
+        en: "The first button in the row, which clears the filter and shows every talk. The rest of the buttons are the topics found on the talks themselves - nothing to type in here.",
+        es: "El primer botón de la fila, que borra el filtro y muestra todas las charlas. El resto de los botones son los temas encontrados en las propias charlas - no hay nada que escribir aquí.",
+      },
+    },
+    defaultValue: createLocalizedDefault({ en: "All teachings", es: "Todas las enseñanzas" }),
+    label: { en: "“Show everything” button text", es: "Texto del botón “mostrar todo”" },
+    localized: true,
+    name: "allTeachingsLabel",
+    type: "text",
+  },
+  {
+    admin: {
       description: {
         en: "The last button in the topic row, the one with the small arrow.",
         es: "El último botón de la fila de temas, el que lleva la flecha pequeña.",
@@ -187,6 +222,7 @@ export const courseRailFields: Field[] = [
   }),
   {
     admin: {
+      condition: (_, siblingData) => siblingData?.source === "typed",
       description: {
         en: "The cards in the sideways-scrolling row. About three show at a time on a wide screen and the rest are one swipe or one arrow click away, so more than three is fine.",
         es: "Las tarjetas de la fila que se desplaza de lado. En una pantalla ancha se ven unas tres a la vez y el resto quedan a un deslizamiento o a un clic de flecha, así que más de tres está bien.",
@@ -411,5 +447,20 @@ export const courseRailFields: Field[] = [
     minRows: 1,
     name: "courses",
     type: "array",
+  },
+  {
+    admin: {
+      condition: (_, siblingData) => siblingData?.source === "talks",
+      description: {
+        en: "How many talks to pull in. The chips above still only offer the topics found among these.",
+        es: "Cuántas charlas traer. Los botones de arriba solo ofrecen los temas que se encuentren entre ellas.",
+      },
+    },
+    defaultValue: 6,
+    label: { en: "How many", es: "Cuántas" },
+    max: 24,
+    min: 1,
+    name: "limit",
+    type: "number",
   },
 ];

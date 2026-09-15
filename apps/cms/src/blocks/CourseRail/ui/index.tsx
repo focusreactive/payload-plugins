@@ -4,24 +4,33 @@
  * The course rail: a header, a row of topic chips and controls, and a horizontally scrolling row of
  * course cards.
  *
- * Why the whole section is a client module rather than only the arrows: the two arrows move the
- * rail with `scrollBy`, which nothing in HTML can do. The cards are still in the server-rendered
- * HTML, because Next renders a client component on the server too - verify it the only way that can
- * tell the two apart, `curl -s <url> | grep -i "<a course title>"`, never by looking at the page.
+ * Why the whole section is a client module rather than only the interactive pieces: the two arrows
+ * move the rail with `scrollBy`-style scrolling, which nothing in HTML can do, and a "filter" topic
+ * chip narrows the rail in memory with no navigation at all, which needs `onClick` and state. The
+ * cards themselves are still in the server-rendered HTML, because Next renders a client component on
+ * the server too - verify it the only way that can tell the two apart,
+ * `curl -s <url> | grep -i "<a course title>"`, never by looking at the page.
  *
  * The arrows render nothing at all until the effect below has measured the rail. That is the
  * degraded path: with JavaScript unavailable no arrows appear and the rail is still a plain
- * `overflow-x` scroller, so no card is unreachable. Do not give them a server-rendered fallback -
- * they would be controls that cannot work.
+ * `overflow-x` scroller, so no card is unreachable. A "filter" section without JavaScript instead
+ * shows every fetched talk with no way to narrow it - also not unreachable, just unfiltered. Do not
+ * give the arrows a server-rendered fallback - they would be controls that cannot work.
  */
 
 import Link from "next/link";
+import type { RefObject } from "react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
-import { Media } from "@/components/media";
+import { Button } from "@/components/ui/Button";
+import { Chip, ChipRow } from "@/components/ui/Chip";
+import { ContentCard } from "@/components/ui/ContentCard";
+import { IconButton } from "@/components/ui/IconButton";
+import { useScrollReveal } from "@/components/ui/ScrollReveal/useScrollReveal";
+import { SectionMarker } from "@/components/ui/SectionMarker";
 import { cn } from "@/components/utils";
 
-import type { CourseRailCourse, CourseRailProps, CourseRailTopic } from "./types";
+import type { CourseRailCourse, CourseRailProps } from "./types";
 
 /**
  * Card widths are `calc()` fractions of the rail, so `scrollLeft` rarely lands on a whole pixel and
@@ -38,86 +47,110 @@ interface RailState {
   hasOverflow: boolean;
 }
 
-const RATING_STAR_COUNT = 5;
-
 /**
  * 3.28 cards across the rail's own (edge-bled) width, which is what leaves a slice of the fourth
  * card visible as the signal that the row scrolls. It stays an inline style rather than an
  * arbitrary Tailwind value because a clamp nested inside a calc does not survive the class-name
  * escape: the spaces CSS requires around the minus sign collide with Tailwind's underscore escape
- * inside the inner clamp's own comma list.
+ * inside the inner clamp's own comma list. `ContentCard`'s own "course" width carries the identical
+ * formula for the identical reason - this is deliberately the same string, not a shared import,
+ * since a Payload-agnostic `ui/` cannot reach into another block's file either.
  */
 const COURSE_CARD_WIDTH = "clamp(260px, calc((100% - 2 * clamp(16px, 1.6vw, 24px)) / 3.28), 460px)";
 
 const FOCUS_RING =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
-const CONTROL_BOX =
-  "inline-flex flex-none items-center h-[clamp(40px,3.4vw,46px)] rounded-lg whitespace-nowrap";
+/** The concept's own numbers (07-footer.html:6-8): the heading and the chip cluster reveal after the eyebrow, at these extra delays on top of useScrollReveal's 50ms base - 120ms and 190ms total. */
+const HEADING_REVEAL_DELAY_MS = 70;
+const CHIP_CLUSTER_REVEAL_DELAY_MS = 140;
+/** The rail's own `data-reveal-stagger="90"` (07-footer.html:31). */
+const RAIL_CARD_STAGGER_STEP_MS = 90;
 
-const CHIP_BOX = cn(
-  CONTROL_BOX,
-  "border px-[clamp(12px,1.3vw,20px)]",
-  "transition-colors duration-200 ease-out motion-reduce:transition-none"
-);
+/** `measureChips()`'s own gap (07-footer.html:274), read live instead of hardcoded wherever the DOM will give it up - see `useChipOverflow` below. */
+const CHIP_ROW_GAP_FALLBACK_PX = 10;
 
 /**
- * tailwind-merge reads this design system's type utilities - `text-eyebrow`, `text-small`,
- * `text-h-card` - as colour utilities, because their value is a bare word rather than a size on
- * its scale. So inside a single `cn()` call a later `text-<colour>` silently deletes the one that
- * sets the size, weight and tracking, and the control renders at body size with no warning. Keeping
- * the type utility outside `cn()` is what stops that, and is why every className below that mixes
- * the two goes through here.
+ * Ported from the concept's `measureChips()` (07-footer.html:265-283). Two of its traps are kept on
+ * purpose: a chip's width is cached the moment it first measures non-zero, so a chip already hidden
+ * by a previous pass (`display:none` reports a 0-width rect) is never mistaken for having shrunk to
+ * nothing; and measurement re-runs at +30/+120/+600ms, on `document.fonts.ready` and on resize/
+ * `ResizeObserver`, because a web font swapping in after first paint is what made the original count
+ * wrong on first render.
+ *
+ * `containerRef` sits on a plain wrapper OUTSIDE `ChipRow` rather than on `ChipRow` itself: `ChipRow`
+ * is a plain function component with no forwarded ref, by its own design (client state belongs in
+ * "the rail block that consumes this", per its file comment) - so this reads through the wrapper to
+ * its one rendered child instead of asking the primitive to expose one.
  */
-function withTypeUtility(typeUtility: string, ...classNames: Parameters<typeof cn>) {
-  return `${typeUtility} ${cn(...classNames)}`;
-}
+function useChipOverflow(chipCount: number): {
+  containerRef: RefObject<HTMLDivElement | null>;
+  visibleChipCount: number;
+} {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const chipWidthsRef = useRef<number[]>([]);
+  const [visibleChipCount, setVisibleChipCount] = useState(chipCount);
 
-function SparkleGlyph() {
-  return (
-    <svg
-      aria-hidden
-      className="shrink-0 text-primary"
-      fill="currentColor"
-      height="14"
-      viewBox="0 0 14 14"
-      width="14"
-    >
-      <path d="M7 0l1.3 4.4L13 5.7 8.4 7 7 14 5.6 7 1 5.7 5.7 4.4z" />
-    </svg>
-  );
-}
+  useEffect(() => {
+    chipWidthsRef.current = [];
+    setVisibleChipCount(chipCount);
+  }, [chipCount]);
 
-function TopicChip({ topic }: { topic: CourseRailTopic }) {
-  const toneClassName = topic.isSelected
-    ? "bg-primary text-primary-foreground border-primary"
-    : "bg-background text-foreground border-border";
+  useEffect(() => {
+    const measure = () => {
+      const row = containerRef.current?.firstElementChild;
+      if (!(row instanceof HTMLElement)) return;
+      const chipElements = Array.from(row.children);
+      if (chipElements.length !== chipCount) return;
 
-  // A chip with no destination is a label, not a control: an `<a href="#">` would be a link to
-  // nowhere and a `<button>` would be a click that does nothing.
-  if (!topic.href) {
-    return (
-      <span className={withTypeUtility("text-eyebrow", CHIP_BOX, toneClassName)}>
-        {topic.label}
-      </span>
-    );
-  }
+      const widths = chipWidthsRef.current;
+      for (const [index, chip] of chipElements.entries()) {
+        if (!(chip instanceof HTMLElement)) continue;
+        const width = chip.getBoundingClientRect().width;
+        if (width > 0) widths[index] = width;
+      }
+      if (widths.length < chipCount || widths.some((width) => !width)) return;
 
-  return (
-    <Link
-      aria-current={topic.isSelected ? "true" : undefined}
-      className={withTypeUtility(
-        "text-eyebrow",
-        CHIP_BOX,
-        toneClassName,
-        topic.isSelected ? "hover:bg-primary-hover" : "hover:bg-primary-soft",
-        FOCUS_RING
-      )}
-      href={topic.href}
-    >
-      {topic.label}
-    </Link>
-  );
+      const gapPx = Number.parseFloat(getComputedStyle(row).columnGap) || CHIP_ROW_GAP_FALLBACK_PX;
+      let usedWidth = 0;
+      let fittingCount = 0;
+      for (const width of widths) {
+        const nextWidth = usedWidth + (fittingCount ? gapPx : 0) + width;
+        if (nextWidth > row.clientWidth + 0.5) break;
+        usedWidth = nextWidth;
+        fittingCount++;
+      }
+      setVisibleChipCount(Math.max(1, fittingCount));
+    };
+
+    measure();
+    const retryTimeoutIds = [30, 120, 600].map((delayMs) => window.setTimeout(measure, delayMs));
+
+    // A late-swapping web font is the concept's own reason for this retry (07-footer.html:240) -
+    // `document.fonts.ready` has no synchronous form, so this is the one retry that has to be a
+    // promise rather than a timeout. `isMounted` is what stops it from calling `measure` after the
+    // cleanup below has already run, since the effect can be gone long before a font finishes.
+    let isMounted = true;
+    async function measureWhenFontsReady() {
+      if (!document.fonts) return;
+      await document.fonts.ready;
+      if (isMounted) measure();
+    }
+    measureWhenFontsReady();
+
+    window.addEventListener("resize", measure);
+    const resizeObserver = new ResizeObserver(measure);
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
+
+    return () => {
+      isMounted = false;
+      for (const timeoutId of retryTimeoutIds) window.clearTimeout(timeoutId);
+      window.removeEventListener("resize", measure);
+      resizeObserver.disconnect();
+    };
+  }, [chipCount]);
+
+  return { containerRef, visibleChipCount };
 }
 
 const RAIL_ARROW_PATHS = {
@@ -136,19 +169,11 @@ function RailArrow({ direction, disabled, onClick, railElementId }: RailArrowPro
   const isPrevious = direction === "prev";
 
   return (
-    <button
+    <IconButton
       aria-controls={railElementId}
       aria-label={isPrevious ? "Previous courses" : "Next courses"}
-      className={cn(
-        "hidden size-[clamp(40px,3.4vw,46px)] flex-none items-center justify-center p-0 md:inline-flex",
-        "rounded-lg border border-border bg-background",
-        "transition-colors duration-200 ease-out hover:border-primary hover:bg-primary-soft",
-        "disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none",
-        FOCUS_RING
-      )}
       disabled={disabled}
       onClick={onClick}
-      type="button"
     >
       <svg aria-hidden fill="none" height="10" viewBox="0 0 16 10" width="17">
         <path
@@ -159,123 +184,60 @@ function RailArrow({ direction, disabled, onClick, railElementId }: RailArrowPro
           strokeWidth="1.5"
         />
       </svg>
-    </button>
+    </IconButton>
   );
 }
 
-const RATING_STAR_PATH = "M6 .8l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 9l-3.2 1.7.6-3.6L.8 4.6l3.6-.5z";
+interface CourseRailCardProps {
+  course: CourseRailCourse;
+  index: number;
+}
 
 /**
- * Five identical unlabelled glyphs read as nothing, and the printed figure alone reads as a bare
- * number, so the sentence in between carries the whole meaning and both visible parts are hidden
- * from a screen reader.
+ * `ContentCard` is pure rendering - no `ref`, no `style` prop - so the entrance reveal (which needs
+ * both, for its own IntersectionObserver and its opacity/transform) has to live on a wrapper. That
+ * wrapper is deliberately also the box carrying `scroll-snap-align` and the width formula, so the
+ * flex item the rail actually snaps against is the one box the reveal ref is attached to, rather
+ * than two differently-sized ones - which is what a generic `<ScrollReveal stagger>` wrapper around
+ * `ContentCard` would otherwise produce (see `useScrollReveal`'s own file comment on this exact
+ * trade-off).
  */
-function RatingCluster({ rating }: { rating: number }) {
-  const filledCount = Math.round(rating);
+function CourseRailCard({ course, index }: CourseRailCardProps) {
+  const { ref, style } = useScrollReveal<HTMLDivElement>({
+    staggerIndex: index,
+    staggerStepMs: RAIL_CARD_STAGGER_STEP_MS,
+  });
 
   return (
-    <div className="flex min-w-0 items-center gap-2">
-      <span aria-hidden className="flex items-center gap-0.5">
-        {Array.from({ length: RATING_STAR_COUNT }, (_, starIndex) => (
-          <svg
-            className={starIndex < filledCount ? "text-primary" : "text-ink-12"}
-            fill="currentColor"
-            height="13"
-            key={starIndex}
-            viewBox="0 0 12 12"
-            width="13"
-          >
-            <path d={RATING_STAR_PATH} />
-          </svg>
-        ))}
-      </span>
-      <span className="sr-only">{`Rated ${rating.toFixed(1)} out of 5`}</span>
-      <span aria-hidden className="text-small font-medium tabular-nums text-foreground">
-        {rating.toFixed(1)}
-      </span>
+    <div
+      className="flex-none snap-start"
+      data-course-rail-card
+      ref={ref}
+      style={{ ...style, width: COURSE_CARD_WIDTH }}
+    >
+      <ContentCard
+        className="h-full"
+        cover={course.cover}
+        dateLabel={course.dateLabel}
+        description={course.description}
+        eyebrow={course.eyebrow}
+        href={course.href}
+        price={course.price}
+        priceBefore={course.priceBefore}
+        rating={course.rating}
+        title={course.title}
+      />
     </div>
   );
 }
 
-function CourseCardBody({ course }: { course: CourseRailCourse }) {
-  return (
-    <>
-      <div className="relative aspect-[485/300] w-full flex-none overflow-hidden rounded-lg bg-primary-soft">
-        <Media
-          {...course.cover.data}
-          imageProps={{
-            ...course.cover.imageProps,
-            className: "size-full object-cover",
-            fill: true,
-            fit: "cover",
-            sizes: "(max-width: 640px) 80vw, (max-width: 1024px) 45vw, 380px",
-          }}
-          visualEditing={course.cover.visualEditing}
-        />
-      </div>
-
-      {(course.rating != null || course.dateLabel) && (
-        <div
-          className={cn(
-            "flex items-center gap-3 px-1 pt-[clamp(12px,1.2vw,18px)] pb-[clamp(8px,0.9vw,12px)]",
-            // With no rating there is nothing on the left, so the date keeps its own corner
-            // instead of sliding across to where the stars would have been.
-            course.rating == null ? "justify-end" : "justify-between"
-          )}
-        >
-          {course.rating != null && <RatingCluster rating={course.rating} />}
-          {course.dateLabel && (
-            <span className="text-eyebrow whitespace-nowrap text-ink-42">{course.dateLabel}</span>
-          )}
-        </div>
-      )}
-
-      <h3 className="text-h-card m-0 mb-[clamp(8px,0.9vw,12px)] px-1 text-pretty text-foreground">
-        {course.title}
-      </h3>
-
-      {course.description && (
-        <p className="text-small m-0 mb-[clamp(14px,1.6vw,22px)] px-1 text-pretty text-muted-foreground">
-          {course.description}
-        </p>
-      )}
-
-      {course.price && (
-        <div className="mt-auto flex flex-wrap items-baseline gap-2.5 px-1 pb-1">
-          <span className="text-lead font-medium text-primary">{course.price}</span>
-          {course.priceBefore && (
-            <span className="text-small text-ink-42 line-through">{course.priceBefore}</span>
-          )}
-        </div>
-      )}
-    </>
-  );
+/** `scrollRail()`'s own easing (07-footer.html:301), lifted unchanged. */
+function easeInOutQuad(progress: number): number {
+  return progress < 0.5 ? 2 * progress * progress : 1 - (-2 * progress + 2) ** 2 / 2;
 }
 
-function CourseCard({ course }: { course: CourseRailCourse }) {
-  const cardClassName = cn(
-    "group box-border flex flex-none snap-start flex-col rounded-xl border border-ink-08 bg-card",
-    "p-[clamp(10px,1vw,14px)] text-foreground",
-    "transition-[transform,border-color] duration-300 ease-out",
-    "hover:-translate-y-0.5 hover:border-ink-16",
-    "motion-reduce:transition-none motion-reduce:hover:translate-y-0",
-    FOCUS_RING
-  );
-
-  if (!course.href) {
-    return (
-      <article className={cardClassName} style={{ width: COURSE_CARD_WIDTH }}>
-        <CourseCardBody course={course} />
-      </article>
-    );
-  }
-
-  return (
-    <Link className={cardClassName} href={course.href} style={{ width: COURSE_CARD_WIDTH }}>
-      <CourseCardBody course={course} />
-    </Link>
-  );
-}
+/** `scrollRail()`'s own duration (07-footer.html:298). */
+const RAIL_SCROLL_DURATION_MS = 380;
 
 export function CourseRail({
   allTopicsHref,
@@ -283,13 +245,32 @@ export function CourseRail({
   courses,
   eyebrow,
   heading,
-  topics,
+  topics: topicsConfig,
   viewAllHref,
   viewAllLabel,
 }: CourseRailProps) {
   const railRef = useRef<HTMLDivElement>(null);
   const railElementId = useId();
   const [railState, setRailState] = useState<RailState>(UNMEASURED_RAIL);
+  const scrollAnimationFrameRef = useRef<number | null>(null);
+  const [selectedTopicSlug, setSelectedTopicSlug] = useState<string | null>(null);
+
+  const markerReveal = useScrollReveal<HTMLDivElement>();
+  const headingReveal = useScrollReveal<HTMLHeadingElement>({ delay: HEADING_REVEAL_DELAY_MS });
+  const chipClusterReveal = useScrollReveal<HTMLDivElement>({
+    delay: CHIP_CLUSTER_REVEAL_DELAY_MS,
+  });
+
+  const topicList = topicsConfig.topics;
+  const { containerRef: chipRowContainerRef, visibleChipCount } = useChipOverflow(topicList.length);
+
+  // "filter" mode never navigates (07-footer.html's chips are all onClick, no href) - it narrows
+  // `courses` in memory instead. "static" mode ignores `selectedTopicSlug` entirely: its chips are
+  // editor-authored links or plain labels, exactly as before this pass.
+  const displayedCourses =
+    topicsConfig.mode === "filter" && selectedTopicSlug !== null
+      ? courses.filter((course) => course.topicSlugs?.includes(selectedTopicSlug))
+      : courses;
 
   useEffect(() => {
     const rail = railRef.current;
@@ -315,74 +296,142 @@ export function CourseRail({
       rail.removeEventListener("scroll", measure);
       resizeObserver.disconnect();
     };
-  }, []);
+    // A topic switch changes how many cards are in the rail without changing the rail element's own
+    // box, which is the only thing the ResizeObserver above watches - so the effect has to re-run
+    // itself on that change rather than wait for a resize that never comes.
+  }, [displayedCourses.length]);
 
-  const scrollByPage = useCallback((direction: -1 | 1) => {
+  useEffect(
+    () => () => {
+      if (scrollAnimationFrameRef.current !== null) {
+        cancelAnimationFrame(scrollAnimationFrameRef.current);
+      }
+    },
+    []
+  );
+
+  const scrollRailByCard = useCallback((direction: -1 | 1) => {
     const rail = railRef.current;
     if (!rail) return;
-    // One visible width of cards. Passing no `behavior` leaves the choice to the element's CSS
-    // `scroll-behavior`, which is smooth only under `motion-safe`.
-    rail.scrollBy({ left: direction * rail.clientWidth });
+
+    const firstCard = rail.querySelector<HTMLElement>("[data-course-rail-card]");
+    const gapPx = Number.parseFloat(getComputedStyle(rail).columnGap) || 0;
+    const step = firstCard
+      ? firstCard.getBoundingClientRect().width + gapPx
+      : rail.clientWidth * 0.8;
+    const maxScrollLeft = rail.scrollWidth - rail.clientWidth;
+    const from = rail.scrollLeft;
+    const target = Math.max(0, Math.min(maxScrollLeft, from + direction * step));
+    if (Math.abs(target - from) < 1) return;
+
+    if (scrollAnimationFrameRef.current !== null) {
+      cancelAnimationFrame(scrollAnimationFrameRef.current);
+      scrollAnimationFrameRef.current = null;
+    }
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      rail.scrollLeft = target;
+      return;
+    }
+
+    // scroll-snap fights a manual scrollLeft tween - each written frame gets pulled back toward the
+    // nearest snap point - so it is switched off for the tween's duration and restored after,
+    // exactly as the concept's own scrollRail() does.
+    const previousScrollSnapType = rail.style.scrollSnapType;
+    rail.style.scrollSnapType = "none";
+    const startTime = performance.now();
+
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - startTime) / RAIL_SCROLL_DURATION_MS);
+      rail.scrollLeft = from + (target - from) * easeInOutQuad(progress);
+      if (progress < 1) {
+        scrollAnimationFrameRef.current = requestAnimationFrame(tick);
+      } else {
+        scrollAnimationFrameRef.current = null;
+        rail.style.scrollSnapType = previousScrollSnapType;
+      }
+    };
+    scrollAnimationFrameRef.current = requestAnimationFrame(tick);
   }, []);
 
   if (courses.length === 0) return null;
 
   const showAllTopics = Boolean(allTopicsHref && allTopicsLabel);
   const showViewAll = Boolean(viewAllHref && viewAllLabel);
-  const showLeftCluster = topics.length > 0 || showAllTopics;
+  const showLeftCluster = topicList.length > 0 || showAllTopics;
   const showRightCluster = showViewAll || railState.hasOverflow;
 
   return (
     <>
       {eyebrow && (
-        <div className="mb-[clamp(10px,1.2vw,18px)] flex items-center gap-2.5">
-          <SparkleGlyph />
-          <span className="text-small text-foreground">{eyebrow}</span>
+        <div
+          className="mb-[clamp(10px,1.2vw,18px)]"
+          ref={markerReveal.ref}
+          style={markerReveal.style}
+        >
+          <SectionMarker>{eyebrow}</SectionMarker>
         </div>
       )}
 
-      <h2 className="text-display-1 m-0 mb-[clamp(28px,3.4vw,52px)] max-w-[22ch] text-balance text-foreground">
+      <h2
+        className="text-display-1 m-0 mb-[clamp(28px,3.4vw,52px)] max-w-[22ch] text-balance text-foreground"
+        ref={headingReveal.ref}
+        style={headingReveal.style}
+      >
         {heading}
       </h2>
 
       {(showLeftCluster || showRightCluster) && (
-        <div className="mb-[clamp(24px,2.6vw,40px)] flex flex-col items-stretch gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-[clamp(12px,2vw,32px)]">
+        <div
+          className="mb-[clamp(24px,2.6vw,40px)] flex flex-col items-stretch gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-[clamp(12px,2vw,32px)]"
+          ref={chipClusterReveal.ref}
+          style={chipClusterReveal.style}
+        >
           {showLeftCluster && (
             <div className="flex min-w-0 items-center gap-2.5 lg:flex-1">
-              {topics.length > 0 && (
-                // The design hid the chips that did not fit by measuring them in JavaScript. A
-                // scroller reaches the same chips without needing JavaScript to decide which ones a
-                // crawler is allowed to see, and the fade replaces the hard cut that measurement
-                // was there to avoid.
-                <div className="scrollbar-none mask-fade-right flex min-w-0 flex-1 flex-nowrap items-center gap-2.5 overflow-x-auto">
-                  {topics.map((topic, topicIndex) => (
-                    <TopicChip key={topicIndex} topic={topic} />
-                  ))}
+              {topicList.length > 0 && (
+                <div className="min-w-0 flex-1" ref={chipRowContainerRef}>
+                  <ChipRow>
+                    {topicsConfig.mode === "static"
+                      ? topicsConfig.topics.map((topic, topicIndex) => (
+                          <Chip
+                            className={topicIndex < visibleChipCount ? undefined : "hidden"}
+                            href={topic.href}
+                            isActive={topic.isSelected}
+                            key={topicIndex}
+                          >
+                            {topic.label}
+                          </Chip>
+                        ))
+                      : topicsConfig.topics.map((topic, topicIndex) => (
+                          <Chip
+                            className={topicIndex < visibleChipCount ? undefined : "hidden"}
+                            isActive={selectedTopicSlug === topic.topicSlug}
+                            key={topicIndex}
+                            onClick={() => setSelectedTopicSlug(topic.topicSlug)}
+                          >
+                            {topic.label}
+                          </Chip>
+                        ))}
+                  </ChipRow>
                 </div>
               )}
 
               {showAllTopics && allTopicsHref && (
-                <Link
-                  className={withTypeUtility(
-                    "text-eyebrow",
-                    CHIP_BOX,
-                    "gap-2 border-border bg-background text-foreground",
-                    "hover:border-primary hover:bg-primary-soft",
-                    FOCUS_RING
-                  )}
-                  href={allTopicsHref}
-                >
-                  {allTopicsLabel}
-                  <svg aria-hidden fill="none" height="6" viewBox="0 0 10 6" width="10">
-                    <path
-                      d="M1 1l4 4 4-4"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.4"
-                    />
-                  </svg>
-                </Link>
+                <Button asChild caps tone="surface">
+                  <Link href={allTopicsHref}>
+                    {allTopicsLabel}
+                    <svg aria-hidden fill="none" height="6" viewBox="0 0 10 6" width="10">
+                      <path
+                        d="M1 1l4 4 4-4"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="1.4"
+                      />
+                    </svg>
+                  </Link>
+                </Button>
               )}
             </div>
           )}
@@ -390,20 +439,9 @@ export function CourseRail({
           {showRightCluster && (
             <div className="flex flex-none items-center gap-[clamp(8px,1vw,12px)]">
               {showViewAll && viewAllHref && (
-                <Link
-                  className={withTypeUtility(
-                    "text-small",
-                    CONTROL_BOX,
-                    "px-[clamp(14px,1.7vw,24px)] font-medium",
-                    "bg-primary text-primary-foreground",
-                    "transition-colors duration-200 ease-out hover:bg-primary-hover",
-                    "motion-reduce:transition-none",
-                    FOCUS_RING
-                  )}
-                  href={viewAllHref}
-                >
-                  {viewAllLabel}
-                </Link>
+                <Button asChild tone="primary">
+                  <Link href={viewAllHref}>{viewAllLabel}</Link>
+                </Button>
               )}
 
               {railState.hasOverflow && (
@@ -411,13 +449,13 @@ export function CourseRail({
                   <RailArrow
                     direction="prev"
                     disabled={railState.atStart}
-                    onClick={() => scrollByPage(-1)}
+                    onClick={() => scrollRailByCard(-1)}
                     railElementId={railElementId}
                   />
                   <RailArrow
                     direction="next"
                     disabled={railState.atEnd}
-                    onClick={() => scrollByPage(1)}
+                    onClick={() => scrollRailByCard(1)}
                     railElementId={railElementId}
                   />
                 </>
@@ -451,8 +489,8 @@ export function CourseRail({
         role="group"
         tabIndex={0}
       >
-        {courses.map((course, courseIndex) => (
-          <CourseCard course={course} key={courseIndex} />
+        {displayedCourses.map((course, courseIndex) => (
+          <CourseRailCard course={course} index={courseIndex} key={courseIndex} />
         ))}
       </div>
     </>
