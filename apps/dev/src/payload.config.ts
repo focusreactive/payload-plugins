@@ -102,6 +102,7 @@ export default buildConfig({
         withAutoTranslate(Articles, { targets: ["de", "fr", "es"], debounceMs: 2000 }),
         withAutoTranslate(Playground, { targets: ["de", "fr", "es"], debounceMs: 2000 }),
       ],
+      targetSelection: "multi",
       runner: resolveTranslatorRunner(),
       translationProvider: resolveTranslationProvider(),
       levels: [documentLevel(), collectionLevel(), fieldLevel()],
