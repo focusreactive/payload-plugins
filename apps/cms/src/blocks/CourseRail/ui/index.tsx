@@ -11,18 +11,20 @@
  * the server too - verify it the only way that can tell the two apart,
  * `curl -s <url> | grep -i "<a course title>"`, never by looking at the page.
  *
- * The arrows render nothing at all until the effect below has measured the rail. That is the
- * degraded path: with JavaScript unavailable no arrows appear and the rail is still a plain
- * `overflow-x` scroller, so no card is unreachable. A "filter" section without JavaScript instead
- * shows every fetched talk with no way to narrow it - also not unreachable, just unfiltered. Do not
- * give the arrows a server-rendered fallback - they would be controls that cannot work.
+ * The arrows render nothing at all until `useCardRail` has measured the rail. That is the degraded
+ * path: with JavaScript unavailable no arrows appear and the rail is still a plain `overflow-x`
+ * scroller, so no card is unreachable. A "filter" section without JavaScript instead shows every
+ * fetched talk with no way to narrow it - also not unreachable, just unfiltered. Do not give the
+ * arrows a server-rendered fallback - they would be controls that cannot work.
  */
 
 import Link from "next/link";
 import type { RefObject } from "react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { CARD_RAIL_CLASS, CARD_RAIL_ITEM_WIDTH } from "@/components/ui/CardRail/constants";
+import { useCardRail } from "@/components/ui/CardRail/useCardRail";
 import { Chip, ChipRow } from "@/components/ui/Chip";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { IconButton } from "@/components/ui/IconButton";
@@ -31,32 +33,6 @@ import { SectionMarker } from "@/components/ui/SectionMarker";
 import { cn } from "@/components/utils";
 
 import type { CourseRailCourse, CourseRailProps } from "./types";
-
-/**
- * Card widths are `calc()` fractions of the rail, so `scrollLeft` rarely lands on a whole pixel and
- * an exact `=== 0` / `=== maxScrollLeft` comparison would leave an arrow enabled at either end.
- */
-const SCROLL_EDGE_TOLERANCE_PX = 4;
-
-/** No overflow until measured, which is what keeps the arrows out of the server-rendered HTML. */
-const UNMEASURED_RAIL = { atEnd: true, atStart: true, hasOverflow: false };
-
-interface RailState {
-  atEnd: boolean;
-  atStart: boolean;
-  hasOverflow: boolean;
-}
-
-/**
- * 3.28 cards across the rail's own (edge-bled) width, which is what leaves a slice of the fourth
- * card visible as the signal that the row scrolls. It stays an inline style rather than an
- * arbitrary Tailwind value because a clamp nested inside a calc does not survive the class-name
- * escape: the spaces CSS requires around the minus sign collide with Tailwind's underscore escape
- * inside the inner clamp's own comma list. `ContentCard`'s own "course" width carries the identical
- * formula for the identical reason - this is deliberately the same string, not a shared import,
- * since a Payload-agnostic `ui/` cannot reach into another block's file either.
- */
-const COURSE_CARD_WIDTH = "clamp(260px, calc((100% - 2 * clamp(16px, 1.6vw, 24px)) / 3.28), 460px)";
 
 const FOCUS_RING =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
@@ -196,11 +172,12 @@ interface CourseRailCardProps {
 /**
  * `ContentCard` is pure rendering - no `ref`, no `style` prop - so the entrance reveal (which needs
  * both, for its own IntersectionObserver and its opacity/transform) has to live on a wrapper. That
- * wrapper is deliberately also the box carrying `scroll-snap-align` and the width formula, so the
- * flex item the rail actually snaps against is the one box the reveal ref is attached to, rather
- * than two differently-sized ones - which is what a generic `<ScrollReveal stagger>` wrapper around
- * `ContentCard` would otherwise produce (see `useScrollReveal`'s own file comment on this exact
- * trade-off).
+ * wrapper is deliberately also the box carrying `scroll-snap-align`, so the item the rail actually
+ * snaps against is the one box the reveal ref is attached to, rather than two differently-sized
+ * ones - which is what a generic `<ScrollReveal stagger>` wrapper around `ContentCard` would
+ * otherwise produce (see `useScrollReveal`'s own file comment on this exact trade-off).
+ *
+ * It carries no width: the rail's grid track owns that now (`useCardRail`).
  */
 function CourseRailCard({ course, index }: CourseRailCardProps) {
   const { ref, style } = useScrollReveal<HTMLDivElement>({
@@ -209,12 +186,7 @@ function CourseRailCard({ course, index }: CourseRailCardProps) {
   });
 
   return (
-    <div
-      className="flex-none snap-start"
-      data-course-rail-card
-      ref={ref}
-      style={{ ...style, width: COURSE_CARD_WIDTH }}
-    >
+    <div className="flex min-w-0 snap-start" ref={ref} style={style}>
       <ContentCard
         className="h-full"
         cover={course.cover}
@@ -231,14 +203,6 @@ function CourseRailCard({ course, index }: CourseRailCardProps) {
   );
 }
 
-/** `scrollRail()`'s own easing (07-footer.html:301), lifted unchanged. */
-function easeInOutQuad(progress: number): number {
-  return progress < 0.5 ? 2 * progress * progress : 1 - (-2 * progress + 2) ** 2 / 2;
-}
-
-/** `scrollRail()`'s own duration (07-footer.html:298). */
-const RAIL_SCROLL_DURATION_MS = 380;
-
 export function CourseRail({
   allTopicsHref,
   allTopicsLabel,
@@ -249,10 +213,7 @@ export function CourseRail({
   viewAllHref,
   viewAllLabel,
 }: CourseRailProps) {
-  const railRef = useRef<HTMLDivElement>(null);
   const railElementId = useId();
-  const [railState, setRailState] = useState<RailState>(UNMEASURED_RAIL);
-  const scrollAnimationFrameRef = useRef<number | null>(null);
   const [selectedTopicSlug, setSelectedTopicSlug] = useState<string | null>(null);
 
   const markerReveal = useScrollReveal<HTMLDivElement>();
@@ -272,87 +233,18 @@ export function CourseRail({
       ? courses.filter((course) => course.topicSlugs?.includes(selectedTopicSlug))
       : courses;
 
-  useEffect(() => {
-    const rail = railRef.current;
-    if (!rail) return;
-
-    const measure = () => {
-      const maxScrollLeft = rail.scrollWidth - rail.clientWidth;
-      setRailState({
-        atEnd: rail.scrollLeft >= maxScrollLeft - SCROLL_EDGE_TOLERANCE_PX,
-        atStart: rail.scrollLeft <= SCROLL_EDGE_TOLERANCE_PX,
-        hasOverflow: maxScrollLeft > SCROLL_EDGE_TOLERANCE_PX,
-      });
-    };
-
-    measure();
-    rail.addEventListener("scroll", measure, { passive: true });
-    // A width change re-flows the cards, which changes how many fit and whether the rail overflows
-    // at all - so a resize has to re-measure, not merely re-enable the arrows.
-    const resizeObserver = new ResizeObserver(measure);
-    resizeObserver.observe(rail);
-
-    return () => {
-      rail.removeEventListener("scroll", measure);
-      resizeObserver.disconnect();
-    };
+  const {
+    railProps,
+    railRef,
+    scrollByCard,
+    state: railState,
+  } = useCardRail<HTMLDivElement>({
     // A topic switch changes how many cards are in the rail without changing the rail element's own
-    // box, which is the only thing the ResizeObserver above watches - so the effect has to re-run
-    // itself on that change rather than wait for a resize that never comes.
-  }, [displayedCourses.length]);
-
-  useEffect(
-    () => () => {
-      if (scrollAnimationFrameRef.current !== null) {
-        cancelAnimationFrame(scrollAnimationFrameRef.current);
-      }
-    },
-    []
-  );
-
-  const scrollRailByCard = useCallback((direction: -1 | 1) => {
-    const rail = railRef.current;
-    if (!rail) return;
-
-    const firstCard = rail.querySelector<HTMLElement>("[data-course-rail-card]");
-    const gapPx = Number.parseFloat(getComputedStyle(rail).columnGap) || 0;
-    const step = firstCard
-      ? firstCard.getBoundingClientRect().width + gapPx
-      : rail.clientWidth * 0.8;
-    const maxScrollLeft = rail.scrollWidth - rail.clientWidth;
-    const from = rail.scrollLeft;
-    const target = Math.max(0, Math.min(maxScrollLeft, from + direction * step));
-    if (Math.abs(target - from) < 1) return;
-
-    if (scrollAnimationFrameRef.current !== null) {
-      cancelAnimationFrame(scrollAnimationFrameRef.current);
-      scrollAnimationFrameRef.current = null;
-    }
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      rail.scrollLeft = target;
-      return;
-    }
-
-    // scroll-snap fights a manual scrollLeft tween - each written frame gets pulled back toward the
-    // nearest snap point - so it is switched off for the tween's duration and restored after,
-    // exactly as the concept's own scrollRail() does.
-    const previousScrollSnapType = rail.style.scrollSnapType;
-    rail.style.scrollSnapType = "none";
-    const startTime = performance.now();
-
-    const tick = (now: number) => {
-      const progress = Math.min(1, (now - startTime) / RAIL_SCROLL_DURATION_MS);
-      rail.scrollLeft = from + (target - from) * easeInOutQuad(progress);
-      if (progress < 1) {
-        scrollAnimationFrameRef.current = requestAnimationFrame(tick);
-      } else {
-        scrollAnimationFrameRef.current = null;
-        rail.style.scrollSnapType = previousScrollSnapType;
-      }
-    };
-    scrollAnimationFrameRef.current = requestAnimationFrame(tick);
-  }, []);
+    // box, which is the only thing the hook's ResizeObserver watches - so it has to be told the
+    // count rather than wait for a resize that never comes.
+    itemCount: displayedCourses.length,
+    itemWidth: CARD_RAIL_ITEM_WIDTH,
+  });
 
   if (courses.length === 0) return null;
 
@@ -449,13 +341,13 @@ export function CourseRail({
                   <RailArrow
                     direction="prev"
                     disabled={railState.atStart}
-                    onClick={() => scrollRailByCard(-1)}
+                    onClick={() => scrollByCard(-1)}
                     railElementId={railElementId}
                   />
                   <RailArrow
                     direction="next"
                     disabled={railState.atEnd}
-                    onClick={() => scrollRailByCard(1)}
+                    onClick={() => scrollByCard(1)}
                     railElementId={railElementId}
                   />
                 </>
@@ -478,16 +370,15 @@ export function CourseRail({
       <div
         aria-label={heading}
         className={cn(
-          "scrollbar-none flex items-stretch gap-[clamp(16px,1.6vw,24px)]",
-          "overflow-x-auto overflow-y-hidden overscroll-x-contain snap-x snap-proximity",
+          CARD_RAIL_CLASS,
           "-mt-1 -mb-6 mr-[calc(50%_-_50vw)] pt-1 pr-[clamp(16px,2.5vw,40px)] pb-6",
-          "motion-safe:scroll-smooth",
           FOCUS_RING
         )}
         id={railElementId}
         ref={railRef}
         role="group"
         tabIndex={0}
+        {...railProps}
       >
         {displayedCourses.map((course, courseIndex) => (
           <CourseRailCard course={course} index={courseIndex} key={courseIndex} />

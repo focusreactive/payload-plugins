@@ -185,16 +185,17 @@ async function ShopifyCarouselBlockContent({
     <>
       {header ? <SectionHeader {...header} className="mb-12" /> : null}
 
-      <ShopifyCarouselRail label={resolvedHeading}>
+      <ShopifyCarouselRail itemCount={products.length} label={resolvedHeading}>
         {products.map((product) => {
           const canBuy = Boolean(product.variantId) && product.availableForSale;
           const productHref = `https://${storefrontConfig.domain}/products/${product.handle}`;
 
           return (
             // flex-col + gap holds the buy button (or the unavailable note) under the card; the
-            // card's own width comes from ContentCard's inline style, so the button below stretches
-            // to match it rather than needing that width duplicated here.
-            <li className="flex flex-none flex-col gap-4 snap-start" key={product.handle}>
+            // width comes from the rail's own grid track, so both the card and the button below it
+            // fill the same column rather than needing that width duplicated here. `min-w-0` is
+            // what stops a long product title from pushing the track wider than it was told to be.
+            <li className="flex min-w-0 flex-col gap-4 snap-start" key={product.handle}>
               <ContentCard
                 cover={buildProductCover(product.featuredImage, product.title)}
                 href={productHref}

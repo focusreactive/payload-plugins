@@ -13,6 +13,7 @@
 
 import type { PreparedMedia } from "@/components/media";
 
+import { CARD_RAIL_ITEM_WIDTH } from "@/components/ui/CardRail/constants";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { cn } from "@/components/utils";
 import { excerptAtWord } from "@/lib/talks/display";
@@ -132,44 +133,51 @@ interface TalkListProps {
 }
 
 /**
- * ContentCard's "course" width is `clamp(260px, calc((100% - 2 * clamp(16px,1.6vw,24px)) / 3.28),
- * 460px)` (see ContentCard's own CONTENT_CARD_WIDTH comment) - a formula built for a flex row, where
- * a wrapped item's `100%` resolves against the row's own width. This gap has to match the one baked
- * into that formula exactly, or the maths the formula is doing no longer lines up with the space it
- * is dividing.
+ * The gap is the same `clamp(16px,1.6vw,24px)` the rail's track formula divides against
+ * (`CARD_RAIL_ITEM_WIDTH`), so the two layouts read as one system and the rail's 3.28-cards-across
+ * arithmetic stays true.
  */
-const CARD_ROW_GAP_CLASS = "gap-[clamp(16px,1.6vw,24px)]";
+const CARD_GAP_CLASS = "gap-[clamp(16px,1.6vw,24px)]";
+
+/**
+ * The concept draws no breakpoints at all - it is one 1520px composition - so every column count
+ * below is ours. Three is what the rail shows at desktop, so the grid matching it keeps a card the
+ * same size whichever layout an editor picks.
+ */
+const CARD_GRID_COLUMNS_CLASS = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3";
 
 export function TalkList({ layout = "grid", showKind, showTier, talks }: TalkListProps) {
   if (layout === "rail") {
     return (
-      // A plain scroller, no arrows: src/blocks/CourseRail/ui/index.tsx's rail is being generalised
-      // into a shared rail component with real arrow controls, and this block migrates onto it
-      // once that exists - adding a second, block-local arrow implementation now would be one more
-      // place for the two to drift apart. tabIndex is what lets a keyboard user scroll it in the
-      // meantime: Firefox and Safari do not make a scroll container focusable on their own.
-      <div
+      // A plain scroller, no arrows: the arrows live on the blocks that own a header row to put
+      // them in (CourseRail, ShopifyCarouselRail), and both drive the rail through the same
+      // `useCardRail` hook. tabIndex is what lets a keyboard user scroll this one: Firefox and
+      // Safari do not make a scroll container focusable on their own.
+      <ul
         aria-label="Talks"
         className={cn(
-          "scrollbar-none flex flex-nowrap items-stretch overflow-x-auto overscroll-x-contain snap-x snap-proximity pb-2",
-          CARD_ROW_GAP_CLASS
+          "scrollbar-none grid list-none grid-flow-col items-stretch overflow-x-auto overscroll-x-contain snap-x snap-proximity pb-2",
+          CARD_GAP_CLASS
         )}
-        role="group"
+        style={{ gridAutoColumns: CARD_RAIL_ITEM_WIDTH }}
         tabIndex={0}
       >
         {talks.map((talk) => (
-          <TalkCard key={talk.id} showKind={showKind} showTier={showTier} talk={talk} />
+          <li className="flex min-w-0" key={talk.id}>
+            <TalkCard showKind={showKind} showTier={showTier} talk={talk} />
+          </li>
         ))}
-      </div>
+      </ul>
     );
   }
 
   return (
-    // flex-wrap, not a CSS grid: see CARD_ROW_GAP_CLASS above for why the card's own width formula
-    // needs a flex row's containing block, which a grid cell is not.
-    <ul className={cn("flex flex-wrap items-stretch", CARD_ROW_GAP_CLASS)}>
+    // A real CSS grid, so the column is what decides a card's width. Under the flex-wrap row this
+    // replaced, each `<li>` shrink-to-fit its own text and ContentCard's `100%` resolved against
+    // that, which rendered sixteen full-width cards in one column at every desktop size.
+    <ul className={cn(CARD_GRID_COLUMNS_CLASS, "list-none", CARD_GAP_CLASS)}>
       {talks.map((talk) => (
-        <li key={talk.id}>
+        <li className="flex min-w-0" key={talk.id}>
           <TalkCard showKind={showKind} showTier={showTier} talk={talk} />
         </li>
       ))}

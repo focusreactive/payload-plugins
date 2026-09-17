@@ -7,14 +7,19 @@ import { RatingGlyph, StarRating } from "../StarRating";
 import type { ContentCardProps, ContentCardVariant } from "./types";
 
 /**
- * Both widths are `clamp()`s with a nested `calc()` (course) or `min()` (featured), so they stay
- * inline styles rather than Tailwind arbitrary values: the spaces CSS requires around a
- * `calc()`/`min()` minus or comma collide with Tailwind's underscore escape inside the outer
- * clamp's own comma list. `CourseRail/ui/index.tsx` carries the same reasoning for the `course`
- * value, lifted unchanged from there.
+ * A course card fills whatever box it is given, because the box is what knows how wide a card
+ * should be: a rail track (`useCardRail`'s `gridAutoColumns`) or a grid column. It used to carry
+ * `clamp(260px, calc((100% - 2 * gap) / 3.28), 460px)` itself, which is only right when the card is
+ * a direct child of the rail - inside the `<li>` that TalkGrid and the store rail wrap it in, that
+ * `100%` resolved against a shrink-to-fit parent and each card took its own text's width, so a
+ * three-column grid rendered one 1200px card per row.
+ *
+ * The featured card keeps a width of its own because it has no track: it floats over the hero
+ * image, sized against the viewport. It stays an inline style rather than an arbitrary Tailwind
+ * value because the spaces CSS requires inside `min()` collide with Tailwind's underscore escape.
  */
 const CONTENT_CARD_WIDTH: Record<ContentCardVariant, string> = {
-  course: "clamp(260px, calc((100% - 2 * clamp(16px, 1.6vw, 24px)) / 3.28), 460px)",
+  course: "100%",
   featured: "clamp(200px, min(19vw, 26vh), 300px)",
 };
 
