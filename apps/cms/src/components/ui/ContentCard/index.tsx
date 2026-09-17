@@ -31,6 +31,11 @@ interface ContentCardCoverProps {
   variant: ContentCardVariant;
 }
 
+/**
+ * Rendered only when there IS a cover. An always-present well is right on the concept's own feed,
+ * where every card is a course with artwork, and wrong on this archive: a talk's cover is optional
+ * and a topic has no image at all, so a results grid came out as a row of empty pale boxes.
+ */
 function ContentCardCover({ cover, variant }: ContentCardCoverProps) {
   const isFeatured = variant === "featured";
 
@@ -106,7 +111,7 @@ function FeaturedCardBody({
         </div>
       )}
 
-      <ContentCardCover cover={cover} variant="featured" />
+      {cover && <ContentCardCover cover={cover} variant="featured" />}
 
       {hasMetaRow && (
         <div className="mb-2 flex items-center gap-2 px-1 pt-[clamp(10px,1vw,14px)]">
@@ -169,7 +174,7 @@ function CourseCardBody({
 
   return (
     <>
-      <ContentCardCover cover={cover} variant="course" />
+      {cover && <ContentCardCover cover={cover} variant="course" />}
 
       {(leadingMeta || dateLabel) && (
         <div

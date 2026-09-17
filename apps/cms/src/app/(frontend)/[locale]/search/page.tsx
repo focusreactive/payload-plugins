@@ -41,27 +41,34 @@ export default async function SearchPage({ params, searchParams }: Args) {
       <Header data={siteSettings.blog.header as HeaderType} />
 
       <main className="grow">
-        <div className="mx-auto w-full max-w-[860px] px-[clamp(16px,2.5vw,40px)] py-[clamp(48px,5vw,88px)]">
-          <SectionMarker>Search the library</SectionMarker>
+        {/*
+          The asking half is a reading column and the answering half is the site's own container.
+          One width for both would either cramp the results to three narrow cards or stretch the
+          input to 1,520px, which reads as a form field for an essay.
+        */}
+        <div className="mx-auto w-full max-w-containerMaxW px-[clamp(16px,2.5vw,40px)] py-[clamp(48px,5vw,88px)]">
+          <div className="max-w-[860px]">
+            <SectionMarker>Search the library</SectionMarker>
 
-          <DisplayHeading
-            as="h1"
-            className="mt-[clamp(10px,1.2vw,18px)] mb-[clamp(24px,2.6vw,40px)] max-w-[18ch]"
-            size="display-2"
-            text={PROMPT}
-          />
+            <DisplayHeading
+              as="h1"
+              className="mt-[clamp(10px,1.2vw,18px)] mb-[clamp(24px,2.6vw,40px)] max-w-[18ch]"
+              size="display-2"
+              text={PROMPT}
+            />
 
-          <SearchInput
-            defaultValue={query ?? ""}
-            placeholder="I keep losing my temper with people I love"
-          />
+            <SearchInput
+              defaultValue={query ?? ""}
+              placeholder="I keep losing my temper with people I love"
+            />
 
-          {query ? null : (
-            <p className="mt-[clamp(16px,1.8vw,26px)] text-body text-muted-foreground">
-              This searches meaning rather than words, so a whole sentence finds more than a single
-              term does.
-            </p>
-          )}
+            {query ? null : (
+              <p className="mt-[clamp(16px,1.8vw,26px)] text-body text-muted-foreground">
+                This searches meaning rather than words, so a whole sentence finds more than a
+                single term does.
+              </p>
+            )}
+          </div>
 
           <Suspense fallback={null} key={query}>
             <SearchResults locale={locale} query={query} />
