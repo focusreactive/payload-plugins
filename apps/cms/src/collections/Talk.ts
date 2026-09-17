@@ -11,12 +11,16 @@
 
 import type { CollectionConfig, Field } from "payload";
 
+import type { Talk as TalkDoc } from "@/payload-types";
+
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { slugField } from "payload";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { generateSeoFields } from "@/lib/utils/seoFields";
 
 import { imageField } from "@/lib/fields/imageField";
+import { extractTalkText } from "@/lib/search/extractSearchText";
+import { buildEmbeddingHooks } from "@/lib/search/indexHooks";
 import { talkAiFields } from "@/lib/fields/talkAiFields";
 import { talkKindOptions, talkTierOptions } from "@/lib/talks/taxonomy";
 
@@ -26,6 +30,17 @@ import { talkKindOptions, talkTierOptions } from "@/lib/talks/taxonomy";
  * seed script and the "view as" switch all import them from this path.
  */
 export { TALK_KINDS, TALK_TIERS } from "@/lib/talks/taxonomy";
+
+/**
+ * Talk is the collection this site's search is actually for: 14,000 archive items whose titles
+ * rarely contain the word a reader would search for. `requirePublished` is on because Talk keeps
+ * drafts, and a draft talk surfacing in search would leak a title an editor has not released.
+ */
+const talkEmbeddingHooks = buildEmbeddingHooks<TalkDoc>({
+  collection: "talk",
+  extractText: extractTalkText,
+  requirePublished: true,
+});
 
 /**
  * `imageField` takes no description argument, so the group it returns is re-wrapped with one here -
@@ -226,6 +241,7 @@ export const Talk: CollectionConfig<"talk"> = {
       ],
     },
   ],
+  hooks: talkEmbeddingHooks,
   labels: {
     plural: "Talks",
     singular: "Talk",

@@ -16,3 +16,13 @@ export const TALKS_CONFIG = {
 export const TOPICS_CONFIG = {
   basePath: "/browse-topics",
 } as const;
+
+/**
+ * The search route. Hand-written like the two above, and hardcoded for the same reason: it is a
+ * coded route rather than a Page document, so there is nothing for an editor to point at.
+ */
+export const SEARCH_CONFIG = {
+  basePath: "/search",
+  /** The query-string key `SearchInput` writes and the page reads. Changing it breaks shared links. */
+  queryParam: "query",
+} as const;

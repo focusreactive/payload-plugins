@@ -36,6 +36,7 @@ import * as migration_20260904_133003_add_talk_and_topic_collections from './202
 import * as migration_20260907_123617_add_shopify_carousel_and_sidebar_blocks from './20260907_123617_add_shopify_carousel_and_sidebar_blocks';
 import * as migration_20260914_191756_add_showcase_design_blocks from './20260914_191756_add_showcase_design_blocks';
 import * as migration_20260915_212350_add_talk_cover_and_block_sources from './20260915_212350_add_talk_cover_and_block_sources';
+import * as migration_20260917_190000_index_archive_collections_for_search from './20260917_190000_index_archive_collections_for_search';
 
 export const migrations = [
   {
@@ -227,5 +228,10 @@ export const migrations = [
     up: migration_20260915_212350_add_talk_cover_and_block_sources.up,
     down: migration_20260915_212350_add_talk_cover_and_block_sources.down,
     name: '20260915_212350_add_talk_cover_and_block_sources'
+  },
+  {
+    up: migration_20260917_190000_index_archive_collections_for_search.up,
+    down: migration_20260917_190000_index_archive_collections_for_search.down,
+    name: '20260917_190000_index_archive_collections_for_search'
   },
 ];

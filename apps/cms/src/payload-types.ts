@@ -2824,7 +2824,7 @@ export interface Footer {
 export interface DocumentEmbedding {
   id: number;
   documentId: string;
-  collection: 'page' | 'post';
+  collection: 'page' | 'post' | 'talk' | 'topic';
   locale: string;
   updatedAt: string;
   createdAt: string;

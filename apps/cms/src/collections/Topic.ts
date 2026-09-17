@@ -16,9 +16,25 @@
 
 import type { CollectionConfig } from "payload";
 
+import { extractTopicText } from "@/lib/search/extractSearchText";
+import { buildEmbeddingHooks } from "@/lib/search/indexHooks";
+import type { Topic as TopicDoc } from "@/payload-types";
+
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { slugField } from "payload";
 import { generateSeoFields } from "@/lib/utils/seoFields";
+
+/**
+ * A topic is indexed as well as a talk because on this archive a topic page IS a destination: a
+ * reader searching "resentment" wants the curated page of teachings about it at least as much as
+ * one talk. `requirePublished` is off because Topic runs no drafts - it has no `_status` column at
+ * all, so gating on one would index nothing.
+ */
+const topicEmbeddingHooks = buildEmbeddingHooks<TopicDoc>({
+  collection: "topic",
+  extractText: extractTopicText,
+  requirePublished: false,
+});
 
 export const Topic: CollectionConfig<"topic"> = {
   access: {
@@ -86,6 +102,7 @@ export const Topic: CollectionConfig<"topic"> = {
       ],
     },
   ],
+  hooks: topicEmbeddingHooks,
   labels: { plural: "Topics", singular: "Topic" },
   slug: "topic",
   timestamps: true,
