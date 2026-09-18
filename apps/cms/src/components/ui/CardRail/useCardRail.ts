@@ -26,13 +26,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
  */
 const SCROLL_EDGE_TOLERANCE_PX = 4;
 
-/** `scrollRail()`'s own duration and easing in the concept (07-footer.html:298-301), lifted unchanged. */
-const RAIL_SCROLL_DURATION_MS = 380;
-
-function easeInOutQuad(progress: number): number {
-  return progress < 0.5 ? 2 * progress * progress : 1 - (-2 * progress + 2) ** 2 / 2;
-}
-
 /**
  * Far enough that a click on a card is never mistaken for a drag, short enough that a deliberate
  * drag is not mistaken for a click. Below this the pointer sequence is left alone entirely and the
@@ -89,7 +82,6 @@ export function useCardRail<T extends HTMLElement>({
 }: UseCardRailOptions): UseCardRailResult<T> {
   const railRef = useRef<T>(null);
   const [state, setState] = useState<CardRailState>(UNMEASURED_RAIL);
-  const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     const rail = railRef.current;
@@ -117,50 +109,20 @@ export function useCardRail<T extends HTMLElement>({
     };
   }, [itemCount]);
 
-  useEffect(
-    () => () => {
-      if (animationFrameRef.current !== null) cancelAnimationFrame(animationFrameRef.current);
-    },
-    []
-  );
-
+  // The rail's own CSS already carries `scroll-smooth` and `snap-proximity` (CARD_RAIL_CLASS), so
+  // the browser's native smooth scroll lands on the nearest snap point on its own - no manual
+  // requestAnimationFrame tween or easing curve to keep in step with it.
   const scrollByCard = useCallback((direction: -1 | 1) => {
     const rail = railRef.current;
     if (!rail) return;
 
     const maxScrollLeft = rail.scrollWidth - rail.clientWidth;
-    const from = rail.scrollLeft;
-    const target = Math.max(0, Math.min(maxScrollLeft, from + direction * measureCardStep(rail)));
-    if (Math.abs(target - from) < 1) return;
-
-    if (animationFrameRef.current !== null) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      rail.scrollLeft = target;
-      return;
-    }
-
-    // scroll-snap fights a manual scrollLeft tween - each written frame gets pulled back toward the
-    // nearest snap point - so it is switched off for the tween's duration and restored after,
-    // exactly as the concept's own scrollRail() does.
-    const previousScrollSnapType = rail.style.scrollSnapType;
-    rail.style.scrollSnapType = "none";
-    const startTime = performance.now();
-
-    const tick = (now: number) => {
-      const progress = Math.min(1, (now - startTime) / RAIL_SCROLL_DURATION_MS);
-      rail.scrollLeft = from + (target - from) * easeInOutQuad(progress);
-      if (progress < 1) {
-        animationFrameRef.current = requestAnimationFrame(tick);
-      } else {
-        animationFrameRef.current = null;
-        rail.style.scrollSnapType = previousScrollSnapType;
-      }
-    };
-    animationFrameRef.current = requestAnimationFrame(tick);
+    const target = Math.max(
+      0,
+      Math.min(maxScrollLeft, rail.scrollLeft + direction * measureCardStep(rail))
+    );
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    rail.scrollTo({ behavior: reducedMotion ? "instant" : "smooth", left: target });
   }, []);
 
   /**
