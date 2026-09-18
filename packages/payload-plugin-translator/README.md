@@ -156,7 +156,7 @@ translatorPlugin(config: TranslatorPluginConfig)
 | `translationProvider` | `TranslationProvider` | — | **Required.** What actually translates the text. |
 | `runner` | `TaskRunnerProvider` | — | **Required.** What runs the translation — in the background, or inline. |
 | `levels` | `TranslationLevel[]` | `[documentLevel(), collectionLevel()]` | Which translation surfaces to enable. |
-| `access` | `AccessGuard` | — | **Required.** Who may call the translation endpoints. Pass `new AnyAccessGuard()` to leave them open on purpose. _Required since v0.14.0._ |
+| `access` | `AccessGuard` | — | Gate for every translation endpoint. Omit to leave them open. |
 | `basePath` | `string` | `'/translate'` | Base path for the plugin's endpoints. |
 | `targetSelection` | `'single' \| 'multi'` | `'single'` | `'multi'` lets an editor pick several target locales for one run. _Since v0.10.0._ |
 | `provenance` | `boolean \| { slug?: string }` | `false` | Adds a collection recording what each locale was translated from, so the admin can flag stale ones. Default slug `translator-provenance`. |
@@ -385,16 +385,6 @@ Payload deletes a job the moment it completes, so the "Completed" state never ap
 
 ## Access control
 
-### Who may call the endpoints
-
-**`access` is required.** _Since v0.14.0._ The plugin refuses to start without it.
-
-Payload does not authenticate custom endpoints — it works out who is calling and hands the request to
-the handler either way, leaving the decision to whoever added the route. These endpoints write to your
-documents and spend money at your translation provider, so leaving them open is a decision worth
-making on purpose rather than inheriting by omission. Before 0.14.0 the option defaulted to open, and
-an install that never set it was reachable by anyone who could reach the server.
-
 ```ts
 import type { AccessGuard } from '@focus-reactive/payload-plugin-translator'
 
@@ -403,14 +393,6 @@ const signedInOnly: AccessGuard = {
 }
 
 translatorPlugin({ collections, translationProvider, runner, access: signedInOnly })
-```
-
-If open is genuinely what you want, say so:
-
-```ts
-import { AnyAccessGuard } from '@focus-reactive/payload-plugin-translator'
-
-translatorPlugin({ collections, translationProvider, runner, access: new AnyAccessGuard() })
 ```
 
 Return `false` and the request is rejected with `403 Forbidden`. The guard receives the request headers, the authenticated user and the Payload instance, and may be async — so a role or permission check is a lookup away, shaped by your own generated `TypedUser`.
@@ -447,35 +429,6 @@ Set `provenance: true` and the plugin adds a collection that records, for each d
 
 > [!NOTE]
 > **Upgrading from below 0.11.1.** A locale can read as out of date once after the upgrade with nothing actually needing re-translation. Dismissing the flag or re-translating settles it.
-
-### What the translated write is allowed to do
-
-_Since v0.14.0._ A translation is checked against your collection's own access rules, as the person
-who asked for it. Before, it was not: the plugin wrote through Payload's server-side API, which skips
-those rules by default, so a collection declaring `update: () => false` still received translated
-content.
-
-- **Triggered by a save** — checked as the editor whose save triggered it.
-- **Triggered from the panel or the endpoint** — checked as whoever asked.
-- **Run later from the queue** — the requester is recorded on the job and rebuilt when it runs, so it
-  is still their rights that decide. If they no longer qualify, the translation fails and says so.
-- **Made by your own server-side code**, with no user on the request — unchanged: it writes without a
-  check, as it always did. Jobs queued before you upgraded carry no requester and behave the same way.
-
-A field your rules refuse is left as it was; its siblings are still translated. Rules are asked about
-the locale being written, so `req.locale` decides per target. A refused translation never affects the
-save that triggered it.
-
-One limit worth knowing: inside a `blocks` field, a refusal is remembered by field name rather than by
-block type. Refuse `heading` in one block type and `heading` is left alone in every block type of that
-field — never the other way round.
-
-### The translation receipts are private
-
-_Since v0.14.0._ When `provenance` is on, the collection recording what each locale was translated from
-now refuses every read and write from outside. It declared no rules before, so Payload's default
-applied and any signed-in user could read the whole inventory, silence another editor's "out of date"
-indicator, or delete the history. The plugin's own access to it is unaffected.
 
 ## HTTP endpoints you can call
 
