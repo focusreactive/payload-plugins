@@ -136,6 +136,13 @@ function buildTypedRail(
  * would filter to an empty rail. `getTalks` is called with no `topicSlug`, so every talk in the
  * result is what the "All teachings" sentinel shows and what every derived chip filters in memory,
  * client-side, out of.
+ *
+ * Walked by topic POSITION across talks, not talk-by-talk: a talk-by-talk walk exhausts one talk's
+ * whole topic list before moving to the next, so when the first fetched talk happens to carry 3+
+ * topics, the first 3 chips after "All teachings" are all that one talk's topics and every one of
+ * them filters to the same single result - indistinguishable from a broken filter on the first
+ * click. Taking each talk's 1st topic before any talk's 2nd spreads the earliest, most-clicked
+ * chips across different talks instead.
  */
 async function buildTalkRail(
   limit: number,
@@ -148,9 +155,11 @@ async function buildTalkRail(
   const seenTopicSlugs = new Set<string>();
   const filterTopics: CourseRailFilterTopic[] = [{ label: allTeachingsLabel, topicSlug: null }];
 
-  for (const talk of talks) {
-    for (const topic of talk.topics ?? []) {
-      if (typeof topic !== "object" || seenTopicSlugs.has(topic.slug)) continue;
+  const maxTopicsPerTalk = Math.max(0, ...talks.map((talk) => talk.topics?.length ?? 0));
+  for (let topicIndex = 0; topicIndex < maxTopicsPerTalk; topicIndex++) {
+    for (const talk of talks) {
+      const topic = talk.topics?.[topicIndex];
+      if (!topic || typeof topic !== "object" || seenTopicSlugs.has(topic.slug)) continue;
       seenTopicSlugs.add(topic.slug);
       filterTopics.push({ label: topic.title, topicSlug: topic.slug });
     }
