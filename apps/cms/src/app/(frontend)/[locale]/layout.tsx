@@ -1,5 +1,5 @@
 import type { Viewport } from "next";
-import { Archivo, IBM_Plex_Mono, Newsreader } from "next/font/google";
+import { Poppins } from "next/font/google";
 import { getMessages } from "next-intl/server";
 import { draftMode } from "next/headers";
 import React from "react";
@@ -12,33 +12,27 @@ import type { Locale } from "@/lib/types";
 import { LivePreviewListener } from "@/components/LivePreviewListener";
 import { VisualEditingEditRouter } from "@/components/VisualEditingEditRouter";
 
-const newsreader = Newsreader({
+/**
+ * One family for the whole site, which is the design system's own decision - display and body
+ * differ by size and tracking, never by face.
+ *
+ * 400 and 500 are the only weights, and only those two are loaded. The public components that
+ * still reached for a 600 were moved to 500 rather than kept alive by shipping a third weight -
+ * there is no bold in this design, so a face that can render one is a face that will.
+ */
+const poppins = Poppins({
   display: "swap",
   style: ["normal", "italic"],
   subsets: ["latin"],
-  variable: "--font-newsreader",
-  weight: ["400", "500", "600"],
-});
-
-const archivo = Archivo({
-  display: "swap",
-  subsets: ["latin"],
-  variable: "--font-archivo",
-  weight: ["400", "500", "600"],
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  display: "swap",
-  subsets: ["latin"],
-  variable: "--font-ibm-plex-mono",
+  variable: "--font-poppins",
   weight: ["400", "500"],
 });
 
 export const viewport: Viewport = {
   initialScale: 1,
   themeColor: [
-    { color: "#eef2f3", media: "(prefers-color-scheme: light)" },
-    { color: "#08100f", media: "(prefers-color-scheme: dark)" },
+    { color: "#ffffff", media: "(prefers-color-scheme: light)" },
+    { color: "#0b0d0c", media: "(prefers-color-scheme: dark)" },
   ],
   width: "device-width",
 };
@@ -54,11 +48,7 @@ export default async function RootLayout({ children, params }: Props) {
   const messages = await getMessages();
 
   return (
-    <html
-      lang={locale}
-      data-theme="light"
-      className={`${newsreader.variable} ${archivo.variable} ${ibmPlexMono.variable}`}
-    >
+    <html lang={locale} data-theme="light" className={poppins.variable}>
       <head />
       <body>
         <AnalyticsProviderClient measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID!}>

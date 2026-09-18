@@ -6,15 +6,17 @@ export function Chevron({ className }: ChevronProps) {
   return (
     <svg
       aria-hidden
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
+      width="10"
+      height="6"
+      viewBox="0 0 10 6"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.4"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       className={className}
     >
-      <path d="m6 9 6 6 6-6" />
+      <path d="M1 1l4 4 4-4" />
     </svg>
   );
 }

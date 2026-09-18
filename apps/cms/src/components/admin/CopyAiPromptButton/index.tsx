@@ -16,31 +16,31 @@ import { useState } from "react";
  */
 const THEME = {
   colors: {
-    background: "#eef2f3",
-    foreground: "#0a1314",
+    background: "#ffffff",
+    foreground: "#000000",
     surface: "#ffffff",
-    surfaceMuted: "#dde6e7",
+    surfaceMuted: "#eef5f0",
     card: "#ffffff",
-    cardForeground: "#0a1314",
-    muted: "#dde6e7",
-    mutedForeground: "#5a6a6b",
-    primary: "#0d9488",
+    cardForeground: "#000000",
+    muted: "#eef5f0",
+    mutedForeground: "rgba(0, 0, 0, 0.62)",
+    primary: "#19a846",
     primaryForeground: "#ffffff",
-    primaryHover: "#0a7268",
-    secondary: "#0a1314",
+    primaryHover: "#128036",
+    secondary: "#000000",
     secondaryForeground: "#ffffff",
-    accent: "#d8ff3a",
-    accentForeground: "#0a1314",
-    border: "rgba(10, 19, 20, 0.12)",
-    borderStrong: "rgba(10, 19, 20, 0.22)",
-    ring: "#0d9488",
+    accent: "#9bd4ae",
+    accentForeground: "#000000",
+    border: "#e0e0e0",
+    borderStrong: "rgba(0, 0, 0, 0.24)",
+    ring: "#19a846",
   },
   fonts: {
-    display: "'Newsreader', Georgia, 'Times New Roman', serif",
-    sans: "'Archivo', system-ui, -apple-system, sans-serif",
-    mono: "'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace",
+    display: "'Poppins', system-ui, -apple-system, sans-serif",
+    sans: "'Poppins', system-ui, -apple-system, sans-serif",
+    mono: "ui-monospace, 'SF Mono', Menlo, monospace",
   },
-  radii: { sm: "8px", md: "16px", lg: "28px", pill: "999px" },
+  radii: { sm: "5px", md: "7px", lg: "12px", pill: "999px" },
 } as const;
 
 const c = THEME.colors;
@@ -74,18 +74,20 @@ THEME VALUES — use these EXACT literal values directly in your CSS. Do NOT use
 - Surfaces/text: background ${c.background}, foreground/text ${c.foreground}, surface ${c.surface}, surface-muted ${c.surfaceMuted}, card ${c.card}, card text ${c.cardForeground}, muted ${c.muted}, muted text ${c.mutedForeground}
 - Brand/actions: primary ${c.primary}, text-on-primary ${c.primaryForeground}, primary hover ${c.primaryHover}, secondary ${c.secondary}, text-on-secondary ${c.secondaryForeground}, accent ${c.accent}, text-on-accent ${c.accentForeground}
 - Borders/rings: border ${c.border}, border-strong ${c.borderStrong}, focus ring ${c.ring}
-- Fonts: headings/display → ${f.display}; body → ${f.sans}; code/labels/eyebrow → ${f.mono}
+- Fonts: ONE family for everything — headings, body and labels are all ${f.sans}. Use ${f.mono} only for actual code. Never introduce a second display face.
 - Radii: small ${r.sm}, medium ${r.md}, large ${r.lg}, pill ${r.pill}
 
+FONT WEIGHT — this is the rule that most often gets broken. Only 400 and 500 exist. There is no bold anywhere: never write font-weight 600, 700, 800 or 900, and never use <strong> for visual emphasis. Big display headings are 400, and 500 is spent on the small type — card titles, prices, buttons, nav links, eyebrows.
+
 TYPOGRAPHY SCALE — match these sizes so headings/body align with the rest of the site:
-- Display 1: font-display, clamp(2.8rem, 7vw, 5.4rem), line-height 0.98, letter-spacing -0.02em
-- Display 2: font-display, clamp(2.2rem, 5vw, 3.6rem), line-height 1.02
-- Section heading: font-display, clamp(1.9rem, 4vw, 3rem), line-height 1.05
-- Card heading: font-display, 1.5rem, line-height 1.1
-- Lead: clamp(1.1rem, 1.6vw, 1.32rem), line-height 1.55
-- Body: 1.0625rem, line-height 1.7
-- Small: 0.9375rem, line-height 1.55
-- Eyebrow/kicker: font-mono, 0.72rem, letter-spacing 0.16em, text-transform uppercase
+- Display 1: 400, clamp(2.6rem, 6vw, 4rem), line-height 1.06, letter-spacing -0.02em
+- Display 2: 400, clamp(2.2rem, 4.8vw, 3.5rem), line-height 1.08, letter-spacing -0.02em
+- Section heading: 500, clamp(1.625rem, 3vw, 2.2rem), line-height 1.2, letter-spacing -0.02em
+- Card heading: 500, 1.3125rem, line-height 1.28, letter-spacing -0.01em
+- Lead: 400, 1.0625rem, line-height 1.6
+- Body: 400, 1rem, line-height 1.6
+- Small: 400, 0.9375rem, line-height 1.45
+- Eyebrow/kicker: 500, 0.75rem, letter-spacing 0.1em, text-transform uppercase, same family as the body
 
 SPACING & LAYOUT — this fragment is dropped inside a section that the CMS already controls. The section sets the theme (light/dark), the max content width and horizontal padding, the vertical section padding (top/bottom), and any background. Treat your fragment as pure inner content:
 - The root element must be full width (width: 100%). Do NOT add an outer max-width, do NOT center the whole fragment, and do NOT add a background color or set a theme — the section owns all of that.

@@ -97,7 +97,7 @@ const bodyVariants = cva("relative z-[1] text-body-lg leading-[1.6]", {
 });
 
 const linkVariants = cva(
-  "relative z-[1] inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.18em] transition-colors",
+  "relative z-[1] inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.1em] transition-colors",
   {
     defaultVariants: { backgroundColor: "light" },
     variants: {

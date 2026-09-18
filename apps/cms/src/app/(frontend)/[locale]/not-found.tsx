@@ -38,7 +38,7 @@ export default async function NotFound() {
       <main className="flex flex-1 flex-col">
         <section className="flex flex-1 items-center justify-center py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8 lg:py-24">
           <div className="mx-auto max-w-7xl text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <h1 className="text-4xl md:text-6xl font-medium mb-6">
               {settings.title || "404 - Page not found"}
             </h1>
             <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
