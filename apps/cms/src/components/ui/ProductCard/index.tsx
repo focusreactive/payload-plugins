@@ -36,7 +36,7 @@ export function ProductCard({
   return (
     <Link
       className={cn(
-        "group relative flex grow flex-col overflow-hidden rounded-xl border border-ink-08 bg-card p-[clamp(10px,1vw,14px)] text-foreground",
+        "group relative flex grow flex-col overflow-hidden rounded-xl border border-ink-08 bg-card text-foreground",
         "transition-colors duration-200 ease-out hover:border-primary",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
         "motion-reduce:transition-none",
@@ -44,7 +44,13 @@ export function ProductCard({
       )}
       href={href}
     >
-      <div className="relative w-full flex-none overflow-hidden rounded-inner bg-primary-soft aspect-[485/300]">
+      {/*
+        No padding, no radius here: the card's own `overflow-hidden` + `rounded-xl` clips this box
+        to the card's shape for free, so the cover bleeds flush to the top/left/right edges instead
+        of floating in a well. 2/3 is a trade-paperback ratio - the 485/300 landscape box this
+        replaced was built for talk/course thumbnails and cropped a portrait book cover hard.
+      */}
+      <div className="relative w-full flex-none overflow-hidden bg-primary-soft aspect-[2/3]">
         {cover && (
           <Media
             {...cover.data}
@@ -60,18 +66,20 @@ export function ProductCard({
         )}
       </div>
 
-      <h3 className="m-0 mt-[clamp(10px,1vw,14px)] mb-[clamp(8px,0.9vw,12px)] px-1 text-h-card text-pretty text-foreground line-clamp-2 transition-colors duration-200 ease-out group-hover:text-primary">
-        {title}
-      </h3>
+      <div className="flex grow flex-col p-[clamp(10px,1vw,14px)]">
+        <h3 className="m-0 mb-[clamp(8px,0.9vw,12px)] text-h-card text-pretty text-foreground line-clamp-2 transition-colors duration-200 ease-out group-hover:text-primary">
+          {title}
+        </h3>
 
-      {price && (
-        <div className="mt-auto flex flex-wrap items-baseline gap-2.5 px-1 pb-1">
-          <span className="text-lead font-medium text-primary">{price}</span>
-          {priceBefore && (
-            <span className="text-small text-ink-42 line-through">{priceBefore}</span>
-          )}
-        </div>
-      )}
+        {price && (
+          <div className="mt-auto flex flex-wrap items-baseline gap-2.5">
+            <span className="text-lead font-medium text-primary">{price}</span>
+            {priceBefore && (
+              <span className="text-small text-ink-42 line-through">{priceBefore}</span>
+            )}
+          </div>
+        )}
+      </div>
     </Link>
   );
 }
