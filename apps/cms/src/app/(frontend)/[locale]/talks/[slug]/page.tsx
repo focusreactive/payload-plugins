@@ -71,13 +71,16 @@ const formatTimestamp = (totalSeconds?: number | null) => {
 const AUDIO_ELEMENT_ID = "talk-audio";
 
 /**
- * The locked notice shows a fragment, not the field. The teaser is 300 characters and the hero
- * talk's whole body is 377, so printing the teaser in full showed a paywalled item almost
- * entirely, and it read as a leak rather than as an invitation. A visible teaser is the point of
- * the indexable-teaser pattern; the proportion is the part that was wrong. The `teaser` field
- * itself is untouched - this is a rendering budget, not a content change.
+ * The locked notice shows the whole teaser, budgeted at the teaser field's own 300-character
+ * limit rather than a tighter one. A 140-char re-cut was tried and reverted: 9 of the 10 gated
+ * talks have no AI summary (only the 3 talks with audio get one), so the teaser is the ONLY
+ * indexable text standing between the topic chips and the lock - halving it undercut the exact
+ * "always give the crawler something" pitch this page exists to demonstrate. The one document
+ * where a full teaser approaches the whole body ("Here's the Best Spiritual News You'll Ever
+ * Hear!", 376 characters of body against a 300-character teaser) still withholds the thing that
+ * actually gates - audio and transcript - so it is not a leak of the reason to pay.
  */
-const LOCKED_NOTICE_EXCERPT_CHARS = 140;
+const LOCKED_NOTICE_EXCERPT_CHARS = 300;
 
 /** Every section on this page carries the same heading, so they cannot drift apart again. */
 function SectionHeading({ children }: { children: ReactNode }) {

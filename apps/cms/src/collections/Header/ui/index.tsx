@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 
 import { cn } from "@/components/utils";
 import { Brand } from "./components/Brand";
-import { CartButton } from "./components/CartButton";
 import { DesktopNav } from "./components/DesktopNav";
 import { HeaderActions } from "./components/HeaderActions";
 import { MobileNav } from "./components/MobileNav";
@@ -36,8 +35,8 @@ export function Header({ brand, navItems, actions, className }: IHeaderProps) {
         <Brand brand={brand} />
         <div className="flex min-w-0 flex-wrap items-center justify-end gap-[clamp(2px,0.4vw,8px)]">
           <DesktopNav navItems={navItems} />
-          {/* Below the desktop width the search and cart squares stay: they are the shop
-              affordance, and burying them in the panel costs more than the row gains. */}
+          {/* Below the desktop width the search square stays: it is the shop affordance, and
+              burying it in the panel costs more than the row gains. */}
           <div className="flex items-center gap-[clamp(8px,1vw,12px)] sm:ml-[clamp(6px,1.4vw,20px)]">
             <SearchButton />
             <div
@@ -45,7 +44,6 @@ export function Header({ brand, navItems, actions, className }: IHeaderProps) {
             >
               <HeaderActions actions={actions} />
             </div>
-            <CartButton />
             <MobileNav navItems={navItems} actions={actions} />
           </div>
         </div>
