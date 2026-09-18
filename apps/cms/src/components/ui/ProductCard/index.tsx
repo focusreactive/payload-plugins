@@ -47,10 +47,12 @@ export function ProductCard({
       {/*
         No padding, no radius here: the card's own `overflow-hidden` + `rounded-xl` clips this box
         to the card's shape for free, so the cover bleeds flush to the top/left/right edges instead
-        of floating in a well. 2/3 is a trade-paperback ratio - the 485/300 landscape box this
-        replaced was built for talk/course thumbnails and cropped a portrait book cover hard.
+        of floating in a well. 3/4 reads as a book cover without the height a true 2/3 trade-
+        paperback ratio would give it at the rail's own card width (~600px tall at 400px wide,
+        which dwarfed the row) - the 485/300 landscape box this replaced was built for talk/course
+        thumbnails and cropped a portrait cover hard in the other direction.
       */}
-      <div className="relative w-full flex-none overflow-hidden bg-primary-soft aspect-[2/3]">
+      <div className="relative w-full flex-none overflow-hidden bg-primary-soft aspect-[3/4]">
         {cover && (
           <Media
             {...cover.data}
