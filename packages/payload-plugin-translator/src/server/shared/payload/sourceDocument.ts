@@ -1,7 +1,7 @@
 import type { CollectionSlug, Payload } from "payload";
 
-import type { TransactionScope } from "./TransactionScope.shapes";
-import { freshReq } from "./TransactionScope.shapes";
+import type { RequestScope } from "./RequestScope.shapes";
+import { freshReq } from "./RequestScope.shapes";
 
 /**
  * The single source read: what "translate from X" resolves to. Both translation write paths and
@@ -12,7 +12,7 @@ export function fetchSourceDocument(
   collection: CollectionSlug,
   id: string,
   locale: string,
-  scope: TransactionScope = {}
+  scope: RequestScope = {}
 ) {
   return payload.findByID({
     req: freshReq(scope),

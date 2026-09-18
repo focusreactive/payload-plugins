@@ -34,11 +34,15 @@ export type TranslatorPluginConfig = {
    */
   runner: TaskRunnerProvider;
   /**
-   * Access guard for translation endpoints.
-   * Controls who can trigger translations via API.
-   * @default undefined (no access restrictions)
+   * Who may call the translation endpoints. Required — there is no default.
+   *
+   * The endpoints write to your documents and spend money at your translation provider, and Payload
+   * does not authenticate custom endpoints for you, so leaving them open is a decision rather than a
+   * detail. Pass a guard, or pass `new AnyAccessGuard()` to state that open is what you want.
+   *
+   * @since 0.14.0 — previously optional, defaulting to open.
    */
-  access?: AccessGuard;
+  access: AccessGuard;
   /**
    * Base path for all translation API endpoints.
    * Useful to avoid conflicts with existing routes.
@@ -146,19 +150,21 @@ export class TranslateCollectionPlugin {
         basePath: rawBasePath = "/translate",
       } = this.pluginConfig;
 
-      // Snapshot each collection's schema as an independent FieldLike tree BEFORE Payload's sanitizer
-      // mutates the originals (it deletes `localized` from fields nested under a localized ancestor).
-      // `projectFieldsToFieldLike` deep-copies only the properties the pipeline reads — an explicit,
-      // typed contract, replacing the old JSON round-trip (which "worked" only by silently dropping the
-      // Lexical editor's async functions that structuredClone chokes on). Payload's `Field[]` is
-      // structurally assignable to `FieldLike[]`, so the projection happens right here at the boundary.
+      // `access` is typed required, so this fires only for JavaScript or otherwise untyped config.
+      if (!access) {
+        throw new Error(
+          "payload-plugin-translator: `access` is required. The translation endpoints write to your " +
+            "documents and spend money at your provider, and Payload does not authenticate custom " +
+            "endpoints. Pass an access guard, or `new AnyAccessGuard()` to leave them open on purpose."
+        );
+      }
+
       const schemaMap: CollectionSchemaMap = new Map(
         collections.map((col) => [col.slug, projectFieldsToFieldLike(col.fields)])
       );
       const collectionSlugs = new Set(schemaMap.keys());
       const basePath = normalizePath(rawBasePath);
 
-      // Each concern owns its own config-time wiring and exposes it uniformly; init() just composes.
       const provenanceModule = configureProvenance(provenance, schemaMap);
       const inlineMarks = experimental?.inlineMarks === true;
 
@@ -171,8 +177,6 @@ export class TranslateCollectionPlugin {
         lifecycle: lifecycle ?? {},
         collections: Array.from(collectionSlugs),
       });
-      // Auto-translate (#51) reads its opt-in from each collection's `custom` (via `withAutoTranslate`);
-      // needs the runner's factory, so it wires after `wireTranslateRunner`.
       const autoTranslateModule = configureAutoTranslate(collections, schemaMap, taskRunnerFactory);
 
       const activeLevels = levels ?? [documentLevel(), collectionLevel()];
@@ -194,7 +198,6 @@ export class TranslateCollectionPlugin {
       builder.addConfigModifier(autoTranslateModule.configure(collectionSlugs));
       builder.addAdminProvider(new CacheProviderExport(basePath));
 
-      // The single place the Payload config is mutated.
       return builder.applyTo(config);
     };
   }
@@ -211,6 +214,7 @@ export class TranslateCollectionPlugin {
  *       collections: [Posts, Pages],
  *       translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
  *       runner: createPayloadJobsRunner(),
+ *       access: { check: ({ req }) => Boolean(req.user) },
  *     }),
  *   ],
  * })

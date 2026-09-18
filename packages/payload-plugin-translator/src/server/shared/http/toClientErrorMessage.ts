@@ -5,6 +5,12 @@ import { readFailureReason } from "../../../core/domain/translation-providers/fa
 const REASON_TEXT: Record<UserFacingFailureReason, string> = {
   "model-unavailable":
     "The configured translation model is not available to this API key. Set `model` in the provider configuration to one your key can use.",
+  "permission-denied":
+    "This translation was not written: the access rules of the target collection refuse it for the user who requested it.",
+  "requester-missing":
+    "This translation was not written: the user who requested it no longer exists, so there are no permissions to check it against.",
+  "permission-check-failed":
+    "This translation was not written: the target collection's access rules could not be evaluated. If a save triggered it, that save was rolled back — check the server logs and the collection's `access` functions.",
 };
 
 /** Call this on any message before it reaches a user — see {@link REASON_TEXT}. */

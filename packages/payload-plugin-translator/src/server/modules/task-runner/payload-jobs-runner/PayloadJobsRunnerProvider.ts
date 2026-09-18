@@ -124,6 +124,8 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
       const workflowInputSchema: Field[] = [
         ...inputSchema.filter((f) => "name" in f && f.name !== "target_lng"),
         { type: "json", name: "target_lngs", required: true },
+        { type: "text", name: "requester_id" },
+        { type: "text", name: "requester_collection" },
       ];
 
       const task = {
@@ -140,17 +142,27 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
             target_lng: string;
             strategy: TranslationStrategyName;
             publish_on_translation?: boolean;
+            requester_id?: string | number | null;
+            requester_collection?: string | null;
           };
         }) => {
           const { collectionSlug, collectionId } = readCollectionRef(args.input);
-          await handler(args.req.payload, {
-            collection: collectionSlug,
-            collectionId,
-            sourceLng: args.input.source_lng,
-            targetLng: args.input.target_lng,
-            strategy: args.input.strategy,
-            publishOnTranslation: args.input.publish_on_translation ?? false,
-          });
+          // A job's own request carries no user, so the requester travels in the row.
+          await handler(
+            args.req.payload,
+            {
+              collection: collectionSlug,
+              collectionId,
+              sourceLng: args.input.source_lng,
+              targetLng: args.input.target_lng,
+              strategy: args.input.strategy,
+              publishOnTranslation: args.input.publish_on_translation ?? false,
+            },
+            {
+              userId: args.input.requester_id ?? null,
+              userCollection: args.input.requester_collection ?? null,
+            }
+          );
           return { output: {} };
         },
       };

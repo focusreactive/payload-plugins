@@ -14,8 +14,11 @@ export type AccessGuardRequest = {
 };
 
 /**
- * Gate for the translation API endpoints. Provide one via `translatorPlugin({ access })`
- * to control who may trigger translations; omit it to leave the endpoints open.
+ * Gate for the translation API endpoints. Required: `translatorPlugin({ access })` throws at config
+ * time without one, because neither "closed" nor "open" is a default the plugin should pick on your
+ * behalf. To leave them open on purpose, pass `new AnyAccessGuard()` — a decision, written down.
+ *
+ * @since 0.14.0 required; it was optional before, and omitting it left the endpoints open.
  *
  * @example
  * ```ts

@@ -8,13 +8,12 @@ import { normalizeJobLocales } from "./normalizeJob";
 import { planEnqueue } from "./planEnqueue";
 import type { RequestShape } from "./planEnqueue";
 import { readCollectionRef } from "./readCollectionRef";
+import type { RequestScope } from "../../../shared/payload/RequestScope.shapes";
+import { freshReq } from "../../../shared/payload/RequestScope.shapes";
 
 const APPEND_ATTEMPTS = 2;
 
-/**
- * Groups served at once: a `select_all` enqueue can span thousands, each costing two writes and a
- * read, and the ceiling is the database pool rather than the CPU.
- */
+/** Bounded by the database pool, not the CPU — a `select_all` enqueue can span thousands of groups. */
 const ENQUEUE_CONCURRENCY = 10;
 
 type QueueWorkflow = (args: {
@@ -22,26 +21,29 @@ type QueueWorkflow = (args: {
   queue: string;
   waitUntil?: Date;
   input: StoredWorkflowInput;
+  req?: { transactionID?: string | number };
 }) => Promise<unknown>;
 
-function requestShape(task: TaskInput): RequestShape {
+function requestShape(task: TaskInput, scope: RequestScope): RequestShape {
   return {
     collectionSlug: task.collectionSlug,
     collectionId: String(task.collectionId),
     sourceLng: task.sourceLng,
     strategy: task.strategy,
     publishOnTranslation: task.publishOnTranslation,
+    requesterId: scope.userId ?? null,
+    requesterCollection: scope.userCollection ?? null,
   };
 }
 
 /** `pickHost` matches on the same shape, so no two groups can pick the same host job — which is what
  * makes the parallel `serve` calls safe. */
-function requestKey(task: TaskInput): string {
-  return JSON.stringify(requestShape(task));
+function requestKey(task: TaskInput, scope: RequestScope): string {
+  return JSON.stringify(requestShape(task, scope));
 }
 
 function documentKey(collectionSlug: string, collectionId: string): string {
-  // NUL: no slug or id can contain it, so two different documents cannot produce one key.
+  // NUL separator: no slug or id can contain it.
   return `${collectionSlug}\u0000${collectionId}`;
 }
 
@@ -51,16 +53,16 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     private readonly config: PayloadJobsRunnerConfig
   ) {}
 
-  async enqueue(tasks: TaskInput[]): Promise<void> {
+  async enqueue(tasks: TaskInput[], scope: RequestScope = {}): Promise<void> {
     const byRequest = new Map<string, TaskInput[]>();
     for (const task of tasks) {
-      const key = requestKey(task);
+      const key = requestKey(task, scope);
       const group = byRequest.get(key) ?? [];
       group.push(task);
       byRequest.set(key, group);
     }
 
-    const live = await this.findRawJobs({ completedAt: { exists: false } });
+    const live = await this.findRawJobs({ completedAt: { exists: false } }, scope);
     const liveByDocument = new Map<string, PayloadJob[]>();
     for (const job of live) {
       const { collectionSlug, collectionId } = readCollectionRef(job.input);
@@ -74,7 +76,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
       await Promise.all(
         groups
           .slice(i, i + ENQUEUE_CONCURRENCY)
-          .map((group) => this.serve(group, liveByDocument, exclusiveQueue))
+          .map((group) => this.serve(group, liveByDocument, exclusiveQueue, scope))
       );
     }
   }
@@ -82,10 +84,11 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   private async serve(
     group: TaskInput[],
     liveByDocument: Map<string, PayloadJob[]>,
-    exclusiveQueue: boolean
+    exclusiveQueue: boolean,
+    scope: RequestScope
   ): Promise<void> {
     const [first] = group;
-    const request = requestShape(first);
+    const request = requestShape(first, scope);
     const plan = planEnqueue({
       live: liveByDocument.get(documentKey(request.collectionSlug, request.collectionId)) ?? [],
       request,
@@ -94,13 +97,18 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     });
 
     const undelivered = plan.host
-      ? await this.extendJob(plan.host, plan.append, first.waitUntil)
+      ? await this.extendJob(plan.host, plan.append, first.waitUntil, scope)
       : [];
     const queue = [...plan.queue, ...undelivered];
-    if (queue.length > 0) await this.queueWorkflow(request, queue, first.waitUntil);
+    if (queue.length > 0) await this.queueWorkflow(request, queue, first.waitUntil, scope);
   }
 
-  private async extendJob(job: PayloadJob, locales: string[], waitUntil?: Date): Promise<string[]> {
+  private async extendJob(
+    job: PayloadJob,
+    locales: string[],
+    waitUntil: Date | undefined,
+    scope: RequestScope
+  ): Promise<string[]> {
     let current = job;
     let undelivered = locales;
     // `input` is one JSON column, so a concurrent append replaces the whole list; the union makes a
@@ -114,6 +122,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
       // Not `payload.update`: it rewrites the whole row and reverts log entries written in between.
       // See D2 of docs/plans/2026-09-08-one-live-job-per-document.task.md.
       await this.payload.db.updateOne({
+        req: freshReq(scope),
         collection: this.config.jobsCollection,
         id: job.id,
         data: {
@@ -123,7 +132,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
         returning: false,
       });
 
-      const reread = await this.findJobById(job.id);
+      const reread = await this.findJobById(job.id, scope);
       if (!reread || reread.completedAt) return locales;
       current = reread;
 
@@ -137,7 +146,8 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   private async queueWorkflow(
     request: RequestShape,
     targetLngs: string[],
-    waitUntil?: Date
+    waitUntil: Date | undefined,
+    scope: RequestScope
   ): Promise<void> {
     const input: StoredWorkflowInput = {
       collection_slug: request.collectionSlug,
@@ -146,6 +156,8 @@ export class PayloadJobsTaskRunner implements TaskRunner {
       target_lngs: targetLngs,
       strategy: request.strategy,
       publish_on_translation: request.publishOnTranslation,
+      requester_id: scope.userId ?? null,
+      requester_collection: scope.userCollection ?? null,
     };
 
     // Cast: `jobs.queue` is typed over the host's generated slugs, which cannot include a workflow
@@ -156,17 +168,20 @@ export class PayloadJobsTaskRunner implements TaskRunner {
       queue: this.config.queueName,
       waitUntil,
       input,
+      req: freshReq(scope),
     });
   }
 
   async cancel(taskIds: string[]): Promise<void> {
     if (taskIds.length === 0) return;
 
-    // Mark then delete: the delete alone would take the row out of the status feed under
-    // `deleteJobOnComplete: false` without recording why it went. The mark does not reach a running
-    // handler — see D1 of docs/plans/2026-09-08-one-live-job-per-document.task.md.
+    // Mark then delete: the delete alone would drop the row from the status feed under
+    // `deleteJobOnComplete: false` with no record of why, and the mark does not reach a running
+    // handler — D1 of docs/plans/2026-09-08-one-live-job-per-document.task.md.
+    // `ownJobs()` on both calls: a queue name is the host's to choose and may be shared, so an id
+    // alone could reach somebody else's job.
     await this.payload.jobs.cancel({
-      where: { id: { in: taskIds } },
+      where: { and: [this.ownJobs(), { id: { in: taskIds } }] },
       queue: this.config.queueName,
     });
 
@@ -187,11 +202,10 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     if (job.processing && !this.isStale(job.updatedAt)) {
       return { success: false, error: "already_running" };
     }
-    // Unconditional: a manual run also lifts the auto-translate debounce, not just the lock.
     await this.clearPickerBlockers(taskId);
 
-    // Not `jobs.runByID`: payload 3.84.1 builds the picker guard (processing / hasError / waitUntil)
-    // only on the `where` path, so the id path re-runs a job that exhausted its retries.
+    // Not `jobs.runByID`: the picker guard is built only on the `where` path — see
+    // docs/plans/2026-09-04-job-scan-bounds.task.md.
     const result = await this.payload.jobs.run({
       queue: this.config.queueName,
       where: { id: { equals: taskId } },
@@ -248,9 +262,8 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   }
 
   /**
-   * Matched in memory, not in a `where`: a job's collection reference sits either in the flat text
-   * fields or in the legacy relationship shape (see `readCollectionRef`), so `input.collection_slug`
-   * as a filter would silently drop every pre-migration job.
+   * Matched in memory: the collection reference has two stored shapes (see `readCollectionRef`), so a
+   * `where` on `input.collection_slug` would silently drop every pre-migration job.
    */
   async findByCollection(
     collectionSlug: CollectionSlug,
@@ -278,16 +291,17 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     };
   }
 
-  private async findJobById(id: string): Promise<PayloadJob | undefined> {
-    const [job] = await this.findRawJobs({ id: { equals: id } });
+  private async findJobById(id: string, scope: RequestScope = {}): Promise<PayloadJob | undefined> {
+    const [job] = await this.findRawJobs({ id: { equals: id } }, scope);
     return job;
   }
 
-  private async findRawJobs(where?: Where): Promise<PayloadJob[]> {
+  private async findRawJobs(where?: Where, scope: RequestScope = {}): Promise<PayloadJob[]> {
     const and: Where[] = [this.ownJobs()];
     if (where) and.push(where);
 
     const response = await this.payload.find({
+      req: freshReq(scope),
       collection: this.config.jobsCollection,
       // The legacy `input.collection` is a declared relationship; at the default depth Payload
       // populates it, and `readCollectionRef` would then read a document where it wants an id.

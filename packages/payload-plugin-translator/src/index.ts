@@ -12,6 +12,7 @@ export type { TranslationProvenanceRecord } from "./core";
 
 // Access control
 export type { AccessGuard, AccessGuardRequest } from "./types/AccessGuard";
+export { AnyAccessGuard } from "./server/shared/access/AnyAccessGuard";
 
 // Translation provider port (from the dependency-free core)
 export type { TranslationProvider, TranslationInput, TranslationOutput } from "./core";
