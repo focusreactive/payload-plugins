@@ -33,4 +33,7 @@ export type FieldTranslationNotice = {
  */
 export type FieldTranslationResult =
   | { status: "translated"; value: unknown }
-  | { status: "noop"; value: unknown; notice: FieldTranslationNotice };
+  // No `value`: a refusal used to echo the field as it is saved — read with `draft: true` through the
+  // Local API, so unpublished content the collection's own rules never gated. Nothing consumed it;
+  // the field control reads `value` only on the `translated` branch.
+  | { status: "noop"; notice: FieldTranslationNotice };

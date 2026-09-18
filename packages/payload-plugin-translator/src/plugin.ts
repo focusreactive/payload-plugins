@@ -34,11 +34,15 @@ export type TranslatorPluginConfig = {
    */
   runner: TaskRunnerProvider;
   /**
-   * Access guard for translation endpoints.
-   * Controls who can trigger translations via API.
-   * @default undefined (no access restrictions)
+   * Who may call the translation endpoints. Required — there is no default.
+   *
+   * The endpoints write to your documents and spend money at your translation provider, and Payload
+   * does not authenticate custom endpoints for you, so leaving them open is a decision rather than a
+   * detail. Pass a guard, or pass `new AnyAccessGuard()` to state that open is what you want.
+   *
+   * @since 0.14.0 — previously optional, defaulting to open.
    */
-  access?: AccessGuard;
+  access: AccessGuard;
   /**
    * Base path for all translation API endpoints.
    * Useful to avoid conflicts with existing routes.
@@ -146,6 +150,17 @@ export class TranslateCollectionPlugin {
         basePath: rawBasePath = "/translate",
       } = this.pluginConfig;
 
+      // Refuse rather than guess. Closing silently would break hosts whose callers are
+      // unauthenticated, with nothing to tell them why; staying open is the defect. Both ways out are
+      // named, because a reader meeting this message has to pick one.
+      if (!access) {
+        throw new Error(
+          "payload-plugin-translator: `access` is required. The translation endpoints write to your " +
+            "documents and spend money at your provider, and Payload does not authenticate custom " +
+            "endpoints. Pass an access guard, or `new AnyAccessGuard()` to leave them open on purpose."
+        );
+      }
+
       // Snapshot each collection's schema as an independent FieldLike tree BEFORE Payload's sanitizer
       // mutates the originals (it deletes `localized` from fields nested under a localized ancestor).
       // `projectFieldsToFieldLike` deep-copies only the properties the pipeline reads — an explicit,
@@ -211,6 +226,8 @@ export class TranslateCollectionPlugin {
  *       collections: [Posts, Pages],
  *       translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
  *       runner: createPayloadJobsRunner(),
+ *       // Required: who may reach the plugin's endpoints. `new AnyAccessGuard()` says "anyone".
+ *       access: { check: ({ req }) => Boolean(req.user) },
  *     }),
  *   ],
  * })

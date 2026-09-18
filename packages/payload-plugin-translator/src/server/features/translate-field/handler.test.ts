@@ -24,7 +24,11 @@ const makeReqWithPayload = (
   body: Partial<FieldTranslationInput> & Record<string, unknown>,
   findByID: ReturnType<typeof vi.fn>
 ): PayloadRequest =>
-  ({ json: () => Promise.resolve(body), payload: { findByID } }) as unknown as PayloadRequest;
+  ({
+    json: () => Promise.resolve(body),
+    // The endpoint now checks both locales against the project's own, so the fixture declares them.
+    payload: { findByID, config: { localization: { defaultLocale: "en", locales: ["en", "de"] } } },
+  }) as unknown as PayloadRequest;
 
 // Valid from-locale request: translate `posts.title` from `en` into `de`, reading doc `p1`.
 const baseBody = {

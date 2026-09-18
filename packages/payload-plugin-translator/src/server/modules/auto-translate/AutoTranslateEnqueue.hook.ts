@@ -1,7 +1,11 @@
 import type { CollectionAfterChangeHook } from "payload";
 import { hasDraftsEnabled } from "payload/shared";
 
-import { killedTheCallersTransaction } from "../../shared/payload/TransactionScope.shapes";
+import {
+  authCollectionsOf,
+  identityOf,
+  killedTheCallersTransaction,
+} from "../../shared/payload/RequestScope.shapes";
 
 import { hasSourceContentChanged } from "../../../core/domain/auto-translate";
 import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../core/domain/auto-translate";
@@ -88,9 +92,13 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
       // Settled first: Payload parks a promise in this field while the transaction opens, and a
       // promise reaching the adapter as a transaction key is silently wrong.
       transactionID = await req.transactionID;
-      await taskRunnerFactory
-        .create(req.payload)
-        .enqueue(tasks, transactionID == null ? {} : { transactionID });
+      // The editor who saved is the only identity this path has, and it is the one whose rights the
+      // translated write must be checked against. Read, never written back: Payload maps every
+      // document of a bulk update over one shared request.
+      await taskRunnerFactory.create(req.payload).enqueue(tasks, {
+        ...(transactionID == null ? {} : { transactionID }),
+        ...identityOf(req, authCollectionsOf(req.payload), req.payload.logger),
+      });
     } catch (error) {
       req.payload.logger.error({
         err: error,

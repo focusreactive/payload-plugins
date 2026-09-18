@@ -2,7 +2,7 @@ import type { CollectionSlug, Config, Payload } from "payload";
 import type { TaskRunner } from "./TaskRunner.interface";
 import type { ID } from "./types";
 import type { TranslationStrategyName } from "../../../core/translation-pipeline/strategies";
-import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes";
+import type { RequestScope } from "../../shared/payload/RequestScope.shapes";
 
 /**
  * Input for task handler callback
@@ -22,7 +22,7 @@ export type TaskHandlerInput = {
 export type TaskHandler = (
   payload: Payload,
   input: TaskHandlerInput,
-  scope?: TransactionScope
+  scope?: RequestScope
 ) => Promise<void>;
 
 /**

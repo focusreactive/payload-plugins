@@ -10,6 +10,13 @@ export type RequestShape = {
   sourceLng: string;
   strategy: string;
   publishOnTranslation: boolean;
+  /**
+   * Who asked, both halves. The collection is not decoration: a host may have two auth-enabled
+   * collections, so `admins:1` and `editors:1` are different people with the same id, and comparing
+   * ids alone would let one inherit the other's job — and their rights with it.
+   */
+  requesterId: string | number | null;
+  requesterCollection: string | null;
 };
 
 /**
@@ -54,9 +61,13 @@ export function planEnqueue(args: {
 }
 
 /**
- * A job carries one source locale, one strategy and one publish flag for all of its locales, so it can
- * host only a request that chose the same three — otherwise the request runs under settings the user
- * did not pick.
+ * A job carries one source locale, one strategy, one publish flag and one requester for all of its
+ * locales, so it can host only a request that matches all four — otherwise the request runs under
+ * settings the user did not pick, or under rights they do not have.
+ *
+ * The requester is why "one live job per document" is now "per document per requester": two people
+ * translating the same document at once get a job each. The invariant existed to stop parallel
+ * translations overwriting one another, and that still holds — locales still run one at a time.
  */
 function pickHost(live: PayloadJob[], request: RequestShape): PayloadJob | null {
   const usable = live.filter(
@@ -65,7 +76,9 @@ function pickHost(live: PayloadJob[], request: RequestShape): PayloadJob | null 
       !isCancelled(job.error) &&
       job.input?.source_lng === request.sourceLng &&
       job.input?.strategy === request.strategy &&
-      (job.input?.publish_on_translation ?? false) === request.publishOnTranslation
+      (job.input?.publish_on_translation ?? false) === request.publishOnTranslation &&
+      (job.input?.requester_id ?? null) === request.requesterId &&
+      (job.input?.requester_collection ?? null) === request.requesterCollection
   );
   const newestFirst = usable.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
   return newestFirst[0] ?? null;

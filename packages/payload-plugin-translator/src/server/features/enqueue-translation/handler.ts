@@ -1,6 +1,7 @@
 import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared";
+import { authCollectionsOf, identityOf } from "../../shared/payload/RequestScope.shapes";
 import type { TaskRunnerFactory } from "../../modules/task-runner";
 import { extractLocaleCodes } from "../../modules/auto-translate";
 import type { LocalizationLike } from "../../modules/auto-translate";
@@ -53,6 +54,14 @@ export class EnqueueTranslationHandler {
         "Localization is not enabled in this Payload config; there are no target locales to translate into"
       );
 
+    // The source is checked, not just the targets. `resolveTargets` only ever uses it to exclude it
+    // from the target list, so an unconfigured code would pass straight through to
+    // `payload.findByID({ locale })` and read a locale this project does not have.
+    if (!knownLocales.has(source_lng))
+      return ServerResponse.badRequest(
+        `source_lng "${source_lng}" is not one of this project's configured locales`
+      );
+
     // Normalize the scalar-or-array target into the concrete locales to fan out to: de-dup, exclude the
     // source, and drop locales that are not configured.
     const { targets, droppedUnknown } = Locales.resolveTargets({
@@ -88,7 +97,13 @@ export class EnqueueTranslationHandler {
       }))
     );
 
-    await runner.enqueue(tasks);
+    // Whoever pressed Translate is the identity these writes are checked against — this is the
+    // manual path, the one an editor actually uses. Without it every queued translation would be
+    // unattributed, and unattributed means access control off.
+    await runner.enqueue(
+      tasks,
+      identityOf(req, authCollectionsOf(req.payload), req.payload.logger)
+    );
 
     return ServerResponse.success({ success: true, queued: tasks.length });
   }

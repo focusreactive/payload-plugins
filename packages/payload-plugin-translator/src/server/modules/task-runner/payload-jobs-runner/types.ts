@@ -108,6 +108,9 @@ export type PayloadJob = {
     target_lngs?: string[];
     strategy?: string;
     publish_on_translation?: boolean;
+    /** Absent on every job queued before the requester was recorded — see {@link StoredWorkflowInput}. */
+    requester_id?: string | number | null;
+    requester_collection?: string | null;
   };
 };
 
@@ -119,6 +122,15 @@ export type StoredWorkflowInput = {
   target_lngs: string[];
   strategy: string;
   publish_on_translation: boolean;
+  /**
+   * Who asked for this translation, rebuilt at run time so the write is checked against their rights
+   * rather than nobody's. `null` means the request carried no identity — a job queued before this
+   * field existed, or one made by the host's own server-side code, and those keep the old behaviour
+   * of writing with access control off. Two keys, not one: a host may have more than one
+   * auth-enabled collection, so the id alone would not say who to look up.
+   */
+  requester_id: string | number | null;
+  requester_collection: string | null;
 };
 
 /** Written by Payload only once a task settles — an absent entry means that locale has not run. */

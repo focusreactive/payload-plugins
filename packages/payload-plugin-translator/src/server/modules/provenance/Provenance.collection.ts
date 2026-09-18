@@ -23,6 +23,22 @@ export function makeProvenanceCollection(slug: string = DEFAULT_PROVENANCE_SLUG)
   return {
     slug,
     admin: { hidden: true },
+    // Closed to the outside, every operation. A collection that declares nothing inherits Payload's
+    // default — any signed-in user — and `admin: { hidden: true }` hides the rows from the UI but not
+    // from `/api/<slug>`. Measured on that surface: a signed-in caller could read every row (an
+    // inventory of which documents exist and which locales they carry, for collections they may not
+    // read), overwrite `dismissedFingerprint` to silence the out-of-date indicator on someone else's
+    // document, and delete the history outright.
+    //
+    // Nothing legitimate is lost. The panel reads staleness through the plugin's own endpoint, and
+    // the plugin's own reads and writes go through the Local API, which does not consult these rules
+    // — including the delete-cleanup cascade. A host who wants outside access declares their own.
+    access: {
+      read: () => false,
+      create: () => false,
+      update: () => false,
+      delete: () => false,
+    },
     // Marker so plugin wiring can recognise its own collection ({@link isProvenanceCollection}) — lets
     // a repeated plugin run stay idempotent and lets the slug-collision guard ignore its own sidecar.
     custom: { [PROVENANCE_MARKER]: true },

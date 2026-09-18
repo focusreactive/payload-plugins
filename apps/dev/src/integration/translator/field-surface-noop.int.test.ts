@@ -11,7 +11,9 @@ import { callEndpoint } from "./callEndpoint";
 // Payload only once.
 
 type Notice = { level: string; reason: string; message: string };
-type Reply = { status: string; value: unknown; notice?: Notice };
+// A refusal carries only its notice now: it used to echo the saved field, which meant handing
+// back draft content the collection's own rules never gated.
+type Reply = { status: string; value?: unknown; notice?: Notice };
 
 /**
  * `surface` is declared by this spec rather than by the app, so Payload's generated slug and data
@@ -150,7 +152,6 @@ describe("per-field translation — the reasons a noop is a noop", () => {
     expect(status).toBe(200);
     expect(reply).toEqual({
       status: "noop",
-      value: 42,
       notice: { level: "info", reason: "not-translatable", message: expect.any(String) },
     });
   });
@@ -160,7 +161,6 @@ describe("per-field translation — the reasons a noop is a noop", () => {
     expect(status).toBe(200);
     expect(reply).toEqual({
       status: "noop",
-      value: "classified",
       notice: { level: "info", reason: "excluded", message: expect.any(String) },
     });
   });
@@ -181,7 +181,6 @@ describe("per-field translation — the reasons a noop is a noop", () => {
     expect(status).toBe(200);
     expect(reply).toEqual({
       status: "noop",
-      value: "Card one",
       notice: { level: "warning", reason: "localized-list", message: expect.any(String) },
     });
   });
@@ -191,7 +190,6 @@ describe("per-field translation — the reasons a noop is a noop", () => {
     expect(status).toBe(200);
     expect(reply).toEqual({
       status: "noop",
-      value: "Row one",
       notice: { level: "warning", reason: "localized-list", message: expect.any(String) },
     });
   });

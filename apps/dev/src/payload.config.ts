@@ -103,6 +103,9 @@ export default buildConfig({
         withAutoTranslate(Playground, { targets: ["de", "fr", "es"], debounceMs: 2000 }),
       ],
       targetSelection: "multi",
+      // The plugin will not start without this. A sandbox still gets a real answer rather than the
+      // open one, so the endpoints behave here the way they should in a project.
+      access: { check: ({ req }) => Boolean(req.user) },
       runner: resolveTranslatorRunner(),
       translationProvider: resolveTranslationProvider(),
       levels: [documentLevel(), collectionLevel(), fieldLevel()],

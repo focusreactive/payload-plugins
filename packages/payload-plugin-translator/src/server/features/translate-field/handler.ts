@@ -2,6 +2,8 @@ import type { CollectionSlug, PayloadRequest } from "payload";
 
 import { getByPath, ServerResponse } from "../../shared";
 import { translateContent } from "../../../core/translation-pipeline";
+import { extractLocaleCodes } from "../../modules/auto-translate";
+import type { LocalizationLike } from "../../modules/auto-translate";
 
 import type {
   FieldTranslationNotice,
@@ -17,13 +19,11 @@ const byteLength = (value: unknown): number =>
   new TextEncoder().encode(JSON.stringify(value) ?? "").length;
 
 const noop = (
-  value: unknown,
   level: FieldTranslationNotice["level"],
   reason: FieldTranslationReason,
   message: string
 ): FieldTranslationResult => ({
   status: "noop",
-  value,
   notice: { level, reason, message },
 });
 
@@ -42,7 +42,8 @@ const noop = (
  * there is no strategy to choose and `skip_existing` has no meaning on this surface.
  *
  * **"I cannot translate this" is a success, not an error.** Five situations come back `200` with
- * `status: "noop"`, the source value unchanged, and a notice naming which. `reason` is what tells
+ * `status: "noop"` and a notice naming which. The reply carries no value: it used to echo the field
+ * as saved, which meant handing back draft content the collection's own rules never gated. `reason` is what tells
  * them apart: two of the five carry the same `message` word for word.
  *
  * | `reason` | When | level |
@@ -91,6 +92,25 @@ export class TranslateFieldHandler {
         `Collection "${collection_slug}" is not available for translation`
       );
 
+    // Both locales, not just the target: `source_lng` reaches `payload.findByID({ locale })` a few
+    // lines down, and an unconfigured code there reads a locale the project does not have.
+    const known = extractLocaleCodes(
+      req.payload?.config?.localization as LocalizationLike | undefined
+    );
+    if (!known)
+      return ServerResponse.badRequest(
+        "Localization is not enabled in this Payload config; there is nothing to translate between"
+      );
+    for (const [name, code] of [
+      ["source_lng", source_lng],
+      ["target_lng", target_lng],
+    ] as const) {
+      if (!known.has(code))
+        return ServerResponse.badRequest(
+          `${name} "${code}" is not one of this project's configured locales`
+        );
+    }
+
     // The whole document, not just the field: the resolver needs it to disambiguate `blocks`, whose
     // `blockType` lives in the data.
     const sourceDoc = await fetchSourceDocument(
@@ -120,7 +140,6 @@ export class TranslateFieldHandler {
     if (resolution.status === "inside-blocks") {
       return ServerResponse.success(
         noop(
-          sourceValue,
           "info",
           "block-unresolved",
           "Couldn't resolve the block for this field in the source document"
@@ -132,7 +151,6 @@ export class TranslateFieldHandler {
       // index can't be matched to the source locale. Translate the whole document instead.
       return ServerResponse.success(
         noop(
-          sourceValue,
           "warning",
           "localized-list",
           "This field is inside a localized block — translate the whole document instead, so blocks stay aligned across locales"
@@ -141,12 +159,12 @@ export class TranslateFieldHandler {
     }
     if (resolution.status === "not-translatable") {
       return ServerResponse.success(
-        noop(sourceValue, "info", "not-translatable", "Nothing to translate in this field")
+        noop("info", "not-translatable", "Nothing to translate in this field")
       );
     }
     if (resolution.status === "excluded") {
       return ServerResponse.success(
-        noop(sourceValue, "info", "excluded", "This field is excluded from translation")
+        noop("info", "excluded", "This field is excluded from translation")
       );
     }
 
@@ -163,7 +181,7 @@ export class TranslateFieldHandler {
 
     if (!translated) {
       return ServerResponse.success(
-        noop(sourceValue, "info", "nothing-translatable", "Nothing to translate in this field")
+        noop("info", "nothing-translatable", "Nothing to translate in this field")
       );
     }
 

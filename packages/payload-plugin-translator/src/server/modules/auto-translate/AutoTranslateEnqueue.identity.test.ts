@@ -15,7 +15,6 @@ const policy: NormalizedAutoTranslatePolicy = {
   strategy: "overwrite",
   debounceMs: 0,
 };
-
 const logger = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() };
 
 function setup() {
@@ -49,51 +48,38 @@ function hookArgs(req: Record<string, unknown>) {
   } as unknown as Parameters<CollectionAfterChangeHook>[0];
 }
 
-describe("auto-translate hook — the triggering transaction", () => {
+// The editor who saved is the only identity this path has, and it is available right here. Dropping it
+// is why a translated write has been landing with access control switched off.
+describe("auto-translate hook — whose identity reaches the runner", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("hands the triggering request's transaction id to enqueue", async () => {
+  it("hands the saving user to enqueue", async () => {
     const { hook, enqueue } = setup();
 
-    await hook(hookArgs({ transactionID: "tx-99" }));
+    await hook(hookArgs({ user: { id: "anna", collection: "users" } }));
 
-    expect(enqueue).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ transactionID: "tx-99" })
-    );
+    const [, scope] = enqueue.mock.calls[0] as [unknown, Record<string, unknown>];
+    expect(scope).toMatchObject({ userId: "anna", userCollection: "users" });
   });
 
-  it("settles a transaction id that is still a promise", async () => {
+  it("hands no identity when the save carried none", async () => {
     const { hook, enqueue } = setup();
 
-    await hook(hookArgs({ transactionID: Promise.resolve("tx-9") }));
+    await hook(hookArgs({ user: null }));
 
-    expect(enqueue).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ transactionID: "tx-9" })
-    );
+    const [, scope] = enqueue.mock.calls[0] as [unknown, Record<string, unknown> | undefined];
+    expect(scope?.userId ?? null).toBeNull();
   });
 
-  it("hands no transaction id when the request has none", async () => {
-    const { hook, enqueue } = setup();
-
-    await hook(hookArgs({}));
-
-    const scope = enqueue.mock.calls[0]?.[1] as { transactionID?: unknown } | undefined;
-    expect(scope?.transactionID).toBeUndefined();
-  });
-
-  // Payload reuses one request across every document of a bulk update, so anything written onto it
-  // here would leak to the next document in the batch.
-  it("does not mutate the triggering request", async () => {
+  // A bulk update maps every document over one shared request; anything written onto it would reach
+  // the next document in the batch.
+  it("does not mutate the request it read the user from", async () => {
     const { hook } = setup();
-    const args = hookArgs({ transactionID: "tx-99" });
+    const args = hookArgs({ user: { id: "anna", collection: "users" } });
     const before = JSON.stringify(Object.keys(args.req).sort());
-    const contextBefore = JSON.stringify(args.req.context);
 
     await hook(args);
 
     expect(JSON.stringify(Object.keys(args.req).sort())).toBe(before);
-    expect(JSON.stringify(args.req.context)).toBe(contextBefore);
   });
 });

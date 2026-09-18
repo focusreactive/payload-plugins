@@ -123,8 +123,25 @@ describe("PayloadJobsTaskRunner", () => {
           target_lngs: ["de", "fr"],
           strategy: "overwrite",
           publish_on_translation: false,
+          requester_id: null,
+          requester_collection: null,
         },
+        req: {},
       });
+    });
+
+    // Enqueuing now joins the caller's transaction, which it did not before the scope existed. That
+    // is deliberate: a job row queued by a save that then rolls back would otherwise survive it and
+    // translate a document whose edit never happened. The row lives and dies with the edit.
+    it("queues the job inside the caller's transaction", async () => {
+      await runner.enqueue([createInput()], { transactionID: "tx-7" });
+
+      expect(mockPayload.jobs.queue).toHaveBeenCalledWith(
+        expect.objectContaining({ req: { transactionID: "tx-7" } })
+      );
+      expect(mockPayload.find).toHaveBeenCalledWith(
+        expect.objectContaining({ req: { transactionID: "tx-7" } })
+      );
     });
 
     it("passes waitUntil through to payload.jobs.queue when set (debounce)", async () => {
@@ -360,7 +377,17 @@ describe("PayloadJobsTaskRunner", () => {
       await runner.cancel(["job-1", "job-2"]);
 
       expect(mockPayload.jobs.cancel).toHaveBeenCalledWith({
-        where: { id: { in: ["job-1", "job-2"] } },
+        where: {
+          and: [
+            {
+              or: [
+                { workflowSlug: { equals: "translate_document_locales" } },
+                { taskSlug: { equals: "translate_document" } },
+              ],
+            },
+            { id: { in: ["job-1", "job-2"] } },
+          ],
+        },
         queue: "translations",
       });
       expect(mockPayload.delete).toHaveBeenCalledWith({
