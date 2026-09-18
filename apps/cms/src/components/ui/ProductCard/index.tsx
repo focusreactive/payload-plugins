@@ -1,15 +1,15 @@
-import Link from "next/link";
-
 import { Media } from "@/components/media";
 import type { PreparedMedia } from "@/components/media";
 import { cn } from "@/components/utils";
+import { checkoutVariant } from "@/lib/actions/checkoutVariant";
 
 export interface ProductCardProps {
   cover?: PreparedMedia;
   title: string;
   price?: string;
   priceBefore?: string;
-  href: string;
+  /** Null/undefined renders the card as a plain, unclickable article - out of stock or no variant. */
+  variantId?: string | null;
   className?: string;
 }
 
@@ -24,26 +24,30 @@ export interface ProductCardProps {
  * this card claim that height rather than sitting at its own shorter content height inside the
  * `<li>`'s flex column. `mt-auto` on the price row then pins it to the bottom of whatever height
  * that turns out to be, so a two-line title and a one-line title end at the same price baseline.
+ *
+ * The whole card submits `checkoutVariant` rather than linking to the Shopify product page - a
+ * click here is meant to buy, not to browse, so there is no intermediate storefront page to land
+ * the shopper on first.
  */
 export function ProductCard({
   className,
   cover,
-  href,
   price,
   priceBefore,
   title,
+  variantId,
 }: ProductCardProps) {
-  return (
-    <Link
-      className={cn(
-        "group relative flex grow flex-col overflow-hidden rounded-xl border border-ink-08 bg-card text-foreground",
-        "transition-colors duration-200 ease-out hover:border-primary",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-        "motion-reduce:transition-none",
-        className
-      )}
-      href={href}
-    >
+  const cardClassName = cn(
+    "group relative flex grow flex-col overflow-hidden rounded-xl border border-ink-08 bg-card text-left text-foreground",
+    "transition-colors duration-200 ease-out",
+    variantId && "hover:border-primary",
+    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+    "motion-reduce:transition-none",
+    className
+  );
+
+  const content = (
+    <>
       {/*
         No padding, no radius here: the card's own `overflow-hidden` + `rounded-xl` clips this box
         to the card's shape for free, so the cover bleeds flush to the top/left/right edges instead
@@ -69,7 +73,12 @@ export function ProductCard({
       </div>
 
       <div className="flex grow flex-col p-[clamp(10px,1vw,14px)]">
-        <h3 className="m-0 mb-[clamp(8px,0.9vw,12px)] text-h-card text-pretty text-foreground line-clamp-2 transition-colors duration-200 ease-out group-hover:text-primary">
+        <h3
+          className={cn(
+            "m-0 mb-[clamp(8px,0.9vw,12px)] text-h-card text-pretty text-foreground transition-colors duration-200 ease-out line-clamp-2",
+            variantId && "group-hover:text-primary"
+          )}
+        >
           {title}
         </h3>
 
@@ -82,6 +91,19 @@ export function ProductCard({
           </div>
         )}
       </div>
-    </Link>
+    </>
+  );
+
+  if (!variantId) {
+    return <article className={cardClassName}>{content}</article>;
+  }
+
+  return (
+    <form action={checkoutVariant} className="contents">
+      <input name="variantId" type="hidden" value={variantId} />
+      <button className={cardClassName} type="submit">
+        {content}
+      </button>
+    </form>
   );
 }

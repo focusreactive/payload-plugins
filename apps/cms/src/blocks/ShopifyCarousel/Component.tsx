@@ -14,18 +14,14 @@ import { SectionContainer } from "@/components/shared";
  * The cards are passed into it as children, so they are still emitted by this file.
  */
 
-import {
-  buildCartPermalink,
-  createCheckoutUrl,
-  getProductsByHandles,
-  getStorefrontConfig,
-} from "@/dal";
+import { getProductsByHandles, getStorefrontConfig } from "@/dal";
 import { Button } from "@/components/ui/Button";
 import { DisplayHeading } from "@/components/DisplayHeading";
 import type { PreparedMedia } from "@/components/media";
 import { SectionHeader } from "@/components/SectionHeader";
 import { ProductCard } from "@/components/ui/ProductCard";
 import { ShopifyCarouselRail } from "@/components/ShopifyCarouselRail";
+import { checkoutVariant } from "@/lib/actions/checkoutVariant";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 
 interface ProductHandleRow {
@@ -68,48 +64,6 @@ function buildProductCover(
   return {
     data: { alt: featuredImage.altText ?? title, kind: "image", src: featuredImage.url },
   };
-}
-
-/**
- * One action for the whole rail, not one closure per card: the variant id travels in a hidden
- * input, so nothing has to be bound per render. A bound closure would work - Next encrypts bound
- * arguments - but it pays an encrypt on every render and a decrypt on every submit, per card.
- *
- * Kept at module scope for the same reason the single-product block does it (ShopifyProduct/
- * Component.tsx), and because a nested action trips `unicorn/consistent-function-scoping`.
- */
-async function checkout(formData: FormData) {
-  "use server";
-
-  const { redirect } = await import("next/navigation");
-  const variantId = formData.get("variantId");
-  if (typeof variantId !== "string") return;
-
-  // cartCreate throws when Shopify reports userErrors and returns null on a success carrying no
-  // cart. On a live walkthrough neither may surface as a Next error overlay or as a button that
-  // visibly does nothing, so both fall back to the cart permalink - the one destination that needs
-  // no API call and therefore cannot fail here.
-  let hostedCheckoutUrl: string | null = null;
-  let failure: unknown = null;
-  try {
-    hostedCheckoutUrl = await createCheckoutUrl(variantId);
-  } catch (cause) {
-    failure = cause;
-  }
-
-  if (!hostedCheckoutUrl) {
-    // The button quietly changes destination, so the server log is the only place an expired token
-    // or a Shopify-side rejection is visible at all - and afterwards the only record it happened.
-    console.error(
-      `[checkout] ${variantId}: no hosted checkout URL, falling back to the cart permalink.`,
-      failure ?? "cartCreate returned no cart"
-    );
-  }
-
-  // redirect() navigates by throwing a NEXT_REDIRECT error, which is why it sits outside the try:
-  // a catch that did not rethrow would swallow the navigation and the click would do nothing.
-  const destination = hostedCheckoutUrl ?? buildCartPermalink(variantId);
-  if (destination) redirect(destination);
 }
 
 interface NoticeProps {
@@ -188,7 +142,6 @@ async function ShopifyCarouselBlockContent({
       <ShopifyCarouselRail itemCount={products.length} label={resolvedHeading}>
         {products.map((product) => {
           const canBuy = Boolean(product.variantId) && product.availableForSale;
-          const productHref = `https://${storefrontConfig.domain}/products/${product.handle}`;
 
           return (
             // flex-col + gap holds the buy button (or the unavailable note) under the card; the
@@ -198,7 +151,6 @@ async function ShopifyCarouselBlockContent({
             <li className="flex min-w-0 flex-col gap-4 snap-start" key={product.handle}>
               <ProductCard
                 cover={buildProductCover(product.featuredImage, product.title)}
-                href={productHref}
                 price={
                   showPrice !== false && product.price ? formatMoney(product.price) : undefined
                 }
@@ -208,11 +160,12 @@ async function ShopifyCarouselBlockContent({
                     : undefined
                 }
                 title={product.title}
+                variantId={canBuy ? product.variantId : null}
               />
 
               {showBuyButton ? (
                 canBuy ? (
-                  <form action={checkout}>
+                  <form action={checkoutVariant}>
                     <input name="variantId" type="hidden" value={product.variantId ?? ""} />
                     <Button className="w-full" tone="primary" type="submit">
                       Buy on Shopify
