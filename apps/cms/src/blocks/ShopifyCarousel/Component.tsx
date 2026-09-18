@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/Button";
 import { DisplayHeading } from "@/components/DisplayHeading";
 import type { PreparedMedia } from "@/components/media";
 import { SectionHeader } from "@/components/SectionHeader";
-import { ContentCard } from "@/components/ui/ContentCard";
+import { ProductCard } from "@/components/ui/ProductCard";
 import { ShopifyCarouselRail } from "@/components/ShopifyCarouselRail";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 
@@ -196,7 +196,7 @@ async function ShopifyCarouselBlockContent({
             // fill the same column rather than needing that width duplicated here. `min-w-0` is
             // what stops a long product title from pushing the track wider than it was told to be.
             <li className="flex min-w-0 flex-col gap-4 snap-start" key={product.handle}>
-              <ContentCard
+              <ProductCard
                 cover={buildProductCover(product.featuredImage, product.title)}
                 href={productHref}
                 price={
