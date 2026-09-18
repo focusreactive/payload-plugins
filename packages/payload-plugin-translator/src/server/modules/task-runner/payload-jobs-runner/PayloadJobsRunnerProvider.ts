@@ -124,8 +124,6 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
       const workflowInputSchema: Field[] = [
         ...inputSchema.filter((f) => "name" in f && f.name !== "target_lng"),
         { type: "json", name: "target_lngs", required: true },
-        // Who asked. A job queued before this existed carries neither, and writes with access off —
-        // the same rule as a save made by the host's own server-side code.
         { type: "text", name: "requester_id" },
         { type: "text", name: "requester_collection" },
       ];
@@ -149,9 +147,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
           };
         }) => {
           const { collectionSlug, collectionId } = readCollectionRef(args.input);
-          // The job runs long after the request that queued it, on a request of its own that carries
-          // no user — so the requester travels in the row and is rebuilt here. This is how Payload's
-          // own scheduled publish solves the same problem.
+          // A job's own request carries no user, so the requester travels in the row.
           await handler(
             args.req.payload,
             {

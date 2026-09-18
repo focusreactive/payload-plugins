@@ -12,9 +12,6 @@ import { Locales } from "../../../core/domain/locales";
 import { EnqueueInputSchema } from "./model";
 import type { EnqueueConfig } from "./model";
 
-/**
- * Enqueues translation tasks for documents
- */
 export class EnqueueTranslationHandler {
   constructor(
     private readonly config: EnqueueConfig,
@@ -42,10 +39,8 @@ export class EnqueueTranslationHandler {
         "Content of this collection is not available for translation"
       );
 
-    // A localization-less config has no valid target locale: a phantom locale would burn a provider
-    // call and corrupt data — orphaned rows on Mongo/SQLite, a locale-enum error on Postgres, or (with
-    // no localization at all) overwrite the single unlocalized field and wipe the source. Reject before
-    // anything is enqueued.
+    // Writing a phantom locale orphans rows on Mongo/SQLite, errors on Postgres' locale enum, and
+    // with no localization at all overwrites the single unlocalized field — wiping the source.
     const knownLocales = extractLocaleCodes(
       req.payload.config?.localization as LocalizationLike | undefined
     );
@@ -54,16 +49,13 @@ export class EnqueueTranslationHandler {
         "Localization is not enabled in this Payload config; there are no target locales to translate into"
       );
 
-    // The source is checked, not just the targets. `resolveTargets` only ever uses it to exclude it
-    // from the target list, so an unconfigured code would pass straight through to
-    // `payload.findByID({ locale })` and read a locale this project does not have.
+    // `resolveTargets` only excludes the source from the targets, so an unconfigured code would
+    // otherwise reach `payload.findByID({ locale })` unchecked.
     if (!knownLocales.has(source_lng))
       return ServerResponse.badRequest(
         `source_lng "${source_lng}" is not one of this project's configured locales`
       );
 
-    // Normalize the scalar-or-array target into the concrete locales to fan out to: de-dup, exclude the
-    // source, and drop locales that are not configured.
     const { targets, droppedUnknown } = Locales.resolveTargets({
       target_lng,
       source_lng,
@@ -97,9 +89,6 @@ export class EnqueueTranslationHandler {
       }))
     );
 
-    // Whoever pressed Translate is the identity these writes are checked against — this is the
-    // manual path, the one an editor actually uses. Without it every queued translation would be
-    // unattributed, and unattributed means access control off.
     await runner.enqueue(
       tasks,
       identityOf(req, authCollectionsOf(req.payload), req.payload.logger)

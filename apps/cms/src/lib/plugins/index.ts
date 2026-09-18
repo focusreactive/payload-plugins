@@ -126,7 +126,9 @@ export const plugins: Plugin[] = [
     collections: ["page", "posts"],
     overrides: {
       admin: { group: "Settings" },
-      // @ts-expect-error - This is a valid override, mapped fields don't resolve to the same type
+      // @ts-expect-error — `.map()` over the `Field` union returns spread object literals that TS
+      // will not re-narrow to `Field`, so the callback's return type is not assignable to
+      // `FieldsOverride`'s `Field[]`.
       fields: ({ defaultFields }) => {
         const customFields: Field[] = [
           {
@@ -336,9 +338,7 @@ export const plugins: Plugin[] = [
     collections: [PageCollection, Posts, Categories, Authors, Testimonials, Header, Footer].map(
       (col) => JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
     ),
-    // Required since 0.14.0: the translation endpoints write to documents and spend money at the
-    // provider, and Payload does not authenticate custom endpoints, so the plugin will not start
-    // without an answer. Signed-in users only.
+    // Payload does not authenticate custom endpoints, so the plugin requires this check.
     access: { check: ({ req }) => Boolean(req.user) },
     runner: createSyncRunner(),
     translationProvider: createOpenAIProvider({

@@ -1,18 +1,5 @@
-/**
- * Why the endpoint declined to translate, for code rather than for a reader. `message` is the
- * sentence shown to an editor and may be reworded at any time; these values may not — two of the
- * five situations carry the same sentence word for word, so this is the only thing that tells
- * them apart.
- *
- * - `block-unresolved` — the path descends into `blocks` and the saved document does not say
- *   which block sits at that position.
- * - `localized-list` — the path descends through a **localized** `blocks` or `array`, whose order
- *   is its own per locale, so a positional path cannot be matched across them.
- * - `not-translatable` — the path lands on a field whose type this plugin does not translate.
- * - `excluded` — the field opted out via `withFieldTranslation({ exclude: true })`.
- * - `nothing-translatable` — the subtree resolved, but held no translatable text: an empty value,
- *   or one whose leaves are all excluded or not localized.
- */
+/** Stable across rewordings of `message`, which two of these situations share word for word —
+ * branch on `reason`, never on the text. */
 export type FieldTranslationReason =
   | "block-unresolved"
   | "localized-list"
@@ -26,14 +13,6 @@ export type FieldTranslationNotice = {
   message: string;
 };
 
-/**
- * Successful response. Never an error for "couldn't translate": a field with no
- * localized content (or a path our resolver can't handle yet) is a `noop` with a
- * calm notice, not an HTTP error.
- */
 export type FieldTranslationResult =
   | { status: "translated"; value: unknown }
-  // No `value`: a refusal used to echo the field as it is saved — read with `draft: true` through the
-  // Local API, so unpublished content the collection's own rules never gated. Nothing consumed it;
-  // the field control reads `value` only on the `translated` branch.
   | { status: "noop"; notice: FieldTranslationNotice };

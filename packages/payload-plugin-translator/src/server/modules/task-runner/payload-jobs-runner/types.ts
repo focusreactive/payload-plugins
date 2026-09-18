@@ -1,78 +1,40 @@
 import type { CollectionSlug } from "payload";
 
-/**
- * Configuration for automatic job processing.
- */
 export type AutoRunConfig = {
-  /**
-   * Cron schedule for auto-running jobs.
-   * @default '* * * * *' (every minute)
-   */
+  /** @default '* * * * *' — every minute */
   cron?: string;
-  /**
-   * Maximum number of jobs to process per run.
-   * @default 50
-   */
+  /** Jobs taken per autorun tick. @default 50 */
   limit?: number;
 };
 
-/**
- * Options for PayloadJobsRunnerProvider
- */
 export type PayloadJobsRunnerOptions = {
-  /**
-   * Name of the Payload task.
-   * @default 'translate_document'
-   */
+  /** @default 'translate_document' */
   taskName?: string;
-  /**
-   * Name of the job queue.
-   * @default 'translations'
-   */
+  /** @default 'translations' */
   queueName?: string;
-  /**
-   * Name of the Payload jobs collection.
-   * @default 'payload-jobs'
-   */
+  /** @default 'payload-jobs' */
   jobsCollection?: CollectionSlug;
   /**
-   * Automatic job processing configuration.
-   * Set to `false` to disable (for Vercel/serverless deployments).
-   * Set to an object to customize cron schedule and limit.
+   * `false` where no cron runs (Vercel and other serverless): jobs then queue and wait for an
+   * external driver.
    * @default { cron: '* * * * *', limit: 50 }
    */
   autoRun?: false | AutoRunConfig;
   /**
-   * How long (ms) a job may stay `processing: true` before its lock is
-   * considered stale and the job becomes eligible to be re-run.
-   *
-   * A process killed mid-run (deploy, crash, request timeout) leaves a job
-   * stuck at `processing: true`; the autorun picker only takes
-   * `processing: false`, so without recovery such a job would hang forever.
-   * On boot the runner resets stale locks, and manual `run()` will re-claim a
-   * stale-locked job instead of refusing it as already-running.
-   *
-   * MUST be larger than the longest a single document translation can
-   * legitimately take, otherwise a genuinely in-flight job could be reclaimed
-   * and run twice (safe under the idempotent `overwrite` strategy, but wasteful).
+   * How long (ms) a job may hold `processing: true` before the lock counts as stale and the job may
+   * be re-run. MUST exceed the longest a single document translation can legitimately take, or an
+   * in-flight job is reclaimed and the document translated twice.
    * @default 300000 (5 minutes)
    */
   staleJobTimeoutMs?: number;
-  /**
-   * Retry configuration for failed jobs.
-   */
   retries?: {
     attempts?: number;
     backoff?: { delay?: number; type: "exponential" | "fixed" };
   };
 };
 
-/**
- * Internal configuration for PayloadJobsRunner
- */
 export type PayloadJobsRunnerConfig = {
   taskName: string;
-  /** Derived from `taskName`; deliberately not a plugin option. */
   workflowName: string;
   queueName: string;
   jobsCollection: CollectionSlug;
@@ -91,12 +53,10 @@ export type PayloadJob = {
   processing?: boolean | null;
   waitUntil?: string | null;
   input?: {
-    /** Document reference (flat text, ID-agnostic). Current shape. */
     collection_slug?: string;
     collection_id?: string;
     /**
-     * @deprecated Legacy relationship shape, read-only fallback for jobs queued
-     * before the ID-agnostic migration. Removed in next major.
+     * @deprecated Read-only fallback for jobs queued before the ID-agnostic migration.
      * See docs/DEPRECATIONS.md#jobs-input-collection-field
      */
     collection?: {
@@ -108,7 +68,6 @@ export type PayloadJob = {
     target_lngs?: string[];
     strategy?: string;
     publish_on_translation?: boolean;
-    /** Absent on every job queued before the requester was recorded — see {@link StoredWorkflowInput}. */
     requester_id?: string | number | null;
     requester_collection?: string | null;
   };
@@ -123,11 +82,9 @@ export type StoredWorkflowInput = {
   strategy: string;
   publish_on_translation: boolean;
   /**
-   * Who asked for this translation, rebuilt at run time so the write is checked against their rights
-   * rather than nobody's. `null` means the request carried no identity — a job queued before this
-   * field existed, or one made by the host's own server-side code, and those keep the old behaviour
-   * of writing with access control off. Two keys, not one: a host may have more than one
-   * auth-enabled collection, so the id alone would not say who to look up.
+   * Who asked, replayed at run time so the write is checked against their rights rather than
+   * nobody's. `null` keeps the old behaviour of writing with access control off — see
+   * {@link RequestScope}.
    */
   requester_id: string | number | null;
   requester_collection: string | null;

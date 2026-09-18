@@ -10,10 +10,11 @@ import type { Requester } from "./RequestScope.shapes";
 /**
  * Payload 3.84.1's sanitized permission shape (`utilities/sanitizePermissions.js`).
  *
- * A refusal is an **absent key** — the sanitizer writes `false`, deletes the key, then deletes any
- * object it emptied — so `update: false` is a value Payload cannot emit, and a fully-refused field or
- * collection arrives as nothing at all. A fully-allowed one collapses the other way, to the literal
- * `true`, which `fields` and `blocks` may themselves become.
+ * A refusal is an **absent key** — the sanitizer deletes what it set to `false`, then deletes the
+ * object it emptied — so a refused field or collection arrives as nothing at all and `update: false`
+ * cannot occur. A fully-allowed one collapses to the literal `true`, which `fields` and `blocks` may
+ * themselves become. `{ permission: true, where }` is a grant: the query has already been run against
+ * this document.
  */
 type Grant = boolean | { permission?: boolean };
 
@@ -32,11 +33,8 @@ type DocPermissions = { update?: Grant; fields?: FieldPermissions | true };
  */
 const STRUCTURAL_KEYS = new Set(["id", "blockType", "blockName"]);
 
-/** An absent block slug is one the rules refuse outright, so every field of such a row is refused. */
 const REFUSE_EVERY_FIELD: FieldPermissions = {};
 
-// `{ permission: true, where }` is a grant: `docAccessOperation` has already run the query against
-// this document.
 function isGranted(value: Grant | undefined): boolean {
   if (value === true) return true;
   return typeof value === "object" && value !== null && value.permission === true;
@@ -46,9 +44,7 @@ type LocalRequest = Awaited<ReturnType<typeof createLocalReq>>;
 
 /**
  * `docAccessOperation` is generic over the host's own slugs and wants Payload's sanitized
- * `Collection`, neither of which a plugin registered at config time can name. The cast is on the
- * *function*, once, so every argument at the call site stays checked — `as never` on the argument
- * would check nothing.
+ * `Collection`, neither of which a plugin registered at config time can name.
  */
 type EvaluateDocAccess = (args: {
   id: string;
@@ -69,16 +65,12 @@ type BuildLocalRequest = (
 const evaluateDocAccess = docAccessOperation as unknown as EvaluateDocAccess;
 const buildLocalRequest = createLocalReq as unknown as BuildLocalRequest;
 
-/**
- * Payload reports a rule on `meta.subtitle` under a nested `fields`, never at the top level, so the
- * walk has to descend; the leaf path is reported rather than its container, which is what lets the
- * write keep the siblings the rules allow.
- */
+/** Leaf paths only: a container whose children are allowed is not reported, so the write keeps the
+ * siblings the rules allow. */
 function deniedPaths(fields: FieldPermissions | true, data: unknown, prefix = ""): string[] {
   if (fields === true) return [];
   if (data === null || typeof data !== "object") return [];
-  // An array's rows share one set of field rules, so a refusal inside one row refuses that leaf in
-  // every row; the path carries no index.
+  // Rows share one rule set, so a refusal in any row refuses that leaf in all of them.
   if (Array.isArray(data)) {
     const merged = new Set<string>();
     for (const row of data) for (const path of deniedPaths(fields, row, prefix)) merged.add(path);
@@ -112,7 +104,6 @@ function deniedPaths(fields: FieldPermissions | true, data: unknown, prefix = ""
       }
     }
   }
-  // Two rows of the same blocks field can refuse the same leaf.
   return [...new Set(denied)];
 }
 
@@ -167,11 +158,9 @@ async function findRequester(payload: Payload, requester: Requester) {
   const user = await payload.findByID({
     collection,
     id: requester.userId,
-    // The depth Payload authenticates at, so the rules see the user they would have seen on the
-    // editor's own save. At depth 0 a rule reading `user.role.name` finds an id and answers no,
-    // refusing a translation for somebody who may in fact write; one that reaches a level deeper
-    // throws instead, and a throw here costs the caller their transaction. `undefined` is Payload's
-    // own answer when the collection declares no depth — it falls through to `defaultDepth`.
+    // The depth Payload authenticates at, so a rule reading `user.role.name` sees what it would on
+    // the editor's own save; at depth 0 it finds an id and refuses, or throws — and a throw here
+    // costs the caller their transaction.
     depth: typeof auth === "object" ? auth.depth : undefined,
     overrideAccess: true,
   });
@@ -182,8 +171,6 @@ async function findRequester(payload: Payload, requester: Requester) {
  * Asks Payload's own evaluator (`docAccessOperation`, the one behind `/api/<slug>/access`) instead of
  * attempting the write and catching `Forbidden`: a caught refusal has already been through
  * {@link killedTheCallersTransaction}'s rollback and would discard the editor's own save.
- *
- * Field-level answers come back too, so a refused field is dropped rather than failing the locale.
  */
 export async function checkTranslationPermission(
   query: PermissionQuery
@@ -193,8 +180,8 @@ export async function checkTranslationPermission(
 
   const user = await findRequester(payload, scope).catch(() => null);
   if (!user) {
-    // A plain error on purpose: nothing has been written and no Payload operation ran that could
-    // have rolled the caller's transaction back, so this must not read as a destroyed save.
+    // Plain `Error`, not `APIError`: nothing ran here that could have rolled the caller's
+    // transaction back.
     throw new Error(
       markFailureReason(
         "requester-missing",
@@ -203,12 +190,11 @@ export async function checkTranslationPermission(
     );
   }
 
-  // Payload's own request builder, because a host rule may read anything a real request carries —
-  // `headers`, `i18n`, `context` — and a `TypeError` off a stand-in is answered with `killTransaction`.
-  // The transaction has to travel: a `Where` rule is resolved by counting rows, and on PostgreSQL a
-  // count outside the caller's transaction cannot see the uncommitted document, so the rule is applied
-  // to nothing and answers "allowed" — issue #124. The locale likewise, or `createLocalReq` substitutes
-  // the project default and the rules answer about the wrong one.
+  // Payload's own builder: a host rule may read anything a real request carries (`headers`, `i18n`,
+  // `context`), and a `TypeError` off a stand-in is answered with `killTransaction`. The transaction
+  // must travel too — a `Where` rule is resolved by counting rows, and on PostgreSQL a count outside
+  // the caller's transaction cannot see the uncommitted document, so the rule answers "allowed"
+  // (#124). The locale too, or the rules answer about the project default.
   const req = await buildLocalRequest(
     { user, req: freshReq(scope), locale: targetLocale },
     payload

@@ -95,16 +95,12 @@ export default buildConfig({
       usernameFieldPath: "name",
     }),
     translatorPlugin({
-      // Articles is opted in to auto-translate: editing + saving its source-locale (en) content
-      // auto-queues translations into de/fr/es. No drafts on this collection, so every save fires.
       collections: [
         Pages,
         withAutoTranslate(Articles, { targets: ["de", "fr", "es"], debounceMs: 2000 }),
         withAutoTranslate(Playground, { targets: ["de", "fr", "es"], debounceMs: 2000 }),
       ],
       targetSelection: "multi",
-      // The plugin will not start without this. A sandbox still gets a real answer rather than the
-      // open one, so the endpoints behave here the way they should in a project.
       access: { check: ({ req }) => Boolean(req.user) },
       runner: resolveTranslatorRunner(),
       translationProvider: resolveTranslationProvider(),

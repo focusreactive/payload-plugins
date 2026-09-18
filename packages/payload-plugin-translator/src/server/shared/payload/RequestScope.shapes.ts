@@ -9,14 +9,9 @@ import { APIError } from "payload";
  * a bulk update.
  */
 export type RequestScope = {
-  /** Absent: the operation opens a transaction of its own. */
   transactionID?: string | number;
-  /**
-   * Who asked. `null` or absent means the request carried no identity — a server-side Local API call,
-   * or a job queued before this was recorded — and such work keeps writing with access control off.
-   */
+  /** `null` means the request carried no identity — such work writes with access control off. */
   userId?: string | number | null;
-  /** A host may have several auth-enabled collections, so {@link userId} alone identifies no row. */
   userCollection?: string | null;
 };
 
@@ -26,12 +21,8 @@ export function freshReq(scope: RequestScope): { transactionID?: string | number
 }
 
 /**
- * `collection` is not always on `req.user`: Payload's own auth strategies set it, a host's custom one
- * need not, and `findByID` does not put it on a user the host fetched itself.
- *
- * Filling it in is only safe when one auth-enabled collection exists. With two, `admins:1` and
- * `editors:1` are different people, and guessing would evaluate — and on the deferred path execute —
- * the write as a stranger. An ambiguous request is therefore reported as unattributed.
+ * Guessing the collection is only safe when one auth-enabled collection exists: with two,
+ * `admins:1` and `editors:1` are different people and the write would run as a stranger.
  */
 export function identityOf(
   req: { user?: { id?: string | number; collection?: string } | null },
@@ -67,13 +58,9 @@ export function isAttributed(scope: RequestScope): scope is RequestScope & Reque
 }
 
 /**
- * Whether this failure has already rolled the caller's transaction back: Payload's `killTransaction`
- * fires from the catch of every operation and rolls back whenever a transaction id is present,
- * without checking whose it is. Rethrowing cannot save the caller's edit — it is already gone — it
- * only stops the translator reporting a save that did not happen.
- *
- * Narrowed to `APIError` because only a Payload operation reaches `killTransaction`; a provider
- * outage throws before any operation runs and leaves the save intact.
+ * Payload's `killTransaction` fires from the catch of every operation and rolls back whenever a
+ * transaction id is present, whoever owns it. Narrowed to `APIError` because only a Payload operation
+ * reaches it — a provider outage throws before any operation runs.
  */
 export function killedTheCallersTransaction(scope: RequestScope, error: unknown): boolean {
   return scope.transactionID != null && error instanceof APIError;

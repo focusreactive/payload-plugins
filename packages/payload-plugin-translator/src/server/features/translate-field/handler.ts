@@ -28,48 +28,10 @@ const noop = (
 });
 
 /**
- * What a caller of `POST {basePath}/field` is owed. The types state the shapes; this states what
- * they mean.
- *
- * **The value translated is the saved one.** It is read from the document at `doc_id` in
- * `source_lng` — never from the request, which carries no value. Unsaved edits in the form are
- * therefore invisible here, and that is the contract, not an oversight.
- *
- * **Nothing is written.** The reply carries the translated value; persisting it is the caller's
- * job. The source document is left as it was, in every locale.
- *
- * **It always overwrites.** A per-field translate is an explicit "translate this one now", so
- * there is no strategy to choose and `skip_existing` has no meaning on this surface.
- *
- * **"I cannot translate this" is a success, not an error.** Five situations come back `200` with
- * `status: "noop"` and a notice naming which. The reply carries no value: it used to echo the field
- * as saved, which meant handing back draft content the collection's own rules never gated. `reason` is what tells
- * them apart: two of the five carry the same `message` word for word.
- *
- * | `reason` | When | level |
- * |---|---|---|
- * | `block-unresolved` | the path runs into `blocks` and the saved document does not say which block sits there | `info` |
- * | `localized-list` | the path runs through a **localized** `blocks` or `array` | `warning` |
- * | `not-translatable` | the path lands on a field whose type this plugin does not translate — a container named directly is judged by its own type, not by what it holds | `info` |
- * | `excluded` | the field opted out via `withFieldTranslation({ exclude: true })` | `info` |
- * | `nothing-translatable` | the path landed on a translatable leaf that held no translatable text: empty in the source locale, or not localized, so there is one value for every locale | `info` |
- *
- * The one `warning` is the case where the request is answerable but the answer would be wrong:
- * a localized list has its own order per locale, so an index in the path cannot be matched across
- * locales, and translating the whole document is the only correct route.
- *
- * **HTTP errors are kept for genuine errors:** `400` for a body that fails validation, `400` for a
- * collection the plugin does not manage, `400` for a path naming no field in that collection, and
- * `413` for a source value whose serialized size exceeds {@link MAX_FIELD_VALUE_BYTES}. The size is
- * measured on the value read from the document, because that is what is held in memory across the
- * provider call — the request body no longer carries one.
- *
- * **A path is resolved against the saved data, not the schema alone.** A segment inside `blocks`
- * needs the document's own `blockType` to know which block's fields apply. Containers that carry no
- * name — a row, an unnamed tab, a collapsible — do not appear in the path at all.
- *
- * @param req - the Payload request; the body must satisfy {@link FieldTranslationInputSchema}
- * @returns `200` with a {@link FieldTranslationResult}, or one of the errors above
+ * `POST {basePath}/field`. Translates the **saved** value at `doc_id` in `source_lng` — the request
+ * carries no value, so unsaved form edits are invisible — and writes nothing; the caller persists.
+ * "Cannot translate" answers `200` with `status: "noop"` and a `reason`; HTTP status is reserved for
+ * a bad request.
  */
 export type FieldTranslation = (req: PayloadRequest) => Promise<Response>;
 
@@ -92,8 +54,6 @@ export class TranslateFieldHandler {
         `Collection "${collection_slug}" is not available for translation`
       );
 
-    // Both locales, not just the target: `source_lng` reaches `payload.findByID({ locale })` a few
-    // lines down, and an unconfigured code there reads a locale the project does not have.
     const known = extractLocaleCodes(
       req.payload?.config?.localization as LocalizationLike | undefined
     );
@@ -121,8 +81,6 @@ export class TranslateFieldHandler {
     );
     const sourceValue = getByPath(sourceDoc as Record<string, unknown>, field_path);
 
-    // Guard the *translated* payload (held synchronously through the provider call), not the
-    // request body, which now carries no field value.
     if (byteLength(sourceValue) > MAX_FIELD_VALUE_BYTES) {
       return ServerResponse.custom(
         `Field value exceeds the ${MAX_FIELD_VALUE_BYTES}-byte limit`,
@@ -147,8 +105,6 @@ export class TranslateFieldHandler {
       );
     }
     if (resolution.status === "localized-list-ancestor") {
-      // Inside a localized blocks/array: its order/content is independent per locale, so the path
-      // index can't be matched to the source locale. Translate the whole document instead.
       return ServerResponse.success(
         noop(
           "warning",
@@ -168,8 +124,6 @@ export class TranslateFieldHandler {
       );
     }
 
-    // No `strategy`/`targetData`: a per-field translate is an explicit "translate this field now",
-    // so `translateContent` always overwrites (its default). skip_existing has no meaning here.
     const translated = await translateContent({
       schema: resolution.schema,
       sourceData: resolution.sourceData,

@@ -13,10 +13,7 @@ import { freshReq } from "../../../shared/payload/RequestScope.shapes";
 
 const APPEND_ATTEMPTS = 2;
 
-/**
- * Groups served at once: a `select_all` enqueue can span thousands, each costing two writes and a
- * read, and the ceiling is the database pool rather than the CPU.
- */
+/** Bounded by the database pool, not the CPU — a `select_all` enqueue can span thousands of groups. */
 const ENQUEUE_CONCURRENCY = 10;
 
 type QueueWorkflow = (args: {
@@ -46,7 +43,7 @@ function requestKey(task: TaskInput, scope: RequestScope): string {
 }
 
 function documentKey(collectionSlug: string, collectionId: string): string {
-  // NUL: no slug or id can contain it, so two different documents cannot produce one key.
+  // NUL separator: no slug or id can contain it.
   return `${collectionSlug}\u0000${collectionId}`;
 }
 
@@ -178,12 +175,11 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   async cancel(taskIds: string[]): Promise<void> {
     if (taskIds.length === 0) return;
 
-    // Mark then delete: the delete alone would take the row out of the status feed under
-    // `deleteJobOnComplete: false` without recording why it went. The mark does not reach a running
-    // handler — see D1 of docs/plans/2026-09-08-one-live-job-per-document.task.md.
-    // Scoped by `ownJobs()` like the delete below it: the queue name alone is a name the host chose
-    // and may share, so an id belonging to somebody else's job on that queue would be marked
-    // cancelled by a caller who only ever named an id.
+    // Mark then delete: the delete alone would drop the row from the status feed under
+    // `deleteJobOnComplete: false` with no record of why, and the mark does not reach a running
+    // handler — D1 of docs/plans/2026-09-08-one-live-job-per-document.task.md.
+    // `ownJobs()` on both calls: a queue name is the host's to choose and may be shared, so an id
+    // alone could reach somebody else's job.
     await this.payload.jobs.cancel({
       where: { and: [this.ownJobs(), { id: { in: taskIds } }] },
       queue: this.config.queueName,
@@ -206,11 +202,10 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     if (job.processing && !this.isStale(job.updatedAt)) {
       return { success: false, error: "already_running" };
     }
-    // Unconditional: a manual run also lifts the auto-translate debounce, not just the lock.
     await this.clearPickerBlockers(taskId);
 
-    // Not `jobs.runByID`: payload 3.84.1 builds the picker guard (processing / hasError / waitUntil)
-    // only on the `where` path, so the id path re-runs a job that exhausted its retries.
+    // Not `jobs.runByID`: the picker guard is built only on the `where` path — see
+    // docs/plans/2026-09-04-job-scan-bounds.task.md.
     const result = await this.payload.jobs.run({
       queue: this.config.queueName,
       where: { id: { equals: taskId } },
@@ -267,9 +262,8 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   }
 
   /**
-   * Matched in memory, not in a `where`: a job's collection reference sits either in the flat text
-   * fields or in the legacy relationship shape (see `readCollectionRef`), so `input.collection_slug`
-   * as a filter would silently drop every pre-migration job.
+   * Matched in memory: the collection reference has two stored shapes (see `readCollectionRef`), so a
+   * `where` on `input.collection_slug` would silently drop every pre-migration job.
    */
   async findByCollection(
     collectionSlug: CollectionSlug,

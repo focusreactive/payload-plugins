@@ -18,7 +18,6 @@ import type { TranslateDocumentInput, TranslateDocumentOutput } from "./model";
 import { resolveTargetLayer } from "./targetLayer";
 import type { PublishScope, TargetLayer } from "./targetLayer";
 
-/** Loop guard: the auto-translate afterChange hook (#51) skips writes carrying this key. */
 const translatorWriteContext = () => ({ [AUTO_TRANSLATE_SKIP_CONTEXT_KEY]: true });
 
 /**
@@ -47,7 +46,6 @@ function dropPath(value: unknown, segments: string[]): unknown {
   return Object.fromEntries(entries);
 }
 
-/** Paths are dot-separated and carry no row index, so an array is pruned row by row. */
 function withoutDeniedFields(
   data: Record<string, unknown>,
   denied: string[]
@@ -59,11 +57,6 @@ function withoutDeniedFields(
   );
 }
 
-/**
- * Translates a single document from source language to target language. Provenance is delegated to
- * {@link ProvenanceService}: this handler only decides *when* to capture the source fingerprint
- * (before the pipeline mutates the source in place) and *when* to record it (after the save).
- */
 export class TranslateDocumentHandler implements Handler<
   TranslateDocumentInput,
   TranslateDocumentOutput
@@ -101,9 +94,7 @@ export class TranslateDocumentHandler implements Handler<
       targetLng,
     });
 
-    // `draft: true` is unconditional: on a collection without drafts Payload has no version to
-    // substitute, so it returns the only row. The write cannot be as relaxed — the `no-drafts`
-    // layer omits `draft` entirely.
+    // Unconditional: with no drafts Payload has no version to substitute and returns the only row.
     const [sourceData, currentTargetVersion] = await Promise.all([
       fetchSourceDocument(payload, collection, collectionId, sourceLng, scope),
       payload.findByID({

@@ -3,18 +3,12 @@ import type { CollectionSlug } from "payload";
 import { isCancelled, latestLogByLocale } from "./normalizeJob";
 import type { PayloadJob } from "./types";
 
-/** The part of a request that every locale in it shares. */
 export type RequestShape = {
   collectionSlug: CollectionSlug;
   collectionId: string;
   sourceLng: string;
   strategy: string;
   publishOnTranslation: boolean;
-  /**
-   * Who asked, both halves. The collection is not decoration: a host may have two auth-enabled
-   * collections, so `admins:1` and `editors:1` are different people with the same id, and comparing
-   * ids alone would let one inherit the other's job — and their rights with it.
-   */
   requesterId: string | number | null;
   requesterCollection: string | null;
 };
@@ -33,8 +27,7 @@ export type EnqueuePlan = {
  * One live job per document: a later request extends that job's locale list rather than replacing it.
  *
  * @param live - non-completed jobs for **this document only**; the caller filters by document.
- * @param requested - target locales in request order; duplicates ignored.
- * @param exclusiveQueue - the host's `enableConcurrencyControl`; with it on a running job is queued
+ * @param exclusiveQueue - the host's `enableConcurrencyControl`; with it on, a running job is queued
  *   behind rather than extended.
  */
 export function planEnqueue(args: {
@@ -61,13 +54,8 @@ export function planEnqueue(args: {
 }
 
 /**
- * A job carries one source locale, one strategy, one publish flag and one requester for all of its
- * locales, so it can host only a request that matches all four — otherwise the request runs under
- * settings the user did not pick, or under rights they do not have.
- *
- * The requester is why "one live job per document" is now "per document per requester": two people
- * translating the same document at once get a job each. The invariant existed to stop parallel
- * translations overwriting one another, and that still holds — locales still run one at a time.
+ * A job carries one source locale, strategy, publish flag and requester for all of its locales, so it
+ * can host only a request matching all four — the invariant is per document *per requester*.
  */
 function pickHost(live: PayloadJob[], request: RequestShape): PayloadJob | null {
   const usable = live.filter(
