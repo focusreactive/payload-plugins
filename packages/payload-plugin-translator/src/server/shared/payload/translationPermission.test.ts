@@ -16,7 +16,6 @@ const evaluator = async () =>
 const requestBuilder = async () =>
   (await import("payload")).createLocalReq as unknown as ReturnType<typeof vi.fn>;
 
-/** What `createLocalReq` returns: the things a host access rule is entitled to read off a request. */
 const A_REAL_REQUEST = { headers: new Headers(), i18n: {}, t: () => "", context: {} };
 
 const { checkTranslationPermission } = await import("./translationPermission");
@@ -37,14 +36,11 @@ const ask = (data: Record<string, unknown>, scope = ANNA) =>
     collection: "posts" as never,
     id: "d1",
     data,
-    locale: "de",
+    targetLocale: "de",
     scope,
   });
 
-// Payload's sanitized permissions express a refusal by LEAVING THE KEY OUT, and collapse a field that
-// allows everything to the literal `true`. Reading that shape as `update === false` — the obvious
-// reading — detects nothing at all, on any adapter. Measured against the real evaluator before these
-// were written.
+// Every fixture shape below was measured against Payload 3.84.1's sanitizer, not invented.
 describe("checkTranslationPermission — reading Payload's permission shape", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -72,8 +68,6 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
     expect((await ask({ title: "t" })).deniedFields).toEqual([]);
   });
 
-  // The leaf, not the branch: a rule on one field inside a group must not cost its siblings their
-  // translation.
   it("finds a refusal nested inside a container, and names the leaf", async () => {
     (await evaluator()).mockResolvedValue({
       update: true,
@@ -85,8 +79,6 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
     expect(result.deniedFields).toEqual(["meta.subtitle"]);
   });
 
-  // An array's rows share one set of rules, so a refusal inside any row refuses that leaf everywhere
-  // and the path carries no index.
   it("names an array's refused leaf once, without a row index", async () => {
     (await evaluator()).mockResolvedValue({
       update: true,
@@ -112,10 +104,6 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
     expect((await ask({ meta: { subtitle: "s" } })).deniedFields).toEqual([]);
   });
 
-  // The collection level is encoded exactly like the field level, and reading it as `update !== false`
-  // answers "allowed" to every one of these — the sanitizer never emits `false`, it deletes the key.
-  // A collection refusing every operation therefore arrives as `{}`, or as `{ readVersions: true }`
-  // when it is versioned, with its fields gone the same way.
   it.each([
     ["every operation refused", {}],
     ["every operation refused, versioned", { readVersions: true }],
@@ -135,9 +123,6 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
     expect((await ask({ title: "t" })).allowed).toBe(true);
   });
 
-  // A rule returning a `Where` keeps its object rather than collapsing, because the query carries a
-  // condition. `docAccessOperation` has already run it against this document, so `permission` is the
-  // answer for this document and nothing further needs deciding.
   it("reads a resolved where-query grant as a grant", async () => {
     (await evaluator()).mockResolvedValue({
       update: { permission: true, where: { tenant: { equals: "t1" } } },
@@ -147,25 +132,18 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
     expect((await ask({ title: "t" })).allowed).toBe(true);
   });
 
-  // `fields` collapses to the literal `true` when every field allows everything; treating that as a
-  // map of permissions would find no permission for any name and refuse the entire document.
   it("denies nothing when `fields` collapsed to `true`", async () => {
     (await evaluator()).mockResolvedValue({ update: true, fields: true });
 
     expect((await ask({ title: "t", meta: { subtitle: "s" } })).deniedFields).toEqual([]);
   });
 
-  // A field refusing every operation is emptied and then deleted outright, so "absent" is how the
-  // strictest rule of all arrives — not how an unmentioned field does.
   it("treats a field the sanitizer removed entirely as refused", async () => {
     (await evaluator()).mockResolvedValue({ update: true, fields: { body: true } });
 
     expect((await ask({ title: "t", body: "b" })).deniedFields).toEqual(["title"]);
   });
 
-  // Row identity and the block discriminator are never fields and never translated, and dropping an
-  // array row's `id` would make Payload rebuild the row — losing the siblings it shares across
-  // locales, which is the whole reason the prune works by path.
   it("never refuses a row's identity or its block type", async () => {
     (await evaluator()).mockResolvedValue({
       update: true,
@@ -177,10 +155,6 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
     expect(result.deniedFields).toEqual([]);
   });
 
-  // None of the three is a reserved name, so a host may declare a translatable field called
-  // `blockName` — and then Payload reports a permission for it like any other. Excusing the name
-  // rather than its absence would drop that rule on the floor, and only that way round: everywhere
-  // else an unclear answer costs a translation, here it would have cost a refusal.
   it("honours a rule on a real field that happens to be named like row structure", async () => {
     (await evaluator()).mockResolvedValue({
       update: true,
@@ -192,8 +166,6 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
     expect(result.deniedFields).toEqual(["blockName"]);
   });
 
-  // Blocks are reported under their own key. Reading only `fields` finds nothing to refuse for a
-  // blocks field, which is the shape most documents in this plugin are made of.
   it("finds a refusal declared inside a block", async () => {
     (await evaluator()).mockResolvedValue({
       update: true,
@@ -221,9 +193,6 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
     expect(result.deniedFields).toEqual(["content.headline"]);
   });
 
-  // A leaf's value has keys of its own — a rich text document's `root`, a relationship's `value` —
-  // and they are not fields. Walking into one would report every one of them as refused and prune the
-  // field down to nothing.
   it("does not walk into the value of a granted leaf", async () => {
     (await evaluator()).mockResolvedValue({ update: true, fields: { body: { update: true } } });
 
@@ -232,9 +201,6 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
     expect(result.deniedFields).toEqual([]);
   });
 
-  // The rules must see the user they would have seen on the editor's own save. Payload authenticates
-  // at the collection's `auth.depth`; rebuilt shallower, a rule reading `user.role.name` finds an id
-  // where it expects an object and refuses someone who may in fact write.
   it("rebuilds the requester at the depth Payload authenticates at", async () => {
     (await evaluator()).mockResolvedValue({ update: true, fields: true });
 
@@ -245,8 +211,6 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
     );
   });
 
-  // An unattributed request is the host's own server-side code, or a job queued before the requester
-  // was recorded. It keeps the behaviour it had, and never reaches the evaluator.
   it("asks nothing and allows everything when the request named nobody", async () => {
     const result = await ask({ title: "t" }, {} as never);
 
@@ -254,9 +218,6 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
     expect(await evaluator()).not.toHaveBeenCalled();
   });
 
-  // Two failures, told apart on purpose. Nothing has run yet when the requester cannot be found, so
-  // the caller's transaction is intact and this must not read as a destroyed save. By the time the
-  // evaluator throws, `killTransaction` has already rolled that transaction back, so it must.
   it("refuses to guess when the named requester cannot be found", async () => {
     (payload.findByID as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("not found"));
 
@@ -278,9 +239,6 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
     expect(readFailureReason((error as Error).message)).toBe("permission-check-failed");
   });
 
-  // An access rule returning a `Where` is resolved by counting matching rows, and outside the caller's
-  // transaction PostgreSQL cannot count a document the caller has not committed — so the rule would
-  // be applied to nothing and answer "allowed". The #124 shape, measured again here.
   it("carries the caller's transaction to the evaluator", async () => {
     (await evaluator()).mockResolvedValue({ update: true, fields: true });
 
@@ -290,9 +248,6 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
     expect(args.req.transactionID).toBe("tx-1");
   });
 
-  // The rules are deciding a write to the *target* locale. Left unset, `createLocalReq` fills in the
-  // project's default, so a rule saying "this editor owns English but not German" would be asked
-  // about English and its yes used to authorise the German write.
   it("asks about the locale being written, not the project default", async () => {
     (await evaluator()).mockResolvedValue({ update: true, fields: true });
 
@@ -302,10 +257,6 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
     expect(built.locale).toBe("de");
   });
 
-  // The host's rules receive this object and may read anything Payload always puts on a request. A
-  // hand-rolled `{ payload, user }` makes a correct rule throw, and `docAccessOperation` answers a
-  // throw by rolling the caller's transaction back — so a truncated request costs the editor the save
-  // their own rule would have allowed.
   it("hands the evaluator a request Payload built, not a stand-in", async () => {
     (await evaluator()).mockResolvedValue({ update: true, fields: true });
 

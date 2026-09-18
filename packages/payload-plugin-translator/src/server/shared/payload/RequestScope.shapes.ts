@@ -1,31 +1,22 @@
 import { APIError } from "payload";
 
 /**
- * The caller's request, reduced to the two things the translator needs from it and nothing else:
- * which transaction to join, and who is asking.
+ * The caller's transaction and identity, which Payload carries nowhere ambiently: an operation joins a
+ * transaction only when the id is passed under `req` on that call, and sees a user only when one is
+ * passed with it.
  *
- * Payload has no ambient transaction — an operation joins one only when the id is passed under `req`
- * on that call — and no ambient user either. Both are available at the boundary (an HTTP route, an
- * `afterChange` hook) and both used to be dropped one line later, which is why a translated write
- * landed with access control switched off.
- *
- * A slice rather than the whole `PayloadRequest`, which is a god type this package keeps out of leaf
- * helpers and which Payload reuses across every document of a bulk update.
- *
- * @since 0.14.0
+ * A slice, not the whole `PayloadRequest`: Payload reuses one request object across every document of
+ * a bulk update.
  */
 export type RequestScope = {
-  /** Join the caller's transaction. Absent means the operation opens its own. */
+  /** Absent: the operation opens a transaction of its own. */
   transactionID?: string | number;
   /**
    * Who asked. `null` or absent means the request carried no identity — a server-side Local API call,
    * or a job queued before this was recorded — and such work keeps writing with access control off.
    */
   userId?: string | number | null;
-  /**
-   * Which auth-enabled collection {@link userId} belongs to. Needed because a host may have more than
-   * one, so the id alone does not say who to look up.
-   */
+  /** A host may have several auth-enabled collections, so {@link userId} alone identifies no row. */
   userCollection?: string | null;
 };
 
@@ -35,19 +26,12 @@ export function freshReq(scope: RequestScope): { transactionID?: string | number
 }
 
 /**
- * The identity half of a scope, read from a request.
- *
  * `collection` is not always on `req.user`: Payload's own auth strategies set it, a host's custom one
- * need not, and host code passing a user it fetched itself will not — `findByID` does not put the
- * collection on the document it returns.
+ * need not, and `findByID` does not put it on a user the host fetched itself.
  *
- * Completing it is only safe when there is one answer. With a single auth-enabled collection there
- * is, and filling it in keeps a signed-in person from reading as anonymous — which would send their
- * write past the permission check entirely. With two, `admins:1` and `editors:1` are different people
- * carrying the same id, and a guess would evaluate the write against a stranger's rights and, on the
- * deferred path, execute it as them. That is worse than either honest alternative, so an ambiguous
- * request is reported as carrying no identity: the behaviour it had before any of this existed, plus
- * a line in the log naming what to fix.
+ * Filling it in is only safe when one auth-enabled collection exists. With two, `admins:1` and
+ * `editors:1` are different people, and guessing would evaluate — and on the deferred path execute —
+ * the write as a stranger. An ambiguous request is therefore reported as unattributed.
  */
 export function identityOf(
   req: { user?: { id?: string | number; collection?: string } | null },
@@ -70,15 +54,15 @@ export function identityOf(
   return { userId: null, userCollection: null };
 }
 
-/** The slugs a user could have come from — the only thing that makes a missing one unambiguous. */
 export function authCollectionsOf(payload: {
   config?: { collections?: Array<{ slug: string; auth?: unknown }> };
 }): string[] {
   return (payload.config?.collections ?? []).filter((c) => Boolean(c.auth)).map((c) => c.slug);
 }
 
-/** True when the scope names somebody whose rights the write should be checked against. */
-export function isAttributed(scope: RequestScope): boolean {
+export type Requester = { userId: string | number; userCollection: string };
+
+export function isAttributed(scope: RequestScope): scope is RequestScope & Requester {
   return scope.userId != null && scope.userCollection != null;
 }
 

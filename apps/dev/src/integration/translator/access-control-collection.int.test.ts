@@ -9,17 +9,9 @@ let ctx: TestPayload;
 let editor: { id: string; collection: string };
 
 /**
- * One rule, answering differently per document, so a single boot can show both halves.
- *
- * It **reads the request** — `i18n`, which only a request Payload itself built actually carries — so
- * a hand-rolled `{ payload, user }` stand-in makes it throw a `TypeError`, and Payload answers a
- * throwing access rule by killing the caller's transaction. The "allowed" case below is what makes
- * that visible: with a stand-in the rule cannot say yes, and nothing is translated.
- *
- * It then **refuses the update** for a document marked locked. That is the headline case of the whole
- * branch, and the one nothing used to cover: the sanitizer expresses a refusal by deleting the key,
- * never by setting it false, so a check reading the answer as `update !== false` agrees with every
- * refusal ever written.
+ * `req.i18n` is in the predicate on purpose: only a request Payload itself built carries it, so a
+ * hand-rolled stand-in makes this rule throw instead of answering, and the "allowed" case below then
+ * fails. Removing that clause removes the only coverage of the request the evaluator is handed.
  */
 const withCollectionRule = (collections: CollectionConfig[]): CollectionConfig[] =>
   collections.map((c) => {
@@ -30,9 +22,19 @@ const withCollectionRule = (collections: CollectionConfig[]): CollectionConfig[]
         update: ({ req, data }: { req: PayloadRequest; data?: { ref?: string } }) =>
           Boolean(req.i18n.language) && data?.ref !== "locked",
       },
-      fields: [...c.fields, { name: "tagline", type: "text", localized: true }],
+      // `access: { update: () => true }` is what makes this fixture discriminating: without it every
+      // field inherits the collection's refusal and the write stops on the prune instead, so the
+      // collection-level check is never exercised. Measured — removing it leaves the file green
+      // against a broken predicate.
+      fields: [
+        ...c.fields,
+        { name: "tagline", type: "text", localized: true, access: { update: () => true } },
+      ],
     } as CollectionConfig;
   });
+
+/** What the German locale holds before the source is edited; a refusal must leave it exactly this. */
+const UNTOUCHED_DE = { title: "Eigener Titel", tagline: "Eigene Zeile" };
 
 const germanDoc = async (id: string) =>
   (await ctx.payload.findByID({
@@ -68,12 +70,11 @@ describe("a collection rule decides the translation, and it is read a real reque
       user: editor as never,
     });
     const id = String(created.id);
-    // Give the target locale its own values first, so "left alone" is distinguishable from "blank".
     await ctx.payload.update({
       collection: "docs" as "pages",
       id,
       locale: "de",
-      data: { title: "Eigener Titel", tagline: "Eigene Zeile" } as never,
+      data: UNTOUCHED_DE as never,
       draft: true,
     });
     return id;
@@ -94,12 +95,10 @@ describe("a collection rule decides the translation, and it is read a real reque
     await publishEdit(id, "Locked edited", "Locked line edited");
 
     const de = await germanDoc(id);
-    expect(de.title, "the refusal is the whole document, not one field").toBe("Eigener Titel");
-    expect(de.tagline).toBe("Eigene Zeile");
+    expect(de.title, "the refusal is the whole document, not one field").toBe(UNTOUCHED_DE.title);
+    expect(de.tagline).toBe(UNTOUCHED_DE.tagline);
   });
 
-  // The yes half, and the one that pins the request. A rule reading `req.i18n` off a stand-in throws
-  // rather than answering, so this locale would stay as it was.
   it("a document the same rule allows is translated", async () => {
     const id = await seed("open", "Open", "Open line");
 

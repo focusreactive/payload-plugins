@@ -5,19 +5,15 @@ import { markFailureReason } from "../../../core/domain/translation-providers/fa
 
 import type { RequestScope } from "./RequestScope.shapes";
 import { freshReq, isAttributed } from "./RequestScope.shapes";
+import type { Requester } from "./RequestScope.shapes";
 
 /**
- * Payload's sanitized permission shape, which is why every predicate below reads the way it does.
+ * Payload 3.84.1's sanitized permission shape (`utilities/sanitizePermissions.js`).
  *
- * A refusal is an **absent key**, never `false`: the sanitizer writes `false` and deletes the key in
- * the same breath, then deletes any object it emptied. So a field declaring `access: { update: () =>
- * false }` comes back as `{ create: true, read: true }`, a field refusing every operation disappears
- * from `fields` entirely, and a collection refusing every operation comes back as `{}`. Anything that
- * allows everything collapses the other way, to the literal `true` — which `fields` and `blocks`
- * themselves can become, not just a single field.
- *
- * A rule that returns a `Where` keeps its object, `{ permission: true, where: … }`, because the query
- * has already been run against this document by the time we see it.
+ * A refusal is an **absent key** — the sanitizer writes `false`, deletes the key, then deletes any
+ * object it emptied — so `update: false` is a value Payload cannot emit, and a fully-refused field or
+ * collection arrives as nothing at all. A fully-allowed one collapses the other way, to the literal
+ * `true`, which `fields` and `blocks` may themselves become.
  */
 type Grant = boolean | { permission?: boolean };
 
@@ -27,35 +23,33 @@ type FieldPermission =
 type FieldPermissions = Record<string, FieldPermission | undefined>;
 type BlockPermissions = Record<string, true | { fields?: FieldPermissions | true } | undefined>;
 
-/** What the evaluator answers, as much of it as this file reads. */
 type DocPermissions = { update?: Grant; fields?: FieldPermissions | true };
 
 /**
- * Row identity and the block discriminator. Payload reports no permission for these, and reading
- * their absence as a refusal would prune an array row's `id` — which makes Payload rebuild the row
- * and lose the non-localized siblings it shares across every locale.
- *
- * None of the three is a reserved field name, so a host may legitimately declare a translatable field
- * called `blockName`. When it does, Payload reports a permission for it like any other, and the walk
- * below honours it: only the *absence* is excused here, never a refusal.
+ * Payload reports no permission for row identity or the block discriminator. Reading their absence as
+ * a refusal would prune an array row's `id`, which makes Payload rebuild the row and lose the
+ * non-localized siblings it shares across every locale.
  */
 const STRUCTURAL_KEYS = new Set(["id", "blockType", "blockName"]);
 
+/** An absent block slug is one the rules refuse outright, so every field of such a row is refused. */
+const REFUSE_EVERY_FIELD: FieldPermissions = {};
+
+// `{ permission: true, where }` is a grant: `docAccessOperation` has already run the query against
+// this document.
 function isGranted(value: Grant | undefined): boolean {
   if (value === true) return true;
   return typeof value === "object" && value !== null && value.permission === true;
 }
 
-/**
- * What `docAccessOperation` accepts, named locally so the call stays type-checked.
- *
- * Its published signature is generic over the host's own collection slugs and expects the sanitized
- * `Collection` object, neither of which a plugin registered at config time can name. Casting the
- * *function* once against a declared signature keeps every argument at the call site checked, which
- * erasing the argument with `as never` would not.
- */
 type LocalRequest = Awaited<ReturnType<typeof createLocalReq>>;
 
+/**
+ * `docAccessOperation` is generic over the host's own slugs and wants Payload's sanitized
+ * `Collection`, neither of which a plugin registered at config time can name. The cast is on the
+ * *function*, once, so every argument at the call site stays checked — `as never` on the argument
+ * would check nothing.
+ */
 type EvaluateDocAccess = (args: {
   id: string;
   collection: unknown;
@@ -76,11 +70,9 @@ const evaluateDocAccess = docAccessOperation as unknown as EvaluateDocAccess;
 const buildLocalRequest = createLocalReq as unknown as BuildLocalRequest;
 
 /**
- * Every path in `data` the rules refuse, walking into groups, arrays, tabs and blocks.
- *
- * A rule declared on `meta.subtitle` is reported by Payload under a nested `fields`, never at the top
- * level — so a check that only looked at top-level names would honour no nested rule at all. Reporting
- * the leaf path rather than its container is what lets the write keep the siblings the rules allow.
+ * Payload reports a rule on `meta.subtitle` under a nested `fields`, never at the top level, so the
+ * walk has to descend; the leaf path is reported rather than its container, which is what lets the
+ * write keep the siblings the rules allow.
  */
 function deniedPaths(fields: FieldPermissions | true, data: unknown, prefix = ""): string[] {
   if (fields === true) return [];
@@ -99,8 +91,6 @@ function deniedPaths(fields: FieldPermissions | true, data: unknown, prefix = ""
     if (permission === undefined && STRUCTURAL_KEYS.has(name)) continue;
     if (permission === true) continue;
     const path = prefix ? `${prefix}.${name}` : name;
-    // Absent means the sanitizer emptied it — every operation refused — so this is the shape a field
-    // that hides itself from the requester takes, not a field nobody mentioned.
     if (permission === undefined || !isGranted(permission.update)) {
       denied.push(path);
       continue;
@@ -112,40 +102,27 @@ function deniedPaths(fields: FieldPermissions | true, data: unknown, prefix = ""
     if (permission.fields !== undefined) {
       denied.push(...deniedPaths(permission.fields, child, path));
     }
-    // Blocks are reported under a key of their own, one entry per block slug, each carrying its own
-    // `fields`. Read only `fields` and a blocks field looks unremarkable, so no rule declared inside
-    // one is honoured at all.
     if (permission.blocks !== undefined && permission.blocks !== true && Array.isArray(child)) {
       for (const row of child) {
         if (row === null || typeof row !== "object") continue;
         const slug = (row as Record<string, unknown>).blockType;
         const block = typeof slug === "string" ? permission.blocks[slug] : undefined;
         if (block === true) continue;
-        // An absent slug is a block the rules refuse outright; `{}` then refuses each of its fields.
-        denied.push(...deniedPaths(block?.fields ?? {}, row, path));
+        denied.push(...deniedPaths(block?.fields ?? REFUSE_EVERY_FIELD, row, path));
       }
     }
   }
-  // A leaf path carries no row index, so the same name refused in one row is refused in every row of
-  // that field — conservative in the direction that loses a translation rather than writes a refused
-  // one, and the reason a name can be named twice here.
+  // Two rows of the same blocks field can refuse the same leaf.
   return [...new Set(denied)];
 }
 
-/** What the host's rules allow this write to do. */
 export type TranslationPermission = {
-  /** False when the collection refuses the write outright; nothing should be written. */
   allowed: boolean;
-  /**
-   * Dot-separated paths the caller may not write — `title`, `meta.subtitle`. Paths rather than names
-   * because a rule may sit on a field nested in a group, an array row or a tab, and dropping the
-   * whole container to honour one leaf would throw away the siblings it allows.
-   */
+  /** Dot-separated paths the caller may not write — `title`, `meta.subtitle`. No row indices. */
   deniedFields: string[];
   /**
-   * The requester, rebuilt, when there was one — so a caller that can afford Payload's own
-   * enforcement at the write does not have to look them up a second time. `null` for an
-   * unattributed request.
+   * The requester, already rebuilt at auth depth, so a caller passing `overrideAccess: false` need not
+   * look them up again. `null` when unattributed.
    */
   user: Record<string, unknown> | null;
 };
@@ -157,19 +134,13 @@ type PermissionQuery = {
   collection: CollectionSlug;
   id: string;
   data: Record<string, unknown>;
-  /** The locale being written, not the one being read: it is the write the rules are deciding. */
-  locale: string;
+  targetLocale: string;
   scope: RequestScope;
 };
 
 /**
- * Run Payload's evaluator, and make its failure legible.
- *
- * It calls `killTransaction` from its own catch, so by the time a throw reaches us the caller's save
- * is already rolled back — including when the thrown thing is an ordinary `TypeError` from a host
- * rule reading `user.role.name` on a null role. Rethrowing it as an `APIError` is what lets
- * `killedTheCallersTransaction` recognise it further up and surface the loss; left as a plain error
- * it would be swallowed as best-effort and the editor would be told their save succeeded.
+ * Rethrown as `APIError` so {@link killedTheCallersTransaction} recognises it: `docAccessOperation`
+ * kills the transaction from its own catch, including for an ordinary `TypeError` out of a host rule.
  */
 async function evaluate(args: Parameters<EvaluateDocAccess>[0]): Promise<DocPermissions> {
   try {
@@ -186,19 +157,16 @@ async function evaluate(args: Parameters<EvaluateDocAccess>[0]): Promise<DocPerm
 }
 
 /**
- * `user.collection` is what Payload's own access evaluation keys on; an id alone is not enough.
- *
- * Deliberately the one read that does **not** join the caller's transaction. The requester is a row
- * committed long before this request, so there is nothing to miss — and joining would mean a failed
- * lookup rolls the caller's save back through `killTransaction`, which is exactly what the plain
- * error below promises has not happened.
+ * The one read that deliberately does **not** join the caller's transaction: the requester was
+ * committed long before this request, and joining would let a failed lookup roll the caller's save
+ * back through `killTransaction`.
  */
-async function findRequester(payload: Payload, scope: RequestScope) {
-  const collection = scope.userCollection as CollectionSlug;
+async function findRequester(payload: Payload, requester: Requester) {
+  const collection = requester.userCollection as CollectionSlug;
   const auth = payload.collections[collection]?.config?.auth;
   const user = await payload.findByID({
     collection,
-    id: scope.userId as string,
+    id: requester.userId,
     // The depth Payload authenticates at, so the rules see the user they would have seen on the
     // editor's own save. At depth 0 a rule reading `user.role.name` finds an id and answers no,
     // refusing a translation for somebody who may in fact write; one that reaches a level deeper
@@ -207,30 +175,20 @@ async function findRequester(payload: Payload, scope: RequestScope) {
     depth: typeof auth === "object" ? auth.depth : undefined,
     overrideAccess: true,
   });
-  return user ? { ...user, collection: scope.userCollection } : null;
+  return user ? { ...user, collection: requester.userCollection } : null;
 }
 
 /**
- * Ask whether this write is allowed, rather than attempting it and catching the refusal.
+ * Asks Payload's own evaluator (`docAccessOperation`, the one behind `/api/<slug>/access`) instead of
+ * attempting the write and catching `Forbidden`: a caught refusal has already been through
+ * {@link killedTheCallersTransaction}'s rollback and would discard the editor's own save.
  *
- * The distinction is load-bearing. `Forbidden` extends `APIError`, and every Payload write operation
- * calls `killTransaction` from its catch — which rolls back whatever transaction the request carries
- * without checking whose it is. On the inline path that transaction belongs to the editor's own save,
- * so a refused translation would discard their work. Asking first means nothing ever reaches that
- * catch.
- *
- * `docAccessOperation` is Payload's own evaluator — the one behind `/api/<slug>/access` — and it
- * returns a permissions object instead of throwing. It reports field-level permissions too, so a
- * field the caller may not write is dropped from the payload rather than failing the whole
- * translation.
- *
- * An unattributed scope allows everything: a request with no identity is the host's own server-side
- * code, or a job queued before the requester was recorded, and both keep the behaviour they had.
+ * Field-level answers come back too, so a refused field is dropped rather than failing the locale.
  */
 export async function checkTranslationPermission(
   query: PermissionQuery
 ): Promise<TranslationPermission> {
-  const { payload, collection, id, data, locale, scope } = query;
+  const { payload, collection, id, data, targetLocale, scope } = query;
   if (!isAttributed(scope)) return ALLOW_ALL;
 
   const user = await findRequester(payload, scope).catch(() => null);
@@ -245,25 +203,16 @@ export async function checkTranslationPermission(
     );
   }
 
-  // A real request, not a hand-rolled stand-in. The host's own access rules receive this object and
-  // are entitled to everything Payload always puts on one — `req.headers`, `req.i18n`, `req.context`
-  // — and a rule reading one of those off a bare `{ payload, user }` throws a `TypeError`, which
-  // `docAccessOperation` answers by rolling the caller's transaction back. Building it properly is
-  // what keeps a correct rule from destroying the editor's save.
-  //
-  // The transaction travels with it: an access rule that returns a `Where` is resolved by counting
-  // matching rows, and on PostgreSQL a count outside the caller's transaction cannot see a document
-  // the caller has not committed — so the rule would be applied to nothing and answer "allowed",
-  // which is the #124 shape exactly. The cost is named rather than hidden: `docAccessOperation`
-  // calls `killTransaction` if it throws, so a rule that throws for its own reasons still takes the
-  // save with it, and `evaluate` makes that loss visible instead of silent.
-  //
-  // So does the locale. `createLocalReq` fills an absent one from the project's default, and the
-  // rules are then asked about a locale nobody is writing — "may this user write English?" answered
-  // and used to authorise a write to German. `req.locale !== "de"` is the ordinary way a host says
-  // an editor owns one locale and not another, and it is exactly the shape that would have been
-  // read backwards.
-  const req = await buildLocalRequest({ user, req: freshReq(scope), locale }, payload);
+  // Payload's own request builder, because a host rule may read anything a real request carries —
+  // `headers`, `i18n`, `context` — and a `TypeError` off a stand-in is answered with `killTransaction`.
+  // The transaction has to travel: a `Where` rule is resolved by counting rows, and on PostgreSQL a
+  // count outside the caller's transaction cannot see the uncommitted document, so the rule is applied
+  // to nothing and answers "allowed" — issue #124. The locale likewise, or `createLocalReq` substitutes
+  // the project default and the rules answer about the wrong one.
+  const req = await buildLocalRequest(
+    { user, req: freshReq(scope), locale: targetLocale },
+    payload
+  );
 
   const permissions = await evaluate({
     id,

@@ -22,13 +22,9 @@ import type { PublishScope, TargetLayer } from "./targetLayer";
 const translatorWriteContext = () => ({ [AUTO_TRANSLATE_SKIP_CONTEXT_KEY]: true });
 
 /**
- * Whether this write can afford Payload's own enforcement on top of the pre-check.
- *
- * It can exactly when there is no caller transaction to damage — the deferred path, where the job
- * runs on a request of its own, long after the save that queued it committed. There, a refusal
- * Payload raises costs nothing but the translation. On the inline path a caller transaction is
- * present and `killTransaction` would take the editor's save with it, so the pre-check stands alone;
- * that is the whole reason it exists.
+ * Payload enforces the write itself only when there is no caller transaction to lose: a refusal calls
+ * `killTransaction`, which on the inline path would take the editor's own save with it. On the
+ * deferred path the job owns its request, so a refusal costs only the translation.
  */
 function enforcedAtTheWrite(
   scope: RequestScope,
@@ -51,13 +47,7 @@ function dropPath(value: unknown, segments: string[]): unknown {
   return Object.fromEntries(entries);
 }
 
-/**
- * Drop the paths the rules refuse and keep everything else.
- *
- * A refused field is a reason to leave that field alone, not to abandon the locale — so a rule on
- * `meta.subtitle` must not cost `meta.headline` its translation. Paths are dot-separated and an array
- * is pruned row by row, because a row's fields share one rule.
- */
+/** Paths are dot-separated and carry no row index, so an array is pruned row by row. */
 function withoutDeniedFields(
   data: Record<string, unknown>,
   denied: string[]
@@ -127,19 +117,15 @@ export class TranslateDocumentHandler implements Handler<
       }),
     ]);
 
-    // Ask before spending, not just before writing. Asking is what protects the caller's save —
-    // attempting the write and catching the refusal would let Payload's `killTransaction` roll back
-    // whatever transaction the request carries. Asking *here*, ahead of the provider call, also means
-    // a refusal costs nothing: the job's retries re-ask instead of re-buying a translation the write
-    // will refuse anyway. The source document stands in for the data, which is what a rule keyed on
-    // the document can read; the deferred path writes with `overrideAccess: false` as well, so a rule
-    // that keys on the translated values still gets its say there.
+    // Placed ahead of the provider call so a refusal costs no money: a retry re-asks instead of
+    // re-buying a translation the write will refuse. `sourceData` stands in for the write payload — a
+    // rule keyed on the *translated* values is still enforced at the write on the deferred path.
     const permission = await checkTranslationPermission({
       payload,
       collection,
       id: String(collectionId),
       data: sourceData as Record<string, unknown>,
-      locale: targetLng,
+      targetLocale: targetLng,
       scope,
     });
     if (!permission.allowed) throw new TranslationRefused(collection, targetLng);
@@ -160,9 +146,8 @@ export class TranslateDocumentHandler implements Handler<
 
     if (translatedData) {
       const writable = withoutDeniedFields(translatedData, permission.deniedFields);
-      if (Object.keys(writable).length === 0) {
-        throw new TranslationRefused(collection, targetLng);
-      }
+      const everyFieldRefused = Object.keys(writable).length === 0;
+      if (everyFieldRefused) throw new TranslationRefused(collection, targetLng);
 
       await this.saveTranslatedDocument(payload, input, writable, layer.write, scope, permission);
 
@@ -179,9 +164,6 @@ export class TranslateDocumentHandler implements Handler<
       }
     }
 
-    // No gate of its own: `_status` is one of Payload's base version fields and declares no access,
-    // so it inherits the collection's — and a collection that refuses the update has already been
-    // refused above. A publish the rules would object to cannot reach this line.
     if (publishOnTranslation && layer.kind === "drafts") {
       await this.publishTargetLocale(payload, input, layer.publish, scope, permission);
     }
