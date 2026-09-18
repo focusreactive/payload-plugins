@@ -150,9 +150,7 @@ export class TranslateCollectionPlugin {
         basePath: rawBasePath = "/translate",
       } = this.pluginConfig;
 
-      // Refuse rather than guess. Closing silently would break hosts whose callers are
-      // unauthenticated, with nothing to tell them why; staying open is the defect. Both ways out are
-      // named, because a reader meeting this message has to pick one.
+      // `access` is typed required, so this fires only for JavaScript or otherwise untyped config.
       if (!access) {
         throw new Error(
           "payload-plugin-translator: `access` is required. The translation endpoints write to your " +
@@ -161,19 +159,12 @@ export class TranslateCollectionPlugin {
         );
       }
 
-      // Snapshot each collection's schema as an independent FieldLike tree BEFORE Payload's sanitizer
-      // mutates the originals (it deletes `localized` from fields nested under a localized ancestor).
-      // `projectFieldsToFieldLike` deep-copies only the properties the pipeline reads — an explicit,
-      // typed contract, replacing the old JSON round-trip (which "worked" only by silently dropping the
-      // Lexical editor's async functions that structuredClone chokes on). Payload's `Field[]` is
-      // structurally assignable to `FieldLike[]`, so the projection happens right here at the boundary.
       const schemaMap: CollectionSchemaMap = new Map(
         collections.map((col) => [col.slug, projectFieldsToFieldLike(col.fields)])
       );
       const collectionSlugs = new Set(schemaMap.keys());
       const basePath = normalizePath(rawBasePath);
 
-      // Each concern owns its own config-time wiring and exposes it uniformly; init() just composes.
       const provenanceModule = configureProvenance(provenance, schemaMap);
       const inlineMarks = experimental?.inlineMarks === true;
 
@@ -186,8 +177,6 @@ export class TranslateCollectionPlugin {
         lifecycle: lifecycle ?? {},
         collections: Array.from(collectionSlugs),
       });
-      // Auto-translate (#51) reads its opt-in from each collection's `custom` (via `withAutoTranslate`);
-      // needs the runner's factory, so it wires after `wireTranslateRunner`.
       const autoTranslateModule = configureAutoTranslate(collections, schemaMap, taskRunnerFactory);
 
       const activeLevels = levels ?? [documentLevel(), collectionLevel()];
@@ -209,7 +198,6 @@ export class TranslateCollectionPlugin {
       builder.addConfigModifier(autoTranslateModule.configure(collectionSlugs));
       builder.addAdminProvider(new CacheProviderExport(basePath));
 
-      // The single place the Payload config is mutated.
       return builder.applyTo(config);
     };
   }
@@ -226,7 +214,6 @@ export class TranslateCollectionPlugin {
  *       collections: [Posts, Pages],
  *       translationProvider: createOpenAIProvider({ apiKey: process.env.OPENAI_API_KEY }),
  *       runner: createPayloadJobsRunner(),
- *       // Required: who may reach the plugin's endpoints. `new AnyAccessGuard()` says "anyone".
  *       access: { check: ({ req }) => Boolean(req.user) },
  *     }),
  *   ],
