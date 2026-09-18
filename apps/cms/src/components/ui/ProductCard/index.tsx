@@ -49,22 +49,24 @@ export function ProductCard({
   const content = (
     <>
       {/*
-        No padding, no radius here: the card's own `overflow-hidden` + `rounded-xl` clips this box
-        to the card's shape for free, so the cover bleeds flush to the top/left/right edges instead
-        of floating in a well. 3/4 reads as a book cover without the height a true 2/3 trade-
-        paperback ratio would give it at the rail's own card width (~600px tall at 400px wide,
-        which dwarfed the row) - the 485/300 landscape box this replaced was built for talk/course
-        thumbnails and cropped a portrait cover hard in the other direction.
+        A mount, not a crop window: the dev store's own product photos are 262x262 squares, and
+        `object-cover` bleeding one into a 3/4 box meant cropping a square into a portrait AND
+        upscaling it ~1.7x to fill the width - the two things that make a small source image read
+        as "low quality" rather than just small. `object-contain` inside a padded well shows the
+        square photo whole and only as large as it actually is; the padding is what turns the
+        leftover space into a deliberate frame instead of looking like a missing image. 4/5 is
+        gentler than the 3/4 this replaced - that one still read "too tall" once the image itself
+        stopped needing the extra height to avoid a crop.
       */}
-      <div className="relative w-full flex-none overflow-hidden bg-primary-soft aspect-[3/4]">
+      <div className="relative w-full flex-none overflow-hidden bg-primary-soft aspect-[4/5] p-[clamp(16px,3vw,32px)]">
         {cover && (
           <Media
             {...cover.data}
             imageProps={{
               ...cover.imageProps,
-              className: "size-full object-cover",
+              className: "size-full object-contain",
               fill: true,
-              fit: "cover",
+              fit: "contain",
               sizes: "(max-width: 640px) 80vw, (max-width: 1024px) 45vw, 380px",
             }}
             visualEditing={cover.visualEditing}
