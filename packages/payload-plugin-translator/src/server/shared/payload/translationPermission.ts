@@ -8,32 +8,14 @@ import { freshReq, isAttributed } from "./RequestScope.shapes";
 import type { Requester } from "./RequestScope.shapes";
 
 /**
- * Payload 3.84.1's sanitized permission shape (`utilities/sanitizePermissions.js`).
- *
- * A refusal is an **absent key** — the sanitizer deletes what it set to `false`, then deletes the
- * object it emptied — so a refused field or collection arrives as nothing at all and `update: false`
- * cannot occur. A fully-allowed one collapses to the literal `true`, which `fields` and `blocks` may
- * themselves become. `{ permission: true, where }` is a grant: the query has already been run against
- * this document.
+ * A refusal is an **absent key** — Payload's sanitizer deletes what it set to `false` — so
+ * `update: false` is a value it cannot emit and a refused collection arrives as nothing at all. A
+ * grant is the literal `true`, or `{ permission: true, where }` when the rule returned a query, which
+ * has already been run against this document.
  */
 type Grant = boolean | { permission?: boolean };
 
-type FieldPermission =
-  | true
-  | { update?: Grant; fields?: FieldPermissions | true; blocks?: BlockPermissions | true };
-type FieldPermissions = Record<string, FieldPermission | undefined>;
-type BlockPermissions = Record<string, true | { fields?: FieldPermissions | true } | undefined>;
-
-type DocPermissions = { update?: Grant; fields?: FieldPermissions | true };
-
-/**
- * Payload reports no permission for row identity or the block discriminator. Reading their absence as
- * a refusal would prune an array row's `id`, which makes Payload rebuild the row and lose the
- * non-localized siblings it shares across every locale.
- */
-const STRUCTURAL_KEYS = new Set(["id", "blockType", "blockName"]);
-
-const REFUSE_EVERY_FIELD: FieldPermissions = {};
+type DocPermissions = { update?: Grant };
 
 function isGranted(value: Grant | undefined): boolean {
   if (value === true) return true;
@@ -65,52 +47,8 @@ type BuildLocalRequest = (
 const evaluateDocAccess = docAccessOperation as unknown as EvaluateDocAccess;
 const buildLocalRequest = createLocalReq as unknown as BuildLocalRequest;
 
-/** Leaf paths only: a container whose children are allowed is not reported, so the write keeps the
- * siblings the rules allow. */
-function deniedPaths(fields: FieldPermissions | true, data: unknown, prefix = ""): string[] {
-  if (fields === true) return [];
-  if (data === null || typeof data !== "object") return [];
-  // Rows share one rule set, so a refusal in any row refuses that leaf in all of them.
-  if (Array.isArray(data)) {
-    const merged = new Set<string>();
-    for (const row of data) for (const path of deniedPaths(fields, row, prefix)) merged.add(path);
-    return [...merged];
-  }
-
-  const denied: string[] = [];
-  for (const name of Object.keys(data as Record<string, unknown>)) {
-    const permission = fields[name];
-    if (permission === undefined && STRUCTURAL_KEYS.has(name)) continue;
-    if (permission === true) continue;
-    const path = prefix ? `${prefix}.${name}` : name;
-    if (permission === undefined || !isGranted(permission.update)) {
-      denied.push(path);
-      continue;
-    }
-
-    const child = (data as Record<string, unknown>)[name];
-    // A leaf declares neither: recursing into one would walk the *value's* own keys — a rich text
-    // document's `root`, a relationship's `value` — and read every one of them as a refused field.
-    if (permission.fields !== undefined) {
-      denied.push(...deniedPaths(permission.fields, child, path));
-    }
-    if (permission.blocks !== undefined && permission.blocks !== true && Array.isArray(child)) {
-      for (const row of child) {
-        if (row === null || typeof row !== "object") continue;
-        const slug = (row as Record<string, unknown>).blockType;
-        const block = typeof slug === "string" ? permission.blocks[slug] : undefined;
-        if (block === true) continue;
-        denied.push(...deniedPaths(block?.fields ?? REFUSE_EVERY_FIELD, row, path));
-      }
-    }
-  }
-  return [...new Set(denied)];
-}
-
 export type TranslationPermission = {
   allowed: boolean;
-  /** Dot-separated paths the caller may not write — `title`, `meta.subtitle`. No row indices. */
-  deniedFields: string[];
   /**
    * The requester, already rebuilt at auth depth, so a caller passing `overrideAccess: false` need not
    * look them up again. `null` when unattributed.
@@ -118,7 +56,7 @@ export type TranslationPermission = {
   user: Record<string, unknown> | null;
 };
 
-const ALLOW_ALL: TranslationPermission = { allowed: true, deniedFields: [], user: null };
+const ALLOW_ALL: TranslationPermission = { allowed: true, user: null };
 
 type PermissionQuery = {
   payload: Payload;
@@ -168,6 +106,45 @@ async function findRequester(payload: Payload, requester: Requester) {
 }
 
 /**
+ * Whether the collection's rules allow this exact payload to be written, asked of an already-rebuilt
+ * requester so a caller with several writes pays for one lookup.
+ *
+ * `data` must be the payload that write will send. Payload evaluates the same rule with the same
+ * argument (`updateByID`: `executeAccess({ id, data, req })`), so a rule reading `data` gives one
+ * answer here and a different one at the write if it is asked about anything else — and at the write
+ * a refusal is a `Forbidden` inside the caller's transaction.
+ */
+export async function mayWrite(query: {
+  payload: Payload;
+  collection: CollectionSlug;
+  id: string;
+  data: Record<string, unknown>;
+  targetLocale: string;
+  scope: RequestScope;
+  user: Record<string, unknown>;
+}): Promise<boolean> {
+  const { payload, collection, id, data, targetLocale, scope, user } = query;
+
+  // Payload's own builder: a host rule may read anything a real request carries (`headers`, `i18n`,
+  // `context`), and a `TypeError` off a stand-in is answered with `killTransaction`. The transaction
+  // must travel too — a `Where` rule is resolved by counting rows, and on PostgreSQL a count outside
+  // the caller's transaction cannot see the uncommitted document, so the rule answers "allowed"
+  // (#124). The locale too, or the rules answer about the project default.
+  const req = await buildLocalRequest(
+    { user, req: freshReq(scope), locale: targetLocale },
+    payload
+  );
+
+  const permissions = await evaluate({
+    id,
+    collection: payload.collections[collection],
+    data,
+    req,
+  });
+  return isGranted(permissions.update);
+}
+
+/**
  * Asks Payload's own evaluator (`docAccessOperation`, the one behind `/api/<slug>/access`) instead of
  * attempting the write and catching `Forbidden`: a caught refusal has already been through
  * {@link killedTheCallersTransaction}'s rollback and would discard the editor's own save.
@@ -190,26 +167,6 @@ export async function checkTranslationPermission(
     );
   }
 
-  // Payload's own builder: a host rule may read anything a real request carries (`headers`, `i18n`,
-  // `context`), and a `TypeError` off a stand-in is answered with `killTransaction`. The transaction
-  // must travel too — a `Where` rule is resolved by counting rows, and on PostgreSQL a count outside
-  // the caller's transaction cannot see the uncommitted document, so the rule answers "allowed"
-  // (#124). The locale too, or the rules answer about the project default.
-  const req = await buildLocalRequest(
-    { user, req: freshReq(scope), locale: targetLocale },
-    payload
-  );
-
-  const permissions = await evaluate({
-    id,
-    collection: payload.collections[collection],
-    data,
-    req,
-  });
-
-  return {
-    allowed: isGranted(permissions.update),
-    deniedFields: deniedPaths(permissions.fields ?? {}, data),
-    user,
-  };
+  const allowed = await mayWrite({ payload, collection, id, data, targetLocale, scope, user });
+  return { allowed, user };
 }

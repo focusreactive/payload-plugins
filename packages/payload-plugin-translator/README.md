@@ -156,7 +156,7 @@ translatorPlugin(config: TranslatorPluginConfig)
 | `translationProvider` | `TranslationProvider` | — | **Required.** What actually translates the text. |
 | `runner` | `TaskRunnerProvider` | — | **Required.** What runs the translation — in the background, or inline. |
 | `levels` | `TranslationLevel[]` | `[documentLevel(), collectionLevel()]` | Which translation surfaces to enable. |
-| `access` | `AccessGuard` | — | Gate for every translation endpoint. Omit to leave them open. |
+| `access` | `AccessGuard` | — | **Required.** Who may call the translation endpoints. `new AnyAccessGuard()` leaves them open on purpose. |
 | `basePath` | `string` | `'/translate'` | Base path for the plugin's endpoints. |
 | `targetSelection` | `'single' \| 'multi'` | `'single'` | `'multi'` lets an editor pick several target locales for one run. _Since v0.10.0._ |
 | `provenance` | `boolean \| { slug?: string }` | `false` | Adds a collection recording what each locale was translated from, so the admin can flag stale ones. Default slug `translator-provenance`. |

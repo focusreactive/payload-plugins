@@ -12,6 +12,8 @@ vi.mock("../../../core/translation-pipeline", () => ({
 
 vi.mock("../../shared/payload/translationPermission", () => ({
   checkTranslationPermission: vi.fn(),
+  // The second ask, with the payload each write actually sends; allowed unless a case says otherwise.
+  mayWrite: vi.fn().mockResolvedValue(true),
 }));
 
 const permission = async () =>
@@ -55,7 +57,7 @@ describe("TranslateDocumentHandler — where Payload's own enforcement is afford
     } as unknown as Payload;
 
     handler = new TranslateDocumentHandler(provider, schemaMap);
-    (await permission()).mockResolvedValue({ allowed: true, deniedFields: [], user: ANNA });
+    (await permission()).mockResolvedValue({ allowed: true, user: ANNA });
   });
 
   it("lets Payload check the deferred write as well", async () => {
@@ -64,19 +66,20 @@ describe("TranslateDocumentHandler — where Payload's own enforcement is afford
     expect(writeArgs()).toMatchObject({ overrideAccess: false, user: ANNA });
   });
 
-  it("leaves the inline write to the pre-check alone, so a refusal cannot kill the save", async () => {
+  // Inside the editor's transaction too: Payload deletes a field the requester may not write and
+  // does not throw, so there is no refusal here for `killTransaction` to act on.
+  it("lets Payload check the inline write as well", async () => {
     await handler.handle(payload, input(), {
       transactionID: "tx-1",
       userId: "anna",
       userCollection: "users",
     });
 
-    expect(writeArgs()).not.toHaveProperty("overrideAccess");
-    expect(writeArgs()).not.toHaveProperty("user");
+    expect(writeArgs()).toMatchObject({ overrideAccess: false, user: ANNA });
   });
 
   it("adds nothing when the request named nobody", async () => {
-    (await permission()).mockResolvedValue({ allowed: true, deniedFields: [], user: null });
+    (await permission()).mockResolvedValue({ allowed: true, user: null });
 
     await handler.handle(payload, input(), {});
 

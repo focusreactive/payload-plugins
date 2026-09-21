@@ -1,0 +1,94 @@
+Suite audit — does anything still hold the behaviour after 19 checks were deleted?
+==================================================================================
+Target: the uncommitted reduction on fix/translator-access-control. The plugin stopped walking
+Payload's permission answer and pruning denied fields; Payload now enforces field rules at the write
+on every path, and the plugin's pre-check asks one collection-level question.
+
+19 checks went with the deleted code: 13 in translationPermission.test.ts, 2 in handler.access.test.ts,
+4 in handler.prune.test.ts (whole file). The question this audit answers is whether the behaviour they
+asserted is still guarded, or whether it left with them.
+
+Method: break the three things the design now rests on, one at a time, and read what reddens. Every
+mutation rebuilt the plugin first — `apps/dev` resolves it from `dist`, so an unbuilt mutation
+measures the previous build — and ran on PostgreSQL, the only adapter where the inline path carries a
+transaction at all. The working tree carries the change under audit, so the files were restored from
+copies rather than `git checkout --`.
+
+
+Mutation 1 — Payload enforces nothing (`enforcedAtTheWrite` always returns `{}`)
+--------------------------------------------------------------------------------
+    unit           2 failed / 1589
+    integration    3 failed / 13
+
+    × access-control.int.test.ts         field rule — the denied field keeps the value it already had
+    × access-control-queue.int.test.ts   writes as them — the field rule still applies when the job runs
+    × access-control-blocks.int.test.ts  the refused block field keeps its value while its neighbours translate
+
+This is the answer to "what holds what the deleted checks held". A field rule on the inline path, the
+same rule on the deferred path, and a rule declared **inside a block** — the case that cost a full
+review round to get right in the deleted walk — are each held by one integration check, and all three
+redden the moment Payload stops being asked to enforce.
+
+`access-control-blocks.int.test.ts` was deliberately kept when the code it was written against was
+deleted. This run is why: it now proves Payload's traversal rather than the plugin's, and it is the
+only check that does.
+
+
+Mutation 2 — the collection refusal is ignored (`allowed: true` always)
+-----------------------------------------------------------------------
+    unit           3 failed / 1589
+    integration    4 failed / 13
+
+    × access-control-locale.int.test.ts      the refused locale is not written
+    × access-control-locale.int.test.ts      a locale the same rule allows is written
+    × access-control-collection.int.test.ts  nothing is written into a document the collection refuses
+    × access-control-collection.int.test.ts  the editor's own save survives either answer
+
+The fourth row is the important one, and it proves the design's central claim rather than arguing it.
+With the pre-check answering "allowed" the write reaches `executeAccess`, which throws `Forbidden`,
+which reaches `killTransaction` — and the **editor's own save is rolled back**. That is exactly the
+hole the pre-check exists to close, and until this run it was reasoning from Payload's source rather
+than a measurement.
+
+It also explains the second row: the save died, so the locale that should have been translated was
+not. A collapse, not an independent failure.
+
+
+Mutation 3 — no pre-check at all (`checkTranslationPermission` returns ALLOW_ALL)
+---------------------------------------------------------------------------------
+    unit           9 failed / 1589
+    integration    5 failed / 13
+
+The union of the first two, as expected. Recorded because it is the shape a future reader is most
+likely to try ("Payload enforces it anyway, why do we ask first?") — and it reddens five checks.
+
+
+What survived the cull, and whether it still says what it claims
+-----------------------------------------------------------------
+`translationPermission.test.ts` keeps 11 checks over 9 cases, all of them about the three
+responsibilities that remain: the collection-level answer, rebuilding the requester, and the request
+handed to the host's rules. No orphan — every one traces to code that still exists.
+
+**One title had outlived its mechanism.** An `it.each` row read "update refused, one field granting
+it", and its fixture carries `fields: { title: true }` — a key nothing reads any more, because there
+is no field walk. The row still asserts the right outcome, but it was describing a mechanism that is
+gone. Relabelled to what it now proves: a field-level grant cannot rescue a collection-level refusal.
+That is a real property and worth pinning; the old label was not.
+
+No tautologies found. Every surviving check fails under at least one of the three mutations except
+the four that are about the requester and the request shape, which have their own mutations already
+recorded in the earlier run (depth, stand-in request, default locale).
+
+
+Cost, counted rather than predicted
+------------------------------------
+The reduction removed 126 lines of test and 80 lines of implementation. Coverage of the *behaviour*
+did not fall: three integration checks now carry what 19 unit checks carried, and they carry it
+against Payload's real traversal rather than a copy of it. What was lost is coverage of a copy that no
+longer exists.
+
+
+After the audit: unit 1589 in 130 files; integration 154 on PostgreSQL, 148 + 6 adapter-skipped on
+SQLite and Mongo, both queue modes; check-types clean in the plugin and both apps; lint at the
+58-warning baseline. No scaffolding created — this audit needed no stub or red config, because the
+mutations are the instrument in audit mode. Files restored from copies and verified green.

@@ -12,6 +12,8 @@ vi.mock("../../../core/translation-pipeline", () => ({
 
 vi.mock("../../shared/payload/translationPermission", () => ({
   checkTranslationPermission: vi.fn(),
+  // The second ask, with the payload each write actually sends; allowed unless a case says otherwise.
+  mayWrite: vi.fn().mockResolvedValue(true),
 }));
 
 const mocks = async () => ({
@@ -59,7 +61,7 @@ describe("TranslateDocumentHandler — a refusal costs nothing at the provider",
 
   it("never calls the translation pipeline when the write is refused", async () => {
     const { translate, permission } = await mocks();
-    permission.mockResolvedValue({ allowed: false, deniedFields: [] });
+    permission.mockResolvedValue({ allowed: false });
 
     await handler.handle(payload, input(), {}).catch(() => undefined);
 
@@ -68,7 +70,7 @@ describe("TranslateDocumentHandler — a refusal costs nothing at the provider",
 
   it("still calls it when the write is allowed", async () => {
     const { translate, permission } = await mocks();
-    permission.mockResolvedValue({ allowed: true, deniedFields: [] });
+    permission.mockResolvedValue({ allowed: true });
 
     await handler.handle(payload, input(), {});
 
@@ -80,7 +82,7 @@ describe("TranslateDocumentHandler — a refusal costs nothing at the provider",
     const { translate, permission } = await mocks();
     permission.mockImplementation(async () => {
       order.push("ask");
-      return { allowed: true, deniedFields: [] };
+      return { allowed: true };
     });
     translate.mockImplementation(async () => {
       order.push("translate");
