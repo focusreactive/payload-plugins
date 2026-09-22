@@ -191,7 +191,7 @@ function buildAction(
  * "open it" action points into the CMS admin because those links need an
  * account and the credentials go out after the call.
  */
-function buildHomepageBlocks(defaultMediaId: number) {
+function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<string, number>) {
   const hero: HeroBlock = {
     blockType: "hero",
     variant: "centered",
@@ -223,7 +223,7 @@ function buildHomepageBlocks(defaultMediaId: number) {
     eyebrow: "3,115 of roughly 3,800 items",
     heading: "Your attorneys keep writing in Passle. The article arrives here enriched.",
     layout: "image-text",
-    image: defaultMediaId,
+    image: illustrations["passle-to-cms.svg"] ?? defaultMediaId,
     content: buildParagraphRichText(
       "A post published in Passle sends its shortcode, and the platform pulls the article, matches the author to their profile by email address, and files it under the practice areas it belongs to. Nobody copies text, and an editor who adds a summary or a related service keeps that work when the article syncs again."
     ),
@@ -237,7 +237,7 @@ function buildHomepageBlocks(defaultMediaId: number) {
     heading:
       "Your Japanese pages already use Japanese addresses. The platform treats that as normal.",
     layout: "text-image",
-    image: defaultMediaId,
+    image: illustrations["one-document-six-addresses.svg"] ?? defaultMediaId,
     content: buildParagraphRichText(
       "/global-presence/asia/japan/ and /ja/世界展開/アジア/日本/ are the same document with a different address in each language, assembled from the address of every parent above it. Rename a parent in one language and every page beneath it follows, in that language only."
     ),
@@ -263,7 +263,7 @@ function buildHomepageBlocks(defaultMediaId: number) {
     eyebrow: "Review before publication",
     heading: "A translation arrives as a draft, addressed to a human.",
     layout: "image-text",
-    image: defaultMediaId,
+    image: illustrations["language-and-market.svg"] ?? defaultMediaId,
     content: buildParagraphRichText(
       "Machine translation drafts the page and the review queue holds it until someone signs it off. For an IP practice that is the only acceptable order, and it is the same queue that holds a fee-earner's request to update their own biography."
     ),
@@ -356,6 +356,30 @@ interface DemoMediaSpec {
  */
 function buildDemoMedia(): DemoMediaSpec[] {
   return [
+    {
+      filename: "one-document-six-addresses.svg",
+      alt: "One document with a different localised address in each of six languages",
+      mimetype: "image/svg+xml",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "demo-illustrations", "one-document-six-addresses.svg")
+      ),
+    },
+    {
+      filename: "language-and-market.svg",
+      alt: "Language decides wording, market decides visibility",
+      mimetype: "image/svg+xml",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "demo-illustrations", "language-and-market.svg")
+      ),
+    },
+    {
+      filename: "passle-to-cms.svg",
+      alt: "An article published in Passle arrives in the content platform enriched",
+      mimetype: "image/svg+xml",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "demo-illustrations", "passle-to-cms.svg")
+      ),
+    },
     {
       filename: "demo-logo.svg",
       alt: "Content Platform Demo",
@@ -563,7 +587,7 @@ function buildDemoPresets(
           "Patents, trade marks, and every regional office share one content model, so a rebrand rolls out to nine markets at once instead of nine separate projects."
         ),
         actions: [buildAction("View services", "/services", "default")],
-        image: { image: mediaIdByFilename["preview-hero.png"], aspectRatio: "16/9" },
+        image: { image: mediaIdByFilename["one-document-six-addresses.svg"], aspectRatio: "16/9" },
         section: { theme: "light" },
       },
     },
@@ -975,6 +999,12 @@ export async function POST(request: Request) {
     // Mark one media doc as the platform default, because every block's image defaultValue
     // resolves through getDefaultMediaId, and a null there fails validation on any locale that
     // falls back to the default block set.
+    const illustrationIds: Record<string, number> = {
+      "one-document-six-addresses.svg": mediaIdByFilename["one-document-six-addresses.svg"],
+      "language-and-market.svg": mediaIdByFilename["language-and-market.svg"],
+      "passle-to-cms.svg": mediaIdByFilename["passle-to-cms.svg"],
+    };
+
     const platformDefaultMediaId = mediaIdByFilename["preview-content.png"];
     if (platformDefaultMediaId) {
       await payload.update({
@@ -1041,7 +1071,7 @@ export async function POST(request: Request) {
       const parentId = spec.parentKey ? pageIdByKey[spec.parentKey] : undefined;
       const blocks =
         spec.key === "home"
-          ? buildHomepageBlocks(defaultMediaNumericId)
+          ? buildHomepageBlocks(defaultMediaNumericId, illustrationIds)
           : buildStructuralBlocks(spec.en.title, defaultMediaNumericId);
 
       const created = await payload.create({
