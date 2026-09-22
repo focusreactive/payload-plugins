@@ -12,9 +12,10 @@ import type { Locale } from "@/lib/types";
 import { LivePreviewListener } from "@/components/LivePreviewListener";
 import { VisualEditingEditRouter } from "@/components/VisualEditingEditRouter";
 
+// One style per next/font/google call: Turbopack's font loader rejects a multi-entry query with
+// "next/font/google queries have exactly one entry", and it only fails on the Vercel build.
 const newsreader = Newsreader({
   display: "swap",
-  style: ["normal", "italic"],
   subsets: ["latin"],
   variable: "--font-newsreader",
   weight: ["400", "500", "600"],
