@@ -1,11 +1,9 @@
-import { readdir } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
 
 import type { Person } from "@/payload-types";
 import { getPayloadClient } from "@/lib/dal/payload-client";
 import { ingestInsightFromPassle } from "@/lib/passle/ingestInsightFromPassle";
 
-const fixturesDirectoryUrl = new URL("../lib/passle/fixtures/", import.meta.url);
+import { passleFixturesByShortcode } from "@/lib/passle/fixtures";
 
 /**
  * Prerequisite CMS data, not Passle data: the real webhook never creates a
@@ -91,8 +89,8 @@ async function seedPeopleRecords(payload: Awaited<ReturnType<typeof getPayloadCl
 }
 
 async function seedInsightsFromFixtures(payload: Awaited<ReturnType<typeof getPayloadClient>>) {
-  const fixtureFileNames = (await readdir(fileURLToPath(fixturesDirectoryUrl))).filter((fileName) =>
-    fileName.endsWith(".json")
+  const fixtureFileNames = Object.keys(passleFixturesByShortcode).map(
+    (shortcode) => `${shortcode}.json`
   );
 
   for (const fixtureFileName of fixtureFileNames) {
