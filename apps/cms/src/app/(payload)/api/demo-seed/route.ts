@@ -1300,6 +1300,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Optional, and deliberately not an env var: a screenshot pass asks for a throwaway admin in the
+  // request body, so nothing about it outlives the run that asked for it.
+  const requestBody = (await request.json().catch(() => ({}))) as {
+    screenshotPassword?: unknown;
+  };
+  const screenshotPassword =
+    typeof requestBody.screenshotPassword === "string" &&
+    requestBody.screenshotPassword.length >= 12
+      ? requestBody.screenshotPassword
+      : undefined;
+
   const payload = await getPayloadClient();
 
   try {
@@ -1589,6 +1600,49 @@ export async function POST(request: Request) {
         data: { name: persona.name, email: persona.email, role: persona.role, password },
       });
       usersCreatedCount += 1;
+    }
+
+    // A screenshot pass needs an admin login, but the four persona passwords live only on the
+    // presenter's machine and never enter this repo. One throwaway admin can be created from the
+    // request body instead, and any run that does not ask for one deletes it again, so the demo is
+    // never left carrying a login nobody recorded.
+    const screenshotUserEmail = "screenshot@example.com";
+    const existingScreenshotUser = await payload.find({
+      collection: "users",
+      where: { email: { equals: screenshotUserEmail } },
+      limit: 1,
+      overrideAccess: true,
+    });
+    const existingScreenshotDoc = existingScreenshotUser.docs[0];
+
+    if (screenshotPassword) {
+      if (existingScreenshotDoc) {
+        await payload.update({
+          collection: "users",
+          id: existingScreenshotDoc.id,
+          overrideAccess: true,
+          data: { name: "Screenshot", role: "admin", password: screenshotPassword },
+        });
+        usersUpdatedCount += 1;
+      } else {
+        await payload.create({
+          collection: "users",
+          overrideAccess: true,
+          data: {
+            name: "Screenshot",
+            email: screenshotUserEmail,
+            role: "admin",
+            password: screenshotPassword,
+          },
+        });
+        usersCreatedCount += 1;
+      }
+    } else if (existingScreenshotDoc) {
+      await payload.delete({
+        collection: "users",
+        id: existingScreenshotDoc.id,
+        overrideAccess: true,
+      });
     }
 
     // Upsert by author so a second run reuses the same testimonial instead of duplicating it.
