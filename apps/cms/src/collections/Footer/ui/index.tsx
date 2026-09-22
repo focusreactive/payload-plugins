@@ -43,7 +43,7 @@ export function Footer({
           <div className="flex flex-col">
             <NextLink
               href={brand.href}
-              className="inline-flex items-center gap-2.5 font-display text-[1.4rem] font-semibold tracking-[-0.02em]"
+              className="inline-flex items-center gap-2.5 font-display text-[1.4rem] tracking-[-0.02em]"
             >
               {brand.logo ? <Media {...toLogoMediaProps(brand.logo)} /> : brand.label}
             </NextLink>
