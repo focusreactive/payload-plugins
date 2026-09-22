@@ -16,20 +16,19 @@ export function FeaturedCard({ featured }: FeaturedCardProps) {
     <>
       {badge && (
         <Eyebrow tone="accent" prefix="dot" size="md" className="self-start">
-          <span aria-hidden className="size-1.5 rounded-pill bg-accent-foreground opacity-50" />
           {badge}
         </Eyebrow>
       )}
       {title && (
-        <span className="mt-auto font-display text-[1.32rem] font-semibold leading-[1.08] tracking-[-0.01em]">
+        <span className="mt-auto font-display text-[1.32rem] leading-[1.08] tracking-[-0.01em] text-foreground">
           {title}
         </span>
       )}
       {description && (
-        <span className="text-[0.88rem] leading-[1.5] text-white/80">{description}</span>
+        <span className="text-[0.88rem] leading-[1.5] text-muted-foreground">{description}</span>
       )}
       {link && (
-        <span className="inline-flex items-center gap-1.5 text-[0.85rem] font-semibold text-accent">
+        <span className="inline-flex items-center gap-1.5 text-[0.85rem] font-semibold text-primary">
           {link.label}
           <span aria-hidden>&rarr;</span>
         </span>
@@ -37,8 +36,12 @@ export function FeaturedCard({ featured }: FeaturedCardProps) {
     </>
   );
 
+  /**
+   * A flat sunken band, not a gradient tile: DESIGN.md bans gradients outright and the serif is
+   * never bold, so the title carries weight through size rather than a heavier weight.
+   */
   const cardClassName =
-    "flex min-h-[196px] flex-col gap-[9px] rounded-md bg-gradient-to-br from-primary to-deep-900 p-5 text-white";
+    "flex min-h-[196px] flex-col gap-[9px] rounded-[4px] border border-border bg-surface-muted p-5";
 
   if (link) {
     const newTabProps = link.newTab ? { rel: "noopener noreferrer", target: "_blank" } : {};

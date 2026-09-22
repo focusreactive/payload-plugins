@@ -54,7 +54,7 @@ export function DesktopNav({ navItems }: DesktopNavProps) {
               </NavigationMenu.Trigger>
               <NavigationMenu.Content
                 className={cn(
-                  "absolute left-0 top-full z-50 mt-3 rounded-lg border border-border bg-surface p-3.5 shadow-[0_30px_70px_-30px_rgba(10,19,20,0.42)]",
+                  "absolute left-0 top-full z-50 mt-3 rounded-[4px] border border-border bg-surface p-3.5",
                   "data-[state=open]:animate-in data-[state=open]:fade-in data-[state=closed]:animate-out data-[state=closed]:fade-out motion-reduce:animate-none"
                 )}
               >
