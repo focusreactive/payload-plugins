@@ -933,6 +933,7 @@ export async function POST(request: Request) {
         overrideAccess: true,
         context: { skipEmbedding: true },
         data: {
+          _status: "published",
           title: spec.en.title,
           // The core slug field hook re-slugifies on every create regardless
           // of `generateSlug`, so the exact value set here is temporary and
@@ -959,6 +960,7 @@ export async function POST(request: Request) {
           overrideAccess: true,
           context: { skipEmbedding: true },
           data: {
+            _status: "published",
             title: text.title,
             slug: text.slug,
             generateSlug: false,
