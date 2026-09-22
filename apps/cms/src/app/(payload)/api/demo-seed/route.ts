@@ -356,6 +356,12 @@ interface DemoMediaSpec {
 function buildDemoMedia(): DemoMediaSpec[] {
   return [
     {
+      filename: "demo-logo.svg",
+      alt: "Content Platform Demo",
+      mimetype: "image/svg+xml",
+      data: readFileSync(path.join(process.cwd(), "public", "demo-logo.svg")),
+    },
+    {
       filename: "preview-hero.png",
       alt: "Hero block preview",
       mimetype: "image/png",
@@ -848,7 +854,10 @@ const FOOTER_TEXT_BY_LOCALE: Record<LocaleCode, { description: string; copyright
   },
 };
 
-async function seedNavigation(payload: Awaited<ReturnType<typeof getPayloadClient>>) {
+async function seedNavigation(
+  payload: Awaited<ReturnType<typeof getPayloadClient>>,
+  logoMediaId: number | undefined
+) {
   const [header] = (await payload.find({ collection: "header", limit: 1, overrideAccess: true }))
     .docs;
   const [footer] = (await payload.find({ collection: "footer", limit: 1, overrideAccess: true }))
@@ -867,6 +876,7 @@ async function seedNavigation(payload: Awaited<ReturnType<typeof getPayloadClien
         context: { skipEmbedding: true },
         data: {
           name: "Content Platform Demo",
+          ...(logoMediaId ? { logo: logoMediaId } : {}),
           navItems: navigation.map((item) => ({
             label: item.label,
             type: "link" as const,
@@ -886,6 +896,7 @@ async function seedNavigation(payload: Awaited<ReturnType<typeof getPayloadClien
         context: { skipEmbedding: true },
         data: {
           name: "Content Platform Demo",
+          ...(logoMediaId ? { logo: logoMediaId } : {}),
           description: footerText.description,
           copyrightText: footerText.copyright,
           linkGroups: [
@@ -1226,6 +1237,12 @@ export async function POST(request: Request) {
       presetsCreatedCount += 1;
     }
 
+    await seedNavigation(payload, mediaIdByFilename["demo-logo.svg"]);
+
+    // Every page here was deleted and recreated with a new id, so the cached map still points
+    // at rows that no longer exist until it is rebuilt.
+    revalidatePathMap();
+
     return NextResponse.json({
       deleted: {
         page: deletedPages.docs.length,
@@ -1248,12 +1265,6 @@ export async function POST(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Demo seed failed.";
     payload.logger.error(error, "Demo seed failed");
-    await seedNavigation(payload);
-
-    // Every page here was deleted and recreated with a new id, so the cached map still points
-    // at rows that no longer exist until it is rebuilt.
-    revalidatePathMap();
-
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
