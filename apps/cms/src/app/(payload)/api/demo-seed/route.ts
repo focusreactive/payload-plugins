@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 
 import { getPayloadClient } from "@/dal/payload-client";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
+import { revalidatePathMap } from "@/dal/pathMap";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import type {
   CardsGridBlock,
@@ -1142,6 +1143,10 @@ export async function POST(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Demo seed failed.";
     payload.logger.error(error, "Demo seed failed");
+    // Every page here was deleted and recreated with a new id, so the cached map still points
+    // at rows that no longer exist until it is rebuilt.
+    revalidatePathMap();
+
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

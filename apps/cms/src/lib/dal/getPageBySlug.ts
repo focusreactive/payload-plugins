@@ -62,13 +62,18 @@ export const getPageBySlug = cache(
       return null;
     }
 
-    return payload.findByID({
-      id,
-      collection: "page",
-      depth: 3,
-      draft: false,
-      locale: resolvedLocale,
-      overrideAccess: true,
-    }) as Promise<RequiredDataFromCollectionSlug<"page"> | null>;
+    // The map can name an id that has since been deleted (a reseed recreates every page with a
+    // new id). Payload throws NotFound rather than returning null, and an uncaught throw here
+    // turns a routine 404 into a 500 inside generateMetadata.
+    return payload
+      .findByID({
+        id,
+        collection: "page",
+        depth: 3,
+        draft: false,
+        locale: resolvedLocale,
+        overrideAccess: true,
+      })
+      .catch(() => null) as Promise<RequiredDataFromCollectionSlug<"page"> | null>;
   }
 );
