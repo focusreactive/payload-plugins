@@ -1319,6 +1319,25 @@ export async function POST(request: Request) {
       const existingDoc = existingMedia.docs[0];
       if (existingDoc) {
         mediaIdByFilename[spec.filename] = existingDoc.id;
+
+        // Re-upload when the bytes on disk have changed, because upserting on filename
+        // alone silently keeps the old picture: a redrawn illustration or a retaken
+        // screenshot would never reach the demo, and the seed would report success.
+        if (existingDoc.filesize !== spec.data.length) {
+          await payload.update({
+            collection: "media",
+            id: existingDoc.id,
+            overrideAccess: true,
+            data: { alt: spec.alt },
+            file: {
+              data: spec.data,
+              mimetype: spec.mimetype,
+              name: spec.filename,
+              size: spec.data.length,
+            },
+          });
+        }
+
         continue;
       }
 
