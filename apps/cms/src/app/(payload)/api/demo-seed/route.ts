@@ -357,6 +357,14 @@ interface DemoMediaSpec {
 function buildDemoMedia(): DemoMediaSpec[] {
   return [
     {
+      filename: "content-model.svg",
+      alt: "Four document types, six languages and nine markets in one content model",
+      mimetype: "image/svg+xml",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "demo-illustrations", "content-model.svg")
+      ),
+    },
+    {
       filename: "one-document-six-addresses.svg",
       alt: "One document with a different localised address in each of six languages",
       mimetype: "image/svg+xml",
@@ -1005,7 +1013,7 @@ export async function POST(request: Request) {
       "passle-to-cms.svg": mediaIdByFilename["passle-to-cms.svg"],
     };
 
-    const platformDefaultMediaId = mediaIdByFilename["preview-content.png"];
+    const platformDefaultMediaId = mediaIdByFilename["content-model.svg"];
     if (platformDefaultMediaId) {
       await payload.update({
         collection: "media",
@@ -1015,7 +1023,7 @@ export async function POST(request: Request) {
       });
     }
 
-    let defaultMediaId: string | number | null = mediaIdByFilename["preview-content.png"] ?? null;
+    let defaultMediaId: string | number | null = mediaIdByFilename["content-model.svg"] ?? null;
     if (!defaultMediaId) {
       defaultMediaId = await getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT);
     }

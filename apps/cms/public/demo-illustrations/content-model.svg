@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" width="640" height="420" role="img" aria-label="The content model: four document types, six languages, nine markets">
+  <rect width="640" height="420" fill="#FBFAF7"/>
+  <g font-family="Newsreader, Georgia, serif" font-size="15" fill="#12100E">
+    <rect x="40" y="60" width="128" height="62" fill="#FFFFFF" stroke="#12100E" stroke-width="1.5"/>
+    <text x="58" y="88">Insight</text>
+    <rect x="188" y="60" width="128" height="62" fill="#FFFFFF" stroke="#12100E" stroke-width="1.5"/>
+    <text x="206" y="88">Person</text>
+    <rect x="336" y="60" width="128" height="62" fill="#FFFFFF" stroke="#12100E" stroke-width="1.5"/>
+    <text x="354" y="88">Service</text>
+    <rect x="484" y="60" width="116" height="62" fill="#FFFFFF" stroke="#12100E" stroke-width="1.5"/>
+    <text x="502" y="88">Page</text>
+  </g>
+  <g font-family="Archivo, Helvetica, sans-serif" font-size="10" letter-spacing="1.1" fill="#6B6459">
+    <text x="58" y="108">FROM PASSLE</text>
+    <text x="206" y="108">AUTHOR MATCH</text>
+    <text x="354" y="108">PER MARKET</text>
+    <text x="502" y="108">THE TREE</text>
+  </g>
+  <g stroke="#C9C2B6" stroke-width="1">
+    <path d="M104 122 V 168" fill="none"/><path d="M252 122 V 168" fill="none"/>
+    <path d="M400 122 V 168" fill="none"/><path d="M542 122 V 168" fill="none"/>
+    <path d="M104 168 H 542" fill="none"/>
+    <path d="M320 168 V 206" fill="none"/>
+  </g>
+  <rect x="150" y="206" width="340" height="60" fill="#1F4B43"/>
+  <text x="178" y="234" font-family="Newsreader, Georgia, serif" font-size="16" fill="#FBFAF7">One document, two independent axes</text>
+  <text x="178" y="254" font-family="Archivo, Helvetica, sans-serif" font-size="10.5" letter-spacing="1.3" fill="#BFD4CE">LANGUAGE AND MARKET</text>
+  <g font-family="'IBM Plex Mono', ui-monospace, monospace" font-size="12" fill="#12100E">
+    <text x="40" y="316">en  fr  ja  ko  zh-hans  zh-hant</text>
+    <text x="40" y="352">UK  France  Japan  Korea  Greater China  Canada  USA  …</text>
+  </g>
+  <g font-family="Archivo, Helvetica, sans-serif" font-size="10" letter-spacing="1.3" fill="#6B6459">
+    <text x="40" y="298">SIX LANGUAGES</text>
+    <text x="40" y="334">NINE MARKETS</text>
+  </g>
+</svg>
