@@ -1,6 +1,3 @@
-import { resolveBackdropTone } from "@/components/utils";
-import { AbstractBackdrop } from "@/components/AbstractBackdrop";
-import { GridLines } from "@/components/GridLines";
 import type { SectionHeaderProps } from "@/components/SectionHeader";
 import { SectionHeader } from "@/components/SectionHeader";
 
@@ -10,16 +7,16 @@ interface CtaBandProps {
   actions: React.ReactNode;
 }
 
-export function CtaBand({ header, theme, actions }: CtaBandProps) {
-  const backdropTone = resolveBackdropTone(theme);
-
+/**
+ * Left aligned and ruled rather than centred over a backdrop: DESIGN.md bans both centred body copy
+ * and decorative background art, and the rule is what separates a section on this site.
+ */
+export function CtaBand({ header, actions }: CtaBandProps) {
   return (
-    <div>
-      <AbstractBackdrop variant="blobs" tone={backdropTone} intensity="subtle" />
-      <GridLines tone={backdropTone} />
-      <div className="relative z-10 flex flex-col items-center gap-[26px] py-[clamp(56px,8vw,104px)] text-center">
-        {header && <SectionHeader {...header} align="center" className="max-w-[760px]" />}
-        <div className="flex flex-wrap items-center justify-center gap-3.5">{actions}</div>
+    <div className="rule-top grid grid-cols-1 gap-8 py-[clamp(56px,8vw,104px)] lg:grid-cols-12">
+      {header && <SectionHeader {...header} align="left" className="lg:col-span-7" />}
+      <div className="flex flex-wrap items-center gap-4 lg:col-span-4 lg:col-start-9 lg:justify-end">
+        {actions}
       </div>
     </div>
   );
