@@ -3,8 +3,14 @@
 @source "../..";
 
 :root {
-  --section-margin-base: clamp(56px, 8vw, 104px);
-  --section-margin-large: clamp(96px, 14vw, 180px);
+  /*
+   * DESIGN.md's clamp(72px, 10vw, 128px) is the gap BETWEEN two sections, but this value is
+   * applied as padding on both the top and the bottom of every section, so two adjacent sections
+   * each contribute one side and the values stack. Halving it here is what makes the visible gap
+   * match the token instead of doubling it.
+   */
+  --section-margin-base: clamp(36px, 5vw, 64px);
+  --section-margin-large: clamp(56px, 8vw, 104px);
   --container-padding-base: clamp(20px, 5vw, 64px);
   --container-max-width: 1180px;
 }
