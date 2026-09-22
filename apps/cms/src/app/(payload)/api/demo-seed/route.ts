@@ -8,6 +8,8 @@ import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { revalidatePathMap } from "@/dal/pathMap";
 import { seedInsightsFromFixtures, seedPeopleRecords } from "@/scripts/seedPassleInsights";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
+import { passleFixturesByShortcode } from "@/lib/passle/fixtures";
+import type { PasslePostPayload } from "@/lib/passle/types";
 import type {
   CardsGridBlock,
   CarouselBlock,
@@ -18,6 +20,7 @@ import type {
   HeroBlock,
   LogosBlock,
   NewsletterBlock,
+  Person,
   RawHtmlBlock,
   StatsBlock,
   TestimonialsListBlock,
@@ -185,6 +188,35 @@ function buildAction(
   return { type: "custom", label, url, newTab: false, appearance };
 }
 
+function sortPasslePostsByPublishedDateDescending(posts: PasslePostPayload[]): PasslePostPayload[] {
+  return [...posts].sort(
+    (first, second) =>
+      new Date(second.PublishedDate).getTime() - new Date(first.PublishedDate).getTime()
+  );
+}
+
+function formatPasslePostPublishedDate(publishedDate: string): string {
+  return new Date(publishedDate).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+/**
+ * Shared by every cardsGrid that lists Passle-ingested posts (insights, and the
+ * per-service "recent work" sections), so the same title/author/date shape is never
+ * hand-typed twice and drifts.
+ */
+function buildInsightCardsGridItem(post: PasslePostPayload) {
+  const authorName = post.Authors[0]?.Name ?? "Unattributed";
+  return {
+    icon: "file-text" as const,
+    title: post.PostTitle,
+    description: `${authorName} · ${formatPasslePostPublishedDate(post.PublishedDate)}`,
+  };
+}
+
 /**
  * Builds the homepage's `blocks` array. Copy is verbatim from the deal's
  * homepage-copy brief (outside this repository, which is public) - every
@@ -343,6 +375,285 @@ function buildStructuralBlocks(pageTitle: string, defaultMediaId: number) {
     section: { theme: "light" },
   };
   return [placeholder];
+}
+
+/**
+ * /insights: every card is built from the same Passle fixtures the ingest itself reads
+ * (@/lib/passle/fixtures), sorted newest first, so this listing always matches what a second
+ * seed run would produce - nothing here is typed independently of the ingest data.
+ */
+function buildInsightsPageBlocks(illustrations: Record<string, number>, defaultMediaId: number) {
+  const intro: ContentBlock = {
+    blockType: "content",
+    eyebrow: "From Passle",
+    heading: "Twenty articles, none of them typed by hand",
+    layout: "image-text",
+    image: illustrations["passle-to-cms.svg"] ?? defaultMediaId,
+    content: buildParagraphRichText(
+      "Every article below arrived through the same webhook: a shortcode comes in from Passle, the platform fetches the post, matches its author to a person record by email address, and files the result here with its original publish date intact."
+    ),
+    section: { theme: "light" },
+  };
+
+  const listing: CardsGridBlock = {
+    blockType: "cardsGrid",
+    eyebrow: "Latest insights",
+    heading: "Recently published",
+    description: "Newest first, in the order they synced.",
+    columns: 3,
+    items: sortPasslePostsByPublishedDateDescending(Object.values(passleFixturesByShortcode)).map(
+      buildInsightCardsGridItem
+    ),
+    section: { theme: "light" },
+  };
+
+  return [intro, listing];
+}
+
+/**
+ * /our-people: cards come from the Person documents seedPeopleRecords has already written by the
+ * time this runs (see the reordering in POST below), not from a copy of that seed data kept here -
+ * so this always reflects what is actually in the database, not what the seed script intended.
+ */
+function buildOurPeoplePageBlocks(
+  illustrations: Record<string, number>,
+  defaultMediaId: number,
+  people: Person[]
+) {
+  const intro: ContentBlock = {
+    blockType: "content",
+    eyebrow: "Author matching",
+    heading: "A person record is what makes an author real",
+    layout: "text-image",
+    image: illustrations["content-model.svg"] ?? defaultMediaId,
+    content: buildParagraphRichText(
+      "Twenty-one people are on file here, each with a name, a job title, an office and the markets they cover. When an article syncs from Passle, the ingest checks its author's email address against this list. A match links the article to a real profile; a miss leaves the author's email on the article for an editor to resolve by hand."
+    ),
+    section: { theme: "light" },
+  };
+
+  const roster: CardsGridBlock = {
+    blockType: "cardsGrid",
+    eyebrow: "Our people",
+    heading: "Twenty-one profiles, matched by email",
+    description: "Grouped by office.",
+    columns: 3,
+    items: people.map((person) => ({
+      icon: "users",
+      title: person.name,
+      description: `${person.jobTitle} - ${person.office}`,
+    })),
+    section: { theme: "light" },
+  };
+
+  return [intro, roster];
+}
+
+/**
+ * /services: links to the two child service pages plus the real per-locale service counts already
+ * quoted on the homepage (17 English, 8 French, 5 Japanese) - restated here rather than recomputed,
+ * since there is no live per-locale service count to query in this demo database.
+ */
+function buildServicesOverviewPageBlocks() {
+  const overview: CardsGridBlock = {
+    blockType: "cardsGrid",
+    eyebrow: "Services",
+    heading: "Two practice areas, each with its own page",
+    columns: 2,
+    items: [
+      {
+        icon: "shield",
+        title: "Patents",
+        description: "Filing, prosecution and enforcement for inventions.",
+        link: { ...buildAction("View patents", "/services/patents"), label: "View patents" },
+      },
+      {
+        icon: "target",
+        title: "Trade marks",
+        description: "Registering and defending brand identity across every market.",
+        link: {
+          ...buildAction("View trade marks", "/services/trade-marks"),
+          label: "View trade marks",
+        },
+      },
+    ],
+    section: { theme: "light" },
+  };
+
+  const coverage: StatsBlock = {
+    blockType: "stats",
+    items: [
+      { value: "17", label: "English-language services" },
+      { value: "8", label: "French-language services" },
+      { value: "5", label: "Japanese-language services" },
+    ],
+    section: { theme: "light" },
+  };
+
+  return [overview, coverage];
+}
+
+/**
+ * /services/patents and /services/trade-marks are deliberately built with different block orders
+ * and, on patents only, an FAQ item grounded in a real gap in the seeded Person data: nobody
+ * carries the "japan" market value (@/lib/fields/marketsField.ts lists it as one of nine options),
+ * so a market-scoped view of a patents page would have no attorney to route a Japanese enquiry to.
+ * This is the market-visibility note the two pages are meant to demonstrate - deliberately absent
+ * from the trade marks page below.
+ */
+function buildPatentsPageBlocks(illustrations: Record<string, number>, defaultMediaId: number) {
+  const recentPosts = sortPasslePostsByPublishedDateDescending(
+    Object.values(passleFixturesByShortcode).filter((post) => post.Tags?.includes("Patents"))
+  );
+
+  const intro: ContentBlock = {
+    blockType: "content",
+    eyebrow: "Patents",
+    heading: "Protection for what your engineers have actually built",
+    layout: "image-text",
+    image: illustrations["one-document-six-addresses.svg"] ?? defaultMediaId,
+    content: buildParagraphRichText(
+      "Patent work here runs from a first filing through prosecution to enforcement, across the offices that handle technical subject matter. The examples below are recent matters our own attorneys wrote up, not brochure copy."
+    ),
+    section: { theme: "light" },
+  };
+
+  const recentWork: CardsGridBlock = {
+    blockType: "cardsGrid",
+    eyebrow: "Recent patent work",
+    heading: "From the people who did it",
+    columns: 3,
+    items: recentPosts.map(buildInsightCardsGridItem),
+    section: { theme: "light" },
+  };
+
+  const availability: FaqBlock = {
+    blockType: "faq",
+    eyebrow: "Before you ask",
+    heading: "Availability",
+    items: [
+      {
+        question: "Is a patent attorney available in every market this page publishes to?",
+        answer: buildParagraphRichText(
+          "Attorneys are on file for the UK/Europe, Greater China, South East Asia and Canada markets. Nobody is currently recorded against the Japan market, so a market-scoped view of this page would have no one to route a Japanese enquiry to until that gap is closed."
+        ),
+      },
+      {
+        question: "Who handles a matter that spans two offices?",
+        answer: buildParagraphRichText(
+          "The attorney who takes the initial instruction stays the point of contact even when a second office's technical specialism is brought in, so a client is never managing two relationships for one matter."
+        ),
+      },
+    ],
+    section: { theme: "light" },
+  };
+
+  return [intro, recentWork, availability];
+}
+
+function buildTradeMarksPageBlocks(illustrations: Record<string, number>, defaultMediaId: number) {
+  const recentPosts = sortPasslePostsByPublishedDateDescending(
+    Object.values(passleFixturesByShortcode).filter((post) =>
+      post.Tags?.includes("Brands & Trade Marks")
+    )
+  );
+
+  const recentWork: CardsGridBlock = {
+    blockType: "cardsGrid",
+    eyebrow: "Recent trade mark work",
+    heading: "From the people who did it",
+    columns: 3,
+    items: recentPosts.map(buildInsightCardsGridItem),
+    section: { theme: "light" },
+  };
+
+  const intro: ContentBlock = {
+    blockType: "content",
+    eyebrow: "Trade marks",
+    heading: "Brand identity, registered and defended",
+    layout: "text-image",
+    image: illustrations["language-and-market.svg"] ?? defaultMediaId,
+    content: buildParagraphRichText(
+      "Trade mark work covers clearance, filing, portfolio management and enforcement, in whichever of the firm's nine markets a brand needs protecting. The examples below are recent matters, not brochure copy."
+    ),
+    section: { theme: "light" },
+  };
+
+  return [recentWork, intro];
+}
+
+/**
+ * /global-presence and its three descendants (asia, japan, tokyo-office) get shorter with every
+ * level, ending at the leaf with a stats block instead of more prose - proving the four-level
+ * localised address structure without turning any of them into an essay.
+ */
+function buildGlobalPresencePageBlocks(defaultMediaId: number) {
+  const intro: ContentBlock = {
+    blockType: "content",
+    eyebrow: "Global presence",
+    heading: "Nine markets, three published languages",
+    layout: "image-text",
+    image: defaultMediaId,
+    content: buildParagraphRichText(
+      "The address structure below moves from continent to country to office. Renaming a page at any level cascades that change to every child address beneath it, in that language only."
+    ),
+    section: { theme: "light" },
+  };
+  return [intro];
+}
+
+function buildAsiaPageBlocks(defaultMediaId: number) {
+  const intro: ContentBlock = {
+    blockType: "content",
+    eyebrow: "Asia",
+    heading: "Three offices, two markets",
+    layout: "text-image",
+    image: defaultMediaId,
+    content: buildParagraphRichText(
+      "This branch covers the firm's Asia offices: Hong Kong, Singapore and Kuala Lumpur, spanning the Greater China and South East Asia markets."
+    ),
+    section: { theme: "light" },
+  };
+  return [intro];
+}
+
+function buildJapanPageBlocks(defaultMediaId: number) {
+  const intro: ContentBlock = {
+    blockType: "content",
+    eyebrow: "Japan",
+    heading: "One market, one address",
+    layout: "image-text",
+    image: defaultMediaId,
+    content: buildParagraphRichText(
+      "Everything beneath this address belongs to one market: Japan."
+    ),
+    section: { theme: "light" },
+  };
+  return [intro];
+}
+
+function buildTokyoOfficePageBlocks(defaultMediaId: number) {
+  const intro: ContentBlock = {
+    blockType: "content",
+    eyebrow: "Tokyo office",
+    heading: "Office level",
+    layout: "text-image",
+    image: defaultMediaId,
+    content: buildParagraphRichText("The address ends here."),
+    section: { theme: "light" },
+  };
+
+  const details: StatsBlock = {
+    blockType: "stats",
+    items: [
+      { value: "Tokyo", label: "Office" },
+      { value: "Japan", label: "Market" },
+      { value: "4", label: "Levels in this address" },
+    ],
+    section: { theme: "light" },
+  };
+
+  return [intro, details];
 }
 
 interface DemoMediaSpec {
@@ -1065,6 +1376,17 @@ export async function POST(request: Request) {
     // and payload.find() both return the raw id, which is numeric in this database.
     const defaultMediaNumericId = Number(defaultMediaId);
 
+    // The people and insights are seeded before the page tree below, not after: /our-people
+    // reads real Person documents back out of the database to build its cards, and that only
+    // works once seedPeopleRecords has actually written them. Neither seed step touches the
+    // `page` or `posts` collections, so running them before those deletes is safe.
+    await seedPeopleRecords(payload);
+    await seedInsightsFromFixtures(payload);
+
+    const seededPeople = (
+      await payload.find({ collection: "person", limit: 100, overrideAccess: true })
+    ).docs;
+
     const deletedPages = await payload.delete({
       collection: "page",
       where: { id: { not_equals: 0 } },
@@ -1082,10 +1404,32 @@ export async function POST(request: Request) {
 
     for (const spec of PAGE_TREE) {
       const parentId = spec.parentKey ? pageIdByKey[spec.parentKey] : undefined;
-      const blocks =
-        spec.key === "home"
-          ? buildHomepageBlocks(defaultMediaNumericId, illustrationIds)
-          : buildStructuralBlocks(spec.en.title, defaultMediaNumericId);
+      const blocks = (() => {
+        switch (spec.key) {
+          case "home":
+            return buildHomepageBlocks(defaultMediaNumericId, illustrationIds);
+          case "insights":
+            return buildInsightsPageBlocks(illustrationIds, defaultMediaNumericId);
+          case "our-people":
+            return buildOurPeoplePageBlocks(illustrationIds, defaultMediaNumericId, seededPeople);
+          case "services":
+            return buildServicesOverviewPageBlocks();
+          case "patents":
+            return buildPatentsPageBlocks(illustrationIds, defaultMediaNumericId);
+          case "trade-marks":
+            return buildTradeMarksPageBlocks(illustrationIds, defaultMediaNumericId);
+          case "global-presence":
+            return buildGlobalPresencePageBlocks(defaultMediaNumericId);
+          case "asia":
+            return buildAsiaPageBlocks(defaultMediaNumericId);
+          case "japan":
+            return buildJapanPageBlocks(defaultMediaNumericId);
+          case "tokyo-office":
+            return buildTokyoOfficePageBlocks(defaultMediaNumericId);
+          default:
+            return buildStructuralBlocks(spec.en.title, defaultMediaNumericId);
+        }
+      })();
 
       const created = await payload.create({
         collection: "page",
@@ -1280,11 +1624,6 @@ export async function POST(request: Request) {
       });
       presetsCreatedCount += 1;
     }
-
-    // The people come first: the Passle ingest matches an author by email against a Person that
-    // already exists, and never creates one, exactly as the real webhook behaves.
-    await seedPeopleRecords(payload);
-    await seedInsightsFromFixtures(payload);
 
     await seedNavigation(payload, mediaIdByFilename["demo-logo.svg"]);
 
