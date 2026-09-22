@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { NextResponse } from "next/server";
 
 import { getPayloadClient } from "@/dal/payload-client";
@@ -328,6 +331,118 @@ function buildStructuralBlocks(pageTitle: string, defaultMediaId: number) {
   return [placeholder];
 }
 
+interface DemoMediaSpec {
+  filename: string;
+  alt: string;
+  mimetype: string;
+  data: Buffer;
+}
+
+/**
+ * Every entry reads its file with a literal, statically-analysable path (never a path built from
+ * a loop variable) so Vercel's build-time file tracer can see and bundle each one - the same class
+ * of bug d94dca92 fixed for the JSON fixtures, where a dynamic directory reference silently
+ * dropped its contents from the deployed function.
+ */
+function buildDemoMedia(): DemoMediaSpec[] {
+  return [
+    {
+      filename: "preview-hero.png",
+      alt: "Hero block preview",
+      mimetype: "image/png",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "block-preview-images", "preview-hero.png")
+      ),
+    },
+    {
+      filename: "preview-content.png",
+      alt: "Content block preview",
+      mimetype: "image/png",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "block-preview-images", "preview-content.png")
+      ),
+    },
+    {
+      filename: "preview-faq.png",
+      alt: "FAQ block preview",
+      mimetype: "image/png",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "block-preview-images", "preview-faq.png")
+      ),
+    },
+    {
+      filename: "preview-cards-grid.png",
+      alt: "Cards grid block preview",
+      mimetype: "image/png",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "block-preview-images", "preview-cards-grid.png")
+      ),
+    },
+    {
+      filename: "preview-carusel.png",
+      alt: "Carousel block preview",
+      mimetype: "image/png",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "block-preview-images", "preview-carusel.png")
+      ),
+    },
+    {
+      filename: "preview-logos.png",
+      alt: "Logos block preview",
+      mimetype: "image/png",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "block-preview-images", "preview-logos.png")
+      ),
+    },
+    {
+      filename: "preview-chart.png",
+      alt: "Chart block preview",
+      mimetype: "image/png",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "block-preview-images", "preview-chart.png")
+      ),
+    },
+    {
+      filename: "preview-cta.png",
+      alt: "CTA band block preview",
+      mimetype: "image/png",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "block-preview-images", "preview-cta.png")
+      ),
+    },
+    {
+      filename: "preview-newsletter.png",
+      alt: "Newsletter block preview",
+      mimetype: "image/png",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "block-preview-images", "preview-newsletter.png")
+      ),
+    },
+    {
+      filename: "preview-stats.png",
+      alt: "Stats block preview",
+      mimetype: "image/png",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "block-preview-images", "preview-stats.png")
+      ),
+    },
+    {
+      filename: "preview-testimonials.png",
+      alt: "Testimonials block preview",
+      mimetype: "image/png",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "block-preview-images", "preview-testimonials.png")
+      ),
+    },
+    {
+      filename: "empty-placeholder.jpg",
+      alt: "Raw HTML block preview",
+      mimetype: "image/jpeg",
+      data: readFileSync(path.join(process.cwd(), "public", "empty-placeholder.jpg")),
+    },
+  ];
+}
+
 export async function POST(request: Request) {
   const seedToken = request.headers.get("x-seed-token");
   // SANDBOX_E_SEED_TOKEN lives in this repo's encrypted clients tier, so an agent can inject it
@@ -476,6 +591,41 @@ export async function POST(request: Request) {
       });
     }
 
+    // Upsert by filename so a second run reuses the same media docs instead of duplicating them -
+    // Payload itself would otherwise suffix a colliding filename rather than dedupe it.
+    const mediaIdByFilename: Record<string, number> = {};
+    let mediaCreatedCount = 0;
+
+    for (const spec of buildDemoMedia()) {
+      const existingMedia = await payload.find({
+        collection: "media",
+        where: { filename: { equals: spec.filename } },
+        limit: 1,
+        overrideAccess: true,
+      });
+
+      const existingDoc = existingMedia.docs[0];
+      if (existingDoc) {
+        mediaIdByFilename[spec.filename] = existingDoc.id;
+        continue;
+      }
+
+      const createdMedia = await payload.create({
+        collection: "media",
+        overrideAccess: true,
+        data: { alt: spec.alt },
+        file: {
+          data: spec.data,
+          mimetype: spec.mimetype,
+          name: spec.filename,
+          size: spec.data.length,
+        },
+      });
+
+      mediaIdByFilename[spec.filename] = createdMedia.id;
+      mediaCreatedCount += 1;
+    }
+
     return NextResponse.json({
       deleted: {
         page: deletedPages.docs.length,
@@ -483,6 +633,7 @@ export async function POST(request: Request) {
       },
       created: {
         page: PAGE_TREE.length,
+        media: mediaCreatedCount,
       },
     });
   } catch (error) {
