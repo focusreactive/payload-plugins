@@ -1,7 +1,5 @@
-import { cn, resolveBackdropTone } from "@/components/utils";
-import { AbstractBackdrop } from "@/components/AbstractBackdrop";
+import { cn } from "@/components/utils";
 import { DisplayHeading } from "@/components/DisplayHeading";
-import { GridLines } from "@/components/GridLines";
 import { Media } from "@/components/media";
 import type { PreparedMedia } from "@/components/media";
 import { Link } from "@/components/link";
@@ -16,11 +14,7 @@ interface HeroBadgeProps {
 
 function HeroBadge({ badge }: HeroBadgeProps) {
   if (!badge) return null;
-  return (
-    <Eyebrow tone="accent" prefix="dot">
-      {badge}
-    </Eyebrow>
-  );
+  return <Eyebrow prefix="none">{badge}</Eyebrow>;
 }
 
 interface HeroActionsProps {
@@ -31,7 +25,7 @@ interface HeroActionsProps {
 function HeroActions({ links, className }: HeroActionsProps) {
   if (!links?.length) return null;
   return (
-    <ul className={cn("flex flex-wrap items-center gap-3.5", className)}>
+    <ul className={cn("flex flex-wrap items-center gap-4", className)}>
       {links.map((link, i) => (
         <li key={i}>
           <Link {...link} />
@@ -43,57 +37,34 @@ function HeroActions({ links, className }: HeroActionsProps) {
 
 function HeroImage({ image }: { image: PreparedMedia }) {
   return (
-    <div className="relative ml-auto w-full max-w-[480px] overflow-hidden rounded-md">
+    <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[4px]">
       <Media {...image.data} visualEditing={image.visualEditing} imageProps={image.imageProps} />
     </div>
   );
 }
 
-export function Hero({ variant, theme, badge, title, text, image, links }: IHeroProps) {
-  const backdropTone = resolveBackdropTone(theme);
+/**
+ * No backdrop and no grid lines here, and none anywhere else either: DESIGN.md bans decorative
+ * background art, so the structure has to come from type size, whitespace and one hairline rule.
+ */
+export function Hero({ badge, title, text, image, links }: IHeroProps) {
   const hasImage = typeof image?.data?.src === "string" && image.data.src.length > 0;
 
-  if (variant === "centered") {
-    return (
-      <>
-        <AbstractBackdrop variant="blobs" tone={backdropTone} />
-        <GridLines tone={backdropTone} />
-        <div className="relative z-1 mx-auto flex max-w-[840px] flex-col items-center gap-6 text-center">
-          <HeroBadge badge={badge} />
-          <DisplayHeading as="h1" size="display-1" text={title} className="text-balance" />
-          <div className="text-lead max-w-[600px] text-muted-foreground">
-            <RichText {...text} />
-          </div>
-          <HeroActions links={links} className="mt-2 justify-center" />
-        </div>
-      </>
-    );
-  }
-
   return (
-    <>
-      <AbstractBackdrop variant="orbs" tone={backdropTone} />
-      <GridLines tone={backdropTone} />
-      <div
-        className={cn(
-          "relative z-1 grid grid-cols-1 items-center gap-10 lg:gap-16",
-          hasImage && "lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]"
-        )}
-      >
-        <div className="flex max-w-[620px] flex-col gap-6">
-          <HeroBadge badge={badge} />
-          <DisplayHeading as="h1" size="display-1" text={title} />
-          <div className="text-lead max-w-[520px] text-muted-foreground">
-            <RichText {...text} />
-          </div>
-          <HeroActions links={links} className="mt-2" />
+    <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
+      <div className={cn("flex flex-col gap-8", hasImage ? "lg:col-span-7" : "lg:col-span-9")}>
+        <HeroBadge badge={badge} />
+        <DisplayHeading as="h1" size="display-1" text={title} className="display-serif" />
+        <div className="measure text-muted-foreground">
+          <RichText {...text} />
         </div>
-        {hasImage && (
-          <div className="hidden lg:block">
-            <HeroImage image={image} />
-          </div>
-        )}
+        <HeroActions links={links} />
       </div>
-    </>
+      {hasImage && (
+        <div className="lg:col-span-4 lg:col-start-9">
+          <HeroImage image={image} />
+        </div>
+      )}
+    </div>
   );
 }

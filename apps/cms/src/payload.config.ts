@@ -13,8 +13,10 @@ import { DocumentEmbeddings } from "@/collections/DocumentEmbeddings";
 import { Footer } from "@/collections/Footer/config";
 import { GlobalBlock } from "@/collections/GlobalBlock/config";
 import { Header } from "@/collections/Header/config";
+import { Insight } from "@/collections/Insight";
 import { Media } from "@/collections/Media";
 import { Page } from "@/collections/Page/Page";
+import { Person } from "@/collections/Person";
 import { Posts } from "@/collections/Posts";
 import { Testimonials } from "@/collections/Testimonials";
 import { Users } from "@/collections/Users";
@@ -69,6 +71,8 @@ export default buildConfig({
     Categories,
     Authors,
     Posts,
+    Person,
+    Insight,
     Testimonials,
     Header,
     Footer,

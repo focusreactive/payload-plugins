@@ -114,12 +114,11 @@ export const generateMeta = async (args: {
         slug: doc.slug,
       });
     }
-  } else if (collection === "page") {
+  } else if (collection === "page" && (doc as Page)?.id) {
     languages = await getAlternateLocales({
-      breadcrumbs: (doc as Page)?.breadcrumbs,
       collection: "page",
       currentLocale: locale,
-      slug: doc?.slug || undefined,
+      id: (doc as Page).id,
     });
   }
 

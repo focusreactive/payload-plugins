@@ -1,0 +1,59 @@
+{
+  "common": {
+    "goToHomepage": "前往首页",
+    "page": "页面",
+    "exitPreview": "退出预览",
+    "returnToHome": "返回首页",
+    "somethingWentWrong": "出现问题",
+    "anErrorOccurredWhileLoadingTheBlog": "加载博客时发生错误：{errorMessage}",
+    "anErrorOccurredWhileLoadingTheSite": "加载网站时发生错误：{errorMessage}"
+  },
+  "pageRange": {
+    "docs": {
+      "plural": "文档",
+      "singular": "文档"
+    },
+    "posts": {
+      "plural": "文章",
+      "singular": "文章"
+    },
+    "noResults": "未找到搜索结果。",
+    "showing": "共 {total} 个{label}，显示第 {start}{end} 项",
+    "showingEnd": "-{end}"
+  },
+  "pagination": {
+    "previous": "上一页",
+    "next": "下一页",
+    "goToPreviousPage": "转到上一页",
+    "goToNextPage": "转到下一页",
+    "morePages": "更多页面"
+  },
+  "blog": {
+    "backToJournal": "返回 Journal",
+    "noResults": "没有与您的搜索相符的文章。",
+    "readTime": "{minutes} 分钟",
+    "readTimeLong": "阅读需 {minutes} 分钟",
+    "search": {
+      "all": "全部",
+      "label": "搜索文章",
+      "open": "搜索文章",
+      "close": "关闭搜索",
+      "clear": "清除搜索"
+    },
+    "newsletter": {
+      "eyebrow": "The Journal，每月一期",
+      "heading": "每月一封精心撰写的邮件，没有多余信息。",
+      "placeholder": "you@team.com",
+      "button": "订阅",
+      "disclaimer": "无垃圾邮件，可随时取消订阅。"
+    }
+  },
+  "announcements": {
+    "title": "公告",
+    "noAnnouncements": "暂无公告。",
+    "metadata": {
+      "title": "公告",
+      "description": "{count, plural, =0 {暂无公告} =1 {1 条公告} other {# 条公告}}（租户：{tenant}）"
+    }
+  }
+}

@@ -39,6 +39,10 @@ export { getRedirects, getCachedRedirects } from "./getRedirects";
 // Localization
 export { getAlternateLocales } from "./getAlternateLocales";
 
+// Path map (route resolution, hreflang, sitemap, link renderer - see its own file header)
+export { getPathMap, revalidatePathMap, PATH_MAP_CACHE_TAG } from "./pathMap";
+export type { PathMap } from "./pathMap";
+
 // Static params (route generation)
 export { getMainSitePageStaticParams } from "./staticParams/pages";
 export { getBlogPostStaticParams } from "./staticParams/posts";

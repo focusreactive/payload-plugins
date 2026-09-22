@@ -1,82 +1,59 @@
 import { cn, cva } from "@/components/utils";
 import { Link } from "@/components/link";
 import { ButtonVariant } from "@/components/button/types";
-import { GlowCard } from "./GlowCard";
 import type { IDefaultCardProps } from "./types";
 
+/**
+ * Flat card, hairline border, no shadow and no hover glow: DESIGN.md makes the rule the structural
+ * device of this site, so a card that lifts or glows reads as a different product.
+ */
 const cardVariants = cva(
   [
-    "group relative overflow-hidden",
-    "flex h-full flex-col gap-[14px]",
-    "border rounded-md p-[26px]",
-    "transition-[transform,box-shadow,border-color] duration-[280ms,360ms,360ms] ease-out",
-    "before:pointer-events-none before:absolute before:inset-0 before:z-0",
-    "before:bg-[radial-gradient(440px_circle_at_var(--mx,50%)_var(--my,50%),color-mix(in_srgb,var(--color-primary)_18%,transparent),transparent_62%)]",
-    "before:opacity-0 before:transition-opacity before:duration-500",
-    "motion-safe:hover:before:opacity-100",
+    "group relative flex h-full flex-col gap-[14px]",
+    "border border-border rounded-[4px] p-7",
+    "transition-colors duration-200 ease-out",
   ],
   {
     defaultVariants: { backgroundColor: "light" },
     variants: {
       backgroundColor: {
-        light: [
-          "bg-surface text-foreground border-border",
-          "hover:border-[color-mix(in_srgb,var(--color-primary)_30%,var(--color-border))]",
-          "hover:shadow-[0_22px_50px_-28px_color-mix(in_srgb,var(--color-primary)_42%,rgba(10,19,20,0.5))]",
-        ],
-        "light-gray": [
-          "bg-surface-muted text-foreground border-transparent",
-          "hover:border-[color-mix(in_srgb,var(--color-primary)_30%,var(--color-border))]",
-          "hover:shadow-[0_22px_50px_-28px_color-mix(in_srgb,var(--color-primary)_42%,rgba(10,19,20,0.5))]",
-        ],
-        dark: [
-          "bg-[var(--color-deep-900)] text-slate-50 border-white/10",
-          "hover:shadow-[0_24px_50px_-24px_rgba(0,0,0,0.6)]",
-        ],
-        "dark-gray": [
-          "bg-[var(--color-pine-900)] text-slate-50 border-white/10",
-          "hover:shadow-[0_24px_50px_-24px_rgba(0,0,0,0.6)]",
-        ],
-        "gradient-2": [
-          "bg-gradient-to-br from-teal-600 to-ink-950 text-white border-transparent",
-          "hover:shadow-[0_24px_50px_-24px_rgba(0,0,0,0.6)]",
-        ],
-        none: [
-          "bg-transparent border-border",
-          "hover:border-[color-mix(in_srgb,var(--color-primary)_30%,var(--color-border))]",
-          "hover:shadow-[0_22px_50px_-28px_color-mix(in_srgb,var(--color-primary)_42%,rgba(10,19,20,0.5))]",
-        ],
+        light: "bg-surface text-foreground",
+        "light-gray": "bg-surface-muted text-foreground",
+        dark: "bg-surface text-foreground",
+        "dark-gray": "bg-surface-muted text-foreground",
+        "gradient-2": "bg-surface text-foreground",
+        none: "bg-transparent text-foreground",
       },
     },
   }
 );
 
 const iconTileVariants = cva(
-  "relative z-[1] flex size-[46px] shrink-0 items-center justify-center rounded-md transition-transform duration-[360ms] ease-out group-hover:scale-[1.06]",
+  "relative z-[1] flex size-6 shrink-0 items-center justify-center text-muted-foreground",
   {
     defaultVariants: { backgroundColor: "light" },
     variants: {
       backgroundColor: {
-        light: "bg-primary-soft text-primary",
-        "light-gray": "bg-primary-soft text-primary",
-        dark: "bg-white/[0.12] text-accent",
-        "dark-gray": "bg-white/[0.12] text-accent",
-        "gradient-2": "bg-white/20 text-white",
-        none: "bg-primary-soft text-primary",
+        light: "",
+        "light-gray": "",
+        dark: "",
+        "dark-gray": "",
+        "gradient-2": "",
+        none: "",
       },
     },
   }
 );
 
-const titleVariants = cva("relative z-[1] text-h-card", {
+const titleVariants = cva("relative z-[1] text-h-card transition-colors group-hover:text-primary", {
   defaultVariants: { backgroundColor: "light" },
   variants: {
     backgroundColor: {
       light: "text-foreground",
       "light-gray": "text-foreground",
-      dark: "text-slate-50",
-      "dark-gray": "text-slate-50",
-      "gradient-2": "text-white",
+      dark: "text-foreground",
+      "dark-gray": "text-foreground",
+      "gradient-2": "text-foreground",
       none: "text-foreground",
     },
   },
@@ -88,9 +65,9 @@ const bodyVariants = cva("relative z-[1] text-body-lg leading-[1.6]", {
     backgroundColor: {
       light: "text-muted-foreground",
       "light-gray": "text-muted-foreground",
-      dark: "text-slate-50/75",
-      "dark-gray": "text-slate-50/75",
-      "gradient-2": "text-white/90",
+      dark: "text-muted-foreground",
+      "dark-gray": "text-muted-foreground",
+      "gradient-2": "text-muted-foreground",
       none: "text-muted-foreground",
     },
   },
@@ -106,7 +83,7 @@ const linkVariants = cva(
         "light-gray": "text-primary hover:text-primary-hover",
         dark: "text-primary hover:text-primary-hover",
         "dark-gray": "text-primary hover:text-primary-hover",
-        "gradient-2": "text-white hover:text-slate-50",
+        "gradient-2": "text-primary hover:text-primary-hover",
         none: "text-primary hover:text-primary-hover",
       },
     },
@@ -132,10 +109,10 @@ export default function DefaultCard({
         ? "items-end text-right"
         : "items-start";
 
-  const roundedClass = rounded === "large" ? "rounded-lg p-[30px]" : "";
+  const roundedClass = rounded === "large" ? "p-8" : "";
 
   return (
-    <GlowCard className={cn(cardVariants({ backgroundColor: bg }), roundedClass, alignClass)}>
+    <div className={cn(cardVariants({ backgroundColor: bg }), roundedClass, alignClass)}>
       {icon !== undefined && (
         <div className={iconTileVariants({ backgroundColor: bg })}>
           {icon !== null ? (
@@ -179,6 +156,6 @@ export default function DefaultCard({
           </Link>
         </div>
       )}
-    </GlowCard>
+    </div>
   );
 }

@@ -12,11 +12,13 @@ import type { Locale } from "@/lib/types";
 import { injectSection } from "@/lib/fields/section/injectSection";
 import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
 
-function buildFaqItems(locale: Locale) {
+function buildFaqItems(locale: string) {
   const { question, answer } = DEFAULT_VALUES.blocks.faq;
+  const answerCopy = answer[locale as keyof typeof answer] ?? answer.en;
+  const questionCopy = question[locale as keyof typeof question] ?? question.en;
   return Array.from({ length: 3 }, () => ({
-    answer: createRichTextState(answer[locale].heading, answer[locale].paragraph),
-    question: question[locale],
+    answer: createRichTextState(answerCopy.heading, answerCopy.paragraph),
+    question: questionCopy,
   }));
 }
 
@@ -26,7 +28,6 @@ const fields: Field[] = [
     admin: { initCollapsed: true },
     defaultValue: createLocalizedDefault({
       en: buildFaqItems("en"),
-      es: buildFaqItems("es"),
     }),
     fields: [
       {

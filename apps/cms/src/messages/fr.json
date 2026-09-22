@@ -1,0 +1,59 @@
+{
+  "common": {
+    "goToHomepage": "Accéder à la page d'accueil",
+    "page": "Page",
+    "exitPreview": "Quitter l'aperçu",
+    "returnToHome": "Retour à l'accueil",
+    "somethingWentWrong": "Un problème est survenu",
+    "anErrorOccurredWhileLoadingTheBlog": "Une erreur s'est produite lors du chargement du blog : {errorMessage}",
+    "anErrorOccurredWhileLoadingTheSite": "Une erreur s'est produite lors du chargement du site : {errorMessage}"
+  },
+  "pageRange": {
+    "docs": {
+      "plural": "Documents",
+      "singular": "Document"
+    },
+    "posts": {
+      "plural": "Articles",
+      "singular": "Article"
+    },
+    "noResults": "La recherche n'a produit aucun résultat.",
+    "showing": "Affichage de {start}{end} sur {total} {label}",
+    "showingEnd": " - {end}"
+  },
+  "pagination": {
+    "previous": "Précédent",
+    "next": "Suivant",
+    "goToPreviousPage": "Aller à la page précédente",
+    "goToNextPage": "Aller à la page suivante",
+    "morePages": "Plus de pages"
+  },
+  "blog": {
+    "backToJournal": "Retour au Journal",
+    "noResults": "Aucun article ne correspond à votre recherche.",
+    "readTime": "{minutes} min",
+    "readTimeLong": "{minutes} min de lecture",
+    "search": {
+      "all": "Tous",
+      "label": "Rechercher des articles",
+      "open": "Rechercher des articles",
+      "close": "Fermer la recherche",
+      "clear": "Effacer la recherche"
+    },
+    "newsletter": {
+      "eyebrow": "The Journal, chaque mois",
+      "heading": "Un e-mail réfléchi par mois. Rien de superflu.",
+      "placeholder": "vous@equipe.com",
+      "button": "S'abonner",
+      "disclaimer": "Pas de spam. Désabonnement à tout moment."
+    }
+  },
+  "announcements": {
+    "title": "Annonces",
+    "noAnnouncements": "Aucune annonce disponible.",
+    "metadata": {
+      "title": "Annonces",
+      "description": "{count, plural, =0 {Aucune annonce} =1 {1 annonce} other {# annonces}} pour le tenant {tenant}"
+    }
+  }
+}

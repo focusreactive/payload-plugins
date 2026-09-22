@@ -5,11 +5,13 @@ import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { getPayloadClient } from "@/dal/payload-client";
 import type { Page } from "@/payload-types";
 
+import { getPathMap } from "./pathMap";
+
 type GetAlternateLocalesOptions =
   | {
       collection: "page";
-      breadcrumbs?: Page["breadcrumbs"];
-      slug?: string;
+      /** The id of the page being viewed - looked up in the path map directly, so the caller never has to resolve a path per locale itself. */
+      id: number;
       currentLocale: Locale;
     }
   | {
@@ -84,50 +86,16 @@ export async function getAlternateLocales(
   }
 
   if (options.collection === "page") {
-    let pathSegments: string[] = [];
-
-    if (options.breadcrumbs && options.breadcrumbs.length > 0) {
-      const lastBreadcrumb = options.breadcrumbs.at(-1);
-      if (lastBreadcrumb?.url) {
-        pathSegments = lastBreadcrumb.url.replace(/^\//, "").split("/").filter(Boolean);
-      }
-    } else if (options.slug) {
-      pathSegments = options.slug.split("/").filter(Boolean);
-    }
-
-    if (pathSegments.length === 0) {
-      pathSegments = ["home"];
-    }
-
-    const fullPath = pathSegments.join("/");
+    // Same document, same id, in every locale - the id never changes on a
+    // rename, so this is exactly the lookup the map exists for. One cached
+    // read replaces what used to be one `payload.find` per locale.
+    const pathMap = await getPathMap();
+    const pathsByLocale = pathMap.idToPath[options.id] ?? {};
 
     for (const locale of locales) {
-      const result = await payload.find({
-        collection: "page",
-        limit: 1,
-        locale,
-        overrideAccess: false,
-        pagination: false,
-        select: {
-          breadcrumbs: true,
-        },
-        where: {
-          _status: {
-            equals: "published",
-          },
-          "breadcrumbs.url": {
-            equals: `/${fullPath}`,
-          },
-        },
-      });
-
-      if (result.docs.length > 0) {
-        const url = buildUrl({
-          breadcrumbs: result.docs[0].breadcrumbs,
-          collection: "page",
-          locale,
-        });
-        languages[locale] = url;
+      const path = pathsByLocale[locale];
+      if (path) {
+        languages[locale] = buildUrl({ collection: "page", locale, path });
       }
     }
 

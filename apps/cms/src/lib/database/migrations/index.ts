@@ -32,6 +32,8 @@ import * as migration_20260708_183318_remove_aspect_ratio_from_unneccesary_block
 import * as migration_20260713_155547_restructure_global_settings from './20260713_155547_restructure_global_settings';
 import * as migration_20260805_120053_group_seo_defaults_under_og_and_x from './20260805_120053_group_seo_defaults_under_og_and_x';
 import * as migration_20260812_125336_add_ab_pending_percentages_to_pages from './20260812_125336_add_ab_pending_percentages_to_pages';
+import * as migration_20260922_155907_widen_locales_enum_to_six_locales from './20260922_155907_widen_locales_enum_to_six_locales';
+import * as migration_20260922_164231_localize_page_and_post_slug from './20260922_164231_localize_page_and_post_slug';
 
 export const migrations = [
   {
@@ -202,6 +204,16 @@ export const migrations = [
   {
     up: migration_20260812_125336_add_ab_pending_percentages_to_pages.up,
     down: migration_20260812_125336_add_ab_pending_percentages_to_pages.down,
-    name: '20260812_125336_add_ab_pending_percentages_to_pages'
+    name: '20260812_125336_add_ab_pending_percentages_to_pages',
+  },
+  {
+    up: migration_20260922_155907_widen_locales_enum_to_six_locales.up,
+    down: migration_20260922_155907_widen_locales_enum_to_six_locales.down,
+    name: '20260922_155907_widen_locales_enum_to_six_locales',
+  },
+  {
+    up: migration_20260922_164231_localize_page_and_post_slug.up,
+    down: migration_20260922_164231_localize_page_and_post_slug.down,
+    name: '20260922_164231_localize_page_and_post_slug'
   },
 ];

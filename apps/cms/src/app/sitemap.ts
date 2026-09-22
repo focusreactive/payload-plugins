@@ -8,7 +8,7 @@ import { getLastModifiedDate } from "@/lib/utils/getLastModifiedDate";
 import { getServerSideURL } from "@/lib/utils/getURL";
 import type { Locale } from "@/lib/types";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
-import { getAllDocuments, getBlogPageSettings, getPayloadClient } from "@/dal";
+import { getAllDocuments, getBlogPageSettings, getPathMap, getPayloadClient } from "@/dal";
 
 type Sitemap = MetadataRoute.Sitemap;
 
@@ -19,6 +19,11 @@ async function generateSitemap(): Promise<Sitemap> {
   const locales = I18N_CONFIG.locales.map((locale) => locale.code) as Locale[];
   try {
     const sitemap: Sitemap = [];
+    // The map is the single source of truth for a page's path (see
+    // pathMap.ts); reading URLs from it here rather than re-deriving them
+    // from each page's own breadcrumbs keeps the sitemap from drifting out
+    // of sync with the catch-all route's own path resolution.
+    const pathMap = await getPathMap();
 
     await Promise.all(
       locales.map(async (locale) => {
@@ -68,11 +73,13 @@ async function generateSitemap(): Promise<Sitemap> {
         const homeUrl = buildUrl({ collection: "page", locale });
 
         pages.forEach((page) => {
-          const url = buildUrl({
-            breadcrumbs: page.breadcrumbs,
-            collection: "page",
-            locale,
-          });
+          const path = pathMap.idToPath[page.id]?.[locale];
+          if (!path) {
+            // The map only carries pages that resolved a breadcrumb path in
+            // this locale (see pathMap.ts); nothing to link to otherwise.
+            return;
+          }
+          const url = buildUrl({ collection: "page", locale, path });
           const isHome = url === homeUrl;
           sitemap.push({
             changeFrequency,
