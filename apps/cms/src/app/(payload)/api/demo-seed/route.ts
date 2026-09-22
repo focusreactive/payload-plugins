@@ -12,6 +12,7 @@ import type {
   CtaBandBlock,
   HeroBlock,
   StatsBlock,
+  User,
 } from "@/payload-types";
 
 /**
@@ -443,6 +444,51 @@ function buildDemoMedia(): DemoMediaSpec[] {
   ];
 }
 
+/**
+ * The Users collection has exactly three roles - admin, author, user - with no
+ * market-restriction or approval-workflow field anywhere in the schema. The four personas this
+ * demo needs to show collapse onto those three: the international and local editors both land on
+ * "author" (the schema has no finer mechanism to tell them apart - the distinction stays in the
+ * name and email only), and the fee-earner - who only submits a profile-change request for
+ * approval - gets "user". None of these is the shared admin@focusreactive.com login; each is a
+ * dedicated demo identity with its own email. Passwords are never hardcoded: each is read from
+ * its own env var at seed time, mirroring how SANDBOX_E_SEED_TOKEN already works here, so the
+ * actual values never enter this public repo.
+ */
+interface DemoUserSpec {
+  email: string;
+  name: string;
+  role: User["role"];
+  passwordEnvVar: string;
+}
+
+const DEMO_USERS: DemoUserSpec[] = [
+  {
+    email: "administrator@example.com",
+    name: "Administrator",
+    role: "admin",
+    passwordEnvVar: "SANDBOX_E_ADMIN_PASSWORD",
+  },
+  {
+    email: "international.editor@example.com",
+    name: "International digital and communications editor",
+    role: "author",
+    passwordEnvVar: "SANDBOX_E_INTL_EDITOR_PASSWORD",
+  },
+  {
+    email: "local.editor@example.com",
+    name: "Local marketing and communications editor",
+    role: "author",
+    passwordEnvVar: "SANDBOX_E_LOCAL_EDITOR_PASSWORD",
+  },
+  {
+    email: "fee.earner@example.com",
+    name: "Fee-earner",
+    role: "user",
+    passwordEnvVar: "SANDBOX_E_FEE_EARNER_PASSWORD",
+  },
+];
+
 export async function POST(request: Request) {
   const seedToken = request.headers.get("x-seed-token");
   // SANDBOX_E_SEED_TOKEN lives in this repo's encrypted clients tier, so an agent can inject it
@@ -626,6 +672,48 @@ export async function POST(request: Request) {
       mediaCreatedCount += 1;
     }
 
+    // Upsert by email. Re-writing name/role/password on every run keeps an existing demo login in
+    // sync with the current env var rather than leaving it to drift from a stale earlier value.
+    const userWarnings: string[] = [];
+    let usersCreatedCount = 0;
+    let usersUpdatedCount = 0;
+
+    for (const persona of DEMO_USERS) {
+      const password = process.env[persona.passwordEnvVar];
+      if (!password) {
+        userWarnings.push(
+          `Skipped ${persona.email}: ${persona.passwordEnvVar} is not set in this environment.`
+        );
+        continue;
+      }
+
+      const existingUser = await payload.find({
+        collection: "users",
+        where: { email: { equals: persona.email } },
+        limit: 1,
+        overrideAccess: true,
+      });
+
+      const existingDoc = existingUser.docs[0];
+      if (existingDoc) {
+        await payload.update({
+          collection: "users",
+          id: existingDoc.id,
+          overrideAccess: true,
+          data: { name: persona.name, role: persona.role, password },
+        });
+        usersUpdatedCount += 1;
+        continue;
+      }
+
+      await payload.create({
+        collection: "users",
+        overrideAccess: true,
+        data: { name: persona.name, email: persona.email, role: persona.role, password },
+      });
+      usersCreatedCount += 1;
+    }
+
     return NextResponse.json({
       deleted: {
         page: deletedPages.docs.length,
@@ -634,7 +722,12 @@ export async function POST(request: Request) {
       created: {
         page: PAGE_TREE.length,
         media: mediaCreatedCount,
+        users: usersCreatedCount,
       },
+      updated: {
+        users: usersUpdatedCount,
+      },
+      warnings: userWarnings,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Demo seed failed.";
