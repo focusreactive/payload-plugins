@@ -34,6 +34,7 @@ import * as migration_20260805_120053_group_seo_defaults_under_og_and_x from './
 import * as migration_20260812_125336_add_ab_pending_percentages_to_pages from './20260812_125336_add_ab_pending_percentages_to_pages';
 import * as migration_20260922_155907_widen_locales_enum_to_six_locales from './20260922_155907_widen_locales_enum_to_six_locales';
 import * as migration_20260922_164231_localize_page_and_post_slug from './20260922_164231_localize_page_and_post_slug';
+import * as migration_20260922_165529_insight_and_person_collections from './20260922_165529_insight_and_person_collections';
 
 export const migrations = [
   {
@@ -214,6 +215,11 @@ export const migrations = [
   {
     up: migration_20260922_164231_localize_page_and_post_slug.up,
     down: migration_20260922_164231_localize_page_and_post_slug.down,
-    name: '20260922_164231_localize_page_and_post_slug'
+    name: '20260922_164231_localize_page_and_post_slug',
+  },
+  {
+    up: migration_20260922_165529_insight_and_person_collections.up,
+    down: migration_20260922_165529_insight_and_person_collections.down,
+    name: '20260922_165529_insight_and_person_collections'
   },
 ];
