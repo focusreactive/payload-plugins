@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { getPayloadClient } from "@/dal/payload-client";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { revalidatePathMap } from "@/dal/pathMap";
+import { seedInsightsFromFixtures, seedPeopleRecords } from "@/scripts/seedPassleInsights";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import type {
   CardsGridBlock,
@@ -1236,6 +1237,11 @@ export async function POST(request: Request) {
       });
       presetsCreatedCount += 1;
     }
+
+    // The people come first: the Passle ingest matches an author by email against a Person that
+    // already exists, and never creates one, exactly as the real webhook behaves.
+    await seedPeopleRecords(payload);
+    await seedInsightsFromFixtures(payload);
 
     await seedNavigation(payload, mediaIdByFilename["demo-logo.svg"]);
 
