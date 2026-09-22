@@ -1,2 +1,2 @@
-export { AnimatedCarousel } from "./AnimatedCarousel";
 export { TestimonialCard } from "./TestimonialCard";
+export { TestimonialsGrid } from "./TestimonialsGrid";

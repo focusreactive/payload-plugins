@@ -386,31 +386,6 @@ body {
   }
 }
 
-.testimonials-carousel-group {
-  animation: testimonials-carousel-scrolling var(--testimonials-carousel-duration, 60s) linear
-    infinite;
-}
-
-.testimonials-carousel:hover .testimonials-carousel-group,
-.testimonials-carousel:focus-within .testimonials-carousel-group {
-  animation-play-state: paused;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .testimonials-carousel-group {
-    animation: none;
-  }
-}
-
-@keyframes testimonials-carousel-scrolling {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-100%);
-  }
-}
-
 /* The design language for this sandbox lives in apps/cms/DESIGN.md. Values below are that
    document made real - change the document first, then this block, or the two drift apart. */
 :root {
