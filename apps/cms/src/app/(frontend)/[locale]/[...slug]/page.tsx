@@ -80,6 +80,11 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   });
 }
 
+// getPageBySlug reads draftMode(), so a static regeneration of these routes throws
+// DYNAMIC_SERVER_USAGE the moment the database has content. The sandbox serves three
+// people on one call, so rendering per request costs nothing worth keeping.
+export const dynamic = "force-dynamic";
+
 export async function generateStaticParams() {
   return await getMainSitePageStaticParams();
 }
