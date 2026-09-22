@@ -8,6 +8,11 @@ const __dirname = import.meta.dirname;
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // The demo-seed route reads the block preview PNGs from public/ at runtime, and public/ is not
+  // part of a function's bundle unless it is traced in explicitly.
+  outputFileTracingIncludes: {
+    "/(payload)/api/demo-seed": ["./public/block-preview-images/**"],
+  },
   turbopack: {
     root: path.resolve(__dirname, "../.."),
   },

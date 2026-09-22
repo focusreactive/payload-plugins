@@ -819,7 +819,45 @@ export async function POST(request: Request) {
   const payload = await getPayloadClient();
 
   try {
-    let defaultMediaId = await getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT);
+    // Upsert by filename so a second run reuses the same media docs instead of duplicating them -
+    // Payload itself would otherwise suffix a colliding filename rather than dedupe it.
+    const mediaIdByFilename: Record<string, number> = {};
+    let mediaCreatedCount = 0;
+
+    for (const spec of buildDemoMedia()) {
+      const existingMedia = await payload.find({
+        collection: "media",
+        where: { filename: { equals: spec.filename } },
+        limit: 1,
+        overrideAccess: true,
+      });
+
+      const existingDoc = existingMedia.docs[0];
+      if (existingDoc) {
+        mediaIdByFilename[spec.filename] = existingDoc.id;
+        continue;
+      }
+
+      const createdMedia = await payload.create({
+        collection: "media",
+        overrideAccess: true,
+        data: { alt: spec.alt },
+        file: {
+          data: spec.data,
+          mimetype: spec.mimetype,
+          name: spec.filename,
+          size: spec.data.length,
+        },
+      });
+
+      mediaIdByFilename[spec.filename] = createdMedia.id;
+      mediaCreatedCount += 1;
+    }
+
+    let defaultMediaId: string | number | null = mediaIdByFilename["preview-content.png"] ?? null;
+    if (!defaultMediaId) {
+      defaultMediaId = await getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT);
+    }
 
     // getDefaultMediaId reads through unstable_cache, so on a branch database it can hand back an
     // id from whatever content lived here before. A relationship to a missing row fails validation
@@ -949,41 +987,6 @@ export async function POST(request: Request) {
             : {}),
         },
       });
-    }
-
-    // Upsert by filename so a second run reuses the same media docs instead of duplicating them -
-    // Payload itself would otherwise suffix a colliding filename rather than dedupe it.
-    const mediaIdByFilename: Record<string, number> = {};
-    let mediaCreatedCount = 0;
-
-    for (const spec of buildDemoMedia()) {
-      const existingMedia = await payload.find({
-        collection: "media",
-        where: { filename: { equals: spec.filename } },
-        limit: 1,
-        overrideAccess: true,
-      });
-
-      const existingDoc = existingMedia.docs[0];
-      if (existingDoc) {
-        mediaIdByFilename[spec.filename] = existingDoc.id;
-        continue;
-      }
-
-      const createdMedia = await payload.create({
-        collection: "media",
-        overrideAccess: true,
-        data: { alt: spec.alt },
-        file: {
-          data: spec.data,
-          mimetype: spec.mimetype,
-          name: spec.filename,
-          size: spec.data.length,
-        },
-      });
-
-      mediaIdByFilename[spec.filename] = createdMedia.id;
-      mediaCreatedCount += 1;
     }
 
     // Upsert by email. Re-writing name/role/password on every run keeps an existing demo login in
