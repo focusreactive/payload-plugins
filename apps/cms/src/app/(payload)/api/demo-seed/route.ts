@@ -331,9 +331,12 @@ function buildStructuralBlocks(pageTitle: string, defaultMediaId: number) {
 
 export async function POST(request: Request) {
   const seedToken = request.headers.get("x-seed-token");
-  const expectedToken = process.env.CRON_SECRET;
+  // SANDBOX_E_SEED_TOKEN lives in this repo's encrypted clients tier, so an agent can inject it
+  // with secrets.sh and reset the demo unattended; CRON_SECRET stays as the fallback because it
+  // is what the Vercel project already carried.
+  const expectedToken = process.env.SANDBOX_E_SEED_TOKEN ?? process.env.CRON_SECRET;
 
-  // Fail closed: an unset CRON_SECRET must never make an unheadered request
+  // Fail closed: an unset token must never make an unheadered request
   // pass by both sides comparing to undefined.
   if (!expectedToken || !seedToken || seedToken !== expectedToken) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
