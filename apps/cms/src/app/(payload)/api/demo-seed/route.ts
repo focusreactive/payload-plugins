@@ -195,6 +195,10 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
   const hero: HeroBlock = {
     blockType: "hero",
     variant: "centered",
+    image: {
+      image: illustrations["content-model.svg"] ?? defaultMediaId,
+      aspectRatio: "16/9",
+    },
     eyebrow: "Content platform demo",
     title: "Fifteen offices, six languages, nine markets, one content model",
     richText: buildParagraphRichText(
@@ -1008,6 +1012,7 @@ export async function POST(request: Request) {
     // resolves through getDefaultMediaId, and a null there fails validation on any locale that
     // falls back to the default block set.
     const illustrationIds: Record<string, number> = {
+      "content-model.svg": mediaIdByFilename["content-model.svg"],
       "one-document-six-addresses.svg": mediaIdByFilename["one-document-six-addresses.svg"],
       "language-and-market.svg": mediaIdByFilename["language-and-market.svg"],
       "passle-to-cms.svg": mediaIdByFilename["passle-to-cms.svg"],
