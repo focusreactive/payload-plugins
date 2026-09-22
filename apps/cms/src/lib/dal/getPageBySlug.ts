@@ -37,6 +37,37 @@ async function getDraftPageByPath(
   return docs.find((p) => p?.breadcrumbs?.at(-1)?.url === targetUrl) ?? null;
 }
 
+/**
+ * The published equivalent of the draft lookup, used only when the cached map
+ * cannot answer. A request that lands while a reseed is mid-flight caches a map
+ * built from a half-written database, and every page created after that instant
+ * then 404s until the next write rebuilds it. Querying the database directly on
+ * a miss costs one indexed query on a path nobody can route to anyway, and it
+ * makes a mistimed reload survivable. Deliberately no `revalidateTag` here:
+ * Next refuses a cache mutation during render.
+ */
+async function getPublishedPageByPath(
+  payload: Payload,
+  pathSegmentsNorm: string[],
+  resolvedLocale: Locale
+): Promise<RequiredDataFromCollectionSlug<"page"> | null> {
+  const targetUrl = `/${pathSegmentsNorm.join("/")}`;
+  const lastSegment = pathSegmentsNorm.at(-1)!;
+
+  const docs = await getAllDocuments(payload, "page", {
+    depth: 3,
+    draft: false,
+    locale: resolvedLocale,
+    overrideAccess: true,
+    where: {
+      _status: { equals: "published" },
+      slug: { equals: lastSegment },
+    },
+  });
+
+  return docs.find((page) => page?.breadcrumbs?.at(-1)?.url === targetUrl) ?? null;
+}
+
 export const getPageBySlug = cache(
   async (
     pathSegments: string[],
@@ -59,13 +90,13 @@ export const getPageBySlug = cache(
     const id = pathMap.pathToId[resolvedLocale]?.[targetUrl];
 
     if (id === undefined) {
-      return null;
+      return getPublishedPageByPath(payload, pathSegmentsNorm, resolvedLocale);
     }
 
     // The map can name an id that has since been deleted (a reseed recreates every page with a
     // new id). Payload throws NotFound rather than returning null, and an uncaught throw here
     // turns a routine 404 into a 500 inside generateMetadata.
-    return payload
+    const mappedPage = (await payload
       .findByID({
         id,
         collection: "page",
@@ -74,6 +105,8 @@ export const getPageBySlug = cache(
         locale: resolvedLocale,
         overrideAccess: true,
       })
-      .catch(() => null) as Promise<RequiredDataFromCollectionSlug<"page"> | null>;
+      .catch(() => null)) as RequiredDataFromCollectionSlug<"page"> | null;
+
+    return mappedPage ?? getPublishedPageByPath(payload, pathSegmentsNorm, resolvedLocale);
   }
 );
