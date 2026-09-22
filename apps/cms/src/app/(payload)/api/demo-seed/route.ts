@@ -804,6 +804,111 @@ function buildDemoPresets(
   ];
 }
 
+/**
+ * The header and footer are the only content visible on every page, so a demo that leaves the
+ * fork base's own navigation in place advertises someone else's product on every screenshot.
+ * Localised labels and paths, because the nav is where a viewer first sees the language switch.
+ */
+const NAVIGATION_BY_LOCALE: Record<LocaleCode, { label: string; url: string }[]> = {
+  en: [
+    { label: "Insights", url: "/insights" },
+    { label: "Our people", url: "/our-people" },
+    { label: "Services", url: "/services" },
+    { label: "Global presence", url: "/global-presence" },
+  ],
+  fr: [
+    { label: "Actualités", url: "/fr/actualites" },
+    { label: "Notre équipe", url: "/fr/notre-equipe" },
+    { label: "Services", url: "/fr/services" },
+    { label: "Présence mondiale", url: "/fr/presence-mondiale" },
+  ],
+  ja: [
+    { label: "インサイト", url: "/ja/インサイト" },
+    { label: "専門家", url: "/ja/専門家" },
+    { label: "サービス", url: "/ja/サービス" },
+    { label: "世界展開", url: "/ja/世界展開" },
+  ],
+};
+
+const FOOTER_TEXT_BY_LOCALE: Record<LocaleCode, { description: string; copyright: string }> = {
+  en: {
+    description:
+      "A working content platform: six languages, nine markets, and every article arriving from the firm's own publishing tool.",
+    copyright: "Content Platform Demo",
+  },
+  fr: {
+    description:
+      "Une plateforme de contenu en fonctionnement : six langues, neuf marchés, et chaque article arrivant depuis l'outil de publication du cabinet.",
+    copyright: "Content Platform Demo",
+  },
+  ja: {
+    description:
+      "実際に動作するコンテンツ基盤。6つの言語、9つの市場、そして記事は事務所自身の配信ツールから届きます。",
+    copyright: "Content Platform Demo",
+  },
+};
+
+async function seedNavigation(payload: Awaited<ReturnType<typeof getPayloadClient>>) {
+  const [header] = (await payload.find({ collection: "header", limit: 1, overrideAccess: true }))
+    .docs;
+  const [footer] = (await payload.find({ collection: "footer", limit: 1, overrideAccess: true }))
+    .docs;
+
+  for (const locale of ["en", "fr", "ja"] as LocaleCode[]) {
+    const navigation = NAVIGATION_BY_LOCALE[locale];
+    const footerText = FOOTER_TEXT_BY_LOCALE[locale];
+
+    if (header) {
+      await payload.update({
+        collection: "header",
+        id: header.id,
+        locale,
+        overrideAccess: true,
+        context: { skipEmbedding: true },
+        data: {
+          name: "Content Platform Demo",
+          navItems: navigation.map((item) => ({
+            label: item.label,
+            type: "link" as const,
+            link: { type: "custom" as const, url: item.url },
+          })),
+          actions: [],
+        },
+      });
+    }
+
+    if (footer) {
+      await payload.update({
+        collection: "footer",
+        id: footer.id,
+        locale,
+        overrideAccess: true,
+        context: { skipEmbedding: true },
+        data: {
+          name: "Content Platform Demo",
+          description: footerText.description,
+          copyrightText: footerText.copyright,
+          linkGroups: [
+            {
+              label: navigation[2].label,
+              links: navigation.slice(2).map((item) => ({
+                link: { type: "custom" as const, url: item.url, label: item.label },
+              })),
+            },
+            {
+              label: navigation[0].label,
+              links: navigation.slice(0, 2).map((item) => ({
+                link: { type: "custom" as const, url: item.url, label: item.label },
+              })),
+            },
+          ],
+          legalLinks: [],
+        },
+      });
+    }
+  }
+}
+
 export async function POST(request: Request) {
   const seedToken = request.headers.get("x-seed-token");
   // SANDBOX_E_SEED_TOKEN lives in this repo's encrypted clients tier, so an agent can inject it
@@ -1143,6 +1248,8 @@ export async function POST(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Demo seed failed.";
     payload.logger.error(error, "Demo seed failed");
+    await seedNavigation(payload);
+
     // Every page here was deleted and recreated with a new id, so the cached map still points
     // at rows that no longer exist until it is rebuilt.
     revalidatePathMap();
