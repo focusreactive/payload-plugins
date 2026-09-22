@@ -8,10 +8,17 @@ import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import type {
   CardsGridBlock,
+  CarouselBlock,
+  ChartBlock,
   ContentBlock,
   CtaBandBlock,
+  FaqBlock,
   HeroBlock,
+  LogosBlock,
+  NewsletterBlock,
+  RawHtmlBlock,
   StatsBlock,
+  TestimonialsListBlock,
   User,
 } from "@/payload-types";
 
@@ -489,6 +496,313 @@ const DEMO_USERS: DemoUserSpec[] = [
   },
 ];
 
+/**
+ * TestimonialsList's `testimonials` field requires at least one row, so the preset needs a real
+ * testimonial document to point at. Author and company are invented for this demo and match no
+ * real person or organisation.
+ */
+function buildDemoTestimonial(avatarMediaId: number) {
+  return {
+    author: "Elena Voss",
+    company: "Global IP Practice",
+    position: "Senior Editor",
+    rating: 5,
+    avatar: avatarMediaId,
+    content:
+      "Publishing the same rebrand across nine markets used to mean nine separate projects. Now it's one page tree and a locale switch.",
+  };
+}
+
+interface DemoPresetSpec {
+  name: string;
+  previewFilename: string;
+  block:
+    | HeroBlock
+    | ContentBlock
+    | FaqBlock
+    | CardsGridBlock
+    | CarouselBlock
+    | LogosBlock
+    | ChartBlock
+    | CtaBandBlock
+    | NewsletterBlock
+    | StatsBlock
+    | TestimonialsListBlock
+    | RawHtmlBlock;
+}
+
+/**
+ * One preset per entry in contentBlocks.ts (apps/cms/src/blocks/contentBlocks.ts), so every block
+ * in the drawer has a populated starting point instead of an empty shell. GlobalSectionSlotBlock
+ * is deliberately excluded - its only field is a required relationship to an existing globalBlock
+ * document, demo-seed never creates one, and a preset with nothing but a pointer to nothing isn't
+ * "real content."
+ */
+function buildDemoPresets(
+  mediaIdByFilename: Record<string, number>,
+  testimonialId: number
+): DemoPresetSpec[] {
+  return [
+    {
+      name: "Demo Hero",
+      previewFilename: "preview-hero.png",
+      block: {
+        blockType: "hero",
+        variant: "showcase",
+        eyebrow: "Demo preset",
+        title: "A rebrand that keeps every market in sync",
+        richText: buildParagraphRichText(
+          "Patents, trade marks, and every regional office share one content model, so a rebrand rolls out to nine markets at once instead of nine separate projects."
+        ),
+        actions: [buildAction("View services", "/services", "default")],
+        image: { image: mediaIdByFilename["preview-hero.png"], aspectRatio: "16/9" },
+        section: { theme: "light" },
+      },
+    },
+    {
+      name: "Demo Content",
+      previewFilename: "preview-content.png",
+      block: {
+        blockType: "content",
+        eyebrow: "How it works",
+        heading: "One page tree, three languages",
+        layout: "image-text",
+        image: mediaIdByFilename["preview-content.png"],
+        content: buildParagraphRichText(
+          "Every page carries an English, French, and Japanese version from the same record, so a slug change or a parent rename cascades to all three without a separate translation project."
+        ),
+        actions: [buildAction("View global presence", "/global-presence", "outline")],
+        section: { theme: "light" },
+      },
+    },
+    {
+      name: "Demo FAQ",
+      previewFilename: "preview-faq.png",
+      block: {
+        blockType: "faq",
+        eyebrow: "Questions",
+        heading: "Frequently asked",
+        description: "What a new editor usually asks in week one.",
+        items: [
+          {
+            question: "Who can publish to every market at once?",
+            answer: buildParagraphRichText(
+              "Only the international digital and communications editor role can publish across all markets in one step."
+            ),
+          },
+          {
+            question: "What happens to a page outside my own market?",
+            answer: buildParagraphRichText(
+              "Local editors are scoped to their own markets, so a page outside them stays read-only."
+            ),
+          },
+        ],
+        section: { theme: "light" },
+      },
+    },
+    {
+      name: "Demo Cards Grid",
+      previewFilename: "preview-cards-grid.png",
+      block: {
+        blockType: "cardsGrid",
+        eyebrow: "Explore",
+        heading: "Start here",
+        description: "Three entry points into the demo content.",
+        items: [
+          {
+            icon: "users",
+            title: "Our people",
+            description: "Meet the editors and reviewers behind the published pages.",
+            link: {
+              ...buildAction("Meet our people", "/our-people", "default"),
+              label: "Meet our people",
+            },
+          },
+          {
+            icon: "layers",
+            title: "Services",
+            description: "Patents, trade marks, and everything in between.",
+            link: {
+              ...buildAction("View services", "/services", "default"),
+              label: "View services",
+            },
+          },
+          {
+            icon: "map",
+            title: "Global presence",
+            description: "Nine markets, one shared content model.",
+            link: {
+              ...buildAction("View global presence", "/global-presence", "default"),
+              label: "View global presence",
+            },
+          },
+        ],
+        section: { theme: "light" },
+      },
+    },
+    {
+      name: "Demo Carousel",
+      previewFilename: "preview-carusel.png",
+      block: {
+        blockType: "carousel",
+        eyebrow: "Case studies",
+        heading: "Three ways teams use this platform",
+        description: "A quick look at recent regional launches.",
+        effect: "slide",
+        slides: [
+          {
+            image: { image: mediaIdByFilename["preview-carusel.png"] },
+            text: buildParagraphRichText(
+              "Tokyo office launch, translated into Japanese from the same page tree."
+            ),
+          },
+          {
+            image: { image: mediaIdByFilename["preview-carusel.png"] },
+            text: buildParagraphRichText(
+              "A rebrand rolled out to nine markets without forking the content model."
+            ),
+          },
+          {
+            image: { image: mediaIdByFilename["preview-carusel.png"] },
+            text: buildParagraphRichText(
+              "A parent page renamed once, cascading to every child slug."
+            ),
+          },
+        ],
+        section: { theme: "light" },
+      },
+    },
+    {
+      name: "Demo Logos",
+      previewFilename: "preview-logos.png",
+      block: {
+        blockType: "logos",
+        label: "Trusted by teams across nine markets",
+        alignVariant: "center",
+        items: [
+          {
+            image: { image: mediaIdByFilename["preview-logos.png"] },
+            link: { type: "custom", newTab: false, url: "/global-presence", label: "Tokyo office" },
+          },
+          {
+            image: { image: mediaIdByFilename["preview-logos.png"] },
+            link: {
+              type: "custom",
+              newTab: false,
+              url: "/global-presence",
+              label: "Amsterdam office",
+            },
+          },
+          {
+            image: { image: mediaIdByFilename["preview-logos.png"] },
+            link: {
+              type: "custom",
+              newTab: false,
+              url: "/global-presence",
+              label: "Singapore office",
+            },
+          },
+        ],
+        section: { theme: "light" },
+      },
+    },
+    {
+      name: "Demo Chart",
+      previewFilename: "preview-chart.png",
+      block: {
+        blockType: "chart",
+        eyebrow: "Platform metrics",
+        heading: "Publishing *velocity* since the rebrand",
+        description: "Pages published per month across all nine markets.",
+        title: "Monthly published pages",
+        subtitle: "By market",
+        ranges: [
+          {
+            label: "Q1",
+            dataPoints: [
+              { label: "Asia", value: 24 },
+              { label: "Europe", value: 31 },
+              { label: "Americas", value: 18 },
+            ],
+          },
+          {
+            label: "Q2",
+            dataPoints: [
+              { label: "Asia", value: 29 },
+              { label: "Europe", value: 35 },
+              { label: "Americas", value: 22 },
+            ],
+          },
+        ],
+        section: { theme: "light" },
+      },
+    },
+    {
+      name: "Demo CTA Band",
+      previewFilename: "preview-cta.png",
+      block: {
+        blockType: "ctaBand",
+        eyebrow: "Ready when you are",
+        heading: "See it on your own content next",
+        description: "The fastest way to evaluate a platform is to publish something real in it.",
+        actions: [buildAction("View our people", "/our-people", "accent")],
+        section: { theme: "light" },
+      },
+    },
+    {
+      name: "Demo Newsletter",
+      previewFilename: "preview-newsletter.png",
+      block: {
+        blockType: "newsletter",
+        eyebrow: "Stay in the loop",
+        heading: "Get updates on the platform",
+        inputPlaceholder: "Work email",
+        buttonLabel: "Subscribe",
+        disclaimer: "Unsubscribe anytime.",
+        section: { theme: "light" },
+      },
+    },
+    {
+      name: "Demo Stats",
+      previewFilename: "preview-stats.png",
+      block: {
+        blockType: "stats",
+        items: [
+          { value: "15", label: "Offices" },
+          { value: "6", label: "Languages" },
+          { value: "9", label: "Markets" },
+          { value: "1", label: "Content model" },
+        ],
+        section: { theme: "light" },
+      },
+    },
+    {
+      name: "Demo Testimonials",
+      previewFilename: "preview-testimonials.png",
+      block: {
+        blockType: "testimonialsList",
+        eyebrow: "What editors say",
+        heading: "From the rollout",
+        description: "Feedback from the first cohort of editors.",
+        testimonialItems: [{ testimonial: testimonialId }],
+        showRating: true,
+        showAvatar: true,
+        duration: 60,
+        section: { theme: "light" },
+      },
+    },
+    {
+      name: "Demo Raw HTML",
+      previewFilename: "empty-placeholder.jpg",
+      block: {
+        blockType: "rawHtml",
+        html: '<div style="padding: 2rem;"><strong>Embed placeholder</strong> - drop a signed office-hours widget, a status badge, or any third-party embed here.</div>',
+        section: { theme: "light" },
+      },
+    },
+  ];
+}
+
 export async function POST(request: Request) {
   const seedToken = request.headers.get("x-seed-token");
   // SANDBOX_E_SEED_TOKEN lives in this repo's encrypted clients tier, so an agent can inject it
@@ -714,6 +1028,80 @@ export async function POST(request: Request) {
       usersCreatedCount += 1;
     }
 
+    // Upsert by author so a second run reuses the same testimonial instead of duplicating it.
+    const testimonialAuthor = "Elena Voss";
+    const existingTestimonial = await payload.find({
+      collection: "testimonials",
+      where: { author: { equals: testimonialAuthor } },
+      locale: "en",
+      limit: 1,
+      overrideAccess: true,
+    });
+
+    const testimonialAvatarId = mediaIdByFilename["preview-testimonials.png"];
+    const testimonialData = buildDemoTestimonial(testimonialAvatarId);
+    let testimonialId: number;
+    if (existingTestimonial.docs[0]) {
+      testimonialId = existingTestimonial.docs[0].id;
+      await payload.update({
+        collection: "testimonials",
+        id: testimonialId,
+        locale: "en",
+        overrideAccess: true,
+        data: testimonialData,
+      });
+    } else {
+      const createdTestimonial = await payload.create({
+        collection: "testimonials",
+        locale: "en",
+        overrideAccess: true,
+        data: testimonialData,
+      });
+      testimonialId = createdTestimonial.id;
+    }
+
+    // Upsert by name (locale "en", the anchor locale for every localized field in this route).
+    let presetsCreatedCount = 0;
+    let presetsUpdatedCount = 0;
+
+    for (const spec of buildDemoPresets(mediaIdByFilename, testimonialId)) {
+      const existingPreset = await payload.find({
+        collection: "presets",
+        where: { name: { equals: spec.name } },
+        locale: "en",
+        limit: 1,
+        overrideAccess: true,
+      });
+
+      const previewMediaId = mediaIdByFilename[spec.previewFilename];
+      const presetData = {
+        name: spec.name,
+        preview: previewMediaId,
+        presetBlock: [spec.block],
+      };
+
+      const existingDoc = existingPreset.docs[0];
+      if (existingDoc) {
+        await payload.update({
+          collection: "presets",
+          id: existingDoc.id,
+          locale: "en",
+          overrideAccess: true,
+          data: presetData,
+        });
+        presetsUpdatedCount += 1;
+        continue;
+      }
+
+      await payload.create({
+        collection: "presets",
+        locale: "en",
+        overrideAccess: true,
+        data: presetData,
+      });
+      presetsCreatedCount += 1;
+    }
+
     return NextResponse.json({
       deleted: {
         page: deletedPages.docs.length,
@@ -723,9 +1111,13 @@ export async function POST(request: Request) {
         page: PAGE_TREE.length,
         media: mediaCreatedCount,
         users: usersCreatedCount,
+        testimonials: existingTestimonial.docs[0] ? 0 : 1,
+        presets: presetsCreatedCount,
       },
       updated: {
         users: usersUpdatedCount,
+        testimonials: existingTestimonial.docs[0] ? 1 : 0,
+        presets: presetsUpdatedCount,
       },
       warnings: userWarnings,
     });
