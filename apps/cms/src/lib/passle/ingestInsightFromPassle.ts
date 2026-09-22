@@ -56,9 +56,19 @@ export async function ingestInsightFromPassle({
   }
 
   const editorConfig = await editorConfigFactory.default({ config: payload.config });
+
+  // Passle wraps every post in a featured-media div and sprinkles embeds through the body. The
+  // HTML converter turns those into nodes the Insight editor does not enable, and Payload then
+  // rejects the whole field as invalid without naming the node - so the media goes first and the
+  // prose is what gets stored.
+  const prose = passlePost.PostContentHtml.replaceAll(
+    /<(img|picture|iframe|video|source|script|style)\b[^>]*>[\s\S]*?<\/\1>|<(img|source)\b[^>]*\/?>/gi,
+    ""
+  );
+
   const convertedBody = convertHTMLToLexical({
     editorConfig,
-    html: passlePost.PostContentHtml,
+    html: prose,
     JSDOM,
   });
 
