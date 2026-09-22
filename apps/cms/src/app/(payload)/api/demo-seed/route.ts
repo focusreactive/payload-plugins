@@ -198,7 +198,6 @@ function buildHomepageBlocks(defaultMediaId: number) {
     blockType: "stats",
     items: [
       { value: "3,115", label: "Passle items synced (of about 3,800)" },
-      { value: "265", label: "Fee-earner profiles" },
       { value: "17", label: "English services" },
       { value: "8", label: "French services" },
       { value: "5", label: "Japanese services" },
