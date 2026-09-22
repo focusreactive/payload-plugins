@@ -345,6 +345,18 @@ export async function POST(request: Request) {
 
   try {
     let defaultMediaId = await getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT);
+
+    // getDefaultMediaId reads through unstable_cache, so on a branch database it can hand back an
+    // id from whatever content lived here before. A relationship to a missing row fails validation
+    // with "Image invalid" and never names the id, so confirm the row exists before trusting it.
+    if (defaultMediaId) {
+      const existing = await payload
+        .findByID({ collection: "media", id: defaultMediaId, depth: 0, overrideAccess: true })
+        .catch(() => null);
+      if (!existing) {
+        defaultMediaId = null;
+      }
+    }
     if (!defaultMediaId) {
       const fallbackMedia = await payload.find({
         collection: "media",
