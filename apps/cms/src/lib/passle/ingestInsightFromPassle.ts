@@ -56,11 +56,23 @@ export async function ingestInsightFromPassle({
   }
 
   const editorConfig = await editorConfigFactory.default({ config: payload.config });
-  const bodyRichText = convertHTMLToLexical({
+  const convertedBody = convertHTMLToLexical({
     editorConfig,
     html: passlePost.PostContentHtml,
     JSDOM,
   });
+
+  // Some Passle posts are a video embed or a single image with no prose, and the HTML converter
+  // returns a root with no children for those. The body field is required, so an empty root fails
+  // validation and takes the whole ingest with it - fall back to the snippet Passle always sends.
+  const hasBodyContent = (convertedBody?.root?.children?.length ?? 0) > 0;
+  const bodyRichText = hasBodyContent
+    ? convertedBody
+    : convertHTMLToLexical({
+        editorConfig,
+        html: `<p>${passlePost.ContentTextSnippet ?? passlePost.PostTitle}</p>`,
+        JSDOM,
+      });
 
   // The slug field generates from the title on save, but Payload's typed create still wants the
   // property present, so the ingest supplies the same slugified title rather than an empty string.
