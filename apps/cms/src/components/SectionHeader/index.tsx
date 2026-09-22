@@ -38,7 +38,7 @@ export function SectionHeader({
       )}
     >
       {eyebrow?.text && (
-        <Eyebrow prefix="dot" tone={eyebrow.variant ?? "accent"}>
+        <Eyebrow prefix="dot" tone={eyebrow.variant ?? "muted"}>
           {eyebrow.text}
         </Eyebrow>
       )}
