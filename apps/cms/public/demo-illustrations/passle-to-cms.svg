@@ -1,24 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" width="640" height="420" role="img" aria-label="An article arrives from Passle and is enriched in the CMS">
-  <rect width="640" height="420" fill="#FBFAF7"/>
-  <rect x="40" y="110" width="150" height="90" fill="#FFFFFF" stroke="#12100E" stroke-width="1.5"/>
-  <text x="58" y="146" font-family="Newsreader, Georgia, serif" font-size="16" fill="#12100E">Passle</text>
-  <text x="58" y="170" font-family="Archivo, Helvetica, sans-serif" font-size="10.5" letter-spacing="1.2" fill="#6B6459">AUTHOR PUBLISHES</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360" role="img" aria-label="An article arrives from Passle and is enriched in the CMS">
+  <rect width="640" height="360" fill="#FBFAF7"/>
+  <rect x="40" y="94.3" width="150" height="77.1" fill="#FFFFFF" stroke="#12100E" stroke-width="1.5"/>
+  <text x="58" y="125.1" font-family="Newsreader, Georgia, serif" font-size="16" fill="#12100E">Passle</text>
+  <text x="58" y="145.7" font-family="Archivo, Helvetica, sans-serif" font-size="10.5" letter-spacing="1.2" fill="#6B6459">AUTHOR PUBLISHES</text>
   <path d="M190 155 H 246" stroke="#1F4B43" stroke-width="1.5"/>
   <path d="M240 150 l 8 5 -8 5" fill="#1F4B43"/>
-  <text x="196" y="142" font-family="'IBM Plex Mono', ui-monospace, monospace" font-size="11" fill="#1F4B43">shortcode</text>
-  <rect x="250" y="80" width="170" height="150" fill="#FFFFFF" stroke="#12100E" stroke-width="1.5"/>
-  <text x="268" y="112" font-family="Newsreader, Georgia, serif" font-size="16" fill="#12100E">Content platform</text>
+  <text x="196" y="121.7" font-family="'IBM Plex Mono', ui-monospace, monospace" font-size="11" fill="#1F4B43">shortcode</text>
+  <rect x="250" y="68.6" width="170" height="128.6" fill="#FFFFFF" stroke="#12100E" stroke-width="1.5"/>
+  <text x="268" y="96.0" font-family="Newsreader, Georgia, serif" font-size="16" fill="#12100E">Content platform</text>
   <g font-family="Archivo, Helvetica, sans-serif" font-size="11.5" fill="#12100E">
-    <text x="268" y="142">pulls the article</text>
-    <text x="268" y="166">matches the author</text>
-    <text x="268" y="190">files it by practice area</text>
-    <text x="268" y="214">keeps editor additions</text>
+    <text x="268" y="121.7">pulls the article</text>
+    <text x="268" y="142.3">matches the author</text>
+    <text x="268" y="162.9">files it by practice area</text>
+    <text x="268" y="183.4">keeps editor additions</text>
   </g>
   <path d="M420 155 H 476" stroke="#1F4B43" stroke-width="1.5"/>
   <path d="M470 150 l 8 5 -8 5" fill="#1F4B43"/>
-  <rect x="480" y="110" width="120" height="90" fill="#FFFFFF" stroke="#12100E" stroke-width="1.5"/>
-  <text x="498" y="146" font-family="Newsreader, Georgia, serif" font-size="16" fill="#12100E">Website</text>
-  <text x="498" y="170" font-family="Archivo, Helvetica, sans-serif" font-size="10.5" letter-spacing="1.2" fill="#6B6459">SIX LANGUAGES</text>
-  <text x="40" y="300" font-family="Newsreader, Georgia, serif" font-size="17" fill="#12100E">3,115 of roughly 3,800 items already come this way.</text>
-  <text x="40" y="330" font-family="Archivo, Helvetica, sans-serif" font-size="12.5" fill="#6B6459">Nobody copies text between systems.</text>
+  <rect x="480" y="94.3" width="120" height="77.1" fill="#FFFFFF" stroke="#12100E" stroke-width="1.5"/>
+  <text x="498" y="125.1" font-family="Newsreader, Georgia, serif" font-size="16" fill="#12100E">Website</text>
+  <text x="498" y="145.7" font-family="Archivo, Helvetica, sans-serif" font-size="10.5" letter-spacing="1.2" fill="#6B6459">SIX LANGUAGES</text>
+  <text x="40" y="257.1" font-family="Newsreader, Georgia, serif" font-size="17" fill="#12100E">3,115 of roughly 3,800 items already come this way.</text>
+  <text x="40" y="282.9" font-family="Archivo, Helvetica, sans-serif" font-size="12.5" fill="#6B6459">Nobody copies text between systems.</text>
 </svg>

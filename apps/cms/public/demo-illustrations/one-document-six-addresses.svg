@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" width="640" height="420" role="img" aria-label="One document, six localised addresses">
-  <rect width="640" height="420" fill="#FBFAF7"/>
-  <rect x="40" y="168" width="176" height="84" fill="#FFFFFF" stroke="#12100E" stroke-width="1.5"/>
-  <text x="60" y="200" font-family="Newsreader, Georgia, serif" font-size="17" fill="#12100E">Tokyo office</text>
-  <text x="60" y="224" font-family="Archivo, Helvetica, sans-serif" font-size="11" letter-spacing="1.4" fill="#6B6459">ONE DOCUMENT</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360" role="img" aria-label="One document, six localised addresses">
+  <rect width="640" height="360" fill="#FBFAF7"/>
+  <rect x="40" y="144.0" width="176" height="72.0" fill="#FFFFFF" stroke="#12100E" stroke-width="1.5"/>
+  <text x="60" y="171.4" font-family="Newsreader, Georgia, serif" font-size="17" fill="#12100E">Tokyo office</text>
+  <text x="60" y="192.0" font-family="Archivo, Helvetica, sans-serif" font-size="11" letter-spacing="1.4" fill="#6B6459">ONE DOCUMENT</text>
   <g stroke="#C9C2B6" stroke-width="1">
     <path d="M216 210 C 276 210, 276 60, 336 60" fill="none"/>
     <path d="M216 210 C 276 210, 276 120, 336 120" fill="none"/>
@@ -12,15 +12,15 @@
     <path d="M216 210 C 276 210, 276 360, 336 360" fill="none"/>
   </g>
   <g font-family="'IBM Plex Mono', ui-monospace, monospace" font-size="12.5" fill="#12100E">
-    <text x="348" y="64">/global-presence/asia/japan/tokyo-office</text>
-    <text x="348" y="124">/fr/presence-mondiale/asie/japon/…</text>
-    <text x="348" y="184">/ja/世界展開/アジア/日本/東京オフィス</text>
-    <text x="348" y="244">/ko/글로벌-네트워크/아시아/일본/…</text>
-    <text x="348" y="304">/zh-hans/全球布局/亚洲/日本/…</text>
-    <text x="348" y="364">/zh-hant/全球佈局/亞洲/日本/…</text>
+    <text x="348" y="54.9">/global-presence/asia/japan/tokyo-office</text>
+    <text x="348" y="106.3">/fr/presence-mondiale/asie/japon/…</text>
+    <text x="348" y="157.7">/ja/世界展開/アジア/日本/東京オフィス</text>
+    <text x="348" y="209.1">/ko/글로벌-네트워크/아시아/일본/…</text>
+    <text x="348" y="260.6">/zh-hans/全球布局/亚洲/日本/…</text>
+    <text x="348" y="312.0">/zh-hant/全球佈局/亞洲/日本/…</text>
   </g>
   <g font-family="Archivo, Helvetica, sans-serif" font-size="10.5" letter-spacing="1.2" fill="#1F4B43">
-    <text x="348" y="46">EN</text><text x="348" y="106">FR</text><text x="348" y="166">JA</text>
-    <text x="348" y="226">KO</text><text x="348" y="286">ZH-HANS</text><text x="348" y="346">ZH-HANT</text>
+    <text x="348" y="39.4">EN</text><text x="348" y="90.9">FR</text><text x="348" y="142.3">JA</text>
+    <text x="348" y="193.7">KO</text><text x="348" y="245.1">ZH-HANS</text><text x="348" y="296.6">ZH-HANT</text>
   </g>
 </svg>
