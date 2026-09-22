@@ -259,7 +259,10 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     eyebrow: "3,115 of roughly 3,800 items",
     heading: "Your attorneys keep writing in Passle. The article arrives here enriched.",
     layout: "image-text",
-    image: illustrations["passle-to-cms.svg"] ?? defaultMediaId,
+    // A screenshot of the real admin beats a drawn diagram here: the claim is that
+    // articles arrive by themselves, and the list of them with their authors is the
+    // evidence. The drawn version of this sat next to it and looked invented.
+    image: illustrations["admin-insight-list.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
       "A post published in Passle sends its shortcode, and the platform pulls the article, matches the author to their profile by email address, and files it under the practice areas it belongs to. Nobody copies text, and an editor who adds a summary or a related service keeps that work when the article syncs again."
     ),
@@ -273,7 +276,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     heading:
       "Your Japanese pages already use Japanese addresses. The platform treats that as normal.",
     layout: "text-image",
-    image: illustrations["one-document-six-addresses.svg"] ?? defaultMediaId,
+    image: illustrations["admin-pages-japanese.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
       "/global-presence/asia/japan/ and /ja/世界展開/アジア/日本/ are the same document with a different address in each language, assembled from the address of every parent above it. Rename a parent in one language and every page beneath it follows, in that language only."
     ),
@@ -701,6 +704,22 @@ function buildDemoMedia(): DemoMediaSpec[] {
       mimetype: "image/svg+xml",
       data: readFileSync(
         path.join(process.cwd(), "public", "demo-illustrations", "passle-to-cms.svg")
+      ),
+    },
+    {
+      filename: "admin-insight-list.png",
+      alt: "The insight list in the CMS, showing articles that arrived from Passle with their authors and publish dates",
+      mimetype: "image/png",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "demo-screens", "admin-insight-list.png")
+      ),
+    },
+    {
+      filename: "admin-pages-japanese.png",
+      alt: "The page list in the CMS with the locale set to Japanese, showing Japanese titles and Japanese slugs",
+      mimetype: "image/png",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "demo-screens", "admin-pages-japanese.png")
       ),
     },
     {
@@ -1327,6 +1346,8 @@ export async function POST(request: Request) {
       "one-document-six-addresses.svg": mediaIdByFilename["one-document-six-addresses.svg"],
       "language-and-market.svg": mediaIdByFilename["language-and-market.svg"],
       "passle-to-cms.svg": mediaIdByFilename["passle-to-cms.svg"],
+      "admin-insight-list.png": mediaIdByFilename["admin-insight-list.png"],
+      "admin-pages-japanese.png": mediaIdByFilename["admin-pages-japanese.png"],
     };
 
     const platformDefaultMediaId = mediaIdByFilename["content-model.svg"];
