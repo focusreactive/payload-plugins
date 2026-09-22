@@ -854,6 +854,19 @@ export async function POST(request: Request) {
       mediaCreatedCount += 1;
     }
 
+    // Mark one media doc as the platform default, because every block's image defaultValue
+    // resolves through getDefaultMediaId, and a null there fails validation on any locale that
+    // falls back to the default block set.
+    const platformDefaultMediaId = mediaIdByFilename["preview-content.png"];
+    if (platformDefaultMediaId) {
+      await payload.update({
+        collection: "media",
+        id: platformDefaultMediaId,
+        overrideAccess: true,
+        data: { defaultFor: [PLATFORM_DEFAULT_MEDIA_SLOT] },
+      });
+    }
+
     let defaultMediaId: string | number | null = mediaIdByFilename["preview-content.png"] ?? null;
     if (!defaultMediaId) {
       defaultMediaId = await getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT);
