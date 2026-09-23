@@ -1,4 +1,4 @@
-import { Link } from "@/components/link";
+import { Button } from "@/shared/ui/shadcn/base/buttons/button";
 import type { IDefaultCardProps } from "./types";
 
 export default function DefaultCard({
@@ -29,7 +29,17 @@ export default function DefaultCard({
         {description && <p className="mt-1 text-md text-tertiary">{description}</p>}
       </div>
 
-      {link?.href && <Link {...link} />}
+      {/*
+        Untitled UI's feature-text exposes a bare {footer} slot and never renders a button in it,
+        so there is no per-card treatment of theirs to copy. Their link-colour Button is the
+        closest thing they ship to an inline card action, and it keeps these four cards on the
+        same component as every other CTA on the page.
+      */}
+      {link?.href && (
+        <Button href={link.href} size="md" color="link-color" className="self-start">
+          {link.text}
+        </Button>
+      )}
     </div>
   );
 }
