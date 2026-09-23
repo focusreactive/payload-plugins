@@ -262,7 +262,9 @@ const PAGE_TREE: PageSpec[] = [
     key: "home",
     parentKey: null,
     en: { title: "Home", slug: "home" },
-    fr: { title: "Accueil", slug: "accueil" },
+    // The home slug never appears in a URL: the locale root serves it, and a localised value here
+    // makes /fr 404 while /ja works, because only "home" resolves as the index.
+    fr: { title: "Accueil", slug: "home" },
     ja: { title: "ホーム", slug: "home" },
   },
   {
