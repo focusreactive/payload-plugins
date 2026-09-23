@@ -1356,19 +1356,35 @@ export async function POST(request: Request) {
       mediaCreatedCount += 1;
     }
 
+    // Anything in the library that this seed did not put there is either another project's content
+    // inherited with the branch database, or a stale copy Payload renamed around an earlier upload.
+    // Both are visible the moment an editor opens Media on the call.
+    const seededFilenames = new Set(buildDemoMedia().map((spec) => spec.filename));
+    const strayMedia = await payload.find({
+      collection: "media",
+      limit: 500,
+      depth: 0,
+      overrideAccess: true,
+    });
+    let mediaDeletedCount = 0;
+    for (const doc of strayMedia.docs) {
+      if (doc.filename && !seededFilenames.has(doc.filename)) {
+        await payload.delete({ collection: "media", id: doc.id, overrideAccess: true });
+        mediaDeletedCount += 1;
+      }
+    }
+
     // Mark one media doc as the platform default, because every block's image defaultValue
     // resolves through getDefaultMediaId, and a null there fails validation on any locale that
     // falls back to the default block set.
     const illustrationIds: Record<string, number> = {
-      "content-model.svg": mediaIdByFilename["content-model.svg"],
-      "one-document-six-addresses.svg": mediaIdByFilename["one-document-six-addresses.svg"],
-      "language-and-market.svg": mediaIdByFilename["language-and-market.svg"],
-      "passle-to-cms.svg": mediaIdByFilename["passle-to-cms.svg"],
+      "admin-page-tree.png": mediaIdByFilename["admin-page-tree.png"],
+      "admin-person-markets.png": mediaIdByFilename["admin-person-markets.png"],
       "admin-insight-list.png": mediaIdByFilename["admin-insight-list.png"],
       "admin-pages-japanese.png": mediaIdByFilename["admin-pages-japanese.png"],
     };
 
-    const platformDefaultMediaId = mediaIdByFilename["content-model.svg"];
+    const platformDefaultMediaId = mediaIdByFilename["admin-page-tree.png"];
     if (platformDefaultMediaId) {
       await payload.update({
         collection: "media",
@@ -1378,7 +1394,7 @@ export async function POST(request: Request) {
       });
     }
 
-    let defaultMediaId: string | number | null = mediaIdByFilename["content-model.svg"] ?? null;
+    let defaultMediaId: string | number | null = mediaIdByFilename["admin-page-tree.png"] ?? null;
     if (!defaultMediaId) {
       defaultMediaId = await getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT);
     }
@@ -1717,6 +1733,7 @@ export async function POST(request: Request) {
       deleted: {
         page: deletedPages.docs.length,
         posts: deletedPosts.docs.length,
+        media: mediaDeletedCount,
       },
       created: {
         page: PAGE_TREE.length,
