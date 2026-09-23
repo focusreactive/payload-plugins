@@ -29,7 +29,7 @@ import { I18N_CONFIG } from "@/lib/config/i18n";
 import { abAdapter } from "@/lib/plugins/ab/abAdapter";
 import { buildVariantData } from "@/lib/plugins/ab/buildVariantData";
 import type { ABVariantData } from "@/lib/plugins/ab/types";
-import { superAdmin, or, authenticated, user } from "@/lib/access";
+import { superAdmin, authenticated, editorial } from "@/lib/access";
 import { getServerSideURL } from "@/lib/utils/getURL";
 import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 import { validateRedirectPath } from "@/lib/utils/redirectUrl";
@@ -202,10 +202,10 @@ export const plugins: Plugin[] = [
         beforeChange: [normalizeRedirectFields],
       },
       access: {
-        create: or(superAdmin, user),
-        delete: or(superAdmin, user),
-        read: or(superAdmin, user),
-        update: or(superAdmin, user),
+        create: superAdmin,
+        delete: superAdmin,
+        read: authenticated,
+        update: superAdmin,
       },
     },
     redirectTypeFieldOverride: {
@@ -267,10 +267,10 @@ export const plugins: Plugin[] = [
     },
     overrides: {
       access: {
-        create: or(superAdmin, user),
-        delete: or(superAdmin, user),
+        create: editorial,
+        delete: editorial,
         read: authenticated,
-        update: or(superAdmin, user),
+        update: editorial,
       },
       admin: {
         defaultColumns: ["name", "preview", "presetBlock", "updatedAt"],

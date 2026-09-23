@@ -117,12 +117,12 @@ const LOCALIZED_PAGE_BODY: Record<
     fr: {
       eyebrow: "Six langues, neuf marchés",
       heading: "La liste des services n’est pas la même dans chaque langue",
-      body: "La version anglaise compte dix-sept services, la française huit, la japonaise cinq. C’est une décision éditoriale, pas une lacune.",
+      body: "La version anglaise compte dix-sept services, la française huit, la japonaise cinq. C’est une décision éditoriale, pas une lacune. Deux d’entre eux, Brevets et Marques, sont développés en pages complètes dans cette démonstration.",
     },
     ja: {
       eyebrow: "6言語、9市場",
       heading: "サービス一覧は言語ごとに異なります",
-      body: "英語版では17件、フランス語版では8件、日本語版では5件のサービスを掲載しています。これは意図的な編集判断であり、抜け漏れではありません。",
+      body: "英語版では17件、フランス語版では8件、日本語版では5件のサービスを掲載しています。これは意図的な編集判断であり、抜け漏れではありません。このデモでは、そのうち特許と商標の2件をページとして作成しています。",
     },
   },
   patents: {
@@ -219,17 +219,17 @@ const PAGE_META_EN: Record<string, { title: string; description: string }> = {
   "our-people": {
     title: "People, and the markets they cover",
     description:
-      "Twenty-one profiles with a job title, an office and a set of markets, which is what lets an article find its author automatically.",
+      "Twenty-one profiles, each with a job title, an office and the markets they cover. The email address on the profile is what lets an article find its author automatically.",
   },
   services: {
     title: "Services, and why the list differs by language",
     description:
-      "English carries seventeen services, French eight, Japanese five. That is an editorial decision, and which markets a page appears in is set separately again.",
+      "English carries seventeen services, French eight, Japanese five. That is an editorial decision, not a translation gap.",
   },
   patents: {
     title: "Patents",
     description:
-      "Patent work from first filing through prosecution to enforcement, with recent matters written up by the attorneys who handled them.",
+      "Patent work from first filing through prosecution to enforcement, alongside the firm's own published commentary on it.",
   },
   "trade-marks": {
     title: "Trade marks",
@@ -248,7 +248,7 @@ const PAGE_META_EN: Record<string, { title: string; description: string }> = {
   japan: {
     title: "Japan",
     description:
-      "The country level. Rename it in one language and every address beneath it follows, in that language only.",
+      "The country level. Change its address in one language and every address beneath it follows, in that language only.",
   },
   "tokyo-office": {
     title: "Tokyo office",
@@ -492,7 +492,10 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
   const stats: StatsBlock = {
     blockType: "stats",
     items: [
-      { value: "3,115", label: "Passle items in the estate, of about 3,800" },
+      {
+        value: "3,115",
+        label: "Passle items on your site, of roughly 3,800, counted from your sitemap",
+      },
       { value: "20", label: "Ingested into this demo" },
       { value: "17", label: "English services" },
       { value: "8", label: "French services" },
@@ -502,7 +505,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
 
   const passleSync: ContentBlock = {
     blockType: "content",
-    eyebrow: "3,115 of roughly 3,800 items in the estate",
+    eyebrow: "3,115 of roughly 3,800 items, counted from your sitemap",
     heading: "Your attorneys keep writing in Passle. The article arrives here enriched.",
     layout: "image-text",
     // A screenshot of the real admin beats a drawn diagram here: the claim is that
@@ -510,7 +513,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     // evidence. The drawn version of this sat next to it and looked invented.
     image: illustrations["admin-insight-list-light.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
-      "A post published in Passle sends its shortcode, and the platform pulls the article, matches the author to their profile by email address, and files it under the practice areas it belongs to. Nobody copies text, and an editor who adds a summary or a related service keeps that work when the article syncs again."
+      "A post published in Passle sends its shortcode, and the platform pulls the article, matches the author to their profile by email address, and files it under the practice areas it belongs to. Nobody copies text, and re-sending the same shortcode updates the article in place instead of creating a second one."
     ),
     actions: [buildAction("Open the synced article in the CMS", "/admin/collections/insight")],
     section: { theme: "light" },
@@ -524,9 +527,11 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     layout: "text-image",
     image: illustrations["admin-pages-japanese-light.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
-      "/global-presence/asia/japan/ and /ja/世界展開/アジア/日本/ are the same document with a different address in each language, assembled from the address of every parent above it. Rename a parent in one language and every page beneath it follows, in that language only."
+      "/global-presence/asia/japan/ and /ja/世界展開/アジア/日本/ are the same document with a different address in each language, assembled from the address of every parent above it. Change a parent's address in one language and every page beneath it follows, in that language only."
     ),
-    actions: [buildAction("Rename a parent and watch the cascade", "/admin/collections/page")],
+    actions: [
+      buildAction("Change a parent's address and watch the cascade", "/admin/collections/page"),
+    ],
     section: { theme: "light" },
   };
 
@@ -536,10 +541,8 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     heading:
       "French carries eight services. English carries seventeen. That is a decision, not a gap.",
     description:
-      "Which languages a page exists in, and which markets it appears in, are set separately. A reference from a page to a service that is not offered in that market fails before it can publish, so a market shell cannot quietly link to something you do not do there.",
-    actions: [
-      buildAction("See how markets are set, separately from language", "/admin/collections/person"),
-    ],
+      "Which languages a document exists in, and which markets it belongs to, are two separate fields, not one derived from the other. An article whose author covers none of its markets fails validation before it can be saved, and the message names both sides.",
+    actions: [buildAction("See the market field on a person", "/admin/collections/person")],
     section: { theme: "light" },
   };
 
@@ -550,7 +553,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     layout: "image-text",
     image: illustrations["admin-review-queue.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
-      "Machine translation drafts the page and the review queue holds it until someone signs it off. For an IP practice that is the only acceptable order, and it is the same queue that holds a fee-earner's request to update their own biography."
+      "Machine translation drafts the page and the review queue holds it until someone signs it off. For an IP practice that is the only acceptable order."
     ),
     actions: [
       buildAction("Open the review queue", "/admin/collections/page?where[_status][equals]=draft"),
@@ -611,7 +614,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     layout: "text-image",
     image: defaultMediaId,
     content: buildParagraphRichText(
-      "The visual design is a speculative direction, not a proposal for your brand, and your brand agency's work replaces it. Passle runs against fixtures of your own published articles rather than your live tenancy, because the Passle API is read-only and a demo tenancy would be empty. Content migration, search and the mobile layout are deliberately out of scope here and are priced in the estimate."
+      "The visual design is a speculative direction, not a proposal for your brand, and your brand agency's work replaces it. Passle runs against fixtures of your own published articles rather than your live tenancy, because we hold no credentials for it and a fresh demo tenancy would be empty. Article and profile detail pages, content migration, search and the mobile layout are deliberately out of scope here and are priced in the estimate."
     ),
     section: { theme: "light" },
   };
@@ -669,7 +672,7 @@ function buildInsightsPageBlocks(illustrations: Record<string, number>, defaultM
     blockType: "cardsGrid",
     eyebrow: "Latest insights",
     heading: "Recently published",
-    description: "Newest first, in the order they synced.",
+    description: "Newest first, by published date.",
     columns: 3,
     items: sortPasslePostsByPublishedDateDescending(Object.values(passleFixturesByShortcode)).map(
       buildInsightCardsGridItem
@@ -706,7 +709,8 @@ function buildOurPeoplePageBlocks(
     blockType: "cardsGrid",
     eyebrow: "Our people",
     heading: "Twenty-one profiles, matched by email",
-    description: "Twenty-one records, in the order they synced.",
+    description:
+      "Twenty-one people on file. The webhook never creates one, it only matches an incoming author against them.",
     columns: 3,
     items: people.map((person) => ({
       alignVariant: "left" as const,
@@ -728,7 +732,7 @@ function buildServicesOverviewPageBlocks() {
   const overview: CardsGridBlock = {
     blockType: "cardsGrid",
     eyebrow: "Services",
-    heading: "Two practice areas, each with its own page",
+    heading: "Two of the seventeen, built out as pages",
     columns: 2,
     items: [
       {
@@ -783,7 +787,7 @@ function buildPatentsPageBlocks(illustrations: Record<string, number>, defaultMe
     layout: "image-text",
     image: illustrations["admin-insight-list-light.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
-      "Patent work here runs from a first filing through prosecution to enforcement, across the offices that handle technical subject matter. The examples below are recent matters our own attorneys wrote up, not brochure copy."
+      "Patent work here runs from a first filing through prosecution to enforcement, across the offices that handle technical subject matter. The articles below are the firm's own published commentary, pulled in from Passle."
     ),
     section: { theme: "light" },
   };
@@ -791,7 +795,7 @@ function buildPatentsPageBlocks(illustrations: Record<string, number>, defaultMe
   const recentWork: CardsGridBlock = {
     blockType: "cardsGrid",
     eyebrow: "Recent patent work",
-    heading: "From the people who did it",
+    heading: "Written by the attorneys who work on it",
     columns: 3,
     items: recentPosts.map(buildInsightCardsGridItem),
     section: { theme: "light" },
@@ -809,9 +813,9 @@ function buildPatentsPageBlocks(illustrations: Record<string, number>, defaultMe
         ),
       },
       {
-        question: "Who handles a matter that spans two offices?",
+        question: "What happens when an article's author is not in the CMS?",
         answer: buildParagraphRichText(
-          "The attorney who takes the initial instruction stays the point of contact even when a second office's technical specialism is brought in, so a client is never managing two relationships for one matter."
+          "The article still publishes, and the platform records the author's email address on it so an editor can link the right profile by hand. One of the twenty articles here is deliberately in that state."
         ),
       },
     ],
@@ -831,7 +835,7 @@ function buildTradeMarksPageBlocks(illustrations: Record<string, number>, defaul
   const recentWork: CardsGridBlock = {
     blockType: "cardsGrid",
     eyebrow: "Recent trade mark work",
-    heading: "From the people who did it",
+    heading: "Written by the attorneys who work on it",
     columns: 3,
     items: recentPosts.map(buildInsightCardsGridItem),
     section: { theme: "light" },
@@ -844,7 +848,7 @@ function buildTradeMarksPageBlocks(illustrations: Record<string, number>, defaul
     layout: "text-image",
     image: illustrations["admin-person-markets.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
-      "Trade mark work covers clearance, filing, portfolio management and enforcement, in whichever of the firm's nine markets a brand needs protecting. Which of those markets this page appears in is set separately from the languages it exists in, which is the same field the screenshot shows on a person. The examples below are recent matters, not brochure copy."
+      "Trade mark work covers clearance, filing, portfolio management and enforcement, in whichever of the firm's nine markets a brand needs protecting. Markets are a separate field from language, shown here on a person record. The articles below are the firm's own published commentary."
     ),
     section: { theme: "light" },
   };
@@ -861,11 +865,11 @@ function buildGlobalPresencePageBlocks(defaultMediaId: number) {
   const intro: ContentBlock = {
     blockType: "content",
     eyebrow: "Global presence",
-    heading: "Nine markets, six languages, three of them filled in here",
+    heading: "Nine markets, and six languages of which three are written here",
     layout: "image-text",
     image: defaultMediaId,
     content: buildParagraphRichText(
-      "The address structure below moves from continent to country to office. Renaming a page at any level cascades that change to every child address beneath it, in that language only."
+      "The address structure below moves from continent to country to office. Changing a page's address at any level cascades to every child address beneath it, in that language only."
     ),
     section: { theme: "light" },
   };
@@ -891,11 +895,11 @@ function buildJapanPageBlocks(defaultMediaId: number) {
   const intro: ContentBlock = {
     blockType: "content",
     eyebrow: "Japan",
-    heading: "One market, one address",
+    heading: "One country, one address in each language",
     layout: "image-text",
     image: defaultMediaId,
     content: buildParagraphRichText(
-      "Everything beneath this address belongs to one market: Japan."
+      "Everything beneath this address sits in Japan, and each level carries its own address segment in each language."
     ),
     section: { theme: "light" },
   };
@@ -1144,13 +1148,13 @@ const DEMO_USERS: DemoUserSpec[] = [
  */
 function buildDemoTestimonial(avatarMediaId: number) {
   return {
-    author: "Elena Voss",
-    company: "Global IP Practice",
-    position: "Senior Editor",
+    author: "Placeholder",
+    company: "Placeholder",
+    position: "Placeholder",
     rating: 5,
     avatar: avatarMediaId,
     content:
-      "Publishing the same rebrand across nine markets used to mean nine separate projects. Now it's one page tree and a locale switch.",
+      "Preset placeholder text. In the delivered platform this slot carries a directory ranking or a client reference.",
   };
 }
 
@@ -1226,15 +1230,15 @@ function buildDemoPresets(
         description: "What a new editor usually asks in week one.",
         items: [
           {
-            question: "Who can publish to every market at once?",
+            question: "Where does a page's address come from?",
             answer: buildParagraphRichText(
-              "Only the international digital and communications editor role can publish across all markets in one step."
+              "From the addresses of every page above it, joined together, in the language you are editing. Change a parent's address and every page beneath it follows."
             ),
           },
           {
-            question: "What happens to a page outside my own market?",
+            question: "Why does an article refuse to save with the author I picked?",
             answer: buildParagraphRichText(
-              "Local editors are scoped to their own markets, so a page outside them stays read-only."
+              "Because that author covers none of the markets the article is filed under. The message names the article's markets and the author's, so you can correct whichever is wrong."
             ),
           },
         ],
@@ -1253,7 +1257,8 @@ function buildDemoPresets(
           {
             icon: "users",
             title: "Our people",
-            description: "Meet the editors and reviewers behind the published pages.",
+            description:
+              "The attorneys whose articles arrive from Passle, with the markets they cover.",
             link: {
               ...buildAction("Meet our people", "/our-people", "default"),
               label: "Meet our people",
@@ -1331,7 +1336,7 @@ function buildDemoPresets(
               type: "custom",
               newTab: false,
               url: "/global-presence",
-              label: "Amsterdam office",
+              label: "Toronto office",
             },
           },
           {
@@ -1353,8 +1358,8 @@ function buildDemoPresets(
       block: {
         blockType: "chart",
         eyebrow: "Platform metrics",
-        heading: "Publishing *velocity* since the rebrand",
-        description: "Pages published per month across all nine markets.",
+        heading: "Publishing velocity",
+        description: "Placeholder figures, shipped with the preset so the block has a shape.",
         title: "Monthly published pages",
         subtitle: "By market",
         ranges: [
@@ -1856,6 +1861,13 @@ export async function POST(request: Request) {
                       content: buildParagraphRichText(localizedBody.body),
                       section: { theme: "light" as const },
                     },
+                    // The French and Japanese bodies count twenty articles and twenty-one people.
+                    // Without these the reader is told a number and shown nothing, so the two
+                    // data-driven listings are carried over. Neither card carries a link, so
+                    // nothing here can send a French reader to an English address.
+                    ...(spec.key === "insights" || spec.key === "our-people"
+                      ? blocks.slice(1)
+                      : []),
                   ],
                 }
               : {}),
