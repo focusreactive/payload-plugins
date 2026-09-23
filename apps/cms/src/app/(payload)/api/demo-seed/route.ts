@@ -640,7 +640,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     blockType: "hero",
     variant: "centered",
     image: {
-      image: illustrations["admin-page-tree.png"] ?? defaultMediaId,
+      image: illustrations["admin-pages-en.png"] ?? defaultMediaId,
       aspectRatio: "16/9",
     },
     eyebrow: "Content platform demo",
@@ -731,7 +731,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     heading:
       "Your Japanese pages already use Japanese addresses. The platform treats that as normal.",
     layout: "text-image",
-    image: illustrations["admin-pages-ja-locale.png"] ?? defaultMediaId,
+    image: illustrations["admin-pages-ja.png"] ?? defaultMediaId,
     // The two addresses were buried mid-sentence, which is where the whole claim lives. On their
     // own lines a viewer sees them without being read to.
     content: buildRichText(
@@ -1063,7 +1063,7 @@ function buildServicesOverviewPageBlocks(illustrations: Record<string, number> =
   const coverage: StatsBlock = {
     blockType: "stats",
     layout: "splitImage",
-    image: illustrations["admin-pages-french.png"],
+    image: illustrations["admin-pages-fr.png"],
     eyebrow: "Coverage by language",
     heading: "Each language carries its own list",
     description:
@@ -1346,20 +1346,16 @@ function buildDemoMedia(): DemoMediaSpec[] {
       ),
     },
     {
-      filename: "admin-pages-ja-locale.png",
+      filename: "admin-pages-ja.png",
       alt: "The page list in the CMS with the locale set to Japanese, showing Japanese titles and Japanese slugs",
       mimetype: "image/png",
-      data: readFileSync(
-        path.join(process.cwd(), "public", "demo-screens", "admin-pages-ja-locale.png")
-      ),
+      data: readFileSync(path.join(process.cwd(), "public", "demo-screens", "admin-pages-ja.png")),
     },
     {
-      filename: "admin-pages-french.png",
+      filename: "admin-pages-fr.png",
       alt: "The page list in the CMS with the locale set to French, showing French titles and French slugs",
       mimetype: "image/png",
-      data: readFileSync(
-        path.join(process.cwd(), "public", "demo-screens", "admin-pages-french.png")
-      ),
+      data: readFileSync(path.join(process.cwd(), "public", "demo-screens", "admin-pages-fr.png")),
     },
     {
       filename: "admin-tokyo-ja.png",
@@ -1368,10 +1364,10 @@ function buildDemoMedia(): DemoMediaSpec[] {
       data: readFileSync(path.join(process.cwd(), "public", "demo-screens", "admin-tokyo-ja.png")),
     },
     {
-      filename: "admin-page-tree.png",
+      filename: "admin-pages-en.png",
       alt: "The page list in the CMS, each page with its own slug, above the locale switcher",
       mimetype: "image/png",
-      data: readFileSync(path.join(process.cwd(), "public", "demo-screens", "admin-page-tree.png")),
+      data: readFileSync(path.join(process.cwd(), "public", "demo-screens", "admin-pages-en.png")),
     },
     {
       filename: "admin-person-record.png",
@@ -1843,16 +1839,16 @@ export async function POST(request: Request) {
     // resolves through getDefaultMediaId, and a null there fails validation on any locale that
     // falls back to the default block set.
     const illustrationIds: Record<string, number> = {
-      "admin-page-tree.png": mediaIdByFilename["admin-page-tree.png"],
+      "admin-pages-en.png": mediaIdByFilename["admin-pages-en.png"],
       "admin-person-record.png": mediaIdByFilename["admin-person-record.png"],
       "admin-review-queue.png": mediaIdByFilename["admin-review-queue.png"],
       "admin-insights-passle.png": mediaIdByFilename["admin-insights-passle.png"],
-      "admin-pages-ja-locale.png": mediaIdByFilename["admin-pages-ja-locale.png"],
-      "admin-pages-french.png": mediaIdByFilename["admin-pages-french.png"],
+      "admin-pages-ja.png": mediaIdByFilename["admin-pages-ja.png"],
+      "admin-pages-fr.png": mediaIdByFilename["admin-pages-fr.png"],
       "admin-tokyo-ja.png": mediaIdByFilename["admin-tokyo-ja.png"],
     };
 
-    const platformDefaultMediaId = mediaIdByFilename["admin-page-tree.png"];
+    const platformDefaultMediaId = mediaIdByFilename["admin-pages-en.png"];
     if (platformDefaultMediaId) {
       await payload.update({
         collection: "media",
@@ -1862,7 +1858,7 @@ export async function POST(request: Request) {
       });
     }
 
-    let defaultMediaId: string | number | null = mediaIdByFilename["admin-page-tree.png"] ?? null;
+    let defaultMediaId: string | number | null = mediaIdByFilename["admin-pages-en.png"] ?? null;
     if (!defaultMediaId) {
       defaultMediaId = await getDefaultMediaId(PLATFORM_DEFAULT_MEDIA_SLOT);
     }
@@ -2040,7 +2036,7 @@ export async function POST(request: Request) {
                             blockType: "hero" as const,
                             variant: "centered" as const,
                             image: {
-                              image: (illustrationIds["admin-page-tree.png"] ??
+                              image: (illustrationIds["admin-pages-en.png"] ??
                                 defaultMediaId) as number,
                               aspectRatio: "16/9" as const,
                             },
@@ -2076,9 +2072,8 @@ export async function POST(request: Request) {
                       image: (spec.key === "tokyo-office"
                         ? (illustrationIds["admin-tokyo-ja.png"] ?? defaultMediaId)
                         : locale === "ja"
-                          ? (illustrationIds["admin-pages-ja-locale.png"] ?? defaultMediaId)
-                          : (illustrationIds["admin-pages-french.png"] ??
-                            defaultMediaId)) as number,
+                          ? (illustrationIds["admin-pages-ja.png"] ?? defaultMediaId)
+                          : (illustrationIds["admin-pages-fr.png"] ?? defaultMediaId)) as number,
                       content: buildParagraphRichText(localizedBody.body),
                       section: { theme: "light" as const },
                     },

@@ -82,13 +82,34 @@ export function Stats({ eyebrow, heading, description, layout, image, items }: S
             <div className="grid grid-cols-1 gap-12 md:gap-8 lg:grid-cols-2">
               <dl className="grid grid-cols-1 gap-8 self-center md:grid-cols-2 md:gap-y-16 md:pr-8">
                 {items.map((item, index) => (
-                  <div key={index} className="flex flex-1 flex-col-reverse gap-3 text-center">
-                    <div className="flex flex-col gap-1">
+                  // justify-end packs the reversed column to the top of its grid cell, so a
+                  // two-line description no longer lifts its number above the one beside it.
+                  <div
+                    key={index}
+                    className="flex flex-1 flex-col-reverse justify-end gap-3 text-center"
+                  >
+                    <div className="flex flex-col items-center gap-1">
                       <dt className="text-lg font-semibold text-balance text-primary">
                         {item.label}
                       </dt>
                       {item.description && (
                         <p className="text-md text-pretty text-tertiary">{item.description}</p>
+                      )}
+                      {item.link && (
+                        <Button
+                          color="link-color"
+                          size="lg"
+                          href={item.link.href}
+                          iconTrailing={
+                            <ArrowRight
+                              data-icon="trailing"
+                              className="pointer-events-none size-5 shrink-0 transition-inherit-all"
+                            />
+                          }
+                          className="mt-2"
+                        >
+                          {item.link.text}
+                        </Button>
                       )}
                     </div>
                     <dd className={valueClassName(item.value, "extraLarge")}>
