@@ -1,3 +1,4 @@
+import { editorialInOwnMarkets, rejectMarketsOutsideEditorScope } from "@/lib/access/marketScoped";
 import { slugField } from "payload";
 import type { CollectionConfig, TextField } from "payload";
 
@@ -40,9 +41,9 @@ sidebarMarketsField.admin = {
 export const Insight: CollectionConfig<"insight"> = {
   access: {
     create: editorial,
-    delete: editorial,
+    delete: editorialInOwnMarkets,
     read: anyone,
-    update: editorial,
+    update: editorialInOwnMarkets,
   },
   admin: {
     defaultColumns: ["title", "author", "publishedDate", "updatedAt"],
@@ -176,6 +177,9 @@ export const Insight: CollectionConfig<"insight"> = {
     },
     sidebarMarketsField,
   ],
+  hooks: {
+    beforeChange: [rejectMarketsOutsideEditorScope],
+  },
   labels: {
     plural: {
       en: "Insights",

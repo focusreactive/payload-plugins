@@ -808,7 +808,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     // an email address. It now sits on the card it belongs to, so the reader matches capability to
     // login without holding four of them in their head.
     description:
-      "Sign out and back in as any of them. Scoping an editor to their own markets and content types is specced, not built into this sandbox.",
+      "Sign out and back in as any of them. The local editor looks after Canada: Canadian articles and people open for editing, every other market is read only, and pages can be edited but not created or deleted.",
     // Each card carries the account it belongs to, and the link signs the current user out,
     // because signing in as another role is the only way to see that role's admin. Four buttons
     // that all said "Sign in as this role" and all landed on the same /admin said nothing.
@@ -833,7 +833,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
       {
         title: "Local marketing and communications editor",
         description:
-          "Creates, edits and publishes pages, people and insights · local.editor@example.com",
+          "Canada only: edits Canadian articles and people, edits pages but cannot create or delete them · local.editor@example.com",
         link: {
           ...buildAction("Sign out and use this account", "/admin/logout"),
           label: "Sign out and use this account",
@@ -1462,11 +1462,10 @@ function buildDemoMedia(): DemoMediaSpec[] {
 }
 
 /**
- * The Users collection has exactly three roles - admin, author, user - with no
- * market-restriction or approval-workflow field anywhere in the schema. The four personas this
- * demo needs to show collapse onto those three: the international and local editors both land on
- * "author" (the schema has no finer mechanism to tell them apart - the distinction stays in the
- * name and email only), and the fee-earner - who only submits a profile-change request for
+ * The Users collection has three roles - admin, author, user - and a markets field. The four
+ * personas map onto them: the international and local editors are both "author", told apart by
+ * markets (empty for the international editor, Canada for the local one, which scopes articles and
+ * people to Canada and stops them creating or deleting pages), and the fee-earner - who only submits a profile-change request for
  * approval - gets "user". None of these is the shared admin@focusreactive.com login; each is a
  * dedicated demo identity with its own email. Passwords are never hardcoded: each is read from
  * its own env var at seed time, mirroring how SANDBOX_E_SEED_TOKEN already works here, so the
@@ -1476,6 +1475,7 @@ interface DemoUserSpec {
   email: string;
   name: string;
   role: User["role"];
+  markets?: NonNullable<User["markets"]>;
   passwordEnvVar: string;
 }
 
@@ -1496,6 +1496,9 @@ const DEMO_USERS: DemoUserSpec[] = [
     email: "local.editor@example.com",
     name: "Local marketing and communications editor",
     role: "author",
+    // Canada, because the seeded people and articles include Canadian ones, so the scope shows
+    // both sides: Canadian articles open for editing, UK and Asian ones read only.
+    markets: ["canada"],
     passwordEnvVar: "SANDBOX_E_LOCAL_EDITOR_PASSWORD",
   },
   {
@@ -2318,7 +2321,12 @@ export async function POST(request: Request) {
           collection: "users",
           id: existingDoc.id,
           overrideAccess: true,
-          data: { name: persona.name, role: persona.role, password },
+          data: {
+            name: persona.name,
+            role: persona.role,
+            markets: persona.markets ?? [],
+            password,
+          },
         });
         usersUpdatedCount += 1;
         continue;
@@ -2331,6 +2339,7 @@ export async function POST(request: Request) {
           name: persona.name,
           email: persona.email,
           role: persona.role,
+          markets: persona.markets ?? [],
           password,
         },
       });

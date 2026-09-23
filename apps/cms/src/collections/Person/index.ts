@@ -1,3 +1,4 @@
+import { editorialInOwnMarkets, rejectMarketsOutsideEditorScope } from "@/lib/access/marketScoped";
 import type { CollectionConfig } from "payload";
 
 import { anyone, editorial } from "@/lib/access";
@@ -6,9 +7,9 @@ import { marketsField } from "@/lib/fields/marketsField";
 export const Person: CollectionConfig<"person"> = {
   access: {
     create: editorial,
-    delete: editorial,
+    delete: editorialInOwnMarkets,
     read: anyone,
-    update: editorial,
+    update: editorialInOwnMarkets,
   },
   admin: {
     defaultColumns: ["name", "jobTitle", "office", "email", "updatedAt"],
@@ -71,6 +72,9 @@ export const Person: CollectionConfig<"person"> = {
     },
     marketsField(),
   ],
+  hooks: {
+    beforeChange: [rejectMarketsOutsideEditorScope],
+  },
   labels: {
     plural: {
       en: "People",

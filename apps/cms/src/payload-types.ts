@@ -1609,6 +1609,12 @@ export interface User {
    * The role of the user
    */
   role: 'admin' | 'author' | 'user';
+  /**
+   * Leave empty for an editor who works across every market. Set it for a local editor, who can then change only articles and people in these markets, and cannot create or delete pages.
+   */
+  markets?:
+    | ('uk-europe' | 'canada' | 'greater-china' | 'se-asia' | 'usa' | 'japan' | 'korea' | 'nordics' | 'south-america')[]
+    | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -3860,6 +3866,7 @@ export interface GlobalBlockSelect<T extends boolean = true> {
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
   role?: T;
+  markets?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;

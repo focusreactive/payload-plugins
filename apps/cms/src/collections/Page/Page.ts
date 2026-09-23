@@ -1,3 +1,4 @@
+import { notScopedEditor } from "@/lib/access/marketScoped";
 import { createParentField, createBreadcrumbsField } from "@payloadcms/plugin-nested-docs";
 import type { CollectionConfig } from "payload";
 
@@ -17,8 +18,8 @@ import { validateReservedSlug, validateReservedPath } from "./hooks/validateRese
 
 export const Page: CollectionConfig<"page"> = {
   access: {
-    create: editorial,
-    delete: editorial,
+    create: notScopedEditor,
+    delete: notScopedEditor,
     read: anyone,
     update: editorial,
   },
