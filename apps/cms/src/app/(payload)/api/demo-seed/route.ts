@@ -373,7 +373,11 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     ),
     actions: [
       buildAction("Open the CMS", "/admin", "accent"),
-      buildAction("See an article that arrived from Passle", "/admin", "outline"),
+      buildAction(
+        "See an article that arrived from Passle",
+        "/admin/collections/insight",
+        "outline"
+      ),
     ],
     section: { theme: "light" },
   };
@@ -381,17 +385,17 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
   const stats: StatsBlock = {
     blockType: "stats",
     items: [
-      { value: "3,115", label: "Passle items synced (of about 3,800)" },
+      { value: "3,115", label: "Passle items in the estate, of about 3,800" },
+      { value: "20", label: "Ingested into this demo" },
       { value: "17", label: "English services" },
       { value: "8", label: "French services" },
-      { value: "5", label: "Japanese services" },
     ],
     section: { theme: "light" },
   };
 
   const passleSync: ContentBlock = {
     blockType: "content",
-    eyebrow: "3,115 of roughly 3,800 items",
+    eyebrow: "3,115 of roughly 3,800 items in the estate",
     heading: "Your attorneys keep writing in Passle. The article arrives here enriched.",
     layout: "image-text",
     // A screenshot of the real admin beats a drawn diagram here: the claim is that
@@ -401,7 +405,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     content: buildParagraphRichText(
       "A post published in Passle sends its shortcode, and the platform pulls the article, matches the author to their profile by email address, and files it under the practice areas it belongs to. Nobody copies text, and an editor who adds a summary or a related service keeps that work when the article syncs again."
     ),
-    actions: [buildAction("Open the synced article in the CMS", "/admin")],
+    actions: [buildAction("Open the synced article in the CMS", "/admin/collections/insight")],
     section: { theme: "light" },
   };
 
@@ -427,7 +431,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     description:
       "Which languages a page exists in, and which markets it appears in, are set separately. A reference from a page to a service that is not offered in that market fails before it can publish, so a market shell cannot quietly link to something you do not do there.",
     actions: [
-      buildAction("Switch market and watch the service list change", "/admin/collections/page"),
+      buildAction("See how markets are set, separately from language", "/admin/collections/person"),
     ],
     section: { theme: "light" },
   };
@@ -441,7 +445,9 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     content: buildParagraphRichText(
       "Machine translation drafts the page and the review queue holds it until someone signs it off. For an IP practice that is the only acceptable order, and it is the same queue that holds a fee-earner's request to update their own biography."
     ),
-    actions: [buildAction("Open the review queue", "/admin")],
+    actions: [
+      buildAction("Open the review queue", "/admin/collections/page?where[_status][equals]=draft"),
+    ],
     section: { theme: "light" },
   };
 
@@ -451,22 +457,41 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     heading: "What someone sees is what their job needs, and nothing else.",
     description:
       "An administrator, an international digital and communications editor who publishes anywhere, a local marketing and communications editor limited to their own markets and content types, and a fee-earner whose only task here is submitting a change to their own profile.",
+    // Each card carries the account it belongs to, and the link signs the current user out,
+    // because signing in as another role is the only way to see that role's admin. Four buttons
+    // that all said "Sign in as this role" and all landed on the same /admin said nothing.
     items: [
       {
         title: "Administrator",
-        link: { ...buildAction("Sign in as this role", "/admin"), label: "Sign in as this role" },
+        description: "administrator@example.com",
+        link: {
+          ...buildAction("Sign out and use this account", "/admin/logout"),
+          label: "Sign out and use this account",
+        },
       },
       {
         title: "International digital and communications editor",
-        link: { ...buildAction("Sign in as this role", "/admin"), label: "Sign in as this role" },
+        description: "international.editor@example.com",
+        link: {
+          ...buildAction("Sign out and use this account", "/admin/logout"),
+          label: "Sign out and use this account",
+        },
       },
       {
         title: "Local marketing and communications editor",
-        link: { ...buildAction("Sign in as this role", "/admin"), label: "Sign in as this role" },
+        description: "local.editor@example.com",
+        link: {
+          ...buildAction("Sign out and use this account", "/admin/logout"),
+          label: "Sign out and use this account",
+        },
       },
       {
         title: "Fee-earner",
-        link: { ...buildAction("Sign in as this role", "/admin"), label: "Sign in as this role" },
+        description: "fee.earner@example.com",
+        link: {
+          ...buildAction("Sign out and use this account", "/admin/logout"),
+          label: "Sign out and use this account",
+        },
       },
     ],
     section: { theme: "light" },
@@ -574,7 +599,7 @@ function buildOurPeoplePageBlocks(
     blockType: "cardsGrid",
     eyebrow: "Our people",
     heading: "Twenty-one profiles, matched by email",
-    description: "Grouped by office.",
+    description: "Twenty-one records, in the order they synced.",
     columns: 3,
     items: people.map((person) => ({
       alignVariant: "left" as const,
@@ -717,7 +742,7 @@ function buildTradeMarksPageBlocks(illustrations: Record<string, number>, defaul
     section: { theme: "light" },
   };
 
-  return [recentWork, intro];
+  return [intro, recentWork];
 }
 
 /**
@@ -744,11 +769,11 @@ function buildAsiaPageBlocks(defaultMediaId: number) {
   const intro: ContentBlock = {
     blockType: "content",
     eyebrow: "Asia",
-    heading: "Three offices, two markets",
+    heading: "The continent level of the address",
     layout: "text-image",
     image: defaultMediaId,
     content: buildParagraphRichText(
-      "This branch covers the firm's Asia offices: Hong Kong, Singapore and Kuala Lumpur, spanning the Greater China and South East Asia markets."
+      "Asia is the second segment of the address. One office sits beneath it in this demo, Tokyo, two levels down through Japan."
     ),
     section: { theme: "light" },
   };
@@ -1661,6 +1686,55 @@ export async function POST(request: Request) {
                 }
               : {}),
           },
+        });
+      }
+    }
+
+    // The review queue is the destination for the fourth claim, and an empty queue proves nothing.
+    // This page is created as a draft and never published, which is what a machine translation
+    // waiting for a human actually looks like: it exists, it is addressable, and it is not live.
+    const draftServiceParentId = pageIdByKey["services"];
+    if (draftServiceParentId) {
+      const draftPage = await payload.create({
+        collection: "page",
+        locale: "en",
+        draft: true,
+        overrideAccess: true,
+        context: { skipEmbedding: true },
+        data: {
+          _status: "draft",
+          title: "Designs",
+          slug: "designs",
+          parent: draftServiceParentId,
+          generateSlug: false,
+          blocks: [
+            {
+              blockType: "content" as const,
+              eyebrow: "Awaiting review",
+              heading: "Designs",
+              layout: "text-image" as const,
+              image: defaultMediaId as number,
+              content: buildParagraphRichText(
+                "A third service page, translated by the platform and held here until an editor approves it. It is addressable, it is not published, and nothing on the public site links to it."
+              ),
+              section: { theme: "light" as const },
+            },
+          ],
+        },
+      });
+
+      for (const [locale, text] of [
+        ["fr", { title: "Dessins et modèles", slug: "dessins-et-modeles" }],
+        ["ja", { title: "意匠", slug: "意匠" }],
+      ] as const) {
+        await payload.update({
+          collection: "page",
+          id: draftPage.id,
+          locale,
+          draft: true,
+          overrideAccess: true,
+          context: { skipEmbedding: true },
+          data: { _status: "draft", title: text.title, slug: text.slug, generateSlug: false },
         });
       }
     }

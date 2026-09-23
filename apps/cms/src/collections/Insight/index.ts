@@ -46,7 +46,8 @@ export const Insight: CollectionConfig<"insight"> = {
   },
   admin: {
     defaultColumns: ["title", "author", "publishedDate", "updatedAt"],
-    group: "Insights",
+    // Pages, insights and people are one job for an editor, so they sit in one group.
+    group: "Content",
     pagination: {
       limits: [20, 50, 100],
     },
