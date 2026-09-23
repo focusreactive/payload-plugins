@@ -121,3 +121,13 @@
     --color-cta-outline-foreground: var(--color-text-secondary);
     --color-cta-outline-border: var(--color-border-primary);
 }
+
+/*
+ * Third instance of the same collision: Untitled UI's footer says `bg-primary`, meaning their
+ * white surface token (theme.css:348 --color-bg-primary). This app's base.css defines a generic
+ * --color-primary as the dark green brand colour and is imported later, so the footer rendered
+ * dark green while its links kept Untitled's grey - measured at 2.00:1, illegible.
+ */
+@theme {
+    --color-footer-panel: var(--color-bg-primary);
+}

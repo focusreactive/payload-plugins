@@ -50,7 +50,7 @@ export function Footer({
   copywriteText,
 }: IFooterProps) {
   return (
-    <footer className="bg-primary py-12 md:pt-16">
+    <footer className="bg-footer-panel py-12 md:pt-16">
       <div className="mx-auto max-w-container px-4 md:px-8">
         <nav>
           {/*
