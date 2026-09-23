@@ -14,7 +14,6 @@ const nextConfig = {
     "/(payload)/api/demo-seed": [
       "./public/block-preview-images/**",
       "./public/demo-logo.svg",
-      "./public/demo-illustrations/**",
       "./public/demo-screens/**",
     ],
   },
