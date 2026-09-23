@@ -857,10 +857,12 @@ function buildTokyoOfficePageBlocks(defaultMediaId: number) {
   const intro: ContentBlock = {
     blockType: "content",
     eyebrow: "Tokyo office",
-    heading: "Office level",
+    heading: "Tokyo",
     layout: "text-image",
     image: defaultMediaId,
-    content: buildParagraphRichText("The address ends here."),
+    content: buildParagraphRichText(
+      "The Tokyo office is the deepest page in this address tree, reached through Global presence, Asia and Japan in English and through the Japanese names of those same three documents in Japanese. It is one document with two addresses, not two pages."
+    ),
     section: { theme: "light" },
   };
 
@@ -869,7 +871,7 @@ function buildTokyoOfficePageBlocks(defaultMediaId: number) {
     items: [
       { value: "Tokyo", label: "Office" },
       { value: "Japan", label: "Market" },
-      { value: "4", label: "Levels in this address" },
+      { value: "2", label: "Languages this page exists in" },
     ],
     section: { theme: "light" },
   };
