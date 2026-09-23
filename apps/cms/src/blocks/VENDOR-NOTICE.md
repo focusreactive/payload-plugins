@@ -47,6 +47,7 @@ Paths below are under `https://github.com/tailark/blocks/blob/main/registry/base
 | `apps/cms/src/components/CtaBandSection` (`CtaBand` block) | `call-to-action/two.tsx` | The flex `justify-between` band with the heading and description on one side and the actions right-aligned on the other |
 | `apps/cms/src/collections/Footer/ui/index.tsx` | `footer/two.tsx` | The wide brand column plus three narrower link-group columns |
 | `apps/cms/src/collections/Header/ui/index.tsx` and `ui/components/{DesktopNav,DropdownContent,MegaLink,FeaturedCard,Chevron}.tsx` | `hero-section/two-header.tsx` (functionally identical to `hero-section/four-header.tsx`) | The Radix `NavigationMenu` mega-menu structure and the featured-card teaser inside a dropdown panel |
+| `apps/cms/src/components/FaqSection/index.tsx` and `apps/cms/src/components/Accordion/index.tsx` | `faqs/two.tsx` | Verified rather than rewritten: this app's `0.8fr/1.2fr` header-plus-accordion grid is already the same ~40/60 column ratio as Tailark's `md:grid-cols-5` (`col-span-2`/`col-span-3`) split, and the existing `Accordion` was already a plain hairline-rule list with no card, shadow, or rounded-highlight background - the thing `two.tsx` has and `one.tsx` (shadow/ring card) and `three.tsx` (rounded-highlight pill, custom `hr`) do not. Not ported: `two.tsx`'s "contact support" link under the heading, since adding it would need a new field outside this block's schema |
 
 ## Not ported, and why
 
@@ -57,7 +58,5 @@ Paths below are under `https://github.com/tailark/blocks/blob/main/registry/base
 - **TestimonialsList** - the `testimonials/` category was never actually fetched this pass. The
   change made (dropping the auto-scrolling marquee for a static grid) removed a `DESIGN.md`
   violation but was not checked against a real Tailark testimonials file.
-- **Faq** - the `faqs/` category was never fetched either. The existing two-column
-  `SectionHeader` + `Accordion` layout predates this pass and was not verified against Tailark.
 - **Logos** - there is no logos category in the OSS Tailark repo; the existing grayscale logo row
   is original and untouched by this pass.
