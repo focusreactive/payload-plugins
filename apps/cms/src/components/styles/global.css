@@ -24,3 +24,16 @@
     flex-shrink: 0;
   }
 }
+
+@layer base {
+  /* Japanese has no spaces, so the default break-anywhere rule splits a katakana word across two
+     lines: 「ひとつのドキュメント」 rendered as ドキュメン / ト. auto-phrase breaks on phrase
+     boundaries instead, and browsers that do not support it fall back to the current behaviour. */
+  :lang(ja) h1,
+  :lang(ja) h2,
+  :lang(ja) h3,
+  :lang(ja) h4 {
+    word-break: auto-phrase;
+    line-break: strict;
+  }
+}

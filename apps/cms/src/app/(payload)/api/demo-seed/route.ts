@@ -85,7 +85,7 @@ const LOCALIZED_PAGE_BODY: Record<
     },
     ja: {
       eyebrow: "ローカライズされたURL",
-      heading: "ひとつのドキュメント、言語ごとのURL",
+      heading: "同じ文書に、言語ごとのURL",
       body: "このページは、英語版トップページと同じドキュメントの日本語版です。日本語のURLを持ち、同じCMSで管理されています。",
     },
   },
@@ -353,7 +353,7 @@ const LOCALIZED_HOMEPAGE: Record<
     heroEyebrow: "Démonstration",
     heroTitle: "Quinze bureaux, six langues, neuf marchés, un seul modèle de contenu",
     heroBody:
-      "Une plateforme de contenu en fonctionnement, construite sur vos propres publications. Tout ce qui suit existe réellement dans le CMS, ce n’est pas une maquette.",
+      "Une plateforme de contenu réellement en service, construite sur vos propres publications. Tout ce qui suit existe réellement dans le CMS, ce n’est pas une maquette.",
     primaryAction: "Ouvrir le CMS",
     secondaryAction: "Voir un article arrivé de Passle",
     stats: [
@@ -957,6 +957,14 @@ function buildDemoMedia(): DemoMediaSpec[] {
       mimetype: "image/png",
       data: readFileSync(
         path.join(process.cwd(), "public", "demo-screens", "admin-pages-japanese-light.png")
+      ),
+    },
+    {
+      filename: "admin-pages-french-light.png",
+      alt: "The page list in the CMS with the locale set to French, showing French titles and French slugs",
+      mimetype: "image/png",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "demo-screens", "admin-pages-french-light.png")
       ),
     },
     {
@@ -1642,6 +1650,7 @@ export async function POST(request: Request) {
       "admin-review-queue.png": mediaIdByFilename["admin-review-queue.png"],
       "admin-insight-list-light.png": mediaIdByFilename["admin-insight-list-light.png"],
       "admin-pages-japanese-light.png": mediaIdByFilename["admin-pages-japanese-light.png"],
+      "admin-pages-french-light.png": mediaIdByFilename["admin-pages-french-light.png"],
     };
 
     const platformDefaultMediaId = mediaIdByFilename["admin-page-tree.png"];
@@ -1838,11 +1847,12 @@ export async function POST(request: Request) {
                       eyebrow: localizedBody.eyebrow,
                       heading: localizedBody.heading,
                       layout: "text-image" as const,
-                      // A Japanese page showing a screenshot of the English admin undercuts the
-                      // point it is making, so that locale gets the Japanese capture.
+                      // A page arguing that its address is localized, next to a screenshot of the
+                      // English admin, argues against itself: each locale gets its own capture.
                       image: (locale === "ja"
                         ? (illustrationIds["admin-pages-japanese-light.png"] ?? defaultMediaId)
-                        : defaultMediaId) as number,
+                        : (illustrationIds["admin-pages-french-light.png"] ??
+                          defaultMediaId)) as number,
                       content: buildParagraphRichText(localizedBody.body),
                       section: { theme: "light" as const },
                     },
