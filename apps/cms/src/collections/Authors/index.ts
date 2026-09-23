@@ -12,6 +12,7 @@ export const Authors: CollectionConfig<"authors"> = {
   admin: {
     defaultColumns: ["name", "updatedAt"],
     group: "Blog",
+    hidden: true,
     pagination: {
       limits: [20, 50, 100],
     },

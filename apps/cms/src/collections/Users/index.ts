@@ -47,7 +47,7 @@ export const Users: CollectionConfig<"users"> = {
   },
   admin: {
     defaultColumns: ["name", "role", "email", "updatedAt"],
-    group: "Settings",
+    group: "Administration",
     pagination: {
       limits: [20, 50, 100],
     },

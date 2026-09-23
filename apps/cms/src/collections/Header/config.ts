@@ -17,7 +17,7 @@ export const Header: CollectionConfig<"header"> = {
   },
   admin: {
     defaultColumns: ["name", "logo"],
-    group: "Global Components",
+    group: "Configuration",
     useAsTitle: "name",
   },
   fields: [

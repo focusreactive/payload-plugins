@@ -15,7 +15,7 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
   },
   admin: {
     defaultColumns: ["title", "block", "updatedAt"],
-    group: "Global Components",
+    group: "Configuration",
     useAsTitle: "title",
   },
   dbName: "gsec",

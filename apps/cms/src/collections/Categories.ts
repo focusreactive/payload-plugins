@@ -15,6 +15,7 @@ export const Categories: CollectionConfig<"categories"> = {
   admin: {
     defaultColumns: ["title"],
     group: "Blog",
+    hidden: true,
     useAsTitle: "title",
   },
   fields: [

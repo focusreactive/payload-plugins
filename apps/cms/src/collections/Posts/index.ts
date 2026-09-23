@@ -39,6 +39,7 @@ export const Posts: CollectionConfig<"posts"> = {
     },
     defaultColumns: ["title", "slug", "heroImage", "updatedAt"],
     group: "Blog",
+    hidden: true,
     livePreview: {
       url: ({ data, locale: localeProp }) => {
         const locale = localeProp.code ?? localeProp.fallbackLocale;

@@ -12,7 +12,7 @@ export const Person: CollectionConfig<"person"> = {
   },
   admin: {
     defaultColumns: ["name", "jobTitle", "office", "email", "updatedAt"],
-    group: "Insights",
+    group: "Content",
     pagination: {
       limits: [20, 50, 100],
     },
