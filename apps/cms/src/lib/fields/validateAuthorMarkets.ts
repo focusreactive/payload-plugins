@@ -76,7 +76,9 @@ export const validateAuthorMarkets: RelationshipFieldSingleValidation = async (
     return true;
   }
 
-  return `This author does not cover any of this insight's markets. Insight markets: ${describeMarkets(
-    insightMarkets
-  )}. ${author?.name ?? "This author"}'s markets: ${describeMarkets(authorMarkets)}.`;
+  // The conclusion leads, because Payload renders a field error as a pill clipped to the field
+  // width: only the first thirty-odd characters are ever read without hovering.
+  return `No market in common: ${author?.name ?? "this author"} covers ${describeMarkets(
+    authorMarkets
+  )}, this insight is filed under ${describeMarkets(insightMarkets)}.`;
 };
