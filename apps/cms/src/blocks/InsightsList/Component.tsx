@@ -7,8 +7,14 @@ import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { InsightsListBlock, Person } from "@/payload-types";
 
-import { InsightsList } from './ui';
-import type { InsightCard } from './ui';
+import { InsightsList } from "./ui";
+import type { InsightCard } from "./ui";
+
+const ALL_MARKETS_LABEL: Record<string, string> = {
+  en: "All markets",
+  fr: "Tous les marchés",
+  ja: "全市場",
+};
 
 const DATE_LOCALE_BY_SITE_LOCALE: Record<string, string> = {
   en: "en-GB",
@@ -59,7 +65,12 @@ export async function InsightsListBlockComponent({
         id: String(doc.id),
         title: doc.title,
         summary: doc.standfirst ?? "",
-        category: MARKET_OPTIONS.find((option) => option.value === firstMarket)?.label ?? null,
+        // An article filed under no market still gets a label, so every title in a row starts at
+        // the same height.
+        category:
+          MARKET_OPTIONS.find((option) => option.value === firstMarket)?.label ??
+          ALL_MARKETS_LABEL[locale] ??
+          ALL_MARKETS_LABEL.en,
         authorName: author?.name ?? null,
         publishedAt: doc.publishedDate ? dateFormatter.format(new Date(doc.publishedDate)) : null,
       };
