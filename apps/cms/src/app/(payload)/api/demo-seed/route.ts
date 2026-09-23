@@ -65,6 +65,140 @@ interface PageSpec {
 
 // Parents are listed before their children - the create loop below relies on
 // that order to resolve each page's parent id before it is needed.
+
+/**
+ * French and Japanese page bodies. Without these, every non-English page falls back to the
+ * starter kit's own demo blocks and renders "NEW - CADENCE 3.0 / The operating system for teams
+ * that ship" - on the exact pages the walkthrough opens to prove that one document carries a
+ * different address per language. Short and factual on purpose: this is structural copy that has
+ * to be right in three languages, not marketing.
+ */
+const LOCALIZED_PAGE_BODY: Record<
+  string,
+  Record<"fr" | "ja", { eyebrow: string; heading: string; body: string }>
+> = {
+  home: {
+    fr: {
+      eyebrow: "Démonstration",
+      heading: "Quinze bureaux, six langues, neuf marchés, un seul modèle de contenu",
+      body: "Cette page est la version française du même document que la page d'accueil anglaise. Elle porte sa propre adresse, et son contenu est géré dans le même CMS.",
+    },
+    ja: {
+      eyebrow: "デモ",
+      heading: "15のオフィス、6つの言語、9つの市場、ひとつのコンテンツモデル",
+      body: "このページは英語版ホームページと同一のドキュメントの日本語版です。日本語のアドレスを持ち、同じCMSで管理されています。",
+    },
+  },
+  insights: {
+    fr: {
+      eyebrow: "Depuis Passle",
+      heading: "Les articles arrivent depuis Passle, sans copier-coller",
+      body: "Vingt articles publiés par le cabinet sont arrivés par le même webhook. L'auteur est rattaché à sa fiche par adresse e-mail.",
+    },
+    ja: {
+      eyebrow: "Passleから",
+      heading: "記事はPassleから届きます。手入力はありません",
+      body: "20件の記事が同じWebhookを通じて届きました。著者はメールアドレスで人物レコードに紐付けられます。",
+    },
+  },
+  "our-people": {
+    fr: {
+      eyebrow: "Rattachement des auteurs",
+      heading: "Une fiche par personne, avec ses marchés",
+      body: "Vingt et une fiches, chacune avec un intitulé de poste, un bureau et les marchés couverts. Les marchés se définissent séparément des langues.",
+    },
+    ja: {
+      eyebrow: "著者の紐付け",
+      heading: "人物レコードと担当市場",
+      body: "21名分のレコードがあり、役職、オフィス、担当市場を保持します。市場は言語とは別に設定します。",
+    },
+  },
+  services: {
+    fr: {
+      eyebrow: "Six langues, neuf marchés",
+      heading: "La liste des services change selon le marché",
+      body: "L'anglais porte dix-sept services, le français huit, le japonais cinq. C'est une décision éditoriale, pas une lacune.",
+    },
+    ja: {
+      eyebrow: "6言語、9市場",
+      heading: "サービス一覧は市場ごとに変わります",
+      body: "英語では17、フランス語では8、日本語では5のサービスを掲載しています。これは意図的な判断です。",
+    },
+  },
+  patents: {
+    fr: {
+      eyebrow: "Service",
+      heading: "Brevets",
+      body: "Page de service en français. Le même document porte une adresse française et reste lié aux mêmes articles.",
+    },
+    ja: {
+      eyebrow: "サービス",
+      heading: "特許",
+      body: "日本語のサービスページです。同一ドキュメントが日本語のアドレスを持ち、同じ記事に紐付いています。",
+    },
+  },
+  "trade-marks": {
+    fr: {
+      eyebrow: "Service",
+      heading: "Marques",
+      body: "Page de service en français. Sa visibilité par marché se règle indépendamment de sa langue.",
+    },
+    ja: {
+      eyebrow: "サービス",
+      heading: "商標",
+      body: "日本語のサービスページです。市場ごとの公開範囲は言語とは独立して設定します。",
+    },
+  },
+  "global-presence": {
+    fr: {
+      eyebrow: "Présence mondiale",
+      heading: "Du continent au pays, puis au bureau",
+      body: "Cette branche descend sur quatre niveaux. Chaque niveau porte son propre segment d'adresse, dans chaque langue.",
+    },
+    ja: {
+      eyebrow: "拠点",
+      heading: "大陸から国へ、そしてオフィスへ",
+      body: "この階層は4段階です。各階層が言語ごとに独自のアドレス区間を持ちます。",
+    },
+  },
+  asia: {
+    fr: {
+      eyebrow: "Niveau continent",
+      heading: "Asie",
+      body: "Deuxième niveau de l'adresse. Le bureau de Tokyo se trouve deux niveaux plus bas.",
+    },
+    ja: {
+      eyebrow: "大陸レベル",
+      heading: "アジア",
+      body: "アドレスの第2階層です。東京オフィスはこの2つ下にあります。",
+    },
+  },
+  japan: {
+    fr: {
+      eyebrow: "Niveau pays",
+      heading: "Japon",
+      body: "Troisième niveau. Renommez ce niveau en français et seules les adresses françaises en dessous changent.",
+    },
+    ja: {
+      eyebrow: "国レベル",
+      heading: "日本",
+      body: "第3階層です。この階層の名称を変更すると、その言語の配下のアドレスだけが変わります。",
+    },
+  },
+  "tokyo-office": {
+    fr: {
+      eyebrow: "Niveau bureau",
+      heading: "Bureau de Tokyo",
+      body: "Quatrième et dernier niveau. Son adresse française est assemblée à partir de chaque parent au-dessus.",
+    },
+    ja: {
+      eyebrow: "オフィスレベル",
+      heading: "東京オフィス",
+      body: "最下層です。日本語のアドレスは、上位のすべての階層から組み立てられます。",
+    },
+  },
+};
+
 const PAGE_TREE: PageSpec[] = [
   {
     key: "home",
@@ -1495,6 +1629,8 @@ export async function POST(request: Request) {
       // because slugify() is ASCII-only and would otherwise strip it to "".
       for (const locale of ["en", "fr", "ja"] as LocaleCode[]) {
         const text = spec[locale];
+        const localizedBody = locale === "en" ? undefined : LOCALIZED_PAGE_BODY[spec.key]?.[locale];
+
         await payload.update({
           collection: "page",
           id: created.id,
@@ -1507,6 +1643,23 @@ export async function POST(request: Request) {
             title: text.title,
             slug: text.slug,
             generateSlug: false,
+            // blocks is localized and required, so a locale left unwritten renders the starter
+            // kit's own demo blocks instead of this demo's content.
+            ...(localizedBody
+              ? {
+                  blocks: [
+                    {
+                      blockType: "content" as const,
+                      eyebrow: localizedBody.eyebrow,
+                      heading: localizedBody.heading,
+                      layout: "text-image" as const,
+                      image: defaultMediaId as number,
+                      content: buildParagraphRichText(localizedBody.body),
+                      section: { theme: "light" as const },
+                    },
+                  ],
+                }
+              : {}),
           },
         });
       }
