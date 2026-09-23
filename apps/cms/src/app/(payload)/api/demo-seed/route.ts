@@ -199,6 +199,64 @@ const LOCALIZED_PAGE_BODY: Record<
   },
 };
 
+/**
+ * Page titles and descriptions, written rather than generated. The SEO plugin's generator filled
+ * every page with "Explore a live content platform demo featuring..." and "Discover our author
+ * matching system...", four of six opening with Explore or Discover, which is the first thing a
+ * digital lead sees when they view source.
+ */
+const PAGE_META_EN: Record<string, { title: string; description: string }> = {
+  home: {
+    title: "A content platform for fifteen offices and six languages",
+    description:
+      "One document carries a different address in each language, markets are set separately from languages, and articles arrive from Passle without copy-paste.",
+  },
+  insights: {
+    title: "Insights, arriving from Passle",
+    description:
+      "Twenty published articles that reached this platform through a webhook, each matched to its author by email address.",
+  },
+  "our-people": {
+    title: "People, and the markets they cover",
+    description:
+      "Twenty-one profiles with a job title, an office and a set of markets, which is what lets an article find its author automatically.",
+  },
+  services: {
+    title: "Services, and why the list differs by market",
+    description:
+      "English carries seventeen services, French eight, Japanese five. Which markets a page appears in is set separately from which languages it exists in.",
+  },
+  patents: {
+    title: "Patents",
+    description:
+      "Patent work from first filing through prosecution to enforcement, with recent matters written up by the attorneys who handled them.",
+  },
+  "trade-marks": {
+    title: "Trade marks",
+    description:
+      "Clearance, filing, portfolio management and enforcement, in whichever of the nine markets a brand needs protecting.",
+  },
+  "global-presence": {
+    title: "Global presence",
+    description:
+      "The office tree, four levels deep, where every level carries its own address segment in every language.",
+  },
+  asia: {
+    title: "Asia",
+    description: "The continent level of the address, with Japan and the Tokyo office beneath it.",
+  },
+  japan: {
+    title: "Japan",
+    description:
+      "The country level. Rename it in one language and every address beneath it follows, in that language only.",
+  },
+  "tokyo-office": {
+    title: "Tokyo office",
+    description:
+      "The deepest level of the address tree, reached through Global presence, Asia and Japan in English and through 世界展開, アジア and 日本 in Japanese.",
+  },
+};
+
 const PAGE_TREE: PageSpec[] = [
   {
     key: "home",
@@ -1668,6 +1726,14 @@ export async function POST(request: Request) {
             title: text.title,
             slug: text.slug,
             generateSlug: false,
+            // Written rather than generated, and per locale, because the generator produced the
+            // same four openings across every page.
+            meta: localizedBody
+              ? { title: localizedBody.heading, description: localizedBody.body }
+              : {
+                  title: PAGE_META_EN[spec.key]?.title ?? text.title,
+                  description: PAGE_META_EN[spec.key]?.description ?? "",
+                },
             // blocks is localized and required, so a locale left unwritten renders the starter
             // kit's own demo blocks instead of this demo's content.
             ...(localizedBody
