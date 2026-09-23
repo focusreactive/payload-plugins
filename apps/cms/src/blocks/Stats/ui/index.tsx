@@ -136,7 +136,14 @@ export function Stats({ eyebrow, heading, description, layout, image, items }: S
                       color="link-color"
                       size="lg"
                       href={item.link.href}
-                      iconTrailing={ArrowRight}
+                      // An element, not the component: Button is a client component and this file
+                      // renders on the server, where a function prop cannot cross that boundary.
+                      iconTrailing={
+                        <ArrowRight
+                          data-icon="trailing"
+                          className="pointer-events-none size-5 shrink-0 transition-inherit-all"
+                        />
+                      }
                       className="mt-auto self-start"
                     >
                       {item.link.text}
