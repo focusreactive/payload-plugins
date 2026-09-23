@@ -12,7 +12,9 @@ import type { ABVariantData } from "@/lib/plugins/ab/types";
 import { abCookies } from "./lib/plugins/ab/abCookies";
 import { routing } from "./lib/i18n/routing";
 
-const intlMiddleware = createMiddleware(routing);
+// The `<link rel="alternate">` tags are already emitted from our own path map in generateMeta.ts;
+// the middleware's header would otherwise advertise a naive locale-prefixed path that 404s.
+const intlMiddleware = createMiddleware({ ...routing, alternateLinks: false });
 
 const localeCodes = I18N_CONFIG.locales.map((l) => l.code).join("|");
 const localeRegex = new RegExp(`^/(${localeCodes})(/.*)?$`);
