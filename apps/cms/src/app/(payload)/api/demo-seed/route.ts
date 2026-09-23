@@ -332,6 +332,53 @@ const PAGE_TREE: PageSpec[] = [
   },
 ];
 
+/**
+ * The French and Japanese homepages carried a single paragraph while the English one carried a
+ * hero, a stats row and five sections. On a demo whose headline claim is that one content model
+ * serves every locale, switching from / to /fr looked like the claim failing. These two locales
+ * now open with the same hero and the same stats row, translated.
+ */
+const LOCALIZED_HOMEPAGE: Record<
+  "fr" | "ja",
+  {
+    heroEyebrow: string;
+    heroTitle: string;
+    heroBody: string;
+    primaryAction: string;
+    secondaryAction: string;
+    stats: { value: string; label: string }[];
+  }
+> = {
+  fr: {
+    heroEyebrow: "Démonstration",
+    heroTitle: "Quinze bureaux, six langues, neuf marchés, un seul modèle de contenu",
+    heroBody:
+      "Une plateforme de contenu en fonctionnement, construite sur vos propres publications. Tout ce qui suit existe réellement dans le CMS, ce n’est pas une maquette.",
+    primaryAction: "Ouvrir le CMS",
+    secondaryAction: "Voir un article arrivé de Passle",
+    stats: [
+      { value: "3 115", label: "Éléments Passle dans le fonds, sur environ 3 800" },
+      { value: "20", label: "Intégrés dans cette démo" },
+      { value: "17", label: "Services en anglais" },
+      { value: "8", label: "Services en français" },
+    ],
+  },
+  ja: {
+    heroEyebrow: "コンテンツ基盤デモ",
+    heroTitle: "15拠点、6言語、9市場、ひとつのコンテンツモデル",
+    heroBody:
+      "御社自身の公開記事をもとに構築した、実際に稼働するコンテンツ基盤です。以下のすべてが背後のCMSに実在しており、モックアップではありません。",
+    primaryAction: "CMSを開く",
+    secondaryAction: "Passleから届いた記事を見る",
+    stats: [
+      { value: "3,115", label: "Passle上の記事数（全体で約3,800件）" },
+      { value: "20", label: "このデモに取り込んだ件数" },
+      { value: "17", label: "英語版のサービス数" },
+      { value: "8", label: "フランス語版のサービス数" },
+    ],
+  },
+};
+
 type LexicalRichTextState = ContentBlock["content"];
 
 function buildParagraphRichText(paragraph: string): LexicalRichTextState {
@@ -1726,6 +1773,8 @@ export async function POST(request: Request) {
       for (const locale of ["en", "fr", "ja"] as LocaleCode[]) {
         const text = spec[locale];
         const localizedBody = locale === "en" ? undefined : LOCALIZED_PAGE_BODY[spec.key]?.[locale];
+        const localizedHome =
+          locale === "en" || spec.key !== "home" ? undefined : LOCALIZED_HOMEPAGE[locale];
 
         await payload.update({
           collection: "page",
@@ -1752,6 +1801,36 @@ export async function POST(request: Request) {
             ...(localizedBody
               ? {
                   blocks: [
+                    ...(localizedHome
+                      ? [
+                          {
+                            blockType: "hero" as const,
+                            variant: "centered" as const,
+                            image: {
+                              image: (illustrationIds["admin-page-tree.png"] ??
+                                defaultMediaId) as number,
+                              aspectRatio: "16/9" as const,
+                            },
+                            eyebrow: localizedHome.heroEyebrow,
+                            title: localizedHome.heroTitle,
+                            richText: buildParagraphRichText(localizedHome.heroBody),
+                            actions: [
+                              buildAction(localizedHome.primaryAction, "/admin", "accent"),
+                              buildAction(
+                                localizedHome.secondaryAction,
+                                "/admin/collections/insight",
+                                "outline"
+                              ),
+                            ],
+                            section: { theme: "light" as const },
+                          },
+                          {
+                            blockType: "stats" as const,
+                            items: localizedHome.stats,
+                            section: { theme: "light" as const },
+                          },
+                        ]
+                      : []),
                     {
                       blockType: "content" as const,
                       eyebrow: localizedBody.eyebrow,
