@@ -37,9 +37,6 @@
      * neither family covers. */
     --font-display: var(--font-newsreader), Georgia, serif;
     --font-body: var(--font-ibm-plex-sans), system-ui, -apple-system, sans-serif;
-    /* The frontend body reads --font-sans, not --font-body. Its default pointed at an Archivo
-     * variable this app never loads, so every paragraph was silently the system font. */
-    --font-sans: var(--font-ibm-plex-sans), system-ui, -apple-system, sans-serif;
     --font-mono: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 

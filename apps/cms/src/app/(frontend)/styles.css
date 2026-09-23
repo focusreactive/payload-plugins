@@ -25,7 +25,9 @@
 body {
   background: var(--color-background);
   color: var(--color-foreground);
-  font-family: var(--font-sans);
+  /* --font-body, not --font-sans: two stylesheets both define --font-sans, and the fork base's,
+     which points at an Archivo face this app never loads, is the one that wins. */
+  font-family: var(--font-body);
   font-size: 18px;
   line-height: 1.65;
   text-rendering: optimizeLegibility;
