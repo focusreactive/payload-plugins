@@ -1748,7 +1748,11 @@ export async function POST(request: Request) {
                       eyebrow: localizedBody.eyebrow,
                       heading: localizedBody.heading,
                       layout: "text-image" as const,
-                      image: defaultMediaId as number,
+                      // A Japanese page showing a screenshot of the English admin undercuts the
+                      // point it is making, so that locale gets the Japanese capture.
+                      image: (locale === "ja"
+                        ? (illustrationIds["admin-pages-japanese.png"] ?? defaultMediaId)
+                        : defaultMediaId) as number,
                       content: buildParagraphRichText(localizedBody.body),
                       section: { theme: "light" as const },
                     },
