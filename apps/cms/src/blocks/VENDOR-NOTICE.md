@@ -1,10 +1,23 @@
-# Vendor notice: Tailark blocks
+# Vendor notice
+
+## Untitled UI React PRO (current source, from 2026-09-23)
+
+Every marketing section on this app now comes from Untitled UI React PRO under the licence the
+deal owner holds. Their files sit under `apps/cms/src/shared/ui/shadcn/`, installed by their CLI
+and not edited. Where a section is rendered by a Payload block, the block's `ui/index.tsx` carries
+their JSX and className strings verbatim with only the literal content swapped for props. See
+`apps/cms/DESIGN.md`.
+
+Untitled UI is a commercial licence, not an open-source one: these files must not be redistributed
+outside a project the licence covers.
+
+## Tailark blocks (superseded, still present in some layouts)
 
 Some layout structure in this directory was adapted from [Tailark](https://github.com/tailark/blocks),
 MIT licensed. The source repo ships as `radix`/`dusk` and `radix`/`mist` shadcn registry blocks; this
 app used the `radix` base, `mist` kit. No Tailark source file is vendored verbatim: every import was
 rewritten against this app's own primitives (`@/components/*`, `cn`, `cva`) and every SaaS-style
-decoration banned by `apps/cms/DESIGN.md` (gradients, glows, pill radii, coloured-circle icons, card
+decoration banned by the since-superseded rules in `apps/cms/DESIGN.md` (gradients, glows, pill radii, coloured-circle icons, card
 shadows, centred body copy) was stripped. What was kept is grid structure, column ratios, and
 responsive breakpoints from the source file named below.
 
