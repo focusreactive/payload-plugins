@@ -115,7 +115,7 @@ export async function CardsGridBlockComponent({
         // Untitled UI's own section-heading scale, verbatim from features-simple-icons-04. The
         // eyebrow span comes from features-alternating-layout-04 because their icon grid has no
         // eyebrow of its own, and the same borrow is already used by the Content and CTA sections.
-        <div className="mb-12 flex flex-col">
+        <div className="mb-12 flex max-w-3xl flex-col">
           {header.eyebrow?.text && (
             <span className="text-sm font-semibold text-brand-secondary md:text-md">
               {header.eyebrow.text}
