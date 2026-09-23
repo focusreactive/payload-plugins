@@ -55,6 +55,16 @@ body {
   }
 
   /*
+   * @tailwindcss/typography's own .prose rule sets font-size: 1rem on this element, which sits
+   * between a section's size class and the paragraph inside it - so `text-xl` on the wrapper was
+   * discarded one level before it reached the text, and the hero subhead rendered at 16px under a
+   * 60px heading. Inheriting hands the size decision back to whichever section owns it.
+   */
+  .prose {
+    font-size: inherit;
+  }
+
+  /*
    * Deliberately sets no font-size and no color. Both used to be hardcoded here, at the same
    * specificity as the utility classes on the container, so every Untitled UI type class on a
    * rich-text body silently lost - the hero subhead rendered at 18.88px under a 60px heading.
