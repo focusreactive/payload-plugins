@@ -1,6 +1,7 @@
 import type { Access, CollectionBeforeChangeHook } from "payload";
 import { APIError } from "payload";
 
+import { MARKET_OPTIONS } from "@/lib/fields/marketsField";
 import type { User } from "@/payload-types";
 
 /**
@@ -50,7 +51,7 @@ export const rejectMarketsOutsideEditorScope: CollectionBeforeChangeHook = ({
   const touchesOwnMarket = incoming.some((market) => markets.includes(market));
   if (!touchesOwnMarket || added.length > 0) {
     throw new APIError(
-      `You look after ${markets.join(", ")}. File this under at least one of those markets, and only those.`,
+      `You look after ${markets.map((market) => MARKET_OPTIONS.find((option) => option.value === market)?.label ?? market).join(", ")}. File this under at least one of those markets, and only those.`,
       403,
       null,
       true
