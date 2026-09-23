@@ -96,7 +96,10 @@ export const generateMeta = async (args: {
   const twitterSite = settings?.seo?.x?.site;
   const twitterCreator = settings?.seo?.x?.creator;
 
-  const shouldIndex = doc?.meta?.robots === "index";
+  // This branch is a client sandbox carrying a prospect's own published articles and their people,
+  // and its URL gets shared after the call. Nothing here may be indexed, whatever an individual
+  // document's SEO field says, so the per-document setting is deliberately ignored.
+  const shouldIndex = false;
 
   let languages: Record<string, string> | undefined;
 

@@ -1357,24 +1357,6 @@ export async function POST(request: Request) {
       mediaCreatedCount += 1;
     }
 
-    // Anything in the library that this seed did not put there is either another project's content
-    // inherited with the branch database, or a stale copy Payload renamed around an earlier upload.
-    // Both are visible the moment an editor opens Media on the call.
-    const seededFilenames = new Set(buildDemoMedia().map((spec) => spec.filename));
-    const strayMedia = await payload.find({
-      collection: "media",
-      limit: 500,
-      depth: 0,
-      overrideAccess: true,
-    });
-    let mediaDeletedCount = 0;
-    for (const doc of strayMedia.docs) {
-      if (doc.filename && !seededFilenames.has(doc.filename)) {
-        await payload.delete({ collection: "media", id: doc.id, overrideAccess: true });
-        mediaDeletedCount += 1;
-      }
-    }
-
     // Mark one media doc as the platform default, because every block's image defaultValue
     // resolves through getDefaultMediaId, and a null there fails validation on any locale that
     // falls back to the default block set.
@@ -1726,6 +1708,32 @@ export async function POST(request: Request) {
 
     await seedNavigation(payload, mediaIdByFilename["demo-logo.svg"]);
 
+    // Anything in the library that this seed did not put there is either another project's content
+    // inherited with the branch database, or a stale copy Payload renamed around an earlier upload.
+    // Both are visible the moment an editor opens Media on the call.
+    const seededFilenames = new Set(buildDemoMedia().map((spec) => spec.filename));
+    const strayMedia = await payload.find({
+      collection: "media",
+      limit: 500,
+      depth: 0,
+      overrideAccess: true,
+    });
+    let mediaDeletedCount = 0;
+    for (const doc of strayMedia.docs) {
+      if (!doc.filename || seededFilenames.has(doc.filename)) {
+        continue;
+      }
+
+      // A row another document still points at cannot be deleted, and Postgres reports that as a
+      // bare "Failed query" with no field name. Skipping it keeps the reset working; the count in
+      // the response is what actually went.
+      try {
+        await payload.delete({ collection: "media", id: doc.id, overrideAccess: true });
+        mediaDeletedCount += 1;
+      } catch {
+        continue;
+      }
+    }
     // Every page here was deleted and recreated with a new id, so the cached map still points
     // at rows that no longer exist until it is rebuilt.
     revalidatePathMap();
