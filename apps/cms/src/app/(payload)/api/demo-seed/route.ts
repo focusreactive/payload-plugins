@@ -1822,6 +1822,33 @@ export async function POST(request: Request) {
       );
     }
 
+    const SITE_SEO_BY_LOCALE: Record<
+      LocaleCode,
+      { description: string; notFoundTitle: string; notFoundDescription: string }
+    > = {
+      en: {
+        description:
+          "A working content platform: fifteen offices, six languages, nine markets, one content model.",
+        notFoundTitle: "That address does not exist",
+        notFoundDescription:
+          "Every page here lives at its own address in each language. This one does not, in any of them.",
+      },
+      fr: {
+        description:
+          "Une plateforme de contenu en fonctionnement : quinze bureaux, six langues, neuf marchés, un seul modèle de contenu.",
+        notFoundTitle: "Cette adresse n'existe pas",
+        notFoundDescription:
+          "Chaque page possède sa propre adresse dans chaque langue. Celle-ci n'existe dans aucune.",
+      },
+      ja: {
+        description:
+          "実際に動作するコンテンツ基盤。15のオフィス、6つの言語、9つの市場、ひとつのコンテンツモデル。",
+        notFoundTitle: "このアドレスは存在しません",
+        notFoundDescription:
+          "各ページは言語ごとに固有のアドレスを持ちます。このアドレスはいずれの言語にもありません。",
+      },
+    };
+
     const siteSettingsTextByLocale: Record<LocaleCode, string> = {
       en: "Content Platform Demo",
       fr: "Démo de plateforme de contenu",
@@ -1836,17 +1863,25 @@ export async function POST(request: Request) {
         overrideAccess: true,
         data: {
           general: { siteName: siteSettingsTextByLocale[locale] },
+          // Every locale, not just English: the title suffix falls back to the site name, and
+          // leaving fr and ja unwritten put "| My Site" in the browser tab of every non-English
+          // page, which is the starter kit's factory default.
+          seo: {
+            defaultDescription: SITE_SEO_BY_LOCALE[locale].description,
+            og: {
+              title: siteSettingsTextByLocale[locale],
+              siteName: siteSettingsTextByLocale[locale],
+              description: SITE_SEO_BY_LOCALE[locale].description,
+            },
+          },
+          // The 404 copy is stored on this document, so a change to the field's default value
+          // never reaches a database that already has one. It has to be written here.
+          notFound: {
+            title: SITE_SEO_BY_LOCALE[locale].notFoundTitle,
+            description: SITE_SEO_BY_LOCALE[locale].notFoundDescription,
+          },
           ...(locale === "en"
             ? {
-                seo: {
-                  defaultDescription:
-                    "A working content platform demo built on your own published material.",
-                  og: {
-                    title: "Content Platform Demo",
-                    siteName: "Content Platform Demo",
-                    description: "Fifteen offices, six languages, nine markets, one content model.",
-                  },
-                },
                 blog: {
                   title: "Insights",
                   description: "Latest articles and updates.",
