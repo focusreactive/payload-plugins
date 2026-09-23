@@ -402,6 +402,9 @@ body {
   --color-card: #ffffff;
   --color-card-foreground: #15171b;
   --color-muted-foreground: #585d66;
+  /* DESIGN.md's ink-tertiary, darkened from #8A8F98 (3.1:1 against paper) to clear WCAG AA
+     for the 12px kicker label - the axe-core failure was on this token, not any one component. */
+  --color-ink-tertiary: #646972;
   --color-border: #e3ded3;
   --color-input: #e3ded3;
   --color-primary: #1f4b43;
@@ -422,7 +425,7 @@ body {
 @layer utilities {
   /* The editorial signature of this design: an uppercase label above a section heading. */
   .kicker {
-    color: #8a8f98;
+    color: var(--color-ink-tertiary);
     font-family: var(--font-sans);
     font-size: 12px;
     font-weight: 600;

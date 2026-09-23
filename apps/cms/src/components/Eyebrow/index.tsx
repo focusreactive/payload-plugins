@@ -14,7 +14,7 @@ interface Props {
 const toneMap: Record<EyebrowTone, string> = {
   default: "bg-foreground text-background",
   primary: "bg-primary text-primary-foreground",
-  muted: "text-[#8a8f98]",
+  muted: "text-[var(--color-ink-tertiary)]",
   accent: "bg-accent text-accent-foreground",
   outline: "border border-foreground text-foreground",
 };

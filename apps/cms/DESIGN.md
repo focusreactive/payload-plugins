@@ -8,7 +8,7 @@ colors:
   surface-sunken: "#F2EFE8"
   ink: "#15171B"
   ink-secondary: "#585D66"
-  ink-tertiary: "#8A8F98"
+  ink-tertiary: "#646972"
   rule: "#E3DED3"
   accent: "#1F4B43"
   accent-hover: "#16382F"
@@ -50,7 +50,7 @@ Warm paper rather than white, near-black rather than black, and one accent used 
 | `surface-sunken` | `#F2EFE8` | One band per page at most, to separate a section |
 | `ink` | `#15171B` | Headings and body copy |
 | `ink-secondary` | `#585D66` | Standfirsts, metadata, captions |
-| `ink-tertiary` | `#8A8F98` | Dates, counts, disabled states |
+| `ink-tertiary` | `#646972` | Dates, counts, disabled states |
 | `rule` | `#E3DED3` | Every divider and every card border, at 1px |
 | `accent` | `#1F4B43` | Links, one button per section, the active state of a filter |
 
