@@ -1,3 +1,4 @@
+import { setRequestLocale } from "next-intl/server";
 import { TrackPage } from "@focus-reactive/payload-plugin-analytics/client";
 import type { Metadata } from "next";
 import { draftMode } from "next/headers";
@@ -13,7 +14,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ChildPages } from "@/components/ChildPages";
 import type { Locale } from "@/lib/types";
 import { getPageBySlug } from "@/dal/getPageBySlug";
-import { resolveListingDetail } from "@/dal/getListingRoutes";
+import { getListingDetailStaticParams, resolveListingDetail } from "@/dal/getListingRoutes";
 import { InsightDetail, PersonDetail } from "@/components/demo/articles/detailViews";
 import { getMainSitePageStaticParams } from "@/dal/staticParams/pages";
 import { PayloadRedirects } from "@/components/PayloadRedirects";
@@ -31,6 +32,7 @@ interface Args {
 
 export default async function Page({ params }: Args) {
   const { slug = [], locale } = await params;
+  setRequestLocale(locale);
   const { decodedSegments, url } = parseSlugToPath(slug);
 
   if (decodedSegments[0] === "home") {
@@ -126,11 +128,12 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   });
 }
 
-// getPageBySlug reads draftMode(), so a static regeneration of these routes throws
-// DYNAMIC_SERVER_USAGE the moment the database has content. The sandbox serves three
-// people on one call, so rendering per request costs nothing worth keeping.
-export const dynamic = "force-dynamic";
+// Statically generated at build, then regenerated on demand: page saves and the demo seed call
+// revalidatePath. The hourly revalidate is only a backstop for an article or person edit, which
+// does not revalidate the listing pages that show them.
+export const revalidate = 3600;
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
-  return await getMainSitePageStaticParams();
+  return [...(await getMainSitePageStaticParams()), ...(await getListingDetailStaticParams())];
 }

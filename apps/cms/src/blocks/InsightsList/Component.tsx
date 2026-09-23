@@ -2,7 +2,7 @@ import type { Where } from "payload";
 
 import { SectionContainer } from "@/components/shared";
 import { MARKET_OPTIONS } from "@/lib/fields/marketsField";
-import { getInsightHref, getPayloadClient } from "@/lib/dal";
+import { getInsightHref, getPayloadClient, getPersonHref } from "@/lib/dal";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { InsightsListBlock, Person } from "@/payload-types";
@@ -75,6 +75,7 @@ export async function InsightsListBlockComponent({
           authorName: author?.name ?? null,
           publishedAt: doc.publishedDate ? dateFormatter.format(new Date(doc.publishedDate)) : null,
           href: await getInsightHref(doc, locale),
+          authorHref: author ? await getPersonHref(author, locale) : null,
         };
       })
   );

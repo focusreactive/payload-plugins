@@ -1,6 +1,6 @@
 import type { Viewport } from "next";
 import localFont from "next/font/local";
-import { getMessages } from "next-intl/server";
+import { getMessages, setRequestLocale } from "next-intl/server";
 import { draftMode } from "next/headers";
 import React from "react";
 
@@ -70,6 +70,9 @@ interface Props {
 
 export default async function RootLayout({ children, params }: Props) {
   const { locale } = await params;
+  // Tells next-intl the locale up front. Without it every getLocale() call in a block reads the
+  // request headers, which opts the whole page out of static generation.
+  setRequestLocale(locale);
   const { isEnabled: draft } = await draftMode();
   const messages = await getMessages();
 

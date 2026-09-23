@@ -75,9 +75,10 @@ function initialsOf(name: string) {
 }
 
 /**
- * The article page, on the proportions of Untitled UI's blog post template: a narrow reading
- * column, the category and date above a display headline, the standfirst as a lead, then the
- * author card that links to the person the webhook matched.
+ * The article page on Untitled UI's content-section-rich-text-01: a 720px reading column, the
+ * body in their prose scale (prose, md:prose-lg), a lead paragraph, and the author footer under a
+ * rule at the end. Above it, the blog-post header they pair it with: market, date, headline, and
+ * the author, who links to the profile the webhook matched them to.
  */
 export async function InsightDetail({
   insight,
@@ -98,68 +99,91 @@ export async function InsightDetail({
         year: "numeric",
       }).format(new Date(insight.publishedDate))
     : null;
+  const showLead = Boolean(insight.standfirst) && !bodyRepeatsStandfirst(insight);
+
+  const authorLink = (className: string) =>
+    author ? (
+      authorHref ? (
+        <NextLink href={authorHref} className={className}>
+          {author.name}
+        </NextLink>
+      ) : (
+        <span className={className}>{author.name}</span>
+      )
+    ) : null;
 
   return (
-    <article className="py-16 md:py-24">
-      <div className="mx-auto max-w-container px-4 md:px-8">
-        <div className="mx-auto max-w-180">
-          {listingHref && (
-            <NextLink
-              href={listingHref}
-              className="text-sm font-semibold text-brand-secondary hover:text-brand-secondary_hover"
-            >
-              ← {copy.back}
-            </NextLink>
-          )}
-          <div className="mt-8 flex flex-wrap items-center gap-2">
-            {marketLabels(insight.markets).map((label) => (
-              <Badge key={label} type="pill-color" color="brand" size="md">
-                {label}
-              </Badge>
-            ))}
-            {date && <time className="text-sm text-tertiary">{date}</time>}
-          </div>
-          <h1 className="mt-4 text-display-md font-semibold text-balance text-primary md:text-display-lg">
-            {insight.title}
-          </h1>
-          {insight.standfirst && !bodyRepeatsStandfirst(insight) && (
-            <p className="mt-4 text-lg text-pretty text-tertiary md:mt-6 md:text-xl">
-              {insight.standfirst}
-            </p>
-          )}
-
-          <div className="mt-8 flex items-center gap-3 border-y border-secondary py-6">
-            {author ? (
-              <>
-                <Avatar border initials={initialsOf(author.name)} alt={author.name} size="lg" />
-                <div className="flex-1">
-                  <p className="text-sm text-tertiary">{copy.writtenBy}</p>
-                  {authorHref ? (
-                    <NextLink
-                      href={authorHref}
-                      className="text-md font-semibold text-primary underline-offset-4 hover:underline"
-                    >
-                      {author.name}
-                    </NextLink>
-                  ) : (
-                    <p className="text-md font-semibold text-primary">{author.name}</p>
+    <article>
+      <header className="bg-secondary_subtle py-16 md:py-24">
+        <div className="mx-auto max-w-container px-4 md:px-8">
+          <div className="mx-auto flex max-w-180 flex-col items-center text-center">
+            {listingHref && (
+              <NextLink
+                href={listingHref}
+                className="text-sm font-semibold text-brand-secondary hover:text-brand-secondary_hover"
+              >
+                ← {copy.back}
+              </NextLink>
+            )}
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+              {marketLabels(insight.markets).map((label) => (
+                <Badge key={label} type="pill-color" color="brand" size="md">
+                  {label}
+                </Badge>
+              ))}
+            </div>
+            <h1 className="mt-4 text-display-md font-semibold text-balance text-primary md:text-display-lg">
+              {insight.title}
+            </h1>
+            <p className="mt-4 text-md text-tertiary md:mt-6 md:text-lg">
+              {author && (
+                <>
+                  {copy.writtenBy}{" "}
+                  {authorLink(
+                    "font-semibold text-primary underline-offset-4 hover:text-brand-secondary hover:underline"
                   )}
-                  {author.jobTitle && <p className="text-sm text-tertiary">{author.jobTitle}</p>}
+                  {date && " · "}
+                </>
+              )}
+              {date && <time>{date}</time>}
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <div className="py-16 md:py-24">
+        <div className="mx-auto max-w-container px-4 md:px-8">
+          <div className="mx-auto max-w-prose md:max-w-180">
+            <div className="mx-auto prose md:prose-lg">
+              {showLead && <p className="lead">{insight.standfirst}</p>}
+            </div>
+            {insight.body && <RichText content={insight.body} className="mx-auto md:prose-lg" />}
+
+            <div className="mt-12 flex flex-col items-start justify-between gap-y-6 border-t border-secondary pt-6 md:flex-row md:items-center">
+              {author ? (
+                <div className="flex items-center gap-3 md:gap-4">
+                  <Avatar border initials={initialsOf(author.name)} alt={author.name} size="lg" />
+                  <div>
+                    {authorLink(
+                      "block text-md font-semibold text-primary underline-offset-4 hover:text-brand-secondary hover:underline md:text-lg"
+                    )}
+                    {author.jobTitle && (
+                      <p className="text-md text-tertiary">
+                        {[author.jobTitle, author.office].filter(Boolean).join(", ")}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <p className="hidden max-w-60 text-sm text-pretty text-tertiary md:block">
+              ) : (
+                <p className="text-sm text-tertiary">{copy.unmatched}</p>
+              )}
+              {author && (
+                <p className="max-w-72 text-sm text-pretty text-tertiary md:text-right">
                   {copy.fromPassle}
                 </p>
-              </>
-            ) : (
-              <p className="text-sm text-tertiary">{copy.unmatched}</p>
-            )}
-          </div>
-
-          {insight.body && (
-            <div className="mt-10 text-lg text-secondary">
-              <RichText content={insight.body} variant="content" />
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </article>

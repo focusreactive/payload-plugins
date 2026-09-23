@@ -223,6 +223,7 @@ export interface Page {
     | NewsletterBlock
     | StatsBlock
     | InsightsListBlock
+    | FeatureListBlock
     | RawHtmlBlock
     | GlobalSectionSlotBlock
   )[];
@@ -1366,6 +1367,68 @@ export interface InsightsListBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FeatureListBlock".
+ */
+export interface FeatureListBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  items: {
+    icon?:
+      | (
+          | 'map'
+          | 'clock'
+          | 'zap'
+          | 'activity'
+          | 'layout-grid'
+          | 'sparkles'
+          | 'file-text'
+          | 'users'
+          | 'bar-chart-3'
+          | 'plug'
+          | 'shield'
+          | 'git-branch'
+          | 'gauge'
+          | 'bell'
+          | 'layers'
+          | 'workflow'
+          | 'calendar'
+          | 'compass'
+          | 'target'
+          | 'wand-2'
+        )
+      | null;
+    title: string;
+    description?: string | null;
+    id?: string | null;
+  }[];
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'featureList';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "RawHtmlBlock".
  */
 export interface RawHtmlBlock {
@@ -1435,6 +1498,7 @@ export interface GlobalBlock {
     | NewsletterBlock
     | StatsBlock
     | InsightsListBlock
+    | FeatureListBlock
     | RawHtmlBlock
   )[];
   updatedAt: string;
@@ -2353,6 +2417,64 @@ export interface Preset {
         blockType: 'insightsList';
       }
     | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        items: {
+          icon?:
+            | (
+                | 'map'
+                | 'clock'
+                | 'zap'
+                | 'activity'
+                | 'layout-grid'
+                | 'sparkles'
+                | 'file-text'
+                | 'users'
+                | 'bar-chart-3'
+                | 'plug'
+                | 'shield'
+                | 'git-branch'
+                | 'gauge'
+                | 'bell'
+                | 'layers'
+                | 'workflow'
+                | 'calendar'
+                | 'compass'
+                | 'target'
+                | 'wand-2'
+              )
+            | null;
+          title: string;
+          description?: string | null;
+          id?: string | null;
+        }[];
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'featureList';
+      }
+    | {
         /**
          * Raw HTML rendered as-is on the page. Use for embeds and one-off markup.
          */
@@ -2925,6 +3047,7 @@ export interface PageSelect<T extends boolean = true> {
         newsletter?: T | NewsletterBlockSelect<T>;
         stats?: T | StatsBlockSelect<T>;
         insightsList?: T | InsightsListBlockSelect<T>;
+        featureList?: T | FeatureListBlockSelect<T>;
         rawHtml?: T | RawHtmlBlockSelect<T>;
         globalSectionSlot?: T | GlobalSectionSlotBlockSelect<T>;
       };
@@ -3452,6 +3575,41 @@ export interface InsightsListBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FeatureListBlock_select".
+ */
+export interface FeatureListBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  items?:
+    | T
+    | {
+        icon?: T;
+        title?: T;
+        description?: T;
+        id?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "RawHtmlBlock_select".
  */
 export interface RawHtmlBlockSelect<T extends boolean = true> {
@@ -3853,6 +4011,7 @@ export interface GlobalBlockSelect<T extends boolean = true> {
         newsletter?: T | NewsletterBlockSelect<T>;
         stats?: T | StatsBlockSelect<T>;
         insightsList?: T | InsightsListBlockSelect<T>;
+        featureList?: T | FeatureListBlockSelect<T>;
         rawHtml?: T | RawHtmlBlockSelect<T>;
       };
   updatedAt?: T;
@@ -4374,6 +4533,39 @@ export interface PresetsSelect<T extends boolean = true> {
                     url?: T;
                     customPage?: T;
                     label?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        featureList?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              items?:
+                | T
+                | {
+                    icon?: T;
+                    title?: T;
+                    description?: T;
+                    id?: T;
                   };
               section?:
                 | T

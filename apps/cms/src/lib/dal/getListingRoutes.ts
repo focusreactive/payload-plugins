@@ -122,3 +122,45 @@ export async function resolveListingDetail(
 
   return null;
 }
+
+/**
+ * Every article and profile address, in every language it exists in, for generateStaticParams.
+ */
+export async function getListingDetailStaticParams(): Promise<
+  { locale: string; slug: string[] }[]
+> {
+  const payload = await getPayloadClient();
+  const params: { locale: string; slug: string[] }[] = [];
+  const [insightPaths, peoplePaths] = await Promise.all([
+    getListingPathsBySlug("insights"),
+    getListingPathsBySlug("our-people"),
+  ]);
+  const people = await payload.find({ collection: "person", limit: 200, depth: 0 });
+  for (const locale of SITE_LOCALES) {
+    const insightBase = insightPaths[locale];
+    if (insightBase) {
+      const insights = await payload.find({
+        collection: "insight",
+        locale,
+        fallbackLocale: false,
+        limit: 500,
+        depth: 0,
+      });
+      for (const insight of insights.docs) {
+        if (insight.title && insight.slug) {
+          params.push({ locale, slug: [...insightBase.split("/").filter(Boolean), insight.slug] });
+        }
+      }
+    }
+    const peopleBase = peoplePaths[locale];
+    if (peopleBase) {
+      for (const person of people.docs) {
+        params.push({
+          locale,
+          slug: [...peopleBase.split("/").filter(Boolean), personSlug(person)],
+        });
+      }
+    }
+  }
+  return params;
+}

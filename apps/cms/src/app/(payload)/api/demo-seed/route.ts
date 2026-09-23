@@ -14,6 +14,7 @@ import { personSlug } from "@/lib/dal/getListingRoutes";
 import { translatedInsight102o1qk } from "@/lib/passle/translations/102o1qk";
 import type { PasslePostPayload } from "@/lib/passle/types";
 import type {
+  FeatureListBlock,
   InsightsListBlock,
   CardsGridBlock,
   CarouselBlock,
@@ -622,12 +623,27 @@ function formatPasslePostPublishedDate(publishedDate: string): string {
  * per-service "recent work" sections), so the same title/author/date shape is never
  * hand-typed twice and drifts.
  */
+// Filled in POST once the insights are seeded, so the patents and trade marks cards can link to
+// each article's own page. Slugs come from the database, not recomputed from the title here.
+const insightSlugByShortcode = new Map<string, string>();
+
 function buildInsightCardsGridItem(post: PasslePostPayload) {
   const authorName = post.Authors[0]?.Name ?? "Unattributed";
+  const slug = insightSlugByShortcode.get(post.PostShortcode);
   return {
     alignVariant: "left" as const,
     title: post.PostTitle,
     description: `${authorName} · ${formatPasslePostPublishedDate(post.PublishedDate)}`,
+    ...(slug
+      ? {
+          link: {
+            type: "custom" as const,
+            url: `/insights/${slug}`,
+            label: "Read the article",
+            newTab: false,
+          },
+        }
+      : {}),
   };
 }
 
@@ -720,10 +736,14 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
           "The author is matched to their profile by email address.",
           "The article inherits the markets that author covers.",
           "Re-sending the same shortcode updates the article in place, never creating a second one.",
+          "It gets its own page, linked to its author's profile, and the insights list picks it up.",
         ],
       }
     ),
-    actions: [buildAction("Open the synced article in the CMS", "/admin/collections/insight")],
+    actions: [
+      buildAction("Read it on the site", "/insights/takeaways-from-uc-berkeley-law-ai-institute"),
+      buildAction("Open the articles in the CMS", "/admin/collections/insight", "outline"),
+    ],
     section: { theme: "light" },
   };
 
@@ -750,7 +770,8 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
       }
     ),
     actions: [
-      buildAction("Change a parent's address and watch the cascade", "/admin/collections/page"),
+      buildAction("See a page four levels deep in Japanese", "/ja/世界展開/アジア/日本/東京"),
+      buildAction("Change a parent's address in the CMS", "/admin/collections/page", "outline"),
     ],
     section: { theme: "light" },
   };
@@ -853,30 +874,50 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     section: { theme: "light" },
   };
 
-  const footnotes: ContentBlock = {
-    blockType: "content",
+  // A bulleted list here read as fine print. Each limit is its own statement with a title, on
+  // Untitled's features-simple-icons-04, so the reader sees six clear boundaries at a glance.
+  const footnotes: FeatureListBlock = {
+    blockType: "featureList",
     eyebrow: "Honest footnotes",
-    heading: "Scope of this demo",
-    layout: "text-image",
-    // Explicitly null, not omitted: the field carries an async defaultValue that resolves to the
-    // platform's default media, so leaving it out put a screenshot on the one section that reads
-    // as a footnote and repeated the hero's image on the same page.
-    image: null,
-    // This section has no image, so its text runs the full container width - the one place on the
-    // page where a single paragraph became an unreadable slab. It is also the section that has to
-    // be read rather than skimmed past, which is why it is the one that had to become a list.
-    content: buildRichText(
-      { paragraph: "Everything above is real. Here is what this demo is not." },
+    heading: "What this demo is not",
+    description: "Everything above is real and running. These are its edges.",
+    items: [
       {
-        bullets: [
-          "The visual design is a speculative direction, not a proposal for your brand. Your brand agency's work replaces it.",
-          "Passle runs against fixtures of your published articles, not your live tenancy. We hold no credentials for it, and a fresh demo tenancy would be empty.",
-          "The layout reflows on a phone, but nobody has designed the mobile experience. Navigation, image crops and tap targets are unreviewed.",
-          "Articles are not filed by practice area here. The Passle feed already carries tags on every article, so this is a taxonomy to model, not data to go and find.",
-          "Priced in the estimate, not built here: that mobile pass, article and profile detail pages, content migration, and search.",
-        ],
-      }
-    ),
+        icon: "sparkles",
+        title: "A direction, not your brand",
+        description:
+          "The visual design is speculative. Your brand agency's work replaces it, and the blocks take any design without a schema change.",
+      },
+      {
+        icon: "plug",
+        title: "Fixtures, not your live Passle",
+        description:
+          "Twenty of your published articles, run through the same webhook. We hold no credentials for your tenancy, and a fresh demo tenancy would be empty.",
+      },
+      {
+        icon: "layout-grid",
+        title: "Reflows on a phone, not designed for one",
+        description:
+          "Navigation, image crops and tap targets on mobile are unreviewed. The mobile pass is priced in the estimate.",
+      },
+      {
+        icon: "layers",
+        title: "No practice-area filing yet",
+        description:
+          "Passle already tags every article, so this is a taxonomy to model, not data to go and find.",
+      },
+      {
+        icon: "shield",
+        title: "Two-factor sign-in and glossary translation",
+        description: "Specced for the build, not wired into this sandbox.",
+      },
+      {
+        icon: "workflow",
+        title: "No migration and no search here",
+        description:
+          "Moving your Umbraco content and the site search are priced in the estimate, not demonstrated.",
+      },
+    ],
     section: { theme: "light" },
   };
 
@@ -1920,6 +1961,18 @@ export async function POST(request: Request) {
     // `page` or `posts` collections, so running them before those deletes is safe.
     await seedPeopleRecords(payload);
     await seedInsightsFromFixtures(payload);
+    insightSlugByShortcode.clear();
+    for (const insight of (
+      await payload.find({
+        collection: "insight",
+        locale: "en",
+        limit: 500,
+        depth: 0,
+        overrideAccess: true,
+      })
+    ).docs) {
+      if (insight.slug) insightSlugByShortcode.set(insight.passleShortcode, insight.slug);
+    }
 
     const seededPeople = (
       await payload.find({

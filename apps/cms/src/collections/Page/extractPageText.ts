@@ -5,6 +5,7 @@ import { extractCtaBandText } from "@/blocks/CtaBand/extractText";
 import { extractNewsletterText } from "@/blocks/Newsletter/extractText";
 import { extractStatsText } from "@/blocks/Stats/extractText";
 import { extractInsightsListText } from "@/blocks/InsightsList/extractText";
+import { extractFeatureListText } from "@/blocks/FeatureList/extractText";
 import { extractFaqText } from "@/blocks/Faq/extractText";
 import { extractHeroText } from "@/blocks/Hero/extractText";
 import { extractLogosText } from "@/blocks/Logos/extractText";
@@ -54,6 +55,9 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
     }
     case "insightsList": {
       return extractInsightsListText(block);
+    }
+    case "featureList": {
+      return extractFeatureListText(block);
     }
     default: {
       return "";
