@@ -207,6 +207,11 @@ const LOCALIZED_PAGE_BODY: Record<
  * matching system...", four of six opening with Explore or Discover, which is the first thing a
  * digital lead sees when they view source.
  */
+const TRANSLATED_INSIGHTS_NOTE = {
+  fr: "Seul cet article existe en français. Les dix-neuf autres n’existent qu’en anglais et ne sont donc pas listés ici.",
+  ja: "日本語版があるのはこの記事のみです。残りの19本は英語版のみのため、ここには表示されません。",
+} as const;
+
 const PAGE_META_EN: Record<string, { title: string; description: string }> = {
   home: {
     title: "A content platform for fifteen offices and six languages",
@@ -2203,10 +2208,31 @@ export async function POST(request: Request) {
                     // grid's heading, and carrying it at all would put English question and
                     // answer text on a French page.
                     ...(localizedListingHeader
-                      ? blocks.slice(1, 2).map((block) => ({
-                          ...block,
-                          ...localizedListingHeader,
-                        }))
+                      ? blocks.slice(1, 2).map(
+                          (block) =>
+                            ({
+                              ...block,
+                              ...localizedListingHeader,
+                              // No fallback: a French or Japanese reader sees only the articles that
+                              // exist in their language, never the English titles under a local heading.
+                              ...(spec.key === "insights" && (locale === "fr" || locale === "ja")
+                                ? {
+                                    description: TRANSLATED_INSIGHTS_NOTE[locale],
+                                    items: [
+                                      {
+                                        alignVariant: "left" as const,
+                                        title: translatedInsight102o1qk.locales[locale].title,
+                                        description: `${
+                                          passleFixturesByShortcode[
+                                            translatedInsight102o1qk.passleShortcode
+                                          ]?.Authors[0]?.Name ?? ""
+                                        }`,
+                                      },
+                                    ],
+                                  }
+                                : {}),
+                            }) as typeof block
+                        )
                       : []),
                   ],
                 }
