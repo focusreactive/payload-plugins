@@ -1,5 +1,5 @@
 import type { Viewport } from "next";
-import { Archivo, IBM_Plex_Mono, Newsreader } from "next/font/google";
+import localFont from "next/font/local";
 import { getMessages } from "next-intl/server";
 import { draftMode } from "next/headers";
 import React from "react";
@@ -12,27 +12,29 @@ import type { Locale } from "@/lib/types";
 import { LivePreviewListener } from "@/components/LivePreviewListener";
 import { VisualEditingEditRouter } from "@/components/VisualEditingEditRouter";
 
-// One style per next/font/google call: Turbopack's font loader rejects a multi-entry query with
-// "next/font/google queries have exactly one entry", and it only fails on the Vercel build.
-const newsreader = Newsreader({
+// Self-hosted rather than next/font/google: every build otherwise fetched three families from
+// Google, and one failed hiccup takes the whole deployment down with "Can't resolve
+// [next]/internal/font/google/archivo_*.module.css". Newsreader and Archivo ship as variable
+// fonts, so one file covers the whole weight range.
+const newsreader = localFont({
   display: "swap",
-  subsets: ["latin"],
+  src: [{ path: "../../../fonts/Newsreader-variable.woff2", style: "normal", weight: "400 600" }],
   variable: "--font-newsreader",
-  weight: ["400", "500", "600"],
 });
 
-const archivo = Archivo({
+const archivo = localFont({
   display: "swap",
-  subsets: ["latin"],
+  src: [{ path: "../../../fonts/Archivo-variable.woff2", style: "normal", weight: "400 600" }],
   variable: "--font-archivo",
-  weight: ["400", "500", "600"],
 });
 
-const ibmPlexMono = IBM_Plex_Mono({
+const ibmPlexMono = localFont({
   display: "swap",
-  subsets: ["latin"],
+  src: [
+    { path: "../../../fonts/IBMPlexMono-400.woff2", style: "normal", weight: "400" },
+    { path: "../../../fonts/IBMPlexMono-500.woff2", style: "normal", weight: "500" },
+  ],
   variable: "--font-ibm-plex-mono",
-  weight: ["400", "500"],
 });
 
 export const viewport: Viewport = {
