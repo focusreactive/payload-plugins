@@ -1,4 +1,3 @@
-import { SectionHeader } from "@/components/SectionHeader";
 import { CardsGrid } from "./ui";
 import type { IDefaultCardProps } from "./ui/types";
 import {
@@ -89,7 +88,26 @@ export async function CardsGridBlockComponent({
 
   return (
     <SectionContainer sectionData={{ ...section, id }}>
-      {header && <SectionHeader {...header} className="mb-12" />}
+      {header && (
+        // Untitled UI's own section-heading scale, verbatim from features-simple-icons-04. The
+        // eyebrow span comes from features-alternating-layout-04 because their icon grid has no
+        // eyebrow of its own, and the same borrow is already used by the Content and CTA sections.
+        <div className="mb-12 flex flex-col">
+          {header.eyebrow?.text && (
+            <span className="text-sm font-semibold text-brand-secondary md:text-md">
+              {header.eyebrow.text}
+            </span>
+          )}
+          {header.title && (
+            <h2 className="mt-5 text-display-sm font-semibold text-primary md:text-display-md">
+              {header.title}
+            </h2>
+          )}
+          {header.subtitle && (
+            <p className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">{header.subtitle}</p>
+          )}
+        </div>
+      )}
       <CardsGrid items={cards} columns={columns ?? 3} />
     </SectionContainer>
   );
