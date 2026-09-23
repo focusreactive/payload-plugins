@@ -652,7 +652,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     layout: "text-image",
     image: defaultMediaId,
     content: buildParagraphRichText(
-      "The visual design is a speculative direction, not a proposal for your brand, and your brand agency's work replaces it. Passle runs against fixtures of your own published articles rather than your live tenancy, because we hold no credentials for it and a fresh demo tenancy would be empty. Article and profile detail pages, content migration, search and the mobile layout are deliberately out of scope here and are priced in the estimate."
+      "The visual design is a speculative direction, not a proposal for your brand, and your brand agency's work replaces it. Passle runs against fixtures of your own published articles rather than your live tenancy, because we hold no credentials for it and a fresh demo tenancy would be empty. The layout reflows on a phone because every block here does, but nobody has designed the mobile experience: navigation behaviour, image crops and tap targets are unreviewed. That pass, article and profile detail pages, content migration and search are out of scope here and priced in the estimate."
     ),
     section: { theme: "light" },
   };
