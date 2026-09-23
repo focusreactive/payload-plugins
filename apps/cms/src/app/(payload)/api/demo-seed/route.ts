@@ -211,7 +211,6 @@ function formatPasslePostPublishedDate(publishedDate: string): string {
 function buildInsightCardsGridItem(post: PasslePostPayload) {
   const authorName = post.Authors[0]?.Name ?? "Unattributed";
   return {
-    icon: "file-text" as const,
     title: post.PostTitle,
     description: `${authorName} · ${formatPasslePostPublishedDate(post.PublishedDate)}`,
   };
@@ -228,7 +227,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     blockType: "hero",
     variant: "centered",
     image: {
-      image: illustrations["content-model.svg"] ?? defaultMediaId,
+      image: illustrations["admin-page-tree.png"] ?? defaultMediaId,
       aspectRatio: "16/9",
     },
     eyebrow: "Content platform demo",
@@ -302,7 +301,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     eyebrow: "Review before publication",
     heading: "A translation arrives as a draft, addressed to a human.",
     layout: "image-text",
-    image: illustrations["language-and-market.svg"] ?? defaultMediaId,
+    image: illustrations["admin-person-markets.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
       "Machine translation drafts the page and the review queue holds it until someone signs it off. For an IP practice that is the only acceptable order, and it is the same queue that holds a fee-earner's request to update their own biography."
     ),
@@ -391,7 +390,7 @@ function buildInsightsPageBlocks(illustrations: Record<string, number>, defaultM
     eyebrow: "From Passle",
     heading: "Twenty articles, none of them typed by hand",
     layout: "image-text",
-    image: illustrations["passle-to-cms.svg"] ?? defaultMediaId,
+    image: illustrations["admin-insight-list.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
       "Every article below arrived through the same webhook: a shortcode comes in from Passle, the platform fetches the post, matches its author to a person record by email address, and files the result here with its original publish date intact."
     ),
@@ -428,7 +427,7 @@ function buildOurPeoplePageBlocks(
     eyebrow: "Author matching",
     heading: "A person record is what makes an author real",
     layout: "text-image",
-    image: illustrations["content-model.svg"] ?? defaultMediaId,
+    image: illustrations["admin-page-tree.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
       "Twenty-one people are on file here, each with a name, a job title, an office and the markets they cover. When an article syncs from Passle, the ingest checks its author's email address against this list. A match links the article to a real profile; a miss leaves the author's email on the article for an editor to resolve by hand."
     ),
@@ -442,7 +441,6 @@ function buildOurPeoplePageBlocks(
     description: "Grouped by office.",
     columns: 3,
     items: people.map((person) => ({
-      icon: "users",
       title: person.name,
       description: `${person.jobTitle} - ${person.office}`,
     })),
@@ -514,7 +512,7 @@ function buildPatentsPageBlocks(illustrations: Record<string, number>, defaultMe
     eyebrow: "Patents",
     heading: "Protection for what your engineers have actually built",
     layout: "image-text",
-    image: illustrations["one-document-six-addresses.svg"] ?? defaultMediaId,
+    image: illustrations["admin-pages-japanese.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
       "Patent work here runs from a first filing through prosecution to enforcement, across the offices that handle technical subject matter. The examples below are recent matters our own attorneys wrote up, not brochure copy."
     ),
@@ -575,7 +573,7 @@ function buildTradeMarksPageBlocks(illustrations: Record<string, number>, defaul
     eyebrow: "Trade marks",
     heading: "Brand identity, registered and defended",
     layout: "text-image",
-    image: illustrations["language-and-market.svg"] ?? defaultMediaId,
+    image: illustrations["admin-person-markets.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
       "Trade mark work covers clearance, filing, portfolio management and enforcement, in whichever of the firm's nine markets a brand needs protecting. The examples below are recent matters, not brochure copy."
     ),
@@ -675,38 +673,6 @@ interface DemoMediaSpec {
 function buildDemoMedia(): DemoMediaSpec[] {
   return [
     {
-      filename: "content-model.svg",
-      alt: "Four document types, six languages and nine markets in one content model",
-      mimetype: "image/svg+xml",
-      data: readFileSync(
-        path.join(process.cwd(), "public", "demo-illustrations", "content-model.svg")
-      ),
-    },
-    {
-      filename: "one-document-six-addresses.svg",
-      alt: "One document with a different localised address in each of six languages",
-      mimetype: "image/svg+xml",
-      data: readFileSync(
-        path.join(process.cwd(), "public", "demo-illustrations", "one-document-six-addresses.svg")
-      ),
-    },
-    {
-      filename: "language-and-market.svg",
-      alt: "Language decides wording, market decides visibility",
-      mimetype: "image/svg+xml",
-      data: readFileSync(
-        path.join(process.cwd(), "public", "demo-illustrations", "language-and-market.svg")
-      ),
-    },
-    {
-      filename: "passle-to-cms.svg",
-      alt: "An article published in Passle arrives in the content platform enriched",
-      mimetype: "image/svg+xml",
-      data: readFileSync(
-        path.join(process.cwd(), "public", "demo-illustrations", "passle-to-cms.svg")
-      ),
-    },
-    {
       filename: "admin-insight-list.png",
       alt: "The insight list in the CMS, showing articles that arrived from Passle with their authors and publish dates",
       mimetype: "image/png",
@@ -720,6 +686,20 @@ function buildDemoMedia(): DemoMediaSpec[] {
       mimetype: "image/png",
       data: readFileSync(
         path.join(process.cwd(), "public", "demo-screens", "admin-pages-japanese.png")
+      ),
+    },
+    {
+      filename: "admin-page-tree.png",
+      alt: "The page list in the CMS, each page with its own slug, above the locale switcher",
+      mimetype: "image/png",
+      data: readFileSync(path.join(process.cwd(), "public", "demo-screens", "admin-page-tree.png")),
+    },
+    {
+      filename: "admin-person-markets.png",
+      alt: "A person in the CMS, with the markets they belong to set separately from any language",
+      mimetype: "image/png",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "demo-screens", "admin-person-markets.png")
       ),
     },
     {
