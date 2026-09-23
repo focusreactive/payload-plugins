@@ -418,7 +418,10 @@ const LOCALIZED_HOMEPAGE: Record<
     primaryAction: "Ouvrir le CMS",
     secondaryAction: "Voir un article arrivé de Passle",
     stats: [
-      { value: "3 115", label: "Éléments Passle dans le fonds, sur environ 3 800" },
+      {
+        value: "3 115",
+        label: "Éléments Passle dans le fonds, sur environ 3 800",
+      },
       { value: "20", label: "Intégrés dans cette démo" },
       { value: "17", label: "Services en anglais" },
       { value: "8", label: "Services en français" },
@@ -442,7 +445,68 @@ const LOCALIZED_HOMEPAGE: Record<
 
 type LexicalRichTextState = ContentBlock["content"];
 
-function buildParagraphRichText(paragraph: string): LexicalRichTextState {
+type RichTextPart = { paragraph: string } | { bullets: string[] };
+
+function buildTextNode(text: string) {
+  return {
+    type: "text",
+    detail: 0,
+    format: 0,
+    mode: "normal",
+    style: "",
+    text,
+    version: 1,
+  };
+}
+
+function buildParagraphNode(paragraph: string) {
+  return {
+    type: "paragraph",
+    direction: "ltr",
+    format: "",
+    indent: 0,
+    textFormat: 0,
+    version: 1,
+    children: [buildTextNode(paragraph)],
+  };
+}
+
+/**
+ * `tag` and `listType` both have to be present, and they are read by two different pieces of code:
+ * the packaged JSX converter renders the element named by `tag`
+ * (@payloadcms/richtext-lexical, converters/list.js), while this repository's own `listitem`
+ * override keys off `listType === "bullet"` to swap the marker for the brand check icon
+ * (apps/cms/src/components/shared/RichText/index.tsx). Omitting either one renders nothing.
+ */
+function buildBulletListNode(bullets: string[]) {
+  return {
+    type: "list",
+    direction: "ltr",
+    format: "",
+    indent: 0,
+    version: 1,
+    listType: "bullet",
+    start: 1,
+    tag: "ul",
+    children: bullets.map((bullet, index) => ({
+      type: "listitem",
+      direction: "ltr",
+      format: "",
+      indent: 0,
+      version: 1,
+      value: index + 1,
+      children: [buildTextNode(bullet)],
+    })),
+  };
+}
+
+/**
+ * Body copy is read on a projector, in a room, by someone deciding whether to buy this. A section
+ * that arrives as one sixty-word paragraph gets skipped, so every claim here is either a paragraph
+ * of at most two sentences or a bullet list - and a list only where the items really are parallel,
+ * because bulleting a single argument reads worse than the paragraph did.
+ */
+function buildRichText(...parts: RichTextPart[]): LexicalRichTextState {
   return {
     root: {
       type: "root",
@@ -450,29 +514,15 @@ function buildParagraphRichText(paragraph: string): LexicalRichTextState {
       format: "",
       indent: 0,
       version: 1,
-      children: [
-        {
-          type: "paragraph",
-          direction: "ltr",
-          format: "",
-          indent: 0,
-          textFormat: 0,
-          version: 1,
-          children: [
-            {
-              type: "text",
-              detail: 0,
-              format: 0,
-              mode: "normal",
-              style: "",
-              text: paragraph,
-              version: 1,
-            },
-          ],
-        },
-      ],
+      children: parts.map((part) =>
+        "bullets" in part ? buildBulletListNode(part.bullets) : buildParagraphNode(part.paragraph)
+      ),
     },
   };
+}
+
+function buildParagraphRichText(paragraph: string): LexicalRichTextState {
+  return buildRichText({ paragraph });
 }
 
 interface SeedActionLink {
@@ -555,7 +605,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     items: [
       {
         value: "3,115",
-        label: "Passle items on your site, of roughly 3,800, counted from your sitemap",
+        label: "Passle items on your site, of roughly 3,800",
       },
       { value: "20", label: "Ingested into this demo" },
       { value: "17", label: "English services" },
@@ -573,8 +623,23 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     // articles arrive by themselves, and the list of them with their authors is the
     // evidence. The drawn version of this sat next to it and looked invented.
     image: illustrations["admin-insights-passle.png"] ?? defaultMediaId,
-    content: buildParagraphRichText(
-      "A post published in Passle sends its shortcode, and the platform pulls the article, matches the author to their profile by email address, and files it under the practice areas it belongs to. Nobody copies text, and re-sending the same shortcode updates the article in place instead of creating a second one."
+    // "files it under the practice areas it belongs to" until 2026-09-23: there is no practice-area
+    // or service field on the Insight collection, so nothing files anything. What the ingest really
+    // does is copy the author's markets onto the article
+    // (lib/passle/ingestInsightFromPassle.ts, `matchedPersonMarkets`), which is the claim the
+    // language-and-market section below then builds on.
+    content: buildRichText(
+      {
+        paragraph: "Nobody copies text. A post published in Passle arrives here on its own.",
+      },
+      {
+        bullets: [
+          "Passle sends the shortcode, and the platform pulls the article.",
+          "The author is matched to their profile by email address.",
+          "The article inherits the markets that author covers.",
+          "Re-sending the same shortcode updates the article in place, never creating a second one.",
+        ],
+      }
     ),
     actions: [buildAction("Open the synced article in the CMS", "/admin/collections/insight")],
     section: { theme: "light" },
@@ -587,8 +652,20 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
       "Your Japanese pages already use Japanese addresses. The platform treats that as normal.",
     layout: "text-image",
     image: illustrations["admin-pages-ja-locale.png"] ?? defaultMediaId,
-    content: buildParagraphRichText(
-      "/global-presence/asia/japan/ and /ja/世界展開/アジア/日本/ are the same document with a different address in each language, assembled from the address of every parent above it. Change a parent's address in one language and every page beneath it follows, in that language only."
+    // The two addresses were buried mid-sentence, which is where the whole claim lives. On their
+    // own lines a viewer sees them without being read to.
+    content: buildRichText(
+      {
+        paragraph:
+          "One document. One address per language, assembled from the address of every parent above it.",
+      },
+      {
+        bullets: ["English: /global-presence/asia/japan/", "Japanese: /ja/世界展開/アジア/日本/"],
+      },
+      {
+        paragraph:
+          "Change a parent's address in one language and every page beneath it follows, in that language only.",
+      }
     ),
     actions: [
       buildAction("Change a parent's address and watch the cascade", "/admin/collections/page"),
@@ -606,8 +683,18 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
       "French carries eight services. English carries seventeen. That is a decision, not a gap.",
     layout: "image-text",
     image: illustrations["admin-person-record.png"] ?? defaultMediaId,
-    content: buildParagraphRichText(
-      "Which languages a document exists in, and which markets it belongs to, are two separate fields, not one derived from the other. An article whose author covers none of its markets fails validation before it can be saved, and the message names both sides."
+    content: buildRichText(
+      {
+        paragraph:
+          "Which languages a document exists in, and which markets it belongs to, are two separate fields. Neither is derived from the other.",
+      },
+      {
+        bullets: [
+          "Markets are set on the article and on the person who wrote it.",
+          "An article whose author covers none of its markets will not save.",
+          "The error names both sides: the author's markets, and the article's.",
+        ],
+      }
     ),
     actions: [buildAction("See the market field on a person", "/admin/collections/person")],
     section: { theme: "light" },
@@ -619,8 +706,12 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     heading: "A translation arrives as a draft, addressed to a human.",
     layout: "image-text",
     image: illustrations["admin-review-queue.png"] ?? defaultMediaId,
-    content: buildParagraphRichText(
-      "Machine translation drafts the page and the review queue holds it until someone signs it off. For an IP practice that is the only acceptable order."
+    content: buildRichText(
+      {
+        paragraph:
+          "Machine translation drafts the page. The review queue holds it until someone signs it off.",
+      },
+      { paragraph: "For an IP practice, that is the only acceptable order." }
     ),
     actions: [
       buildAction("Open the review queue", "/admin/collections/page?where[_status][equals]=draft"),
@@ -632,15 +723,18 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     blockType: "cardsGrid",
     eyebrow: "Roles",
     heading: "Four accounts, and what each one can actually do.",
+    // What each account can do used to sit here, in one block, above four cards that carried only
+    // an email address. It now sits on the card it belongs to, so the reader matches capability to
+    // login without holding four of them in their head.
     description:
-      "An administrator who can do anything, including adding people to the platform. Two editors who create, edit and publish pages, people and insights. And a fee-earner, who can read everything and change nothing but their own account, because that is what several hundred of them need. Scoping an editor to their own markets and content types is a field on the user and a filter on the query, and it is specced rather than built into this sandbox.",
+      "Sign out and back in as any of them. Scoping an editor to their own markets and content types is specced, not built into this sandbox.",
     // Each card carries the account it belongs to, and the link signs the current user out,
     // because signing in as another role is the only way to see that role's admin. Four buttons
     // that all said "Sign in as this role" and all landed on the same /admin said nothing.
     items: [
       {
         title: "Administrator",
-        description: "administrator@example.com",
+        description: "Anything at all, including adding people · administrator@example.com",
         link: {
           ...buildAction("Sign out and use this account", "/admin/logout"),
           label: "Sign out and use this account",
@@ -648,7 +742,8 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
       },
       {
         title: "International digital and communications editor",
-        description: "international.editor@example.com",
+        description:
+          "Creates, edits and publishes pages, people and insights · international.editor@example.com",
         link: {
           ...buildAction("Sign out and use this account", "/admin/logout"),
           label: "Sign out and use this account",
@@ -656,7 +751,8 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
       },
       {
         title: "Local marketing and communications editor",
-        description: "local.editor@example.com",
+        description:
+          "Creates, edits and publishes pages, people and insights · local.editor@example.com",
         link: {
           ...buildAction("Sign out and use this account", "/admin/logout"),
           label: "Sign out and use this account",
@@ -664,7 +760,8 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
       },
       {
         title: "Fee-earner",
-        description: "fee.earner@example.com",
+        description:
+          "Reads everything, changes nothing but their own account · fee.earner@example.com",
         link: {
           ...buildAction("Sign out and use this account", "/admin/logout"),
           label: "Sign out and use this account",
@@ -683,8 +780,19 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     // platform's default media, so leaving it out put a screenshot on the one section that reads
     // as a footnote and repeated the hero's image on the same page.
     image: null,
-    content: buildParagraphRichText(
-      "The visual design is a speculative direction, not a proposal for your brand, and your brand agency's work replaces it. Passle runs against fixtures of your own published articles rather than your live tenancy, because we hold no credentials for it and a fresh demo tenancy would be empty. The layout reflows on a phone because every block here does, but nobody has designed the mobile experience: navigation behaviour, image crops and tap targets are unreviewed. That pass, article and profile detail pages, content migration and search are out of scope here and priced in the estimate."
+    // This section has no image, so its text runs the full container width - the one place on the
+    // page where a single paragraph became an unreadable slab. It is also the section that has to
+    // be read rather than skimmed past, which is why it is the one that had to become a list.
+    content: buildRichText(
+      { paragraph: "Everything above is real. Here is what this demo is not." },
+      {
+        bullets: [
+          "The visual design is a speculative direction, not a proposal for your brand. Your brand agency's work replaces it.",
+          "Passle runs against fixtures of your published articles, not your live tenancy. We hold no credentials for it, and a fresh demo tenancy would be empty.",
+          "The layout reflows on a phone, but nobody has designed the mobile experience. Navigation, image crops and tap targets are unreviewed.",
+          "Priced in the estimate, not built here: that mobile pass, article and profile detail pages, content migration, and search.",
+        ],
+      }
     ),
     section: { theme: "light" },
   };
@@ -743,8 +851,15 @@ function buildInsightsPageBlocks(illustrations: Record<string, number>, defaultM
     heading: "Twenty articles, none of them typed by hand",
     layout: "image-text",
     image: illustrations["admin-insights-passle.png"] ?? defaultMediaId,
-    content: buildParagraphRichText(
-      "Every article below arrived through the same webhook: a shortcode comes in from Passle, the platform fetches the post, matches its author to a person record by email address, and files the result here with its original publish date intact."
+    content: buildRichText(
+      { paragraph: "Every article below arrived through the same webhook." },
+      {
+        bullets: [
+          "A shortcode comes in from Passle, and the platform fetches the post.",
+          "The author is matched to a person record by email address.",
+          "The article is filed here with its original publish date intact.",
+        ],
+      }
     ),
     section: { theme: "light" },
   };
@@ -780,8 +895,21 @@ function buildOurPeoplePageBlocks(
     heading: "A person record is what makes an author real",
     layout: "text-image",
     image: illustrations["admin-person-record.png"] ?? defaultMediaId,
-    content: buildParagraphRichText(
-      "Twenty-one people are on file here, each with a name, a job title, an office and the markets they cover. When an article syncs from Passle, the ingest checks its author's email address against this list. A match links the article to a real profile; a miss leaves the author's email on the article for an editor to resolve by hand."
+    content: buildRichText(
+      {
+        paragraph:
+          "Twenty-one people are on file, each with a job title, an office and the markets they cover.",
+      },
+      {
+        paragraph:
+          "When an article syncs from Passle, the ingest checks its author's email address against this list.",
+      },
+      {
+        bullets: [
+          "A match links the article to a real profile.",
+          "A miss leaves the author's email on the article for an editor to resolve by hand.",
+        ],
+      }
     ),
     section: { theme: "light" },
   };
@@ -791,7 +919,7 @@ function buildOurPeoplePageBlocks(
     eyebrow: "Our people",
     heading: "Twenty-one profiles, matched by email",
     description:
-      "Twenty-one people on file. The webhook never creates one, it only matches an incoming author against them.",
+      "The webhook never creates a profile. It only matches an incoming author against the ones already here.",
     columns: 3,
     items: people.map((person) => ({
       alignVariant: "left" as const,
@@ -820,7 +948,10 @@ function buildServicesOverviewPageBlocks() {
         icon: "shield",
         title: "Patents",
         description: "Filing, prosecution and enforcement for inventions.",
-        link: { ...buildAction("View patents", "/services/patents"), label: "View patents" },
+        link: {
+          ...buildAction("View patents", "/services/patents"),
+          label: "View patents",
+        },
       },
       {
         icon: "target",
@@ -867,8 +998,15 @@ function buildPatentsPageBlocks(illustrations: Record<string, number>, defaultMe
     heading: "Protection for what your engineers have actually built",
     layout: "image-text",
     image: illustrations["admin-insights-passle.png"] ?? defaultMediaId,
-    content: buildParagraphRichText(
-      "Patent work here runs from a first filing through prosecution to enforcement, across the offices that handle technical subject matter. The articles below are the firm's own published commentary, pulled in from Passle."
+    content: buildRichText(
+      {
+        paragraph:
+          "Patent work runs from first filing through prosecution to enforcement. It happens in the offices that handle technical subject matter.",
+      },
+      {
+        paragraph:
+          "The articles below are the firm's own published commentary, pulled in from Passle.",
+      }
     ),
     section: { theme: "light" },
   };
@@ -889,14 +1027,29 @@ function buildPatentsPageBlocks(illustrations: Record<string, number>, defaultMe
     items: [
       {
         question: "Is a patent attorney available in every market this page publishes to?",
-        answer: buildParagraphRichText(
-          "Attorneys are on file for the UK/Europe, Greater China, South East Asia and Canada markets. Nobody is currently recorded against the Japan market, so a market-scoped view of this page would have no one to route a Japanese enquiry to until that gap is closed."
+        answer: buildRichText(
+          {
+            paragraph: "No. Attorneys are on file for four of the nine markets:",
+          },
+          {
+            bullets: ["UK/Europe", "Greater China", "South East Asia", "Canada"],
+          },
+          {
+            paragraph:
+              "Nobody is recorded against Japan. A market-scoped view here would have no one to route a Japanese enquiry to until that gap is closed.",
+          }
         ),
       },
       {
         question: "What happens when an article's author is not in the CMS?",
-        answer: buildParagraphRichText(
-          "The article still publishes, and the platform records the author's email address on it so an editor can link the right profile by hand. One of the twenty articles here is deliberately in that state."
+        answer: buildRichText(
+          {
+            paragraph:
+              "The article still publishes. The platform records the author's email address on it, for an editor to link by hand.",
+          },
+          {
+            paragraph: "One of the twenty articles here is deliberately in that state.",
+          }
         ),
       },
     ],
@@ -928,8 +1081,15 @@ function buildTradeMarksPageBlocks(illustrations: Record<string, number>, defaul
     heading: "Brand identity, registered and defended",
     layout: "text-image",
     image: illustrations["admin-person-record.png"] ?? defaultMediaId,
-    content: buildParagraphRichText(
-      "Trade mark work covers clearance, filing, portfolio management and enforcement, in whichever of the firm's nine markets a brand needs protecting. Markets are a separate field from language, shown here on a person record. The articles below are the firm's own published commentary."
+    content: buildRichText(
+      {
+        paragraph:
+          "Trade mark work covers clearance, filing, portfolio management and enforcement. It runs in whichever of the nine markets a brand needs protecting.",
+      },
+      {
+        paragraph:
+          "Markets are a separate field from language, shown here on a person record. The articles below are the firm's own published commentary.",
+      }
     ),
     section: { theme: "light" },
   };
@@ -949,8 +1109,14 @@ function buildGlobalPresencePageBlocks(defaultMediaId: number) {
     heading: "Nine markets, and six languages of which three are written here",
     layout: "image-text",
     image: defaultMediaId,
-    content: buildParagraphRichText(
-      "The address structure below moves from continent to country to office. Changing a page's address at any level cascades to every child address beneath it, in that language only."
+    content: buildRichText(
+      {
+        paragraph: "The address structure below moves from continent to country to office.",
+      },
+      {
+        paragraph:
+          "Change a page's address at any level and every child address follows, in that language only.",
+      }
     ),
     section: { theme: "light" },
   };
@@ -994,8 +1160,16 @@ function buildTokyoOfficePageBlocks(defaultMediaId: number) {
     heading: "Tokyo",
     layout: "text-image",
     image: defaultMediaId,
-    content: buildParagraphRichText(
-      "The Tokyo office is the deepest page in this address tree, reached through Global presence, Asia and Japan in English, and through the French and Japanese names of those same three documents in the other two languages. It is one document with three addresses, not three pages."
+    content: buildRichText(
+      { paragraph: "One document with three addresses, not three pages." },
+      {
+        paragraph:
+          "This is the deepest page in the address tree. In English you reach it through Global presence, Asia and Japan.",
+      },
+      {
+        paragraph:
+          "In French and Japanese those same three documents carry their own names, so only the address changes.",
+      }
     ),
     section: { theme: "light" },
   };
@@ -1278,10 +1452,13 @@ function buildDemoPresets(
         eyebrow: "Demo preset",
         title: "A rebrand that keeps every market in sync",
         richText: buildParagraphRichText(
-          "Patents, trade marks, and every regional office share one content model, so a rebrand rolls out to nine markets at once instead of nine separate projects."
+          "Patents, trade marks and every regional office share one content model. A rebrand rolls out to nine markets at once, not as nine separate projects."
         ),
         actions: [buildAction("View services", "/services", "default")],
-        image: { image: mediaIdByFilename["one-document-six-addresses.svg"], aspectRatio: "16/9" },
+        image: {
+          image: mediaIdByFilename["one-document-six-addresses.svg"],
+          aspectRatio: "16/9",
+        },
         section: { theme: "light" },
       },
     },
@@ -1295,7 +1472,7 @@ function buildDemoPresets(
         layout: "image-text",
         image: mediaIdByFilename["preview-content.png"],
         content: buildParagraphRichText(
-          "Every page carries an English, French, and Japanese version from the same record, so a slug change or a parent rename cascades to all three without a separate translation project."
+          "Every page carries an English, French and Japanese version from the same record. A slug change or a parent rename cascades to all three, with no separate translation project."
         ),
         actions: [buildAction("View global presence", "/global-presence", "outline")],
         section: { theme: "light" },
@@ -1409,7 +1586,12 @@ function buildDemoPresets(
         items: [
           {
             image: { image: mediaIdByFilename["preview-logos.png"] },
-            link: { type: "custom", newTab: false, url: "/global-presence", label: "Tokyo office" },
+            link: {
+              type: "custom",
+              newTab: false,
+              url: "/global-presence",
+              label: "Tokyo office",
+            },
           },
           {
             image: { image: mediaIdByFilename["preview-logos.png"] },
@@ -1623,13 +1805,21 @@ async function seedNavigation(
             {
               label: navigation[2].label,
               links: navigation.slice(2).map((item) => ({
-                link: { type: "custom" as const, url: item.url, label: item.label },
+                link: {
+                  type: "custom" as const,
+                  url: item.url,
+                  label: item.label,
+                },
               })),
             },
             {
               label: navigation[0].label,
               links: navigation.slice(0, 2).map((item) => ({
-                link: { type: "custom" as const, url: item.url, label: item.label },
+                link: {
+                  type: "custom" as const,
+                  url: item.url,
+                  label: item.label,
+                },
               })),
             },
           ],
@@ -1691,7 +1881,11 @@ export async function POST(request: Request) {
           // Replacing rather than updating, because an update keeps the stored object and Payload
           // renames the incoming file around it: the third upload of the same screenshot became
           // admin-insight-list-2.png and left two stale copies in the media library.
-          await payload.delete({ collection: "media", id: existingDoc.id, overrideAccess: true });
+          await payload.delete({
+            collection: "media",
+            id: existingDoc.id,
+            overrideAccess: true,
+          });
 
           const replacedMedia = await payload.create({
             collection: "media",
@@ -1759,7 +1953,12 @@ export async function POST(request: Request) {
     // with "Image invalid" and never names the id, so confirm the row exists before trusting it.
     if (defaultMediaId) {
       const existing = await payload
-        .findByID({ collection: "media", id: defaultMediaId, depth: 0, overrideAccess: true })
+        .findByID({
+          collection: "media",
+          id: defaultMediaId,
+          depth: 0,
+          overrideAccess: true,
+        })
         .catch(() => null);
       if (!existing) {
         defaultMediaId = null;
@@ -1794,7 +1993,11 @@ export async function POST(request: Request) {
     await seedInsightsFromFixtures(payload);
 
     const seededPeople = (
-      await payload.find({ collection: "person", limit: 100, overrideAccess: true })
+      await payload.find({
+        collection: "person",
+        limit: 100,
+        overrideAccess: true,
+      })
     ).docs;
 
     const deletedPages = await payload.delete({
@@ -1892,9 +2095,15 @@ export async function POST(request: Request) {
             // Written rather than generated, and per locale, because the generator produced the
             // same four openings across every page.
             meta: localizedHome
-              ? { title: localizedHome.heroTitle, description: localizedHome.heroBody }
+              ? {
+                  title: localizedHome.heroTitle,
+                  description: localizedHome.heroBody,
+                }
               : localizedBody
-                ? { title: localizedBody.heading, description: localizedBody.body }
+                ? {
+                    title: localizedBody.heading,
+                    description: localizedBody.body,
+                  }
                 : {
                     title: PAGE_META_EN[spec.key]?.title ?? text.title,
                     description: PAGE_META_EN[spec.key]?.description ?? "",
@@ -1956,7 +2165,10 @@ export async function POST(request: Request) {
                     // grid's heading, and carrying it at all would put English question and
                     // answer text on a French page.
                     ...(localizedListingHeader
-                      ? blocks.slice(1, 2).map((block) => ({ ...block, ...localizedListingHeader }))
+                      ? blocks.slice(1, 2).map((block) => ({
+                          ...block,
+                          ...localizedListingHeader,
+                        }))
                       : []),
                   ],
                 }
@@ -2063,7 +2275,11 @@ export async function POST(request: Request) {
 
     const SITE_SEO_BY_LOCALE: Record<
       LocaleCode,
-      { description: string; notFoundTitle: string; notFoundDescription: string }
+      {
+        description: string;
+        notFoundTitle: string;
+        notFoundDescription: string;
+      }
     > = {
       en: {
         description:
@@ -2177,7 +2393,12 @@ export async function POST(request: Request) {
       await payload.create({
         collection: "users",
         overrideAccess: true,
-        data: { name: persona.name, email: persona.email, role: persona.role, password },
+        data: {
+          name: persona.name,
+          email: persona.email,
+          role: persona.role,
+          password,
+        },
       });
       usersCreatedCount += 1;
     }
@@ -2201,7 +2422,11 @@ export async function POST(request: Request) {
           collection: "users",
           id: existingScreenshotDoc.id,
           overrideAccess: true,
-          data: { name: "Screenshot", role: "admin", password: screenshotPassword },
+          data: {
+            name: "Screenshot",
+            role: "admin",
+            password: screenshotPassword,
+          },
         });
         usersUpdatedCount += 1;
       } else {
@@ -2321,7 +2546,11 @@ export async function POST(request: Request) {
       // bare "Failed query" with no field name. Skipping it keeps the reset working; the count in
       // the response is what actually went.
       try {
-        await payload.delete({ collection: "media", id: doc.id, overrideAccess: true });
+        await payload.delete({
+          collection: "media",
+          id: doc.id,
+          overrideAccess: true,
+        });
         mediaDeletedCount += 1;
       } catch {
         continue;

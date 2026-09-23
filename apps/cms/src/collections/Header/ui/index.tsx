@@ -17,7 +17,7 @@ export function Header({ brand, navItems, actions, className }: IHeaderProps) {
     <header
       className={cn("sticky left-0 top-0 z-[100] border-b border-border bg-background", className)}
     >
-      <div className="mx-auto flex max-w-containerMaxW items-center justify-between gap-6 px-containerBase py-[15px]">
+      <div className="mx-auto flex max-w-container items-center justify-between gap-6 px-4 py-[15px] md:px-8">
         <Brand brand={brand} />
         <DesktopNav navItems={navItems} />
         <div className="flex items-center gap-2.5">

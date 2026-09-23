@@ -20,6 +20,18 @@
     --color-brand-900: rgb(102 0 36);
     --color-brand-950: rgb(71 0 25);
 
+    /* The hero band and every other "brand tint" surface. Untitled UI points these at brand-50,
+     * which at #E20050 is a strong pink across a full-width band. Softened to a warm near-white
+     * that still separates the section from the ones around it. The pink itself is untouched:
+     * it stays full strength on the badge, the buttons, the eyebrows and the stat numbers. */
+    --color-utility-brand-50: rgb(252 247 248);
+    --color-utility-brand-50_alt: rgb(252 247 248);
+
+    /* Their hero sets the heading to brand-primary, which on this ramp is a dark maroon. A
+     * heading is not a brand accent - it is text. */
+    --color-text-brand-primary: rgb(21 23 27);
+    --color-text-brand-secondary: rgb(199 0 70);
+
     /* A 140-year-old patent firm reads wrong in Inter alone. Display goes serif, body stays
      * a grotesque, and the mono is only used for eyebrows. All three are already self-hosted
      * by next/font/local in the [locale] layout. */

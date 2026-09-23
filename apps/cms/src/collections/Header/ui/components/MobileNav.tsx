@@ -64,7 +64,7 @@ export function MobileNav({ navItems, actions }: MobileNavProps) {
       <div
         id={panelId}
         className={cn(
-          "absolute left-0 top-full w-full bg-background px-containerBase overflow-hidden border-border border-t transition-[max-height,padding] duration-300 ease-out motion-reduce:transition-none min-[860px]:hidden",
+          "absolute left-0 top-full w-full bg-background px-4 md:px-8 overflow-hidden border-border border-t transition-[max-height,padding] duration-300 ease-out motion-reduce:transition-none min-[860px]:hidden",
           open ? "max-h-[60vh]" : "max-h-0"
         )}
       >
