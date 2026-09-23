@@ -89,14 +89,16 @@ async function generateSitemap(): Promise<Sitemap> {
           });
         });
 
-        const blogLastModified = getLastModifiedDate(posts[0]?.publishedAt) || new Date();
-
-        sitemap.push({
-          changeFrequency,
-          lastModified: blogLastModified,
-          priority: 0.9,
-          url: buildUrl({ collection: "posts", locale }),
-        });
+        // The blog index is listed only when a post exists. This demo seeds none, and six locales
+        // of an empty /blog in the sitemap is the fork base advertising itself to anyone who looks.
+        if (posts.length > 0) {
+          sitemap.push({
+            changeFrequency,
+            lastModified: getLastModifiedDate(posts[0]?.publishedAt) || new Date(),
+            priority: 0.9,
+            url: buildUrl({ collection: "posts", locale }),
+          });
+        }
 
         posts.forEach((post) => {
           sitemap.push({
