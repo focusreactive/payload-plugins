@@ -561,9 +561,9 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
   const roles: CardsGridBlock = {
     blockType: "cardsGrid",
     eyebrow: "Roles",
-    heading: "What someone sees is what their job needs, and nothing else.",
+    heading: "Four accounts, and what each one can actually do.",
     description:
-      "An administrator, an international digital and communications editor who publishes anywhere, a local marketing and communications editor limited to their own markets and content types, and a fee-earner whose only task here is submitting a change to their own profile.",
+      "An administrator who can do anything, including adding people to the platform. Two editors who create, edit and publish pages, people and insights. And a fee-earner, who can read everything and change nothing but their own account, because that is what several hundred of them need. Scoping an editor to their own markets and content types is a field on the user and a filter on the query, and it is specced rather than built into this sandbox.",
     // Each card carries the account it belongs to, and the link signs the current user out,
     // because signing in as another role is the only way to see that role's admin. Four buttons
     // that all said "Sign in as this role" and all landed on the same /admin said nothing.

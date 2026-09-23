@@ -5,7 +5,7 @@ import { authenticated, onlySelf, or, superAdmin, user } from "@/lib/access";
 export const Users: CollectionConfig<"users"> = {
   access: {
     admin: authenticated,
-    create: or(superAdmin, user),
+    create: superAdmin,
     delete: ({ req: { user }, id }) => {
       if (!user) {
         return false;

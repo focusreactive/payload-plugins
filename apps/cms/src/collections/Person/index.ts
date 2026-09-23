@@ -1,14 +1,14 @@
 import type { CollectionConfig } from "payload";
 
-import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { anyone, editorial } from "@/lib/access";
 import { marketsField } from "@/lib/fields/marketsField";
 
 export const Person: CollectionConfig<"person"> = {
   access: {
-    create: or(superAdmin, user, author),
-    delete: or(superAdmin, user, author),
+    create: editorial,
+    delete: editorial,
     read: anyone,
-    update: or(superAdmin, user, author),
+    update: editorial,
   },
   admin: {
     defaultColumns: ["name", "jobTitle", "office", "email", "updatedAt"],

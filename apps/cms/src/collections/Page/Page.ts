@@ -2,7 +2,7 @@ import { createParentField, createBreadcrumbsField } from "@payloadcms/plugin-ne
 import type { CollectionConfig } from "payload";
 
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
-import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { anyone, editorial } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
@@ -17,10 +17,10 @@ import { validateReservedSlug, validateReservedPath } from "./hooks/validateRese
 
 export const Page: CollectionConfig<"page"> = {
   access: {
-    create: or(superAdmin, user, author),
-    delete: or(superAdmin, user, author),
+    create: editorial,
+    delete: editorial,
     read: anyone,
-    update: or(superAdmin, user, author),
+    update: editorial,
   },
   admin: {
     components: {
