@@ -166,12 +166,12 @@ const LOCALIZED_PAGE_BODY: Record<
     fr: {
       eyebrow: "Échelon continental",
       heading: "Asie",
-      body: "Deuxième niveau de l’URL. Le bureau de Tokyo se trouve deux niveaux plus bas.",
+      body: "Deuxième niveau de l’URL. Tokyo se trouve deux niveaux plus bas.",
     },
     ja: {
       eyebrow: "大陸階層",
       heading: "アジア",
-      body: "URLの第2階層です。東京オフィスは、ここから2階層下にあります。",
+      body: "URLの第2階層です。東京は、ここから2階層下にあります。",
     },
   },
   japan: {
@@ -189,12 +189,12 @@ const LOCALIZED_PAGE_BODY: Record<
   "tokyo-office": {
     fr: {
       eyebrow: "Échelon local",
-      heading: "Bureau de Tokyo",
+      heading: "Tokyo",
       body: "Quatrième et dernier niveau. Son URL française se compose des segments de toutes les pages parentes qui la précèdent.",
     },
     ja: {
       eyebrow: "拠点階層",
-      heading: "東京オフィス",
+      heading: "東京",
       body: "最下層です。日本語のアドレスは、上位のすべての階層から組み立てられます。",
     },
   },
@@ -244,7 +244,7 @@ const PAGE_META_EN: Record<string, { title: string; description: string }> = {
   },
   asia: {
     title: "Asia",
-    description: "The continent level of the address, with Japan and the Tokyo office beneath it.",
+    description: "The continent level of the address, with Japan and Tokyo beneath it.",
   },
   japan: {
     title: "Japan",
@@ -252,7 +252,7 @@ const PAGE_META_EN: Record<string, { title: string; description: string }> = {
       "The country level. Change its address in one language and every address beneath it follows, in that language only.",
   },
   "tokyo-office": {
-    title: "Tokyo office",
+    title: "Tokyo",
     description:
       "The deepest level of the address tree, reached through Global presence, Asia and Japan in English and through 世界展開, アジア and 日本 in Japanese.",
   },
@@ -327,9 +327,9 @@ const PAGE_TREE: PageSpec[] = [
   {
     key: "tokyo-office",
     parentKey: "japan",
-    en: { title: "Tokyo office", slug: "tokyo-office" },
-    fr: { title: "Bureau de Tokyo", slug: "bureau-de-tokyo" },
-    ja: { title: "東京オフィス", slug: "東京オフィス" },
+    en: { title: "Tokyo", slug: "tokyo" },
+    fr: { title: "Tokyo", slug: "tokyo" },
+    ja: { title: "東京", slug: "東京" },
   },
 ];
 
@@ -1145,7 +1145,7 @@ function buildAsiaPageBlocks(defaultMediaId: number) {
     layout: "text-image",
     image: defaultMediaId,
     content: buildParagraphRichText(
-      "Asia is the second segment of the address. One office sits beneath it in this demo, Tokyo, two levels down through Japan."
+      "Asia is the second segment of the address. One more level sits beneath it in this demo, Tokyo, reached through Japan."
     ),
     section: { theme: "light" },
   };
@@ -1170,7 +1170,7 @@ function buildJapanPageBlocks(defaultMediaId: number) {
 function buildTokyoOfficePageBlocks(defaultMediaId: number) {
   const intro: ContentBlock = {
     blockType: "content",
-    eyebrow: "Tokyo office",
+    eyebrow: "Client liaison",
     heading: "Tokyo",
     layout: "text-image",
     image: defaultMediaId,
@@ -1191,7 +1191,7 @@ function buildTokyoOfficePageBlocks(defaultMediaId: number) {
   const details: StatsBlock = {
     blockType: "stats",
     items: [
-      { value: "Tokyo", label: "Office" },
+      { value: "Client liaison", label: "Presence in Japan" },
       { value: "Japan", label: "Market" },
       { value: "3", label: "Languages this page exists in" },
     ],
@@ -1571,7 +1571,7 @@ function buildDemoPresets(
           {
             image: { image: mediaIdByFilename["preview-carusel.png"] },
             text: buildParagraphRichText(
-              "Tokyo office launch, translated into Japanese from the same page tree."
+              "A Japan practice update, translated into Japanese from the same page tree."
             ),
           },
           {
@@ -1604,7 +1604,7 @@ function buildDemoPresets(
               type: "custom",
               newTab: false,
               url: "/global-presence",
-              label: "Tokyo office",
+              label: "Global presence",
             },
           },
           {
