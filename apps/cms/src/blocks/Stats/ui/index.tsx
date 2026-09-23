@@ -17,7 +17,14 @@ export function Stats({ items }: StatsProps) {
       {items.map((item, index) => (
         <div key={index} className="flex flex-1 flex-col-reverse justify-end gap-3 text-center">
           <dt className="text-lg font-semibold text-balance text-primary">{item.label}</dt>
-          <dd className="text-display-lg font-semibold text-brand-tertiary_alt md:text-display-xl">
+          <dd
+            className={
+              /\d/u.test(item.value)
+                ? "text-display-lg font-semibold text-brand-tertiary_alt md:text-display-xl"
+                : // A word at display-xl wraps and dwarfs the figures beside it.
+                  "text-display-sm font-semibold text-brand-tertiary_alt md:text-display-md"
+            }
+          >
             <AnimatedStatValue value={item.value} />
           </dd>
         </div>

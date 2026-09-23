@@ -75,11 +75,11 @@ export function ScreenshotViewer({ children, caption }: ScreenshotViewerProps) {
 
       {isOpen &&
         // Portalled to body: a section ancestor with a transform turns `fixed` into
-        // positioned-to-that-section, which clipped the overlay. z-90 sits under the sticky
-        // header (z-100) so the site chrome stays visible while the image is open.
+        // positioned-to-that-section, which clipped the overlay. z-[1000] puts it above the
+        // sticky header, so the image gets the whole viewport.
         createPortal(
           <div
-            className="fixed inset-0 z-90 flex cursor-zoom-out flex-col items-center justify-center gap-4 bg-black/80 px-4 pt-32 pb-6 backdrop-blur-sm md:px-10 md:pb-10"
+            className="fixed inset-0 z-[1000] flex cursor-zoom-out flex-col items-center justify-center gap-3 bg-black/85 px-4 pt-16 pb-4 backdrop-blur-sm md:px-8 md:pb-6"
             onClick={close}
             role="dialog"
             aria-modal="true"
@@ -89,14 +89,14 @@ export function ScreenshotViewer({ children, caption }: ScreenshotViewerProps) {
               type="button"
               onClick={close}
               aria-label="Close"
-              className="absolute top-[78px] right-4 z-20 flex size-10 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white ring-1 ring-white/20 transition hover:bg-white/20 md:right-8"
+              className="absolute top-3 right-3 z-20 flex size-10 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white ring-1 ring-white/20 transition hover:bg-white/20 md:right-8"
             >
               <XClose className="size-5" />
             </button>
             <div
               // An explicit height, because the child is a `fill` image: it positions against this
               // box, so max-h-full alone leaves it zero-high and only the caption renders.
-              className="relative h-[calc(100vh-13rem)] w-full max-w-[1600px] overflow-hidden rounded-lg bg-white shadow-2xl"
+              className="relative h-[calc(100dvh-7.5rem)] w-full max-w-[1800px] overflow-hidden rounded-lg bg-white shadow-2xl"
               onClick={(event) => event.stopPropagation()}
             >
               {children}

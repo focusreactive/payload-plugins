@@ -11,7 +11,9 @@ import { useEffect, useRef, useState } from "react";
  * surrounds it is preserved verbatim. A value with no digits renders untouched.
  */
 export function AnimatedStatValue({ value }: { value: string }) {
-  const match = value.match(/^(\D*)([\d,.\s]+)(.*)$/u);
+  // The numeric run must start and end on a digit. The old pattern accepted a lone space as the
+  // number, so "Client liaison" parsed as 0 and rendered with a stray trailing zero.
+  const match = value.match(/^(\D*)(\d(?:[\d,.\s]*\d)?)(.*)$/u);
   const target = match ? Number(match[2].replace(/[^\d]/gu, "")) : NaN;
   // French seeds "3 115" with a narrow no-break space, English "3,115" with a comma. Reuse
   // whichever the source used, or the count reformats itself into the wrong locale mid-animation.
