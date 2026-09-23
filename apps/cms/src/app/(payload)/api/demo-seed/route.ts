@@ -1174,13 +1174,13 @@ function buildJapanPageBlocks(defaultMediaId: number) {
   return [intro];
 }
 
-function buildTokyoOfficePageBlocks(defaultMediaId: number) {
+function buildTokyoOfficePageBlocks(defaultMediaId: number, illustrations: Record<string, number>) {
   const intro: ContentBlock = {
     blockType: "content",
     eyebrow: "Client liaison",
     heading: "Tokyo",
     layout: "text-image",
-    image: defaultMediaId,
+    image: illustrations["admin-tokyo-ja.png"] ?? defaultMediaId,
     content: buildRichText(
       { paragraph: "One document with three addresses, not three pages." },
       {
@@ -1246,6 +1246,12 @@ function buildDemoMedia(): DemoMediaSpec[] {
       data: readFileSync(
         path.join(process.cwd(), "public", "demo-screens", "admin-pages-french.png")
       ),
+    },
+    {
+      filename: "admin-tokyo-ja.png",
+      alt: "The Tokyo page open in the CMS in Japanese, with the live preview showing its Japanese address",
+      mimetype: "image/png",
+      data: readFileSync(path.join(process.cwd(), "public", "demo-screens", "admin-tokyo-ja.png")),
     },
     {
       filename: "admin-page-tree.png",
@@ -1972,6 +1978,7 @@ export async function POST(request: Request) {
       "admin-insights-passle.png": mediaIdByFilename["admin-insights-passle.png"],
       "admin-pages-ja-locale.png": mediaIdByFilename["admin-pages-ja-locale.png"],
       "admin-pages-french.png": mediaIdByFilename["admin-pages-french.png"],
+      "admin-tokyo-ja.png": mediaIdByFilename["admin-tokyo-ja.png"],
     };
 
     const platformDefaultMediaId = mediaIdByFilename["admin-page-tree.png"];
@@ -2079,7 +2086,7 @@ export async function POST(request: Request) {
           case "japan":
             return buildJapanPageBlocks(defaultMediaNumericId);
           case "tokyo-office":
-            return buildTokyoOfficePageBlocks(defaultMediaNumericId);
+            return buildTokyoOfficePageBlocks(defaultMediaNumericId, illustrationIds);
           default:
             return buildStructuralBlocks(spec.en.title, defaultMediaNumericId);
         }
@@ -2193,9 +2200,12 @@ export async function POST(request: Request) {
                       layout: "text-image" as const,
                       // A page arguing that its address is localized, next to a screenshot of the
                       // English admin, argues against itself: each locale gets its own capture.
-                      image: (locale === "ja"
-                        ? (illustrationIds["admin-pages-ja-locale.png"] ?? defaultMediaId)
-                        : (illustrationIds["admin-pages-french.png"] ?? defaultMediaId)) as number,
+                      image: (spec.key === "tokyo-office"
+                        ? (illustrationIds["admin-tokyo-ja.png"] ?? defaultMediaId)
+                        : locale === "ja"
+                          ? (illustrationIds["admin-pages-ja-locale.png"] ?? defaultMediaId)
+                          : (illustrationIds["admin-pages-french.png"] ??
+                            defaultMediaId)) as number,
                       content: buildParagraphRichText(localizedBody.body),
                       section: { theme: "light" as const },
                     },
