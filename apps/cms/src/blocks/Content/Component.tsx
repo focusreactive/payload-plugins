@@ -33,7 +33,10 @@ export const ContentBlockComponent: React.FC<ContentBlockProps & { isFirstBlock?
             <Media
               {...media.data}
               className="absolute inset-0"
-              imageProps={{ ...media.imageProps, className: "object-cover", fill: true }}
+              // contain, not cover: every image in this demo is a product screenshot, and the grid
+              // row stretches the container past its 4:3 so cover shaves the left edge off a
+              // window chrome. Letterboxing is invisible against the page background.
+              imageProps={{ ...media.imageProps, className: "object-contain", fill: true }}
               visualEditing={media.visualEditing}
             />
           ) : null
