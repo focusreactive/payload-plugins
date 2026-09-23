@@ -46,3 +46,12 @@ export type { PathMap } from "./pathMap";
 // Static params (route generation)
 export { getMainSitePageStaticParams } from "./staticParams/pages";
 export { getBlogPostStaticParams } from "./staticParams/posts";
+
+// Article and person addresses under their listing pages
+export {
+  getInsightHref,
+  getPersonHref,
+  personSlug,
+  resolveListingDetail,
+} from "./getListingRoutes";
+export type { ListingDetail } from "./getListingRoutes";

@@ -10,6 +10,7 @@ import { revalidatePathMap } from "@/dal/pathMap";
 import { seedInsightsFromFixtures, seedPeopleRecords } from "@/scripts/seedPassleInsights";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { passleFixturesByShortcode } from "@/lib/passle/fixtures";
+import { personSlug } from "@/lib/dal/getListingRoutes";
 import { translatedInsight102o1qk } from "@/lib/passle/translations/102o1qk";
 import type { PasslePostPayload } from "@/lib/passle/types";
 import type {
@@ -653,7 +654,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
       buildAction("Open the CMS", "/admin", "accent"),
       buildAction(
         "See an article that arrived from Passle",
-        "/admin/collections/insight",
+        "/insights/takeaways-from-uc-berkeley-law-ai-institute",
         "outline"
       ),
     ],
@@ -1020,6 +1021,12 @@ function buildOurPeoplePageBlocks(
       backgroundColor: "light-gray" as const,
       title: person.name,
       description: person.jobTitle,
+      link: {
+        type: "custom" as const,
+        url: `/our-people/${personSlug(person)}`,
+        label: person.name,
+        newTab: false,
+      },
     })),
     section: { theme: "light" },
   };
@@ -2054,7 +2061,11 @@ export async function POST(request: Request) {
                               buildAction(localizedHome.primaryAction, "/admin", "accent"),
                               buildAction(
                                 localizedHome.secondaryAction,
-                                "/admin/collections/insight",
+                                // The one article translated into both languages, at its own
+                                // localised address.
+                                locale === "fr"
+                                  ? "/fr/actualites/enseignements-ai-institute-uc-berkeley-law"
+                                  : "/ja/インサイト/ucバークレー-ai-institute-からの学び",
                                 "outline"
                               ),
                             ],
@@ -2100,6 +2111,24 @@ export async function POST(request: Request) {
                               ...localizedListingHeader,
                               // No fallback: a French or Japanese reader sees only the articles that
                               // exist in their language, never the English titles under a local heading.
+                              // Profile links follow the page's language, or a French reader
+                              // clicking a person lands on the English address.
+                              ...(spec.key === "our-people" && (locale === "fr" || locale === "ja")
+                                ? {
+                                    items: seededPeople.map((person) => ({
+                                      alignVariant: "center" as const,
+                                      backgroundColor: "light-gray" as const,
+                                      title: person.name,
+                                      description: person.jobTitle,
+                                      link: {
+                                        type: "custom" as const,
+                                        url: `${locale === "fr" ? "/fr/notre-equipe" : "/ja/専門家"}/${personSlug(person)}`,
+                                        label: person.name,
+                                        newTab: false,
+                                      },
+                                    })),
+                                  }
+                                : {}),
                               // The insights list filters to this language itself.
                               ...(spec.key === "insights" && (locale === "fr" || locale === "ja")
                                 ? { description: TRANSLATED_INSIGHTS_NOTE[locale] }

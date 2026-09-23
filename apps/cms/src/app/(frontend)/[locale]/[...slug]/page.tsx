@@ -13,6 +13,8 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ChildPages } from "@/components/ChildPages";
 import type { Locale } from "@/lib/types";
 import { getPageBySlug } from "@/dal/getPageBySlug";
+import { resolveListingDetail } from "@/dal/getListingRoutes";
+import { InsightDetail, PersonDetail } from "@/components/demo/articles/detailViews";
 import { getMainSitePageStaticParams } from "@/dal/staticParams/pages";
 import { PayloadRedirects } from "@/components/PayloadRedirects";
 import { redirect } from "@/lib/i18n/navigation";
@@ -39,6 +41,27 @@ export default async function Page({ params }: Args) {
   const { isEnabled: draft } = await draftMode();
 
   if (!page) {
+    // Articles and people have no page documents; their addresses sit under the listing page.
+    const detail = await resolveListingDetail(decodedSegments, locale);
+    const listingPage = detail ? await getPageBySlug(decodedSegments.slice(0, -1), locale) : null;
+    if (detail && listingPage) {
+      const listingHref = listingPage.breadcrumbs?.at(-1)?.url
+        ? `${locale === "en" ? "" : `/${locale}`}${listingPage.breadcrumbs.at(-1)!.url}`
+        : null;
+      return (
+        <>
+          <Header data={listingPage.header as HeaderType} />
+          <main>
+            {detail.kind === "insight" ? (
+              <InsightDetail insight={detail.insight} locale={locale} listingHref={listingHref} />
+            ) : (
+              <PersonDetail person={detail.person} locale={locale} listingHref={listingHref} />
+            )}
+          </main>
+          <Footer data={listingPage.footer as FooterType} />
+        </>
+      );
+    }
     return <PayloadRedirects url={url} locale={locale} />;
   }
 
@@ -79,7 +102,21 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   const page = await getPageBySlug(decodedSegments, locale);
 
   if (!page) {
-    return generateNotFoundMeta({ locale });
+    const detail = await resolveListingDetail(decodedSegments, locale);
+    if (!detail) return generateNotFoundMeta({ locale });
+    const title = detail.kind === "insight" ? detail.insight.title : detail.person.name;
+    const description =
+      detail.kind === "insight"
+        ? (detail.insight.standfirst ?? undefined)
+        : [detail.person.jobTitle, detail.person.office].filter(Boolean).join(" · ") || undefined;
+    // hreflang only for languages this article really exists in; the language switcher reads
+    // these links to decide which languages to offer.
+    return {
+      title: `${title} | Marks & Clerk`,
+      description,
+      robots: { index: false, follow: false },
+      alternates: { languages: detail.alternates },
+    };
   }
 
   return generateMeta({

@@ -32,7 +32,7 @@ export default function DefaultCard({
   // back to initials.
   if (_backgroundColor === "light-gray" && !credential) {
     return (
-      <div className="flex h-full flex-col items-center gap-5 bg-surface-raised px-6 py-6 ring-1 ring-secondary_alt">
+      <div className="relative flex h-full flex-col items-center gap-5 bg-surface-raised px-6 py-6 ring-1 ring-secondary_alt transition hover:ring-brand">
         <Avatar
           border
           initials={title ? initialsOf(title) : undefined}
@@ -40,7 +40,18 @@ export default function DefaultCard({
           size="2xl"
         />
         <div className="text-center">
-          {title && <h3 className="text-lg font-semibold text-primary">{title}</h3>}
+          {title && (
+            <h3 className="text-lg font-semibold text-primary">
+              {link?.href ? (
+                // The whole card is the click target, so a directory of 21 reads as 21 links.
+                <a href={link.href} className="after:absolute after:inset-0 hover:underline">
+                  {title}
+                </a>
+              ) : (
+                title
+              )}
+            </h3>
+          )}
           {description && <p className="text-md text-pretty text-brand-secondary">{description}</p>}
         </div>
       </div>

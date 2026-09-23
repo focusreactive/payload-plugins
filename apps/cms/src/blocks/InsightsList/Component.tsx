@@ -2,7 +2,7 @@ import type { Where } from "payload";
 
 import { SectionContainer } from "@/components/shared";
 import { MARKET_OPTIONS } from "@/lib/fields/marketsField";
-import { getPayloadClient } from "@/lib/dal";
+import { getInsightHref, getPayloadClient } from "@/lib/dal";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { InsightsListBlock, Person } from "@/payload-types";
@@ -56,25 +56,28 @@ export async function InsightsListBlockComponent({
     year: "numeric",
   });
 
-  const cards: InsightCard[] = result.docs
-    .filter((doc) => doc.title)
-    .map((doc) => {
-      const author = typeof doc.author === "object" && doc.author ? (doc.author as Person) : null;
-      const firstMarket = doc.markets?.[0];
-      return {
-        id: String(doc.id),
-        title: doc.title,
-        summary: doc.standfirst ?? "",
-        // An article filed under no market still gets a label, so every title in a row starts at
-        // the same height.
-        category:
-          MARKET_OPTIONS.find((option) => option.value === firstMarket)?.label ??
-          ALL_MARKETS_LABEL[locale] ??
-          ALL_MARKETS_LABEL.en,
-        authorName: author?.name ?? null,
-        publishedAt: doc.publishedDate ? dateFormatter.format(new Date(doc.publishedDate)) : null,
-      };
-    });
+  const cards: InsightCard[] = await Promise.all(
+    result.docs
+      .filter((doc) => doc.title)
+      .map(async (doc) => {
+        const author = typeof doc.author === "object" && doc.author ? (doc.author as Person) : null;
+        const firstMarket = doc.markets?.[0];
+        return {
+          id: String(doc.id),
+          title: doc.title,
+          summary: doc.standfirst ?? "",
+          // An article filed under no market still gets a label, so every title in a row starts at
+          // the same height.
+          category:
+            MARKET_OPTIONS.find((option) => option.value === firstMarket)?.label ??
+            ALL_MARKETS_LABEL[locale] ??
+            ALL_MARKETS_LABEL.en,
+          authorName: author?.name ?? null,
+          publishedAt: doc.publishedDate ? dateFormatter.format(new Date(doc.publishedDate)) : null,
+          href: await getInsightHref(doc, locale),
+        };
+      })
+  );
 
   const viewAllLink = viewAll ? prepareLinkProps(viewAll, locale) : null;
 

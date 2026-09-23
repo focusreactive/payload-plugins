@@ -1,3 +1,5 @@
+import { ArrowUpRight } from "@untitledui/icons";
+
 import { Avatar } from "@/shared/ui/shadcn/base/avatar/avatar";
 import { Button } from "@/shared/ui/shadcn/base/buttons/button";
 
@@ -8,6 +10,7 @@ export interface InsightCard {
   category: string | null;
   authorName: string | null;
   publishedAt: string | null;
+  href: string | null;
 }
 
 interface InsightsListProps {
@@ -30,8 +33,8 @@ function initialsOf(name: string) {
 
 /**
  * Untitled UI's blog-section-simple-left-aligned-01 with its Simple01Vertical card. The card's
- * thumbnail is dropped because Passle posts carry no image, and the title is not a link because
- * articles have no page of their own on this demo, so the arrow that promises one goes too.
+ * thumbnail is dropped because Passle posts carry no image. The title links to the article page
+ * under the listing, in the reader's language.
  */
 export function InsightsList({ eyebrow, heading, description, cards, viewAll }: InsightsListProps) {
   return (
@@ -70,7 +73,20 @@ export function InsightsList({ eyebrow, heading, description, cards, viewAll }: 
                   )}
                   <div className="flex flex-col gap-1">
                     <h3 className="text-lg font-semibold text-balance text-primary">
-                      {card.title}
+                      {card.href ? (
+                        <a
+                          href={card.href}
+                          className="group/title flex justify-between gap-x-4 rounded-md outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
+                        >
+                          {card.title}
+                          <ArrowUpRight
+                            className="mt-0.5 size-6 shrink-0 text-fg-quaternary transition duration-100 ease-linear group-hover/title:text-fg-quaternary_hover"
+                            aria-hidden="true"
+                          />
+                        </a>
+                      ) : (
+                        card.title
+                      )}
                     </h3>
                     <p className="line-clamp-3 text-md text-pretty text-tertiary">{card.summary}</p>
                   </div>
