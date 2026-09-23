@@ -55,6 +55,15 @@ function marketLabels(markets: string[] | null | undefined) {
   });
 }
 
+// Passle's snippet is the article's first sentences cut mid-word. Shown above a body that opens
+// with the same words, it reads as a duplicated, broken paragraph.
+function bodyRepeatsStandfirst(insight: Insight) {
+  const standfirst = insight.standfirst?.trim();
+  if (!standfirst) return false;
+  const bodyText = JSON.stringify(insight.body ?? "").replace(/\\n/gu, " ");
+  return bodyText.includes(standfirst.slice(0, 60));
+}
+
 function initialsOf(name: string) {
   const words = name
     .replace(/\b[A-Z]\.\s*/gu, "")
@@ -113,7 +122,7 @@ export async function InsightDetail({
           <h1 className="mt-4 text-display-md font-semibold text-balance text-primary md:text-display-lg">
             {insight.title}
           </h1>
-          {insight.standfirst && (
+          {insight.standfirst && !bodyRepeatsStandfirst(insight) && (
             <p className="mt-4 text-lg text-pretty text-tertiary md:mt-6 md:text-xl">
               {insight.standfirst}
             </p>

@@ -145,12 +145,13 @@
 
 /*
  * Untitled UI's sections put no font class on their headings, so the display face has to be
- * applied by element. h1 and h2 only: card titles are h3 and stay in the text face, where a
- * serif at 18px read as a different design from the card around it.
+ * applied by element: h1, h2 and the stat figures. Card titles are h3 and stay in the text face,
+ * where a serif at 18px read as a different design from the card around it, and avatar initials
+ * carry a display size class too, so the rule is not keyed on the class alone.
  */
 h1,
 h2,
-[class*="text-display-"] {
+dd[class*="text-display-"] {
     font-family: var(--font-display);
     letter-spacing: -0.01em;
 }
