@@ -46,7 +46,6 @@ const fields: Field[] = [
     },
     name: "image",
     relationTo: "media",
-    required: true,
     type: "upload",
   },
   {

@@ -761,7 +761,7 @@ export interface ContentBlock {
   heading?: string | null;
   description?: string | null;
   layout: 'image-text' | 'text-image';
-  image: number | Media;
+  image?: (number | null) | Media;
   content: {
     root: {
       type: string;
@@ -1664,7 +1664,7 @@ export interface Preset {
         heading?: string | null;
         description?: string | null;
         layout: 'image-text' | 'text-image';
-        image: number | Media;
+        image?: (number | null) | Media;
         content: {
           root: {
             type: string;

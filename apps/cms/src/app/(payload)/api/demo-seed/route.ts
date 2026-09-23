@@ -673,7 +673,6 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     eyebrow: "Honest footnotes",
     heading: "Scope of this demo",
     layout: "text-image",
-    image: defaultMediaId,
     content: buildParagraphRichText(
       "The visual design is a speculative direction, not a proposal for your brand, and your brand agency's work replaces it. Passle runs against fixtures of your own published articles rather than your live tenancy, because we hold no credentials for it and a fresh demo tenancy would be empty. The layout reflows on a phone because every block here does, but nobody has designed the mobile experience: navigation behaviour, image crops and tap targets are unreviewed. That pass, article and profile detail pages, content migration and search are out of scope here and priced in the estimate."
     ),
