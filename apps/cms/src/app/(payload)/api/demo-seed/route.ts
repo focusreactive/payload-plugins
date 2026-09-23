@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { getPayloadClient } from "@/dal/payload-client";
@@ -1728,6 +1729,12 @@ export async function POST(request: Request) {
     // Every page here was deleted and recreated with a new id, so the cached map still points
     // at rows that no longer exist until it is rebuilt.
     revalidatePathMap();
+
+    // The rendered pages are cached too, and a query string does not bypass that cache: a reseed
+    // rewrote every document while the site kept serving the previous run's HTML, which reads as
+    // "the seed did nothing". Purging the whole route tree is right here because the seed just
+    // rewrote all of it.
+    revalidatePath("/", "layout");
 
     return NextResponse.json({
       deleted: {
