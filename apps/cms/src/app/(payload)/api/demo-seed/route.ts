@@ -414,7 +414,8 @@ const LOCALIZED_HOMEPAGE: Record<
     heroBody: string;
     primaryAction: string;
     secondaryAction: string;
-    stats: { value: string; label: string }[];
+    statsHeader: StatsHeader;
+    stats: NonNullable<StatsBlock["items"]>;
   }
 > = {
   fr: {
@@ -424,14 +425,35 @@ const LOCALIZED_HOMEPAGE: Record<
       "Une plateforme de contenu réellement en service, construite sur vos propres publications. Tout ce qui suit existe réellement dans le CMS, ce n’est pas une maquette.",
     primaryAction: "Ouvrir le CMS",
     secondaryAction: "Voir un article arrivé de Passle",
+    statsHeader: {
+      eyebrow: "Chiffres",
+      heading: "Les chiffres derrière cette démo",
+      description:
+        "Chaque chiffre a été compté sur votre site ou dans ce CMS, et chacun indique sa source.",
+    },
     stats: [
       {
         value: "3 115",
-        label: "Éléments Passle dans le fonds, sur environ 3 800",
+        label: "Éléments Passle sur votre site",
+        description: "Comptés depuis votre plan du site, sur environ 3 800 éléments au total.",
       },
-      { value: "20", label: "Intégrés dans cette démo" },
-      { value: "17", label: "Services en anglais" },
-      { value: "8", label: "Services en français" },
+      {
+        value: "20",
+        label: "Intégrés dans cette démo",
+        description: "De vrais articles de votre site, chacun rattaché à son auteur par e-mail.",
+        link: buildStatLink("Voir les articles", "/fr/actualites"),
+      },
+      {
+        value: "17",
+        label: "Services en anglais",
+        description: "La liste anglaise complète. Brevets et marques sont construits ici en pages.",
+      },
+      {
+        value: "8",
+        label: "Services en français",
+        description: "Le français en compte moins que l’anglais, et le site montre cet écart.",
+        link: buildStatLink("Voir les services", "/fr/services"),
+      },
     ],
   },
   ja: {
@@ -441,11 +463,35 @@ const LOCALIZED_HOMEPAGE: Record<
       "御社自身の公開記事をもとに構築した、実際に稼働するコンテンツ基盤です。以下のすべてが背後のCMSに実在しており、モックアップではありません。",
     primaryAction: "CMSを開く",
     secondaryAction: "Passleから届いた記事を見る",
+    statsHeader: {
+      eyebrow: "数字で見る",
+      heading: "このデモを支える数字",
+      description:
+        "以下の数字はすべて、御社の公開サイトまたはこのCMSで数えたもので、それぞれ出典を示しています。",
+    },
     stats: [
-      { value: "3,115", label: "Passle上の記事数（全体で約3,800件）" },
-      { value: "20", label: "このデモに取り込んだ件数" },
-      { value: "17", label: "英語版のサービス数" },
-      { value: "8", label: "フランス語版のサービス数" },
+      {
+        value: "3,115",
+        label: "Passle上の記事数",
+        description: "サイトマップから数えた件数です。全体では約3,800件あります。",
+      },
+      {
+        value: "20",
+        label: "このデモに取り込んだ件数",
+        description: "御社サイトの実際の記事で、著者とはメールアドレスで紐付けています。",
+        link: buildStatLink("記事を見る", "/ja/インサイト"),
+      },
+      {
+        value: "17",
+        label: "英語版のサービス数",
+        description: "英語版の全リストです。特許と商標はここでページとして作成しています。",
+      },
+      {
+        value: "8",
+        label: "フランス語版のサービス数",
+        description: "フランス語版は英語版より少なく、サイトはその差を隠さず示します。",
+        link: buildStatLink("サービスを見る", "/ja/サービス"),
+      },
     ],
   },
 };
@@ -548,6 +594,12 @@ function buildAction(
   return { type: "custom", label, url, newTab: false, appearance };
 }
 
+function buildStatLink(label: string, url: string) {
+  return { type: "custom" as const, label, url, newTab: false };
+}
+
+type StatsHeader = Pick<StatsBlock, "eyebrow" | "heading" | "description">;
+
 function sortPasslePostsByPublishedDateDescending(posts: PasslePostPayload[]): PasslePostPayload[] {
   return [...posts].sort(
     (first, second) =>
@@ -609,14 +661,35 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
 
   const stats: StatsBlock = {
     blockType: "stats",
+    layout: "accentLine",
+    eyebrow: "By the numbers",
+    heading: "The numbers behind this demo",
+    description:
+      "Every figure was counted from your live site or from this CMS, and each one says where.",
     items: [
       {
         value: "3,115",
-        label: "Passle items on your site, of roughly 3,800",
+        label: "Passle items on your site",
+        description: "Counted from your sitemap, out of roughly 3,800 items in total.",
       },
-      { value: "20", label: "Ingested into this demo" },
-      { value: "17", label: "English services" },
-      { value: "8", label: "French services" },
+      {
+        value: "20",
+        label: "Ingested into this demo",
+        description: "Real articles from your site, each filed against its author by email.",
+        link: buildStatLink("Browse the articles", "/insights"),
+      },
+      {
+        value: "17",
+        label: "English services",
+        description: "The full English list. Patents and trade marks are built out as pages here.",
+        link: buildStatLink("View services", "/services"),
+      },
+      {
+        value: "8",
+        label: "French services",
+        description: "French lists fewer services than English, and the site shows that gap.",
+        link: buildStatLink("View the French list", "/fr/services"),
+      },
     ],
     section: { theme: "light" },
   };
@@ -958,7 +1031,7 @@ function buildOurPeoplePageBlocks(
  * quoted on the homepage (17 English, 8 French, 5 Japanese) - restated here rather than recomputed,
  * since there is no live per-locale service count to query in this demo database.
  */
-function buildServicesOverviewPageBlocks() {
+function buildServicesOverviewPageBlocks(illustrations: Record<string, number> = {}) {
   const overview: CardsGridBlock = {
     blockType: "cardsGrid",
     eyebrow: "Services",
@@ -989,10 +1062,35 @@ function buildServicesOverviewPageBlocks() {
 
   const coverage: StatsBlock = {
     blockType: "stats",
+    layout: "splitImage",
+    image: illustrations["admin-pages-french.png"],
+    eyebrow: "Coverage by language",
+    heading: "Each language carries its own list",
+    description:
+      "Your English, French and Japanese sites do not list the same services. These counts come from each one.",
     items: [
-      { value: "17", label: "English-language services" },
-      { value: "8", label: "French-language services" },
-      { value: "5", label: "Japanese-language services" },
+      {
+        value: "17",
+        label: "English services",
+        description: "The full list on your English site.",
+      },
+      {
+        value: "8",
+        label: "French services",
+        description: "Nine fewer than English.",
+        link: buildStatLink("View in French", "/fr/services"),
+      },
+      {
+        value: "5",
+        label: "Japanese services",
+        description: "The smallest of the three lists.",
+        link: buildStatLink("View in Japanese", "/ja/サービス"),
+      },
+      {
+        value: "2",
+        label: "Built out as pages",
+        description: "Patents and trade marks, in all three languages.",
+      },
     ],
     section: { theme: "light" },
   };
@@ -1197,10 +1295,26 @@ function buildTokyoOfficePageBlocks(defaultMediaId: number, illustrations: Recor
 
   const details: StatsBlock = {
     blockType: "stats",
+    layout: "accentLine",
+    eyebrow: "This page",
+    heading: "What sits at this address",
     items: [
-      { value: "Client liaison", label: "Presence in Japan" },
-      { value: "Japan", label: "Market" },
-      { value: "3", label: "Languages this page exists in" },
+      {
+        value: "Client liaison",
+        label: "Presence in Japan",
+        description: "Japan is served through client liaison, not a local office.",
+      },
+      {
+        value: "Japan",
+        label: "Country",
+        description: "The level above this one in the address.",
+      },
+      {
+        value: "3",
+        label: "Languages this page exists in",
+        description: "English, French and Japanese, each with its own address.",
+        link: buildStatLink("Open in Japanese", "/ja/世界展開/アジア/日本/東京"),
+      },
     ],
     section: { theme: "light" },
   };
@@ -1478,7 +1592,7 @@ function buildDemoPresets(
     {
       name: "Cards - icon cards with links",
       previewFilename: "preset-icon-cards.png",
-      block: firstCardsGrid(buildServicesOverviewPageBlocks()),
+      block: firstCardsGrid(buildServicesOverviewPageBlocks(illustrations)),
     },
     {
       name: "Cards - people directory",
@@ -1831,7 +1945,7 @@ export async function POST(request: Request) {
           case "our-people":
             return buildOurPeoplePageBlocks(illustrationIds, defaultMediaNumericId, seededPeople);
           case "services":
-            return buildServicesOverviewPageBlocks();
+            return buildServicesOverviewPageBlocks(illustrationIds);
           case "patents":
             return buildPatentsPageBlocks(illustrationIds, defaultMediaNumericId);
           case "trade-marks":
@@ -1945,6 +2059,8 @@ export async function POST(request: Request) {
                           },
                           {
                             blockType: "stats" as const,
+                            layout: "accentLine" as const,
+                            ...localizedHome.statsHeader,
                             items: localizedHome.stats,
                             section: { theme: "light" as const },
                           },
