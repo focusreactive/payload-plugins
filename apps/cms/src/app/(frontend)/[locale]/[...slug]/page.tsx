@@ -9,6 +9,8 @@ import { generateMeta } from "@/lib/utils/generateMeta";
 import { generateNotFoundMeta } from "@/lib/utils/generateNotFoundMeta";
 import { parseSlugToPath } from "@/lib/utils/parseSlugToPath";
 import { BreadcrumbsJsonLd } from "@/components/seo/components";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { ChildPages } from "@/components/ChildPages";
 import type { Locale } from "@/lib/types";
 import { getPageBySlug } from "@/dal/getPageBySlug";
 import { getMainSitePageStaticParams } from "@/dal/staticParams/pages";
@@ -55,7 +57,14 @@ export default async function Page({ params }: Args) {
 
           <PayloadRedirects disableNotFound url={url} locale={locale} />
 
+          {/* getPageBySlug's declared return type marks `id` optional (it is
+              Payload's write-side type), but a resolved document always has
+              one - the same assumption line 46 above already makes. */}
+          <Breadcrumbs pageId={page.id!} locale={locale} />
+
           <RenderBlocks blocks={page.blocks} />
+
+          <ChildPages pageId={page.id!} locale={locale} />
         </div>
       </main>
       <Footer data={page.footer as FooterType} />

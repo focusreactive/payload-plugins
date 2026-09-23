@@ -55,5 +55,9 @@
       "title": "お知らせ",
       "description": "テナント{tenant}の{count, plural, =0 {お知らせはありません} =1 {お知らせ1件} other {お知らせ#件}}"
     }
+  },
+  "hierarchyNav": {
+    "breadcrumbLabel": "パンくずリスト",
+    "inThisSection": "このセクション"
   }
 }

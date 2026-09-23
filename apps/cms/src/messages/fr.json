@@ -55,5 +55,9 @@
       "title": "Annonces",
       "description": "{count, plural, =0 {Aucune annonce} =1 {1 annonce} other {# annonces}} pour le tenant {tenant}"
     }
+  },
+  "hierarchyNav": {
+    "breadcrumbLabel": "Fil d'Ariane",
+    "inThisSection": "Dans cette section"
   }
 }

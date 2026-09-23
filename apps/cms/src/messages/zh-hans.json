@@ -55,5 +55,9 @@
       "title": "公告",
       "description": "{count, plural, =0 {暂无公告} =1 {1 条公告} other {# 条公告}}（租户：{tenant}）"
     }
+  },
+  "hierarchyNav": {
+    "breadcrumbLabel": "面包屑导航",
+    "inThisSection": "本节内容"
   }
 }

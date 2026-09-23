@@ -23,11 +23,41 @@ import type { Page } from "@/payload-types";
  */
 export const PATH_MAP_CACHE_TAG = "path-map";
 
+export interface BreadcrumbEntry {
+  label: string;
+  url: string;
+}
+
+export interface ChildPageEntry {
+  id: number;
+  title: string;
+  description: string | null;
+  url: string;
+}
+
 export interface PathMap {
   /** locale -> path (leading slash, e.g. "/global-presence/asia/japan") -> page id */
   pathToId: Record<Locale, Record<string, number>>;
   /** page id -> locale -> path */
   idToPath: Record<number, Partial<Record<Locale, string>>>;
+  /**
+   * page id -> locale -> the full ancestor chain (root first, page itself
+   * last), each entry carrying the label Payload's nested-docs plugin
+   * captured at that locale. A missing entry for a locale means that page
+   * (or an ancestor of it) was never actually translated there - the caller
+   * must render nothing rather than fall back to another locale's chain,
+   * because the breadcrumb's whole point is that the chain differs per
+   * language.
+   */
+  idToBreadcrumbs: Record<number, Partial<Record<Locale, BreadcrumbEntry[]>>>;
+  /**
+   * page id -> locale -> its direct published children, in that locale.
+   * Built from each doc's own `parent` id rather than a per-page query, so
+   * the child list costs nothing beyond the one query the whole map already
+   * makes. A child absent from a locale's array was not translated there
+   * and must not be listed, for the same reason as idToBreadcrumbs.
+   */
+  childrenByParentId: Record<number, Partial<Record<Locale, ChildPageEntry[]>>>;
 }
 
 async function buildPathMap(): Promise<PathMap> {
@@ -36,44 +66,75 @@ async function buildPathMap(): Promise<PathMap> {
 
   const pathToId = Object.fromEntries(locales.map((locale) => [locale, {}])) as PathMap["pathToId"];
   const idToPath: PathMap["idToPath"] = {};
+  const idToBreadcrumbs: PathMap["idToBreadcrumbs"] = {};
+  const childrenByParentId: PathMap["childrenByParentId"] = {};
 
   // `locale: "all"` returns every localised field as `{ [locale]: value }` in
   // a single request, so the whole route table - every locale, every
   // published page - is built from exactly one query, per the CONTEXT.md
-  // spec ("Build one cached path map ... from a single query").
+  // spec ("Build one cached path map ... from a single query"). `title`,
+  // `parent` and `meta.description` ride along on that same query so the
+  // breadcrumb and child-list components below cost no extra reads.
   const { docs } = await payload.find({
     collection: "page",
     depth: 0,
     locale: "all",
     overrideAccess: true,
     pagination: false,
-    select: { breadcrumbs: true },
+    select: { breadcrumbs: true, title: true, parent: true, meta: true },
     where: { _status: { equals: "published" } },
   });
 
   for (const doc of docs as unknown as Array<{
     id: number;
+    parent?: number | null;
     breadcrumbs?: Partial<Record<Locale, Page["breadcrumbs"]>>;
+    title?: Partial<Record<Locale, string>>;
+    meta?: Partial<Record<Locale, { description?: string | null }>>;
   }>) {
     const breadcrumbsByLocale = doc.breadcrumbs ?? {};
 
     for (const locale of locales) {
-      const path = breadcrumbsByLocale[locale]?.at(-1)?.url;
+      const crumbs = breadcrumbsByLocale[locale];
+      const path = crumbs?.at(-1)?.url;
 
       if (!path) {
         // Not every page has been saved under every locale yet (translation
         // in progress, or the locale was added after the page was created).
-        // Leaving it out of both directions is correct: there is nothing to
-        // route to and nothing to hreflang against.
+        // Leaving it out of every map is correct: there is nothing to route
+        // to, nothing to hreflang against, and nothing genuine to show as a
+        // breadcrumb or a child link.
         continue;
       }
 
       pathToId[locale][path] = doc.id;
       idToPath[doc.id] = { ...idToPath[doc.id], [locale]: path };
+
+      const chain = (crumbs ?? [])
+        .filter((crumb): crumb is { label: string; url: string } =>
+          Boolean(crumb.label && crumb.url)
+        )
+        .map((crumb) => ({ label: crumb.label, url: crumb.url }));
+
+      idToBreadcrumbs[doc.id] = { ...idToBreadcrumbs[doc.id], [locale]: chain };
+
+      if (doc.parent) {
+        const entry: ChildPageEntry = {
+          id: doc.id,
+          title: doc.title?.[locale] ?? "",
+          description: doc.meta?.[locale]?.description ?? null,
+          url: path,
+        };
+
+        childrenByParentId[doc.parent] = {
+          ...childrenByParentId[doc.parent],
+          [locale]: [...(childrenByParentId[doc.parent]?.[locale] ?? []), entry],
+        };
+      }
     }
   }
 
-  return { pathToId, idToPath };
+  return { pathToId, idToPath, idToBreadcrumbs, childrenByParentId };
 }
 
 export async function getPathMap(): Promise<PathMap> {

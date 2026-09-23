@@ -55,5 +55,9 @@
       "title": "Announcements",
       "description": "{count, plural, =0 {No announcements} =1 {1 announcement} other {# announcements}} for tenant {tenant}"
     }
+  },
+  "hierarchyNav": {
+    "breadcrumbLabel": "Breadcrumb",
+    "inThisSection": "In this section"
   }
 }

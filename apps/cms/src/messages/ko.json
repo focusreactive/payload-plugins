@@ -55,5 +55,9 @@
       "title": "공지사항",
       "description": "{tenant} 테넌트의 {count, plural, =0 {공지사항이 없습니다} =1 {공지사항 1건} other {공지사항 #건}}"
     }
+  },
+  "hierarchyNav": {
+    "breadcrumbLabel": "이동 경로",
+    "inThisSection": "이 섹션에서"
   }
 }
