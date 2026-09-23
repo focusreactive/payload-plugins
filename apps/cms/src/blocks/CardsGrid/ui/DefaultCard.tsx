@@ -45,7 +45,7 @@ const iconTileVariants = cva(
   }
 );
 
-const titleVariants = cva("relative z-[1] text-h-card transition-colors group-hover:text-primary", {
+const titleVariants = cva("relative z-[1] text-h-card transition-colors", {
   defaultVariants: { backgroundColor: "light" },
   variants: {
     backgroundColor: {
@@ -124,7 +124,17 @@ export default function DefaultCard({
       )}
 
       <div className="relative z-[1] flex flex-1 flex-col gap-3">
-        {title && <h3 className={titleVariants({ backgroundColor: bg })}>{title}</h3>}
+        {title && (
+          <h3
+            className={cn(
+              titleVariants({ backgroundColor: bg }),
+              // Only a card with a real destination should look interactive on hover.
+              link?.href && "group-hover:text-primary"
+            )}
+          >
+            {title}
+          </h3>
+        )}
         {description && <p className={bodyVariants({ backgroundColor: bg })}>{description}</p>}
       </div>
 
