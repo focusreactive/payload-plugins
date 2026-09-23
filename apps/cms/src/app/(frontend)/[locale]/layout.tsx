@@ -14,18 +14,20 @@ import { VisualEditingEditRouter } from "@/components/VisualEditingEditRouter";
 
 // Self-hosted rather than next/font/google: every build otherwise fetched three families from
 // Google, and one failed hiccup takes the whole deployment down with "Can't resolve
-// [next]/internal/font/google/archivo_*.module.css". Newsreader and Archivo ship as variable
-// fonts, so one file covers the whole weight range.
-const newsreader = localFont({
+// [next]/internal/font/google/archivo_*.module.css". Both ship as variable fonts, so one file
+// covers the whole weight range.
+const instrumentSans = localFont({
   display: "swap",
-  src: [{ path: "../../../fonts/Newsreader-variable.woff2", style: "normal", weight: "400 600" }],
-  variable: "--font-newsreader",
+  src: [
+    { path: "../../../fonts/InstrumentSans-variable.woff2", style: "normal", weight: "400 700" },
+  ],
+  variable: "--font-instrument-sans",
 });
 
-const archivo = localFont({
+const inter = localFont({
   display: "swap",
-  src: [{ path: "../../../fonts/Archivo-variable.woff2", style: "normal", weight: "400 600" }],
-  variable: "--font-archivo",
+  src: [{ path: "../../../fonts/Inter-variable.woff2", style: "normal", weight: "400 700" }],
+  variable: "--font-inter",
 });
 
 const ibmPlexMono = localFont({
@@ -60,7 +62,7 @@ export default async function RootLayout({ children, params }: Props) {
     <html
       lang={locale}
       data-theme="light"
-      className={`${newsreader.variable} ${archivo.variable} ${ibmPlexMono.variable}`}
+      className={`${instrumentSans.variable} ${inter.variable} ${ibmPlexMono.variable}`}
     >
       <head />
       <body>

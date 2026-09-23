@@ -790,6 +790,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
           "The visual design is a speculative direction, not a proposal for your brand. Your brand agency's work replaces it.",
           "Passle runs against fixtures of your published articles, not your live tenancy. We hold no credentials for it, and a fresh demo tenancy would be empty.",
           "The layout reflows on a phone, but nobody has designed the mobile experience. Navigation, image crops and tap targets are unreviewed.",
+          "Articles are not filed by practice area here. The Passle feed already carries tags on every article, so this is a taxonomy to model, not data to go and find.",
           "Priced in the estimate, not built here: that mobile pass, article and profile detail pages, content migration, and search.",
         ],
       }
