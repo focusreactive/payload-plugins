@@ -79,7 +79,7 @@ export function ScreenshotViewer({ children, caption }: ScreenshotViewerProps) {
         // header (z-100) so the site chrome stays visible while the image is open.
         createPortal(
           <div
-            className="fixed inset-0 z-90 flex cursor-zoom-out flex-col items-center justify-center gap-4 bg-black/80 px-4 pt-24 pb-6 backdrop-blur-sm md:px-10 md:pb-10"
+            className="fixed inset-0 z-90 flex cursor-zoom-out flex-col items-center justify-center gap-4 bg-black/80 px-4 pt-32 pb-6 backdrop-blur-sm md:px-10 md:pb-10"
             onClick={close}
             role="dialog"
             aria-modal="true"
@@ -89,14 +89,14 @@ export function ScreenshotViewer({ children, caption }: ScreenshotViewerProps) {
               type="button"
               onClick={close}
               aria-label="Close"
-              className="absolute top-24 right-4 z-1 flex size-10 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white ring-1 ring-white/20 transition hover:bg-white/20 md:right-8"
+              className="absolute top-[78px] right-4 z-20 flex size-10 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white ring-1 ring-white/20 transition hover:bg-white/20 md:right-8"
             >
               <XClose className="size-5" />
             </button>
             <div
               // An explicit height, because the child is a `fill` image: it positions against this
               // box, so max-h-full alone leaves it zero-high and only the caption renders.
-              className="relative h-[calc(100vh-11rem)] w-full max-w-[1600px] overflow-hidden rounded-lg bg-white shadow-2xl"
+              className="relative h-[calc(100vh-13rem)] w-full max-w-[1600px] overflow-hidden rounded-lg bg-white shadow-2xl"
               onClick={(event) => event.stopPropagation()}
             >
               {children}

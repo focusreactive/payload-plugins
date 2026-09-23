@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/lib/i18n/navigation";
 import type { Locale } from "@/lib/types";
 import { getPathMap } from "@/dal/pathMap";
-import { Eyebrow } from "@/components/Eyebrow";
+import { ArrowRight } from "@untitledui/icons";
 import { Container } from "@/components/shared";
 
 interface Props {
@@ -30,25 +30,30 @@ export async function ChildPages({ pageId, locale }: Props) {
 
   return (
     <Container containerData={{}}>
-      <nav aria-label={t("inThisSection")} className="border-border border-t pt-10 pb-16">
-        <Eyebrow tone="muted" prefix="none" className="mb-6">
+      {/* Same card treatment as the CardsGrid icon cards, so this list reads as one of the page's sections rather than a sitemap. */}
+      <nav
+        aria-label={t("inThisSection")}
+        className="border-t border-secondary pt-12 pb-16 md:pt-16 md:pb-24"
+      >
+        <span className="text-sm font-semibold text-brand-secondary md:text-md">
           {t("inThisSection")}
-        </Eyebrow>
-        <ul className="flex flex-col gap-6">
+        </span>
+        <ul className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 md:gap-8 lg:grid-cols-3">
           {children.map((child) => (
             <li key={child.id}>
               <Link
                 href={child.url}
                 locale={locale}
-                className="text-primary underline decoration-1 underline-offset-4 hover:text-primary-hover"
+                className="group flex h-full flex-col gap-2 bg-surface-raised p-5 ring-1 ring-secondary_alt transition hover:ring-border-brand md:p-6"
               >
-                {child.title}
+                <span className="flex items-center justify-between gap-4 text-lg font-semibold text-primary">
+                  {child.title}
+                  <ArrowRight className="size-5 shrink-0 text-fg-brand-primary transition group-hover:translate-x-0.5" />
+                </span>
+                {child.description && (
+                  <span className="text-md text-pretty text-tertiary">{child.description}</span>
+                )}
               </Link>
-              {child.description && (
-                <p className="text-muted-foreground mt-1 text-[0.875rem] leading-[1.45]">
-                  {child.description}
-                </p>
-              )}
             </li>
           ))}
         </ul>
