@@ -341,8 +341,12 @@ body {
     height: 1.125rem;
     padding: 3px;
     border-radius: var(--radius-pill);
-    background: var(--color-bg-brand-secondary);
-    color: var(--color-fg-brand-primary);
+    /*
+     * Neutral, not the brand colour. These lists are steps and caveats, and under "what this demo
+     * is not" a brand tick reads as a checkmark saying the opposite of the sentence beside it.
+     */
+    background: color-mix(in srgb, var(--color-foreground) 8%, transparent);
+    color: color-mix(in srgb, var(--color-foreground) 55%, transparent);
   }
 
   .prose-card {

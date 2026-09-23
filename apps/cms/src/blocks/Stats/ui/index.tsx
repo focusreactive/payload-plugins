@@ -5,17 +5,17 @@ interface StatsProps {
 }
 
 /**
- * Untitled UI's metrics-card-gray-light: the numbers sit on one raised panel rather than floating
- * on the section background. The panel uses surface-raised instead of their bg-secondary because
- * sections here alternate onto that same grey, which would make the panel invisible.
+ * The numbers sit directly on the section background. A raised panel inside an alternating grey
+ * section read as two competing backgrounds. Items align to the top so a label that wraps to two
+ * lines does not lift its number above the others.
  */
 export function Stats({ items }: StatsProps) {
   if (!items.length) return null;
 
   return (
-    <dl className="flex flex-col gap-8 bg-surface-raised px-6 py-10 ring-1 ring-secondary_alt md:flex-row md:p-16">
+    <dl className="flex flex-col gap-10 md:flex-row md:items-start md:gap-8">
       {items.map((item, index) => (
-        <div key={index} className="flex flex-1 flex-col-reverse gap-3 text-center">
+        <div key={index} className="flex flex-1 flex-col-reverse justify-end gap-3 text-center">
           <dt className="text-lg font-semibold text-balance text-primary">{item.label}</dt>
           <dd className="text-display-lg font-semibold text-brand-tertiary_alt md:text-display-xl">
             <AnimatedStatValue value={item.value} />
