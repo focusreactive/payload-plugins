@@ -64,7 +64,7 @@ export function LanguageSwitcher() {
         onClick={() => setIsOpen((value) => !value)}
         aria-expanded={isOpen}
         aria-haspopup="menu"
-        className="flex h-10 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-tertiary ring-1 ring-secondary_alt transition hover:bg-surface-raised hover:text-primary"
+        className="flex h-10 cursor-pointer items-center gap-1.5 rounded-[4px] px-3 text-sm font-semibold text-tertiary ring-1 ring-secondary_alt transition hover:bg-surface-raised hover:text-primary"
       >
         <Globe01 className="size-4" />
         {NATIVE_LABELS[locale] ?? locale}
@@ -73,7 +73,7 @@ export function LanguageSwitcher() {
       {isOpen && (
         <ul
           role="menu"
-          className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-lg bg-surface-raised py-1 shadow-lg ring-1 ring-secondary_alt"
+          className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-[4px] bg-surface-raised py-1 shadow-lg ring-1 ring-secondary_alt"
         >
           {I18N_CONFIG.locales.map(({ code }) => {
             const href = alternates[code];
