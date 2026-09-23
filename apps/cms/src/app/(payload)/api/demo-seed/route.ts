@@ -345,9 +345,22 @@ const PAGE_TREE: PageSpec[] = [
  */
 const LOCALIZED_LISTING_HEADER: Record<
   "fr" | "ja",
-  Record<"insights" | "our-people", { eyebrow: string; heading: string; description: string }>
+  Record<
+    "insights" | "our-people" | "patents" | "trade-marks",
+    { eyebrow: string; heading: string; description: string }
+  >
 > = {
   fr: {
+    patents: {
+      eyebrow: "Travaux récents en brevets",
+      heading: "Rédigés par les attorneys qui les traitent",
+      description: "Articles publiés par le cabinet. Ils n’existent qu’en anglais.",
+    },
+    "trade-marks": {
+      eyebrow: "Travaux récents en marques",
+      heading: "Rédigés par les attorneys qui les traitent",
+      description: "Articles publiés par le cabinet. Ils n’existent qu’en anglais.",
+    },
     insights: {
       eyebrow: "Derniers articles",
       heading: "Publiés récemment",
@@ -362,6 +375,16 @@ const LOCALIZED_LISTING_HEADER: Record<
     },
   },
   ja: {
+    patents: {
+      eyebrow: "特許分野の最近の記事",
+      heading: "実務を担当する弁理士が執筆しています",
+      description: "事務所が公開した記事です。本文は英語版のみです。",
+    },
+    "trade-marks": {
+      eyebrow: "商標分野の最近の記事",
+      heading: "実務を担当する弁理士が執筆しています",
+      description: "事務所が公開した記事です。本文は英語版のみです。",
+    },
     insights: {
       eyebrow: "最新の記事",
       heading: "最近公開された記事",
@@ -1827,10 +1850,12 @@ export async function POST(request: Request) {
         const localizedBody = locale === "en" ? undefined : LOCALIZED_PAGE_BODY[spec.key]?.[locale];
         const localizedHome =
           locale === "en" || spec.key !== "home" ? undefined : LOCALIZED_HOMEPAGE[locale];
+        const CARRIED_LISTING_KEYS = ["insights", "our-people", "patents", "trade-marks"] as const;
+        type CarriedListingKey = (typeof CARRIED_LISTING_KEYS)[number];
         const localizedListingHeader =
-          locale === "en" || (spec.key !== "insights" && spec.key !== "our-people")
+          locale === "en" || !CARRIED_LISTING_KEYS.includes(spec.key as CarriedListingKey)
             ? undefined
-            : LOCALIZED_LISTING_HEADER[locale][spec.key];
+            : LOCALIZED_LISTING_HEADER[locale][spec.key as CarriedListingKey];
 
         await payload.update({
           collection: "page",
