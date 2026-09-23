@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { revalidatePath } from "next/cache";
@@ -14,6 +14,7 @@ import { personSlug } from "@/lib/dal/getListingRoutes";
 import { translatedInsight102o1qk } from "@/lib/passle/translations/102o1qk";
 import type { PasslePostPayload } from "@/lib/passle/types";
 import type {
+  PeopleDirectoryBlock,
   FeatureListBlock,
   InsightsListBlock,
   CardsGridBlock,
@@ -26,7 +27,6 @@ import type {
   LogosBlock,
   NewsletterBlock,
   Page,
-  Person,
   RawHtmlBlock,
   StatsBlock,
   TestimonialsListBlock,
@@ -1020,11 +1020,7 @@ function buildInsightsPageBlocks(illustrations: Record<string, number>, defaultM
  * time this runs (see the reordering in POST below), not from a copy of that seed data kept here -
  * so this always reflects what is actually in the database, not what the seed script intended.
  */
-function buildOurPeoplePageBlocks(
-  illustrations: Record<string, number>,
-  defaultMediaId: number,
-  people: Person[]
-) {
+function buildOurPeoplePageBlocks(illustrations: Record<string, number>, defaultMediaId: number) {
   const intro: ContentBlock = {
     blockType: "content",
     eyebrow: "Author matching",
@@ -1049,26 +1045,14 @@ function buildOurPeoplePageBlocks(
     section: { theme: "light" },
   };
 
-  const roster: CardsGridBlock = {
-    blockType: "cardsGrid",
+  // A peopleDirectory rather than cards typed in here: it reads the Person records when the page
+  // renders, so a profile added or moved to another office shows up with no page edit.
+  const roster: PeopleDirectoryBlock = {
+    blockType: "peopleDirectory",
     eyebrow: "Our people",
     heading: "Twenty-one profiles, matched by email",
     description:
       "The webhook never creates a profile. It only matches an incoming author against the ones already here.",
-    columns: 3,
-    items: people.map((person) => ({
-      alignVariant: "center" as const,
-      // Selects the Untitled team-section card in CardsGrid's DefaultCard.
-      backgroundColor: "light-gray" as const,
-      title: person.name,
-      description: person.jobTitle,
-      link: {
-        type: "custom" as const,
-        url: `/our-people/${personSlug(person)}`,
-        label: person.name,
-        newTab: false,
-      },
-    })),
     section: { theme: "light" },
   };
 
@@ -1383,6 +1367,24 @@ interface DemoMediaSpec {
 }
 
 /**
+ * The public headshots from marks-clerk.com, one per seeded person, named by personSlug so the
+ * seed can attach each one without a lookup table. This one reads its directory rather than
+ * literal paths, so next.config lists public/demo-people in outputFileTracingIncludes: without
+ * that line the deployed function ships with an empty directory and every photo silently drops.
+ */
+function buildHeadshotMedia(): DemoMediaSpec[] {
+  const headshotDirectory = path.join(process.cwd(), "public", "demo-people");
+  return readdirSync(headshotDirectory)
+    .filter((filename) => filename.endsWith(".webp"))
+    .map((filename) => ({
+      filename,
+      alt: `Headshot of ${filename.replace(/\.webp$/, "").replaceAll("-", " ")}`,
+      mimetype: "image/webp",
+      data: readFileSync(path.join(headshotDirectory, filename)),
+    }));
+}
+
+/**
  * Every entry reads its file with a literal, statically-analysable path (never a path built from
  * a loop variable) so Vercel's build-time file tracer can see and bundle each one - the same class
  * of bug d94dca92 fixed for the JSON fixtures, where a dynamic directory reference silently
@@ -1390,6 +1392,7 @@ interface DemoMediaSpec {
  */
 function buildDemoMedia(): DemoMediaSpec[] {
   return [
+    ...buildHeadshotMedia(),
     {
       filename: "admin-insights-passle.png",
       alt: "The insight list in the CMS, showing articles that arrived from Passle with their authors and publish dates",
@@ -1592,8 +1595,7 @@ interface DemoPresetSpec {
  */
 function buildDemoPresets(
   defaultMediaId: number,
-  illustrations: Record<string, number>,
-  people: Person[]
+  illustrations: Record<string, number>
 ): DemoPresetSpec[] {
   const home = buildHomepageBlocks(defaultMediaId, illustrations);
   const pickHomeBlock = (blockType: string, headingIncludes?: string) => {
@@ -1613,12 +1615,6 @@ function buildDemoPresets(
     if (!block) throw new Error("Preset source missing: cardsGrid");
     return block;
   };
-  // A directory preset only needs enough cards to show the pattern; all twenty-one would be
-  // pasted onto whatever page an editor drops it on.
-  const firstSix = (block: CardsGridBlock): CardsGridBlock => ({
-    ...block,
-    items: (block.items ?? []).slice(0, 6),
-  });
 
   return [
     {
@@ -1649,9 +1645,7 @@ function buildDemoPresets(
     {
       name: "Cards - people directory",
       previewFilename: "preset-team-cards.png",
-      block: firstSix(
-        firstCardsGrid(buildOurPeoplePageBlocks(illustrations, defaultMediaId, people))
-      ),
+      block: buildOurPeoplePageBlocks(illustrations, defaultMediaId)[1] as PeopleDirectoryBlock,
     },
     {
       name: "Insights - newest articles",
@@ -1964,6 +1958,19 @@ export async function POST(request: Request) {
     // works once seedPeopleRecords has actually written them. Neither seed step touches the
     // `page` or `posts` collections, so running them before those deletes is safe.
     await seedPeopleRecords(payload);
+    for (const person of (
+      await payload.find({ collection: "person", limit: 200, depth: 0, overrideAccess: true })
+    ).docs) {
+      const photoId = mediaIdByFilename[`${personSlug(person)}.webp`];
+      if (photoId && person.photo !== photoId) {
+        await payload.update({
+          collection: "person",
+          id: person.id,
+          data: { photo: photoId },
+          overrideAccess: true,
+        });
+      }
+    }
     await seedInsightsFromFixtures(payload);
     insightSlugByShortcode.clear();
     for (const insight of (
@@ -1977,14 +1984,6 @@ export async function POST(request: Request) {
     ).docs) {
       if (insight.slug) insightSlugByShortcode.set(insight.passleShortcode, insight.slug);
     }
-
-    const seededPeople = (
-      await payload.find({
-        collection: "person",
-        limit: 100,
-        overrideAccess: true,
-      })
-    ).docs;
 
     const deletedPages = await payload.delete({
       collection: "page",
@@ -2010,7 +2009,7 @@ export async function POST(request: Request) {
           case "insights":
             return buildInsightsPageBlocks(illustrationIds, defaultMediaNumericId);
           case "our-people":
-            return buildOurPeoplePageBlocks(illustrationIds, defaultMediaNumericId, seededPeople);
+            return buildOurPeoplePageBlocks(illustrationIds, defaultMediaNumericId);
           case "services":
             return buildServicesOverviewPageBlocks(illustrationIds);
           case "patents":
@@ -2168,24 +2167,8 @@ export async function POST(request: Request) {
                               ...localizedListingHeader,
                               // No fallback: a French or Japanese reader sees only the articles that
                               // exist in their language, never the English titles under a local heading.
-                              // Profile links follow the page's language, or a French reader
-                              // clicking a person lands on the English address.
-                              ...(spec.key === "our-people" && (locale === "fr" || locale === "ja")
-                                ? {
-                                    items: seededPeople.map((person) => ({
-                                      alignVariant: "center" as const,
-                                      backgroundColor: "light-gray" as const,
-                                      title: person.name,
-                                      description: person.jobTitle,
-                                      link: {
-                                        type: "custom" as const,
-                                        url: `${locale === "fr" ? "/fr/notre-equipe" : "/ja/専門家"}/${personSlug(person)}`,
-                                        label: person.name,
-                                        newTab: false,
-                                      },
-                                    })),
-                                  }
-                                : {}),
+                              // The people directory needs no override: it builds each profile
+                              // link in the page's own language from the Person records.
                               // The insights list filters to this language itself.
                               ...(spec.key === "insights" && (locale === "fr" || locale === "ja")
                                 ? { description: TRANSLATED_INSIGHTS_NOTE[locale] }
@@ -2515,7 +2498,7 @@ export async function POST(request: Request) {
     let presetsCreatedCount = 0;
     let presetsUpdatedCount = 0;
 
-    const demoPresets = buildDemoPresets(defaultMediaNumericId, illustrationIds, seededPeople);
+    const demoPresets = buildDemoPresets(defaultMediaNumericId, illustrationIds);
     for (const spec of demoPresets) {
       const existingPreset = await payload.find({
         collection: "presets",

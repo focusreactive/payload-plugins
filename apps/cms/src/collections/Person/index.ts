@@ -12,7 +12,7 @@ export const Person: CollectionConfig<"person"> = {
     update: editorialInOwnMarkets,
   },
   admin: {
-    defaultColumns: ["name", "jobTitle", "office", "email", "updatedAt"],
+    defaultColumns: ["photo", "name", "jobTitle", "office", "email", "updatedAt"],
     group: "Content",
     pagination: {
       limits: [20, 50, 100],
@@ -61,6 +61,15 @@ export const Person: CollectionConfig<"person"> = {
       },
       name: "office",
       type: "text",
+    },
+    {
+      label: {
+        en: "Photo",
+        es: "Foto",
+      },
+      name: "photo",
+      relationTo: "media",
+      type: "upload",
     },
     {
       label: {

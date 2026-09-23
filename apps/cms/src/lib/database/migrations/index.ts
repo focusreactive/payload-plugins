@@ -40,6 +40,7 @@ import * as migration_20260923_160042_insights_list_block from './20260923_16004
 import * as migration_20260923_161703_users_markets from './20260923_161703_users_markets';
 import * as migration_20260923_202108_feature_list_block from './20260923_202108_feature_list_block';
 import * as migration_20260923_213431_stats_item_images from './20260923_213431_stats_item_images';
+import * as migration_20260923_232412_people_directory_and_person_photo from './20260923_232412_people_directory_and_person_photo';
 
 export const migrations = [
   {
@@ -250,6 +251,11 @@ export const migrations = [
   {
     up: migration_20260923_213431_stats_item_images.up,
     down: migration_20260923_213431_stats_item_images.down,
-    name: '20260923_213431_stats_item_images'
+    name: '20260923_213431_stats_item_images',
+  },
+  {
+    up: migration_20260923_232412_people_directory_and_person_photo.up,
+    down: migration_20260923_232412_people_directory_and_person_photo.down,
+    name: '20260923_232412_people_directory_and_person_photo'
   },
 ];

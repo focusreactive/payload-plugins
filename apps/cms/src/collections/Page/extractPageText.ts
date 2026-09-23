@@ -56,6 +56,9 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
     case "insightsList": {
       return extractInsightsListText(block);
     }
+    case "peopleDirectory": {
+      return joinText([block.eyebrow, block.heading, block.description]);
+    }
     case "featureList": {
       return extractFeatureListText(block);
     }

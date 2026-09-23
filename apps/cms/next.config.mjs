@@ -15,6 +15,7 @@ const nextConfig = {
       "./public/block-preview-images/**",
       "./public/demo-logo.svg",
       "./public/demo-screens/**",
+      "./public/demo-people/**",
     ],
   },
   turbopack: {

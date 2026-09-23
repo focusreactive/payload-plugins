@@ -12,6 +12,7 @@ import { NewsletterBlockComponent } from "./Newsletter/Component";
 import { RawHtmlBlockComponent } from "./RawHtml/Component";
 import { FeatureListBlockComponent } from "./FeatureList/Component";
 import { InsightsListBlockComponent } from "./InsightsList/Component";
+import { PeopleDirectoryBlockComponent } from "./PeopleDirectory/Component";
 import { StatsBlockComponent } from "./Stats/Component";
 import { TestimonialsListBlockComponent } from "./TestimonialsList/Component";
 
@@ -24,6 +25,7 @@ export const contentBlockComponents = {
   newsletter: NewsletterBlockComponent,
   stats: StatsBlockComponent,
   insightsList: InsightsListBlockComponent,
+  peopleDirectory: PeopleDirectoryBlockComponent,
   featureList: FeatureListBlockComponent,
   faq: FaqBlockComponent,
   hero: HeroBlockComponent,

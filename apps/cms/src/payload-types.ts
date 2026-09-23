@@ -223,6 +223,7 @@ export interface Page {
     | NewsletterBlock
     | StatsBlock
     | InsightsListBlock
+    | PeopleDirectoryBlock
     | FeatureListBlock
     | RawHtmlBlock
     | GlobalSectionSlotBlock
@@ -1371,6 +1372,39 @@ export interface InsightsListBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PeopleDirectoryBlock".
+ */
+export interface PeopleDirectoryBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'peopleDirectory';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "FeatureListBlock".
  */
 export interface FeatureListBlock {
@@ -1502,6 +1536,7 @@ export interface GlobalBlock {
     | NewsletterBlock
     | StatsBlock
     | InsightsListBlock
+    | PeopleDirectoryBlock
     | FeatureListBlock
     | RawHtmlBlock
   )[];
@@ -1591,6 +1626,7 @@ export interface Person {
    */
   email: string;
   office?: string | null;
+  photo?: (number | null) | Media;
   biography?: string | null;
   /**
    * The markets this applies to.
@@ -2431,6 +2467,35 @@ export interface Preset {
          */
         heading?: string | null;
         description?: string | null;
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'peopleDirectory';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
         items: {
           icon?:
             | (
@@ -3055,6 +3120,7 @@ export interface PageSelect<T extends boolean = true> {
         newsletter?: T | NewsletterBlockSelect<T>;
         stats?: T | StatsBlockSelect<T>;
         insightsList?: T | InsightsListBlockSelect<T>;
+        peopleDirectory?: T | PeopleDirectoryBlockSelect<T>;
         featureList?: T | FeatureListBlockSelect<T>;
         rawHtml?: T | RawHtmlBlockSelect<T>;
         globalSectionSlot?: T | GlobalSectionSlotBlockSelect<T>;
@@ -3584,6 +3650,33 @@ export interface InsightsListBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PeopleDirectoryBlock_select".
+ */
+export interface PeopleDirectoryBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "FeatureListBlock_select".
  */
 export interface FeatureListBlockSelect<T extends boolean = true> {
@@ -3836,6 +3929,7 @@ export interface PersonSelect<T extends boolean = true> {
   jobTitle?: T;
   email?: T;
   office?: T;
+  photo?: T;
   biography?: T;
   markets?: T;
   updatedAt?: T;
@@ -4020,6 +4114,7 @@ export interface GlobalBlockSelect<T extends boolean = true> {
         newsletter?: T | NewsletterBlockSelect<T>;
         stats?: T | StatsBlockSelect<T>;
         insightsList?: T | InsightsListBlockSelect<T>;
+        peopleDirectory?: T | PeopleDirectoryBlockSelect<T>;
         featureList?: T | FeatureListBlockSelect<T>;
         rawHtml?: T | RawHtmlBlockSelect<T>;
       };
@@ -4544,6 +4639,31 @@ export interface PresetsSelect<T extends boolean = true> {
                     customPage?: T;
                     label?: T;
                   };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        peopleDirectory?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
               section?:
                 | T
                 | {

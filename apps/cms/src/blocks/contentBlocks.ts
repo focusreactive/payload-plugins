@@ -12,6 +12,7 @@ import { NewsletterBlock } from "./Newsletter/config";
 import { RawHtmlBlock } from "./RawHtml/config";
 import { FeatureListBlock } from "./FeatureList/config";
 import { InsightsListBlock } from "./InsightsList/config";
+import { PeopleDirectoryBlock } from "./PeopleDirectory/config";
 import { StatsBlock } from "./Stats/config";
 import { TestimonialsListBlock } from "./TestimonialsList/config";
 
@@ -28,6 +29,7 @@ export const contentBlocks: Block[] = [
   NewsletterBlock,
   StatsBlock,
   InsightsListBlock,
+  PeopleDirectoryBlock,
   FeatureListBlock,
   RawHtmlBlock,
 ];
