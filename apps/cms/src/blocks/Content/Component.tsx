@@ -33,10 +33,12 @@ export const ContentBlockComponent: React.FC<ContentBlockProps & { isFirstBlock?
             <Media
               {...media.data}
               className="absolute inset-0"
-              // contain, not cover: every image in this demo is a product screenshot, and the grid
-              // row stretches the container past its 4:3 so cover shaves the left edge off a
-              // window chrome. Letterboxing is invisible against the page background.
-              imageProps={{ ...media.imageProps, className: "object-contain", fill: true }}
+              // fit, not a class: next/image writes object-fit as an inline style, which beats
+              // object-contain in the class list. contain rather than cover because every image
+              // here is a product screenshot, the grid row stretches the container past its 4:3,
+              // and cover was shaving the left edge off the admin window: "Insights" read as
+              // "nsights". Letterboxing is invisible against the page background.
+              imageProps={{ ...media.imageProps, fit: "contain", fill: true }}
               visualEditing={media.visualEditing}
             />
           ) : null
