@@ -66,16 +66,20 @@ operation joins the surrounding transaction.
 3. Get the Payload instance via `await getPayloadClient()` — never import
    `getPayload` from `payload` outside `payload-client.ts`.
 4. Wrap with `react.cache` (per-request memoization) and/or
-   `unstable_cache` (cross-request cache with tags) as appropriate.
+   `scopedCache` (cross-request cache with tags) as appropriate.
 5. Re-export from `src/lib/dal/index.ts` if it's part of the public surface.
 
 ## Caching
 
 - `react.cache` deduplicates within a single render pass.
-- `next/cache.unstable_cache` deduplicates across requests; pair with
-  `revalidateTag` (see `src/lib/utils/cacheTags.ts`).
+- `scopedCache` (`src/lib/utils/scopedCache.ts`) deduplicates across requests;
+  pair it with `revalidateScopedTag` (tag names in `src/lib/utils/cacheTags.ts`).
+  Never import `unstable_cache` or `revalidateTag` from `next/cache` directly,
+  and lint refuses it: every preview branch shares one Vercel data cache, and
+  the wrapper prefixes each key and tag with the branch so one sandbox cannot
+  read another's entries.
 - Tag every cached read so collection/global hooks can invalidate it via
-  `revalidateTag`.
+  `revalidateScopedTag`.
 
 ## Future adapters
 

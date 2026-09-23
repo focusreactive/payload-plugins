@@ -1,6 +1,5 @@
-import { unstable_cache } from "next/cache";
-
 import { cacheTag } from "@/lib/utils/cacheTags";
+import { scopedCache } from "@/lib/utils/scopedCache";
 import type { Locale } from "@/lib/types";
 import { getPayloadClient } from "@/dal/payload-client";
 
@@ -19,6 +18,6 @@ export async function getRedirects(locale: Locale) {
 }
 
 export const getCachedRedirects = ({ locale }: { locale: Locale }) =>
-  unstable_cache(async () => getRedirects(locale), ["redirects", locale], {
+  scopedCache(async () => getRedirects(locale), ["redirects", locale], {
     tags: ["redirects", cacheTag({ locale, type: "redirect" })],
   });
