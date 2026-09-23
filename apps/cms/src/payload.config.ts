@@ -31,6 +31,7 @@ export default buildConfig({
   admin: {
     components: {
       afterLogin: ["/components/admin/SSOButtons"],
+      beforeNavLinks: ["/components/admin/ReviewQueueNavLink#ReviewQueueNavLink"],
       graphics: {
         Icon: "/components/admin/Icon",
         Logo: "/components/admin/Logo",
