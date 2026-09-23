@@ -211,6 +211,7 @@ function formatPasslePostPublishedDate(publishedDate: string): string {
 function buildInsightCardsGridItem(post: PasslePostPayload) {
   const authorName = post.Authors[0]?.Name ?? "Unattributed";
   return {
+    alignVariant: "left" as const,
     title: post.PostTitle,
     description: `${authorName} · ${formatPasslePostPublishedDate(post.PublishedDate)}`,
   };
@@ -441,6 +442,7 @@ function buildOurPeoplePageBlocks(
     description: "Grouped by office.",
     columns: 3,
     items: people.map((person) => ({
+      alignVariant: "left" as const,
       title: person.name,
       description: `${person.jobTitle} - ${person.office}`,
     })),
