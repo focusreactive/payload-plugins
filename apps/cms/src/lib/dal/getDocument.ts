@@ -1,5 +1,4 @@
-import { unstable_cache } from "next/cache";
-
+import { scopedCache } from "@/lib/utils/scopedCache";
 import { getPayloadClient } from "@/dal/payload-client";
 import type { Config } from "@/payload-types";
 
@@ -41,11 +40,11 @@ async function getDocumentByID(
 }
 
 export const getCachedDocument = (collection: Collection, slug: string) =>
-  unstable_cache(async () => getDocument(collection, slug), [collection, slug], {
+  scopedCache(async () => getDocument(collection, slug), [collection, slug], {
     tags: [`${collection}_${slug}`],
   });
 
 export const getCachedDocumentByID = (collection: Collection, id: number) =>
-  unstable_cache(async () => getDocumentByID(collection, id), [collection, id.toString()], {
+  scopedCache(async () => getDocumentByID(collection, id), [collection, id.toString()], {
     tags: [`${collection}_id_${id}`],
   });

@@ -3,7 +3,7 @@
  * Page document per topic. Modelled on getTalkBySlug in ./getTalks.ts for its signature and on
  * getPostBySlug.ts for its caching, which is the by-slug convention here: react `cache` collapses
  * the repeat call that generateMetadata + the page component always make within one request, and
- * `unstable_cache` keeps the query out of the database across requests.
+ * `scopedCache` keeps the query out of the database across requests.
  *
  * No `_status` filter, unlike getPostBySlug: the Topic collection declares no `versions`, so there
  * is no status column to filter on and asking for one would fail the query rather than return
@@ -13,11 +13,11 @@
  * does nothing on a topic while working on every Page.
  */
 
-import { unstable_cache } from "next/cache";
 import { draftMode } from "next/headers";
 import type { Payload } from "payload";
 import { cache } from "react";
 
+import { scopedCache } from "@/lib/utils/scopedCache";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { Locale } from "@/lib/types";
 import type { Topic } from "@/payload-types";
@@ -46,7 +46,7 @@ async function getTopicBySlugQuery(
 }
 
 const getTopicBySlugCached = cache(async (payload: Payload, slug: string, resolvedLocale: Locale) =>
-  unstable_cache(
+  scopedCache(
     () => getTopicBySlugQuery(payload, slug, resolvedLocale, false),
     [slug, resolvedLocale],
     // A literal tag rather than cacheTag(), whose params union covers page, post and redirect

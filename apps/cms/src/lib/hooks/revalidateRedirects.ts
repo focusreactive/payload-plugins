@@ -1,7 +1,7 @@
-import { revalidateTag } from "next/cache";
 import type { CollectionAfterChangeHook } from "payload";
 
 import { cacheTag } from "@/lib/utils/cacheTags";
+import { revalidateScopedTag } from "@/lib/utils/scopedCache";
 import { getLocaleFromRequest } from "@/lib/utils/getLocaleFromRequest";
 
 export const revalidateRedirects: CollectionAfterChangeHook = async ({ doc, req }) => {
@@ -11,7 +11,7 @@ export const revalidateRedirects: CollectionAfterChangeHook = async ({ doc, req 
     payload.logger.info(`Revalidating redirects`);
     const locale = getLocaleFromRequest(req);
 
-    revalidateTag(cacheTag({ locale, type: "redirect" }), "max");
+    revalidateScopedTag(cacheTag({ locale, type: "redirect" }), "max");
     payload.logger.info(`Revalidated redirects for locale: ${locale}`);
   }
 

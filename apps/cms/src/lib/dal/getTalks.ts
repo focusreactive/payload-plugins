@@ -1,5 +1,5 @@
 /**
- * Reads for the Talk collection. Modelled on getPosts.ts, including its unstable_cache +
+ * Reads for the Talk collection. Modelled on getPosts.ts, including its scopedCache +
  * react cache pairing, so a page rendering three TalkGrid blocks issues one query per distinct
  * argument set rather than three.
  *
@@ -8,11 +8,11 @@
  * megabytes per row out of the database to render a title and a lock icon.
  */
 
-import { unstable_cache } from "next/cache";
 import { draftMode } from "next/headers";
 import type { Payload, Where } from "payload";
 import { cache } from "react";
 
+import { scopedCache } from "@/lib/utils/scopedCache";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { Locale } from "@/lib/types";
 
@@ -86,7 +86,7 @@ const getTalksCached = cache(
     topicSlug: string | undefined,
     ids: (number | string)[] | undefined
   ) =>
-    unstable_cache(
+    scopedCache(
       () => getTalksQuery(payload, limit, locale, kind, topicSlug, ids, false),
       [limit.toString(), locale, kind ?? "", topicSlug ?? "", (ids ?? []).join(",")],
       { tags: ["talks"] }
