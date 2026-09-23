@@ -596,13 +596,19 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     section: { theme: "light" },
   };
 
-  const languageAndMarket: CtaBandBlock = {
-    blockType: "ctaBand",
+  // A ctaBand until 2026-09-23: it carries the only claim on the page that the CMS enforces a
+  // rule, and a band has no image field, so the section that most needed evidence was the one
+  // showing none. The screenshot is the person record its own button links to.
+  const languageAndMarket: ContentBlock = {
+    blockType: "content",
     eyebrow: "Six languages, nine markets",
     heading:
       "French carries eight services. English carries seventeen. That is a decision, not a gap.",
-    description:
-      "Which languages a document exists in, and which markets it belongs to, are two separate fields, not one derived from the other. An article whose author covers none of its markets fails validation before it can be saved, and the message names both sides.",
+    layout: "image-text",
+    image: illustrations["admin-person-record.png"] ?? defaultMediaId,
+    content: buildParagraphRichText(
+      "Which languages a document exists in, and which markets it belongs to, are two separate fields, not one derived from the other. An article whose author covers none of its markets fails validation before it can be saved, and the message names both sides."
+    ),
     actions: [buildAction("See the market field on a person", "/admin/collections/person")],
     section: { theme: "light" },
   };
@@ -673,6 +679,10 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     eyebrow: "Honest footnotes",
     heading: "Scope of this demo",
     layout: "text-image",
+    // Explicitly null, not omitted: the field carries an async defaultValue that resolves to the
+    // platform's default media, so leaving it out put a screenshot on the one section that reads
+    // as a footnote and repeated the hero's image on the same page.
+    image: null,
     content: buildParagraphRichText(
       "The visual design is a speculative direction, not a proposal for your brand, and your brand agency's work replaces it. Passle runs against fixtures of your own published articles rather than your live tenancy, because we hold no credentials for it and a fresh demo tenancy would be empty. The layout reflows on a phone because every block here does, but nobody has designed the mobile experience: navigation behaviour, image crops and tap targets are unreviewed. That pass, article and profile detail pages, content migration and search are out of scope here and priced in the estimate."
     ),

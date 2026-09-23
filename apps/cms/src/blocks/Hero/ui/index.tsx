@@ -1,21 +1,11 @@
 import { cn } from "@/components/utils";
-import { DisplayHeading } from "@/components/DisplayHeading";
 import { Media } from "@/components/media";
 import type { PreparedMedia } from "@/components/media";
 import { Link } from "@/components/link";
 import type { LinkProps } from "@/components/link/types";
-import { Eyebrow } from "@/components/Eyebrow";
 import { RichText } from "@/components/richText";
+import { Badge } from "@/shared/ui/shadcn/base/badges/badges";
 import type { IHeroProps } from "./types";
-
-interface HeroBadgeProps {
-  badge?: string | null;
-}
-
-function HeroBadge({ badge }: HeroBadgeProps) {
-  if (!badge) return null;
-  return <Eyebrow prefix="none">{badge}</Eyebrow>;
-}
 
 interface HeroActionsProps {
   links: LinkProps[];
@@ -25,7 +15,12 @@ interface HeroActionsProps {
 function HeroActions({ links, className }: HeroActionsProps) {
   if (!links?.length) return null;
   return (
-    <ul className={cn("flex flex-wrap items-center gap-4", className)}>
+    <ul
+      className={cn(
+        "mt-8 flex w-full flex-col-reverse items-stretch gap-3 md:mt-12 md:flex-row md:items-start",
+        className
+      )}
+    >
       {links.map((link, i) => (
         <li key={i}>
           <Link {...link} />
@@ -40,80 +35,61 @@ function HeroActions({ links, className }: HeroActionsProps) {
  * CSS aspect-ratio on the image itself, and a competing Tailwind aspect-[...] on this wrapper would
  * win over it (an inline style loses to nothing, but a sibling fixed-height ancestor forces the
  * inner aspect-ratio box to auto and it stops doing anything) - which is exactly why every hero
- * image, seeded as 16/9, used to render forced into a 4/5 portrait crop.
+ * image, seeded as 16/9, used to render forced into a 4/5 portrait crop. Untitled's own height and
+ * corner-radius classes go on imageProps.className (the actual <img>) instead, never on this
+ * wrapper, for the same reason.
  */
-function HeroImage({ image, className }: { image: PreparedMedia; className?: string }) {
+function HeroImage({ image }: { image: PreparedMedia }) {
   return (
-    <div className={cn("relative w-full overflow-hidden rounded-[4px]", className)}>
-      <Media {...image.data} visualEditing={image.visualEditing} imageProps={image.imageProps} />
+    <div className="relative w-full overflow-hidden">
+      <Media
+        {...image.data}
+        visualEditing={image.visualEditing}
+        imageProps={{
+          ...image.imageProps,
+          className: cn(
+            image.imageProps?.className,
+            "inset-0 h-60 w-full rounded-tr-[32px] rounded-bl-[32px] object-cover md:h-110 md:rounded-tr-[64px] md:rounded-bl-[64px] lg:h-full"
+          ),
+        }}
+      />
     </div>
   );
 }
 
 /**
- * Adapted from Tailark's hero-section/one.tsx: a text column held to roughly half the row width
- * with the image occupying an independent column beside it, not stretched to match its height.
- * Dropped from the source: the skewed 3D screenshot mockup, the gradient backdrop and the
- * "Trusted by" logo strip - all SaaS decoration DESIGN.md doesn't carry, and the logo strip
- * duplicates the site's own Logos block.
+ * Ported from Untitled UI's marketing/header-section/hero-split-image-05.tsx. Dropped from the
+ * source: the outer bg-primary/overflow-hidden shell, the two decorative grid-pattern images and
+ * the <Header/> - SectionContainer (one level up, wired in Component.tsx) already supplies
+ * "relative overflow-hidden", the section's vertical padding and the theme-driven background, so
+ * repeating any of those here would double the padding or silently override the CMS theme choice.
  */
-function HeroShowcase({ badge, title, text, image, links }: Omit<IHeroProps, "variant" | "theme">) {
+export function Hero({ badge, title, text, image, links }: IHeroProps) {
   const hasImage = typeof image?.data?.src === "string" && image.data.src.length > 0;
 
   return (
-    <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
-      <div className={cn("flex flex-col gap-8", hasImage ? "lg:col-span-7" : "lg:col-span-9")}>
-        <HeroBadge badge={badge} />
-        <DisplayHeading as="h1" size="display-1" text={title} className="display-serif" />
-        <div className="measure text-muted-foreground">
-          <RichText {...text} />
-        </div>
+    <div className="relative mx-auto grid max-w-container grid-cols-1 gap-16 px-4 md:px-8 lg:min-h-160 lg:items-center">
+      <div className="z-10 flex max-w-200 flex-col items-start">
+        {badge && (
+          <Badge size="md" type="pill-color" color="brand" className="mb-4">
+            {badge}
+          </Badge>
+        )}
+        <h1 className="text-display-md font-semibold text-primary md:text-display-lg lg:text-display-xl">
+          {title}
+        </h1>
+        <RichText
+          {...text}
+          className="mt-4 max-w-xl text-lg text-balance text-tertiary md:mt-6 md:text-xl"
+        />
         <HeroActions links={links} />
       </div>
+
       {hasImage && (
-        <div className="lg:col-span-4 lg:col-start-9 lg:self-start">
+        <div className="relative lg:absolute lg:top-0 lg:right-8 lg:h-full lg:w-140">
           <HeroImage image={image} />
         </div>
       )}
     </div>
-  );
-}
-
-/**
- * Adapted from Tailark's hero-section/five.tsx and six.tsx: centered heading and copy above a
- * single image below the fold. Dropped from the source: the second, inset "app screenshot" layered
- * on top of a background photo (this block has one image field, not two), the shadow/ring frame
- * (a hairline border instead, per DESIGN.md), and the "Trusted by" logo strip.
- */
-function HeroCentered({ badge, title, text, image, links }: Omit<IHeroProps, "variant" | "theme">) {
-  const hasImage = typeof image?.data?.src === "string" && image.data.src.length > 0;
-
-  return (
-    <div className="flex flex-col items-center gap-8 text-center">
-      <HeroBadge badge={badge} />
-      <DisplayHeading
-        as="h1"
-        size="display-1"
-        text={title}
-        className="display-serif mx-auto max-w-3xl"
-      />
-      <div className="measure mx-auto text-muted-foreground">
-        <RichText {...text} />
-      </div>
-      <HeroActions links={links} className="justify-center" />
-      {hasImage && <HeroImage image={image} className="mt-4 max-w-4xl border border-border" />}
-    </div>
-  );
-}
-
-/**
- * No backdrop and no grid lines here, and none anywhere else either: DESIGN.md bans decorative
- * background art, so the structure has to come from type size, whitespace and one hairline rule.
- */
-export function Hero({ variant, badge, title, text, image, links }: IHeroProps) {
-  const HeroVariantComponent = variant === "centered" ? HeroCentered : HeroShowcase;
-
-  return (
-    <HeroVariantComponent badge={badge} title={title} text={text} image={image} links={links} />
   );
 }

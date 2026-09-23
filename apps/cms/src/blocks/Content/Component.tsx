@@ -25,7 +25,11 @@ export const ContentBlockComponent: React.FC<ContentBlockProps & { isFirstBlock?
   const media = resolvedImage ? prepareMediaProps({ image: resolvedImage }) : null;
 
   return (
-    <SectionContainer sectionData={{ ...section, id }}>
+    <SectionContainer
+      // Untitled UI's section brings its own padding, container and max width. Ours would nest
+      // inside theirs and halve the content width.
+      sectionData={{ ...section, id, paddingY: "none", paddingX: "none", maxWidth: "none" }}
+    >
       <ContentSection
         layout={layout}
         header={header}
