@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { headers } from "next/headers";
 import NextLink from "next/link";
 import React from "react";
 
@@ -20,11 +19,9 @@ interface Props {
 }
 
 export default async function NotFound() {
-  const headersList = await headers();
-  const pathname = headersList.get("x-pathname") || "/";
-
-  const segments = pathname.split("/").filter(Boolean);
-  const locale = await resolveLocale(segments[0] as Locale | undefined);
+  // The locale the layout set, not the request headers: reading headers() here made every route
+  // that can 404 render on demand, which was all of them.
+  const locale = await resolveLocale();
 
   const [settings, t] = await Promise.all([
     getNotFoundSettings({ locale }),
