@@ -24,7 +24,11 @@ export async function HeroBlockComponent({
   const locale = await resolveLocale();
 
   return (
-    <SectionContainer sectionData={{ ...section, id }}>
+    <SectionContainer
+      // Untitled UI's hero brings max-w-container and its own horizontal padding. Ours nested
+      // inside theirs halves the usable width.
+      sectionData={{ ...section, id, paddingX: "none", maxWidth: "none" }}
+    >
       <Hero
         variant={variant}
         theme={section?.theme ?? null}
