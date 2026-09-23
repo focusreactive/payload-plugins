@@ -97,7 +97,7 @@ export const Users: CollectionConfig<"users"> = {
         },
         position: "sidebar",
       },
-      defaultValue: "admin",
+      defaultValue: "user",
       label: {
         en: "Role",
         es: "Rol",

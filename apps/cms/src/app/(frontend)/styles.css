@@ -54,10 +54,14 @@ body {
     --tw-prose-invert-code: var(--color-foreground);
   }
 
+  /*
+   * Deliberately sets no font-size and no color. Both used to be hardcoded here, at the same
+   * specificity as the utility classes on the container, so every Untitled UI type class on a
+   * rich-text body silently lost - the hero subhead rendered at 18.88px under a 60px heading.
+   * Paragraphs now inherit whatever their section sets.
+   */
   .prose p {
-    font-size: 1.18rem;
     line-height: 1.75;
-    color: color-mix(in srgb, var(--color-foreground) 88%, transparent);
   }
 
   .prose h2 {

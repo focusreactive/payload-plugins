@@ -13,7 +13,9 @@ import { useEffect, useRef, useState } from "react";
 export function AnimatedStatValue({ value }: { value: string }) {
   const match = value.match(/^(\D*)([\d,.\s]+)(.*)$/u);
   const target = match ? Number(match[2].replace(/[^\d]/gu, "")) : NaN;
-  const usesGrouping = match ? /,/u.test(match[2]) : false;
+  // French seeds "3 115" with a narrow no-break space, English "3,115" with a comma. Reuse
+  // whichever the source used, or the count reformats itself into the wrong locale mid-animation.
+  const groupSeparator = match ? (match[2].match(/[^\d]/u)?.[0] ?? "") : "";
 
   const elementRef = useRef<HTMLSpanElement>(null);
   const [displayed, setDisplayed] = useState(0);
@@ -57,7 +59,9 @@ export function AnimatedStatValue({ value }: { value: string }) {
 
   if (!match || !Number.isFinite(target)) return <>{value}</>;
 
-  const rendered = usesGrouping ? displayed.toLocaleString("en-US") : String(displayed);
+  const rendered = groupSeparator
+    ? String(displayed).replace(/\B(?=(\d{3})+(?!\d))/gu, groupSeparator)
+    : String(displayed);
   return (
     <span ref={elementRef}>
       {match[1]}

@@ -105,13 +105,13 @@ const LOCALIZED_PAGE_BODY: Record<
   "our-people": {
     fr: {
       eyebrow: "Rattachement des auteurs",
-      heading: "Un profil par personne, avec les marchés qu’elle couvre",
-      body: "Vingt et un profils, chacun avec un intitulé de poste, un bureau et les marchés couverts. Les marchés se configurent indépendamment des langues.",
+      heading: "Un profil par personne",
+      body: "Vingt et un profils, chacun avec un intitulé de poste. Les marchés se configurent indépendamment des langues.",
     },
     ja: {
       eyebrow: "著者の紐付け",
-      heading: "一人ひとりのプロフィールと担当市場",
-      body: "21名分のプロフィールに、役職、所属オフィス、担当市場を掲載しています。市場は言語とは独立して設定します。",
+      heading: "一人ひとりのプロフィール",
+      body: "21名分のプロフィールに、役職を掲載しています。市場は言語とは独立して設定します。",
     },
   },
   services: {
@@ -153,12 +153,12 @@ const LOCALIZED_PAGE_BODY: Record<
   "global-presence": {
     fr: {
       eyebrow: "Présence mondiale",
-      heading: "Du continent au pays, puis au bureau",
+      heading: "Du continent au pays, puis à l’implantation",
       body: "Cette branche compte quatre niveaux. Chaque niveau possède son propre segment d’URL, dans chaque langue.",
     },
     ja: {
       eyebrow: "拠点",
-      heading: "大陸から国へ、そしてオフィスへ",
+      heading: "大陸から国へ、そして拠点へ",
       body: "この構造は4階層です。各階層が、言語ごとに固有のURLセグメントを持ちます。",
     },
   },
@@ -178,12 +178,12 @@ const LOCALIZED_PAGE_BODY: Record<
     fr: {
       eyebrow: "Échelon national",
       heading: "Japon",
-      body: "Troisième niveau. Renommez-le dans la version française, et seules les URL françaises situées en dessous changent.",
+      body: "Troisième niveau. Changez son adresse dans la version française, et seules les URL françaises situées en dessous changent.",
     },
     ja: {
       eyebrow: "国階層",
       heading: "日本",
-      body: "第3階層です。ある言語でこの階層の名称を変更すると、その言語の配下のURLだけが変わります。",
+      body: "第3階層です。ある言語でこの階層のアドレスを変更すると、その言語の配下のURLだけが変わります。",
     },
   },
   "tokyo-office": {
@@ -218,9 +218,9 @@ const PAGE_META_EN: Record<string, { title: string; description: string }> = {
       "Twenty published articles that reached this platform through a webhook, each matched to its author by email address.",
   },
   "our-people": {
-    title: "People, and the markets they cover",
+    title: "Our people, twenty-one profiles",
     description:
-      "Twenty-one profiles, each with a job title, an office and the markets they cover. The email address on the profile is what lets an article find its author automatically.",
+      "Twenty-one profiles, each with a job title. The email address on the profile is what lets an article find its author automatically.",
   },
   services: {
     title: "Services, and why the list differs by language",
@@ -240,7 +240,7 @@ const PAGE_META_EN: Record<string, { title: string; description: string }> = {
   "global-presence": {
     title: "Global presence",
     description:
-      "The office tree, four levels deep, where every level carries its own address segment in every language.",
+      "The presence tree, four levels deep, where every level carries its own address segment in every language.",
   },
   asia: {
     title: "Asia",
@@ -354,12 +354,12 @@ const LOCALIZED_LISTING_HEADER: Record<
   fr: {
     patents: {
       eyebrow: "Travaux récents en brevets",
-      heading: "Rédigés par les attorneys qui les traitent",
+      heading: "Rédigés par les conseils en propriété industrielle qui les traitent",
       description: "Articles publiés par le cabinet. Ils n’existent qu’en anglais.",
     },
     "trade-marks": {
       eyebrow: "Travaux récents en marques",
-      heading: "Rédigés par les attorneys qui les traitent",
+      heading: "Rédigés par les conseils en propriété industrielle qui les traitent",
       description: "Articles publiés par le cabinet. Ils n’existent qu’en anglais.",
     },
     insights: {
@@ -372,7 +372,7 @@ const LOCALIZED_LISTING_HEADER: Record<
       eyebrow: "Notre équipe",
       heading: "Vingt et un profils, rattachés par adresse e-mail",
       description:
-        "Le webhook n’en crée jamais un seul : il rattache l’auteur d’un article à un profil déjà présent.",
+        "Le webhook n’en crée jamais un seul : il rattache l’auteur d’un article à un profil déjà présent.",
     },
   },
   ja: {
@@ -911,8 +911,7 @@ function buildOurPeoplePageBlocks(
     image: illustrations["admin-person-record.png"] ?? defaultMediaId,
     content: buildRichText(
       {
-        paragraph:
-          "Twenty-one people are on file, each with a job title, an office and the markets they cover.",
+        paragraph: "Twenty-one people are on file, each with a job title.",
       },
       {
         paragraph:
@@ -938,7 +937,7 @@ function buildOurPeoplePageBlocks(
     items: people.map((person) => ({
       alignVariant: "left" as const,
       title: person.name,
-      description: `${person.jobTitle} - ${person.office}`,
+      description: person.jobTitle,
     })),
     section: { theme: "light" },
   };
@@ -1125,7 +1124,7 @@ function buildGlobalPresencePageBlocks(defaultMediaId: number) {
     image: defaultMediaId,
     content: buildRichText(
       {
-        paragraph: "The address structure below moves from continent to country to office.",
+        paragraph: "The address structure below moves from continent to country to location.",
       },
       {
         paragraph:
@@ -1530,7 +1529,7 @@ function buildDemoPresets(
             icon: "users",
             title: "Our people",
             description:
-              "The attorneys whose articles arrive from Passle, with the markets they cover.",
+              "The attorneys whose articles arrive from Passle.",
             link: {
               ...buildAction("Meet our people", "/our-people", "default"),
               label: "Meet our people",
@@ -1766,17 +1765,17 @@ const FOOTER_GROUP_LABELS_BY_LOCALE: Record<LocaleCode, { practice: string; firm
 const FOOTER_TEXT_BY_LOCALE: Record<LocaleCode, { description: string; copyright: string }> = {
   en: {
     description:
-      "A working content platform: six languages, nine markets, and every article arriving from the firm's own publishing tool.",
+      "A working content platform: six languages, nine markets, and every article seeded from real fixtures, not a live tenancy.",
     copyright: "Marks & Clerk - content platform demo, built by FocusReactive",
   },
   fr: {
     description:
-      "Une plateforme de contenu réellement en service : six langues, neuf marchés, et des articles qui arrivent directement de l’outil de publication du cabinet.",
+      "Une plateforme de contenu réellement en service : six langues, neuf marchés, et des articles repris de publications réelles, pas un flux en direct.",
     copyright: "Marks & Clerk - content platform demo, built by FocusReactive",
   },
   ja: {
     description:
-      "実際に稼働しているコンテンツ基盤。6言語、9市場、記事は事務所自身の発信ツールから届きます。",
+      "実際に稼働しているコンテンツ基盤。6言語、9市場、記事は実際の公開記事をもとに投入したもので、ライブ連携ではありません。",
     copyright: "Marks & Clerk - content platform demo, built by FocusReactive",
   },
 };
@@ -2253,7 +2252,7 @@ export async function POST(request: Request) {
               slug: "dessins-et-modeles",
               eyebrow: "En attente de relecture",
               heading: "Dessins et modèles",
-              body: "Troisième page de service, traduite par la plateforme et retenue ici jusqu'à ce qu'un relecteur la valide. Elle possède déjà son URL, elle n'est pas publiée, et aucun lien du site public n'y mène.",
+              body: "Troisième page de service, traduite par la plateforme et retenue ici jusqu’à ce qu’un relecteur la valide. Elle possède déjà son URL, elle n’est pas publiée, et aucun lien du site public n’y mène.",
             },
           ],
           [
@@ -2317,7 +2316,7 @@ export async function POST(request: Request) {
       },
       fr: {
         description:
-          "Une plateforme de contenu réellement en service : quinze bureaux, six langues, neuf marchés, un seul modèle de contenu.",
+          "Une plateforme de contenu réellement en service : quinze bureaux, six langues, neuf marchés, un seul modèle de contenu.",
         notFoundTitle: "Cette page n’existe pas",
         notFoundDescription:
           "Chaque page possède sa propre URL dans chaque langue. Celle que vous avez saisie n’existe dans aucune d’elles.",

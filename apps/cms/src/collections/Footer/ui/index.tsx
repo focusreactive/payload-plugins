@@ -60,7 +60,7 @@ export function Footer({
            * empty rather than the row stretching to fill - left as-is per the no-invented-classes
            * rule rather than substituting a column count they never shipped.
            */}
-          <ul className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6">
+          <ul className="flex flex-wrap gap-x-16 gap-y-8">
             {linkGroups.map((group, groupIndex) => (
               <li key={groupIndex}>
                 <h4 className="text-sm font-semibold text-quaternary">{group.label}</h4>

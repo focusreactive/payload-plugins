@@ -159,8 +159,8 @@ export const Footer: CollectionConfig<"footer"> = {
         },
       },
       defaultValue: createLocalizedDefault({
-        en: "© 2026 Cadence Labs, Inc.",
-        es: "© 2026 Cadence Labs, Inc.",
+        en: "© 2026",
+        es: "© 2026",
       }),
       localized: true,
       name: "copyrightText",

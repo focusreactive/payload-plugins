@@ -1,7 +1,6 @@
 import { cn } from "@/components/utils";
 import { Media } from "@/components/media";
 import type { PreparedMedia } from "@/components/media";
-import { RichText } from "@/components/richText";
 import { Badge } from "@/shared/ui/shadcn/base/badges/badges";
 import { Button } from "@/shared/ui/shadcn/base/buttons/button";
 import { BackgroundStripes } from "@/shared/ui/shadcn/marketing/header-section/base-components/background-stripes";
@@ -55,10 +54,16 @@ export function Hero({ badge, title, text, image, links }: IHeroProps) {
               {title}
             </h1>
 
-            <RichText
-              {...text}
-              className="mt-4 max-w-3xl text-lg text-brand-secondary md:mt-6 md:text-xl"
-            />
+            {/*
+              Not <RichText {...text} .../> here: that component (components/richText) wraps its
+              children in its own "prose max-w-full" div, but text.richText already arrives
+              pre-wrapped in one from components/shared/RichText's own rendering - nesting two
+              .prose containers. This renders the already-wrapped node directly, keeping exactly
+              one .prose layer.
+            */}
+            <div className="mt-4 max-w-3xl text-lg text-brand-secondary md:mt-6 md:text-xl">
+              {text.richText}
+            </div>
 
             {links?.length > 0 && (
               <div className="relative z-1 mt-8 flex w-full flex-col-reverse items-stretch gap-3 sm:w-auto sm:flex-row sm:items-start md:mt-12">
@@ -70,6 +75,19 @@ export function Hero({ badge, title, text, image, links }: IHeroProps) {
                     // Untitled UI's source puts secondary first because its own first action is a
                     // "Demo" link. Ours leads with the primary call, so the order is reversed.
                     color={index === 0 ? "primary" : "secondary"}
+                    // The "secondary" color's `bg-primary text-secondary ring-primary` is generated
+                    // twice, once per Tailwind entry point (globals.css vs this app's own
+                    // app/(frontend)/styles.css, which imports @repo/tailwind-config/base.css and
+                    // never sees theme.css's Untitled overrides), and the second, later-loaded
+                    // stylesheet wins the cascade - so this button rendered DESIGN.md's own
+                    // near-black `--color-secondary` on its own dark green `--color-primary`
+                    // instead of Untitled's white/grey outline button. See brand.css for the
+                    // cta-outline tokens this points at instead.
+                    className={
+                      index !== 0
+                        ? "bg-cta-outline text-cta-outline-foreground ring-cta-outline-border"
+                        : undefined
+                    }
                   >
                     {link.text}
                   </Button>

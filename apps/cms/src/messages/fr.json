@@ -1,12 +1,12 @@
 {
   "common": {
-    "goToHomepage": "Accéder à la page d'accueil",
+    "goToHomepage": "Accéder à la page d’accueil",
     "page": "Page",
-    "exitPreview": "Quitter l'aperçu",
-    "returnToHome": "Retour à l'accueil",
+    "exitPreview": "Quitter l’aperçu",
+    "returnToHome": "Retour à l’accueil",
     "somethingWentWrong": "Un problème est survenu",
-    "anErrorOccurredWhileLoadingTheBlog": "Une erreur s'est produite lors du chargement du blog : {errorMessage}",
-    "anErrorOccurredWhileLoadingTheSite": "Une erreur s'est produite lors du chargement du site : {errorMessage}"
+    "anErrorOccurredWhileLoadingTheBlog": "Une erreur s’est produite lors du chargement du blog : {errorMessage}",
+    "anErrorOccurredWhileLoadingTheSite": "Une erreur s’est produite lors du chargement du site : {errorMessage}"
   },
   "pageRange": {
     "docs": {
@@ -17,7 +17,7 @@
       "plural": "Articles",
       "singular": "Article"
     },
-    "noResults": "La recherche n'a produit aucun résultat.",
+    "noResults": "La recherche n’a produit aucun résultat.",
     "showing": "Affichage de {start}{end} sur {total} {label}",
     "showingEnd": " - {end}"
   },
@@ -44,7 +44,7 @@
       "eyebrow": "The Journal, chaque mois",
       "heading": "Un e-mail réfléchi par mois. Rien de superflu.",
       "placeholder": "vous@equipe.com",
-      "button": "S'abonner",
+      "button": "S’abonner",
       "disclaimer": "Pas de spam. Désabonnement à tout moment."
     }
   },
@@ -57,7 +57,7 @@
     }
   },
   "hierarchyNav": {
-    "breadcrumbLabel": "Fil d'Ariane",
+    "breadcrumbLabel": "Fil d’Ariane",
     "inThisSection": "Dans cette section"
   }
 }

@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { en } from "@payloadcms/translations/languages/en";
 import { es } from "@payloadcms/translations/languages/es";
+import { fr } from "@payloadcms/translations/languages/fr";
+import { ja } from "@payloadcms/translations/languages/ja";
 import { buildConfig } from "payload";
 import sharp from "sharp";
 
@@ -63,12 +65,16 @@ export default buildConfig({
         },
       ],
     },
+    meta: {
+      titleSuffix: " - Marks & Clerk",
+    },
     user: Users.slug,
   },
   collections: [
-    Users,
-    Media,
+    // Content leads the nav (this demo is about content), with Page first within it;
+    // Users moved out of the lead slot so the sidebar no longer opens on Administration.
     Page,
+    Media,
     Categories,
     Authors,
     Posts,
@@ -78,6 +84,7 @@ export default buildConfig({
     Header,
     Footer,
     GlobalBlock,
+    Users,
     DocumentEmbeddings,
   ],
   db: createDatabaseAdapter({
@@ -87,7 +94,7 @@ export default buildConfig({
   globals: [SiteSettings],
   i18n: {
     fallbackLanguage: "en",
-    supportedLanguages: { en, es },
+    supportedLanguages: { en, es, fr, ja },
     translations: {
       en: {
         sso: {

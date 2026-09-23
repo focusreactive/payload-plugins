@@ -57,10 +57,13 @@ export const Insight: CollectionConfig<"insight"> = {
     {
       // Not shown to editors: it is the thought-leadership platform's own sync
       // key, set by the ingest route, and there is nothing an editor can do
-      // with it directly.
+      // with it directly. A hand-created Insight (no Passle origin) never gets
+      // one from the ingest route, so it needs a generated default here or it
+      // can never pass the required+unique validation and can never be saved.
       admin: {
         hidden: true,
       },
+      defaultValue: () => `manual-${crypto.randomUUID()}`,
       index: true,
       label: "Passle Shortcode",
       name: "passleShortcode",
