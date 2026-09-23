@@ -2654,6 +2654,8 @@ export async function POST(request: Request) {
             data: {
               title: translation.title,
               slug: translation.slug,
+              // Without this the slug hook re-slugifies to ASCII and the Japanese address collapses.
+              generateSlug: false,
               standfirst: translation.standfirst,
               body: buildRichText(...translation.paragraphs.map((paragraph) => ({ paragraph }))),
             },
