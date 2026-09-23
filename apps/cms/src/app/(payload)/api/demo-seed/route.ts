@@ -1282,83 +1282,55 @@ function buildDemoMedia(): DemoMediaSpec[] {
       data: readFileSync(path.join(process.cwd(), "public", "brand", "marks-and-clerk-logo.svg")),
     },
     {
-      filename: "preview-hero.png",
-      alt: "Hero block preview",
+      filename: "preset-hero.png",
+      alt: "Preview of a section preset, captured from the live demo",
+      mimetype: "image/png",
+      data: readFileSync(path.join(process.cwd(), "public", "preset-previews", "preset-hero.png")),
+    },
+    {
+      filename: "preset-stats.png",
+      alt: "Preview of a section preset, captured from the live demo",
+      mimetype: "image/png",
+      data: readFileSync(path.join(process.cwd(), "public", "preset-previews", "preset-stats.png")),
+    },
+    {
+      filename: "preset-content-image-left.png",
+      alt: "Preview of a section preset, captured from the live demo",
       mimetype: "image/png",
       data: readFileSync(
-        path.join(process.cwd(), "public", "block-preview-images", "preview-hero.png")
+        path.join(process.cwd(), "public", "preset-previews", "preset-content-image-left.png")
       ),
     },
     {
-      filename: "preview-content.png",
-      alt: "Content block preview",
+      filename: "preset-content-image-right.png",
+      alt: "Preview of a section preset, captured from the live demo",
       mimetype: "image/png",
       data: readFileSync(
-        path.join(process.cwd(), "public", "block-preview-images", "preview-content.png")
+        path.join(process.cwd(), "public", "preset-previews", "preset-content-image-right.png")
       ),
     },
     {
-      filename: "preview-faq.png",
-      alt: "FAQ block preview",
+      filename: "preset-icon-cards.png",
+      alt: "Preview of a section preset, captured from the live demo",
       mimetype: "image/png",
       data: readFileSync(
-        path.join(process.cwd(), "public", "block-preview-images", "preview-faq.png")
+        path.join(process.cwd(), "public", "preset-previews", "preset-icon-cards.png")
       ),
     },
     {
-      filename: "preview-cards-grid.png",
-      alt: "Cards grid block preview",
+      filename: "preset-team-cards.png",
+      alt: "Preview of a section preset, captured from the live demo",
       mimetype: "image/png",
       data: readFileSync(
-        path.join(process.cwd(), "public", "block-preview-images", "preview-cards-grid.png")
+        path.join(process.cwd(), "public", "preset-previews", "preset-team-cards.png")
       ),
     },
     {
-      filename: "preview-carusel.png",
-      alt: "Carousel block preview",
+      filename: "preset-text-cards.png",
+      alt: "Preview of a section preset, captured from the live demo",
       mimetype: "image/png",
       data: readFileSync(
-        path.join(process.cwd(), "public", "block-preview-images", "preview-carusel.png")
-      ),
-    },
-    {
-      filename: "preview-logos.png",
-      alt: "Logos block preview",
-      mimetype: "image/png",
-      data: readFileSync(
-        path.join(process.cwd(), "public", "block-preview-images", "preview-logos.png")
-      ),
-    },
-    {
-      filename: "preview-chart.png",
-      alt: "Chart block preview",
-      mimetype: "image/png",
-      data: readFileSync(
-        path.join(process.cwd(), "public", "block-preview-images", "preview-chart.png")
-      ),
-    },
-    {
-      filename: "preview-cta.png",
-      alt: "CTA band block preview",
-      mimetype: "image/png",
-      data: readFileSync(
-        path.join(process.cwd(), "public", "block-preview-images", "preview-cta.png")
-      ),
-    },
-    {
-      filename: "preview-newsletter.png",
-      alt: "Newsletter block preview",
-      mimetype: "image/png",
-      data: readFileSync(
-        path.join(process.cwd(), "public", "block-preview-images", "preview-newsletter.png")
-      ),
-    },
-    {
-      filename: "preview-stats.png",
-      alt: "Stats block preview",
-      mimetype: "image/png",
-      data: readFileSync(
-        path.join(process.cwd(), "public", "block-preview-images", "preview-stats.png")
+        path.join(process.cwd(), "public", "preset-previews", "preset-text-cards.png")
       ),
     },
     {
@@ -1443,297 +1415,82 @@ function buildDemoTestimonial(avatarMediaId: number) {
 interface DemoPresetSpec {
   name: string;
   previewFilename: string;
-  block:
-    | HeroBlock
-    | ContentBlock
-    | FaqBlock
-    | CardsGridBlock
-    | CarouselBlock
-    | LogosBlock
-    | ChartBlock
-    | CtaBandBlock
-    | NewsletterBlock
-    | StatsBlock
-    | TestimonialsListBlock
-    | RawHtmlBlock;
+  block: NonNullable<Page["blocks"]>[number];
 }
 
 /**
- * One preset per entry in contentBlocks.ts (apps/cms/src/blocks/contentBlocks.ts), so every block
- * in the drawer has a populated starting point instead of an empty shell. GlobalSectionSlotBlock
- * is deliberately excluded - its only field is a required relationship to an existing globalBlock
- * document, demo-seed never creates one, and a preset with nothing but a pointer to nothing isn't
- * "real content."
+ * One preset per section design the demo actually renders, each taken from the same builder the
+ * page uses, so a preset can never drift from the section it previews. Blocks still on the fork
+ * base's design (FAQ, carousel, logos, chart, CTA band, newsletter, testimonials, raw HTML) get no
+ * preset: offering one would put the old look straight back onto a page.
  */
 function buildDemoPresets(
-  mediaIdByFilename: Record<string, number>,
-  testimonialId: number
+  defaultMediaId: number,
+  illustrations: Record<string, number>,
+  people: Person[]
 ): DemoPresetSpec[] {
+  const home = buildHomepageBlocks(defaultMediaId, illustrations);
+  const pickHomeBlock = (blockType: string, headingIncludes?: string) => {
+    const block = home.find(
+      (candidate) =>
+        candidate.blockType === blockType &&
+        (headingIncludes === undefined ||
+          ("heading" in candidate && String(candidate.heading ?? "").includes(headingIncludes)))
+    );
+    if (!block) throw new Error(`Preset source missing: ${blockType} ${headingIncludes ?? ""}`);
+    return block as NonNullable<Page["blocks"]>[number];
+  };
+  const firstCardsGrid = (blocks: { blockType: string }[]) => {
+    const block = blocks.find((candidate) => candidate.blockType === "cardsGrid") as
+      | CardsGridBlock
+      | undefined;
+    if (!block) throw new Error("Preset source missing: cardsGrid");
+    return block;
+  };
+  // A directory preset only needs enough cards to show the pattern; all twenty-one would be
+  // pasted onto whatever page an editor drops it on.
+  const firstSix = (block: CardsGridBlock): CardsGridBlock => ({
+    ...block,
+    items: (block.items ?? []).slice(0, 6),
+  });
+
   return [
     {
-      name: "Demo Hero",
-      previewFilename: "preview-hero.png",
-      block: {
-        blockType: "hero",
-        variant: "showcase",
-        eyebrow: "Demo preset",
-        title: "A rebrand that keeps every market in sync",
-        richText: buildParagraphRichText(
-          "Patents, trade marks and every regional office share one content model. A rebrand rolls out to nine markets at once, not as nine separate projects."
-        ),
-        actions: [buildAction("View services", "/services", "default")],
-        image: {
-          image: mediaIdByFilename["one-document-six-addresses.svg"],
-          aspectRatio: "16/9",
-        },
-        section: { theme: "light" },
-      },
+      name: "Hero - centred, screenshot below",
+      previewFilename: "preset-hero.png",
+      block: pickHomeBlock("hero"),
     },
     {
-      name: "Demo Content",
-      previewFilename: "preview-content.png",
-      block: {
-        blockType: "content",
-        eyebrow: "How it works",
-        heading: "One page tree, three languages",
-        layout: "image-text",
-        image: mediaIdByFilename["preview-content.png"],
-        content: buildParagraphRichText(
-          "Every page carries an English, French and Japanese version from the same record. A slug change or a parent rename cascades to all three, with no separate translation project."
-        ),
-        actions: [buildAction("View global presence", "/global-presence", "outline")],
-        section: { theme: "light" },
-      },
+      name: "Stats - row of figures",
+      previewFilename: "preset-stats.png",
+      block: pickHomeBlock("stats"),
     },
     {
-      name: "Demo FAQ",
-      previewFilename: "preview-faq.png",
-      block: {
-        blockType: "faq",
-        eyebrow: "Questions",
-        heading: "Frequently asked",
-        description: "What a new editor usually asks in week one.",
-        items: [
-          {
-            question: "Where does a page's address come from?",
-            answer: buildParagraphRichText(
-              "From the addresses of every page above it, joined together, in the language you are editing. Change a parent's address and every page beneath it follows."
-            ),
-          },
-          {
-            question: "Why does an article refuse to save with the author I picked?",
-            answer: buildParagraphRichText(
-              "Because that author covers none of the markets the article is filed under. The message names the article's markets and the author's, so you can correct whichever is wrong."
-            ),
-          },
-        ],
-        section: { theme: "light" },
-      },
+      name: "Content - screenshot left, bullets",
+      previewFilename: "preset-content-image-left.png",
+      block: pickHomeBlock("content", "Passle"),
     },
     {
-      name: "Demo Cards Grid",
-      previewFilename: "preview-cards-grid.png",
-      block: {
-        blockType: "cardsGrid",
-        eyebrow: "Explore",
-        heading: "Start here",
-        description: "Three entry points into the demo content.",
-        items: [
-          {
-            icon: "users",
-            title: "Our people",
-            description: "The attorneys whose articles arrive from Passle.",
-            link: {
-              ...buildAction("Meet our people", "/our-people", "default"),
-              label: "Meet our people",
-            },
-          },
-          {
-            icon: "layers",
-            title: "Services",
-            description: "Patents, trade marks, and everything in between.",
-            link: {
-              ...buildAction("View services", "/services", "default"),
-              label: "View services",
-            },
-          },
-          {
-            icon: "map",
-            title: "Global presence",
-            description: "Nine markets, one shared content model.",
-            link: {
-              ...buildAction("View global presence", "/global-presence", "default"),
-              label: "View global presence",
-            },
-          },
-        ],
-        section: { theme: "light" },
-      },
+      name: "Content - screenshot right, bullets",
+      previewFilename: "preset-content-image-right.png",
+      block: pickHomeBlock("content", "Japanese pages"),
     },
     {
-      name: "Demo Carousel",
-      previewFilename: "preview-carusel.png",
-      block: {
-        blockType: "carousel",
-        eyebrow: "Case studies",
-        heading: "Three ways teams use this platform",
-        description: "A quick look at recent regional launches.",
-        effect: "slide",
-        slides: [
-          {
-            image: { image: mediaIdByFilename["preview-carusel.png"] },
-            text: buildParagraphRichText(
-              "A Japan practice update, translated into Japanese from the same page tree."
-            ),
-          },
-          {
-            image: { image: mediaIdByFilename["preview-carusel.png"] },
-            text: buildParagraphRichText(
-              "A rebrand rolled out to nine markets without forking the content model."
-            ),
-          },
-          {
-            image: { image: mediaIdByFilename["preview-carusel.png"] },
-            text: buildParagraphRichText(
-              "A parent page renamed once, cascading to every child slug."
-            ),
-          },
-        ],
-        section: { theme: "light" },
-      },
+      name: "Cards - icon cards with links",
+      previewFilename: "preset-icon-cards.png",
+      block: firstCardsGrid(buildServicesOverviewPageBlocks()),
     },
     {
-      name: "Demo Logos",
-      previewFilename: "preview-logos.png",
-      block: {
-        blockType: "logos",
-        label: "Trusted by teams across nine markets",
-        alignVariant: "center",
-        items: [
-          {
-            image: { image: mediaIdByFilename["preview-logos.png"] },
-            link: {
-              type: "custom",
-              newTab: false,
-              url: "/global-presence",
-              label: "Global presence",
-            },
-          },
-          {
-            image: { image: mediaIdByFilename["preview-logos.png"] },
-            link: {
-              type: "custom",
-              newTab: false,
-              url: "/global-presence",
-              label: "Toronto office",
-            },
-          },
-          {
-            image: { image: mediaIdByFilename["preview-logos.png"] },
-            link: {
-              type: "custom",
-              newTab: false,
-              url: "/global-presence",
-              label: "Singapore office",
-            },
-          },
-        ],
-        section: { theme: "light" },
-      },
+      name: "Cards - people directory",
+      previewFilename: "preset-team-cards.png",
+      block: firstSix(
+        firstCardsGrid(buildOurPeoplePageBlocks(illustrations, defaultMediaId, people))
+      ),
     },
     {
-      name: "Demo Chart",
-      previewFilename: "preview-chart.png",
-      block: {
-        blockType: "chart",
-        eyebrow: "Platform metrics",
-        heading: "Publishing velocity",
-        description: "Placeholder figures, shipped with the preset so the block has a shape.",
-        title: "Monthly published pages",
-        subtitle: "By market",
-        ranges: [
-          {
-            label: "Q1",
-            dataPoints: [
-              { label: "Asia", value: 24 },
-              { label: "Europe", value: 31 },
-              { label: "Americas", value: 18 },
-            ],
-          },
-          {
-            label: "Q2",
-            dataPoints: [
-              { label: "Asia", value: 29 },
-              { label: "Europe", value: 35 },
-              { label: "Americas", value: 22 },
-            ],
-          },
-        ],
-        section: { theme: "light" },
-      },
-    },
-    {
-      name: "Demo CTA Band",
-      previewFilename: "preview-cta.png",
-      block: {
-        blockType: "ctaBand",
-        eyebrow: "Ready when you are",
-        heading: "See it on your own content next",
-        description: "The fastest way to evaluate a platform is to publish something real in it.",
-        actions: [buildAction("View our people", "/our-people", "accent")],
-        section: { theme: "light" },
-      },
-    },
-    {
-      name: "Demo Newsletter",
-      previewFilename: "preview-newsletter.png",
-      block: {
-        blockType: "newsletter",
-        eyebrow: "Stay in the loop",
-        heading: "Get updates on the platform",
-        inputPlaceholder: "Work email",
-        buttonLabel: "Subscribe",
-        disclaimer: "Unsubscribe anytime.",
-        section: { theme: "light" },
-      },
-    },
-    {
-      name: "Demo Stats",
-      previewFilename: "preview-stats.png",
-      block: {
-        blockType: "stats",
-        items: [
-          { value: "15", label: "Offices" },
-          { value: "6", label: "Languages" },
-          { value: "9", label: "Markets" },
-          { value: "1", label: "Content model" },
-        ],
-        section: { theme: "light" },
-      },
-    },
-    {
-      name: "Demo Testimonials",
-      previewFilename: "preview-testimonials.png",
-      block: {
-        blockType: "testimonialsList",
-        eyebrow: "What editors say",
-        heading: "From the rollout",
-        description: "Feedback from the first cohort of editors.",
-        testimonialItems: [{ testimonial: testimonialId }],
-        showRating: true,
-        showAvatar: true,
-        duration: 60,
-        section: { theme: "light" },
-      },
-    },
-    {
-      name: "Demo Raw HTML",
-      previewFilename: "empty-placeholder.jpg",
-      block: {
-        blockType: "rawHtml",
-        html: '<div style="padding: 2rem;"><strong>Embed placeholder</strong> - drop a signed office-hours widget, a status badge, or any third-party embed here.</div>',
-        section: { theme: "light" },
-      },
+      name: "Cards - article list",
+      previewFilename: "preset-text-cards.png",
+      block: firstSix(firstCardsGrid(buildInsightsPageBlocks(illustrations, defaultMediaId))),
     },
   ];
 }
@@ -2560,7 +2317,8 @@ export async function POST(request: Request) {
     let presetsCreatedCount = 0;
     let presetsUpdatedCount = 0;
 
-    for (const spec of buildDemoPresets(mediaIdByFilename, testimonialId)) {
+    const demoPresets = buildDemoPresets(defaultMediaNumericId, illustrationIds, seededPeople);
+    for (const spec of demoPresets) {
       const existingPreset = await payload.find({
         collection: "presets",
         where: { name: { equals: spec.name } },
@@ -2596,6 +2354,24 @@ export async function POST(request: Request) {
         data: presetData,
       });
       presetsCreatedCount += 1;
+    }
+
+    // The branch database inherits the fork base's presets ("Dark", "Light Gray", ...) with its
+    // vendor preview images, and earlier runs of this seed left presets for sections that no
+    // longer exist. Anything not defined above goes, or the drawer offers the old designs.
+    const demoPresetNames = new Set(demoPresets.map((spec) => spec.name));
+    const allPresets = await payload.find({
+      collection: "presets",
+      limit: 500,
+      depth: 0,
+      locale: "en",
+      overrideAccess: true,
+    });
+    let presetsDeletedCount = 0;
+    for (const preset of allPresets.docs) {
+      if (demoPresetNames.has(preset.name)) continue;
+      await payload.delete({ collection: "presets", id: preset.id, overrideAccess: true });
+      presetsDeletedCount += 1;
     }
 
     await seedNavigation(payload, mediaIdByFilename["demo-logo.svg"]);
@@ -2685,6 +2461,7 @@ export async function POST(request: Request) {
         page: deletedPages.docs.length,
         posts: deletedPosts.docs.length,
         media: mediaDeletedCount,
+        presets: presetsDeletedCount,
       },
       created: {
         page: PAGE_TREE.length,
