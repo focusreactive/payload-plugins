@@ -10,6 +10,7 @@ import type { Locale } from "@/lib/types";
 import { buttonVariants, ButtonVariant } from "@/components/button";
 import { getPathname } from "@/lib/i18n/navigation";
 import { getNotFoundSettings } from "@/dal/getNotFoundSettings";
+import { DisplayHeading } from "@/components/DisplayHeading";
 import type { Header as HeaderType, Footer as FooterType } from "@/payload-types";
 import { Footer } from "@/collections/Footer/Component";
 import { Header } from "@/collections/Header/Component";
@@ -36,14 +37,12 @@ export default async function NotFound() {
     <div className="flex min-h-screen flex-col">
       <Header data={settings.header as HeaderType} disableActive />
       <main className="flex flex-1 flex-col">
-        <section className="flex flex-1 items-center justify-center py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8 lg:py-24">
-          <div className="mx-auto max-w-7xl text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              {settings.title || "404 - Page not found"}
-            </h1>
-            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
+        <section className="flex flex-1 items-center py-[clamp(40px,6vw,72px)]">
+          <div className="mx-auto flex w-full max-w-containerMaxW flex-col items-center gap-6 px-containerBase text-center">
+            <DisplayHeading as="h1" size="display-1" text={settings.title || "Page not found"} />
+            <p className="max-w-2xl text-lead text-muted-foreground">
               {settings.description ||
-                "Unfortunately, the requested page does not exist or has been deleted."}
+                "This path isn't in the content model - the rest of this demo is."}
             </p>
             <NextLink
               href={homeHref}

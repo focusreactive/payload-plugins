@@ -76,11 +76,11 @@ export const DEFAULT_VALUES = {
         es: "Descripción de mi sitio",
       },
       notFoundDescription: {
-        en: "Unfortunately, the requested page does not exist or has been deleted.",
-        es: "Lo sentimos, la página solicitada no existe o ha sido eliminada.",
+        en: "This path isn't in the content model - the rest of this demo is.",
+        es: "Esta ruta no está en el modelo de contenido - el resto de esta demo sí.",
       },
       notFoundTitle: {
-        en: "404 - Page not found",
+        en: "Page not found",
         es: "Página no encontrada",
       },
       seoTitleSuffix: { en: "My Site", es: "Mi sitio web" },
