@@ -3,6 +3,7 @@ import type { CollectionConfig, TextField } from "payload";
 
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { marketsField } from "@/lib/fields/marketsField";
+import { validateAuthorMarkets } from "@/lib/fields/validateAuthorMarkets";
 import { generateRichText } from "@/lib/utils/generateRichText";
 
 const addressField = slugField({
@@ -147,9 +148,11 @@ export const Insight: CollectionConfig<"insight"> = {
         en: "Author",
         es: "Autor",
       },
+      hasMany: false,
       name: "author",
       relationTo: "person",
       type: "relationship",
+      validate: validateAuthorMarkets,
     },
     {
       admin: {
