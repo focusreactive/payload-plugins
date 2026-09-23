@@ -338,6 +338,44 @@ const PAGE_TREE: PageSpec[] = [
  * serves every locale, switching from / to /fr looked like the claim failing. These two locales
  * now open with the same hero and the same stats row, translated.
  */
+/**
+ * The two data-driven listings are carried into every locale so the counts the body text states are
+ * backed by something. Their own heading is not localized by the block, so it is overridden here:
+ * an English "Recently published" over French article cards is the tell that the page is a copy.
+ */
+const LOCALIZED_LISTING_HEADER: Record<
+  "fr" | "ja",
+  Record<"insights" | "our-people", { eyebrow: string; heading: string; description: string }>
+> = {
+  fr: {
+    insights: {
+      eyebrow: "Derniers articles",
+      heading: "Publiés récemment",
+      description:
+        "Les plus récents d’abord, par date de publication. Les articles eux-mêmes n’existent qu’en anglais.",
+    },
+    "our-people": {
+      eyebrow: "Notre équipe",
+      heading: "Vingt et un profils, rattachés par adresse e-mail",
+      description:
+        "Le webhook n’en crée jamais un seul : il rattache l’auteur d’un article à un profil déjà présent.",
+    },
+  },
+  ja: {
+    insights: {
+      eyebrow: "最新の記事",
+      heading: "最近公開された記事",
+      description: "公開日の新しい順に表示しています。記事本文は英語版のみです。",
+    },
+    "our-people": {
+      eyebrow: "専門家",
+      heading: "21名のプロフィール、メールアドレスで紐付け",
+      description:
+        "Webhookがプロフィールを新規作成することはありません。既存のプロフィールに記事の著者を紐付けるだけです。",
+    },
+  },
+};
+
 const LOCALIZED_HOMEPAGE: Record<
   "fr" | "ja",
   {
@@ -1789,6 +1827,10 @@ export async function POST(request: Request) {
         const localizedBody = locale === "en" ? undefined : LOCALIZED_PAGE_BODY[spec.key]?.[locale];
         const localizedHome =
           locale === "en" || spec.key !== "home" ? undefined : LOCALIZED_HOMEPAGE[locale];
+        const localizedListingHeader =
+          locale === "en" || (spec.key !== "insights" && spec.key !== "our-people")
+            ? undefined
+            : LOCALIZED_LISTING_HEADER[locale][spec.key];
 
         await payload.update({
           collection: "page",
@@ -1865,8 +1907,8 @@ export async function POST(request: Request) {
                     // Without these the reader is told a number and shown nothing, so the two
                     // data-driven listings are carried over. Neither card carries a link, so
                     // nothing here can send a French reader to an English address.
-                    ...(spec.key === "insights" || spec.key === "our-people"
-                      ? blocks.slice(1)
+                    ...(localizedListingHeader
+                      ? blocks.slice(1).map((block) => ({ ...block, ...localizedListingHeader }))
                       : []),
                   ],
                 }
