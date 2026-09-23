@@ -31,10 +31,7 @@ export async function ChildPages({ pageId, locale }: Props) {
   return (
     <Container containerData={{}}>
       {/* Same card treatment as the CardsGrid icon cards, so this list reads as one of the page's sections rather than a sitemap. */}
-      <nav
-        aria-label={t("inThisSection")}
-        className="border-t border-secondary pt-12 pb-16 md:pt-16 md:pb-24"
-      >
+      <nav aria-label={t("inThisSection")} className="pt-12 pb-16 md:pt-16 md:pb-24">
         <span className="text-sm font-semibold text-brand-secondary md:text-md">
           {t("inThisSection")}
         </span>
