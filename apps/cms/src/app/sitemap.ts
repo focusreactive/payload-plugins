@@ -1,9 +1,9 @@
 import type { MetadataRoute } from "next";
-import { unstable_cache } from "next/cache";
 
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { cacheTag } from "@/lib/utils/cacheTags";
+import { scopedCache } from "@/lib/utils/scopedCache";
 import { getLastModifiedDate } from "@/lib/utils/getLastModifiedDate";
 import { getServerSideURL } from "@/lib/utils/getURL";
 import type { Locale } from "@/lib/types";
@@ -133,7 +133,7 @@ async function generateSitemap(): Promise<Sitemap> {
   }
 }
 
-const getCachedSitemap = unstable_cache(
+const getCachedSitemap = scopedCache(
   async () => generateSitemap(),
   [cacheTag({ type: "sitemap" })],
   {

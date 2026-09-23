@@ -1,10 +1,10 @@
-import { revalidateTag } from "next/cache";
 import type { Payload } from "payload";
 
 import type { Page } from "@/payload-types";
 
 import type { Locale } from "../types";
 import { cacheTag } from "./cacheTags";
+import { revalidateScopedTag } from "./scopedCache";
 
 /**
  * The page content itself is no longer cached under a per-path tag (see
@@ -15,5 +15,5 @@ import { cacheTag } from "./cacheTags";
  */
 export function revalidatePageCache(params: { doc: Page; locale: Locale; payload: Payload }): void {
   params.payload.logger?.info?.(`Revalidating sitemap after change to page: ${params.doc.slug}`);
-  revalidateTag(cacheTag({ type: "sitemap" }), "max");
+  revalidateScopedTag(cacheTag({ type: "sitemap" }), "max");
 }

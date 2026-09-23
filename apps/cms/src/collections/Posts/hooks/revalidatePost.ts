@@ -1,7 +1,7 @@
-import { revalidateTag } from "next/cache";
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook, Payload } from "payload";
 
 import { cacheTag } from "@/lib/utils/cacheTags";
+import { revalidateScopedTag } from "@/lib/utils/scopedCache";
 import { getLocaleFromRequest } from "@/lib/utils/getLocaleFromRequest";
 import type { Locale } from "@/lib/types";
 import type { Post } from "@/payload-types";
@@ -11,8 +11,8 @@ function revalidatePostTags(slug: string, locale: Locale, payload: Payload) {
 
   // Revalidates this post AND all other posts (via postsList tag),
   // ensuring related articles sections on other posts stay up to date.
-  revalidateTag(cacheTag({ locale, slug, type: "post" }), "max");
-  revalidateTag(cacheTag({ locale, type: "postsList" }), "max");
+  revalidateScopedTag(cacheTag({ locale, slug, type: "post" }), "max");
+  revalidateScopedTag(cacheTag({ locale, type: "postsList" }), "max");
 }
 
 export const revalidatePost: CollectionAfterChangeHook<Post> = async ({
@@ -27,12 +27,12 @@ export const revalidatePost: CollectionAfterChangeHook<Post> = async ({
 
     if (doc._status === "published") {
       revalidatePostTags(doc?.slug ?? "", locale, payload);
-      revalidateTag(cacheTag({ type: "sitemap" }), "max");
+      revalidateScopedTag(cacheTag({ type: "sitemap" }), "max");
     }
 
     if (previousDoc?._status === "published" && doc._status !== "published") {
       revalidatePostTags(previousDoc?.slug ?? "", locale, payload);
-      revalidateTag(cacheTag({ type: "sitemap" }), "max");
+      revalidateScopedTag(cacheTag({ type: "sitemap" }), "max");
     }
   }
   return doc;
@@ -45,7 +45,7 @@ export const revalidateDelete: CollectionAfterDeleteHook<Post> = async ({ doc, r
     const locale = getLocaleFromRequest(req);
 
     revalidatePostTags(doc?.slug ?? "", locale, payload);
-    revalidateTag(cacheTag({ type: "sitemap" }), "max");
+    revalidateScopedTag(cacheTag({ type: "sitemap" }), "max");
   }
 
   return doc;

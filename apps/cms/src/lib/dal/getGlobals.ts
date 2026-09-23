@@ -1,5 +1,4 @@
-import { revalidateTag, unstable_cache } from "next/cache";
-
+import { revalidateScopedTag, scopedCache } from "@/lib/utils/scopedCache";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { Locale } from "@/lib/types";
 import { getPayloadClient } from "@/dal/payload-client";
@@ -12,8 +11,8 @@ export function formatGlobalCacheTag(collection: GlobalSlug, locale?: Locale): s
 
 export function revalidateGlobalTags(params: { collection: GlobalSlug; locale: Locale }): void {
   const { collection, locale } = params;
-  revalidateTag(formatGlobalCacheTag(collection), "max");
-  revalidateTag(formatGlobalCacheTag(collection, locale), "max");
+  revalidateScopedTag(formatGlobalCacheTag(collection), "max");
+  revalidateScopedTag(formatGlobalCacheTag(collection, locale), "max");
 }
 
 async function getGlobal(slug: GlobalSlug, depth = 0, locale?: Locale, draft?: boolean) {
@@ -34,7 +33,7 @@ export const getCachedGlobal = (
     };
   }
 
-  return unstable_cache(
+  return scopedCache(
     async () => {
       const resolvedLocale = locale ? await resolveLocale(locale) : undefined;
       return getGlobal(collection, depth, resolvedLocale);

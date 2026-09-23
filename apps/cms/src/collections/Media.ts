@@ -1,6 +1,6 @@
-import { revalidateTag } from "next/cache";
 import type { CollectionBeforeChangeHook, CollectionConfig } from "payload";
 
+import { revalidateScopedTag } from "@/lib/utils/scopedCache";
 import { anyone, editorial } from "@/lib/access";
 import { generateRichText } from "@/lib/utils/generateRichText";
 import { DEFAULT_MEDIA_CACHE_TAG } from "@/dal/getDefaultMediaId";
@@ -80,7 +80,7 @@ export const Media: CollectionConfig<"media"> = {
       ({ req }) => {
         if (req?.context?.disableRevalidate) return;
         try {
-          revalidateTag(DEFAULT_MEDIA_CACHE_TAG, "max");
+          revalidateScopedTag(DEFAULT_MEDIA_CACHE_TAG, "max");
         } catch {
           // outside a Next.js request/build context (e.g. seed scripts, tests)
         }
@@ -90,7 +90,7 @@ export const Media: CollectionConfig<"media"> = {
       ({ req }) => {
         if (req?.context?.disableRevalidate) return;
         try {
-          revalidateTag(DEFAULT_MEDIA_CACHE_TAG, "max");
+          revalidateScopedTag(DEFAULT_MEDIA_CACHE_TAG, "max");
         } catch {
           // outside a Next.js request/build context (e.g. seed scripts, tests)
         }

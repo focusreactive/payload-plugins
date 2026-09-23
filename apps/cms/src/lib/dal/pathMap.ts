@@ -1,4 +1,4 @@
-import { revalidateTag, unstable_cache } from "next/cache";
+import { revalidateScopedTag, scopedCache } from "@/lib/utils/scopedCache";
 
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import type { Locale } from "@/lib/types";
@@ -138,7 +138,7 @@ async function buildPathMap(): Promise<PathMap> {
 }
 
 export async function getPathMap(): Promise<PathMap> {
-  return unstable_cache(buildPathMap, ["path-map"], {
+  return scopedCache(buildPathMap, ["path-map"], {
     revalidate: false,
     tags: [PATH_MAP_CACHE_TAG],
   })();
@@ -152,5 +152,5 @@ export async function getPathMap(): Promise<PathMap> {
  * touched without doing the rebuild anyway.
  */
 export function revalidatePathMap(): void {
-  revalidateTag(PATH_MAP_CACHE_TAG, "max");
+  revalidateScopedTag(PATH_MAP_CACHE_TAG, "max");
 }
