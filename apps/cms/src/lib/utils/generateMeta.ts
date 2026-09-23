@@ -166,9 +166,9 @@ export const generateMeta = async (args: {
       ...overridesOpenGraph,
     }),
     robots: {
-      follow: true,
+      follow: shouldIndex,
       googleBot: {
-        follow: true,
+        follow: shouldIndex,
         index: shouldIndex,
       },
       index: shouldIndex,
