@@ -1317,9 +1317,13 @@ export async function POST(request: Request) {
         // alone silently keeps the old picture: a redrawn illustration or a retaken
         // screenshot would never reach the demo, and the seed would report success.
         if (existingDoc.filesize !== spec.data.length) {
-          await payload.update({
+          // Replacing rather than updating, because an update keeps the stored object and Payload
+          // renames the incoming file around it: the third upload of the same screenshot became
+          // admin-insight-list-2.png and left two stale copies in the media library.
+          await payload.delete({ collection: "media", id: existingDoc.id, overrideAccess: true });
+
+          const replacedMedia = await payload.create({
             collection: "media",
-            id: existingDoc.id,
             overrideAccess: true,
             data: { alt: spec.alt },
             file: {
@@ -1329,6 +1333,8 @@ export async function POST(request: Request) {
               size: spec.data.length,
             },
           });
+
+          mediaIdByFilename[spec.filename] = replacedMedia.id;
         }
 
         continue;
