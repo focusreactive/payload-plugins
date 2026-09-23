@@ -1,17 +1,17 @@
 import type { CollectionConfig } from "payload";
 
 import { contentBlocks } from "@/blocks/contentBlocks";
-import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { anyone, editorial } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 
 import { preventDeleteIfReferenced } from "./hooks/preventDeleteIfReferenced";
 
 export const GlobalBlock: CollectionConfig<"globalBlock"> = {
   access: {
-    create: or(superAdmin, user, author),
-    delete: or(superAdmin, user, author),
+    create: editorial,
+    delete: editorial,
     read: anyone,
-    update: or(superAdmin, user, author),
+    update: editorial,
   },
   admin: {
     defaultColumns: ["title", "block", "updatedAt"],

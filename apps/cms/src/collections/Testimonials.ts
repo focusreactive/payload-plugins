@@ -1,13 +1,13 @@
 import type { CollectionConfig } from "payload";
 
-import { anyone, or, user, superAdmin } from "@/lib/access";
+import { anyone, editorial } from "@/lib/access";
 
 export const Testimonials: CollectionConfig<"testimonials"> = {
   access: {
-    create: or(superAdmin, user),
-    delete: or(superAdmin, user),
+    create: editorial,
+    delete: editorial,
     read: anyone,
-    update: or(superAdmin, user),
+    update: editorial,
   },
   admin: {
     defaultColumns: ["author", "company", "rating", "createdAt"],

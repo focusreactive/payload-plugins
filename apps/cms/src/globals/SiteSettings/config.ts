@@ -1,7 +1,7 @@
 import type { GlobalConfig } from "payload";
 
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
-import { anyone, or, user, superAdmin } from "@/lib/access";
+import { anyone, superAdmin } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { generateSeoFields } from "@/lib/utils/seoFields";
 
@@ -10,7 +10,7 @@ import { revalidateSiteSettings } from "./hooks/revalidateSiteSettings";
 export const SiteSettings: GlobalConfig = {
   access: {
     read: anyone,
-    update: or(superAdmin, user),
+    update: superAdmin,
   },
   admin: {
     group: "Configuration",

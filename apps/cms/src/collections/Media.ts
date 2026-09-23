@@ -1,7 +1,7 @@
 import { revalidateTag } from "next/cache";
 import type { CollectionBeforeChangeHook, CollectionConfig } from "payload";
 
-import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { anyone, editorial } from "@/lib/access";
 import { generateRichText } from "@/lib/utils/generateRichText";
 import { DEFAULT_MEDIA_CACHE_TAG } from "@/dal/getDefaultMediaId";
 
@@ -19,10 +19,10 @@ const setDefaultFocalPoint: CollectionBeforeChangeHook = ({ data }) => {
 
 export const Media: CollectionConfig<"media"> = {
   access: {
-    create: or(superAdmin, user, author),
-    delete: or(superAdmin, user, author),
+    create: editorial,
+    delete: editorial,
     read: anyone,
-    update: or(superAdmin, user, author),
+    update: editorial,
   },
   admin: {
     defaultColumns: ["filename", "alt"],
