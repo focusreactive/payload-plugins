@@ -1931,8 +1931,12 @@ export async function POST(request: Request) {
                     // Without these the reader is told a number and shown nothing, so the two
                     // data-driven listings are carried over. Neither card carries a link, so
                     // nothing here can send a French reader to an English address.
+                    // The listing grid only, never what follows it. The patents page carries an
+                    // FAQ after its grid: spreading the header across both gave the FAQ the
+                    // grid's heading, and carrying it at all would put English question and
+                    // answer text on a French page.
                     ...(localizedListingHeader
-                      ? blocks.slice(1).map((block) => ({ ...block, ...localizedListingHeader }))
+                      ? blocks.slice(1, 2).map((block) => ({ ...block, ...localizedListingHeader }))
                       : []),
                   ],
                 }
