@@ -679,7 +679,10 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     section: { theme: "light" },
   };
 
-  return [
+  // Alternating surface tone is how a reader sees where one section ends and the next begins.
+  // Done here rather than in CSS so it stays an editor's decision: the theme is a field on every
+  // section, and flipping one in the admin changes the page.
+  const homeBlocks = [
     hero,
     stats,
     passleSync,
@@ -689,6 +692,14 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     roles,
     footnotes,
   ];
+
+  return homeBlocks.map((block, index) => ({
+    ...block,
+    section: {
+      ...(block.section ?? {}),
+      theme: index % 2 === 0 ? ("light" as const) : ("light-gray" as const),
+    },
+  }));
 }
 
 /**
@@ -1055,9 +1066,9 @@ function buildDemoMedia(): DemoMediaSpec[] {
     },
     {
       filename: "demo-logo.svg",
-      alt: "Content Platform Demo",
+      alt: "Marks & Clerk",
       mimetype: "image/svg+xml",
-      data: readFileSync(path.join(process.cwd(), "public", "demo-logo.svg")),
+      data: readFileSync(path.join(process.cwd(), "public", "brand", "marks-and-clerk-logo.svg")),
     },
     {
       filename: "preview-hero.png",
@@ -2067,10 +2078,12 @@ export async function POST(request: Request) {
       },
     };
 
+    // A firm's name does not translate, and the header now carries their own wordmark, so the
+    // browser tab has to agree with it rather than saying "Content Platform Demo".
     const siteSettingsTextByLocale: Record<LocaleCode, string> = {
-      en: "Content Platform Demo",
-      fr: "Démo de plateforme de contenu",
-      ja: "コンテンツ基盤デモ",
+      en: "Marks & Clerk",
+      fr: "Marks & Clerk",
+      ja: "Marks & Clerk",
     };
 
     for (const locale of ["en", "fr", "ja"] as LocaleCode[]) {
@@ -2081,6 +2094,9 @@ export async function POST(request: Request) {
         overrideAccess: true,
         data: {
           general: { siteName: siteSettingsTextByLocale[locale] },
+          // The admin sidebar logo reads from here; with nothing set it falls back to the
+          // starter kit's /logo.svg.
+          adminPanel: { logo: mediaIdByFilename["demo-logo.svg"] },
           // Every locale, not just English: the title suffix falls back to the site name, and
           // leaving fr and ja unwritten put "| My Site" in the browser tab of every non-English
           // page, which is the starter kit's factory default.

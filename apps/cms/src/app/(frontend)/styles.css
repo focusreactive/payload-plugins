@@ -9,8 +9,8 @@
    * each contribute one side and the values stack. Halving it here is what makes the visible gap
    * match the token instead of doubling it.
    */
-  --section-margin-base: clamp(36px, 5vw, 64px);
-  --section-margin-large: clamp(56px, 8vw, 104px);
+  --section-margin-base: clamp(56px, 7vw, 96px);
+  --section-margin-large: clamp(80px, 10vw, 140px);
   --container-padding-base: clamp(20px, 5vw, 64px);
   --container-max-width: 1180px;
 }

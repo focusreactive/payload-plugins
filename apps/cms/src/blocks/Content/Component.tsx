@@ -2,6 +2,7 @@ import { ButtonSize } from "@/components/button";
 import { ContentSection } from "./ui";
 
 import { Media } from "@/components/media";
+import { ScreenshotViewer } from "@/components/ScreenshotViewer";
 import { CMSLink, RichText, SectionContainer } from "@/components/shared";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
@@ -30,17 +31,19 @@ export const ContentBlockComponent: React.FC<ContentBlockProps & { isFirstBlock?
         header={header}
         image={
           media ? (
-            <Media
-              {...media.data}
-              className="absolute inset-0"
-              // fit, not a class: next/image writes object-fit as an inline style, which beats
-              // object-contain in the class list. contain rather than cover because every image
-              // here is a product screenshot, the grid row stretches the container past its 4:3,
-              // and cover was shaving the left edge off the admin window: "Insights" read as
-              // "nsights". Letterboxing is invisible against the page background.
-              imageProps={{ ...media.imageProps, fit: "contain", fill: true }}
-              visualEditing={media.visualEditing}
-            />
+            <ScreenshotViewer caption={resolvedImage?.alt ?? null}>
+              <Media
+                {...media.data}
+                className="absolute inset-0"
+                // fit, not a class: next/image writes object-fit as an inline style, which beats
+                // object-contain in the class list. contain rather than cover because every image
+                // here is a product screenshot, the grid row stretches the container past its 4:3,
+                // and cover was shaving the left edge off the admin window: "Insights" read as
+                // "nsights". Letterboxing is invisible against the page background.
+                imageProps={{ ...media.imageProps, fit: "contain", fill: true }}
+                visualEditing={media.visualEditing}
+              />
+            </ScreenshotViewer>
           ) : null
         }
         body={content ? <RichText content={content} variant="content" /> : null}

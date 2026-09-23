@@ -1,0 +1,68 @@
+/*
+ * Marks & Clerk overrides on top of Untitled UI's theme. Kept in its own file, imported after
+ * theme.css, so `untitledui upgrade` can replace theme.css without losing any of this.
+ *
+ * Only tokens are set here. No layout, no component classes - the sections are Untitled UI's
+ * markup verbatim and they read these variables.
+ */
+@theme {
+    /* Their own wordmark colour, taken from the SVG their site serves. Untitled UI ships a
+     * purple brand ramp; every brand-* utility in their sections resolves through these. */
+    --color-brand-50: rgb(255 240 246);
+    --color-brand-100: rgb(255 224 235);
+    --color-brand-200: rgb(255 194 216);
+    --color-brand-300: rgb(255 138 181);
+    --color-brand-400: rgb(249 82 145);
+    --color-brand-500: rgb(226 0 80);
+    --color-brand-600: rgb(199 0 70);
+    --color-brand-700: rgb(166 0 58);
+    --color-brand-800: rgb(133 0 47);
+    --color-brand-900: rgb(102 0 36);
+    --color-brand-950: rgb(71 0 25);
+
+    /* A 140-year-old patent firm reads wrong in Inter alone. Display goes serif, body stays
+     * a grotesque, and the mono is only used for eyebrows. All three are already self-hosted
+     * by next/font/local in the [locale] layout. */
+    --font-display: var(--font-newsreader), Georgia, "Times New Roman", serif;
+    --font-body: var(--font-archivo), system-ui, -apple-system, sans-serif;
+    --font-mono: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/*
+ * Product screenshots are dense admin UI shown at roughly half page width, where the text is
+ * too small to read. The pan enlarges a region and walks it left to right so the detail is
+ * legible in passing, then rests. Click-to-enlarge (ScreenshotViewer) is the real answer; this
+ * is what makes the section readable without one.
+ *
+ * Driven by a data attribute rather than :hover or an animation-play-state toggle, because the
+ * component only sets it while the section is actually on screen.
+ */
+@keyframes screenshot-pan {
+    0% {
+        transform: scale(1) translateX(0);
+    }
+    8% {
+        transform: scale(1.5) translateX(15%);
+    }
+    67% {
+        transform: scale(1.5) translateX(-15%);
+    }
+    83% {
+        transform: scale(1) translateX(0);
+    }
+    100% {
+        transform: scale(1) translateX(0);
+    }
+}
+
+.screenshot-viewer[data-panning="true"] .screenshot-viewer-pan {
+    animation: screenshot-pan 12s ease-in-out infinite;
+    transform-origin: center center;
+    will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .screenshot-viewer[data-panning="true"] .screenshot-viewer-pan {
+        animation: none;
+    }
+}
