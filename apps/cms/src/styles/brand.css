@@ -132,3 +132,11 @@
     --color-footer-panel: var(--color-bg-primary);
     --color-surface-raised: var(--color-bg-primary);
 }
+
+/*
+ * Untitled's mockup frame is neutral-900, which reads as a black bezel around a light admin UI.
+ * A light neutral keeps the framed look without the heavy outline.
+ */
+@theme {
+    --color-screen-mockup-border: var(--color-neutral-200);
+}

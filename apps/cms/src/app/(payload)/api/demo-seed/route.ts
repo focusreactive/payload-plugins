@@ -935,7 +935,9 @@ function buildOurPeoplePageBlocks(
       "The webhook never creates a profile. It only matches an incoming author against the ones already here.",
     columns: 3,
     items: people.map((person) => ({
-      alignVariant: "left" as const,
+      alignVariant: "center" as const,
+      // Selects the Untitled team-section card in CardsGrid's DefaultCard.
+      backgroundColor: "light-gray" as const,
       title: person.name,
       description: person.jobTitle,
     })),
@@ -1528,8 +1530,7 @@ function buildDemoPresets(
           {
             icon: "users",
             title: "Our people",
-            description:
-              "The attorneys whose articles arrive from Passle.",
+            description: "The attorneys whose articles arrive from Passle.",
             link: {
               ...buildAction("Meet our people", "/our-people", "default"),
               label: "Meet our people",

@@ -1,6 +1,18 @@
 import { Button } from "@/shared/ui/shadcn/base/buttons/button";
 import { DemoCredential } from "@/components/demo/DemoCredential";
+import { FeaturedIcon } from "@/shared/ui/shadcn/foundations/featured-icon/featured-icon";
+import { Avatar } from "@/shared/ui/shadcn/base/avatar/avatar";
 import type { IDefaultCardProps } from "./types";
+
+function initialsOf(name: string) {
+  const words = name
+    .replace(/\b[A-Z]\.\s*/gu, "")
+    .split(/[\s-]+/u)
+    .filter(Boolean);
+  return (
+    (words[0]?.[0] ?? "") + (words.length > 1 ? words[words.length - 1][0] : "")
+  ).toUpperCase();
+}
 
 export default function DefaultCard({
   image: _image,
@@ -14,6 +26,47 @@ export default function DefaultCard({
   credential,
 }: IDefaultCardProps) {
   const hasIcon = icon !== undefined && icon !== null;
+
+  // Untitled's team-section-simple-04 card. Selected by the item's existing backgroundColor
+  // field so a directory needs no new schema column; there are no photos, so the avatar falls
+  // back to initials.
+  if (_backgroundColor === "light-gray" && !credential) {
+    return (
+      <div className="flex h-full flex-col items-center gap-5 bg-surface-raised px-6 py-6 ring-1 ring-secondary_alt">
+        <Avatar
+          border
+          initials={title ? initialsOf(title) : undefined}
+          alt={title ?? undefined}
+          size="2xl"
+        />
+        <div className="text-center">
+          {title && <h3 className="text-lg font-semibold text-primary">{title}</h3>}
+          {description && <p className="text-md text-pretty text-brand-secondary">{description}</p>}
+        </div>
+      </div>
+    );
+  }
+
+  // Untitled's features-icon-cards-01 card (FeatureTextFeaturedIconCard), with the link in its
+  // footer slot the way their section places it.
+  if (hasIcon && !credential) {
+    return (
+      <div className="flex h-full flex-col gap-12 bg-surface-raised p-5 ring-1 ring-secondary_alt md:gap-16 md:p-6">
+        <FeaturedIcon icon={icon} size="lg" color="brand" theme="dark" />
+        <div className="mt-auto flex flex-col gap-4">
+          <div>
+            {title && <h3 className="text-lg font-semibold text-primary">{title}</h3>}
+            {description && <p className="mt-1 text-md text-pretty text-tertiary">{description}</p>}
+          </div>
+          {link?.href && (
+            <Button href={link.href} size="lg" color="link-color" className="self-start">
+              {link.text}
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
   // A card carrying a login is a panel with its own edge, not a run of centred text: the
   // credentials are a form to read left to right, and centring them fights that.
   const isPanel = credential !== undefined && credential !== null;

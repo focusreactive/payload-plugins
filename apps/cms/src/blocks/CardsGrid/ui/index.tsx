@@ -34,6 +34,9 @@ export function CardsGrid(props: ICardsGridProps) {
   const itemCount = items?.length ?? 0;
 
   const effectiveColumns = resolveEffectiveColumns(columns, itemCount);
+  // Boxed cards (icon cards, team cards) take Untitled's tighter card gutter; bare text columns
+  // keep the wide one so they do not run together.
+  const isBoxed = items?.some((item) => item.icon || item.backgroundColor === "light-gray");
 
   const gridCols =
     effectiveColumns === 3
@@ -51,7 +54,8 @@ export function CardsGrid(props: ICardsGridProps) {
   return (
     <ul
       className={cn(
-        "not-prose grid w-full grid-cols-1 gap-x-16 gap-y-10 md:gap-y-8",
+        "not-prose grid w-full grid-cols-1",
+        isBoxed ? "gap-6 md:gap-8" : "gap-x-16 gap-y-10 md:gap-y-8",
         tabletGridCols,
         gridCols
       )}

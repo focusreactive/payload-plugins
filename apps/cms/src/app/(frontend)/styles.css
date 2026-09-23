@@ -235,6 +235,7 @@ body {
 
   .prose-copy ul > li {
     position: relative;
+    text-wrap: pretty;
     padding-left: 2rem;
     color: color-mix(in srgb, var(--color-foreground) 88%, transparent);
     font-size: 1.12rem;
@@ -323,6 +324,7 @@ body {
   .prose-content ul > li {
     position: relative;
     padding-left: 30px !important;
+    text-wrap: pretty;
     color: var(--color-muted-foreground);
   }
 
@@ -339,12 +341,8 @@ body {
     height: 1.125rem;
     padding: 3px;
     border-radius: var(--radius-pill);
-    /*
-     * Neutral, not the brand green. These lists are steps and caveats, and under "what this demo
-     * is not" a green tick reads as a checkmark saying the opposite of the sentence beside it.
-     */
-    background: color-mix(in srgb, var(--color-foreground) 8%, transparent);
-    color: color-mix(in srgb, var(--color-foreground) 55%, transparent);
+    background: var(--color-bg-brand-secondary);
+    color: var(--color-fg-brand-primary);
   }
 
   .prose-card {

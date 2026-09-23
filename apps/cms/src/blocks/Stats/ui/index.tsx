@@ -4,29 +4,22 @@ interface StatsProps {
   items: { value: string; label: string }[];
 }
 
+/**
+ * Untitled UI's metrics-card-gray-light: the numbers sit on one raised panel rather than floating
+ * on the section background. The panel uses surface-raised instead of their bg-secondary because
+ * sections here alternate onto that same grey, which would make the panel invisible.
+ */
 export function Stats({ items }: StatsProps) {
   if (!items.length) return null;
 
   return (
-    // Untitled's metrics band is a fixed 2-up because their own demo always has four stats. Ours
-    // vary, and 3 items in a 2-column grid leaves a visible hole, so the column count follows the
-    // item count instead.
-    <dl
-      className={`grid grid-cols-1 gap-x-8 gap-y-10 md:gap-y-12 ${
-        items.length % 3 === 0 ? "md:grid-cols-3" : "md:grid-cols-2"
-      }`}
-    >
-      {items.map((item, i) => (
-        <div
-          key={i}
-          className="flex flex-col items-center gap-4 text-center md:flex-row md:items-start md:gap-4 md:text-left"
-        >
-          <div className="flex flex-1 flex-col-reverse gap-1">
-            <dt className="text-lg font-semibold text-primary">{item.label}</dt>
-            <dd className="text-display-lg font-semibold text-brand-tertiary_alt">
-              <AnimatedStatValue value={item.value} />
-            </dd>
-          </div>
+    <dl className="flex flex-col gap-8 bg-surface-raised px-6 py-10 ring-1 ring-secondary_alt md:flex-row md:p-16">
+      {items.map((item, index) => (
+        <div key={index} className="flex flex-1 flex-col-reverse gap-3 text-center">
+          <dt className="text-lg font-semibold text-balance text-primary">{item.label}</dt>
+          <dd className="text-display-lg font-semibold text-brand-tertiary_alt md:text-display-xl">
+            <AnimatedStatValue value={item.value} />
+          </dd>
         </div>
       ))}
     </dl>

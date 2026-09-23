@@ -60,7 +60,11 @@ export function ContentSection({ layout, header, image, body, actions }: Content
             {actions && <div className="mt-2 flex flex-wrap items-center gap-4">{actions}</div>}
           </div>
 
-          {hasImage && <div className="relative min-h-60 w-full flex-1 md:min-h-140">{image}</div>}
+          {hasImage && (
+            <div className="relative min-h-60 w-full flex-1 overflow-hidden rounded-xl bg-white shadow-xl ring-4 ring-screen-mockup-border md:min-h-140 md:ring-6">
+              {image}
+            </div>
+          )}
         </div>
       </div>
     </div>
