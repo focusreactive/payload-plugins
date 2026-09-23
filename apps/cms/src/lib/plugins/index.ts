@@ -19,6 +19,7 @@ import { Authors } from "@/collections/Authors";
 import { Categories } from "@/collections/Categories";
 import { Footer } from "@/collections/Footer/config";
 import { Header } from "@/collections/Header/config";
+import { Insight } from "@/collections/Insight";
 import { Page as PageCollection } from "@/collections/Page/Page";
 import serverExtractPageContent from "@/collections/Page/serverExtractPageContent";
 import { Posts } from "@/collections/Posts";
@@ -333,8 +334,17 @@ export const plugins: Plugin[] = [
   }),
 
   translatorPlugin({
-    collections: [PageCollection, Posts, Categories, Authors, Testimonials, Header, Footer].map(
-      (col) => JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
+    collections: [
+      PageCollection,
+      Posts,
+      Categories,
+      Authors,
+      Testimonials,
+      Header,
+      Footer,
+      Insight,
+    ].map((col) =>
+      JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
     ),
     runner: createSyncRunner(),
     translationProvider: createOpenAIProvider({

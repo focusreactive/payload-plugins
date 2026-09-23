@@ -4,6 +4,7 @@ import { cn } from "@/components/utils";
 import { Brand } from "./components/Brand";
 import { DesktopNav } from "./components/DesktopNav";
 import { HeaderActions } from "./components/HeaderActions";
+import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { MobileNav } from "./components/MobileNav";
 import type { IHeaderProps } from "./types";
 
@@ -21,6 +22,7 @@ export function Header({ brand, navItems, actions, className }: IHeaderProps) {
         <Brand brand={brand} />
         <DesktopNav navItems={navItems} />
         <div className="flex items-center gap-2.5">
+          <LanguageSwitcher />
           <div className="hidden items-center gap-2.5 min-[860px]:flex">
             <HeaderActions actions={actions} />
           </div>

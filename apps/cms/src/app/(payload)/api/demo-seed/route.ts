@@ -10,6 +10,7 @@ import { revalidatePathMap } from "@/dal/pathMap";
 import { seedInsightsFromFixtures, seedPeopleRecords } from "@/scripts/seedPassleInsights";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { passleFixturesByShortcode } from "@/lib/passle/fixtures";
+import { translatedInsight102o1qk } from "@/lib/passle/translations/102o1qk";
 import type { PasslePostPayload } from "@/lib/passle/types";
 import type {
   CardsGridBlock,
@@ -2601,6 +2602,44 @@ export async function POST(request: Request) {
     // rewrote every document while the site kept serving the previous run's HTML, which reads as
     // "the seed did nothing". Purging the whole route tree is right here because the seed just
     // rewrote all of it.
+    // One insight carries real French and Japanese versions so the language switcher has a
+    // translated article to land on; every other insight stays English-only on purpose.
+    try {
+      const [translatableInsight] = (
+        await payload.find({
+          collection: "insight",
+          where: { passleShortcode: { equals: translatedInsight102o1qk.passleShortcode } },
+          limit: 1,
+          depth: 0,
+          overrideAccess: true,
+        })
+      ).docs;
+      if (!translatableInsight) {
+        seedWarnings.push(
+          `Insight ${translatedInsight102o1qk.passleShortcode} not found, so no translated insight`
+        );
+      } else {
+        for (const [locale, translation] of Object.entries(translatedInsight102o1qk.locales)) {
+          await payload.update({
+            collection: "insight",
+            id: translatableInsight.id,
+            locale: locale as "fr" | "ja",
+            overrideAccess: true,
+            data: {
+              title: translation.title,
+              slug: translation.slug,
+              standfirst: translation.standfirst,
+              body: buildRichText(...translation.paragraphs.map((paragraph) => ({ paragraph }))),
+            },
+          });
+        }
+      }
+    } catch (error) {
+      seedWarnings.push(
+        `Translated insight failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+
     revalidatePath("/", "layout");
 
     return NextResponse.json({
