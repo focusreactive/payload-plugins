@@ -6,25 +6,37 @@ export const sectionFields: GroupField = {
       type: "row",
       fields: [
         {
-          admin: { width: "50%" },
-          label: { en: "Theme", es: "Tema" },
+          admin: {
+            description: {
+              en: "The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.",
+              es: "Los colores con los que se dibuja esta sección. El texto cambia entre negro y blanco para seguir siendo legible, así que no hace falta cambiar nada escrito.",
+            },
+            width: "50%",
+          },
+          label: { en: "Colours", es: "Colores" },
           name: "theme",
           options: [
-            { label: { en: "Light", es: "Claro" }, value: "light" },
-            { label: { en: "Dark", es: "Oscuro" }, value: "dark" },
-            { label: { en: "Light Gray", es: "Gris Claro" }, value: "light-gray" },
-            { label: { en: "Dark Gray", es: "Gris Oscuro" }, value: "dark-gray" },
+            { label: { en: "White", es: "Blanco" }, value: "light" },
+            { label: { en: "Black", es: "Negro" }, value: "dark" },
+            { label: { en: "Soft green", es: "Verde suave" }, value: "light-gray" },
+            { label: { en: "Charcoal", es: "Gris carbón" }, value: "dark-gray" },
           ],
           type: "select",
         },
         {
-          admin: { width: "50%" },
+          admin: {
+            description: {
+              en: "Keep this section lined up with the rest of the page, or let it run the full width of the screen.",
+              es: "Mantén esta sección alineada con el resto de la página o deja que ocupe todo el ancho de la pantalla.",
+            },
+            width: "50%",
+          },
           defaultValue: "base",
-          label: { en: "Max Width", es: "Ancho Máximo" },
+          label: { en: "How wide the section runs", es: "Ancho de la sección" },
           name: "maxWidth",
           options: [
-            { label: { en: "None", es: "Ninguno" }, value: "none" },
-            { label: { en: "Base", es: "Base" }, value: "base" },
+            { label: { en: "Edge to edge", es: "De borde a borde" }, value: "none" },
+            { label: { en: "In line with the page", es: "Alineada con la página" }, value: "base" },
           ],
           type: "select",
         },
@@ -34,25 +46,37 @@ export const sectionFields: GroupField = {
       type: "row",
       fields: [
         {
-          admin: { width: "50%" },
+          admin: {
+            description: {
+              en: "Breathing room above and below. Use none when this section is meant to sit tight against the one before it.",
+              es: "Aire por encima y por debajo. Usa ninguno cuando esta sección deba quedar pegada a la anterior.",
+            },
+            width: "50%",
+          },
           defaultValue: "base",
-          label: { en: "Padding Y", es: "Relleno Vertical" },
+          label: { en: "Space above and below", es: "Espacio arriba y abajo" },
           name: "paddingY",
           options: [
             { label: { en: "None", es: "Ninguno" }, value: "none" },
-            { label: { en: "Base", es: "Base" }, value: "base" },
-            { label: { en: "Large", es: "Grande" }, value: "large" },
+            { label: { en: "Standard", es: "Estándar" }, value: "base" },
+            { label: { en: "Generous", es: "Amplio" }, value: "large" },
           ],
           type: "select",
         },
         {
-          admin: { width: "50%" },
+          admin: {
+            description: {
+              en: "The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.",
+              es: "El margen entre esta sección y los bordes izquierdo y derecho de la pantalla. Quítalo solo para una imagen o una franja de color que deba tocar los bordes.",
+            },
+            width: "50%",
+          },
           defaultValue: "base",
-          label: { en: "Padding X", es: "Relleno Horizontal" },
+          label: { en: "Space at the sides", es: "Espacio a los lados" },
           name: "paddingX",
           options: [
             { label: { en: "None", es: "Ninguno" }, value: "none" },
-            { label: { en: "Base", es: "Base" }, value: "base" },
+            { label: { en: "Standard", es: "Estándar" }, value: "base" },
           ],
           type: "select",
         },

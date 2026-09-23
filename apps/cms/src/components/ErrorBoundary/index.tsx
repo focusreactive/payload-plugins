@@ -40,7 +40,7 @@ export const ErrorBoundary: React.FC<ErrorBoundaryProps> = ({
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
             <div className="space-y-6">
               <div className="space-y-2">
-                <h1 className="text-4xl font-bold tracking-tight">{title}</h1>
+                <h1 className="text-4xl font-medium tracking-tight">{title}</h1>
                 <p className="text-muted-foreground text-lg">{errorMessage}</p>
               </div>
 
