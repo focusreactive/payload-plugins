@@ -5,6 +5,7 @@ import React from "react";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
+import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 import type { Footer as FooterType, Media } from "@/payload-types";
 
 interface Props {
@@ -58,7 +59,7 @@ export async function Footer({ data }: Props) {
 
   const props: IFooterProps = {
     brand: {
-      href: "/",
+      href: shouldIncludeLocalePrefix(locale) ? `/${locale}` : "/",
       label: data.name ?? "",
       logo: logo ? prepareMediaProps({ image: logo }) : null,
     },

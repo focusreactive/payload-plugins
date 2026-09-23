@@ -96,7 +96,10 @@ export const generateMeta = async (args: {
   const twitterSite = settings?.seo?.x?.site;
   const twitterCreator = settings?.seo?.x?.creator;
 
-  const shouldIndex = doc?.meta?.robots === "index";
+  // This branch is a client sandbox carrying a prospect's own published articles and their people,
+  // and its URL gets shared after the call. Nothing here may be indexed, whatever an individual
+  // document's SEO field says, so the per-document setting is deliberately ignored.
+  const shouldIndex = false;
 
   let languages: Record<string, string> | undefined;
 
@@ -114,12 +117,11 @@ export const generateMeta = async (args: {
         slug: doc.slug,
       });
     }
-  } else if (collection === "page") {
+  } else if (collection === "page" && (doc as Page)?.id) {
     languages = await getAlternateLocales({
-      breadcrumbs: (doc as Page)?.breadcrumbs,
       collection: "page",
       currentLocale: locale,
-      slug: doc?.slug || undefined,
+      id: (doc as Page).id,
     });
   }
 
@@ -164,9 +166,9 @@ export const generateMeta = async (args: {
       ...overridesOpenGraph,
     }),
     robots: {
-      follow: true,
+      follow: shouldIndex,
       googleBot: {
-        follow: true,
+        follow: shouldIndex,
         index: shouldIndex,
       },
       index: shouldIndex,

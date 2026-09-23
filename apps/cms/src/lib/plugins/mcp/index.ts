@@ -249,4 +249,12 @@ export const mcpPluginConfig = mcpPlugin({
       user: LOCAL_DEV_MCP_USER,
     };
   },
+  // Fork-base admin furniture the demo never opens; the collection itself still works.
+  overrideApiKeyCollection: (collection) => ({
+    ...collection,
+    admin: {
+      ...collection.admin,
+      hidden: true,
+    },
+  }),
 });

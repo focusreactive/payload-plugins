@@ -35,7 +35,7 @@ const Avatar: React.FC<{ avatar: (number | null) | MediaType | undefined; name: 
         {...media.data}
         visualEditing={media.visualEditing}
         htmlElement="div"
-        className="size-[42px] shrink-0 overflow-hidden rounded-full"
+        className="size-[42px] shrink-0 overflow-hidden rounded-[4px]"
         imageProps={{
           ...media.imageProps,
           className: "size-full object-cover",
@@ -50,7 +50,7 @@ const Avatar: React.FC<{ avatar: (number | null) | MediaType | undefined; name: 
 
   return (
     <span
-      className="flex size-[42px] shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary"
+      className="flex size-[42px] shrink-0 items-center justify-center rounded-[4px] border border-border bg-surface-muted font-display text-base text-muted-foreground"
       aria-hidden
     >
       {initial}
@@ -70,7 +70,7 @@ export const TestimonialCard: React.FC<{
   const roleCompany = [testimonial.position, testimonial.company].filter(Boolean).join(" · ");
 
   return (
-    <article className="flex w-[380px] shrink-0 flex-col gap-4 rounded-md border border-border bg-surface p-7">
+    <article className="flex flex-col gap-4 rounded-[4px] border border-border bg-surface p-7">
       {showRating && <StarRow rating={testimonial.rating} />}
 
       {testimonial.content && (

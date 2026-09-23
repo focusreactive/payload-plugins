@@ -24,7 +24,11 @@ export async function HeroBlockComponent({
   const locale = await resolveLocale();
 
   return (
-    <SectionContainer sectionData={{ ...section, id }}>
+    <SectionContainer
+      // Untitled UI's hero owns its container, horizontal padding and vertical rhythm. Anything
+      // this wrapper adds on top of that doubles it.
+      sectionData={{ ...section, id, paddingX: "none", maxWidth: "none", paddingY: "none" }}
+    >
       <Hero
         variant={variant}
         theme={section?.theme ?? null}

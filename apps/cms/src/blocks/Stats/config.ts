@@ -1,26 +1,49 @@
 import type { Block, Field } from "payload";
 
+import { link } from "@/lib/fields/link";
+import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
 import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
-import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { injectSection } from "@/lib/fields/section/injectSection";
 
 const fields: Field[] = [
+  ...sectionHeaderFields(),
+  {
+    type: "row",
+    fields: [
+      {
+        admin: {
+          width: "50%",
+          description: {
+            en: "Figures in a row with a coloured rule, or in a grid beside an image.",
+            es: "Cifras en fila con una línea de color, o en cuadrícula junto a una imagen.",
+          },
+        },
+        defaultValue: "accentLine",
+        label: { en: "Layout", es: "Diseño" },
+        name: "layout",
+        options: [
+          { label: { en: "Row with accent line", es: "Fila con línea" }, value: "accentLine" },
+          {
+            label: { en: "Grid beside an image", es: "Cuadrícula con imagen" },
+            value: "splitImage",
+          },
+        ],
+        type: "select",
+      },
+      {
+        admin: {
+          width: "50%",
+          condition: (_, siblingData) => siblingData?.layout === "splitImage",
+        },
+        label: { en: "Image", es: "Imagen" },
+        name: "image",
+        relationTo: "media",
+        type: "upload",
+      },
+    ],
+  },
   {
     admin: { initCollapsed: true },
-    defaultValue: createLocalizedDefault({
-      en: [
-        { label: "fewer status meetings", value: "70%" },
-        { label: "tools consolidated into one", value: "4→1" },
-        { label: "faster sprint planning", value: "2.5×" },
-        { label: "teams shipping in rhythm", value: "4,000+" },
-      ],
-      es: [
-        { label: "menos reuniones de estado", value: "70%" },
-        { label: "herramientas consolidadas en una", value: "4→1" },
-        { label: "planificación de sprints más rápida", value: "2.5×" },
-        { label: "equipos publicando con ritmo", value: "4,000+" },
-      ],
-    }),
     fields: [
       {
         type: "row",
@@ -42,6 +65,32 @@ const fields: Field[] = [
             type: "text",
           },
         ],
+      },
+      {
+        admin: {
+          description: {
+            en: "One sentence saying where the figure comes from.",
+            es: "Una frase que diga de dónde sale la cifra.",
+          },
+        },
+        label: { en: "Description", es: "Descripción" },
+        localized: true,
+        name: "description",
+        type: "textarea",
+      },
+      link({ appearances: false, required: false }),
+
+      {
+        admin: {
+          description: {
+            en: "Image layout only. Shown while this figure is selected; falls back to the block image.",
+            es: "Solo en el diseño con imagen. Se muestra mientras esta cifra está seleccionada; si falta, se usa la imagen del bloque.",
+          },
+        },
+        label: { en: "Image", es: "Imagen" },
+        name: "image",
+        relationTo: "media",
+        type: "upload",
       },
     ],
     localized: true,

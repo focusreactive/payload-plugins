@@ -1,8 +1,5 @@
-import { resolveBackdropTone } from "@/components/utils";
-import { AbstractBackdrop } from "@/components/AbstractBackdrop";
-import { GridLines } from "@/components/GridLines";
+import { cn } from "@/components/utils";
 import type { SectionHeaderProps } from "@/components/SectionHeader";
-import { SectionHeader } from "@/components/SectionHeader";
 
 interface CtaBandProps {
   header?: SectionHeaderProps | null;
@@ -10,16 +7,37 @@ interface CtaBandProps {
   actions: React.ReactNode;
 }
 
-export function CtaBand({ header, theme, actions }: CtaBandProps) {
-  const backdropTone = resolveBackdropTone(theme);
+export function CtaBand({ header, actions }: CtaBandProps) {
+  const HeadingTag = header?.isFirstBlock ? "h1" : "h2";
 
   return (
-    <div>
-      <AbstractBackdrop variant="blobs" tone={backdropTone} intensity="subtle" />
-      <GridLines tone={backdropTone} />
-      <div className="relative z-10 flex flex-col items-center gap-[26px] py-[clamp(56px,8vw,104px)] text-center">
-        {header && <SectionHeader {...header} align="center" className="max-w-[760px]" />}
-        <div className="flex flex-wrap items-center justify-center gap-3.5">{actions}</div>
+    <div className="flex flex-col justify-center text-center">
+      {header && (
+        <>
+          {/* cta-simple-centered has no eyebrow slot at all - copied verbatim from
+              features-alternating-layout-04, which pairs the same centered h2+p with one. */}
+          {header.eyebrow?.text && (
+            <span className="text-sm font-semibold text-brand-secondary md:text-md">
+              {header.eyebrow.text}
+            </span>
+          )}
+          {header.title && (
+            <HeadingTag
+              className={cn(
+                "text-display-sm font-semibold text-primary md:text-display-md",
+                header.eyebrow?.text && "mt-3"
+              )}
+            >
+              {header.title}
+            </HeadingTag>
+          )}
+          {header.subtitle && (
+            <p className="mt-4 text-md text-tertiary md:mt-5 md:text-lg">{header.subtitle}</p>
+          )}
+        </>
+      )}
+      <div className="mt-8 flex flex-col-reverse gap-3 self-stretch md:mt-8 md:flex-row md:self-center">
+        {actions}
       </div>
     </div>
   );

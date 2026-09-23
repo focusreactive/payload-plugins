@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { en } from "@payloadcms/translations/languages/en";
 import { es } from "@payloadcms/translations/languages/es";
+import { fr } from "@payloadcms/translations/languages/fr";
+import { ja } from "@payloadcms/translations/languages/ja";
 import { buildConfig } from "payload";
 import sharp from "sharp";
 
@@ -13,8 +15,10 @@ import { DocumentEmbeddings } from "@/collections/DocumentEmbeddings";
 import { Footer } from "@/collections/Footer/config";
 import { GlobalBlock } from "@/collections/GlobalBlock/config";
 import { Header } from "@/collections/Header/config";
+import { Insight } from "@/collections/Insight";
 import { Media } from "@/collections/Media";
 import { Page } from "@/collections/Page/Page";
+import { Person } from "@/collections/Person";
 import { Posts } from "@/collections/Posts";
 import { Testimonials } from "@/collections/Testimonials";
 import { Users } from "@/collections/Users";
@@ -29,6 +33,7 @@ export default buildConfig({
   admin: {
     components: {
       afterLogin: ["/components/admin/SSOButtons"],
+      beforeNavLinks: ["/components/admin/ReviewQueueNavLink#ReviewQueueNavLink"],
       graphics: {
         Icon: "/components/admin/Icon",
         Logo: "/components/admin/Logo",
@@ -60,19 +65,26 @@ export default buildConfig({
         },
       ],
     },
+    meta: {
+      titleSuffix: " - Marks & Clerk",
+    },
     user: Users.slug,
   },
   collections: [
-    Users,
-    Media,
+    // Content leads the nav (this demo is about content), with Page first within it;
+    // Users moved out of the lead slot so the sidebar no longer opens on Administration.
     Page,
+    Media,
     Categories,
     Authors,
     Posts,
+    Person,
+    Insight,
     Testimonials,
     Header,
     Footer,
     GlobalBlock,
+    Users,
     DocumentEmbeddings,
   ],
   db: createDatabaseAdapter({
@@ -82,7 +94,7 @@ export default buildConfig({
   globals: [SiteSettings],
   i18n: {
     fallbackLanguage: "en",
-    supportedLanguages: { en, es },
+    supportedLanguages: { en, es, fr, ja },
     translations: {
       en: {
         sso: {

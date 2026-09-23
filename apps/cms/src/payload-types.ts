@@ -68,16 +68,18 @@ export interface Config {
   };
   blocks: {};
   collections: {
-    users: User;
-    media: Media;
     page: Page;
+    media: Media;
     categories: Category;
     authors: Author;
     posts: Post;
+    person: Person;
+    insight: Insight;
     testimonials: Testimonial;
     header: Header;
     footer: Footer;
     globalBlock: GlobalBlock;
+    users: User;
     'document-embeddings': DocumentEmbedding;
     redirects: Redirect;
     presets: Preset;
@@ -94,20 +96,22 @@ export interface Config {
   };
   collectionsJoins: {
     'payload-folders': {
-      documentsAndFolders: 'payload-folders' | 'media' | 'page';
+      documentsAndFolders: 'payload-folders' | 'page' | 'media';
     };
   };
   collectionsSelect: {
-    users: UsersSelect<false> | UsersSelect<true>;
-    media: MediaSelect<false> | MediaSelect<true>;
     page: PageSelect<false> | PageSelect<true>;
+    media: MediaSelect<false> | MediaSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     authors: AuthorsSelect<false> | AuthorsSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
+    person: PersonSelect<false> | PersonSelect<true>;
+    insight: InsightSelect<false> | InsightSelect<true>;
     testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
     globalBlock: GlobalBlockSelect<false> | GlobalBlockSelect<true>;
+    users: UsersSelect<false> | UsersSelect<true>;
     'document-embeddings': DocumentEmbeddingsSelect<false> | DocumentEmbeddingsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     presets: PresetsSelect<false> | PresetsSelect<true>;
@@ -125,7 +129,12 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('en' | 'es') | ('en' | 'es')[];
+  fallbackLocale:
+    | ('false' | 'none' | 'null')
+    | false
+    | null
+    | ('en' | 'fr' | 'ja' | 'ko' | 'zh-hans' | 'zh-hant')
+    | ('en' | 'fr' | 'ja' | 'ko' | 'zh-hans' | 'zh-hant')[];
   globals: {
     'site-settings': SiteSetting;
     _abManifest: _AbManifest;
@@ -134,7 +143,7 @@ export interface Config {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     _abManifest: _AbManifestSelect<false> | _AbManifestSelect<true>;
   };
-  locale: 'en' | 'es';
+  locale: 'en' | 'fr' | 'ja' | 'ko' | 'zh-hans' | 'zh-hant';
   widgets: {
     collections: CollectionsWidget;
   };
@@ -188,166 +197,6 @@ export interface PayloadMcpApiKeyAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: number;
-  /**
-   * The name of the user
-   */
-  name: string;
-  /**
-   * The role of the user
-   */
-  role: 'admin' | 'author' | 'user';
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: number;
-  alt: string;
-  caption?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  /**
-   * Use this file as default when no image is selected.
-   */
-  defaultFor?: 'platform_default'[] | null;
-  folder?: (number | null) | FolderInterface;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-  sizes?: {
-    thumbnail?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    square?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    small?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    medium?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    large?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    xlarge?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    og?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-  };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-folders".
- */
-export interface FolderInterface {
-  id: number;
-  name: string;
-  folder?: (number | null) | FolderInterface;
-  documentsAndFolders?: {
-    docs?: (
-      | {
-          relationTo?: 'payload-folders';
-          value: number | FolderInterface;
-        }
-      | {
-          relationTo?: 'media';
-          value: number | Media;
-        }
-      | {
-          relationTo?: 'page';
-          value: number | Page;
-        }
-    )[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  folderType?: ('media' | 'page')[] | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "page".
  */
 export interface Page {
@@ -373,6 +222,8 @@ export interface Page {
     | CtaBandBlock
     | NewsletterBlock
     | StatsBlock
+    | InsightsListBlock
+    | FeatureListBlock
     | RawHtmlBlock
     | GlobalSectionSlotBlock
   )[];
@@ -532,6 +383,133 @@ export interface Header {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  alt: string;
+  caption?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Use this file as default when no image is selected.
+   */
+  defaultFor?: 'platform_default'[] | null;
+  folder?: (number | null) | FolderInterface;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    square?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    small?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    medium?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    large?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    xlarge?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    og?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-folders".
+ */
+export interface FolderInterface {
+  id: number;
+  name: string;
+  folder?: (number | null) | FolderInterface;
+  documentsAndFolders?: {
+    docs?: (
+      | {
+          relationTo?: 'payload-folders';
+          value: number | FolderInterface;
+        }
+      | {
+          relationTo?: 'page';
+          value: number | Page;
+        }
+      | {
+          relationTo?: 'media';
+          value: number | Media;
+        }
+    )[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  folderType?: ('page' | 'media')[] | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -760,7 +738,7 @@ export interface ContentBlock {
   heading?: string | null;
   description?: string | null;
   layout: 'image-text' | 'text-image';
-  image: number | Media;
+  image?: (number | null) | Media;
   content: {
     root: {
       type: string;
@@ -1270,9 +1248,44 @@ export interface NewsletterBlock {
  * via the `definition` "StatsBlock".
  */
 export interface StatsBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  /**
+   * Figures in a row with a coloured rule, or in a grid beside an image.
+   */
+  layout?: ('accentLine' | 'splitImage') | null;
+  image?: (number | null) | Media;
   items: {
     value: string;
     label: string;
+    /**
+     * One sentence saying where the figure comes from.
+     */
+    description?: string | null;
+    link?: {
+      type?: ('reference' | 'custom' | 'customPage') | null;
+      newTab?: boolean | null;
+      reference?:
+        | ({
+            relationTo: 'page';
+            value: number | Page;
+          } | null)
+        | ({
+            relationTo: 'posts';
+            value: number | Post;
+          } | null);
+      url?: string | null;
+      customPage?: ('blog' | 'search') | null;
+      label?: string | null;
+    };
+    /**
+     * Image layout only. Shown while this figure is selected; falls back to the block image.
+     */
+    image?: (number | null) | Media;
     id?: string | null;
   }[];
   section?: {
@@ -1296,6 +1309,127 @@ export interface StatsBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'stats';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "InsightsListBlock".
+ */
+export interface InsightsListBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  /**
+   * How many of the newest articles to show.
+   */
+  limit?: number | null;
+  /**
+   * Leave empty to show every market.
+   */
+  markets?:
+    | ('uk-europe' | 'canada' | 'greater-china' | 'se-asia' | 'usa' | 'japan' | 'korea' | 'nordics' | 'south-america')[]
+    | null;
+  viewAll?: {
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+    label?: string | null;
+  };
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'insightsList';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FeatureListBlock".
+ */
+export interface FeatureListBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  items: {
+    icon?:
+      | (
+          | 'map'
+          | 'clock'
+          | 'zap'
+          | 'activity'
+          | 'layout-grid'
+          | 'sparkles'
+          | 'file-text'
+          | 'users'
+          | 'bar-chart-3'
+          | 'plug'
+          | 'shield'
+          | 'git-branch'
+          | 'gauge'
+          | 'bell'
+          | 'layers'
+          | 'workflow'
+          | 'calendar'
+          | 'compass'
+          | 'target'
+          | 'wand-2'
+        )
+      | null;
+    title: string;
+    description?: string | null;
+    id?: string | null;
+  }[];
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'featureList';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1367,6 +1501,8 @@ export interface GlobalBlock {
     | CtaBandBlock
     | NewsletterBlock
     | StatsBlock
+    | InsightsListBlock
+    | FeatureListBlock
     | RawHtmlBlock
   )[];
   updatedAt: string;
@@ -1441,6 +1577,130 @@ export interface Footer {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "person".
+ */
+export interface Person {
+  id: number;
+  name: string;
+  jobTitle: string;
+  /**
+   * Used to match this person to an article's author automatically.
+   */
+  email: string;
+  office?: string | null;
+  biography?: string | null;
+  /**
+   * The markets this applies to.
+   */
+  markets?:
+    | ('uk-europe' | 'canada' | 'greater-china' | 'se-asia' | 'usa' | 'japan' | 'korea' | 'nordics' | 'south-america')[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "insight".
+ */
+export interface Insight {
+  id: number;
+  passleShortcode: string;
+  /**
+   * The article's headline.
+   */
+  title: string;
+  /**
+   * The one- or two-sentence summary shown above the article and in listings.
+   */
+  standfirst: string;
+  /**
+   * The full text of the article.
+   */
+  body: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  /**
+   * The web address for this article, generated automatically from the title.
+   */
+  slug: string;
+  /**
+   * When this article was first published.
+   */
+  publishedDate: string;
+  /**
+   * Who wrote this article. Matched automatically from the article's author email; set it by hand if nothing matched.
+   */
+  author?: (number | null) | Person;
+  /**
+   * The email address the thought-leadership platform sent for this article's author. Filled in automatically when no matching person is found, so the right person can be linked above by hand. Clears once Author is set.
+   */
+  unmatchedAuthorEmail?: string | null;
+  /**
+   * The markets this applies to.
+   */
+  markets?:
+    | ('uk-europe' | 'canada' | 'greater-china' | 'se-asia' | 'usa' | 'japan' | 'korea' | 'nordics' | 'south-america')[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  /**
+   * The name of the user
+   */
+  name: string;
+  /**
+   * The role of the user
+   */
+  role: 'admin' | 'author' | 'user';
+  /**
+   * Leave empty for an editor who works across every market. Set it for a local editor, who can then change only articles and people in these markets, and cannot create or delete pages.
+   */
+  markets?:
+    | ('uk-europe' | 'canada' | 'greater-china' | 'se-asia' | 'usa' | 'japan' | 'korea' | 'nordics' | 'south-america')[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1578,7 +1838,7 @@ export interface Preset {
         heading?: string | null;
         description?: string | null;
         layout: 'image-text' | 'text-image';
-        image: number | Media;
+        image?: (number | null) | Media;
         content: {
           root: {
             type: string;
@@ -2037,9 +2297,44 @@ export interface Preset {
         blockType: 'newsletter';
       }
     | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        /**
+         * Figures in a row with a coloured rule, or in a grid beside an image.
+         */
+        layout?: ('accentLine' | 'splitImage') | null;
+        image?: (number | null) | Media;
         items: {
           value: string;
           label: string;
+          /**
+           * One sentence saying where the figure comes from.
+           */
+          description?: string | null;
+          link?: {
+            type?: ('reference' | 'custom' | 'customPage') | null;
+            newTab?: boolean | null;
+            reference?:
+              | ({
+                  relationTo: 'page';
+                  value: number | Page;
+                } | null)
+              | ({
+                  relationTo: 'posts';
+                  value: number | Post;
+                } | null);
+            url?: string | null;
+            customPage?: ('blog' | 'search') | null;
+            label?: string | null;
+          };
+          /**
+           * Image layout only. Shown while this figure is selected; falls back to the block image.
+           */
+          image?: (number | null) | Media;
           id?: string | null;
         }[];
         section?: {
@@ -2063,6 +2358,129 @@ export interface Preset {
         id?: string | null;
         blockName?: string | null;
         blockType: 'stats';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        /**
+         * How many of the newest articles to show.
+         */
+        limit?: number | null;
+        /**
+         * Leave empty to show every market.
+         */
+        markets?:
+          | (
+              | 'uk-europe'
+              | 'canada'
+              | 'greater-china'
+              | 'se-asia'
+              | 'usa'
+              | 'japan'
+              | 'korea'
+              | 'nordics'
+              | 'south-america'
+            )[]
+          | null;
+        viewAll?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'insightsList';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        items: {
+          icon?:
+            | (
+                | 'map'
+                | 'clock'
+                | 'zap'
+                | 'activity'
+                | 'layout-grid'
+                | 'sparkles'
+                | 'file-text'
+                | 'users'
+                | 'bar-chart-3'
+                | 'plug'
+                | 'shield'
+                | 'git-branch'
+                | 'gauge'
+                | 'bell'
+                | 'layers'
+                | 'workflow'
+                | 'calendar'
+                | 'compass'
+                | 'target'
+                | 'wand-2'
+              )
+            | null;
+          title: string;
+          description?: string | null;
+          id?: string | null;
+        }[];
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'featureList';
       }
     | {
         /**
@@ -2483,16 +2901,12 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
-        relationTo: 'users';
-        value: number | User;
+        relationTo: 'page';
+        value: number | Page;
       } | null)
     | ({
         relationTo: 'media';
         value: number | Media;
-      } | null)
-    | ({
-        relationTo: 'page';
-        value: number | Page;
       } | null)
     | ({
         relationTo: 'categories';
@@ -2505,6 +2919,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'posts';
         value: number | Post;
+      } | null)
+    | ({
+        relationTo: 'person';
+        value: number | Person;
+      } | null)
+    | ({
+        relationTo: 'insight';
+        value: number | Insight;
       } | null)
     | ({
         relationTo: 'testimonials';
@@ -2521,6 +2943,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'globalBlock';
         value: number | GlobalBlock;
+      } | null)
+    | ({
+        relationTo: 'users';
+        value: number | User;
       } | null)
     | ({
         relationTo: 'document-embeddings';
@@ -2608,125 +3034,6 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users_select".
- */
-export interface UsersSelect<T extends boolean = true> {
-  name?: T;
-  role?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  email?: T;
-  resetPasswordToken?: T;
-  resetPasswordExpiration?: T;
-  salt?: T;
-  hash?: T;
-  loginAttempts?: T;
-  lockUntil?: T;
-  sessions?:
-    | T
-    | {
-        id?: T;
-        createdAt?: T;
-        expiresAt?: T;
-      };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media_select".
- */
-export interface MediaSelect<T extends boolean = true> {
-  alt?: T;
-  caption?: T;
-  defaultFor?: T;
-  folder?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
-  sizes?:
-    | T
-    | {
-        thumbnail?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        square?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        small?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        medium?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        large?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        xlarge?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        og?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-      };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "page_select".
  */
 export interface PageSelect<T extends boolean = true> {
@@ -2747,6 +3054,8 @@ export interface PageSelect<T extends boolean = true> {
         ctaBand?: T | CtaBandBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
         stats?: T | StatsBlockSelect<T>;
+        insightsList?: T | InsightsListBlockSelect<T>;
+        featureList?: T | FeatureListBlockSelect<T>;
         rawHtml?: T | RawHtmlBlockSelect<T>;
         globalSectionSlot?: T | GlobalSectionSlotBlockSelect<T>;
       };
@@ -3191,11 +3500,102 @@ export interface NewsletterBlockSelect<T extends boolean = true> {
  * via the `definition` "StatsBlock_select".
  */
 export interface StatsBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  layout?: T;
+  image?: T;
   items?:
     | T
     | {
         value?: T;
         label?: T;
+        description?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+            };
+        image?: T;
+        id?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "InsightsListBlock_select".
+ */
+export interface InsightsListBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  limit?: T;
+  markets?: T;
+  viewAll?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FeatureListBlock_select".
+ */
+export interface FeatureListBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  items?:
+    | T
+    | {
+        icon?: T;
+        title?: T;
+        description?: T;
         id?: T;
       };
   section?:
@@ -3251,6 +3651,101 @@ export interface GlobalSectionSlotBlockSelect<T extends boolean = true> {
   _hidden?: T;
   id?: T;
   blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media_select".
+ */
+export interface MediaSelect<T extends boolean = true> {
+  alt?: T;
+  caption?: T;
+  defaultFor?: T;
+  folder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        square?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        small?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        medium?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        large?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        xlarge?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        og?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3331,6 +3826,38 @@ export interface PostsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "person_select".
+ */
+export interface PersonSelect<T extends boolean = true> {
+  name?: T;
+  jobTitle?: T;
+  email?: T;
+  office?: T;
+  biography?: T;
+  markets?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "insight_select".
+ */
+export interface InsightSelect<T extends boolean = true> {
+  passleShortcode?: T;
+  title?: T;
+  standfirst?: T;
+  body?: T;
+  generateSlug?: T;
+  slug?: T;
+  publishedDate?: T;
+  author?: T;
+  unmatchedAuthorEmail?: T;
+  markets?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3492,11 +4019,38 @@ export interface GlobalBlockSelect<T extends boolean = true> {
         ctaBand?: T | CtaBandBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
         stats?: T | StatsBlockSelect<T>;
+        insightsList?: T | InsightsListBlockSelect<T>;
+        featureList?: T | FeatureListBlockSelect<T>;
         rawHtml?: T | RawHtmlBlockSelect<T>;
       };
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users_select".
+ */
+export interface UsersSelect<T extends boolean = true> {
+  name?: T;
+  role?: T;
+  markets?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3929,11 +4483,98 @@ export interface PresetsSelect<T extends boolean = true> {
         stats?:
           | T
           | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              layout?: T;
+              image?: T;
               items?:
                 | T
                 | {
                     value?: T;
                     label?: T;
+                    description?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          label?: T;
+                        };
+                    image?: T;
+                    id?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        insightsList?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              limit?: T;
+              markets?: T;
+              viewAll?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        featureList?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              items?:
+                | T
+                | {
+                    icon?: T;
+                    title?: T;
+                    description?: T;
                     id?: T;
                   };
               section?:

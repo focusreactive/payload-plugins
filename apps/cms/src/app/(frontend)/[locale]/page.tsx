@@ -21,6 +21,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return generateMeta({ collection: "page", doc: page, locale });
 }
 
+export const revalidate = 3600;
+
 export async function generateStaticParams() {
   return I18N_CONFIG.locales.map((locale) => ({
     locale: locale.code,

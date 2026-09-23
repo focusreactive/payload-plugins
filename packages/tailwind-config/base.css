@@ -158,7 +158,8 @@
 /* ──────────────── Selection ──────────────── */
 ::selection {
   background: var(--color-accent);
-  color: var(--color-ink-950);
+  /* The accent is a dark green, so ink-950 on it was near-invisible. */
+  color: #fff;
 }
 
 @utility text-display-1 {

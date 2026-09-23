@@ -1,0 +1,28 @@
+{
+  "PostShortcode": "102nbge",
+  "PassleShortcode": "102nbge",
+  "PostUrl": "https://www.example.com/insights/latest-insights/102nbge-upc-no-reinvention-of-the-wheel-for-doctrine-of-equivalence-test/",
+  "PostTitle": "UPC: No reinvention of the wheel for doctrine of equivalence test",
+  "Authors": [
+    {
+      "Name": "Thomas Prock",
+      "EmailAddress": "tprock@example.com",
+      "JobTitle": "Partner"
+    },
+    {
+      "Name": "Andrew Tiberia",
+      "EmailAddress": "atiberia@example.com",
+      "JobTitle": "Trainee Patent Attorney"
+    }
+  ],
+  "CoAuthors": [],
+  "ContentTextSnippet": "In a recent decision of the Unified Patent Court (UPC), the Düsseldorf Local Division has endorsed the Dutch doctrine of equivalence test previously followed by the Hague Local Division, indicating that a consensus could",
+  "PublishedDate": "2026-07-10T09:00:00.000Z",
+  "Tags": [
+    "EPO Patent Oppositions",
+    "Patents",
+    "Europe",
+    "UPC"
+  ],
+  "PostContentHtml": "<p><span>In a recent decision of the Unified Patent Court (UPC), the Düsseldorf Local Division has endorsed the Dutch doctrine of equivalence test previously followed by the Hague Local Division, indicating that a consensus could be forming for assessing claims for infringement by equivalence at the UPC (Wonderland Nursery Goods v Cybex, UPC_CFI_807/2024).</span></p><p><span>In rejecting the claimant’s equivalent infringement arguments, the Court described the Dutch-derived test as a “coherent whole” and stated that there was “no indication that applying a different standard would produce a different outcome”.&nbsp;</span></p><p><span>In particular, the claimant asserted infringement by equivalence of certain features of the claimed swivel locking device for a stroller wheel, essentially arguing that the design has simply been reversed in the allegedly infringing stroller models marketed by the defendant, but the Court found the claimant’s submissions to fail (at least) the first three steps of the test.</span></p><p><span><strong>Step 1: Technical equivalence – does the variation solve (essentially) the same problem that the patented invention solves, and performs (essentially) the same function in this context?</strong></span></p><p><span><strong>No.</strong> The Court rejected the claimant’s framing of a simple reversal of the design, finding that the claimant wrongly “reduces the entire invention to a secured connection between rotatable and non-rotatable elements” whereas the patent is aimed at achieving this connection “through a particular arrangement of components”. Consequently, the panel held that it is the “function of the arrangement and location of the respective components, as set out specifically in the claim” that are decisive for assessing technical equivalence, and the claimant “must not focus solely on the objective task of the patent”.</span></p><p><span><strong>Step 2: Is extending the protection of the claim to the equivalent proportionate to a fair protection for the patentee?</strong></span></p><p><span><strong>No.</strong> Again, the Court dismissed the claimant’s argument that it would be obvious for the skilled person to simply reverse the claimed wheel locking assembly. The Court ruled that, in general, it is not obvious to a skilled person how to apply the equivalent element if such a “fundamental redesign” of the claimed device is required to reach the alleged variant.</span></p><p><span><strong>Step 3: Reasonable legal certainty for third parties – does the skilled person understand from the patent that the scope of the invention is broader than what is claimed literally</strong></span></p><p><span><strong>No.</strong> The claimant relied on the broad objective of the invention to justify a wider scope of protection than literally claimed, but the Court rejected this as “[failing] to consider that the claim sets out specific requirements regarding the arrangement of the components”, and that it is precisely this arrangement which achieves the technical result.</span></p><p><span><strong>Step 4: Is the allegedly infringing product novel and inventive over the prior art?</strong></span></p><p><span>For the last step of the test, the Court decided it was not necessary to comment given the decisively negative conclusions for the first three steps.</span></p><p><span>In summary, the Düsseldorf Local Division has followed the Hague Local Division’s four-step doctrine of equivalence test in full, though placing a particular emphasis on a strict, feature-by-feature functional analysis. If appealed, the decision may pave the way for the Dutch-derived test to emerge as the settled standard for assessing equivalence at the UPC.&nbsp;</span></p>"
+}

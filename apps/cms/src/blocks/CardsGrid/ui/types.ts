@@ -4,6 +4,7 @@ import type { PreparedMedia } from "@/components/media";
 import type { LinkProps } from "@/components/link/types";
 
 export interface IDefaultCardProps {
+  credential?: { email: string; password: string };
   title: string;
   description?: string;
   image: PreparedMedia;

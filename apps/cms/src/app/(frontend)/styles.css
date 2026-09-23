@@ -3,8 +3,14 @@
 @source "../..";
 
 :root {
-  --section-margin-base: clamp(56px, 8vw, 104px);
-  --section-margin-large: clamp(96px, 14vw, 180px);
+  /*
+   * DESIGN.md's clamp(72px, 10vw, 128px) is the gap BETWEEN two sections, but this value is
+   * applied as padding on both the top and the bottom of every section, so two adjacent sections
+   * each contribute one side and the values stack. Halving it here is what makes the visible gap
+   * match the token instead of doubling it.
+   */
+  --section-margin-base: clamp(56px, 7vw, 96px);
+  --section-margin-large: clamp(80px, 10vw, 140px);
   --container-padding-base: clamp(20px, 5vw, 64px);
   --container-max-width: 1180px;
 }
@@ -19,7 +25,9 @@
 body {
   background: var(--color-background);
   color: var(--color-foreground);
-  font-family: var(--font-sans);
+  /* --font-body, not --font-sans: two stylesheets both define --font-sans, and the fork base's,
+     which points at an Archivo face this app never loads, is the one that wins. */
+  font-family: var(--font-body);
   font-size: 18px;
   line-height: 1.65;
   text-rendering: optimizeLegibility;
@@ -48,10 +56,38 @@ body {
     --tw-prose-invert-code: var(--color-foreground);
   }
 
+  /*
+   * @tailwindcss/typography's own .prose rule sets font-size: 1rem on this element, which sits
+   * between a section's size class and the paragraph inside it - so `text-xl` on the wrapper was
+   * discarded one level before it reached the text, and the hero subhead rendered at 16px under a
+   * 60px heading. Inheriting hands the size decision back to whichever section owns it.
+   */
+  /*
+   * The shared preset makes this band slate-200, a cold blue-grey that fights the warm cream page
+   * and the pink brand. Overridden here rather than in packages/tailwind-config, which other demos
+   * share.
+   */
+  [data-theme="light-gray"] {
+    --color-background: #f2f0ea;
+    --color-surface-muted: #e8e5dd;
+  }
+
+  /* A heading that breaks one word onto its own last line reads as a layout bug. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+
+  /*
+   * Deliberately sets no font-size and no color. Both used to be hardcoded here, at the same
+   * specificity as the utility classes on the container, so every Untitled UI type class on a
+   * rich-text body silently lost - the hero subhead rendered at 18.88px under a 60px heading.
+   * Paragraphs now inherit whatever their section sets.
+   */
   .prose p {
-    font-size: 1.18rem;
     line-height: 1.75;
-    color: color-mix(in srgb, var(--color-foreground) 88%, transparent);
   }
 
   .prose h2 {
@@ -201,6 +237,7 @@ body {
 
   .prose-copy ul > li {
     position: relative;
+    text-wrap: pretty;
     padding-left: 2rem;
     color: color-mix(in srgb, var(--color-foreground) 88%, transparent);
     font-size: 1.12rem;
@@ -272,15 +309,24 @@ body {
     text-underline-offset: 4px;
   }
 
+  /*
+   * !important on exactly three declarations, and only these. @tailwindcss/typography's own
+   * `.prose :where(ul)` carries the same specificity as `.prose-content ul`, so the winner is
+   * decided by source order - and the plugin is injected by Untitled UI's globals.css, which has
+   * to load first so its theme is the base. Without this the list keeps its native disc marker and
+   * the list item loses its 30px of padding, leaving the absolutely-positioned check icon painted
+   * over the first word: "A shortcode comes in" rendered as "shortcode comes in".
+   */
   .prose-content ul {
     margin: 0;
-    list-style: none;
-    padding: 0;
+    list-style: none !important;
+    padding: 0 !important;
   }
 
   .prose-content ul > li {
     position: relative;
-    padding-left: 30px;
+    padding-left: 30px !important;
+    text-wrap: pretty;
     color: var(--color-muted-foreground);
   }
 
@@ -297,8 +343,12 @@ body {
     height: 1.125rem;
     padding: 3px;
     border-radius: var(--radius-pill);
-    background: var(--color-primary-soft);
-    color: var(--color-primary);
+    /*
+     * Neutral, not the brand colour. These lists are steps and caveats, and under "what this demo
+     * is not" a brand tick reads as a checkmark saying the opposite of the sentence beside it.
+     */
+    background: color-mix(in srgb, var(--color-foreground) 8%, transparent);
+    color: color-mix(in srgb, var(--color-foreground) 55%, transparent);
   }
 
   .prose-card {
@@ -386,27 +436,113 @@ body {
   }
 }
 
-.testimonials-carousel-group {
-  animation: testimonials-carousel-scrolling var(--testimonials-carousel-duration, 60s) linear
-    infinite;
+/* The design language for this sandbox lives in apps/cms/DESIGN.md. Values below are that
+   document made real - change the document first, then this block, or the two drift apart. */
+:root {
+  --color-background: #fbfaf7;
+  --color-foreground: #15171b;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f2efe8;
+  --color-card: #ffffff;
+  --color-card-foreground: #15171b;
+  --color-muted-foreground: #585d66;
+  /* DESIGN.md's ink-tertiary, darkened from #8A8F98 (3.1:1 against paper) to clear WCAG AA
+     for the 12px kicker label - the axe-core failure was on this token, not any one component. */
+  --color-ink-tertiary: #646972;
+  --color-border: #e3ded3;
+  --color-input: #e3ded3;
+  --color-primary: #1f4b43;
+  --color-primary-hover: #16382f;
+  --color-primary-foreground: #fbfaf7;
+  --color-primary-soft: #e7eeeb;
+  --color-accent: #1f4b43;
+  --color-accent-hover: #16382f;
+  --color-accent-foreground: #fbfaf7;
+  --color-ring: #1f4b43;
+  --container-max-width: 1180px;
 }
 
-.testimonials-carousel:hover .testimonials-carousel-group,
-.testimonials-carousel:focus-within .testimonials-carousel-group {
-  animation-play-state: paused;
+body {
+  font-size: 17px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .testimonials-carousel-group {
-    animation: none;
+@layer utilities {
+  /* The editorial signature of this design: an uppercase label above a section heading. */
+  .kicker {
+    color: var(--color-ink-tertiary);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .display-serif {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+
+  /* Text wider than this stops reading as an editorial page and starts reading as a template. */
+  .measure {
+    max-width: 68ch;
+  }
+
+  .rule-top {
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* The CSS floor under every scroll reveal: a page whose JavaScript never runs still shows
+     its content, because a blank demo is worse than an unanimated one. */
+  .reveal-floor {
+    opacity: 1;
+    transform: none;
   }
 }
 
-@keyframes testimonials-carousel-scrolling {
-  from {
-    transform: translateX(0);
+/* The shared preset sizes display type for a product landing page: 5.4rem at weight 500. A law
+   firm reads that as shouting, so the scale comes down to DESIGN.md's 56px ceiling and the serif
+   stops being semibold. */
+@layer utilities {
+  .text-display-1 {
+    font-size: clamp(2.4rem, 5vw, 3.5rem);
+    font-weight: 400;
+    line-height: 1.05;
   }
-  to {
-    transform: translateX(-100%);
+
+  .text-display-2 {
+    font-size: clamp(2rem, 4vw, 2.5rem);
+    font-weight: 400;
+    line-height: 1.1;
   }
+
+  .text-h-section {
+    font-size: clamp(1.6rem, 3vw, 1.875rem);
+    font-weight: 400;
+    line-height: 1.15;
+  }
+
+  .text-h-card {
+    font-weight: 400;
+  }
+}
+
+/* Every button in the shared component set is a pill. DESIGN.md allows 2px, so the override lands
+   on the utility rather than on each variant, which keeps the button component untouched. */
+@layer utilities {
+  .rounded-pill {
+    border-radius: 2px;
+  }
+}
+
+/*
+ * Unlayered on purpose. @tailwindcss/typography sets font-size: 1rem on .prose itself, and that
+ * element sits between a section's size class and the paragraph inside it, so every size we set on
+ * a rich-text container was discarded one level before it reached the text. The same rule inside
+ * @layer utilities still lost; unlayered CSS outranks every layer.
+ */
+.prose {
+  font-size: inherit;
 }

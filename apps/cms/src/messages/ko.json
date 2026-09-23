@@ -1,0 +1,64 @@
+{
+  "common": {
+    "goToHomepage": "홈페이지로 이동",
+    "page": "페이지",
+    "exitPreview": "미리보기 종료",
+    "returnToHome": "홈으로 돌아가기",
+    "somethingWentWrong": "문제가 발생했습니다",
+    "anErrorOccurredWhileLoadingTheBlog": "블로그를 불러오는 중 오류가 발생했습니다: {errorMessage}",
+    "anErrorOccurredWhileLoadingTheSite": "사이트를 불러오는 중 오류가 발생했습니다: {errorMessage}"
+  },
+  "pageRange": {
+    "docs": {
+      "plural": "문서",
+      "singular": "문서"
+    },
+    "posts": {
+      "plural": "게시물",
+      "singular": "게시물"
+    },
+    "noResults": "검색 결과가 없습니다.",
+    "showing": "총 {total}개의 {label} 중 {start}{end}개 표시 중",
+    "showingEnd": "~{end}"
+  },
+  "pagination": {
+    "previous": "이전",
+    "next": "다음",
+    "goToPreviousPage": "이전 페이지로 이동",
+    "goToNextPage": "다음 페이지로 이동",
+    "morePages": "페이지 더 보기"
+  },
+  "blog": {
+    "backToJournal": "Journal로 돌아가기",
+    "noResults": "검색어와 일치하는 기사가 없습니다.",
+    "readTime": "{minutes}분",
+    "readTimeLong": "{minutes}분 소요",
+    "search": {
+      "all": "전체",
+      "label": "기사 검색",
+      "open": "기사 검색",
+      "close": "검색 닫기",
+      "clear": "검색 지우기"
+    },
+    "newsletter": {
+      "eyebrow": "The Journal, 매월 발송",
+      "heading": "매달 한 번, 정성껏 쓴 이메일을 보내드립니다. 불필요한 소식은 없습니다.",
+      "placeholder": "you@team.com",
+      "button": "구독하기",
+      "disclaimer": "스팸 없습니다. 언제든지 구독을 취소할 수 있습니다."
+    }
+  },
+  "announcements": {
+    "title": "공지사항",
+    "noAnnouncements": "현재 공지사항이 없습니다.",
+    "metadata": {
+      "title": "공지사항",
+      "description": "{tenant} 테넌트의 {count, plural, =0 {공지사항이 없습니다} =1 {공지사항 1건} other {공지사항 #건}}"
+    }
+  },
+  "hierarchyNav": {
+    "home": "홈",
+    "breadcrumbLabel": "이동 경로",
+    "inThisSection": "이 섹션에서"
+  }
+}

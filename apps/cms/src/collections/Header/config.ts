@@ -1,7 +1,7 @@
 import type { CollectionConfig, GroupField } from "payload";
 
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
-import { anyone, or, user, superAdmin } from "@/lib/access";
+import { anyone, superAdmin } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
@@ -10,14 +10,14 @@ import { revalidateResourcesUsingHeader } from "./hooks/revalidateResourcesUsing
 
 export const Header: CollectionConfig<"header"> = {
   access: {
-    create: or(superAdmin, user),
-    delete: or(superAdmin, user),
+    create: superAdmin,
+    delete: superAdmin,
     read: anyone,
-    update: or(superAdmin, user),
+    update: superAdmin,
   },
   admin: {
     defaultColumns: ["name", "logo"],
-    group: "Global Components",
+    group: "Navigation",
     useAsTitle: "name",
   },
   fields: [

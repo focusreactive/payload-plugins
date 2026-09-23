@@ -14,7 +14,7 @@ const defaultHeroLinkItem = (label: string) => ({
   label,
   newTab: false,
   type: "custom" as const,
-  url: "https://www.google.com",
+  url: "",
 });
 
 export const heroFields: Field[] = [
@@ -36,8 +36,8 @@ export const heroFields: Field[] = [
       {
         admin: { width: "50%" },
         defaultValue: createLocalizedDefault({
-          en: "New · Cadence 3.0",
-          es: "Nuevo · Cadence 3.0",
+          en: "New",
+          es: "Nuevo",
         }),
         label: { en: "Eyebrow", es: "Antetítulo" },
         localized: true,
@@ -70,12 +70,12 @@ export const heroFields: Field[] = [
     },
     defaultValue: createLocalizedDefault({
       en: [
-        { ...defaultHeroLinkItem("Start free"), appearance: "accent" as const },
-        { ...defaultHeroLinkItem("Watch the tour"), appearance: "outline" as const },
+        { ...defaultHeroLinkItem("Learn more"), appearance: "accent" as const },
+        { ...defaultHeroLinkItem("Contact us"), appearance: "outline" as const },
       ],
       es: [
-        { ...defaultHeroLinkItem("Comenzar gratis"), appearance: "accent" as const },
-        { ...defaultHeroLinkItem("Ver el tour"), appearance: "outline" as const },
+        { ...defaultHeroLinkItem("Más información"), appearance: "accent" as const },
+        { ...defaultHeroLinkItem("Contáctenos"), appearance: "outline" as const },
       ],
     }),
     fields: (link() as GroupField).fields,

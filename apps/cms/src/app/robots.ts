@@ -14,8 +14,10 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
   return {
     rules: [
       {
-        allow: "/",
-        disallow: ["/admin/", "/api/", "/next/", "/*?draft=true", "/*&draft=true"],
+        // This sandbox carries a prospect's own published articles and their people, under a URL
+        // that gets shared after the call. Nothing here may be indexed, so the whole tree is
+        // disallowed rather than the admin and the API alone.
+        disallow: "/",
         userAgent: "*",
       },
     ],

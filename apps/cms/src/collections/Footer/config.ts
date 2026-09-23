@@ -1,7 +1,7 @@
 import type { CollectionConfig } from "payload";
 
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
-import { anyone, or, user, superAdmin } from "@/lib/access";
+import { anyone, superAdmin } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
@@ -10,14 +10,14 @@ import { revalidateResourcesUsingFooter } from "./hooks/revalidateResourcesUsing
 
 export const Footer: CollectionConfig<"footer"> = {
   access: {
-    create: or(superAdmin, user),
-    delete: or(superAdmin, user),
+    create: superAdmin,
+    delete: superAdmin,
     read: anyone,
-    update: or(superAdmin, user),
+    update: superAdmin,
   },
   admin: {
     defaultColumns: ["name", "logo"],
-    group: "Global Components",
+    group: "Navigation",
     useAsTitle: "name",
   },
   fields: [
@@ -159,8 +159,8 @@ export const Footer: CollectionConfig<"footer"> = {
         },
       },
       defaultValue: createLocalizedDefault({
-        en: "© 2026 Cadence Labs, Inc.",
-        es: "© 2026 Cadence Labs, Inc.",
+        en: "© 2026",
+        es: "© 2026",
       }),
       localized: true,
       name: "copyrightText",

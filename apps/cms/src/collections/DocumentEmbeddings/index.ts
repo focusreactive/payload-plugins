@@ -11,6 +11,7 @@ export const DocumentEmbeddings: CollectionConfig = {
   },
   admin: {
     group: "System",
+    hidden: true,
   },
   fields: [
     {

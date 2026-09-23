@@ -16,12 +16,32 @@ export const I18N_CONFIG: {
       label: "English",
     },
     {
-      code: "es",
-      label: "Spanish",
+      code: "fr",
+      label: "French",
+    },
+    {
+      code: "ja",
+      label: "Japanese",
+    },
+    {
+      code: "ko",
+      label: "Korean",
+    },
+    {
+      code: "zh-hans",
+      label: "Chinese (Simplified)",
+    },
+    {
+      code: "zh-hant",
+      label: "Chinese (Traditional)",
     },
   ],
   openGraphLocales: {
-    en: "en_US",
-    es: "es_ES",
+    en: "en_GB",
+    fr: "fr_FR",
+    ja: "ja_JP",
+    ko: "ko_KR",
+    "zh-hans": "zh_CN",
+    "zh-hant": "zh_TW",
   },
 };

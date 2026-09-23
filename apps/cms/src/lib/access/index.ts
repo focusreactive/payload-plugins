@@ -8,3 +8,4 @@ export { nobody } from "./nobody";
 export { onlySelf } from "./onlySelf";
 export { createdBy } from "./createdBy";
 export { superAdmin } from "./superAdmin";
+export { editorial } from "./editorial";

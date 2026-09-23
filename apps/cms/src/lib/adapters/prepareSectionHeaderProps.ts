@@ -7,6 +7,7 @@ export interface SectionHeaderInput {
   size?: SectionHeaderProps["size"];
   align?: SectionHeaderProps["align"];
   eyebrowVariant?: SectionHeaderEyebrow["variant"];
+  isFirstBlock?: SectionHeaderProps["isFirstBlock"];
 }
 
 export function prepareSectionHeaderProps({
@@ -16,6 +17,7 @@ export function prepareSectionHeaderProps({
   size,
   align,
   eyebrowVariant,
+  isFirstBlock,
 }: SectionHeaderInput): SectionHeaderProps | null {
   if (!eyebrow && !heading && !description) {
     return null;
@@ -24,6 +26,7 @@ export function prepareSectionHeaderProps({
   return {
     align,
     eyebrow: eyebrow ? { text: eyebrow, variant: eyebrowVariant } : null,
+    isFirstBlock,
     size,
     subtitle: description,
     title: heading,

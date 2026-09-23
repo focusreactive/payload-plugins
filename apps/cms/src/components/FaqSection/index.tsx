@@ -1,10 +1,8 @@
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
-import { SectionHeader } from "@/components/SectionHeader";
 
 import { RichText } from "@/components/shared";
-import type { AccordionItemData } from "@/components/Accordion";
-import { Accordion } from "@/components/Accordion";
-import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
+
+import { FaqQuestion } from "./FaqQuestion";
 
 export interface FaqSectionItem {
   question: string;
@@ -19,21 +17,43 @@ interface FaqSectionProps {
   items?: FaqSectionItem[] | null;
 }
 
+/**
+ * Untitled UI's faq-accordion-03: heading on the left, questions on the right, the first one
+ * open. Section padding and container are theirs, so the block renders with none of its own.
+ */
 export function FaqSection({ eyebrow, heading, description, items }: FaqSectionProps) {
-  const accordionItems: AccordionItemData[] = (items ?? []).map((item, index) => ({
-    content: <RichText content={item.answer} />,
-    id: item.id ?? String(index),
-    trigger: item.question,
-  }));
-
-  const firstId = accordionItems[0]?.id ?? null;
-  const header = prepareSectionHeaderProps({ eyebrow, size: "h-section", description, heading });
-
   return (
-    <div className="grid grid-cols-1 items-start gap-[clamp(32px,6vw,80px)] min-[861px]:grid-cols-[0.8fr_1.2fr]">
-      {header ? <SectionHeader {...header} /> : <div aria-hidden />}
-
-      <Accordion items={accordionItems} defaultOpenId={firstId} triggerHeadingLevel={3} />
+    <div className="py-16 md:py-24">
+      <div className="mx-auto max-w-container px-4 md:px-8">
+        <div className="flex flex-col gap-12 lg:flex-row lg:gap-16">
+          {(eyebrow || heading || description) && (
+            <div className="flex w-full max-w-3xl flex-col lg:max-w-xl">
+              {eyebrow && (
+                <span className="text-sm font-semibold text-brand-secondary md:text-md">
+                  {eyebrow}
+                </span>
+              )}
+              {heading && (
+                <h2 className="mt-3 text-display-sm font-semibold text-primary md:text-display-md">
+                  {heading}
+                </h2>
+              )}
+              {description && <p className="mt-4 text-lg text-tertiary md:mt-5">{description}</p>}
+            </div>
+          )}
+          <div className="flex w-full flex-col gap-8">
+            {(items ?? []).map((item, index) => (
+              <FaqQuestion
+                key={item.id ?? index}
+                question={item.question}
+                defaultOpen={index === 0}
+              >
+                <RichText content={item.answer} />
+              </FaqQuestion>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

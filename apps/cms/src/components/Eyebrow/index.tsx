@@ -14,27 +14,27 @@ interface Props {
 const toneMap: Record<EyebrowTone, string> = {
   default: "bg-foreground text-background",
   primary: "bg-primary text-primary-foreground",
-  muted: "text-muted-foreground",
+  muted: "text-[var(--color-ink-tertiary)]",
   accent: "bg-accent text-accent-foreground",
   outline: "border border-foreground text-foreground",
 };
 
 const sizeMap = {
-  sm: "px-2.5 py-1 text-[10px]",
-  md: "px-3.5 py-[7px] text-[0.72rem] font-semibold",
+  sm: "text-[10px]",
+  md: "text-[12px] font-semibold",
 };
 
 export function Eyebrow({
   children,
   prefix = "none",
-  tone = "primary",
+  tone = "muted",
   size = "md",
   className,
 }: Props) {
   return (
     <span
       className={cn(
-        "inline-flex w-fit items-center gap-1.5 rounded-pill font-mono uppercase tracking-[0.16em] leading-none whitespace-nowrap",
+        "inline-flex w-fit items-center gap-1.5 font-mono uppercase tracking-[0.14em] leading-none whitespace-nowrap",
         toneMap[tone],
         sizeMap[size],
         className

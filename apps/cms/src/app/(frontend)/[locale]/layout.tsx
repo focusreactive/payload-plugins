@@ -1,6 +1,6 @@
 import type { Viewport } from "next";
-import { Archivo, IBM_Plex_Mono, Newsreader } from "next/font/google";
-import { getMessages } from "next-intl/server";
+import localFont from "next/font/local";
+import { getMessages, setRequestLocale } from "next-intl/server";
 import { draftMode } from "next/headers";
 import React from "react";
 
@@ -12,26 +12,46 @@ import type { Locale } from "@/lib/types";
 import { LivePreviewListener } from "@/components/LivePreviewListener";
 import { VisualEditingEditRouter } from "@/components/VisualEditingEditRouter";
 
-const newsreader = Newsreader({
+// Self-hosted rather than next/font/google: every build otherwise fetched three families from
+// Google, and one failed hiccup takes the whole deployment down with "Can't resolve
+// [next]/internal/font/google/archivo_*.module.css". Both ship as variable fonts, so one file
+// covers the whole weight range.
+const instrumentSans = localFont({
   display: "swap",
-  style: ["normal", "italic"],
-  subsets: ["latin"],
+  src: [
+    { path: "../../../fonts/InstrumentSans-variable.woff2", style: "normal", weight: "400 700" },
+  ],
+  variable: "--font-instrument-sans",
+});
+
+const inter = localFont({
+  display: "swap",
+  src: [{ path: "../../../fonts/Inter-variable.woff2", style: "normal", weight: "400 700" }],
+  variable: "--font-inter",
+});
+
+// Newsreader for headlines and IBM Plex Sans for text, picked on 2026-09-23 over Instrument Sans
+// with Inter. Newsreader ships its optical-size axis, so display headlines get the tighter
+// high-contrast cut without a second file.
+const newsreader = localFont({
+  display: "swap",
+  src: [{ path: "../../../fonts/Newsreader-variable.woff2", style: "normal", weight: "400 700" }],
   variable: "--font-newsreader",
-  weight: ["400", "500", "600"],
 });
 
-const archivo = Archivo({
+const ibmPlexSans = localFont({
   display: "swap",
-  subsets: ["latin"],
-  variable: "--font-archivo",
-  weight: ["400", "500", "600"],
+  src: [{ path: "../../../fonts/IBMPlexSans-variable.woff2", style: "normal", weight: "400 700" }],
+  variable: "--font-ibm-plex-sans",
 });
 
-const ibmPlexMono = IBM_Plex_Mono({
+const ibmPlexMono = localFont({
   display: "swap",
-  subsets: ["latin"],
+  src: [
+    { path: "../../../fonts/IBMPlexMono-400.woff2", style: "normal", weight: "400" },
+    { path: "../../../fonts/IBMPlexMono-500.woff2", style: "normal", weight: "500" },
+  ],
   variable: "--font-ibm-plex-mono",
-  weight: ["400", "500"],
 });
 
 export const viewport: Viewport = {
@@ -50,6 +70,9 @@ interface Props {
 
 export default async function RootLayout({ children, params }: Props) {
   const { locale } = await params;
+  // Tells next-intl the locale up front. Without it every getLocale() call in a block reads the
+  // request headers, which opts the whole page out of static generation.
+  setRequestLocale(locale);
   const { isEnabled: draft } = await draftMode();
   const messages = await getMessages();
 
@@ -57,7 +80,7 @@ export default async function RootLayout({ children, params }: Props) {
     <html
       lang={locale}
       data-theme="light"
-      className={`${newsreader.variable} ${archivo.variable} ${ibmPlexMono.variable}`}
+      className={`${instrumentSans.variable} ${inter.variable} ${newsreader.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
     >
       <head />
       <body>

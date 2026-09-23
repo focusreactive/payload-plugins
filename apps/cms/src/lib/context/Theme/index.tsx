@@ -6,7 +6,7 @@ import canUseDOM from "@/lib/utils/canUseDOM";
 
 import { defaultTheme, themeLocalStorageKey } from "./consts";
 import type { Theme, ThemeContextType } from "./types";
-import { getImplicitPreference, themeIsValid } from "./utils";
+import { themeIsValid } from "./utils";
 
 const initialContext: ThemeContextType = {
   setTheme: () => null,
@@ -20,14 +20,13 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     canUseDOM ? (document.documentElement.dataset.theme as Theme) : undefined
   );
 
+  // This demo is light-only: the operating system's color-scheme preference must never move the
+  // frontend to dark, so a reset falls back to defaultTheme ("light") instead of consulting it.
   const setTheme = (themeToSet: Theme | null) => {
     if (themeToSet === null) {
       window.localStorage.removeItem(themeLocalStorageKey);
-      const implicitPreference = getImplicitPreference();
-      document.documentElement.dataset.theme = implicitPreference || "";
-      if (implicitPreference) {
-        setThemeState(implicitPreference);
-      }
+      document.documentElement.dataset.theme = defaultTheme;
+      setThemeState(defaultTheme);
     } else {
       setThemeState(themeToSet);
       window.localStorage.setItem(themeLocalStorageKey, themeToSet);
@@ -41,12 +40,6 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (themeIsValid(preference)) {
       themeToSet = preference;
-    } else {
-      const implicitPreference = getImplicitPreference();
-
-      if (implicitPreference) {
-        themeToSet = implicitPreference;
-      }
     }
 
     document.documentElement.dataset.theme = themeToSet;

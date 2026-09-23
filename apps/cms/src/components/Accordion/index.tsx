@@ -39,7 +39,7 @@ export function Accordion({
             aria-expanded={isOpen}
             aria-controls={`accordion-panel-${item.id}`}
           >
-            <span className="font-display text-[1.3rem] font-semibold leading-tight tracking-tight text-foreground transition-colors [button:hover_>_&]:text-primary">
+            <span className="font-display text-[1.3rem] leading-tight tracking-tight text-foreground transition-colors [button:hover_>_&]:text-primary">
               {item.trigger}
             </span>
             <span

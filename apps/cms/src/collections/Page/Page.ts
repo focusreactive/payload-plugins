@@ -1,8 +1,9 @@
+import { notScopedEditor } from "@/lib/access/marketScoped";
 import { createParentField, createBreadcrumbsField } from "@payloadcms/plugin-nested-docs";
 import type { CollectionConfig } from "payload";
 
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
-import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { anyone, editorial } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
@@ -17,10 +18,10 @@ import { validateReservedSlug, validateReservedPath } from "./hooks/validateRese
 
 export const Page: CollectionConfig<"page"> = {
   access: {
-    create: or(superAdmin, user, author),
-    delete: or(superAdmin, user, author),
+    create: notScopedEditor,
+    delete: notScopedEditor,
     read: anyone,
-    update: or(superAdmin, user, author),
+    update: editorial,
   },
   admin: {
     components: {

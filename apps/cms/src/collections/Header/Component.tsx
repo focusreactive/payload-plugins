@@ -11,6 +11,7 @@ import React from "react";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
+import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 import type { Header as HeaderType, Media } from "@/payload-types";
 
 import { HeaderClient } from "./HeaderClient";
@@ -127,7 +128,7 @@ export async function Header({ data, disableActive }: Props) {
 
   const props: IHeaderProps = {
     brand: {
-      href: "/",
+      href: shouldIncludeLocalePrefix(locale) ? `/${locale}` : "/",
       label: data.name ?? "",
       logo: logo ? prepareMediaProps({ image: logo }) : null,
     },

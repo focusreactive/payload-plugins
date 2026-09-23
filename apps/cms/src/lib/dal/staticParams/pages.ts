@@ -1,6 +1,7 @@
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import type { Locale } from "@/lib/types";
-import { getPayloadClient } from "@/dal/payload-client";
+
+import { getPathMap } from "../pathMap";
 
 export type PageStaticParams = { locale: string; slug: string[] }[];
 
@@ -15,35 +16,15 @@ function isHomeSlug(slug: string[]): boolean {
 }
 
 export async function getMainSitePageStaticParams(): Promise<PageStaticParams> {
-  const payload = await getPayloadClient();
+  const pathMap = await getPathMap();
 
   const results: PageStaticParams = [];
 
   for (const localeConfig of I18N_CONFIG.locales) {
     const locale = localeConfig.code as Locale;
 
-    const pages = await payload.find({
-      collection: "page",
-      depth: 2,
-      draft: false,
-      limit: 1000,
-      locale,
-      overrideAccess: true,
-      pagination: false,
-      select: {
-        breadcrumbs: true,
-        slug: true,
-      },
-      where: {
-        _status: { equals: "published" },
-      },
-    });
-
-    for (const page of pages.docs) {
-      const slug =
-        (page?.breadcrumbs?.length
-          ? page.breadcrumbs?.at(-1)?.url?.split("/")?.filter(Boolean)
-          : page?.slug?.split("/")) ?? [];
+    for (const path of Object.keys(pathMap.pathToId[locale] ?? {})) {
+      const slug = path.split("/").filter(Boolean);
 
       if (isHomeSlug(slug)) {
         continue;

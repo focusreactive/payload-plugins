@@ -2,13 +2,14 @@ import NextLink from "next/link";
 
 import { Media } from "@/components/media";
 import type { MediaProps, PreparedMedia } from "@/components/media";
+import { Button } from "@/shared/ui/shadcn/base/buttons/button";
 
 import type { FooterLink, IFooterProps } from "./types";
 
 function toLogoMediaProps(logo: PreparedMedia): MediaProps {
   const imageProps = {
     ...logo.imageProps,
-    className: "w-auto h-7.5",
+    className: "h-7 w-auto",
   };
 
   return logo.data.kind === "video"
@@ -16,16 +17,28 @@ function toLogoMediaProps(logo: PreparedMedia): MediaProps {
     : { ...logo.data, visualEditing: logo.visualEditing, imageProps, width: 120, height: 30 };
 }
 
-function FooterAnchor({ link, className }: { link: FooterLink; className?: string }) {
+function FooterAnchor({
+  link,
+  color,
+  size,
+  className,
+}: {
+  link: FooterLink;
+  color: "link-gray";
+  size: "md" | "sm";
+  className?: string;
+}) {
   return (
-    <NextLink
+    <Button
+      color={color}
+      size={size}
       href={link.href}
       target={link.newTab ? "_blank" : undefined}
       rel={link.newTab ? "noopener noreferrer" : undefined}
       className={className}
     >
       {link.label}
-    </NextLink>
+    </Button>
   );
 }
 
@@ -37,54 +50,67 @@ export function Footer({
   copywriteText,
 }: IFooterProps) {
   return (
-    <footer className="bg-background text-foreground border-t border-border">
-      <div className="mx-auto max-w-containerMaxW px-containerBase pb-10 pt-[72px]">
-        <div className="grid grid-cols-[1.6fr_repeat(3,1fr)] gap-10 max-[760px]:grid-cols-2 max-[760px]:gap-8">
-          <div className="flex flex-col">
-            <NextLink
-              href={brand.href}
-              className="inline-flex items-center gap-2.5 font-display text-[1.4rem] font-semibold tracking-[-0.02em]"
-            >
+    <footer className="bg-footer-panel py-12 md:pt-16">
+      <div className="mx-auto max-w-container px-4 md:px-8">
+        <nav>
+          {/*
+           * grid-cols-2/md:grid-cols-3/lg:grid-cols-6 is Untitled UI's literal footer-large-01
+           * class, tuned for their 6-category placeholder data. linkGroups is capped at 4
+           * (Footer/config.ts maxRows), so at the lg breakpoint the last two grid cells sit
+           * empty rather than the row stretching to fill - left as-is per the no-invented-classes
+           * rule rather than substituting a column count they never shipped.
+           */}
+          <ul className="flex flex-wrap gap-x-16 gap-y-8">
+            {linkGroups.map((group, groupIndex) => (
+              <li key={groupIndex}>
+                <h4 className="text-sm font-semibold text-quaternary">{group.label}</h4>
+                <ul className="mt-4 flex flex-col gap-3">
+                  {group.links.map((link, linkIndex) => (
+                    <li key={linkIndex} className="flex">
+                      <FooterAnchor
+                        link={link}
+                        color="link-gray"
+                        size="md"
+                        className="max-h-5 gap-1"
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="mt-12 flex flex-col justify-between gap-6 border-t border-secondary_alt pt-8 md:mt-16 md:flex-row md:items-end">
+          <div className="flex flex-col gap-2">
+            {/*
+              Untitled UI puts w-min on their own inline SVG logo component. Ours is an <img>
+              with w-auto, and min-content of an auto-width replaced element resolves to zero,
+              so the footer logo rendered 0px wide on every page.
+            */}
+            <NextLink href={brand.href} className="inline-flex items-center">
               {brand.logo ? <Media {...toLogoMediaProps(brand.logo)} /> : brand.label}
             </NextLink>
-            {description ? (
-              <p className="text-muted-foreground mt-4 max-w-[30ch] text-small">{description}</p>
-            ) : null}
+            {/* Untitled UI's footer-large-01 bottom bar has no description slot; description is
+                our own CMS data, so it is rendered minimally here using their text token scale. */}
+            {description ? <p className="max-w-xs text-sm text-tertiary">{description}</p> : null}
           </div>
 
-          {linkGroups.map((group, groupIndex) => (
-            <nav aria-label={group.label} key={groupIndex}>
-              <h5 className="text-muted-foreground mb-4 font-mono text-[0.72rem] font-medium uppercase tracking-[0.14em]">
-                {group.label}
-              </h5>
-              <ul className="flex flex-col">
-                {group.links.map((link, linkIndex) => (
-                  <li key={linkIndex}>
-                    <FooterAnchor
-                      className="text-muted-foreground hover:text-primary block py-1.5 text-[0.95rem] transition-colors motion-reduce:transition-none"
-                      link={link}
-                    />
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-6">
+            {copywriteText ? <p className="text-sm text-quaternary">{copywriteText}</p> : null}
+            {/* Untitled UI's footer-large-01 bottom bar has no legal-links slot (only a logo and
+                one copyright line); legalLinks is our own CMS data, so it is rendered minimally
+                here reusing their own Button link-gray variant. */}
+            {legalLinks.length > 0 ? (
+              <ul className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                {legalLinks.map((link, index) => (
+                  <li key={index}>
+                    <FooterAnchor link={link} color="link-gray" size="sm" />
                   </li>
                 ))}
               </ul>
-            </nav>
-          ))}
-        </div>
-
-        <div className="border-border text-muted-foreground mt-14 flex flex-wrap items-center justify-between gap-5 border-t pt-7 text-[0.85rem]">
-          {copywriteText ? <span>{copywriteText}</span> : <span />}
-          {legalLinks.length > 0 ? (
-            <ul className="flex flex-wrap items-center gap-x-[18px] gap-y-2">
-              {legalLinks.map((link, index) => (
-                <li key={index}>
-                  <FooterAnchor
-                    className="hover:text-primary transition-colors motion-reduce:transition-none"
-                    link={link}
-                  />
-                </li>
-              ))}
-            </ul>
-          ) : null}
+            ) : null}
+          </div>
         </div>
       </div>
     </footer>

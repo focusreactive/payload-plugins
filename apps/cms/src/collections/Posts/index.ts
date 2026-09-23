@@ -7,7 +7,7 @@ import { LogosInlineBlock } from "@/blocks/Logos/inlineConfig";
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
-import { anyone, author, or, user, superAdmin } from "@/lib/access";
+import { anyone, editorial } from "@/lib/access";
 import {
   createLocalizedDefault,
   createLocalizedRichText,
@@ -26,10 +26,10 @@ import { revalidateDelete, revalidatePost } from "./hooks/revalidatePost";
 
 export const Posts: CollectionConfig<"posts"> = {
   access: {
-    create: or(superAdmin, user, author),
-    delete: or(superAdmin, user, author),
+    create: editorial,
+    delete: editorial,
     read: anyone,
-    update: or(superAdmin, user, author),
+    update: editorial,
   },
   admin: {
     components: {
@@ -39,6 +39,7 @@ export const Posts: CollectionConfig<"posts"> = {
     },
     defaultColumns: ["title", "slug", "heroImage", "updatedAt"],
     group: "Blog",
+    hidden: true,
     livePreview: {
       url: ({ data, locale: localeProp }) => {
         const locale = localeProp.code ?? localeProp.fallbackLocale;

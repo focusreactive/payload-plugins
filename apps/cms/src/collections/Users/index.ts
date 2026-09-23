@@ -1,3 +1,4 @@
+import { MARKET_OPTIONS } from "@/lib/fields/marketsField";
 import type { CollectionConfig } from "payload";
 
 import { authenticated, onlySelf, or, superAdmin, user } from "@/lib/access";
@@ -5,7 +6,7 @@ import { authenticated, onlySelf, or, superAdmin, user } from "@/lib/access";
 export const Users: CollectionConfig<"users"> = {
   access: {
     admin: authenticated,
-    create: or(superAdmin, user),
+    create: superAdmin,
     delete: ({ req: { user }, id }) => {
       if (!user) {
         return false;
@@ -47,7 +48,7 @@ export const Users: CollectionConfig<"users"> = {
   },
   admin: {
     defaultColumns: ["name", "role", "email", "updatedAt"],
-    group: "Settings",
+    group: "Administration",
     pagination: {
       limits: [20, 50, 100],
     },
@@ -97,7 +98,7 @@ export const Users: CollectionConfig<"users"> = {
         },
         position: "sidebar",
       },
-      defaultValue: "admin",
+      defaultValue: "user",
       label: {
         en: "Role",
         es: "Rol",
@@ -129,6 +130,26 @@ export const Users: CollectionConfig<"users"> = {
       required: true,
       saveToJWT: true,
       type: "select",
+    },
+    {
+      name: "markets",
+      type: "select",
+      hasMany: true,
+      options: [...MARKET_OPTIONS],
+      admin: {
+        position: "sidebar",
+        description: {
+          en: "Leave empty for an editor who works across every market. Set it for a local editor, who can then change only articles and people in these markets, and cannot create or delete pages.",
+          es: "Déjalo vacío para un editor que trabaja en todos los mercados.",
+        },
+        condition: (data) => data?.role === "author",
+      },
+      access: {
+        // Only an admin decides which markets an editor may publish to.
+        update: ({ req: { user } }) => Boolean(user && "role" in user && user.role === "admin"),
+      },
+      label: { en: "Markets this editor looks after", es: "Mercados de este editor" },
+      saveToJWT: true,
     },
   ],
   labels: {

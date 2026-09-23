@@ -2,7 +2,7 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { cn } from "@/components/utils";
 import React from "react";
 
-import { AnimatedCarousel } from "@/components/Testimonials";
+import { TestimonialsGrid } from "@/components/Testimonials";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { Testimonial, TestimonialsListBlock } from "@/payload-types";
 import { Container } from "@/components/shared/Container";
@@ -17,7 +17,6 @@ export const TestimonialsListBlockComponent: React.FC<Props> = ({
   testimonialItems,
   showRating = true,
   showAvatar = true,
-  duration = 60,
   section,
   id,
 }) => {
@@ -49,11 +48,10 @@ export const TestimonialsListBlockComponent: React.FC<Props> = ({
         </Container>
       )}
 
-      <AnimatedCarousel
+      <TestimonialsGrid
         testimonials={testimonials}
         showRating={showRating ?? true}
         showAvatar={showAvatar ?? true}
-        duration={duration ?? 60}
       />
     </section>
   );

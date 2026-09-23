@@ -10,6 +10,8 @@ import { HeroBlockComponent } from "./Hero/Component";
 import { LogosBlockComponent } from "./Logos/Component";
 import { NewsletterBlockComponent } from "./Newsletter/Component";
 import { RawHtmlBlockComponent } from "./RawHtml/Component";
+import { FeatureListBlockComponent } from "./FeatureList/Component";
+import { InsightsListBlockComponent } from "./InsightsList/Component";
 import { StatsBlockComponent } from "./Stats/Component";
 import { TestimonialsListBlockComponent } from "./TestimonialsList/Component";
 
@@ -21,6 +23,8 @@ export const contentBlockComponents = {
   ctaBand: CtaBandBlockComponent,
   newsletter: NewsletterBlockComponent,
   stats: StatsBlockComponent,
+  insightsList: InsightsListBlockComponent,
+  featureList: FeatureListBlockComponent,
   faq: FaqBlockComponent,
   hero: HeroBlockComponent,
   logos: LogosBlockComponent,
@@ -32,7 +36,8 @@ export type ContentBlockType = keyof typeof contentBlockComponents;
 
 export function renderContentBlock(
   block: { blockType?: string | null; id?: string | null },
-  key: React.Key
+  key: React.Key,
+  isFirstBlock = false
 ): React.ReactNode {
   const { blockType } = block;
 
@@ -46,7 +51,7 @@ export function renderContentBlock(
 
   return (
     <div key={key}>
-      <Block {...block} />
+      <Block {...block} isFirstBlock={isFirstBlock} />
     </div>
   );
 }

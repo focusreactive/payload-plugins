@@ -1,3 +1,4 @@
+import { setRequestLocale } from "next-intl/server";
 import { TrackPage } from "@focus-reactive/payload-plugin-analytics/client";
 import type { Metadata } from "next";
 import { draftMode } from "next/headers";
@@ -9,8 +10,12 @@ import { generateMeta } from "@/lib/utils/generateMeta";
 import { generateNotFoundMeta } from "@/lib/utils/generateNotFoundMeta";
 import { parseSlugToPath } from "@/lib/utils/parseSlugToPath";
 import { BreadcrumbsJsonLd } from "@/components/seo/components";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { ChildPages } from "@/components/ChildPages";
 import type { Locale } from "@/lib/types";
 import { getPageBySlug } from "@/dal/getPageBySlug";
+import { getListingDetailStaticParams, resolveListingDetail } from "@/dal/getListingRoutes";
+import { InsightDetail, PersonDetail } from "@/components/demo/articles/detailViews";
 import { getMainSitePageStaticParams } from "@/dal/staticParams/pages";
 import { PayloadRedirects } from "@/components/PayloadRedirects";
 import { redirect } from "@/lib/i18n/navigation";
@@ -27,6 +32,7 @@ interface Args {
 
 export default async function Page({ params }: Args) {
   const { slug = [], locale } = await params;
+  setRequestLocale(locale);
   const { decodedSegments, url } = parseSlugToPath(slug);
 
   if (decodedSegments[0] === "home") {
@@ -37,6 +43,29 @@ export default async function Page({ params }: Args) {
   const { isEnabled: draft } = await draftMode();
 
   if (!page) {
+    // Articles and people have no page documents; their addresses sit under the listing page.
+    const detail = await resolveListingDetail(decodedSegments, locale);
+    const listingPage = detail ? await getPageBySlug(decodedSegments.slice(0, -1), locale) : null;
+    if (detail && listingPage) {
+      return (
+        <>
+          <Header data={listingPage.header as HeaderType} />
+          <main>
+            <Breadcrumbs
+              pageId={listingPage.id!}
+              locale={locale}
+              currentLabel={detail.kind === "insight" ? detail.insight.title : detail.person.name}
+            />
+            {detail.kind === "insight" ? (
+              <InsightDetail insight={detail.insight} locale={locale} />
+            ) : (
+              <PersonDetail person={detail.person} locale={locale} />
+            )}
+          </main>
+          <Footer data={listingPage.footer as FooterType} />
+        </>
+      );
+    }
     return <PayloadRedirects url={url} locale={locale} />;
   }
 
@@ -55,7 +84,14 @@ export default async function Page({ params }: Args) {
 
           <PayloadRedirects disableNotFound url={url} locale={locale} />
 
+          {/* getPageBySlug's declared return type marks `id` optional (it is
+              Payload's write-side type), but a resolved document always has
+              one - the same assumption line 46 above already makes. */}
+          <Breadcrumbs pageId={page.id!} locale={locale} />
+
           <RenderBlocks blocks={page.blocks} />
+
+          <ChildPages pageId={page.id!} locale={locale} />
         </div>
       </main>
       <Footer data={page.footer as FooterType} />
@@ -70,7 +106,21 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   const page = await getPageBySlug(decodedSegments, locale);
 
   if (!page) {
-    return generateNotFoundMeta({ locale });
+    const detail = await resolveListingDetail(decodedSegments, locale);
+    if (!detail) return generateNotFoundMeta({ locale });
+    const title = detail.kind === "insight" ? detail.insight.title : detail.person.name;
+    const description =
+      detail.kind === "insight"
+        ? (detail.insight.standfirst ?? undefined)
+        : [detail.person.jobTitle, detail.person.office].filter(Boolean).join(" · ") || undefined;
+    // hreflang only for languages this article really exists in; the language switcher reads
+    // these links to decide which languages to offer.
+    return {
+      title: `${title} | Marks & Clerk`,
+      description,
+      robots: { index: false, follow: false },
+      alternates: { languages: detail.alternates },
+    };
   }
 
   return generateMeta({
@@ -80,6 +130,12 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   });
 }
 
+// Statically generated at build, then regenerated on demand: page saves and the demo seed call
+// revalidatePath. The hourly revalidate is only a backstop for an article or person edit, which
+// does not revalidate the listing pages that show them.
+export const revalidate = 3600;
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
-  return await getMainSitePageStaticParams();
+  return [...(await getMainSitePageStaticParams()), ...(await getListingDetailStaticParams())];
 }

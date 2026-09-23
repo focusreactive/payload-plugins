@@ -76,9 +76,21 @@ export const CMSLink: React.FC<Props> = (props) => {
     url,
   } = props;
 
+  // A page reference has to resolve through its full breadcrumb path, not
+  // just its own slug: `reference.value` is a page nested several levels
+  // deep (e.g. japan under asia under global-presence), and using only
+  // `.slug` produced "/japan" instead of "/global-presence/asia/japan".
+  // The `Link` this renders through (next-intl's navigation Link) adds the
+  // locale prefix itself, so this only has to resolve the unprefixed path -
+  // same division of labour as prepareLinkProps.ts for rich-text links.
+  const referencedPagePath =
+    type === "reference" && reference?.relationTo === "page" && typeof reference.value === "object"
+      ? ((reference.value as Page).breadcrumbs?.at(-1)?.url ?? null)
+      : null;
+
   const href =
     type === "reference" && typeof reference?.value === "object" && reference.value.slug
-      ? `${collectionPaths[reference.relationTo]}/${reference.value.slug}`
+      ? (referencedPagePath ?? `${collectionPaths[reference.relationTo]}/${reference.value.slug}`)
       : url;
 
   if (!href) {

@@ -19,6 +19,7 @@ import { Authors } from "@/collections/Authors";
 import { Categories } from "@/collections/Categories";
 import { Footer } from "@/collections/Footer/config";
 import { Header } from "@/collections/Header/config";
+import { Insight } from "@/collections/Insight";
 import { Page as PageCollection } from "@/collections/Page/Page";
 import serverExtractPageContent from "@/collections/Page/serverExtractPageContent";
 import { Posts } from "@/collections/Posts";
@@ -29,7 +30,7 @@ import { I18N_CONFIG } from "@/lib/config/i18n";
 import { abAdapter } from "@/lib/plugins/ab/abAdapter";
 import { buildVariantData } from "@/lib/plugins/ab/buildVariantData";
 import type { ABVariantData } from "@/lib/plugins/ab/types";
-import { superAdmin, or, authenticated, user } from "@/lib/access";
+import { superAdmin, authenticated, editorial } from "@/lib/access";
 import { getServerSideURL } from "@/lib/utils/getURL";
 import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 import { validateRedirectPath } from "@/lib/utils/redirectUrl";
@@ -202,10 +203,10 @@ export const plugins: Plugin[] = [
         beforeChange: [normalizeRedirectFields],
       },
       access: {
-        create: or(superAdmin, user),
-        delete: or(superAdmin, user),
-        read: or(superAdmin, user),
-        update: or(superAdmin, user),
+        create: superAdmin,
+        delete: superAdmin,
+        read: authenticated,
+        update: superAdmin,
       },
     },
     redirectTypeFieldOverride: {
@@ -267,14 +268,14 @@ export const plugins: Plugin[] = [
     },
     overrides: {
       access: {
-        create: or(superAdmin, user),
-        delete: or(superAdmin, user),
+        create: editorial,
+        delete: editorial,
         read: authenticated,
-        update: or(superAdmin, user),
+        update: editorial,
       },
       admin: {
         defaultColumns: ["name", "preview", "presetBlock", "updatedAt"],
-        group: "Settings",
+        group: "Reusable blocks",
       },
       fields: (defaultFields: Field[]) => defaultFields.map(withBlockNameCell),
     },
@@ -333,8 +334,17 @@ export const plugins: Plugin[] = [
   }),
 
   translatorPlugin({
-    collections: [PageCollection, Posts, Categories, Authors, Testimonials, Header, Footer].map(
-      (col) => JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
+    collections: [
+      PageCollection,
+      Posts,
+      Categories,
+      Authors,
+      Testimonials,
+      Header,
+      Footer,
+      Insight,
+    ].map((col) =>
+      JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
     ),
     runner: createSyncRunner(),
     translationProvider: createOpenAIProvider({
@@ -371,7 +381,10 @@ export const plugins: Plugin[] = [
 
   analyticsPlugin({
     ga4: {
-      measurementId: process.env.GA4_MEASUREMENT_ID!,
+      // No analytics on a client sandbox. The project-level GA4 id is shared with the other
+      // sandboxes on this Vercel project, so it is ignored here rather than unset there: a demo
+      // that ships a tracker to a law firm invites a data-protection question mid-call.
+      measurementId: "",
       propertyId: process.env.GA4_PROPERTY_ID!,
       serviceAccount: {
         clientEmail: process.env.GA4_CLIENT_EMAIL!,

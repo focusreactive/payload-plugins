@@ -32,6 +32,14 @@ import * as migration_20260708_183318_remove_aspect_ratio_from_unneccesary_block
 import * as migration_20260713_155547_restructure_global_settings from './20260713_155547_restructure_global_settings';
 import * as migration_20260805_120053_group_seo_defaults_under_og_and_x from './20260805_120053_group_seo_defaults_under_og_and_x';
 import * as migration_20260812_125336_add_ab_pending_percentages_to_pages from './20260812_125336_add_ab_pending_percentages_to_pages';
+import * as migration_20260922_155907_widen_locales_enum_to_six_locales from './20260922_155907_widen_locales_enum_to_six_locales';
+import * as migration_20260922_164231_localize_page_and_post_slug from './20260922_164231_localize_page_and_post_slug';
+import * as migration_20260922_165529_insight_and_person_collections from './20260922_165529_insight_and_person_collections';
+import * as migration_20260923_142115_stats_section_header_and_item_links from './20260923_142115_stats_section_header_and_item_links';
+import * as migration_20260923_160042_insights_list_block from './20260923_160042_insights_list_block';
+import * as migration_20260923_161703_users_markets from './20260923_161703_users_markets';
+import * as migration_20260923_202108_feature_list_block from './20260923_202108_feature_list_block';
+import * as migration_20260923_213431_stats_item_images from './20260923_213431_stats_item_images';
 
 export const migrations = [
   {
@@ -202,6 +210,46 @@ export const migrations = [
   {
     up: migration_20260812_125336_add_ab_pending_percentages_to_pages.up,
     down: migration_20260812_125336_add_ab_pending_percentages_to_pages.down,
-    name: '20260812_125336_add_ab_pending_percentages_to_pages'
+    name: '20260812_125336_add_ab_pending_percentages_to_pages',
+  },
+  {
+    up: migration_20260922_155907_widen_locales_enum_to_six_locales.up,
+    down: migration_20260922_155907_widen_locales_enum_to_six_locales.down,
+    name: '20260922_155907_widen_locales_enum_to_six_locales',
+  },
+  {
+    up: migration_20260922_164231_localize_page_and_post_slug.up,
+    down: migration_20260922_164231_localize_page_and_post_slug.down,
+    name: '20260922_164231_localize_page_and_post_slug',
+  },
+  {
+    up: migration_20260922_165529_insight_and_person_collections.up,
+    down: migration_20260922_165529_insight_and_person_collections.down,
+    name: '20260922_165529_insight_and_person_collections',
+  },
+  {
+    up: migration_20260923_142115_stats_section_header_and_item_links.up,
+    down: migration_20260923_142115_stats_section_header_and_item_links.down,
+    name: '20260923_142115_stats_section_header_and_item_links',
+  },
+  {
+    up: migration_20260923_160042_insights_list_block.up,
+    down: migration_20260923_160042_insights_list_block.down,
+    name: '20260923_160042_insights_list_block',
+  },
+  {
+    up: migration_20260923_161703_users_markets.up,
+    down: migration_20260923_161703_users_markets.down,
+    name: '20260923_161703_users_markets',
+  },
+  {
+    up: migration_20260923_202108_feature_list_block.up,
+    down: migration_20260923_202108_feature_list_block.down,
+    name: '20260923_202108_feature_list_block',
+  },
+  {
+    up: migration_20260923_213431_stats_item_images.up,
+    down: migration_20260923_213431_stats_item_images.down,
+    name: '20260923_213431_stats_item_images'
   },
 ];

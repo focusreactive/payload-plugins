@@ -1,0 +1,157 @@
+/*
+ * Marks & Clerk overrides on top of Untitled UI's theme. Kept in its own file, imported after
+ * theme.css, so `untitledui upgrade` can replace theme.css without losing any of this.
+ *
+ * Only tokens are set here. No layout, no component classes - the sections are Untitled UI's
+ * markup verbatim and they read these variables.
+ */
+@theme {
+    /* Their own wordmark colour, taken from the SVG their site serves. Untitled UI ships a
+     * purple brand ramp; every brand-* utility in their sections resolves through these. */
+    --color-brand-50: rgb(255 240 246);
+    --color-brand-100: rgb(255 224 235);
+    --color-brand-200: rgb(255 194 216);
+    --color-brand-300: rgb(255 138 181);
+    --color-brand-400: rgb(249 82 145);
+    --color-brand-500: rgb(226 0 80);
+    --color-brand-600: rgb(199 0 70);
+    --color-brand-700: rgb(166 0 58);
+    --color-brand-800: rgb(133 0 47);
+    --color-brand-900: rgb(102 0 36);
+    --color-brand-950: rgb(71 0 25);
+
+    /* The hero band and every other "brand tint" surface. Untitled UI points these at brand-50,
+     * which at #E20050 is a strong pink across a full-width band. Softened to a warm near-white
+     * that still separates the section from the ones around it. The pink itself is untouched:
+     * it stays full strength on the badge, the buttons, the eyebrows and the stat numbers. */
+    --color-utility-brand-50: rgb(252 247 248);
+    --color-utility-brand-50_alt: rgb(252 247 248);
+
+    /* Their hero sets the heading to brand-primary, which on this ramp is a dark maroon. A
+     * heading is not a brand accent - it is text. */
+    --color-text-brand-primary: rgb(21 23 27);
+    --color-text-brand-secondary: rgb(199 0 70);
+
+    /* Newsreader for headlines, IBM Plex Sans for everything else. Self-hosted by
+     * next/font/local in the [locale] layout. Japanese falls through to the system face, which
+     * neither family covers. */
+    --font-display: var(--font-newsreader), Georgia, serif;
+    --font-body: var(--font-ibm-plex-sans), system-ui, -apple-system, sans-serif;
+    --font-mono: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/*
+ * Product screenshots are dense admin UI shown at roughly half page width, where the text is
+ * too small to read. The pan enlarges a region and walks it left to right so the detail is
+ * legible in passing, then rests. Click-to-enlarge (ScreenshotViewer) is the real answer; this
+ * is what makes the section readable without one.
+ *
+ * Driven by a data attribute rather than :hover or an animation-play-state toggle, because the
+ * component only sets it while the section is actually on screen.
+ */
+@keyframes screenshot-pan {
+    0% {
+        transform: scale(1) translateX(0);
+    }
+    6% {
+        transform: scale(1.5) translateX(15%);
+    }
+    48% {
+        transform: scale(1.5) translateX(-15%);
+    }
+    68% {
+        transform: scale(1) translateX(0);
+    }
+    100% {
+        transform: scale(1) translateX(0);
+    }
+}
+
+.screenshot-viewer[data-panning="true"] .screenshot-viewer-pan {
+    animation: screenshot-pan 8s ease-in-out infinite;
+    transform-origin: center center;
+    will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .screenshot-viewer[data-panning="true"] .screenshot-viewer-pan {
+        animation: none;
+    }
+}
+
+/*
+ * Untitled UI's theme defines --color-bg-secondary (neutral-50). Tailwind resolves our Button's
+ * `bg-secondary` utility to THAT rather than to our --color-secondary, so every solid CTA
+ * rendered white-on-white and read as an empty grey box. These names cannot collide with
+ * anything in their theme, and the Button variants below point at them.
+ */
+@theme {
+    --color-cta-solid: #0a1314;
+    --color-cta-solid-foreground: #ffffff;
+    --color-cta-solid-hover: #1f3033;
+}
+
+/*
+ * Same trap, second source: @repo/tailwind-config/base.css (imported by
+ * app/(frontend)/styles.css) defines its own generic --color-secondary (ink-950 in light mode).
+ * Imported after theme.css, it wins the cascade for `bg-secondary` / `text-secondary`, so both
+ * resolve to the same near-black value - the credential box and its code text became one
+ * colour. Names below point straight at Untitled UI's own secondary-surface tokens
+ * (styles/theme.css:367 --color-bg-secondary, :298 --color-text-secondary) under names nothing
+ * else defines.
+ */
+@theme {
+    --color-credential-panel: var(--color-bg-secondary);
+    --color-credential-panel-foreground: var(--color-text-secondary);
+}
+
+/*
+ * Third source, same collision family: Untitled UI's own secondary Button (shared/ui/shadcn/base/
+ * buttons/button.tsx) is `bg-primary text-secondary ring-1 ring-primary`. `bg-primary`/`ring-primary`
+ * pick up this app's own DESIGN.md green (app/(frontend)/styles.css `:root { --color-primary:
+ * #1f4b43 }`, unlayered so it beats even base.css's teal-600), and `text-secondary` picks up
+ * base.css's ink-950 - so the hero's secondary CTA rendered near-black text on a dark green fill
+ * instead of Untitled's white-surface, grey-text, grey-border outline button. Point-in-place
+ * replacements for that one component, not a redefinition of --color-primary itself, which the
+ * legacy/editorial design system still needs at #1f4b43.
+ */
+@theme {
+    --color-cta-outline: var(--color-bg-primary);
+    --color-cta-outline-foreground: var(--color-text-secondary);
+    --color-cta-outline-border: var(--color-border-primary);
+}
+
+/*
+ * Third instance of the same collision: Untitled UI's footer says `bg-primary`, meaning their
+ * white surface token (theme.css:348 --color-bg-primary). This app's base.css defines a generic
+ * --color-primary as the dark green brand colour and is imported later, so the footer rendered
+ * dark green while its links kept Untitled's grey - measured at 2.00:1, illegible.
+ */
+@theme {
+    --color-footer-panel: var(--color-bg-primary);
+    --color-surface-raised: var(--color-bg-primary);
+}
+
+/*
+ * Untitled's mockup frame is neutral-900, which reads as a black bezel around a light admin UI.
+ * A light neutral keeps the framed look without the heavy outline.
+ */
+@theme {
+    --color-screen-mockup-border: var(--color-neutral-200);
+}
+
+/*
+ * Untitled UI's sections put no font class on their headings, so the display face has to be
+ * applied by element: h1, h2 and the stat figures. Card titles are h3 and stay in the text face,
+ * where a serif at 18px read as a different design from the card around it, and avatar initials
+ * carry a display size class too, so the rule is not keyed on the class alone.
+ */
+h1,
+h2,
+dd[class*="text-display-"] {
+    font-family: var(--font-display);
+    /* 700, not the 600 their classes ask for. The preview that was picked loaded only the 500
+     * cut, so the browser drew a synthetic bold; the real variable font at 600 reads lighter. */
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}

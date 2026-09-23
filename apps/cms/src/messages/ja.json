@@ -1,0 +1,64 @@
+{
+  "common": {
+    "goToHomepage": "ホームページへ移動",
+    "page": "ページ",
+    "exitPreview": "プレビューを終了",
+    "returnToHome": "ホームに戻る",
+    "somethingWentWrong": "問題が発生しました",
+    "anErrorOccurredWhileLoadingTheBlog": "ブログの読み込み中にエラーが発生しました: {errorMessage}",
+    "anErrorOccurredWhileLoadingTheSite": "サイトの読み込み中にエラーが発生しました: {errorMessage}"
+  },
+  "pageRange": {
+    "docs": {
+      "plural": "ドキュメント",
+      "singular": "ドキュメント"
+    },
+    "posts": {
+      "plural": "投稿",
+      "singular": "投稿"
+    },
+    "noResults": "検索結果が見つかりませんでした。",
+    "showing": "{total}件中{start}{end}件の{label}を表示中",
+    "showingEnd": "〜{end}"
+  },
+  "pagination": {
+    "previous": "前へ",
+    "next": "次へ",
+    "goToPreviousPage": "前のページに移動",
+    "goToNextPage": "次のページに移動",
+    "morePages": "さらにページを表示"
+  },
+  "blog": {
+    "backToJournal": "Journalに戻る",
+    "noResults": "検索条件に一致する記事が見つかりませんでした。",
+    "readTime": "{minutes}分",
+    "readTimeLong": "{minutes}分で読了",
+    "search": {
+      "all": "すべて",
+      "label": "記事を検索",
+      "open": "記事を検索",
+      "close": "検索を閉じる",
+      "clear": "検索をクリア"
+    },
+    "newsletter": {
+      "eyebrow": "The Journal、毎月配信",
+      "heading": "月に一度、厳選した情報をお届けします。無駄なノイズはありません。",
+      "placeholder": "you@team.com",
+      "button": "購読する",
+      "disclaimer": "スパムはありません。いつでも配信停止できます。"
+    }
+  },
+  "announcements": {
+    "title": "お知らせ",
+    "noAnnouncements": "現在お知らせはありません。",
+    "metadata": {
+      "title": "お知らせ",
+      "description": "テナント{tenant}の{count, plural, =0 {お知らせはありません} =1 {お知らせ1件} other {お知らせ#件}}"
+    }
+  },
+  "hierarchyNav": {
+    "home": "ホーム",
+    "breadcrumbLabel": "パンくずリスト",
+    "inThisSection": "このセクション内"
+  }
+}
