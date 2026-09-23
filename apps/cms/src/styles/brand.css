@@ -54,13 +54,13 @@
     0% {
         transform: scale(1) translateX(0);
     }
-    8% {
+    6% {
         transform: scale(1.5) translateX(15%);
     }
-    67% {
+    48% {
         transform: scale(1.5) translateX(-15%);
     }
-    83% {
+    68% {
         transform: scale(1) translateX(0);
     }
     100% {
@@ -69,7 +69,7 @@
 }
 
 .screenshot-viewer[data-panning="true"] .screenshot-viewer-pan {
-    animation: screenshot-pan 12s ease-in-out infinite;
+    animation: screenshot-pan 8s ease-in-out infinite;
     transform-origin: center center;
     will-change: transform;
 }
@@ -130,4 +130,5 @@
  */
 @theme {
     --color-footer-panel: var(--color-bg-primary);
+    --color-surface-raised: var(--color-bg-primary);
 }

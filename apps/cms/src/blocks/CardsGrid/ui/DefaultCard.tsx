@@ -13,14 +13,19 @@ export default function DefaultCard({
   alignVariant,
   credential,
 }: IDefaultCardProps) {
-  const isCentered = alignVariant === "center";
   const hasIcon = icon !== undefined && icon !== null;
+  // A card carrying a login is a panel with its own edge, not a run of centred text: the
+  // credentials are a form to read left to right, and centring them fights that.
+  const isPanel = credential !== undefined && credential !== null;
+  const isCentered = !isPanel && alignVariant === "center";
 
-  const wrapperClassName = isCentered
-    ? hasIcon
-      ? "flex max-w-sm flex-col items-center gap-3 text-center md:gap-4"
-      : "flex max-w-sm flex-col items-center gap-4 text-center"
-    : "flex max-w-sm flex-col gap-4";
+  const wrapperClassName = isPanel
+    ? "flex h-full flex-col gap-4 rounded-2xl bg-surface-raised p-6 shadow-lg ring-1 ring-secondary_alt"
+    : isCentered
+      ? hasIcon
+        ? "flex max-w-sm flex-col items-center gap-3 text-center md:gap-4"
+        : "flex max-w-sm flex-col items-center gap-4 text-center"
+      : "flex max-w-sm flex-col gap-4";
 
   return (
     <div className={wrapperClassName}>
@@ -40,7 +45,7 @@ export default function DefaultCard({
       {credential && <DemoCredential email={credential.email} password={credential.password} />}
 
       {link?.href && (
-        <Button href={link.href} size="md" color="link-color" className="self-start">
+        <Button href={link.href} size="md" color="link-color" className="mt-auto self-start">
           {link.text}
         </Button>
       )}

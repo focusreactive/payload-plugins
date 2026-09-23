@@ -60,6 +60,24 @@ body {
    * discarded one level before it reached the text, and the hero subhead rendered at 16px under a
    * 60px heading. Inheriting hands the size decision back to whichever section owns it.
    */
+  /*
+   * The shared preset makes this band slate-200, a cold blue-grey that fights the warm cream page
+   * and the pink brand. Overridden here rather than in packages/tailwind-config, which other demos
+   * share.
+   */
+  [data-theme="light-gray"] {
+    --color-background: #f2f0ea;
+    --color-surface-muted: #e8e5dd;
+  }
+
+  /* A heading that breaks one word onto its own last line reads as a layout bug. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+
   .prose {
     font-size: inherit;
   }
@@ -292,15 +310,23 @@ body {
     text-underline-offset: 4px;
   }
 
+  /*
+   * !important on exactly three declarations, and only these. @tailwindcss/typography's own
+   * `.prose :where(ul)` carries the same specificity as `.prose-content ul`, so the winner is
+   * decided by source order - and the plugin is injected by Untitled UI's globals.css, which has
+   * to load first so its theme is the base. Without this the list keeps its native disc marker and
+   * the list item loses its 30px of padding, leaving the absolutely-positioned check icon painted
+   * over the first word: "A shortcode comes in" rendered as "shortcode comes in".
+   */
   .prose-content ul {
     margin: 0;
-    list-style: none;
-    padding: 0;
+    list-style: none !important;
+    padding: 0 !important;
   }
 
   .prose-content ul > li {
     position: relative;
-    padding-left: 30px;
+    padding-left: 30px !important;
     color: var(--color-muted-foreground);
   }
 
@@ -317,8 +343,12 @@ body {
     height: 1.125rem;
     padding: 3px;
     border-radius: var(--radius-pill);
-    background: var(--color-primary-soft);
-    color: var(--color-primary);
+    /*
+     * Neutral, not the brand green. These lists are steps and caveats, and under "what this demo
+     * is not" a green tick reads as a checkmark saying the opposite of the sentence beside it.
+     */
+    background: color-mix(in srgb, var(--color-foreground) 8%, transparent);
+    color: color-mix(in srgb, var(--color-foreground) 55%, transparent);
   }
 
   .prose-card {

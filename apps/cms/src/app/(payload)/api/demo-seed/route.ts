@@ -1808,7 +1808,17 @@ async function seedNavigation(
             type: "link" as const,
             link: { type: "custom" as const, url: item.url },
           })),
-          actions: [],
+          // The whole point of the demo is the CMS behind the page, so there is a way into it
+          // from every page rather than only from the homepage hero.
+          actions: [
+            {
+              appearance: "accent" as const,
+              label: "CMS",
+              newTab: true,
+              type: "custom" as const,
+              url: "/admin",
+            },
+          ],
         },
       });
     }

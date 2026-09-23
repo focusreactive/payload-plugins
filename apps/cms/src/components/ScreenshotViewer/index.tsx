@@ -79,7 +79,9 @@ export function ScreenshotViewer({ children, caption }: ScreenshotViewerProps) {
           aria-label={caption ?? "Screenshot"}
         >
           <div
-            className="relative max-h-full w-full max-w-[1600px] overflow-hidden rounded-lg bg-white shadow-2xl"
+            // An explicit height, because the child is a `fill` image: it positions against this
+            // box, so max-h-full alone leaves it zero-high and only the caption renders.
+            className="relative h-[80vh] w-full max-w-[1600px] overflow-hidden rounded-lg shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             {children}
