@@ -1,14 +1,16 @@
-import { ButtonSize } from "@/components/button";
 import { ContentSection } from "./ui";
 
 import { Media } from "@/components/media";
 import { ScreenshotViewer } from "@/components/ScreenshotViewer";
-import { CMSLink, RichText, SectionContainer } from "@/components/shared";
+import { RichText, SectionContainer } from "@/components/shared";
+import { Button } from "@/shared/ui/shadcn/base/buttons/button";
+import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
-import type { ContentBlock as ContentBlockProps, Page, Post } from "@/payload-types";
+import { resolveLocale } from "@/lib/utils/resolveLocale";
+import type { ContentBlock as ContentBlockProps } from "@/payload-types";
 
-export const ContentBlockComponent: React.FC<ContentBlockProps & { isFirstBlock?: boolean }> = ({
+export const ContentBlockComponent = async ({
   eyebrow,
   heading,
   description,
@@ -19,7 +21,8 @@ export const ContentBlockComponent: React.FC<ContentBlockProps & { isFirstBlock?
   section,
   id,
   isFirstBlock,
-}) => {
+}: ContentBlockProps & { isFirstBlock?: boolean }) => {
+  const locale = await resolveLocale();
   const resolvedImage = typeof image !== "number" ? image : null;
   const header = prepareSectionHeaderProps({ eyebrow, description, heading, isFirstBlock });
   const media = resolvedImage ? prepareMediaProps({ image: resolvedImage }) : null;
@@ -53,25 +56,19 @@ export const ContentBlockComponent: React.FC<ContentBlockProps & { isFirstBlock?
         body={content ? <RichText content={content} variant="content" /> : null}
         actions={
           actions?.length
-            ? actions.map((action) => (
-                <CMSLink
-                  key={action.id ?? action.label}
-                  type={action.type}
-                  reference={
-                    action.reference
-                      ? {
-                          relationTo: action.reference.relationTo as "page" | "posts",
-                          value: action.reference.value as Page | Post | string | number,
-                        }
-                      : null
-                  }
-                  url={action.url}
-                  newTab={action.newTab}
-                  label={action.label}
-                  appearance={action.appearance}
-                  size={ButtonSize.Large}
-                />
-              ))
+            ? actions.map((action, index) => {
+                const link = prepareLinkProps(action, locale);
+                return (
+                  <Button
+                    key={action.id ?? action.label}
+                    href={link.href}
+                    size="lg"
+                    color={index === 0 ? "primary" : "secondary"}
+                  >
+                    {link.text}
+                  </Button>
+                );
+              })
             : null
         }
       />

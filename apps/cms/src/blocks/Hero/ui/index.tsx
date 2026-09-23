@@ -67,7 +67,9 @@ export function Hero({ badge, title, text, image, links }: IHeroProps) {
                     key={index}
                     href={link.href}
                     size="xl"
-                    color={index === 0 ? "secondary" : "primary"}
+                    // Untitled UI's source puts secondary first because its own first action is a
+                    // "Demo" link. Ours leads with the primary call, so the order is reversed.
+                    color={index === 0 ? "primary" : "secondary"}
                   >
                     {link.text}
                   </Button>

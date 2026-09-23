@@ -10,15 +10,19 @@ interface DesktopNavProps {
   navItems: HeaderNavItem[];
 }
 
+// Untitled UI's own nav-link type scale, verbatim from
+// shared/ui/shadcn/marketing/header-navigation/header.tsx. Only the type is theirs: the nav tree
+// itself stays ours because it is driven by the CMS mega-nav data, which their static header has
+// no equivalent for.
 const itemLinkClassName =
-  "inline-flex items-center rounded-pill px-3.5 py-2 text-[0.95rem] font-medium text-muted-foreground transition-colors duration-150 hover:bg-surface-muted hover:text-foreground focus-visible:bg-surface-muted focus-visible:text-foreground focus-visible:outline-none";
+  "flex cursor-pointer items-center gap-0.5 rounded-lg px-1.5 py-1 text-sm font-semibold text-secondary outline-focus-ring transition duration-100 ease-linear hover:text-secondary_hover focus-visible:outline-2 focus-visible:outline-offset-2";
 
-const activeItemClassName = "font-bold text-foreground";
+const activeItemClassName = "text-brand-secondary";
 
 export function DesktopNav({ navItems }: DesktopNavProps) {
   return (
     <NavigationMenu.Root className="hidden items-center min-[860px]:flex" delayDuration={0}>
-      <NavigationMenu.List className="flex list-none items-center gap-1">
+      <NavigationMenu.List className="flex list-none items-center gap-0.5">
         {navItems.map((item, index) => {
           if (item.kind === "link") {
             const newTabProps = item.newTab ? { rel: "noopener noreferrer", target: "_blank" } : {};

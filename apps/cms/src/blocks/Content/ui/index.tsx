@@ -1,6 +1,5 @@
 import { cn } from "@/components/utils";
 import type { SectionHeaderProps } from "@/components/SectionHeader";
-import { SectionHeader } from "@/components/SectionHeader";
 
 interface ContentSectionProps {
   layout?: "image-text" | "text-image" | null;
@@ -13,6 +12,9 @@ interface ContentSectionProps {
 export function ContentSection({ layout, header, image, body, actions }: ContentSectionProps) {
   const resolvedLayout = layout ?? "image-text";
   const hasImage = Boolean(image);
+  // Mirrors SectionHeaderProps.isFirstBlock -> DisplayHeading's `as` prop: exactly one heading
+  // per page can become the h1, set upstream by RenderBlocks' block index.
+  const HeadingTag = header?.isFirstBlock ? "h1" : "h2";
 
   return (
     // Untitled UI's own section padding and container, verbatim from
@@ -33,9 +35,27 @@ export function ContentSection({ layout, header, image, body, actions }: Content
                   : "lg:py-24 lg:pr-24 lg:pl-12")
             )}
           >
-            {header && <SectionHeader {...header} className="gap-[18px]" />}
+            {header?.eyebrow?.text && (
+              <span className="text-sm font-semibold text-brand-secondary md:text-md">
+                {header.eyebrow.text}
+              </span>
+            )}
 
-            {body}
+            {header?.title && (
+              <HeadingTag className="mt-3 text-display-sm font-semibold text-primary md:text-display-md">
+                {header.title}
+              </HeadingTag>
+            )}
+
+            {/* header.subtitle (the CMS "description" field) has no slot in Untitled UI's
+                alternating-layout markup - its "body" class already belongs to the richText
+                `body` prop below. Kept in our own prior SectionHeader styling rather than
+                dropped, since it is CMS-editable data. */}
+            {header?.subtitle && (
+              <div className="text-lead text-muted-foreground">{header.subtitle}</div>
+            )}
+
+            {body && <div className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">{body}</div>}
 
             {actions && <div className="mt-2 flex flex-wrap items-center gap-4">{actions}</div>}
           </div>
