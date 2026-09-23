@@ -125,7 +125,7 @@ export const plugins: Plugin[] = [
   redirectsPlugin({
     collections: ["page", "posts"],
     overrides: {
-      admin: { group: "Configuration" },
+      admin: { group: "Settings" },
       // @ts-expect-error - This is a valid override, mapped fields don't resolve to the same type
       fields: ({ defaultFields }) => {
         const customFields: Field[] = [
@@ -274,7 +274,7 @@ export const plugins: Plugin[] = [
       },
       admin: {
         defaultColumns: ["name", "preview", "presetBlock", "updatedAt"],
-        group: "Configuration",
+        group: "Reusable blocks",
       },
       fields: (defaultFields: Field[]) => defaultFields.map(withBlockNameCell),
     },

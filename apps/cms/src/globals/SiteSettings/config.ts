@@ -13,7 +13,7 @@ export const SiteSettings: GlobalConfig = {
     update: superAdmin,
   },
   admin: {
-    group: "Configuration",
+    group: "Settings",
   },
   fields: [
     {

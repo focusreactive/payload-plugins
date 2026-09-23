@@ -17,7 +17,7 @@ export const Footer: CollectionConfig<"footer"> = {
   },
   admin: {
     defaultColumns: ["name", "logo"],
-    group: "Configuration",
+    group: "Navigation",
     useAsTitle: "name",
   },
   fields: [
