@@ -15,6 +15,12 @@ export interface SectionHeaderProps {
   align?: "left" | "center" | null;
   size?: "display-1" | "display-2" | "h-section" | null;
   className?: string;
+  /**
+   * True only for the page's first rendered block, passed through unmodified from
+   * RenderBlocks' block index - never set independently, so exactly one heading per page
+   * can ever become the h1.
+   */
+  isFirstBlock?: boolean;
 }
 
 export function SectionHeader({
@@ -24,6 +30,7 @@ export function SectionHeader({
   align = "left",
   size = "display-2",
   className,
+  isFirstBlock = false,
 }: SectionHeaderProps) {
   if (!(eyebrow?.text || title || subtitle)) {
     return null;
@@ -42,7 +49,9 @@ export function SectionHeader({
           {eyebrow.text}
         </Eyebrow>
       )}
-      {title && <DisplayHeading as="h2" size={size ?? "display-2"} text={title} />}
+      {title && (
+        <DisplayHeading as={isFirstBlock ? "h1" : "h2"} size={size ?? "display-2"} text={title} />
+      )}
       {subtitle && <div className="text-lead text-muted-foreground">{subtitle}</div>}
     </div>
   );

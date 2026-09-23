@@ -26,7 +26,7 @@ export const RenderBlocks: React.FC<{
           return <GlobalSectionSlotBlockComponent key={index} {...block} />;
         }
 
-        return renderContentBlock(block, index);
+        return renderContentBlock(block, index, index === 0);
       })}
     </Fragment>
   );

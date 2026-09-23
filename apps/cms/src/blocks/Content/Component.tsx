@@ -7,7 +7,7 @@ import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
 import type { ContentBlock as ContentBlockProps, Page, Post } from "@/payload-types";
 
-export const ContentBlockComponent: React.FC<ContentBlockProps> = ({
+export const ContentBlockComponent: React.FC<ContentBlockProps & { isFirstBlock?: boolean }> = ({
   eyebrow,
   heading,
   description,
@@ -17,9 +17,10 @@ export const ContentBlockComponent: React.FC<ContentBlockProps> = ({
   actions,
   section,
   id,
+  isFirstBlock,
 }) => {
   const resolvedImage = typeof image !== "number" ? image : null;
-  const header = prepareSectionHeaderProps({ eyebrow, description, heading });
+  const header = prepareSectionHeaderProps({ eyebrow, description, heading, isFirstBlock });
   const media = resolvedImage ? prepareMediaProps({ image: resolvedImage }) : null;
 
   return (

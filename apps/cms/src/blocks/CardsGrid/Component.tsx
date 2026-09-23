@@ -65,7 +65,8 @@ export async function CardsGridBlockComponent({
   columns,
   section,
   id,
-}: CardsGridBlock) {
+  isFirstBlock,
+}: CardsGridBlock & { isFirstBlock?: boolean }) {
   const locale = await resolveLocale();
 
   const cards: IDefaultCardProps[] = (items ?? []).map((item) => {
@@ -84,7 +85,7 @@ export async function CardsGridBlockComponent({
     };
   });
 
-  const header = prepareSectionHeaderProps({ eyebrow, description, heading });
+  const header = prepareSectionHeaderProps({ eyebrow, description, heading, isFirstBlock });
 
   return (
     <SectionContainer sectionData={{ ...section, id }}>

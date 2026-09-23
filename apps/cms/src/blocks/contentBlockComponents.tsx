@@ -32,7 +32,8 @@ export type ContentBlockType = keyof typeof contentBlockComponents;
 
 export function renderContentBlock(
   block: { blockType?: string | null; id?: string | null },
-  key: React.Key
+  key: React.Key,
+  isFirstBlock = false
 ): React.ReactNode {
   const { blockType } = block;
 
@@ -46,7 +47,7 @@ export function renderContentBlock(
 
   return (
     <div key={key}>
-      <Block {...block} />
+      <Block {...block} isFirstBlock={isFirstBlock} />
     </div>
   );
 }
