@@ -40,7 +40,9 @@ Paths below are under `https://github.com/tailark/blocks/blob/main/registry/base
 
 | This app's component | Tailark source | What was kept |
 |---|---|---|
-| `apps/cms/src/blocks/Content/ui/index.tsx` | `content/one.tsx` | The asymmetric column split (Tailark's 5-column `grid-cols-5` with a 2/3 image-text ratio, adapted here to a 12-column 5/7 ratio) and the hairline rule between the two sides, in place of Tailark's filled panel background |
+| `apps/cms/src/blocks/Hero/ui/index.tsx` (centered variant) | `hero-section/five.tsx` and `six.tsx` | Centered heading and copy above a single image below the fold, with the shadow/ring frame dropped for a hairline border |
+| `apps/cms/src/blocks/Hero/ui/index.tsx` (showcase variant) | `hero-section/one.tsx` | The text column held to roughly half the row width with the image in an independent, non-stretched column beside it |
+| `apps/cms/src/blocks/Content/ui/index.tsx` | `content/one.tsx` and `two.tsx` | Each source file repeats one row twice (`grid sm:grid-cols-5`, image at `col-span-2`, text at `col-span-3` with `border-l pl-12`) to build a stacked feature list; this block has one image and one text field, so it takes a single row of that pattern, adapted from a 5-column to a 12-column split (5/7) for consistency with the rest of the site's grid |
 | `apps/cms/src/blocks/Stats/ui/index.tsx` | `stats/four.tsx` | The 2-column-mobile / 4-column-desktop grid and the border-top rule marking each figure, in place of Tailark's bordered card |
 | `apps/cms/src/components/CtaBandSection` (`CtaBand` block) | `call-to-action/two.tsx` | The flex `justify-between` band with the heading and description on one side and the actions right-aligned on the other |
 | `apps/cms/src/collections/Footer/ui/index.tsx` | `footer/two.tsx` | The wide brand column plus three narrower link-group columns |
@@ -48,11 +50,6 @@ Paths below are under `https://github.com/tailark/blocks/blob/main/registry/base
 
 ## Not ported, and why
 
-- **Hero** (`apps/cms/src/blocks/Hero/ui/index.tsx`) - every hero-section file actually fetched
-  (`one` through `six`) is a centred, single-column hero with a below-fold hero image and a
-  logo strip; none matches this app's badge-heading-actions-plus-aside-image layout. That layout
-  was hand-built against `DESIGN.md`, not ported. Worth revisiting against a hero-section file this
-  pass did not fetch, if a closer match exists.
 - **CardsGrid / `DefaultCard`** - the nine `features/*.tsx` files fetched are all bento-style
   dashboard mockups (nested cards, avatar stacks); none is a plain icon-title-description-link
   grid. `DefaultCard`'s flat bordered card was hand-built from the general `DESIGN.md` card rule,

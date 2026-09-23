@@ -26,8 +26,8 @@ const textVariants = cva(
     defaultVariants: { layout: "image-text" },
     variants: {
       layout: {
-        "image-text": "lg:order-2 lg:border-l lg:pl-16",
-        "text-image": "lg:order-1 lg:border-r lg:pr-16",
+        "image-text": "lg:order-2 lg:border-l lg:pl-12",
+        "text-image": "lg:order-1 lg:border-r lg:pr-12",
       },
     },
   }
