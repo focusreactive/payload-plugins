@@ -1,3 +1,5 @@
+import { AnimatedStatValue } from "@/components/demo/AnimatedStatValue";
+
 interface StatsProps {
   items: { value: string; label: string }[];
 }
@@ -14,7 +16,9 @@ export function Stats({ items }: StatsProps) {
         >
           <div className="flex flex-1 flex-col-reverse gap-1">
             <dt className="text-lg font-semibold text-primary">{item.label}</dt>
-            <dd className="text-display-lg font-semibold text-brand-tertiary_alt">{item.value}</dd>
+            <dd className="text-display-lg font-semibold text-brand-tertiary_alt">
+              <AnimatedStatValue value={item.value} />
+            </dd>
           </div>
         </div>
       ))}

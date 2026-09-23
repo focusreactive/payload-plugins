@@ -1739,21 +1739,32 @@ const NAVIGATION_BY_LOCALE: Record<LocaleCode, { label: string; url: string }[]>
   ],
 };
 
+/**
+ * The footer's two link columns were previously labelled with their own first link, so the
+ * column read "Services / Services / Global presence". A column label has to name the group,
+ * not repeat a member of it.
+ */
+const FOOTER_GROUP_LABELS_BY_LOCALE: Record<LocaleCode, { practice: string; firm: string }> = {
+  en: { practice: "What we do", firm: "Who we are" },
+  fr: { practice: "Notre expertise", firm: "Le cabinet" },
+  ja: { practice: "サービス内容", firm: "事務所について" },
+};
+
 const FOOTER_TEXT_BY_LOCALE: Record<LocaleCode, { description: string; copyright: string }> = {
   en: {
     description:
       "A working content platform: six languages, nine markets, and every article arriving from the firm's own publishing tool.",
-    copyright: "Content Platform Demo",
+    copyright: "Marks & Clerk - content platform demo, built by FocusReactive",
   },
   fr: {
     description:
       "Une plateforme de contenu réellement en service : six langues, neuf marchés, et des articles qui arrivent directement de l’outil de publication du cabinet.",
-    copyright: "Content Platform Demo",
+    copyright: "Marks & Clerk - content platform demo, built by FocusReactive",
   },
   ja: {
     description:
       "実際に稼働しているコンテンツ基盤。6言語、9市場、記事は事務所自身の発信ツールから届きます。",
-    copyright: "Content Platform Demo",
+    copyright: "Marks & Clerk - content platform demo, built by FocusReactive",
   },
 };
 
@@ -1778,7 +1789,7 @@ async function seedNavigation(
         overrideAccess: true,
         context: { skipEmbedding: true },
         data: {
-          name: "Content Platform Demo",
+          name: "Marks & Clerk",
           ...(logoMediaId ? { logo: logoMediaId } : {}),
           navItems: navigation.map((item) => ({
             label: item.label,
@@ -1798,13 +1809,13 @@ async function seedNavigation(
         overrideAccess: true,
         context: { skipEmbedding: true },
         data: {
-          name: "Content Platform Demo",
+          name: "Marks & Clerk",
           ...(logoMediaId ? { logo: logoMediaId } : {}),
           description: footerText.description,
           copyrightText: footerText.copyright,
           linkGroups: [
             {
-              label: navigation[2].label,
+              label: FOOTER_GROUP_LABELS_BY_LOCALE[locale].practice,
               links: navigation.slice(2).map((item) => ({
                 link: {
                   type: "custom" as const,
@@ -1814,7 +1825,7 @@ async function seedNavigation(
               })),
             },
             {
-              label: navigation[0].label,
+              label: FOOTER_GROUP_LABELS_BY_LOCALE[locale].firm,
               links: navigation.slice(0, 2).map((item) => ({
                 link: {
                   type: "custom" as const,

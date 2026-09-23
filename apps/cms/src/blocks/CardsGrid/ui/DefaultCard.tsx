@@ -1,4 +1,5 @@
 import { Button } from "@/shared/ui/shadcn/base/buttons/button";
+import { DemoCredential } from "@/components/demo/DemoCredential";
 import type { IDefaultCardProps } from "./types";
 
 export default function DefaultCard({
@@ -10,6 +11,7 @@ export default function DefaultCard({
   icon,
   rounded: _rounded,
   alignVariant,
+  credential,
 }: IDefaultCardProps) {
   const isCentered = alignVariant === "center";
   const hasIcon = icon !== undefined && icon !== null;
@@ -35,6 +37,8 @@ export default function DefaultCard({
         closest thing they ship to an inline card action, and it keeps these four cards on the
         same component as every other CTA on the page.
       */}
+      {credential && <DemoCredential email={credential.email} password={credential.password} />}
+
       {link?.href && (
         <Button href={link.href} size="md" color="link-color" className="self-start">
           {link.text}

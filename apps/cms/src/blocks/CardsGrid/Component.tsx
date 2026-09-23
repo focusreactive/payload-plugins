@@ -56,6 +56,28 @@ const ICON_MAP: Record<CardIcon, React.ReactElement> = {
   zap: <Zap size={22} strokeWidth={1.8} />,
 };
 
+/**
+ * The four demo logins live only as Vercel environment variables on this sandbox, so the page
+ * reads them the same way the seed route does. Keyed by the email the seed writes into each
+ * card's description; any card without a match renders no credential block at all.
+ */
+const DEMO_PERSONA_PASSWORD_ENV_BY_EMAIL: Record<string, string> = {
+  "administrator@example.com": "SANDBOX_E_ADMIN_PASSWORD",
+  "international.editor@example.com": "SANDBOX_E_INTL_EDITOR_PASSWORD",
+  "local.editor@example.com": "SANDBOX_E_LOCAL_EDITOR_PASSWORD",
+  "fee.earner@example.com": "SANDBOX_E_FEE_EARNER_PASSWORD",
+};
+
+function resolveDemoCredential(description: string | null | undefined) {
+  if (!description) return undefined;
+  const email = Object.keys(DEMO_PERSONA_PASSWORD_ENV_BY_EMAIL).find((candidate) =>
+    description.includes(candidate)
+  );
+  if (!email) return undefined;
+  const password = process.env[DEMO_PERSONA_PASSWORD_ENV_BY_EMAIL[email]];
+  return password ? { email, password } : undefined;
+}
+
 export async function CardsGridBlockComponent({
   eyebrow,
   heading,
@@ -81,6 +103,7 @@ export async function CardsGridBlockComponent({
       link: prepareLinkProps(item.link, locale),
       rounded: (item.rounded as IDefaultCardProps["rounded"]) ?? "none",
       title: item.title,
+      credential: resolveDemoCredential(item.description),
     };
   });
 
