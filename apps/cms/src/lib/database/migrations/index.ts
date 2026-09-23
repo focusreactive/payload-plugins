@@ -36,6 +36,7 @@ import * as migration_20260922_155907_widen_locales_enum_to_six_locales from './
 import * as migration_20260922_164231_localize_page_and_post_slug from './20260922_164231_localize_page_and_post_slug';
 import * as migration_20260922_165529_insight_and_person_collections from './20260922_165529_insight_and_person_collections';
 import * as migration_20260923_142115_stats_section_header_and_item_links from './20260923_142115_stats_section_header_and_item_links';
+import * as migration_20260923_160042_insights_list_block from './20260923_160042_insights_list_block';
 
 export const migrations = [
   {
@@ -226,6 +227,11 @@ export const migrations = [
   {
     up: migration_20260923_142115_stats_section_header_and_item_links.up,
     down: migration_20260923_142115_stats_section_header_and_item_links.down,
-    name: '20260923_142115_stats_section_header_and_item_links'
+    name: '20260923_142115_stats_section_header_and_item_links',
+  },
+  {
+    up: migration_20260923_160042_insights_list_block.up,
+    down: migration_20260923_160042_insights_list_block.down,
+    name: '20260923_160042_insights_list_block'
   },
 ];

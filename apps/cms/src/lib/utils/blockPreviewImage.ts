@@ -14,6 +14,7 @@ const PREVIEW_IMAGES: Record<string, string> = {
   Testimonials: "/block-preview-images/preview-testimonials.png",
   Newsletter: "/block-preview-images/preview-newsletter.png",
   Stats: "/block-preview-images/preview-stats.png",
+  "Insights List": "/block-preview-images/preview-insights-list.png",
 };
 
 export function getBlockPreviewImage(label: string): {

@@ -10,6 +10,7 @@ import { HeroBlockComponent } from "./Hero/Component";
 import { LogosBlockComponent } from "./Logos/Component";
 import { NewsletterBlockComponent } from "./Newsletter/Component";
 import { RawHtmlBlockComponent } from "./RawHtml/Component";
+import { InsightsListBlockComponent } from "./InsightsList/Component";
 import { StatsBlockComponent } from "./Stats/Component";
 import { TestimonialsListBlockComponent } from "./TestimonialsList/Component";
 
@@ -21,6 +22,7 @@ export const contentBlockComponents = {
   ctaBand: CtaBandBlockComponent,
   newsletter: NewsletterBlockComponent,
   stats: StatsBlockComponent,
+  insightsList: InsightsListBlockComponent,
   faq: FaqBlockComponent,
   hero: HeroBlockComponent,
   logos: LogosBlockComponent,

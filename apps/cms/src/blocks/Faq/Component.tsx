@@ -12,7 +12,10 @@ export const FaqBlockComponent: React.FC<FaqBlockProps> = ({
   id,
   ...rest
 }) => (
-  <SectionContainer sectionData={{ ...section, id }}>
+  <SectionContainer
+    // faq-accordion-03 carries its own padding and container.
+    sectionData={{ ...section, id, paddingY: "none", paddingX: "none", maxWidth: "none" }}
+  >
     <FaqJsonLd
       faq={{ eyebrow, heading, description, items, section, id, ...rest } as FaqBlockProps}
     />

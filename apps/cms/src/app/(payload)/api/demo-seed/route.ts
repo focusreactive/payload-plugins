@@ -13,6 +13,7 @@ import { passleFixturesByShortcode } from "@/lib/passle/fixtures";
 import { translatedInsight102o1qk } from "@/lib/passle/translations/102o1qk";
 import type { PasslePostPayload } from "@/lib/passle/types";
 import type {
+  InsightsListBlock,
   CardsGridBlock,
   CarouselBlock,
   ChartBlock,
@@ -957,15 +958,15 @@ function buildInsightsPageBlocks(illustrations: Record<string, number>, defaultM
     section: { theme: "light" },
   };
 
-  const listing: CardsGridBlock = {
-    blockType: "cardsGrid",
+  // Read live from the Insight collection, so an article the webhook delivers during the call
+  // shows up here on the next page load with nobody editing this page.
+  const listing: InsightsListBlock = {
+    blockType: "insightsList",
     eyebrow: "Latest insights",
     heading: "Recently published",
-    description: "Newest first, by published date.",
-    columns: 3,
-    items: sortPasslePostsByPublishedDateDescending(Object.values(passleFixturesByShortcode)).map(
-      buildInsightCardsGridItem
-    ),
+    description:
+      "Newest first, by published date. This list reads the articles in the CMS, so nobody maintains it by hand.",
+    limit: 24,
     section: { theme: "light" },
   };
 
@@ -1598,9 +1599,12 @@ function buildDemoPresets(
       ),
     },
     {
-      name: "Cards - article list",
+      name: "Insights - newest articles",
       previewFilename: "preset-text-cards.png",
-      block: firstSix(firstCardsGrid(buildInsightsPageBlocks(illustrations, defaultMediaId))),
+      block: {
+        ...(buildInsightsPageBlocks(illustrations, defaultMediaId)[1] as InsightsListBlock),
+        limit: 6,
+      },
     },
   ];
 }
@@ -2093,21 +2097,9 @@ export async function POST(request: Request) {
                               ...localizedListingHeader,
                               // No fallback: a French or Japanese reader sees only the articles that
                               // exist in their language, never the English titles under a local heading.
+                              // The insights list filters to this language itself.
                               ...(spec.key === "insights" && (locale === "fr" || locale === "ja")
-                                ? {
-                                    description: TRANSLATED_INSIGHTS_NOTE[locale],
-                                    items: [
-                                      {
-                                        alignVariant: "left" as const,
-                                        title: translatedInsight102o1qk.locales[locale].title,
-                                        description: `${
-                                          passleFixturesByShortcode[
-                                            translatedInsight102o1qk.passleShortcode
-                                          ]?.Authors[0]?.Name ?? ""
-                                        }`,
-                                      },
-                                    ],
-                                  }
+                                ? { description: TRANSLATED_INSIGHTS_NOTE[locale] }
                                 : {}),
                             }) as typeof block
                         )

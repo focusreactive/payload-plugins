@@ -222,6 +222,7 @@ export interface Page {
     | CtaBandBlock
     | NewsletterBlock
     | StatsBlock
+    | InsightsListBlock
     | RawHtmlBlock
     | GlobalSectionSlotBlock
   )[];
@@ -1306,6 +1307,65 @@ export interface StatsBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "InsightsListBlock".
+ */
+export interface InsightsListBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  /**
+   * How many of the newest articles to show.
+   */
+  limit?: number | null;
+  /**
+   * Leave empty to show every market.
+   */
+  markets?:
+    | ('uk-europe' | 'canada' | 'greater-china' | 'se-asia' | 'usa' | 'japan' | 'korea' | 'nordics' | 'south-america')[]
+    | null;
+  viewAll?: {
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+    label?: string | null;
+  };
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'insightsList';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "RawHtmlBlock".
  */
 export interface RawHtmlBlock {
@@ -1374,6 +1434,7 @@ export interface GlobalBlock {
     | CtaBandBlock
     | NewsletterBlock
     | StatsBlock
+    | InsightsListBlock
     | RawHtmlBlock
   )[];
   updatedAt: string;
@@ -2221,6 +2282,71 @@ export interface Preset {
         blockType: 'stats';
       }
     | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        /**
+         * How many of the newest articles to show.
+         */
+        limit?: number | null;
+        /**
+         * Leave empty to show every market.
+         */
+        markets?:
+          | (
+              | 'uk-europe'
+              | 'canada'
+              | 'greater-china'
+              | 'se-asia'
+              | 'usa'
+              | 'japan'
+              | 'korea'
+              | 'nordics'
+              | 'south-america'
+            )[]
+          | null;
+        viewAll?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'insightsList';
+      }
+    | {
         /**
          * Raw HTML rendered as-is on the page. Use for embeds and one-off markup.
          */
@@ -2792,6 +2918,7 @@ export interface PageSelect<T extends boolean = true> {
         ctaBand?: T | CtaBandBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
         stats?: T | StatsBlockSelect<T>;
+        insightsList?: T | InsightsListBlockSelect<T>;
         rawHtml?: T | RawHtmlBlockSelect<T>;
         globalSectionSlot?: T | GlobalSectionSlotBlockSelect<T>;
       };
@@ -3280,6 +3407,45 @@ export interface StatsBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "InsightsListBlock_select".
+ */
+export interface InsightsListBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  limit?: T;
+  markets?: T;
+  viewAll?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "RawHtmlBlock_select".
  */
 export interface RawHtmlBlockSelect<T extends boolean = true> {
@@ -3680,6 +3846,7 @@ export interface GlobalBlockSelect<T extends boolean = true> {
         ctaBand?: T | CtaBandBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
         stats?: T | StatsBlockSelect<T>;
+        insightsList?: T | InsightsListBlockSelect<T>;
         rawHtml?: T | RawHtmlBlockSelect<T>;
       };
   updatedAt?: T;
@@ -4163,6 +4330,43 @@ export interface PresetsSelect<T extends boolean = true> {
                           label?: T;
                         };
                     id?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        insightsList?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              limit?: T;
+              markets?: T;
+              viewAll?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
                   };
               section?:
                 | T
