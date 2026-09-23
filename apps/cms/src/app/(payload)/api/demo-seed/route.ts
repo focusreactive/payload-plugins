@@ -1867,6 +1867,10 @@ export async function POST(request: Request) {
           // leaving fr and ja unwritten put "| My Site" in the browser tab of every non-English
           // page, which is the starter kit's factory default.
           seo: {
+            // Written explicitly rather than left to fall back to siteName: the field carries its
+            // own localized defaultValue ("My Site"), which wins over the fallback and put the
+            // starter kit's name in every French and Japanese browser tab.
+            titleSuffix: siteSettingsTextByLocale[locale],
             defaultDescription: SITE_SEO_BY_LOCALE[locale].description,
             og: {
               title: siteSettingsTextByLocale[locale],
