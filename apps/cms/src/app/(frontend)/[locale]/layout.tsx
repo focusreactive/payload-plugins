@@ -30,6 +30,21 @@ const inter = localFont({
   variable: "--font-inter",
 });
 
+// Newsreader for headlines and IBM Plex Sans for text, picked on 2026-09-23 over Instrument Sans
+// with Inter. Newsreader ships its optical-size axis, so display headlines get the tighter
+// high-contrast cut without a second file.
+const newsreader = localFont({
+  display: "swap",
+  src: [{ path: "../../../fonts/Newsreader-variable.woff2", style: "normal", weight: "400 700" }],
+  variable: "--font-newsreader",
+});
+
+const ibmPlexSans = localFont({
+  display: "swap",
+  src: [{ path: "../../../fonts/IBMPlexSans-variable.woff2", style: "normal", weight: "400 700" }],
+  variable: "--font-ibm-plex-sans",
+});
+
 const ibmPlexMono = localFont({
   display: "swap",
   src: [
@@ -62,7 +77,7 @@ export default async function RootLayout({ children, params }: Props) {
     <html
       lang={locale}
       data-theme="light"
-      className={`${instrumentSans.variable} ${inter.variable} ${ibmPlexMono.variable}`}
+      className={`${instrumentSans.variable} ${inter.variable} ${newsreader.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
     >
       <head />
       <body>

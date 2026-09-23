@@ -32,12 +32,11 @@
     --color-text-brand-primary: rgb(21 23 27);
     --color-text-brand-secondary: rgb(199 0 70);
 
-    /* Untitled UI's sections apply no display-font class at all, so a serif display face only
-     * ever reached our own headings and the page read as two different typefaces. One family
-     * for both, with Inter underneath because their whole library is drawn around its metrics.
-     * Self-hosted by next/font/local in the [locale] layout. */
-    --font-display: var(--font-instrument-sans), var(--font-inter), system-ui, sans-serif;
-    --font-body: var(--font-inter), system-ui, -apple-system, sans-serif;
+    /* Newsreader for headlines, IBM Plex Sans for everything else. Self-hosted by
+     * next/font/local in the [locale] layout. Japanese falls through to the system face, which
+     * neither family covers. */
+    --font-display: var(--font-newsreader), Georgia, serif;
+    --font-body: var(--font-ibm-plex-sans), system-ui, -apple-system, sans-serif;
     --font-mono: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -139,4 +138,16 @@
  */
 @theme {
     --color-screen-mockup-border: var(--color-neutral-200);
+}
+
+/*
+ * Untitled UI's sections put no font class on their headings, so the display face has to be
+ * applied by element. h1 and h2 only: card titles are h3 and stay in the text face, where a
+ * serif at 18px read as a different design from the card around it.
+ */
+h1,
+h2,
+[class*="text-display-"] {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
 }
