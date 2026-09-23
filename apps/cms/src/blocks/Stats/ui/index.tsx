@@ -20,9 +20,10 @@ export function Stats({ items }: StatsProps) {
           <dd
             className={
               /\d/u.test(item.value)
-                ? "text-display-lg font-semibold text-brand-tertiary_alt md:text-display-xl"
-                : // A word at display-xl wraps and dwarfs the figures beside it.
-                  "text-display-sm font-semibold text-brand-tertiary_alt md:text-display-md"
+                ? "flex items-center justify-center text-display-lg font-semibold text-brand-tertiary_alt md:h-18 md:text-display-xl"
+                : // A word at display-xl wraps and dwarfs the figures beside it. The shared md:h-18
+                  // keeps every label on one line across the row whatever size its value is.
+                  "flex items-center justify-center text-display-sm font-semibold text-brand-tertiary_alt md:h-18 md:text-display-md"
             }
           >
             <AnimatedStatValue value={item.value} />
