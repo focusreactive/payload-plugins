@@ -81,7 +81,7 @@ export function Footer({
           </ul>
         </nav>
 
-        <div className="mt-12 flex flex-col justify-between gap-6 border-t border-secondary pt-8 md:mt-16 md:flex-row md:items-center">
+        <div className="mt-12 flex flex-col justify-between gap-6 border-t border-secondary_alt pt-8 md:mt-16 md:flex-row md:items-end">
           <div className="flex flex-col gap-2">
             {/*
               Untitled UI puts w-min on their own inline SVG logo component. Ours is an <img>
