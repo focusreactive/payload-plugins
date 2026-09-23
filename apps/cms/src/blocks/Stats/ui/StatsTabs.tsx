@@ -51,9 +51,11 @@ export function StatsTabs({ items, images }: StatsTabsProps) {
     const progressBar = progressBarRef.current;
     if (!isAutoplaying || !progressBar || items.length < 2) return;
 
+    // No scale-y-0 class for the start state: Tailwind 4 writes it to the separate CSS `scale`
+    // property, which multiplies with this transform and pins the bar at zero height.
     const animation = progressBar.animate(
       [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }],
-      { duration: AUTOPLAY_DURATION_MILLISECONDS, easing: "linear", fill: "forwards" }
+      { duration: AUTOPLAY_DURATION_MILLISECONDS, easing: "linear", fill: "both" }
     );
     animation.pause();
     animation.onfinish = () => setCurrentIndex((index) => (index + 1) % items.length);
@@ -105,7 +107,7 @@ export function StatsTabs({ items, images }: StatsTabsProps) {
                 <div
                   ref={progressBarRef}
                   aria-hidden
-                  className="absolute top-0 bottom-0 -left-1 w-1 origin-top scale-y-0 bg-fg-brand-primary_alt"
+                  className="absolute top-0 bottom-0 -left-1 w-1 origin-top bg-fg-brand-primary_alt"
                 />
               )}
               <button
