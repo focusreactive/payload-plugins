@@ -371,7 +371,10 @@ export const plugins: Plugin[] = [
 
   analyticsPlugin({
     ga4: {
-      measurementId: process.env.GA4_MEASUREMENT_ID!,
+      // No analytics on a client sandbox. The project-level GA4 id is shared with the other
+      // sandboxes on this Vercel project, so it is ignored here rather than unset there: a demo
+      // that ships a tracker to a law firm invites a data-protection question mid-call.
+      measurementId: "",
       propertyId: process.env.GA4_PROPERTY_ID!,
       serviceAccount: {
         clientEmail: process.env.GA4_CLIENT_EMAIL!,
