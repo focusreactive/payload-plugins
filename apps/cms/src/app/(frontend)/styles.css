@@ -78,10 +78,6 @@ body {
     text-wrap: balance;
   }
 
-  .prose {
-    font-size: inherit;
-  }
-
   /*
    * Deliberately sets no font-size and no color. Both used to be hardcoded here, at the same
    * specificity as the utility classes on the container, so every Untitled UI type class on a
@@ -535,4 +531,14 @@ body {
   .rounded-pill {
     border-radius: 2px;
   }
+}
+
+/*
+ * Unlayered on purpose. @tailwindcss/typography sets font-size: 1rem on .prose itself, and that
+ * element sits between a section's size class and the paragraph inside it, so every size we set on
+ * a rich-text container was discarded one level before it reached the text. The same rule inside
+ * @layer utilities still lost; unlayered CSS outranks every layer.
+ */
+.prose {
+  font-size: inherit;
 }
