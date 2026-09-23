@@ -2,6 +2,8 @@ import { JSDOM } from "jsdom";
 import { convertHTMLToLexical, editorConfigFactory } from "@payloadcms/richtext-lexical";
 import type { Payload, TypedLocale } from "payload";
 
+import type { Person } from "@/payload-types";
+
 import { fetchPasslePost } from "./fetchPasslePost";
 
 export interface IngestInsightResult {
@@ -42,6 +44,10 @@ export async function ingestInsightFromPassle({
   const authorEmail = primaryAuthor?.EmailAddress?.trim().toLowerCase();
 
   let matchedPersonId: number | null = null;
+  // An article inherits the markets of the person who wrote it. Without this every insight lands
+  // with an empty market set, which the author-market rule treats as "not decided yet" and passes,
+  // so the rule could never fire on seeded content.
+  let matchedPersonMarkets: Person["markets"] | null = null;
   if (authorEmail) {
     const personMatch = await payload.find({
       collection: "person",
@@ -53,6 +59,7 @@ export async function ingestInsightFromPassle({
       },
     });
     matchedPersonId = personMatch.docs[0]?.id ?? null;
+    matchedPersonMarkets = personMatch.docs[0]?.markets ?? null;
   }
 
   const editorConfig = await editorConfigFactory.default({ config: payload.config });
@@ -93,6 +100,7 @@ export async function ingestInsightFromPassle({
 
   const passleSourcedData = {
     author: matchedPersonId,
+    markets: matchedPersonMarkets ?? undefined,
     slug: slugFromTitle,
     body: bodyRichText,
     publishedDate: passlePost.PublishedDate,
