@@ -81,118 +81,118 @@ const LOCALIZED_PAGE_BODY: Record<
     fr: {
       eyebrow: "Démonstration",
       heading: "Quinze bureaux, six langues, neuf marchés, un seul modèle de contenu",
-      body: "Cette page est la version française du même document que la page d'accueil anglaise. Elle porte sa propre adresse, et son contenu est géré dans le même CMS.",
+      body: "Cette page et la page d’accueil anglaise sont un seul et même document, ici dans sa version française. Elle possède sa propre URL, et son contenu est géré dans le même CMS.",
     },
     ja: {
-      eyebrow: "デモ",
-      heading: "15のオフィス、6つの言語、9つの市場、ひとつのコンテンツモデル",
-      body: "このページは英語版ホームページと同一のドキュメントの日本語版です。日本語のアドレスを持ち、同じCMSで管理されています。",
+      eyebrow: "コンテンツ基盤デモ",
+      heading: "15拠点、6言語、9市場、ひとつのコンテンツモデル",
+      body: "このページは、英語版トップページと同じドキュメントの日本語版です。日本語のURLを持ち、同じCMSで管理されています。",
     },
   },
   insights: {
     fr: {
-      eyebrow: "Depuis Passle",
-      heading: "Les articles arrivent depuis Passle, sans copier-coller",
-      body: "Vingt articles publiés par le cabinet sont arrivés par le même webhook. L'auteur est rattaché à sa fiche par adresse e-mail.",
+      eyebrow: "En provenance de Passle",
+      heading: "Les articles nous parviennent de Passle, sans copier-coller",
+      body: "Vingt articles publiés par le cabinet sont arrivés ici par webhook. Chaque auteur est rattaché à son profil grâce à son adresse e-mail.",
     },
     ja: {
-      eyebrow: "Passleから",
-      heading: "記事はPassleから届きます。手入力はありません",
-      body: "20件の記事が同じWebhookを通じて届きました。著者はメールアドレスで人物レコードに紐付けられます。",
+      eyebrow: "Passle連携",
+      heading: "記事はPassleから自動で届きます。手入力は不要です",
+      body: "20件の記事が、いずれも同じWebhookを通じて届きました。著者はメールアドレスでプロフィールに紐付けられます。",
     },
   },
   "our-people": {
     fr: {
       eyebrow: "Rattachement des auteurs",
-      heading: "Une fiche par personne, avec ses marchés",
-      body: "Vingt et une fiches, chacune avec un intitulé de poste, un bureau et les marchés couverts. Les marchés se définissent séparément des langues.",
+      heading: "Un profil par personne, avec les marchés qu’elle couvre",
+      body: "Vingt et un profils, chacun avec un intitulé de poste, un bureau et les marchés couverts. Les marchés se configurent indépendamment des langues.",
     },
     ja: {
       eyebrow: "著者の紐付け",
-      heading: "人物レコードと担当市場",
-      body: "21名分のレコードがあり、役職、オフィス、担当市場を保持します。市場は言語とは別に設定します。",
+      heading: "一人ひとりのプロフィールと担当市場",
+      body: "21名分のプロフィールに、役職、所属オフィス、担当市場を掲載しています。市場は言語とは独立して設定します。",
     },
   },
   services: {
     fr: {
       eyebrow: "Six langues, neuf marchés",
-      heading: "La liste des services change selon le marché",
-      body: "L'anglais porte dix-sept services, le français huit, le japonais cinq. C'est une décision éditoriale, pas une lacune.",
+      heading: "La liste des services n’est pas la même dans chaque langue",
+      body: "La version anglaise compte dix-sept services, la française huit, la japonaise cinq. C’est une décision éditoriale, pas une lacune.",
     },
     ja: {
       eyebrow: "6言語、9市場",
-      heading: "サービス一覧は市場ごとに変わります",
-      body: "英語では17、フランス語では8、日本語では5のサービスを掲載しています。これは意図的な判断です。",
+      heading: "サービス一覧は言語ごとに異なります",
+      body: "英語版では17件、フランス語版では8件、日本語版では5件のサービスを掲載しています。これは意図的な編集判断であり、抜け漏れではありません。",
     },
   },
   patents: {
     fr: {
-      eyebrow: "Service",
-      heading: "Brevets",
-      body: "Page de service en français. Le même document porte une adresse française et reste lié aux mêmes articles.",
+      eyebrow: "Brevets",
+      heading: "Du premier dépôt à la défense du titre",
+      body: "Le travail sur les brevets va du premier dépôt à la procédure de délivrance, puis au contentieux, dans les bureaux qui traitent les sujets techniques. Cette page et sa version anglaise sont un seul et même document, publié sous une URL française et rattaché aux mêmes articles.",
     },
     ja: {
-      eyebrow: "サービス",
-      heading: "特許",
-      body: "日本語のサービスページです。同一ドキュメントが日本語のアドレスを持ち、同じ記事に紐付いています。",
+      eyebrow: "特許",
+      heading: "出願から権利化、そして権利行使まで",
+      body: "特許業務は、最初の出願から権利化の手続き、そして権利行使までを扱います。このページは英語版と同一のドキュメントで、日本語のURLを持ち、同じ記事に紐付いています。",
     },
   },
   "trade-marks": {
     fr: {
-      eyebrow: "Service",
-      heading: "Marques",
-      body: "Page de service en français. Sa visibilité par marché se règle indépendamment de sa langue.",
+      eyebrow: "Marques",
+      heading: "Protéger une marque, puis la défendre",
+      body: "Le travail sur les marques couvre la recherche d’antériorité, le dépôt, la gestion de portefeuille et la défense, dans chacun des neuf marchés où une marque doit être protégée. La visibilité de cette page par marché se règle indépendamment de sa langue.",
     },
     ja: {
-      eyebrow: "サービス",
-      heading: "商標",
-      body: "日本語のサービスページです。市場ごとの公開範囲は言語とは独立して設定します。",
+      eyebrow: "商標",
+      heading: "ブランドを登録し、そして守る",
+      body: "商標業務は、調査から出願、ポートフォリオ管理、権利行使までを扱います。市場ごとの公開範囲は、言語とは独立して設定します。",
     },
   },
   "global-presence": {
     fr: {
       eyebrow: "Présence mondiale",
       heading: "Du continent au pays, puis au bureau",
-      body: "Cette branche descend sur quatre niveaux. Chaque niveau porte son propre segment d'adresse, dans chaque langue.",
+      body: "Cette branche compte quatre niveaux. Chaque niveau possède son propre segment d’URL, dans chaque langue.",
     },
     ja: {
       eyebrow: "拠点",
       heading: "大陸から国へ、そしてオフィスへ",
-      body: "この階層は4段階です。各階層が言語ごとに独自のアドレス区間を持ちます。",
+      body: "この構造は4階層です。各階層が、言語ごとに固有のURLセグメントを持ちます。",
     },
   },
   asia: {
     fr: {
-      eyebrow: "Niveau continent",
+      eyebrow: "Échelon continental",
       heading: "Asie",
-      body: "Deuxième niveau de l'adresse. Le bureau de Tokyo se trouve deux niveaux plus bas.",
+      body: "Deuxième niveau de l’URL. Le bureau de Tokyo se trouve deux niveaux plus bas.",
     },
     ja: {
-      eyebrow: "大陸レベル",
+      eyebrow: "大陸階層",
       heading: "アジア",
-      body: "アドレスの第2階層です。東京オフィスはこの2つ下にあります。",
+      body: "URLの第2階層です。東京オフィスは、ここから2階層下にあります。",
     },
   },
   japan: {
     fr: {
-      eyebrow: "Niveau pays",
+      eyebrow: "Échelon national",
       heading: "Japon",
-      body: "Troisième niveau. Renommez ce niveau en français et seules les adresses françaises en dessous changent.",
+      body: "Troisième niveau. Renommez-le dans la version française, et seules les URL françaises situées en dessous changent.",
     },
     ja: {
-      eyebrow: "国レベル",
+      eyebrow: "国階層",
       heading: "日本",
-      body: "第3階層です。この階層の名称を変更すると、その言語の配下のアドレスだけが変わります。",
+      body: "第3階層です。ある言語でこの階層の名称を変更すると、その言語の配下のURLだけが変わります。",
     },
   },
   "tokyo-office": {
     fr: {
-      eyebrow: "Niveau bureau",
+      eyebrow: "Échelon local",
       heading: "Bureau de Tokyo",
-      body: "Quatrième et dernier niveau. Son adresse française est assemblée à partir de chaque parent au-dessus.",
+      body: "Quatrième et dernier niveau. Son URL française se compose des segments de toutes les pages parentes qui la précèdent.",
     },
     ja: {
-      eyebrow: "オフィスレベル",
+      eyebrow: "拠点階層",
       heading: "東京オフィス",
       body: "最下層です。日本語のアドレスは、上位のすべての階層から組み立てられます。",
     },
@@ -222,9 +222,9 @@ const PAGE_META_EN: Record<string, { title: string; description: string }> = {
       "Twenty-one profiles with a job title, an office and a set of markets, which is what lets an article find its author automatically.",
   },
   services: {
-    title: "Services, and why the list differs by market",
+    title: "Services, and why the list differs by language",
     description:
-      "English carries seventeen services, French eight, Japanese five. Which markets a page appears in is set separately from which languages it exists in.",
+      "English carries seventeen services, French eight, Japanese five. That is an editorial decision, and which markets a page appears in is set separately again.",
   },
   patents: {
     title: "Patents",
@@ -501,7 +501,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     eyebrow: "Review before publication",
     heading: "A translation arrives as a draft, addressed to a human.",
     layout: "image-text",
-    image: illustrations["admin-person-markets.png"] ?? defaultMediaId,
+    image: illustrations["admin-review-queue.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
       "Machine translation drafts the page and the review queue holds it until someone signs it off. For an IP practice that is the only acceptable order, and it is the same queue that holds a fee-earner's request to update their own biography."
     ),
@@ -648,7 +648,7 @@ function buildOurPeoplePageBlocks(
     eyebrow: "Author matching",
     heading: "A person record is what makes an author real",
     layout: "text-image",
-    image: illustrations["admin-page-tree.png"] ?? defaultMediaId,
+    image: illustrations["admin-person-markets.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
       "Twenty-one people are on file here, each with a name, a job title, an office and the markets they cover. When an article syncs from Passle, the ingest checks its author's email address against this list. A match links the article to a real profile; a miss leaves the author's email on the article for an editor to resolve by hand."
     ),
@@ -734,7 +734,7 @@ function buildPatentsPageBlocks(illustrations: Record<string, number>, defaultMe
     eyebrow: "Patents",
     heading: "Protection for what your engineers have actually built",
     layout: "image-text",
-    image: illustrations["admin-pages-japanese-light.png"] ?? defaultMediaId,
+    image: illustrations["admin-insight-list-light.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
       "Patent work here runs from a first filing through prosecution to enforcement, across the offices that handle technical subject matter. The examples below are recent matters our own attorneys wrote up, not brochure copy."
     ),
@@ -797,7 +797,7 @@ function buildTradeMarksPageBlocks(illustrations: Record<string, number>, defaul
     layout: "text-image",
     image: illustrations["admin-person-markets.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
-      "Trade mark work covers clearance, filing, portfolio management and enforcement, in whichever of the firm's nine markets a brand needs protecting. The examples below are recent matters, not brochure copy."
+      "Trade mark work covers clearance, filing, portfolio management and enforcement, in whichever of the firm's nine markets a brand needs protecting. Which of those markets this page appears in is set separately from the languages it exists in, which is the same field the screenshot shows on a person. The examples below are recent matters, not brochure copy."
     ),
     section: { theme: "light" },
   };
@@ -814,7 +814,7 @@ function buildGlobalPresencePageBlocks(defaultMediaId: number) {
   const intro: ContentBlock = {
     blockType: "content",
     eyebrow: "Global presence",
-    heading: "Nine markets, three published languages",
+    heading: "Nine markets, six languages, three of them filled in here",
     layout: "image-text",
     image: defaultMediaId,
     content: buildParagraphRichText(
@@ -863,7 +863,7 @@ function buildTokyoOfficePageBlocks(defaultMediaId: number) {
     layout: "text-image",
     image: defaultMediaId,
     content: buildParagraphRichText(
-      "The Tokyo office is the deepest page in this address tree, reached through Global presence, Asia and Japan in English and through the Japanese names of those same three documents in Japanese. It is one document with two addresses, not two pages."
+      "The Tokyo office is the deepest page in this address tree, reached through Global presence, Asia and Japan in English, and through the French and Japanese names of those same three documents in the other two languages. It is one document with three addresses, not three pages."
     ),
     section: { theme: "light" },
   };
@@ -873,7 +873,7 @@ function buildTokyoOfficePageBlocks(defaultMediaId: number) {
     items: [
       { value: "Tokyo", label: "Office" },
       { value: "Japan", label: "Market" },
-      { value: "2", label: "Languages this page exists in" },
+      { value: "3", label: "Languages this page exists in" },
     ],
     section: { theme: "light" },
   };
@@ -924,6 +924,14 @@ function buildDemoMedia(): DemoMediaSpec[] {
       mimetype: "image/png",
       data: readFileSync(
         path.join(process.cwd(), "public", "demo-screens", "admin-person-markets.png")
+      ),
+    },
+    {
+      filename: "admin-review-queue.png",
+      alt: "The translated Designs page open in the CMS, status Draft, with the Publish changes button unused and the review queue link in the sidebar",
+      mimetype: "image/png",
+      data: readFileSync(
+        path.join(process.cwd(), "public", "demo-screens", "admin-review-queue.png")
       ),
     },
     {
@@ -1415,12 +1423,12 @@ const FOOTER_TEXT_BY_LOCALE: Record<LocaleCode, { description: string; copyright
   },
   fr: {
     description:
-      "Une plateforme de contenu en fonctionnement : six langues, neuf marchés, et chaque article arrivant depuis l'outil de publication du cabinet.",
+      "Une plateforme de contenu réellement en service : six langues, neuf marchés, et des articles qui arrivent directement de l’outil de publication du cabinet.",
     copyright: "Content Platform Demo",
   },
   ja: {
     description:
-      "実際に動作するコンテンツ基盤。6つの言語、9つの市場、そして記事は事務所自身の配信ツールから届きます。",
+      "実際に稼働しているコンテンツ基盤。6言語、9市場、記事は事務所自身の発信ツールから届きます。",
     copyright: "Content Platform Demo",
   },
 };
@@ -1584,6 +1592,7 @@ export async function POST(request: Request) {
     const illustrationIds: Record<string, number> = {
       "admin-page-tree.png": mediaIdByFilename["admin-page-tree.png"],
       "admin-person-markets.png": mediaIdByFilename["admin-person-markets.png"],
+      "admin-review-queue.png": mediaIdByFilename["admin-review-queue.png"],
       "admin-insight-list-light.png": mediaIdByFilename["admin-insight-list-light.png"],
       "admin-pages-japanese-light.png": mediaIdByFilename["admin-pages-japanese-light.png"],
     };
@@ -1801,9 +1810,30 @@ export async function POST(request: Request) {
           },
         });
 
+        // Blocks are localized, so a locale left unwritten falls back to the starter kit's own
+        // demo blocks - which is another vendor's marketing copy appearing inside the review
+        // queue, on the page the walkthrough opens to prove the queue works.
         for (const [locale, text] of [
-          ["fr", { title: "Dessins et modèles", slug: "dessins-et-modeles" }],
-          ["ja", { title: "意匠", slug: "意匠" }],
+          [
+            "fr",
+            {
+              title: "Dessins et modèles",
+              slug: "dessins-et-modeles",
+              eyebrow: "En attente de relecture",
+              heading: "Dessins et modèles",
+              body: "Troisième page de service, traduite par la plateforme et retenue ici jusqu'à ce qu'un relecteur la valide. Elle possède déjà son URL, elle n'est pas publiée, et aucun lien du site public n'y mène.",
+            },
+          ],
+          [
+            "ja",
+            {
+              title: "意匠",
+              slug: "意匠",
+              eyebrow: "レビュー待ち",
+              heading: "意匠",
+              body: "3つ目のサービスページです。プラットフォームが翻訳し、担当者が承認するまでここで保留されています。URLはすでに割り当てられていますが、公開はされておらず、公開サイトからのリンクもありません。",
+            },
+          ],
         ] as const) {
           await payload.update({
             collection: "page",
@@ -1812,7 +1842,23 @@ export async function POST(request: Request) {
             draft: true,
             overrideAccess: true,
             context: { skipEmbedding: true },
-            data: { _status: "draft", title: text.title, slug: text.slug, generateSlug: false },
+            data: {
+              _status: "draft",
+              title: text.title,
+              slug: text.slug,
+              generateSlug: false,
+              blocks: [
+                {
+                  blockType: "content" as const,
+                  eyebrow: text.eyebrow,
+                  heading: text.heading,
+                  layout: "text-image" as const,
+                  image: defaultMediaId as number,
+                  content: buildParagraphRichText(text.body),
+                  section: { theme: "light" as const },
+                },
+              ],
+            },
           });
         }
       }
@@ -1835,24 +1881,24 @@ export async function POST(request: Request) {
       },
       fr: {
         description:
-          "Une plateforme de contenu en fonctionnement : quinze bureaux, six langues, neuf marchés, un seul modèle de contenu.",
-        notFoundTitle: "Cette adresse n'existe pas",
+          "Une plateforme de contenu réellement en service : quinze bureaux, six langues, neuf marchés, un seul modèle de contenu.",
+        notFoundTitle: "Cette page n’existe pas",
         notFoundDescription:
-          "Chaque page possède sa propre adresse dans chaque langue. Celle-ci n'existe dans aucune.",
+          "Chaque page possède sa propre URL dans chaque langue. Celle que vous avez saisie n’existe dans aucune d’elles.",
       },
       ja: {
         description:
-          "実際に動作するコンテンツ基盤。15のオフィス、6つの言語、9つの市場、ひとつのコンテンツモデル。",
-        notFoundTitle: "このアドレスは存在しません",
+          "実際に稼働しているコンテンツ基盤。15拠点、6言語、9市場、ひとつのコンテンツモデル。",
+        notFoundTitle: "お探しのページは見つかりませんでした",
         notFoundDescription:
-          "各ページは言語ごとに固有のアドレスを持ちます。このアドレスはいずれの言語にもありません。",
+          "各ページは言語ごとに固有のURLを持ちます。このURLはどの言語にも存在しません。",
       },
     };
 
     const siteSettingsTextByLocale: Record<LocaleCode, string> = {
       en: "Content Platform Demo",
       fr: "Démo de plateforme de contenu",
-      ja: "コンテンツプラットフォームデモ",
+      ja: "コンテンツ基盤デモ",
     };
 
     for (const locale of ["en", "fr", "ja"] as LocaleCode[]) {
