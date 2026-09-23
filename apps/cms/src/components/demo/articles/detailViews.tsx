@@ -1,5 +1,7 @@
 import NextLink from "next/link";
 
+import { ArticleCard } from "@/blocks/InsightsList/ui";
+import type { InsightCard } from "@/blocks/InsightsList/ui";
 import { RichText } from "@/components/shared";
 import { getInsightHref, getPayloadClient, getPersonHref } from "@/dal/index";
 import { MARKET_OPTIONS } from "@/lib/fields/marketsField";
@@ -184,16 +186,31 @@ export async function PersonDetail({ person, locale }: { person: Person; locale:
     limit: 50,
     depth: 0,
   });
-  const articleLinks = await Promise.all(
+  const dateFormatter = new Intl.DateTimeFormat(DATE_LOCALE[locale] ?? "en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  // The insights list's card, without the author row: every card here is by this person.
+  const articleCards: InsightCard[] = await Promise.all(
     articles.docs
       .filter((doc) => doc.title)
-      .map(async (doc) => ({ doc, href: await getInsightHref(doc, locale) }))
+      .map(async (doc) => ({
+        id: String(doc.id),
+        title: doc.title,
+        summary: doc.standfirst ?? "",
+        category: marketLabels(doc.markets)[0] ?? null,
+        authorName: null,
+        publishedAt: doc.publishedDate ? dateFormatter.format(new Date(doc.publishedDate)) : null,
+        href: await getInsightHref(doc, locale),
+        authorHref: null,
+      }))
   );
 
   return (
     <section className="pt-10 pb-16 md:pt-16 md:pb-24">
       <div className="mx-auto max-w-container px-4 md:px-8">
-        <div className="mx-auto max-w-180">
+        <div className="max-w-180">
           <div className="flex flex-col items-start gap-6 md:flex-row md:items-center">
             <Avatar border initials={initialsOf(person.name)} alt={person.name} size="2xl" />
             <div>
@@ -218,34 +235,23 @@ export async function PersonDetail({ person, locale }: { person: Person; locale:
           {person.biography && (
             <p className="mt-8 text-lg text-pretty text-tertiary">{person.biography}</p>
           )}
+        </div>
 
-          <h2 className="mt-12 text-xl font-semibold text-primary">
+        <div className="mt-12 flex flex-col gap-2 border-t border-secondary pt-12 md:mt-16 md:pt-16">
+          <h2 className="text-display-xs font-semibold text-primary md:text-display-sm">
             {copy.articlesBy} {person.name}
           </h2>
-          {articleLinks.length === 0 ? (
-            <p className="mt-4 text-md text-tertiary">{copy.none}</p>
-          ) : (
-            <ul className="mt-4 divide-y divide-secondary border-y border-secondary">
-              {articleLinks.map(({ doc, href }) => (
-                <li key={doc.id} className="py-5">
-                  {href ? (
-                    <NextLink
-                      href={href}
-                      className="text-md font-semibold text-primary underline-offset-4 hover:underline"
-                    >
-                      {doc.title}
-                    </NextLink>
-                  ) : (
-                    <span className="text-md font-semibold text-primary">{doc.title}</span>
-                  )}
-                  {doc.standfirst && (
-                    <p className="mt-1 line-clamp-2 text-md text-tertiary">{doc.standfirst}</p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+          {articleCards.length === 0 && <p className="text-md text-tertiary">{copy.none}</p>}
         </div>
+        {articleCards.length > 0 && (
+          <ul className="mt-8 grid grid-cols-1 gap-6 md:mt-10 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+            {articleCards.map((card) => (
+              <li key={card.id}>
+                <ArticleCard card={card} featured={false} />
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </section>
   );

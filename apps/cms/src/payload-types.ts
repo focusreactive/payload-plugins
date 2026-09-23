@@ -1282,6 +1282,10 @@ export interface StatsBlock {
       customPage?: ('blog' | 'search') | null;
       label?: string | null;
     };
+    /**
+     * Image layout only. Shown while this figure is selected; falls back to the block image.
+     */
+    image?: (number | null) | Media;
     id?: string | null;
   }[];
   section?: {
@@ -2327,6 +2331,10 @@ export interface Preset {
             customPage?: ('blog' | 'search') | null;
             label?: string | null;
           };
+          /**
+           * Image layout only. Shown while this figure is selected; falls back to the block image.
+           */
+          image?: (number | null) | Media;
           id?: string | null;
         }[];
         section?: {
@@ -3513,6 +3521,7 @@ export interface StatsBlockSelect<T extends boolean = true> {
               customPage?: T;
               label?: T;
             };
+        image?: T;
         id?: T;
       };
   section?:
@@ -4495,6 +4504,7 @@ export interface PresetsSelect<T extends boolean = true> {
                           customPage?: T;
                           label?: T;
                         };
+                    image?: T;
                     id?: T;
                   };
               section?:

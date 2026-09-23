@@ -34,12 +34,13 @@ function initialsOf(name: string) {
   ).toUpperCase();
 }
 
-function ArticleCard({ card, featured }: { card: InsightCard; featured: boolean }) {
+export function ArticleCard({ card, featured }: { card: InsightCard; featured: boolean }) {
   return (
     <article
       className={cn(
-        "group relative flex h-full flex-col gap-6 rounded-2xl bg-surface-raised p-6 ring-1 ring-secondary_alt transition duration-150 ease-out",
-        card.href && "hover:-translate-y-0.5 hover:shadow-lg hover:ring-brand",
+        "group relative flex h-full flex-col gap-6 rounded-2xl bg-surface-raised p-6 ring-1 ring-secondary_alt transition-shadow duration-150 ease-out",
+        // Ring colour only: a lift or a drop shadow on hover moved the card and its neighbours.
+        card.href && "hover:ring-brand",
         featured && "md:p-8"
       )}
     >
@@ -64,7 +65,7 @@ function ArticleCard({ card, featured }: { card: InsightCard; featured: boolean 
             >
               {card.title}
               <ArrowUpRight
-                className="mt-0.5 size-6 shrink-0 text-fg-quaternary transition duration-150 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-fg-brand-primary"
+                className="mt-0.5 size-6 shrink-0 text-fg-quaternary transition-colors duration-150 ease-out group-hover:text-fg-brand-primary"
                 aria-hidden="true"
               />
             </a>
@@ -81,6 +82,9 @@ function ArticleCard({ card, featured }: { card: InsightCard; featured: boolean 
           {card.summary}
         </p>
       </div>
+      {!card.authorName && card.publishedAt && (
+        <time className="mt-auto text-sm text-tertiary">{card.publishedAt}</time>
+      )}
       {card.authorName && (
         <div className="mt-auto flex items-center gap-3">
           <Avatar border initials={initialsOf(card.authorName)} alt={card.authorName} size="md" />

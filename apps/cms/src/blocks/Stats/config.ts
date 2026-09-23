@@ -79,6 +79,19 @@ const fields: Field[] = [
         type: "textarea",
       },
       link({ appearances: false, required: false }),
+
+      {
+        admin: {
+          description: {
+            en: "Image layout only. Shown while this figure is selected; falls back to the block image.",
+            es: "Solo en el diseño con imagen. Se muestra mientras esta cifra está seleccionada; si falta, se usa la imagen del bloque.",
+          },
+        },
+        label: { en: "Image", es: "Imagen" },
+        name: "image",
+        relationTo: "media",
+        type: "upload",
+      },
     ],
     localized: true,
     maxRows: 4,

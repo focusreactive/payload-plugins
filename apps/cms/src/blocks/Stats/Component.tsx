@@ -5,7 +5,26 @@ import { SectionContainer } from "@/components/shared";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
-import type { StatsBlock } from "@/payload-types";
+import type { Media as MediaDocument, StatsBlock } from "@/payload-types";
+
+function renderScreenshot(image: MediaDocument) {
+  const media = prepareMediaProps({ image });
+  if (!media) return null;
+  return (
+    <ScreenshotViewer caption={image.alt ?? null}>
+      <Media
+        {...media.data}
+        className="absolute inset-0"
+        imageProps={{ ...media.imageProps, fit: "contain", fill: true }}
+        visualEditing={media.visualEditing}
+      />
+    </ScreenshotViewer>
+  );
+}
+
+function asMediaDocument(image: number | MediaDocument | null | undefined) {
+  return typeof image === "object" && image !== null ? image : null;
+}
 
 export const StatsBlockComponent = async ({
   eyebrow,
@@ -18,8 +37,9 @@ export const StatsBlockComponent = async ({
   id,
 }: StatsBlock) => {
   const locale = await resolveLocale();
-  const resolvedImage = typeof image === "object" && image !== null ? image : null;
-  const media = resolvedImage ? prepareMediaProps({ image: resolvedImage }) : null;
+  const blockImage = asMediaDocument(image);
+  const itemImages = (items ?? []).map((item) => asMediaDocument(item.image) ?? blockImage);
+  const hasImages = itemImages.some(Boolean);
 
   return (
     <SectionContainer
@@ -30,19 +50,8 @@ export const StatsBlockComponent = async ({
         eyebrow={eyebrow}
         heading={heading}
         description={description}
-        layout={layout === "splitImage" && media ? "splitImage" : "accentLine"}
-        image={
-          media ? (
-            <ScreenshotViewer caption={resolvedImage?.alt ?? null}>
-              <Media
-                {...media.data}
-                className="absolute inset-0"
-                imageProps={{ ...media.imageProps, fit: "contain", fill: true }}
-                visualEditing={media.visualEditing}
-              />
-            </ScreenshotViewer>
-          ) : null
-        }
+        layout={layout === "splitImage" && hasImages ? "splitImage" : "accentLine"}
+        images={itemImages.map((itemImage) => (itemImage ? renderScreenshot(itemImage) : null))}
         items={(items ?? []).map((item) => {
           const link = item.link ? prepareLinkProps(item.link, locale) : null;
           return {

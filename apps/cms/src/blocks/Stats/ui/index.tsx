@@ -4,6 +4,8 @@ import { AnimatedStatValue } from "@/components/demo/AnimatedStatValue";
 import { cn } from "@/components/utils";
 import { Button } from "@/shared/ui/shadcn/base/buttons/button";
 
+import { StatsTabs } from "./StatsTabs";
+
 export interface StatItem {
   value: string;
   label: string;
@@ -16,7 +18,8 @@ interface StatsProps {
   heading?: string | null;
   description?: string | null;
   layout: "accentLine" | "splitImage";
-  image?: React.ReactNode;
+  /** The image layout's screenshots, one per item. */
+  images: React.ReactNode[];
   items: StatItem[];
 }
 
@@ -60,12 +63,12 @@ function SectionHeading({
 }
 
 /**
- * Untitled UI's metrics-simple-accent-line and metrics-split-image-01, markup kept from their
+ * Untitled UI's metrics-simple-accent-line and features-tabs-mockup-05, markup kept from their
  * source with the hardcoded rows replaced by CMS items. The accent-line variant also renders the
  * item description, which their data carries but that layout leaves out: every figure on this site
  * needs its source stated beside it.
  */
-export function Stats({ eyebrow, heading, description, layout, image, items }: StatsProps) {
+export function Stats({ eyebrow, heading, description, layout, images, items }: StatsProps) {
   if (!items.length) return null;
 
   if (layout === "splitImage") {
@@ -79,49 +82,7 @@ export function Stats({ eyebrow, heading, description, layout, image, items }: S
               description={description}
               centered={false}
             />
-            <div className="grid grid-cols-1 gap-12 md:gap-8 lg:grid-cols-2">
-              <dl className="grid grid-cols-1 gap-8 self-center md:grid-cols-2 md:gap-y-16 md:pr-8">
-                {items.map((item, index) => (
-                  // justify-end packs the reversed column to the top of its grid cell, so a
-                  // two-line description no longer lifts its number above the one beside it.
-                  <div
-                    key={index}
-                    className="flex flex-1 flex-col-reverse justify-end gap-3 text-center"
-                  >
-                    <div className="flex flex-col items-center gap-1">
-                      <dt className="text-lg font-semibold text-balance text-primary">
-                        {item.label}
-                      </dt>
-                      {item.description && (
-                        <p className="text-md text-pretty text-tertiary">{item.description}</p>
-                      )}
-                      {item.link && (
-                        <Button
-                          color="link-color"
-                          size="lg"
-                          href={item.link.href}
-                          iconTrailing={
-                            <ArrowRight
-                              data-icon="trailing"
-                              className="pointer-events-none size-5 shrink-0 transition-inherit-all"
-                            />
-                          }
-                          className="mt-2"
-                        >
-                          {item.link.text}
-                        </Button>
-                      )}
-                    </div>
-                    <dd className={valueClassName(item.value, "extraLarge")}>
-                      <AnimatedStatValue value={item.value} />
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-              <div className="relative h-70 w-full overflow-hidden rounded-xl bg-white shadow-xl ring-4 ring-screen-mockup-border md:h-140 md:ring-6">
-                {image}
-              </div>
-            </div>
+            <StatsTabs items={items} images={images} />
           </div>
         </div>
       </div>
