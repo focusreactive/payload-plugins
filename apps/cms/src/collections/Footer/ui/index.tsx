@@ -83,7 +83,12 @@ export function Footer({
 
         <div className="mt-12 flex flex-col justify-between gap-6 border-t border-secondary pt-8 md:mt-16 md:flex-row md:items-center">
           <div className="flex flex-col gap-2">
-            <NextLink href={brand.href} className="inline-flex w-min items-center">
+            {/*
+              Untitled UI puts w-min on their own inline SVG logo component. Ours is an <img>
+              with w-auto, and min-content of an auto-width replaced element resolves to zero,
+              so the footer logo rendered 0px wide on every page.
+            */}
+            <NextLink href={brand.href} className="inline-flex items-center">
               {brand.logo ? <Media {...toLogoMediaProps(brand.logo)} /> : brand.label}
             </NextLink>
             {/* Untitled UI's footer-large-01 bottom bar has no description slot; description is
