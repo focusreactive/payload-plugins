@@ -11,8 +11,6 @@ const DATE_LOCALE: Record<string, string> = { en: "en-GB", fr: "fr-FR", ja: "ja-
 
 const COPY: Record<string, Record<string, string>> = {
   en: {
-    back: "All insights",
-    backPeople: "All people",
     writtenBy: "Written by",
     fromPassle: "Arrived from Passle. The author was matched to this profile by email address.",
     unmatched: "Arrived from Passle. No profile in the CMS matches this author's email yet.",
@@ -21,8 +19,6 @@ const COPY: Record<string, Record<string, string>> = {
     markets: "Markets",
   },
   fr: {
-    back: "Tous les articles",
-    backPeople: "Toute l’équipe",
     writtenBy: "Rédigé par",
     fromPassle: "Arrivé de Passle. L’auteur a été rattaché à ce profil par son adresse e-mail.",
     unmatched: "Arrivé de Passle. Aucun profil du CMS ne correspond encore à l’e-mail de l’auteur.",
@@ -31,8 +27,6 @@ const COPY: Record<string, Record<string, string>> = {
     markets: "Marchés",
   },
   ja: {
-    back: "インサイト一覧",
-    backPeople: "専門家一覧",
     writtenBy: "著者",
     fromPassle:
       "Passleから届いた記事です。著者はメールアドレスでこのプロフィールに紐付けられています。",
@@ -80,15 +74,7 @@ function initialsOf(name: string) {
  * rule at the end. Above it, the blog-post header they pair it with: market, date, headline, and
  * the author, who links to the profile the webhook matched them to.
  */
-export async function InsightDetail({
-  insight,
-  locale,
-  listingHref,
-}: {
-  insight: Insight;
-  locale: string;
-  listingHref: string | null;
-}) {
+export async function InsightDetail({ insight, locale }: { insight: Insight; locale: string }) {
   const copy = copyFor(locale);
   const author = typeof insight.author === "object" && insight.author ? insight.author : null;
   const authorHref = author ? await getPersonHref(author, locale) : null;
@@ -114,18 +100,10 @@ export async function InsightDetail({
 
   return (
     <article>
-      <header className="pt-16 pb-10 md:pt-24 md:pb-12">
+      <header className="pt-10 pb-10 md:pt-16 md:pb-12">
         <div className="mx-auto max-w-container px-4 md:px-8">
           <div className="mx-auto flex max-w-180 flex-col items-center text-center">
-            {listingHref && (
-              <NextLink
-                href={listingHref}
-                className="text-sm font-semibold text-brand-secondary hover:text-brand-secondary_hover"
-              >
-                ← {copy.back}
-              </NextLink>
-            )}
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               {marketLabels(insight.markets).map((label) => (
                 <Badge key={label} type="pill-color" color="brand" size="md">
                   {label}
@@ -194,15 +172,7 @@ export async function InsightDetail({
  * The profile page: Untitled's team-member card scaled up to a header, then the person's own
  * articles in this language, read live the same way the insights list reads them.
  */
-export async function PersonDetail({
-  person,
-  locale,
-  listingHref,
-}: {
-  person: Person;
-  locale: string;
-  listingHref: string | null;
-}) {
+export async function PersonDetail({ person, locale }: { person: Person; locale: string }) {
   const copy = copyFor(locale);
   const payload = await getPayloadClient();
   const articles = await payload.find({
@@ -221,18 +191,10 @@ export async function PersonDetail({
   );
 
   return (
-    <section className="py-16 md:py-24">
+    <section className="pt-10 pb-16 md:pt-16 md:pb-24">
       <div className="mx-auto max-w-container px-4 md:px-8">
         <div className="mx-auto max-w-180">
-          {listingHref && (
-            <NextLink
-              href={listingHref}
-              className="text-sm font-semibold text-brand-secondary hover:text-brand-secondary_hover"
-            >
-              ← {copy.backPeople}
-            </NextLink>
-          )}
-          <div className="mt-8 flex flex-col items-start gap-6 md:flex-row md:items-center">
+          <div className="flex flex-col items-start gap-6 md:flex-row md:items-center">
             <Avatar border initials={initialsOf(person.name)} alt={person.name} size="2xl" />
             <div>
               <h1 className="text-display-sm font-semibold text-primary md:text-display-md">

@@ -1,3 +1,4 @@
+import { ChevronRight, HomeLine } from "@untitledui/icons";
 import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/lib/i18n/navigation";
@@ -8,48 +9,56 @@ import { Container } from "@/components/shared";
 interface Props {
   pageId: number;
   locale: Locale;
+  /** An article or person shown under a listing page: the listing becomes a link and this closes the trail. */
+  currentLabel?: string;
 }
 
 /**
  * Reads the ancestor chain from `idToBreadcrumbs`, which is keyed off the
  * nested-docs plugin's own per-locale labels (see pathMap.ts) rather than
- * re-deriving parents from the slug. A page whose chain is missing or has no
- * ancestors for this locale renders nothing - a chain in the wrong language
- * would misstate the very thing this component exists to show, so there is
- * no English fallback here.
+ * re-deriving parents from the slug. A page whose chain is missing for this
+ * locale renders nothing - a chain in the wrong language would misstate the
+ * very thing this component exists to show, so there is no English fallback.
+ * The home page is not a parent in the nested-docs tree, so Home is prepended
+ * here and the home page itself gets no trail.
  */
-export async function Breadcrumbs({ pageId, locale }: Props) {
+export async function Breadcrumbs({ pageId, locale, currentLabel }: Props) {
   const pathMap = await getPathMap();
   const chain = pathMap.idToBreadcrumbs[pageId]?.[locale];
 
-  if (!chain || chain.length <= 1) {
+  if (!chain || chain.length === 0 || (!currentLabel && chain.at(-1)?.url === "/home")) {
     return null;
   }
 
   const t = await getTranslations("hierarchyNav");
-  const ancestors = chain.slice(0, -1);
-  const current = chain.at(-1)!;
+  const ancestors = currentLabel ? chain : chain.slice(0, -1);
+  const current = currentLabel ?? chain.at(-1)!.label;
+  const linkClassName =
+    "rounded-sm text-(--color-text-quaternary) transition-colors duration-100 hover:text-(--color-text-tertiary_hover) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--color-focus-ring)";
 
   return (
-    <Container containerData={{}} className="pt-8">
-      <nav aria-label={t("breadcrumbLabel")} className="mb-6 text-[0.8125rem] leading-[1.45]">
-        <ol className="flex flex-wrap items-center gap-x-2">
+    <Container containerData={{}} className="pt-8 md:pt-10">
+      <nav aria-label={t("breadcrumbLabel")} className="text-sm font-semibold">
+        <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+          <li className="flex items-center gap-x-1.5">
+            <Link href="/" locale={locale} className={linkClassName} aria-label={t("home")}>
+              <HomeLine aria-hidden className="size-5" />
+            </Link>
+            <ChevronRight aria-hidden className="size-4 text-(--color-fg-quaternary)" />
+          </li>
           {ancestors.map((crumb) => (
-            <li key={crumb.url} className="flex items-center gap-x-2">
-              <Link
-                href={crumb.url}
-                locale={locale}
-                className="text-primary underline decoration-1 underline-offset-4 hover:text-primary-hover"
-              >
+            <li key={crumb.url} className="flex items-center gap-x-1.5">
+              <Link href={crumb.url} locale={locale} className={linkClassName}>
                 {crumb.label}
               </Link>
-              <span aria-hidden className="text-[var(--color-ink-tertiary)]">
-                /
-              </span>
+              <ChevronRight aria-hidden className="size-4 text-(--color-fg-quaternary)" />
             </li>
           ))}
-          <li aria-current="page" className="text-muted-foreground">
-            {current.label}
+          <li
+            aria-current="page"
+            className="max-w-[40ch] truncate text-(--color-text-brand-secondary)"
+          >
+            {current}
           </li>
         </ol>
       </nav>

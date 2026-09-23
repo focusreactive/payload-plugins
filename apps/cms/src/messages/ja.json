@@ -57,6 +57,7 @@
     }
   },
   "hierarchyNav": {
+    "home": "ホーム",
     "breadcrumbLabel": "パンくずリスト",
     "inThisSection": "このセクション内"
   }

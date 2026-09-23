@@ -57,6 +57,7 @@
     }
   },
   "hierarchyNav": {
+    "home": "홈",
     "breadcrumbLabel": "이동 경로",
     "inThisSection": "이 섹션에서"
   }

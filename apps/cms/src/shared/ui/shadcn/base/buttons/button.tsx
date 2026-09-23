@@ -68,7 +68,10 @@ export const styles = sortCx({
     },
     secondary: {
       root: [
-        "bg-primary text-secondary shadow-xs-skeuomorphic ring-1 ring-primary ring-inset hover:bg-primary_hover hover:text-secondary_hover data-loading:bg-primary_hover",
+        // Explicit variables: the frontend stylesheet also generates .bg-primary, .text-secondary and
+        // .ring-primary from its own --color-primary (the dark green), and whichever stylesheet loads
+        // last wins, which rendered this button dark green with dark text.
+        "bg-(--color-bg-primary) text-(--color-text-secondary) shadow-xs-skeuomorphic ring-1 ring-(--color-border-primary) ring-inset hover:bg-(--color-bg-primary_hover) hover:text-(--color-text-secondary_hover) data-loading:bg-(--color-bg-primary_hover)",
         // Icon styles
         "*:data-icon:text-fg-quaternary hover:*:data-icon:text-fg-quaternary_hover",
       ].join(" "),

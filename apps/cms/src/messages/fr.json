@@ -57,6 +57,7 @@
     }
   },
   "hierarchyNav": {
+    "home": "Accueil",
     "breadcrumbLabel": "Fil d’Ariane",
     "inThisSection": "Dans cette section"
   }

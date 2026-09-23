@@ -47,17 +47,19 @@ export default async function Page({ params }: Args) {
     const detail = await resolveListingDetail(decodedSegments, locale);
     const listingPage = detail ? await getPageBySlug(decodedSegments.slice(0, -1), locale) : null;
     if (detail && listingPage) {
-      const listingHref = listingPage.breadcrumbs?.at(-1)?.url
-        ? `${locale === "en" ? "" : `/${locale}`}${listingPage.breadcrumbs.at(-1)!.url}`
-        : null;
       return (
         <>
           <Header data={listingPage.header as HeaderType} />
           <main>
+            <Breadcrumbs
+              pageId={listingPage.id!}
+              locale={locale}
+              currentLabel={detail.kind === "insight" ? detail.insight.title : detail.person.name}
+            />
             {detail.kind === "insight" ? (
-              <InsightDetail insight={detail.insight} locale={locale} listingHref={listingHref} />
+              <InsightDetail insight={detail.insight} locale={locale} />
             ) : (
-              <PersonDetail person={detail.person} locale={locale} listingHref={listingHref} />
+              <PersonDetail person={detail.person} locale={locale} />
             )}
           </main>
           <Footer data={listingPage.footer as FooterType} />

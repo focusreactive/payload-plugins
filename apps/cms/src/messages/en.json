@@ -57,6 +57,7 @@
     }
   },
   "hierarchyNav": {
+    "home": "Home",
     "breadcrumbLabel": "Breadcrumb",
     "inThisSection": "In this section"
   }

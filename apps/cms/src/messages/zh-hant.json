@@ -57,6 +57,7 @@
     }
   },
   "hierarchyNav": {
+    "home": "首頁",
     "breadcrumbLabel": "麵包屑導覽",
     "inThisSection": "本節內容"
   }

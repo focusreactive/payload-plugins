@@ -64,7 +64,9 @@ const styles = sortCx({
   },
 
   modern: {
-    base: "bg-primary shadow-xs-skeuomorphic ring-1 ring-primary ring-inset",
+    // Explicit variables, for the same stylesheet collision as the secondary Button: .bg-primary
+    // also resolves to the frontend's dark green.
+    base: "bg-(--color-bg-primary) shadow-xs-skeuomorphic ring-1 ring-(--color-border-primary) ring-inset",
     sizes: {
       sm: "size-8 rounded-md",
       md: "size-10 rounded-lg",

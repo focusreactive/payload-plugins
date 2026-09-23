@@ -57,6 +57,7 @@
     }
   },
   "hierarchyNav": {
+    "home": "首页",
     "breadcrumbLabel": "面包屑导航",
     "inThisSection": "本节内容"
   }
