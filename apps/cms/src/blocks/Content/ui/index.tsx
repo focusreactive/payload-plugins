@@ -57,7 +57,7 @@ export function ContentSection({ layout, header, image, body, actions }: Content
         className={cn(
           hasImage
             ? textVariants({ layout: resolvedLayout })
-            : "flex max-w-[68ch] flex-col gap-[18px]"
+            : "flex max-w-[68ch] flex-col gap-[18px] lg:col-span-12"
         )}
       >
         {header && <SectionHeader {...header} className="gap-[18px]" />}
