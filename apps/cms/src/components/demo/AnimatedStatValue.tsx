@@ -11,9 +11,9 @@ import { useEffect, useRef, useState } from "react";
  * surrounds it is preserved verbatim. A value with no digits renders untouched.
  */
 export function AnimatedStatValue({ value }: { value: string }) {
-  const match = value.match(/^(\D*)([\d,.\s]+)(.*)$/);
-  const target = match ? Number(match[2].replace(/[^\d]/g, "")) : NaN;
-  const usesGrouping = match ? /,/.test(match[2]) : false;
+  const match = value.match(/^(\D*)([\d,.\s]+)(.*)$/u);
+  const target = match ? Number(match[2].replace(/[^\d]/gu, "")) : NaN;
+  const usesGrouping = match ? /,/u.test(match[2]) : false;
 
   const elementRef = useRef<HTMLSpanElement>(null);
   const [displayed, setDisplayed] = useState(0);
