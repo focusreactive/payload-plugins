@@ -1761,50 +1761,59 @@ export async function POST(request: Request) {
     // The review queue is the destination for the fourth claim, and an empty queue proves nothing.
     // This page is created as a draft and never published, which is what a machine translation
     // waiting for a human actually looks like: it exists, it is addressable, and it is not live.
+    const seedWarnings: string[] = [];
     const draftServiceParentId = pageIdByKey["services"];
-    if (draftServiceParentId) {
-      const draftPage = await payload.create({
-        collection: "page",
-        locale: "en",
-        draft: true,
-        overrideAccess: true,
-        context: { skipEmbedding: true },
-        data: {
-          _status: "draft",
-          title: "Designs",
-          slug: "designs",
-          parent: draftServiceParentId,
-          generateSlug: false,
-          blocks: [
-            {
-              blockType: "content" as const,
-              eyebrow: "Awaiting review",
-              heading: "Designs",
-              layout: "text-image" as const,
-              image: defaultMediaId as number,
-              content: buildParagraphRichText(
-                "A third service page, translated by the platform and held here until an editor approves it. It is addressable, it is not published, and nothing on the public site links to it."
-              ),
-              section: { theme: "light" as const },
-            },
-          ],
-        },
-      });
-
-      for (const [locale, text] of [
-        ["fr", { title: "Dessins et modèles", slug: "dessins-et-modeles" }],
-        ["ja", { title: "意匠", slug: "意匠" }],
-      ] as const) {
-        await payload.update({
+    try {
+      if (draftServiceParentId) {
+        const draftPage = await payload.create({
           collection: "page",
-          id: draftPage.id,
-          locale,
+          locale: "en",
           draft: true,
           overrideAccess: true,
           context: { skipEmbedding: true },
-          data: { _status: "draft", title: text.title, slug: text.slug, generateSlug: false },
+          data: {
+            _status: "draft",
+            title: "Designs",
+            // Same as the tree above: the core slug hook re-slugifies on create whatever this says,
+            // and passing generateSlug here fails validation on a draft, so the real slugs are set
+            // by the per-locale updates below.
+            slug: "designs",
+            parent: draftServiceParentId,
+            blocks: [
+              {
+                blockType: "content" as const,
+                eyebrow: "Awaiting review",
+                heading: "Designs",
+                layout: "text-image" as const,
+                image: defaultMediaId as number,
+                content: buildParagraphRichText(
+                  "A third service page, translated by the platform and held here until an editor approves it. It is addressable, it is not published, and nothing on the public site links to it."
+                ),
+                section: { theme: "light" as const },
+              },
+            ],
+          },
         });
+
+        for (const [locale, text] of [
+          ["fr", { title: "Dessins et modèles", slug: "dessins-et-modeles" }],
+          ["ja", { title: "意匠", slug: "意匠" }],
+        ] as const) {
+          await payload.update({
+            collection: "page",
+            id: draftPage.id,
+            locale,
+            draft: true,
+            overrideAccess: true,
+            context: { skipEmbedding: true },
+            data: { _status: "draft", title: text.title, slug: text.slug, generateSlug: false },
+          });
+        }
       }
+    } catch (error) {
+      seedWarnings.push(
+        `Review queue draft not created: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
 
     const siteSettingsTextByLocale: Record<LocaleCode, string> = {
@@ -2057,7 +2066,7 @@ export async function POST(request: Request) {
         testimonials: existingTestimonial.docs[0] ? 1 : 0,
         presets: presetsUpdatedCount,
       },
-      warnings: userWarnings,
+      warnings: [...userWarnings, ...seedWarnings],
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Demo seed failed.";
