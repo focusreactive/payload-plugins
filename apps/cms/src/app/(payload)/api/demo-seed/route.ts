@@ -79,13 +79,13 @@ const LOCALIZED_PAGE_BODY: Record<
 > = {
   home: {
     fr: {
-      eyebrow: "Démonstration",
-      heading: "Quinze bureaux, six langues, neuf marchés, un seul modèle de contenu",
+      eyebrow: "Adresses localisées",
+      heading: "Un seul document, une URL par langue",
       body: "Cette page et la page d’accueil anglaise sont un seul et même document, ici dans sa version française. Elle possède sa propre URL, et son contenu est géré dans le même CMS.",
     },
     ja: {
-      eyebrow: "コンテンツ基盤デモ",
-      heading: "15拠点、6言語、9市場、ひとつのコンテンツモデル",
+      eyebrow: "ローカライズされたURL",
+      heading: "ひとつのドキュメント、言語ごとのURL",
       body: "このページは、英語版トップページと同じドキュメントの日本語版です。日本語のURLを持ち、同じCMSで管理されています。",
     },
   },
@@ -1790,12 +1790,14 @@ export async function POST(request: Request) {
             generateSlug: false,
             // Written rather than generated, and per locale, because the generator produced the
             // same four openings across every page.
-            meta: localizedBody
-              ? { title: localizedBody.heading, description: localizedBody.body }
-              : {
-                  title: PAGE_META_EN[spec.key]?.title ?? text.title,
-                  description: PAGE_META_EN[spec.key]?.description ?? "",
-                },
+            meta: localizedHome
+              ? { title: localizedHome.heroTitle, description: localizedHome.heroBody }
+              : localizedBody
+                ? { title: localizedBody.heading, description: localizedBody.body }
+                : {
+                    title: PAGE_META_EN[spec.key]?.title ?? text.title,
+                    description: PAGE_META_EN[spec.key]?.description ?? "",
+                  },
             // blocks is localized and required, so a locale left unwritten renders the starter
             // kit's own demo blocks instead of this demo's content.
             ...(localizedBody
