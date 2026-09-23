@@ -115,13 +115,17 @@ export function StatsTabs({ items, images }: StatsTabsProps) {
                 aria-controls={`stats-tab-panel-${index}`}
                 className="flex flex-col items-start text-left outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2"
               >
-                <span
-                  className={cn(
-                    "text-display-sm font-semibold transition-colors duration-300",
-                    isCurrent ? "text-brand-tertiary_alt" : "text-quaternary"
-                  )}
-                >
-                  <AnimatedStatValue value={item.value} />
+                {/* Size and colour sit on separate elements: tailwind-merge reads the custom
+                    text-display-* size as a colour and drops it when cn() sees both. */}
+                <span className="text-display-md font-semibold">
+                  <span
+                    className={cn(
+                      "transition-colors duration-300",
+                      isCurrent ? "text-brand-tertiary_alt" : "text-quaternary"
+                    )}
+                  >
+                    <AnimatedStatValue value={item.value} />
+                  </span>
                 </span>
                 <span className="mt-1 text-lg font-semibold text-primary">{item.label}</span>
                 {item.description && (
