@@ -21,6 +21,7 @@ import type {
   HeroBlock,
   LogosBlock,
   NewsletterBlock,
+  Page,
   Person,
   RawHtmlBlock,
   StatsBlock,
@@ -812,13 +813,25 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     footnotes,
   ];
 
-  return homeBlocks.map((block, index) => ({
-    ...block,
-    section: {
-      ...(block.section ?? {}),
-      theme: index % 2 === 0 ? ("light" as const) : ("light-gray" as const),
-    },
-  }));
+  return homeBlocks;
+}
+
+/**
+ * Generous section padding with no change of surface reads as an empty page rather than as
+ * separated sections, which is what the inner pages looked like. Alternating the surface is
+ * what makes a boundary visible, so every page gets it, not only the homepage.
+ */
+function withAlternatingSurfaces<T>(blocks: T[]): T[] {
+  return blocks.map((block, index) => {
+    const existingSection = (block as { section?: Record<string, unknown> | null }).section;
+    return {
+      ...block,
+      section: {
+        ...(existingSection ?? {}),
+        theme: index % 2 === 0 ? "light" : "light-gray",
+      },
+    };
+  }) as T[];
 }
 
 /**
@@ -2029,7 +2042,7 @@ export async function POST(request: Request) {
 
     for (const spec of PAGE_TREE) {
       const parentId = spec.parentKey ? pageIdByKey[spec.parentKey] : undefined;
-      const blocks = (() => {
+      const rawBlocks = (() => {
         switch (spec.key) {
           case "home":
             return buildHomepageBlocks(defaultMediaNumericId, illustrationIds);
@@ -2055,6 +2068,8 @@ export async function POST(request: Request) {
             return buildStructuralBlocks(spec.en.title, defaultMediaNumericId);
         }
       })();
+
+      const blocks = withAlternatingSurfaces(rawBlocks as NonNullable<Page["blocks"]>);
 
       const created = await payload.create({
         collection: "page",
