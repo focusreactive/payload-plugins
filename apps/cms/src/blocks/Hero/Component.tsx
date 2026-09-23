@@ -25,9 +25,9 @@ export async function HeroBlockComponent({
 
   return (
     <SectionContainer
-      // Untitled UI's hero brings max-w-container and its own horizontal padding. Ours nested
-      // inside theirs halves the usable width.
-      sectionData={{ ...section, id, paddingX: "none", maxWidth: "none" }}
+      // Untitled UI's hero owns its container, horizontal padding and vertical rhythm. Anything
+      // this wrapper adds on top of that doubles it.
+      sectionData={{ ...section, id, paddingX: "none", maxWidth: "none", paddingY: "none" }}
     >
       <Hero
         variant={variant}
