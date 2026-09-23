@@ -18,6 +18,7 @@ import type { CollectionConfig } from "payload";
 
 import { extractTopicText } from "@/lib/search/extractSearchText";
 import { buildEmbeddingHooks } from "@/lib/search/indexHooks";
+import { buildRevalidateHooks } from "@/lib/hooks/revalidateArchiveTags";
 import type { Topic as TopicDoc } from "@/payload-types";
 
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
@@ -35,6 +36,8 @@ const topicEmbeddingHooks = buildEmbeddingHooks<TopicDoc>({
   extractText: extractTopicText,
   requirePublished: false,
 });
+
+const topicRevalidateHooks = buildRevalidateHooks<TopicDoc>(["topics", "talks"]);
 
 export const Topic: CollectionConfig<"topic"> = {
   access: {
@@ -102,7 +105,10 @@ export const Topic: CollectionConfig<"topic"> = {
       ],
     },
   ],
-  hooks: topicEmbeddingHooks,
+  hooks: {
+    afterChange: [...topicEmbeddingHooks.afterChange, ...topicRevalidateHooks.afterChange],
+    afterDelete: [...topicEmbeddingHooks.afterDelete, ...topicRevalidateHooks.afterDelete],
+  },
   labels: { plural: "Topics", singular: "Topic" },
   slug: "topic",
   timestamps: true,

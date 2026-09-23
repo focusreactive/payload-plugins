@@ -21,6 +21,7 @@ import { generateSeoFields } from "@/lib/utils/seoFields";
 import { imageField } from "@/lib/fields/imageField";
 import { extractTalkText } from "@/lib/search/extractSearchText";
 import { buildEmbeddingHooks } from "@/lib/search/indexHooks";
+import { buildRevalidateHooks } from "@/lib/hooks/revalidateArchiveTags";
 import { talkAiFields } from "@/lib/fields/talkAiFields";
 import { talkKindOptions, talkTierOptions } from "@/lib/talks/taxonomy";
 
@@ -41,6 +42,8 @@ const talkEmbeddingHooks = buildEmbeddingHooks<TalkDoc>({
   extractText: extractTalkText,
   requirePublished: true,
 });
+
+const talkRevalidateHooks = buildRevalidateHooks<TalkDoc>(["talks"]);
 
 /**
  * `imageField` takes no description argument, so the group it returns is re-wrapped with one here -
@@ -241,7 +244,10 @@ export const Talk: CollectionConfig<"talk"> = {
       ],
     },
   ],
-  hooks: talkEmbeddingHooks,
+  hooks: {
+    afterChange: [...talkEmbeddingHooks.afterChange, ...talkRevalidateHooks.afterChange],
+    afterDelete: [...talkEmbeddingHooks.afterDelete, ...talkRevalidateHooks.afterDelete],
+  },
   labels: {
     plural: "Talks",
     singular: "Talk",
