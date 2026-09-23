@@ -549,7 +549,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     // A screenshot of the real admin beats a drawn diagram here: the claim is that
     // articles arrive by themselves, and the list of them with their authors is the
     // evidence. The drawn version of this sat next to it and looked invented.
-    image: illustrations["admin-insight-list.png"] ?? defaultMediaId,
+    image: illustrations["admin-insights-passle.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
       "A post published in Passle sends its shortcode, and the platform pulls the article, matches the author to their profile by email address, and files it under the practice areas it belongs to. Nobody copies text, and re-sending the same shortcode updates the article in place instead of creating a second one."
     ),
@@ -563,7 +563,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     heading:
       "Your Japanese pages already use Japanese addresses. The platform treats that as normal.",
     layout: "text-image",
-    image: illustrations["admin-pages-japanese.png"] ?? defaultMediaId,
+    image: illustrations["admin-pages-ja-locale.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
       "/global-presence/asia/japan/ and /ja/世界展開/アジア/日本/ are the same document with a different address in each language, assembled from the address of every parent above it. Change a parent's address in one language and every page beneath it follows, in that language only."
     ),
@@ -699,7 +699,7 @@ function buildInsightsPageBlocks(illustrations: Record<string, number>, defaultM
     eyebrow: "From Passle",
     heading: "Twenty articles, none of them typed by hand",
     layout: "image-text",
-    image: illustrations["admin-insight-list.png"] ?? defaultMediaId,
+    image: illustrations["admin-insights-passle.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
       "Every article below arrived through the same webhook: a shortcode comes in from Passle, the platform fetches the post, matches its author to a person record by email address, and files the result here with its original publish date intact."
     ),
@@ -823,7 +823,7 @@ function buildPatentsPageBlocks(illustrations: Record<string, number>, defaultMe
     eyebrow: "Patents",
     heading: "Protection for what your engineers have actually built",
     layout: "image-text",
-    image: illustrations["admin-insight-list.png"] ?? defaultMediaId,
+    image: illustrations["admin-insights-passle.png"] ?? defaultMediaId,
     content: buildParagraphRichText(
       "Patent work here runs from a first filing through prosecution to enforcement, across the offices that handle technical subject matter. The articles below are the firm's own published commentary, pulled in from Passle."
     ),
@@ -986,19 +986,19 @@ interface DemoMediaSpec {
 function buildDemoMedia(): DemoMediaSpec[] {
   return [
     {
-      filename: "admin-insight-list.png",
+      filename: "admin-insights-passle.png",
       alt: "The insight list in the CMS, showing articles that arrived from Passle with their authors and publish dates",
       mimetype: "image/png",
       data: readFileSync(
-        path.join(process.cwd(), "public", "demo-screens", "admin-insight-list.png")
+        path.join(process.cwd(), "public", "demo-screens", "admin-insights-passle.png")
       ),
     },
     {
-      filename: "admin-pages-japanese.png",
+      filename: "admin-pages-ja-locale.png",
       alt: "The page list in the CMS with the locale set to Japanese, showing Japanese titles and Japanese slugs",
       mimetype: "image/png",
       data: readFileSync(
-        path.join(process.cwd(), "public", "demo-screens", "admin-pages-japanese.png")
+        path.join(process.cwd(), "public", "demo-screens", "admin-pages-ja-locale.png")
       ),
     },
     {
@@ -1691,8 +1691,8 @@ export async function POST(request: Request) {
       "admin-page-tree.png": mediaIdByFilename["admin-page-tree.png"],
       "admin-person-record.png": mediaIdByFilename["admin-person-record.png"],
       "admin-review-queue.png": mediaIdByFilename["admin-review-queue.png"],
-      "admin-insight-list.png": mediaIdByFilename["admin-insight-list.png"],
-      "admin-pages-japanese.png": mediaIdByFilename["admin-pages-japanese.png"],
+      "admin-insights-passle.png": mediaIdByFilename["admin-insights-passle.png"],
+      "admin-pages-ja-locale.png": mediaIdByFilename["admin-pages-ja-locale.png"],
       "admin-pages-french.png": mediaIdByFilename["admin-pages-french.png"],
     };
 
@@ -1897,7 +1897,7 @@ export async function POST(request: Request) {
                       // A page arguing that its address is localized, next to a screenshot of the
                       // English admin, argues against itself: each locale gets its own capture.
                       image: (locale === "ja"
-                        ? (illustrationIds["admin-pages-japanese.png"] ?? defaultMediaId)
+                        ? (illustrationIds["admin-pages-ja-locale.png"] ?? defaultMediaId)
                         : (illustrationIds["admin-pages-french.png"] ?? defaultMediaId)) as number,
                       content: buildParagraphRichText(localizedBody.body),
                       section: { theme: "light" as const },
