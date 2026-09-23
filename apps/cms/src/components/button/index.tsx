@@ -25,7 +25,7 @@ export const buttonVariants = cva(
       variant: {
         [ButtonVariant.Default]: "p-0 text-foreground hover:text-primary",
         [ButtonVariant.Primary]:
-          "rounded-pill font-semibold bg-secondary text-secondary-foreground hover:bg-secondary-hover",
+          "rounded-pill font-semibold bg-cta-solid text-cta-solid-foreground hover:bg-cta-solid-hover",
         [ButtonVariant.Accent]:
           "rounded-pill font-semibold bg-accent text-accent-foreground hover:bg-accent-hover",
         [ButtonVariant.Secondary]:
@@ -35,7 +35,7 @@ export const buttonVariants = cva(
         [ButtonVariant.Ghost]:
           "rounded-pill font-semibold bg-surface text-foreground border border-border-strong hover:border-foreground",
         [ButtonVariant.GhostDark]:
-          "rounded-pill font-semibold bg-secondary text-secondary-foreground hover:bg-secondary-hover",
+          "rounded-pill font-semibold bg-cta-solid text-cta-solid-foreground hover:bg-cta-solid-hover",
       },
     },
   }

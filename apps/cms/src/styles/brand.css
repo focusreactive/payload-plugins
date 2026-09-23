@@ -66,3 +66,15 @@
         animation: none;
     }
 }
+
+/*
+ * Untitled UI's theme defines --color-bg-secondary (neutral-50). Tailwind resolves our Button's
+ * `bg-secondary` utility to THAT rather than to our --color-secondary, so every solid CTA
+ * rendered white-on-white and read as an empty grey box. These names cannot collide with
+ * anything in their theme, and the Button variants below point at them.
+ */
+@theme {
+    --color-cta-solid: #0a1314;
+    --color-cta-solid-foreground: #ffffff;
+    --color-cta-solid-hover: #1f3033;
+}
