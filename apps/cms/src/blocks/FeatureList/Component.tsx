@@ -90,8 +90,8 @@ export function FeatureListBlockComponent({
                       {Icon && (
                         <FeaturedIcon
                           icon={Icon}
-                          color="gray"
-                          theme="modern"
+                          color="brand"
+                          theme="light"
                           size="lg"
                           className="shrink-0"
                         />

@@ -114,7 +114,7 @@ export async function InsightDetail({
 
   return (
     <article>
-      <header className="bg-secondary_subtle py-16 md:py-24">
+      <header className="pt-16 pb-10 md:pt-24 md:pb-12">
         <div className="mx-auto max-w-container px-4 md:px-8">
           <div className="mx-auto flex max-w-180 flex-col items-center text-center">
             {listingHref && (
@@ -151,9 +151,9 @@ export async function InsightDetail({
         </div>
       </header>
 
-      <div className="py-16 md:py-24">
+      <div className="pb-16 md:pb-24">
         <div className="mx-auto max-w-container px-4 md:px-8">
-          <div className="mx-auto max-w-prose md:max-w-180">
+          <div className="mx-auto max-w-prose border-t border-secondary pt-10 md:max-w-180 md:pt-12">
             <div className="mx-auto prose md:prose-lg">
               {showLead && <p className="lead">{insight.standfirst}</p>}
             </div>
