@@ -15,7 +15,9 @@ function renderScreenshot(image: MediaDocument) {
       <Media
         {...media.data}
         className="absolute inset-0"
-        imageProps={{ ...media.imageProps, fit: "contain", fill: true }}
+        // The admin captures run from 1.31 to 1.72 wide, so one frame ratio for all of them:
+        // cover anchored top left keeps the header and first rows, and trims the far edge.
+        imageProps={{ ...media.imageProps, fit: "cover", fill: true, className: "object-left-top" }}
         visualEditing={media.visualEditing}
       />
     </ScreenshotViewer>

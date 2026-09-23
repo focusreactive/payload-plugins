@@ -83,7 +83,7 @@ export function StatsTabs({ items, images }: StatsTabsProps) {
   return (
     <div
       ref={sectionRef}
-      className="grid grid-cols-1 gap-12 md:gap-16 lg:grid-cols-2 lg:items-center"
+      className="grid grid-cols-1 gap-12 md:gap-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-center"
       onPointerEnter={() => setIsPointerInside(true)}
       onPointerLeave={() => setIsPointerInside(false)}
     >
@@ -154,27 +154,23 @@ export function StatsTabs({ items, images }: StatsTabsProps) {
         })}
       </ul>
 
-      <div className="-mx-4 flex items-center justify-center overflow-hidden bg-tertiary px-4 py-6 md:mx-0 md:py-10 lg:h-132 lg:py-12 lg:pl-12">
-        {/* Every image stays mounted and stacked, so a tab change is a crossfade rather than a
-            fresh load, and the next screenshot is already decoded when its turn comes. */}
-        <div className="relative h-70 w-full md:h-110">
-          {images.map((image, index) => (
-            <div
-              key={index}
-              id={`stats-tab-panel-${index}`}
-              role="tabpanel"
-              aria-hidden={index !== currentIndex}
-              className={cn(
-                "absolute inset-0 overflow-hidden rounded-lg bg-white shadow-3xl ring-4 ring-screen-mockup-border transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none",
-                index === currentIndex
-                  ? "opacity-100"
-                  : "pointer-events-none scale-[0.98] opacity-0"
-              )}
-            >
-              {image}
-            </div>
-          ))}
-        </div>
+      {/* Every image stays mounted and stacked, so a tab change is a crossfade rather than a
+          fresh load, and the next screenshot is already decoded when its turn comes. */}
+      <div className="relative aspect-[16/10] w-full">
+        {images.map((image, index) => (
+          <div
+            key={index}
+            id={`stats-tab-panel-${index}`}
+            role="tabpanel"
+            aria-hidden={index !== currentIndex}
+            className={cn(
+              "absolute inset-0 overflow-hidden rounded-lg bg-white shadow-3xl ring-4 ring-screen-mockup-border transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none",
+              index === currentIndex ? "opacity-100" : "pointer-events-none scale-[0.98] opacity-0"
+            )}
+          >
+            {image}
+          </div>
+        ))}
       </div>
     </div>
   );
