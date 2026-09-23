@@ -8,7 +8,14 @@ export function Stats({ items }: StatsProps) {
   if (!items.length) return null;
 
   return (
-    <dl className="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 md:gap-y-12">
+    // Untitled's metrics band is a fixed 2-up because their own demo always has four stats. Ours
+    // vary, and 3 items in a 2-column grid leaves a visible hole, so the column count follows the
+    // item count instead.
+    <dl
+      className={`grid grid-cols-1 gap-x-8 gap-y-10 md:gap-y-12 ${
+        items.length % 3 === 0 ? "md:grid-cols-3" : "md:grid-cols-2"
+      }`}
+    >
       {items.map((item, i) => (
         <div
           key={i}

@@ -55,7 +55,7 @@ export function ContentSection({ layout, header, image, body, actions }: Content
               <div className="text-lead text-muted-foreground">{header.subtitle}</div>
             )}
 
-            {body && <div className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">{body}</div>}
+            {body && <div className="mt-4 text-md text-tertiary md:mt-5 md:text-lg">{body}</div>}
 
             {actions && <div className="mt-2 flex flex-wrap items-center gap-4">{actions}</div>}
           </div>

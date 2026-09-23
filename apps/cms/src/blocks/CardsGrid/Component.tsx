@@ -127,7 +127,7 @@ export async function CardsGridBlockComponent({
             </h2>
           )}
           {header.subtitle && (
-            <p className="mt-4 text-lg text-tertiary md:mt-5 md:text-xl">{header.subtitle}</p>
+            <p className="mt-4 text-md text-tertiary md:mt-5 md:text-lg">{header.subtitle}</p>
           )}
         </div>
       )}
