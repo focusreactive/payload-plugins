@@ -19,9 +19,10 @@ export interface IngestInsightResult {
  * through the exact same path a real webhook would.
  *
  * Re-running the same shortcode only ever touches the fields Passle itself
- * supplies (title, standfirst, article body, published date, author match).
- * It never sets `slug` or `markets`, because those are the two fields an
- * editor owns once the insight exists, and a re-sync must not clobber them.
+ * supplies (title, standfirst, article body, published date), plus the author
+ * when the email matches a person. It never sets `slug` or `markets` on an
+ * existing insight, because an editor owns those once it exists, and an author
+ * an editor linked by hand survives a re-sync whose email still matches nobody.
  */
 export async function ingestInsightFromPassle({
   context,
@@ -98,16 +99,13 @@ export async function ingestInsightFromPassle({
     .replaceAll(/^-+|-+$/g, "")
     .slice(0, 80);
 
-  const passleSourcedData = {
-    author: matchedPersonId,
-    markets: matchedPersonMarkets ?? undefined,
-    slug: slugFromTitle,
+  const passleOwnedData = {
     body: bodyRichText,
     publishedDate: passlePost.PublishedDate,
     standfirst: passlePost.ContentTextSnippet,
     title: passlePost.PostTitle,
-    unmatchedAuthorEmail: matchedPersonId ? null : (primaryAuthor?.EmailAddress ?? null),
   };
+  const unmatchedAuthorEmail = matchedPersonId ? null : (primaryAuthor?.EmailAddress ?? null);
 
   const existingInsight = await payload.find({
     collection: "insight",
@@ -119,14 +117,21 @@ export async function ingestInsightFromPassle({
     },
   });
 
-  const existingId = existingInsight.docs[0]?.id;
+  const existingInsightDocument = existingInsight.docs[0];
+  const existingId = existingInsightDocument?.id;
 
   if (existingId) {
+    const authorData = matchedPersonId
+      ? { author: matchedPersonId, unmatchedAuthorEmail: null }
+      : existingInsightDocument.author
+        ? {}
+        : { unmatchedAuthorEmail };
+
     await payload.update({
       id: existingId,
       collection: "insight",
       context,
-      data: passleSourcedData,
+      data: { ...passleOwnedData, ...authorData },
       draft: false,
       locale,
       overrideAccess: true,
@@ -136,7 +141,8 @@ export async function ingestInsightFromPassle({
       authorMatched: Boolean(matchedPersonId),
       created: false,
       insightId: existingId,
-      unmatchedAuthorEmail: passleSourcedData.unmatchedAuthorEmail,
+      unmatchedAuthorEmail:
+        "unmatchedAuthorEmail" in authorData ? (authorData.unmatchedAuthorEmail ?? null) : null,
     };
   }
 
@@ -144,8 +150,12 @@ export async function ingestInsightFromPassle({
     collection: "insight",
     context,
     data: {
-      ...passleSourcedData,
+      ...passleOwnedData,
+      author: matchedPersonId,
+      markets: matchedPersonMarkets ?? undefined,
       passleShortcode: passlePost.PostShortcode,
+      slug: slugFromTitle,
+      unmatchedAuthorEmail,
     },
     draft: false,
     locale,
@@ -156,6 +166,6 @@ export async function ingestInsightFromPassle({
     authorMatched: Boolean(matchedPersonId),
     created: true,
     insightId: created.id,
-    unmatchedAuthorEmail: passleSourcedData.unmatchedAuthorEmail,
+    unmatchedAuthorEmail,
   };
 }

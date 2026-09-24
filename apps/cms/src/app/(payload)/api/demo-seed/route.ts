@@ -98,12 +98,12 @@ const LOCALIZED_PAGE_BODY: Record<
     fr: {
       eyebrow: "En provenance de Passle",
       heading: "Les articles nous parviennent de Passle, sans copier-coller",
-      body: "Vingt articles publiés par le cabinet sont arrivés ici par webhook. Chaque auteur est rattaché à son profil grâce à son adresse e-mail.",
+      body: "Vingt articles publiés par le cabinet dans Passle sont arrivés ici d’eux-mêmes, sans que personne ne les ressaisisse. Chaque article est rattaché au profil de son auteur.",
     },
     ja: {
       eyebrow: "Passle連携",
       heading: "記事はPassleから自動で届きます。手入力は不要です",
-      body: "20件の記事が、いずれも同じWebhookを通じて届きました。著者はメールアドレスでプロフィールに紐付けられます。",
+      body: "事務所がPassleで公開した20件の記事が、手入力なしで自動的に届きました。記事はそれぞれ著者のプロフィールに紐付けられます。",
     },
   },
   "our-people": {
@@ -224,7 +224,7 @@ const PAGE_META_EN: Record<string, { title: string; description: string }> = {
   insights: {
     title: "Insights, arriving from Passle",
     description:
-      "Twenty published articles that reached this platform through a webhook, each matched to its author by email address.",
+      "Twenty of your published articles, arrived from Passle by themselves, each shown under its author's profile.",
   },
   "our-people": {
     title: "Our people, twenty-one profiles",
@@ -381,7 +381,7 @@ const LOCALIZED_LISTING_HEADER: Record<
       eyebrow: "Notre équipe",
       heading: "Vingt et un profils, rattachés par adresse e-mail",
       description:
-        "Le webhook n’en crée jamais un seul : il rattache l’auteur d’un article à un profil déjà présent.",
+        "Les profils sont gérés ici, dans le CMS. Un article venu de Passle rejoint le profil de son auteur ; si l’auteur n’a pas encore de profil, un éditeur le crée.",
     },
   },
   ja: {
@@ -404,7 +404,7 @@ const LOCALIZED_LISTING_HEADER: Record<
       eyebrow: "専門家",
       heading: "21名のプロフィール、メールアドレスで紐付け",
       description:
-        "Webhookがプロフィールを新規作成することはありません。既存のプロフィールに記事の著者を紐付けるだけです。",
+        "プロフィールはこのCMSで管理します。Passleから届いた記事は著者のプロフィールに紐付けられ、プロフィールがまだない著者は編集者が作成します。",
     },
   },
 };
@@ -692,7 +692,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
       },
       {
         value: "20",
-        label: "Ingested into this demo",
+        label: "Arrived in this demo",
         description: "Real articles from your site, each filed against its author by email.",
         link: buildStatLink("Browse the articles", "/insights"),
       },
@@ -714,8 +714,8 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
 
   const passleSync: ContentBlock = {
     blockType: "content",
-    eyebrow: "3,115 of roughly 3,800 items, counted from your sitemap",
-    heading: "Your attorneys keep writing in Passle. The article arrives here enriched.",
+    eyebrow: "3,115 of roughly 3,800 items on your site come from Passle",
+    heading: "Your attorneys keep writing in Passle. The website keeps up by itself.",
     layout: "image-text",
     // A screenshot of the real admin beats a drawn diagram here: the claim is that
     // articles arrive by themselves, and the list of them with their authors is the
@@ -728,15 +728,14 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     // language-and-market section below then builds on.
     content: buildRichText(
       {
-        paragraph: "Nobody copies text. A post published in Passle arrives here on its own.",
+        paragraph:
+          "Nothing changes for the people who write. An attorney publishes in Passle as they do today, and the article appears on the website under their profile, with nobody copying text across.",
       },
       {
         bullets: [
-          "Passle sends the shortcode, and the platform pulls the article.",
-          "The author is matched to their profile by email address.",
-          "The article inherits the markets that author covers.",
-          "Re-sending the same shortcode updates the article in place, never creating a second one.",
-          "It gets its own page, linked to its author's profile, and the insights list picks it up.",
+          "Attorneys write, publish and correct in Passle. A correction reaches the website the same way the original did.",
+          "The platform finds the author's profile and shows the article in the markets that author covers.",
+          "Your editors only handle what the platform cannot place, such as an article whose author has no profile yet, and decide which markets an article appears in.",
         ],
       }
     ),
@@ -892,7 +891,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
         icon: "plug",
         title: "Fixtures, not your live Passle",
         description:
-          "Twenty of your published articles, run through the same webhook. We hold no credentials for your tenancy, and a fresh demo tenancy would be empty.",
+          "Twenty of your published articles, arriving the same way a live article would. We hold no access to your Passle account, and a fresh demo account would be empty.",
       },
       {
         icon: "layout-grid",
@@ -984,16 +983,15 @@ function buildInsightsPageBlocks(illustrations: Record<string, number>, defaultM
   const intro: ContentBlock = {
     blockType: "content",
     eyebrow: "From Passle",
-    heading: "Twenty articles, none of them typed by hand",
+    heading: "Twenty of your published articles, none of them typed in by hand",
     layout: "image-text",
     image: illustrations["admin-insights-passle.png"] ?? defaultMediaId,
     content: buildRichText(
-      { paragraph: "Every article below arrived through the same webhook." },
+      { paragraph: "Every article below was published in Passle and arrived here by itself." },
       {
         bullets: [
-          "A shortcode comes in from Passle, and the platform fetches the post.",
-          "The author is matched to a person record by email address.",
-          "The article is filed here with its original publish date intact.",
+          "Each one sits under its author's profile, with its original publish date.",
+          "A correction made in Passle replaces the text here, so the two never disagree.",
         ],
       }
     ),
@@ -1033,12 +1031,12 @@ function buildOurPeoplePageBlocks(illustrations: Record<string, number>, default
       },
       {
         paragraph:
-          "When an article syncs from Passle, the ingest checks its author's email address against this list.",
+          "When an article arrives from Passle, the platform looks for its author in this list by email address.",
       },
       {
         bullets: [
-          "A match links the article to a real profile.",
-          "A miss leaves the author's email on the article for an editor to resolve by hand.",
+          "Found: the article appears on that person's profile.",
+          "Not found: the article still arrives, and waits for an editor to add the profile or link an existing one.",
         ],
       }
     ),
@@ -1052,7 +1050,7 @@ function buildOurPeoplePageBlocks(illustrations: Record<string, number>, default
     eyebrow: "Our people",
     heading: "Twenty-one profiles, matched by email",
     description:
-      "The webhook never creates a profile. It only matches an incoming author against the ones already here.",
+      "Profiles are kept here, in the CMS, not in Passle. An article joins its author's profile, and an author with no profile yet is one an editor adds.",
     section: { theme: "light" },
   };
 

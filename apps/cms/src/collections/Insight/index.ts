@@ -5,6 +5,7 @@ import type { CollectionConfig, TextField } from "payload";
 import { anyone, editorial } from "@/lib/access";
 import { marketsField } from "@/lib/fields/marketsField";
 import { validateAuthorMarkets } from "@/lib/fields/validateAuthorMarkets";
+import { editableUnlessSyncedFromPassle, isSyncedFromPassle } from "@/lib/passle/syncedFromPassle";
 import { generateRichText } from "@/lib/utils/generateRichText";
 
 const addressField = slugField({
@@ -56,6 +57,21 @@ export const Insight: CollectionConfig<"insight"> = {
   },
   fields: [
     {
+      admin: {
+        components: {
+          Field: "@/components/admin/SyncedFromPassleNote#SyncedFromPassleNote",
+        },
+        condition: (data) => isSyncedFromPassle(data?.passleShortcode),
+        position: "sidebar",
+      },
+      name: "syncedFromPassleNote",
+      type: "ui",
+    },
+    {
+      // The shortcode is how a re-sync finds this document, so it never changes once set.
+      access: {
+        update: () => false,
+      },
       // Not shown to editors: it is the thought-leadership platform's own sync
       // key, set by the ingest route, and there is nothing an editor can do
       // with it directly. A hand-created Insight (no Passle origin) never gets
@@ -73,6 +89,9 @@ export const Insight: CollectionConfig<"insight"> = {
       unique: true,
     },
     {
+      access: {
+        update: editableUnlessSyncedFromPassle,
+      },
       admin: {
         description: {
           en: "The article's headline.",
@@ -89,6 +108,9 @@ export const Insight: CollectionConfig<"insight"> = {
       type: "text",
     },
     {
+      access: {
+        update: editableUnlessSyncedFromPassle,
+      },
       admin: {
         description: {
           en: "The one- or two-sentence summary shown above the article and in listings.",
@@ -105,6 +127,9 @@ export const Insight: CollectionConfig<"insight"> = {
       type: "textarea",
     },
     {
+      access: {
+        update: editableUnlessSyncedFromPassle,
+      },
       admin: {
         description: {
           en: "The full text of the article.",
@@ -123,6 +148,9 @@ export const Insight: CollectionConfig<"insight"> = {
     },
     addressField,
     {
+      access: {
+        update: editableUnlessSyncedFromPassle,
+      },
       admin: {
         date: {
           pickerAppearance: "dayAndTime",
