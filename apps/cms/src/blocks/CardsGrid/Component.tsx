@@ -94,16 +94,25 @@ export async function CardsGridBlockComponent({
     const iconKey = item.icon as CardIcon | null | undefined;
     const icon = iconKey ? (ICON_MAP[iconKey] ?? null) : undefined;
 
+    const credential = resolveDemoCredential(item.description);
+
+    // The email stays in the stored description because it is what the lookup keys on, and it is
+    // the fallback when the password variable is missing. Once the credential block renders the
+    // email with a copy button, the same address in the line above only repeats it.
+    const description = credential
+      ? item.description?.replace(` · ${credential.email}`, "")
+      : item.description;
+
     return {
       alignVariant: (item.alignVariant as IDefaultCardProps["alignVariant"]) ?? "center",
       backgroundColor: (item.backgroundColor as IDefaultCardProps["backgroundColor"]) ?? "none",
-      description: item.description ?? undefined,
+      description: description ?? undefined,
       icon,
       image: prepareMediaProps(item.image ?? null),
       link: prepareLinkProps(item.link, locale),
       rounded: (item.rounded as IDefaultCardProps["rounded"]) ?? "none",
       title: item.title,
-      credential: resolveDemoCredential(item.description),
+      credential,
     };
   });
 
