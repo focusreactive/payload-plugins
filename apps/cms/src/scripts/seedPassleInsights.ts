@@ -220,6 +220,7 @@ export async function seedInsightsFromFixtures(
       context: { skipEmbedding: true },
       payload,
       postShortcode,
+      resetEditorOwnedFields: true,
     });
 
     const authorStatus = result.authorMatched

@@ -29,11 +29,17 @@ export async function ingestInsightFromPassle({
   locale = "en",
   payload,
   postShortcode,
+  resetEditorOwnedFields = false,
 }: {
   context?: Record<string, unknown>;
   locale?: TypedLocale;
   payload: Payload;
   postShortcode: string;
+  /**
+   * The rehearsal reset needs every field back to its seeded value, including the ones a live
+   * re-sync leaves alone, or an address changed during one run-through carries into the next.
+   */
+  resetEditorOwnedFields?: boolean;
 }): Promise<IngestInsightResult> {
   const passlePost = await fetchPasslePost(postShortcode);
 
@@ -117,21 +123,31 @@ export async function ingestInsightFromPassle({
     },
   });
 
+  const editorOwnedData = {
+    author: matchedPersonId,
+    markets: matchedPersonMarkets ?? undefined,
+    slug: slugFromTitle,
+    unmatchedAuthorEmail,
+  };
+
   const existingInsightDocument = existingInsight.docs[0];
   const existingId = existingInsightDocument?.id;
 
   if (existingId) {
-    const authorData = matchedPersonId
-      ? { author: matchedPersonId, unmatchedAuthorEmail: null }
-      : existingInsightDocument.author
-        ? {}
-        : { unmatchedAuthorEmail };
+    let editorFieldsData: Partial<typeof editorOwnedData> = {};
+    if (resetEditorOwnedFields) {
+      editorFieldsData = editorOwnedData;
+    } else if (matchedPersonId) {
+      editorFieldsData = { author: matchedPersonId, unmatchedAuthorEmail: null };
+    } else if (!existingInsightDocument.author) {
+      editorFieldsData = { unmatchedAuthorEmail };
+    }
 
     await payload.update({
       id: existingId,
       collection: "insight",
       context,
-      data: { ...passleOwnedData, ...authorData },
+      data: { ...passleOwnedData, ...editorFieldsData },
       draft: false,
       locale,
       overrideAccess: true,
@@ -141,8 +157,7 @@ export async function ingestInsightFromPassle({
       authorMatched: Boolean(matchedPersonId),
       created: false,
       insightId: existingId,
-      unmatchedAuthorEmail:
-        "unmatchedAuthorEmail" in authorData ? (authorData.unmatchedAuthorEmail ?? null) : null,
+      unmatchedAuthorEmail: editorFieldsData.unmatchedAuthorEmail ?? null,
     };
   }
 
@@ -151,11 +166,8 @@ export async function ingestInsightFromPassle({
     context,
     data: {
       ...passleOwnedData,
-      author: matchedPersonId,
-      markets: matchedPersonMarkets ?? undefined,
+      ...editorOwnedData,
       passleShortcode: passlePost.PostShortcode,
-      slug: slugFromTitle,
-      unmatchedAuthorEmail,
     },
     draft: false,
     locale,
