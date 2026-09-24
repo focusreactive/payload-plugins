@@ -1,4 +1,5 @@
 import { getServerSideURL } from "./getURL";
+import { withMediaVersion } from "./mediaVersion";
 
 function normalizeHostname(hostname: string): string {
   if (hostname.includes(".localhost")) {
@@ -7,46 +8,60 @@ function normalizeHostname(hostname: string): string {
   return hostname;
 }
 
+function withCacheTag(url: string, cacheTag?: string | null): string {
+  if (!cacheTag) {
+    return url;
+  }
+
+  const joiner = url.includes("?") ? "&" : "?";
+  return `${url}${joiner}${encodeURIComponent(cacheTag)}`;
+}
+
+export function isAbsoluteMediaUrl(url: string): boolean {
+  return url.startsWith("http://") || url.startsWith("https://");
+}
+
 /**
- * Processes media resource URL to ensure proper formatting
- * @param url The original URL from the resource
- * @param cacheTag Optional cache tag to append to the URL
- * @returns Properly formatted URL with cache tag if provided
+ * Absolute Blob URLs stay absolute. Relative URLs are prefixed with the server
+ * origin so metadata such as og:image does not concatenate a second host.
  */
 export const getMediaUrl = (url: string | null | undefined, cacheTag?: string | null): string => {
   if (!url) {
     return "";
   }
 
-  if (cacheTag && cacheTag !== "") {
-    cacheTag = encodeURIComponent(cacheTag);
-  }
+  if (isAbsoluteMediaUrl(url)) {
+    let absolute = url;
 
-  // Check if URL already has http/https protocol
-  if (url.startsWith("http://") || url.startsWith("https://")) {
     try {
       const urlObj = new URL(url);
       if (urlObj.hostname.includes(".localhost")) {
         urlObj.hostname = normalizeHostname(urlObj.hostname);
-        url = urlObj.toString();
+        absolute = urlObj.toString();
       }
     } catch {
-      // skip
+      // keep the original absolute URL
     }
-    return cacheTag ? `${url}?${cacheTag}` : url;
+
+    return withCacheTag(absolute, cacheTag);
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || "";
+  const finalBaseUrl = baseUrl || (typeof window === "undefined" ? getServerSideURL() : "");
 
-  let finalBaseUrl = baseUrl;
+  return withCacheTag(`${finalBaseUrl}${url}`, cacheTag);
+};
 
-  if (!finalBaseUrl) {
-    if (typeof window === "undefined") {
-      finalBaseUrl = getServerSideURL();
-    } else {
-      finalBaseUrl = "";
-    }
+/** Version a URL that may already be absolute, without prefixing relative paths. */
+export function toDeliveryUrl(url: string, filesize?: number | null): string {
+  if (!url) {
+    return "";
   }
 
-  return cacheTag ? `${finalBaseUrl}${url}?${cacheTag}` : `${finalBaseUrl}${url}`;
-};
+  const normalized = isAbsoluteMediaUrl(url) ? getMediaUrl(url) : url;
+  return withMediaVersion(normalized, filesize);
+}
+
+export function absoluteMediaUrl(url: string | null | undefined, filesize?: number | null): string {
+  return withMediaVersion(getMediaUrl(url), filesize);
+}

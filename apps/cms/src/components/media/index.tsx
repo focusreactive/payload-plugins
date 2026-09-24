@@ -34,6 +34,7 @@ export function Media(props: MediaProps) {
           onClick={onClick}
           onLoad={onLoad}
           src={props.src}
+          variants={props.variants}
           width={props.width}
         />
       )}
