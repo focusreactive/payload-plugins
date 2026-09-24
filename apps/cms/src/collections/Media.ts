@@ -2,6 +2,7 @@ import { revalidateTag } from "next/cache";
 import type { CollectionBeforeChangeHook, CollectionConfig } from "payload";
 
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import { validateMediaUpload } from "@/lib/hooks/validateMediaUpload";
 import { generateRichText } from "@/lib/utils/generateRichText";
 import { DEFAULT_MEDIA_CACHE_TAG } from "@/dal/getDefaultMediaId";
 
@@ -73,8 +74,22 @@ export const Media: CollectionConfig<"media"> = {
       type: "select",
     },
   ],
+  defaultPopulate: {
+    alt: true,
+    filename: true,
+    filesize: true,
+    focalX: true,
+    focalY: true,
+    height: true,
+    mimeType: true,
+    sizes: true,
+    updatedAt: true,
+    url: true,
+    width: true,
+  },
   folders: true,
   hooks: {
+    beforeValidate: [validateMediaUpload],
     beforeChange: [setDefaultFocalPoint],
     afterChange: [
       ({ req }) => {
@@ -109,7 +124,7 @@ export const Media: CollectionConfig<"media"> = {
   },
   slug: "media",
   upload: {
-    adminThumbnail: "thumbnail",
+    crop: false,
     disableLocalStorage: process.env.NODE_ENV === "production",
     focalPoint: true,
     imageSizes: [
