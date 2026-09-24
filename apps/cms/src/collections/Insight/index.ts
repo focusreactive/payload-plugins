@@ -5,7 +5,11 @@ import type { CollectionConfig, TextField } from "payload";
 import { anyone, editorial } from "@/lib/access";
 import { marketsField } from "@/lib/fields/marketsField";
 import { validateAuthorMarkets } from "@/lib/fields/validateAuthorMarkets";
-import { editableUnlessSyncedFromPassle, isSyncedFromPassle } from "@/lib/passle/syncedFromPassle";
+import {
+  MANUAL_SHORTCODE_PREFIX,
+  editableUnlessSyncedFromPassle,
+  isSyncedFromPassle,
+} from "@/lib/passle/syncedFromPassle";
 import { generateRichText } from "@/lib/utils/generateRichText";
 
 const addressField = slugField({
@@ -80,7 +84,7 @@ export const Insight: CollectionConfig<"insight"> = {
       admin: {
         hidden: true,
       },
-      defaultValue: () => `manual-${crypto.randomUUID()}`,
+      defaultValue: () => `${MANUAL_SHORTCODE_PREFIX}${crypto.randomUUID()}`,
       index: true,
       label: "Passle Shortcode",
       name: "passleShortcode",
