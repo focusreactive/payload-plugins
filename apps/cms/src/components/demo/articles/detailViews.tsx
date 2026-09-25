@@ -154,10 +154,12 @@ export async function InsightDetail({ insight, locale }: { insight: Insight; loc
                 <div className="flex items-center gap-3 md:gap-4">
                   <Avatar
                     border
+                    rounded={false}
                     src={photoUrlOf(author)}
                     initials={initialsOf(author.name)}
                     alt={author.name}
-                    size="lg"
+                    className="h-16 w-13 rounded-lg"
+                    contentClassName="rounded-md [&_img]:object-top"
                   />
                   <div>
                     {authorLink(
@@ -219,6 +221,7 @@ export async function PersonDetail({ person, locale }: { person: Person; locale:
         summary: doc.standfirst ?? "",
         category: marketLabels(doc.markets)[0] ?? null,
         authorName: null,
+        authorPhotoUrl: null,
         publishedAt: doc.publishedDate ? dateFormatter.format(new Date(doc.publishedDate)) : null,
         href: await getInsightHref(doc, locale),
         authorHref: null,
@@ -237,10 +240,13 @@ export async function PersonDetail({ person, locale }: { person: Person; locale:
           <div className="flex flex-col items-start gap-6 md:flex-row md:items-center">
             <Avatar
               border
+              rounded={false}
               src={photoUrlOf(person)}
               initials={initialsOf(person.name)}
               alt={person.name}
               size="2xl"
+              className="h-40 w-32 rounded-xl"
+              contentClassName="rounded-lg [&_img]:object-top"
             />
             <div>
               <h1 className="text-display-sm font-semibold text-primary md:text-display-md">

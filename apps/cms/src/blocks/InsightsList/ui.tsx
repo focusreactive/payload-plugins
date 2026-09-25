@@ -11,6 +11,7 @@ export interface InsightCard {
   summary: string;
   category: string | null;
   authorName: string | null;
+  authorPhotoUrl: string | null;
   publishedAt: string | null;
   href: string | null;
   authorHref: string | null;
@@ -87,7 +88,15 @@ export function ArticleCard({ card, featured }: { card: InsightCard; featured: b
       )}
       {card.authorName && (
         <div className="mt-auto flex items-center gap-3">
-          <Avatar border initials={initialsOf(card.authorName)} alt={card.authorName} size="md" />
+          <Avatar
+            border
+            rounded={false}
+            src={card.authorPhotoUrl}
+            initials={initialsOf(card.authorName)}
+            alt={card.authorName}
+            className="h-14 w-11 rounded-lg"
+            contentClassName="rounded-md [&_img]:object-top"
+          />
           <div>
             {card.authorHref ? (
               <a

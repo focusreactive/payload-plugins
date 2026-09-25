@@ -4,6 +4,7 @@ import { SectionContainer } from "@/components/shared";
 import { MARKET_OPTIONS } from "@/lib/fields/marketsField";
 import { getInsightHref, getPayloadClient, getPersonHref } from "@/lib/dal";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
+import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { InsightsListBlock, Person } from "@/payload-types";
 
@@ -47,7 +48,8 @@ export async function InsightsListBlockComponent({
     where: { and: conditions },
     sort: "-publishedDate",
     limit: limit ?? 6,
-    depth: 1,
+    // depth 2 reaches the author's photo, which sits one relation below the author.
+    depth: 2,
   });
 
   const dateFormatter = new Intl.DateTimeFormat(DATE_LOCALE_BY_SITE_LOCALE[locale] ?? "en-GB", {
@@ -73,6 +75,10 @@ export async function InsightsListBlockComponent({
             ALL_MARKETS_LABEL[locale] ??
             ALL_MARKETS_LABEL.en,
           authorName: author?.name ?? null,
+          authorPhotoUrl:
+            author && typeof author.photo === "object" && author.photo
+              ? getMediaUrl(author.photo.url)
+              : null,
           publishedAt: doc.publishedDate ? dateFormatter.format(new Date(doc.publishedDate)) : null,
           href: await getInsightHref(doc, locale),
           authorHref: author ? await getPersonHref(author, locale) : null,
@@ -85,7 +91,13 @@ export async function InsightsListBlockComponent({
   return (
     <SectionContainer
       // blog-section-simple-left-aligned-01 carries its own padding and container.
-      sectionData={{ ...section, id, paddingY: "none", paddingX: "none", maxWidth: "none" }}
+      sectionData={{
+        ...section,
+        id,
+        paddingY: "none",
+        paddingX: "none",
+        maxWidth: "none",
+      }}
     >
       <InsightsList
         eyebrow={eyebrow}
