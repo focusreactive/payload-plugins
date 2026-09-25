@@ -79,6 +79,9 @@ const TranslateDocument = ({
         ...formData,
         collection_id: [formData[FORM_FIELDS.HIDDEN_COLLECTION_ID]],
       });
+      // The popup closes on success, which took the status list with it, so the queued job left
+      // no visible trace.
+      toast.success("Translation queued");
       onSuccess?.();
     } catch (e) {
       handleFormError(e, form);

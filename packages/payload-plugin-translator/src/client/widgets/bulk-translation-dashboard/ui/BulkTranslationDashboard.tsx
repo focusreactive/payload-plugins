@@ -85,6 +85,11 @@ export default function BulkTranslationDashboard({
         collection_id: documentsSelection.selectedIDs,
         select_all: selectAll,
       });
+      // The status list refreshes on success, but it sits below the fold of a narrow popup, so
+      // without a toast a queued job looked the same as a click that did nothing.
+      toast.success(
+        selectedCount === 1 ? "Translation queued" : `${selectedCount} translations queued`
+      );
     } catch (e) {
       handleFormError(e, form);
     }

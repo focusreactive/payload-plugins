@@ -1,3 +1,4 @@
+import { toast } from "@payloadcms/ui";
 import type { UseFormReturn } from "react-hook-form";
 
 import { NextApiError } from "../errors/handleApiError";
@@ -15,10 +16,13 @@ export function handleFormError<D extends object>(
       });
     } else {
       form.setError("root", { message: error.message });
+      toast.error(error.message);
     }
   } else if (error instanceof Error) {
     form.setError("root", { message: error.message });
+    toast.error(error.message);
   } else {
     form.setError("root", { message: "Unknown error" });
+    toast.error("The translation could not be queued.");
   }
 }

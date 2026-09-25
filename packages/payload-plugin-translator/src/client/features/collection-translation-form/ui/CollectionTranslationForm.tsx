@@ -5,6 +5,7 @@ import { FormProvider } from "react-hook-form";
 import { SendIcon } from "../../../shared/lib/assets/icons/SendIcon";
 import type { TargetSelectionMode } from "../../../../types/TargetSelection";
 import { pruneSourceFromTarget } from "../../../shared/lib/forms/pruneSourceFromTarget";
+import { reportHiddenFieldErrors } from "../../../shared/lib/forms/report-hidden-field-errors";
 import { useLocaleOptions } from "../../../shared/lib/payload/hooks/useLocaleOptions";
 import Button from "../../../shared/ui/Button";
 import FormSelect from "../../../shared/ui/form/FormSelect";
@@ -81,7 +82,9 @@ export function CollectionTranslationForm({
           $variant="filled"
           disabled={form.formState.isSubmitting || selectedCount === 0}
           className={styles["submit-button"]}
-          onClick={form.handleSubmit(onSubmit)}
+          onClick={form.handleSubmit(onSubmit, (errors) =>
+            reportHiddenFieldErrors(errors, [FORM_FIELDS.HIDDEN_COLLECTION_SLUG])
+          )}
           type="submit"
           $size="sm"
           $isLoading={form.formState.isSubmitting}
