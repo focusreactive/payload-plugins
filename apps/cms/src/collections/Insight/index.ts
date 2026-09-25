@@ -7,13 +7,16 @@ import {
   deleteInsightEmbedding,
   indexInsightEmbedding,
 } from "@/collections/Insight/hooks/indexEmbedding";
+import { getInsightHref } from "@/dal";
 import { marketsField } from "@/lib/fields/marketsField";
+import { redirectOnInsightSlugChange } from "@/lib/hooks/redirectOnSlugChange";
 import { validateAuthorMarkets } from "@/lib/fields/validateAuthorMarkets";
 import {
   MANUAL_SHORTCODE_PREFIX,
   editableUnlessSyncedFromPassle,
   isSyncedFromPassle,
 } from "@/lib/passle/syncedFromPassle";
+import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 import { generateRichText } from "@/lib/utils/generateRichText";
 
 const addressField = slugField({
@@ -29,8 +32,10 @@ const addressField = slugField({
       addressTextField.admin = {
         ...addressTextField.admin,
         description: {
-          en: "The web address for this article, generated automatically from the title.",
-          es: "La dirección web de este artículo, generada automáticamente a partir del título.",
+          en: "The web address for this article, generated automatically from the title. Changing it redirects the old address here automatically.",
+          es: "La dirección web de este artículo, generada automáticamente a partir del título. Cambiarla redirige automáticamente la dirección antigua a esta.",
+          fr: "L'adresse web de cet article, générée automatiquement à partir du titre. Si vous la modifiez, l'ancienne adresse redirige automatiquement vers la nouvelle.",
+          ja: "この記事のウェブアドレスです。タイトルから自動生成されます。変更すると、以前のアドレスは自動的に新しいアドレスへリダイレクトされます。",
         },
       };
     }
@@ -55,12 +60,33 @@ export const Insight: CollectionConfig<"insight"> = {
     update: editorialInOwnMarkets,
   },
   admin: {
+    components: {
+      edit: {
+        PreviewButton: "/components/admin/VisualPreviewButton#VisualPreviewButton",
+      },
+    },
     defaultColumns: ["title", "author", "publishedDate", "updatedAt"],
     // Pages, insights and people are one job for an editor, so they sit in one group.
     group: "Content",
+    livePreview: {
+      url: async ({ data, locale }) =>
+        generatePreviewPath({
+          collection: "insight",
+          path:
+            (await getInsightHref({ slug: data?.slug }, locale.code ?? locale.fallbackLocale)) ??
+            "",
+          slug: data?.slug,
+        }),
+    },
     pagination: {
       limits: [20, 50, 100],
     },
+    preview: async (data, { locale }) =>
+      generatePreviewPath({
+        collection: "insight",
+        path: (await getInsightHref({ slug: data?.slug as string }, locale)) ?? "",
+        slug: data?.slug as string,
+      }),
     useAsTitle: "title",
   },
   fields: [
@@ -214,7 +240,7 @@ export const Insight: CollectionConfig<"insight"> = {
     sidebarMarketsField,
   ],
   hooks: {
-    afterChange: [indexInsightEmbedding],
+    afterChange: [indexInsightEmbedding, redirectOnInsightSlugChange],
     afterDelete: [deleteInsightEmbedding],
     beforeChange: [rejectMarketsOutsideEditorScope],
   },

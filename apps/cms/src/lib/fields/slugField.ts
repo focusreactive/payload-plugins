@@ -1,5 +1,5 @@
 import { slugField as payloadSlugField } from "payload";
-import type { PayloadRequest } from "payload";
+import type { PayloadRequest, TextField } from "payload";
 
 /**
  * Shared slug field for Pages and Posts.
@@ -24,10 +24,21 @@ export const createSharedSlugField = (currentCollection: "page" | "posts") => {
   return payloadSlugField({
     localized: true,
     overrides: (field) => {
-      const slugInput = field.fields?.[1] as { unique?: boolean; validate?: unknown } | undefined;
+      const slugInput = field.fields?.[1] as TextField | undefined;
 
       if (slugInput) {
         slugInput.unique = true;
+        if (currentCollection === "page") {
+          slugInput.admin = {
+            ...slugInput.admin,
+            description: {
+              en: "The page's web address. Changing it once published redirects the old address here automatically.",
+              es: "La dirección web de la página. Cambiarla tras la publicación redirige automáticamente la dirección antigua a esta.",
+              fr: "L'adresse web de la page. Si vous la modifiez après publication, l'ancienne adresse redirige automatiquement vers la nouvelle.",
+              ja: "このページのウェブアドレスです。公開後に変更すると、以前のアドレスは自動的に新しいアドレスへリダイレクトされます。",
+            },
+          };
+        }
         slugInput.validate = async (
           value: string | null | undefined,
           { req }: { req: PayloadRequest }
