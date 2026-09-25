@@ -37,7 +37,7 @@ import { validateRedirectPath } from "@/lib/utils/redirectUrl";
 import { isDev } from "@/lib/utils/isDev";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { normalizeRedirectFields } from "@/lib/hooks/normalizeRedirectFields";
-import { revalidateRedirects } from "@/lib/hooks/revalidateRedirects";
+import { revalidateRedirects, revalidateRedirectsOnDelete } from "@/lib/hooks/revalidateRedirects";
 import type { Page } from "@/payload-types";
 
 import { mcpPluginConfig } from "./mcp";
@@ -200,6 +200,7 @@ export const plugins: Plugin[] = [
       },
       hooks: {
         afterChange: [revalidateRedirects],
+        afterDelete: [revalidateRedirectsOnDelete],
         beforeChange: [normalizeRedirectFields],
       },
       access: {

@@ -1,5 +1,6 @@
 import type { Person } from "@/payload-types";
 import { getPayloadClient } from "@/lib/dal/payload-client";
+import { SKIP_REDIRECT_ON_SLUG_CHANGE } from "@/lib/hooks/redirectOnSlugChange";
 import { ingestInsightFromPassle } from "@/lib/passle/ingestInsightFromPassle";
 
 import { passleFixturesByShortcode } from "@/lib/passle/fixtures";
@@ -188,12 +189,14 @@ export async function seedPeopleRecords(payload: Awaited<ReturnType<typeof getPa
       await payload.update({
         id: existingId,
         collection: "person",
+        context: { [SKIP_REDIRECT_ON_SLUG_CHANGE]: true },
         data: person,
         overrideAccess: true,
       });
     } else {
       await payload.create({
         collection: "person",
+        context: { [SKIP_REDIRECT_ON_SLUG_CHANGE]: true },
         data: person,
         overrideAccess: true,
       });
@@ -217,7 +220,7 @@ export async function seedInsightsFromFixtures(
       // embedding index. `Posts` does not check this flag today either
       // (there is no shared skip-embedding convention yet in this
       // codebase), so this is forward-compatible rather than load-bearing.
-      context: { skipEmbedding: true },
+      context: { skipEmbedding: true, [SKIP_REDIRECT_ON_SLUG_CHANGE]: true },
       payload,
       postShortcode,
       resetEditorOwnedFields: true,

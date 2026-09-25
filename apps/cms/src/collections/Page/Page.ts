@@ -10,6 +10,8 @@ import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { createSharedSlugField } from "@/lib/fields/slugField";
 import type { Page as PageType } from "@/payload-types";
 
+import { redirectOnPageSlugChange } from "@/lib/hooks/redirectOnSlugChange";
+
 import { createBasePageFields } from "./basePageFields";
 import { fixBreadcrumbDocIds } from "./hooks/fixBreadcrumbDocIds";
 import { indexPageEmbedding, deletePageEmbedding } from "./hooks/indexEmbedding";
@@ -94,7 +96,7 @@ export const Page: CollectionConfig<"page"> = {
   ],
   folders: true,
   hooks: {
-    afterChange: [revalidatePage, indexPageEmbedding],
+    afterChange: [revalidatePage, indexPageEmbedding, redirectOnPageSlugChange],
     afterDelete: [revalidateDelete, deletePageEmbedding],
     beforeChange: [fixBreadcrumbDocIds, validateReservedSlug, validateReservedPath],
   },

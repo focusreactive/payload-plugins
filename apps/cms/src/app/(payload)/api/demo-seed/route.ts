@@ -11,6 +11,7 @@ import { seedInsightsFromFixtures, seedPeopleRecords } from "@/scripts/seedPassl
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { passleFixturesByShortcode } from "@/lib/passle/fixtures";
 import { personSlug } from "@/lib/dal/getListingRoutes";
+import { SKIP_REDIRECT_ON_SLUG_CHANGE } from "@/lib/hooks/redirectOnSlugChange";
 import { translatedInsight102o1qk } from "@/lib/passle/translations/102o1qk";
 import type { PasslePostPayload } from "@/lib/passle/types";
 import type {
@@ -1730,7 +1731,7 @@ async function seedNavigation(
         id: header.id,
         locale,
         overrideAccess: true,
-        context: { skipEmbedding: true },
+        context: { skipEmbedding: true, [SKIP_REDIRECT_ON_SLUG_CHANGE]: true },
         data: {
           name: "Marks & Clerk",
           ...(logoMediaId ? { logo: logoMediaId } : {}),
@@ -1760,7 +1761,7 @@ async function seedNavigation(
         id: footer.id,
         locale,
         overrideAccess: true,
-        context: { skipEmbedding: true },
+        context: { skipEmbedding: true, [SKIP_REDIRECT_ON_SLUG_CHANGE]: true },
         data: {
           name: "Marks & Clerk",
           ...(logoMediaId ? { logo: logoMediaId } : {}),
@@ -1987,13 +1988,13 @@ export async function POST(request: Request) {
       collection: "page",
       where: { id: { not_equals: 0 } },
       overrideAccess: true,
-      context: { skipEmbedding: true },
+      context: { skipEmbedding: true, [SKIP_REDIRECT_ON_SLUG_CHANGE]: true },
     });
     const deletedPosts = await payload.delete({
       collection: "posts",
       where: { id: { not_equals: 0 } },
       overrideAccess: true,
-      context: { skipEmbedding: true },
+      context: { skipEmbedding: true, [SKIP_REDIRECT_ON_SLUG_CHANGE]: true },
     });
 
     const pageIdByKey: Record<string, number> = {};
@@ -2034,7 +2035,7 @@ export async function POST(request: Request) {
         locale: "en",
         draft: false,
         overrideAccess: true,
-        context: { skipEmbedding: true },
+        context: { skipEmbedding: true, [SKIP_REDIRECT_ON_SLUG_CHANGE]: true },
         data: {
           _status: "published",
           title: spec.en.title,
@@ -2071,7 +2072,7 @@ export async function POST(request: Request) {
           locale,
           draft: false,
           overrideAccess: true,
-          context: { skipEmbedding: true },
+          context: { skipEmbedding: true, [SKIP_REDIRECT_ON_SLUG_CHANGE]: true },
           data: {
             _status: "published",
             title: text.title,
@@ -2194,7 +2195,7 @@ export async function POST(request: Request) {
           locale: "en",
           draft: true,
           overrideAccess: true,
-          context: { skipEmbedding: true },
+          context: { skipEmbedding: true, [SKIP_REDIRECT_ON_SLUG_CHANGE]: true },
           data: {
             _status: "draft",
             title: "Designs",
@@ -2250,7 +2251,7 @@ export async function POST(request: Request) {
             locale,
             draft: true,
             overrideAccess: true,
-            context: { skipEmbedding: true },
+            context: { skipEmbedding: true, [SKIP_REDIRECT_ON_SLUG_CHANGE]: true },
             data: {
               _status: "draft",
               title: text.title,
@@ -2616,6 +2617,7 @@ export async function POST(request: Request) {
             id: translatableInsight.id,
             locale: locale as "fr" | "ja",
             overrideAccess: true,
+            context: { [SKIP_REDIRECT_ON_SLUG_CHANGE]: true },
             data: {
               title: translation.title,
               slug: translation.slug,
