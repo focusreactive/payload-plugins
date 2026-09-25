@@ -63,6 +63,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
       autoRun,
       staleJobTimeoutMs,
       retries: options?.retries ?? defaultValues.retries,
+      onEnqueued: options?.onEnqueued,
     };
   }
 

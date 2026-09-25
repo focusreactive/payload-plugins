@@ -41,6 +41,7 @@ import * as migration_20260923_161703_users_markets from './20260923_161703_user
 import * as migration_20260923_202108_feature_list_block from './20260923_202108_feature_list_block';
 import * as migration_20260923_213431_stats_item_images from './20260923_213431_stats_item_images';
 import * as migration_20260923_232412_people_directory_and_person_photo from './20260923_232412_people_directory_and_person_photo';
+import * as migration_20260925_085418_translator_payload_jobs_runner from './20260925_085418_translator_payload_jobs_runner';
 
 export const migrations = [
   {
@@ -256,6 +257,11 @@ export const migrations = [
   {
     up: migration_20260923_232412_people_directory_and_person_photo.up,
     down: migration_20260923_232412_people_directory_and_person_photo.down,
-    name: '20260923_232412_people_directory_and_person_photo'
+    name: '20260923_232412_people_directory_and_person_photo',
+  },
+  {
+    up: migration_20260925_085418_translator_payload_jobs_runner.up,
+    down: migration_20260925_085418_translator_payload_jobs_runner.down,
+    name: '20260925_085418_translator_payload_jobs_runner'
   },
 ];

@@ -150,13 +150,16 @@ export interface Config {
   user: User | PayloadMcpApiKey;
   jobs: {
     tasks: {
+      translate_document: TaskTranslateDocument;
       schedulePublish: TaskSchedulePublish;
       inline: {
         input: unknown;
         output: unknown;
       };
     };
-    workflows: unknown;
+    workflows: {
+      translate_document_locales: WorkflowTranslateDocumentLocales;
+    };
   };
 }
 export interface UserAuthOperations {
@@ -2918,7 +2921,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'schedulePublish';
+        taskSlug: 'inline' | 'translate_document' | 'schedulePublish';
         taskID: string;
         input?:
           | {
@@ -2951,7 +2954,8 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'schedulePublish') | null;
+  workflowSlug?: 'translate_document_locales' | null;
+  taskSlug?: ('inline' | 'translate_document' | 'schedulePublish') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -4924,6 +4928,7 @@ export interface PayloadJobsSelect<T extends boolean = true> {
         error?: T;
         id?: T;
       };
+  workflowSlug?: T;
   taskSlug?: T;
   queue?: T;
   waitUntil?: T;
@@ -5189,6 +5194,57 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskTranslate_document".
+ */
+export interface TaskTranslateDocument {
+  input: {
+    collection_slug: string;
+    collection_id: string;
+    /**
+     * Deprecated. See docs/DEPRECATIONS.md#jobs-input-collection-field
+     */
+    collection?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null)
+      | ({
+          relationTo: 'categories';
+          value: number | Category;
+        } | null)
+      | ({
+          relationTo: 'authors';
+          value: number | Author;
+        } | null)
+      | ({
+          relationTo: 'testimonials';
+          value: number | Testimonial;
+        } | null)
+      | ({
+          relationTo: 'header';
+          value: number | Header;
+        } | null)
+      | ({
+          relationTo: 'footer';
+          value: number | Footer;
+        } | null)
+      | ({
+          relationTo: 'insight';
+          value: number | Insight;
+        } | null);
+    source_lng: string;
+    target_lng: string;
+    strategy: string;
+    publish_on_translation?: boolean | null;
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "TaskSchedulePublish".
  */
 export interface TaskSchedulePublish {
@@ -5208,6 +5264,64 @@ export interface TaskSchedulePublish {
     user?: (number | null) | User;
   };
   output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WorkflowTranslate_document_locales".
+ */
+export interface WorkflowTranslateDocumentLocales {
+  input: {
+    collection_slug: string;
+    collection_id: string;
+    /**
+     * Deprecated. See docs/DEPRECATIONS.md#jobs-input-collection-field
+     */
+    collection?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null)
+      | ({
+          relationTo: 'categories';
+          value: number | Category;
+        } | null)
+      | ({
+          relationTo: 'authors';
+          value: number | Author;
+        } | null)
+      | ({
+          relationTo: 'testimonials';
+          value: number | Testimonial;
+        } | null)
+      | ({
+          relationTo: 'header';
+          value: number | Header;
+        } | null)
+      | ({
+          relationTo: 'footer';
+          value: number | Footer;
+        } | null)
+      | ({
+          relationTo: 'insight';
+          value: number | Insight;
+        } | null);
+    source_lng: string;
+    strategy: string;
+    publish_on_translation?: boolean | null;
+    target_lngs:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

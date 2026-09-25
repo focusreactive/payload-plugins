@@ -6,5 +6,10 @@
       "path": "/api/scheduled-publish/run",
       "schedule": "0 * * * *"
     }
-  ]
+  ],
+  "functions": {
+    "src/app/(payload)/api/[...slug]/route.ts": {
+      "maxDuration": 300
+    }
+  }
 }

@@ -7,12 +7,13 @@ import { seoPlugin as seoAnalysisPlugin } from "@focus-reactive/payload-plugin-s
 import {
   translatorPlugin,
   createOpenAIProvider,
-  createSyncRunner,
+  createPayloadJobsRunner,
 } from "@focus-reactive/payload-plugin-translator";
 import { visualEditingPlugin } from "@fr-private/payload-plugin-visual-editing";
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
 import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
+import { after } from "next/server";
 import type { Field, PayloadRequest, Plugin } from "payload";
 
 import { Authors } from "@/collections/Authors";
@@ -346,7 +347,22 @@ export const plugins: Plugin[] = [
     ].map((col) =>
       JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
     ),
-    runner: createSyncRunner(),
+    // autoRun: false because this is a Vercel PREVIEW deployment (ideal-cms/sandbox-e) and Vercel
+    // crons only run in production, so the plugin's own cron would never pick a queued job up.
+    // onEnqueued instead runs the job in-process right after enqueue, inside `after()` so the click's
+    // response returns immediately while the translation keeps running past it.
+    runner: createPayloadJobsRunner({
+      autoRun: false,
+      onEnqueued: (payload, jobId, run) => {
+        after(async () => {
+          try {
+            await run();
+          } catch (err) {
+            payload.logger?.error?.({ err, jobId, msg: "[translator] background run failed" });
+          }
+        });
+      },
+    }),
     translationProvider: createOpenAIProvider({
       apiKey: process.env.OPENAI_API_KEY!,
       dryRun: false,

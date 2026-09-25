@@ -1,4 +1,6 @@
-import type { CollectionSlug } from "payload";
+import type { CollectionSlug, Payload } from "payload";
+
+import type { RunResult } from "../types";
 
 /**
  * Configuration for automatic job processing.
@@ -65,6 +67,30 @@ export type PayloadJobsRunnerOptions = {
     attempts?: number;
     backoff?: { delay?: number; type: "exponential" | "fixed" };
   };
+  /**
+   * Fired right after a job is queued or its locale list is extended, with the same id `run(jobId)`
+   * accepts. The normal host lets the `autoRun` cron pick the job up later; a host whose cron never
+   * fires — a Vercel preview deployment, where crons only run in production — can use this to trigger
+   * the run itself immediately, e.g. from Next.js `after()` or `waitUntil()`, instead of an HTTP
+   * self-call to `POST {basePath}/run/:id`. The `run` argument calls the same in-process run path
+   * that endpoint uses, so no self-call or auth token is needed.
+   *
+   * Called liberally — once for every live job a request touches, whether or not that job actually
+   * gained new locales — because `run()` is cheap and safe to call on a job already running or
+   * completed (it reports `already_running` / `already_completed` and does nothing), while skipping a
+   * call could leave a translation queued forever with no cron to pick it up.
+   *
+   * Best-effort only up to the point this returns: a throwing/rejecting callback is logged and
+   * swallowed, and never fails or delays the enqueue, which has already committed. If the host defers
+   * `run()` past that point (e.g. inside Next's `after()`), errors from it are the host's own to
+   * catch and log — this hook cannot see them.
+   * @since 0.14.0
+   */
+  onEnqueued?: (
+    payload: Payload,
+    jobId: string,
+    run: () => Promise<RunResult>
+  ) => void | Promise<void>;
 };
 
 /**
@@ -79,6 +105,7 @@ export type PayloadJobsRunnerConfig = {
   autoRun: false | Required<AutoRunConfig>;
   staleJobTimeoutMs: number;
   retries?: PayloadJobsRunnerOptions["retries"];
+  onEnqueued?: PayloadJobsRunnerOptions["onEnqueued"];
 };
 
 export type PayloadJob = {

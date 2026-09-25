@@ -22,7 +22,7 @@ type QueueWorkflow = (args: {
   queue: string;
   waitUntil?: Date;
   input: StoredWorkflowInput;
-}) => Promise<unknown>;
+}) => Promise<{ id?: string } | null | undefined>;
 
 function requestShape(task: TaskInput): RequestShape {
   return {
@@ -96,8 +96,27 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     const undelivered = plan.host
       ? await this.extendJob(plan.host, plan.append, first.waitUntil)
       : [];
+    if (plan.host) await this.notifyEnqueued(plan.host.id);
+
     const queue = [...plan.queue, ...undelivered];
-    if (queue.length > 0) await this.queueWorkflow(request, queue, first.waitUntil);
+    if (queue.length > 0) {
+      const jobId = await this.queueWorkflow(request, queue, first.waitUntil);
+      if (jobId) await this.notifyEnqueued(jobId);
+    }
+  }
+
+  /**
+   * Lets a host with no working cron (`autoRun: false`, e.g. a Vercel preview) trigger a job the
+   * moment it is queued or extended, instead of waiting on a schedule that will never run it. See the
+   * `onEnqueued` JSDoc in `types.ts` for why this fires even when a host job gained nothing new.
+   */
+  private async notifyEnqueued(jobId: string): Promise<void> {
+    if (!this.config.onEnqueued) return;
+    try {
+      await this.config.onEnqueued(this.payload, jobId, () => this.run(jobId));
+    } catch (err) {
+      this.payload.logger?.error?.({ err, msg: "[translator] onEnqueued callback threw" });
+    }
   }
 
   private async extendJob(job: PayloadJob, locales: string[], waitUntil?: Date): Promise<string[]> {
@@ -138,7 +157,7 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     request: RequestShape,
     targetLngs: string[],
     waitUntil?: Date
-  ): Promise<void> {
+  ): Promise<string | undefined> {
     const input: StoredWorkflowInput = {
       collection_slug: request.collectionSlug,
       collection_id: request.collectionId,
@@ -151,12 +170,15 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     // Cast: `jobs.queue` is typed over the host's generated slugs, which cannot include a workflow
     // registered at config time.
     const queueJob = this.payload.jobs.queue as unknown as QueueWorkflow;
-    await queueJob({
+    const job = await queueJob({
       workflow: this.config.workflowName,
       queue: this.config.queueName,
       waitUntil,
       input,
     });
+    // Optional chaining, not a cast: existing tests mock `jobs.queue` resolving to `undefined`, and
+    // that must stay a no-op (no `onEnqueued` call) rather than throw.
+    return job?.id;
   }
 
   async cancel(taskIds: string[]): Promise<void> {

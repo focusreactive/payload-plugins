@@ -370,12 +370,26 @@ const fake = createTranslationProvider({
 | `autoRun` | `false \| { cron?: string; limit?: number }` | `{ cron: '* * * * *', limit: 50 }` |
 | `staleJobTimeoutMs` | `number` | `300000` |
 | `retries` | `{ attempts?: number; backoff?: { delay?: number; type: 'exponential' \| 'fixed' } }` | `{ attempts: 3, backoff: { type: 'exponential', delay: 5000 } }` |
+| `onEnqueued` | `(payload: Payload, jobId: string, run: () => Promise<RunResult>) => void \| Promise<void>` | none |
 
 > [!WARNING]
 > `staleJobTimeoutMs` must exceed the longest a single document translation can legitimately take. Set it too low and a translation still running is started again — the document is translated twice, and billed twice.
 
 > [!IMPORTANT]
-> Cron autorun does not fire on serverless hosts such as Vercel, so jobs queue and wait. Pass `createPayloadJobsRunner({ autoRun: false })` and drive the queue from your own cron or worker via `POST {basePath}/run/:id`.
+> Cron autorun does not fire on serverless hosts such as Vercel, so jobs queue and wait. Pass `createPayloadJobsRunner({ autoRun: false })` and drive the queue some other way. On a host with a *production* cron (Vercel crons run only in production, never on preview deployments), point it at `POST {basePath}/run/:id`. On a host with no working cron at all — a Vercel preview — use `onEnqueued` instead (_since v0.14.0_): it fires right after a job is queued or extended, with a `run` callback that runs it in-process (no HTTP self-call, no auth token):
+>
+> ```ts
+> import { after } from 'next/server'
+>
+> createPayloadJobsRunner({
+>   autoRun: false,
+>   onEnqueued: (payload, jobId, run) => {
+>     after(() => run())
+>   },
+> })
+> ```
+>
+> Called liberally: once per live job a request touches, even one that gained nothing new, because `run()` is a cheap no-op on a job already running or completed, while skipping the call can leave a translation queued forever.
 
 `createSyncRunner` keeps the status of what it ran in memory — the last 100 tasks, for an hour, adjustable with `maxSize` and `ttlMs`. A restart forgets them. Nothing is lost but the reporting: the translations themselves are already written.
 
