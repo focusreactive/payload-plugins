@@ -2,6 +2,7 @@ import NextLink from "next/link";
 
 import { ArticleCard } from "@/blocks/InsightsList/ui";
 import type { InsightCard } from "@/blocks/InsightsList/ui";
+import { PersonJsonLd } from "@/components/seo/components";
 import { RichText } from "@/components/shared";
 import { getInsightHref, getPayloadClient, getPersonHref } from "@/dal/index";
 import { MARKET_OPTIONS } from "@/lib/fields/marketsField";
@@ -209,6 +210,11 @@ export async function PersonDetail({ person, locale }: { person: Person; locale:
 
   return (
     <section className="pt-10 pb-16 md:pt-16 md:pb-24">
+      <PersonJsonLd
+        person={person}
+        profileUrl={await getPersonHref(person, locale)}
+        locale={locale}
+      />
       <div className="mx-auto max-w-container px-4 md:px-8">
         <div className="max-w-180">
           <div className="flex flex-col items-start gap-6 md:flex-row md:items-center">

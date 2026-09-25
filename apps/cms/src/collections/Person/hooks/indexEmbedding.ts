@@ -14,7 +14,8 @@ import type { Person } from "@/payload-types";
 const SITE_LOCALES = ["en", "fr", "ja"] as const;
 
 export const indexPersonEmbedding: CollectionAfterChangeHook<Person> = async ({ doc, req }) => {
-  if (req.context?.skipEmbedding) {
+  // A draft is a fee-earner's edit still waiting for approval, and search must not find it first.
+  if (req.context?.skipEmbedding || doc._status === "draft") {
     return doc;
   }
 

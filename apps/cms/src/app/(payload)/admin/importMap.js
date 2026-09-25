@@ -35,6 +35,8 @@ import { SeoButton as SeoButton_0275c4dc7702e5d88e7eb977a6a3d442 } from '@focus-
 import { default as default_587142b484744b5573788fdf4a68522a } from '@focus-reactive/payload-plugin-translator/client/widgets/translate-document/ui/TranslateDocument.server'
 import { VisualPreviewButton as VisualPreviewButton_809e4dae2cde944461a83ddb2ad7664d } from '../../../components/admin/VisualPreviewButton'
 import { BlocksFeatureClient as BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { PublishOrSubmitForReview as PublishOrSubmitForReview_f6992def57f774ba7ecbaff96050cdc7 } from '@/components/admin/PersonReview/ReviewButtons'
+import { UnpublishForEditorsOnly as UnpublishForEditorsOnly_f6992def57f774ba7ecbaff96050cdc7 } from '@/components/admin/PersonReview/ReviewButtons'
 import { SyncedFromPassleNote as SyncedFromPassleNote_9881574fef382f4547252a4a219897f1 } from '@/components/admin/SyncedFromPassleNote'
 import { RowLabelGroupName as RowLabelGroupName_7f4fa5fc68fb5a0a92393f6444a57fbd } from '@/components/admin/RowLabel'
 import { BlockNameCell as BlockNameCell_cc45cff47f16a104c7146a801d6e52ae } from '../../../components/admin/BlockNameCell'
@@ -46,6 +48,7 @@ import { default as default_91a09b539d3c86b0aebf520e7564ce08 } from '../../../co
 import { CommentsHeaderButton as CommentsHeaderButton_30d38dd40c31eff500900a16a2792204 } from '@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton'
 import { default as default_3fd776aeb7e4127cf324115b5226afbf } from '../../../components/admin/SSOButtons'
 import { ReviewQueueNavLink as ReviewQueueNavLink_909feb9449a5b54520a1525a57cb3620 } from '../../../components/admin/ReviewQueueNavLink'
+import { ProfilesAwaitingApprovalNavLink as ProfilesAwaitingApprovalNavLink_460b7ccb878b974d70f37377e46ab5bc } from '../../../components/admin/PersonReview/ProfilesAwaitingApprovalNavLink'
 import { default as default_3da48296ca27cce2dd5904839611d77c } from '../../../lib/context/BeforeOpenDrawerWrapper'
 import { default as default_c0acd3f4d5b9577c4e185cd84f6b1b50 } from '../../../lib/context/SeoExtractorRegistrar'
 import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e } from '@payloadcms/storage-vercel-blob/client'
@@ -95,6 +98,8 @@ export const importMap = {
   "@focus-reactive/payload-plugin-translator/client/widgets/translate-document/ui/TranslateDocument.server#default": default_587142b484744b5573788fdf4a68522a,
   "/components/admin/VisualPreviewButton#VisualPreviewButton": VisualPreviewButton_809e4dae2cde944461a83ddb2ad7664d,
   "@payloadcms/richtext-lexical/client#BlocksFeatureClient": BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "@/components/admin/PersonReview/ReviewButtons#PublishOrSubmitForReview": PublishOrSubmitForReview_f6992def57f774ba7ecbaff96050cdc7,
+  "@/components/admin/PersonReview/ReviewButtons#UnpublishForEditorsOnly": UnpublishForEditorsOnly_f6992def57f774ba7ecbaff96050cdc7,
   "@/components/admin/SyncedFromPassleNote#SyncedFromPassleNote": SyncedFromPassleNote_9881574fef382f4547252a4a219897f1,
   "@/components/admin/RowLabel#RowLabelGroupName": RowLabelGroupName_7f4fa5fc68fb5a0a92393f6444a57fbd,
   "/components/admin/BlockNameCell#BlockNameCell": BlockNameCell_cc45cff47f16a104c7146a801d6e52ae,
@@ -106,6 +111,7 @@ export const importMap = {
   "@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton#CommentsHeaderButton": CommentsHeaderButton_30d38dd40c31eff500900a16a2792204,
   "/components/admin/SSOButtons#default": default_3fd776aeb7e4127cf324115b5226afbf,
   "/components/admin/ReviewQueueNavLink#ReviewQueueNavLink": ReviewQueueNavLink_909feb9449a5b54520a1525a57cb3620,
+  "/components/admin/PersonReview/ProfilesAwaitingApprovalNavLink#ProfilesAwaitingApprovalNavLink": ProfilesAwaitingApprovalNavLink_460b7ccb878b974d70f37377e46ab5bc,
   "/lib/context/BeforeOpenDrawerWrapper#default": default_3da48296ca27cce2dd5904839611d77c,
   "/lib/context/SeoExtractorRegistrar#default": default_c0acd3f4d5b9577c4e185cd84f6b1b50,
   "@payloadcms/storage-vercel-blob/client#VercelBlobClientUploadHandler": VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e,

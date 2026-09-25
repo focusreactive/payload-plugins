@@ -2,8 +2,10 @@ import { Media } from "@/components/media";
 import { SectionContainer } from "@/components/shared";
 import { getPayloadClient, getPersonHref } from "@/lib/dal";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
+import { pickStandfirst } from "@/lib/people/pickStandfirst";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { PeopleDirectoryBlock } from "@/payload-types";
+import type { Where } from "payload";
 
 import { PeopleDirectory } from "./ui";
 import type { PersonCard } from "./ui";
@@ -14,13 +16,22 @@ export async function PeopleDirectoryBlockComponent({
   description,
   section,
   id,
+  service,
+  markets,
 }: PeopleDirectoryBlock) {
   const locale = await resolveLocale();
   const payload = await getPayloadClient();
+  const serviceId = service == null ? null : typeof service === "object" ? service.id : service;
+  const listingMarkets = markets ?? [];
+
+  const conditions: Where[] = [{ _status: { equals: "published" } }];
+  if (serviceId !== null) conditions.push({ services: { equals: serviceId } });
+  if (listingMarkets.length > 0) conditions.push({ markets: { in: listingMarkets } });
 
   const result = await payload.find({
     collection: "person",
     locale: locale as "en",
+    where: { and: conditions },
     sort: "createdAt",
     limit: 200,
     depth: 1,
@@ -37,6 +48,7 @@ export async function PeopleDirectoryBlockComponent({
         name: person.name,
         jobTitle: person.jobTitle,
         office: person.office ?? null,
+        standfirst: pickStandfirst(person, { serviceId, markets: listingMarkets }),
         href: await getPersonHref(person, locale),
         // Rendered here rather than in the client grid, so the image pipeline stays on the server.
         photo: media ? (

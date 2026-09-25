@@ -151,6 +151,24 @@ export const Users: CollectionConfig<"users"> = {
       label: { en: "Markets this editor looks after", es: "Mercados de este editor" },
       saveToJWT: true,
     },
+    {
+      name: "person",
+      type: "relationship",
+      relationTo: "person",
+      admin: {
+        position: "sidebar",
+        description: {
+          en: "The profile this fee-earner may edit. Their changes are saved as drafts for an editor to publish.",
+          es: "El perfil que este usuario puede editar.",
+        },
+        condition: (data) => data?.role === "user",
+      },
+      access: {
+        // Only an admin decides whose profile a fee-earner may edit.
+        update: ({ req: { user } }) => Boolean(user && "role" in user && user.role === "admin"),
+      },
+      label: { en: "Profile", es: "Perfil" },
+    },
   ],
   labels: {
     plural: {

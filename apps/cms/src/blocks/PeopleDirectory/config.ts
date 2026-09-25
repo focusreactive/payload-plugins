@@ -1,5 +1,6 @@
 import type { Block } from "payload";
 
+import { MARKET_OPTIONS } from "@/lib/fields/marketsField";
 import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
 import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 import { injectSection } from "@/lib/fields/section/injectSection";
@@ -17,5 +18,37 @@ export const PeopleDirectoryBlock: Block = injectSection({
     plural: { en: "People directories", es: "Directorios de personas" },
     singular: { en: "People directory", es: "Directorio de personas" },
   },
-  fields: [...sectionHeaderFields()],
+  fields: [
+    ...sectionHeaderFields(),
+    {
+      type: "row",
+      fields: [
+        {
+          name: "service",
+          type: "relationship",
+          relationTo: "page",
+          label: { en: "Only people in this service", es: "Solo personas de este servicio" },
+          admin: {
+            description: {
+              en: "On a service page, pick that page. Each person shows the standfirst they wrote for it.",
+              es: "En una página de servicio, elige esa página.",
+            },
+          },
+        },
+        {
+          name: "markets",
+          type: "select",
+          hasMany: true,
+          options: [...MARKET_OPTIONS],
+          label: { en: "Only people in these markets", es: "Solo personas de estos mercados" },
+          admin: {
+            description: {
+              en: "On a market page, pick its markets. Leave both empty to list everyone.",
+              es: "En una página de mercado, elige sus mercados.",
+            },
+          },
+        },
+      ],
+    },
+  ],
 });

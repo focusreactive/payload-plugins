@@ -188,13 +188,13 @@ export async function seedPeopleRecords(payload: Awaited<ReturnType<typeof getPa
       await payload.update({
         id: existingId,
         collection: "person",
-        data: person,
+        data: { ...person, _status: "published" },
         overrideAccess: true,
       });
     } else {
       await payload.create({
         collection: "person",
-        data: person,
+        data: { ...person, _status: "published" },
         overrideAccess: true,
       });
     }
