@@ -265,4 +265,9 @@ export const migrations = [
     down: migration_20260925_085418_translator_payload_jobs_runner.down,
     name: '20260925_085418_translator_payload_jobs_runner'
   },
+  {
+    up: migration_20260925_150000_widen_document_embeddings_collection_enum.up,
+    down: migration_20260925_150000_widen_document_embeddings_collection_enum.down,
+    name: '20260925_150000_widen_document_embeddings_collection_enum'
+  },
 ];
