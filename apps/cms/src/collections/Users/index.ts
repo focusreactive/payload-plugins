@@ -52,7 +52,7 @@ export const Users: CollectionConfig<"users"> = {
     pagination: {
       limits: [20, 50, 100],
     },
-    useAsTitle: "email",
+    useAsTitle: "name",
   },
   auth: true,
   fields: [
