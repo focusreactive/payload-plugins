@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { APIError } from "payload";
 
-import { killedTheCallersTransaction } from "./TransactionScope.shapes";
+import { killedTheCallersTransaction } from "./TransactionScope.shapes.js";
 
 describe("killedTheCallersTransaction", () => {
   it("is true for a Payload error raised inside the caller's transaction", () => {

@@ -1,6 +1,6 @@
-import type { SerializedLexicalRoot } from "./types";
-import { traverseLexicalTree } from "./traverseLexicalTree";
-import { isSerializedLexicalTextNode } from "./guards";
+import type { SerializedLexicalRoot } from "./types.js";
+import { traverseLexicalTree } from "./traverseLexicalTree.js";
+import { isSerializedLexicalTextNode } from "./guards.js";
 
 /**
  * Checks if a serialized Lexical richText structure is empty.

@@ -1,6 +1,6 @@
-import ColorIndicator from "../../../../shared/ui/ColorIndicator";
-import type { TranslationRowState } from "../../model/statusRows";
-import { STATE_DOT } from "../../model/statusRows";
+import ColorIndicator from "../../../../shared/ui/ColorIndicator/index.js";
+import type { TranslationRowState } from "../../model/statusRows.js";
+import { STATE_DOT } from "../../model/statusRows.js";
 
 import styles from "./styles.module.scss";
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ServerResponse } from "./ServerResponse";
+import { ServerResponse } from "./ServerResponse.js";
 
 describe("ServerResponse", () => {
   describe("success responses", () => {

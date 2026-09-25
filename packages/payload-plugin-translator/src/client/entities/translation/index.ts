@@ -1,14 +1,14 @@
-import { useCancelCollectionTranslations } from "./api/mutations/useCancelCollectionTranslations";
-import { useCancelDocumentTranslation } from "./api/mutations/useCancelDocumentTranslation";
-import { useDismissStaleness } from "./api/mutations/useDismissStaleness";
-import { useQueueDocumentTranslation } from "./api/mutations/useQueueDocumentTranslation";
-import { useRunDocumentTranslation } from "./api/mutations/useRunDocumentTranslation";
-import { useCollectionTranslationStatus } from "./api/queries/useCollectionTranslationStatus";
-import { useDocumentStaleness } from "./api/queries/useDocumentStaleness";
-import { useDocumentTranslation } from "./api/queries/useDocumentTranslation";
+import { useCancelCollectionTranslations } from "./api/mutations/useCancelCollectionTranslations.js";
+import { useCancelDocumentTranslation } from "./api/mutations/useCancelDocumentTranslation.js";
+import { useDismissStaleness } from "./api/mutations/useDismissStaleness.js";
+import { useQueueDocumentTranslation } from "./api/mutations/useQueueDocumentTranslation.js";
+import { useRunDocumentTranslation } from "./api/mutations/useRunDocumentTranslation.js";
+import { useCollectionTranslationStatus } from "./api/queries/useCollectionTranslationStatus.js";
+import { useDocumentStaleness } from "./api/queries/useDocumentStaleness.js";
+import { useDocumentTranslation } from "./api/queries/useDocumentTranslation.js";
 
-export { TranslationStatusList } from "./ui/TranslationStatusList";
-export { AutoTranslateMarker } from "./ui/AutoTranslateMarker";
+export { TranslationStatusList } from "./ui/TranslationStatusList/index.js";
+export { AutoTranslateMarker } from "./ui/AutoTranslateMarker/index.js";
 
 export const TranslationsApi = {
   useRunDocumentTranslation,
@@ -32,19 +32,19 @@ export type {
   GroupedCollectionTranslationStatus,
   DocumentStaleness,
   StalenessLocale,
-} from "./model/types";
+} from "./model/types.js";
 
-export { DocumentTranslationStatus } from "./model/enums";
+export { DocumentTranslationStatus } from "./model/enums.js";
 
 export {
   derivePanelStatus,
   deriveCollectionPanelStatus,
   deriveDocumentRunStatus,
   describePanelStatus,
-} from "./model/panelStatus";
-export type { PanelStatus, MarkerTone } from "./model/panelStatus";
-export { PanelStatusMarker } from "./ui/PanelStatusMarker";
-export { ActionButton } from "./ui/ActionButton";
+} from "./model/panelStatus.js";
+export type { PanelStatus, MarkerTone } from "./model/panelStatus.js";
+export { PanelStatusMarker } from "./ui/PanelStatusMarker/index.js";
+export { ActionButton } from "./ui/ActionButton/index.js";
 
-export { buildTranslationStatusRows } from "./model/statusRows";
-export type { TranslationStatusRow, TranslationRowState } from "./model/statusRows";
+export { buildTranslationStatusRows } from "./model/statusRows.js";
+export type { TranslationStatusRow, TranslationRowState } from "./model/statusRows.js";

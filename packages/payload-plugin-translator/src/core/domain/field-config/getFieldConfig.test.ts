@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { Field } from "payload";
 
-import { getTranslateKitFieldConfig, isFieldExcludedFromTranslation } from "./getFieldConfig";
+import { getTranslateKitFieldConfig, isFieldExcludedFromTranslation } from "./getFieldConfig.js";
 
 describe("getTranslateKitFieldConfig", () => {
   it("returns empty object when field has no custom property", () => {

@@ -7,7 +7,7 @@ import {
   selectAllValue,
   summarizeSelection,
   toggleValue,
-} from "./multiSelectModel";
+} from "./multiSelectModel.js";
 
 const options = [
   { value: "en", label: "en" },

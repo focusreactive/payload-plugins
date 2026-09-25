@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { traverseLexicalTree } from "./traverseLexicalTree";
+import { traverseLexicalTree } from "./traverseLexicalTree.js";
 
 const createNode = (type: string, children?: any[]) =>
   ({ type, ...(children && { children }) }) as any;

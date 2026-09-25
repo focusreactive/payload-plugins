@@ -3,13 +3,13 @@ import { ofetch } from "ofetch";
 import type { CollectionSlug } from "payload";
 import { useCallback } from "react";
 
-import { useTranslateKitConfig } from "../../../../app/config";
-import { handleNextApiError } from "../../../../shared/lib/errors/handleApiError";
-import { DocumentTranslationStatus } from "../../model/enums";
+import { useTranslateKitConfig } from "../../../../app/config/index.js";
+import { handleNextApiError } from "../../../../shared/lib/errors/handleApiError.js";
+import { DocumentTranslationStatus } from "../../model/enums.js";
 import type {
   CollectionTranslationStatus,
   GroupedCollectionTranslationStatus,
-} from "../../model/types";
+} from "../../model/types.js";
 
 type Props = {
   collection: CollectionSlug;

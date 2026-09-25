@@ -1,12 +1,15 @@
 import { describe, it, expect, vi } from "vitest";
 import type { CollectionConfig } from "payload";
 
-import { TranslateDocumentExport } from "../../client/widgets/translate-document";
-import { BulkDocumentTranslationDashboard } from "../../client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.export";
+import { TranslateDocumentExport } from "../../client/widgets/translate-document/index.js";
+import { BulkDocumentTranslationDashboard } from "../../client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.export.js";
 
-import { documentLevel } from "./documentLevel";
-import { collectionLevel } from "./collectionLevel";
-import type { CollectionAdminSlot, LevelContext } from "../../server/modules/translation-levels";
+import { documentLevel } from "./documentLevel.js";
+import { collectionLevel } from "./collectionLevel.js";
+import type {
+  CollectionAdminSlot,
+  LevelContext,
+} from "../../server/modules/translation-levels/index.js";
 
 const fakeCollection = {
   slug: "posts",

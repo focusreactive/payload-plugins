@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { CollectionSlug } from "payload";
-import { normalizeJob, normalizeJobLocales } from "./normalizeJob";
-import type { PayloadJob } from "./types";
+import { normalizeJob, normalizeJobLocales } from "./normalizeJob.js";
+import type { PayloadJob } from "./types.js";
 
 describe("normalizeJob", () => {
   const baseJob: PayloadJob = {

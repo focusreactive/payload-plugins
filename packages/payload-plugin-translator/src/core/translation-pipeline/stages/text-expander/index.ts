@@ -1,7 +1,7 @@
-export { TextChunkExpander } from "./TextChunkExpander";
-export type { TextExpansionResult } from "./TextChunkExpander";
-export type { TextExpander, ExpansionResult } from "./TextExpander.interface";
-export { PlainTextExpander } from "./PlainTextExpander";
-export { RichTextExpander } from "./RichTextExpander";
-export { RichContainerExpander } from "./RichContainerExpander";
-export { TextChunkExpanderStage } from "./TextChunkExpander.stage";
+export { TextChunkExpander } from "./TextChunkExpander.js";
+export type { TextExpansionResult } from "./TextChunkExpander.js";
+export type { TextExpander, ExpansionResult } from "./TextExpander.interface.js";
+export { PlainTextExpander } from "./PlainTextExpander.js";
+export { RichTextExpander } from "./RichTextExpander.js";
+export { RichContainerExpander } from "./RichContainerExpander.js";
+export { TextChunkExpanderStage } from "./TextChunkExpander.stage.js";

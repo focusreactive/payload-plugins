@@ -1,6 +1,6 @@
-import type { FieldLike } from "../../kernel/field-traversal";
-import { projectTranslatableContent } from "./contentProjector";
-import { fingerprint } from "./fingerprinter";
+import type { FieldLike } from "../../kernel/field-traversal/index.js";
+import { projectTranslatableContent } from "./contentProjector.js";
+import { fingerprint } from "./fingerprinter.js";
 
 /**
  * The staleness baseline: a stable hash of a document's translatable content.

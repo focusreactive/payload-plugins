@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { Field } from "payload";
-import { DataReconciler } from "./DataReconciler";
+import { DataReconciler } from "./DataReconciler.js";
 
 describe("DataReconciler", () => {
   describe("deep merge with target priority", () => {

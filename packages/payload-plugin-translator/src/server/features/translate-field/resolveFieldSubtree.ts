@@ -1,6 +1,6 @@
-import { isFieldExcludedFromTranslation, isTranslatableField } from "../../shared";
-import { findFieldByPath } from "../../../core/kernel/field-traversal";
-import type { FieldLike } from "../../../core/kernel/field-traversal";
+import { isFieldExcludedFromTranslation, isTranslatableField } from "../../shared/index.js";
+import { findFieldByPath } from "../../../core/kernel/field-traversal/index.js";
+import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
 
 /**
  * Outcome of mapping a declared field path to a translatable subtree.

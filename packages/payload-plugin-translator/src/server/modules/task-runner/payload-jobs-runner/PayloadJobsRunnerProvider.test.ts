@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import type { Config } from "payload";
-import { createPayloadJobsRunner } from "./PayloadJobsRunnerProvider";
-import type { TaskRunnerContext } from "../TaskRunnerProvider.interface";
+import { createPayloadJobsRunner } from "./PayloadJobsRunnerProvider.js";
+import type { TaskRunnerContext } from "../TaskRunnerProvider.interface.js";
 
 const minimalContext: TaskRunnerContext = {
   handler: vi.fn(),

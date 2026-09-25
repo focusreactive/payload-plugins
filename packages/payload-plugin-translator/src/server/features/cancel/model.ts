@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { JobIdSchema } from "../../shared";
+import { JobIdSchema } from "../../shared/index.js";
 
 /**
  * Input validation schema for batch cancel.

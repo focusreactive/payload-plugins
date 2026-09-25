@@ -1,4 +1,4 @@
-import type { TranslationProvenanceRecord } from "./ProvenanceStore.interface";
+import type { TranslationProvenanceRecord } from "./ProvenanceStore.interface.js";
 
 /**
  * Whether a translated locale is out of date relative to its source — the #50 rule, in one place.

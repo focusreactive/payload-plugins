@@ -1,4 +1,4 @@
-import type { TranslationInput } from "../../core/domain/translation-providers";
+import type { TranslationInput } from "../../core/domain/translation-providers/index.js";
 
 /**
  * A JSON Schema document, as a plain object — deliberately untyped beyond that, so it can be dropped

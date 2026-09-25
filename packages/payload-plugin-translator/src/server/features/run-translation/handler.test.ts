@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, PayloadRequest } from "payload";
-import { RunTranslationHandler } from "./handler";
-import type { TaskRunnerFactory, TaskRunner } from "../../modules/task-runner";
+import { RunTranslationHandler } from "./handler.js";
+import type { TaskRunnerFactory, TaskRunner } from "../../modules/task-runner/index.js";
 
 describe("RunTranslationHandler", () => {
   let handler: RunTranslationHandler;

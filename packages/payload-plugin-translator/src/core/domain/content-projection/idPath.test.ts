@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 // (slice 6 design). The grammar lives ENTIRELY in makeIdPath — array/blocks indices are replaced
 // by element `id` (+ blockType for blocks); names/leaves stay as names; no id → positional
 // fallback. This is the sole constructor, so the grammar can't drift.
-import type { IdPath } from "./idPath";
-import { elementSegment, makeIdPath } from "./idPath";
+import type { IdPath } from "./idPath.js";
+import { elementSegment, makeIdPath } from "./idPath.js";
 
 describe("makeIdPath — grammar", () => {
   it("joins name segments with '.'", () => {

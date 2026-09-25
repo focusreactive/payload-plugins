@@ -1,1 +1,1 @@
-export { PanelStatusMarker } from "./PanelStatusMarker";
+export { PanelStatusMarker } from "./PanelStatusMarker.js";

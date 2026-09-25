@@ -1,11 +1,11 @@
 import type { PayloadRequest } from "payload";
 
-import { ServerResponse } from "../../shared";
-import type { TaskRunnerFactory } from "../../modules/task-runner";
-import { isCollectionAvailable } from "../_lib/collection-utils";
+import { ServerResponse } from "../../shared/index.js";
+import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
+import { isCollectionAvailable } from "../_lib/collection-utils.js";
 
-import { GetCollectionStatusInputSchema } from "./model";
-import type { GetCollectionStatusConfig } from "./model";
+import { GetCollectionStatusInputSchema } from "./model.js";
+import type { GetCollectionStatusConfig } from "./model.js";
 
 /**
  * Gets translation status for all documents in a collection

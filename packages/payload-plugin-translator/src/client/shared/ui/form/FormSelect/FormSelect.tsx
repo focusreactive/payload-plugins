@@ -2,9 +2,9 @@ import type { ReactElement } from "react";
 import { useId } from "react";
 import { useController } from "react-hook-form";
 
-import Description from "../../Description";
-import Label from "../../Label";
-import Select from "../../Select";
+import Description from "../../Description/index.js";
+import Label from "../../Label/index.js";
+import Select from "../../Select/index.js";
 
 type FormSelectProps = {
   name: string;

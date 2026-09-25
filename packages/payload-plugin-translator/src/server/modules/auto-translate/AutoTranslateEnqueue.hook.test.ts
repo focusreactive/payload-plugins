@@ -1,17 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CollectionSlug, Field } from "payload";
 
-import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
+import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext.js";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 
 import {
   AUTO_TRANSLATE_CUSTOM_KEY,
   getAutoTranslateConfig,
-} from "../../../core/domain/auto-translate";
+} from "../../../core/domain/auto-translate/index.js";
 
-import { makeCollectionPolicyResolver } from "./AutoTranslate.policy";
-import type { NormalizedAutoTranslatePolicy } from "./AutoTranslate.policy";
-import { makeAutoTranslateHook, propagateAutoTranslateCustom } from "./AutoTranslateEnqueue.hook";
+import { makeCollectionPolicyResolver } from "./AutoTranslate.policy.js";
+import type { NormalizedAutoTranslatePolicy } from "./AutoTranslate.policy.js";
+import {
+  makeAutoTranslateHook,
+  propagateAutoTranslateCustom,
+} from "./AutoTranslateEnqueue.hook.js";
 
 const schema: Field[] = [{ name: "title", type: "text", localized: true }];
 const schemaMap: CollectionSchemaMap = new Map([["posts" as CollectionSlug, schema]]);

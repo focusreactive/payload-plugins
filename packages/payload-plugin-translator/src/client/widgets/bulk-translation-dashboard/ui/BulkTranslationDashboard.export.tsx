@@ -1,8 +1,8 @@
-import type { AccessGuard } from "../../../../types/AccessGuard";
-import { AnyAccessGuard } from "../../../../server/shared";
-import type { RawPayloadComponentExport } from "../../../../types/PayloadComponentExport";
-import type { TargetSelectionMode } from "../../../../types/TargetSelection";
-import { clientComponentPath } from "../../../shared/utils/componentPath";
+import type { AccessGuard } from "../../../../types/AccessGuard.js";
+import { AnyAccessGuard } from "../../../../server/shared/index.js";
+import type { RawPayloadComponentExport } from "../../../../types/PayloadComponentExport.js";
+import type { TargetSelectionMode } from "../../../../types/TargetSelection.js";
+import { clientComponentPath } from "../../../shared/utils/componentPath.js";
 
 export class BulkDocumentTranslationDashboard implements RawPayloadComponentExport {
   serverProps?: object | Record<string, any> | undefined;

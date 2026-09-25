@@ -1,8 +1,8 @@
 import type { CollectionSlug } from "payload";
 
-import type { AutoTranslateConfig } from "../../../core/domain/auto-translate";
-import { Locales } from "../../../core/domain/locales";
-import type { TaskInput } from "../task-runner/types";
+import type { AutoTranslateConfig } from "../../../core/domain/auto-translate/index.js";
+import { Locales } from "../../../core/domain/locales/index.js";
+import type { TaskInput } from "../task-runner/types.js";
 
 /** A collection's auto-translate rule with defaults resolved — the shape the hook consumes. */
 export type NormalizedAutoTranslatePolicy = {

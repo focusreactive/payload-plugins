@@ -1,8 +1,8 @@
-import { markFailureReason } from "../../core/domain/translation-providers/failureReason";
-import { isObject } from "../../core/kernel/utils/isObject";
-import type { CompletionFn } from "../shared";
-import { errorMessageLower, NoContentError, ProviderConfigurationError } from "../shared";
-import type { OpenAIChatParams, OpenAIChatResult, OpenAIClientShape } from "./OpenAI.shapes";
+import { markFailureReason } from "../../core/domain/translation-providers/failureReason.js";
+import { isObject } from "../../core/kernel/utils/isObject.js";
+import type { CompletionFn } from "../shared/index.js";
+import { errorMessageLower, NoContentError, ProviderConfigurationError } from "../shared/index.js";
+import type { OpenAIChatParams, OpenAIChatResult, OpenAIClientShape } from "./OpenAI.shapes.js";
 
 /**
  * Sampling parameters. Omitted from the request entirely unless set — several models reject them.

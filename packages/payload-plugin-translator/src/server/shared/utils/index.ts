@@ -1,9 +1,9 @@
-export { isEmpty } from "../../../core/kernel/utils/isEmpty";
-export { isObject } from "../../../core/kernel/utils/isObject";
-export { normalizePath } from "./normalizePath";
-export { getByPath } from "./getByPath";
-export { setByPath } from "./setByPath";
-export { pipe } from "./pipe";
-export { filterLocalizedFields } from "./filterLocalizedFields";
-export { LazyMap } from "./LazyMap";
-export type { LazyMapOptions } from "./LazyMap";
+export { isEmpty } from "../../../core/kernel/utils/isEmpty.js";
+export { isObject } from "../../../core/kernel/utils/isObject.js";
+export { normalizePath } from "./normalizePath.js";
+export { getByPath } from "./getByPath.js";
+export { setByPath } from "./setByPath.js";
+export { pipe } from "./pipe.js";
+export { filterLocalizedFields } from "./filterLocalizedFields.js";
+export { LazyMap } from "./LazyMap.js";
+export type { LazyMapOptions } from "./LazyMap.js";

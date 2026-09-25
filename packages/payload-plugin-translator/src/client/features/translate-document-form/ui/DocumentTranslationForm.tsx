@@ -2,18 +2,18 @@ import { useEffect, useMemo } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { FormProvider } from "react-hook-form";
 
-import { SendIcon } from "../../../shared/lib/assets/icons/SendIcon";
-import type { TargetSelectionMode } from "../../../../types/TargetSelection";
-import { pruneSourceFromTarget } from "../../../shared/lib/forms/pruneSourceFromTarget";
-import { useLocaleOptions } from "../../../shared/lib/payload/hooks/useLocaleOptions";
-import Button from "../../../shared/ui/Button";
-import FormSelect from "../../../shared/ui/form/FormSelect";
-import FormMultiSelect from "../../../shared/ui/form/FormMultiSelect";
-import { FormSelectStrategy } from "../../../shared/ui/form/FormSelectStrategy";
-import { FormCheckboxPublish } from "../../../shared/ui/form/FormCheckboxPublish";
+import { SendIcon } from "../../../shared/lib/assets/icons/SendIcon.js";
+import type { TargetSelectionMode } from "../../../../types/TargetSelection.js";
+import { pruneSourceFromTarget } from "../../../shared/lib/forms/pruneSourceFromTarget.js";
+import { useLocaleOptions } from "../../../shared/lib/payload/hooks/useLocaleOptions.js";
+import Button from "../../../shared/ui/Button/index.js";
+import FormSelect from "../../../shared/ui/form/FormSelect/index.js";
+import FormMultiSelect from "../../../shared/ui/form/FormMultiSelect/index.js";
+import { FormSelectStrategy } from "../../../shared/ui/form/FormSelectStrategy/index.js";
+import { FormCheckboxPublish } from "../../../shared/ui/form/FormCheckboxPublish/index.js";
 
-import { FORM_FIELDS } from "../model/constants";
-import type { FormValues } from "../model/schema";
+import { FORM_FIELDS } from "../model/constants.js";
+import type { FormValues } from "../model/schema.js";
 import styles from "./styles.module.scss";
 
 type DocumentTranslationFormProps = {

@@ -1,2 +1,2 @@
-export { isEmpty } from "./isEmpty";
-export { isObject } from "./isObject";
+export { isEmpty } from "./isEmpty.js";
+export { isObject } from "./isObject.js";

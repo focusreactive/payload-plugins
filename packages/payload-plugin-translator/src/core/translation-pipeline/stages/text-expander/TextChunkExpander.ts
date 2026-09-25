@@ -1,5 +1,5 @@
-import type { FieldChunk, TextChunk } from "../../types";
-import type { TextExpander } from "./TextExpander.interface";
+import type { FieldChunk, TextChunk } from "../../types/index.js";
+import type { TextExpander } from "./TextExpander.interface.js";
 
 /**
  * Result of text chunk expansion.

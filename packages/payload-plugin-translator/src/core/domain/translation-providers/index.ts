@@ -6,4 +6,4 @@ export type {
   TranslationInput,
   TranslationOutput,
   TranslationIndex,
-} from "./TranslationProvider.interface";
+} from "./TranslationProvider.interface.js";

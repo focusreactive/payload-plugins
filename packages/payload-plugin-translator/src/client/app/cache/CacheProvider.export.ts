@@ -1,5 +1,5 @@
-import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport";
-import { clientComponentPath } from "../../shared/utils/componentPath";
+import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport.js";
+import { clientComponentPath } from "../../shared/utils/componentPath.js";
 
 export class CacheProviderExport implements RawPayloadComponentExport {
   path = clientComponentPath("app/cache/CacheProvider");

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizePath } from "./normalizePath";
+import { normalizePath } from "./normalizePath.js";
 
 describe("normalizePath", () => {
   it("adds leading slash to path without one", () => {

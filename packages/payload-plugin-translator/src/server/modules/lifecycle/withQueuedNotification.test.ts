@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 import type { CollectionSlug } from "payload";
-import { withQueuedNotification } from "./withQueuedNotification";
-import { LifecycleNotifier } from "./LifecycleNotifier";
-import type { TaskRunner } from "../task-runner/TaskRunner.interface";
-import type { TaskInput } from "../task-runner/types";
+import { withQueuedNotification } from "./withQueuedNotification.js";
+import { LifecycleNotifier } from "./LifecycleNotifier.js";
+import type { TaskRunner } from "../task-runner/TaskRunner.interface.js";
+import type { TaskInput } from "../task-runner/types.js";
 
 const makeRunner = (): TaskRunner => ({
   enqueue: vi.fn().mockResolvedValue(undefined),

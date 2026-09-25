@@ -1,4 +1,4 @@
-import { TranslationProviderError } from "./TranslationProviderError";
+import { TranslationProviderError } from "./TranslationProviderError.js";
 
 /**
  * The reply was not JSON, or parsed to something that is not an object — arrays included.

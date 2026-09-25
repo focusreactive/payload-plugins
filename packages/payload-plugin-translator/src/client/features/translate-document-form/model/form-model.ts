@@ -6,9 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 
-import { defaultValues } from "./constants";
-import type { FormInput, FormValues } from "./schema";
-import { validationSchema } from "./schema";
+import { defaultValues } from "./constants.js";
+import type { FormInput, FormValues } from "./schema.js";
+import { validationSchema } from "./schema.js";
 
 type UseFormReturn_ = {
   form: UseFormReturn<FormValues>;

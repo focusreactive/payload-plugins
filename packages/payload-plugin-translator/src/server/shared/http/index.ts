@@ -1,8 +1,8 @@
-export { ServerResponse } from "./ServerResponse";
-export { withErrorHandler } from "./withErrorHandler";
-export { withAccessCheck } from "./withAccessCheck";
+export { ServerResponse } from "./ServerResponse.js";
+export { withErrorHandler } from "./withErrorHandler.js";
+export { withAccessCheck } from "./withAccessCheck.js";
 export {
   toClientErrorMessage,
   failureReasonText,
   GENERIC_TRANSLATION_ERROR,
-} from "./toClientErrorMessage";
+} from "./toClientErrorMessage.js";

@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import type { CollectionSlug } from "payload";
 
-import type { Task } from "../../modules/task-runner";
+import type { Task } from "../../modules/task-runner/index.js";
 
-import { latestTaskPerTargetLocale } from "./model";
+import { latestTaskPerTargetLocale } from "./model.js";
 
 const task = (over: Partial<Task> & { targetLng: string; id: string }): Task => ({
   id: over.id,

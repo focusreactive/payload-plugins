@@ -1,7 +1,7 @@
 import type OpenAI from "openai";
 import { describe, expect, it } from "vitest";
 
-import type { OpenAIClientShape } from "./OpenAI.shapes";
+import type { OpenAIClientShape } from "./OpenAI.shapes.js";
 
 // The one file allowed to import the real SDK type (type position, excluded from the build): it
 // asserts the hand-written slice still accepts the real client, so an SDK reshape fails here.

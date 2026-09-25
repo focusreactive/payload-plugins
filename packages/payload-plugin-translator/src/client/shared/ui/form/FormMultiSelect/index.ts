@@ -1,1 +1,1 @@
-export { default } from "./FormMultiSelect";
+export { default } from "./FormMultiSelect.js";

@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import type { FieldChunk } from "../../types";
-import type { LeafFieldLike } from "../../../kernel/field-traversal/types";
-import { TextChunkExpander } from "./TextChunkExpander";
-import { PlainTextExpander } from "./PlainTextExpander";
-import { RichTextExpander } from "./RichTextExpander";
+import type { FieldChunk } from "../../types/index.js";
+import type { LeafFieldLike } from "../../../kernel/field-traversal/types.js";
+import { TextChunkExpander } from "./TextChunkExpander.js";
+import { PlainTextExpander } from "./PlainTextExpander.js";
+import { RichTextExpander } from "./RichTextExpander.js";
 
 const createFieldChunk = (
   name: string,
