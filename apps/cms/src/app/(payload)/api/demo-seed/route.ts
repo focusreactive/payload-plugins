@@ -914,9 +914,9 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
       },
       {
         icon: "workflow",
-        title: "No migration and no search here",
+        title: "No migration here",
         description:
-          "Moving your Umbraco content and the site search are priced in the estimate, not demonstrated.",
+          "Moving your Umbraco content is priced in the estimate, not demonstrated. Search runs on this demo's content only.",
       },
     ],
     section: { theme: "light" },
