@@ -2178,7 +2178,8 @@ export async function POST(request: Request) {
         await payload.update({
           collection: "person",
           id: person.id,
-          data: { photo: photoId },
+          // Person has drafts now: without a status the photo could land on a draft only.
+          data: { photo: photoId, _status: "published" },
           overrideAccess: true,
         });
       }
