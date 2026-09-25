@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import {
+  AnyAccessGuard,
   createTranslationProvider,
   createSyncRunner,
   documentLevel,
@@ -155,6 +156,10 @@ export async function bootTestPayload(opts?: {
     plugins: [
       translatorPlugin({
         collections: managed,
+        // Open on purpose: the specs call the endpoints in-process with a request that carries no
+        // session, and what they are testing is the translation behaviour behind the gate, not the
+        // gate. A spec about the gate builds its own.
+        access: new AnyAccessGuard(),
         translationProvider: countingProvider,
         runner: opts?.runner ?? createSyncRunner(),
         levels: opts?.fieldSurface ? [documentLevel(), fieldLevel()] : [documentLevel()],

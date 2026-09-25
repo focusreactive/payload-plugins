@@ -1,11 +1,12 @@
 import { APIError } from "payload";
 
 import { ServerResponse } from "./ServerResponse.js";
-import { failureReasonText } from "./toClientErrorMessage.js";
+import { failureReasonText, toClientErrorMessage } from "./toClientErrorMessage.js";
 
 /**
- * Wraps async handler with error handling.
- * Catches APIError and generic Error, returns appropriate HTTP response.
+ * Non-`APIError` failures are collapsed through {@link toClientErrorMessage}: a provider error can
+ * carry the vendor's own text, an API key included. An `APIError` is Payload's or this plugin's own
+ * and keeps its message and status.
  */
 export function withErrorHandler<T extends (...args: any[]) => Promise<Response>>(handler: T): T {
   return (async (...args: Parameters<T>) => {
@@ -15,10 +16,10 @@ export function withErrorHandler<T extends (...args: any[]) => Promise<Response>
       console.error("[TranslateKit] Handler error:", e);
 
       if (e instanceof APIError) {
-        return ServerResponse.custom(e.message, e.status);
+        return ServerResponse.custom(failureReasonText(e.message) ?? e.message, e.status);
       }
       if (e instanceof Error) {
-        return ServerResponse.internalServerError(failureReasonText(e.message) ?? e.message);
+        return ServerResponse.internalServerError(toClientErrorMessage(e.message));
       }
       return ServerResponse.internalServerError();
     }

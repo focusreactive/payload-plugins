@@ -185,3 +185,24 @@ failures being the known #124 auto-translate cases that are red on `main` as wel
 the whole document) stays a follow-up — it changes the `TaskRunner` contract, both runners, five
 handlers and the client.
 
+
+## Superseded in part — 2026-09-15
+
+**"One live job per document" is now "one live job per document *and requester*."**
+`planEnqueue.pickHost` gained the requester to the set of things a job must match before it can host a
+later request, alongside the source locale, the strategy and the publish flag — and for the same
+reason those are there, sharpened: extending somebody else's job would run this request under rights
+its author does not have. Two people translating one document at once therefore get a job each, and
+two rows in the panel.
+
+Be precise about what survives and what does not. **The lost-update fix is untouched**: a translation
+still reads and writes one locale at a time, which is what the invariant was built for. **D4's literal
+promise — "it never creates two live jobs" — is no longer true**, and two consequences follow that
+this document's original reasoning did not have to weigh. Two live jobs for the same document and the
+same target locale can now exist, and unless the host turns on Payload's `enableConcurrencyControl`
+they can be picked in the same run and execute in parallel: the provider is paid twice for one locale,
+and the later write wins. Before, the second request was absorbed into the first job and cost nothing.
+
+That is the price of the access-control decision and it was accepted knowingly, but it is a price, not
+a detail. See `docs/plans/2026-09-15-access-control-surface-research.md` and the access-control work
+that followed it.

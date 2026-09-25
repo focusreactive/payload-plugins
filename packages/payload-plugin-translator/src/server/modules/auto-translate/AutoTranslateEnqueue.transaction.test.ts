@@ -57,7 +57,10 @@ describe("auto-translate hook — the triggering transaction", () => {
 
     await hook(hookArgs({ transactionID: "tx-99" }));
 
-    expect(enqueue).toHaveBeenCalledWith(expect.anything(), { transactionID: "tx-99" });
+    expect(enqueue).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ transactionID: "tx-99" })
+    );
   });
 
   it("settles a transaction id that is still a promise", async () => {
@@ -65,7 +68,10 @@ describe("auto-translate hook — the triggering transaction", () => {
 
     await hook(hookArgs({ transactionID: Promise.resolve("tx-9") }));
 
-    expect(enqueue).toHaveBeenCalledWith(expect.anything(), { transactionID: "tx-9" });
+    expect(enqueue).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ transactionID: "tx-9" })
+    );
   });
 
   it("hands no transaction id when the request has none", async () => {

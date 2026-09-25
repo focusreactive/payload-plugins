@@ -4,8 +4,8 @@ import { computeSourceFingerprint } from "../../../core/domain/content-projectio
 import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { isRecordStale } from "../../../core/domain/provenance/index.js";
 import type { ProvenanceKey, ProvenanceStore } from "../../../core/domain/provenance/index.js";
-import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes.js";
-import { killedTheCallersTransaction } from "../../shared/payload/TransactionScope.shapes.js";
+import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
+import { killedTheCallersTransaction } from "../../shared/payload/RequestScope.shapes.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
 
@@ -20,7 +20,7 @@ export type StalenessLocale = {
 /** Builds a {@link ProvenanceService} bound to a Payload instance; absent when provenance is disabled. */
 export type ProvenanceServiceFactory = (
   payload: Payload,
-  scope?: TransactionScope
+  scope?: RequestScope
 ) => ProvenanceService;
 
 /**
@@ -36,13 +36,13 @@ export class ProvenanceService {
   private readonly payload: Payload;
   private readonly store: ProvenanceStore;
   private readonly schemaMap: CollectionSchemaMap;
-  private readonly scope: TransactionScope;
+  private readonly scope: RequestScope;
 
   constructor(
     payload: Payload,
     store: ProvenanceStore,
     schemaMap: CollectionSchemaMap,
-    scope: TransactionScope = {}
+    scope: RequestScope = {}
   ) {
     this.payload = payload;
     this.store = store;

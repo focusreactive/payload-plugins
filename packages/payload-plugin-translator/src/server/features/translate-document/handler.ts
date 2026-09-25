@@ -6,8 +6,14 @@ import type { TranslationProvider } from "../../../core/domain/translation-provi
 import { translateContent } from "../../../core/translation-pipeline/index.js";
 import type { ProvenanceServiceFactory } from "../../modules/provenance/index.js";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
-import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes.js";
-import { freshReq } from "../../shared/payload/TransactionScope.shapes.js";
+import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
+import { freshReq } from "../../shared/payload/RequestScope.shapes.js";
+import {
+  checkTranslationPermission,
+  mayWrite,
+} from "../../shared/payload/translationPermission.js";
+import type { TranslationPermission } from "../../shared/payload/translationPermission.js";
+import { TranslationRefused } from "../../shared/payload/TranslationRefused.js";
 
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext.js";
@@ -15,14 +21,20 @@ import type { TranslateDocumentInput, TranslateDocumentOutput } from "./model.js
 import { resolveTargetLayer } from "./targetLayer.js";
 import type { PublishScope, TargetLayer } from "./targetLayer.js";
 
-/** Loop guard: the auto-translate afterChange hook (#51) skips writes carrying this key. */
 const translatorWriteContext = () => ({ [AUTO_TRANSLATE_SKIP_CONTEXT_KEY]: true });
 
 /**
- * Translates a single document from source language to target language. Provenance is delegated to
- * {@link ProvenanceService}: this handler only decides *when* to capture the source fingerprint
- * (before the pipeline mutates the source in place) and *when* to record it (after the save).
+ * Payload applies the collection's field rules to this write itself, deleting a field the requester
+ * may not write (`fields/hooks/beforeValidate/promise.js`) — it does not throw, so this is safe even
+ * inside the editor's transaction. An unattributed write keeps the behaviour it always had.
  */
+function enforcedAtTheWrite(
+  permission: TranslationPermission
+): { overrideAccess: false; user: Record<string, unknown> } | Record<string, never> {
+  if (!permission.user) return {};
+  return { overrideAccess: false, user: permission.user };
+}
+
 export class TranslateDocumentHandler implements Handler<
   TranslateDocumentInput,
   TranslateDocumentOutput
@@ -47,7 +59,7 @@ export class TranslateDocumentHandler implements Handler<
   async handle(
     payload: Payload,
     input: TranslateDocumentInput,
-    scope: TransactionScope = {}
+    scope: RequestScope = {}
   ): Promise<TranslateDocumentOutput> {
     const { collection, collectionId, sourceLng, targetLng, strategy, publishOnTranslation } =
       input;
@@ -60,9 +72,7 @@ export class TranslateDocumentHandler implements Handler<
       targetLng,
     });
 
-    // `draft: true` is unconditional: on a collection without drafts Payload has no version to
-    // substitute, so it returns the only row. The write cannot be as relaxed — the `no-drafts`
-    // layer omits `draft` entirely.
+    // Unconditional: with no drafts Payload has no version to substitute and returns the only row.
     const [sourceData, currentTargetVersion] = await Promise.all([
       fetchSourceDocument(payload, collection, collectionId, sourceLng, scope),
       payload.findByID({
@@ -75,6 +85,19 @@ export class TranslateDocumentHandler implements Handler<
         draft: true,
       }),
     ]);
+
+    // Placed ahead of the provider call so a refusal costs no money: a retry re-asks instead of
+    // re-buying a translation the write will refuse. `sourceData` stands in for the write payload — a
+    // rule keyed on the *translated* values is still enforced at the write on the deferred path.
+    const permission = await checkTranslationPermission({
+      payload,
+      collection,
+      id: String(collectionId),
+      data: sourceData as Record<string, unknown>,
+      targetLocale: targetLng,
+      scope,
+    });
+    if (!permission.allowed) throw new TranslationRefused(collection, targetLng);
 
     const provenance = this.provenanceServiceFactory?.(payload, scope);
     const sourceFingerprint = provenance?.captureFingerprint(collection, sourceData) ?? null;
@@ -91,7 +114,15 @@ export class TranslateDocumentHandler implements Handler<
     });
 
     if (translatedData) {
-      await this.saveTranslatedDocument(payload, input, translatedData, layer.write, scope);
+      await this.refuseUnlessAllowed(payload, input, translatedData, scope, permission);
+      await this.saveTranslatedDocument(
+        payload,
+        input,
+        translatedData,
+        layer.write,
+        scope,
+        permission
+      );
 
       if (provenance && sourceFingerprint !== null) {
         await provenance.record(
@@ -107,10 +138,38 @@ export class TranslateDocumentHandler implements Handler<
     }
 
     if (publishOnTranslation && layer.kind === "drafts") {
-      await this.publishTargetLocale(payload, input, layer.publish, scope);
+      const status = { _status: layer.publish.status };
+      await this.refuseUnlessAllowed(payload, input, status, scope, permission);
+      await this.publishTargetLocale(payload, input, layer.publish, scope, permission);
     }
 
     return { success: true };
+  }
+
+  /**
+   * The check before the provider call was asked about the source document; Payload will ask the same
+   * rule about the payload below. A rule that reads `data` answers differently to the two, and at the
+   * write a refusal is a `Forbidden` — inside the editor's transaction, that is their save. So ask
+   * once more with exactly what is about to be sent, while a refusal still costs only the translation.
+   */
+  private async refuseUnlessAllowed(
+    payload: Payload,
+    input: TranslateDocumentInput,
+    data: Record<string, unknown>,
+    scope: RequestScope,
+    permission: TranslationPermission
+  ): Promise<void> {
+    if (!permission.user) return;
+    const allowed = await mayWrite({
+      payload,
+      collection: input.collection,
+      id: String(input.collectionId),
+      data,
+      targetLocale: input.targetLng,
+      scope,
+      user: permission.user,
+    });
+    if (!allowed) throw new TranslationRefused(input.collection, input.targetLng);
   }
 
   private async saveTranslatedDocument(
@@ -118,10 +177,12 @@ export class TranslateDocumentHandler implements Handler<
     input: TranslateDocumentInput,
     translatedData: Record<string, unknown>,
     write: TargetLayer["write"],
-    scope: TransactionScope
+    scope: RequestScope,
+    permission: TranslationPermission
   ): Promise<void> {
     await payload.update({
       req: freshReq(scope),
+      ...enforcedAtTheWrite(permission),
       collection: input.collection,
       id: input.collectionId,
       data: translatedData,
@@ -136,10 +197,12 @@ export class TranslateDocumentHandler implements Handler<
     payload: Payload,
     input: TranslateDocumentInput,
     publish: PublishScope,
-    scope: TransactionScope
+    scope: RequestScope,
+    permission: TranslationPermission
   ): Promise<void> {
     await payload.update({
       req: freshReq(scope),
+      ...enforcedAtTheWrite(permission),
       collection: input.collection,
       id: input.collectionId,
       data: { _status: publish.status },
