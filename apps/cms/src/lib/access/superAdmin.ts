@@ -1,8 +1,5 @@
+import { roleOf } from "./roles";
 import type { isAccessible } from "./types";
 
-export const superAdmin: isAccessible<boolean> = ({ req: { user } }) => {
-  if (!user) {
-    return false;
-  }
-  return "role" in user && user.role === "admin";
-};
+export const superAdmin: isAccessible<boolean> = ({ req: { user } }) =>
+  roleOf(user) === "administrator";

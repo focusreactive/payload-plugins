@@ -1517,14 +1517,11 @@ function buildDemoMedia(): DemoMediaSpec[] {
 }
 
 /**
- * The Users collection has three roles - admin, author, user - and a markets field. The four
- * personas map onto them: the international and local editors are both "author", told apart by
- * markets (empty for the international editor, Canada for the local one, which scopes articles and
- * people to Canada and stops them creating or deleting pages), and the fee-earner - who only submits a profile-change request for
- * approval - gets "user". None of these is the shared admin@focusreactive.com login; each is a
- * dedicated demo identity with its own email. Passwords are never hardcoded: each is read from
- * its own env var at seed time, mirroring how SANDBOX_E_SEED_TOKEN already works here, so the
- * actual values never enter this public repo.
+ * One demo identity per role, each with its own email. None of these is the shared
+ * admin@focusreactive.com login. The local editor is a market editor scoped to Canada, which limits
+ * articles and people to Canada and stops them creating or deleting pages. Passwords are never
+ * hardcoded: each is read from its own env var at seed time, mirroring how SANDBOX_E_SEED_TOKEN
+ * already works here, so the actual values never enter this public repo.
  */
 interface DemoUserSpec {
   email: string;
@@ -1542,19 +1539,19 @@ const DEMO_USERS: DemoUserSpec[] = [
   {
     email: "administrator@example.com",
     name: "Administrator",
-    role: "admin",
+    role: "administrator",
     passwordEnvVar: "SANDBOX_E_ADMIN_PASSWORD",
   },
   {
     email: "international.editor@example.com",
     name: "International digital and communications editor",
-    role: "author",
+    role: "globalEditor",
     passwordEnvVar: "SANDBOX_E_INTL_EDITOR_PASSWORD",
   },
   {
     email: "local.editor@example.com",
     name: "Local marketing and communications editor",
-    role: "author",
+    role: "marketEditor",
     // Canada, because the seeded people and articles include Canadian ones, so the scope shows
     // both sides: Canadian articles open for editing, UK and Asian ones read only.
     markets: ["canada"],
@@ -1563,7 +1560,7 @@ const DEMO_USERS: DemoUserSpec[] = [
   {
     email: "fee.earner@example.com",
     name: "Fee-earner",
-    role: "user",
+    role: "feeEarner",
     // Canadian, so the local editor (Canada) can approve the submission as well as the
     // international editor and the administrator.
     personEmail: FEE_EARNER_PERSON_EMAIL,
@@ -2665,7 +2662,7 @@ export async function POST(request: Request) {
           overrideAccess: true,
           data: {
             name: "Screenshot",
-            role: "admin",
+            role: "administrator",
             password: screenshotPassword,
           },
         });
@@ -2677,7 +2674,7 @@ export async function POST(request: Request) {
           data: {
             name: "Screenshot",
             email: screenshotUserEmail,
-            role: "admin",
+            role: "administrator",
             password: screenshotPassword,
           },
         });
@@ -2690,6 +2687,21 @@ export async function POST(request: Request) {
         overrideAccess: true,
       });
     }
+
+    // The Neon branch was copied from a database shared with other sandboxes, so it carried team
+    // and test logins the client should not find in the Users list. Only the four personas, the
+    // FocusReactive admin that owns the MCP key, and a requested screenshot login survive a reseed.
+    const keptUserEmails = [
+      ...DEMO_USERS.map((persona) => persona.email),
+      "admin@focusreactive.com",
+      ...(screenshotPassword ? [screenshotUserEmail] : []),
+    ];
+    const deletedUsers = await payload.delete({
+      collection: "users",
+      where: { email: { not_in: keptUserEmails } },
+      overrideAccess: true,
+    });
+    const usersDeletedCount = deletedUsers.docs.length;
 
     // Upsert by author so a second run reuses the same testimonial instead of duplicating it.
     const testimonialAuthor = "Elena Voss";
@@ -2885,6 +2897,7 @@ export async function POST(request: Request) {
         posts: deletedPosts.docs.length,
         media: mediaDeletedCount,
         presets: presetsDeletedCount,
+        users: usersDeletedCount,
       },
       created: {
         page: PAGE_TREE.length,

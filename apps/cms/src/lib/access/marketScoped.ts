@@ -5,9 +5,10 @@ import { MARKET_OPTIONS } from "@/lib/fields/marketsField";
 import type { User } from "@/payload-types";
 
 /**
- * A local marketing editor carries the markets they look after on their user record. An editor
- * with none set is the international editor and works across every market; one with markets set
- * may only change documents filed under at least one of them. Admins are never scoped.
+ * A market editor carries the markets they look after on their user record and may only change
+ * documents filed under at least one of them. A market editor with no markets set can change
+ * nothing market-scoped, rather than silently becoming a global editor. Administrators and global
+ * editors are never scoped.
  */
 // req.user can also be an MCP API key, which has no role and is never scoped.
 function asEditor(user: unknown): User | null {
@@ -16,17 +17,17 @@ function asEditor(user: unknown): User | null {
 
 function scopedMarkets(user: unknown): string[] | null {
   const editor = asEditor(user);
-  if (!editor || editor.role !== "author") return null;
-  return editor.markets?.length ? editor.markets : null;
+  if (!editor || editor.role !== "marketEditor") return null;
+  return editor.markets ?? [];
 }
 
 export const editorialInOwnMarkets: Access = ({ req: { user } }) => {
   const editor = asEditor(user);
   if (!editor) return false;
-  if (editor.role === "admin") return true;
-  if (editor.role !== "author") return false;
-  const markets = scopedMarkets(editor);
-  return markets ? { markets: { in: markets } } : true;
+  if (editor.role === "administrator" || editor.role === "globalEditor") return true;
+  if (editor.role !== "marketEditor") return false;
+  const markets = scopedMarkets(editor) ?? [];
+  return markets.length > 0 ? { markets: { in: markets } } : false;
 };
 
 /**
@@ -61,13 +62,11 @@ export const rejectMarketsOutsideEditorScope: CollectionBeforeChangeHook = ({
 };
 
 /**
- * The content types a local editor does not own. They edit pages in place but never create or
- * delete one, so the site structure stays with the international team.
+ * The content types a market editor does not own. They edit pages in place but never create or
+ * delete one, so the site structure stays with the global editors.
  */
 export const notScopedEditor: Access = ({ req: { user } }) => {
   const editor = asEditor(user);
   if (!editor) return false;
-  if (editor.role === "admin") return true;
-  if (editor.role !== "author") return false;
-  return scopedMarkets(editor) === null;
+  return editor.role === "administrator" || editor.role === "globalEditor";
 };

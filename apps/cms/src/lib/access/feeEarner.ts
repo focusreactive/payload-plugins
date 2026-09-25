@@ -3,12 +3,12 @@ import type { Access, FieldAccess } from "payload";
 import type { User } from "@/payload-types";
 
 /**
- * A fee-earner is the "user" role: a lawyer with a login, not an editor. They look after one
+ * A fee-earner is a lawyer with a login, not an editor. They look after one
  * profile, the Person their user record is linked to, and every change they make waits in a draft
  * for an editor to publish.
  */
 export function isFeeEarner(user: unknown): user is User {
-  return Boolean(user && typeof user === "object" && "role" in user && user.role === "user");
+  return Boolean(user && typeof user === "object" && "role" in user && user.role === "feeEarner");
 }
 
 export function linkedPersonId(user: unknown): number | null {

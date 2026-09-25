@@ -11,12 +11,12 @@ import type { User } from "@/payload-types";
  */
 export const PublishOrSubmitForReview = () => {
   const { user } = useAuth<User>();
-  if (user?.role === "user") return <PublishButton label="Submit for review" />;
+  if (user?.role === "feeEarner") return <PublishButton label="Submit for review" />;
   return <PublishButton />;
 };
 
 export const UnpublishForEditorsOnly = () => {
   const { user } = useAuth<User>();
-  if (user?.role === "user") return null;
+  if (user?.role === "feeEarner") return null;
   return <UnpublishButton />;
 };

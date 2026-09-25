@@ -197,7 +197,7 @@ export const mcpPluginConfig = mcpPlugin({
     },
     users: {
       description:
-        "CMS user accounts. Each user has a name, email, and role (admin/author/user). Authentication-enabled. Use this collection to read, create, update or delete users.",
+        "CMS user accounts. Each user has a name, email, and role (administrator, globalEditor, marketEditor or feeEarner). Authentication-enabled. Use this collection to read, create, update or delete users.",
       enabled: {
         create: true,
         delete: true,

@@ -45,6 +45,7 @@ import * as migration_20260925_085418_translator_payload_jobs_runner from './202
 import * as migration_20260925_105646_person_review_and_standfirsts from './20260925_105646_person_review_and_standfirsts';
 import * as migration_20260925_105714_seo_meta_on_insight_and_person from './20260925_105714_seo_meta_on_insight_and_person';
 import * as migration_20260925_150000_widen_document_embeddings_collection_enum from './20260925_150000_widen_document_embeddings_collection_enum';
+import * as migration_20260925_160000_four_user_roles from './20260925_160000_four_user_roles';
 
 export const migrations = [
   {
@@ -280,6 +281,11 @@ export const migrations = [
   {
     up: migration_20260925_150000_widen_document_embeddings_collection_enum.up,
     down: migration_20260925_150000_widen_document_embeddings_collection_enum.down,
-    name: '20260925_150000_widen_document_embeddings_collection_enum'
+    name: '20260925_150000_widen_document_embeddings_collection_enum',
+  },
+  {
+    up: migration_20260925_160000_four_user_roles.up,
+    down: migration_20260925_160000_four_user_roles.down,
+    name: '20260925_160000_four_user_roles',
   },
 ];

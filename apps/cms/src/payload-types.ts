@@ -1792,11 +1792,11 @@ export interface User {
    */
   name: string;
   /**
-   * The role of the user
+   * Administrator: everything, including users and settings. Global editor: content in every market, and approves fee-earners' profile changes. Market editor: content and profile approvals only in the markets set below, and cannot create or delete pages. Fee-earner: only their own linked profile, and every change waits for an editor's approval.
    */
-  role: 'admin' | 'author' | 'user';
+  role: 'administrator' | 'globalEditor' | 'marketEditor' | 'feeEarner';
   /**
-   * Leave empty for an editor who works across every market. Set it for a local editor, who can then change only articles and people in these markets, and cannot create or delete pages.
+   * The markets this editor may change articles and people in. With none set, they can change nothing market-scoped.
    */
   markets?:
     | ('uk-europe' | 'canada' | 'greater-china' | 'se-asia' | 'usa' | 'japan' | 'korea' | 'nordics' | 'south-america')[]

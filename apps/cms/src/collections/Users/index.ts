@@ -1,7 +1,7 @@
 import { MARKET_OPTIONS } from "@/lib/fields/marketsField";
 import type { CollectionConfig } from "payload";
 
-import { authenticated, onlySelf, or, superAdmin, user } from "@/lib/access";
+import { authenticated, onlySelf, superAdmin } from "@/lib/access";
 
 export const Users: CollectionConfig<"users"> = {
   access: {
@@ -14,17 +14,7 @@ export const Users: CollectionConfig<"users"> = {
       if (user.collection !== "users") {
         return true;
       }
-      if (superAdmin({ req: { user } }) && id !== user.id) {
-        return true;
-      }
-
-      if (user?.role === "admin") {
-        if (id === user.id) {
-          return false;
-        }
-        return true;
-      }
-      return false;
+      return superAdmin({ req: { user } }) && id !== user.id;
     },
     read: ({ req: { user } }) => {
       if (!user) {
@@ -81,51 +71,27 @@ export const Users: CollectionConfig<"users"> = {
           if (user.collection !== "users") {
             return false;
           }
-          if (superAdmin({ req: { user } }) && user.id !== doc?.id) {
-            return true;
-          }
-          if (user?.role === "admin" && user.id !== doc?.id) {
-            return true;
-          }
-
-          return false;
+          return superAdmin({ req: { user } }) && user.id !== doc?.id;
         },
       },
       admin: {
         description: {
-          en: "The role of the user",
-          es: "El rol del usuario",
+          en: "Administrator: everything, including users and settings. Global editor: content in every market, and approves fee-earners' profile changes. Market editor: content and profile approvals only in the markets set below, and cannot create or delete pages. Fee-earner: only their own linked profile, and every change waits for an editor's approval.",
+          es: "Administrador: todo. Editor global: todos los mercados. Editor de mercado: solo sus mercados. Abogado: solo su propio perfil, con aprobación.",
         },
         position: "sidebar",
       },
-      defaultValue: "user",
+      defaultValue: "feeEarner",
       label: {
         en: "Role",
         es: "Rol",
       },
       name: "role",
       options: [
-        {
-          label: {
-            en: "Admin",
-            es: "Admin",
-          },
-          value: "admin",
-        },
-        {
-          label: {
-            en: "Author",
-            es: "Autor",
-          },
-          value: "author",
-        },
-        {
-          label: {
-            en: "User",
-            es: "Usuario",
-          },
-          value: "user",
-        },
+        { label: { en: "Administrator", es: "Administrador" }, value: "administrator" },
+        { label: { en: "Global editor", es: "Editor global" }, value: "globalEditor" },
+        { label: { en: "Market editor", es: "Editor de mercado" }, value: "marketEditor" },
+        { label: { en: "Fee-earner", es: "Abogado" }, value: "feeEarner" },
       ],
       required: true,
       saveToJWT: true,
@@ -139,14 +105,15 @@ export const Users: CollectionConfig<"users"> = {
       admin: {
         position: "sidebar",
         description: {
-          en: "Leave empty for an editor who works across every market. Set it for a local editor, who can then change only articles and people in these markets, and cannot create or delete pages.",
-          es: "Déjalo vacío para un editor que trabaja en todos los mercados.",
+          en: "The markets this editor may change articles and people in. With none set, they can change nothing market-scoped.",
+          es: "Los mercados en los que este editor puede cambiar contenido.",
         },
-        condition: (data) => data?.role === "author",
+        condition: (data) => data?.role === "marketEditor",
       },
       access: {
         // Only an admin decides which markets an editor may publish to.
-        update: ({ req: { user } }) => Boolean(user && "role" in user && user.role === "admin"),
+        update: ({ req: { user } }) =>
+          Boolean(user && "role" in user && user.role === "administrator"),
       },
       label: { en: "Markets this editor looks after", es: "Mercados de este editor" },
       saveToJWT: true,
@@ -161,11 +128,12 @@ export const Users: CollectionConfig<"users"> = {
           en: "The profile this fee-earner may edit. Their changes are saved as drafts for an editor to publish.",
           es: "El perfil que este usuario puede editar.",
         },
-        condition: (data) => data?.role === "user",
+        condition: (data) => data?.role === "feeEarner",
       },
       access: {
         // Only an admin decides whose profile a fee-earner may edit.
-        update: ({ req: { user } }) => Boolean(user && "role" in user && user.role === "admin"),
+        update: ({ req: { user } }) =>
+          Boolean(user && "role" in user && user.role === "administrator"),
       },
       label: { en: "Profile", es: "Perfil" },
     },

@@ -6,7 +6,7 @@ export const LOCAL_DEV_MCP_USER: MCPAccessSettings["user"] = {
   email: "local-mcp@localhost",
   id: 0,
   name: "Local MCP",
-  role: "admin",
+  role: "administrator",
   updatedAt: new Date(0).toISOString(),
 };
 

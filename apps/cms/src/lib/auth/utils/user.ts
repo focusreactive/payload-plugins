@@ -34,7 +34,7 @@ function normalizeEmailAndName(input: SSOUserInput): {
 /**
  * Finds or creates an admin user based on the SSO (OIDC/OAuth) profile.
  * If the user exists and is admin, returns it.
- * If not exists, creates with role admin. If exists and is not admin, error.
+ * If not exists, creates with role administrator. If exists and is not admin, error.
  */
 export async function findOrCreateAdminUser(
   payload: Payload,
@@ -73,7 +73,7 @@ export async function findOrCreateAdminUser(
       email,
       name: displayName,
       password: randomPassword,
-      role: "admin",
+      role: "administrator",
     },
   });
 
