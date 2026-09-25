@@ -1,3 +1,4 @@
+import { draftMode } from "next/headers";
 import { cache } from "react";
 
 import type { Insight, Person } from "@/payload-types";
@@ -87,7 +88,8 @@ export async function resolveListingDetail(
       fallbackLocale: false,
       where: { slug: { equals: lastSegment } },
       limit: 1,
-      depth: 1,
+      // Depth 2 reaches the author's photo, not just the author.
+      depth: 2,
     });
     const insight = found.docs[0];
     if (!insight?.title) return null;
@@ -109,11 +111,16 @@ export async function resolveListingDetail(
 
   const peoplePaths = await getListingPathsBySlug("our-people");
   if (peoplePaths[locale as SiteLocale] === parentPath) {
+    // Live preview renders this page in draft mode, so it must read the latest draft rather than
+    // the published version, or a saved change never shows beside the form.
+    const { isEnabled: draft } = await draftMode();
     const people = await payload.find({
       collection: "person",
-      where: { _status: { equals: "published" } },
+      draft,
+      where: draft ? {} : { _status: { equals: "published" } },
+      locale: locale as "en",
       limit: 200,
-      depth: 0,
+      depth: 1,
     });
     const person = people.docs.find((candidate) => personSlug(candidate) === lastSegment);
     if (!person) return null;
@@ -158,7 +165,10 @@ export async function getListingDetailStaticParams(): Promise<
       });
       for (const insight of insights.docs) {
         if (insight.title && insight.slug) {
-          params.push({ locale, slug: [...insightBase.split("/").filter(Boolean), insight.slug] });
+          params.push({
+            locale,
+            slug: [...insightBase.split("/").filter(Boolean), insight.slug],
+          });
         }
       }
     }

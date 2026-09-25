@@ -6,11 +6,16 @@ import { PersonJsonLd } from "@/components/seo/components";
 import { RichText } from "@/components/shared";
 import { getInsightHref, getPayloadClient, getPersonHref } from "@/dal/index";
 import { MARKET_OPTIONS } from "@/lib/fields/marketsField";
+import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import type { Insight, Person } from "@/payload-types";
 import { Avatar } from "@/shared/ui/shadcn/base/avatar/avatar";
 import { Badge } from "@/shared/ui/shadcn/base/badges/badges";
 
-const DATE_LOCALE: Record<string, string> = { en: "en-GB", fr: "fr-FR", ja: "ja-JP" };
+const DATE_LOCALE: Record<string, string> = {
+  en: "en-GB",
+  fr: "fr-FR",
+  ja: "ja-JP",
+};
 
 const COPY: Record<string, Record<string, string>> = {
   en: {
@@ -59,6 +64,10 @@ function bodyRepeatsStandfirst(insight: Insight) {
   if (!standfirst) return false;
   const bodyText = JSON.stringify(insight.body ?? "").replace(/\\n/gu, " ");
   return bodyText.includes(standfirst.slice(0, 60));
+}
+
+function photoUrlOf(person: Person) {
+  return typeof person.photo === "object" && person.photo ? getMediaUrl(person.photo.url) : null;
 }
 
 function initialsOf(name: string) {
@@ -143,7 +152,13 @@ export async function InsightDetail({ insight, locale }: { insight: Insight; loc
             <div className="mt-12 flex flex-col items-start justify-between gap-y-6 border-t border-secondary pt-6 md:flex-row md:items-center">
               {author ? (
                 <div className="flex items-center gap-3 md:gap-4">
-                  <Avatar border initials={initialsOf(author.name)} alt={author.name} size="lg" />
+                  <Avatar
+                    border
+                    src={photoUrlOf(author)}
+                    initials={initialsOf(author.name)}
+                    alt={author.name}
+                    size="lg"
+                  />
                   <div>
                     {authorLink(
                       "block text-md font-semibold text-primary underline-offset-4 hover:text-brand-secondary hover:underline md:text-lg"
@@ -182,7 +197,9 @@ export async function PersonDetail({ person, locale }: { person: Person; locale:
     collection: "insight",
     locale: locale as "en",
     fallbackLocale: false,
-    where: { and: [{ author: { equals: person.id } }, { title: { exists: true } }] },
+    where: {
+      and: [{ author: { equals: person.id } }, { title: { exists: true } }],
+    },
     sort: "-publishedDate",
     limit: 50,
     depth: 0,
@@ -218,7 +235,13 @@ export async function PersonDetail({ person, locale }: { person: Person; locale:
       <div className="mx-auto max-w-container px-4 md:px-8">
         <div className="max-w-180">
           <div className="flex flex-col items-start gap-6 md:flex-row md:items-center">
-            <Avatar border initials={initialsOf(person.name)} alt={person.name} size="2xl" />
+            <Avatar
+              border
+              src={photoUrlOf(person)}
+              initials={initialsOf(person.name)}
+              alt={person.name}
+              size="2xl"
+            />
             <div>
               <h1 className="text-display-sm font-semibold text-primary md:text-display-md">
                 {person.name}
