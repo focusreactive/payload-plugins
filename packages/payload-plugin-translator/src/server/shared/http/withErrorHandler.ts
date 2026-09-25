@@ -1,7 +1,7 @@
 import { APIError } from "payload";
 
-import { ServerResponse } from "./ServerResponse";
-import { failureReasonText, toClientErrorMessage } from "./toClientErrorMessage";
+import { ServerResponse } from "./ServerResponse.js";
+import { failureReasonText, toClientErrorMessage } from "./toClientErrorMessage.js";
 
 /**
  * Non-`APIError` failures are collapsed through {@link toClientErrorMessage}: a provider error can

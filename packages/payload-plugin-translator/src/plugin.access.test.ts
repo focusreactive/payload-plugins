@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 import type { CollectionConfig, Config } from "payload";
 
-import { translatorPlugin } from "./plugin";
-import { createSyncRunner } from "./server/modules/task-runner/sync-runner";
-import type { TranslationProvider } from "./core/domain/translation-providers";
+import { translatorPlugin } from "./plugin.js";
+import { createSyncRunner } from "./server/modules/task-runner/sync-runner/index.js";
+import type { TranslationProvider } from "./core/domain/translation-providers/index.js";
 
 const provider: TranslationProvider = { translate: vi.fn().mockResolvedValue({}) };
 

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { runDryRun } from "./runDryRun";
+import { runDryRun } from "./runDryRun.js";
 
 describe("runDryRun", () => {
   beforeEach(() => {

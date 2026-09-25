@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { APIError } from "payload";
 
-import { withErrorHandler } from "./withErrorHandler";
+import { withErrorHandler } from "./withErrorHandler.js";
 
 // A provider error can carry the API key — the sanitizer's own docblock names
 // `401 Incorrect API key provided: sk-proj-…` as the case. Production is the environment that matters;

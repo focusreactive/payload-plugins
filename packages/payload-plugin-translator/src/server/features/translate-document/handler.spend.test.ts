@@ -1,26 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 
-import { TranslateDocumentHandler } from "./handler";
-import type { TranslationProvider } from "../../../core/domain/translation-providers";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
-import type { TranslateDocumentInput } from "./model";
+import { TranslateDocumentHandler } from "./handler.js";
+import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
+import type { TranslateDocumentInput } from "./model.js";
 
-vi.mock("../../../core/translation-pipeline", () => ({
+vi.mock("../../../core/translation-pipeline/index.js", () => ({
   translateContent: vi.fn().mockResolvedValue({ title: "Titel" }),
 }));
 
-vi.mock("../../shared/payload/translationPermission", () => ({
+vi.mock("../../shared/payload/translationPermission.js", () => ({
   checkTranslationPermission: vi.fn(),
   // The second ask, with the payload each write actually sends; allowed unless a case says otherwise.
   mayWrite: vi.fn().mockResolvedValue(true),
 }));
 
 const mocks = async () => ({
-  translate: (await import("../../../core/translation-pipeline")).translateContent as ReturnType<
-    typeof vi.fn
-  >,
-  permission: (await import("../../shared/payload/translationPermission"))
+  translate: (await import("../../../core/translation-pipeline/index.js"))
+    .translateContent as ReturnType<typeof vi.fn>,
+  permission: (await import("../../shared/payload/translationPermission.js"))
     .checkTranslationPermission as ReturnType<typeof vi.fn>,
 });
 

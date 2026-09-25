@@ -1,5 +1,5 @@
-import type { UserFacingFailureReason } from "../../../core/domain/translation-providers/failureReason";
-import { readFailureReason } from "../../../core/domain/translation-providers/failureReason";
+import type { UserFacingFailureReason } from "../../../core/domain/translation-providers/failureReason.js";
+import { readFailureReason } from "../../../core/domain/translation-providers/failureReason.js";
 
 /** Re-authored here, never taken from the error: only text this file owns is free of vendor detail. */
 const REASON_TEXT: Record<UserFacingFailureReason, string> = {

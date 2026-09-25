@@ -1,5 +1,5 @@
-import { TransportError } from "./TransportError";
-import { TranslationProviderError } from "./TranslationProviderError";
+import { TransportError } from "./TransportError.js";
+import { TranslationProviderError } from "./TranslationProviderError.js";
 
 /**
  * Turns anything a transport threw into a {@link TransportError}, keeping the original on `cause`.

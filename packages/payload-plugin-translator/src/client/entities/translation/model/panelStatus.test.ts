@@ -1,15 +1,15 @@
 import { describe, it, expect } from "vitest";
 
-import { DocumentTranslationStatus } from "./enums";
+import { DocumentTranslationStatus } from "./enums.js";
 import {
   deriveCollectionPanelStatus,
   deriveDocumentRunStatus,
   derivePanelStatus,
   describePanelStatus,
   MARKER_DOT,
-} from "./panelStatus";
-import { STATE_DOT } from "./statusRows";
-import type { DocumentTranslation, GroupedCollectionTranslationStatus } from "./types";
+} from "./panelStatus.js";
+import { STATE_DOT } from "./statusRows.js";
+import type { DocumentTranslation, GroupedCollectionTranslationStatus } from "./types.js";
 
 describe("derivePanelStatus", () => {
   it("failed outranks everything, including stale locales", () => {

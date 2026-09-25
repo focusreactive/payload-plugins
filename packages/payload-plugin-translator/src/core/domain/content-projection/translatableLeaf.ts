@@ -8,10 +8,10 @@
  * `@repo/translator-core` unchanged.
  */
 
-import { isFieldExcludedFromTranslation } from "../field-config";
-import type { FieldLike, LeafFieldLike } from "../../kernel/field-traversal/types";
-import { collectSerializedLexicalTextNodes } from "../../kernel/lexical/collectTextNodes";
-import { isSerializedLexicalRoot } from "../../kernel/lexical/guards";
+import { isFieldExcludedFromTranslation } from "../field-config/index.js";
+import type { FieldLike, LeafFieldLike } from "../../kernel/field-traversal/types.js";
+import { collectSerializedLexicalTextNodes } from "../../kernel/lexical/collectTextNodes.js";
+import { isSerializedLexicalRoot } from "../../kernel/lexical/guards.js";
 
 /** The field types this package translates (mirrors `isTranslatableField`, payload-free). */
 const isTranslatableFieldType = (field: { type: string }): boolean =>

@@ -1,10 +1,10 @@
 import type { Field, RichTextField, TextareaField, TextField } from "payload";
 
-import type { FieldTranslationConfig } from "./core/domain/field-config";
-import { TRANSLATE_KIT_CUSTOM_KEY } from "./core/domain/field-config";
-import { TranslateFieldControlExport } from "./client/widgets/translate-field-control/ui/TranslateFieldControl.export";
-import type { FieldControlPositioner } from "./field-actions";
-import { beforeInputPositioner } from "./field-actions";
+import type { FieldTranslationConfig } from "./core/domain/field-config/index.js";
+import { TRANSLATE_KIT_CUSTOM_KEY } from "./core/domain/field-config/index.js";
+import { TranslateFieldControlExport } from "./client/widgets/translate-field-control/ui/TranslateFieldControl.export.js";
+import type { FieldControlPositioner } from "./field-actions.js";
+import { beforeInputPositioner } from "./field-actions.js";
 
 export type { FieldTranslationConfig };
 

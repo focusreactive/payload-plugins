@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 
-import type { ManagedCollectionsConfig } from "./Provenance.shapes";
+import type { ManagedCollectionsConfig } from "./Provenance.shapes.js";
 
 export const DEFAULT_PROVENANCE_SLUG = "translator-provenance";
 

@@ -1,9 +1,13 @@
-import { isTranslatableLeaf } from "../../../domain/content-projection/translatableLeaf";
-import type { ChildCursor, FieldLike, FieldWalker } from "../../../kernel/field-traversal";
-import { matchElementById, resolveBlockFields, walkFields } from "../../../kernel/field-traversal";
-import { isObject } from "../../../kernel/utils/isObject";
-import type { TranslationStrategy } from "../../strategies";
-import type { FieldChunk } from "../../types";
+import { isTranslatableLeaf } from "../../../domain/content-projection/translatableLeaf.js";
+import type { ChildCursor, FieldLike, FieldWalker } from "../../../kernel/field-traversal/index.js";
+import {
+  matchElementById,
+  resolveBlockFields,
+  walkFields,
+} from "../../../kernel/field-traversal/index.js";
+import { isObject } from "../../../kernel/utils/isObject.js";
+import type { TranslationStrategy } from "../../strategies/index.js";
+import type { FieldChunk } from "../../types/index.js";
 
 /** Data position for the collect walk: the three parallel trees plus the path from root. */
 type Cursor = {

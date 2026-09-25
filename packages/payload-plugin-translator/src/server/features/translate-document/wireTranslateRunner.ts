@@ -1,22 +1,22 @@
 import type { CollectionSlug } from "payload";
 
-import type { TranslationProvider } from "../../../core/domain/translation-providers";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
-import type { ConfigModifier } from "../../../types/ConfigModifier";
-import type { ProvenanceServiceFactory } from "../../modules/provenance";
+import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
+import type { ConfigModifier } from "../../../types/ConfigModifier.js";
+import type { ProvenanceServiceFactory } from "../../modules/provenance/index.js";
 import {
   LifecycleNotifier,
   taskFromHandlerInput,
   withQueuedNotification,
-} from "../../modules/lifecycle";
-import type { TranslationLifecycleCallbacks } from "../../modules/lifecycle";
+} from "../../modules/lifecycle/index.js";
+import type { TranslationLifecycleCallbacks } from "../../modules/lifecycle/index.js";
 import type {
   TaskRunnerContext,
   TaskRunnerFactory,
   TaskRunnerProvider,
-} from "../../modules/task-runner";
+} from "../../modules/task-runner/index.js";
 
-import { TranslateDocumentHandler } from "./handler";
+import { TranslateDocumentHandler } from "./handler.js";
 
 type WireTranslateRunnerParams = {
   translationProvider: TranslationProvider;

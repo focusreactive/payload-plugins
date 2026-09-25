@@ -2,8 +2,8 @@
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import type { PropsWithChildren } from "react";
-import { CacheClientProviderFactory } from "../../shared/providers/CacheClientProvider";
-import { TranslateKitConfigProvider } from "../config";
+import { CacheClientProviderFactory } from "../../shared/providers/CacheClientProvider/index.js";
+import { TranslateKitConfigProvider } from "../config/index.js";
 
 const queryClient = new CacheClientProviderFactory().create("client");
 

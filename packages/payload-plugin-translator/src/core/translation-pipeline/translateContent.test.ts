@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import type { Field } from "payload";
 
-import type { TranslationProvider } from "../domain/translation-providers";
-import { computeSourceFingerprint } from "../domain/content-projection/computeSourceFingerprint";
-import { translateContent } from "./translateContent";
+import type { TranslationProvider } from "../domain/translation-providers/index.js";
+import { computeSourceFingerprint } from "../domain/content-projection/computeSourceFingerprint.js";
+import { translateContent } from "./translateContent.js";
 
 // Deterministic fake provider: prefixes each collected text chunk with "T:".
 // Preserves the numeric keys, as the contract requires.

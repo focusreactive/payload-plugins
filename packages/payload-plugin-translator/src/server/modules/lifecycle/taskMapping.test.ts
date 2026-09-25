@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import type { TaskInput } from "../task-runner/types";
-import type { TaskHandlerInput } from "../task-runner/TaskRunnerProvider.interface";
-import { taskFromInput, taskFromHandlerInput } from "./taskMapping";
+import type { TaskInput } from "../task-runner/types.js";
+import type { TaskHandlerInput } from "../task-runner/TaskRunnerProvider.interface.js";
+import { taskFromInput, taskFromHandlerInput } from "./taskMapping.js";
 
 // Both mappers project an internal task shape onto the public `TranslationTask`. The two fragile
 // properties are the full field set (incl. `strategy`) and the deliberate omission of

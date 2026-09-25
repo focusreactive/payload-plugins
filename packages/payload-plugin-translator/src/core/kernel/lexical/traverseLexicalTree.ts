@@ -1,5 +1,5 @@
-import type { SerializedLexicalNode } from "./types";
-import { hasChildren } from "./guards";
+import type { SerializedLexicalNode } from "./types.js";
+import { hasChildren } from "./guards.js";
 
 /**
  * Traverses serialized Lexical tree depth-first and calls visitor for each node.

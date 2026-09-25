@@ -1,11 +1,11 @@
 import type { CollectionSlug, Payload } from "payload";
 import { APIError, createLocalReq, docAccessOperation } from "payload";
 
-import { markFailureReason } from "../../../core/domain/translation-providers/failureReason";
+import { markFailureReason } from "../../../core/domain/translation-providers/failureReason.js";
 
-import type { RequestScope } from "./RequestScope.shapes";
-import { freshReq, isAttributed } from "./RequestScope.shapes";
-import type { Requester } from "./RequestScope.shapes";
+import type { RequestScope } from "./RequestScope.shapes.js";
+import { freshReq, isAttributed } from "./RequestScope.shapes.js";
+import type { Requester } from "./RequestScope.shapes.js";
 
 /**
  * A refusal is an **absent key** — Payload's sanitizer deletes what it set to `false` — so

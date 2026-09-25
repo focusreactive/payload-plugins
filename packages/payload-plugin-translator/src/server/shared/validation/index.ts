@@ -1,1 +1,1 @@
-export { JobIdSchema } from "./jobId";
+export { JobIdSchema } from "./jobId.js";

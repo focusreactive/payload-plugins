@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import type { PayloadRequest } from "payload";
 
-import type { AccessGuard } from "../../shared";
+import type { AccessGuard } from "../../shared/index.js";
 
-import { createGetDocumentStalenessRoute, createDismissStalenessRoute } from "./route";
-import type { StalenessConfig } from "./model";
+import { createGetDocumentStalenessRoute, createDismissStalenessRoute } from "./route.js";
+import type { StalenessConfig } from "./model.js";
 
 // Route-contract test: pin path + method + access-guard wiring so the Phase 1
 // relocation of route registration stays behaviour-preserving. Handler logic

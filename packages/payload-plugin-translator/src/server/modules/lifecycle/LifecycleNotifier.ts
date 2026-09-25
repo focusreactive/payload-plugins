@@ -1,4 +1,4 @@
-import type { TranslationLifecycleCallbacks, TranslationTask } from "./types";
+import type { TranslationLifecycleCallbacks, TranslationTask } from "./types.js";
 
 /** Minimal logger surface used for swallowed callback errors (Payload's `payload.logger` satisfies it). */
 type LifecycleLogger = { error: (obj: unknown) => void };

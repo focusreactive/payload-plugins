@@ -1,12 +1,12 @@
 import type { Payload, CollectionSlug } from "payload";
 
-import type { TaskFilter, TaskRunner } from "../TaskRunner.interface";
-import { toTaskFilter } from "../toTaskFilter";
-import type { TaskHandler } from "../TaskRunnerProvider.interface";
-import type { Task, TaskInput, RunResult, ID } from "../types";
-import type { LazyMap } from "../../../shared/utils";
-import type { RequestScope } from "../../../shared/payload/RequestScope.shapes";
-import { killedTheCallersTransaction } from "../../../shared/payload/RequestScope.shapes";
+import type { TaskFilter, TaskRunner } from "../TaskRunner.interface.js";
+import { toTaskFilter } from "../toTaskFilter.js";
+import type { TaskHandler } from "../TaskRunnerProvider.interface.js";
+import type { Task, TaskInput, RunResult, ID } from "../types.js";
+import type { LazyMap } from "../../../shared/utils/index.js";
+import type { RequestScope } from "../../../shared/payload/RequestScope.shapes.js";
+import { killedTheCallersTransaction } from "../../../shared/payload/RequestScope.shapes.js";
 
 /**
  * Synchronous TaskRunner implementation.

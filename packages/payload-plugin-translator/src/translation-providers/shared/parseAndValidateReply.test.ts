@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { KeySetMismatchError, UnparseableReplyError } from "./errors";
-import { parseAndValidateReply } from "./parseAndValidateReply";
+import { KeySetMismatchError, UnparseableReplyError } from "./errors/index.js";
+import { parseAndValidateReply } from "./parseAndValidateReply.js";
 
 describe("parseAndValidateReply", () => {
   it("returns every translation when the reply is complete", () => {

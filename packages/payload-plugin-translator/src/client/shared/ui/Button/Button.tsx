@@ -2,7 +2,7 @@ import classNames from "classnames";
 import type { ComponentPropsWithRef, CSSProperties, ReactNode } from "react";
 import { forwardRef } from "react";
 
-import Loading from "../Loading";
+import Loading from "../Loading/index.js";
 
 import styles from "./styles.module.scss";
 

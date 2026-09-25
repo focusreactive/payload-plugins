@@ -14,7 +14,7 @@ import type {
   GroupFieldLike,
   LeafFieldLike,
   TabsFieldLike,
-} from "./types";
+} from "./types.js";
 
 // --- (1) Payload concrete types are assignable to the structural family ---
 const payloadField = {} as Field;

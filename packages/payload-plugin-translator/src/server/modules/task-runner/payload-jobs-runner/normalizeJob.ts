@@ -1,6 +1,6 @@
-import type { Task, TaskStatus } from "../types";
-import type { JobLogEntry, PayloadJob } from "./types";
-import { readCollectionRef } from "./readCollectionRef";
+import type { Task, TaskStatus } from "../types.js";
+import type { JobLogEntry, PayloadJob } from "./types.js";
+import { readCollectionRef } from "./readCollectionRef.js";
 
 function getJobStatus(job: PayloadJob): TaskStatus {
   if (job.completedAt) return "completed";

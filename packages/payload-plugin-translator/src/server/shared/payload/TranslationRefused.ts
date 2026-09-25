@@ -1,4 +1,4 @@
-import { markFailureReason } from "../../../core/domain/translation-providers/failureReason";
+import { markFailureReason } from "../../../core/domain/translation-providers/failureReason.js";
 
 /**
  * A translation the host's access rules refused.

@@ -5,20 +5,20 @@ import {
   authCollectionsOf,
   identityOf,
   killedTheCallersTransaction,
-} from "../../shared/payload/RequestScope.shapes";
+} from "../../shared/payload/RequestScope.shapes.js";
 
-import { hasSourceContentChanged } from "../../../core/domain/auto-translate";
-import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../core/domain/auto-translate";
-import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
-import type { TaskRunnerFactory } from "../task-runner";
+import { hasSourceContentChanged } from "../../../core/domain/auto-translate/index.js";
+import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../core/domain/auto-translate/index.js";
+import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext.js";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
+import type { TaskRunnerFactory } from "../task-runner/index.js";
 
 import type {
   AutoTranslatePolicyResolver,
   NormalizedAutoTranslatePolicy,
-} from "./AutoTranslate.policy";
-import { buildAutoTranslateTasks, passesPublishGate } from "./AutoTranslate.policy";
-import type { AutoTranslateManagedConfig } from "./AutoTranslate.shapes";
+} from "./AutoTranslate.policy.js";
+import { buildAutoTranslateTasks, passesPublishGate } from "./AutoTranslate.policy.js";
+import type { AutoTranslateManagedConfig } from "./AutoTranslate.shapes.js";
 
 /** A hook is a bare function with no `custom` bag, so the idempotency marker lives on the function itself. */
 type MarkedHook = CollectionAfterChangeHook & { __translatorAutoTranslate?: boolean };

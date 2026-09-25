@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload } from "payload";
 
-import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner";
-import type { PayloadJobsRunnerConfig } from "./types";
+import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner.js";
+import type { PayloadJobsRunnerConfig } from "./types.js";
 
 describe("PayloadJobsTaskRunner — cancel reaches only the plugin's own jobs", () => {
   let payload: Payload & { jobs: { cancel: ReturnType<typeof vi.fn> } };

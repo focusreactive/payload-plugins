@@ -1,8 +1,8 @@
-import type { TranslationStrategy } from "./TranslationStrategy.interface";
-import { OverwriteStrategy } from "./Overwrite.strategy";
-import { SkipExistingStrategy } from "./SkipExisting.strategy";
+import type { TranslationStrategy } from "./TranslationStrategy.interface.js";
+import { OverwriteStrategy } from "./Overwrite.strategy.js";
+import { SkipExistingStrategy } from "./SkipExisting.strategy.js";
 
-export type { TranslationStrategy, StrategyContext } from "./TranslationStrategy.interface";
+export type { TranslationStrategy, StrategyContext } from "./TranslationStrategy.interface.js";
 export { OverwriteStrategy, SkipExistingStrategy };
 
 /**

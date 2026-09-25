@@ -1,14 +1,14 @@
 import type { CollectionSlug, Endpoint } from "payload";
 
-import type { TranslationContext } from "../modules/translation-levels";
+import type { TranslationContext } from "../modules/translation-levels/index.js";
 
-import { createEnqueueRoute } from "./enqueue-translation";
-import { createRunRoute } from "./run-translation";
-import { createCancelRoute } from "./cancel";
-import { createCancelByCollectionRoute } from "./cancel-by-collection";
-import { createGetDocumentStatusRoute } from "./get-document-status";
-import { createGetCollectionStatusRoute } from "./get-collection-status";
-import { createGetDocumentStalenessRoute, createDismissStalenessRoute } from "./staleness";
+import { createEnqueueRoute } from "./enqueue-translation/index.js";
+import { createRunRoute } from "./run-translation/index.js";
+import { createCancelRoute } from "./cancel/index.js";
+import { createCancelByCollectionRoute } from "./cancel-by-collection/index.js";
+import { createGetDocumentStatusRoute } from "./get-document-status/index.js";
+import { createGetCollectionStatusRoute } from "./get-collection-status/index.js";
+import { createGetDocumentStalenessRoute, createDismissStalenessRoute } from "./staleness/index.js";
 
 export type TranslationRoutesDeps = Pick<
   TranslationContext,

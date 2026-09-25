@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CollectionSlug, Field, PayloadRequest } from "payload";
 
-import type { TranslationProvider } from "../../../core/domain/translation-providers";
-import { TranslateFieldHandler } from "./handler";
-import type { FieldTranslationConfig } from "./model";
+import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
+import { TranslateFieldHandler } from "./handler.js";
+import type { FieldTranslationConfig } from "./model.js";
 
-vi.mock("../../../core/translation-pipeline", () => ({
+vi.mock("../../../core/translation-pipeline/index.js", () => ({
   translateContent: vi.fn().mockResolvedValue(null),
 }));
 

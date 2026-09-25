@@ -1,12 +1,12 @@
 import type { CollectionSlug, Payload, Where } from "payload";
 
-import type { RequestScope } from "../../shared/payload/RequestScope.shapes";
-import { freshReq } from "../../shared/payload/RequestScope.shapes";
+import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
+import { freshReq } from "../../shared/payload/RequestScope.shapes.js";
 import type {
   ProvenanceKey,
   ProvenanceStore,
   TranslationProvenanceRecord,
-} from "../../../core/domain/provenance";
+} from "../../../core/domain/provenance/index.js";
 
 /** Builds a provenance store bound to a Payload instance; absent when provenance is disabled. */
 export type ProvenanceStoreFactory = (payload: Payload, scope?: RequestScope) => ProvenanceStore;

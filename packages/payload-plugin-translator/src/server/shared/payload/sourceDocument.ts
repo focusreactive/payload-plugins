@@ -1,7 +1,7 @@
 import type { CollectionSlug, Payload } from "payload";
 
-import type { RequestScope } from "./RequestScope.shapes";
-import { freshReq } from "./RequestScope.shapes";
+import type { RequestScope } from "./RequestScope.shapes.js";
+import { freshReq } from "./RequestScope.shapes.js";
 
 /**
  * The single source read: what "translate from X" resolves to. Both translation write paths and

@@ -1,15 +1,15 @@
 import type { Payload, Where, CollectionSlug } from "payload";
 
-import type { TaskFilter, TaskRunner } from "../TaskRunner.interface";
-import { toTaskFilter } from "../toTaskFilter";
-import type { Task, TaskInput, RunResult } from "../types";
-import type { PayloadJobsRunnerConfig, PayloadJob, StoredWorkflowInput } from "./types";
-import { normalizeJobLocales } from "./normalizeJob";
-import { planEnqueue } from "./planEnqueue";
-import type { RequestShape } from "./planEnqueue";
-import { readCollectionRef } from "./readCollectionRef";
-import type { RequestScope } from "../../../shared/payload/RequestScope.shapes";
-import { freshReq } from "../../../shared/payload/RequestScope.shapes";
+import type { TaskFilter, TaskRunner } from "../TaskRunner.interface.js";
+import { toTaskFilter } from "../toTaskFilter.js";
+import type { Task, TaskInput, RunResult } from "../types.js";
+import type { PayloadJobsRunnerConfig, PayloadJob, StoredWorkflowInput } from "./types.js";
+import { normalizeJobLocales } from "./normalizeJob.js";
+import { planEnqueue } from "./planEnqueue.js";
+import type { RequestShape } from "./planEnqueue.js";
+import { readCollectionRef } from "./readCollectionRef.js";
+import type { RequestScope } from "../../../shared/payload/RequestScope.shapes.js";
+import { freshReq } from "../../../shared/payload/RequestScope.shapes.js";
 
 const APPEND_ATTEMPTS = 2;
 

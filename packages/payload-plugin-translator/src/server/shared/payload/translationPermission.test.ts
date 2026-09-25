@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload } from "payload";
 import { APIError } from "payload";
 
-import { readFailureReason } from "../../../core/domain/translation-providers/failureReason";
+import { readFailureReason } from "../../../core/domain/translation-providers/failureReason.js";
 
 vi.mock("payload", async (importOriginal) => ({
   ...(await importOriginal<typeof import("payload")>()),
@@ -18,7 +18,7 @@ const requestBuilder = async () =>
 
 const A_REAL_REQUEST = { headers: new Headers(), i18n: {}, t: () => "", context: {} };
 
-const { checkTranslationPermission } = await import("./translationPermission");
+const { checkTranslationPermission } = await import("./translationPermission.js");
 
 const ANNA = { userId: "anna", userCollection: "users" };
 

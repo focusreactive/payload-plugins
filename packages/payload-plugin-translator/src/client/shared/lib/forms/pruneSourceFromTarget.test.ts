@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { pruneSourceFromTarget } from "./pruneSourceFromTarget";
+import { pruneSourceFromTarget } from "./pruneSourceFromTarget.js";
 
 describe("pruneSourceFromTarget", () => {
   describe("multi (string[])", () => {

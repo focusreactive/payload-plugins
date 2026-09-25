@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 
-import { authCollectionsOf, identityOf, isAttributed } from "./RequestScope.shapes";
+import { authCollectionsOf, identityOf, isAttributed } from "./RequestScope.shapes.js";
 
 const ONE = ["users"];
 const TWO = ["admins", "editors"];

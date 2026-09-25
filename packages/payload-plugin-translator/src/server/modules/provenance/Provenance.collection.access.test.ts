@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { makeProvenanceCollection } from "./Provenance.collection";
+import { makeProvenanceCollection } from "./Provenance.collection.js";
 
 // A collection that declares no `access` inherits Payload's default, which is "any signed-in user"
 // — measured: a signed-in caller can read every row, overwrite `dismissedFingerprint` to suppress the

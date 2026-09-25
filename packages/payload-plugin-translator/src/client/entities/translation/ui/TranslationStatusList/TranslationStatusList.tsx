@@ -3,18 +3,18 @@ import type { CollectionSlug } from "payload";
 
 import { useState } from "react";
 
-import { CheckIcon } from "../../../../shared/lib/assets/icons/CheckIcon";
-import { CloseIcon } from "../../../../shared/lib/assets/icons/CloseIcon";
-import { ReloadIcon } from "../../../../shared/lib/assets/icons/ReloadIcon";
-import { useCancelDocumentTranslation } from "../../api/mutations/useCancelDocumentTranslation";
-import { useDismissStaleness } from "../../api/mutations/useDismissStaleness";
-import { useQueueDocumentTranslation } from "../../api/mutations/useQueueDocumentTranslation";
-import { useRunDocumentTranslation } from "../../api/mutations/useRunDocumentTranslation";
-import type { TranslationStatusRow } from "../../model/statusRows";
-import { ActionButton } from "../ActionButton";
-import { TranslationDirection } from "../TranslationDirection";
+import { CheckIcon } from "../../../../shared/lib/assets/icons/CheckIcon.js";
+import { CloseIcon } from "../../../../shared/lib/assets/icons/CloseIcon.js";
+import { ReloadIcon } from "../../../../shared/lib/assets/icons/ReloadIcon.js";
+import { useCancelDocumentTranslation } from "../../api/mutations/useCancelDocumentTranslation.js";
+import { useDismissStaleness } from "../../api/mutations/useDismissStaleness.js";
+import { useQueueDocumentTranslation } from "../../api/mutations/useQueueDocumentTranslation.js";
+import { useRunDocumentTranslation } from "../../api/mutations/useRunDocumentTranslation.js";
+import type { TranslationStatusRow } from "../../model/statusRows.js";
+import { ActionButton } from "../ActionButton/index.js";
+import { TranslationDirection } from "../TranslationDirection/index.js";
 
-import { STATE_LABEL, StatusBadge } from "./StatusBadge";
+import { STATE_LABEL, StatusBadge } from "./StatusBadge.js";
 import styles from "./styles.module.scss";
 
 type TranslationStatusListProps = {

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { loadOpenAIClient } from "./loadOpenAIClient";
+import { loadOpenAIClient } from "./loadOpenAIClient.js";
 
 const SOURCE = readFileSync(join(__dirname, "loadOpenAIClient.ts"), "utf-8");
 

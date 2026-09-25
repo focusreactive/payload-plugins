@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
-import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner";
-import type { PayloadJobsRunnerConfig, PayloadJob } from "./types";
-import type { TaskInput } from "../types";
+import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner.js";
+import type { PayloadJobsRunnerConfig, PayloadJob } from "./types.js";
+import type { TaskInput } from "../types.js";
 
 describe("PayloadJobsTaskRunner", () => {
   let mockPayload: {

@@ -4,8 +4,8 @@ import {
   isProvenanceCollection,
   ensureProvenanceCollectionRegistered,
   DEFAULT_PROVENANCE_SLUG,
-} from "./Provenance.collection";
-import type { ManagedCollectionsConfig } from "./Provenance.shapes";
+} from "./Provenance.collection.js";
+import type { ManagedCollectionsConfig } from "./Provenance.shapes.js";
 
 describe("makeProvenanceCollection", () => {
   it("defaults to the translator-provenance slug", () => {

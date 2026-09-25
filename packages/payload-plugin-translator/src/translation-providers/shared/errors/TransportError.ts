@@ -1,4 +1,4 @@
-import { TranslationProviderError } from "./TranslationProviderError";
+import { TranslationProviderError } from "./TranslationProviderError.js";
 
 /**
  * The call to the provider failed — network, auth, rate limit, timeout. The vendor's own error is on

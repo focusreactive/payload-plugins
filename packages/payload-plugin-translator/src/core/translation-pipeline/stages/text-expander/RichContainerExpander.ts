@@ -1,12 +1,12 @@
-import { collectInlineFragments } from "../../../kernel/lexical/collectInlineFragments";
+import { collectInlineFragments } from "../../../kernel/lexical/collectInlineFragments.js";
 import {
   collectSerializedLexicalTextNodes,
   isSerializedLexicalRoot,
-} from "../../../kernel/lexical";
-import { serializeInlineMarks } from "../../../kernel/lexical/inlineMarks";
-import type { FieldChunk, RichTextChunk, TextChunk } from "../../types";
-import { RichTextExpander } from "./RichTextExpander";
-import type { ExpansionResult, TextExpander } from "./TextExpander.interface";
+} from "../../../kernel/lexical/index.js";
+import { serializeInlineMarks } from "../../../kernel/lexical/inlineMarks.js";
+import type { FieldChunk, RichTextChunk, TextChunk } from "../../types/index.js";
+import { RichTextExpander } from "./RichTextExpander.js";
+import type { ExpansionResult, TextExpander } from "./TextExpander.interface.js";
 
 /**
  * Expands richText into one chunk per container, so a whole sentence reaches the model and its

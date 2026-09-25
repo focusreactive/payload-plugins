@@ -1,4 +1,4 @@
-import type { AccessGuard } from "./types";
+import type { AccessGuard } from "./types.js";
 
 /**
  * Lets every request through, including one that carried no session at all.

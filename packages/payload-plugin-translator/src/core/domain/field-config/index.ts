@@ -2,6 +2,6 @@ export {
   getFieldTranslationConfig,
   getTranslateKitFieldConfig,
   isFieldExcludedFromTranslation,
-} from "./getFieldConfig";
-export { TRANSLATE_KIT_CUSTOM_KEY } from "./types";
-export type { FieldTranslationConfig, TranslateKitFieldConfig } from "./types";
+} from "./getFieldConfig.js";
+export { TRANSLATE_KIT_CUSTOM_KEY } from "./types.js";
+export type { FieldTranslationConfig, TranslateKitFieldConfig } from "./types.js";

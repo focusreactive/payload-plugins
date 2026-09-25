@@ -1,12 +1,12 @@
-import { isObject } from "../utils/isObject";
-import { hasFields, isBlockItem, isTabsField } from "./guards";
+import { isObject } from "../utils/isObject.js";
+import { hasFields, isBlockItem, isTabsField } from "./guards.js";
 import {
   fieldAffectsData,
   fieldIsArrayType,
   fieldIsBlockType,
   fieldIsGroupType,
   tabHasName,
-} from "./predicates";
+} from "./predicates.js";
 import type {
   BlocksFieldLike,
   FieldLike,
@@ -14,7 +14,7 @@ import type {
   LeafField,
   TabScope,
   TabsFieldLike,
-} from "./types";
+} from "./types.js";
 
 /**
  * Classify a single {@link FieldLike} into a discriminated {@link FieldStructure} — the

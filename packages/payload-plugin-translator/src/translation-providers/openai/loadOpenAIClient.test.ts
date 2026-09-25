@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isModuleNotFound, loadOpenAIClient } from "./loadOpenAIClient";
+import { isModuleNotFound, loadOpenAIClient } from "./loadOpenAIClient.js";
 
 type ThrownError = Error & { code?: string };
 

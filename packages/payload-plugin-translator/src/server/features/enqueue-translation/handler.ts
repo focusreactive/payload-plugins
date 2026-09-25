@@ -1,16 +1,16 @@
 import type { PayloadRequest } from "payload";
 
-import { ServerResponse } from "../../shared";
-import { authCollectionsOf, identityOf } from "../../shared/payload/RequestScope.shapes";
-import type { TaskRunnerFactory } from "../../modules/task-runner";
-import { extractLocaleCodes } from "../../modules/auto-translate";
-import type { LocalizationLike } from "../../modules/auto-translate";
-import { isCollectionAvailable, getAllCollectionIds } from "../_lib/collection-utils";
+import { ServerResponse } from "../../shared/index.js";
+import { authCollectionsOf, identityOf } from "../../shared/payload/RequestScope.shapes.js";
+import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
+import { extractLocaleCodes } from "../../modules/auto-translate/index.js";
+import type { LocalizationLike } from "../../modules/auto-translate/index.js";
+import { isCollectionAvailable, getAllCollectionIds } from "../_lib/collection-utils.js";
 
-import { Locales } from "../../../core/domain/locales";
+import { Locales } from "../../../core/domain/locales/index.js";
 
-import { EnqueueInputSchema } from "./model";
-import type { EnqueueConfig } from "./model";
+import { EnqueueInputSchema } from "./model.js";
+import type { EnqueueConfig } from "./model.js";
 
 export class EnqueueTranslationHandler {
   constructor(

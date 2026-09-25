@@ -1,16 +1,16 @@
 import type { Config, Field, Payload, WorkflowConfig } from "payload";
 
-import type { TaskRunner } from "../TaskRunner.interface";
+import type { TaskRunner } from "../TaskRunner.interface.js";
 import type {
   PayloadJobsRunnerOptions,
   PayloadJobsRunnerConfig,
   AutoRunConfig,
   StoredWorkflowInput,
-} from "./types";
-import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner";
-import { readCollectionRef } from "./readCollectionRef";
-import type { TaskRunnerContext, TaskRunnerProvider } from "../TaskRunnerProvider.interface";
-import type { TranslationStrategyName } from "../../../../core/translation-pipeline/strategies";
+} from "./types.js";
+import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner.js";
+import { readCollectionRef } from "./readCollectionRef.js";
+import type { TaskRunnerContext, TaskRunnerProvider } from "../TaskRunnerProvider.interface.js";
+import type { TranslationStrategyName } from "../../../../core/translation-pipeline/strategies/index.js";
 
 const defaultAutoRun: Required<AutoRunConfig> = {
   cron: "* * * * *",

@@ -1,4 +1,4 @@
-import type { DocumentStaleness, DocumentTranslation } from "./types";
+import type { DocumentStaleness, DocumentTranslation } from "./types.js";
 
 /**
  * One row in the unified per-locale STATUS list. Collapses what used to be three separate visual

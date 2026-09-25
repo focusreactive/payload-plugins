@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
-import { getAutoTranslateConfig } from "./getAutoTranslateConfig";
-import { AUTO_TRANSLATE_CUSTOM_KEY } from "./types";
+import { getAutoTranslateConfig } from "./getAutoTranslateConfig.js";
+import { AUTO_TRANSLATE_CUSTOM_KEY } from "./types.js";
 
 const wrap = (value: unknown) => ({ custom: { [AUTO_TRANSLATE_CUSTOM_KEY]: value } });
 

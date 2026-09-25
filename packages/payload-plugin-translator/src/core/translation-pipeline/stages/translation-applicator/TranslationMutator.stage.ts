@@ -1,5 +1,5 @@
-import type { PipelineContext, PipelineStage } from "../../types";
-import { TranslationMutator } from "./TranslationMutator";
+import type { PipelineContext, PipelineStage } from "../../types/index.js";
+import { TranslationMutator } from "./TranslationMutator.js";
 
 /**
  * Applies translations to data via mutation.

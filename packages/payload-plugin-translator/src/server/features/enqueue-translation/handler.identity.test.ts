@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CollectionSlug, PayloadRequest } from "payload";
 
-import { EnqueueTranslationHandler } from "./handler";
+import { EnqueueTranslationHandler } from "./handler.js";
 
 const LOCALIZATION = { defaultLocale: "en", locales: ["en", "de"] };
 
