@@ -20,7 +20,9 @@ export const ProfilesAwaitingApprovalNavLink = async ({
   user?: TypedUser | null;
 }) => {
   if (!user || isFeeEarner(user)) return null;
-  const approvable = await editorialInOwnMarkets({ req: { user } as PayloadRequest });
+  const approvable = await editorialInOwnMarkets({
+    req: { user } as PayloadRequest,
+  });
   if (approvable === false) return null;
 
   const submitted: Where = { reviewStatus: { equals: "submitted" } };
@@ -33,10 +35,8 @@ export const ProfilesAwaitingApprovalNavLink = async ({
   });
 
   return (
-    <div className="nav-group">
-      <Link className="nav__link" href={AWAITING_APPROVAL_HREF} prefetch={false}>
-        <span className="nav__link-label">Profiles awaiting approval ({awaiting.totalDocs})</span>
-      </Link>
-    </div>
+    <Link className="nav__link" href={AWAITING_APPROVAL_HREF} prefetch={false}>
+      <span className="nav__link-label">Profiles awaiting approval ({awaiting.totalDocs})</span>
+    </Link>
   );
 };

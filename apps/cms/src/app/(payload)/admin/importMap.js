@@ -47,9 +47,7 @@ import { default as default_dfe4008080d895d460898c3a6155e9ba } from '../../../co
 import { default as default_91a09b539d3c86b0aebf520e7564ce08 } from '../../../components/admin/Logo'
 import { CommentsHeaderButton as CommentsHeaderButton_30d38dd40c31eff500900a16a2792204 } from '@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton'
 import { default as default_3fd776aeb7e4127cf324115b5226afbf } from '../../../components/admin/SSOButtons'
-import { ReviewQueueNavLink as ReviewQueueNavLink_909feb9449a5b54520a1525a57cb3620 } from '../../../components/admin/ReviewQueueNavLink'
-import { ProfilesAwaitingApprovalNavLink as ProfilesAwaitingApprovalNavLink_460b7ccb878b974d70f37377e46ab5bc } from '../../../components/admin/PersonReview/ProfilesAwaitingApprovalNavLink'
-import { SeoOverviewNavLink as SeoOverviewNavLink_e0690e88cfd01a91143fe22f639d22be } from '../../../components/admin/SeoOverviewNavLink'
+import { EditorialNavGroup as EditorialNavGroup_d4c63ce4d15250e025f9fc185a0ec9ec } from '../../../components/admin/EditorialNavGroup'
 import { default as default_3da48296ca27cce2dd5904839611d77c } from '../../../lib/context/BeforeOpenDrawerWrapper'
 import { default as default_c0acd3f4d5b9577c4e185cd84f6b1b50 } from '../../../lib/context/SeoExtractorRegistrar'
 import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e } from '@payloadcms/storage-vercel-blob/client'
@@ -112,9 +110,7 @@ export const importMap = {
   "/components/admin/Logo#default": default_91a09b539d3c86b0aebf520e7564ce08,
   "@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton#CommentsHeaderButton": CommentsHeaderButton_30d38dd40c31eff500900a16a2792204,
   "/components/admin/SSOButtons#default": default_3fd776aeb7e4127cf324115b5226afbf,
-  "/components/admin/ReviewQueueNavLink#ReviewQueueNavLink": ReviewQueueNavLink_909feb9449a5b54520a1525a57cb3620,
-  "/components/admin/PersonReview/ProfilesAwaitingApprovalNavLink#ProfilesAwaitingApprovalNavLink": ProfilesAwaitingApprovalNavLink_460b7ccb878b974d70f37377e46ab5bc,
-  "/components/admin/SeoOverviewNavLink#SeoOverviewNavLink": SeoOverviewNavLink_e0690e88cfd01a91143fe22f639d22be,
+  "/components/admin/EditorialNavGroup#EditorialNavGroup": EditorialNavGroup_d4c63ce4d15250e025f9fc185a0ec9ec,
   "/lib/context/BeforeOpenDrawerWrapper#default": default_3da48296ca27cce2dd5904839611d77c,
   "/lib/context/SeoExtractorRegistrar#default": default_c0acd3f4d5b9577c4e185cd84f6b1b50,
   "@payloadcms/storage-vercel-blob/client#VercelBlobClientUploadHandler": VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e,

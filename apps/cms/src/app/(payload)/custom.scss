@@ -13,3 +13,8 @@
 .LexicalEditorTheme__table {
   width: 100%;
 }
+
+// Payload places beforeNavLinks above its folder button; the folder entry belongs at the very top.
+.nav__wrap > .browse-by-folder-button {
+  order: -1;
+}

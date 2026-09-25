@@ -38,11 +38,7 @@ export default buildConfig({
     dateFormat: "MMM d, yyyy",
     components: {
       afterLogin: ["/components/admin/SSOButtons"],
-      beforeNavLinks: [
-        "/components/admin/ReviewQueueNavLink#ReviewQueueNavLink",
-        "/components/admin/PersonReview/ProfilesAwaitingApprovalNavLink#ProfilesAwaitingApprovalNavLink",
-        "/components/admin/SeoOverviewNavLink#SeoOverviewNavLink",
-      ],
+      beforeNavLinks: ["/components/admin/EditorialNavGroup#EditorialNavGroup"],
       graphics: {
         Icon: "/components/admin/Icon",
         Logo: "/components/admin/Logo",
