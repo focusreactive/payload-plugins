@@ -1,0 +1,137 @@
+@layer payload-default {
+  .seo-overview {
+    padding-bottom: calc(var(--base) * 3);
+
+    &__header {
+      padding-top: calc(var(--base) * 2);
+      margin-bottom: var(--base);
+
+      h1 {
+        margin: 0 0 calc(var(--base) / 2);
+      }
+    }
+
+    &__intro {
+      max-width: 72ch;
+      color: var(--theme-elevation-600);
+      margin: 0;
+    }
+
+    &__controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: calc(var(--base) / 2) var(--base);
+      margin-bottom: calc(var(--base) / 2);
+    }
+
+    &__locales {
+      display: inline-flex;
+      border: 1px solid var(--theme-elevation-150);
+      border-radius: var(--style-radius-s);
+      overflow: hidden;
+    }
+
+    &__locale {
+      padding: calc(var(--base) / 4) calc(var(--base) / 2);
+      text-decoration: none;
+      color: var(--theme-elevation-800);
+
+      &--active {
+        background: var(--theme-elevation-800);
+        color: var(--theme-elevation-0);
+      }
+    }
+
+    &__search,
+    &__select,
+    &__editor input,
+    &__editor textarea {
+      font: inherit;
+      color: var(--theme-elevation-800);
+      background: var(--theme-input-bg);
+      border: 1px solid var(--theme-elevation-150);
+      border-radius: var(--style-radius-s);
+      padding: calc(var(--base) / 4) calc(var(--base) / 2);
+    }
+
+    &__search {
+      min-width: 16rem;
+      flex: 1 1 16rem;
+    }
+
+    &__toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: calc(var(--base) / 4);
+      cursor: pointer;
+    }
+
+    &__summary,
+    &__note,
+    &__empty {
+      color: var(--theme-elevation-500);
+      font-size: 0.8125rem;
+    }
+
+    &__table-wrap table {
+      width: 100%;
+
+      td {
+        vertical-align: top;
+      }
+    }
+
+    &__path {
+      font-family: var(--font-mono, monospace);
+      font-size: 0.8125rem;
+      word-break: break-all;
+    }
+
+    &__value {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-width: 36ch;
+    }
+
+    &__count {
+      color: var(--theme-elevation-500);
+      font-size: 0.75rem;
+
+      &--over {
+        color: var(--theme-error-500);
+        font-weight: 600;
+      }
+    }
+
+    &__editor {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 18rem;
+
+      textarea {
+        resize: vertical;
+      }
+    }
+
+    &__row--editing td {
+      background: var(--theme-elevation-50);
+    }
+
+    &__actions {
+      white-space: nowrap;
+
+      .btn + .btn {
+        margin-left: calc(var(--base) / 4);
+      }
+
+      .seo-overview__note {
+        white-space: normal;
+        display: block;
+        max-width: 22ch;
+      }
+    }
+  }
+}

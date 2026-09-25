@@ -38,12 +38,21 @@ export default buildConfig({
     dateFormat: "MMM d, yyyy",
     components: {
       afterLogin: ["/components/admin/SSOButtons"],
-      beforeNavLinks: ["/components/admin/ReviewQueueNavLink#ReviewQueueNavLink"],
+      beforeNavLinks: [
+        "/components/admin/ReviewQueueNavLink#ReviewQueueNavLink",
+        "/components/admin/SeoOverviewNavLink#SeoOverviewNavLink",
+      ],
       graphics: {
         Icon: "/components/admin/Icon",
         Logo: "/components/admin/Logo",
       },
       providers: ["/lib/context/BeforeOpenDrawerWrapper", "/lib/context/SeoExtractorRegistrar"],
+      views: {
+        seoOverview: {
+          Component: "/components/admin/SeoOverview/SeoOverviewView#SeoOverviewView",
+          path: "/seo-overview",
+        },
+      },
     },
     importMap: {
       baseDir,
