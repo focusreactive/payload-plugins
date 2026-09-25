@@ -42,6 +42,7 @@ import * as migration_20260923_202108_feature_list_block from './20260923_202108
 import * as migration_20260923_213431_stats_item_images from './20260923_213431_stats_item_images';
 import * as migration_20260923_232412_people_directory_and_person_photo from './20260923_232412_people_directory_and_person_photo';
 import * as migration_20260925_085418_translator_payload_jobs_runner from './20260925_085418_translator_payload_jobs_runner';
+import * as migration_20260925_150000_widen_document_embeddings_collection_enum from './20260925_150000_widen_document_embeddings_collection_enum';
 
 export const migrations = [
   {

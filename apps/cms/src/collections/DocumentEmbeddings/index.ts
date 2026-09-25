@@ -24,6 +24,9 @@ export const DocumentEmbeddings: CollectionConfig = {
       options: [
         { label: "Page", value: "page" },
         { label: "Post", value: "post" },
+        { label: "Insight", value: "insight" },
+        { label: "Person", value: "person" },
+        { label: "Service", value: "service" },
       ],
       required: true,
       type: "select",

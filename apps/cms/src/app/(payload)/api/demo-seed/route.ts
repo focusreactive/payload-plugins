@@ -11,6 +11,7 @@ import { seedInsightsFromFixtures, seedPeopleRecords } from "@/scripts/seedPassl
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
 import { passleFixturesByShortcode } from "@/lib/passle/fixtures";
 import { personSlug } from "@/lib/dal/getListingRoutes";
+import { reindexAllEmbeddings } from "@/lib/search/reindexAllEmbeddings";
 import { translatedInsight102o1qk } from "@/lib/passle/translations/102o1qk";
 import type { PasslePostPayload } from "@/lib/passle/types";
 import type {
@@ -2635,6 +2636,18 @@ export async function POST(request: Request) {
 
     revalidatePath("/", "layout");
 
+    // Every page, post and insight above was created with skipEmbedding so this one request
+    // doesn't also make dozens of sequential OpenAI calls; this is what actually makes search
+    // work again after a reseed, and it is currently the only reindex path in this codebase.
+    let searchIndexed: Awaited<ReturnType<typeof reindexAllEmbeddings>> | null = null;
+    try {
+      searchIndexed = await reindexAllEmbeddings(payload);
+    } catch (error) {
+      seedWarnings.push(
+        `Search reindex failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+
     return NextResponse.json({
       deleted: {
         page: deletedPages.docs.length,
@@ -2654,6 +2667,7 @@ export async function POST(request: Request) {
         testimonials: existingTestimonial.docs[0] ? 1 : 0,
         presets: presetsUpdatedCount,
       },
+      searchIndexed,
       warnings: [...userWarnings, ...seedWarnings],
     });
   } catch (error) {

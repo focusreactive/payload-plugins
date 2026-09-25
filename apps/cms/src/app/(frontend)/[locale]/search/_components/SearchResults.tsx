@@ -2,8 +2,19 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { search } from "@/lib/search/search";
+import type { SearchCollection } from "@/lib/search/types";
 
 const PLACEHOLDER = "/empty-placeholder.jpg";
+
+// Mirrors each collection's own admin label (Insight/index.ts, Person/index.ts labels.plural.en);
+// "Service" pages are tagged separately from "page" purely for this label (Page/isServicePage.ts).
+const GROUP_LABELS: Record<SearchCollection, string> = {
+  insight: "Insights",
+  page: "Pages",
+  person: "People",
+  post: "Posts",
+  service: "Services",
+};
 
 interface SearchResultsProps {
   query?: string;
@@ -38,7 +49,7 @@ export async function SearchResults({ query, locale }: SearchResultsProps) {
       {result.data.map((group) => (
         <section key={group.collection}>
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-            {group.collection === "post" ? "Posts" : "Pages"}
+            {GROUP_LABELS[group.collection]}
           </h2>
 
           <div className="space-y-2">

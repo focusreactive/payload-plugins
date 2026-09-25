@@ -3,6 +3,10 @@ import { slugField } from "payload";
 import type { CollectionConfig, TextField } from "payload";
 
 import { anyone, editorial } from "@/lib/access";
+import {
+  deleteInsightEmbedding,
+  indexInsightEmbedding,
+} from "@/collections/Insight/hooks/indexEmbedding";
 import { marketsField } from "@/lib/fields/marketsField";
 import { validateAuthorMarkets } from "@/lib/fields/validateAuthorMarkets";
 import {
@@ -210,6 +214,8 @@ export const Insight: CollectionConfig<"insight"> = {
     sidebarMarketsField,
   ],
   hooks: {
+    afterChange: [indexInsightEmbedding],
+    afterDelete: [deleteInsightEmbedding],
     beforeChange: [rejectMarketsOutsideEditorScope],
   },
   labels: {

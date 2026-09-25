@@ -2,9 +2,10 @@
 
 import type { Payload } from "payload";
 
+import { getInsightHref, getPersonHref, personSlug } from "@/lib/dal/getListingRoutes";
 import type { Locale } from "@/lib/types";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
-import type { Page, Post } from "@/payload-types";
+import type { Insight, Page, Person, Post } from "@/payload-types";
 
 import type { SearchCollection } from "./types";
 
@@ -22,7 +23,7 @@ export async function getDocumentSearchData(
   collection: SearchCollection,
   locale: string
 ): Promise<DisplayData | null> {
-  if (collection === "page") {
+  if (collection === "page" || collection === "service") {
     let doc: Page;
 
     try {
@@ -99,6 +100,60 @@ export async function getDocumentSearchData(
         locale,
         slug: doc.slug,
       }),
+    };
+  }
+
+  if (collection === "insight") {
+    let doc: Insight;
+
+    try {
+      doc = await payload.findByID({
+        collection: "insight",
+        depth: 0,
+        id: documentId,
+        locale: locale as Locale,
+      });
+    } catch {
+      return null;
+    }
+
+    // Insights have no image field of their own (Insight/index.ts), so there is nothing to
+    // resolve here - unlike page and post, this is always null rather than a lookup that failed.
+    return {
+      imageAlt: null,
+      imageUrl: null,
+      slug: doc.slug ?? "",
+      title: doc.title,
+      url: (await getInsightHref(doc, locale)) ?? "/",
+    };
+  }
+
+  if (collection === "person") {
+    let doc: Person;
+
+    try {
+      doc = await payload.findByID({
+        collection: "person",
+        depth: 1,
+        id: documentId,
+        // Person carries no localized fields (Person/index.ts), so every locale reads the same
+        // row - fetched in the requested locale anyway to keep the findByID call shape uniform.
+        locale: locale as Locale,
+      });
+    } catch {
+      return null;
+    }
+
+    const { photo } = doc;
+    const imageUrl = photo && typeof photo !== "number" ? (photo.url ?? null) : null;
+    const imageAlt = photo && typeof photo !== "number" ? photo.alt : null;
+
+    return {
+      imageAlt,
+      imageUrl,
+      slug: personSlug(doc),
+      title: doc.name,
+      url: (await getPersonHref(doc, locale)) ?? "/",
     };
   }
 

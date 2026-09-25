@@ -25,7 +25,10 @@ interface Params {
   locale: string;
 }
 
-const VALID_LOCALES = new Set(["en", "es"]);
+// The site only ever carries real content in these three locales (SITE_LOCALES in
+// getListingRoutes.ts); ko/zh-hans/zh-hant are configured for routing but never seeded, so
+// letting them through here would just run an embedding search against an empty locale.
+const VALID_LOCALES = new Set(["en", "fr", "ja"]);
 
 export async function search({ query, locale }: Params): Promise<Response> {
   if (!VALID_LOCALES.has(locale)) {

@@ -2,6 +2,10 @@ import { editorialInOwnMarkets, rejectMarketsOutsideEditorScope } from "@/lib/ac
 import type { CollectionConfig } from "payload";
 
 import { anyone, editorial } from "@/lib/access";
+import {
+  deletePersonEmbedding,
+  indexPersonEmbedding,
+} from "@/collections/Person/hooks/indexEmbedding";
 import { marketsField } from "@/lib/fields/marketsField";
 
 export const Person: CollectionConfig<"person"> = {
@@ -82,6 +86,8 @@ export const Person: CollectionConfig<"person"> = {
     marketsField(),
   ],
   hooks: {
+    afterChange: [indexPersonEmbedding],
+    afterDelete: [deletePersonEmbedding],
     beforeChange: [rejectMarketsOutsideEditorScope],
   },
   labels: {

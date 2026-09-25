@@ -1,4 +1,4 @@
-export type SearchCollection = "page" | "post";
+export type SearchCollection = "page" | "post" | "insight" | "person" | "service";
 
 export interface SearchRawItem {
   documentId: string;
