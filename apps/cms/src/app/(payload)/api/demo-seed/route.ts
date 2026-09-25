@@ -2233,6 +2233,13 @@ export async function POST(request: Request) {
       overrideAccess: true,
       context: { skipEmbedding: true, [SKIP_REDIRECT_ON_SLUG_CHANGE]: true },
     });
+    // A visitor's test rename writes a redirect from the old address. The reseed restores that
+    // address as a real page, and a leftover redirect would send it to a page that no longer exists.
+    await payload.delete({
+      collection: "redirects",
+      where: { id: { not_equals: 0 } },
+      overrideAccess: true,
+    });
 
     const pageIdByKey: Record<string, number> = {};
 
