@@ -3,6 +3,7 @@ import type { CollectionConfig } from "payload";
 
 import { anyone, editorial } from "@/lib/access";
 import { marketsField } from "@/lib/fields/marketsField";
+import { seoMetaGroup } from "@/lib/fields/seoMetaGroup";
 
 export const Person: CollectionConfig<"person"> = {
   access: {
@@ -80,6 +81,7 @@ export const Person: CollectionConfig<"person"> = {
       type: "textarea",
     },
     marketsField(),
+    seoMetaGroup({ descriptionFallback: "job title and office", titleFallback: "name" }),
   ],
   hooks: {
     beforeChange: [rejectMarketsOutsideEditorScope],

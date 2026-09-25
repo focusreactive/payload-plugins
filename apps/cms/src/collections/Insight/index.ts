@@ -4,6 +4,7 @@ import type { CollectionConfig, TextField } from "payload";
 
 import { anyone, editorial } from "@/lib/access";
 import { marketsField } from "@/lib/fields/marketsField";
+import { seoMetaGroup } from "@/lib/fields/seoMetaGroup";
 import { validateAuthorMarkets } from "@/lib/fields/validateAuthorMarkets";
 import {
   MANUAL_SHORTCODE_PREFIX,
@@ -208,6 +209,7 @@ export const Insight: CollectionConfig<"insight"> = {
       type: "email",
     },
     sidebarMarketsField,
+    seoMetaGroup({ descriptionFallback: "standfirst", titleFallback: "headline" }),
   ],
   hooks: {
     beforeChange: [rejectMarketsOutsideEditorScope],

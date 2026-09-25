@@ -1634,6 +1634,19 @@ export interface Person {
   markets?:
     | ('uk-europe' | 'canada' | 'greater-china' | 'se-asia' | 'usa' | 'japan' | 'korea' | 'nordics' | 'south-america')[]
     | null;
+  /**
+   * What search engines show for this page. Left empty, the name and job title and office are used instead.
+   */
+  meta?: {
+    /**
+     * Up to 60 characters shows in full in search results.
+     */
+    title?: string | null;
+    /**
+     * Up to 160 characters shows in full in search results.
+     */
+    description?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -1696,6 +1709,19 @@ export interface Insight {
   markets?:
     | ('uk-europe' | 'canada' | 'greater-china' | 'se-asia' | 'usa' | 'japan' | 'korea' | 'nordics' | 'south-america')[]
     | null;
+  /**
+   * What search engines show for this page. Left empty, the headline and standfirst are used instead.
+   */
+  meta?: {
+    /**
+     * Up to 60 characters shows in full in search results.
+     */
+    title?: string | null;
+    /**
+     * Up to 160 characters shows in full in search results.
+     */
+    description?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -3932,6 +3958,12 @@ export interface PersonSelect<T extends boolean = true> {
   photo?: T;
   biography?: T;
   markets?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3950,6 +3982,12 @@ export interface InsightSelect<T extends boolean = true> {
   author?: T;
   unmatchedAuthorEmail?: T;
   markets?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

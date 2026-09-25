@@ -243,7 +243,6 @@ export const Posts: CollectionConfig<"posts"> = {
             en: "SEO",
             es: "SEO",
           },
-          localized: true,
           name: "meta",
         },
       ],
