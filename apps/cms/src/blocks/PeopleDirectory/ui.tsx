@@ -9,6 +9,7 @@ export interface PersonCard {
   name: string;
   jobTitle: string;
   office: string | null;
+  standfirst: string | null;
   href: string | null;
   photo: React.ReactNode;
 }
@@ -63,6 +64,9 @@ function PersonCardView({ card }: { card: PersonCard }) {
           )}
         </h3>
         <p className="text-md text-pretty text-brand-secondary">{card.jobTitle}</p>
+        {card.standfirst && (
+          <p className="mt-2 text-sm text-pretty text-tertiary">{card.standfirst}</p>
+        )}
         {card.office && <p className="mt-2 text-sm text-tertiary">{card.office}</p>}
       </div>
     </article>

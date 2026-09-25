@@ -1384,6 +1384,16 @@ export interface PeopleDirectoryBlock {
    */
   heading?: string | null;
   description?: string | null;
+  /**
+   * On a service page, pick that page. Each person shows the standfirst they wrote for it.
+   */
+  service?: (number | null) | Page;
+  /**
+   * On a market page, pick its markets. Leave both empty to list everyone.
+   */
+  markets?:
+    | ('uk-europe' | 'canada' | 'greater-china' | 'se-asia' | 'usa' | 'japan' | 'korea' | 'nordics' | 'south-america')[]
+    | null;
   section?: {
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
     maxWidth?: ('none' | 'base') | null;
@@ -1632,13 +1642,50 @@ export interface Person {
   photo?: (number | null) | Media;
   biography?: string | null;
   /**
+   * One or two sentences shown under the name wherever this person is listed. Used when no contextual standfirst below fits the page.
+   */
+  standfirst?: string | null;
+  /**
    * The markets this applies to.
    */
   markets?:
     | ('uk-europe' | 'canada' | 'greater-china' | 'se-asia' | 'usa' | 'japan' | 'korea' | 'nordics' | 'south-america')[]
     | null;
+  /**
+   * The service pages this person works in. Lists them on those pages, and tells search engines what they know about.
+   */
+  services?: (number | Page)[] | null;
+  /**
+   * A different standfirst for a listing on one service page, one market page, or both. The most specific match wins; anywhere else shows the standfirst above.
+   */
+  contextualStandfirsts?:
+    | {
+        service?: (number | null) | Page;
+        market?:
+          | (
+              | 'uk-europe'
+              | 'canada'
+              | 'greater-china'
+              | 'se-asia'
+              | 'usa'
+              | 'japan'
+              | 'korea'
+              | 'nordics'
+              | 'south-america'
+            )
+          | null;
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * A fee-earner's changes wait here until an editor publishes them. To send them back, choose Changes requested, write a note and save a draft.
+   */
+  reviewStatus?: ('draft' | 'submitted' | 'changesRequested') | null;
+  reviewerNote?: string | null;
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1722,6 +1769,10 @@ export interface User {
   markets?:
     | ('uk-europe' | 'canada' | 'greater-china' | 'se-asia' | 'usa' | 'japan' | 'korea' | 'nordics' | 'south-america')[]
     | null;
+  /**
+   * The profile this fee-earner may edit. Their changes are saved as drafts for an editor to publish.
+   */
+  person?: (number | null) | Person;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -1748,7 +1799,7 @@ export interface User {
 export interface DocumentEmbedding {
   id: number;
   documentId: string;
-  collection: 'page' | 'post';
+  collection: 'page' | 'post' | 'insight' | 'person' | 'service';
   locale: string;
   updatedAt: string;
   createdAt: string;
@@ -2470,6 +2521,26 @@ export interface Preset {
          */
         heading?: string | null;
         description?: string | null;
+        /**
+         * On a service page, pick that page. Each person shows the standfirst they wrote for it.
+         */
+        service?: (number | null) | Page;
+        /**
+         * On a market page, pick its markets. Leave both empty to list everyone.
+         */
+        markets?:
+          | (
+              | 'uk-europe'
+              | 'canada'
+              | 'greater-china'
+              | 'se-asia'
+              | 'usa'
+              | 'japan'
+              | 'korea'
+              | 'nordics'
+              | 'south-america'
+            )[]
+          | null;
         section?: {
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
           maxWidth?: ('none' | 'base') | null;
@@ -3660,6 +3731,8 @@ export interface PeopleDirectoryBlockSelect<T extends boolean = true> {
   eyebrow?: T;
   heading?: T;
   description?: T;
+  service?: T;
+  markets?: T;
   section?:
     | T
     | {
@@ -3935,9 +4008,22 @@ export interface PersonSelect<T extends boolean = true> {
   office?: T;
   photo?: T;
   biography?: T;
+  standfirst?: T;
   markets?: T;
+  services?: T;
+  contextualStandfirsts?:
+    | T
+    | {
+        service?: T;
+        market?: T;
+        text?: T;
+        id?: T;
+      };
+  reviewStatus?: T;
+  reviewerNote?: T;
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -4134,6 +4220,7 @@ export interface UsersSelect<T extends boolean = true> {
   name?: T;
   role?: T;
   markets?: T;
+  person?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -4668,6 +4755,8 @@ export interface PresetsSelect<T extends boolean = true> {
               eyebrow?: T;
               heading?: T;
               description?: T;
+              service?: T;
+              markets?: T;
               section?:
                 | T
                 | {

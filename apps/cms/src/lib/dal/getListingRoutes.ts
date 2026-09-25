@@ -109,7 +109,12 @@ export async function resolveListingDetail(
 
   const peoplePaths = await getListingPathsBySlug("our-people");
   if (peoplePaths[locale as SiteLocale] === parentPath) {
-    const people = await payload.find({ collection: "person", limit: 200, depth: 0 });
+    const people = await payload.find({
+      collection: "person",
+      where: { _status: { equals: "published" } },
+      limit: 200,
+      depth: 0,
+    });
     const person = people.docs.find((candidate) => personSlug(candidate) === lastSegment);
     if (!person) return null;
     const alternates: Record<string, string> = {};
@@ -135,7 +140,12 @@ export async function getListingDetailStaticParams(): Promise<
     getListingPathsBySlug("insights"),
     getListingPathsBySlug("our-people"),
   ]);
-  const people = await payload.find({ collection: "person", limit: 200, depth: 0 });
+  const people = await payload.find({
+    collection: "person",
+    where: { _status: { equals: "published" } },
+    limit: 200,
+    depth: 0,
+  });
   for (const locale of SITE_LOCALES) {
     const insightBase = insightPaths[locale];
     if (insightBase) {

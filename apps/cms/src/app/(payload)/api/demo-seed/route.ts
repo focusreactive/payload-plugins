@@ -864,7 +864,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
       {
         title: "Fee-earner",
         description:
-          "Reads everything, changes nothing but their own account · fee.earner@example.com",
+          "Edits one profile, Robert A. McNaughton, and submits it for an editor to approve · fee.earner@example.com",
         link: {
           ...buildAction("Sign out and use this account", "/admin/logout"),
           label: "Sign out and use this account",
@@ -1530,8 +1530,12 @@ interface DemoUserSpec {
   name: string;
   role: User["role"];
   markets?: NonNullable<User["markets"]>;
+  /** The Person a fee-earner may edit, found by email so the link survives a reseed. */
+  personEmail?: string;
   passwordEnvVar: string;
 }
+
+const FEE_EARNER_PERSON_EMAIL = "rmcnaughton@example.com";
 
 const DEMO_USERS: DemoUserSpec[] = [
   {
@@ -1559,9 +1563,218 @@ const DEMO_USERS: DemoUserSpec[] = [
     email: "fee.earner@example.com",
     name: "Fee-earner",
     role: "user",
+    // Canadian, so the local editor (Canada) can approve the submission as well as the
+    // international editor and the administrator.
+    personEmail: FEE_EARNER_PERSON_EMAIL,
     passwordEnvVar: "SANDBOX_E_FEE_EARNER_PASSWORD",
   },
 ];
+
+/**
+ * Service and market context for the people listings. A directory on the Patents and Trade marks
+ * pages lists the people tied to that service, and one on the Asia page lists the Greater China
+ * and SE Asia people. The contextual standfirsts are written against those three listings, so
+ * each one is visible at a known address, and the default standfirst shows everywhere else.
+ */
+const PEOPLE_DIRECTORY_CONTEXTS: Array<{
+  pageKey: string;
+  block: Omit<PeopleDirectoryBlock, "blockType" | "service">;
+  serviceOfPage: boolean;
+}> = [
+  {
+    pageKey: "patents",
+    serviceOfPage: true,
+    block: {
+      eyebrow: "Patents people",
+      heading: "The attorneys behind this practice",
+      description:
+        "Each profile tagged with the Patents service. Where someone has a standfirst written for patents, you read it here instead of their general one.",
+      section: { theme: "light" },
+    },
+  },
+  {
+    pageKey: "trade-marks",
+    serviceOfPage: true,
+    block: {
+      eyebrow: "Trade marks people",
+      heading: "The attorneys behind this practice",
+      description:
+        "Each profile tagged with the Trade marks service, with the standfirst written for trade marks where there is one.",
+      section: { theme: "light" },
+    },
+  },
+  {
+    pageKey: "asia",
+    serviceOfPage: false,
+    block: {
+      eyebrow: "Our people in Asia",
+      heading: "Greater China and South-East Asia",
+      description:
+        "Filtered by market, not by service. A standfirst written for a market shows here in place of the general one.",
+      markets: ["greater-china", "se-asia"],
+      section: { theme: "light" },
+    },
+  },
+];
+
+const PEOPLE_CONTEXT: Array<{
+  email: string;
+  standfirst: string;
+  services: Array<"patents" | "trade-marks">;
+  contextual: Array<{
+    service?: "patents" | "trade-marks";
+    market?: "greater-china";
+    text: string;
+  }>;
+}> = [
+  {
+    email: "zsu@example.com",
+    standfirst: "Partner in Hong Kong, advising on patent and trade mark matters.",
+    services: ["patents", "trade-marks"],
+    contextual: [
+      {
+        market: "greater-china",
+        text: "Partner in Hong Kong, the first point of contact for clients filing across Greater China.",
+      },
+    ],
+  },
+  {
+    email: "xhuang@example.com",
+    standfirst: "Partner in Hong Kong.",
+    services: ["trade-marks"],
+    contextual: [
+      {
+        service: "trade-marks",
+        text: "Heads the trade mark team in Hong Kong and is its legal representative.",
+      },
+    ],
+  },
+  {
+    email: "clovrics@example.com",
+    standfirst: "Partner in Toronto.",
+    services: ["trade-marks"],
+    contextual: [
+      {
+        service: "trade-marks",
+        text: "Heads trade marks and copyright for Canada, from the Toronto office.",
+      },
+    ],
+  },
+  {
+    email: FEE_EARNER_PERSON_EMAIL,
+    standfirst: "Associate in the Toronto office.",
+    services: ["patents"],
+    contextual: [],
+  },
+  {
+    email: "jgregoire@example.com",
+    standfirst: "Partner in the Toronto office.",
+    services: ["patents"],
+    contextual: [],
+  },
+  {
+    email: "mshaw@example.com",
+    standfirst: "Partner in the London office.",
+    services: ["patents"],
+    contextual: [],
+  },
+];
+
+async function seedPeopleInContext(
+  payload: Awaited<ReturnType<typeof getPayloadClient>>,
+  pageIdByKey: Record<string, number>
+) {
+  for (const context of PEOPLE_DIRECTORY_CONTEXTS) {
+    const pageId = pageIdByKey[context.pageKey];
+    if (!pageId) continue;
+    const page = await payload.findByID({
+      collection: "page",
+      id: pageId,
+      locale: "en",
+      depth: 0,
+      overrideAccess: true,
+    });
+    await payload.update({
+      collection: "page",
+      id: pageId,
+      locale: "en",
+      overrideAccess: true,
+      context: { skipEmbedding: true },
+      data: {
+        _status: "published",
+        blocks: [
+          ...(page.blocks ?? []),
+          {
+            blockType: "peopleDirectory",
+            ...context.block,
+            ...(context.serviceOfPage ? { service: pageId } : {}),
+          },
+        ],
+      },
+    });
+  }
+
+  for (const entry of PEOPLE_CONTEXT) {
+    const found = await payload.find({
+      collection: "person",
+      where: { email: { equals: entry.email } },
+      limit: 1,
+      depth: 0,
+      overrideAccess: true,
+    });
+    const person = found.docs[0];
+    if (!person) continue;
+    await payload.update({
+      collection: "person",
+      id: person.id,
+      locale: "en",
+      overrideAccess: true,
+      context: { skipEmbedding: true },
+      data: {
+        _status: "published",
+        standfirst: entry.standfirst,
+        services: entry.services.flatMap((key) => (pageIdByKey[key] ? [pageIdByKey[key]] : [])),
+        contextualStandfirsts: entry.contextual.map((contextual) => ({
+          service: contextual.service ? pageIdByKey[contextual.service] : null,
+          market: contextual.market ?? null,
+          text: contextual.text,
+        })),
+      },
+    });
+  }
+
+  // The fee-earner's own edit, waiting for approval, so the editors' queue has something in it on
+  // first sign-in. A draft on top of the published profile: the site keeps showing the published
+  // biography until an editor publishes this one.
+  const feeEarnerPerson = (
+    await payload.find({
+      collection: "person",
+      where: { email: { equals: FEE_EARNER_PERSON_EMAIL } },
+      limit: 1,
+      depth: 0,
+      overrideAccess: true,
+    })
+  ).docs[0];
+  if (feeEarnerPerson) {
+    await payload.update({
+      collection: "person",
+      id: feeEarnerPerson.id,
+      locale: "en",
+      draft: true,
+      overrideAccess: true,
+      context: { skipEmbedding: true },
+      data: {
+        _status: "draft",
+        reviewStatus: "submitted",
+        jobTitle: "Associate, Patent Agent",
+        standfirst:
+          "Associate in the Toronto office, working on patent prosecution in Canada and the US.",
+        biography:
+          "Robert works on patent prosecution for Canadian and international applicants, with a focus on mechanical and software inventions. This is the fee-earner's own edit, submitted for review: it stays off the site until an editor publishes it.",
+      },
+    });
+  }
+}
 
 /**
  * TestimonialsList's `testimonials` field requires at least one row, so the preset needs a real
@@ -1965,7 +2178,8 @@ export async function POST(request: Request) {
         await payload.update({
           collection: "person",
           id: person.id,
-          data: { photo: photoId },
+          // Person has drafts now: without a status the photo could land on a draft only.
+          data: { photo: photoId, _status: "published" },
           overrideAccess: true,
         });
       }
@@ -2183,6 +2397,8 @@ export async function POST(request: Request) {
       }
     }
 
+    await seedPeopleInContext(payload, pageIdByKey);
+
     // The review queue is the destination for the fourth claim, and an empty queue proves nothing.
     // This page is created as a draft and never published, which is what a machine translation
     // waiting for a human actually looks like: it exists, it is addressable, and it is not live.
@@ -2369,6 +2585,17 @@ export async function POST(request: Request) {
 
     for (const persona of DEMO_USERS) {
       const password = process.env[persona.passwordEnvVar];
+      const linkedPerson = persona.personEmail
+        ? (
+            await payload.find({
+              collection: "person",
+              where: { email: { equals: persona.personEmail } },
+              limit: 1,
+              depth: 0,
+              overrideAccess: true,
+            })
+          ).docs[0]
+        : undefined;
       if (!password) {
         userWarnings.push(
           `Skipped ${persona.email}: ${persona.passwordEnvVar} is not set in this environment.`
@@ -2393,6 +2620,7 @@ export async function POST(request: Request) {
             name: persona.name,
             role: persona.role,
             markets: persona.markets ?? [],
+            person: linkedPerson?.id ?? null,
             password,
           },
         });
@@ -2408,6 +2636,7 @@ export async function POST(request: Request) {
           email: persona.email,
           role: persona.role,
           markets: persona.markets ?? [],
+          person: linkedPerson?.id ?? null,
           password,
         },
       });
