@@ -823,6 +823,29 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     section: { theme: "light" },
   };
 
+  const automaticRedirects: ContentBlock = {
+    blockType: "content",
+    eyebrow: "Redirects without asking",
+    heading: "Rename a published page, and the old address keeps working.",
+    layout: "text-image",
+    image: illustrations["admin-redirects.png"] ?? defaultMediaId,
+    content: buildRichText(
+      {
+        paragraph:
+          "Change the address of a published page, article or profile and the CMS writes the redirect from the old one when you publish. Nobody has to remember to file it.",
+      },
+      {
+        bullets: [
+          "Links already shared, and the ones search engines hold, land on the new address.",
+          "Saving a draft creates nothing, so work in progress never moves a live address.",
+          "Every redirect is listed in one place, where you can switch one off or point it elsewhere.",
+        ],
+      }
+    ),
+    actions: [buildAction("See the redirects", "/admin/collections/redirects")],
+    section: { theme: "light" },
+  };
+
   const roles: CardsGridBlock = {
     blockType: "cardsGrid",
     eyebrow: "Roles",
@@ -838,7 +861,8 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     items: [
       {
         title: "Administrator",
-        description: "Anything at all, including adding people · administrator@example.com",
+        description:
+          "Administrator role: anything at all, including adding people · administrator@example.com",
         link: {
           ...buildAction("Sign out and use this account", "/admin/logout"),
           label: "Sign out and use this account",
@@ -847,7 +871,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
       {
         title: "International digital and communications editor",
         description:
-          "Creates, edits and publishes pages, people and insights · international.editor@example.com",
+          "Global editor role: creates, edits and publishes pages, people and insights in every market, and approves profile changes · international.editor@example.com",
         link: {
           ...buildAction("Sign out and use this account", "/admin/logout"),
           label: "Sign out and use this account",
@@ -856,7 +880,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
       {
         title: "Local marketing and communications editor",
         description:
-          "Canada only: edits Canadian articles and people, edits pages but cannot create or delete them · local.editor@example.com",
+          "Market editor role, set to Canada: edits Canadian articles and people, edits pages but cannot create or delete them · local.editor@example.com",
         link: {
           ...buildAction("Sign out and use this account", "/admin/logout"),
           label: "Sign out and use this account",
@@ -865,7 +889,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
       {
         title: "Fee-earner",
         description:
-          "Edits one profile, Robert A. McNaughton, and submits it for an editor to approve · fee.earner@example.com",
+          "Fee-earner role: edits one profile, Robert A. McNaughton, and submits it for an editor to approve · fee.earner@example.com",
         link: {
           ...buildAction("Sign out and use this account", "/admin/logout"),
           label: "Sign out and use this account",
@@ -932,6 +956,7 @@ function buildHomepageBlocks(defaultMediaId: number, illustrations: Record<strin
     localisedAddresses,
     languageAndMarket,
     reviewQueue,
+    automaticRedirects,
     roles,
     footnotes,
   ];
