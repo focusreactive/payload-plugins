@@ -32,8 +32,10 @@ const baseDir = path.dirname(fileURLToPath(import.meta.url));
 export default buildConfig({
   admin: {
     // Payload's default long form ("September 24th 2026, 3:08 PM") overflows the document header
-    // and gets cut off, so Last Modified and Created showed only half a date.
-    dateFormat: "d MMM yyyy, HH:mm",
+    // and gets cut off, so Last Modified and Created showed only half a date. The setting is one
+    // date-fns pattern applied everywhere, so dropping the year only in the current year would mean
+    // replacing Payload's own document controls.
+    dateFormat: "MMM d, yyyy",
     components: {
       afterLogin: ["/components/admin/SSOButtons"],
       beforeNavLinks: ["/components/admin/ReviewQueueNavLink#ReviewQueueNavLink"],
