@@ -3,15 +3,15 @@ import type {
   TranslationOutput,
   TranslationProvider,
   TranslationRequestOptions,
-} from "../../core/domain/translation-providers";
-import { buildResponseSchema } from "./buildResponseSchema";
-import type { JsonSchemaObject } from "./buildResponseSchema";
-import { buildSystemPrompt } from "./buildSystemPrompt";
-import type { SystemPromptBuilder } from "./buildSystemPrompt";
-import { NoContentError, ProviderConfigurationError, wrapTransportError } from "./errors";
-import { parseAndValidateReply } from "./parseAndValidateReply";
-import { runDryRun } from "./runDryRun";
-import type { DryRunConfig } from "./runDryRun";
+} from "../../core/domain/translation-providers/index.js";
+import { buildResponseSchema } from "./buildResponseSchema.js";
+import type { JsonSchemaObject } from "./buildResponseSchema.js";
+import { buildSystemPrompt } from "./buildSystemPrompt.js";
+import type { SystemPromptBuilder } from "./buildSystemPrompt.js";
+import { NoContentError, ProviderConfigurationError, wrapTransportError } from "./errors/index.js";
+import { parseAndValidateReply } from "./parseAndValidateReply.js";
+import { runDryRun } from "./runDryRun.js";
+import type { DryRunConfig } from "./runDryRun.js";
 
 /**
  * Everything a transport needs in order to make one translation request.

@@ -14,7 +14,7 @@
  */
 
 import { createHash } from "node:crypto";
-import type { IdPath } from "./idPath";
+import type { IdPath } from "./idPath.js";
 
 interface ProjectionEntry {
   idPath: IdPath;

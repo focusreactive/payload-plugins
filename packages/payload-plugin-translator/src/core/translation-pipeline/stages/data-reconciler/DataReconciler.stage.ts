@@ -1,5 +1,5 @@
-import type { PipelineContext, PipelineStage } from "../../types";
-import { DataReconciler } from "./DataReconciler";
+import type { PipelineContext, PipelineStage } from "../../types/index.js";
+import { DataReconciler } from "./DataReconciler.js";
 
 /**
  * Deep merges source and target data with target priority.

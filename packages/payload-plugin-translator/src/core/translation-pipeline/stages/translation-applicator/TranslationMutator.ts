@@ -1,8 +1,8 @@
-import type { ParsedMark } from "../../../kernel/lexical/inlineMarks";
-import { hasChildren } from "../../../kernel/lexical";
-import type { SerializedLexicalNode } from "../../../kernel/lexical";
-import type { RichContainerChunk, TextChunk } from "../../types";
-import { isPlainTextChunk, isRichContainerChunk, isRichTextChunk } from "../../types";
+import type { ParsedMark } from "../../../kernel/lexical/inlineMarks.js";
+import { hasChildren } from "../../../kernel/lexical/index.js";
+import type { SerializedLexicalNode } from "../../../kernel/lexical/index.js";
+import type { RichContainerChunk, TextChunk } from "../../types/index.js";
+import { isPlainTextChunk, isRichContainerChunk, isRichTextChunk } from "../../types/index.js";
 
 /**
  * Writes a container's reply back by rebuilding `children` in the reply's order — which is what

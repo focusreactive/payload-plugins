@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, PayloadRequest, CollectionSlug } from "payload";
-import { GetDocumentStatusHandler } from "./handler";
-import type { GetDocumentStatusConfig } from "./model";
-import type { TaskRunnerFactory, TaskRunner, Task } from "../../modules/task-runner";
-import { GENERIC_TRANSLATION_ERROR } from "../../shared";
+import { GetDocumentStatusHandler } from "./handler.js";
+import type { GetDocumentStatusConfig } from "./model.js";
+import type { TaskRunnerFactory, TaskRunner, Task } from "../../modules/task-runner/index.js";
+import { GENERIC_TRANSLATION_ERROR } from "../../shared/index.js";
 
 describe("GetDocumentStatusHandler", () => {
   let handler: GetDocumentStatusHandler;

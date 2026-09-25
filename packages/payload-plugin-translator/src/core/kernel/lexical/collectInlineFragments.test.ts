@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { collectInlineFragments } from "./collectInlineFragments";
-import type { SerializedLexicalNode } from "./types";
+import { collectInlineFragments } from "./collectInlineFragments.js";
+import type { SerializedLexicalNode } from "./types.js";
 
 const createNode = (
   type: string,

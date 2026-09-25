@@ -2,12 +2,12 @@
 
 import type { PropsWithChildren } from "react";
 
-import { describePanelStatus, PanelStatusMarker } from "../../../entities/translation";
-import type { PanelStatus } from "../../../entities/translation";
-import { LanguageTranslateIcon } from "../../../shared/lib/assets/icons/LanguageTranslateIcon";
-import { useToggle } from "../../../shared/lib/utils/react/useToggle";
-import Button from "../../../shared/ui/Button";
-import Popup from "../../../shared/ui/Popup";
+import { describePanelStatus, PanelStatusMarker } from "../../../entities/translation/index.js";
+import type { PanelStatus } from "../../../entities/translation/index.js";
+import { LanguageTranslateIcon } from "../../../shared/lib/assets/icons/LanguageTranslateIcon.js";
+import { useToggle } from "../../../shared/lib/utils/react/useToggle.js";
+import Button from "../../../shared/ui/Button/index.js";
+import Popup from "../../../shared/ui/Popup/index.js";
 
 import styles from "./styles.module.scss";
 

@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CollectionSlug, Field, PayloadRequest } from "payload";
 
-import type { TranslationProvider } from "../../../core/domain/translation-providers";
+import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
 
-import { TranslateFieldHandler } from "./handler";
-import type { FieldTranslationConfig, FieldTranslationInput } from "./model";
-import { MAX_FIELD_VALUE_BYTES } from "./model";
+import { TranslateFieldHandler } from "./handler.js";
+import type { FieldTranslationConfig, FieldTranslationInput } from "./model.js";
+import { MAX_FIELD_VALUE_BYTES } from "./model.js";
 
 // Isolate the handler's orchestration (read → resolve → translate → response mapping)
 // from the pipeline itself.
-vi.mock("../../../core/translation-pipeline", () => ({
+vi.mock("../../../core/translation-pipeline/index.js", () => ({
   translateContent: vi.fn().mockResolvedValue(null),
 }));
 
@@ -92,9 +92,8 @@ beforeEach(() => {
 });
 
 const importTranslateContent = async () =>
-  (await import("../../../core/translation-pipeline")).translateContent as unknown as ReturnType<
-    typeof vi.fn
-  >;
+  (await import("../../../core/translation-pipeline/index.js"))
+    .translateContent as unknown as ReturnType<typeof vi.fn>;
 
 describe("TranslateFieldHandler", () => {
   it("reads the source-locale value from the saved doc and translates a localized leaf", async () => {

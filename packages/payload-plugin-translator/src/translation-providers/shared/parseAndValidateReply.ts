@@ -1,6 +1,9 @@
-import type { TranslationInput, TranslationOutput } from "../../core/domain/translation-providers";
-import { isObject } from "../../core/kernel/utils/isObject";
-import { KeySetMismatchError, UnparseableReplyError } from "./errors";
+import type {
+  TranslationInput,
+  TranslationOutput,
+} from "../../core/domain/translation-providers/index.js";
+import { isObject } from "../../core/kernel/utils/isObject.js";
+import { KeySetMismatchError, UnparseableReplyError } from "./errors/index.js";
 
 export type ParsedReply = {
   translations: TranslationOutput;

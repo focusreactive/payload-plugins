@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import type { PayloadRequest } from "payload";
 
-import type { AccessGuard } from "../../shared";
-import type { TaskRunnerFactory } from "../../modules/task-runner";
+import type { AccessGuard } from "../../shared/index.js";
+import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 
-import { createGetCollectionStatusRoute } from "./route";
-import type { GetCollectionStatusConfig } from "./model";
+import { createGetCollectionStatusRoute } from "./route.js";
+import type { GetCollectionStatusConfig } from "./model.js";
 
 // Route-contract test: pin path + method + access-guard wiring so the Phase 1
 // relocation of route registration stays behaviour-preserving. Handler logic

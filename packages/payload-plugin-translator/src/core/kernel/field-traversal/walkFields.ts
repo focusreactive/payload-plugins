@@ -1,4 +1,4 @@
-import { classifyField, tabScopes } from "./kernel";
+import { classifyField, tabScopes } from "./kernel.js";
 import type {
   ArrayFieldLike,
   BlocksFieldLike,
@@ -7,7 +7,7 @@ import type {
   FieldWalker,
   GroupFieldLike,
   TabLike,
-} from "./types";
+} from "./types.js";
 
 /**
  * Internal engine backing {@link walkFields}. Methods return `true` to mean "stop requested —

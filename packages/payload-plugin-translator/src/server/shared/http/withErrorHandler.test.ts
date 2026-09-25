@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { APIError } from "payload";
-import { markFailureReason } from "../../../core/domain/translation-providers/failureReason";
-import { withErrorHandler } from "./withErrorHandler";
-import { ServerResponse } from "./ServerResponse";
+import { markFailureReason } from "../../../core/domain/translation-providers/failureReason.js";
+import { withErrorHandler } from "./withErrorHandler.js";
+import { ServerResponse } from "./ServerResponse.js";
 
 describe("withErrorHandler", () => {
   beforeEach(() => {

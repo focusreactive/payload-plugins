@@ -1,9 +1,9 @@
 import type { Field } from "payload";
 
-import type { ChildCursor, FieldWalker } from "../../../core/kernel/field-traversal";
-import { resolveBlockFields, walkFields } from "../../../core/kernel/field-traversal";
-import { isLocalizedField, isTranslatableField } from "../guards";
-import { isObject } from "../../../core/kernel/utils/isObject";
+import type { ChildCursor, FieldWalker } from "../../../core/kernel/field-traversal/index.js";
+import { resolveBlockFields, walkFields } from "../../../core/kernel/field-traversal/index.js";
+import { isLocalizedField, isTranslatableField } from "../guards/index.js";
+import { isObject } from "../../../core/kernel/utils/isObject.js";
 
 /** Data position for the filter walk: a single data object at the current schema level. */
 type Cursor = { data: Record<string, unknown> };

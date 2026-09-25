@@ -1,4 +1,10 @@
-import type { ArrayFieldLike, BlocksFieldLike, FieldLike, GroupFieldLike, TabLike } from "./types";
+import type {
+  ArrayFieldLike,
+  BlocksFieldLike,
+  FieldLike,
+  GroupFieldLike,
+  TabLike,
+} from "./types.js";
 
 /**
  * Framework-agnostic re-implementations of Payload's field predicates, defined over the

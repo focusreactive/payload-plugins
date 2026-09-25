@@ -1,7 +1,7 @@
 import type { CollectionSlug } from "payload";
 
-import type { Task, TaskInput, RunResult } from "./types";
-import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes";
+import type { Task, TaskInput, RunResult } from "./types.js";
+import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes.js";
 
 /**
  * Interface for task execution backends.

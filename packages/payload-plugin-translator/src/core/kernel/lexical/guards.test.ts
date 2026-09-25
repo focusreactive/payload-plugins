@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import type { SerializedLexicalNode } from "./types";
-import { isSerializedLexicalRoot, isSerializedLexicalTextNode, hasChildren } from "./guards";
+import type { SerializedLexicalNode } from "./types.js";
+import { isSerializedLexicalRoot, isSerializedLexicalTextNode, hasChildren } from "./guards.js";
 
 describe("lexical guards", () => {
   describe("isSerializedLexicalRoot", () => {

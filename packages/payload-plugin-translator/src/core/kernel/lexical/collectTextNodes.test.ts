@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { collectSerializedLexicalTextNodes } from "./collectTextNodes";
+import { collectSerializedLexicalTextNodes } from "./collectTextNodes.js";
 
 const createNode = (type: string, props?: Record<string, any>, children?: any[]) =>
   ({ type, ...props, ...(children && { children }) }) as any;

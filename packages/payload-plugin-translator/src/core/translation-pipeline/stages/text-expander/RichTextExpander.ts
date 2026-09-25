@@ -1,10 +1,10 @@
-import type { FieldChunk, RichTextChunk } from "../../types";
-import type { SerializedLexicalRoot } from "../../../kernel/lexical";
+import type { FieldChunk, RichTextChunk } from "../../types/index.js";
+import type { SerializedLexicalRoot } from "../../../kernel/lexical/index.js";
 import {
   isSerializedLexicalRoot,
   collectSerializedLexicalTextNodes,
-} from "../../../kernel/lexical";
-import type { ExpansionResult, TextExpander } from "./TextExpander.interface";
+} from "../../../kernel/lexical/index.js";
+import type { ExpansionResult, TextExpander } from "./TextExpander.interface.js";
 
 /**
  * Expands richText fields into multiple RichTextChunks (one per text node).

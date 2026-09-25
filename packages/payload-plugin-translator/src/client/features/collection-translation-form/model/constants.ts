@@ -1,4 +1,4 @@
-import type { TranslationStrategy } from "../../../shared/ui/form/FormSelectStrategy";
+import type { TranslationStrategy } from "../../../shared/ui/form/FormSelectStrategy/index.js";
 
 export const FORM_FIELDS = {
   SOURCE_LNG: "source_lng",

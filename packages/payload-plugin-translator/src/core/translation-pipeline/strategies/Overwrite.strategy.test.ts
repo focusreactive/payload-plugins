@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { OverwriteStrategy } from "./Overwrite.strategy";
+import { OverwriteStrategy } from "./Overwrite.strategy.js";
 
 describe("OverwriteStrategy", () => {
   const strategy = new OverwriteStrategy();

@@ -1,9 +1,9 @@
-export { TranslationProviderError } from "./TranslationProviderError";
-export type { TranslationFailureCode } from "./TranslationProviderError";
-export { NoContentError } from "./NoContentError";
-export { UnparseableReplyError } from "./UnparseableReplyError";
-export { KeySetMismatchError } from "./KeySetMismatchError";
-export { TransportError } from "./TransportError";
-export { ProviderConfigurationError } from "./ProviderConfigurationError";
-export { wrapTransportError } from "./wrapTransportError";
-export { errorMessageLower } from "./errorMessageLower";
+export { TranslationProviderError } from "./TranslationProviderError.js";
+export type { TranslationFailureCode } from "./TranslationProviderError.js";
+export { NoContentError } from "./NoContentError.js";
+export { UnparseableReplyError } from "./UnparseableReplyError.js";
+export { KeySetMismatchError } from "./KeySetMismatchError.js";
+export { TransportError } from "./TransportError.js";
+export { ProviderConfigurationError } from "./ProviderConfigurationError.js";
+export { wrapTransportError } from "./wrapTransportError.js";
+export { errorMessageLower } from "./errorMessageLower.js";

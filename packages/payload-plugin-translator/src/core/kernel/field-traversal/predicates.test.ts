@@ -17,7 +17,7 @@ import {
   fieldIsBlockType,
   fieldIsGroupType,
   tabHasName,
-} from "./predicates";
+} from "./predicates.js";
 
 /** One representative field per Payload type the classifier can encounter. */
 const FIELD_FIXTURES: Field[] = [

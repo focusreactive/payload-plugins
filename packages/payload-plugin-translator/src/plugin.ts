@@ -1,20 +1,20 @@
 import type { CollectionConfig, Config } from "payload";
 
-import { CacheProviderExport } from "./client/app/cache/CacheProvider.export";
-import { configureAutoTranslate } from "./server/modules/auto-translate";
-import { configureProvenance } from "./server/modules/provenance";
-import type { AccessGuard } from "./types/AccessGuard";
-import type { CollectionSchemaMap } from "./types/CollectionSchemaMap";
-import type { TargetSelectionMode } from "./types/TargetSelection";
-import { projectFieldsToFieldLike } from "./core/kernel/field-traversal";
-import type { TranslationProvider } from "./core/domain/translation-providers";
-import type { TaskRunnerProvider } from "./server/modules/task-runner";
-import { wireTranslateRunner } from "./server/features/translate-document";
-import type { TranslationLifecycleCallbacks } from "./server/modules/lifecycle";
-import { documentLevel, collectionLevel } from "./composition/levels";
-import type { TranslationLevel } from "./server/modules/translation-levels";
-import { PluginConfigBuilder } from "./server/modules/translation-levels/PluginConfigBuilder";
-import { normalizePath } from "./server/shared";
+import { CacheProviderExport } from "./client/app/cache/CacheProvider.export.js";
+import { configureAutoTranslate } from "./server/modules/auto-translate/index.js";
+import { configureProvenance } from "./server/modules/provenance/index.js";
+import type { AccessGuard } from "./types/AccessGuard.js";
+import type { CollectionSchemaMap } from "./types/CollectionSchemaMap.js";
+import type { TargetSelectionMode } from "./types/TargetSelection.js";
+import { projectFieldsToFieldLike } from "./core/kernel/field-traversal/index.js";
+import type { TranslationProvider } from "./core/domain/translation-providers/index.js";
+import type { TaskRunnerProvider } from "./server/modules/task-runner/index.js";
+import { wireTranslateRunner } from "./server/features/translate-document/index.js";
+import type { TranslationLifecycleCallbacks } from "./server/modules/lifecycle/index.js";
+import { documentLevel, collectionLevel } from "./composition/levels/index.js";
+import type { TranslationLevel } from "./server/modules/translation-levels/index.js";
+import { PluginConfigBuilder } from "./server/modules/translation-levels/PluginConfigBuilder.js";
+import { normalizePath } from "./server/shared/index.js";
 
 export type TranslatorPluginConfig = {
   /**

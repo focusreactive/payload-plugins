@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
-import { FORM_FIELDS } from "./constants";
-import { validationSchema } from "./schema";
+import { FORM_FIELDS } from "./constants.js";
+import { validationSchema } from "./schema.js";
 
 const base = {
   [FORM_FIELDS.SOURCE_LNG]: "en",

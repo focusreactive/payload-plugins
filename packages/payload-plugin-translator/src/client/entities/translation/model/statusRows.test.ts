@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 
-import { DocumentTranslationStatus } from "./enums";
-import { buildTranslationStatusRows, STATE_DOT } from "./statusRows";
-import type { DocumentStaleness, DocumentTranslation } from "./types";
+import { DocumentTranslationStatus } from "./enums.js";
+import { buildTranslationStatusRows, STATE_DOT } from "./statusRows.js";
+import type { DocumentStaleness, DocumentTranslation } from "./types.js";
 
 const staleness = (
   locales: Array<{ target: string; stale: boolean; at?: string }>

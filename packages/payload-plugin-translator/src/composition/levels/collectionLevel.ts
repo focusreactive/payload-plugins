@@ -1,7 +1,7 @@
-import { BulkDocumentTranslationDashboard } from "../../client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.export";
+import { BulkDocumentTranslationDashboard } from "../../client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.export.js";
 
-import type { TranslationLevel } from "../../server/modules/translation-levels";
-import { useDocTranslationApi } from "./useDocTranslationApi";
+import type { TranslationLevel } from "../../server/modules/translation-levels/index.js";
+import { useDocTranslationApi } from "./useDocTranslationApi.js";
 
 /**
  * Bulk collection translation: a dashboard on the list view (translate many

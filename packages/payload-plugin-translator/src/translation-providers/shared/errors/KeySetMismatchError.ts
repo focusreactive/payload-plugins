@@ -1,4 +1,4 @@
-import { TranslationProviderError } from "./TranslationProviderError";
+import { TranslationProviderError } from "./TranslationProviderError.js";
 
 /**
  * Nothing in the reply could be applied — either its keys did not overlap the input's, or they did

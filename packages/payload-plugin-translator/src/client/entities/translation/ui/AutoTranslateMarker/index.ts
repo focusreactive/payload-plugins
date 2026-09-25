@@ -1,1 +1,1 @@
-export { AutoTranslateMarker } from "./AutoTranslateMarker";
+export { AutoTranslateMarker } from "./AutoTranslateMarker.js";

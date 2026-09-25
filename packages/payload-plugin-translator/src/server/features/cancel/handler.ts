@@ -1,9 +1,9 @@
 import type { PayloadRequest } from "payload";
 
-import { ServerResponse } from "../../shared";
-import type { TaskRunnerFactory } from "../../modules/task-runner";
+import { ServerResponse } from "../../shared/index.js";
+import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 
-import { CancelInputSchema } from "./model";
+import { CancelInputSchema } from "./model.js";
 
 /**
  * Cancels and deletes translation tasks by IDs

@@ -3,4 +3,4 @@ export type {
   LevelContext,
   TranslationContext,
   CollectionAdminSlot,
-} from "./types";
+} from "./types.js";

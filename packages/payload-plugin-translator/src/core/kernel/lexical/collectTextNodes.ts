@@ -1,5 +1,5 @@
-import type { SerializedLexicalNode, SerializedTextNodeRef } from "./types";
-import { hasChildren, isSerializedLexicalTextNode } from "./guards";
+import type { SerializedLexicalNode, SerializedTextNodeRef } from "./types.js";
+import { hasChildren, isSerializedLexicalTextNode } from "./guards.js";
 
 /**
  * Recursively collects text node references from serialized Lexical JSON.

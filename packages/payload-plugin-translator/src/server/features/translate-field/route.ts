@@ -1,10 +1,10 @@
 import type { Endpoint } from "payload";
 
-import { withAccessCheck, withErrorHandler } from "../../shared";
-import type { AccessGuard } from "../../shared";
+import { withAccessCheck, withErrorHandler } from "../../shared/index.js";
+import type { AccessGuard } from "../../shared/index.js";
 
-import type { FieldTranslationConfig } from "./model";
-import { TranslateFieldHandler } from "./handler";
+import type { FieldTranslationConfig } from "./model.js";
+import { TranslateFieldHandler } from "./handler.js";
 
 export type CreateFieldRouteArgs = FieldTranslationConfig & {
   access?: AccessGuard;

@@ -1,6 +1,6 @@
 import type { CollectionSlug } from "payload";
 
-import type { FieldLike } from "../core/kernel/field-traversal";
+import type { FieldLike } from "../core/kernel/field-traversal/index.js";
 
 /**
  * Map of collection slug to its projected field schema — an independent {@link FieldLike} snapshot

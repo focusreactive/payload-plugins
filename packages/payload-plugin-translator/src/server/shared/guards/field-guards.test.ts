@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { Field } from "payload";
-import { isTranslatableField, isLocalizedField, isRelationshipField } from "./field-guards";
+import { isTranslatableField, isLocalizedField, isRelationshipField } from "./field-guards.js";
 
 describe("field-guards", () => {
   describe("isTranslatableField", () => {

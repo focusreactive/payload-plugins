@@ -1,2 +1,2 @@
-export { default } from "./MultiSelect";
-export type { MultiSelectOption } from "./multiSelectModel";
+export { default } from "./MultiSelect.js";
+export type { MultiSelectOption } from "./multiSelectModel.js";

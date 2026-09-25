@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 
-import { createTranslationRoutes } from "./createTranslationRoutes";
-import type { TranslationRoutesDeps } from "./createTranslationRoutes";
+import { createTranslationRoutes } from "./createTranslationRoutes.js";
+import type { TranslationRoutesDeps } from "./createTranslationRoutes.js";
 
 // Bundle-contract test: pins that the shared route bundle stays complete and
 // ordered, and threads basePath into every endpoint. The bundle registers via

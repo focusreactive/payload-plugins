@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { setByPath } from "./setByPath";
+import { setByPath } from "./setByPath.js";
 
 describe("setByPath", () => {
   it("sets top-level property", () => {

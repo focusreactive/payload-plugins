@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createTranslationProvider } from "./CompletionProvider.provider";
-import type { CompletionRequest } from "./CompletionProvider.provider";
+import { createTranslationProvider } from "./CompletionProvider.provider.js";
+import type { CompletionRequest } from "./CompletionProvider.provider.js";
 import {
   KeySetMismatchError,
   NoContentError,
   ProviderConfigurationError,
   TransportError,
   UnparseableReplyError,
-} from "./errors";
+} from "./errors/index.js";
 
 function recordingComplete(reply: string) {
   const seen: CompletionRequest[] = [];

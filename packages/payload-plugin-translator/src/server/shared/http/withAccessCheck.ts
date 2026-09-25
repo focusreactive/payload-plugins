@@ -1,7 +1,7 @@
 import type { PayloadRequest } from "payload";
 
-import type { AccessGuard } from "../access/types";
-import { ServerResponse } from "./ServerResponse";
+import type { AccessGuard } from "../access/types.js";
+import { ServerResponse } from "./ServerResponse.js";
 
 /**
  * Wraps handler with access check.

@@ -1,2 +1,2 @@
-export { createGetDocumentStalenessRoute, createDismissStalenessRoute } from "./route";
-export type { StalenessConfig } from "./model";
+export { createGetDocumentStalenessRoute, createDismissStalenessRoute } from "./route.js";
+export type { StalenessConfig } from "./model.js";

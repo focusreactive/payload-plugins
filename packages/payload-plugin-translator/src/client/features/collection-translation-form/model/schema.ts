@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { FORM_FIELDS } from "./constants";
+import { FORM_FIELDS } from "./constants.js";
 
 export const validationSchema = z.object({
   [FORM_FIELDS.SOURCE_LNG]: z.string().nonempty(""),
