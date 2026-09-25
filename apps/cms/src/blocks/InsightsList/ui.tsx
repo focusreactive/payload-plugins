@@ -89,13 +89,12 @@ export function ArticleCard({ card, featured }: { card: InsightCard; featured: b
       {card.authorName && (
         <div className="mt-auto flex items-center gap-3">
           <Avatar
-            border
             rounded={false}
             src={card.authorPhotoUrl}
             initials={initialsOf(card.authorName)}
             alt={card.authorName}
-            className="h-14 w-11 rounded-lg"
-            contentClassName="rounded-md [&_img]:object-top"
+            className="h-14 w-11 rounded-sm"
+            contentClassName="rounded-sm [&_img]:object-top"
           />
           <div>
             {card.authorHref ? (

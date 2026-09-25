@@ -153,13 +153,12 @@ export async function InsightDetail({ insight, locale }: { insight: Insight; loc
               {author ? (
                 <div className="flex items-center gap-3 md:gap-4">
                   <Avatar
-                    border
                     rounded={false}
                     src={photoUrlOf(author)}
                     initials={initialsOf(author.name)}
                     alt={author.name}
-                    className="h-16 w-13 rounded-lg"
-                    contentClassName="rounded-md [&_img]:object-top"
+                    className="h-16 w-13 rounded-sm"
+                    contentClassName="rounded-sm [&_img]:object-top"
                   />
                   <div>
                     {authorLink(
@@ -239,14 +238,13 @@ export async function PersonDetail({ person, locale }: { person: Person; locale:
         <div className="max-w-180">
           <div className="flex flex-col items-start gap-6 md:flex-row md:items-center">
             <Avatar
-              border
               rounded={false}
               src={photoUrlOf(person)}
               initials={initialsOf(person.name)}
               alt={person.name}
               size="2xl"
-              className="h-40 w-32 rounded-xl"
-              contentClassName="rounded-lg [&_img]:object-top"
+              className="h-40 w-32 rounded-sm"
+              contentClassName="rounded-sm [&_img]:object-top"
             />
             <div>
               <h1 className="text-display-sm font-semibold text-primary md:text-display-md">
