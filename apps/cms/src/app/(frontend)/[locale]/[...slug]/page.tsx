@@ -108,11 +108,14 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   if (!page) {
     const detail = await resolveListingDetail(decodedSegments, locale);
     if (!detail) return generateNotFoundMeta({ locale });
-    const title = detail.kind === "insight" ? detail.insight.title : detail.person.name;
+    const meta = detail.kind === "insight" ? detail.insight.meta : detail.person.meta;
+    const title =
+      meta?.title || (detail.kind === "insight" ? detail.insight.title : detail.person.name);
     const description =
-      detail.kind === "insight"
+      meta?.description ||
+      (detail.kind === "insight"
         ? (detail.insight.standfirst ?? undefined)
-        : [detail.person.jobTitle, detail.person.office].filter(Boolean).join(" · ") || undefined;
+        : [detail.person.jobTitle, detail.person.office].filter(Boolean).join(" · ") || undefined);
     // hreflang only for languages this article really exists in; the language switcher reads
     // these links to decide which languages to offer.
     return {

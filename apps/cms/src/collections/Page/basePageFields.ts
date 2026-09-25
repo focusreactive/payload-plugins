@@ -57,7 +57,6 @@ export function createBasePageFields({ withBlocksDefaultValue = false } = {}): F
         {
           fields: generateSeoFields({ generation: true }),
           label: { en: "SEO", es: "SEO" },
-          localized: true,
           name: "meta",
         },
       ],

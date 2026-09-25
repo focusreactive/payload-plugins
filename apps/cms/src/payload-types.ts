@@ -251,6 +251,9 @@ export interface Page {
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
   generateSlug?: boolean | null;
+  /**
+   * The page's web address. Changing it once published redirects the old address here automatically.
+   */
   slug: string;
   parent?: (number | null) | Page;
   breadcrumbs?:
@@ -1632,6 +1635,9 @@ export interface Footer {
  */
 export interface Person {
   id: number;
+  /**
+   * This person's public web address is generated from their name. Changing it redirects the old address here automatically.
+   */
   name: string;
   jobTitle: string;
   /**
@@ -1683,6 +1689,19 @@ export interface Person {
    */
   reviewStatus?: ('draft' | 'submitted' | 'changesRequested') | null;
   reviewerNote?: string | null;
+  /**
+   * What search engines show for this page. Left empty, the name and job title and office are used instead.
+   */
+  meta?: {
+    /**
+     * Up to 60 characters shows in full in search results.
+     */
+    title?: string | null;
+    /**
+     * Up to 160 characters shows in full in search results.
+     */
+    description?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -1725,7 +1744,7 @@ export interface Insight {
    */
   generateSlug?: boolean | null;
   /**
-   * The web address for this article, generated automatically from the title.
+   * The web address for this article, generated automatically from the title. Changing it redirects the old address here automatically.
    */
   slug: string;
   /**
@@ -1746,6 +1765,19 @@ export interface Insight {
   markets?:
     | ('uk-europe' | 'canada' | 'greater-china' | 'se-asia' | 'usa' | 'japan' | 'korea' | 'nordics' | 'south-america')[]
     | null;
+  /**
+   * What search engines show for this page. Left empty, the headline and standfirst are used instead.
+   */
+  meta?: {
+    /**
+     * Up to 60 characters shows in full in search results.
+     */
+    title?: string | null;
+    /**
+     * Up to 160 characters shows in full in search results.
+     */
+    description?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -4021,6 +4053,12 @@ export interface PersonSelect<T extends boolean = true> {
       };
   reviewStatus?: T;
   reviewerNote?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -4040,6 +4078,12 @@ export interface InsightSelect<T extends boolean = true> {
   author?: T;
   unmatchedAuthorEmail?: T;
   markets?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

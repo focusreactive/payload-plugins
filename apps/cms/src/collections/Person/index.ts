@@ -13,6 +13,7 @@ import {
 import { notFeeEarner, ownProfile } from "@/lib/access/feeEarner";
 import { getPersonHref } from "@/dal";
 import { MARKET_OPTIONS, marketsField } from "@/lib/fields/marketsField";
+import { seoMetaGroup } from "@/lib/fields/seoMetaGroup";
 import { redirectOnPersonSlugChange } from "@/lib/hooks/redirectOnSlugChange";
 import { generatePreviewPath } from "@/lib/utils/generatePreviewPath";
 
@@ -240,6 +241,10 @@ export const Person: CollectionConfig<"person"> = {
         position: "sidebar",
         condition: (data) => Boolean(data?.reviewStatus),
       },
+    },
+    {
+      ...seoMetaGroup({ descriptionFallback: "job title and office", titleFallback: "name" }),
+      access: editorsOnly,
     },
   ],
   hooks: {

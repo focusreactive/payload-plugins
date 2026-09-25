@@ -10,6 +10,7 @@ import {
 import { getInsightHref } from "@/dal";
 import { marketsField } from "@/lib/fields/marketsField";
 import { redirectOnInsightSlugChange } from "@/lib/hooks/redirectOnSlugChange";
+import { seoMetaGroup } from "@/lib/fields/seoMetaGroup";
 import { validateAuthorMarkets } from "@/lib/fields/validateAuthorMarkets";
 import {
   MANUAL_SHORTCODE_PREFIX,
@@ -238,6 +239,7 @@ export const Insight: CollectionConfig<"insight"> = {
       type: "email",
     },
     sidebarMarketsField,
+    seoMetaGroup({ descriptionFallback: "standfirst", titleFallback: "headline" }),
   ],
   hooks: {
     afterChange: [indexInsightEmbedding, redirectOnInsightSlugChange],

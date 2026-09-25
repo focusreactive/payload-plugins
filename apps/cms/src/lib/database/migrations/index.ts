@@ -43,6 +43,7 @@ import * as migration_20260923_213431_stats_item_images from './20260923_213431_
 import * as migration_20260923_232412_people_directory_and_person_photo from './20260923_232412_people_directory_and_person_photo';
 import * as migration_20260925_085418_translator_payload_jobs_runner from './20260925_085418_translator_payload_jobs_runner';
 import * as migration_20260925_105646_person_review_and_standfirsts from './20260925_105646_person_review_and_standfirsts';
+import * as migration_20260925_105714_seo_meta_on_insight_and_person from './20260925_105714_seo_meta_on_insight_and_person';
 import * as migration_20260925_150000_widen_document_embeddings_collection_enum from './20260925_150000_widen_document_embeddings_collection_enum';
 
 export const migrations = [
@@ -270,6 +271,11 @@ export const migrations = [
     up: migration_20260925_105646_person_review_and_standfirsts.up,
     down: migration_20260925_105646_person_review_and_standfirsts.down,
     name: '20260925_105646_person_review_and_standfirsts',
+  },
+  {
+    up: migration_20260925_105714_seo_meta_on_insight_and_person.up,
+    down: migration_20260925_105714_seo_meta_on_insight_and_person.down,
+    name: '20260925_105714_seo_meta_on_insight_and_person',
   },
   {
     up: migration_20260925_150000_widen_document_embeddings_collection_enum.up,
