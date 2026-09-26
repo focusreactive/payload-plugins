@@ -29,6 +29,7 @@ To add an individual plugin to an existing Payload project, see the install comm
 | [`@focus-reactive/payload-plugin-comments`](./packages/payload-plugin-comments)     | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-comments)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-comments)     | Comments plugin — inline field comments, mentions, annotations, and collaboration |
 | [`@focus-reactive/payload-plugin-translator`](./packages/payload-plugin-translator) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-translator)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-translator) | AI translation plugin — one-click translations on top of Payload's localization   |
 | [`@focus-reactive/payload-plugin-scheduling`](./packages/payload-plugin-scheduling) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-scheduling)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-scheduling) | Schedule publication plugin — schedule documents to publish at a future date      |
+| [`@focus-reactive/payload-plugin-site-preview`](./packages/payload-plugin-site-preview) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-site-preview)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-site-preview) | Site preview plugin — live preview and click-to-edit for static and template-rendered sites |
 
 
 ## A/B Testing Plugin for Payload CMS
@@ -138,6 +139,20 @@ bun add @focus-reactive/payload-plugin-scheduling
 
 - Package: [`@focus-reactive/payload-plugin-scheduling`](./packages/payload-plugin-scheduling)
 - [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-scheduling)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-scheduling)
+
+## Site Preview Plugin for Payload CMS
+
+Live preview and click-to-edit for frontends that are not a React app — static site generators, template engines, anything that renders HTML. The CMS asks the site to render the document with its own templates, unsaved edits included, and shows it in the admin; a click on a block opens it in the form, tabs and collapsed rows included, and a focused field highlights its block.
+
+```bash
+npm install @focus-reactive/payload-plugin-site-preview
+yarn add @focus-reactive/payload-plugin-site-preview
+pnpm add @focus-reactive/payload-plugin-site-preview
+bun add @focus-reactive/payload-plugin-site-preview
+```
+
+- Package: [`@focus-reactive/payload-plugin-site-preview`](./packages/payload-plugin-site-preview)
+- [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-site-preview)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-site-preview)
 
 ## Run Demo Locally
 

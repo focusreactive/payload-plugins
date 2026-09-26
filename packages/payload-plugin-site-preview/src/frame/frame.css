@@ -1,0 +1,56 @@
+:is([data-payload-id], [data-payload-doc]) {
+  cursor: pointer;
+}
+
+:is([data-payload-id], [data-payload-doc]):hover:not(
+    :has(:is([data-payload-id], [data-payload-doc]):hover)
+  ) {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}
+
+:is([data-payload-id], [data-payload-doc]):hover:has(
+    :is([data-payload-id], [data-payload-doc]):hover
+  ) {
+  outline: 2px dashed rgba(59, 130, 246, 0.5);
+  outline-offset: -2px;
+}
+
+.payload-focused {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: -2px;
+  animation: payload-focused 1.5s ease-in forwards;
+}
+
+@keyframes payload-focused {
+  from {
+    box-shadow: inset 0 0 0 9999px rgba(59, 130, 246, 0.12);
+  }
+  to {
+    box-shadow: inset 0 0 0 9999px rgba(59, 130, 246, 0);
+    outline-color: transparent;
+  }
+}
+
+.payload-edit-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2147483647;
+  padding: 1px 8px;
+  border-radius: 0 0 4px 4px;
+  background: #3b82f6;
+  color: #fff;
+  font:
+    600 12px/1.6 system-ui,
+    -apple-system,
+    sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+body:has(:is([data-payload-id], [data-payload-doc]):hover) .payload-edit-label {
+  opacity: 1;
+}

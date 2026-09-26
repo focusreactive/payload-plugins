@@ -194,7 +194,7 @@
     },
     "packages/create-ideal-cms": {
       "name": "create-ideal-cms",
-      "version": "1.0.0",
+      "version": "1.2.0",
       "bin": {
         "create-ideal-cms": "./dist/index.js",
       },
@@ -417,9 +417,27 @@
         "react-dom",
       ],
     },
+    "packages/payload-plugin-site-preview": {
+      "name": "@focus-reactive/payload-plugin-site-preview",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@payloadcms/ui": "3.84.1",
+        "@swc/cli": "0.4.0",
+        "@swc/core": "1.7.0",
+        "@types/react": "19.2.9",
+        "payload": "3.84.1",
+        "react": "19.2.1",
+        "typescript": "5.9.2",
+      },
+      "peerDependencies": {
+        "@payloadcms/ui": "^3.84.0",
+        "payload": "^3.84.0",
+        "react": "^19.0.0",
+      },
+    },
     "packages/payload-plugin-translator": {
       "name": "@focus-reactive/payload-plugin-translator",
-      "version": "0.11.3",
+      "version": "0.13.4",
       "dependencies": {
         "@hookform/resolvers": "^3.9.0",
         "@radix-ui/react-popover": "^1.1.0",
@@ -750,6 +768,8 @@
     "@focus-reactive/payload-plugin-scheduling": ["@focus-reactive/payload-plugin-scheduling@workspace:packages/payload-plugin-scheduling"],
 
     "@focus-reactive/payload-plugin-seo": ["@focus-reactive/payload-plugin-seo@workspace:packages/payload-plugin-seo"],
+
+    "@focus-reactive/payload-plugin-site-preview": ["@focus-reactive/payload-plugin-site-preview@workspace:packages/payload-plugin-site-preview"],
 
     "@focus-reactive/payload-plugin-translator": ["@focus-reactive/payload-plugin-translator@workspace:packages/payload-plugin-translator"],
 
