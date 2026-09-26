@@ -22,6 +22,7 @@ packages/
   payload-plugin-comments/            → @focus-reactive/payload-plugin-comments (published)
   payload-plugin-scheduling/          → @focus-reactive/payload-plugin-scheduling (published)
   payload-plugin-translator/          → @focus-reactive/payload-plugin-translator (published)
+  payload-plugin-site-preview/        → @focus-reactive/payload-plugin-site-preview (published)
   ui/                                 → @repo/ui — shared React UI components (private)
   tailwind-config/                    → @repo/tailwind-config — shared Tailwind v4 config (private)
   typescript-config/                  → @repo/typescript-config (private)

@@ -1,0 +1,72 @@
+{
+  "name": "@focus-reactive/payload-plugin-site-preview",
+  "version": "0.0.0",
+  "description": "Live preview and click-to-edit for Payload CMS on any frontend that renders HTML — static sites and template engines included, no framework required",
+  "license": "MIT",
+  "author": "FocusReactive <ship@focusreactive.com>",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./client": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "payload",
+    "payload-cms",
+    "payload-plugin",
+    "live-preview",
+    "click-to-edit",
+    "visual-editing",
+    "static-site"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/focusreactive/payload-plugins",
+    "directory": "packages/payload-plugin-site-preview"
+  },
+  "bugs": {
+    "url": "https://github.com/focusreactive/payload-plugins/issues"
+  },
+  "homepage": "https://github.com/focusreactive/payload-plugins/tree/main/packages/payload-plugin-site-preview",
+  "scripts": {
+    "build": "bun run embed && bun run build:swc && bun run build:types",
+    "embed": "node scripts/embed-frame.mjs",
+    "build:swc": "swc ./src -d ./dist --config-file .swcrc --strip-leading-paths --ignore \"src/frame/*.js\"",
+    "build:types": "tsc --emitDeclarationOnly --outDir dist",
+    "check-types": "bun run embed && tsgo --noEmit",
+    "clean": "rm -rf dist",
+    "dev": "bun run embed && bun run build:swc -- --watch",
+    "lint": "ultracite check",
+    "lint:fix": "ultracite fix",
+    "format": "ultracite fix",
+    "format:check": "ultracite check"
+  },
+  "peerDependencies": {
+    "@payloadcms/ui": "^3.84.0",
+    "payload": "^3.84.0",
+    "react": "^19.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@payloadcms/ui": "3.84.1",
+    "@swc/cli": "0.4.0",
+    "@swc/core": "1.7.0",
+    "@types/react": "19.2.9",
+    "payload": "3.84.1",
+    "react": "19.2.1",
+    "typescript": "5.9.2"
+  }
+}
