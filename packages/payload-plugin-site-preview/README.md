@@ -32,7 +32,8 @@ export default buildConfig({
       collections: ["pages"],
       // Where the site renders a document. `data` is the unsaved form data, or null for the saved document.
       site: async ({ req, id }) => {
-        const page = await req.payload.findByID({ collection: "pages", id, req });
+        // Pass `req`, and keep access control on: this decides what a signed-in editor gets to see.
+        const page = await req.payload.findByID({ collection: "pages", id, req, overrideAccess: false });
         return {
           url: `https://my-site.com/api/preview?slug=${page.slug}`,
           headers: { "X-Preview-Secret": process.env.PREVIEW_SECRET ?? "" },
@@ -65,6 +66,39 @@ The plugin calls the `url` you return:
 Relative urls in the page (`css/app.css`, `img/logo.svg`) are fetched from the site through the CMS. If the page lives in a subdirectory, return `basePath: "nyc/"` or send an `X-Preview-Base: nyc/` header.
 
 Check the secret in the endpoint: this is how pages that are not public in Payload get rendered.
+
+Astro, with on-demand rendering (`output: "server"` or `prerender = false`):
+
+```astro
+---
+// src/pages/preview/[slug].astro
+export const prerender = false;
+
+if (Astro.request.headers.get("x-preview-secret") !== import.meta.env.PREVIEW_SECRET) {
+  return new Response("Forbidden", { status: 401 });
+}
+const page =
+  Astro.request.method === "POST"
+    ? (await Astro.request.json()).doc
+    : await getPage(Astro.params.slug); // your usual Payload query
+---
+<PageLayout page={page} preview />
+```
+
+Any Node server with a template engine — Express and Nunjucks here, the same for Liquid or Handlebars,
+and for an Eleventy site's own templates:
+
+```js
+app.all("/api/preview", express.json({ limit: "5mb" }), async (req, res) => {
+  if (req.get("x-preview-secret") !== process.env.PREVIEW_SECRET) return res.sendStatus(401);
+  const page = req.method === "POST" ? req.body.doc : await getPage(req.query.slug);
+  res.send(nunjucks.render("page.njk", { page, preview: true }));
+});
+```
+
+A site that cannot render on request — a static host serving its build — can still have the preview
+of saved pages and click-to-edit: point `site` at the deployed page and set `unsaved: false`. Its
+build then has to print the attributes, which the public site would carry too.
 
 ### 4. Mark what can be clicked
 
@@ -104,16 +138,23 @@ The innermost marked element wins, so a card inside a marked section opens the c
 | `site` | `(args) => SiteRequest \| null` | — | Where the site renders a document: `{ url, headers?, body?, basePath? }` |
 | `scrollOffset` | `string` | — | `'80px'`, or the selector of a fixed header, measured when the preview scrolls |
 | `depth` | `number` | `2` | How deep relationships in unsaved form data are populated |
+| `unsaved` | `boolean` | `true` | Render unsaved edits; `false` for a site that only serves its build |
 
 ## What it relies on
 
 Click-to-edit drives the admin's DOM where Payload offers no API: rows are found by the ids Payload renders (`sections-1-items-row-3`), tabs are switched by their buttons (a tabs field keeps its active tab in local state), a drawer is found by its close button. Rows are expanded through form state (`SET_ROW_COLLAPSED`), and a drawer opens on the right tab through the document's preferences. After upgrading Payload, click a nested card in the preview before shipping.
 
+## Not covered yet
+
+- **Globals** — a global cannot be a previewed page, and a click cannot open one: Payload's document drawer takes collections only.
+- **Drafts and localization** — unsaved form data is read without a locale and as a published document, and the admin's locale is not passed to `site`. A site with drafts or several locales renders what `site` returns for the saved document; check that it is the version you expect.
+- **Links to other pages** — the preview scrolls to anchors on the page, but does not follow links elsewhere.
+
 ## Good to know
 
 - **Analytics** — the preview is a real render of your page, trackers included. Leave them out of preview renders, or every preview reload is a visit.
 - **Rate limits** — a page loads its files through the CMS (`/api/site-preview/<collection>/<id>/_/…`), often a hundred at a time; exempt that path from a rate limiter.
-- **Links** — relative links resolve against the CMS, so the preview does not follow them.
+- **Links** — the page's relative urls resolve against the CMS proxy; in-page anchors scroll, links to other pages are not followed.
 
 ## License
 
