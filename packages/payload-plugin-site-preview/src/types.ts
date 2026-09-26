@@ -37,4 +37,10 @@ export type SitePreviewOptions = {
   scrollOffset?: string;
   /** How deep relationships in unsaved form data are populated. Match what the site reads. Default 2. */
   depth?: number;
+  /**
+   * Render the editor's unsaved edits (a POST to the site). Default true. Turn it off for a site that
+   * cannot render on request — a static host answering from its build — and point `site` at the
+   * deployed page: the preview then shows the saved document, and click-to-edit still works.
+   */
+  unsaved?: boolean;
 };

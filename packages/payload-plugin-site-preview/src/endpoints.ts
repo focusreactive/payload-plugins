@@ -46,7 +46,12 @@ const render = async (
   const basePath = request.basePath ?? res.headers.get("x-preview-base") ?? "";
   const base = `${serverURL(req)}${api}${ENDPOINT}/${collection}/${id}/${ASSETS_SEGMENT}/${basePath}`;
   return new Response(
-    injectPreview(await res.text(), { base, api, scrollOffset: options.scrollOffset }),
+    injectPreview(await res.text(), {
+      base,
+      api,
+      scrollOffset: options.scrollOffset,
+      unsaved: options.unsaved !== false,
+    }),
     {
       status: res.status,
       headers: {
@@ -78,7 +83,41 @@ export const previewEndpoints = (options: SitePreviewOptions): Endpoint[] => {
     return { collection, id };
   };
 
+  // The document's page with the unsaved form data the frame posts back — unless the site renders
+  // only what it has built.
+  const unsavedEndpoint: Endpoint[] =
+    options.unsaved === false
+      ? []
+      : [
+          {
+            // The document's page with the unsaved form data the frame posts back.
+            path: `${ENDPOINT}/:collection/:id`,
+            method: "post",
+            handler: async (req) => {
+              const target = guard(req);
+              if (target instanceof Response) {
+                return target;
+              }
+              const unsaved = await readForm(req).catch(() => undefined);
+              if (unsaved === undefined) {
+                return new Response("Form data is not JSON.", { status: 400 });
+              }
+              if (!unsaved) {
+                return new Response("No data given.", { status: 400 });
+              }
+              const data = await readUnsaved(
+                req,
+                target.collection,
+                { ...unsaved, id: target.id },
+                options.depth ?? 2
+              );
+              return render(options, req, target.collection, target.id, data);
+            },
+          },
+        ];
+
   return [
+    ...unsavedEndpoint,
     {
       // The document's page, saved — or one of its files under `_/`.
       path: `${ENDPOINT}/:collection/:id/:path*`,
@@ -105,31 +144,6 @@ export const previewEndpoints = (options: SitePreviewOptions): Endpoint[] => {
           return new Response("Nothing to preview for this document.", { status: 404 });
         }
         return proxyAsset(origin, path, new URL(req.url || "", "http://internal").search);
-      },
-    },
-    {
-      // The document's page with the unsaved form data the frame posts back.
-      path: `${ENDPOINT}/:collection/:id`,
-      method: "post",
-      handler: async (req) => {
-        const target = guard(req);
-        if (target instanceof Response) {
-          return target;
-        }
-        const unsaved = await readForm(req).catch(() => undefined);
-        if (unsaved === undefined) {
-          return new Response("Form data is not JSON.", { status: 400 });
-        }
-        if (!unsaved) {
-          return new Response("No data given.", { status: 400 });
-        }
-        const data = await readUnsaved(
-          req,
-          target.collection,
-          { ...unsaved, id: target.id },
-          options.depth ?? 2
-        );
-        return render(options, req, target.collection, target.id, data);
       },
     },
     {
