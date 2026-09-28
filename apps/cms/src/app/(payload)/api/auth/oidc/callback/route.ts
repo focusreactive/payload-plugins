@@ -1,13 +1,12 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { createLocalReq, getFieldsToSign, jwtSign } from "payload";
-import { addSessionToUser } from "payload/shared";
 
 import { claimsFromIdTokenPayload, claimsFromUserInfoResponse } from "@/lib/auth/oidc/claims";
 import type { IdTokenPayload } from "@/lib/auth/oidc/claims";
 import { getOIDCConfig } from "@/lib/auth/oidc/config";
 import { getDiscovery } from "@/lib/auth/oidc/discovery";
+import { redirectWithSession } from "@/lib/auth/utils/session";
 import { findOrCreateAdminUser } from "@/lib/auth/utils/user";
 import { getPayloadClient } from "@/dal";
 
@@ -170,55 +169,10 @@ export async function GET(request: Request) {
 
     const user = await findOrCreateAdminUser(payload, claims);
 
-    const usersCollection = payload.collections.users.config;
-    if (!usersCollection?.auth) {
-      throw new Error("Users collection auth config not found");
-    }
-    const { secret } = payload;
-    if (!secret) {
-      throw new Error("Payload secret not configured");
-    }
-
-    let sid: string | undefined;
-    if (usersCollection.auth.useSessions) {
-      const req = await createLocalReq({}, payload);
-      const session = await addSessionToUser({
-        collectionConfig: usersCollection,
-        payload,
-        req,
-        user: { ...user, collection: "users" },
-      });
-      ({ sid } = session);
-    }
-
-    const fieldsToSign = getFieldsToSign({
-      collectionConfig: usersCollection,
-      email: user.email,
-      sid,
-      user: { ...user, collection: "users" },
-    });
-    const tokenExpiration = usersCollection.auth.tokenExpiration ?? 7200;
-    const { token } = await jwtSign({
-      fieldsToSign,
-      secret,
-      tokenExpiration,
-    });
-
-    const cookieName = `${payload.config.cookiePrefix ?? "payload"}-token`;
-    const cookieOpts = usersCollection.auth.cookies ?? {};
-    const isSecure = cookieOpts.secure ?? process.env.NODE_ENV === "production";
-    const sameSite =
-      cookieOpts.sameSite === false
-        ? "lax"
-        : ((cookieOpts.sameSite as "lax" | "strict" | "none") ?? "lax");
-
-    const response = NextResponse.redirect(`${origin}/admin`);
-    response.cookies.set(cookieName, token, {
-      httpOnly: true,
-      maxAge: tokenExpiration,
-      path: "/",
-      sameSite,
-      secure: isSecure,
+    const response = await redirectWithSession({
+      payload,
+      redirectTo: `${origin}/admin`,
+      user,
     });
 
     payload.logger.info(`User ${user.email} logged in via OIDC SSO`);

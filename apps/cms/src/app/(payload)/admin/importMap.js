@@ -45,8 +45,10 @@ import { PresetAdminComponentCellWrapper as PresetAdminComponentCellWrapper_f0a4
 import { FolderTypeField as FolderTypeField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
 import { default as default_dfe4008080d895d460898c3a6155e9ba } from '../../../components/admin/Icon'
 import { default as default_91a09b539d3c86b0aebf520e7564ce08 } from '../../../components/admin/Logo'
+import { DemoPersonaHeaderSwitch as DemoPersonaHeaderSwitch_d4de61609f6bd247178aa67c2e82e9da } from '../../../components/admin/DemoPersonaSwitcher'
 import { CommentsHeaderButton as CommentsHeaderButton_30d38dd40c31eff500900a16a2792204 } from '@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton'
 import { default as default_3fd776aeb7e4127cf324115b5226afbf } from '../../../components/admin/SSOButtons'
+import { DemoPersonaLoginButtons as DemoPersonaLoginButtons_d4de61609f6bd247178aa67c2e82e9da } from '../../../components/admin/DemoPersonaSwitcher'
 import { EditorialNavGroup as EditorialNavGroup_d4c63ce4d15250e025f9fc185a0ec9ec } from '../../../components/admin/EditorialNavGroup'
 import { default as default_3da48296ca27cce2dd5904839611d77c } from '../../../lib/context/BeforeOpenDrawerWrapper'
 import { default as default_c0acd3f4d5b9577c4e185cd84f6b1b50 } from '../../../lib/context/SeoExtractorRegistrar'
@@ -108,8 +110,10 @@ export const importMap = {
   "@payloadcms/next/client#FolderTypeField": FolderTypeField_2b8867833a34864a02ddf429b0728a40,
   "/components/admin/Icon#default": default_dfe4008080d895d460898c3a6155e9ba,
   "/components/admin/Logo#default": default_91a09b539d3c86b0aebf520e7564ce08,
+  "/components/admin/DemoPersonaSwitcher#DemoPersonaHeaderSwitch": DemoPersonaHeaderSwitch_d4de61609f6bd247178aa67c2e82e9da,
   "@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton#CommentsHeaderButton": CommentsHeaderButton_30d38dd40c31eff500900a16a2792204,
   "/components/admin/SSOButtons#default": default_3fd776aeb7e4127cf324115b5226afbf,
+  "/components/admin/DemoPersonaSwitcher#DemoPersonaLoginButtons": DemoPersonaLoginButtons_d4de61609f6bd247178aa67c2e82e9da,
   "/components/admin/EditorialNavGroup#EditorialNavGroup": EditorialNavGroup_d4c63ce4d15250e025f9fc185a0ec9ec,
   "/lib/context/BeforeOpenDrawerWrapper#default": default_3da48296ca27cce2dd5904839611d77c,
   "/lib/context/SeoExtractorRegistrar#default": default_c0acd3f4d5b9577c4e185cd84f6b1b50,

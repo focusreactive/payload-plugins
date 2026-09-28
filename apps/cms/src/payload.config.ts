@@ -37,7 +37,11 @@ export default buildConfig({
     // replacing Payload's own document controls.
     dateFormat: "MMM d, yyyy",
     components: {
-      afterLogin: ["/components/admin/SSOButtons"],
+      actions: ["/components/admin/DemoPersonaSwitcher#DemoPersonaHeaderSwitch"],
+      afterLogin: [
+        "/components/admin/SSOButtons",
+        "/components/admin/DemoPersonaSwitcher#DemoPersonaLoginButtons",
+      ],
       beforeNavLinks: ["/components/admin/EditorialNavGroup#EditorialNavGroup"],
       graphics: {
         Icon: "/components/admin/Icon",
