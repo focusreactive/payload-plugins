@@ -7,6 +7,8 @@ import { loadSeoOverviewRows } from "./loadSeoOverviewRows";
 import { SeoOverviewTable } from "./SeoOverviewTable";
 import "./seoOverview.scss";
 
+const LOCALES_WITH_CONTENT = new Set(["en", "fr", "ja"]);
+
 export async function SeoOverviewView({
   initPageResult,
   params,
@@ -18,11 +20,15 @@ export async function SeoOverviewView({
 
   const localeCode = locale?.code ?? "en";
   const rows = await loadSeoOverviewRows({ locale: localeCode, req });
+  // Korean and both Chinese locales exist in the config but the seed writes no content in them, so
+  // their tabs would open on a table of empty fields.
   const locales = payload.config.localization
-    ? payload.config.localization.locales.map((option) => ({
-        code: option.code,
-        label: typeof option.label === "string" ? option.label : option.code,
-      }))
+    ? payload.config.localization.locales
+        .filter((option) => LOCALES_WITH_CONTENT.has(option.code))
+        .map((option) => ({
+          code: option.code,
+          label: typeof option.label === "string" ? option.label : option.code,
+        }))
     : [{ code: "en", label: "English" }];
 
   return (
