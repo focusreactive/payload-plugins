@@ -29,6 +29,7 @@ import { Testimonials } from "@/collections/Testimonials";
 import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { abAdapter } from "@/lib/plugins/ab/abAdapter";
+import { hideReadOnlyCollectionsFromScopedRoles } from "@/lib/plugins/scopedRoleNav";
 import { buildVariantData } from "@/lib/plugins/ab/buildVariantData";
 import type { ABVariantData } from "@/lib/plugins/ab/types";
 import { superAdmin, authenticated, editorial } from "@/lib/access";
@@ -443,4 +444,6 @@ export const plugins: Plugin[] = [
   }),
 
   mcpPluginConfig,
+
+  hideReadOnlyCollectionsFromScopedRoles,
 ];
