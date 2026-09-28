@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/payload-plugin-netlify-deploy",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Publish button for Payload CMS sites on Netlify: build from the admin, stream the build log, preview a deploy and publish it, one build at a time per site",
   "license": "MIT",
   "author": "FocusReactive <ship@focusreactive.com>",
