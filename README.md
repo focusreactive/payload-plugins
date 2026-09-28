@@ -30,6 +30,7 @@ To add an individual plugin to an existing Payload project, see the install comm
 | [`@focus-reactive/payload-plugin-translator`](./packages/payload-plugin-translator) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-translator)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-translator) | AI translation plugin — one-click translations on top of Payload's localization   |
 | [`@focus-reactive/payload-plugin-scheduling`](./packages/payload-plugin-scheduling) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-scheduling)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-scheduling) | Schedule publication plugin — schedule documents to publish at a future date      |
 | [`@focus-reactive/payload-plugin-html-preview`](./packages/payload-plugin-html-preview) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-html-preview)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-html-preview) | HTML preview plugin — live preview and click-to-edit for static and template-rendered sites |
+| [`@focus-reactive/payload-plugin-netlify-deploy`](./packages/payload-plugin-netlify-deploy) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-netlify-deploy)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-netlify-deploy) | Netlify deploy plugin — build, preview and publish Netlify sites from the admin, with the live build log |
 
 
 ## A/B Testing Plugin for Payload CMS
@@ -153,6 +154,20 @@ bun add @focus-reactive/payload-plugin-html-preview
 
 - Package: [`@focus-reactive/payload-plugin-html-preview`](./packages/payload-plugin-html-preview)
 - [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-html-preview)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-html-preview)
+
+## Netlify Deploy Plugin for Payload CMS
+
+A frontend on Netlify only changes when it is rebuilt. This plugin puts that step in the Payload admin: a Publish button beside Save that builds the site, streams the Netlify build log into a drawer, locks while a build runs and shows why one failed — for one site, or a CMS that feeds dozens.
+
+```bash
+npm install @focus-reactive/payload-plugin-netlify-deploy
+yarn add @focus-reactive/payload-plugin-netlify-deploy
+pnpm add @focus-reactive/payload-plugin-netlify-deploy
+bun add @focus-reactive/payload-plugin-netlify-deploy
+```
+
+- Package: [`@focus-reactive/payload-plugin-netlify-deploy`](./packages/payload-plugin-netlify-deploy)
+- [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-netlify-deploy)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-netlify-deploy)
 
 ## Run Demo Locally
 
