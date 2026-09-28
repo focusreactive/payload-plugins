@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/payload-plugin-site-preview",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Live preview and click-to-edit for Payload CMS on any frontend that renders HTML — static sites and template engines included, no framework required",
   "license": "MIT",
   "author": "FocusReactive <ship@focusreactive.com>",
