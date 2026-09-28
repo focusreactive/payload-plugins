@@ -143,13 +143,13 @@ export async function InsightDetail({ insight, locale }: { insight: Insight; loc
 
       <div className="pb-16 md:pb-24">
         <div className="mx-auto max-w-container px-4 md:px-8">
-          <div className="mx-auto max-w-prose border-t border-secondary pt-10 md:max-w-180 md:pt-12">
+          <div className="mx-auto max-w-prose border-t border-secondary_alt pt-10 md:max-w-180 md:pt-12">
             <div className="mx-auto prose md:prose-lg">
               {showLead && <p className="lead">{insight.standfirst}</p>}
             </div>
             {insight.body && <RichText content={insight.body} className="mx-auto md:prose-lg" />}
 
-            <div className="mt-12 flex flex-col items-start justify-between gap-y-6 border-t border-secondary pt-6 md:flex-row md:items-center">
+            <div className="mt-12 flex flex-col items-start justify-between gap-y-6 border-t border-secondary_alt pt-6 md:flex-row md:items-center">
               {author ? (
                 <div className="flex items-center gap-3 md:gap-4">
                   <Avatar
@@ -270,7 +270,7 @@ export async function PersonDetail({ person, locale }: { person: Person; locale:
           )}
         </div>
 
-        <div className="mt-12 flex flex-col gap-2 border-t border-secondary pt-12 md:mt-16 md:pt-16">
+        <div className="mt-12 flex flex-col gap-2 border-t border-secondary_alt pt-12 md:mt-16 md:pt-16">
           <h2 className="text-display-xs font-semibold text-primary md:text-display-sm">
             {copy.articlesBy} {person.name}
           </h2>
