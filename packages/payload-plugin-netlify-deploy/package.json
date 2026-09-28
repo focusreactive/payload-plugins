@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/payload-plugin-netlify-deploy",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Build, preview and publish Netlify sites from the Payload admin — with the live build log, the reason a build failed, and a lock while one runs",
   "license": "MIT",
   "author": "FocusReactive <ship@focusreactive.com>",
