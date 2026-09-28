@@ -1,4 +1,4 @@
-# @focus-reactive/payload-plugin-site-preview
+# @focus-reactive/payload-plugin-html-preview
 
 Live preview and click-to-edit for [Payload CMS](https://payloadcms.com/) on **any frontend that renders HTML** — a static site generator, a template engine, a PHP app. No React, no client SDK on the site.
 
@@ -15,7 +15,7 @@ Payload's own live preview expects the frontend to subscribe to form data and re
 ## Installation
 
 ```bash
-pnpm add @focus-reactive/payload-plugin-site-preview
+pnpm add @focus-reactive/payload-plugin-html-preview
 ```
 
 ## Usage
@@ -24,11 +24,11 @@ pnpm add @focus-reactive/payload-plugin-site-preview
 
 ```ts
 // payload.config.ts
-import { sitePreviewPlugin } from "@focus-reactive/payload-plugin-site-preview";
+import { htmlPreviewPlugin } from "@focus-reactive/payload-plugin-html-preview";
 
 export default buildConfig({
   plugins: [
-    sitePreviewPlugin({
+    htmlPreviewPlugin({
       collections: ["pages"],
       // Where the site renders a document. `data` is the unsaved form data, or null for the saved document.
       site: async ({ req, id }) => {
@@ -153,7 +153,7 @@ Click-to-edit drives the admin's DOM where Payload offers no API: rows are found
 ## Good to know
 
 - **Analytics** — the preview is a real render of your page, trackers included. Leave them out of preview renders, or every preview reload is a visit.
-- **Rate limits** — a page loads its files through the CMS (`/api/site-preview/<collection>/<id>/_/…`), often a hundred at a time; exempt that path from a rate limiter.
+- **Rate limits** — a page loads its files through the CMS (`/api/html-preview/<collection>/<id>/_/…`), often a hundred at a time; exempt that path from a rate limiter.
 - **Links** — the page's relative urls resolve against the CMS proxy; in-page anchors scroll, links to other pages are not followed.
 
 ## License

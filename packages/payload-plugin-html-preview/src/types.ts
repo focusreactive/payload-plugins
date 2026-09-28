@@ -25,7 +25,7 @@ export type SiteRequestArgs = {
   data: JsonObject | null;
 };
 
-export type SitePreviewOptions = {
+export type HtmlPreviewOptions = {
   /** The collections whose documents are pages of the site. */
   collections: CollectionSlug[];
   /** Where the site renders a document; null when there is nothing to preview. */

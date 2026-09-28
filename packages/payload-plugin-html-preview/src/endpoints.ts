@@ -5,7 +5,7 @@ import { injectPreview } from "./lib/injectPreview.js";
 import { proxyAsset } from "./lib/proxyAsset.js";
 import { readUnsaved } from "./lib/readUnsaved.js";
 import { FRAME_ASSETS } from "./frame/assets.js";
-import type { SitePreviewOptions } from "./types.js";
+import type { HtmlPreviewOptions } from "./types.js";
 
 // A page's files arrive a hundred at a time right after it, and need only its site's origin.
 const origins = new Map<string, string>();
@@ -14,7 +14,7 @@ const serverURL = (req: PayloadRequest) =>
   req.payload.config.serverURL || new URL(req.url || "http://localhost").origin;
 
 const render = async (
-  options: SitePreviewOptions,
+  options: HtmlPreviewOptions,
   req: PayloadRequest,
   collection: CollectionSlug,
   id: string,
@@ -69,7 +69,7 @@ const readForm = async (req: PayloadRequest): Promise<JsonObject | null> => {
   return data && typeof data === "object" && !Array.isArray(data) ? data : null;
 };
 
-export const previewEndpoints = (options: SitePreviewOptions): Endpoint[] => {
+export const previewEndpoints = (options: HtmlPreviewOptions): Endpoint[] => {
   // Only the configured collections, and only for someone signed in to the admin.
   const guard = (req: PayloadRequest) => {
     if (!req.user) {

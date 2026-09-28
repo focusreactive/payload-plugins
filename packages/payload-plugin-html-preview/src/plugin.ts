@@ -2,9 +2,9 @@ import type { CollectionConfig, Plugin } from "payload";
 
 import { previewEndpoints } from "./endpoints.js";
 import { ENDPOINT } from "./lib/constants.js";
-import type { SitePreviewOptions } from "./types.js";
+import type { HtmlPreviewOptions } from "./types.js";
 
-const LISTENER = "@focus-reactive/payload-plugin-site-preview/client#ClickToEditListener";
+const LISTENER = "@focus-reactive/payload-plugin-html-preview/client#ClickToEditListener";
 
 // The admin's live preview frame shows the site's own render of the document, proxied through the
 // CMS; `v` only makes the admin reload the frame after a save. The listener goes into the document
@@ -33,8 +33,8 @@ const withPreview = (collection: CollectionConfig): CollectionConfig => ({
   },
 });
 
-export const sitePreviewPlugin =
-  (options: SitePreviewOptions): Plugin =>
+export const htmlPreviewPlugin =
+  (options: HtmlPreviewOptions): Plugin =>
   (config) => ({
     ...config,
     endpoints: [...(config.endpoints ?? []), ...previewEndpoints(options)],
