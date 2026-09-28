@@ -28,7 +28,11 @@
     "live-preview",
     "click-to-edit",
     "visual-editing",
-    "static-site"
+    "static-site",
+    "nunjucks",
+    "eleventy",
+    "template-engine",
+    "html"
   ],
   "repository": {
     "type": "git",
