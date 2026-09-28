@@ -1,5 +1,7 @@
 # @focus-reactive/payload-plugin-netlify-deploy
 
+[![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-netlify-deploy)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-netlify-deploy)
+
 A **Publish** button for [Payload CMS](https://payloadcms.com/) sites hosted on [Netlify](https://www.netlify.com/): build the site from the admin, watch the build log, check a preview and publish it — without leaving the document you just saved.
 
 A site on Netlify only shows what Payload holds after it is rebuilt. Editors usually have to ask a developer, trigger a build hook or run a Slack command, and then wait without seeing whether the build worked. This plugin puts that step where editors already are, and works for one site as well as for a CMS that feeds dozens.
