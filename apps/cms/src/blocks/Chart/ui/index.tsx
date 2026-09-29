@@ -37,10 +37,8 @@ function ChartTooltip({ active, payload, label }: TooltipProps<number, string>) 
 
   return (
     <div className="rounded-sm border border-border bg-surface px-3 py-2 shadow-lg">
-      <p className="font-mono text-[0.62rem] uppercase tracking-[0.08em] text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-1 font-mono text-sm font-semibold text-foreground tabular-nums">
+      <p className="text-[0.62rem] uppercase tracking-[0.1em] text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-medium text-foreground tabular-nums">
         {typeof value === "number" ? value.toLocaleString("en-US") : value}
       </p>
     </div>
@@ -60,7 +58,7 @@ function RangeTab({ label, isActive, onSelect }: RangeTabProps) {
       aria-pressed={isActive}
       onClick={onSelect}
       className={cn(
-        "cursor-pointer rounded-pill border-none px-[15px] py-2 text-[0.82rem] font-semibold whitespace-nowrap",
+        "cursor-pointer rounded-pill border-none px-[15px] py-2 text-[0.82rem] font-medium whitespace-nowrap",
         "transition-colors duration-150 ease-out",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
         "text-muted-foreground hover:text-foreground",
@@ -138,7 +136,7 @@ export function Chart({ title, subtitle, ranges }: ChartProps) {
                 tick={{
                   fill: "var(--color-muted-foreground)",
                   fontSize: "0.66rem",
-                  fontFamily: "var(--font-mono)",
+                  fontFamily: "var(--font-display)",
                   letterSpacing: "0.04em",
                 }}
               />

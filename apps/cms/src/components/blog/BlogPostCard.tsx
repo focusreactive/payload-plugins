@@ -23,7 +23,7 @@ export function BlogPostCard({
       </div>
 
       {(category || readTime) && (
-        <div className="text-muted-foreground flex flex-wrap items-center gap-3 font-mono text-[0.72rem] uppercase tracking-[0.08em]">
+        <div className="text-muted-foreground flex flex-wrap items-center gap-3 text-[0.72rem] uppercase tracking-[0.1em]">
           {category && <span className="text-primary whitespace-nowrap">{category}</span>}
           {readTime && <span className="whitespace-nowrap">{readTime}</span>}
         </div>

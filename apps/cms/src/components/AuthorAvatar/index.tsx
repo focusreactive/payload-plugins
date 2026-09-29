@@ -5,7 +5,7 @@ import NextImage from "next/image";
 import type { Author } from "@/payload-types";
 
 const fallbackVariants = cva(
-  "grid flex-none place-items-center rounded-pill bg-primary-soft font-semibold text-primary",
+  "grid flex-none place-items-center rounded-pill bg-primary-soft font-medium text-primary",
   {
     defaultVariants: {
       size: "md",

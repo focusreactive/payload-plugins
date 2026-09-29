@@ -7,6 +7,8 @@ import { Brand } from "./components/Brand";
 import { DesktopNav } from "./components/DesktopNav";
 import { HeaderActions } from "./components/HeaderActions";
 import { MobileNav } from "./components/MobileNav";
+import { SearchButton } from "./components/SearchButton";
+import { DESKTOP_NAV_VISIBLE } from "./constants";
 import type { IHeaderProps } from "./types";
 
 const SCROLL_THRESHOLD_PX = 8;
@@ -24,19 +26,26 @@ export function Header({ brand, navItems, actions, className }: IHeaderProps) {
   return (
     <header
       className={cn(
-        "sticky left-0 top-0 z-[100] bg-background/[0.82] backdrop-blur-[14px] backdrop-saturate-[1.4] transition-[background-color,border-color] duration-200 ease-out motion-reduce:transition-none",
+        "sticky left-0 top-0 z-[100] bg-background transition-[background-color,border-color] duration-200 ease-out motion-reduce:transition-none",
         scrolled ? "border-b border-border" : "border-b border-transparent",
         className
       )}
     >
-      <div className="mx-auto flex max-w-containerMaxW items-center justify-between gap-6 px-containerBase py-[15px]">
+      <div className="mx-auto flex min-h-[clamp(60px,7vh,96px)] max-w-containerMaxW flex-wrap items-center justify-between gap-[clamp(12px,2vw,40px)] px-containerBase py-[clamp(12px,1.5vh,18px)]">
         <Brand brand={brand} />
-        <DesktopNav navItems={navItems} />
-        <div className="flex items-center gap-2.5">
-          <div className="hidden items-center gap-2.5 min-[860px]:flex">
-            <HeaderActions actions={actions} />
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-[clamp(2px,0.4vw,8px)]">
+          <DesktopNav navItems={navItems} />
+          {/* Below the desktop width the search square stays: it is the shop affordance, and
+              burying it in the panel costs more than the row gains. */}
+          <div className="flex items-center gap-[clamp(8px,1vw,12px)] sm:ml-[clamp(6px,1.4vw,20px)]">
+            <SearchButton />
+            <div
+              className={cn("hidden items-center gap-[clamp(8px,1vw,12px)]", DESKTOP_NAV_VISIBLE)}
+            >
+              <HeaderActions actions={actions} />
+            </div>
+            <MobileNav navItems={navItems} actions={actions} />
           </div>
-          <MobileNav navItems={navItems} actions={actions} />
         </div>
       </div>
     </header>

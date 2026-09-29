@@ -13,7 +13,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     className={cn("flex flex-col items-center justify-center py-16 px-4 text-center", className)}
   >
     {icon && <div className="mb-4 text-muted-foreground">{icon}</div>}
-    <h3 className="text-lg font-semibold mb-2">{title}</h3>
+    <h3 className="text-lg font-medium mb-2">{title}</h3>
     {description && <p className="text-sm text-muted-foreground max-w-md">{description}</p>}
   </div>
 );

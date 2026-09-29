@@ -55,7 +55,7 @@ export async function FeaturedPost({ post, readMoreLabel, locale, className }: F
       </div>
 
       <div className="flex flex-col gap-[18px]">
-        <div className="flex flex-wrap items-center gap-3 font-mono text-[0.72rem] uppercase tracking-[0.08em] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-3 text-[0.72rem] uppercase tracking-[0.1em] text-muted-foreground">
           {category && (
             <>
               <span className="whitespace-nowrap text-primary">{category.title}</span>
@@ -77,7 +77,7 @@ export async function FeaturedPost({ post, readMoreLabel, locale, className }: F
           <div className="mt-1.5 flex items-center gap-[18px]">
             {author && <AuthorAvatar author={author} size="md" />}
             <div>
-              {author && <div className="text-[0.95rem] font-semibold">{author.name}</div>}
+              {author && <div className="text-[0.95rem] font-medium">{author.name}</div>}
               {publishedDate && (
                 <time
                   dateTime={post.publishedAt ?? undefined}
@@ -91,7 +91,7 @@ export async function FeaturedPost({ post, readMoreLabel, locale, className }: F
         )}
 
         {readMoreLabel && (
-          <span className="mt-2 inline-flex items-center gap-1.5 font-semibold transition-colors hover:text-primary motion-reduce:transition-none">
+          <span className="mt-2 inline-flex items-center gap-1.5 font-medium transition-colors hover:text-primary motion-reduce:transition-none">
             {readMoreLabel} <span aria-hidden>→</span>
           </span>
         )}

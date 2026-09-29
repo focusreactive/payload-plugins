@@ -50,7 +50,7 @@ const Avatar: React.FC<{ avatar: (number | null) | MediaType | undefined; name: 
 
   return (
     <span
-      className="flex size-[42px] shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary"
+      className="flex size-[42px] shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-medium text-primary"
       aria-hidden
     >
       {initial}
@@ -82,7 +82,7 @@ export const TestimonialCard: React.FC<{
       <footer className="mt-auto flex items-center gap-3 border-t border-border pt-5">
         {showAvatar && <Avatar avatar={testimonial.avatar} name={testimonial.author} />}
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-foreground">{testimonial.author}</p>
+          <p className="truncate text-sm font-medium text-foreground">{testimonial.author}</p>
           {roleCompany && (
             <p className="mt-0.5 truncate text-small text-muted-foreground">{roleCompany}</p>
           )}

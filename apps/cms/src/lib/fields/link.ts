@@ -70,10 +70,15 @@ export const link: LinkType = ({
         fields: [
           {
             admin: {
+              description: {
+                en: "Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.",
+                es: "Elige una página de este sitio y el enlace seguirá funcionando aunque esa página se renombre más adelante. Escribe una dirección a mano solo para algo fuera de este sitio.",
+              },
               layout: "horizontal",
               width: "50%",
             },
             defaultValue: "reference",
+            label: { en: "Where it goes", es: "A dónde lleva" },
             name: "type",
             options: [
               {
@@ -215,11 +220,12 @@ export const link: LinkType = ({
     linkResult.fields.push({
       admin: {
         description: {
-          en: "Choose how the link should be rendered.",
-          es: "Elige cómo se debe renderizar el enlace.",
+          en: "Whether this shows as a solid button, an outlined one, or plain underlined wording.",
+          es: "Si esto se muestra como un botón sólido, uno con borde o simplemente texto subrayado.",
         },
       },
       defaultValue: "default",
+      label: { en: "How it looks", es: "Cómo se ve" },
       name: "appearance",
       options: appearanceOptionsToUse,
       type: "select",

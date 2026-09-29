@@ -61,7 +61,7 @@ export const PageRange: React.FC<{
   const { plural, singular } = getLabels();
 
   return (
-    <div className={[className, "font-semibold"].filter(Boolean).join(" ")}>
+    <div className={[className, "font-medium"].filter(Boolean).join(" ")}>
       {(totalDocs === undefined || totalDocs === 0) && t("noResults")}
       {totalDocs !== undefined &&
         totalDocs > 0 &&

@@ -5,15 +5,42 @@ import type { MediaProps, PreparedMedia } from "@/components/media";
 
 import type { FooterLink, IFooterProps } from "./types";
 
+/*
+ * Tailwind compiles only the class names it can read as literal text, so a template string built
+ * from the group count would emit no CSS. Every template an editor can produce is spelled out.
+ */
+const COLUMN_TEMPLATE_BY_GROUP_COUNT: Record<number, string> = {
+  1: "lg:grid-cols-[minmax(0,6fr)_minmax(0,2fr)]",
+  2: "lg:grid-cols-[minmax(0,6fr)_repeat(2,minmax(0,2fr))]",
+  3: "lg:grid-cols-[minmax(0,6fr)_repeat(3,minmax(0,2fr))]",
+  4: "lg:grid-cols-[minmax(0,6fr)_repeat(4,minmax(0,2fr))]",
+};
+
+const TOP_GRID_BASE_CLASSES =
+  "grid grid-cols-1 gap-[clamp(24px,3vw,56px)] pb-[clamp(32px,4vw,64px)] sm:grid-cols-2";
+
 function toLogoMediaProps(logo: PreparedMedia): MediaProps {
   const imageProps = {
     ...logo.imageProps,
-    className: "w-auto h-7.5",
+    className: "block h-10 w-auto max-w-[min(100%,340px)] object-contain",
   };
 
+  /*
+   * The wrapper carries its own cap so the percentage above resolves against the width of the
+   * link, which is what keeps a wide logo inside a 320px viewport instead of overflowing it.
+   */
+  const className = "max-w-full";
+
   return logo.data.kind === "video"
-    ? { ...logo.data, visualEditing: logo.visualEditing, imageProps }
-    : { ...logo.data, visualEditing: logo.visualEditing, imageProps, width: 120, height: 30 };
+    ? { ...logo.data, className, imageProps, visualEditing: logo.visualEditing }
+    : {
+        ...logo.data,
+        className,
+        height: 40,
+        imageProps,
+        visualEditing: logo.visualEditing,
+        width: 304,
+      };
 }
 
 function FooterAnchor({ link, className }: { link: FooterLink; className?: string }) {
@@ -36,32 +63,38 @@ export function Footer({
   legalLinks,
   copywriteText,
 }: IFooterProps) {
+  const columnTemplate =
+    COLUMN_TEMPLATE_BY_GROUP_COUNT[linkGroups.length] ?? COLUMN_TEMPLATE_BY_GROUP_COUNT[3];
+
   return (
     <footer className="bg-background text-foreground border-t border-border">
-      <div className="mx-auto max-w-containerMaxW px-containerBase pb-10 pt-[72px]">
-        <div className="grid grid-cols-[1.6fr_repeat(3,1fr)] gap-10 max-[760px]:grid-cols-2 max-[760px]:gap-8">
-          <div className="flex flex-col">
-            <NextLink
-              href={brand.href}
-              className="inline-flex items-center gap-2.5 font-display text-[1.4rem] font-semibold tracking-[-0.02em]"
-            >
-              {brand.logo ? <Media {...toLogoMediaProps(brand.logo)} /> : brand.label}
+      <div className="mx-auto w-full max-w-containerMaxW px-containerBase pb-10 pt-[72px]">
+        <div className={`${TOP_GRID_BASE_CLASSES} ${columnTemplate}`}>
+          <div className="flex min-w-0 flex-col gap-[clamp(20px,2.4vw,40px)] sm:col-span-2 lg:col-span-1">
+            <NextLink href={brand.href} className="block w-fit max-w-full">
+              {brand.logo ? (
+                <Media {...toLogoMediaProps(brand.logo)} />
+              ) : (
+                <span className="text-h-card">{brand.label}</span>
+              )}
             </NextLink>
             {description ? (
-              <p className="text-muted-foreground mt-4 max-w-[30ch] text-small">{description}</p>
+              <p className="text-muted-foreground max-w-[44ch] text-pretty text-body-lg">
+                {description}
+              </p>
             ) : null}
           </div>
 
           {linkGroups.map((group, groupIndex) => (
-            <nav aria-label={group.label} key={groupIndex}>
-              <h5 className="text-muted-foreground mb-4 font-mono text-[0.72rem] font-medium uppercase tracking-[0.14em]">
+            <nav aria-label={group.label} className="min-w-0" key={groupIndex}>
+              <h5 className="text-foreground mb-[clamp(14px,1.6vw,24px)] text-eyebrow">
                 {group.label}
               </h5>
-              <ul className="flex flex-col">
+              <ul className="flex flex-col gap-[clamp(10px,1.1vw,14px)]">
                 {group.links.map((link, linkIndex) => (
                   <li key={linkIndex}>
                     <FooterAnchor
-                      className="text-muted-foreground hover:text-primary block py-1.5 text-[0.95rem] transition-colors motion-reduce:transition-none"
+                      className="text-foreground hover:text-primary block text-body-lg leading-[1.4] transition-colors duration-250 motion-reduce:transition-none"
                       link={link}
                     />
                   </li>
@@ -71,14 +104,18 @@ export function Footer({
           ))}
         </div>
 
-        <div className="border-border text-muted-foreground mt-14 flex flex-wrap items-center justify-between gap-5 border-t pt-7 text-[0.85rem]">
-          {copywriteText ? <span>{copywriteText}</span> : <span />}
+        <div className="border-border flex flex-wrap items-center justify-between gap-[clamp(12px,1.6vw,24px)] border-t pt-[clamp(20px,2.2vw,32px)]">
+          {copywriteText ? (
+            <span className="text-muted-foreground text-small">{copywriteText}</span>
+          ) : (
+            <span />
+          )}
           {legalLinks.length > 0 ? (
-            <ul className="flex flex-wrap items-center gap-x-[18px] gap-y-2">
+            <ul className="flex flex-wrap items-center gap-[clamp(16px,2vw,32px)]">
               {legalLinks.map((link, index) => (
                 <li key={index}>
                   <FooterAnchor
-                    className="hover:text-primary transition-colors motion-reduce:transition-none"
+                    className="text-muted-foreground hover:text-primary text-small transition-colors duration-250 motion-reduce:transition-none"
                     link={link}
                   />
                 </li>

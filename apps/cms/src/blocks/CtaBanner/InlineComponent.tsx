@@ -9,10 +9,11 @@ import type { CtaBannerInline, Page, Post } from "@/payload-types";
 import { CtaBanner } from "./ui";
 import type { CtaBannerVariant } from "./ui";
 
+/** The tone names the backdrop the marker sits on, not the ink: dark backdrop, light text. */
 const eyebrowToneByVariant: Record<CtaBannerVariant, SectionHeaderEyebrow["variant"]> = {
-  accent: "default",
-  dark: "accent",
-  default: "accent",
+  accent: "dark",
+  dark: "dark",
+  default: "light",
 };
 
 export const CtaBannerInlineComponent: React.FC<CtaBannerInline> = ({

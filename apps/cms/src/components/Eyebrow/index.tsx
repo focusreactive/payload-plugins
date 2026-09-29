@@ -21,7 +21,7 @@ const toneMap: Record<EyebrowTone, string> = {
 
 const sizeMap = {
   sm: "px-2.5 py-1 text-[10px]",
-  md: "px-3.5 py-[7px] text-[0.72rem] font-semibold",
+  md: "px-3.5 py-[7px] text-[0.72rem] font-medium",
 };
 
 export function Eyebrow({
@@ -34,7 +34,10 @@ export function Eyebrow({
   return (
     <span
       className={cn(
-        "inline-flex w-fit items-center gap-1.5 rounded-pill font-mono uppercase tracking-[0.16em] leading-none whitespace-nowrap",
+        // One family, so an eyebrow is the body face tracked wide rather than a second typeface.
+        // 0.1em is the design's own figure; the mono face and 0.16em came from the system this
+        // replaced and were the last thing on the public site still setting type in monospace.
+        "inline-flex w-fit items-center gap-1.5 rounded-pill uppercase tracking-[0.1em] leading-none whitespace-nowrap",
         toneMap[tone],
         sizeMap[size],
         className

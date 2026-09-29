@@ -1,11 +1,11 @@
 import { cn } from "@/components/utils";
 import { DisplayHeading } from "../DisplayHeading";
-import type { EyebrowTone } from "../Eyebrow";
-import { Eyebrow } from "../Eyebrow";
+import type { BackdropTone } from "@/components/utils";
+import { SectionMarker } from "../ui/SectionMarker";
 
 export interface SectionHeaderEyebrow {
   text: string;
-  variant?: EyebrowTone;
+  variant?: BackdropTone;
 }
 
 export interface SectionHeaderProps {
@@ -38,9 +38,7 @@ export function SectionHeader({
       )}
     >
       {eyebrow?.text && (
-        <Eyebrow prefix="dot" tone={eyebrow.variant ?? "accent"}>
-          {eyebrow.text}
-        </Eyebrow>
+        <SectionMarker tone={eyebrow.variant ?? "light"}>{eyebrow.text}</SectionMarker>
       )}
       {title && <DisplayHeading as="h2" size={size ?? "display-2"} text={title} />}
       {subtitle && <div className="text-lead text-muted-foreground">{subtitle}</div>}

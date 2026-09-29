@@ -2,223 +2,334 @@
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
+/*
+ * A green-on-white design system, replacing the teal/lime/Newsreader set this file carried before.
+ * Taken from a Claude Design concept whose whole palette is eight colours and whose whole type
+ * system is Poppins at two weights.
+ *
+ * Only the PRIMITIVES and the type utilities changed. Every semantic name below - `--color-primary`,
+ * `--color-surface`, `--color-border` - kept its name, which is why twenty-three existing blocks
+ * re-skinned without being touched. The old palette names survive as aliases at the foot of tier 1
+ * for the nineteen call sites that still reference them directly.
+ *
+ * Two rules the concept holds to, and components here must not break:
+ *   - Two weights, 400 and 500. There is no bold anywhere in the design.
+ *   - One family. Display and body are the same face; the difference is size and tracking.
+ */
+
 /* ──────────────── Tier 1: primitives ──────────────── */
 @theme {
-  --font-display: var(--font-newsreader, "Times New Roman"), Georgia, serif;
-  --font-sans: var(--font-archivo, ui-sans-serif), system-ui, -apple-system, sans-serif;
-  --font-mono: var(--font-ibm-plex-mono, ui-monospace), "SF Mono", Menlo, monospace;
+  /* One family, so display and sans resolve to the same face on purpose. */
+  --font-display: var(--font-poppins, ui-sans-serif), system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-poppins, ui-sans-serif), system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 
   --color-white: #ffffff;
-  --color-slate-50: #eef2f3;
-  --color-slate-100: #dde6e7;
-  --color-slate-200: #e1e8e9;
-  --color-slate-300: #d3dedf;
-  --color-slate-400: #8fa3a1;
-  --color-slate-450: #9ab0ad;
-  --color-slate-500: #5a6a6b;
+  --color-black: #000000;
 
-  --color-ink-950: #0a1314;
-  --color-deep-950: #08100f;
-  --color-deep-900: #11201d;
-  --color-deep-850: #16241f;
-  --color-pine-950: #17211f;
-  --color-pine-900: #212e2b;
-  --color-pine-850: #1b2724;
+  /* The brand green and the two steps either side of it. */
+  --color-green-600: #19a846;
+  --color-green-700: #128036;
+  --color-green-300: #9bd4ae;
 
-  --color-teal-600: #0d9488;
-  --color-teal-700: #0a7268;
-  --color-teal-400: #2dd4bf;
-  --color-teal-300: #5fe3d2;
-  --color-teal-soft-light: #d6efeb;
-  --color-teal-soft-dark: #103b35;
-  --color-teal-soft-pine: #1d3a35;
+  /* Mint surfaces. The concept uses EEF5F0 for every tinted panel and E3E8E4 for its edge. */
+  --color-mint-50: #eef5f0;
+  --color-mint-200: #e3e8e4;
 
-  --color-lime-400: #d8ff3a;
-  --color-lime-500: #c6ec33;
+  --color-grey-200: #e0e0e0;
+  --color-grey-500: rgba(0, 0, 0, 0.62);
 
-  --color-ink-12: rgba(10, 19, 20, 0.12);
-  --color-ink-22: rgba(10, 19, 20, 0.22);
+  /* Ink at the opacities the concept actually uses, rather than a grey ramp it never asked for. */
+  --color-ink-08: rgba(0, 0, 0, 0.08);
+  --color-ink-12: rgba(0, 0, 0, 0.12);
+  --color-ink-16: rgba(0, 0, 0, 0.16);
+  --color-ink-24: rgba(0, 0, 0, 0.24);
+  --color-ink-42: rgba(0, 0, 0, 0.42);
+  --color-ink-62: rgba(0, 0, 0, 0.62);
+
   --color-white-11: rgba(255, 255, 255, 0.11);
   --color-white-13: rgba(255, 255, 255, 0.13);
   --color-white-24: rgba(255, 255, 255, 0.24);
   --color-white-28: rgba(255, 255, 255, 0.28);
+  --color-white-62: rgba(255, 255, 255, 0.62);
 
-  --color-cream-50: var(--color-slate-50);
-  --color-cream-100: var(--color-slate-100);
-  --color-white-10: var(--color-white-11);
+  /* Near-black, for the dark zones the concept has no opinion about. */
+  --color-deep-950: #0b0d0c;
+  --color-deep-900: #141817;
+  --color-deep-850: #1b201e;
 
-  --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 28px;
+  --radius-sm: 5px;
+  --radius-md: 7px;
+  --radius-lg: 12px;
+  /* Anything nested inside a card: its cover well, a feature box. Five uses in the concept. */
+  --radius-inner: clamp(10px, 1vw, 14px);
+  --radius-xl: clamp(14px, 1.4vw, 20px);
+  --radius-2xl: clamp(20px, 2.5vw, 40px);
   --radius-pill: 999px;
 
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /*
+   * One height for every interactive control the concept draws - button, icon button, topic chip,
+   * rail arrow - twenty-three uses. A control that sets its own height will not line up with the
+   * row it sits in, so reach for this rather than a fresh clamp.
+   */
+  --spacing-control: clamp(40px, 3.4vw, 46px);
+  --spacing-control-sm: clamp(28px, 2.2vw, 32px);
+
+  --shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.08);
+  --shadow-lift: 0 18px 40px rgba(0, 0, 0, 0.18);
+  --shadow-float: 0 22px 52px rgba(0, 0, 0, 0.24);
+
+  /*
+   * Deprecated aliases. The concept has no teal, no lime and no slate; these exist only so the
+   * nineteen components still naming the old palette render in the new one instead of falling back
+   * to a Tailwind default. Point new code at the names above and delete a row once its last caller
+   * is gone.
+   */
+  --color-teal-600: var(--color-green-600);
+  --color-teal-700: var(--color-green-700);
+  --color-teal-400: var(--color-green-300);
+  --color-teal-300: var(--color-green-300);
+  --color-teal-soft-light: var(--color-mint-50);
+  --color-teal-soft-dark: #10301d;
+  --color-teal-soft-pine: #12291c;
+  --color-lime-400: var(--color-green-300);
+  --color-lime-500: var(--color-green-600);
+  --color-slate-50: var(--color-white);
+  --color-slate-100: var(--color-mint-50);
+  --color-slate-200: var(--color-mint-200);
+  --color-slate-300: var(--color-grey-200);
+  --color-slate-400: var(--color-white-62);
+  --color-slate-450: var(--color-white-62);
+  --color-slate-500: var(--color-ink-62);
+  --color-ink-950: var(--color-black);
+  --color-pine-950: var(--color-deep-950);
+  --color-pine-900: var(--color-deep-900);
+  --color-pine-850: var(--color-deep-850);
+  --color-cream-50: var(--color-white);
+  --color-cream-100: var(--color-mint-50);
+  --color-ink-22: var(--color-ink-24);
+  --color-white-10: var(--color-white-11);
 }
 
-/* ──────────────── Tier 2: semantic roles ──────────────── */
+/* ──────────────── Tier 2: semantic ──────────────── */
+/*
+ * `@theme`, not `:root`. Tailwind v4 generates a colour utility only for a `--color-*` declared
+ * inside `@theme`, so moving this block to `:root` leaves `bg-primary`, `text-foreground`,
+ * `border-border` and every other semantic class emitting nothing - with no build error, because
+ * the variables themselves still resolve. The theme zones below stay plain selectors on purpose:
+ * they re-point these variables per section rather than declaring new utilities.
+ */
 @theme {
-  --color-background: var(--color-slate-50);
-  --color-foreground: var(--color-ink-950);
+  --color-background: var(--color-white);
+  --color-foreground: var(--color-black);
 
   --color-surface: var(--color-white);
-  --color-surface-muted: var(--color-slate-100);
+  --color-surface-muted: var(--color-mint-50);
 
   --color-card: var(--color-white);
-  --color-card-foreground: var(--color-ink-950);
+  --color-card-foreground: var(--color-black);
 
   --color-popover: var(--color-white);
-  --color-popover-foreground: var(--color-ink-950);
+  --color-popover-foreground: var(--color-black);
 
-  --color-primary: var(--color-teal-600);
+  --color-primary: var(--color-green-600);
   --color-primary-foreground: var(--color-white);
-  --color-primary-hover: var(--color-teal-700);
-  --color-primary-soft: var(--color-teal-soft-light);
+  --color-primary-hover: var(--color-green-700);
+  --color-primary-soft: var(--color-mint-50);
 
-  --color-secondary: var(--color-ink-950);
+  --color-secondary: var(--color-black);
   --color-secondary-foreground: var(--color-white);
-  --color-secondary-hover: color-mix(in srgb, var(--color-secondary) 80%, var(--color-background));
+  --color-secondary-hover: var(--color-ink-62);
 
-  --color-muted: var(--color-slate-100);
-  --color-muted-foreground: var(--color-slate-500);
+  --color-muted: var(--color-mint-50);
+  --color-muted-foreground: var(--color-ink-62);
 
-  --color-accent: var(--color-lime-400);
-  --color-accent-hover: var(--color-lime-500);
-  --color-accent-foreground: var(--color-ink-950);
+  /* The concept accents with a lighter green, never with a second hue. */
+  --color-accent: var(--color-green-300);
+  --color-accent-hover: var(--color-green-600);
+  --color-accent-foreground: var(--color-black);
 
   --color-highlight: var(--color-primary);
 
   --color-destructive: oklch(0.577 0.245 27.325);
   --color-destructive-foreground: var(--color-white);
 
-  --color-success: oklch(0.6 0.15 145);
+  --color-success: var(--color-green-600);
   --color-warning: oklch(0.75 0.15 85);
 
-  --color-border: var(--color-ink-12);
-  --color-border-strong: var(--color-ink-22);
-  --color-input: var(--color-ink-22);
-  --color-ring: var(--color-teal-600);
+  --color-border: var(--color-grey-200);
+  --color-border-strong: var(--color-ink-24);
+  --color-input: var(--color-grey-200);
+  --color-ring: var(--color-green-600);
 
   /* Prose */
   --tw-prose-headings: var(--color-foreground);
-  --tw-prose-invert-headings: var(--color-slate-50);
+  --tw-prose-invert-headings: var(--color-white);
 }
 
 /* ──────────────── Section theme zones ──────────────── */
+/*
+ * The concept is light throughout and says nothing about a dark section, but blocks here can be set
+ * to one, so these stay. Primary lifts to the light green, because #19A846 on near-black does not
+ * clear contrast at body size.
+ */
 .dark-zone,
 [data-theme="dark"] {
   --color-background: var(--color-deep-950);
-  --color-foreground: var(--color-slate-50);
+  --color-foreground: var(--color-white);
   --color-surface: var(--color-deep-900);
   --color-surface-muted: var(--color-deep-850);
   --color-card: var(--color-deep-900);
-  --color-card-foreground: var(--color-slate-50);
+  --color-card-foreground: var(--color-white);
   --color-popover: var(--color-deep-900);
-  --color-popover-foreground: var(--color-slate-50);
-  --color-primary: var(--color-teal-400);
-  --color-primary-hover: var(--color-teal-300);
+  --color-popover-foreground: var(--color-white);
+  --color-primary: var(--color-green-300);
+  --color-primary-foreground: var(--color-black);
+  --color-primary-hover: var(--color-white);
   --color-primary-soft: var(--color-teal-soft-dark);
-  --color-secondary: var(--color-slate-50);
-  --color-secondary-foreground: var(--color-ink-950);
-  --color-secondary-hover: var(--color-slate-100);
+  --color-secondary: var(--color-white);
+  --color-secondary-foreground: var(--color-black);
+  --color-secondary-hover: var(--color-white-62);
   --color-muted: var(--color-deep-850);
-  --color-muted-foreground: var(--color-slate-400);
+  --color-muted-foreground: var(--color-white-62);
   --color-border: var(--color-white-13);
   --color-border-strong: var(--color-white-28);
   --color-highlight: var(--color-accent);
 }
 
 [data-theme="dark-gray"] {
-  --color-background: var(--color-pine-950);
-  --color-foreground: var(--color-slate-50);
-  --color-surface: var(--color-pine-900);
-  --color-surface-muted: var(--color-pine-850);
-  --color-card: var(--color-pine-900);
-  --color-card-foreground: var(--color-slate-50);
-  --color-popover: var(--color-pine-900);
-  --color-popover-foreground: var(--color-slate-50);
-  --color-primary: var(--color-teal-400);
-  --color-primary-hover: var(--color-teal-300);
+  --color-background: var(--color-deep-900);
+  --color-foreground: var(--color-white);
+  --color-surface: var(--color-deep-850);
+  --color-surface-muted: var(--color-deep-950);
+  --color-card: var(--color-deep-850);
+  --color-card-foreground: var(--color-white);
+  --color-popover: var(--color-deep-850);
+  --color-popover-foreground: var(--color-white);
+  --color-primary: var(--color-green-300);
+  --color-primary-foreground: var(--color-black);
+  --color-primary-hover: var(--color-white);
   --color-primary-soft: var(--color-teal-soft-pine);
-  --color-secondary: var(--color-slate-50);
-  --color-secondary-foreground: var(--color-ink-950);
-  --color-secondary-hover: var(--color-slate-100);
-  --color-muted: var(--color-pine-850);
-  --color-muted-foreground: var(--color-slate-450);
+  --color-secondary: var(--color-white);
+  --color-secondary-foreground: var(--color-black);
+  --color-secondary-hover: var(--color-white-62);
+  --color-muted: var(--color-deep-850);
+  --color-muted-foreground: var(--color-white-62);
   --color-border: var(--color-white-11);
   --color-border-strong: var(--color-white-24);
   --color-highlight: var(--color-accent);
 }
 
+/* The concept's one tinted panel: mint on white, edged in the mint's own darker step. */
 [data-theme="light-gray"] {
-  --color-background: var(--color-slate-200);
-  --color-surface-muted: var(--color-slate-300);
+  --color-background: var(--color-mint-50);
+  --color-surface: var(--color-white);
+  --color-surface-muted: var(--color-mint-200);
+  --color-border: var(--color-mint-200);
 }
 
 /* ──────────────── Selection ──────────────── */
 ::selection {
-  background: var(--color-accent);
-  color: var(--color-ink-950);
+  background: var(--color-green-300);
+  color: var(--color-black);
 }
 
+/* ──────────────── Type ──────────────── */
+/*
+ * Sizes are the concept's own, in the order it uses them: 64 / 56 / 26-35 / 21 / 17 / 16 / 15 / 12.
+ *
+ * The weight system runs the opposite way round to the usual one: the concept sets every display
+ * heading at 52-64px in 400, and spends 500 on the small type instead - card titles at 21px, plan
+ * names at 26px, prices, buttons, nav links, eyebrows. Counted across the seven slices it is 400 on
+ * all five big headings and 500 on all thirty-eight small items. Setting a display heading in 500
+ * is the single loudest way to stop looking like this design.
+ */
 @utility text-display-1 {
   font-family: var(--font-display);
-  font-weight: 500;
-  font-size: clamp(2.8rem, 7vw, 5.4rem);
-  line-height: 0.98;
+  font-weight: 400;
+  font-size: clamp(2.6rem, 6vw, 4rem);
+  line-height: 1.06;
   letter-spacing: -0.02em;
 }
 
 @utility text-display-2 {
   font-family: var(--font-display);
-  font-weight: 500;
-  font-size: clamp(2.2rem, 5vw, 3.6rem);
-  line-height: 1.02;
-  letter-spacing: -0.015em;
+  font-weight: 400;
+  font-size: clamp(2.2rem, 4.8vw, 3.5rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
 }
 
 @utility text-h-section {
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: clamp(1.9rem, 4vw, 3rem);
-  line-height: 1.05;
-  letter-spacing: -0.015em;
+  font-size: clamp(1.625rem, 3vw, 2.2rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 @utility text-h-card {
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 1.5rem;
-  line-height: 1.1;
+  font-size: 1.3125rem;
+  line-height: 1.28;
   letter-spacing: -0.01em;
 }
 
 @utility text-lead {
-  font-size: clamp(1.1rem, 1.6vw, 1.32rem);
-  line-height: 1.55;
+  font-weight: 400;
+  font-size: 1.0625rem;
+  line-height: 1.6;
 }
 
 @utility text-body-lg {
-  font-size: 1.0625rem;
-  line-height: 1.7;
+  font-weight: 400;
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 @utility text-small {
+  font-weight: 400;
   font-size: 0.9375rem;
-  line-height: 1.55;
+  line-height: 1.45;
 }
 
+/*
+ * Poppins rather than mono: the concept sets every eyebrow in the body face, tracked wide. 0.1em is
+ * its own figure - it appears twelve times against two for 0.14em, which is the hero alone.
+ */
 @utility text-eyebrow {
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-weight: 500;
-  font-size: 0.72rem;
-  letter-spacing: 0.16em;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 /* ──────────────── Custom utility ──────────────── */
 @utility mask-shadow-y {
   mask-image: linear-gradient(90deg, transparent, #fff 10%, #fff 90%, transparent);
+}
+
+/*
+ * A right-edge fade for a rail that scrolls without a scrollbar. The concept measured its chip row
+ * in JavaScript and hid whatever did not fit whole; a scroller keeps every chip reachable, but with
+ * a hard edge it cuts one mid-word and reads as a rendering fault rather than as "there is more".
+ * Only the right edge fades, because the left one is at the start of the row where the selected
+ * chip sits.
+ */
+@utility mask-fade-right {
+  mask-image: linear-gradient(to right, #fff 0, #fff calc(100% - 40px), transparent 100%);
+}
+
+/* The concept's rails hide their scrollbar and scroll by snap. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* ──────────────── Backdrop float keyframes (AbstractBackdrop) ──────────────── */

@@ -32,6 +32,11 @@ import * as migration_20260708_183318_remove_aspect_ratio_from_unneccesary_block
 import * as migration_20260713_155547_restructure_global_settings from './20260713_155547_restructure_global_settings';
 import * as migration_20260805_120053_group_seo_defaults_under_og_and_x from './20260805_120053_group_seo_defaults_under_og_and_x';
 import * as migration_20260812_125336_add_ab_pending_percentages_to_pages from './20260812_125336_add_ab_pending_percentages_to_pages';
+import * as migration_20260904_133003_add_talk_and_topic_collections from './20260904_133003_add_talk_and_topic_collections';
+import * as migration_20260907_123617_add_shopify_carousel_and_sidebar_blocks from './20260907_123617_add_shopify_carousel_and_sidebar_blocks';
+import * as migration_20260914_191756_add_showcase_design_blocks from './20260914_191756_add_showcase_design_blocks';
+import * as migration_20260915_212350_add_talk_cover_and_block_sources from './20260915_212350_add_talk_cover_and_block_sources';
+import * as migration_20260917_190000_index_archive_collections_for_search from './20260917_190000_index_archive_collections_for_search';
 
 export const migrations = [
   {
@@ -202,6 +207,31 @@ export const migrations = [
   {
     up: migration_20260812_125336_add_ab_pending_percentages_to_pages.up,
     down: migration_20260812_125336_add_ab_pending_percentages_to_pages.down,
-    name: '20260812_125336_add_ab_pending_percentages_to_pages'
+    name: '20260812_125336_add_ab_pending_percentages_to_pages',
+  },
+  {
+    up: migration_20260904_133003_add_talk_and_topic_collections.up,
+    down: migration_20260904_133003_add_talk_and_topic_collections.down,
+    name: '20260904_133003_add_talk_and_topic_collections',
+  },
+  {
+    up: migration_20260907_123617_add_shopify_carousel_and_sidebar_blocks.up,
+    down: migration_20260907_123617_add_shopify_carousel_and_sidebar_blocks.down,
+    name: '20260907_123617_add_shopify_carousel_and_sidebar_blocks',
+  },
+  {
+    up: migration_20260914_191756_add_showcase_design_blocks.up,
+    down: migration_20260914_191756_add_showcase_design_blocks.down,
+    name: '20260914_191756_add_showcase_design_blocks',
+  },
+  {
+    up: migration_20260915_212350_add_talk_cover_and_block_sources.up,
+    down: migration_20260915_212350_add_talk_cover_and_block_sources.down,
+    name: '20260915_212350_add_talk_cover_and_block_sources'
+  },
+  {
+    up: migration_20260917_190000_index_archive_collections_for_search.up,
+    down: migration_20260917_190000_index_archive_collections_for_search.down,
+    name: '20260917_190000_index_archive_collections_for_search'
   },
 ];

@@ -75,6 +75,8 @@ export interface Config {
     authors: Author;
     posts: Post;
     testimonials: Testimonial;
+    talk: Talk;
+    topic: Topic;
     header: Header;
     footer: Footer;
     globalBlock: GlobalBlock;
@@ -105,6 +107,8 @@ export interface Config {
     authors: AuthorsSelect<false> | AuthorsSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
+    talk: TalkSelect<false> | TalkSelect<true>;
+    topic: TopicSelect<false> | TopicSelect<true>;
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
     globalBlock: GlobalBlockSelect<false> | GlobalBlockSelect<true>;
@@ -362,8 +366,18 @@ export interface Page {
    */
   header?: (number | null) | Header;
   blocks: (
+    | HeroSpotlightBlock
+    | CourseRailBlock
+    | MembershipTiersBlock
+    | PortraitFeatureBlock
+    | BookOfferBlock
     | HeroBlock
     | ContentBlock
+    | TalkGridBlock
+    | TopicChipsBlock
+    | SidebarSectionBlock
+    | ShopifyProductBlock
+    | ShopifyCarouselBlock
     | FaqBlock
     | TestimonialsListBlock
     | CardsGridBlock
@@ -410,7 +424,7 @@ export interface Page {
    * The original page this variant belongs to.
    */
   _abVariantOf?: (number | null) | Page;
-  _abPendingPercentages?:
+  _abVariantPercentages?:
     | {
         [k: string]: unknown;
       }
@@ -443,6 +457,9 @@ export interface Header {
         label: string;
         type: 'link' | 'dropdown';
         link?: {
+          /**
+           * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+           */
           type?: ('reference' | 'custom' | 'customPage') | null;
           newTab?: boolean | null;
           reference?:
@@ -464,6 +481,9 @@ export interface Header {
             title?: string | null;
             description?: string | null;
             link?: {
+              /**
+               * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+               */
               type?: ('reference' | 'custom' | 'customPage') | null;
               newTab?: boolean | null;
               reference?:
@@ -485,6 +505,9 @@ export interface Header {
                 title: string;
                 description?: string | null;
                 link?: {
+                  /**
+                   * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+                   */
                   type?: ('reference' | 'custom' | 'customPage') | null;
                   newTab?: boolean | null;
                   reference?:
@@ -508,6 +531,9 @@ export interface Header {
     | null;
   actions?:
     | {
+        /**
+         * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+         */
         type?: ('reference' | 'custom' | 'customPage') | null;
         newTab?: boolean | null;
         reference?:
@@ -523,7 +549,7 @@ export interface Header {
         customPage?: ('blog' | 'search') | null;
         label: string;
         /**
-         * Choose how the link should be rendered.
+         * Whether this shows as a solid button, an outlined one, or plain underlined wording.
          */
         appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
         id?: string | null;
@@ -593,6 +619,9 @@ export interface Post {
     description?: string | null;
     actions?:
       | {
+          /**
+           * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+           */
           type?: ('reference' | 'custom' | 'customPage') | null;
           newTab?: boolean | null;
           reference?:
@@ -608,7 +637,7 @@ export interface Post {
           customPage?: ('blog' | 'search') | null;
           label: string;
           /**
-           * Choose how the link should be rendered.
+           * Whether this shows as a solid button, an outlined one, or plain underlined wording.
            */
           appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
           id?: string | null;
@@ -678,6 +707,660 @@ export interface Author {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroSpotlightBlock".
+ */
+export interface HeroSpotlightBlock {
+  /**
+   * The short line above the headline, with a green dot in front of it. A few words read best, because it sits on top of the photograph.
+   */
+  eyebrow?: string | null;
+  /**
+   * The first thing a visitor reads. It wraps onto two lines over the photograph, so keep it to one sentence.
+   */
+  heading: string;
+  /**
+   * One or two sentences under the headline saying what the library holds.
+   */
+  introText?: string | null;
+  /**
+   * The outlined button under the introduction. Clear the button text and no button is shown at all.
+   */
+  ctaLink?: {
+    /**
+     * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+     */
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+    label?: string | null;
+  };
+  /**
+   * The photograph filling the whole panel. Choose a wide, calm picture, because the white headline sits over its top left corner. Leave it empty and the meadow photograph is used.
+   */
+  backgroundImage?: {
+    image?: (number | null) | Media;
+  };
+  /**
+   * Which part of the photograph stays in view when it is cropped to the panel. Move it if a face or a horizon gets cut off.
+   */
+  backgroundFocalPoint?: ('top' | 'upper-middle' | 'centre' | 'lower-middle' | 'bottom') | null;
+  /**
+   * Darkens the photograph by this percentage so the white text stays readable. Raise it only if your own picture is too bright.
+   */
+  photoDarkening?: number | null;
+  /**
+   * Turn this off to leave the photograph and headline on their own, with no card in the corner.
+   */
+  showFeaturedCard?: boolean | null;
+  /**
+   * The small white card in the bottom corner of the photograph.
+   */
+  featuredCard?: {
+    /**
+     * The small line across the top of the card.
+     */
+    label?: string | null;
+    /**
+     * The picture on the card. It is cropped to a wide rectangle, so keep the subject in the middle. Leave it empty and the flower picture is used.
+     */
+    image?: {
+      image?: (number | null) | Media;
+    };
+    /**
+     * The name of the teaching the card points to.
+     */
+    title: string;
+    /**
+     * The score shown beside the green star. Leave it empty and the star disappears.
+     */
+    rating?: string | null;
+    /**
+     * The date shown beside the score. It is written out in capitals to match the rest of the card.
+     */
+    date?: string | null;
+    /**
+     * The price, shown in green. Type it exactly as it should appear, currency and all.
+     */
+    price?: string | null;
+    /**
+     * Shown struck through beside the price. Leave it empty when nothing is discounted.
+     */
+    compareAtPrice?: string | null;
+    /**
+     * Where a visitor lands when they click the card.
+     */
+    link?: {
+      /**
+       * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+       */
+      type?: ('reference' | 'custom' | 'customPage') | null;
+      newTab?: boolean | null;
+      reference?:
+        | ({
+            relationTo: 'page';
+            value: number | Page;
+          } | null)
+        | ({
+            relationTo: 'posts';
+            value: number | Post;
+          } | null);
+      url?: string | null;
+      customPage?: ('blog' | 'search') | null;
+    };
+  };
+  section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
+    maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
+    paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'heroSpotlight';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CourseRailBlock".
+ */
+export interface CourseRailBlock {
+  /**
+   * The short line above the headline, beside the green star. Leave it empty and that line is not shown.
+   */
+  eyebrow?: string | null;
+  /**
+   * The large headline that opens this row of courses. It wraps onto two or three lines on its own, so write it as one thought.
+   */
+  heading: string;
+  /**
+   * Whether the cards below are typed in by hand, or pulled live from the Talk archive with chips that filter them.
+   */
+  source: 'typed' | 'talks';
+  /**
+   * The small capitalised buttons above the courses. When more are added than fit on one line, the row slides sideways.
+   */
+  topics?:
+    | {
+        /**
+         * What this button says. Two or three words read best, because the text is set in capitals.
+         */
+        label: string;
+        /**
+         * The page someone lands on after choosing this topic. Leave it unset and the button is still shown, but it cannot be clicked.
+         */
+        link?: {
+          /**
+           * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+           */
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+        };
+        /**
+         * Fills this button green so a visitor can see which topic the courses below belong to. Tick it on one button at most.
+         */
+        isSelected?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * The first button in the row, which clears the filter and shows every talk. The rest of the buttons are the topics found on the talks themselves - nothing to type in here.
+   */
+  allTeachingsLabel?: string | null;
+  /**
+   * The last button in the topic row, the one with the small arrow.
+   */
+  allTopicsLabel?: string | null;
+  /**
+   * Where that last button sends people, normally the page listing every topic. With nothing chosen the button is not shown.
+   */
+  allTopicsLink?: {
+    /**
+     * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+     */
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+  };
+  /**
+   * The green button to the right, above the courses.
+   */
+  viewAllLabel?: string | null;
+  /**
+   * Where the green button sends people. With nothing chosen the button is not shown.
+   */
+  viewAllLink?: {
+    /**
+     * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+     */
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+  };
+  /**
+   * The cards in the sideways-scrolling row. About three show at a time on a wide screen and the rest are one swipe or one arrow click away, so more than three is fine.
+   */
+  courses?:
+    | {
+        /**
+         * The picture on the card. It is cropped to a wide rectangle, so keep the subject near the middle. Left empty, one of the standing pictures is shown instead.
+         */
+        image?: {
+          image?: (number | null) | Media;
+        };
+        /**
+         * The name on the card. Two lines fit comfortably; a longer title pushes the price down.
+         */
+        title: string;
+        /**
+         * One or two sentences under the title. Keeping them a similar length across the cards keeps the row even.
+         */
+        description?: string | null;
+        /**
+         * How many of the five stars are filled, and the figure printed beside them. One decimal reads best, such as 4.8.
+         */
+        rating?: number | null;
+        /**
+         * The small note at the top right of the card, such as the month the course runs. Leave it empty to show nothing there.
+         */
+        dateLabel?: string | null;
+        /**
+         * Shown in green. Write it exactly as it should read, currency sign included.
+         */
+        price?: string | null;
+        /**
+         * Shown crossed out beside the price. Leave it empty when nothing is discounted.
+         */
+        priceBefore?: string | null;
+        /**
+         * Clicking anywhere on the card opens this page. With nothing chosen the card is still shown, but it cannot be clicked.
+         */
+        link?: {
+          /**
+           * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+           */
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * How many talks to pull in. The chips above still only offer the topics found among these.
+   */
+  limit?: number | null;
+  section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
+    maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
+    paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'courseRail';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "MembershipTiersBlock".
+ */
+export interface MembershipTiersBlock {
+  /**
+   * The small line above the headline, next to the star. Leave it empty and both the line and the star disappear.
+   */
+  eyebrow?: string | null;
+  /**
+   * The large headline across the top of the panel. A few words read best; anything longer runs to three lines on a phone.
+   */
+  heading: string;
+  /**
+   * The photograph behind the whole panel. A dark tint is laid over it so the white writing stays readable, so choose something calm rather than busy. Leave it empty to keep the meadow photograph.
+   */
+  backgroundImage?: {
+    image?: (number | null) | Media;
+  };
+  /**
+   * The monthly and annual switch shown above the plans below, and the words printed on it.
+   */
+  billing?: {
+    /**
+     * Turn this off when every plan has one price. The switch disappears and only the monthly price is shown.
+     */
+    showBillingToggle?: boolean | null;
+    /**
+     * Which price someone sees before they touch the switch.
+     */
+    defaultPeriod?: ('monthly' | 'annual') | null;
+    /**
+     * The word on the left half of the switch.
+     */
+    monthlyLabel?: string | null;
+    /**
+     * The word on the right half of the switch.
+     */
+    annualLabel?: string | null;
+    /**
+     * The small green tag on the annual half of the switch. Leave it empty to show no tag.
+     */
+    savingsBadge?: string | null;
+    /**
+     * The small text printed after every monthly price, for example / month.
+     */
+    monthlyPeriodSuffix?: string | null;
+    /**
+     * The small text printed after every annual price. Say how the charge is taken, so nobody is surprised at checkout.
+     */
+    annualPeriodSuffix?: string | null;
+  };
+  /**
+   * Each plan becomes one card. Three fit across the row.
+   */
+  tiers: {
+    /**
+     * The name at the top of the card.
+     */
+    name: string;
+    /**
+     * Highlighted lifts one plan onto a white card so the eye lands on it first. Use it on one plan only.
+     */
+    emphasis?: ('standard' | 'featured') | null;
+    /**
+     * One short line under the plan name saying who the plan suits.
+     */
+    tagline?: string | null;
+    /**
+     * The small green tag beside the plan name. It only appears on the highlighted plan.
+     */
+    badge?: string | null;
+    /**
+     * Shown while the switch is on monthly. Type it exactly as it should read, currency sign and all.
+     */
+    priceMonthly: string;
+    /**
+     * Shown while the switch is on annual. Leave it empty and the monthly price is used on both sides of the switch.
+     */
+    priceAnnual?: string | null;
+    /**
+     * Where the button sends someone, and the words on it. Point it at the page where they sign up.
+     */
+    link?: {
+      /**
+       * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+       */
+      type?: ('reference' | 'custom' | 'customPage') | null;
+      newTab?: boolean | null;
+      reference?:
+        | ({
+            relationTo: 'page';
+            value: number | Page;
+          } | null)
+        | ({
+            relationTo: 'posts';
+            value: number | Post;
+          } | null);
+      url?: string | null;
+      customPage?: ('blog' | 'search') | null;
+      label?: string | null;
+    };
+    /**
+     * The small heading above the list of what the plan includes.
+     */
+    featuresHeading?: string | null;
+    /**
+     * One line for each thing the plan includes. Keep each to a short phrase so the cards stay close in height.
+     */
+    features?:
+      | {
+          /**
+           * One thing the plan includes, written as a short phrase.
+           */
+          label: string;
+          id?: string | null;
+        }[]
+      | null;
+    id?: string | null;
+  }[];
+  section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
+    maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
+    paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'membershipTiers';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PortraitFeatureBlock".
+ */
+export interface PortraitFeatureBlock {
+  /**
+   * The small name that sits above the headline, beside the green star. A person's name reads best; anything longer than a few words crowds the star.
+   */
+  personName: string;
+  /**
+   * The large statement that says who this person is. It is set to about twenty characters a line, so roughly forty-five characters fills two lines and reads best. Put a word between asterisks to pick it out in green.
+   */
+  heading: string;
+  /**
+   * One or two sentences under the headline, carrying the credentials that earn a reader's trust. It sits at the foot of the column against the bottom of the photograph, so two lines look best and four start to unbalance the pair.
+   */
+  description: string;
+  /**
+   * The button under the text. Leave the wording empty and no button is shown.
+   */
+  link?: {
+    /**
+     * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+     */
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+    label?: string | null;
+  };
+  /**
+   * The photograph beside the text. It fills a tall rounded frame and is cropped from the centre, a little above the middle, so a face sits best in the upper half of the picture. Leave it empty and the frame stays but shows nothing.
+   */
+  portrait?: {
+    image?: (number | null) | Media;
+  };
+  section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
+    maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
+    paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'portraitFeature';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BookOfferBlock".
+ */
+export interface BookOfferBlock {
+  /**
+   * The short line beside the star, above the title. It is the first thing people read, so say what they get and that it costs them nothing.
+   */
+  eyebrow?: string | null;
+  /**
+   * The name of the book, set in the largest type on the panel. It is also the wording read aloud to describe the cover picture, so write it exactly as it appears on the book.
+   */
+  heading: string;
+  /**
+   * One line under the title telling people what they have to do to receive the book.
+   */
+  description?: string | null;
+  /**
+   * The faint wording shown inside the empty email box before anyone types. It is also what is read aloud to someone using a screen reader, so keep it plain.
+   */
+  emailPlaceholder: string;
+  /**
+   * The words on the white button people press to ask for the book. Two or three words keep it on one line.
+   */
+  submitLabel: string;
+  /**
+   * What appears in place of the email box once someone has signed up, so they know it worked.
+   */
+  successMessage: string;
+  /**
+   * A picture of the book, standing upright and breaking out past the top and bottom of the panel. Upload it with the background removed so nothing shows as a rectangle behind it. Leave it empty and the panel runs as text only.
+   */
+  cover?: {
+    image?: (number | null) | Media;
+  };
+  section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
+    maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
+    paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'bookOffer';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "HeroBlock".
  */
 export interface HeroBlock {
@@ -701,6 +1384,9 @@ export interface HeroBlock {
   } | null;
   actions?:
     | {
+        /**
+         * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+         */
         type?: ('reference' | 'custom' | 'customPage') | null;
         newTab?: boolean | null;
         reference?:
@@ -716,7 +1402,7 @@ export interface HeroBlock {
         customPage?: ('blog' | 'search') | null;
         label: string;
         /**
-         * Choose how the link should be rendered.
+         * Whether this shows as a solid button, an outlined one, or plain underlined wording.
          */
         appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
         id?: string | null;
@@ -727,9 +1413,21 @@ export interface HeroBlock {
     aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
   };
   section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
     maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
     paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
@@ -778,6 +1476,9 @@ export interface ContentBlock {
   };
   actions?:
     | {
+        /**
+         * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+         */
         type?: ('reference' | 'custom' | 'customPage') | null;
         newTab?: boolean | null;
         reference?:
@@ -793,16 +1494,28 @@ export interface ContentBlock {
         customPage?: ('blog' | 'search') | null;
         label: string;
         /**
-         * Choose how the link should be rendered.
+         * Whether this shows as a solid button, an outlined one, or plain underlined wording.
          */
         appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
         id?: string | null;
       }[]
     | null;
   section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
     maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
     paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
@@ -820,6 +1533,523 @@ export interface ContentBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'content';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TalkGridBlock".
+ */
+export interface TalkGridBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  source: 'recent' | 'topic' | 'kind' | 'selected';
+  topic?: (number | null) | Topic;
+  kind?:
+    | (
+        | 'featured-talk'
+        | 'short-talk'
+        | 'special-lesson'
+        | 'student-qa'
+        | 'study-group-discussion'
+        | 'article'
+        | 'blog'
+        | 'letter'
+        | 'insight-timer-talk'
+      )
+    | null;
+  talkItems?:
+    | {
+        talk: number | Talk;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * How the cards are arranged. Grid wraps them across as many rows as needed. Rail puts them in one row that scrolls sideways, which suits a short, curated set best.
+   */
+  layout: 'grid' | 'rail';
+  limit?: number | null;
+  showKind?: boolean | null;
+  /**
+   * Shows a lock and the tier needed. Rows are listed at every tier either way - the gate is on the body, not the listing, so a gated talk stays indexable.
+   */
+  showTier?: boolean | null;
+  section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
+    maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
+    paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'talkGrid';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "topic".
+ */
+export interface Topic {
+  id: number;
+  /**
+   * What this subject is called. It becomes the heading of its own page and the label wherever this topic is listed.
+   */
+  title: string;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  /**
+   * The introduction shown under the heading on this topic's own page. Also used as the search description when the SEO tab is left empty.
+   */
+  description?: string | null;
+  meta?: {
+    title?: string | null;
+    /**
+     * Image used when sharing this page on social media.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+    /**
+     * Allow search engines to index this page
+     */
+    robots?: ('index' | 'noindex') | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "talk".
+ */
+export interface Talk {
+  id: number;
+  /**
+   * What this teaching is called. Used as the page heading, on every listing card, and as the link title when someone shares it.
+   */
+  title: string;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  /**
+   * Which part of the archive this belongs to. Decides the label on the card and which listings it appears in.
+   */
+  kind:
+    | 'featured-talk'
+    | 'short-talk'
+    | 'special-lesson'
+    | 'student-qa'
+    | 'study-group-discussion'
+    | 'article'
+    | 'blog'
+    | 'letter'
+    | 'insight-timer-talk';
+  /**
+   * The membership someone needs before the body unlocks. The title, teaser, topics and summary stay public whichever you pick, so the page is still found in search.
+   */
+  requiredTier: 'visitor' | 'basic' | 'premium' | 'all-access';
+  /**
+   * The opening someone reads before the membership gate. It also appears on listing cards and in search results, so write it to stand on its own. Two or three sentences.
+   */
+  teaser?: string | null;
+  /**
+   * The picture shown on this talk's card wherever it is listed - grids, rails, topic pages. Left empty, the card is simply shown with no picture up top; nothing else about the listing changes.
+   */
+  coverImage?: {
+    image?: (number | null) | Media;
+  };
+  /**
+   * The full teaching. Everything here is hidden from anyone below the membership set above.
+   */
+  body: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * The date shown on the page. Listings are ordered newest first by this, not by when you created the item.
+   */
+  publishedAt?: string | null;
+  /**
+   * How long the audio runs, counted in seconds. Readers see it as “7 min”. A 7 minute 15 second recording is 435.
+   */
+  durationSeconds?: number | null;
+  /**
+   * Web address of the recording. Use the permanent link to the file - a temporary or expiring share link stops playing within a day. Leave empty for an item with no audio.
+   */
+  audioUrl?: string | null;
+  /**
+   * The subjects this teaching covers. Each one gives the item a place in Browse Topics, and a reader who finishes it is offered the rest of that topic. Two or three is usually right.
+   */
+  topics?: (number | Topic)[] | null;
+  /**
+   * Whether someone has read the text below and is happy with it. Readers see it either way - this is a note for your team.
+   */
+  aiStatus?: ('awaiting-review' | 'approved') | null;
+  /**
+   * Two or three sentences, shown above the teaching. Also used as the search description when the SEO tab is left empty.
+   */
+  aiSummary?: string | null;
+  /**
+   * The few points a reader should come away with. Shown as a short list under the summary.
+   */
+  aiTakeaways?:
+    | {
+        takeaway: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Phrased the way a reader would actually ask them out loud, not as headings. These are the lines an AI assistant quotes when it answers with this teaching.
+   */
+  aiQuestions?:
+    | {
+        question: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Lines worth lifting out. Each one becomes a button that jumps the audio to the moment it was said.
+   */
+  aiPullQuotes?:
+    | {
+        quote: string;
+        speakerName?: string | null;
+        /**
+         * Set automatically by finding the quote in the recording.
+         */
+        startSeconds?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * The full text of the recording, word for word. Behind the same membership as the body.
+   */
+  transcript?: string | null;
+  transcriptSegments?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * The page this item was brought over from. Filled in automatically and kept for reference - nothing to edit here.
+   */
+  sourceUrl?: string | null;
+  meta?: {
+    title?: string | null;
+    /**
+     * Image used when sharing this page on social media.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+    /**
+     * Allow search engines to index this page
+     */
+    robots?: ('index' | 'noindex') | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TopicChipsBlock".
+ */
+export interface TopicChipsBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  /**
+   * Leave empty to show the topics carrying the most talks.
+   */
+  topicItems?:
+    | {
+        topic: number | Topic;
+        id?: string | null;
+      }[]
+    | null;
+  section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
+    maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
+    paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'topicChips';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SidebarSectionBlock".
+ */
+export interface SidebarSectionBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  body: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  sidebarHeading?: string | null;
+  sidebarLinks?:
+    | {
+        /**
+         * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+         */
+        type?: ('reference' | 'custom' | 'customPage') | null;
+        newTab?: boolean | null;
+        reference?:
+          | ({
+              relationTo: 'page';
+              value: number | Page;
+            } | null)
+          | ({
+              relationTo: 'posts';
+              value: number | Post;
+            } | null);
+        url?: string | null;
+        customPage?: ('blog' | 'search') | null;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  sidebarPosition: 'left' | 'right';
+  section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
+    maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
+    paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'sidebarSection';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ShopifyProductBlock".
+ */
+export interface ShopifyProductBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  /**
+   * The book or product this section shows. Its name, cover, price and availability all come from the store, so there is nothing to retype here.
+   */
+  productHandle: string;
+  /**
+   * Show the price under the product's name.
+   */
+  showPrice?: boolean | null;
+  /**
+   * On by default here, because a section built around one product is usually there to sell it. Turning it off leaves the card itself as the link to the product page.
+   */
+  showBuyButton?: boolean | null;
+  section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
+    maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
+    paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'shopifyProduct';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ShopifyCarouselBlock".
+ */
+export interface ShopifyCarouselBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  /**
+   * One row per product, shown left to right in this order. Drag a row to move it.
+   */
+  productHandles: {
+    /**
+     * The product this row shows. Its name, cover, price and availability all come from the store, so there is nothing to retype here.
+     */
+    handle: string;
+    id?: string | null;
+  }[];
+  /**
+   * Show the price under each product's name.
+   */
+  showPrice?: boolean | null;
+  /**
+   * Off by default, to match the design: the whole card links to the product page. Turning this on adds a buy button under each card that checks out the product directly.
+   */
+  showBuyButton?: boolean | null;
+  section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
+    maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
+    paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'shopifyCarousel';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -852,9 +2082,21 @@ export interface FaqBlock {
     id?: string | null;
   }[];
   section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
     maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
     paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
@@ -897,9 +2139,21 @@ export interface TestimonialsListBlock {
    */
   duration?: number | null;
   section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
     maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
     paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
@@ -980,6 +2234,9 @@ export interface CardsGridBlock {
       aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
     };
     link?: {
+      /**
+       * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+       */
       type?: ('reference' | 'custom' | 'customPage') | null;
       newTab?: boolean | null;
       reference?:
@@ -995,7 +2252,7 @@ export interface CardsGridBlock {
       customPage?: ('blog' | 'search') | null;
       label?: string | null;
       /**
-       * Choose how the link should be rendered.
+       * Whether this shows as a solid button, an outlined one, or plain underlined wording.
        */
       appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     };
@@ -1005,9 +2262,21 @@ export interface CardsGridBlock {
     id?: string | null;
   }[];
   section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
     maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
     paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
@@ -1060,9 +2329,21 @@ export interface CarouselBlock {
     id?: string | null;
   }[];
   section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
     maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
     paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
@@ -1093,6 +2374,9 @@ export interface LogosBlock {
       image: number | Media;
     };
     link: {
+      /**
+       * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+       */
       type?: ('reference' | 'custom' | 'customPage') | null;
       newTab?: boolean | null;
       reference?:
@@ -1111,9 +2395,21 @@ export interface LogosBlock {
     id?: string | null;
   }[];
   section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
     maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
     paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
@@ -1158,9 +2454,21 @@ export interface ChartBlock {
     id?: string | null;
   }[];
   section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
     maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
     paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
@@ -1191,6 +2499,9 @@ export interface CtaBandBlock {
   heading?: string | null;
   description?: string | null;
   actions: {
+    /**
+     * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+     */
     type?: ('reference' | 'custom' | 'customPage') | null;
     newTab?: boolean | null;
     reference?:
@@ -1206,15 +2517,27 @@ export interface CtaBandBlock {
     customPage?: ('blog' | 'search') | null;
     label: string;
     /**
-     * Choose how the link should be rendered.
+     * Whether this shows as a solid button, an outlined one, or plain underlined wording.
      */
     appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     id?: string | null;
   }[];
   section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
     maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
     paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
@@ -1244,9 +2567,21 @@ export interface NewsletterBlock {
   buttonLabel: string;
   disclaimer?: string | null;
   section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
     maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
     paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
@@ -1276,9 +2611,21 @@ export interface StatsBlock {
     id?: string | null;
   }[];
   section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
     maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
     paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
@@ -1307,9 +2654,21 @@ export interface RawHtmlBlock {
    */
   html: string;
   section?: {
+    /**
+     * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+     */
     theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    /**
+     * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+     */
     maxWidth?: ('none' | 'base') | null;
+    /**
+     * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+     */
     paddingY?: ('none' | 'base' | 'large') | null;
+    /**
+     * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+     */
     paddingX?: ('none' | 'base') | null;
     background?: {
       /**
@@ -1356,8 +2715,18 @@ export interface GlobalBlock {
    * The single block this global represents. Edit once, reuse on any page.
    */
   block: (
+    | HeroSpotlightBlock
+    | CourseRailBlock
+    | MembershipTiersBlock
+    | PortraitFeatureBlock
+    | BookOfferBlock
     | HeroBlock
     | ContentBlock
+    | TalkGridBlock
+    | TopicChipsBlock
+    | SidebarSectionBlock
+    | ShopifyProductBlock
+    | ShopifyCarouselBlock
     | FaqBlock
     | TestimonialsListBlock
     | CardsGridBlock
@@ -1393,6 +2762,9 @@ export interface Footer {
         label: string;
         links: {
           link: {
+            /**
+             * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+             */
             type?: ('reference' | 'custom' | 'customPage') | null;
             newTab?: boolean | null;
             reference?:
@@ -1416,6 +2788,9 @@ export interface Footer {
   legalLinks?:
     | {
         link: {
+          /**
+           * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+           */
           type?: ('reference' | 'custom' | 'customPage') | null;
           newTab?: boolean | null;
           reference?:
@@ -1435,7 +2810,7 @@ export interface Footer {
       }[]
     | null;
   /**
-   * Copyright text shown at the bottom
+   * The line along the very bottom of every page. Put your own organisation's name here - it is the last thing a visitor reads, and it is shown exactly as you type it.
    */
   copyrightText?: string | null;
   updatedAt: string;
@@ -1449,7 +2824,7 @@ export interface Footer {
 export interface DocumentEmbedding {
   id: number;
   documentId: string;
-  collection: 'page' | 'post';
+  collection: 'page' | 'post' | 'talk' | 'topic';
   locale: string;
   updatedAt: string;
   createdAt: string;
@@ -1503,6 +2878,640 @@ export interface Preset {
   preview?: (number | null) | Media;
   presetBlock: (
     | {
+        /**
+         * The short line above the headline, with a green dot in front of it. A few words read best, because it sits on top of the photograph.
+         */
+        eyebrow?: string | null;
+        /**
+         * The first thing a visitor reads. It wraps onto two lines over the photograph, so keep it to one sentence.
+         */
+        heading: string;
+        /**
+         * One or two sentences under the headline saying what the library holds.
+         */
+        introText?: string | null;
+        /**
+         * The outlined button under the introduction. Clear the button text and no button is shown at all.
+         */
+        ctaLink?: {
+          /**
+           * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+           */
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
+        /**
+         * The photograph filling the whole panel. Choose a wide, calm picture, because the white headline sits over its top left corner. Leave it empty and the meadow photograph is used.
+         */
+        backgroundImage?: {
+          image?: (number | null) | Media;
+        };
+        /**
+         * Which part of the photograph stays in view when it is cropped to the panel. Move it if a face or a horizon gets cut off.
+         */
+        backgroundFocalPoint?: ('top' | 'upper-middle' | 'centre' | 'lower-middle' | 'bottom') | null;
+        /**
+         * Darkens the photograph by this percentage so the white text stays readable. Raise it only if your own picture is too bright.
+         */
+        photoDarkening?: number | null;
+        /**
+         * Turn this off to leave the photograph and headline on their own, with no card in the corner.
+         */
+        showFeaturedCard?: boolean | null;
+        /**
+         * The small white card in the bottom corner of the photograph.
+         */
+        featuredCard?: {
+          /**
+           * The small line across the top of the card.
+           */
+          label?: string | null;
+          /**
+           * The picture on the card. It is cropped to a wide rectangle, so keep the subject in the middle. Leave it empty and the flower picture is used.
+           */
+          image?: {
+            image?: (number | null) | Media;
+          };
+          /**
+           * The name of the teaching the card points to.
+           */
+          title: string;
+          /**
+           * The score shown beside the green star. Leave it empty and the star disappears.
+           */
+          rating?: string | null;
+          /**
+           * The date shown beside the score. It is written out in capitals to match the rest of the card.
+           */
+          date?: string | null;
+          /**
+           * The price, shown in green. Type it exactly as it should appear, currency and all.
+           */
+          price?: string | null;
+          /**
+           * Shown struck through beside the price. Leave it empty when nothing is discounted.
+           */
+          compareAtPrice?: string | null;
+          /**
+           * Where a visitor lands when they click the card.
+           */
+          link?: {
+            /**
+             * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+             */
+            type?: ('reference' | 'custom' | 'customPage') | null;
+            newTab?: boolean | null;
+            reference?:
+              | ({
+                  relationTo: 'page';
+                  value: number | Page;
+                } | null)
+              | ({
+                  relationTo: 'posts';
+                  value: number | Post;
+                } | null);
+            url?: string | null;
+            customPage?: ('blog' | 'search') | null;
+          };
+        };
+        section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
+          maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
+          paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'heroSpotlight';
+      }
+    | {
+        /**
+         * The short line above the headline, beside the green star. Leave it empty and that line is not shown.
+         */
+        eyebrow?: string | null;
+        /**
+         * The large headline that opens this row of courses. It wraps onto two or three lines on its own, so write it as one thought.
+         */
+        heading: string;
+        /**
+         * Whether the cards below are typed in by hand, or pulled live from the Talk archive with chips that filter them.
+         */
+        source: 'typed' | 'talks';
+        /**
+         * The small capitalised buttons above the courses. When more are added than fit on one line, the row slides sideways.
+         */
+        topics?:
+          | {
+              /**
+               * What this button says. Two or three words read best, because the text is set in capitals.
+               */
+              label: string;
+              /**
+               * The page someone lands on after choosing this topic. Leave it unset and the button is still shown, but it cannot be clicked.
+               */
+              link?: {
+                /**
+                 * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+                 */
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                newTab?: boolean | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+              };
+              /**
+               * Fills this button green so a visitor can see which topic the courses below belong to. Tick it on one button at most.
+               */
+              isSelected?: boolean | null;
+              id?: string | null;
+            }[]
+          | null;
+        /**
+         * The first button in the row, which clears the filter and shows every talk. The rest of the buttons are the topics found on the talks themselves - nothing to type in here.
+         */
+        allTeachingsLabel?: string | null;
+        /**
+         * The last button in the topic row, the one with the small arrow.
+         */
+        allTopicsLabel?: string | null;
+        /**
+         * Where that last button sends people, normally the page listing every topic. With nothing chosen the button is not shown.
+         */
+        allTopicsLink?: {
+          /**
+           * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+           */
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+        };
+        /**
+         * The green button to the right, above the courses.
+         */
+        viewAllLabel?: string | null;
+        /**
+         * Where the green button sends people. With nothing chosen the button is not shown.
+         */
+        viewAllLink?: {
+          /**
+           * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+           */
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+        };
+        /**
+         * The cards in the sideways-scrolling row. About three show at a time on a wide screen and the rest are one swipe or one arrow click away, so more than three is fine.
+         */
+        courses?:
+          | {
+              /**
+               * The picture on the card. It is cropped to a wide rectangle, so keep the subject near the middle. Left empty, one of the standing pictures is shown instead.
+               */
+              image?: {
+                image?: (number | null) | Media;
+              };
+              /**
+               * The name on the card. Two lines fit comfortably; a longer title pushes the price down.
+               */
+              title: string;
+              /**
+               * One or two sentences under the title. Keeping them a similar length across the cards keeps the row even.
+               */
+              description?: string | null;
+              /**
+               * How many of the five stars are filled, and the figure printed beside them. One decimal reads best, such as 4.8.
+               */
+              rating?: number | null;
+              /**
+               * The small note at the top right of the card, such as the month the course runs. Leave it empty to show nothing there.
+               */
+              dateLabel?: string | null;
+              /**
+               * Shown in green. Write it exactly as it should read, currency sign included.
+               */
+              price?: string | null;
+              /**
+               * Shown crossed out beside the price. Leave it empty when nothing is discounted.
+               */
+              priceBefore?: string | null;
+              /**
+               * Clicking anywhere on the card opens this page. With nothing chosen the card is still shown, but it cannot be clicked.
+               */
+              link?: {
+                /**
+                 * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+                 */
+                type?: ('reference' | 'custom' | 'customPage') | null;
+                newTab?: boolean | null;
+                reference?:
+                  | ({
+                      relationTo: 'page';
+                      value: number | Page;
+                    } | null)
+                  | ({
+                      relationTo: 'posts';
+                      value: number | Post;
+                    } | null);
+                url?: string | null;
+                customPage?: ('blog' | 'search') | null;
+              };
+              id?: string | null;
+            }[]
+          | null;
+        /**
+         * How many talks to pull in. The chips above still only offer the topics found among these.
+         */
+        limit?: number | null;
+        section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
+          maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
+          paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'courseRail';
+      }
+    | {
+        /**
+         * The small line above the headline, next to the star. Leave it empty and both the line and the star disappear.
+         */
+        eyebrow?: string | null;
+        /**
+         * The large headline across the top of the panel. A few words read best; anything longer runs to three lines on a phone.
+         */
+        heading: string;
+        /**
+         * The photograph behind the whole panel. A dark tint is laid over it so the white writing stays readable, so choose something calm rather than busy. Leave it empty to keep the meadow photograph.
+         */
+        backgroundImage?: {
+          image?: (number | null) | Media;
+        };
+        /**
+         * The monthly and annual switch shown above the plans below, and the words printed on it.
+         */
+        billing?: {
+          /**
+           * Turn this off when every plan has one price. The switch disappears and only the monthly price is shown.
+           */
+          showBillingToggle?: boolean | null;
+          /**
+           * Which price someone sees before they touch the switch.
+           */
+          defaultPeriod?: ('monthly' | 'annual') | null;
+          /**
+           * The word on the left half of the switch.
+           */
+          monthlyLabel?: string | null;
+          /**
+           * The word on the right half of the switch.
+           */
+          annualLabel?: string | null;
+          /**
+           * The small green tag on the annual half of the switch. Leave it empty to show no tag.
+           */
+          savingsBadge?: string | null;
+          /**
+           * The small text printed after every monthly price, for example / month.
+           */
+          monthlyPeriodSuffix?: string | null;
+          /**
+           * The small text printed after every annual price. Say how the charge is taken, so nobody is surprised at checkout.
+           */
+          annualPeriodSuffix?: string | null;
+        };
+        /**
+         * Each plan becomes one card. Three fit across the row.
+         */
+        tiers: {
+          /**
+           * The name at the top of the card.
+           */
+          name: string;
+          /**
+           * Highlighted lifts one plan onto a white card so the eye lands on it first. Use it on one plan only.
+           */
+          emphasis?: ('standard' | 'featured') | null;
+          /**
+           * One short line under the plan name saying who the plan suits.
+           */
+          tagline?: string | null;
+          /**
+           * The small green tag beside the plan name. It only appears on the highlighted plan.
+           */
+          badge?: string | null;
+          /**
+           * Shown while the switch is on monthly. Type it exactly as it should read, currency sign and all.
+           */
+          priceMonthly: string;
+          /**
+           * Shown while the switch is on annual. Leave it empty and the monthly price is used on both sides of the switch.
+           */
+          priceAnnual?: string | null;
+          /**
+           * Where the button sends someone, and the words on it. Point it at the page where they sign up.
+           */
+          link?: {
+            /**
+             * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+             */
+            type?: ('reference' | 'custom' | 'customPage') | null;
+            newTab?: boolean | null;
+            reference?:
+              | ({
+                  relationTo: 'page';
+                  value: number | Page;
+                } | null)
+              | ({
+                  relationTo: 'posts';
+                  value: number | Post;
+                } | null);
+            url?: string | null;
+            customPage?: ('blog' | 'search') | null;
+            label?: string | null;
+          };
+          /**
+           * The small heading above the list of what the plan includes.
+           */
+          featuresHeading?: string | null;
+          /**
+           * One line for each thing the plan includes. Keep each to a short phrase so the cards stay close in height.
+           */
+          features?:
+            | {
+                /**
+                 * One thing the plan includes, written as a short phrase.
+                 */
+                label: string;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+        }[];
+        section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
+          maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
+          paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'membershipTiers';
+      }
+    | {
+        /**
+         * The small name that sits above the headline, beside the green star. A person's name reads best; anything longer than a few words crowds the star.
+         */
+        personName: string;
+        /**
+         * The large statement that says who this person is. It is set to about twenty characters a line, so roughly forty-five characters fills two lines and reads best. Put a word between asterisks to pick it out in green.
+         */
+        heading: string;
+        /**
+         * One or two sentences under the headline, carrying the credentials that earn a reader's trust. It sits at the foot of the column against the bottom of the photograph, so two lines look best and four start to unbalance the pair.
+         */
+        description: string;
+        /**
+         * The button under the text. Leave the wording empty and no button is shown.
+         */
+        link?: {
+          /**
+           * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+           */
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
+        /**
+         * The photograph beside the text. It fills a tall rounded frame and is cropped from the centre, a little above the middle, so a face sits best in the upper half of the picture. Leave it empty and the frame stays but shows nothing.
+         */
+        portrait?: {
+          image?: (number | null) | Media;
+        };
+        section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
+          maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
+          paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'portraitFeature';
+      }
+    | {
+        /**
+         * The short line beside the star, above the title. It is the first thing people read, so say what they get and that it costs them nothing.
+         */
+        eyebrow?: string | null;
+        /**
+         * The name of the book, set in the largest type on the panel. It is also the wording read aloud to describe the cover picture, so write it exactly as it appears on the book.
+         */
+        heading: string;
+        /**
+         * One line under the title telling people what they have to do to receive the book.
+         */
+        description?: string | null;
+        /**
+         * The faint wording shown inside the empty email box before anyone types. It is also what is read aloud to someone using a screen reader, so keep it plain.
+         */
+        emailPlaceholder: string;
+        /**
+         * The words on the white button people press to ask for the book. Two or three words keep it on one line.
+         */
+        submitLabel: string;
+        /**
+         * What appears in place of the email box once someone has signed up, so they know it worked.
+         */
+        successMessage: string;
+        /**
+         * A picture of the book, standing upright and breaking out past the top and bottom of the panel. Upload it with the background removed so nothing shows as a rectangle behind it. Leave it empty and the panel runs as text only.
+         */
+        cover?: {
+          image?: (number | null) | Media;
+        };
+        section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
+          maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
+          paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'bookOffer';
+      }
+    | {
         variant: 'showcase' | 'centered';
         eyebrow?: string | null;
         title?: string | null;
@@ -1523,6 +3532,9 @@ export interface Preset {
         } | null;
         actions?:
           | {
+              /**
+               * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+               */
               type?: ('reference' | 'custom' | 'customPage') | null;
               newTab?: boolean | null;
               reference?:
@@ -1538,7 +3550,7 @@ export interface Preset {
               customPage?: ('blog' | 'search') | null;
               label: string;
               /**
-               * Choose how the link should be rendered.
+               * Whether this shows as a solid button, an outlined one, or plain underlined wording.
                */
               appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
               id?: string | null;
@@ -1549,9 +3561,21 @@ export interface Preset {
           aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
         };
         section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
           maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
           paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
@@ -1596,6 +3620,9 @@ export interface Preset {
         };
         actions?:
           | {
+              /**
+               * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+               */
               type?: ('reference' | 'custom' | 'customPage') | null;
               newTab?: boolean | null;
               reference?:
@@ -1611,16 +3638,28 @@ export interface Preset {
               customPage?: ('blog' | 'search') | null;
               label: string;
               /**
-               * Choose how the link should be rendered.
+               * Whether this shows as a solid button, an outlined one, or plain underlined wording.
                */
               appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
               id?: string | null;
             }[]
           | null;
         section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
           maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
           paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
@@ -1638,6 +3677,320 @@ export interface Preset {
         id?: string | null;
         blockName?: string | null;
         blockType: 'content';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        source: 'recent' | 'topic' | 'kind' | 'selected';
+        topic?: (number | null) | Topic;
+        kind?:
+          | (
+              | 'featured-talk'
+              | 'short-talk'
+              | 'special-lesson'
+              | 'student-qa'
+              | 'study-group-discussion'
+              | 'article'
+              | 'blog'
+              | 'letter'
+              | 'insight-timer-talk'
+            )
+          | null;
+        talkItems?:
+          | {
+              talk: number | Talk;
+              id?: string | null;
+            }[]
+          | null;
+        /**
+         * How the cards are arranged. Grid wraps them across as many rows as needed. Rail puts them in one row that scrolls sideways, which suits a short, curated set best.
+         */
+        layout: 'grid' | 'rail';
+        limit?: number | null;
+        showKind?: boolean | null;
+        /**
+         * Shows a lock and the tier needed. Rows are listed at every tier either way - the gate is on the body, not the listing, so a gated talk stays indexable.
+         */
+        showTier?: boolean | null;
+        section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
+          maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
+          paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'talkGrid';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        /**
+         * Leave empty to show the topics carrying the most talks.
+         */
+        topicItems?:
+          | {
+              topic: number | Topic;
+              id?: string | null;
+            }[]
+          | null;
+        section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
+          maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
+          paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'topicChips';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        body: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        };
+        sidebarHeading?: string | null;
+        sidebarLinks?:
+          | {
+              /**
+               * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+               */
+              type?: ('reference' | 'custom' | 'customPage') | null;
+              newTab?: boolean | null;
+              reference?:
+                | ({
+                    relationTo: 'page';
+                    value: number | Page;
+                  } | null)
+                | ({
+                    relationTo: 'posts';
+                    value: number | Post;
+                  } | null);
+              url?: string | null;
+              customPage?: ('blog' | 'search') | null;
+              label?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        sidebarPosition: 'left' | 'right';
+        section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
+          maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
+          paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'sidebarSection';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        /**
+         * The book or product this section shows. Its name, cover, price and availability all come from the store, so there is nothing to retype here.
+         */
+        productHandle: string;
+        /**
+         * Show the price under the product's name.
+         */
+        showPrice?: boolean | null;
+        /**
+         * On by default here, because a section built around one product is usually there to sell it. Turning it off leaves the card itself as the link to the product page.
+         */
+        showBuyButton?: boolean | null;
+        section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
+          maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
+          paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'shopifyProduct';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        /**
+         * One row per product, shown left to right in this order. Drag a row to move it.
+         */
+        productHandles: {
+          /**
+           * The product this row shows. Its name, cover, price and availability all come from the store, so there is nothing to retype here.
+           */
+          handle: string;
+          id?: string | null;
+        }[];
+        /**
+         * Show the price under each product's name.
+         */
+        showPrice?: boolean | null;
+        /**
+         * Off by default, to match the design: the whole card links to the product page. Turning this on adds a buy button under each card that checks out the product directly.
+         */
+        showBuyButton?: boolean | null;
+        section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
+          maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
+          paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'shopifyCarousel';
       }
     | {
         eyebrow?: string | null;
@@ -1666,9 +4019,21 @@ export interface Preset {
           id?: string | null;
         }[];
         section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
           maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
           paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
@@ -1707,9 +4072,21 @@ export interface Preset {
          */
         duration?: number | null;
         section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
           maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
           paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
@@ -1771,6 +4148,9 @@ export interface Preset {
             aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
           };
           link?: {
+            /**
+             * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+             */
             type?: ('reference' | 'custom' | 'customPage') | null;
             newTab?: boolean | null;
             reference?:
@@ -1786,7 +4166,7 @@ export interface Preset {
             customPage?: ('blog' | 'search') | null;
             label?: string | null;
             /**
-             * Choose how the link should be rendered.
+             * Whether this shows as a solid button, an outlined one, or plain underlined wording.
              */
             appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
           };
@@ -1796,9 +4176,21 @@ export interface Preset {
           id?: string | null;
         }[];
         section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
           maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
           paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
@@ -1847,9 +4239,21 @@ export interface Preset {
           id?: string | null;
         }[];
         section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
           maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
           paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
@@ -1876,6 +4280,9 @@ export interface Preset {
             image: number | Media;
           };
           link: {
+            /**
+             * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+             */
             type?: ('reference' | 'custom' | 'customPage') | null;
             newTab?: boolean | null;
             reference?:
@@ -1894,9 +4301,21 @@ export interface Preset {
           id?: string | null;
         }[];
         section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
           maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
           paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
@@ -1937,9 +4356,21 @@ export interface Preset {
           id?: string | null;
         }[];
         section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
           maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
           paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
@@ -1966,6 +4397,9 @@ export interface Preset {
         heading?: string | null;
         description?: string | null;
         actions: {
+          /**
+           * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+           */
           type?: ('reference' | 'custom' | 'customPage') | null;
           newTab?: boolean | null;
           reference?:
@@ -1981,15 +4415,27 @@ export interface Preset {
           customPage?: ('blog' | 'search') | null;
           label: string;
           /**
-           * Choose how the link should be rendered.
+           * Whether this shows as a solid button, an outlined one, or plain underlined wording.
            */
           appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
           id?: string | null;
         }[];
         section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
           maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
           paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
@@ -2015,9 +4461,21 @@ export interface Preset {
         buttonLabel: string;
         disclaimer?: string | null;
         section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
           maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
           paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
@@ -2043,9 +4501,21 @@ export interface Preset {
           id?: string | null;
         }[];
         section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
           maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
           paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
@@ -2070,9 +4540,21 @@ export interface Preset {
          */
         html: string;
         section?: {
+          /**
+           * The colours this section is drawn in. The wording flips between black and white to stay readable, so you do not need to change any text.
+           */
           theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          /**
+           * Keep this section lined up with the rest of the page, or let it run the full width of the screen.
+           */
           maxWidth?: ('none' | 'base') | null;
+          /**
+           * Breathing room above and below. Use none when this section is meant to sit tight against the one before it.
+           */
           paddingY?: ('none' | 'base' | 'large') | null;
+          /**
+           * The gap between this section and the left and right edges of the screen. Remove it only for a picture or a colour band meant to touch the edges.
+           */
           paddingX?: ('none' | 'base') | null;
           background?: {
             /**
@@ -2511,6 +4993,14 @@ export interface PayloadLockedDocument {
         value: number | Testimonial;
       } | null)
     | ({
+        relationTo: 'talk';
+        value: number | Talk;
+      } | null)
+    | ({
+        relationTo: 'topic';
+        value: number | Topic;
+      } | null)
+    | ({
         relationTo: 'header';
         value: number | Header;
       } | null)
@@ -2736,8 +5226,18 @@ export interface PageSelect<T extends boolean = true> {
   blocks?:
     | T
     | {
+        heroSpotlight?: T | HeroSpotlightBlockSelect<T>;
+        courseRail?: T | CourseRailBlockSelect<T>;
+        membershipTiers?: T | MembershipTiersBlockSelect<T>;
+        portraitFeature?: T | PortraitFeatureBlockSelect<T>;
+        bookOffer?: T | BookOfferBlockSelect<T>;
         hero?: T | HeroBlockSelect<T>;
         content?: T | ContentBlockSelect<T>;
+        talkGrid?: T | TalkGridBlockSelect<T>;
+        topicChips?: T | TopicChipsBlockSelect<T>;
+        sidebarSection?: T | SidebarSectionBlockSelect<T>;
+        shopifyProduct?: T | ShopifyProductBlockSelect<T>;
+        shopifyCarousel?: T | ShopifyCarouselBlockSelect<T>;
         faq?: T | FaqBlockSelect<T>;
         testimonialsList?: T | TestimonialsListBlockSelect<T>;
         cardsGrid?: T | CardsGridBlockSelect<T>;
@@ -2771,11 +5271,317 @@ export interface PageSelect<T extends boolean = true> {
         id?: T;
       };
   _abVariantOf?: T;
-  _abPendingPercentages?: T;
+  _abVariantPercentages?: T;
   folder?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroSpotlightBlock_select".
+ */
+export interface HeroSpotlightBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  introText?: T;
+  ctaLink?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+      };
+  backgroundImage?:
+    | T
+    | {
+        image?: T;
+      };
+  backgroundFocalPoint?: T;
+  photoDarkening?: T;
+  showFeaturedCard?: T;
+  featuredCard?:
+    | T
+    | {
+        label?: T;
+        image?:
+          | T
+          | {
+              image?: T;
+            };
+        title?: T;
+        rating?: T;
+        date?: T;
+        price?: T;
+        compareAtPrice?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+            };
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CourseRailBlock_select".
+ */
+export interface CourseRailBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  source?: T;
+  topics?:
+    | T
+    | {
+        label?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+            };
+        isSelected?: T;
+        id?: T;
+      };
+  allTeachingsLabel?: T;
+  allTopicsLabel?: T;
+  allTopicsLink?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+      };
+  viewAllLabel?: T;
+  viewAllLink?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+      };
+  courses?:
+    | T
+    | {
+        image?:
+          | T
+          | {
+              image?: T;
+            };
+        title?: T;
+        description?: T;
+        rating?: T;
+        dateLabel?: T;
+        price?: T;
+        priceBefore?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+            };
+        id?: T;
+      };
+  limit?: T;
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "MembershipTiersBlock_select".
+ */
+export interface MembershipTiersBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  backgroundImage?:
+    | T
+    | {
+        image?: T;
+      };
+  billing?:
+    | T
+    | {
+        showBillingToggle?: T;
+        defaultPeriod?: T;
+        monthlyLabel?: T;
+        annualLabel?: T;
+        savingsBadge?: T;
+        monthlyPeriodSuffix?: T;
+        annualPeriodSuffix?: T;
+      };
+  tiers?:
+    | T
+    | {
+        name?: T;
+        emphasis?: T;
+        tagline?: T;
+        badge?: T;
+        priceMonthly?: T;
+        priceAnnual?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              customPage?: T;
+              label?: T;
+            };
+        featuresHeading?: T;
+        features?:
+          | T
+          | {
+              label?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PortraitFeatureBlock_select".
+ */
+export interface PortraitFeatureBlockSelect<T extends boolean = true> {
+  personName?: T;
+  heading?: T;
+  description?: T;
+  link?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+      };
+  portrait?:
+    | T
+    | {
+        image?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BookOfferBlock_select".
+ */
+export interface BookOfferBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  emailPlaceholder?: T;
+  submitLabel?: T;
+  successMessage?: T;
+  cover?:
+    | T
+    | {
+        image?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2846,6 +5652,185 @@ export interface ContentBlockSelect<T extends boolean = true> {
         appearance?: T;
         id?: T;
       };
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TalkGridBlock_select".
+ */
+export interface TalkGridBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  source?: T;
+  topic?: T;
+  kind?: T;
+  talkItems?:
+    | T
+    | {
+        talk?: T;
+        id?: T;
+      };
+  layout?: T;
+  limit?: T;
+  showKind?: T;
+  showTier?: T;
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TopicChipsBlock_select".
+ */
+export interface TopicChipsBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  topicItems?:
+    | T
+    | {
+        topic?: T;
+        id?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SidebarSectionBlock_select".
+ */
+export interface SidebarSectionBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  body?: T;
+  sidebarHeading?: T;
+  sidebarLinks?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+        id?: T;
+      };
+  sidebarPosition?: T;
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ShopifyProductBlock_select".
+ */
+export interface ShopifyProductBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  productHandle?: T;
+  showPrice?: T;
+  showBuyButton?: T;
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ShopifyCarouselBlock_select".
+ */
+export interface ShopifyCarouselBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  productHandles?:
+    | T
+    | {
+        handle?: T;
+        id?: T;
+      };
+  showPrice?: T;
+  showBuyButton?: T;
   section?:
     | T
     | {
@@ -3348,6 +6333,84 @@ export interface TestimonialsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "talk_select".
+ */
+export interface TalkSelect<T extends boolean = true> {
+  title?: T;
+  generateSlug?: T;
+  slug?: T;
+  kind?: T;
+  requiredTier?: T;
+  teaser?: T;
+  coverImage?:
+    | T
+    | {
+        image?: T;
+      };
+  body?: T;
+  publishedAt?: T;
+  durationSeconds?: T;
+  audioUrl?: T;
+  topics?: T;
+  aiStatus?: T;
+  aiSummary?: T;
+  aiTakeaways?:
+    | T
+    | {
+        takeaway?: T;
+        id?: T;
+      };
+  aiQuestions?:
+    | T
+    | {
+        question?: T;
+        id?: T;
+      };
+  aiPullQuotes?:
+    | T
+    | {
+        quote?: T;
+        speakerName?: T;
+        startSeconds?: T;
+        id?: T;
+      };
+  transcript?: T;
+  transcriptSegments?: T;
+  sourceUrl?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
+        robots?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "topic_select".
+ */
+export interface TopicSelect<T extends boolean = true> {
+  title?: T;
+  generateSlug?: T;
+  slug?: T;
+  description?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
+        robots?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
 export interface HeaderSelect<T extends boolean = true> {
@@ -3481,8 +6544,18 @@ export interface GlobalBlockSelect<T extends boolean = true> {
   block?:
     | T
     | {
+        heroSpotlight?: T | HeroSpotlightBlockSelect<T>;
+        courseRail?: T | CourseRailBlockSelect<T>;
+        membershipTiers?: T | MembershipTiersBlockSelect<T>;
+        portraitFeature?: T | PortraitFeatureBlockSelect<T>;
+        bookOffer?: T | BookOfferBlockSelect<T>;
         hero?: T | HeroBlockSelect<T>;
         content?: T | ContentBlockSelect<T>;
+        talkGrid?: T | TalkGridBlockSelect<T>;
+        topicChips?: T | TopicChipsBlockSelect<T>;
+        sidebarSection?: T | SidebarSectionBlockSelect<T>;
+        shopifyProduct?: T | ShopifyProductBlockSelect<T>;
+        shopifyCarousel?: T | ShopifyCarouselBlockSelect<T>;
         faq?: T | FaqBlockSelect<T>;
         testimonialsList?: T | TestimonialsListBlockSelect<T>;
         cardsGrid?: T | CardsGridBlockSelect<T>;
@@ -3537,6 +6610,302 @@ export interface PresetsSelect<T extends boolean = true> {
   presetBlock?:
     | T
     | {
+        heroSpotlight?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              introText?: T;
+              ctaLink?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                  };
+              backgroundImage?:
+                | T
+                | {
+                    image?: T;
+                  };
+              backgroundFocalPoint?: T;
+              photoDarkening?: T;
+              showFeaturedCard?: T;
+              featuredCard?:
+                | T
+                | {
+                    label?: T;
+                    image?:
+                      | T
+                      | {
+                          image?: T;
+                        };
+                    title?: T;
+                    rating?: T;
+                    date?: T;
+                    price?: T;
+                    compareAtPrice?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                        };
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        courseRail?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              source?: T;
+              topics?:
+                | T
+                | {
+                    label?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                        };
+                    isSelected?: T;
+                    id?: T;
+                  };
+              allTeachingsLabel?: T;
+              allTopicsLabel?: T;
+              allTopicsLink?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                  };
+              viewAllLabel?: T;
+              viewAllLink?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                  };
+              courses?:
+                | T
+                | {
+                    image?:
+                      | T
+                      | {
+                          image?: T;
+                        };
+                    title?: T;
+                    description?: T;
+                    rating?: T;
+                    dateLabel?: T;
+                    price?: T;
+                    priceBefore?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                        };
+                    id?: T;
+                  };
+              limit?: T;
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        membershipTiers?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              backgroundImage?:
+                | T
+                | {
+                    image?: T;
+                  };
+              billing?:
+                | T
+                | {
+                    showBillingToggle?: T;
+                    defaultPeriod?: T;
+                    monthlyLabel?: T;
+                    annualLabel?: T;
+                    savingsBadge?: T;
+                    monthlyPeriodSuffix?: T;
+                    annualPeriodSuffix?: T;
+                  };
+              tiers?:
+                | T
+                | {
+                    name?: T;
+                    emphasis?: T;
+                    tagline?: T;
+                    badge?: T;
+                    priceMonthly?: T;
+                    priceAnnual?: T;
+                    link?:
+                      | T
+                      | {
+                          type?: T;
+                          newTab?: T;
+                          reference?: T;
+                          url?: T;
+                          customPage?: T;
+                          label?: T;
+                        };
+                    featuresHeading?: T;
+                    features?:
+                      | T
+                      | {
+                          label?: T;
+                          id?: T;
+                        };
+                    id?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        portraitFeature?:
+          | T
+          | {
+              personName?: T;
+              heading?: T;
+              description?: T;
+              link?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                  };
+              portrait?:
+                | T
+                | {
+                    image?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        bookOffer?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              emailPlaceholder?: T;
+              submitLabel?: T;
+              successMessage?: T;
+              cover?:
+                | T
+                | {
+                    image?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
         hero?:
           | T
           | {
@@ -3602,6 +6971,175 @@ export interface PresetsSelect<T extends boolean = true> {
                     appearance?: T;
                     id?: T;
                   };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        talkGrid?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              source?: T;
+              topic?: T;
+              kind?: T;
+              talkItems?:
+                | T
+                | {
+                    talk?: T;
+                    id?: T;
+                  };
+              layout?: T;
+              limit?: T;
+              showKind?: T;
+              showTier?: T;
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        topicChips?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              topicItems?:
+                | T
+                | {
+                    topic?: T;
+                    id?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        sidebarSection?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              body?: T;
+              sidebarHeading?: T;
+              sidebarLinks?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                    id?: T;
+                  };
+              sidebarPosition?: T;
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        shopifyProduct?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              productHandle?: T;
+              showPrice?: T;
+              showBuyButton?: T;
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        shopifyCarousel?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              productHandles?:
+                | T
+                | {
+                    handle?: T;
+                    id?: T;
+                  };
+              showPrice?: T;
+              showBuyButton?: T;
               section?:
                 | T
                 | {
@@ -4489,6 +8027,9 @@ export interface CardsGridInlineBlock {
       aspectRatio?: ('16/9' | '3/2' | '4/3' | '1/1' | '9/16' | '1/2' | '4/1' | '3/1' | 'auto') | null;
     };
     link?: {
+      /**
+       * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+       */
       type?: ('reference' | 'custom' | 'customPage') | null;
       newTab?: boolean | null;
       reference?:
@@ -4504,7 +8045,7 @@ export interface CardsGridInlineBlock {
       customPage?: ('blog' | 'search') | null;
       label?: string | null;
       /**
-       * Choose how the link should be rendered.
+       * Whether this shows as a solid button, an outlined one, or plain underlined wording.
        */
       appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
     };
@@ -4529,6 +8070,9 @@ export interface LogosInlineBlock {
       image: number | Media;
     };
     link: {
+      /**
+       * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+       */
       type?: ('reference' | 'custom' | 'customPage') | null;
       newTab?: boolean | null;
       reference?:
@@ -4578,6 +8122,9 @@ export interface CtaBannerInline {
   description?: string | null;
   actions?:
     | {
+        /**
+         * Pick a page on this site and the address keeps working if that page is later renamed. Type an address by hand only for somewhere outside this site.
+         */
         type?: ('reference' | 'custom' | 'customPage') | null;
         newTab?: boolean | null;
         reference?:
@@ -4593,7 +8140,7 @@ export interface CtaBannerInline {
         customPage?: ('blog' | 'search') | null;
         label: string;
         /**
-         * Choose how the link should be rendered.
+         * Whether this shows as a solid button, an outlined one, or plain underlined wording.
          */
         appearance?: ('default' | 'outline' | 'accent' | 'ghost' | 'link') | null;
         id?: string | null;

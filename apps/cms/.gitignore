@@ -30,7 +30,14 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
+#
+# Ignore every .env variant and re-admit the two that are meant to be read. `.env*.local` alone let
+# `.env.preview` through, and that file carries DATABASE_URL, PAYLOAD_SECRET, OPENAI_API_KEY,
+# GOOGLE_CLIENT_SECRET, MAIL_PASSWORD and a Vercel REST token into a PUBLIC repo on one `git add -A`.
+# Untracked is a state; ignored is a guarantee.
+.env*
+!.env.example
+!test.env
 
 # vercel
 .vercel
