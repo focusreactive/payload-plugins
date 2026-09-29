@@ -174,6 +174,8 @@ export const netlifyClient = (token: string) => {
           method: "POST",
         }
       ),
+    remove: (siteId: string, deployId: string) =>
+      call<null>(`/sites/${siteId}/deploys/${deployId}`, { method: "DELETE" }),
     cancel: (deployId: string) =>
       call<NetlifyDeploy>(`/deploys/${deployId}/cancel`, { method: "POST" }),
     publish: (siteId: string, deployId: string) =>

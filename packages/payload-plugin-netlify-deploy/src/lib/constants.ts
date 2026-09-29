@@ -13,8 +13,14 @@ export const REQUEST_TIMEOUT_MS = 10_000;
 export const LOG_QUIET_MS = 800;
 export const LOG_MAX_MS = 6000;
 
-// Every build started here carries it, which is how the panel tells its own builds from the rest.
+// Asked for as the title of every build started here. Netlify drops a title passed to its builds
+// API, so the panel tells its own builds by the record in KV_PREFIX instead.
 export const TITLE_PREFIX = "Payload";
+
+// Payload's key-value store (`payload.kv`) keeps who started each build, keyed by deploy id, and a
+// short lock per site while a build is being started.
+export const KV_PREFIX = "netlify-deploy";
+export const START_LOCK_MS = 30_000;
 
 export const BUTTON_COMPONENT = "@focus-reactive/payload-plugin-netlify-deploy/client#DeployButton";
 

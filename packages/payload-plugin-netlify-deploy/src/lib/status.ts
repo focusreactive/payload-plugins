@@ -1,5 +1,5 @@
 import type { DeployPhase, DeploySummary } from "../types.js";
-import { BUILDING_STATES, QUEUED_STATES, TITLE_PREFIX } from "./constants.js";
+import { BUILDING_STATES, QUEUED_STATES } from "./constants.js";
 import type { NetlifyDeploy, NetlifySite } from "./netlify.js";
 
 export const isRunning = (deploy: NetlifyDeploy) =>
@@ -22,12 +22,23 @@ const labelOf = (
     return { label: "Building", tone: "busy" };
   }
   if (deploy.state === "ready") {
-    return isPublished(deploy, site)
-      ? { label: "Published", tone: "live" }
-      : { label: "Preview, not published", tone: "ready" };
+    if (deploy.id === site.published_deploy?.id) {
+      return { label: "Published", tone: "live" };
+    }
+    if (deploy.published_at) {
+      return { label: "Was live", tone: "past" };
+    }
+    // Built before what is live: a later publish replaced it, so it is no longer worth opening.
+    return deploy.created_at < (site.published_deploy?.created_at ?? "")
+      ? { label: "Outdated preview", tone: "muted" }
+      : { label: "Preview, not published", tone: "muted" };
   }
   if (isCancelled(deploy)) {
-    return { label: "Cancelled", tone: "muted" };
+    return { label: "Cancelled", tone: "failed" };
+  }
+  // Netlify skips a build it already has one queued for, e.g. when builds are allowed again.
+  if (deploy.state === "error" && /^skipped/iu.test(deploy.error_message ?? "")) {
+    return { label: "Skipped", tone: "muted" };
   }
   if (deploy.state === "error") {
     return { label: "Failed", tone: "failed" };
@@ -35,15 +46,25 @@ const labelOf = (
   return { label: deploy.state, tone: "muted" };
 };
 
-export const summarize = (deploy: NetlifyDeploy, site: NetlifySite): DeploySummary => ({
+/** Who started a build here, as recorded when it was started; null for a build from elsewhere. */
+export type BuildRecord = { by: string } | null;
+
+export const summarize = (
+  deploy: NetlifyDeploy,
+  site: NetlifySite,
+  record: BuildRecord
+): DeploySummary => ({
   id: deploy.id,
   ...labelOf(deploy, site),
   title: deploy.title ?? null,
-  startedHere: Boolean(deploy.title?.startsWith(TITLE_PREFIX)),
+  startedHere: record !== null,
+  startedBy: record?.by ?? null,
   createdAt: deploy.created_at,
   tookSeconds: deploy.deploy_time ?? null,
   errorMessage: deploy.error_message ?? null,
-  previewUrl: deploy.links?.permalink ?? deploy.deploy_ssl_url ?? null,
+  // The deploy's own address. `deploy_ssl_url` is the branch alias (`master--site`), which serves
+  // whatever is live, not this build.
+  previewUrl: deploy.links?.permalink ?? `https://${deploy.id}--${site.name}.netlify.app`,
 });
 
 // The newest production deploy decides: running, waiting to be published (a site whose
@@ -59,9 +80,15 @@ export const phaseOf = (latest: NetlifyDeploy | undefined, site: NetlifySite): D
     return "building";
   }
   if (latest.state === "ready") {
-    return !isPublished(latest, site) && site.published_deploy?.locked ? "ready" : "idle";
+    // A preview older than what is live was overtaken by it and is not offered.
+    const newer = latest.created_at > (site.published_deploy?.created_at ?? "");
+    return !isPublished(latest, site) && site.published_deploy?.locked && newer ? "ready" : "idle";
   }
-  if (latest.state === "error" && !isCancelled(latest)) {
+  if (
+    latest.state === "error" &&
+    !isCancelled(latest) &&
+    !/^skipped/iu.test(latest.error_message ?? "")
+  ) {
     return "failed";
   }
   return "idle";

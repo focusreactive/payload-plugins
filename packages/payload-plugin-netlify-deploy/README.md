@@ -11,10 +11,10 @@ A site on Netlify only shows what Payload holds after it is rebuilt. Editors usu
 - **Publish button beside Save** — on every document of the collections you list, or in the admin's top bar for a single site. It shows the state of the site at a glance: a coloured dot, a label and the number of saved changes waiting to go live.
 - **Statuses** — the button and its drawer always say where the site is: _Live_, _Not published_, _In queue_ (waiting for a free Netlify builder), _Building_, _Preview ready_, _Build failed_, _Publishing_. They update by themselves, and a toast tells the editor when a build is ready, has failed or went live, wherever they are in the admin.
 - **Live build log** — the Netlify log streams into the drawer while the site builds, with warnings and errors highlighted, and stays there after a failure. When a build fails, Netlify's own reason is shown above the log, word for word.
-- **Preview before it goes live** — on a site whose auto-publishing is locked, a build becomes a preview first: _Open preview_ opens the built site on its own Netlify URL, _Publish_ makes it live, _Discard_ drops it. On a site that auto-publishes, the button builds and publishes in one go.
+- **Preview before it goes live** — on a site whose auto-publishing is locked, a build becomes a preview first: _Open preview_ opens the built site on its own Netlify URL, _Publish_ makes it live, _Build again_ builds a fresh preview after more edits (the old one stays on Netlify, no longer offered), _Cancel_ deletes it and nothing goes live. On a site that auto-publishes, the button builds and publishes in one go.
 - **What changed** — optionally, the list of documents saved since the live site was built ("Saved since the last publish"), and on a preview, what that preview includes. The count sits on the button.
 - **One build at a time** — while any build of the site runs, started from the admin, a git push, a build hook or the Netlify UI, the button is locked and says so. Different sites build in parallel.
-- **Cancel and history** — your own build can be cancelled; the last deploys are listed with their state, when they ran and how long they took.
+- **Cancel and history** — a build started in Payload can be cancelled while it runs, or its preview deleted once it is ready. The last deploys are listed with who started them in Payload (or _not from Payload_), their state, when they ran and how long they took.
 - **Unsaved changes warning** — a build uses what is saved, so the drawer warns when the document has unsaved edits.
 - **Many sites** — each document can resolve to its own Netlify site, with a note of its own ("One site serves 4 editions…").
 - **Roles** — who may build and who may publish are ordinary Payload access functions.
@@ -114,7 +114,7 @@ pnpm payload generate:importmap
 
 ### 7. Try it
 
-Open a document of a listed collection and press **Publish** beside Save, then **Build preview**. The log starts streaming; when the build is done, **Open preview**, check it, and **Publish to <your domain>**.
+Open a document of a listed collection and press **Publish** beside Save, then **Start publishing**. The log starts streaming; when the build is done, **Open preview**, check it, and **Publish to <your domain>**.
 
 ## Options
 
@@ -140,13 +140,14 @@ Open a document of a listed collection and press **Publish** beside Save, then *
 | `404` from Netlify | the site id or domain is not one this token's account can see |
 | "You are not allowed to start a build." | `access.build` returned something other than `true` for this user |
 | "A build of this site is already running." | a build started elsewhere is still running; wait for it or cancel it on Netlify |
+| "A build of this site is being started." | someone started one less than 30 seconds ago and Netlify does not list it yet |
 | The build starts, but no log appears | the server runs Node older than 22 |
-| _Build and publish_ where you expected _Build preview_ | the site's auto-publishing is not locked (setup step 6) |
+| _Build and publish_ where you expected _Start publishing_ | the site's auto-publishing is not locked (setup step 6) |
 
 ## How it works
 
 - **Status** — the plugin reads the site and its latest production deploys from the Netlify API. The newest deploy decides what the drawer shows. The admin asks every few seconds while a build runs, and rarely otherwise, only while the tab is visible.
-- **Build** — `POST /sites/:site/builds`, titled `Payload · <editor>`, so the drawer knows its own builds. A site with stopped builds has them allowed just long enough to queue the build.
+- **Build** — `POST /sites/:site/builds`. Netlify keeps no title for a build started this way, so who started it is stored in Payload's key-value store (`payload.kv`, deploy id → the user's `useAsTitle`, or email), which is how the drawer knows its own builds. The same store holds a 30-second lock per site against a second click. A site with stopped builds has them allowed just long enough to queue the build.
 - **Publish** — restores the finished deploy, which is how a locked site is published.
 - **Log** — read from the WebSocket that `netlify logs:deploy` uses, a short read per request, so no connection outlives it.
 - **Security** — the token never leaves the server. The site always comes from the configuration and the document, never from the request, so the endpoints cannot be pointed at another site, and every endpoint needs a signed-in user.
@@ -159,7 +160,7 @@ All under your API route, with `collection` and `id` query parameters for a docu
 |---|---|
 | `GET /netlify-deploy/status` | the site, its phase, the current deploy, recent deploys, changes, permissions |
 | `POST /netlify-deploy/build` | start a build; `409` while one runs |
-| `POST /netlify-deploy/cancel` | `{ deployId }` — cancel a running build |
+| `POST /netlify-deploy/discard` | `{ deployId }` — cancel a running build, or delete a finished preview; never a published deploy |
 | `POST /netlify-deploy/publish` | `{ deployId }` — publish a finished build |
 | `GET /netlify-deploy/log?deploy=<id>` | the build log so far, and whether the build has ended |
 
@@ -167,7 +168,8 @@ All under your API route, with `collection` and `id` query parameters for a docu
 
 - **Build minutes** — a button makes builds easy to start. The lock stops parallel builds of a site, not frequent ones.
 - **Stopped builds** — for the few seconds a build is being queued on a site with stopped builds, a push to its production branch would build too. The same holds for any tool that builds such a site through the API.
-- **A discarded preview** stays a finished deploy on Netlify; the admin just stops offering it, per browser.
+- **A cancelled preview** is deleted from Netlify, so nobody is offered it again. A preview older than what is live is not offered either.
+- **The preview link** is the deploy's own address (`<deploy id>--<site>.netlify.app`). `master--<site>.netlify.app` is the branch alias and shows what is live, not the preview.
 
 ## License
 
