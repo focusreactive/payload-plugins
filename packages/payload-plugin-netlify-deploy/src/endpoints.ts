@@ -1,9 +1,10 @@
 import type { Access, CollectionSlug, Endpoint, PayloadRequest } from "payload";
 
-import { ENDPOINT, TITLE_PREFIX } from "./lib/constants.js";
+import { ENDPOINT, KV_PREFIX, START_LOCK_MS, TITLE_PREFIX } from "./lib/constants.js";
 import { NetlifyError, netlifyClient } from "./lib/netlify.js";
 import type { NetlifyClient, NetlifyDeploy, NetlifySite } from "./lib/netlify.js";
 import { isRunning, phaseOf, summarize } from "./lib/status.js";
+import type { BuildRecord } from "./lib/status.js";
 import type {
   DeployLog,
   DeployStatus,
@@ -32,13 +33,28 @@ const readBody = async (req: PayloadRequest): Promise<Record<string, unknown>> =
 const siteUrl = (site: NetlifySite) =>
   site.ssl_url ?? site.url ?? `https://${site.name}.netlify.app`;
 
+// The name the admin shows for the user — their collection's `useAsTitle` — and the email when
+// that field is empty.
 const userName = (req: PayloadRequest) => {
-  const user = req.user as { email?: string; id?: string | number } | null;
-  return user?.email ?? String(user?.id ?? "someone");
+  const user = req.user as (Record<string, unknown> & { collection?: string }) | null;
+  if (!user) {
+    return "someone";
+  }
+  const field = user.collection
+    ? req.payload.collections[user.collection as CollectionSlug]?.config.admin?.useAsTitle
+    : undefined;
+  const name = field && field !== "id" ? user[field] : undefined;
+  return typeof name === "string" && name ? name : String(user.email ?? user.id ?? "someone");
 };
 
 const allowed = async (check: Access | undefined, req: PayloadRequest) =>
   check ? (await check({ req })) === true : Boolean(req.user);
+
+const buildKey = (deployId: string) => `${KV_PREFIX}:build:${deployId}`;
+const lockKey = (siteId: string) => `${KV_PREFIX}:starting:${siteId}`;
+
+const recordOf = async (req: PayloadRequest, deployId: string): Promise<BuildRecord> =>
+  (await req.payload.kv.get<{ by: string }>(buildKey(deployId)).catch(() => null)) ?? null;
 
 // A deploy named in a request must belong to the site the document resolved to.
 const deployOf = async ({ api, site }: Context, deployId: unknown) => {
@@ -112,6 +128,7 @@ export const deployEndpoints = (options: NetlifyDeployOptions): Endpoint[] => {
       handler: handle(async ({ req, api, site, target }) => {
         const deploys: NetlifyDeploy[] = await api.deploys(site.id, 8);
         const phase = phaseOf(deploys[0], site);
+        const records = await Promise.all(deploys.map((deploy) => recordOf(req, deploy.id)));
         const publishedAt = site.published_deploy?.published_at ?? null;
         // What is live was read from Payload when its build started, not when it was published: a
         // save made while that build ran is not on the site, so it still counts as waiting.
@@ -137,8 +154,13 @@ export const deployEndpoints = (options: NetlifyDeployOptions): Endpoint[] => {
           note: target.note ?? null,
           lastPublishedAt: publishedAt,
           phase,
-          current: phase === "idle" || !deploys[0] ? null : summarize(deploys[0], site),
-          recent: deploys.slice(0, 5).map((deploy) => summarize(deploy, site)),
+          current:
+            phase === "idle" || !deploys[0]
+              ? null
+              : summarize(deploys[0], site, records[0] ?? null),
+          recent: deploys
+            .slice(0, 5)
+            .map((deploy, index) => summarize(deploy, site, records[index] ?? null)),
           changes,
           can: {
             build: await allowed(options.access?.build, req),
@@ -156,40 +178,61 @@ export const deployEndpoints = (options: NetlifyDeployOptions): Endpoint[] => {
         if (!(await allowed(options.access?.build, req))) {
           return fail("You are not allowed to start a build.", 403);
         }
+        // A build Netlify accepted takes a moment to show in its list, so a second click in that
+        // window would start a second build; the lock covers it.
+        const startedAt = await req.payload.kv.get<number>(lockKey(site.id)).catch(() => null);
+        if (startedAt && Date.now() - startedAt < START_LOCK_MS) {
+          return fail("A build of this site is being started.", 409);
+        }
         const deploys = await api.deploys(site.id, 5);
         if (deploys.some(isRunning)) {
           return fail("A build of this site is already running.", 409);
         }
+        await req.payload.kv.set(lockKey(site.id), Date.now());
         // A site whose builds are stopped (so pushes do not deploy by themselves) builds only while
         // they are allowed; they are stopped again as soon as the build is queued.
         const stopped = Boolean(site.build_settings?.stop_builds);
-        if (stopped) {
-          await api.stopBuilds(site.id, false);
-        }
         let build: { deploy_id: string };
         try {
+          if (stopped) {
+            await api.stopBuilds(site.id, false);
+          }
           build = await api.build(site.id, `${TITLE_PREFIX} · ${userName(req)}`);
+        } catch (error) {
+          await req.payload.kv.delete(lockKey(site.id)).catch(() => undefined);
+          throw error;
         } finally {
           if (stopped) {
             await api.stopBuilds(site.id, true);
           }
         }
+        await req.payload.kv.set(buildKey(build.deploy_id), { by: userName(req) });
         await notify(options.onBuild, context, build.deploy_id);
         return json({ deployId: build.deploy_id });
       }),
     },
     {
-      path: `${ENDPOINT}/cancel`,
+      // Throws the build away: a running one is cancelled, a finished preview is deleted from
+      // Netlify, so nobody is offered it again. What is live is never touched.
+      path: `${ENDPOINT}/discard`,
       method: "post",
       handler: handle(async (context) => {
         if (!(await allowed(options.access?.build, context.req))) {
-          return fail("You are not allowed to cancel a build.", 403);
+          return fail("You are not allowed to discard a build.", 403);
         }
         const deploy = await deployOf(context, (await readBody(context.req)).deployId);
         if (!deploy) {
           return fail("No such deploy on this site.", 404);
         }
-        await context.api.cancel(deploy.id);
+        if (deploy.id === context.site.published_deploy?.id || deploy.published_at) {
+          return fail("A published deploy cannot be discarded.", 409);
+        }
+        if (isRunning(deploy)) {
+          await context.api.cancel(deploy.id);
+        } else {
+          await context.api.remove(context.site.id, deploy.id);
+          await context.req.payload.kv.delete(buildKey(deploy.id)).catch(() => undefined);
+        }
         return json({ ok: true });
       }),
     },

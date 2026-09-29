@@ -57,7 +57,7 @@ export type NetlifyDeployOptions = {
 
 export type DeployPhase = "idle" | "queued" | "building" | "ready" | "failed";
 
-export type DeployTone = "live" | "busy" | "ready" | "failed" | "muted";
+export type DeployTone = "live" | "past" | "busy" | "ready" | "failed" | "muted";
 
 export type DeploySummary = {
   id: string;
@@ -65,6 +65,8 @@ export type DeploySummary = {
   tone: DeployTone;
   title: string | null;
   startedHere: boolean;
+  /** Who started it in Payload, read back from the build's title; null for a build started elsewhere. */
+  startedBy: string | null;
   createdAt: string;
   tookSeconds: number | null;
   errorMessage: string | null;

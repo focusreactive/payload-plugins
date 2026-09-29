@@ -4,7 +4,7 @@ import { Button } from "@payloadcms/ui";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 
-import type { DeployLog, DeployStatus, DeployTone } from "../types.js";
+import type { DeployLog, DeployStatus, DeploySummary, DeployTone } from "../types.js";
 import type { DeployAction } from "./useDeploy.js";
 
 /** What the panel shows: Netlify's phase, overridden while a request of ours is on its way. */
@@ -20,11 +20,12 @@ type Props = {
   onBuild: () => void;
   onCancel: () => void;
   onPublish: () => void;
-  onDiscard: () => void;
 };
 
+// Payload's theme has no green (`success` is blue), so live takes the Publish button's green.
 export const TONES: Record<DeployTone, string> = {
-  live: "var(--theme-success-500)",
+  live: "#16a34a",
+  past: "#2f5bd3",
   busy: "var(--theme-warning-600)",
   failed: "var(--theme-error-500)",
   ready: "#2f5bd3",
@@ -52,6 +53,31 @@ const duration = (seconds: number) =>
 
 const since = (time: string, now: number) =>
   duration(Math.max(0, Math.round((now - new Date(time).getTime()) / 1000)));
+
+// The preview's buttons sit side by side and read as one row: one width, a little wider than any label.
+const pairButton = { style: { minWidth: 140, justifyContent: "center" } };
+
+// Payload's buttons read their colours from these variables, which keeps the hover state. Its
+// theme has no green (`success` is blue), so the green that means "this goes live" is set here.
+export const GREEN_BUTTON = {
+  fontWeight: 600,
+  "--bg-color": "#16a34a",
+  "--hover-bg": "#15803d",
+  "--color": "#fff",
+  "--hover-color": "#fff",
+} as CSSProperties;
+
+export const GREY_BUTTON = {
+  "--bg-color": "var(--theme-elevation-150)",
+  "--hover-bg": "var(--theme-elevation-150)",
+  "--color": "var(--theme-elevation-800)",
+  "--hover-color": "var(--theme-elevation-800)",
+} as CSSProperties;
+
+const publishButton = { style: { ...pairButton.style, ...GREEN_BUTTON } };
+
+const author = (deploy: DeploySummary | null) =>
+  deploy?.startedHere ? `by ${deploy.startedBy ?? "someone"}` : "outside Payload";
 
 const clock = (time: string) =>
   new Date(time).toLocaleTimeString(undefined, {
@@ -112,7 +138,6 @@ export const DeployPanel = ({
   onBuild,
   onCancel,
   onPublish,
-  onDiscard,
 }: Props) => {
   const [now, setNow] = useState(() => Date.now());
   const logRef = useRef<HTMLDivElement>(null);
@@ -148,12 +173,18 @@ export const DeployPanel = ({
     building: {
       label: "Building",
       tone: "busy",
-      line: `Started ${ownBuild ? "from Payload" : "outside Payload"} ${current ? since(current.createdAt, now) : ""} ago`,
+      line: `Started ${author(current)} ${current ? since(current.createdAt, now) : ""} ago`,
     },
     ready: {
       label: "Preview ready",
       tone: "ready",
-      line: `Built${current?.tookSeconds ? ` in ${duration(current.tookSeconds)}` : ""} · not live yet`,
+      line: [
+        `Built ${current ? ago(current.createdAt, now) : ""} ${author(current)}`,
+        current?.tookSeconds ? `took ${duration(current.tookSeconds)}` : null,
+        "not live yet",
+      ]
+        .filter(Boolean)
+        .join(" · "),
     },
     failed: {
       label: "Failed",
@@ -167,6 +198,26 @@ export const DeployPanel = ({
     },
   };
   const state = badge[view];
+
+  // A preview holds what was saved when its build started; anything saved later waits for the next.
+  const builtAt = view === "ready" && current ? new Date(current.createdAt).getTime() : null;
+  const changeLists =
+    view === "idle"
+      ? [{ title: "Saved since the last publish", note: null, changes: status.changes }]
+      : builtAt !== null
+        ? [
+            {
+              title: "This preview includes",
+              note: null,
+              changes: status.changes.filter((c) => new Date(c.updatedAt).getTime() <= builtAt),
+            },
+            {
+              title: "Saved after this build started",
+              note: "Not in this preview. Build again to include them.",
+              changes: status.changes.filter((c) => new Date(c.updatedAt).getTime() > builtAt),
+            },
+          ]
+        : [];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, paddingBottom: 40 }}>
@@ -198,7 +249,7 @@ export const DeployPanel = ({
 
       {error && <span style={{ ...muted, color: "var(--theme-error-500)" }}>{error}</span>}
 
-      {unsaved && (view === "idle" || view === "failed") && (
+      {unsaved && (view === "idle" || view === "ready" || view === "failed") && (
         <Card
           style={{
             borderColor: "var(--theme-warning-300)",
@@ -232,6 +283,23 @@ export const DeployPanel = ({
           <span style={muted}>{state.line}</span>
         </div>
 
+        {view === "ready" && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              paddingTop: 16,
+              borderTop: "1px solid var(--theme-elevation-150)",
+            }}
+          >
+            <p style={heading}>Check the preview first</p>
+            <span style={muted}>
+              Open the pages you changed. Nothing is live until you publish.
+            </span>
+          </div>
+        )}
+
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           {view === "idle" && (
             <Button
@@ -241,7 +309,7 @@ export const DeployPanel = ({
               onClick={onBuild}
               size="medium"
             >
-              {site.locked ? "Build preview" : "Build and publish"}
+              {site.locked ? "Start publishing" : "Build and publish"}
             </Button>
           )}
           {view === "failed" && can.build && (
@@ -252,34 +320,77 @@ export const DeployPanel = ({
           {(view === "starting" || view === "queued" || view === "building") && (
             <>
               <Button buttonStyle="primary" disabled margin={false} size="medium">
-                {ownBuild || view === "starting" ? "Building…" : "Build preview"}
+                {ownBuild || view === "starting" ? "Building…" : "Start publishing"}
               </Button>
               {ownBuild && can.build && current && (
                 <Button
-                  buttonStyle="secondary"
-                  disabled={pending === "cancel"}
+                  buttonStyle="error"
+                  disabled={pending === "discard"}
                   margin={false}
                   onClick={onCancel}
                   size="medium"
                 >
-                  Cancel build
+                  Cancel
                 </Button>
               )}
             </>
           )}
           {view === "ready" && (
             <>
+              {current?.previewUrl && (
+                <Button
+                  buttonStyle="primary"
+                  el="anchor"
+                  extraButtonProps={pairButton}
+                  margin={false}
+                  newTab
+                  size="medium"
+                  url={current.previewUrl}
+                >
+                  Open preview
+                </Button>
+              )}
+              {current?.previewUrl && (
+                <span
+                  aria-hidden
+                  style={{
+                    width: 1,
+                    alignSelf: "stretch",
+                    margin: "0 8px",
+                    background: "var(--theme-elevation-150)",
+                  }}
+                />
+              )}
               <Button
                 buttonStyle="primary"
                 disabled={!can.publish}
+                extraButtonProps={publishButton}
                 margin={false}
                 onClick={onPublish}
                 size="medium"
               >
-                Publish to {host}
+                Publish
               </Button>
-              <Button buttonStyle="secondary" margin={false} onClick={onDiscard} size="medium">
-                Discard
+              {/* A new build replaces this preview as the one offered; this one stays on Netlify. */}
+              {can.build && (
+                <Button
+                  buttonStyle="secondary"
+                  extraButtonProps={pairButton}
+                  margin={false}
+                  onClick={onBuild}
+                  size="medium"
+                >
+                  Build again
+                </Button>
+              )}
+              <Button
+                buttonStyle="error"
+                disabled={pending === "discard"}
+                margin={false}
+                onClick={onCancel}
+                size="medium"
+              >
+                Cancel
               </Button>
             </>
           )}
@@ -293,7 +404,7 @@ export const DeployPanel = ({
         {view === "idle" && can.build && (
           <span style={muted}>
             {site.locked
-              ? "Builds the site from what is saved in Payload. You check the preview before anything goes live."
+              ? "Builds a preview from what is saved in Payload. You check it, then publish."
               : "Builds the site from what is saved in Payload. Netlify publishes it as soon as the build is ready."}
           </span>
         )}
@@ -311,27 +422,6 @@ export const DeployPanel = ({
         )}
       </Card>
 
-      {view === "ready" && current?.previewUrl && (
-        <Card
-          style={{ borderColor: "rgba(47, 91, 211, 0.35)", background: "rgba(47, 91, 211, 0.07)" }}
-        >
-          <p style={heading}>Check the preview first</p>
-          <span style={muted}>Open the pages you changed. Nothing is live until you publish.</span>
-          <div>
-            <Button
-              buttonStyle="secondary"
-              el="anchor"
-              margin={false}
-              newTab
-              size="medium"
-              url={current.previewUrl}
-            >
-              Open preview
-            </Button>
-          </div>
-        </Card>
-      )}
-
       {view === "failed" && current?.errorMessage && (
         <Card
           style={{ borderColor: "var(--theme-error-200)", background: "var(--theme-error-50)" }}
@@ -343,25 +433,28 @@ export const DeployPanel = ({
         </Card>
       )}
 
-      {(view === "idle" || view === "ready") && status.changes.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <p style={heading}>
-            {view === "ready" ? "This preview includes" : "Saved since the last publish"} ·{" "}
-            {status.changes.length}
-          </p>
-          {status.changes.map((change) => (
-            <div key={`${change.label}-${change.updatedAt}`} style={row}>
-              {change.url ? (
-                <a href={change.url} style={{ flexGrow: 1, fontWeight: 500 }}>
-                  {change.label}
-                </a>
-              ) : (
-                <span style={{ flexGrow: 1, fontWeight: 500 }}>{change.label}</span>
-              )}
-              <span style={muted}>saved {ago(change.updatedAt, now)}</span>
+      {changeLists.map(
+        (list) =>
+          list.changes.length > 0 && (
+            <div key={list.title} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <p style={heading}>
+                {list.title} · {list.changes.length}
+              </p>
+              {list.note && <span style={muted}>{list.note}</span>}
+              {list.changes.map((change) => (
+                <div key={`${change.label}-${change.updatedAt}`} style={row}>
+                  {change.url ? (
+                    <a href={change.url} style={{ flexGrow: 1, fontWeight: 500 }}>
+                      {change.label}
+                    </a>
+                  ) : (
+                    <span style={{ flexGrow: 1, fontWeight: 500 }}>{change.label}</span>
+                  )}
+                  <span style={muted}>saved {ago(change.updatedAt, now)}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )
       )}
 
       {(view === "queued" || view === "building" || view === "failed") && (
@@ -426,7 +519,7 @@ export const DeployPanel = ({
         </div>
       )}
 
-      {view === "idle" && status.recent.length > 0 && (
+      {status.recent.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <p style={heading}>Recent deploys</p>
           {status.recent.map((deploy) => (
@@ -434,9 +527,11 @@ export const DeployPanel = ({
               <Dot color={TONES[deploy.tone]} />
               <span style={{ flexGrow: 1, fontWeight: 500 }}>
                 {deploy.label}
-                {deploy.startedHere && (
-                  <span style={{ ...muted, fontWeight: 400 }}> · from Payload</span>
-                )}
+                <span style={{ ...muted, fontWeight: 400 }}>
+                  {deploy.startedHere
+                    ? ` · by ${deploy.startedBy ?? "someone"}`
+                    : " · not from Payload"}
+                </span>
               </span>
               <span style={muted}>{ago(deploy.createdAt, now)}</span>
               <span style={{ ...muted, width: 80, textAlign: "right" }}>

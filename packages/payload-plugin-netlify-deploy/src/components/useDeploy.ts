@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ENDPOINT } from "../lib/constants.js";
 import type { DeployLog, DeployStatus } from "../types.js";
 
-export type DeployAction = "build" | "cancel" | "publish";
+export type DeployAction = "build" | "discard" | "publish";
 
 // Often while something runs, rarely while nothing does — and only while the tab is in view.
 const POLL_ACTIVE_MS = 3000;
@@ -165,7 +165,7 @@ export const useDeploy = ({ collection, id, open, refreshKey }: Args) => {
     log,
     pending,
     build: () => act("build"),
-    cancel: (deploy: string) => act("cancel", { deployId: deploy }),
+    discard: (deploy: string) => act("discard", { deployId: deploy }),
     publish: (deploy: string) => act("publish", { deployId: deploy }),
   };
 };
