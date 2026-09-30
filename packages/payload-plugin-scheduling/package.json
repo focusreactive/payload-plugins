@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "@types/node": "22.19.9",
-    "payload": "3.79.0",
+    "payload": "3.90.1",
     "tsup": "8.0.0",
     "typescript": "5.0.2",
     "vitest": "^2.1.8"

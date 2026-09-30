@@ -19,6 +19,7 @@ import { Posts } from "@/collections/Posts";
 import { Testimonials } from "@/collections/Testimonials";
 import { Users } from "@/collections/Users";
 import { I18N_CONFIG } from "@/lib/config/i18n";
+import { MAX_UPLOAD_BYTES } from "@/lib/constants/uploadLimits";
 import { createDatabaseAdapter } from "@/lib/database";
 import { SiteSettings } from "@/globals/SiteSettings/config";
 import { plugins } from "@/lib/plugins";
@@ -106,6 +107,14 @@ export default buildConfig({
   plugins,
   secret: process.env.PAYLOAD_SECRET || "",
   sharp,
+  upload: {
+    limits: {
+      fileSize: MAX_UPLOAD_BYTES,
+    },
+    // Multipart framing sits on top of the file bytes.
+    requestSizeLimit: MAX_UPLOAD_BYTES + 1024 * 1024,
+    uploadTimeout: 0,
+  },
   typescript: {
     outputFile: path.resolve(baseDir, "payload-types.ts"),
   },

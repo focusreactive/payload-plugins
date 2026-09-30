@@ -24,7 +24,7 @@ Validate changes with: `bun run check-types && bun run lint`.
 
 ## Tech Stack
 
-Next.js 16 + React 19 with Payload CMS 3.84, PostgreSQL, Tailwind CSS 4, next-intl 4. **React Compiler is enabled — do not use `useMemo` or `useCallback`.**
+Next.js 16 + React 19 with Payload CMS 3.90, PostgreSQL, Tailwind CSS 4, next-intl 4. **React Compiler is enabled — do not use `useMemo` or `useCallback`.**
 
 ## Architecture
 

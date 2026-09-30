@@ -64,13 +64,13 @@
     "access": "public"
   },
   "devDependencies": {
-    "@payloadcms/ui": "3.79.0",
+    "@payloadcms/ui": "3.90.1",
     "@swc/cli": "0.4.0",
     "@swc/core": "1.7.0",
     "@types/react": "19.2.9",
     "@types/react-dom": "19.2.3",
     "copyfiles": "2.4.1",
-    "payload": "3.79.0",
+    "payload": "3.90.1",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "typescript": "5.5.2"
