@@ -38,7 +38,11 @@ describe("translatorPlugin — the endpoint access decision is not optional", ()
     const error = await build({}).catch((e: Error) => e);
 
     expect(error).toBeInstanceOf(Error);
-    expect((error as Error).message).toContain("access");
+    const message = (error as Error).message;
+    expect(message).toContain("access");
+    // The refusal stops the process at startup, so it owes the reader the way out, not just the
+    // diagnosis. `AnyAccessGuard` is the only one of the two that cannot be guessed from the field.
+    expect(message).toContain("AnyAccessGuard");
   });
 
   it("builds when a guard is supplied", async () => {

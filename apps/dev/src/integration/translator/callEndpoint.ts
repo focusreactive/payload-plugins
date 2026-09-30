@@ -19,7 +19,6 @@ export async function callEndpoint(
   opts?: {
     routeParams?: Record<string, unknown>;
     body?: unknown;
-    /** Who is calling. Omitted means an anonymous request, which is what most specs want. */
     user?: { id: string | number; collection: string } | null;
   }
 ): Promise<{ status: number; data: unknown }> {

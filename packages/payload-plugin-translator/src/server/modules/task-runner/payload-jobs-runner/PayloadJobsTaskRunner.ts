@@ -12,8 +12,6 @@ import type { RequestScope } from "../../../shared/payload/RequestScope.shapes.j
 import { freshReq } from "../../../shared/payload/RequestScope.shapes.js";
 
 const APPEND_ATTEMPTS = 2;
-
-/** Bounded by the database pool, not the CPU — a `select_all` enqueue can span thousands of groups. */
 const ENQUEUE_CONCURRENCY = 10;
 
 type QueueWorkflow = (args: {
@@ -31,19 +29,16 @@ function requestShape(task: TaskInput, scope: RequestScope): RequestShape {
     sourceLng: task.sourceLng,
     strategy: task.strategy,
     publishOnTranslation: task.publishOnTranslation,
-    requesterId: scope.userId ?? null,
-    requesterCollection: scope.userCollection ?? null,
+    requesterId: scope.requester?.userId ?? null,
+    requesterCollection: scope.requester?.userCollection ?? null,
   };
 }
 
-/** `pickHost` matches on the same shape, so no two groups can pick the same host job — which is what
- * makes the parallel `serve` calls safe. */
 function requestKey(task: TaskInput, scope: RequestScope): string {
   return JSON.stringify(requestShape(task, scope));
 }
 
 function documentKey(collectionSlug: string, collectionId: string): string {
-  // NUL separator: no slug or id can contain it.
   return `${collectionSlug}\u0000${collectionId}`;
 }
 
@@ -111,16 +106,12 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   ): Promise<string[]> {
     let current = job;
     let undelivered = locales;
-    // `input` is one JSON column, so a concurrent append replaces the whole list; the union makes a
-    // retry from the stored row harmless.
     for (let attempt = 0; attempt < APPEND_ATTEMPTS; attempt++) {
       const listed = current.input?.target_lngs ?? [];
       const missing = locales.filter((locale) => !listed.includes(locale));
       const debounce = waitUntil && !current.processing ? waitUntil.toISOString() : undefined;
       if (missing.length === 0 && !debounce) return [];
 
-      // Not `payload.update`: it rewrites the whole row and reverts log entries written in between.
-      // See D2 of docs/plans/2026-09-08-one-live-job-per-document.task.md.
       await this.payload.db.updateOne({
         req: freshReq(scope),
         collection: this.config.jobsCollection,
@@ -156,12 +147,10 @@ export class PayloadJobsTaskRunner implements TaskRunner {
       target_lngs: targetLngs,
       strategy: request.strategy,
       publish_on_translation: request.publishOnTranslation,
-      requester_id: scope.userId ?? null,
-      requester_collection: scope.userCollection ?? null,
+      requester_id: scope.requester?.userId ?? null,
+      requester_collection: scope.requester?.userCollection ?? null,
     };
 
-    // Cast: `jobs.queue` is typed over the host's generated slugs, which cannot include a workflow
-    // registered at config time.
     const queueJob = this.payload.jobs.queue as unknown as QueueWorkflow;
     await queueJob({
       workflow: this.config.workflowName,
@@ -175,11 +164,6 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   async cancel(taskIds: string[]): Promise<void> {
     if (taskIds.length === 0) return;
 
-    // Mark then delete: the delete alone would drop the row from the status feed under
-    // `deleteJobOnComplete: false` with no record of why, and the mark does not reach a running
-    // handler — D1 of docs/plans/2026-09-08-one-live-job-per-document.task.md.
-    // `ownJobs()` on both calls: a queue name is the host's to choose and may be shared, so an id
-    // alone could reach somebody else's job.
     await this.payload.jobs.cancel({
       where: { and: [this.ownJobs(), { id: { in: taskIds } }] },
       queue: this.config.queueName,
@@ -204,8 +188,6 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     }
     await this.clearPickerBlockers(taskId);
 
-    // Not `jobs.runByID`: the picker guard is built only on the `where` path — see
-    // docs/plans/2026-09-04-job-scan-bounds.task.md.
     const result = await this.payload.jobs.run({
       queue: this.config.queueName,
       where: { id: { equals: taskId } },
@@ -282,7 +264,6 @@ export class PayloadJobsTaskRunner implements TaskRunner {
   }
 
   private ownJobs(): Where {
-    // Pre-workflow jobs are still in the table: docs/DEPRECATIONS.md#jobs-per-locale-task-shape
     return {
       or: [
         { workflowSlug: { equals: this.config.workflowName } },
@@ -303,8 +284,6 @@ export class PayloadJobsTaskRunner implements TaskRunner {
     const response = await this.payload.find({
       req: freshReq(scope),
       collection: this.config.jobsCollection,
-      // The legacy `input.collection` is a declared relationship; at the default depth Payload
-      // populates it, and `readCollectionRef` would then read a document where it wants an id.
       depth: 0,
       pagination: false,
       where: { and },

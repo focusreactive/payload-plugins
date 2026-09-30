@@ -3,6 +3,7 @@ import type { Payload, CollectionSlug } from "payload";
 import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner.js";
 import type { PayloadJobsRunnerConfig, PayloadJob } from "./types.js";
 import type { TaskInput } from "../types.js";
+import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
 
 describe("PayloadJobsTaskRunner", () => {
   let mockPayload: {
@@ -128,6 +129,21 @@ describe("PayloadJobsTaskRunner", () => {
         },
         req: {},
       });
+    });
+
+    // The other half of the round trip `requesterRoundTrip.test.ts` reads back. Without a case
+    // carrying a real requester, both columns could be hardcoded to null and stay green — and a job
+    // row naming nobody is a job that writes without a permission check.
+    it("writes the requester who asked into the job row", async () => {
+      await runner.enqueue([createInput()], {
+        requester: asRequester(0, "editors"),
+      });
+
+      expect(mockPayload.jobs.queue).toHaveBeenCalledWith(
+        expect.objectContaining({
+          input: expect.objectContaining({ requester_id: 0, requester_collection: "editors" }),
+        })
+      );
     });
 
     // Enqueuing now joins the caller's transaction, which it did not before the scope existed. That

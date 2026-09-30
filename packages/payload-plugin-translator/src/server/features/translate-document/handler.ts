@@ -8,12 +8,9 @@ import type { ProvenanceServiceFactory } from "../../modules/provenance/index.js
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import { freshReq } from "../../shared/payload/RequestScope.shapes.js";
-import {
-  checkTranslationPermission,
-  mayWrite,
-} from "../../shared/payload/translationPermission.js";
-import type { TranslationPermission } from "../../shared/payload/translationPermission.js";
-import { TranslationRefused } from "../../shared/payload/TranslationRefused.js";
+import { checkTranslationPermission, mayWrite } from "./translationPermission.js";
+import type { TranslationPermission } from "./translationPermission.js";
+import { TranslationRefused } from "./TranslationRefused.js";
 
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext.js";
@@ -72,7 +69,6 @@ export class TranslateDocumentHandler implements Handler<
       targetLng,
     });
 
-    // Unconditional: with no drafts Payload has no version to substitute and returns the only row.
     const [sourceData, currentTargetVersion] = await Promise.all([
       fetchSourceDocument(payload, collection, collectionId, sourceLng, scope),
       payload.findByID({
@@ -86,14 +82,11 @@ export class TranslateDocumentHandler implements Handler<
       }),
     ]);
 
-    // Placed ahead of the provider call so a refusal costs no money: a retry re-asks instead of
-    // re-buying a translation the write will refuse. `sourceData` stands in for the write payload — a
-    // rule keyed on the *translated* values is still enforced at the write on the deferred path.
     const permission = await checkTranslationPermission({
       payload,
       collection,
       id: String(collectionId),
-      data: sourceData as Record<string, unknown>,
+      data: sourceData,
       targetLocale: targetLng,
       scope,
     });

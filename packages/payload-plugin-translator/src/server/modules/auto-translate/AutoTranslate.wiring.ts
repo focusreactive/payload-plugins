@@ -9,7 +9,7 @@ import {
   makeCollectionPolicyResolver,
   normalizeAutoTranslateConfig,
 } from "./AutoTranslate.policy.js";
-import type { NormalizedAutoTranslatePolicy } from "./AutoTranslate.policy.js";
+import type { LocalizationLike, NormalizedAutoTranslatePolicy } from "./AutoTranslate.policy.js";
 import {
   injectAutoTranslateHook,
   makeAutoTranslateHook,
@@ -46,6 +46,34 @@ function warnDroppedLocales(
 }
 
 /**
+ * Runs while the config is still being built, so a locale nobody configured is dropped before the
+ * first hook can enqueue a translation for it — after that it would cost provider calls and leave
+ * translations under a locale the project cannot serve.
+ */
+function dropLocalesTheProjectDoesNotHave(
+  config: { localization?: LocalizationLike },
+  slugs: Set<string>,
+  policies: Map<string, NormalizedAutoTranslatePolicy>
+): void {
+  const knownLocales = extractLocaleCodes(config.localization);
+  if (!knownLocales) {
+    if (slugs.size > 0) {
+      console.warn(
+        "[payload-plugin-translator] auto-translate is configured but localization is disabled; no translations will be enqueued."
+      );
+    }
+    return;
+  }
+  for (const slug of slugs) {
+    const policy = policies.get(slug);
+    if (!policy) continue;
+    const filtered = filterPolicyToKnownLocales(policy, knownLocales);
+    warnDroppedLocales(slug, filtered, knownLocales);
+    policies.set(slug, filtered.policy);
+  }
+}
+
+/**
  * Turn the opt-in `withAutoTranslate` config (read from each collection's `custom`) into a
  * self-contained {@link AutoTranslateModule} — mirrors `configureProvenance`. Builds the per-collection
  * policy map + resolver once, then returns a `configure(managedSlugs) → ConfigModifier` that injects a
@@ -72,28 +100,9 @@ export function configureAutoTranslate(
     configure:
       (managedSlugs: Set<string>): ConfigModifier =>
       (config) => {
-        // Inject only onto collections that both opted in AND are plugin-managed.
         const slugs = new Set([...enabledSlugs].filter((slug) => managedSlugs.has(slug)));
-        // Drop targets / source-locale overrides that are not configured locales, fail-fast with a
-        // warning at init — else a mistyped locale silently burns provider calls and orphans data at
-        // runtime. Filter the shared `policies` map once here (config-time, before any hook fires), so
-        // the hook, the propagated `custom`, and the admin indicator all read the corrected policy.
-        const knownLocales = extractLocaleCodes(config.localization);
-        if (knownLocales) {
-          for (const slug of slugs) {
-            const policy = policies.get(slug);
-            if (!policy) continue;
-            const filtered = filterPolicyToKnownLocales(policy, knownLocales);
-            warnDroppedLocales(slug, filtered, knownLocales);
-            policies.set(slug, filtered.policy);
-          }
-        } else if (slugs.size > 0) {
-          console.warn(
-            "[payload-plugin-translator] auto-translate is configured but localization is disabled; no translations will be enqueued."
-          );
-        }
+        dropLocalesTheProjectDoesNotHave(config, slugs, policies);
         injectAutoTranslateHook(config, slugs, hook);
-        // Mirror the opt-in onto the registered collection's `custom` so the admin UI can read it back.
         propagateAutoTranslateCustom(config, slugs, policies);
         return config;
       },

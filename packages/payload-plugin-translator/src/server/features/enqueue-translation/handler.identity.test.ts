@@ -45,7 +45,7 @@ describe("POST /enqueue — who the queued translation is attributed to", () => 
     await handler.handle(req);
 
     const [, scope] = enqueue.mock.calls[0] as [unknown, Record<string, unknown>];
-    expect(scope).toMatchObject({ userId: "anna", userCollection: "users" });
+    expect(scope).toMatchObject({ requester: { userId: "anna", userCollection: "users" } });
   });
 
   it("records nobody when the request carried no session", async () => {
@@ -54,6 +54,6 @@ describe("POST /enqueue — who the queued translation is attributed to", () => 
     await handler.handle(req);
 
     const [, scope] = enqueue.mock.calls[0] as [unknown, Record<string, unknown>];
-    expect(scope.userId).toBeNull();
+    expect(scope.requester).toBeNull();
   });
 });

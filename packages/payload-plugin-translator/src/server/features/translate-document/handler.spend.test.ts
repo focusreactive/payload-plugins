@@ -10,16 +10,15 @@ vi.mock("../../../core/translation-pipeline/index.js", () => ({
   translateContent: vi.fn().mockResolvedValue({ title: "Titel" }),
 }));
 
-vi.mock("../../shared/payload/translationPermission.js", () => ({
+vi.mock("./translationPermission.js", () => ({
   checkTranslationPermission: vi.fn(),
-  // The second ask, with the payload each write actually sends; allowed unless a case says otherwise.
   mayWrite: vi.fn().mockResolvedValue(true),
 }));
 
 const mocks = async () => ({
   translate: (await import("../../../core/translation-pipeline/index.js"))
     .translateContent as ReturnType<typeof vi.fn>,
-  permission: (await import("../../shared/payload/translationPermission.js"))
+  permission: (await import("./translationPermission.js"))
     .checkTranslationPermission as ReturnType<typeof vi.fn>,
 });
 

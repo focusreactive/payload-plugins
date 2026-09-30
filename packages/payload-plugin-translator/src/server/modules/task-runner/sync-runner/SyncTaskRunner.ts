@@ -6,7 +6,7 @@ import type { TaskHandler } from "../TaskRunnerProvider.interface.js";
 import type { Task, TaskInput, RunResult, ID } from "../types.js";
 import type { LazyMap } from "../../../shared/utils/index.js";
 import type { RequestScope } from "../../../shared/payload/RequestScope.shapes.js";
-import { killedTheCallersTransaction } from "../../../shared/payload/RequestScope.shapes.js";
+import { killedTheCallersTransaction } from "../../../shared/payload/killedTheCallersTransaction.js";
 
 /**
  * Synchronous TaskRunner implementation.
@@ -15,11 +15,15 @@ import { killedTheCallersTransaction } from "../../../shared/payload/RequestScop
  * Stores results in memory for status queries.
  */
 export class SyncTaskRunner implements TaskRunner {
-  constructor(
-    private readonly payload: Payload,
-    private readonly handler: TaskHandler,
-    private readonly tasks: LazyMap<string, Task>
-  ) {}
+  private readonly payload: Payload;
+  private readonly handler: TaskHandler;
+  private readonly tasks: LazyMap<string, Task>;
+
+  constructor(payload: Payload, handler: TaskHandler, tasks: LazyMap<string, Task>) {
+    this.payload = payload;
+    this.handler = handler;
+    this.tasks = tasks;
+  }
 
   async enqueue(inputs: TaskInput[], scope: RequestScope = {}): Promise<void> {
     for (const input of inputs) {
@@ -37,6 +41,14 @@ export class SyncTaskRunner implements TaskRunner {
 
       this.tasks.set(key, task);
 
+      const markEvictable = (status: "completed" | "failed", error?: Task["error"]) => {
+        const at = new Date().toISOString();
+        task.status = status;
+        task.updatedAt = at;
+        if (status === "completed") task.completedAt = at;
+        if (error) task.error = error;
+      };
+
       try {
         await this.handler(
           this.payload,
@@ -51,20 +63,12 @@ export class SyncTaskRunner implements TaskRunner {
           scope
         );
 
-        task.status = "completed";
-        task.completedAt = new Date().toISOString();
+        markEvictable("completed");
       } catch (error) {
-        task.status = "failed";
-        task.error = {
+        markEvictable("failed", {
           message: error instanceof Error ? error.message : "Unknown error",
-        };
-        // Abandon the remaining locales: with the caller's transaction already rolled back they
-        // would only pile up errors against a dead one.
+        });
         if (killedTheCallersTransaction(scope, error)) throw error;
-      } finally {
-        // `finally`, not after the `try`: the rethrow above must still leave a timestamp, or
-        // `LazyMap` never evicts the failed task.
-        task.updatedAt = new Date().toISOString();
       }
     }
   }
@@ -74,7 +78,6 @@ export class SyncTaskRunner implements TaskRunner {
   }
 
   async run(_taskId: string): Promise<RunResult> {
-    // Sync runner executes tasks immediately, no pending tasks to run
     return { success: false, error: "not_found" };
   }
 
@@ -89,9 +92,6 @@ export class SyncTaskRunner implements TaskRunner {
     for (const [, task] of this.tasks) {
       if (task.input.collectionSlug !== collectionSlug) continue;
       if (wanted && !wanted.has(task.input.collectionId)) continue;
-      // Keyed on `completedAt`, the same field the jobs runner pushes into its where clause. Keying
-      // on `status` instead would agree only by accident: `getJobStatus` happens to check
-      // `completedAt` before `error`, and reordering it would silently split the two runners.
       if (excludeCompleted && task.completedAt) continue;
       results.push(task);
     }
@@ -99,8 +99,6 @@ export class SyncTaskRunner implements TaskRunner {
     return results;
   }
 
-  // Keyed by (document, target locale) so translating a second locale of the same document does not
-  // evict the first — findByCollection must be able to return one task per locale.
   private getKey(collectionSlug: CollectionSlug, collectionId: ID, targetLng: string): string {
     return `${collectionSlug}:${collectionId}:${targetLng}`;
   }

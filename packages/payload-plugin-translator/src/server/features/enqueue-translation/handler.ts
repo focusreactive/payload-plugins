@@ -1,7 +1,7 @@
 import type { PayloadRequest } from "payload";
 
 import { ServerResponse } from "../../shared/index.js";
-import { authCollectionsOf, identityOf } from "../../shared/payload/RequestScope.shapes.js";
+import { authCollectionsOf, identityOf } from "../../shared/payload/identityOf.js";
 import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 import { extractLocaleCodes } from "../../modules/auto-translate/index.js";
 import type { LocalizationLike } from "../../modules/auto-translate/index.js";
@@ -39,8 +39,6 @@ export class EnqueueTranslationHandler {
         "Content of this collection is not available for translation"
       );
 
-    // Writing a phantom locale orphans rows on Mongo/SQLite, errors on Postgres' locale enum, and
-    // with no localization at all overwrites the single unlocalized field — wiping the source.
     const knownLocales = extractLocaleCodes(
       req.payload.config?.localization as LocalizationLike | undefined
     );
@@ -49,12 +47,11 @@ export class EnqueueTranslationHandler {
         "Localization is not enabled in this Payload config; there are no target locales to translate into"
       );
 
-    // `resolveTargets` only excludes the source from the targets, so an unconfigured code would
-    // otherwise reach `payload.findByID({ locale })` unchecked.
-    if (!knownLocales.has(source_lng))
+    if (!knownLocales.has(source_lng)) {
       return ServerResponse.badRequest(
         `source_lng "${source_lng}" is not one of this project's configured locales`
       );
+    }
 
     const { targets, droppedUnknown } = Locales.resolveTargets({
       target_lng,

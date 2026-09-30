@@ -10,6 +10,8 @@ import type {
 import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner.js";
 import { readCollectionRef } from "./readCollectionRef.js";
 import type { TaskRunnerContext, TaskRunnerProvider } from "../TaskRunnerProvider.interface.js";
+import type { Requester } from "../../../shared/payload/RequestScope.shapes.js";
+import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
 import type { TranslationStrategyName } from "../../../../core/translation-pipeline/strategies/index.js";
 
 const defaultAutoRun: Required<AutoRunConfig> = {
@@ -36,6 +38,17 @@ const defaultValues = {
     },
   },
 };
+
+/**
+ * Rows queued before the scope carried one `requester` object are already on disk as two nullable
+ * columns, so both must be present before they read back as an identity.
+ */
+export function requesterOf(input: {
+  requester_id?: string | number | null;
+  requester_collection?: string | null;
+}): Requester | null {
+  return asRequester(input.requester_id, input.requester_collection);
+}
 
 export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
   private readonly config: PayloadJobsRunnerConfig;
@@ -147,7 +160,6 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
           };
         }) => {
           const { collectionSlug, collectionId } = readCollectionRef(args.input);
-          // A job's own request carries no user, so the requester travels in the row.
           await handler(
             args.req.payload,
             {
@@ -158,10 +170,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
               strategy: args.input.strategy,
               publishOnTranslation: args.input.publish_on_translation ?? false,
             },
-            {
-              userId: args.input.requester_id ?? null,
-              userCollection: args.input.requester_collection ?? null,
-            }
+            { requester: requesterOf(args.input) }
           );
           return { output: {} };
         },

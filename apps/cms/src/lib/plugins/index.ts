@@ -338,7 +338,6 @@ export const plugins: Plugin[] = [
     collections: [PageCollection, Posts, Categories, Authors, Testimonials, Header, Footer].map(
       (col) => JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
     ),
-    // Payload does not authenticate custom endpoints, so the plugin requires this check.
     access: { check: ({ req }) => Boolean(req.user) },
     runner: createSyncRunner(),
     translationProvider: createOpenAIProvider({

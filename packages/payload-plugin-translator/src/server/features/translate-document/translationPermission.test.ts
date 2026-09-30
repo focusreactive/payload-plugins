@@ -3,6 +3,7 @@ import type { Payload } from "payload";
 import { APIError } from "payload";
 
 import { readFailureReason } from "../../../core/domain/translation-providers/failureReason.js";
+import { asRequester } from "../../shared/payload/RequestScope.shapes.js";
 
 vi.mock("payload", async (importOriginal) => ({
   ...(await importOriginal<typeof import("payload")>()),
@@ -20,7 +21,7 @@ const A_REAL_REQUEST = { headers: new Headers(), i18n: {}, t: () => "", context:
 
 const { checkTranslationPermission } = await import("./translationPermission.js");
 
-const ANNA = { userId: "anna", userCollection: "users" };
+const ANNA = { requester: asRequester("anna", "users") };
 
 const payload = {
   collections: {

@@ -5,6 +5,7 @@ import { TranslateDocumentHandler } from "./handler.js";
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { TranslateDocumentInput } from "./model.js";
+import { asRequester } from "../../shared/payload/RequestScope.shapes.js";
 
 vi.mock("../../../core/translation-pipeline/index.js", () => ({
   translateContent: vi.fn(),
@@ -15,14 +16,13 @@ const pipeline = async () =>
     typeof vi.fn
   >;
 
-vi.mock("../../shared/payload/translationPermission.js", () => ({
+vi.mock("./translationPermission.js", () => ({
   checkTranslationPermission: vi.fn(),
-  // The second ask, with the payload each write actually sends; allowed unless a case says otherwise.
   mayWrite: vi.fn().mockResolvedValue(true),
 }));
 
 const permission = async () =>
-  (await import("../../shared/payload/translationPermission.js"))
+  (await import("./translationPermission.js"))
     .checkTranslationPermission as ReturnType<typeof vi.fn>;
 
 describe("TranslateDocumentHandler — it asks before it writes", () => {
@@ -85,13 +85,13 @@ describe("TranslateDocumentHandler — it asks before it writes", () => {
   });
 
   it("asks about the document it is about to write, with the caller's identity", async () => {
-    await handler.handle(payload, input(), { userId: "anna", userCollection: "users" });
+    await handler.handle(payload, input(), { requester: asRequester("anna", "users") });
 
     expect(await permission()).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: "posts",
         id: "doc-123",
-        scope: expect.objectContaining({ userId: "anna" }),
+        scope: expect.objectContaining({ requester: asRequester("anna", "users") }),
       })
     );
   });

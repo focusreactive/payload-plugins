@@ -1,4 +1,4 @@
-import type { CollectionSlug, PayloadRequest } from "payload";
+import type { PayloadRequest } from "payload";
 
 import { getByPath, ServerResponse } from "../../shared/index.js";
 import { translateContent } from "../../../core/translation-pipeline/index.js";
@@ -49,36 +49,33 @@ export class TranslateFieldHandler {
     const { collection_slug, field_path, target_lng, source_lng, doc_id } = parsed.data;
 
     const fields = this.config.schemaMap.get(collection_slug);
-    if (!fields)
+    if (!fields) {
       return ServerResponse.badRequest(
         `Collection "${collection_slug}" is not available for translation`
       );
+    }
 
     const known = extractLocaleCodes(
       req.payload?.config?.localization as LocalizationLike | undefined
     );
-    if (!known)
+    if (!known) {
       return ServerResponse.badRequest(
         "Localization is not enabled in this Payload config; there is nothing to translate between"
       );
+    }
+
     for (const [name, code] of [
       ["source_lng", source_lng],
       ["target_lng", target_lng],
-    ] as const) {
-      if (!known.has(code))
+    ]) {
+      if (!known.has(code)) {
         return ServerResponse.badRequest(
           `${name} "${code}" is not one of this project's configured locales`
         );
+      }
     }
 
-    // The whole document, not just the field: the resolver needs it to disambiguate `blocks`, whose
-    // `blockType` lives in the data.
-    const sourceDoc = await fetchSourceDocument(
-      req.payload,
-      collection_slug as CollectionSlug,
-      doc_id, // JobIdSchema normalizes to a string; Payload coerces per the collection's id type
-      source_lng
-    );
+    const sourceDoc = await fetchSourceDocument(req.payload, collection_slug, doc_id, source_lng);
     const sourceValue = getByPath(sourceDoc as Record<string, unknown>, field_path);
 
     if (byteLength(sourceValue) > MAX_FIELD_VALUE_BYTES) {

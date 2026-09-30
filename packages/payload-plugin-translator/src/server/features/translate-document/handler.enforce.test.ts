@@ -5,19 +5,19 @@ import { TranslateDocumentHandler } from "./handler.js";
 import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { TranslateDocumentInput } from "./model.js";
+import { asRequester } from "../../shared/payload/RequestScope.shapes.js";
 
 vi.mock("../../../core/translation-pipeline/index.js", () => ({
   translateContent: vi.fn().mockResolvedValue({ title: "Titel" }),
 }));
 
-vi.mock("../../shared/payload/translationPermission.js", () => ({
+vi.mock("./translationPermission.js", () => ({
   checkTranslationPermission: vi.fn(),
-  // The second ask, with the payload each write actually sends; allowed unless a case says otherwise.
   mayWrite: vi.fn().mockResolvedValue(true),
 }));
 
 const permission = async () =>
-  (await import("../../shared/payload/translationPermission.js"))
+  (await import("./translationPermission.js"))
     .checkTranslationPermission as ReturnType<typeof vi.fn>;
 
 const ANNA = { id: "anna", collection: "users" };
@@ -61,7 +61,7 @@ describe("TranslateDocumentHandler — where Payload's own enforcement is afford
   });
 
   it("lets Payload check the deferred write as well", async () => {
-    await handler.handle(payload, input(), { userId: "anna", userCollection: "users" });
+    await handler.handle(payload, input(), { requester: asRequester("anna", "users") });
 
     expect(writeArgs()).toMatchObject({ overrideAccess: false, user: ANNA });
   });
@@ -71,8 +71,7 @@ describe("TranslateDocumentHandler — where Payload's own enforcement is afford
   it("lets Payload check the inline write as well", async () => {
     await handler.handle(payload, input(), {
       transactionID: "tx-1",
-      userId: "anna",
-      userCollection: "users",
+      requester: asRequester("anna", "users"),
     });
 
     expect(writeArgs()).toMatchObject({ overrideAccess: false, user: ANNA });

@@ -59,7 +59,7 @@ describe("auto-translate hook — whose identity reaches the runner", () => {
     await hook(hookArgs({ user: { id: "anna", collection: "users" } }));
 
     const [, scope] = enqueue.mock.calls[0] as [unknown, Record<string, unknown>];
-    expect(scope).toMatchObject({ userId: "anna", userCollection: "users" });
+    expect(scope).toMatchObject({ requester: { userId: "anna", userCollection: "users" } });
   });
 
   it("hands no identity when the save carried none", async () => {
@@ -68,12 +68,10 @@ describe("auto-translate hook — whose identity reaches the runner", () => {
     await hook(hookArgs({ user: null }));
 
     const [, scope] = enqueue.mock.calls[0] as [unknown, Record<string, unknown> | undefined];
-    expect(scope?.userId ?? null).toBeNull();
+    expect(scope?.requester ?? null).toBeNull();
   });
 
-  // A bulk update maps every document over one shared request; anything written onto it would reach
-  // the next document in the batch.
-  it("does not mutate the request it read the user from", async () => {
+  it("does not mutate the request a bulk update shares across every document", async () => {
     const { hook } = setup();
     const args = hookArgs({ user: { id: "anna", collection: "users" } });
     const before = JSON.stringify(Object.keys(args.req).sort());

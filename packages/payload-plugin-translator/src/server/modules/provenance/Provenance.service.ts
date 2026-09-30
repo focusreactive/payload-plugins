@@ -5,7 +5,7 @@ import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { isRecordStale } from "../../../core/domain/provenance/index.js";
 import type { ProvenanceKey, ProvenanceStore } from "../../../core/domain/provenance/index.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
-import { killedTheCallersTransaction } from "../../shared/payload/RequestScope.shapes.js";
+import { killedTheCallersTransaction } from "../../shared/payload/killedTheCallersTransaction.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
 

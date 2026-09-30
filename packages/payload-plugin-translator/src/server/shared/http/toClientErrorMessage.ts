@@ -22,8 +22,6 @@ export function failureReasonText(message?: string): string | null {
 /** Shown to the browser instead of a raw provider/runtime error outside development. */
 export const GENERIC_TRANSLATION_ERROR = "Translation failed. See the server logs for details.";
 
-// Only these environments get the raw message as a debug aid. Anything else — production, an unset
-// or misconfigured NODE_ENV — is treated as "not debug", so the default is the safe, generic text.
 const DEBUG_ENVS = new Set(["development", "test"]);
 
 /**
@@ -43,7 +41,7 @@ export function toClientErrorMessage(message?: string): string {
   const reasonText = failureReasonText(message);
   if (reasonText !== null) return reasonText;
 
-  if (DEBUG_ENVS.has(process.env.NODE_ENV ?? "")) {
+  if (DEBUG_ENVS.has(process.env.NODE_ENV)) {
     return message?.trim() || GENERIC_TRANSLATION_ERROR;
   }
   return GENERIC_TRANSLATION_ERROR;

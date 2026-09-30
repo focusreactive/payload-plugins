@@ -181,8 +181,7 @@ describe("EnqueueTranslationHandler", () => {
             publishOnTranslation: false,
           },
         ],
-        // Whoever pressed Translate; this fixture's request carries no session.
-        { userId: null, userCollection: null }
+        { requester: null }
       );
     });
 

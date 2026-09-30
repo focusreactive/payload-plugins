@@ -150,12 +150,10 @@ export class TranslateCollectionPlugin {
         basePath: rawBasePath = "/translate",
       } = this.pluginConfig;
 
-      // `access` is typed required, so this fires only for JavaScript or otherwise untyped config.
       if (!access) {
         throw new Error(
-          "payload-plugin-translator: `access` is required. The translation endpoints write to your " +
-            "documents and spend money at your provider, and Payload does not authenticate custom " +
-            "endpoints. Pass an access guard, or `new AnyAccessGuard()` to leave them open on purpose."
+          "payload-plugin-translator: `access` is required. Pass an access guard, or " +
+            "`new AnyAccessGuard()` to leave the translation endpoints open on purpose."
         );
       }
 

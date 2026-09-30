@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 
-import { authCollectionsOf, identityOf, isAttributed } from "./RequestScope.shapes.js";
+import { authCollectionsOf, identityOf } from "./identityOf.js";
 
 const ONE = ["users"];
 const TWO = ["admins", "editors"];
@@ -12,23 +12,19 @@ const TWO = ["admins", "editors"];
 describe("identityOf", () => {
   it("reads both halves when the request carries them", () => {
     expect(identityOf({ user: { id: "anna", collection: "editors" } }, TWO)).toEqual({
-      userId: "anna",
-      userCollection: "editors",
+      requester: { userId: "anna", userCollection: "editors" },
     });
   });
 
   it("completes a missing collection when the project has only one", () => {
     const identity = identityOf({ user: { id: "anna" } }, ONE);
 
-    expect(identity).toEqual({ userId: "anna", userCollection: "users" });
-    expect(isAttributed(identity), "a signed-in user must not read as anonymous").toBe(true);
+    expect(identity).toEqual({ requester: { userId: "anna", userCollection: "users" } });
+    expect(identity.requester, "a signed-in user must not read as anonymous").not.toBeNull();
   });
 
   it("refuses to guess when the project has more than one", () => {
-    expect(identityOf({ user: { id: "anna" } }, TWO)).toEqual({
-      userId: null,
-      userCollection: null,
-    });
+    expect(identityOf({ user: { id: "anna" } }, TWO)).toEqual({ requester: null });
   });
 
   it("says in the log what a host has to fix for that case", () => {
@@ -42,20 +38,19 @@ describe("identityOf", () => {
   });
 
   it("names nobody for an anonymous request", () => {
-    expect(identityOf({ user: null }, ONE)).toEqual({ userId: null, userCollection: null });
+    expect(identityOf({ user: null }, ONE)).toEqual({ requester: null });
   });
 
   it("names nobody when there is no user at all", () => {
-    expect(identityOf({}, ONE)).toEqual({ userId: null, userCollection: null });
+    expect(identityOf({}, ONE)).toEqual({ requester: null });
   });
 
-  // A numeric id of 0 is a real id on a database that counts from zero, and it is falsy.
   it("keeps a zero id", () => {
-    expect(identityOf({ user: { id: 0, collection: "users" } }, ONE).userId).toBe(0);
+    expect(identityOf({ user: { id: 0, collection: "users" } }, ONE).requester?.userId).toBe(0);
   });
 
   it("names nobody when the project has no auth collection at all", () => {
-    expect(isAttributed(identityOf({ user: { id: "anna" } }, []))).toBe(false);
+    expect(identityOf({ user: { id: "anna" } }, []).requester).toBeNull();
   });
 });
 

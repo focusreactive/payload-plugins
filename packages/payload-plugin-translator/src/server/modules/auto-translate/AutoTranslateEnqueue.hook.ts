@@ -1,11 +1,8 @@
 import type { CollectionAfterChangeHook } from "payload";
 import { hasDraftsEnabled } from "payload/shared";
 
-import {
-  authCollectionsOf,
-  identityOf,
-  killedTheCallersTransaction,
-} from "../../shared/payload/RequestScope.shapes.js";
+import { authCollectionsOf, identityOf } from "../../shared/payload/identityOf.js";
+import { killedTheCallersTransaction } from "../../shared/payload/killedTheCallersTransaction.js";
 
 import { hasSourceContentChanged } from "../../../core/domain/auto-translate/index.js";
 import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../core/domain/auto-translate/index.js";
@@ -75,8 +72,6 @@ export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAf
       });
       if (tasks.length === 0) return doc;
 
-      // Settled first: Payload parks a promise in this field while the transaction opens, and a
-      // promise reaching the adapter as a transaction key is silently wrong.
       transactionID = await req.transactionID;
       await taskRunnerFactory.create(req.payload).enqueue(tasks, {
         ...(transactionID == null ? {} : { transactionID }),

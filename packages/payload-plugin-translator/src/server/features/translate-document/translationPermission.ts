@@ -3,9 +3,8 @@ import { APIError, createLocalReq, docAccessOperation } from "payload";
 
 import { markFailureReason } from "../../../core/domain/translation-providers/failureReason.js";
 
-import type { RequestScope } from "./RequestScope.shapes.js";
-import { freshReq, isAttributed } from "./RequestScope.shapes.js";
-import type { Requester } from "./RequestScope.shapes.js";
+import type { RequestScope, Requester } from "../../shared/payload/RequestScope.shapes.js";
+import { freshReq } from "../../shared/payload/RequestScope.shapes.js";
 
 /**
  * A refusal is an **absent key** — Payload's sanitizer deletes what it set to `false` — so
@@ -96,9 +95,6 @@ async function findRequester(payload: Payload, requester: Requester) {
   const user = await payload.findByID({
     collection,
     id: requester.userId,
-    // The depth Payload authenticates at, so a rule reading `user.role.name` sees what it would on
-    // the editor's own save; at depth 0 it finds an id and refuses, or throws — and a throw here
-    // costs the caller their transaction.
     depth: typeof auth === "object" ? auth.depth : undefined,
     overrideAccess: true,
   });
@@ -125,11 +121,6 @@ export async function mayWrite(query: {
 }): Promise<boolean> {
   const { payload, collection, id, data, targetLocale, scope, user } = query;
 
-  // Payload's own builder: a host rule may read anything a real request carries (`headers`, `i18n`,
-  // `context`), and a `TypeError` off a stand-in is answered with `killTransaction`. The transaction
-  // must travel too — a `Where` rule is resolved by counting rows, and on PostgreSQL a count outside
-  // the caller's transaction cannot see the uncommitted document, so the rule answers "allowed"
-  // (#124). The locale too, or the rules answer about the project default.
   const req = await buildLocalRequest(
     { user, req: freshReq(scope), locale: targetLocale },
     payload
@@ -153,16 +144,15 @@ export async function checkTranslationPermission(
   query: PermissionQuery
 ): Promise<TranslationPermission> {
   const { payload, collection, id, data, targetLocale, scope } = query;
-  if (!isAttributed(scope)) return ALLOW_ALL;
+  const requester = scope.requester;
+  if (!requester) return ALLOW_ALL;
 
-  const user = await findRequester(payload, scope).catch(() => null);
+  const user = await findRequester(payload, requester).catch(() => null);
   if (!user) {
-    // Plain `Error`, not `APIError`: nothing ran here that could have rolled the caller's
-    // transaction back.
     throw new Error(
       markFailureReason(
         "requester-missing",
-        `the requester (${String(scope.userId)} in "${String(scope.userCollection)}") could not be looked up`
+        `the requester (${String(requester.userId)} in "${String(requester.userCollection)}") could not be looked up`
       )
     );
   }

@@ -15,8 +15,6 @@ export function makeProvenanceCollection(slug: string = DEFAULT_PROVENANCE_SLUG)
   return {
     slug,
     admin: { hidden: true },
-    // Payload's default is any signed-in user, and `admin.hidden` does not cover `/api/<slug>`. The
-    // plugin's own reads and writes go through the Local API, which does not consult these rules.
     access: {
       read: () => false,
       create: () => false,

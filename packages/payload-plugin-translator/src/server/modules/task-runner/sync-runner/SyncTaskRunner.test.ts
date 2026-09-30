@@ -81,6 +81,31 @@ describe("SyncTaskRunner", () => {
       expect(task?.error?.message).toBe("Translation failed");
     });
 
+    it.each([
+      ["a task that succeeded", undefined],
+      ["a task that failed", new Error("Translation failed")],
+    ])("%s reports when it finished, not when it started", async (_label, rejection) => {
+      vi.useFakeTimers();
+      try {
+        vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+        mockHandler = vi.fn().mockImplementation(async () => {
+          vi.setSystemTime(new Date("2026-01-01T00:05:00.000Z"));
+          if (rejection) throw rejection;
+        });
+        runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+
+        await runner.enqueue([createInput()]);
+
+        const task = [...tasks.values()][0];
+        expect(task?.createdAt).toBe("2026-01-01T00:00:00.000Z");
+        expect(task?.updatedAt, "a settled task must carry the time it settled").toBe(
+          "2026-01-01T00:05:00.000Z"
+        );
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it("handles non-Error throws", async () => {
       mockHandler = vi.fn().mockRejectedValue("string error");
       runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
