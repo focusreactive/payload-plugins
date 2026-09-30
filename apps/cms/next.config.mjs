@@ -1,8 +1,14 @@
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { withPayload } from "@payloadcms/next/withPayload";
 import createNextIntlPlugin from "next-intl/plugin";
+
+import {
+  IMAGE_DEVICE_SIZES,
+  IMAGE_MINIMUM_CACHE_TTL,
+  IMAGE_QUALITIES,
+} from "./src/lib/constants/imageDelivery.mjs";
+import { mediaFileRedirects, mediaRemotePatterns } from "./src/lib/constants/mediaDelivery.mjs";
 
 const __dirname = import.meta.dirname;
 
@@ -26,34 +32,22 @@ const nextConfig = {
   experimental: {
     inlineCss: true,
   },
+  async redirects() {
+    return mediaFileRedirects(process.env.BLOB_PUBLIC_BASE_URL);
+  },
   images: {
-    qualities: [75, 85],
-    remotePatterns: [
-      {
-        hostname: "localhost",
-        pathname: "/api/media/**",
-        port: "3000",
-        protocol: "http",
-      },
-      {
-        hostname: "localhost",
-        pathname: "/api/media/**",
-        port: "3333",
-        protocol: "http",
-      },
-      {
-        hostname: "**.public.blob.vercel-storage.com",
-        protocol: "https",
-      },
-      {
-        hostname: "payload-cms-ideal-cms.com",
-        protocol: "https",
-      },
-      {
-        hostname: "payload-cms-ideal-cms.vercel.app",
-        protocol: "https",
-      },
+    deviceSizes: [...IMAGE_DEVICE_SIZES],
+    localPatterns: [
+      { pathname: "**", search: "" },
+      { pathname: "/api/media/**" },
+      { pathname: "/media/**" },
     ],
+    minimumCacheTTL: IMAGE_MINIMUM_CACHE_TTL,
+    qualities: [...IMAGE_QUALITIES],
+    remotePatterns: mediaRemotePatterns({
+      blobBaseUrl: process.env.BLOB_PUBLIC_BASE_URL,
+      nodeEnv: process.env.NODE_ENV,
+    }),
   },
 };
 

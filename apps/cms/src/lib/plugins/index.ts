@@ -114,10 +114,15 @@ const resolveAnalyticsPagePath = async (ref: string, req: PayloadRequest): Promi
   return "";
 };
 
+const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
+
 export const plugins: Plugin[] = [
   vercelBlobStorage({
+    cacheControlMaxAge: ONE_YEAR_IN_SECONDS,
+    clientUploads: true,
     collections: {
-      media: true,
+      // Direct Blob URLs. Media `read` is public (`anyone`); do not enable this if read is restricted.
+      media: { disablePayloadAccessControl: true },
     },
     enabled: process.env.NODE_ENV === "production",
     token: process.env.BLOB_READ_WRITE_TOKEN || "",

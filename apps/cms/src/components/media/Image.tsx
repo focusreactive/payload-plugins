@@ -1,9 +1,10 @@
-import NextImage from "next/image";
 import type { StaticImageData } from "next/image";
 
 import { cn } from "@/components/utils";
+import { IMAGE_QUALITY } from "@/lib/constants/imageDelivery.mjs";
 
-import type { ImageAspectRatio, ImageOverrides } from "./types";
+import type { ImageAspectRatio, ImageOverrides, ImageVariant } from "./types";
+import { VariantImage } from "./VariantImage";
 
 interface ImageContainerProps {
   aspectRatio?: ImageAspectRatio;
@@ -30,9 +31,19 @@ interface ImageProps {
   onClick?: () => void;
   onLoad?: () => void;
   imageProps?: ImageOverrides;
+  variants?: ImageVariant[];
 }
 
-export function Image({ src, alt, width, height, onClick, onLoad, imageProps }: ImageProps) {
+export function Image({
+  src,
+  alt,
+  width,
+  height,
+  onClick,
+  onLoad,
+  imageProps,
+  variants,
+}: ImageProps) {
   const {
     aspectRatio,
     fit,
@@ -42,27 +53,33 @@ export function Image({ src, alt, width, height, onClick, onLoad, imageProps }: 
     quality,
     priority,
     loading,
+    style,
     ...rest
   } = imageProps ?? {};
 
   const resolvedLoading = loading ?? (priority ? undefined : "lazy");
+  const mergedStyle = {
+    ...style,
+    ...(fit ? { objectFit: fit } : {}),
+  };
 
   return (
     <ImageContainer aspectRatio={aspectRatio}>
       <picture className={cn(pictureClassName)}>
-        <NextImage
-          className={cn(className)}
+        <VariantImage
           alt={alt ?? ""}
+          className={cn(className)}
           fill={fill}
-          width={fill ? undefined : width}
           height={fill ? undefined : height}
           loading={resolvedLoading}
           onClick={onClick}
           onLoad={onLoad}
           priority={priority}
-          quality={quality ?? 85}
+          quality={quality ?? IMAGE_QUALITY}
           src={src}
-          style={fit ? { objectFit: fit } : undefined}
+          style={Object.keys(mergedStyle).length > 0 ? mergedStyle : undefined}
+          variants={variants}
+          width={fill ? undefined : width}
           {...rest}
         />
       </picture>

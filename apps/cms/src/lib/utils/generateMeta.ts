@@ -8,7 +8,7 @@ import type { Media, Page, Post } from "@/payload-types";
 import type { Locale } from "../types";
 import { buildUrl } from "../utils/path/buildUrl";
 import { buildPageTitle } from "./buildPageTitle";
-import { getServerSideURL } from "./getURL";
+import { absoluteMediaUrl } from "./getMediaUrl";
 import { mergeOpenGraph } from "./mergeOpenGraph";
 
 function getOpenGraphLocale(locale: Locale): string {
@@ -19,16 +19,13 @@ function getOpenGraphLocale(locale: Locale): string {
 }
 
 const getImageURL = (image: Media | null | undefined) => {
-  let url = null;
-  const serverUrl = getServerSideURL();
-
-  if (image && typeof image === "object" && "url" in image) {
-    const ogUrl = image.sizes?.og?.url;
-
-    url = ogUrl ? serverUrl + ogUrl : serverUrl + image.url;
+  if (!image || typeof image !== "object" || !("url" in image)) {
+    return null;
   }
 
-  return url;
+  const raw = image.sizes?.og?.url ?? image.url;
+  const url = absoluteMediaUrl(raw, image.filesize);
+  return url || null;
 };
 
 export const generateMeta = async (args: {

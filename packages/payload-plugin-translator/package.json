@@ -79,14 +79,14 @@
     "openai": "^4.50.0"
   },
   "devDependencies": {
-    "@payloadcms/richtext-lexical": "3.79.0",
-    "@payloadcms/ui": "3.79.0",
+    "@payloadcms/richtext-lexical": "3.90.1",
+    "@payloadcms/ui": "3.90.1",
     "@swc/cli": "0.4.0",
     "@swc/core": "1.7.0",
     "@types/react": "19.2.9",
     "@vitest/coverage-v8": "3.2.4",
     "copyfiles": "2.4.1",
-    "payload": "3.79.0",
+    "payload": "3.90.1",
     "react": "19.0.0",
     "typescript": "5.5.2",
     "vitest": "3.2.4"
