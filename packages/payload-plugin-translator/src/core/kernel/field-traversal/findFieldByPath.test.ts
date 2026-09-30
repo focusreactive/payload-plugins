@@ -1,7 +1,7 @@
 import type { Field } from "payload";
 import { describe, expect, it } from "vitest";
 
-import { findFieldByPath } from "./findFieldByPath";
+import { findFieldByPath } from "./findFieldByPath.js";
 
 const f = (config: Record<string, unknown>): Field => config as unknown as Field;
 

@@ -1,4 +1,4 @@
-import { TranslationProviderError } from "./TranslationProviderError";
+import { TranslationProviderError } from "./TranslationProviderError.js";
 
 /**
  * The provider is configured in a way that cannot work — most often an optional SDK that is not

@@ -1,7 +1,7 @@
 import type { CollectionSlug } from "payload";
 
-import type { ID } from "../types";
-import type { PayloadJob } from "./types";
+import type { ID } from "../types.js";
+import type { PayloadJob } from "./types.js";
 
 /**
  * Normalized, ID-agnostic document reference parsed out of a stored job input.

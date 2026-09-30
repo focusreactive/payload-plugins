@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CollectionAfterChangeHook, CollectionSlug, Field } from "payload";
 
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
-import type { TaskRunnerFactory } from "../task-runner/TaskRunnerProvider.interface";
-import { makeCollectionPolicyResolver } from "./AutoTranslate.policy";
-import type { NormalizedAutoTranslatePolicy } from "./AutoTranslate.policy";
-import { makeAutoTranslateHook } from "./AutoTranslateEnqueue.hook";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
+import type { TaskRunnerFactory } from "../task-runner/TaskRunnerProvider.interface.js";
+import { makeCollectionPolicyResolver } from "./AutoTranslate.policy.js";
+import type { NormalizedAutoTranslatePolicy } from "./AutoTranslate.policy.js";
+import { makeAutoTranslateHook } from "./AutoTranslateEnqueue.hook.js";
 
 const schemaMap: CollectionSchemaMap = new Map([
   ["posts" as CollectionSlug, [{ name: "title", type: "text", localized: true }] as Field[]],

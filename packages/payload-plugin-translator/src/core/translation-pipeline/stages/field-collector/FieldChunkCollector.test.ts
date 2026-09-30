@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import type { Field } from "payload";
-import { FieldChunkCollector } from "./FieldChunkCollector";
-import { OverwriteStrategy } from "../../strategies/Overwrite.strategy";
-import { SkipExistingStrategy } from "../../strategies/SkipExisting.strategy";
+import { FieldChunkCollector } from "./FieldChunkCollector.js";
+import { OverwriteStrategy } from "../../strategies/Overwrite.strategy.js";
+import { SkipExistingStrategy } from "../../strategies/SkipExisting.strategy.js";
 
 const strategy = new OverwriteStrategy();
 const skipExistingStrategy = new SkipExistingStrategy();

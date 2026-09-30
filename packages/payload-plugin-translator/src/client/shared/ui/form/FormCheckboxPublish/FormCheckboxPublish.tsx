@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 
-import { FormCheckbox } from "../FormCheckbox";
-import InfoPopover from "../../InfoPopover";
+import { FormCheckbox } from "../FormCheckbox/index.js";
+import InfoPopover from "../../InfoPopover/index.js";
 
 import styles from "./styles.module.scss";
 

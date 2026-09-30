@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 
-import FormSelect from "../FormSelect";
-import InfoPopover from "../../InfoPopover";
+import FormSelect from "../FormSelect/index.js";
+import InfoPopover from "../../InfoPopover/index.js";
 
 import styles from "./styles.module.scss";
 

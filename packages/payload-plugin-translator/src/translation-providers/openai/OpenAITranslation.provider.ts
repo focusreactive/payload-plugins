@@ -1,10 +1,10 @@
-import type { TranslationProvider } from "../../core/domain/translation-providers";
-import type { DryRunConfig, SystemPromptBuilder } from "../shared";
-import { createTranslationProvider } from "../shared";
-import { loadOpenAIClient } from "./loadOpenAIClient";
-import type { OpenAIClientShape } from "./OpenAI.shapes";
-import { openAIComplete } from "./openAIComplete";
-import type { OpenAISamplingParams, OpenAIStructuredOutput } from "./openAIComplete";
+import type { TranslationProvider } from "../../core/domain/translation-providers/index.js";
+import type { DryRunConfig, SystemPromptBuilder } from "../shared/index.js";
+import { createTranslationProvider } from "../shared/index.js";
+import { loadOpenAIClient } from "./loadOpenAIClient.js";
+import type { OpenAIClientShape } from "./OpenAI.shapes.js";
+import { openAIComplete } from "./openAIComplete.js";
+import type { OpenAISamplingParams, OpenAIStructuredOutput } from "./openAIComplete.js";
 
 const DEFAULT_MODEL = "gpt-5.4-mini";
 

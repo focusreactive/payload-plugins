@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import type { MarkableFragment, MarkFailure, ParsedMark, ParseResult } from "./inlineMarks";
-import { serializeInlineMarks, parseInlineMarks } from "./inlineMarks";
+import type { MarkableFragment, MarkFailure, ParsedMark, ParseResult } from "./inlineMarks.js";
+import { serializeInlineMarks, parseInlineMarks } from "./inlineMarks.js";
 
 const fragment = (markId: number, text: string | null): MarkableFragment => ({ markId, text });
 

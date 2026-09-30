@@ -1,4 +1,4 @@
-import { TranslationProviderError } from "./TranslationProviderError";
+import { TranslationProviderError } from "./TranslationProviderError.js";
 
 /**
  * The provider produced no usable text — an empty reply, or a response the vendor filtered.

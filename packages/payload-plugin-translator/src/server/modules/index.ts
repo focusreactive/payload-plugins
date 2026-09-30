@@ -1,2 +1,2 @@
-export * from "../../core/domain/translation-providers";
-export * from "../../core/translation-pipeline";
+export * from "../../core/domain/translation-providers/index.js";
+export * from "../../core/translation-pipeline/index.js";

@@ -1,26 +1,26 @@
 import { describe, it, expect, vi } from "vitest";
 import type { Config, Payload } from "payload";
 
-import { translatorPlugin } from "./plugin";
-import type { TranslatorPluginConfig } from "./plugin";
-import { withAutoTranslate } from "./auto-translate-config";
-import { documentLevel, fieldLevel } from "./composition/levels";
-import { TranslateDocumentExport } from "./client/widgets/translate-document";
-import { BulkDocumentTranslationDashboard } from "./client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.export";
-import { withQueuedNotification } from "./server/modules/lifecycle";
+import { translatorPlugin } from "./plugin.js";
+import type { TranslatorPluginConfig } from "./plugin.js";
+import { withAutoTranslate } from "./auto-translate-config.js";
+import { documentLevel, fieldLevel } from "./composition/levels/index.js";
+import { TranslateDocumentExport } from "./client/widgets/translate-document/index.js";
+import { BulkDocumentTranslationDashboard } from "./client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.export.js";
+import { withQueuedNotification } from "./server/modules/lifecycle/index.js";
 
 // Isolate the lifecycle-wiring tests from the real pipeline: a mocked translateContent that returns
 // null makes the handler finish cleanly (nothing to translate) so we can assert `completed` fires
 // without standing up a provider. `vi.mock` is hoisted, so it applies regardless of position; kept
 // below the imports to satisfy the import/first lint rule. Other tests never execute the handler.
-vi.mock("./core/translation-pipeline", () => ({
+vi.mock("./core/translation-pipeline/index.js", () => ({
   translateContent: vi.fn().mockResolvedValue(null),
 }));
 
 // Spy on withQueuedNotification while keeping its real behaviour, so a test can assert the runner
 // was (or wasn't) wrapped for the `lifecycle.onQueued` absent/present branch in plugin.ts.
-vi.mock("./server/modules/lifecycle", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./server/modules/lifecycle")>();
+vi.mock("./server/modules/lifecycle/index.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./server/modules/lifecycle/index.js")>();
   return {
     ...actual,
     withQueuedNotification: vi.fn(actual.withQueuedNotification),

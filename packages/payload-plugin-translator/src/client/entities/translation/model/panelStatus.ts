@@ -1,6 +1,6 @@
-import { DocumentTranslationStatus } from "./enums";
-import type { StatusDotColor } from "./statusRows";
-import type { DocumentTranslation, GroupedCollectionTranslationStatus } from "./types";
+import { DocumentTranslationStatus } from "./enums.js";
+import type { StatusDotColor } from "./statusRows.js";
+import type { DocumentTranslation, GroupedCollectionTranslationStatus } from "./types.js";
 
 /**
  * The single aggregate signal shown on a translate trigger (document or collection). Detail lives in

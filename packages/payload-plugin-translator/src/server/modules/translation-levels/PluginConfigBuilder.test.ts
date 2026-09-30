@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 import type { CollectionConfig, Config, Endpoint } from "payload";
 
-import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport";
+import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport.js";
 
-import { PluginConfigBuilder } from "./PluginConfigBuilder";
+import { PluginConfigBuilder } from "./PluginConfigBuilder.js";
 
 const deps = (collections: Array<{ slug: string }> = []) => ({
   collections: collections as unknown as CollectionConfig[],

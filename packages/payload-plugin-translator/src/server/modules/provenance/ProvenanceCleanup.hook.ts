@@ -1,7 +1,7 @@
 import type { CollectionAfterDeleteHook } from "payload";
 
-import type { ManagedCollectionsConfig } from "./Provenance.shapes";
-import type { ProvenanceStoreFactory } from "./Provenance.store";
+import type { ManagedCollectionsConfig } from "./Provenance.shapes.js";
+import type { ProvenanceStoreFactory } from "./Provenance.store.js";
 
 /**
  * Marks the plugin's own provenance cleanup hook so a repeated `init()` can recognise an

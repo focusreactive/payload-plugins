@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import type { FieldLike } from "./types";
-import { hasFields, isBlockItem, isTabsField } from "./guards";
+import type { FieldLike } from "./types.js";
+import { hasFields, isBlockItem, isTabsField } from "./guards.js";
 
 describe("field-traversal guards", () => {
   describe("isTabsField", () => {

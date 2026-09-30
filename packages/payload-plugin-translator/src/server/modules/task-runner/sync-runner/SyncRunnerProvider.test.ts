@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 
-import { createSyncRunner } from "./SyncRunnerProvider";
-import type { TaskRunnerContext } from "../TaskRunnerProvider.interface";
-import type { TaskInput } from "../types";
+import { createSyncRunner } from "./SyncRunnerProvider.js";
+import type { TaskRunnerContext } from "../TaskRunnerProvider.interface.js";
+import type { TaskInput } from "../types.js";
 
 const fakePayload = {} as Payload;
 

@@ -1,5 +1,4 @@
-import { unstable_cache } from "next/cache";
-
+import { scopedCache } from "@/lib/utils/scopedCache";
 import { getPayloadClient } from "@/dal/payload-client";
 
 export const DEFAULT_MEDIA_CACHE_TAG = "default-media";
@@ -21,7 +20,7 @@ async function fetchDefaultMediaId(slot: string): Promise<string | number | null
 
 export async function getDefaultMediaId(slot: string): Promise<string | number | null> {
   const cacheKey = `default-media-${slot}`;
-  return unstable_cache(() => fetchDefaultMediaId(slot), [cacheKey], {
+  return scopedCache(() => fetchDefaultMediaId(slot), [cacheKey], {
     revalidate: REVALIDATE_SEC,
     tags: [DEFAULT_MEDIA_CACHE_TAG],
   })();

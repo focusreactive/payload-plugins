@@ -1,11 +1,11 @@
 import type { Endpoint } from "payload";
 
-import { withErrorHandler, withAccessCheck } from "../../shared";
-import type { AccessGuard } from "../../shared";
-import type { TaskRunnerFactory } from "../../modules/task-runner";
+import { withErrorHandler, withAccessCheck } from "../../shared/index.js";
+import type { AccessGuard } from "../../shared/index.js";
+import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 
-import type { CancelConfig } from "./model";
-import { CancelByCollectionHandler } from "./handler";
+import type { CancelConfig } from "./model.js";
+import { CancelByCollectionHandler } from "./handler.js";
 
 /**
  * Creates the cancel by collection endpoint

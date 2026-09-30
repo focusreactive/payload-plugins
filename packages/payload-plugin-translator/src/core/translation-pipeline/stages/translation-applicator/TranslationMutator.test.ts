@@ -1,9 +1,14 @@
 import { describe, it, expect } from "vitest";
-import type { PlainTextChunk, RichContainerChunk, RichTextChunk, TextChunk } from "../../types";
-import type { InlineFragment } from "../../../kernel/lexical/collectInlineFragments";
-import type { SerializedLexicalNode } from "../../../kernel/lexical";
-import type { SerializedTextNode } from "../../../kernel/lexical";
-import { TranslationMutator } from "./TranslationMutator";
+import type {
+  PlainTextChunk,
+  RichContainerChunk,
+  RichTextChunk,
+  TextChunk,
+} from "../../types/index.js";
+import type { InlineFragment } from "../../../kernel/lexical/collectInlineFragments.js";
+import type { SerializedLexicalNode } from "../../../kernel/lexical/index.js";
+import type { SerializedTextNode } from "../../../kernel/lexical/index.js";
+import { TranslationMutator } from "./TranslationMutator.js";
 
 // Helper to create a mock SerializedTextNode with required properties
 const createTextNode = (text: string): SerializedTextNode =>

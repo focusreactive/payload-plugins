@@ -1,11 +1,11 @@
 import type { Config, Payload } from "payload";
 
-import type { TaskRunner } from "../TaskRunner.interface";
-import type { TaskRunnerProvider, TaskHandler } from "../TaskRunnerProvider.interface";
-import type { Task } from "../types";
-import type { SyncRunnerOptions } from "./types";
-import { SyncTaskRunner } from "./SyncTaskRunner";
-import { LazyMap } from "../../../shared/utils";
+import type { TaskRunner } from "../TaskRunner.interface.js";
+import type { TaskRunnerProvider, TaskHandler } from "../TaskRunnerProvider.interface.js";
+import type { Task } from "../types.js";
+import type { SyncRunnerOptions } from "./types.js";
+import { SyncTaskRunner } from "./SyncTaskRunner.js";
+import { LazyMap } from "../../../shared/utils/index.js";
 
 const DEFAULT_MAX_SIZE = 100;
 const DEFAULT_TTL_MS = 60 * 60 * 1000; // 1 hour

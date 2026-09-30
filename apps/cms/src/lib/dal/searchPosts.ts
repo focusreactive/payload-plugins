@@ -1,9 +1,9 @@
-import { unstable_cache } from "next/cache";
 import type { Pool } from "pg";
 import { cache } from "react";
 
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { cacheTag } from "@/lib/utils/cacheTags";
+import { scopedCache } from "@/lib/utils/scopedCache";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { Locale } from "@/lib/types";
 import { orderDocsByIds } from "@/lib/utils/orderDocsByIds";
@@ -109,7 +109,7 @@ const searchPostsCached = cache(
     locale: Locale,
     category: string | undefined
   ) =>
-    unstable_cache(
+    scopedCache(
       () => searchPostsQuery(query, page, limit, locale, category),
       ["searchPosts", query, page.toString(), limit.toString(), locale, category ?? ""],
       {

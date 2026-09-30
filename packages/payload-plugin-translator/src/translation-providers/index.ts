@@ -2,8 +2,8 @@ export type {
   TranslationProvider,
   TranslationInput,
   TranslationOutput,
-} from "../core/domain/translation-providers";
+} from "../core/domain/translation-providers/index.js";
 
-export * from "./shared";
+export * from "./shared/index.js";
 
-export * from "./openai";
+export * from "./openai/index.js";

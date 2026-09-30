@@ -1,1 +1,1 @@
-export { TranslateFieldControlExport } from "./ui/TranslateFieldControl.export";
+export { TranslateFieldControlExport } from "./ui/TranslateFieldControl.export.js";

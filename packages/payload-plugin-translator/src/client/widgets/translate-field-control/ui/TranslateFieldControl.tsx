@@ -11,16 +11,16 @@ import {
 } from "@payloadcms/ui";
 import { useState } from "react";
 
-import { useTranslateField } from "../../../entities/translation/api/mutations/useTranslateField";
-import { LanguageTranslateIcon } from "../../../shared/lib/assets/icons/LanguageTranslateIcon";
-import { ReloadIcon } from "../../../shared/lib/assets/icons/ReloadIcon";
-import { SendIcon } from "../../../shared/lib/assets/icons/SendIcon";
-import { useLocaleOptions } from "../../../shared/lib/payload/hooks/useLocaleOptions";
-import { useToggle } from "../../../shared/lib/utils/react/useToggle";
-import Button from "../../../shared/ui/Button";
-import Popup from "../../../shared/ui/Popup";
-import Select from "../../../shared/ui/Select";
-import Tooltip from "../../../shared/ui/Tooltip";
+import { useTranslateField } from "../../../entities/translation/api/mutations/useTranslateField.js";
+import { LanguageTranslateIcon } from "../../../shared/lib/assets/icons/LanguageTranslateIcon.js";
+import { ReloadIcon } from "../../../shared/lib/assets/icons/ReloadIcon.js";
+import { SendIcon } from "../../../shared/lib/assets/icons/SendIcon.js";
+import { useLocaleOptions } from "../../../shared/lib/payload/hooks/useLocaleOptions.js";
+import { useToggle } from "../../../shared/lib/utils/react/useToggle.js";
+import Button from "../../../shared/ui/Button/index.js";
+import Popup from "../../../shared/ui/Popup/index.js";
+import Select from "../../../shared/ui/Select/index.js";
+import Tooltip from "../../../shared/ui/Tooltip/index.js";
 
 import styles from "./styles.module.scss";
 

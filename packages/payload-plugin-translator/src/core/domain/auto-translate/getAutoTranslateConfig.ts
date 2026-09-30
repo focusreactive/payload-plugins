@@ -1,7 +1,7 @@
-import { isObject } from "../../kernel/utils/isObject";
+import { isObject } from "../../kernel/utils/isObject.js";
 
-import type { AutoTranslateConfig } from "./types";
-import { AUTO_TRANSLATE_CUSTOM_KEY } from "./types";
+import type { AutoTranslateConfig } from "./types.js";
+import { AUTO_TRANSLATE_CUSTOM_KEY } from "./types.js";
 
 /**
  * Structural guard: is `value` a well-formed auto-translate config? Validates the one crash-critical

@@ -1,7 +1,7 @@
-import { TranslateDocumentExport } from "../../client/widgets/translate-document";
+import { TranslateDocumentExport } from "../../client/widgets/translate-document/index.js";
 
-import type { TranslationLevel } from "../../server/modules/translation-levels";
-import { useDocTranslationApi } from "./useDocTranslationApi";
+import type { TranslationLevel } from "../../server/modules/translation-levels/index.js";
+import { useDocTranslationApi } from "./useDocTranslationApi.js";
 
 /**
  * Per-document translation: a popup control on the document edit view, backed by

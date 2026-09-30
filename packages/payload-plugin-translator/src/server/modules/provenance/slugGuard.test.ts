@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { assertProvenanceSlugFree } from "./slugGuard";
+import { assertProvenanceSlugFree } from "./slugGuard.js";
 
 describe("assertProvenanceSlugFree", () => {
   it("passes when the slug is not used by any collection", () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { LifecycleNotifier } from "./LifecycleNotifier";
-import type { TranslationTask } from "./types";
+import { LifecycleNotifier } from "./LifecycleNotifier.js";
+import type { TranslationTask } from "./types.js";
 
 const task: TranslationTask = {
   collection: "posts",

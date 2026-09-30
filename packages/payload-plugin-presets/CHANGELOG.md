@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-presets [0.12.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.12.0...@focus-reactive/payload-plugin-presets@0.12.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* **presets:** honour filterOptions in the blocks picker ([b09018c](https://github.com/focusreactive/payload-plugins/commit/b09018cbd8eae88e588fdac71dce32b9ff1f85f4))
+
 # @focus-reactive/payload-plugin-presets [0.12.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-presets@0.11.1...@focus-reactive/payload-plugin-presets@0.12.0) (2026-06-28)
 
 

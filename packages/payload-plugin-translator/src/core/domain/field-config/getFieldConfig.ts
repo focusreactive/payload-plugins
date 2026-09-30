@@ -1,5 +1,5 @@
-import type { FieldTranslationConfig } from "./types";
-import { TRANSLATE_KIT_CUSTOM_KEY } from "./types";
+import type { FieldTranslationConfig } from "./types.js";
+import { TRANSLATE_KIT_CUSTOM_KEY } from "./types.js";
 
 /**
  * Extract translation configuration from a Payload field.

@@ -1,1 +1,1 @@
-export { TranslationStatusList } from "./TranslationStatusList";
+export { TranslationStatusList } from "./TranslationStatusList.js";

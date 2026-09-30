@@ -1,7 +1,7 @@
 import type { Field } from "payload";
 import { describe, expect, it, vi } from "vitest";
-import type { TranslationProvider } from "../domain/translation-providers";
-import { translateContent } from "./translateContent";
+import type { TranslationProvider } from "../domain/translation-providers/index.js";
+import { translateContent } from "./translateContent.js";
 
 const text = (value: string, format = 0) => ({
   type: "text",

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { EnqueueInputSchema } from "./model";
+import { EnqueueInputSchema } from "./model.js";
 
 const base = {
   source_lng: "en",

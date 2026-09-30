@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ofetch } from "ofetch";
 
-import { useTranslateKitConfig } from "../../../../app/config";
-import { handleNextApiError } from "../../../../shared/lib/errors/handleApiError";
+import { useTranslateKitConfig } from "../../../../app/config/index.js";
+import { handleNextApiError } from "../../../../shared/lib/errors/handleApiError.js";
 
 type Variables = {
   collection: string;

@@ -1,3 +1,3 @@
-export { TranslateDocumentHandler } from "./handler";
-export { wireTranslateRunner } from "./wireTranslateRunner";
-export type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
+export { TranslateDocumentHandler } from "./handler.js";
+export { wireTranslateRunner } from "./wireTranslateRunner.js";
+export type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import * as Locales from "./resolveLocales";
+import * as Locales from "./resolveLocales.js";
 
 describe("Locales.isKnown", () => {
   const known = new Set(["en", "de", "fr"]);

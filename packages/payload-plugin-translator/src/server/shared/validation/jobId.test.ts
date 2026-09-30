@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { JobIdSchema } from "./jobId";
+import { JobIdSchema } from "./jobId.js";
 
 describe("JobIdSchema", () => {
   describe("accepts and normalizes", () => {

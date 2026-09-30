@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 
-import { TranslateDocumentHandler } from "./handler";
-import type { TranslationProvider } from "../../../core/domain/translation-providers";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
-import type { TranslateDocumentInput } from "./model";
-import type { ProvenanceServiceFactory } from "../../modules/provenance";
+import { TranslateDocumentHandler } from "./handler.js";
+import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
+import type { TranslateDocumentInput } from "./model.js";
+import type { ProvenanceServiceFactory } from "../../modules/provenance/index.js";
 
-vi.mock("../../../core/translation-pipeline", () => ({
+vi.mock("../../../core/translation-pipeline/index.js", () => ({
   translateContent: vi.fn().mockResolvedValue({ title: "Titel" }),
 }));
 

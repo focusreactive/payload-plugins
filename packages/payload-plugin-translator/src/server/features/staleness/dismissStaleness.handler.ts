@@ -1,10 +1,10 @@
 import type { PayloadRequest } from "payload";
 
-import { ServerResponse } from "../../shared";
-import { isCollectionAvailable } from "../_lib/collection-utils";
+import { ServerResponse } from "../../shared/index.js";
+import { isCollectionAvailable } from "../_lib/collection-utils.js";
 
-import { DismissStalenessInputSchema } from "./model";
-import type { StalenessConfig } from "./model";
+import { DismissStalenessInputSchema } from "./model.js";
+import type { StalenessConfig } from "./model.js";
 
 /** Dismisses (acknowledges) staleness of one target locale for a document. */
 export class DismissStalenessHandler {

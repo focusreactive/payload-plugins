@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { CollectionSlug } from "payload";
-import { readCollectionRef } from "./readCollectionRef";
-import type { PayloadJob } from "./types";
+import { readCollectionRef } from "./readCollectionRef.js";
+import type { PayloadJob } from "./types.js";
 
 describe("readCollectionRef", () => {
   describe("new flat-text shape", () => {

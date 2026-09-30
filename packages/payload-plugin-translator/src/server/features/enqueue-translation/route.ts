@@ -1,11 +1,11 @@
 import type { Endpoint } from "payload";
 
-import { withErrorHandler, withAccessCheck } from "../../shared";
-import type { AccessGuard } from "../../shared";
-import type { TaskRunnerFactory } from "../../modules/task-runner";
+import { withErrorHandler, withAccessCheck } from "../../shared/index.js";
+import type { AccessGuard } from "../../shared/index.js";
+import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 
-import type { EnqueueConfig } from "./model";
-import { EnqueueTranslationHandler } from "./handler";
+import type { EnqueueConfig } from "./model.js";
+import { EnqueueTranslationHandler } from "./handler.js";
 
 /**
  * Creates the enqueue translation endpoint

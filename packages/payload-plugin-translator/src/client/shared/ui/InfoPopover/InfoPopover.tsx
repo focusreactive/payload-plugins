@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
 
-import { QuestionCircleIcon } from "../../lib/assets/icons/QuestionCircleIcon";
+import { QuestionCircleIcon } from "../../lib/assets/icons/QuestionCircleIcon.js";
 
 import styles from "./styles.module.scss";
 

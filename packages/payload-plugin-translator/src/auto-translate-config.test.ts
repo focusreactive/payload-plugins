@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import type { CollectionConfig } from "payload";
 
-import { getAutoTranslateConfig } from "./core/domain/auto-translate";
-import { withAutoTranslate } from "./auto-translate-config";
+import { getAutoTranslateConfig } from "./core/domain/auto-translate/index.js";
+import { withAutoTranslate } from "./auto-translate-config.js";
 
 const collection = (over: Partial<CollectionConfig> = {}): CollectionConfig =>
   ({ slug: "posts", fields: [], ...over }) as CollectionConfig;

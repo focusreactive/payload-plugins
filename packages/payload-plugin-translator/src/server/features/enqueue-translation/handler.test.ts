@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, PayloadRequest, CollectionSlug } from "payload";
-import { EnqueueTranslationHandler } from "./handler";
-import type { EnqueueConfig } from "./model";
-import type { TaskRunnerFactory, TaskRunner } from "../../modules/task-runner";
+import { EnqueueTranslationHandler } from "./handler.js";
+import type { EnqueueConfig } from "./model.js";
+import type { TaskRunnerFactory, TaskRunner } from "../../modules/task-runner/index.js";
 
 // Mock collection-utils
-vi.mock("../_lib/collection-utils", () => ({
+vi.mock("../_lib/collection-utils.js", () => ({
   isCollectionAvailable: vi.fn((slug: string, available: Set<string>) =>
     available.has(slug) ? slug : null
   ),

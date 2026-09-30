@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-translator [0.13.4](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.13.3...@focus-reactive/payload-plugin-translator@0.13.4) (2026-09-25)
+
+
+### Bug Fixes
+
+* **translator:** give every relative import an explicit ESM path ([ecb8cd0](https://github.com/focusreactive/payload-plugins/commit/ecb8cd0316633e68d2156eb901801401234884f8))
+
 ## @focus-reactive/payload-plugin-translator [0.13.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.13.2...@focus-reactive/payload-plugin-translator@0.13.3) (2026-09-15)
 
 ## @focus-reactive/payload-plugin-translator [0.13.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.13.1...@focus-reactive/payload-plugin-translator@0.13.2) (2026-09-15)

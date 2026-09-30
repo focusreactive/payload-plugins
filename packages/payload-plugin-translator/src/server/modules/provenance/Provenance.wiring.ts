@@ -1,17 +1,17 @@
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
-import type { ConfigModifier } from "../../../types/ConfigModifier";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
+import type { ConfigModifier } from "../../../types/ConfigModifier.js";
 
-import { ProvenanceService } from "./Provenance.service";
-import type { ProvenanceServiceFactory } from "./Provenance.service";
-import { PayloadProvenanceStore } from "./Provenance.store";
-import type { ProvenanceStoreFactory } from "./Provenance.store";
+import { ProvenanceService } from "./Provenance.service.js";
+import type { ProvenanceServiceFactory } from "./Provenance.service.js";
+import { PayloadProvenanceStore } from "./Provenance.store.js";
+import type { ProvenanceStoreFactory } from "./Provenance.store.js";
 import {
   DEFAULT_PROVENANCE_SLUG,
   ensureProvenanceCollectionRegistered,
   isProvenanceCollection,
-} from "./Provenance.collection";
-import { injectProvenanceCleanup } from "./ProvenanceCleanup.hook";
-import { assertProvenanceSlugFree } from "./slugGuard";
+} from "./Provenance.collection.js";
+import { injectProvenanceCleanup } from "./ProvenanceCleanup.hook.js";
+import { assertProvenanceSlugFree } from "./slugGuard.js";
 
 /** The opt-in `provenance` plugin option (kept local so this module doesn't depend on plugin.ts). */
 export type ProvenanceOption = boolean | { slug?: string } | undefined;

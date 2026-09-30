@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, PayloadRequest, CollectionSlug } from "payload";
-import { CancelByCollectionHandler } from "./handler";
-import type { CancelConfig } from "./model";
-import type { TaskRunnerFactory, TaskRunner, Task } from "../../modules/task-runner";
+import { CancelByCollectionHandler } from "./handler.js";
+import type { CancelConfig } from "./model.js";
+import type { TaskRunnerFactory, TaskRunner, Task } from "../../modules/task-runner/index.js";
 
 describe("CancelByCollectionHandler", () => {
   let handler: CancelByCollectionHandler;

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-import Button from "../../../../shared/ui/Button";
-import Tooltip from "../../../../shared/ui/Tooltip";
+import Button from "../../../../shared/ui/Button/index.js";
+import Tooltip from "../../../../shared/ui/Tooltip/index.js";
 
 import styles from "./styles.module.scss";
 

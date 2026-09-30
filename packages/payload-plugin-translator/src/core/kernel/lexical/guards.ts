@@ -1,5 +1,5 @@
-import type { SerializedLexicalNode, SerializedLexicalRoot, SerializedTextNode } from "./types";
-import { isObject } from "../utils/isObject";
+import type { SerializedLexicalNode, SerializedLexicalRoot, SerializedTextNode } from "./types.js";
+import { isObject } from "../utils/isObject.js";
 
 /**
  * Node with children property.

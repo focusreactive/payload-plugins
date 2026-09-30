@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { Field } from "payload";
 
-import { resolveFieldSubtree } from "./resolveFieldSubtree";
+import { resolveFieldSubtree } from "./resolveFieldSubtree.js";
 
 // Minimal field configs cast to Field — enough for payload/shared predicates,
 // which key on `type` / `name` / `fields` / `tabs`.

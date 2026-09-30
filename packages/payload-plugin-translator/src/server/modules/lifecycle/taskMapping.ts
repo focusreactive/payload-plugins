@@ -1,6 +1,6 @@
-import type { TaskInput } from "../task-runner/types";
-import type { TaskHandlerInput } from "../task-runner/TaskRunnerProvider.interface";
-import type { TranslationTask } from "./types";
+import type { TaskInput } from "../task-runner/types.js";
+import type { TaskHandlerInput } from "../task-runner/TaskRunnerProvider.interface.js";
+import type { TranslationTask } from "./types.js";
 
 /** Map an enqueue-side {@link TaskInput} to the public {@link TranslationTask}. */
 export const taskFromInput = (task: TaskInput): TranslationTask => ({

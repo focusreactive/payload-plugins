@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 import type { CollectionAfterDeleteHook, Payload } from "payload";
 
-import type { ProvenanceStore } from "../../../core/domain/provenance";
-import type { ManagedCollectionsConfig } from "./Provenance.shapes";
-import { injectProvenanceCleanup, makeProvenanceCleanupHook } from "./ProvenanceCleanup.hook";
+import type { ProvenanceStore } from "../../../core/domain/provenance/index.js";
+import type { ManagedCollectionsConfig } from "./Provenance.shapes.js";
+import { injectProvenanceCleanup, makeProvenanceCleanupHook } from "./ProvenanceCleanup.hook.js";
 
 const makeStore = () =>
   ({

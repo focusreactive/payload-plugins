@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { SkipExistingStrategy } from "./SkipExisting.strategy";
+import { SkipExistingStrategy } from "./SkipExisting.strategy.js";
 
 describe("SkipExistingStrategy", () => {
   const strategy = new SkipExistingStrategy();

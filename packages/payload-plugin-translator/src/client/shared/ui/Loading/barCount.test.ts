@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getBarCount } from "./barCount";
+import { getBarCount } from "./barCount.js";
 
 describe("getBarCount", () => {
   it("scales the bar count with the host size", () => {

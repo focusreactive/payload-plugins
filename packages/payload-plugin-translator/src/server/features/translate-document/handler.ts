@@ -1,19 +1,19 @@
 import type { Payload } from "payload";
 import { APIError } from "payload";
 
-import type { Handler } from "../../shared";
-import type { TranslationProvider } from "../../../core/domain/translation-providers";
-import { translateContent } from "../../../core/translation-pipeline";
-import type { ProvenanceServiceFactory } from "../../modules/provenance";
-import { fetchSourceDocument } from "../../shared/payload/sourceDocument";
-import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes";
-import { freshReq } from "../../shared/payload/TransactionScope.shapes";
+import type { Handler } from "../../shared/index.js";
+import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
+import { translateContent } from "../../../core/translation-pipeline/index.js";
+import type { ProvenanceServiceFactory } from "../../modules/provenance/index.js";
+import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
+import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes.js";
+import { freshReq } from "../../shared/payload/TransactionScope.shapes.js";
 
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
-import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext";
-import type { TranslateDocumentInput, TranslateDocumentOutput } from "./model";
-import { resolveTargetLayer } from "./targetLayer";
-import type { PublishScope, TargetLayer } from "./targetLayer";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
+import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext.js";
+import type { TranslateDocumentInput, TranslateDocumentOutput } from "./model.js";
+import { resolveTargetLayer } from "./targetLayer.js";
+import type { PublishScope, TargetLayer } from "./targetLayer.js";
 
 /** Loop guard: the auto-translate afterChange hook (#51) skips writes carrying this key. */
 const translatorWriteContext = () => ({ [AUTO_TRANSLATE_SKIP_CONTEXT_KEY]: true });

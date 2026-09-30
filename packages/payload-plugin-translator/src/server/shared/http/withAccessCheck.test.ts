@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import type { PayloadRequest } from "payload";
-import { withAccessCheck } from "./withAccessCheck";
-import { ServerResponse } from "./ServerResponse";
-import type { AccessGuard } from "../access/types";
+import { withAccessCheck } from "./withAccessCheck.js";
+import { ServerResponse } from "./ServerResponse.js";
+import type { AccessGuard } from "../access/types.js";
 
 describe("withAccessCheck", () => {
   const createMockRequest = (): PayloadRequest =>

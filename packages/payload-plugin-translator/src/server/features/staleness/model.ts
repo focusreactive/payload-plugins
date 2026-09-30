@@ -1,8 +1,8 @@
 import { z } from "zod";
 import type { CollectionSlug } from "payload";
 
-import { JobIdSchema } from "../../shared";
-import type { TranslationContext } from "../../modules/translation-levels";
+import { JobIdSchema } from "../../shared/index.js";
+import type { TranslationContext } from "../../modules/translation-levels/index.js";
 
 /**
  * Route params for reading a document's per-locale staleness.

@@ -267,6 +267,31 @@ export default defineConfig({
   },
   overrides: [
     {
+      // Every preview branch of apps/cms shares one Vercel data cache, so an unscoped key lets one
+      // branch serve another's content. scopedCache.ts is the one place allowed to reach
+      // next/cache's keyed APIs; everything else goes through it.
+      files: ["apps/cms/src/**/*.ts", "apps/cms/src/**/*.tsx"],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            paths: [
+              {
+                name: "next/cache",
+                importNames: ["unstable_cache", "revalidateTag", "unstable_cacheTag", "cacheTag"],
+                message:
+                  "Use scopedCache / revalidateScopedTag from @/lib/utils/scopedCache, which prefix every key and tag with the branch.",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      files: ["apps/cms/src/lib/utils/scopedCache.ts"],
+      rules: { "no-restricted-imports": "off" },
+    },
+    {
       // Presentational boundary (apps/cms): each block's and collection's
       // colocated ui/ folder is the presentational section — props in, JSX
       // out. Data/Payload access belongs in the controller (Component.tsx),

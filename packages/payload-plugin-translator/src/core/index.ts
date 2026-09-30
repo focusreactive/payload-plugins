@@ -8,26 +8,26 @@ export type {
   TranslationInput,
   TranslationOutput,
   TranslationIndex,
-} from "./domain/translation-providers";
+} from "./domain/translation-providers/index.js";
 
 // Translation pipeline
-export { TranslationPipeline, translateContent } from "./translation-pipeline";
-export type { TranslateContentArgs, TranslationStrategy } from "./translation-pipeline";
+export { TranslationPipeline, translateContent } from "./translation-pipeline/index.js";
+export type { TranslateContentArgs, TranslationStrategy } from "./translation-pipeline/index.js";
 
 // Provenance (contracts only — payload-free port + record types)
 export type {
   ProvenanceKey,
   ProvenanceStore,
   TranslationProvenanceRecord,
-} from "./domain/provenance";
+} from "./domain/provenance/index.js";
 
 // Content projection
-export { projectTranslatableContent } from "./domain/content-projection/contentProjector";
-export type { ProjectionEntry } from "./domain/content-projection/contentProjector";
-export { fingerprint } from "./domain/content-projection/fingerprinter";
-export { computeSourceFingerprint } from "./domain/content-projection/computeSourceFingerprint";
-export { makeIdPath } from "./domain/content-projection/idPath";
-export type { IdPath, PathSegment } from "./domain/content-projection/idPath";
+export { projectTranslatableContent } from "./domain/content-projection/contentProjector.js";
+export type { ProjectionEntry } from "./domain/content-projection/contentProjector.js";
+export { fingerprint } from "./domain/content-projection/fingerprinter.js";
+export { computeSourceFingerprint } from "./domain/content-projection/computeSourceFingerprint.js";
+export { makeIdPath } from "./domain/content-projection/idPath.js";
+export type { IdPath, PathSegment } from "./domain/content-projection/idPath.js";
 
 // Field traversal
 export {
@@ -40,7 +40,7 @@ export {
   resolveBlockFields,
   tabScopes,
   walkFields,
-} from "./kernel/field-traversal";
+} from "./kernel/field-traversal/index.js";
 export type {
   ArrayFieldLike,
   BlockLike,
@@ -54,4 +54,4 @@ export type {
   TabLike,
   TabScope,
   TabsFieldLike,
-} from "./kernel/field-traversal";
+} from "./kernel/field-traversal/index.js";

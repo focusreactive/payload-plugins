@@ -4,5 +4,5 @@ export type {
   ProvenanceKey,
   ProvenanceStore,
   TranslationProvenanceRecord,
-} from "./ProvenanceStore.interface";
-export { isRecordStale } from "./staleness";
+} from "./ProvenanceStore.interface.js";
+export { isRecordStale } from "./staleness.js";

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
-import type { TranslationProvenanceRecord } from "./ProvenanceStore.interface";
-import { isRecordStale } from "./staleness";
+import type { TranslationProvenanceRecord } from "./ProvenanceStore.interface.js";
+import { isRecordStale } from "./staleness.js";
 
 const base: TranslationProvenanceRecord = {
   collectionSlug: "posts",

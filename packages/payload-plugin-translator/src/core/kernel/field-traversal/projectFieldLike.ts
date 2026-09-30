@@ -1,4 +1,4 @@
-import type { FieldLike, TabLike } from "./types";
+import type { FieldLike, TabLike } from "./types.js";
 
 function projectField(field: FieldLike): FieldLike {
   const out: FieldLike = { type: field.type };

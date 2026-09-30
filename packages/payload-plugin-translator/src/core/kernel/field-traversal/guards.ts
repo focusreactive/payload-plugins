@@ -1,5 +1,5 @@
-import { isObject } from "../utils/isObject";
-import type { FieldLike, TabsFieldLike } from "./types";
+import { isObject } from "../utils/isObject.js";
+import type { FieldLike, TabsFieldLike } from "./types.js";
 
 /**
  * Type guard: Checks if a field is a tabs field.

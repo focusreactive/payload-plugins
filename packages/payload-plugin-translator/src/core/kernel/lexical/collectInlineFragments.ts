@@ -5,8 +5,8 @@
  * the nodes themselves, which is what lets this layer reorder formatted pieces at all.
  */
 
-import { hasChildren, isSerializedLexicalTextNode } from "./guards";
-import type { SerializedLexicalNode, SerializedTextNode } from "./types";
+import { hasChildren, isSerializedLexicalTextNode } from "./guards.js";
+import type { SerializedLexicalNode, SerializedTextNode } from "./types.js";
 
 /**
  * One translatable piece of a container.

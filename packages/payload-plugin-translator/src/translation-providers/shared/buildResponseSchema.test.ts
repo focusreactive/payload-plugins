@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildResponseSchema } from "./buildResponseSchema";
+import { buildResponseSchema } from "./buildResponseSchema.js";
 
 describe("buildResponseSchema", () => {
   it("requires exactly the input's keys and forbids extras", () => {

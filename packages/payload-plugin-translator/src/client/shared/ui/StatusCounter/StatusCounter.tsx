@@ -1,6 +1,6 @@
 import classNames from "classnames";
 
-import StatusIndicator from "../StatusIndicator";
+import StatusIndicator from "../StatusIndicator/index.js";
 
 import styles from "./styles.module.scss";
 

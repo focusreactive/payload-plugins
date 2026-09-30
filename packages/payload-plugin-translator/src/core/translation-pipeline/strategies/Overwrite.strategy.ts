@@ -1,5 +1,5 @@
-import { isEmpty } from "../../kernel/utils/isEmpty";
-import type { TranslationStrategy, StrategyContext } from "./TranslationStrategy.interface";
+import { isEmpty } from "../../kernel/utils/isEmpty.js";
+import type { TranslationStrategy, StrategyContext } from "./TranslationStrategy.interface.js";
 
 /**
  * Translates all fields, overwriting existing translations.

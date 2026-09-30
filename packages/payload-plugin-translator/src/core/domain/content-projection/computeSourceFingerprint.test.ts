@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import type { FieldLike } from "../../kernel/field-traversal";
-import { computeSourceFingerprint } from "./computeSourceFingerprint";
-import { projectTranslatableContent } from "./contentProjector";
-import { fingerprint } from "./fingerprinter";
+import type { FieldLike } from "../../kernel/field-traversal/index.js";
+import { computeSourceFingerprint } from "./computeSourceFingerprint.js";
+import { projectTranslatableContent } from "./contentProjector.js";
+import { fingerprint } from "./fingerprinter.js";
 
 describe("computeSourceFingerprint", () => {
   const schema: FieldLike[] = [{ name: "title", type: "text", localized: true }];

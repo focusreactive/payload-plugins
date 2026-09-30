@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
-import type { FieldLike } from "./types";
-import { projectFieldsToFieldLike } from "./projectFieldLike";
+import type { FieldLike } from "./types.js";
+import { projectFieldsToFieldLike } from "./projectFieldLike.js";
 
 // Tests are derived from the projection CONTRACT (design doc + Payload field model), not from the
 // implementation: the projector must deep-copy exactly { type, name, localized, custom, fields,

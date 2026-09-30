@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pipe } from "./pipe";
+import { pipe } from "./pipe.js";
 
 describe("pipe", () => {
   it("returns input unchanged when no functions provided", () => {

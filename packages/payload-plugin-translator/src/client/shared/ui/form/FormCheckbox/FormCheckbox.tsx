@@ -2,8 +2,8 @@ import type { ReactElement } from "react";
 import { useId } from "react";
 import { useController } from "react-hook-form";
 
-import { Checkbox } from "../../Checkbox";
-import Description from "../../Description";
+import { Checkbox } from "../../Checkbox/index.js";
+import Description from "../../Description/index.js";
 
 import styles from "./styles.module.scss";
 

@@ -1,7 +1,7 @@
-import type { TaskRunner } from "../task-runner/TaskRunner.interface";
-import { toTaskFilter } from "../task-runner/toTaskFilter";
-import type { LifecycleNotifier } from "./LifecycleNotifier";
-import { taskFromInput } from "./taskMapping";
+import type { TaskRunner } from "../task-runner/TaskRunner.interface.js";
+import { toTaskFilter } from "../task-runner/toTaskFilter.js";
+import type { LifecycleNotifier } from "./LifecycleNotifier.js";
+import { taskFromInput } from "./taskMapping.js";
 
 /**
  * Decorate a {@link TaskRunner} so `enqueue` fires the `queued` lifecycle callback for each task.

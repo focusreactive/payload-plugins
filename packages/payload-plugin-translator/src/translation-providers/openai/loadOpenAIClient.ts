@@ -1,5 +1,5 @@
-import { errorMessageLower, ProviderConfigurationError } from "../shared";
-import type { OpenAIClientShape } from "./OpenAI.shapes";
+import { errorMessageLower, ProviderConfigurationError } from "../shared/index.js";
+import type { OpenAIClientShape } from "./OpenAI.shapes.js";
 
 /**
  * A literal `import("openai")` is type-resolved like a static import and would put the SDK into the

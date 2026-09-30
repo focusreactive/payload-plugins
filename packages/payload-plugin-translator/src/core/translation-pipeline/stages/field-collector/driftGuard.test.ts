@@ -1,14 +1,14 @@
 import type { Field } from "payload";
 import { describe, expect, it } from "vitest";
 
-import { projectTranslatableContent } from "../../../domain/content-projection/contentProjector";
-import type { FieldLike } from "../../../kernel/field-traversal/types";
-import { OverwriteStrategy } from "../../strategies";
-import type { FieldChunk } from "../../types";
-import { PlainTextExpander } from "../text-expander/PlainTextExpander";
-import { RichTextExpander } from "../text-expander/RichTextExpander";
-import { TextChunkExpander } from "../text-expander/TextChunkExpander";
-import { FieldChunkCollector } from "./FieldChunkCollector";
+import { projectTranslatableContent } from "../../../domain/content-projection/contentProjector.js";
+import type { FieldLike } from "../../../kernel/field-traversal/types.js";
+import { OverwriteStrategy } from "../../strategies/index.js";
+import type { FieldChunk } from "../../types/index.js";
+import { PlainTextExpander } from "../text-expander/PlainTextExpander.js";
+import { RichTextExpander } from "../text-expander/RichTextExpander.js";
+import { TextChunkExpander } from "../text-expander/TextChunkExpander.js";
+import { FieldChunkCollector } from "./FieldChunkCollector.js";
 
 // Drift guard (slice 6, option B): the read-only ContentProjector and the translation pipeline
 // must agree on WHICH leaves are translatable and WHAT source text each holds. They derive that

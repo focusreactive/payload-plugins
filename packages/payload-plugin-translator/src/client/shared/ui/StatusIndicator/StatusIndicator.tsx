@@ -1,7 +1,7 @@
 import classNames from "classnames";
 import type { PropsWithChildren } from "react";
 
-import ColorIndicator from "../ColorIndicator";
+import ColorIndicator from "../ColorIndicator/index.js";
 
 import styles from "./styles.module.scss";
 

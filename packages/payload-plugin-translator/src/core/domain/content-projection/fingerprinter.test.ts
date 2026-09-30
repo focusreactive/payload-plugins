@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { fingerprint } from "./fingerprinter";
-import type { IdPath } from "./idPath";
+import { fingerprint } from "./fingerprinter.js";
+import type { IdPath } from "./idPath.js";
 
 const entry = (idPath: string, text: string) => ({ idPath: idPath as IdPath, text });
 

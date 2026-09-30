@@ -1,4 +1,7 @@
-import type { TranslationInput, TranslationOutput } from "../../core/domain/translation-providers";
+import type {
+  TranslationInput,
+  TranslationOutput,
+} from "../../core/domain/translation-providers/index.js";
 
 export type DryRunTransformer = (text: string) => string | Promise<string>;
 

@@ -1,26 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 import { APIError } from "payload";
-import { TranslateDocumentHandler } from "./handler";
-import type { TranslationProvider } from "../../../core/domain/translation-providers";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
-import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext";
-import type { ProvenanceStore } from "../../../core/domain/provenance";
-import { ProvenanceService } from "../../modules/provenance";
-import type { ProvenanceServiceFactory } from "../../modules/provenance";
-import type { TranslateDocumentInput } from "./model";
+import { TranslateDocumentHandler } from "./handler.js";
+import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
+import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateContext.js";
+import type { ProvenanceStore } from "../../../core/domain/provenance/index.js";
+import { ProvenanceService } from "../../modules/provenance/index.js";
+import type { ProvenanceServiceFactory } from "../../modules/provenance/index.js";
+import type { TranslateDocumentInput } from "./model.js";
 
 // Mock the translation core — the handler's unit tests isolate its
 // orchestration (fetch / strategy plumbing / save), not the pipeline itself.
 // translateContent returns the translated data directly, or null when there is
 // nothing to translate.
-vi.mock("../../../core/translation-pipeline", () => ({
+vi.mock("../../../core/translation-pipeline/index.js", () => ({
   translateContent: vi.fn().mockResolvedValue(null),
 }));
 
 // Provenance fingerprinting is the core's job and tested there; here we pin a fixed hash so the
 // handler test asserts only the record the handler builds and hands to the store.
-vi.mock("../../../core/domain/content-projection/computeSourceFingerprint", () => ({
+vi.mock("../../../core/domain/content-projection/computeSourceFingerprint.js", () => ({
   computeSourceFingerprint: vi.fn(() => "fp-fixed"),
 }));
 
@@ -141,7 +141,7 @@ describe("TranslateDocumentHandler", () => {
 
   describe("translateContent invocation", () => {
     it("forwards fetched docs, strategy and locales to translateContent", async () => {
-      const { translateContent } = await import("../../../core/translation-pipeline");
+      const { translateContent } = await import("../../../core/translation-pipeline/index.js");
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       const input = createInput({
@@ -168,7 +168,7 @@ describe("TranslateDocumentHandler", () => {
 
   describe("success responses", () => {
     it("returns success when no translation needed (pipeline returns null)", async () => {
-      const { translateContent } = await import("../../../core/translation-pipeline");
+      const { translateContent } = await import("../../../core/translation-pipeline/index.js");
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       const input = createInput();
@@ -180,7 +180,7 @@ describe("TranslateDocumentHandler", () => {
     });
 
     it("returns success after saving translated document", async () => {
-      const { translateContent } = await import("../../../core/translation-pipeline");
+      const { translateContent } = await import("../../../core/translation-pipeline/index.js");
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         title: "Übersetzter Titel",
       });
@@ -194,7 +194,7 @@ describe("TranslateDocumentHandler", () => {
 
   describe("saving translated documents", () => {
     beforeEach(async () => {
-      const { translateContent } = await import("../../../core/translation-pipeline");
+      const { translateContent } = await import("../../../core/translation-pipeline/index.js");
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         title: "Translated",
       });
@@ -292,7 +292,7 @@ describe("TranslateDocumentHandler", () => {
 
   describe("publishing", () => {
     const nothingToTranslate = async () => {
-      const { translateContent } = await import("../../../core/translation-pipeline");
+      const { translateContent } = await import("../../../core/translation-pipeline/index.js");
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     };
 
@@ -374,7 +374,7 @@ describe("TranslateDocumentHandler", () => {
     });
 
     const withTranslatedData = async () => {
-      const { translateContent } = await import("../../../core/translation-pipeline");
+      const { translateContent } = await import("../../../core/translation-pipeline/index.js");
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         title: "Hallo",
       });
@@ -383,7 +383,7 @@ describe("TranslateDocumentHandler", () => {
     it("upserts a provenance record after a successful translation", async () => {
       await withTranslatedData();
       const { computeSourceFingerprint } =
-        await import("../../../core/domain/content-projection/computeSourceFingerprint");
+        await import("../../../core/domain/content-projection/computeSourceFingerprint.js");
       // Distinguish source vs. target findByID calls by locale so this assertion actually
       // proves the handler fingerprints the source document, not the target one.
       (mockPayload.findByID as ReturnType<typeof vi.fn>).mockImplementation(
@@ -423,9 +423,9 @@ describe("TranslateDocumentHandler", () => {
       // The stub below mutates its `sourceData` argument on purpose. The real pipeline no longer
       // does — it detaches object-valued leaves — so this stands as the handler-level guard that a
       // regression there cannot silently poison the staleness baseline.
-      const { translateContent } = await import("../../../core/translation-pipeline");
+      const { translateContent } = await import("../../../core/translation-pipeline/index.js");
       const { computeSourceFingerprint } =
-        await import("../../../core/domain/content-projection/computeSourceFingerprint");
+        await import("../../../core/domain/content-projection/computeSourceFingerprint.js");
 
       (mockPayload.findByID as ReturnType<typeof vi.fn>).mockImplementation(
         ({ locale }: { locale: string }) =>
@@ -473,7 +473,7 @@ describe("TranslateDocumentHandler", () => {
     });
 
     it("does not record provenance when nothing was translated (pipeline returns null)", async () => {
-      const { translateContent } = await import("../../../core/translation-pipeline");
+      const { translateContent } = await import("../../../core/translation-pipeline/index.js");
       (translateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       await makeHandlerWithProvenance().handle(mockPayload, createInput());

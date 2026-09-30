@@ -1,2 +1,2 @@
-export { FieldChunkCollector } from "./FieldChunkCollector";
-export { FieldChunkCollectorStage } from "./FieldChunkCollector.stage";
+export { FieldChunkCollector } from "./FieldChunkCollector.js";
+export { FieldChunkCollectorStage } from "./FieldChunkCollector.stage.js";
