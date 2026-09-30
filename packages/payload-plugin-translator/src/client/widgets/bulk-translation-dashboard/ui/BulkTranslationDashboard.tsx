@@ -8,19 +8,19 @@ import {
   AutoTranslateMarker,
   deriveCollectionPanelStatus,
   TranslationsApi,
-} from "../../../entities/translation";
-import type { AutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary";
-import type { TargetSelectionMode } from "../../../../types/TargetSelection";
+} from "../../../entities/translation/index.js";
+import type { AutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary.js";
+import type { TargetSelectionMode } from "../../../../types/TargetSelection.js";
 import {
   CollectionTranslationForm,
   FORM_FIELDS,
-} from "../../../features/collection-translation-form";
-import type { FormValues } from "../../../features/collection-translation-form";
-import { CollectionTranslationFormModel } from "../../../features/collection-translation-form/index.client";
-import CollectionTranslationPopup from "../../../features/collection-translation-popup";
-import { CollectionTranslationProgress } from "../../../features/collection-translation-progress";
-import { handleFormError } from "../../../shared/lib/forms/handle-form-error";
-import { useCollectionDashboardUrlParams } from "../../../shared/lib/payload/hooks/useCollectionDashboardUrlParams";
+} from "../../../features/collection-translation-form/index.js";
+import type { FormValues } from "../../../features/collection-translation-form/index.js";
+import { CollectionTranslationFormModel } from "../../../features/collection-translation-form/index.client.js";
+import CollectionTranslationPopup from "../../../features/collection-translation-popup/index.js";
+import { CollectionTranslationProgress } from "../../../features/collection-translation-progress/index.js";
+import { handleFormError } from "../../../shared/lib/forms/handle-form-error.js";
+import { useCollectionDashboardUrlParams } from "../../../shared/lib/payload/hooks/useCollectionDashboardUrlParams.js";
 
 import styles from "./styles.module.scss";
 

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 
-import type { FieldLike } from "../../kernel/field-traversal";
+import type { FieldLike } from "../../kernel/field-traversal/index.js";
 
-import { hasSourceContentChanged } from "./hasSourceContentChanged";
+import { hasSourceContentChanged } from "./hasSourceContentChanged.js";
 
 describe("hasSourceContentChanged", () => {
   const schema: FieldLike[] = [{ name: "title", type: "text", localized: true }];

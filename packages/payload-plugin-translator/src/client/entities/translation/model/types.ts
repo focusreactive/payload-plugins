@@ -1,4 +1,4 @@
-import type { DocumentTranslationStatus } from "./enums";
+import type { DocumentTranslationStatus } from "./enums.js";
 
 type InputData = {
   source_lng: string;

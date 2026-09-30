@@ -1,17 +1,17 @@
 import type { CollectionSlug, PayloadRequest } from "payload";
 
-import { getByPath, ServerResponse } from "../../shared";
-import { translateContent } from "../../../core/translation-pipeline";
+import { getByPath, ServerResponse } from "../../shared/index.js";
+import { translateContent } from "../../../core/translation-pipeline/index.js";
 
 import type {
   FieldTranslationNotice,
   FieldTranslationReason,
   FieldTranslationResult,
-} from "../../../types/wire/field-translation";
-import { FieldTranslationInputSchema, MAX_FIELD_VALUE_BYTES } from "./model";
-import type { FieldTranslationConfig } from "./model";
-import { resolveFieldSubtree } from "./resolveFieldSubtree";
-import { fetchSourceDocument } from "../../shared/payload/sourceDocument";
+} from "../../../types/wire/field-translation.js";
+import { FieldTranslationInputSchema, MAX_FIELD_VALUE_BYTES } from "./model.js";
+import type { FieldTranslationConfig } from "./model.js";
+import { resolveFieldSubtree } from "./resolveFieldSubtree.js";
+import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
 
 const byteLength = (value: unknown): number =>
   new TextEncoder().encode(JSON.stringify(value) ?? "").length;

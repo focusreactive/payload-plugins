@@ -1,8 +1,8 @@
-import type { PipelineContext, PipelineStage } from "../../types";
-import type { TextExpander } from "./TextExpander.interface";
-import { TextChunkExpander } from "./TextChunkExpander";
-import { RichTextExpander } from "./RichTextExpander";
-import { PlainTextExpander } from "./PlainTextExpander";
+import type { PipelineContext, PipelineStage } from "../../types/index.js";
+import type { TextExpander } from "./TextExpander.interface.js";
+import { TextChunkExpander } from "./TextChunkExpander.js";
+import { RichTextExpander } from "./RichTextExpander.js";
+import { PlainTextExpander } from "./PlainTextExpander.js";
 
 const defaultExpanders: TextExpander[] = [new RichTextExpander(), new PlainTextExpander()];
 

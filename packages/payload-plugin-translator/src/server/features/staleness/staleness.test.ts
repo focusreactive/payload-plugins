@@ -1,14 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Field, Payload, PayloadRequest } from "payload";
 
-import { computeSourceFingerprint } from "../../../core/domain/content-projection/computeSourceFingerprint";
-import type { ProvenanceStore, TranslationProvenanceRecord } from "../../../core/domain/provenance";
-import { ProvenanceService } from "../../modules/provenance";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
+import { computeSourceFingerprint } from "../../../core/domain/content-projection/computeSourceFingerprint.js";
+import type {
+  ProvenanceStore,
+  TranslationProvenanceRecord,
+} from "../../../core/domain/provenance/index.js";
+import { ProvenanceService } from "../../modules/provenance/index.js";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 
-import { GetDocumentStalenessHandler } from "./getDocumentStaleness.handler";
-import { DismissStalenessHandler } from "./dismissStaleness.handler";
-import type { StalenessConfig } from "./model";
+import { GetDocumentStalenessHandler } from "./getDocumentStaleness.handler.js";
+import { DismissStalenessHandler } from "./dismissStaleness.handler.js";
+import type { StalenessConfig } from "./model.js";
 
 const COLLECTION = "posts";
 const schema: Field[] = [{ name: "title", type: "text", localized: true }];

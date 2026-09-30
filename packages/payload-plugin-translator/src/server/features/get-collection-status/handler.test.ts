@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, PayloadRequest, CollectionSlug } from "payload";
-import { GetCollectionStatusHandler } from "./handler";
-import type { GetCollectionStatusConfig } from "./model";
-import type { TaskRunnerFactory, TaskRunner, Task } from "../../modules/task-runner";
+import { GetCollectionStatusHandler } from "./handler.js";
+import type { GetCollectionStatusConfig } from "./model.js";
+import type { TaskRunnerFactory, TaskRunner, Task } from "../../modules/task-runner/index.js";
 
 describe("GetCollectionStatusHandler", () => {
   let handler: GetCollectionStatusHandler;

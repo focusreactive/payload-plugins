@@ -1,7 +1,7 @@
 "use client";
 
-import { AutoTranslateIcon } from "../../../../shared/lib/assets/icons/AutoTranslateIcon";
-import InfoPopover from "../../../../shared/ui/InfoPopover";
+import { AutoTranslateIcon } from "../../../../shared/lib/assets/icons/AutoTranslateIcon.js";
+import InfoPopover from "../../../../shared/ui/InfoPopover/index.js";
 
 import styles from "./styles.module.scss";
 

@@ -1,15 +1,15 @@
 import type { CollectionConfig, Config, Endpoint } from "payload";
 
-import type { AccessGuard } from "../../../types/AccessGuard";
-import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
-import type { TargetSelectionMode } from "../../../types/TargetSelection";
-import type { ConfigModifier } from "../../../types/ConfigModifier";
-import type { TranslationProvider } from "../../../core/domain/translation-providers";
-import type { TaskRunnerFactory } from "../task-runner";
-import type { ProvenanceServiceFactory } from "../provenance";
+import type { AccessGuard } from "../../../types/AccessGuard.js";
+import type { RawPayloadComponentExport } from "../../../types/PayloadComponentExport.js";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
+import type { TargetSelectionMode } from "../../../types/TargetSelection.js";
+import type { ConfigModifier } from "../../../types/ConfigModifier.js";
+import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
+import type { TaskRunnerFactory } from "../task-runner/index.js";
+import type { ProvenanceServiceFactory } from "../provenance/index.js";
 
-import type { CollectionAdminSlot, LevelContext, TranslationContext } from "./types";
+import type { CollectionAdminSlot, LevelContext, TranslationContext } from "./types.js";
 
 type CollectionComponent = {
   slot: CollectionAdminSlot;

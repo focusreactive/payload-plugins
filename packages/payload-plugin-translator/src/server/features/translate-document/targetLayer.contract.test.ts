@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { resolveTargetLayer } from "./targetLayer";
-import type { TargetLayer, VersionsSlice } from "./targetLayer";
+import { resolveTargetLayer } from "./targetLayer.js";
+import type { TargetLayer, VersionsSlice } from "./targetLayer.js";
 
 const LNG = "de";
 const noDrafts: TargetLayer = { kind: "no-drafts", write: { autosave: false } };

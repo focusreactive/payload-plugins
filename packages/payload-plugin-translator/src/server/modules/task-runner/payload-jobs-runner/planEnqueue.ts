@@ -1,7 +1,7 @@
 import type { CollectionSlug } from "payload";
 
-import { isCancelled, latestLogByLocale } from "./normalizeJob";
-import type { PayloadJob } from "./types";
+import { isCancelled, latestLogByLocale } from "./normalizeJob.js";
+import type { PayloadJob } from "./types.js";
 
 /** The part of a request that every locale in it shares. */
 export type RequestShape = {

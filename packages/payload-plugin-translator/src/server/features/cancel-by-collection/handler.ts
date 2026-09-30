@@ -1,11 +1,11 @@
 import type { PayloadRequest } from "payload";
 
-import { ServerResponse } from "../../shared";
-import type { TaskRunnerFactory } from "../../modules/task-runner";
-import { isCollectionAvailable } from "../_lib/collection-utils";
+import { ServerResponse } from "../../shared/index.js";
+import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
+import { isCollectionAvailable } from "../_lib/collection-utils.js";
 
-import { CancelByCollectionInputSchema } from "./model";
-import type { CancelConfig } from "./model";
+import { CancelByCollectionInputSchema } from "./model.js";
+import type { CancelConfig } from "./model.js";
 
 /** Cancels every queued job for a collection; jobs in flight are left alone. */
 export class CancelByCollectionHandler {

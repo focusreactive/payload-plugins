@@ -1,9 +1,9 @@
-import { unstable_cache } from "next/cache";
 import { draftMode } from "next/headers";
 import type { Payload, RequiredDataFromCollectionSlug } from "payload";
 import { cache } from "react";
 
 import { cacheTag } from "@/lib/utils/cacheTags";
+import { scopedCache } from "@/lib/utils/scopedCache";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { Locale } from "@/lib/types";
 import { getPayloadClient } from "@/dal/payload-client";
@@ -56,7 +56,7 @@ export const getPageBySlug = cache(
       type: "page",
     });
 
-    return unstable_cache(
+    return scopedCache(
       () => getPageBySlugQuery(payload, pathSegmentsNorm, resolvedLocale, false),
       [pathKey, resolvedLocale],
       {

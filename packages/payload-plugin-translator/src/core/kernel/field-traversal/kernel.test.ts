@@ -10,7 +10,7 @@ import type {
 } from "payload";
 import { describe, expect, it } from "vitest";
 
-import { classifyField, matchElementById, resolveBlockFields, tabScopes } from "./kernel";
+import { classifyField, matchElementById, resolveBlockFields, tabScopes } from "./kernel.js";
 
 const text = (name: string, extra: Record<string, unknown> = {}): TextField =>
   ({ name, type: "text", ...extra }) as unknown as TextField;

@@ -1,7 +1,11 @@
-import { isEmpty } from "../../../kernel/utils/isEmpty";
-import { isObject } from "../../../kernel/utils/isObject";
-import type { ChildCursor, FieldLike, FieldWalker } from "../../../kernel/field-traversal";
-import { matchElementById, resolveBlockFields, walkFields } from "../../../kernel/field-traversal";
+import { isEmpty } from "../../../kernel/utils/isEmpty.js";
+import { isObject } from "../../../kernel/utils/isObject.js";
+import type { ChildCursor, FieldLike, FieldWalker } from "../../../kernel/field-traversal/index.js";
+import {
+  matchElementById,
+  resolveBlockFields,
+  walkFields,
+} from "../../../kernel/field-traversal/index.js";
 
 /**
  * Data position for the reconcile walk: the source + target objects at the current level, plus

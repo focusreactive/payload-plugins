@@ -1,9 +1,9 @@
-import { unstable_cache } from "next/cache";
 import type { Payload } from "payload";
 import { cache } from "react";
 
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { cacheTag } from "@/lib/utils/cacheTags";
+import { scopedCache } from "@/lib/utils/scopedCache";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import type { Locale } from "@/lib/types";
 
@@ -61,7 +61,7 @@ const getPostsCached = cache(
     locale: Locale,
     category: string | undefined
   ) =>
-    unstable_cache(
+    scopedCache(
       () => getPostsQuery(payload, page, limit, locale, category),
       [page.toString(), limit.toString(), locale, category ?? ""],
       {

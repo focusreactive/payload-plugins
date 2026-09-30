@@ -2,10 +2,10 @@ import type { ReactElement } from "react";
 import { useId } from "react";
 import { useController } from "react-hook-form";
 
-import Description from "../../Description";
-import Label from "../../Label";
-import MultiSelect from "../../MultiSelect";
-import type { MultiSelectOption } from "../../MultiSelect";
+import Description from "../../Description/index.js";
+import Label from "../../Label/index.js";
+import MultiSelect from "../../MultiSelect/index.js";
+import type { MultiSelectOption } from "../../MultiSelect/index.js";
 
 type FormMultiSelectProps = {
   name: string;

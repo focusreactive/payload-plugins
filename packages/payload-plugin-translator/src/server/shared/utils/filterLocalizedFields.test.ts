@@ -1,6 +1,6 @@
 import type { Field } from "payload";
 import { describe, expect, it } from "vitest";
-import { filterLocalizedFields } from "./filterLocalizedFields";
+import { filterLocalizedFields } from "./filterLocalizedFields.js";
 
 describe("filterLocalizedFields", () => {
   describe("simple fields", () => {

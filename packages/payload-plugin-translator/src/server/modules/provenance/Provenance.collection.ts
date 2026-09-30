@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 
-import type { ManagedCollectionsConfig } from "./Provenance.shapes";
+import type { ManagedCollectionsConfig } from "./Provenance.shapes.js";
 
 /** Default slug for the provenance sidecar collection. Overridable via `provenance.slug`. */
 export const DEFAULT_PROVENANCE_SLUG = "translator-provenance";

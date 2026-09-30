@@ -1,14 +1,19 @@
-import type { TranslationProvider } from "../domain/translation-providers";
-import type { PipelineConfig, PipelineResult, PipelineContext, PipelineStage } from "./types";
-import type { TranslationStrategy } from "./strategies";
-import type { TextExpander } from "./stages";
+import type { TranslationProvider } from "../domain/translation-providers/index.js";
+import type {
+  PipelineConfig,
+  PipelineResult,
+  PipelineContext,
+  PipelineStage,
+} from "./types/index.js";
+import type { TranslationStrategy } from "./strategies/index.js";
+import type { TextExpander } from "./stages/index.js";
 import {
   DataReconcilerStage,
   FieldChunkCollectorStage,
   TranslationStage,
   TextChunkExpanderStage,
   TranslationMutatorStage,
-} from "./stages";
+} from "./stages/index.js";
 
 /**
  * Options for TranslationPipeline.

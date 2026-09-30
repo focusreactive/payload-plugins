@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createOpenAIProvider } from "./OpenAITranslation.provider";
-import { OpenAITranslationProvider } from "./OpenAITranslationLegacy.provider";
-import type { OpenAIChatParams, OpenAIClientShape } from "./OpenAI.shapes";
-import { loadOpenAIClient } from "./loadOpenAIClient";
+import { createOpenAIProvider } from "./OpenAITranslation.provider.js";
+import { OpenAITranslationProvider } from "./OpenAITranslationLegacy.provider.js";
+import type { OpenAIChatParams, OpenAIClientShape } from "./OpenAI.shapes.js";
+import { loadOpenAIClient } from "./loadOpenAIClient.js";
 
-vi.mock("./loadOpenAIClient", () => ({
+vi.mock("./loadOpenAIClient.js", () => ({
   loadOpenAIClient: vi.fn(),
 }));
 

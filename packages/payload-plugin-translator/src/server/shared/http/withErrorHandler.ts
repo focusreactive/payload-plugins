@@ -1,7 +1,7 @@
 import { APIError } from "payload";
 
-import { ServerResponse } from "./ServerResponse";
-import { failureReasonText } from "./toClientErrorMessage";
+import { ServerResponse } from "./ServerResponse.js";
+import { failureReasonText } from "./toClientErrorMessage.js";
 
 /**
  * Wraps async handler with error handling.

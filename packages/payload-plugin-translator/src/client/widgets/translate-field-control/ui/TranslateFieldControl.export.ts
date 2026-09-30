@@ -1,5 +1,5 @@
-import type { RawPayloadComponentExport } from "../../../../types/PayloadComponentExport";
-import { clientComponentPath } from "../../../shared/utils/componentPath";
+import type { RawPayloadComponentExport } from "../../../../types/PayloadComponentExport.js";
+import { clientComponentPath } from "../../../shared/utils/componentPath.js";
 
 /**
  * Import-map reference to the per-field Translate control. Appended to a field's

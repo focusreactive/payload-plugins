@@ -1,6 +1,6 @@
-import type { InlineFragment } from "../../kernel/lexical/collectInlineFragments";
-import type { ParsedMark } from "../../kernel/lexical/inlineMarks";
-import type { SerializedLexicalNode, SerializedTextNode } from "../../kernel/lexical";
+import type { InlineFragment } from "../../kernel/lexical/collectInlineFragments.js";
+import type { ParsedMark } from "../../kernel/lexical/inlineMarks.js";
+import type { SerializedLexicalNode, SerializedTextNode } from "../../kernel/lexical/index.js";
 
 /**
  * Text chunk for plain text/textarea fields.

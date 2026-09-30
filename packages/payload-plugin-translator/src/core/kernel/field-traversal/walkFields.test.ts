@@ -1,7 +1,7 @@
 import type { Field } from "payload";
 import { describe, expect, it } from "vitest";
 
-import { resolveBlockFields } from "./kernel";
+import { resolveBlockFields } from "./kernel.js";
 import type {
   ArrayFieldLike,
   BlocksFieldLike,
@@ -10,8 +10,8 @@ import type {
   GroupFieldLike,
   LeafField,
   TabLike,
-} from "./types";
-import { walkFields } from "./walkFields";
+} from "./types.js";
+import { walkFields } from "./walkFields.js";
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);

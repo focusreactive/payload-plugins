@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import type { Field, RichTextField, TextField } from "payload";
 
-import { withFieldTranslation } from "./field-config";
-import { TranslateFieldControlExport } from "./client/widgets/translate-field-control";
+import { withFieldTranslation } from "./field-config.js";
+import { TranslateFieldControlExport } from "./client/widgets/translate-field-control/index.js";
 
 const textField = (overrides: Record<string, unknown> = {}): TextField =>
   ({ name: "title", type: "text", ...overrides }) as unknown as TextField;

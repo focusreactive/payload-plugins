@@ -10,13 +10,13 @@
  * it never mutates the document and never captures write handles.
  */
 
-import type { ChildCursor, FieldWalker } from "../../kernel/field-traversal";
-import { resolveBlockFields, walkFields } from "../../kernel/field-traversal";
-import type { FieldLike } from "../../kernel/field-traversal/types";
-import { isObject } from "../../kernel/utils/isObject";
-import type { IdPath, PathSegment } from "./idPath";
-import { elementSegment, makeIdPath } from "./idPath";
-import { isTranslatableLeaf, leafSourceText } from "./translatableLeaf";
+import type { ChildCursor, FieldWalker } from "../../kernel/field-traversal/index.js";
+import { resolveBlockFields, walkFields } from "../../kernel/field-traversal/index.js";
+import type { FieldLike } from "../../kernel/field-traversal/types.js";
+import { isObject } from "../../kernel/utils/isObject.js";
+import type { IdPath, PathSegment } from "./idPath.js";
+import { elementSegment, makeIdPath } from "./idPath.js";
+import { isTranslatableLeaf, leafSourceText } from "./translatableLeaf.js";
 
 /** One translatable leaf of a document: WHERE it lives ({@link IdPath}) and WHAT text it holds. */
 export interface ProjectionEntry {

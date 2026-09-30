@@ -1,5 +1,5 @@
-import type { FieldChunk, PlainTextChunk } from "../../types";
-import type { ExpansionResult, TextExpander } from "./TextExpander.interface";
+import type { FieldChunk, PlainTextChunk } from "../../types/index.js";
+import type { ExpansionResult, TextExpander } from "./TextExpander.interface.js";
 
 /**
  * Expands plain text and textarea fields into PlainTextChunks.

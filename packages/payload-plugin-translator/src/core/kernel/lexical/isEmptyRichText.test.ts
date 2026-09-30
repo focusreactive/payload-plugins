@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isEmptyRichText } from "./isEmptyRichText";
+import { isEmptyRichText } from "./isEmptyRichText.js";
 
 const createRichText = (root: any) => ({ root }) as any;
 

@@ -1,15 +1,15 @@
-export { createTranslationProvider } from "./CompletionProvider.provider";
+export { createTranslationProvider } from "./CompletionProvider.provider.js";
 export type {
   CompletionFn,
   CompletionRequest,
   TranslationProviderConfig,
-} from "./CompletionProvider.provider";
+} from "./CompletionProvider.provider.js";
 
-export type { JsonSchemaObject } from "./buildResponseSchema";
-export type { SystemPromptBuilder, SystemPromptContext } from "./buildSystemPrompt";
-export type { DryRunConfig, DryRunTransformer } from "./runDryRun";
+export type { JsonSchemaObject } from "./buildResponseSchema.js";
+export type { SystemPromptBuilder, SystemPromptContext } from "./buildSystemPrompt.js";
+export type { DryRunConfig, DryRunTransformer } from "./runDryRun.js";
 
-export { errorMessageLower } from "./errors";
+export { errorMessageLower } from "./errors/index.js";
 export {
   TranslationProviderError,
   NoContentError,
@@ -17,5 +17,5 @@ export {
   KeySetMismatchError,
   TransportError,
   ProviderConfigurationError,
-} from "./errors";
-export type { TranslationFailureCode } from "./errors";
+} from "./errors/index.js";
+export type { TranslationFailureCode } from "./errors/index.js";

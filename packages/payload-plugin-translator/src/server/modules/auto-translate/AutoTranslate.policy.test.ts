@@ -8,8 +8,8 @@ import {
   normalizeAutoTranslateConfig,
   passesPublishGate,
   resolvePublishOnTranslation,
-} from "./AutoTranslate.policy";
-import type { NormalizedAutoTranslatePolicy } from "./AutoTranslate.policy";
+} from "./AutoTranslate.policy.js";
+import type { NormalizedAutoTranslatePolicy } from "./AutoTranslate.policy.js";
 
 const policy = (
   over: Partial<NormalizedAutoTranslatePolicy> = {}

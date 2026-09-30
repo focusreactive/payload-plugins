@@ -1,4 +1,4 @@
-import type { FieldChunk, TextChunk } from "../../types";
+import type { FieldChunk, TextChunk } from "../../types/index.js";
 
 /**
  * Result of text expansion for a single FieldChunk.

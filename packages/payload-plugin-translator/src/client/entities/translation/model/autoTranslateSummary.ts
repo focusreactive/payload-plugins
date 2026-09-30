@@ -1,4 +1,4 @@
-import { getAutoTranslateConfig } from "../../../../core/domain/auto-translate";
+import { getAutoTranslateConfig } from "../../../../core/domain/auto-translate/index.js";
 
 /** The auto-translate facts the marker renders — resolved from a collection's opt-in config. */
 export type AutoTranslateSummary = { targets: string[]; sourceLocale: string };

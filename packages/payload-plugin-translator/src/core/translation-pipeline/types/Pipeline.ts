@@ -1,4 +1,4 @@
-import type { FieldLike } from "../../kernel/field-traversal";
+import type { FieldLike } from "../../kernel/field-traversal/index.js";
 
 /**
  * Pipeline configuration for translation execution.

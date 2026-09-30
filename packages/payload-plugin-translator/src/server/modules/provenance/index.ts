@@ -4,12 +4,12 @@ export {
   DEFAULT_PROVENANCE_SLUG,
   isProvenanceCollection,
   makeProvenanceCollection,
-} from "./Provenance.collection";
-export { PayloadProvenanceStore } from "./Provenance.store";
-export type { ProvenanceStoreFactory } from "./Provenance.store";
-export { injectProvenanceCleanup, makeProvenanceCleanupHook } from "./ProvenanceCleanup.hook";
-export { assertProvenanceSlugFree } from "./slugGuard";
-export { ProvenanceService } from "./Provenance.service";
-export type { ProvenanceServiceFactory, StalenessLocale } from "./Provenance.service";
-export { configureProvenance } from "./Provenance.wiring";
-export type { ProvenanceModule, ProvenanceOption } from "./Provenance.wiring";
+} from "./Provenance.collection.js";
+export { PayloadProvenanceStore } from "./Provenance.store.js";
+export type { ProvenanceStoreFactory } from "./Provenance.store.js";
+export { injectProvenanceCleanup, makeProvenanceCleanupHook } from "./ProvenanceCleanup.hook.js";
+export { assertProvenanceSlugFree } from "./slugGuard.js";
+export { ProvenanceService } from "./Provenance.service.js";
+export type { ProvenanceServiceFactory, StalenessLocale } from "./Provenance.service.js";
+export { configureProvenance } from "./Provenance.wiring.js";
+export type { ProvenanceModule, ProvenanceOption } from "./Provenance.wiring.js";

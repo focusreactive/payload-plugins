@@ -1,12 +1,12 @@
 import { headers as getHeaders } from "next/headers";
 import type { BeforeDocumentControlsServerProps, CollectionConfig } from "payload";
 
-import type { AccessGuard } from "../../../../types/AccessGuard";
-import type { TargetSelectionMode } from "../../../../types/TargetSelection";
+import type { AccessGuard } from "../../../../types/AccessGuard.js";
+import type { TargetSelectionMode } from "../../../../types/TargetSelection.js";
 import { hasDraftsEnabled } from "payload/shared";
-import { resolveAutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary";
+import { resolveAutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary.js";
 
-import TranslateDocument from "./TranslateDocument";
+import TranslateDocument from "./TranslateDocument.js";
 
 type TranslateDocumentServerProps = BeforeDocumentControlsServerProps & {
   collection: CollectionConfig;

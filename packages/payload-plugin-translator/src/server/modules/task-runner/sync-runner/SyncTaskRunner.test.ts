@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
-import { SyncTaskRunner } from "./SyncTaskRunner";
-import type { TaskHandler } from "../TaskRunnerProvider.interface";
-import type { TaskInput, Task } from "../types";
-import { LazyMap } from "../../../shared/utils";
+import { SyncTaskRunner } from "./SyncTaskRunner.js";
+import type { TaskHandler } from "../TaskRunnerProvider.interface.js";
+import type { TaskInput, Task } from "../types.js";
+import { LazyMap } from "../../../shared/utils/index.js";
 
 describe("SyncTaskRunner", () => {
   let mockPayload: Payload;

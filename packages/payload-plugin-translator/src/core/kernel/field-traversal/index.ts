@@ -1,15 +1,15 @@
-export { findFieldByPath } from "./findFieldByPath";
-export type { FieldPathResult } from "./findFieldByPath";
-export { hasFields, isBlockItem, isTabsField } from "./guards";
-export { classifyField, matchElementById, resolveBlockFields, tabScopes } from "./kernel";
-export { projectFieldsToFieldLike } from "./projectFieldLike";
+export { findFieldByPath } from "./findFieldByPath.js";
+export type { FieldPathResult } from "./findFieldByPath.js";
+export { hasFields, isBlockItem, isTabsField } from "./guards.js";
+export { classifyField, matchElementById, resolveBlockFields, tabScopes } from "./kernel.js";
+export { projectFieldsToFieldLike } from "./projectFieldLike.js";
 export {
   fieldAffectsData,
   fieldIsArrayType,
   fieldIsBlockType,
   fieldIsGroupType,
   tabHasName,
-} from "./predicates";
+} from "./predicates.js";
 export type {
   ArrayFieldLike,
   BlockLike,
@@ -27,5 +27,5 @@ export type {
   TabScope,
   TabsFieldLike,
   WalkSignal,
-} from "./types";
-export { walkFields } from "./walkFields";
+} from "./types.js";
+export { walkFields } from "./walkFields.js";

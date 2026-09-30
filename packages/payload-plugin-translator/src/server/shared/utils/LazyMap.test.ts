@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { LazyMap } from "./LazyMap";
+import { LazyMap } from "./LazyMap.js";
 
 type TestEntry = {
   id: string;

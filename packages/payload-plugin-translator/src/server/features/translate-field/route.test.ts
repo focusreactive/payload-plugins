@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import type { CollectionSlug, Field, PayloadRequest } from "payload";
 
-import type { AccessGuard } from "../../shared";
-import type { TranslationProvider } from "../../../core/domain/translation-providers";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
+import type { AccessGuard } from "../../shared/index.js";
+import type { TranslationProvider } from "../../../core/domain/translation-providers/index.js";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 
-import { createFieldRoute } from "./route";
+import { createFieldRoute } from "./route.js";
 
 // Route-contract tests: pin path + method + access-guard wiring. Handler logic
 // and the shared wrappers are covered by their own unit tests.

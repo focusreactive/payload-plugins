@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { CollectionSlug } from "payload";
 
-import type { TaskStatus } from "../../modules/task-runner";
+import type { TaskStatus } from "../../modules/task-runner/index.js";
 
 /**
  * Input validation schema

@@ -1,6 +1,6 @@
 import type { UseFormReturn } from "react-hook-form";
 
-import { NextApiError } from "../errors/handleApiError";
+import { NextApiError } from "../errors/handleApiError.js";
 
 export function handleFormError<D extends object>(
   error: unknown,

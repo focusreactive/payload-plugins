@@ -1,8 +1,8 @@
 import { z } from "zod";
 import type { CollectionSlug } from "payload";
 
-import { JobIdSchema, toClientErrorMessage } from "../../shared";
-import type { Task, TaskStatus } from "../../modules/task-runner";
+import { JobIdSchema, toClientErrorMessage } from "../../shared/index.js";
+import type { Task, TaskStatus } from "../../modules/task-runner/index.js";
 
 /**
  * Input validation schema.

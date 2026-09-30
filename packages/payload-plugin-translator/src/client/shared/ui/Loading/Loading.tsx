@@ -1,7 +1,7 @@
 import classNames from "classnames";
 
-import { getBarCount } from "./barCount";
-import type { LoadingSize } from "./barCount";
+import { getBarCount } from "./barCount.js";
+import type { LoadingSize } from "./barCount.js";
 import styles from "./styles.module.scss";
 
 type LoadingProps = {

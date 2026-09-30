@@ -1,9 +1,9 @@
 import type { PayloadRequest } from "payload";
 
-import { ServerResponse } from "../../shared";
-import type { TaskRunnerFactory } from "../../modules/task-runner";
+import { ServerResponse } from "../../shared/index.js";
+import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
 
-import { RunInputSchema } from "./model";
+import { RunInputSchema } from "./model.js";
 
 /**
  * Runs a translation task by ID

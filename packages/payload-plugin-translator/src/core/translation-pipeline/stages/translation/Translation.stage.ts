@@ -1,7 +1,7 @@
-import { parseInlineMarks } from "../../../kernel/lexical/inlineMarks";
-import type { PipelineContext, PipelineStage } from "../../types";
-import { isRichContainerChunk } from "../../types";
-import type { TranslationProvider } from "../../../domain/translation-providers";
+import { parseInlineMarks } from "../../../kernel/lexical/inlineMarks.js";
+import type { PipelineContext, PipelineStage } from "../../types/index.js";
+import { isRichContainerChunk } from "../../types/index.js";
+import type { TranslationProvider } from "../../../domain/translation-providers/index.js";
 
 /** Writes onto chunks the expander created, rather than returning — see `RichContainerChunk.reply`. */
 function parseContainerReplies(ctx: PipelineContext, translations: Record<number, string>): void {

@@ -1,5 +1,5 @@
-import { classifyField, resolveBlockFields, tabScopes } from "./kernel";
-import type { FieldLike, LeafField } from "./types";
+import { classifyField, resolveBlockFields, tabScopes } from "./kernel.js";
+import type { FieldLike, LeafField } from "./types.js";
 
 /**
  * Outcome of navigating a field schema by a path of segment names (see {@link findFieldByPath}).

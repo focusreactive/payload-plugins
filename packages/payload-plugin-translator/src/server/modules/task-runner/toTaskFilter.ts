@@ -1,4 +1,4 @@
-import type { TaskFilter } from "./TaskRunner.interface";
+import type { TaskFilter } from "./TaskRunner.interface.js";
 
 /**
  * Normalize the two accepted shapes of {@link TaskRunner.findByCollection}'s second argument.

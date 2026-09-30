@@ -1,10 +1,10 @@
 import type { PayloadRequest } from "payload";
 
-import { ServerResponse } from "../../shared";
-import { isCollectionAvailable } from "../_lib/collection-utils";
+import { ServerResponse } from "../../shared/index.js";
+import { isCollectionAvailable } from "../_lib/collection-utils.js";
 
-import { GetDocumentStalenessInputSchema } from "./model";
-import type { StalenessConfig } from "./model";
+import { GetDocumentStalenessInputSchema } from "./model.js";
+import type { StalenessConfig } from "./model.js";
 
 /**
  * Reads per-locale staleness for a single document. Best-effort: a recompute failure (e.g. the

@@ -1,6 +1,6 @@
-import type { PipelineContext, PipelineStage } from "../../types";
-import type { TranslationStrategy } from "../../strategies";
-import { FieldChunkCollector } from "./FieldChunkCollector";
+import type { PipelineContext, PipelineStage } from "../../types/index.js";
+import type { TranslationStrategy } from "../../strategies/index.js";
+import { FieldChunkCollector } from "./FieldChunkCollector.js";
 
 /**
  * Collects FieldChunks with schema metadata and data references.

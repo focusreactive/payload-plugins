@@ -3,9 +3,9 @@ import type {
   TranslationInput,
   TranslationOutput,
   TranslationProvider,
-} from "../../core/domain/translation-providers";
-import { createOpenAIProvider } from "./OpenAITranslation.provider";
-import type { OpenAIProviderConfig } from "./OpenAITranslation.provider";
+} from "../../core/domain/translation-providers/index.js";
+import { createOpenAIProvider } from "./OpenAITranslation.provider.js";
+import type { OpenAIProviderConfig } from "./OpenAITranslation.provider.js";
 
 /**
  * @deprecated Use {@link createOpenAIProvider} instead.

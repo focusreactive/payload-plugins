@@ -1,6 +1,6 @@
-import { revalidateTag } from "next/cache";
 import type { CollectionBeforeChangeHook, CollectionConfig } from "payload";
 
+import { revalidateScopedTag } from "@/lib/utils/scopedCache";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { validateMediaUpload } from "@/lib/hooks/validateMediaUpload";
 import { generateRichText } from "@/lib/utils/generateRichText";
@@ -95,7 +95,7 @@ export const Media: CollectionConfig<"media"> = {
       ({ req }) => {
         if (req?.context?.disableRevalidate) return;
         try {
-          revalidateTag(DEFAULT_MEDIA_CACHE_TAG, "max");
+          revalidateScopedTag(DEFAULT_MEDIA_CACHE_TAG, "max");
         } catch {
           // outside a Next.js request/build context (e.g. seed scripts, tests)
         }
@@ -105,7 +105,7 @@ export const Media: CollectionConfig<"media"> = {
       ({ req }) => {
         if (req?.context?.disableRevalidate) return;
         try {
-          revalidateTag(DEFAULT_MEDIA_CACHE_TAG, "max");
+          revalidateScopedTag(DEFAULT_MEDIA_CACHE_TAG, "max");
         } catch {
           // outside a Next.js request/build context (e.g. seed scripts, tests)
         }

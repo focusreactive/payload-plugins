@@ -3,13 +3,13 @@
 import { ShimmerEffect } from "@payloadcms/ui";
 import { TrashIcon } from "@payloadcms/ui/icons/Trash";
 
-import type { GroupedCollectionTranslationStatus } from "../../../entities/translation";
+import type { GroupedCollectionTranslationStatus } from "../../../entities/translation/index.js";
 import {
   ActionButton,
   DocumentTranslationStatus,
   TranslationsApi,
-} from "../../../entities/translation";
-import ColorIndicator from "../../../shared/ui/ColorIndicator";
+} from "../../../entities/translation/index.js";
+import ColorIndicator from "../../../shared/ui/ColorIndicator/index.js";
 
 import styles from "./styles.module.scss";
 

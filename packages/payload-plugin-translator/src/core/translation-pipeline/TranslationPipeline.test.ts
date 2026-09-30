@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 import type { Field } from "payload";
-import { TranslationPipeline } from "./TranslationPipeline";
-import { OverwriteStrategy } from "./strategies/Overwrite.strategy";
-import { SkipExistingStrategy } from "./strategies/SkipExisting.strategy";
-import type { TranslationProvider } from "../domain/translation-providers";
+import { TranslationPipeline } from "./TranslationPipeline.js";
+import { OverwriteStrategy } from "./strategies/Overwrite.strategy.js";
+import { SkipExistingStrategy } from "./strategies/SkipExisting.strategy.js";
+import type { TranslationProvider } from "../domain/translation-providers/index.js";
 
 const createMockProvider = (
   translationFn?: (textMap: Record<number, string>) => Record<number, string>

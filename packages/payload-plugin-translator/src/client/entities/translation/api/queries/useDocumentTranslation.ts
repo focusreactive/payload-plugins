@@ -3,10 +3,10 @@ import { ofetch } from "ofetch";
 import type { CollectionSlug } from "payload";
 import { useCallback, useEffect, useRef } from "react";
 
-import { useTranslateKitConfig } from "../../../../app/config";
-import { handleNextApiError } from "../../../../shared/lib/errors/handleApiError";
-import { DOCUMENT_STALENESS_QUERY_KEY } from "./useDocumentStaleness";
-import type { DocumentTranslation } from "../../model/types";
+import { useTranslateKitConfig } from "../../../../app/config/index.js";
+import { handleNextApiError } from "../../../../shared/lib/errors/handleApiError.js";
+import { DOCUMENT_STALENESS_QUERY_KEY } from "./useDocumentStaleness.js";
+import type { DocumentTranslation } from "../../model/types.js";
 
 type Props = {
   collection: CollectionSlug;

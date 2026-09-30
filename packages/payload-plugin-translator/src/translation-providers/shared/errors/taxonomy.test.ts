@@ -8,7 +8,7 @@ import {
   TranslationProviderError,
   UnparseableReplyError,
   wrapTransportError,
-} from ".";
+} from "./index.js";
 
 describe("the failure taxonomy", () => {
   it("gives every leaf its own code", () => {

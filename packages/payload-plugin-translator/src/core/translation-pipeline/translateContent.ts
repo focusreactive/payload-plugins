@@ -1,9 +1,9 @@
-import type { FieldLike } from "../kernel/field-traversal";
-import type { TranslationProvider } from "../domain/translation-providers";
-import { TranslationPipeline } from "./TranslationPipeline";
-import { PlainTextExpander, RichContainerExpander } from "./stages";
-import { createTranslationStrategy } from "./strategies";
-import type { TranslationStrategyName } from "./strategies";
+import type { FieldLike } from "../kernel/field-traversal/index.js";
+import type { TranslationProvider } from "../domain/translation-providers/index.js";
+import { TranslationPipeline } from "./TranslationPipeline.js";
+import { PlainTextExpander, RichContainerExpander } from "./stages/index.js";
+import { createTranslationStrategy } from "./strategies/index.js";
+import type { TranslationStrategyName } from "./strategies/index.js";
 
 export type TranslateContentArgs = {
   /** Schema subtree to translate (e.g. `[declaredFieldConfig]`). */

@@ -53,6 +53,13 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (pr
   const { getData, getDataByPath, addFieldRow, replaceState, getFields } = form;
   const currentFieldState = useFormFields(([fields]) => fields?.[path]);
 
+  // Payload resolves the field's `filterOptions` into form state and filters its own drawer by it.
+  // This drawer replaces that one, so it offers the same blocks; existing rows still see them all.
+  const allowedSlugs = currentFieldState?.blocksFilterOptions;
+  const selectableBlocks = allowedSlugs
+    ? blocks.filter((block) => allowedSlugs.includes(block.slug))
+    : blocks;
+
   const existingFieldComponentRef = useRef<ReactNode>(currentFieldState?.customComponents?.Field);
 
   useEffect(() => {
@@ -209,7 +216,7 @@ export const BlocksFieldWithPresets: React.FC<BlocksFieldWithPresetsProps> = (pr
             title={t("presetsPlugin:blocksDrawer:addBlockTitle" as never)}
           >
             <BlockSelectorWithPresets
-              blocks={blocks}
+              blocks={selectableBlocks}
               onSelect={handleBlockSelect}
               tenantId={tenantId}
               locale={locale?.code}

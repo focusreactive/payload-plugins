@@ -1,20 +1,20 @@
-import { getAutoTranslateConfig } from "../../../core/domain/auto-translate";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
-import type { ConfigModifier } from "../../../types/ConfigModifier";
-import type { TaskRunnerFactory } from "../task-runner";
+import { getAutoTranslateConfig } from "../../../core/domain/auto-translate/index.js";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
+import type { ConfigModifier } from "../../../types/ConfigModifier.js";
+import type { TaskRunnerFactory } from "../task-runner/index.js";
 
 import {
   extractLocaleCodes,
   filterPolicyToKnownLocales,
   makeCollectionPolicyResolver,
   normalizeAutoTranslateConfig,
-} from "./AutoTranslate.policy";
-import type { NormalizedAutoTranslatePolicy } from "./AutoTranslate.policy";
+} from "./AutoTranslate.policy.js";
+import type { NormalizedAutoTranslatePolicy } from "./AutoTranslate.policy.js";
 import {
   injectAutoTranslateHook,
   makeAutoTranslateHook,
   propagateAutoTranslateCustom,
-} from "./AutoTranslateEnqueue.hook";
+} from "./AutoTranslateEnqueue.hook.js";
 
 /** A collection as the plugin receives it — only `slug` + `custom` are read to resolve the opt-in. */
 type ConfigurableCollection = { slug: string; custom?: Record<string, unknown> };

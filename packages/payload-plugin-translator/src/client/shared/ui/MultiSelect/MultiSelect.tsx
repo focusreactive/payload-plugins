@@ -2,8 +2,8 @@ import classNames from "classnames";
 import type { ComponentPropsWithRef, CSSProperties } from "react";
 import { forwardRef, useState } from "react";
 
-import { Checkbox } from "../Checkbox";
-import Popup from "../Popup";
+import { Checkbox } from "../Checkbox/index.js";
+import Popup from "../Popup/index.js";
 
 import {
   filterOptions,
@@ -11,11 +11,11 @@ import {
   selectAllValue,
   summarizeSelection,
   toggleValue,
-} from "./multiSelectModel";
-import type { MultiSelectOption } from "./multiSelectModel";
+} from "./multiSelectModel.js";
+import type { MultiSelectOption } from "./multiSelectModel.js";
 import styles from "./styles.module.scss";
 
-export type { MultiSelectOption } from "./multiSelectModel";
+export type { MultiSelectOption } from "./multiSelectModel.js";
 
 /**
  * Props mirror the single `Select` (`ComponentPropsWithRef<"button">` + the same custom `$`-prefixed

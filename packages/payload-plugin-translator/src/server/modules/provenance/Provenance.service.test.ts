@@ -2,10 +2,13 @@ import { describe, it, expect, vi } from "vitest";
 import type { Field, Payload } from "payload";
 import { APIError } from "payload";
 
-import type { ProvenanceStore, TranslationProvenanceRecord } from "../../../core/domain/provenance";
-import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap";
+import type {
+  ProvenanceStore,
+  TranslationProvenanceRecord,
+} from "../../../core/domain/provenance/index.js";
+import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 
-import { ProvenanceService } from "./Provenance.service";
+import { ProvenanceService } from "./Provenance.service.js";
 
 const COLLECTION = "posts";
 const schema: Field[] = [{ name: "title", type: "text", localized: true }];

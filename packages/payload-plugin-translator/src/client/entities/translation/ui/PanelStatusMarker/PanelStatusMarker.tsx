@@ -1,6 +1,6 @@
-import ColorIndicator from "../../../../shared/ui/ColorIndicator";
-import type { MarkerTone } from "../../model/panelStatus";
-import { MARKER_DOT } from "../../model/panelStatus";
+import ColorIndicator from "../../../../shared/ui/ColorIndicator/index.js";
+import type { MarkerTone } from "../../model/panelStatus.js";
+import { MARKER_DOT } from "../../model/panelStatus.js";
 
 import styles from "./styles.module.scss";
 

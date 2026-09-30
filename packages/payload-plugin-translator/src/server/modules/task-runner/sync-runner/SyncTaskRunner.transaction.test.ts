@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 
-import { SyncTaskRunner } from "./SyncTaskRunner";
-import type { Task, TaskInput } from "../types";
-import { LazyMap } from "../../../shared/utils";
+import { SyncTaskRunner } from "./SyncTaskRunner.js";
+import type { Task, TaskInput } from "../types.js";
+import { LazyMap } from "../../../shared/utils/index.js";
 
 const task: TaskInput = {
   collectionSlug: "posts" as CollectionSlug,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import type { UserFacingFailureReason } from "./failureReason";
-import { markFailureReason, readFailureReason } from "./failureReason";
+import type { UserFacingFailureReason } from "./failureReason.js";
+import { markFailureReason, readFailureReason } from "./failureReason.js";
 
 const REASONS: UserFacingFailureReason[] = ["model-unavailable"];
 

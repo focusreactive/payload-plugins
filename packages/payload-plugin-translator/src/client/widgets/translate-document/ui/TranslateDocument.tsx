@@ -10,15 +10,18 @@ import {
   derivePanelStatus,
   TranslationsApi,
   TranslationStatusList,
-} from "../../../entities/translation";
-import type { AutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary";
-import type { TargetSelectionMode } from "../../../../types/TargetSelection";
-import { OpenDocumentTranslationPopup } from "../../../features/open-document-translation-popup";
-import { DocumentTranslationForm, FORM_FIELDS } from "../../../features/translate-document-form";
-import type { FormValues } from "../../../features/translate-document-form";
-import { DocumentTranslationFormModel } from "../../../features/translate-document-form/index.client";
-import { handleFormError } from "../../../shared/lib/forms/handle-form-error";
-import { useCollectionDocumentUrlParams } from "../../../shared/lib/payload/hooks/useCollectionDocumentUrlParams";
+} from "../../../entities/translation/index.js";
+import type { AutoTranslateSummary } from "../../../entities/translation/model/autoTranslateSummary.js";
+import type { TargetSelectionMode } from "../../../../types/TargetSelection.js";
+import { OpenDocumentTranslationPopup } from "../../../features/open-document-translation-popup/index.js";
+import {
+  DocumentTranslationForm,
+  FORM_FIELDS,
+} from "../../../features/translate-document-form/index.js";
+import type { FormValues } from "../../../features/translate-document-form/index.js";
+import { DocumentTranslationFormModel } from "../../../features/translate-document-form/index.client.js";
+import { handleFormError } from "../../../shared/lib/forms/handle-form-error.js";
+import { useCollectionDocumentUrlParams } from "../../../shared/lib/payload/hooks/useCollectionDocumentUrlParams.js";
 
 import styles from "./styles.module.scss";
 

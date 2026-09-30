@@ -1,15 +1,15 @@
 import type { PayloadRequest } from "payload";
 
-import { ServerResponse } from "../../shared";
-import type { TaskRunnerFactory } from "../../modules/task-runner";
-import { isCollectionAvailable } from "../_lib/collection-utils";
+import { ServerResponse } from "../../shared/index.js";
+import type { TaskRunnerFactory } from "../../modules/task-runner/index.js";
+import { isCollectionAvailable } from "../_lib/collection-utils.js";
 
 import {
   GetDocumentStatusInputSchema,
   latestTaskPerTargetLocale,
   taskToJobStatusOutput,
-} from "./model";
-import type { GetDocumentStatusConfig } from "./model";
+} from "./model.js";
+import type { GetDocumentStatusConfig } from "./model.js";
 
 /**
  * Gets the translation status for a specific document

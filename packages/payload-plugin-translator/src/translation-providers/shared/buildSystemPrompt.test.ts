@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildSystemPrompt } from "./buildSystemPrompt";
+import { buildSystemPrompt } from "./buildSystemPrompt.js";
 
 // Pinned verbatim: consumers extend this exact string via `defaultPrompt`, so a reword is breaking.
 const EXPECTED_EN_DE = `Translate the values from the JSON that the user will send you from en into de. Keep all JSON keys exactly as they are, only translate the values.

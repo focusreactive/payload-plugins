@@ -1,4 +1,4 @@
-import { isObject } from "../../../core/kernel/utils/isObject";
+import { isObject } from "../../../core/kernel/utils/isObject.js";
 
 export function errorMessageLower(cause: unknown): string | null {
   if (!isObject(cause)) return null;

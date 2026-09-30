@@ -1,6 +1,6 @@
-import type { FieldLike } from "../../kernel/field-traversal";
-import type { FieldChunk } from "./FieldChunk";
-import type { TextChunk } from "./TextChunk";
+import type { FieldLike } from "../../kernel/field-traversal/index.js";
+import type { FieldChunk } from "./FieldChunk.js";
+import type { TextChunk } from "./TextChunk.js";
 
 /**
  * Pipeline context passed through all stages.

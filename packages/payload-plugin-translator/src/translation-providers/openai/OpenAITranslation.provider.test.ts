@@ -6,13 +6,13 @@ import {
   ProviderConfigurationError,
   TransportError,
   UnparseableReplyError,
-} from "../shared";
-import { readFailureReason } from "../../core/domain/translation-providers/failureReason";
-import { createOpenAIProvider } from "./OpenAITranslation.provider";
-import type { OpenAIChatParams, OpenAIClientShape } from "./OpenAI.shapes";
-import { loadOpenAIClient } from "./loadOpenAIClient";
+} from "../shared/index.js";
+import { readFailureReason } from "../../core/domain/translation-providers/failureReason.js";
+import { createOpenAIProvider } from "./OpenAITranslation.provider.js";
+import type { OpenAIChatParams, OpenAIClientShape } from "./OpenAI.shapes.js";
+import { loadOpenAIClient } from "./loadOpenAIClient.js";
 
-vi.mock("./loadOpenAIClient", () => ({
+vi.mock("./loadOpenAIClient.js", () => ({
   loadOpenAIClient: vi.fn(),
 }));
 

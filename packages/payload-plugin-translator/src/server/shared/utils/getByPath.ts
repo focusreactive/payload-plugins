@@ -1,4 +1,4 @@
-import { isObject } from "../../../core/kernel/utils/isObject";
+import { isObject } from "../../../core/kernel/utils/isObject.js";
 
 /**
  * Gets a value from an object by dot-notation path.

@@ -1,4 +1,4 @@
-import { useCollectionTranslationForm } from "./form-model";
+import { useCollectionTranslationForm } from "./form-model.js";
 
 export const CollectionTranslationFormModel = {
   useForm: useCollectionTranslationForm,

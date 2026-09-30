@@ -1,4 +1,4 @@
-import type { AccessGuard } from "./types";
+import type { AccessGuard } from "./types.js";
 
 /**
  * Default access guard that allows all requests

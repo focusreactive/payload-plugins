@@ -1,7 +1,7 @@
-import { isEmptyRichText } from "../../kernel/lexical/isEmptyRichText";
-import { isSerializedLexicalRoot } from "../../kernel/lexical/guards";
-import { isEmpty } from "../../kernel/utils/isEmpty";
-import type { TranslationStrategy, StrategyContext } from "./TranslationStrategy.interface";
+import { isEmptyRichText } from "../../kernel/lexical/isEmptyRichText.js";
+import { isSerializedLexicalRoot } from "../../kernel/lexical/guards.js";
+import { isEmpty } from "../../kernel/utils/isEmpty.js";
+import type { TranslationStrategy, StrategyContext } from "./TranslationStrategy.interface.js";
 
 /**
  * Only translates fields that are empty or missing in the target locale.

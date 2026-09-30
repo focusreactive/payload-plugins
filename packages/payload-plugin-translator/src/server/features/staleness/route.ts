@@ -1,11 +1,11 @@
 import type { Endpoint } from "payload";
 
-import { withErrorHandler, withAccessCheck } from "../../shared";
-import type { AccessGuard } from "../../shared";
+import { withErrorHandler, withAccessCheck } from "../../shared/index.js";
+import type { AccessGuard } from "../../shared/index.js";
 
-import type { StalenessConfig } from "./model";
-import { GetDocumentStalenessHandler } from "./getDocumentStaleness.handler";
-import { DismissStalenessHandler } from "./dismissStaleness.handler";
+import type { StalenessConfig } from "./model.js";
+import { GetDocumentStalenessHandler } from "./getDocumentStaleness.handler.js";
+import { DismissStalenessHandler } from "./dismissStaleness.handler.js";
 
 /** GET per-locale staleness for one document. */
 export function createGetDocumentStalenessRoute(

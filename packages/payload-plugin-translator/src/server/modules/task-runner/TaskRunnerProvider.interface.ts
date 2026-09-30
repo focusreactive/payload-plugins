@@ -1,8 +1,8 @@
 import type { CollectionSlug, Config, Payload } from "payload";
-import type { TaskRunner } from "./TaskRunner.interface";
-import type { ID } from "./types";
-import type { TranslationStrategyName } from "../../../core/translation-pipeline/strategies";
-import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes";
+import type { TaskRunner } from "./TaskRunner.interface.js";
+import type { ID } from "./types.js";
+import type { TranslationStrategyName } from "../../../core/translation-pipeline/strategies/index.js";
+import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes.js";
 
 /**
  * Input for task handler callback

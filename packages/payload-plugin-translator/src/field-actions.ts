@@ -1,6 +1,6 @@
 import type { Field } from "payload";
 
-import type { RawPayloadComponentExport } from "./types/PayloadComponentExport";
+import type { RawPayloadComponentExport } from "./types/PayloadComponentExport.js";
 
 /**
  * Strategy for placing a per-field control into a field's admin config — the seam
