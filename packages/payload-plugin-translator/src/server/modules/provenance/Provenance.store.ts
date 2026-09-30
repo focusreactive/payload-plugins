@@ -1,7 +1,7 @@
 import type { CollectionSlug, Payload, Where } from "payload";
 
-import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes.js";
-import { freshReq } from "../../shared/payload/TransactionScope.shapes.js";
+import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
+import { freshReq } from "../../shared/payload/RequestScope.shapes.js";
 import type {
   ProvenanceKey,
   ProvenanceStore,
@@ -9,10 +9,7 @@ import type {
 } from "../../../core/domain/provenance/index.js";
 
 /** Builds a provenance store bound to a Payload instance; absent when provenance is disabled. */
-export type ProvenanceStoreFactory = (
-  payload: Payload,
-  scope?: TransactionScope
-) => ProvenanceStore;
+export type ProvenanceStoreFactory = (payload: Payload, scope?: RequestScope) => ProvenanceStore;
 
 interface ProvenanceDoc extends Record<string, unknown> {
   id: string | number;
@@ -60,15 +57,15 @@ function toRecord(doc: ProvenanceDoc): TranslationProvenanceRecord {
 export class PayloadProvenanceStore implements ProvenanceStore {
   private readonly payload: Payload;
   private readonly collection: CollectionSlug;
-  private readonly scope: TransactionScope;
+  private readonly scope: RequestScope;
 
-  constructor(payload: Payload, slug: string, scope: TransactionScope = {}) {
+  constructor(payload: Payload, slug: string, scope: RequestScope = {}) {
     this.payload = payload;
     this.collection = slug as CollectionSlug;
     this.scope = scope;
   }
 
-  private req(): TransactionScope {
+  private req(): { transactionID?: string | number } {
     return freshReq(this.scope);
   }
 

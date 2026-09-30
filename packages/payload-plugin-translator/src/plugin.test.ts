@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import type { Config, Payload } from "payload";
 
 import { translatorPlugin } from "./plugin.js";
+import { AnyAccessGuard } from "./server/shared/access/AnyAccessGuard.js";
 import type { TranslatorPluginConfig } from "./plugin.js";
 import { withAutoTranslate } from "./auto-translate-config.js";
 import { documentLevel, fieldLevel } from "./composition/levels/index.js";
@@ -48,6 +49,8 @@ async function build(overrides: Partial<TranslatorPluginConfig> = {}) {
   const pluginConfig = {
     collections: [collection],
     translationProvider: { translate: vi.fn() },
+    // The plugin refuses to start without an access decision; these fixtures make the open one.
+    access: new AnyAccessGuard(),
     runner,
     ...overrides,
   } as unknown as TranslatorPluginConfig;
@@ -72,6 +75,8 @@ describe("translatorPlugin — default levels (behaviour-preserving)", () => {
     const pluginConfig = {
       collections: [collection],
       translationProvider: { translate: vi.fn() },
+      // The plugin refuses to start without an access decision; these fixtures make the open one.
+      access: new AnyAccessGuard(),
       runner: makeRunner(),
     } as unknown as TranslatorPluginConfig;
 
@@ -190,6 +195,8 @@ describe("translatorPlugin — provenance (opt-in)", () => {
     const pluginConfig = {
       collections: [collection],
       translationProvider: { translate: vi.fn() },
+      // The plugin refuses to start without an access decision; these fixtures make the open one.
+      access: new AnyAccessGuard(),
       runner: { create: vi.fn(), configure: vi.fn().mockReturnValue((c: Config) => c) },
       provenance: {},
     } as unknown as TranslatorPluginConfig;
@@ -211,6 +218,8 @@ describe("translatorPlugin — provenance (opt-in)", () => {
       ({
         collections: [collection],
         translationProvider: { translate: vi.fn() },
+        // The plugin refuses to start without an access decision; these fixtures make the open one.
+        access: new AnyAccessGuard(),
         runner: { create: vi.fn(), configure: vi.fn().mockReturnValue((c: Config) => c) },
         provenance: { slug },
       }) as unknown as TranslatorPluginConfig;
@@ -247,6 +256,8 @@ describe("translatorPlugin — provenance (opt-in)", () => {
     const pluginConfig = {
       collections: [collection],
       translationProvider: { translate: vi.fn() },
+      // The plugin refuses to start without an access decision; these fixtures make the open one.
+      access: new AnyAccessGuard(),
       runner: { create: vi.fn(), configure: vi.fn().mockReturnValue((c: Config) => c) },
       provenance: {},
     } as unknown as TranslatorPluginConfig;
@@ -273,6 +284,8 @@ describe("translatorPlugin — auto-translate (opt-in wiring)", () => {
     const pluginConfig = {
       collections,
       translationProvider: { translate: vi.fn() },
+      // The plugin refuses to start without an access decision; these fixtures make the open one.
+      access: new AnyAccessGuard(),
       runner: makeRunner(),
     } as unknown as TranslatorPluginConfig;
     return translatorPlugin(pluginConfig)({ collections } as unknown as Config);
@@ -303,6 +316,8 @@ describe("translatorPlugin — auto-translate (opt-in wiring)", () => {
     const pluginConfig = {
       collections: [posts],
       translationProvider: { translate: vi.fn() },
+      // The plugin refuses to start without an access decision; these fixtures make the open one.
+      access: new AnyAccessGuard(),
       runner: makeRunner(),
     } as unknown as TranslatorPluginConfig;
     const once = await translatorPlugin(pluginConfig)({

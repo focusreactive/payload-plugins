@@ -10,6 +10,8 @@ const request: RequestShape = {
   sourceLng: "en",
   strategy: "overwrite",
   publishOnTranslation: false,
+  requesterId: null,
+  requesterCollection: null,
 };
 
 const storedInput = {

@@ -62,6 +62,25 @@ describe("EnqueueTranslationHandler", () => {
     handler = new EnqueueTranslationHandler(config, mockTaskRunnerFactory);
   });
 
+  describe("locale validation", () => {
+    // `source_lng` is only ever used to exclude itself from the target list, so an unconfigured code
+    // used to travel straight through to `payload.findByID({ locale })` and read a locale the project
+    // does not have.
+    it("rejects a source locale the project does not have", async () => {
+      const req = createLocalizedRequest({
+        source_lng: "zz",
+        target_lng: "de",
+        collection_slug: "posts",
+        collection_id: ["doc-1"],
+      });
+
+      const response = await handler.handle(req);
+
+      expect(response.status).toBe(400);
+      expect(mockTaskRunner.enqueue).not.toHaveBeenCalled();
+    });
+  });
+
   describe("validation", () => {
     it("returns validation error for missing required fields", async () => {
       const req = createMockRequest({});
@@ -151,16 +170,20 @@ describe("EnqueueTranslationHandler", () => {
 
       await handler.handle(req);
 
-      expect(mockTaskRunner.enqueue).toHaveBeenCalledWith([
-        {
-          collectionSlug: "posts",
-          collectionId: "doc-123",
-          sourceLng: "en",
-          targetLng: "fr",
-          strategy: "skip_existing",
-          publishOnTranslation: false,
-        },
-      ]);
+      expect(mockTaskRunner.enqueue).toHaveBeenCalledWith(
+        [
+          {
+            collectionSlug: "posts",
+            collectionId: "doc-123",
+            sourceLng: "en",
+            targetLng: "fr",
+            strategy: "skip_existing",
+            publishOnTranslation: false,
+          },
+        ],
+        // Whoever pressed Translate; this fixture's request carries no session.
+        { userId: null, userCollection: null }
+      );
     });
 
     // Note: select_all test skipped - requires non-empty collection_id in schema validation

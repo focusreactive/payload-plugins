@@ -5,8 +5,8 @@ import { toTaskFilter } from "../toTaskFilter.js";
 import type { TaskHandler } from "../TaskRunnerProvider.interface.js";
 import type { Task, TaskInput, RunResult, ID } from "../types.js";
 import type { LazyMap } from "../../../shared/utils/index.js";
-import type { TransactionScope } from "../../../shared/payload/TransactionScope.shapes.js";
-import { killedTheCallersTransaction } from "../../../shared/payload/TransactionScope.shapes.js";
+import type { RequestScope } from "../../../shared/payload/RequestScope.shapes.js";
+import { killedTheCallersTransaction } from "../../../shared/payload/RequestScope.shapes.js";
 
 /**
  * Synchronous TaskRunner implementation.
@@ -21,7 +21,7 @@ export class SyncTaskRunner implements TaskRunner {
     private readonly tasks: LazyMap<string, Task>
   ) {}
 
-  async enqueue(inputs: TaskInput[], scope: TransactionScope = {}): Promise<void> {
+  async enqueue(inputs: TaskInput[], scope: RequestScope = {}): Promise<void> {
     for (const input of inputs) {
       const key = this.getKey(input.collectionSlug, input.collectionId, input.targetLng);
       const now = new Date().toISOString();
