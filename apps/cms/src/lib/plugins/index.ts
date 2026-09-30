@@ -9,7 +9,7 @@ import {
   createOpenAIProvider,
   createSyncRunner,
 } from "@focus-reactive/payload-plugin-translator";
-import { visualEditingPlugin } from "@fr-private/payload-plugin-visual-editing";
+import { visualEditingPlugin } from "@focus-reactive/payload-plugin-visual-editing";
 import { nestedDocsPlugin } from "@payloadcms/plugin-nested-docs";
 import { redirectsPlugin } from "@payloadcms/plugin-redirects";
 import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";

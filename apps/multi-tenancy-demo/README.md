@@ -28,21 +28,16 @@ access, and a small themed frontend preview. The two demo tenants are
 - **Live Preview** (`@payloadcms/live-preview-react`): editing a page in the
   admin opens a side-by-side preview of `/<tenant>/<slug>`; saving refreshes the
   frontend route via `RefreshRouteOnSave`.
-- **Visual editing** (`@fr-private/payload-plugin-visual-editing`): in the Live
+- **Visual editing** (`@focus-reactive/payload-plugin-visual-editing`): in the Live
   Preview panel, flip the floating toggle to **Hover**/**Always** and editable
   text gets a click-to-edit badge that deep-links back into the admin field.
   Only active for draft content inside the preview iframe.
 
 ## Run it
 
-> One dependency, `@fr-private/payload-plugin-visual-editing`, is a **private**
-> npm package. Installing it requires an `@fr-private` org token exposed as the
-> `NPM_TOKEN` env var (the repo's root `.npmrc` already reads `${NPM_TOKEN}`):
-> `NPM_TOKEN=npm_xxx bun install`.
-
 ```bash
-# from the repo root (NPM_TOKEN must be set for the private plugin)
-NPM_TOKEN=npm_xxx bun install
+# from the repo root
+bun install
 
 # from this app
 cd apps/multi-tenancy-demo

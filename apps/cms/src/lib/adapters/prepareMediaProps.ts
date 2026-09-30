@@ -1,4 +1,4 @@
-import { withVisualEditingPath } from "@fr-private/payload-plugin-visual-editing/client";
+import { withVisualEditingPath } from "@focus-reactive/payload-plugin-visual-editing/client";
 
 import { ImageAspectRatio } from "@/components/media/types";
 import type { ImageOverrides, PreparedMedia } from "@/components/media/types";
