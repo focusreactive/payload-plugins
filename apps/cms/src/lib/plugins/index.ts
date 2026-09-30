@@ -40,6 +40,7 @@ import { revalidateRedirects } from "@/lib/hooks/revalidateRedirects";
 import type { Page } from "@/payload-types";
 
 import { mcpPluginConfig } from "./mcp";
+import { restrictApiAccess } from "./restrictApiAccess";
 
 const withBlockNameCell = (field: Field): Field => {
   if (field.type !== "blocks" || field.name !== "presetBlock") return field;
@@ -418,4 +419,12 @@ export const plugins: Plugin[] = [
   }),
 
   mcpPluginConfig,
+
+  // Must stay last: wraps access on every collection/global added above.
+  restrictApiAccess({
+    // Local dev serves media from `/api/media/file/*`; the frontend loads those without a session.
+    publicFileCollections: ["media"],
+    // The A/B middleware fetches the manifest anonymously via `/api/globals/<slug>`.
+    publicGlobalReads: abAdapter.createGlobal ? [abAdapter.createGlobal(false).slug] : [],
+  }),
 ];
