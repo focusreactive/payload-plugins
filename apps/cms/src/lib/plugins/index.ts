@@ -420,11 +420,9 @@ export const plugins: Plugin[] = [
 
   mcpPluginConfig,
 
-  // Must stay last: wraps access on every collection/global added above.
+  // Must stay last so it also protects collections and globals added by the plugins above.
   restrictApiAccess({
-    // Local dev serves media from `/api/media/file/*`; the frontend loads those without a session.
-    publicFileCollections: ["media"],
-    // The A/B middleware fetches the manifest anonymously via `/api/globals/<slug>`.
-    publicGlobalReads: abAdapter.createGlobal ? [abAdapter.createGlobal(false).slug] : [],
+    collectionsWithPublicFiles: ["media"],
+    globalsWithPublicRead: abAdapter.createGlobal ? [abAdapter.createGlobal(false).slug] : [],
   }),
 ];

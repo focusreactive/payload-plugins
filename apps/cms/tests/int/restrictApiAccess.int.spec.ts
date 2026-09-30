@@ -30,8 +30,8 @@ const args = (
 
 const sanitize = () =>
   restrictApiAccess({
-    publicFileCollections: ["media"],
-    publicGlobalReads: ["_abManifest"],
+    collectionsWithPublicFiles: ["media"],
+    globalsWithPublicRead: ["_abManifest"],
   })(baseConfig) as Config;
 
 const collection = (config: Config, slug: string) =>
