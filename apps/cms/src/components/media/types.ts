@@ -15,11 +15,6 @@ export enum ImageAspectRatio {
 
 export type VisualEditingAttrs = Record<string, string | undefined>;
 
-export interface ImageVariant {
-  url: string;
-  width: number;
-}
-
 export type MediaData =
   | {
       kind: "image";
@@ -27,7 +22,6 @@ export type MediaData =
       alt?: string;
       width?: number;
       height?: number;
-      variants?: ImageVariant[];
     }
   | {
       kind: "video";

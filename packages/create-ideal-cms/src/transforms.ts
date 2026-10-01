@@ -192,10 +192,10 @@ async function stripPrivatePlugins(targetDir: string): Promise<void> {
       `  const media = image && typeof image === "object" ? image : null;`,
     ],
     [
-      `      data: { kind: "video", src: getMediaUrl(src) },
+      `      data: { kind: "video", src: getMediaUrl(media.url, media.filesize) },
       visualEditing,
     };`,
-      `      data: { kind: "video", src: getMediaUrl(src) },
+      `      data: { kind: "video", src: getMediaUrl(media.url, media.filesize) },
     };`,
     ],
     [
