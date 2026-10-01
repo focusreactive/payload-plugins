@@ -15,7 +15,15 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     rules: [
       {
         allow: "/",
-        disallow: ["/admin/", "/api/", "/next/", "/*?draft=true", "/*&draft=true"],
+        disallow: [
+          "/admin/",
+          "/api/",
+          "/next/",
+          ...["draft", "category", "q", "query"].flatMap((param) => [
+            `/*?${param}=`,
+            `/*&${param}=`,
+          ]),
+        ],
         userAgent: "*",
       },
     ],
