@@ -34,18 +34,20 @@ export class EnqueueTranslationHandler {
     } = validationResult.data;
 
     const collectionSlug = isCollectionAvailable(collection_slug, this.config.availableCollections);
-    if (!collectionSlug)
+    if (!collectionSlug) {
       return ServerResponse.badRequest(
         "Content of this collection is not available for translation"
       );
+    }
 
     const knownLocales = extractLocaleCodes(
       req.payload.config?.localization as LocalizationLike | undefined
     );
-    if (!knownLocales)
+    if (!knownLocales) {
       return ServerResponse.badRequest(
         "Localization is not enabled in this Payload config; there are no target locales to translate into"
       );
+    }
 
     if (!knownLocales.has(source_lng)) {
       return ServerResponse.badRequest(
@@ -65,10 +67,12 @@ export class EnqueueTranslationHandler {
         )} (configured locales: ${[...knownLocales].join(", ")}).`
       );
     }
-    if (targets.length === 0)
+
+    if (targets.length === 0) {
       return ServerResponse.badRequest(
         "No valid target locales to translate into (all requested locales were the source or unknown)"
       );
+    }
 
     const collectionIds = select_all
       ? await getAllCollectionIds(req.payload, collectionSlug)
