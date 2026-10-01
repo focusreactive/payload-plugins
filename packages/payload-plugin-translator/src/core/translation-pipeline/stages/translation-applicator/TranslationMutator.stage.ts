@@ -1,3 +1,4 @@
+import { TranslatorBug } from "../../../errors/index.js";
 import type { PipelineContext, PipelineStage } from "../../types/index.js";
 import { TranslationMutator } from "./TranslationMutator.js";
 
@@ -7,7 +8,7 @@ import { TranslationMutator } from "./TranslationMutator.js";
 export class TranslationMutatorStage implements PipelineStage {
   execute(ctx: PipelineContext): PipelineContext {
     if (!ctx.textChunks || !ctx.translations) {
-      throw new Error("TranslationMutatorStage requires textChunks and translations");
+      throw new TranslatorBug("TranslationMutatorStage requires textChunks and translations");
     }
 
     const mutator = new TranslationMutator();

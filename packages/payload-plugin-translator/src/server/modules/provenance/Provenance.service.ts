@@ -5,7 +5,7 @@ import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { isRecordStale } from "../../../core/domain/provenance/index.js";
 import type { ProvenanceKey, ProvenanceStore } from "../../../core/domain/provenance/index.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
-import { killedTheCallersTransaction } from "../../shared/payload/killedTheCallersTransaction.js";
+import { swallowOrThrow } from "../../shared/payload/swallowOrThrow.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
 
@@ -30,7 +30,8 @@ export type ProvenanceServiceFactory = (
  * {@link ProvenanceStore} port; the port + `computeSourceFingerprint` + `isRecordStale` stay
  * framework-agnostic in the core.
  *
- * Best-effort by contract: fingerprint/record failures log and no-op rather than failing a translation.
+ * Best-effort by contract, except where swallowing would hide a loss — see
+ * {@link swallowOrThrow}.
  */
 export class ProvenanceService {
   private readonly payload: Payload;
@@ -77,38 +78,38 @@ export class ProvenanceService {
     }
   }
 
-  /** Persist a translation receipt (best-effort; a store failure logs and no-ops). */
   async record(
     key: ProvenanceKey & { sourceLocale: string },
     sourceFingerprint: string
   ): Promise<void> {
-    try {
-      await this.store.upsert({
-        collectionSlug: key.collectionSlug,
-        documentId: key.documentId,
-        targetLocale: key.targetLocale,
-        sourceLocale: key.sourceLocale,
-        sourceFingerprint,
-        translatedAt: new Date().toISOString(),
-        dismissedFingerprint: null,
-      });
-    } catch (error) {
-      this.payload.logger.error({
-        err: error,
-        collection: key.collectionSlug,
-        documentId: key.documentId,
-        targetLocale: key.targetLocale,
-        sourceLocale: key.sourceLocale,
-        msg: "translator: failed to record translation provenance",
-      });
-      if (killedTheCallersTransaction(this.scope, error)) throw error;
-    }
+    await swallowOrThrow(
+      this.scope,
+      () =>
+        this.store.upsert({
+          collectionSlug: key.collectionSlug,
+          documentId: key.documentId,
+          targetLocale: key.targetLocale,
+          sourceLocale: key.sourceLocale,
+          sourceFingerprint,
+          translatedAt: new Date().toISOString(),
+          dismissedFingerprint: null,
+        }),
+      (error) =>
+        this.payload.logger.error({
+          err: error,
+          collection: key.collectionSlug,
+          documentId: key.documentId,
+          targetLocale: key.targetLocale,
+          sourceLocale: key.sourceLocale,
+          msg: "translator: failed to record translation provenance",
+        })
+    );
   }
 
   /**
-   * Per-locale staleness for one document: read every receipt, recompute the current source
-   * fingerprint (write-path-identical), and mark each locale stale on undismissed drift. Returns `[]`
-   * when the collection has no schema. Isolates per-locale failures so one bad record can't blank the rest.
+   * Per-locale staleness for one document. A locale whose fingerprint cannot be recomputed is dropped
+   * from the result; if the caller is inside a transaction, that failure propagates instead and the
+   * locales after it go unreported.
    */
   async getStaleness(collection: CollectionSlug, documentId: string): Promise<StalenessLocale[]> {
     const schema = this.schemaMap.get(collection);
@@ -120,24 +121,27 @@ export class ProvenanceService {
     const currentFingerprint = this.makeCurrentFingerprint(collection, documentId, schema);
     const locales: StalenessLocale[] = [];
     for (const record of records) {
-      try {
-        const current = await currentFingerprint(record.sourceLocale);
-        locales.push({
-          target_lng: record.targetLocale,
-          source_lng: record.sourceLocale,
-          is_stale: isRecordStale(record, current),
-          translated_at: record.translatedAt,
-        });
-      } catch (error) {
-        this.payload.logger.error({
-          err: error,
-          collection,
-          documentId,
-          targetLocale: record.targetLocale,
-          sourceLocale: record.sourceLocale,
-          msg: "translator: failed to compute staleness for locale",
-        });
-      }
+      const recomputedOrSwallowed = await swallowOrThrow(
+        this.scope,
+        () => currentFingerprint(record.sourceLocale),
+        (error) =>
+          this.payload.logger.error({
+            err: error,
+            collection,
+            documentId,
+            targetLocale: record.targetLocale,
+            sourceLocale: record.sourceLocale,
+            msg: "translator: failed to compute staleness for locale",
+          })
+      );
+      if (recomputedOrSwallowed === undefined) continue;
+
+      locales.push({
+        target_lng: record.targetLocale,
+        source_lng: record.sourceLocale,
+        is_stale: isRecordStale(record, recomputedOrSwallowed),
+        translated_at: record.translatedAt,
+      });
     }
     return locales;
   }

@@ -1,3 +1,5 @@
+import { asTranslatorError } from "../../../translation-providers/shared/errors/index.js";
+import { TranslatorConfigError } from "../../../core/errors/index.js";
 import type { Payload } from "payload";
 import { APIError } from "payload";
 
@@ -62,7 +64,8 @@ export class TranslateDocumentHandler implements Handler<
       input;
 
     const schema = this.schemaMap.get(collection);
-    if (!schema) throw new APIError(`Collection "${collection}" not found in schemaMap`, 400);
+    if (!schema)
+      throw new TranslatorConfigError(`Collection "${collection}" not found in schemaMap`);
 
     const layer = resolveTargetLayer({
       versions: payload.collections[collection].config.versions,
@@ -95,7 +98,7 @@ export class TranslateDocumentHandler implements Handler<
     const provenance = this.provenanceServiceFactory?.(payload, scope);
     const sourceFingerprint = provenance?.captureFingerprint(collection, sourceData) ?? null;
 
-    const translatedData = await translateContent({
+    const translatedData = await this.translateOrWrap({
       schema,
       sourceData,
       targetData: currentTargetVersion,
@@ -163,6 +166,24 @@ export class TranslateDocumentHandler implements Handler<
       user: permission.user,
     });
     if (!allowed) throw new TranslationRefused(input.collection, input.targetLng);
+  }
+
+  /**
+   * A `TranslationProvider` is a host extension point, so whatever it throws is outside this
+   * plugin's control, and an unrecognised error otherwise reads as "a Payload operation failed" —
+   * which would surface a provider outage as a lost save. An `APIError` is the exception: a provider
+   * is free to query Payload itself, and if it did, that operation has already rolled the caller's
+   * transaction back. Only a failure carrying no such evidence is safe to adopt as ours.
+   */
+  private async translateOrWrap(
+    args: Parameters<typeof translateContent>[0]
+  ): Promise<Awaited<ReturnType<typeof translateContent>>> {
+    try {
+      return await translateContent(args);
+    } catch (error) {
+      if (error instanceof APIError) throw error;
+      throw asTranslatorError(error);
+    }
   }
 
   private async saveTranslatedDocument(

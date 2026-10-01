@@ -1,3 +1,4 @@
+import { TranslatorBug } from "../../../errors/index.js";
 import type { ParsedMark } from "../../../kernel/lexical/inlineMarks.js";
 import { hasChildren } from "../../../kernel/lexical/index.js";
 import type { SerializedLexicalNode } from "../../../kernel/lexical/index.js";
@@ -60,9 +61,8 @@ export class TranslationMutator {
       } else if (isRichTextChunk(chunk)) {
         chunk.nodeRef.text = translation;
       } else {
-        // Exhaustiveness: a new TextChunk kind must be written here, not silently skipped.
         const exhaustive: never = chunk;
-        throw new Error(`unhandled text chunk: ${String(exhaustive)}`);
+        throw new TranslatorBug(`unhandled text chunk: ${String(exhaustive)}`);
       }
     }
   }

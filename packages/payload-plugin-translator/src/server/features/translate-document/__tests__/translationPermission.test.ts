@@ -1,6 +1,7 @@
+import { PermissionCheckFailed } from "../PermissionCheckFailed.js";
+import { RequesterMissing } from "../RequesterMissing.js";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload } from "payload";
-import { APIError } from "payload";
 
 import { readFailureReason } from "../../../../core/domain/translation-providers/failureReason.js";
 import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
@@ -95,8 +96,11 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
 
     const error = await ask({ title: "t" }).catch((e: Error) => e);
 
-    expect(error).toBeInstanceOf(Error);
-    expect(error).not.toBeInstanceOf(APIError);
+    expect(error).toBeInstanceOf(RequesterMissing);
+    expect(
+      (error as RequesterMissing).mustPropagate,
+      "findRequester queries outside the caller's transaction, so nothing of theirs was rolled back"
+    ).toBe(false);
     expect(readFailureReason((error as Error).message)).toBe("requester-missing");
   });
 
@@ -105,9 +109,11 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
 
     const error = await ask({ title: "t" }).catch((e: Error) => e);
 
-    // An APIError is what `killedTheCallersTransaction` recognises further up the chain; a plain
-    // error would be swallowed as best-effort and the editor told their save succeeded.
-    expect(error).toBeInstanceOf(APIError);
+    expect(error).toBeInstanceOf(PermissionCheckFailed);
+    expect(
+      (error as PermissionCheckFailed).mustPropagate,
+      "docAccessOperation has already rolled the caller's save back, so staying quiet would answer them with a success over nothing"
+    ).toBe(true);
     expect(readFailureReason((error as Error).message)).toBe("permission-check-failed");
   });
 

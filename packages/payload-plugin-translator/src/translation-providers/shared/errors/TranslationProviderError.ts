@@ -1,3 +1,5 @@
+import { TranslatorError } from "../../../core/errors/index.js";
+
 /**
  * Failure causes a translation provider can report.
  *
@@ -18,13 +20,8 @@ export type TranslationFailureCode =
  *
  * @since 0.11.0
  */
-export abstract class TranslationProviderError extends Error {
+export abstract class TranslationProviderError extends TranslatorError {
   abstract readonly code: TranslationFailureCode;
 
-  constructor(message: string, options?: ErrorOptions) {
-    // Never `this.cause = cause`: an assigned property is enumerable, so JSON.stringify and pino
-    // serialize the vendor error whole — headers and API key with it. `super` installs it non-enumerably.
-    super(message, options);
-    this.name = new.target.name;
-  }
+  readonly mustPropagate = false;
 }

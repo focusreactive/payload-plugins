@@ -1,3 +1,4 @@
+import { TranslatorBug } from "../../errors/index.js";
 import { classifyField, tabScopes } from "./kernel.js";
 import type {
   ArrayFieldLike,
@@ -64,9 +65,8 @@ class FieldTreeWalker<Cursor extends object, Out> {
           break;
         }
         default: {
-          // Exhaustiveness guard: if a new FieldStructure kind is added, this errors at compile time.
           const exhaustive: never = structure;
-          throw new Error(`unhandled field structure: ${String(exhaustive)}`);
+          throw new TranslatorBug(`unhandled field structure: ${String(exhaustive)}`);
         }
       }
     }

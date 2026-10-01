@@ -1,3 +1,4 @@
+import { TranslatorConfigError } from "../../../../core/errors/index.js";
 import type { Config, Field, Payload, WorkflowConfig } from "payload";
 
 import type { TaskRunner } from "../TaskRunner.interface.js";
@@ -63,7 +64,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
 
     const staleJobTimeoutMs = options?.staleJobTimeoutMs ?? defaultValues.staleJobTimeoutMs;
     if (!Number.isFinite(staleJobTimeoutMs) || staleJobTimeoutMs <= 0) {
-      throw new Error(
+      throw new TranslatorConfigError(
         `[payload-plugin-translator] staleJobTimeoutMs must be a positive finite number (got ${staleJobTimeoutMs})`
       );
     }

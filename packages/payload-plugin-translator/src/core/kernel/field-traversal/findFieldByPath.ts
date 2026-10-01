@@ -1,3 +1,4 @@
+import { TranslatorBug } from "../../errors/index.js";
 import { classifyField, resolveBlockFields, tabScopes } from "./kernel.js";
 import type { FieldLike, LeafField } from "./types.js";
 
@@ -132,9 +133,8 @@ export function findFieldByPath(
           : { status: "not-found" };
       }
       default: {
-        // Exhaustiveness guard: a new FieldStructure kind would error here at compile time.
         const exhaustive: never = structure;
-        throw new Error(`unhandled field structure: ${String(exhaustive)}`);
+        throw new TranslatorBug(`unhandled field structure: ${String(exhaustive)}`);
       }
     }
   }

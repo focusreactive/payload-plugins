@@ -1,3 +1,8 @@
+import {
+  TranslatorBug,
+  TranslatorConfigError,
+  mustPropagate,
+} from "../../../../core/errors/index.js";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 import { APIError } from "payload";
@@ -84,10 +89,10 @@ describe("TranslateDocumentHandler", () => {
   });
 
   describe("schema validation", () => {
-    it("throws APIError when collection not in schemaMap", async () => {
+    it("refuses a collection the schema map does not know", async () => {
       const input = createInput({ collection: "unknown" as CollectionSlug });
 
-      await expect(handler.handle(mockPayload, input)).rejects.toThrow(APIError);
+      await expect(handler.handle(mockPayload, input)).rejects.toThrow(TranslatorConfigError);
       await expect(handler.handle(mockPayload, input)).rejects.toThrow(
         'Collection "unknown" not found in schemaMap'
       );
@@ -163,6 +168,33 @@ describe("TranslateDocumentHandler", () => {
           translationProvider: mockTranslationProvider,
         })
       );
+    });
+
+    it("turns a bare error from the host's provider into one of ours", async () => {
+      const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
+      const fromHost = new Error("the host's own provider blew up");
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(fromHost);
+
+      const thrown = await handler.handle(mockPayload, createInput()).catch((e: unknown) => e);
+
+      expect(
+        mustPropagate(thrown),
+        "an unwrapped provider failure would read as foreign and fail the editor's save"
+      ).toBe(false);
+      expect((thrown as Error).cause).toBe(fromHost);
+    });
+
+    it("leaves a Payload failure raised inside the host's provider foreign", async () => {
+      const { translateContent } = await import("../../../../core/translation-pipeline/index.js");
+      const fromPayload = new APIError("relation does not exist", 500);
+      (translateContent as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(fromPayload);
+
+      const thrown = await handler.handle(mockPayload, createInput()).catch((e: unknown) => e);
+
+      expect(
+        mustPropagate(thrown),
+        "a provider that calls Payload can kill the caller's transaction, so its failure must still surface"
+      ).toBe(true);
     });
   });
 
@@ -485,7 +517,7 @@ describe("TranslateDocumentHandler", () => {
 
     it("does not fail the translation when the provenance write throws (best-effort + logged)", async () => {
       await withTranslatedData();
-      store.upsert.mockRejectedValue(new Error("provenance table down"));
+      store.upsert.mockRejectedValue(new TranslatorBug("provenance table down"));
 
       const result = await makeHandlerWithProvenance().handle(mockPayload, createInput());
 

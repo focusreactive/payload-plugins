@@ -2,7 +2,8 @@ import type { CollectionAfterChangeHook } from "payload";
 import { hasDraftsEnabled } from "payload/shared";
 
 import { authCollectionsOf, identityOf } from "../../shared/payload/identityOf.js";
-import { killedTheCallersTransaction } from "../../shared/payload/killedTheCallersTransaction.js";
+import { swallowOrThrow } from "../../shared/payload/swallowOrThrow.js";
+import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 
 import { hasSourceContentChanged } from "../../../core/domain/auto-translate/index.js";
 import { AUTO_TRANSLATE_CUSTOM_KEY } from "../../../core/domain/auto-translate/index.js";
@@ -26,66 +27,69 @@ type AutoTranslateHookDeps = {
   taskRunnerFactory: TaskRunnerFactory;
 };
 
-/**
- * `afterChange` hook that enqueues translations when a document's source-locale content changes.
- * Best-effort by contract: every failure is logged and swallowed rather than failing the save.
- */
+/** `afterChange` hook that enqueues translations when a document's source-locale content changes. */
 export function makeAutoTranslateHook(deps: AutoTranslateHookDeps): CollectionAfterChangeHook {
   const { resolvePolicy, schemaMap, taskRunnerFactory } = deps;
 
   const hook: MarkedHook = async ({ doc, previousDoc, req, collection }) => {
-    let transactionID: string | number | undefined;
-    try {
-      if (req.context?.[AUTO_TRANSLATE_SKIP_CONTEXT_KEY]) return doc;
+    const transactionID = await req.transactionID;
+    const scope: RequestScope = transactionID == null ? {} : { transactionID };
 
-      const policy = resolvePolicy(collection.slug, doc);
-      if (!policy) return doc;
+    await swallowOrThrow(
+      scope,
+      async () => {
+        const skipAutoTranslate = req.context?.[AUTO_TRANSLATE_SKIP_CONTEXT_KEY];
+        const localization = req.payload.config.localization;
 
-      const localization = req.payload.config.localization;
-      const sourceLocale =
-        policy.sourceLocale ?? (localization ? localization.defaultLocale : undefined);
-      if (!sourceLocale) {
-        req.payload.logger.warn({
+        if (skipAutoTranslate) return;
+
+        const policy = resolvePolicy(collection.slug, doc);
+        if (!policy) return;
+
+        const sourceLocale =
+          policy.sourceLocale ?? (localization ? localization.defaultLocale : undefined);
+        if (!sourceLocale) {
+          req.payload.logger.warn({
+            collection: collection.slug,
+            documentId: String(doc.id),
+            msg: "translator: auto-translate skipped — no source locale resolvable (set localization.defaultLocale or a per-collection sourceLocale)",
+          });
+          return;
+        }
+
+        if (req.locale !== sourceLocale) return;
+
+        const hasDrafts = hasDraftsEnabled(collection);
+        if (!passesPublishGate(doc, hasDrafts)) return;
+
+        const schema = schemaMap.get(collection.slug);
+        if (schema && !hasSourceContentChanged(previousDoc, doc, schema)) return;
+
+        const tasks = buildAutoTranslateTasks({
+          policy,
+          collectionSlug: collection.slug,
+          documentId: String(doc.id),
+          sourceLocale,
+          doc,
+          hasDrafts,
+          now: Date.now(),
+        });
+        if (tasks.length === 0) return;
+
+        await taskRunnerFactory.create(req.payload).enqueue(tasks, {
+          ...scope,
+          ...identityOf(req, authCollectionsOf(req.payload), req.payload.logger),
+        });
+      },
+      (error) =>
+        req.payload.logger.error({
+          err: error,
           collection: collection.slug,
           documentId: String(doc.id),
-          msg: "translator: auto-translate skipped — no source locale resolvable (set localization.defaultLocale or a per-collection sourceLocale)",
-        });
-        return doc;
-      }
+          msg: "translator: auto-translate hook failed",
+        })
+    );
 
-      if (req.locale !== sourceLocale) return doc;
-
-      const hasDrafts = hasDraftsEnabled(collection);
-      if (!passesPublishGate(doc, hasDrafts)) return doc;
-
-      const schema = schemaMap.get(collection.slug);
-      if (schema && !hasSourceContentChanged(previousDoc, doc, schema)) return doc;
-
-      const tasks = buildAutoTranslateTasks({
-        policy,
-        collectionSlug: collection.slug,
-        documentId: String(doc.id),
-        sourceLocale,
-        doc,
-        hasDrafts,
-        now: Date.now(),
-      });
-      if (tasks.length === 0) return doc;
-
-      transactionID = await req.transactionID;
-      await taskRunnerFactory.create(req.payload).enqueue(tasks, {
-        ...(transactionID == null ? {} : { transactionID }),
-        ...identityOf(req, authCollectionsOf(req.payload), req.payload.logger),
-      });
-    } catch (error) {
-      req.payload.logger.error({
-        err: error,
-        collection: collection.slug,
-        documentId: String(doc.id),
-        msg: "translator: auto-translate hook failed",
-      });
-      if (killedTheCallersTransaction({ transactionID }, error)) throw error;
-    }
     return doc;
   };
 

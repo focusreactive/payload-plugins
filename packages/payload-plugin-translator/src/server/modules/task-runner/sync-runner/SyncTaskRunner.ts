@@ -6,14 +6,9 @@ import type { TaskHandler } from "../TaskRunnerProvider.interface.js";
 import type { Task, TaskInput, RunResult, ID } from "../types.js";
 import type { LazyMap } from "../../../shared/utils/index.js";
 import type { RequestScope } from "../../../shared/payload/RequestScope.shapes.js";
-import { killedTheCallersTransaction } from "../../../shared/payload/killedTheCallersTransaction.js";
+import { swallowOrThrow } from "../../../shared/payload/swallowOrThrow.js";
 
-/**
- * Synchronous TaskRunner implementation.
- *
- * Executes translations immediately without queuing.
- * Stores results in memory for status queries.
- */
+/** Runs each task inline on enqueue; results live only in memory, so status queries see nothing from a previous process. */
 export class SyncTaskRunner implements TaskRunner {
   private readonly payload: Payload;
   private readonly handler: TaskHandler;
@@ -49,27 +44,28 @@ export class SyncTaskRunner implements TaskRunner {
         if (error) task.error = error;
       };
 
-      try {
-        await this.handler(
-          this.payload,
-          {
-            collection: input.collectionSlug,
-            collectionId: input.collectionId,
-            sourceLng: input.sourceLng,
-            targetLng: input.targetLng,
-            strategy: input.strategy,
-            publishOnTranslation: input.publishOnTranslation,
-          },
-          scope
-        );
-
-        markEvictable("completed");
-      } catch (error) {
-        markEvictable("failed", {
-          message: error instanceof Error ? error.message : "Unknown error",
-        });
-        if (killedTheCallersTransaction(scope, error)) throw error;
-      }
+      await swallowOrThrow(
+        scope,
+        async () => {
+          await this.handler(
+            this.payload,
+            {
+              collection: input.collectionSlug,
+              collectionId: input.collectionId,
+              sourceLng: input.sourceLng,
+              targetLng: input.targetLng,
+              strategy: input.strategy,
+              publishOnTranslation: input.publishOnTranslation,
+            },
+            scope
+          );
+          markEvictable("completed");
+        },
+        (error) =>
+          markEvictable("failed", {
+            message: error instanceof Error ? error.message : "Unknown error",
+          })
+      );
     }
   }
 

@@ -1,7 +1,7 @@
+import { PermissionCheckFailed } from "./PermissionCheckFailed.js";
+import { RequesterMissing } from "./RequesterMissing.js";
 import type { CollectionSlug, Payload } from "payload";
-import { APIError, createLocalReq, docAccessOperation } from "payload";
-
-import { markFailureReason } from "../../../core/domain/translation-providers/failureReason.js";
+import { createLocalReq, docAccessOperation } from "payload";
 
 import type { RequestScope, Requester } from "../../shared/payload/RequestScope.shapes.js";
 import { freshReq } from "../../shared/payload/RequestScope.shapes.js";
@@ -66,20 +66,13 @@ type PermissionQuery = {
   scope: RequestScope;
 };
 
-/**
- * Rethrown as `APIError` so {@link killedTheCallersTransaction} recognises it: `docAccessOperation`
- * kills the transaction from its own catch, including for an ordinary `TypeError` out of a host rule.
- */
 async function evaluate(args: Parameters<EvaluateDocAccess>[0]): Promise<DocPermissions> {
   try {
     return await evaluateDocAccess(args);
   } catch (error) {
-    throw new APIError(
-      markFailureReason(
-        "permission-check-failed",
-        error instanceof Error ? error.message : "the access rules could not be evaluated"
-      ),
-      500
+    throw new PermissionCheckFailed(
+      error instanceof Error ? error.message : "the access rules could not be evaluated",
+      { cause: error }
     );
   }
 }
@@ -137,8 +130,8 @@ export async function mayWrite(query: {
 
 /**
  * Asks Payload's own evaluator (`docAccessOperation`, the one behind `/api/<slug>/access`) instead of
- * attempting the write and catching `Forbidden`: a caught refusal has already been through
- * {@link killedTheCallersTransaction}'s rollback and would discard the editor's own save.
+ * attempting the write and catching `Forbidden`: by the time a refusal is caught, Payload has rolled
+ * the caller's transaction back from its own catch, and the editor's save is gone with it.
  */
 export async function checkTranslationPermission(
   query: PermissionQuery
@@ -149,12 +142,7 @@ export async function checkTranslationPermission(
 
   const user = await findRequester(payload, requester).catch(() => null);
   if (!user) {
-    throw new Error(
-      markFailureReason(
-        "requester-missing",
-        `the requester (${String(requester.userId)} in "${String(requester.userCollection)}") could not be looked up`
-      )
-    );
+    throw new RequesterMissing(requester.userId, requester.userCollection);
   }
 
   const allowed = await mayWrite({ payload, collection, id, data, targetLocale, scope, user });

@@ -1,5 +1,7 @@
+import { TransportError } from "../../../../translation-providers/shared/errors/index.js";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CollectionSlug, Field } from "payload";
+import { APIError } from "payload";
 
 import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../../types/AutoTranslateContext.js";
 import type { CollectionSchemaMap } from "../../../../types/CollectionSchemaMap.js";
@@ -52,6 +54,7 @@ function hookArgs(over: Record<string, unknown> = {}) {
     collection: (over.collection as object) ?? { slug: "posts", versions: { drafts: true } },
     operation: over.operation ?? "update",
     req: {
+      ...(over.transactionID == null ? {} : { transactionID: over.transactionID }),
       locale: over.locale ?? "en",
       context: over.context ?? {},
       payload: {
@@ -102,10 +105,43 @@ describe("makeAutoTranslateHook", () => {
     expect(enqueue).not.toHaveBeenCalled();
   });
 
-  it("is best-effort: swallows an enqueue error, logs, never throws (R6)", async () => {
-    const enqueue = vi.fn().mockRejectedValue(new Error("queue down"));
+  it("is best-effort: swallows an enqueue error of ours, logs, never throws (R6)", async () => {
+    const enqueue = vi.fn().mockRejectedValue(new TransportError("queue down"));
     const { hook } = setup({ enqueue });
     await expect(hook(hookArgs())).resolves.toBeDefined();
+    expect(logger.error).toHaveBeenCalled();
+  });
+
+  it("swallows one of ours even inside the caller's transaction (R6)", async () => {
+    const enqueue = vi.fn().mockRejectedValue(new TransportError("queue down"));
+    const { hook } = setup({ enqueue });
+
+    await expect(
+      hook(hookArgs({ transactionID: "tx-1" })),
+      "a failure of ours ran no Payload operation, so the editor's save is untouched"
+    ).resolves.toBeDefined();
+    expect(logger.error).toHaveBeenCalled();
+  });
+
+  it("but lets a failure that did not come from the translator out (R6)", async () => {
+    const fromPayload = new APIError("Validation failed", 400);
+    const enqueue = vi.fn().mockRejectedValue(fromPayload);
+    const { hook } = setup({ enqueue });
+
+    await expect(
+      hook(hookArgs({ transactionID: "tx-1" })),
+      "a foreign error means a Payload operation already rolled the editor's save back"
+    ).rejects.toBe(fromPayload);
+  });
+
+  it("and swallows the same failure when the caller has no transaction to lose", async () => {
+    const enqueue = vi.fn().mockRejectedValue(new APIError("Validation failed", 400));
+    const { hook } = setup({ enqueue });
+
+    await expect(
+      hook(hookArgs()),
+      "nothing of the editor's was carried by a transaction, so their save is still intact"
+    ).resolves.toBeDefined();
     expect(logger.error).toHaveBeenCalled();
   });
 

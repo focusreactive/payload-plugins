@@ -1,3 +1,5 @@
+import { APIError } from "payload";
+import { TransportError } from "../../../../../translation-providers/shared/errors/index.js";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload, CollectionSlug } from "payload";
 import { SyncTaskRunner } from "../SyncTaskRunner.js";
@@ -69,8 +71,8 @@ describe("SyncTaskRunner", () => {
       expect(task?.completedAt).toBeDefined();
     });
 
-    it("stores failed task when handler throws", async () => {
-      mockHandler = vi.fn().mockRejectedValue(new Error("Translation failed"));
+    it("stores a failed task when the handler throws one of ours", async () => {
+      mockHandler = vi.fn().mockRejectedValue(new TransportError("Translation failed"));
       runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
 
       const input = createInput();
@@ -83,7 +85,7 @@ describe("SyncTaskRunner", () => {
 
     it.each([
       ["a task that succeeded", undefined],
-      ["a task that failed", new Error("Translation failed")],
+      ["a task that failed", new TransportError("Translation failed")],
     ])("%s reports when it finished, not when it started", async (_label, rejection) => {
       vi.useFakeTimers();
       try {
@@ -106,12 +108,50 @@ describe("SyncTaskRunner", () => {
       }
     });
 
-    it("handles non-Error throws", async () => {
+    it("finishes the batch for a caller with no transaction to lose", async () => {
+      const fromPayload = new APIError("Validation failed", 400);
+      mockHandler = vi.fn().mockRejectedValueOnce(fromPayload).mockResolvedValueOnce(undefined);
+      runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+
+      await expect(
+        runner.enqueue([createInput({ targetLng: "de" }), createInput({ targetLng: "fr" })]),
+        "nothing of this caller's was rolled back, so one refused locale must not cancel the rest"
+      ).resolves.toBeUndefined();
+
+      expect(mockHandler).toHaveBeenCalledTimes(2);
+      expect(tasks.get("posts:doc-123:de")?.status).toBe("failed");
+      expect(tasks.get("posts:doc-123:fr")?.status).toBe("completed");
+    });
+
+    it("swallows one of ours even inside the caller's transaction", async () => {
+      mockHandler = vi.fn().mockRejectedValue(new TransportError("provider down"));
+      runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+
+      await expect(
+        runner.enqueue([createInput()], { transactionID: "tx-1" }),
+        "a provider failure ran no Payload operation, so the editor's save is still intact"
+      ).resolves.toBeUndefined();
+
+      expect(tasks.get("posts:doc-123:de")?.status).toBe("failed");
+    });
+
+    it("lets a failure that did not come from the translator out", async () => {
+      const fromPayload = new APIError("Validation failed", 400);
+      mockHandler = vi.fn().mockRejectedValue(fromPayload);
+      runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+
+      await expect(
+        runner.enqueue([createInput()], { transactionID: "tx-1" }),
+        "a foreign error means a Payload operation already rolled the editor's save back"
+      ).rejects.toBe(fromPayload);
+    });
+
+    it("records a non-Error throw and still lets it out", async () => {
       mockHandler = vi.fn().mockRejectedValue("string error");
       runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
 
       const input = createInput();
-      await runner.enqueue([input]);
+      await expect(runner.enqueue([input], { transactionID: "tx-1" })).rejects.toBe("string error");
 
       const task = tasks.get("posts:doc-123:de");
       expect(task?.status).toBe("failed");

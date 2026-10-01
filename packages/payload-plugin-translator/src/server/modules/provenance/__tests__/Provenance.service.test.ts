@@ -1,3 +1,4 @@
+import { TranslatorBug } from "../../../../core/errors/index.js";
 import { describe, it, expect, vi } from "vitest";
 import type { Field, Payload } from "payload";
 import { APIError } from "payload";
@@ -91,9 +92,56 @@ describe("ProvenanceService", () => {
     expect(drifted[0].is_stale).toBe(true);
   });
 
-  it("record is best-effort — a store failure is caught and logged, not thrown", async () => {
+  it("getStaleness drops a locale it cannot recompute and keeps going", async () => {
+    const store = makeStore({
+      findByDocument: vi
+        .fn()
+        .mockResolvedValue([
+          record({ targetLocale: "de" }),
+          record({ targetLocale: "fr", sourceLocale: "it" }),
+        ]),
+    });
+    const payload = makePayload(async ({ locale }) =>
+      locale === "en" ? Promise.reject(new APIError("relation does not exist")) : sourceDoc
+    );
+    const service = new ProvenanceService(payload, store, schemaMap);
+
+    const locales = await service.getStaleness(COLLECTION, "1");
+
+    expect(
+      locales.map((l) => l.target_lng),
+      "no transaction carried this read, so one unreadable locale must not cost the others"
+    ).toEqual(["fr"]);
+    expect(payload.logger.error as ReturnType<typeof vi.fn>).toHaveBeenCalled();
+  });
+
+  it("getStaleness lets a foreign failure out when the caller is in a transaction", async () => {
+    const fromPayload = new APIError("relation does not exist");
+    const store = makeStore({ findByDocument: vi.fn().mockResolvedValue([record()]) });
+    const payload = makePayload(async () => {
+      throw fromPayload;
+    });
+    const service = new ProvenanceService(payload, store, schemaMap, { transactionID: "tx-1" });
+
+    await expect(
+      service.getStaleness(COLLECTION, "1"),
+      "the read ran inside the caller's transaction, which Payload has now rolled back"
+    ).rejects.toBe(fromPayload);
+  });
+
+  it("getStaleness swallows one of ours even inside the caller's transaction", async () => {
+    const store = makeStore({ findByDocument: vi.fn().mockResolvedValue([record()]) });
+    const payload = makePayload(async () => {
+      throw new TranslatorBug("fingerprint blew up");
+    });
+    const service = new ProvenanceService(payload, store, schemaMap, { transactionID: "tx-1" });
+
+    await expect(service.getStaleness(COLLECTION, "1")).resolves.toEqual([]);
+  });
+
+  it("record is best-effort — a store failure of ours is caught and logged, not thrown", async () => {
     const payload = makePayload(async () => sourceDoc);
-    const store = makeStore({ upsert: vi.fn().mockRejectedValue(new Error("table down")) });
+    const store = makeStore({ upsert: vi.fn().mockRejectedValue(new TranslatorBug("table down")) });
     const service = new ProvenanceService(payload, store, schemaMap);
 
     await expect(
@@ -101,6 +149,21 @@ describe("ProvenanceService", () => {
         { collectionSlug: COLLECTION, documentId: "1", targetLocale: "de", sourceLocale: "en" },
         "fp"
       )
+    ).resolves.toBeUndefined();
+    expect(payload.logger.error as ReturnType<typeof vi.fn>).toHaveBeenCalled();
+  });
+
+  it("record swallows a Payload failure when there is no transaction to lose", async () => {
+    const payload = makePayload(async () => sourceDoc);
+    const store = makeStore({ upsert: vi.fn().mockRejectedValue(new APIError("rejected")) });
+    const service = new ProvenanceService(payload, store, schemaMap);
+
+    await expect(
+      service.record(
+        { collectionSlug: COLLECTION, documentId: "1", targetLocale: "de", sourceLocale: "en" },
+        "fp"
+      ),
+      "no transaction carried the caller's work, so a lost receipt must not cost them anything"
     ).resolves.toBeUndefined();
     expect(payload.logger.error as ReturnType<typeof vi.fn>).toHaveBeenCalled();
   });
@@ -120,7 +183,7 @@ describe("ProvenanceService", () => {
 
   it("record stays best-effort inside a transaction when the failure reached no Payload operation", async () => {
     const payload = makePayload(async () => sourceDoc);
-    const store = makeStore({ upsert: vi.fn().mockRejectedValue(new Error("table down")) });
+    const store = makeStore({ upsert: vi.fn().mockRejectedValue(new TranslatorBug("table down")) });
     const service = new ProvenanceService(payload, store, schemaMap, { transactionID: "tx-1" });
 
     await expect(
