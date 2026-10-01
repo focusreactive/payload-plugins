@@ -1,19 +1,15 @@
 import { del } from "@vercel/blob";
 import type { CollectionAfterErrorHook, CollectionBeforeValidateHook } from "payload";
 
+import type { Media } from "@/payload-types";
+
 const CLIENT_UPLOAD_KEY = "clientUploadKey";
 
-interface UploadDestination {
-  _objectKey?: string | null;
-  filename?: string | null;
-  prefix?: string | null;
-}
-
-export const rememberClientUploadKey: CollectionBeforeValidateHook = ({ data, req }) => {
-  const { _objectKey, filename, prefix } = (data ?? {}) as UploadDestination;
-
-  if (_objectKey && filename) {
-    req.context[CLIENT_UPLOAD_KEY] = [prefix, _objectKey, filename].filter(Boolean).join("/");
+export const rememberClientUploadKey: CollectionBeforeValidateHook<Media> = ({ data, req }) => {
+  if (data?._objectKey && data.filename) {
+    req.context[CLIENT_UPLOAD_KEY] = [data.prefix, data._objectKey, data.filename]
+      .filter(Boolean)
+      .join("/");
   }
 
   return data;

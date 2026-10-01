@@ -6,6 +6,10 @@ import {
   deleteFailedClientUpload,
   rememberClientUploadKey,
 } from "@/lib/hooks/deleteFailedClientUpload";
+import {
+  protectOtherEnvironmentFilesOnDelete,
+  protectOtherEnvironmentFilesOnReplace,
+} from "@/lib/hooks/protectOtherEnvironmentFiles";
 import { validateMediaUpload } from "@/lib/hooks/validateMediaUpload";
 import { generateRichText } from "@/lib/utils/generateRichText";
 import { DEFAULT_MEDIA_CACHE_TAG } from "@/dal/getDefaultMediaId";
@@ -80,6 +84,7 @@ export const Media: CollectionConfig<"media"> = {
     },
   ],
   defaultPopulate: {
+    _objectKey: true,
     alt: true,
     filename: true,
     filesize: true,
@@ -87,6 +92,7 @@ export const Media: CollectionConfig<"media"> = {
     focalY: true,
     height: true,
     mimeType: true,
+    prefix: true,
     sizes: true,
     updatedAt: true,
     url: true,
@@ -95,7 +101,8 @@ export const Media: CollectionConfig<"media"> = {
   folders: true,
   hooks: {
     beforeValidate: [rememberClientUploadKey, validateMediaUpload],
-    beforeChange: [setDefaultFocalPoint],
+    beforeChange: [protectOtherEnvironmentFilesOnReplace, setDefaultFocalPoint],
+    beforeDelete: [protectOtherEnvironmentFilesOnDelete],
     afterChange: [
       ({ req }) => {
         if (req?.context?.disableRevalidate) return;

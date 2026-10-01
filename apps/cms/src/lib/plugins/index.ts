@@ -25,6 +25,7 @@ import { Posts } from "@/collections/Posts";
 import serverExtractPostContent from "@/collections/Posts/serverExtractPostContent";
 import { Testimonials } from "@/collections/Testimonials";
 import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
+import { getMediaStoragePrefix } from "@/lib/storage/mediaStoragePrefix";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { abAdapter } from "@/lib/plugins/ab/abAdapter";
 import { buildVariantData } from "@/lib/plugins/ab/buildVariantData";
@@ -119,11 +120,12 @@ const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
 
 export const plugins: Plugin[] = [
   vercelBlobStorage({
+    alwaysInsertFields: true,
     cacheControlMaxAge: ONE_YEAR_IN_SECONDS,
     clientUploads: true,
     collections: {
       // Direct Blob URLs. Media `read` is public (`anyone`); do not enable this if read is restricted.
-      media: { disablePayloadAccessControl: true },
+      media: { disablePayloadAccessControl: true, prefix: getMediaStoragePrefix() },
     },
     token: process.env.BLOB_READ_WRITE_TOKEN || "",
   }),
