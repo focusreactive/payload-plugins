@@ -2,7 +2,10 @@ import type { CollectionBeforeChangeHook, CollectionConfig } from "payload";
 
 import { revalidateScopedTag } from "@/lib/utils/scopedCache";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
-import { deleteUnsavedUpload } from "@/lib/hooks/deleteUnsavedUpload";
+import {
+  deleteFailedClientUpload,
+  rememberClientUploadKey,
+} from "@/lib/hooks/deleteFailedClientUpload";
 import { validateMediaUpload } from "@/lib/hooks/validateMediaUpload";
 import { generateRichText } from "@/lib/utils/generateRichText";
 import { DEFAULT_MEDIA_CACHE_TAG } from "@/dal/getDefaultMediaId";
@@ -91,7 +94,7 @@ export const Media: CollectionConfig<"media"> = {
   },
   folders: true,
   hooks: {
-    beforeValidate: [validateMediaUpload],
+    beforeValidate: [rememberClientUploadKey, validateMediaUpload],
     beforeChange: [setDefaultFocalPoint],
     afterChange: [
       ({ req }) => {
@@ -103,7 +106,7 @@ export const Media: CollectionConfig<"media"> = {
         }
       },
     ],
-    afterError: [deleteUnsavedUpload],
+    afterError: [deleteFailedClientUpload],
     afterDelete: [
       ({ req }) => {
         if (req?.context?.disableRevalidate) return;

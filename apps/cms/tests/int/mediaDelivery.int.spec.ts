@@ -1,7 +1,10 @@
 import { del } from "@vercel/blob";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { deleteUnsavedUpload } from "@/lib/hooks/deleteUnsavedUpload";
+import {
+  deleteFailedClientUpload,
+  rememberClientUploadKey,
+} from "@/lib/hooks/deleteFailedClientUpload";
 import { readableAltFromFilename, validateMediaUpload } from "@/lib/hooks/validateMediaUpload";
 import { getAbsoluteMediaUrl, getMediaUrl } from "@/lib/utils/getMediaUrl";
 import type { Media } from "@/payload-types";
@@ -40,20 +43,11 @@ describe("getAbsoluteMediaUrl", () => {
   });
 });
 
-describe("deleteUnsavedUpload", () => {
-  const callHook = (filename: string | undefined, savedDocs: number) => {
-    const count = vi.fn().mockResolvedValue({ totalDocs: savedDocs });
-    const req = {
-      file: filename ? { name: filename } : undefined,
-      payload: { count, logger: { error: vi.fn() } },
-    };
-
-    return deleteUnsavedUpload({
-      collection: { slug: "media" },
-      context: {},
-      error: new Error("validation failed"),
-      req,
-    } as never);
+describe("deleteFailedClientUpload", () => {
+  const failUpload = (data: Record<string, unknown>) => {
+    const req = { context: {}, payload: { logger: { error: vi.fn() } } };
+    rememberClientUploadKey({ data, req } as never);
+    return deleteFailedClientUpload({ error: new Error("validation failed"), req } as never);
   };
 
   beforeEach(() => {
@@ -65,24 +59,24 @@ describe("deleteUnsavedUpload", () => {
     vi.unstubAllEnvs();
   });
 
-  it("deletes the uploaded file when no media doc uses it", async () => {
-    await callHook("photo.jpg", 0);
-    expect(del).toHaveBeenCalledWith("photo.jpg", expect.anything());
+  it("deletes the client upload at its full storage key", async () => {
+    await failUpload({ _objectKey: "a1b2", filename: "photo.jpg", prefix: "preview/feat-x" });
+    expect(del).toHaveBeenCalledWith("preview/feat-x/a1b2/photo.jpg", expect.anything());
   });
 
-  it("keeps the file when a media doc still uses it", async () => {
-    await callHook("photo.jpg", 1);
-    expect(del).not.toHaveBeenCalled();
+  it("deletes a client upload that has no prefix", async () => {
+    await failUpload({ _objectKey: "a1b2", filename: "photo.jpg" });
+    expect(del).toHaveBeenCalledWith("a1b2/photo.jpg", expect.anything());
   });
 
-  it("does nothing when the request has no file", async () => {
-    await callHook(undefined, 0);
+  it("keeps files that were not uploaded from the browser", async () => {
+    await failUpload({ filename: "photo.jpg" });
     expect(del).not.toHaveBeenCalled();
   });
 
   it("does nothing when files are stored on local disk", async () => {
     vi.stubEnv("BLOB_READ_WRITE_TOKEN", "");
-    await callHook("photo.jpg", 0);
+    await failUpload({ _objectKey: "a1b2", filename: "photo.jpg" });
     expect(del).not.toHaveBeenCalled();
   });
 });
