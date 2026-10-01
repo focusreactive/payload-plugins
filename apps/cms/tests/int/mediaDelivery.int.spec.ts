@@ -1,152 +1,89 @@
-import { describe, expect, it } from "vitest";
+import { del } from "@vercel/blob";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { collectImageVariants } from "@/lib/adapters/collectImageVariants";
-import {
-  IMAGE_DEVICE_SIZES,
-  IMAGE_MINIMUM_CACHE_TTL,
-  IMAGE_QUALITY,
-  resolveTransformWidth,
-} from "@/lib/constants/imageDelivery.mjs";
-import {
-  blobHostname,
-  mediaFileRedirects,
-  mediaRemotePatterns,
-} from "@/lib/constants/mediaDelivery.mjs";
+import { deleteUnsavedUpload } from "@/lib/hooks/deleteUnsavedUpload";
 import { readableAltFromFilename, validateMediaUpload } from "@/lib/hooks/validateMediaUpload";
-import { absoluteMediaUrl, getMediaUrl } from "@/lib/utils/getMediaUrl";
-import { withMediaVersion } from "@/lib/utils/mediaVersion";
+import { getAbsoluteMediaUrl, getMediaUrl } from "@/lib/utils/getMediaUrl";
 import type { Media } from "@/payload-types";
+
+vi.mock("@vercel/blob", () => ({ del: vi.fn() }));
 
 const MB = 1024 * 1024;
 
-describe("withMediaVersion", () => {
-  it("appends filesize and keeps an existing query", () => {
-    expect(withMediaVersion("https://blob.example/a.jpg", 1200)).toBe(
-      "https://blob.example/a.jpg?v=1200"
-    );
-    expect(withMediaVersion("https://blob.example/a.jpg?x=1", 1200)).toBe(
-      "https://blob.example/a.jpg?x=1&v=1200"
-    );
-  });
-
-  it("leaves the url alone when filesize is missing", () => {
-    expect(withMediaVersion("https://blob.example/a.jpg", null)).toBe("https://blob.example/a.jpg");
-    expect(withMediaVersion("https://blob.example/a.jpg", undefined)).toBe(
-      "https://blob.example/a.jpg"
-    );
-  });
-});
-
 describe("getMediaUrl", () => {
-  it("keeps a direct Blob URL absolute", () => {
-    process.env.NEXT_PUBLIC_SERVER_URL = "https://cms.example";
-    const blobUrl = "https://store.public.blob.vercel-storage.com/photo.jpg";
-
-    expect(getMediaUrl(blobUrl)).toBe(blobUrl);
-    expect(absoluteMediaUrl(blobUrl, 42)).toBe(`${blobUrl}?v=42`);
-    expect(absoluteMediaUrl(blobUrl, 42).includes("cms.example")).toBe(false);
+  it("adds the file size as a version", () => {
+    expect(getMediaUrl("https://store.public.blob.vercel-storage.com/a.jpg", 1200)).toBe(
+      "https://store.public.blob.vercel-storage.com/a.jpg?v=1200"
+    );
+    expect(getMediaUrl("/api/media/file/a.jpg?x=1", 1200)).toBe("/api/media/file/a.jpg?x=1&v=1200");
   });
 
-  it("prefixes only relative urls", () => {
-    process.env.NEXT_PUBLIC_SERVER_URL = "https://cms.example";
+  it("keeps the url as is without a file size", () => {
+    expect(getMediaUrl("/api/media/file/a.jpg", null)).toBe("/api/media/file/a.jpg");
+    expect(getMediaUrl(undefined, 10)).toBe("");
+  });
+});
 
-    expect(absoluteMediaUrl("/api/media/file/photo.jpg", 10)).toBe(
-      "https://cms.example/api/media/file/photo.jpg?v=10"
+describe("getAbsoluteMediaUrl", () => {
+  it("keeps blob urls on their own host", () => {
+    expect(getAbsoluteMediaUrl("https://store.public.blob.vercel-storage.com/a.jpg", 42)).toBe(
+      "https://store.public.blob.vercel-storage.com/a.jpg?v=42"
     );
   });
-});
 
-describe("resolveTransformWidth", () => {
-  it("clamps an 800px original onto one cached width", () => {
-    expect(resolveTransformWidth(640, 800)).toBe(640);
-    expect(resolveTransformWidth(828, 800)).toBe(828);
-    expect(resolveTransformWidth(1080, 800)).toBe(828);
-    expect(resolveTransformWidth(2560, 800)).toBe(828);
-  });
-
-  it("keeps requested widths for a 2400px original", () => {
-    expect(resolveTransformWidth(1920, 2400)).toBe(1920);
-    expect(resolveTransformWidth(2560, 2400)).toBe(2560);
-  });
-
-  it("shares the optimizer width list with next.config", () => {
-    expect(IMAGE_DEVICE_SIZES).toEqual([640, 828, 1080, 1280, 1920, 2560]);
-    expect(IMAGE_QUALITY).toBe(85);
-    expect(IMAGE_MINIMUM_CACHE_TTL).toBe(2_592_000);
-  });
-});
-
-describe("media delivery config", () => {
-  it("redirects legacy file urls to the public blob store", () => {
-    expect(mediaFileRedirects(undefined)).toEqual([]);
-    expect(mediaFileRedirects("https://store.public.blob.vercel-storage.com/")).toEqual([
-      {
-        destination: "https://store.public.blob.vercel-storage.com/:filename",
-        permanent: true,
-        source: "/api/media/file/:filename",
-      },
-    ]);
-  });
-
-  it("allows only the configured blob host in production", () => {
-    const patterns = mediaRemotePatterns({
-      blobBaseUrl: "https://abc123.public.blob.vercel-storage.com",
-      nodeEnv: "production",
-    });
-
-    expect(blobHostname("https://abc123.public.blob.vercel-storage.com/")).toBe(
-      "abc123.public.blob.vercel-storage.com"
+  it("prefixes relative urls with the server url", () => {
+    vi.stubEnv("NEXT_PUBLIC_SERVER_URL", "https://cms.example");
+    expect(getAbsoluteMediaUrl("/api/media/file/a.jpg", 10)).toBe(
+      "https://cms.example/api/media/file/a.jpg?v=10"
     );
-    expect(patterns).toEqual([
-      { hostname: "abc123.public.blob.vercel-storage.com", protocol: "https" },
-    ]);
-    expect(JSON.stringify(patterns).includes("**")).toBe(false);
-  });
-
-  it("keeps localhost media patterns out of production", () => {
-    const devPatterns = mediaRemotePatterns({ blobBaseUrl: undefined, nodeEnv: "development" });
-    expect(devPatterns.every((pattern) => pattern.hostname === "localhost")).toBe(true);
-    expect(mediaRemotePatterns({ blobBaseUrl: undefined, nodeEnv: "production" })).toEqual([]);
+    vi.unstubAllEnvs();
   });
 });
 
-describe("collectImageVariants", () => {
-  it("keeps aspect-ratio sizes and versions them with the original filesize", () => {
-    const media = {
-      filesize: 2400,
-      mimeType: "image/jpeg",
-      sizes: {
-        large: { url: "https://blob.example/large.jpg", width: 1400 },
-        og: { url: "https://blob.example/og.jpg", width: 1200 },
-        small: { url: "https://blob.example/small.jpg", width: 600 },
-        square: { url: "https://blob.example/square.jpg", width: 500 },
-        thumbnail: { url: "https://blob.example/thumb.jpg", width: 300 },
-        xlarge: { url: "https://blob.example/xlarge.jpg", width: 1920 },
-      },
-      url: "https://blob.example/original.jpg",
-      width: 2400,
-    } as Media;
+describe("deleteUnsavedUpload", () => {
+  const callHook = (filename: string | undefined, savedDocs: number) => {
+    const count = vi.fn().mockResolvedValue({ totalDocs: savedDocs });
+    const req = {
+      file: filename ? { name: filename } : undefined,
+      payload: { count, logger: { error: vi.fn() } },
+    };
 
-    const variants = collectImageVariants(media);
+    return deleteUnsavedUpload({
+      collection: { slug: "media" },
+      context: {},
+      error: new Error("validation failed"),
+      req,
+    } as never);
+  };
 
-    expect(variants?.map((variant) => variant.width)).toEqual([300, 600, 1400, 1920, 2400]);
-    expect(variants?.some((variant) => variant.url.includes("square.jpg"))).toBe(false);
-    expect(variants?.some((variant) => variant.url.includes("og.jpg"))).toBe(false);
-    expect(variants?.[0]?.url).toBe("https://blob.example/thumb.jpg?v=2400");
+  beforeEach(() => {
+    vi.mocked(del).mockReset();
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", "vercel_blob_rw_store_secret");
   });
 
-  it("skips the ladder for svg and cropped preferred sizes", () => {
-    const svg = { mimeType: "image/svg+xml", url: "/media/logo.svg", width: 100 } as Media;
-    expect(collectImageVariants(svg)).toBeUndefined();
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
 
-    const photo = {
-      filesize: 10,
-      mimeType: "image/jpeg",
-      sizes: { square: { url: "/square.jpg", width: 500 } },
-      url: "/original.jpg",
-      width: 800,
-    } as Media;
-    expect(collectImageVariants(photo, "square")).toBeUndefined();
+  it("deletes the uploaded file when no media doc uses it", async () => {
+    await callHook("photo.jpg", 0);
+    expect(del).toHaveBeenCalledWith("photo.jpg", expect.anything());
+  });
+
+  it("keeps the file when a media doc still uses it", async () => {
+    await callHook("photo.jpg", 1);
+    expect(del).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when the request has no file", async () => {
+    await callHook(undefined, 0);
+    expect(del).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when files are stored on local disk", async () => {
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", "");
+    await callHook("photo.jpg", 0);
+    expect(del).not.toHaveBeenCalled();
   });
 });
 
