@@ -7,8 +7,7 @@ export interface RestrictApiAccessOptions {
 
 const ADMIN_PANEL_ACCESS_KEY = "admin";
 
-const isRestOrGraphQLRequest = (req: PayloadRequest) =>
-  req.payloadAPI === "REST" || req.payloadAPI === "GraphQL";
+const isExternalApiRequest = (req: PayloadRequest) => req.payloadAPI !== "local";
 
 const requireAuthenticatedApiUser =
   (access: Access, { allowPublicFiles = false } = {}): Access =>
@@ -16,7 +15,7 @@ const requireAuthenticatedApiUser =
     const { req, isReadingStaticFile } = args;
     const isPublicFileRequest = allowPublicFiles && isReadingStaticFile === true;
 
-    if (isRestOrGraphQLRequest(req) && !req.user && !isPublicFileRequest) {
+    if (isExternalApiRequest(req) && !req.user && !isPublicFileRequest) {
       return false;
     }
 

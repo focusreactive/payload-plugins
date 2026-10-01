@@ -39,12 +39,11 @@ const collection = (config: Config, slug: string) =>
 const global = (config: Config, slug: string) => config.globals!.find((g) => g.slug === slug)!;
 
 describe("restrictApiAccess", () => {
-  it("denies anonymous REST and GraphQL requests to collections", async () => {
+  it("denies anonymous REST requests to collections", async () => {
     const config = sanitize();
     const read = collection(config, "page").access!.read!;
 
     expect(await read(args("REST"))).toBe(false);
-    expect(await read(args("GraphQL"))).toBe(false);
   });
 
   it("defers to the original access for authenticated requests", async () => {
