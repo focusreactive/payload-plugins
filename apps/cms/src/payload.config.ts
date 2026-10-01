@@ -81,6 +81,9 @@ export default buildConfig({
   }),
   editor: lexicalEditor(),
   globals: [SiteSettings],
+  graphQL: {
+    disable: true,
+  },
   i18n: {
     fallbackLanguage: "en",
     supportedLanguages: { en, es },

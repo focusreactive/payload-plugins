@@ -40,6 +40,7 @@ import { revalidateRedirects } from "@/lib/hooks/revalidateRedirects";
 import type { Page } from "@/payload-types";
 
 import { mcpPluginConfig } from "./mcp";
+import { restrictApiAccess } from "./restrictApiAccess";
 
 const withBlockNameCell = (field: Field): Field => {
   if (field.type !== "blocks" || field.name !== "presetBlock") return field;
@@ -418,4 +419,10 @@ export const plugins: Plugin[] = [
   }),
 
   mcpPluginConfig,
+
+  // Must stay last so it also protects collections and globals added by the plugins above.
+  restrictApiAccess({
+    collectionsWithPublicFiles: ["media"],
+    globalsWithPublicRead: abAdapter.createGlobal ? [abAdapter.createGlobal(false).slug] : [],
+  }),
 ];
