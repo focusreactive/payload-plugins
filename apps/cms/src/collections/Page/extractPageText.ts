@@ -13,9 +13,6 @@ import type { Page } from "@/payload-types";
 
 export function extractPageBlockText(block: Page["blocks"][number]): string {
   switch (block.blockType) {
-    case "hero": {
-      return extractHeroText(block);
-    }
     case "content": {
       return joinText([...sectionHeadingText(block.heading), extractLexicalText(block.content)]);
     }
@@ -52,6 +49,10 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
   }
 }
 
-export function extractPageText(page: Pick<Page, "title" | "blocks">): string {
-  return joinText([page.title, ...(page.blocks ?? []).map(extractPageBlockText)]);
+export function extractPageText(page: Pick<Page, "title" | "hero" | "blocks">): string {
+  return joinText([
+    page.title,
+    ...(page.hero ?? []).map(extractHeroText),
+    ...(page.blocks ?? []).map(extractPageBlockText),
+  ]);
 }
