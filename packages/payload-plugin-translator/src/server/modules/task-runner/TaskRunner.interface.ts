@@ -45,7 +45,7 @@ export interface TaskRunner {
 }
 
 /**
- * How a {@link TaskRunner.findByCollection} call is narrowed. Each field says whether it reaches the
+ * How a {@link TaskRunner["findByCollection"]} call is narrowed. Each field says whether it reaches the
  * database or is applied in memory over everything the database returned.
  *
  * @since 0.11.2
