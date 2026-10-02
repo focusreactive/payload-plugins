@@ -1,13 +1,10 @@
 import type { Field, GroupField } from "payload";
 
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
-import {
-  createLocalizedDefault,
-  createLocalizedRichText,
-} from "@/lib/utils/createLocalizedDefault";
-import { generateRichText } from "@/lib/utils/generateRichText";
+import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { imageField } from "@/lib/fields/imageField";
 import { link } from "@/lib/fields/link";
+import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 
 const defaultHeroLinkItem = (label: string) => ({
   appearance: "default" as const,
@@ -19,48 +16,21 @@ const defaultHeroLinkItem = (label: string) => ({
 
 export const heroFields: Field[] = [
   {
-    type: "row",
-    fields: [
-      {
-        admin: { width: "50%" },
-        defaultValue: "showcase",
-        label: { en: "Variant", es: "Variante" },
-        name: "variant",
-        options: [
-          { label: { en: "Showcase window", es: "Ventana de producto" }, value: "showcase" },
-          { label: { en: "Centered", es: "Centrado" }, value: "centered" },
-        ],
-        required: true,
-        type: "select",
-      },
-      {
-        admin: { width: "50%" },
-        defaultValue: createLocalizedDefault({
-          en: "New · Cadence 3.0",
-          es: "Nuevo · Cadence 3.0",
-        }),
-        label: { en: "Eyebrow", es: "Antetítulo" },
-        localized: true,
-        name: "eyebrow",
-        type: "text",
-      },
+    defaultValue: "showcase",
+    label: { en: "Variant", es: "Variante" },
+    name: "variant",
+    options: [
+      { label: { en: "Showcase window", es: "Ventana de producto" }, value: "showcase" },
+      { label: { en: "Centered", es: "Centrado" }, value: "centered" },
     ],
+    required: true,
+    type: "select",
   },
-  {
-    defaultValue: createLocalizedDefault(DEFAULT_VALUES.blocks.hero.title),
-    label: { en: "Title", es: "Título" },
-    localized: true,
-    name: "title",
-    type: "text",
-  },
-  {
-    defaultValue: createLocalizedRichText(DEFAULT_VALUES.richText.text),
-    editor: generateRichText("hero"),
-    label: { en: "Rich Text", es: "Texto enriquecido" },
-    localized: true,
-    name: "richText",
-    type: "richText",
-  },
+  sectionHeadingField({
+    eyebrow: { en: "New · Cadence 3.0", es: "Nuevo · Cadence 3.0" },
+    title: DEFAULT_VALUES.blocks.hero.title,
+    description: DEFAULT_VALUES.blocks.hero.description,
+  }),
   {
     admin: {
       components: {

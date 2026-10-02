@@ -43,7 +43,6 @@ import { FolderTypeField as FolderTypeField_2b8867833a34864a02ddf429b0728a40 } f
 import { default as default_dfe4008080d895d460898c3a6155e9ba } from '../../../components/admin/Icon'
 import { default as default_91a09b539d3c86b0aebf520e7564ce08 } from '../../../components/admin/Logo'
 import { CommentsHeaderButton as CommentsHeaderButton_30d38dd40c31eff500900a16a2792204 } from '@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton'
-import { default as default_293abdab3a9d96b17cfed3bec5ca5deb } from '@focus-reactive/payload-plugin-analytics/components/AnalyticsView/AnalyticsHeaderLink'
 import { default as default_3fd776aeb7e4127cf324115b5226afbf } from '../../../components/admin/SSOButtons'
 import { default as default_3da48296ca27cce2dd5904839611d77c } from '../../../lib/context/BeforeOpenDrawerWrapper'
 import { default as default_c0acd3f4d5b9577c4e185cd84f6b1b50 } from '../../../lib/context/SeoExtractorRegistrar'
@@ -52,7 +51,6 @@ import { SeoClientConfigProvider as SeoClientConfigProvider_f1e7cc56df4c13de864b
 import { CommentsProviderWrapper as CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a } from '@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper'
 import { default as default_5668654bc04fc84f784cb30b290f6f3d } from '@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider'
 import { VisualEditingBridgeProvider as VisualEditingBridgeProvider_673e524fc3ed2dc6764c4e182a583baf } from '@fr-private/payload-plugin-visual-editing/admin'
-import { default as default_7772b5ceb4db588e7e8d7d6ad669ce76 } from '@focus-reactive/payload-plugin-analytics/components/AnalyticsView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { SectionVisibilityLabel as SectionVisibilityLabel_5f6b8b6dd39e89e57e0c331f9970bb73 } from '@/lib/fields/section/SectionVisibilityLabel'
 
@@ -103,7 +101,6 @@ export const importMap = {
   "/components/admin/Icon#default": default_dfe4008080d895d460898c3a6155e9ba,
   "/components/admin/Logo#default": default_91a09b539d3c86b0aebf520e7564ce08,
   "@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton#CommentsHeaderButton": CommentsHeaderButton_30d38dd40c31eff500900a16a2792204,
-  "@focus-reactive/payload-plugin-analytics/components/AnalyticsView/AnalyticsHeaderLink#default": default_293abdab3a9d96b17cfed3bec5ca5deb,
   "/components/admin/SSOButtons#default": default_3fd776aeb7e4127cf324115b5226afbf,
   "/lib/context/BeforeOpenDrawerWrapper#default": default_3da48296ca27cce2dd5904839611d77c,
   "/lib/context/SeoExtractorRegistrar#default": default_c0acd3f4d5b9577c4e185cd84f6b1b50,
@@ -112,7 +109,6 @@ export const importMap = {
   "@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper#CommentsProviderWrapper": CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a,
   "@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider#default": default_5668654bc04fc84f784cb30b290f6f3d,
   "@fr-private/payload-plugin-visual-editing/admin#VisualEditingBridgeProvider": VisualEditingBridgeProvider_673e524fc3ed2dc6764c4e182a583baf,
-  "@focus-reactive/payload-plugin-analytics/components/AnalyticsView#default": default_7772b5ceb4db588e7e8d7d6ad669ce76,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@/lib/fields/section/SectionVisibilityLabel#SectionVisibilityLabel": SectionVisibilityLabel_5f6b8b6dd39e89e57e0c331f9970bb73
 }

@@ -30,6 +30,10 @@ export const DEFAULT_VALUES = {
         en: "The operating system for teams that ship.",
         es: "El sistema operativo para equipos que lanzan.",
       },
+      description: {
+        en: "Plan, track and ship your work in one calm, focused workspace.",
+        es: "Planifica, sigue y lanza tu trabajo en un espacio tranquilo y enfocado.",
+      },
     },
     testimonialsList: {
       heading: { en: "Our testimonials", es: "Nuestros testimonios" },
@@ -96,16 +100,6 @@ export const DEFAULT_VALUES = {
       es: {
         heading: "Encabezado de contenido",
         paragraph: "Sección de contenido. Sustituye por tu contenido.",
-      },
-    },
-    text: {
-      en: {
-        heading: "Heading",
-        paragraph: "Text section. Replace with your content.",
-      },
-      es: {
-        heading: "Encabezado",
-        paragraph: "Sección de texto. Sustituye por tu contenido.",
       },
     },
   },
