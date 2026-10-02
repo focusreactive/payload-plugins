@@ -36,7 +36,7 @@ export async function getDocumentSearchData(
       return null;
     }
 
-    const hero = doc.blocks?.find((b) => b.blockType === "hero");
+    const [hero] = doc.hero ?? [];
     let imageUrl: string | null = null;
     let imageAlt: string | null = null;
 

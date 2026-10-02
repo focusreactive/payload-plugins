@@ -35,6 +35,7 @@ import * as migration_20260812_125336_add_ab_pending_percentages_to_pages from '
 import * as migration_20260923_132949_add_reset_password_requested_at from './20260923_132949_add_reset_password_requested_at';
 import * as migration_20261001_143037_add_media_storage_prefix from './20261001_143037_add_media_storage_prefix';
 import * as migration_20261002_091132_section_heading_group from './20261002_091132_section_heading_group';
+import * as migration_20261002_092121_dedicated_page_hero from './20261002_092121_dedicated_page_hero';
 
 export const migrations = [
   {
@@ -220,6 +221,11 @@ export const migrations = [
   {
     up: migration_20261002_091132_section_heading_group.up,
     down: migration_20261002_091132_section_heading_group.down,
-    name: '20261002_091132_section_heading_group'
+    name: '20261002_091132_section_heading_group',
+  },
+  {
+    up: migration_20261002_092121_dedicated_page_hero.up,
+    down: migration_20261002_092121_dedicated_page_hero.down,
+    name: '20261002_092121_dedicated_page_hero'
   },
 ];
