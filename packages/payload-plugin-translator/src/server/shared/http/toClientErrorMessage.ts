@@ -9,6 +9,8 @@ const REASON_TEXT: Record<UserFacingFailureReason, string> = {
     "This translation was not written: the access rules of the target collection refuse it for the user who requested it.",
   "requester-missing":
     "This translation was not written: the user who requested it no longer exists, so there are no permissions to check it against.",
+  "source-unreadable":
+    "This translation did not run: the source document is not readable by the user who requested it, under the access rules of its own collection.",
   "permission-check-failed":
     "This translation was not written: the target collection's access rules could not be evaluated. If a save triggered it, that save was rolled back — check the server logs and the collection's `access` functions.",
 };

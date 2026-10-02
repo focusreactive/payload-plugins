@@ -10,8 +10,10 @@ import type { ProvenanceServiceFactory } from "../../modules/provenance/index.js
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
 import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
 import { freshReq } from "../../shared/payload/RequestScope.shapes.js";
-import { checkTranslationPermission, mayWrite } from "./translationPermission.js";
-import type { TranslationPermission } from "./translationPermission.js";
+import { enforcedAtTheRead } from "../../shared/payload/enforcedAtTheRead.js";
+import { checkTranslationPermission, mayWrite, rebuildRequester } from "./translationPermission.js";
+import { SourceUnreadable } from "./SourceUnreadable.js";
+import type { RebuiltRequester } from "./translationPermission.js";
 import { TranslationRefused } from "./TranslationRefused.js";
 
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
@@ -28,10 +30,10 @@ const translatorWriteContext = () => ({ [AUTO_TRANSLATE_SKIP_CONTEXT_KEY]: true 
  * inside the editor's transaction. An unattributed write keeps the behaviour it always had.
  */
 function enforcedAtTheWrite(
-  permission: TranslationPermission
-): { overrideAccess: false; user: Record<string, unknown> } | Record<string, never> {
-  if (!permission.user) return {};
-  return { overrideAccess: false, user: permission.user };
+  requester: RebuiltRequester | null
+): { overrideAccess: false; user: RebuiltRequester } | Record<string, never> {
+  if (!requester) return {};
+  return { overrideAccess: false, user: requester };
 }
 
 export class TranslateDocumentHandler implements Handler<
@@ -64,16 +66,26 @@ export class TranslateDocumentHandler implements Handler<
       input;
 
     const schema = this.schemaMap.get(collection);
-    if (!schema)
+    if (!schema) {
       throw new TranslatorConfigError(`Collection "${collection}" not found in schemaMap`);
+    }
 
     const layer = resolveTargetLayer({
       versions: payload.collections[collection].config.versions,
       targetLng,
     });
 
+    const requester = await rebuildRequester(payload, scope);
+
     const [sourceData, currentTargetVersion] = await Promise.all([
-      fetchSourceDocument(payload, collection, collectionId, sourceLng, scope),
+      fetchSourceDocument({
+        payload,
+        collection,
+        id: String(collectionId),
+        locale: sourceLng,
+        user: requester,
+        scope,
+      }),
       payload.findByID({
         req: freshReq(scope),
         collection,
@@ -81,19 +93,23 @@ export class TranslateDocumentHandler implements Handler<
         locale: targetLng,
         fallbackLocale: false,
         depth: 0,
+        ...enforcedAtTheRead(requester),
         draft: true,
       }),
     ]);
+    if (!sourceData) throw new SourceUnreadable(collection, sourceLng);
+    if (!currentTargetVersion) throw new SourceUnreadable(collection, targetLng);
 
-    const permission = await checkTranslationPermission({
+    const allowed = await checkTranslationPermission({
       payload,
       collection,
       id: String(collectionId),
       data: sourceData,
       targetLocale: targetLng,
       scope,
+      user: requester,
     });
-    if (!permission.allowed) throw new TranslationRefused(collection, targetLng);
+    if (!allowed) throw new TranslationRefused(collection, targetLng);
 
     const provenance = this.provenanceServiceFactory?.(payload, scope);
     const sourceFingerprint = provenance?.captureFingerprint(collection, sourceData) ?? null;
@@ -110,14 +126,14 @@ export class TranslateDocumentHandler implements Handler<
     });
 
     if (translatedData) {
-      await this.refuseUnlessAllowed(payload, input, translatedData, scope, permission);
+      await this.refuseUnlessAllowed(payload, input, translatedData, scope, requester);
       await this.saveTranslatedDocument(
         payload,
         input,
         translatedData,
         layer.write,
         scope,
-        permission
+        requester
       );
 
       if (provenance && sourceFingerprint !== null) {
@@ -135,8 +151,8 @@ export class TranslateDocumentHandler implements Handler<
 
     if (publishOnTranslation && layer.kind === "drafts") {
       const status = { _status: layer.publish.status };
-      await this.refuseUnlessAllowed(payload, input, status, scope, permission);
-      await this.publishTargetLocale(payload, input, layer.publish, scope, permission);
+      await this.refuseUnlessAllowed(payload, input, status, scope, requester);
+      await this.publishTargetLocale(payload, input, layer.publish, scope, requester);
     }
 
     return { success: true };
@@ -153,9 +169,9 @@ export class TranslateDocumentHandler implements Handler<
     input: TranslateDocumentInput,
     data: Record<string, unknown>,
     scope: RequestScope,
-    permission: TranslationPermission
+    requester: RebuiltRequester | null
   ): Promise<void> {
-    if (!permission.user) return;
+    if (!requester) return;
     const allowed = await mayWrite({
       payload,
       collection: input.collection,
@@ -163,7 +179,7 @@ export class TranslateDocumentHandler implements Handler<
       data,
       targetLocale: input.targetLng,
       scope,
-      user: permission.user,
+      user: requester,
     });
     if (!allowed) throw new TranslationRefused(input.collection, input.targetLng);
   }
@@ -192,11 +208,11 @@ export class TranslateDocumentHandler implements Handler<
     translatedData: Record<string, unknown>,
     write: TargetLayer["write"],
     scope: RequestScope,
-    permission: TranslationPermission
+    requester: RebuiltRequester | null
   ): Promise<void> {
     await payload.update({
       req: freshReq(scope),
-      ...enforcedAtTheWrite(permission),
+      ...enforcedAtTheWrite(requester),
       collection: input.collection,
       id: input.collectionId,
       data: translatedData,
@@ -212,11 +228,11 @@ export class TranslateDocumentHandler implements Handler<
     input: TranslateDocumentInput,
     publish: PublishScope,
     scope: RequestScope,
-    permission: TranslationPermission
+    requester: RebuiltRequester | null
   ): Promise<void> {
     await payload.update({
       req: freshReq(scope),
-      ...enforcedAtTheWrite(permission),
+      ...enforcedAtTheWrite(requester),
       collection: input.collection,
       id: input.collectionId,
       data: { _status: publish.status },

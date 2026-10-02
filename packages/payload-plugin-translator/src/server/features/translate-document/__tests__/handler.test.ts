@@ -111,9 +111,23 @@ describe("TranslateDocumentHandler", () => {
         id: "doc-123",
         locale: "en",
         depth: 0,
+        disableErrors: true,
         draft: true,
         fallbackLocale: false,
       });
+    });
+
+    it("names the locale that was actually refused, not always the source", async () => {
+      vi.mocked(mockPayload.findByID)
+        .mockResolvedValueOnce({ id: "doc-123", title: "Test" } as never)
+        .mockResolvedValueOnce(null as never);
+
+      const thrown = await handler
+        .handle(mockPayload, createInput({ sourceLng: "en", targetLng: "de" }))
+        .catch((e: unknown) => e);
+
+      expect((thrown as Error).message).toContain('locale "de"');
+      expect((thrown as Error).message).not.toContain('locale "en"');
     });
 
     it("fetches target document with target locale and no fallback", async () => {
@@ -128,6 +142,7 @@ describe("TranslateDocumentHandler", () => {
         locale: "de",
         fallbackLocale: false,
         depth: 0,
+        disableErrors: true,
         draft: true,
       });
     });

@@ -5,6 +5,11 @@ import type { GetDocumentStatusConfig } from "./model.js";
 import type { TaskRunnerFactory, TaskRunner, Task } from "../../modules/task-runner/index.js";
 import { GENERIC_TRANSLATION_ERROR } from "../../shared/index.js";
 
+const everyDocumentIsVisible = () =>
+  vi.fn(async (args: { where?: { id?: { in?: string[] } } }) => ({
+    docs: (args.where?.id?.in ?? []).map((id) => ({ id })),
+  }));
+
 describe("GetDocumentStatusHandler", () => {
   let handler: GetDocumentStatusHandler;
   let mockTaskRunner: TaskRunner;
@@ -31,7 +36,7 @@ describe("GetDocumentStatusHandler", () => {
 
   const createMockRequest = (params: Record<string, string> = {}): PayloadRequest =>
     ({
-      payload: {} as Payload,
+      payload: { find: everyDocumentIsVisible() } as unknown as Payload,
       routeParams: params,
     }) as unknown as PayloadRequest;
 
@@ -189,11 +194,16 @@ describe("GetDocumentStatusHandler", () => {
 
       await handler.handle(req);
 
-      expect(mockTaskRunner.findByCollection).toHaveBeenCalledWith("posts", ["doc-456"]);
+      expect(mockTaskRunner.findByCollection).toHaveBeenCalledWith("posts", {
+        documentIds: ["doc-456"],
+      });
     });
 
     it("creates task runner with request payload", async () => {
-      const mockPayload = { collections: {} } as Payload;
+      const mockPayload = {
+        collections: {},
+        find: everyDocumentIsVisible(),
+      } as unknown as Payload;
       const req = createMockRequest({
         collection_slug: "posts",
         collection_id: "doc-123",

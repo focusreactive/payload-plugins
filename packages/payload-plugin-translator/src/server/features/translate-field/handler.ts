@@ -75,7 +75,16 @@ export class TranslateFieldHandler {
       }
     }
 
-    const sourceDoc = await fetchSourceDocument(req.payload, collection_slug, doc_id, source_lng);
+    const sourceDoc = await fetchSourceDocument({
+      payload: req.payload,
+      collection: collection_slug,
+      id: doc_id,
+      locale: source_lng,
+      user: req.user,
+    });
+
+    if (!sourceDoc) return ServerResponse.notFound();
+
     const sourceValue = getByPath(sourceDoc as Record<string, unknown>, field_path);
 
     if (byteLength(sourceValue) > MAX_FIELD_VALUE_BYTES) {

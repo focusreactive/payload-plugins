@@ -12,13 +12,18 @@ vi.mock("../../../../core/translation-pipeline/index.js", () => ({
 }));
 
 vi.mock("../translationPermission.js", () => ({
+  rebuildRequester: vi.fn().mockResolvedValue(null),
   checkTranslationPermission: vi.fn(),
   mayWrite: vi.fn().mockResolvedValue(true),
 }));
 
 const permission = async () =>
-  (await import("../translationPermission.js"))
-    .checkTranslationPermission as ReturnType<typeof vi.fn>;
+  (await import("../translationPermission.js")).checkTranslationPermission as ReturnType<
+    typeof vi.fn
+  >;
+
+const rebuilt = async () =>
+  (await import("../translationPermission.js")).rebuildRequester as ReturnType<typeof vi.fn>;
 
 const ANNA = { id: "anna", collection: "users" };
 
@@ -57,7 +62,8 @@ describe("TranslateDocumentHandler — where Payload's own enforcement is afford
     } as unknown as Payload;
 
     handler = new TranslateDocumentHandler(provider, schemaMap);
-    (await permission()).mockResolvedValue({ allowed: true, user: ANNA });
+    (await permission()).mockResolvedValue(true);
+    (await rebuilt()).mockResolvedValue(ANNA);
   });
 
   it("lets Payload check the deferred write as well", async () => {
@@ -78,7 +84,7 @@ describe("TranslateDocumentHandler — where Payload's own enforcement is afford
   });
 
   it("adds nothing when the request named nobody", async () => {
-    (await permission()).mockResolvedValue({ allowed: true, user: null });
+    (await rebuilt()).mockResolvedValue(null);
 
     await handler.handle(payload, input(), {});
 

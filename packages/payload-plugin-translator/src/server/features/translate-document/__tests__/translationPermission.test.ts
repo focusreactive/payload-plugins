@@ -20,7 +20,8 @@ const requestBuilder = async () =>
 
 const A_REAL_REQUEST = { headers: new Headers(), i18n: {}, t: () => "", context: {} };
 
-const { checkTranslationPermission } = await import("../translationPermission.js");
+const { checkTranslationPermission, rebuildRequester } =
+  await import("../translationPermission.js");
 
 const ANNA = { requester: asRequester("anna", "users") };
 
@@ -32,7 +33,7 @@ const payload = {
   findByID: vi.fn().mockResolvedValue({ id: "anna", email: "anna@test" }),
 } as unknown as Payload;
 
-const ask = (data: Record<string, unknown>, scope = ANNA) =>
+const ask = async (data: Record<string, unknown>, scope = ANNA) =>
   checkTranslationPermission({
     payload,
     collection: "posts" as never,
@@ -40,6 +41,7 @@ const ask = (data: Record<string, unknown>, scope = ANNA) =>
     data,
     targetLocale: "de",
     scope,
+    user: await rebuildRequester(payload, scope),
   });
 
 // Every fixture shape below was measured against Payload 3.84.1's sanitizer, not invented.
@@ -62,14 +64,14 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
     async (_case, permissions) => {
       (await evaluator()).mockResolvedValue(permissions);
 
-      expect((await ask({ title: "t" })).allowed).toBe(false);
+      expect(await ask({ title: "t" })).toBe(false);
     }
   );
 
   it("allows the write when the collection grants update", async () => {
     (await evaluator()).mockResolvedValue({ update: true, fields: true });
 
-    expect((await ask({ title: "t" })).allowed).toBe(true);
+    expect(await ask({ title: "t" })).toBe(true);
   });
 
   it("reads a resolved where-query grant as a grant", async () => {
@@ -78,7 +80,7 @@ describe("checkTranslationPermission — reading Payload's permission shape", ()
       fields: true,
     });
 
-    expect((await ask({ title: "t" })).allowed).toBe(true);
+    expect(await ask({ title: "t" })).toBe(true);
   });
 
   it("rebuilds the requester at the depth Payload authenticates at", async () => {

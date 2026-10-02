@@ -7,6 +7,7 @@
 
 /** A failure cause safe to name to an end user. Every member obliges admin-facing copy for it. */
 export type UserFacingFailureReason =
+  | "source-unreadable"
   | "model-unavailable"
   | "permission-denied"
   | "requester-missing"
@@ -17,6 +18,7 @@ const MARKER_PREFIX = "translator:";
 const MARKER = new RegExp(`^\\[${MARKER_PREFIX}([a-z-]+)\\] `, "u");
 
 const REASONS: ReadonlySet<string> = new Set<UserFacingFailureReason>([
+  "source-unreadable",
   "model-unavailable",
   "permission-denied",
   "requester-missing",

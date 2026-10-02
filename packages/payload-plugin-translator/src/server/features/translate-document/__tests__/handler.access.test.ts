@@ -17,13 +17,20 @@ const pipeline = async () =>
   >;
 
 vi.mock("../translationPermission.js", () => ({
+  rebuildRequester: vi.fn().mockResolvedValue(null),
   checkTranslationPermission: vi.fn(),
   mayWrite: vi.fn().mockResolvedValue(true),
 }));
 
 const permission = async () =>
-  (await import("../translationPermission.js"))
-    .checkTranslationPermission as ReturnType<typeof vi.fn>;
+  (await import("../translationPermission.js")).checkTranslationPermission as ReturnType<
+    typeof vi.fn
+  >;
+
+const rebuilt = async () =>
+  (await import("../translationPermission.js")).rebuildRequester as ReturnType<typeof vi.fn>;
+
+const ANNA = { id: "anna", collection: "users" };
 
 describe("TranslateDocumentHandler — it asks before it writes", () => {
   let handler: TranslateDocumentHandler;
@@ -56,13 +63,13 @@ describe("TranslateDocumentHandler — it asks before it writes", () => {
     } as unknown as Payload;
 
     handler = new TranslateDocumentHandler(provider, schemaMap);
-    (await permission()).mockResolvedValue({ allowed: true });
+    (await permission()).mockResolvedValue(true);
   });
 
   // Asking first is the whole design. Writing and catching would let Payload's `killTransaction` roll
   // back whatever transaction the request carries — on the inline path, the editor's own save.
   it("does not write when the permission check refuses", async () => {
-    (await permission()).mockResolvedValue({ allowed: false });
+    (await permission()).mockResolvedValue(false);
 
     await handler.handle(payload, input(), {}).catch(() => undefined);
 
@@ -70,7 +77,7 @@ describe("TranslateDocumentHandler — it asks before it writes", () => {
   });
 
   it("fails with a reason a reader can act on, not a bare failure", async () => {
-    (await permission()).mockResolvedValue({ allowed: false });
+    (await permission()).mockResolvedValue(false);
 
     const error = await handler.handle(payload, input(), {}).catch((e: Error) => e);
 
@@ -96,6 +103,18 @@ describe("TranslateDocumentHandler — it asks before it writes", () => {
     );
   });
 
+  it("re-asks before the write with the same requester, not with nobody", async () => {
+    const { mayWrite } = await import("../translationPermission.js");
+    (await rebuilt()).mockResolvedValue(ANNA);
+
+    await handler.handle(payload, input(), { requester: asRequester("anna", "users") });
+
+    expect(
+      mayWrite,
+      "handing this check `null` skips it silently — the write would go unchecked"
+    ).toHaveBeenCalledWith(expect.objectContaining({ user: ANNA }));
+  });
+
   // The publish is the one write that still happens when the pipeline produced nothing to save, so
   // it is worth pinning that it does — and that a collection-level refusal stops it, which is the
   // only thing that can.
@@ -112,7 +131,7 @@ describe("TranslateDocumentHandler — it asks before it writes", () => {
 
   it("does not publish when the collection refuses the update", async () => {
     (await pipeline()).mockResolvedValue(null);
-    (await permission()).mockResolvedValue({ allowed: false });
+    (await permission()).mockResolvedValue(false);
 
     await handler.handle(payload, input({ publishOnTranslation: true }), {}).catch(() => undefined);
 

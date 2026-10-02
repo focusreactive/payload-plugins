@@ -16,6 +16,13 @@ type Grant = boolean | { permission?: boolean };
 
 type DocPermissions = { update?: Grant };
 
+/**
+ * A requester read back from storage and stamped with the collection they authenticate against.
+ * Payload resolves a user's own auth collection from that key, so a rebuilt requester without it is
+ * one `docAccessOperation` cannot evaluate.
+ */
+export type RebuiltRequester = Record<string, unknown> & { collection: string };
+
 function isGranted(value: Grant | undefined): boolean {
   if (value === true) return true;
   return typeof value === "object" && value !== null && value.permission === true;
@@ -46,17 +53,6 @@ type BuildLocalRequest = (
 const evaluateDocAccess = docAccessOperation as unknown as EvaluateDocAccess;
 const buildLocalRequest = createLocalReq as unknown as BuildLocalRequest;
 
-export type TranslationPermission = {
-  allowed: boolean;
-  /**
-   * The requester, already rebuilt at auth depth, so a caller passing `overrideAccess: false` need not
-   * look them up again. `null` when unattributed.
-   */
-  user: Record<string, unknown> | null;
-};
-
-const ALLOW_ALL: TranslationPermission = { allowed: true, user: null };
-
 type PermissionQuery = {
   payload: Payload;
   collection: CollectionSlug;
@@ -82,13 +78,15 @@ async function evaluate(args: Parameters<EvaluateDocAccess>[0]): Promise<DocPerm
  * committed long before this request, and joining would let a failed lookup roll the caller's save
  * back through `killTransaction`.
  */
-async function findRequester(payload: Payload, requester: Requester) {
+async function findRequester(
+  payload: Payload,
+  requester: Requester
+): Promise<RebuiltRequester | null> {
   const collection = requester.userCollection as CollectionSlug;
-  const auth = payload.collections[collection]?.config?.auth;
   const user = await payload.findByID({
     collection,
     id: requester.userId,
-    depth: typeof auth === "object" ? auth.depth : undefined,
+    depth: payload.collections[collection]?.config?.auth?.depth,
     overrideAccess: true,
   });
   return user ? { ...user, collection: requester.userCollection } : null;
@@ -110,7 +108,7 @@ export async function mayWrite(query: {
   data: Record<string, unknown>;
   targetLocale: string;
   scope: RequestScope;
-  user: Record<string, unknown>;
+  user: RebuiltRequester;
 }): Promise<boolean> {
   const { payload, collection, id, data, targetLocale, scope, user } = query;
 
@@ -128,23 +126,30 @@ export async function mayWrite(query: {
   return isGranted(permissions.update);
 }
 
+export async function rebuildRequester(
+  payload: Payload,
+  scope: RequestScope
+): Promise<RebuiltRequester | null> {
+  const requester = scope.requester;
+  if (!requester) return null;
+
+  const user = await findRequester(payload, requester).catch(() => null);
+  if (!user) {
+    throw new RequesterMissing(requester.userId, requester.userCollection);
+  }
+  return user;
+}
+
 /**
  * Asks Payload's own evaluator (`docAccessOperation`, the one behind `/api/<slug>/access`) instead of
  * attempting the write and catching `Forbidden`: by the time a refusal is caught, Payload has rolled
  * the caller's transaction back from its own catch, and the editor's save is gone with it.
  */
 export async function checkTranslationPermission(
-  query: PermissionQuery
-): Promise<TranslationPermission> {
-  const { payload, collection, id, data, targetLocale, scope } = query;
-  const requester = scope.requester;
-  if (!requester) return ALLOW_ALL;
+  query: PermissionQuery & { user: RebuiltRequester | null }
+): Promise<boolean> {
+  const { payload, collection, id, data, targetLocale, scope, user } = query;
+  if (!user) return true;
 
-  const user = await findRequester(payload, requester).catch(() => null);
-  if (!user) {
-    throw new RequesterMissing(requester.userId, requester.userCollection);
-  }
-
-  const allowed = await mayWrite({ payload, collection, id, data, targetLocale, scope, user });
-  return { allowed, user };
+  return await mayWrite({ payload, collection, id, data, targetLocale, scope, user });
 }

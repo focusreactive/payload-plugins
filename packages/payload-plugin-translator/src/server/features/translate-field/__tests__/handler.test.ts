@@ -116,6 +116,7 @@ describe("TranslateFieldHandler", () => {
       fallbackLocale: false,
       draft: true,
       depth: 0,
+      disableErrors: true,
     });
     expect(await importTranslateContent()).toHaveBeenCalledWith(
       expect.objectContaining({ sourceData: { title: "Hello" }, sourceLng: "en", targetLng: "de" })

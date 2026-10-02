@@ -75,7 +75,7 @@ export class EnqueueTranslationHandler {
     }
 
     const collectionIds = select_all
-      ? await getAllCollectionIds(req.payload, collectionSlug)
+      ? await getAllCollectionIds(req.payload, collectionSlug, req.user)
       : collection_id;
 
     const runner = this.taskRunnerFactory.create(req.payload);
