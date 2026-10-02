@@ -7,7 +7,7 @@ import {
   TransportError,
   TranslationProviderError,
   UnparseableReplyError,
-  wrapTransportError,
+  asTranslatorError,
 } from "./index.js";
 
 describe("the failure taxonomy", () => {
@@ -35,11 +35,11 @@ describe("the failure taxonomy", () => {
   });
 });
 
-describe("wrapTransportError", () => {
+describe("asTranslatorError", () => {
   it("never quotes the original error's text in its own message", () => {
     const secretive = new Error("401 Unauthorized — key sk-test-abcdef123456");
 
-    const wrapped = wrapTransportError(secretive);
+    const wrapped = asTranslatorError(secretive);
 
     expect(wrapped.message).not.toContain("sk-test-abcdef123456");
     expect(wrapped.message).not.toContain("401 Unauthorized");
@@ -48,11 +48,11 @@ describe("wrapTransportError", () => {
   it("keeps the original reachable on cause", () => {
     const original = new Error("connection refused");
 
-    expect(wrapTransportError(original).cause).toBe(original);
+    expect(asTranslatorError(original).cause).toBe(original);
   });
 
   it("wraps a non-Error throw too", () => {
-    const wrapped = wrapTransportError("just a string");
+    const wrapped = asTranslatorError("just a string");
 
     expect(wrapped).toBeInstanceOf(TransportError);
     expect(wrapped.cause).toBe("just a string");
@@ -61,7 +61,7 @@ describe("wrapTransportError", () => {
   it("passes one of our own errors through unchanged", () => {
     const ours = new KeySetMismatchError("nothing matched", [0], []);
 
-    expect(wrapTransportError(ours)).toBe(ours);
+    expect(asTranslatorError(ours)).toBe(ours);
   });
 });
 

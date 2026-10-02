@@ -31,15 +31,10 @@ export class SyncRunnerProvider implements TaskRunnerProvider {
     });
   }
 
-  // SyncRunner executes the translation inline on enqueue, so it needs the
-  // handler at create time — taken from the caller-supplied argument rather than
-  // stashed on the instance during configure(). No ambient state, no ordering
-  // coupling: create() is a pure function of its arguments.
   create(payload: Payload, handler: TaskHandler): TaskRunner {
     return new SyncTaskRunner(payload, handler, this.tasks);
   }
 
-  // No config changes needed — translations run synchronously, no Payload jobs.
   configure(): (config: Config) => Config {
     return (config) => config;
   }

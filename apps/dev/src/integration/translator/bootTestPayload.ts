@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import {
+  AnyAccessGuard,
   createTranslationProvider,
   createSyncRunner,
   documentLevel,
@@ -155,6 +156,7 @@ export async function bootTestPayload(opts?: {
     plugins: [
       translatorPlugin({
         collections: managed,
+        access: new AnyAccessGuard(),
         translationProvider: countingProvider,
         runner: opts?.runner ?? createSyncRunner(),
         levels: opts?.fieldSurface ? [documentLevel(), fieldLevel()] : [documentLevel()],

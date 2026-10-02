@@ -57,8 +57,6 @@ export type GetDocumentStatusConfig = {
   availableCollections: Set<CollectionSlug>;
 };
 
-// A job is "newer" by creation time, tie-broken by last update — both ISO-8601, so a lexicographic
-// string compare is a correct chronological compare (no Date parsing needed).
 const isNewerTask = (candidate: Task, current: Task): boolean =>
   candidate.createdAt !== current.createdAt
     ? candidate.createdAt > current.createdAt
@@ -101,9 +99,6 @@ export function taskToJobStatusOutput(task: Task): JobStatusOutput {
       target_lng: task.input.targetLng,
       strategy: task.input.strategy,
     },
-    // Never ship the raw provider/runtime error to the browser outside development — it can leak
-    // implementation detail and secrets (e.g. a partial API key). The full error stays in the job
-    // record + server logs.
     error: task.error ? { message: toClientErrorMessage(task.error.message) } : undefined,
     cancelled: task.cancelled,
   };

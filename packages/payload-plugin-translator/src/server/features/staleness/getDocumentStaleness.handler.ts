@@ -28,7 +28,9 @@ export class GetDocumentStalenessHandler {
 
     try {
       const service = this.config.provenanceServiceFactory?.(req.payload);
-      const locales = service ? await service.getStaleness(collectionSlug, collection_id) : [];
+      const locales = service
+        ? await service.getStaleness(collectionSlug, collection_id, req.user)
+        : [];
       return ServerResponse.success({ locales });
     } catch (error) {
       req.payload.logger.error({

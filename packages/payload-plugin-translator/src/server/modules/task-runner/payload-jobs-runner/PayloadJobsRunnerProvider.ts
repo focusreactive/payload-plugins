@@ -1,3 +1,4 @@
+import { TranslatorConfigError } from "../../../../core/errors/index.js";
 import type { Config, Field, Payload, WorkflowConfig } from "payload";
 
 import type { TaskRunner } from "../TaskRunner.interface.js";
@@ -10,6 +11,8 @@ import type {
 import { PayloadJobsTaskRunner } from "./PayloadJobsTaskRunner.js";
 import { readCollectionRef } from "./readCollectionRef.js";
 import type { TaskRunnerContext, TaskRunnerProvider } from "../TaskRunnerProvider.interface.js";
+import type { Requester } from "../../../shared/payload/RequestScope.shapes.js";
+import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
 import type { TranslationStrategyName } from "../../../../core/translation-pipeline/strategies/index.js";
 
 const defaultAutoRun: Required<AutoRunConfig> = {
@@ -37,6 +40,17 @@ const defaultValues = {
   },
 };
 
+/**
+ * Rows queued before the scope carried one `requester` object are already on disk as two nullable
+ * columns, so both must be present before they read back as an identity.
+ */
+export function requesterOf(input: {
+  requester_id?: string | number | null;
+  requester_collection?: string | null;
+}): Requester | null {
+  return asRequester(input.requester_id, input.requester_collection);
+}
+
 export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
   private readonly config: PayloadJobsRunnerConfig;
 
@@ -50,7 +64,7 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
 
     const staleJobTimeoutMs = options?.staleJobTimeoutMs ?? defaultValues.staleJobTimeoutMs;
     if (!Number.isFinite(staleJobTimeoutMs) || staleJobTimeoutMs <= 0) {
-      throw new Error(
+      throw new TranslatorConfigError(
         `[payload-plugin-translator] staleJobTimeoutMs must be a positive finite number (got ${staleJobTimeoutMs})`
       );
     }
@@ -124,6 +138,8 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
       const workflowInputSchema: Field[] = [
         ...inputSchema.filter((f) => "name" in f && f.name !== "target_lng"),
         { type: "json", name: "target_lngs", required: true },
+        { type: "text", name: "requester_id" },
+        { type: "text", name: "requester_collection" },
       ];
 
       const task = {
@@ -140,17 +156,23 @@ export class PayloadJobsRunnerProvider implements TaskRunnerProvider {
             target_lng: string;
             strategy: TranslationStrategyName;
             publish_on_translation?: boolean;
+            requester_id?: string | number | null;
+            requester_collection?: string | null;
           };
         }) => {
           const { collectionSlug, collectionId } = readCollectionRef(args.input);
-          await handler(args.req.payload, {
-            collection: collectionSlug,
-            collectionId,
-            sourceLng: args.input.source_lng,
-            targetLng: args.input.target_lng,
-            strategy: args.input.strategy,
-            publishOnTranslation: args.input.publish_on_translation ?? false,
-          });
+          await handler(
+            args.req.payload,
+            {
+              collection: collectionSlug,
+              collectionId,
+              sourceLng: args.input.source_lng,
+              targetLng: args.input.target_lng,
+              strategy: args.input.strategy,
+              publishOnTranslation: args.input.publish_on_translation ?? false,
+            },
+            { requester: requesterOf(args.input) }
+          );
           return { output: {} };
         },
       };

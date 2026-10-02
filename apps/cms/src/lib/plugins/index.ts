@@ -133,7 +133,9 @@ export const plugins: Plugin[] = [
     collections: ["page", "posts"],
     overrides: {
       admin: { group: "Settings" },
-      // @ts-expect-error - This is a valid override, mapped fields don't resolve to the same type
+      // @ts-expect-error — `.map()` over the `Field` union returns spread object literals that TS
+      // will not re-narrow to `Field`, so the callback's return type is not assignable to
+      // `FieldsOverride`'s `Field[]`.
       fields: ({ defaultFields }) => {
         const customFields: Field[] = [
           {
@@ -343,6 +345,7 @@ export const plugins: Plugin[] = [
     collections: [PageCollection, Posts, Categories, Authors, Testimonials, Header, Footer].map(
       (col) => JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
     ),
+    access: { check: ({ req }) => Boolean(req.user) },
     runner: createSyncRunner(),
     translationProvider: createOpenAIProvider({
       apiKey: process.env.OPENAI_API_KEY!,

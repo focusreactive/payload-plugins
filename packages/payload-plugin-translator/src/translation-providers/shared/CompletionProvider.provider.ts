@@ -8,7 +8,7 @@ import { buildResponseSchema } from "./buildResponseSchema.js";
 import type { JsonSchemaObject } from "./buildResponseSchema.js";
 import { buildSystemPrompt } from "./buildSystemPrompt.js";
 import type { SystemPromptBuilder } from "./buildSystemPrompt.js";
-import { NoContentError, ProviderConfigurationError, wrapTransportError } from "./errors/index.js";
+import { NoContentError, ProviderConfigurationError, asTranslatorError } from "./errors/index.js";
 import { parseAndValidateReply } from "./parseAndValidateReply.js";
 import { runDryRun } from "./runDryRun.js";
 import type { DryRunConfig } from "./runDryRun.js";
@@ -167,7 +167,7 @@ export function createTranslationProvider(config: TranslationProviderConfig): Tr
       try {
         raw = await complete(request);
       } catch (cause) {
-        throw wrapTransportError(cause);
+        throw asTranslatorError(cause);
       }
 
       if (!raw) {
