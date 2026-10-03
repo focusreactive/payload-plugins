@@ -1,12 +1,12 @@
 import type { Field } from "payload";
 
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
-import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
+import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 
 export const testimonialsListFields: Field[] = [
-  ...sectionHeaderFields({
-    headingDefault: DEFAULT_VALUES.blocks.testimonialsList.heading,
-    descriptionDefault: DEFAULT_VALUES.blocks.testimonialsList.subheading,
+  sectionHeadingField({
+    title: DEFAULT_VALUES.blocks.testimonialsList.heading,
+    description: DEFAULT_VALUES.blocks.testimonialsList.subheading,
   }),
   {
     admin: { initCollapsed: true },

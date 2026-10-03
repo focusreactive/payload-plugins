@@ -22,7 +22,7 @@ export const PostContent: React.FC<PostContentProps> = async ({
   const relatedPosts = await getRelatedPosts({ locale, post });
 
   const hasFaq = (post.faq?.items?.length ?? 0) > 0;
-  const hasCta = Boolean(post.cta?.heading);
+  const hasCta = Boolean(post.cta?.heading?.title);
 
   return (
     <article>

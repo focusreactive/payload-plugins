@@ -1,4 +1,4 @@
-import { extractLexicalText, joinText } from "@/lib/utils/text";
+import { extractLexicalText, joinText, sectionHeadingText } from "@/lib/utils/text";
 import type { Post } from "@/payload-types";
 
 export function extractPostText(
@@ -13,10 +13,8 @@ export function extractPostText(
     post.title,
     post.excerpt,
     extractLexicalText(post.content),
-    post.faq?.heading,
+    ...sectionHeadingText(post.faq?.heading),
     ...faqItemsText,
-    post.cta?.eyebrow,
-    post.cta?.heading,
-    post.cta?.description,
+    ...sectionHeadingText(post.cta?.heading),
   ]);
 }

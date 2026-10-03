@@ -18,6 +18,7 @@ import { generateSeoFields } from "@/lib/utils/seoFields";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
+import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 import { createSharedSlugField } from "@/lib/fields/slugField";
 
 import { computeReadingTime } from "./hooks/computeReadingTime";
@@ -146,12 +147,7 @@ export const Posts: CollectionConfig<"posts"> = {
                 },
               },
               fields: [
-                {
-                  label: { en: "Heading", es: "Encabezado" },
-                  localized: true,
-                  name: "heading",
-                  type: "text",
-                },
+                sectionHeadingField(),
                 {
                   admin: { initCollapsed: true },
                   fields: [
@@ -188,31 +184,7 @@ export const Posts: CollectionConfig<"posts"> = {
                 },
               },
               fields: [
-                {
-                  type: "row",
-                  fields: [
-                    {
-                      admin: { width: "40%" },
-                      label: { en: "Eyebrow", es: "Antetítulo" },
-                      localized: true,
-                      name: "eyebrow",
-                      type: "text",
-                    },
-                    {
-                      admin: { width: "60%" },
-                      label: { en: "Heading", es: "Encabezado" },
-                      localized: true,
-                      name: "heading",
-                      type: "text",
-                    },
-                  ],
-                },
-                {
-                  label: { en: "Description", es: "Descripción" },
-                  localized: true,
-                  name: "description",
-                  type: "textarea",
-                },
+                sectionHeadingField(),
                 {
                   admin: { initCollapsed: true },
                   fields: (link() as GroupField).fields,

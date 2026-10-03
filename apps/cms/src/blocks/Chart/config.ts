@@ -3,10 +3,10 @@ import type { Block, Field } from "payload";
 import { getBlockPreviewImage } from "@/lib/utils/blockPreviewImage";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import { injectSection } from "@/lib/fields/section/injectSection";
-import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
+import { sectionHeadingField } from "@/lib/fields/sectionHeadingField";
 
 const fields: Field[] = [
-  ...sectionHeaderFields(),
+  sectionHeadingField(),
   {
     type: "row",
     fields: [
