@@ -62,7 +62,7 @@ cd apps/cms && cp .env.docker.example .env.docker && docker compose up -d
 ## Operations notes
 
 - **Database:** a new database or a schema on your shared PostgreSQL; the app only needs the connection string. Your backups cover it.
-- **Media:** uploads sit on the `media` volume — add it to the backup routine. (On Vercel they go to Blob storage instead; same code.)
+- **Media:** uploads sit on the `media` volume — add it to the backup routine. (On the agency's Vercel preview they go to Blob storage instead; same code.)
 - **Scheduling:** the `cron` service pings `/api/scheduled-publish/run` once a minute with a bearer token; on your side any cron will do.
 - **Base image updates:** rebuild both images from the Dockerfile with the new `BASE_IMAGE`; no other change.
 - **Resource sizing (compose defaults):** cms 2 CPU / 2 GB, postgres 1 CPU / 1 GB, edge 0.25 CPU / 128 MB, cron 0.25 CPU / 128 MB, keycloak 1 CPU / 1.5 GB.

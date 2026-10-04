@@ -72,7 +72,7 @@ site (Markdown in GitLab, Nginx) with a CMS-driven site. Brief highlights (detai
 | F10 | **Cookieless** site, Plausible, click-to-load YouTube | "Privacy and accessibility", "YouTube without cookies" | §5.10 | T10, T4 |
 | F11 | Technical SEO + AI search: metadata, JSON-LD, sitemap with every page, robots allowing AI crawlers, llms.txt | "Technical SEO and AI search" | §5.11 | T10 |
 | F12 | WCAG 2.2 AA on every template | "Privacy and accessibility" | §5.12 | T11 |
-| F13 | Self-hosted: containers on the client's `debian:trixie` image, env-only config, no internet at runtime, their Postgres | "The self-hosted application", "Running on your infrastructure" | §5.13 | T12 |
+| F13 | Self-hosted: containers on the client's `debian:trixie` image, env-only config, no internet at runtime, their Postgres (shown via compose; the shareable link stays a normal Vercel preview) | "The self-hosted application", "Running on your infrastructure" | §5.13 | T12 |
 | F14 | **Redesign** in CT's brand, by us | Agency Brief: FR takes design from UI to final visuals | §6 | T2, T3, T9, T11 |
 
 ### 1.3 Non-goals (say them on the call, do not build them)
@@ -662,12 +662,11 @@ and a spec covering `/`, a service, a sector, `/blog`, a post, `/contact`, `/res
 
 **Accept.** The axe spec passes; keyboard-only run through header → mega-menu → hero CTA → form.
 
-### 5.13 F13 — Self-hosted runtime: Docker on `debian:trixie`, compose, Vercel containers
+### 5.13 F13 — Self-hosted runtime: Docker on `debian:trixie`, compose
 
 **Why.** "Two containers built on your hardened debian:trixie image … configuration from environment
-variables … no internet access at runtime … your PostgreSQL". Vercel now runs OCI images
-(`Dockerfile.vercel`, `vercel.json` `services` with `runtime: "container"`), so one image serves the
-self-hosted story and the shareable demo URL.
+variables … no internet access at runtime … your PostgreSQL". The shareable demo URL is the ordinary Vercel preview of `apps/cms`; Docker is the client's
+production story and is demonstrated with compose.
 
 **Exists.** Nothing for Docker in `apps/cms`; `apps/dev/Dockerfile` is a usable multi-stage model.
 
@@ -677,7 +676,8 @@ official tarball in a build stage, Bun only in the build stage, `output: "standa
 storage `enabled: Boolean(token)`, compose with `postgres:17`, `nginx` (reverse proxy on `:8080`
 serving `/media` from the shared volume), `cron` (curl loop with Bearer `CRON_SECRET`), `keycloak`
 (§5.9), optional `snapshot` + `nginx-static` for the "static files behind Nginx" demonstration.
-Vercel: `vercel.json` services/container with the same Dockerfile; fallback native build.
+Vercel: **not changed** — the preview of the existing `cms` project keeps its native Next.js build,
+migrations and cron from `vercel.json`; Docker is shown through compose only.
 
 **Accept.** `docker build --build-arg BASE_IMAGE=debian:trixie-slim` succeeds; `docker compose up`
 → migrate → seed → `http://localhost:8080/en`; `docker run --network none` of the CMS image against
@@ -1194,9 +1194,9 @@ empty states; mega-menu keyboard; forms; skip link; axe spec (§5.12); Lighthous
 
 **Commit:** `feat(cms): CT design polish and WCAG 2.2 AA pass`
 
-### T12 — Docker on `debian:trixie`, compose (Postgres, Nginx, cron, Keycloak), Vercel containers
+### T12 — Docker on `debian:trixie`, compose (Postgres, Nginx, cron, Keycloak)
 
-**Files (already written, unbuilt — make them build and run, fix what reality disagrees with):** `apps/cms/Dockerfile` (targets `cms`, `site`; `ARG BASE_IMAGE=debian:trixie-slim`, Node from tarball, Bun only in `deps`), `apps/cms/docker-compose.yml` (postgres, cms, edge, cron, keycloak [profile sso], snapshot + site [profiles]), `apps/cms/docker/{entrypoint.sh,nginx-edge.conf,nginx-site.conf,cron.sh,snapshot.sh,keycloak/realm-ct.json}`, `apps/cms/.env.docker.example`, root `.dockerignore`. **To add:** `apps/cms/Dockerfile.vercel` (same content as `Dockerfile`, target `cms`), `next.config.mjs` (`output: "standalone"`, `outputFileTracingRoot: path.resolve(__dirname, "../..")`), `lib/plugins/index.ts` (Blob `enabled`), `lib/auth/oidc/*` + callback (groups → role, §5.9), `apps/cms/vercel.json`, `.gitignore` entries for `apps/cms/.env.docker` and `apps/cms/.secrets/`
+**Files (already written, unbuilt — make them build and run, fix what reality disagrees with):** `apps/cms/Dockerfile` (targets `cms`, `site`; `ARG BASE_IMAGE=debian:trixie-slim`, Node from tarball, Bun only in `deps`), `apps/cms/docker-compose.yml` (postgres, cms, edge, cron, keycloak [profile sso], snapshot + site [profiles]), `apps/cms/docker/{entrypoint.sh,nginx-edge.conf,nginx-site.conf,cron.sh,snapshot.sh,keycloak/realm-ct.json}`, `apps/cms/.env.docker.example`, root `.dockerignore`. **To add:** `next.config.mjs` (`output: "standalone"`, `outputFileTracingRoot: path.resolve(__dirname, "../..")`), `lib/plugins/index.ts` (Blob `enabled`), `lib/auth/oidc/*` + callback (groups → role, §5.9), `.gitignore` entries for `apps/cms/.env.docker` and `apps/cms/.secrets/`
 
 1. **Image** (as written): multi-stage. `FROM ${BASE_IMAGE} AS node` installs Node 24 LTS from the official
    tarball (download `node-v24.x-linux-x64.tar.xz` + `SHASUMS256.txt`, verify, extract to
@@ -1225,12 +1225,17 @@ empty states; mega-menu keyboard; forms; skip link; axe spec (§5.12); Lighthous
    every 60 s), `keycloak` (`quay.io/keycloak/keycloak:26 start-dev --import-realm`, realm JSON per
    §5.9, `:8081`), optional `snapshot` + `nginx-static` (`:8082`, labelled demonstration). Seed from
    the host: `DATABASE_URL=postgres://payload:payload@localhost:5432/ct bun run seed:ct`.
-4. **Vercel**: `vercel.json` → `{"services":{"cms":{"runtime":"container","root":".","entrypoint":"Dockerfile.vercel"}},"rewrites":[{"source":"/(.*)","destination":{"service":"cms"}}]}`;
-   verify the build context Vercel uses for a service root (docs: `/docs/functions/container-images`,
-   `/docs/services`); if it is the service directory, place `Dockerfile.vercel` at the repo root and
-   set the project Root Directory accordingly. Container listens on `$PORT`. No persistent disk →
-   Blob for media on Vercel (hence `enabled: Boolean(token)`). If the plan lacks container images,
-   fall back to the native Next.js build (previous `vercel.json`) — same code.
+4. **Vercel: leave `vercel.json` as it is.** The shareable demo URL is the preview deployment of the
+   existing `cms` Vercel project for this branch (branch alias
+   `cms-git-claude-busy-planck-k29mbr-<team>.vercel.app`): its build command already builds the
+   plugins, runs `bun run migrate` against the Neon `preview/<branch>` database and runs `next build`;
+   the cron for scheduled publishing is already configured. Do not switch the project to the
+   container runtime — if the plan lacks container images the preview build fails and the demo link
+   dies. The container story is told with `docker compose` on the call. (Vercel does support
+   `Dockerfile.vercel` + `services` with `runtime: "container"`; that is a separate experiment, not
+   part of this demo.) Before the call: check the project's Deployment Protection — the client must
+   open the preview without a Vercel login (disable protection for previews, or share link / bypass
+   token).
 5. Prove: `docker build --target cms --build-arg BASE_IMAGE=debian:trixie-slim …`; `docker compose up`
    → `/en` on `:8080`; `docker run --network none …` serves pages; `--profile sso` Keycloak login
    maps roles; `--profile snapshot` then `--profile site` serves the static mirror on `:8082`.
@@ -1298,5 +1303,5 @@ create the demo admin; run the e2e spec against the preview URL; paste URL + dem
 3. **YouTube ids** for the events page — default: 3 placeholder posters with real talk titles from the dump, no iframe until an id exists.
 4. **RE:OS vs CTRL OS** — default: "CTRL OS · becoming RE:OS" eyebrow.
 5. **Spanish locale** stays (non-destructive); DE + JA added.
-6. **Vercel container plan availability** — default: try container runtime; fall back to native build.
+6. **Deployment Protection** on the `cms` Vercel project: previews must open without a Vercel login for the client (disable for previews, or share link / bypass token).
 7. **Public repo** — content is the client's public copy; the dump and internal docs never enter git.
