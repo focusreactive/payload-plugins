@@ -7,6 +7,7 @@ import { seedPresets } from "./seedPresets";
 import { seedRedirects } from "./seedRedirects";
 import { seedTaxonomy } from "./seedTaxonomy";
 import { seedUsers } from "./seedUsers";
+import { seedWorkflow } from "./seedWorkflow";
 
 /** Step registry (run order: context.ts STEP_ORDER). */
 export const STEPS: Partial<Record<StepName, SeedStep>> = {
@@ -18,4 +19,5 @@ export const STEPS: Partial<Record<StepName, SeedStep>> = {
   redirects: seedRedirects,
   taxonomy: seedTaxonomy,
   users: seedUsers,
+  workflow: seedWorkflow,
 };

@@ -51,3 +51,9 @@ export async function pageLink(ctx: SeedContext, path: string, label: string): P
 export function urlLink(url: string, label: string, newTab = false): SeedLink {
   return { label, newTab, type: "custom", url };
 }
+
+/** For link fields built with `disableLabel` (header nav items and menu links): no label stored. */
+export function withoutLabel(link: SeedLink): Omit<SeedLink, "label"> {
+  const { label: _label, ...rest } = link;
+  return rest;
+}

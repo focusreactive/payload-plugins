@@ -51,13 +51,25 @@ export async function upsertMedia(
   ctx: SeedContext,
   input: MediaInput
 ): Promise<{ id: number; url: string; created: boolean }> {
+  // Payload renames an upload whose file already exists on disk ("x.jpg" → "x-1.jpg"), e.g. a
+  // fresh database over a kept media volume, so the stored name may carry a numeric suffix.
+  const dot = input.filename.lastIndexOf(".");
+  const base = dot === -1 ? input.filename : input.filename.slice(0, dot);
+  const ext = dot === -1 ? "" : input.filename.slice(dot);
   const found = await ctx.payload.find({
     collection: "media",
-    limit: 1,
-    where: { filename: { equals: input.filename } },
+    limit: 50,
+    sort: "id",
+    where: { filename: { like: base } },
   });
-  if (found.docs[0]) {
-    return { created: false, id: found.docs[0].id, url: found.docs[0].url ?? "" };
+  const isSameFile = (name: string | null | undefined) =>
+    name === input.filename ||
+    (name?.startsWith(`${base}-`) &&
+      name.endsWith(ext) &&
+      /^\d+$/u.test(name.slice(base.length + 1, name.length - ext.length)));
+  const existing = found.docs.find((doc) => isSameFile(doc.filename));
+  if (existing) {
+    return { created: false, id: existing.id, url: existing.url ?? "" };
   }
   const extension = input.filename.split(".").pop()?.toLowerCase() ?? "";
   const doc = await ctx.payload.create({

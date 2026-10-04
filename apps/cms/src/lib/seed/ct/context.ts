@@ -10,7 +10,8 @@ export type StepName =
   | "pages"
   | "chrome"
   | "redirects"
-  | "presets";
+  | "presets"
+  | "workflow";
 
 /** Run order (T8): pages before chrome (links reference pages), redirects after both. */
 export const STEP_ORDER: StepName[] = [
@@ -22,6 +23,7 @@ export const STEP_ORDER: StepName[] = [
   "chrome",
   "redirects",
   "presets",
+  "workflow",
 ];
 
 export interface SeedFlags {

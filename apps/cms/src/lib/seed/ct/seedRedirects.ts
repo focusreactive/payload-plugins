@@ -14,7 +14,8 @@ const EDITORIAL = [
   { from: "/ct-at-ces.html", to: "/ces-2026" },
 ];
 
-export const LEGACY_JSON = path.resolve(process.cwd(), "src/lib/redirects/legacy.json");
+/** Git-ignored: old slugs carry the client's name. next.config.mjs aliases it as @ct/legacy-map. */
+export const LEGACY_JSON = path.resolve(process.cwd(), "src/lib/redirects/legacy.local.json");
 
 export const seedRedirects: SeedStep = async (ctx) => {
   const result = emptyResult();
@@ -23,7 +24,9 @@ export const seedRedirects: SeedStep = async (ctx) => {
   const authors = [...new Set(ctx.posts.map((post) => post.author))];
   const map = buildLegacyMap(ctx.site.pages, ctx.posts, authors);
   await writeFile(LEGACY_JSON, `${JSON.stringify(map, null, 2)}\n`);
-  log.info(`legacy.json: ${Object.keys(map).length} entries (commit it)`);
+  log.info(
+    `legacy.local.json: ${Object.keys(map).length} entries (rebuild to apply; not committed)`
+  );
 
   for (const entry of EDITORIAL) {
     const found = await ctx.payload.find({

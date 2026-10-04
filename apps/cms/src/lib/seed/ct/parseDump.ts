@@ -318,6 +318,29 @@ export function parseDump(dump: string): ParsedSite {
   };
 }
 
+/**
+ * Slugs are unique across pages and posts (lib/fields/slugField.ts). A post whose slug is taken by a
+ * page of the new IA gets a suffix ("-news" for news, "-<year>" for articles); returns the renames.
+ */
+export function avoidPageSlugs(posts: ParsedPost[], pageSlugs: Set<string>): [string, string][] {
+  const taken = new Set([...pageSlugs, ...posts.map((post) => post.slug)]);
+  const renames: [string, string][] = [];
+  for (const post of posts) {
+    if (!pageSlugs.has(post.slug)) {
+      continue;
+    }
+    const base = `${post.slug}-${post.template === "T-NEWS-POST" ? "news" : post.year}`;
+    let slug = base;
+    for (let n = 2; taken.has(slug); n++) {
+      slug = `${base}-${n}`;
+    }
+    taken.add(slug);
+    renames.push([post.slug, slug]);
+    post.slug = slug;
+  }
+  return renames;
+}
+
 const byDateDesc = (a: ParsedPost, b: ParsedPost) =>
   b.date.localeCompare(a.date) || a.order - b.order;
 

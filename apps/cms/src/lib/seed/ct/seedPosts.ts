@@ -2,6 +2,8 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
+import sharp from "sharp";
+
 import { emptyResult } from "./context";
 import type { SeedContext, SeedStep } from "./context";
 import { assignCategories, CATEGORIES } from "./data/categories";
@@ -12,6 +14,10 @@ import type { ImageInsert } from "./markdownImages";
 import { upsertMedia } from "./mediaStore";
 import { firstParagraph, londonMorning, slugify } from "./text";
 import type { MappedImage, MappedPost, ParsedPost } from "./types";
+
+const ACTIVE_SVG = /<(?:foreignObject|script|iframe|embed|object)\b|\son[a-z]+\s*=/iu;
+
+const sameUrl = (a: string, b: string) => a.replace(/\/+$/u, "") === b.replace(/\/+$/u, "");
 
 /** og:image files shared by many posts are the site default, not a post cover (content doc §3). */
 function sharedSha1s(posts: MappedPost[]): Set<string> {
@@ -40,10 +46,21 @@ async function uploadMapped(
     return null;
   }
   const name = slugify(path.basename(image.local, path.extname(image.local))) || "image";
+  let data = await readFile(file);
+  let extension = path.extname(image.local).toLowerCase();
+  // Payload rejects SVGs with active content; draw.io exports carry <foreignObject> labels (with a
+  // plain <text> fallback). Rasterise those instead of weakening the upload check.
+  if (extension === ".svg" && ACTIVE_SVG.test(data.toString("utf-8"))) {
+    data = await sharp(data, { density: 144 })
+      .resize({ width: 1600, withoutEnlargement: true })
+      .png()
+      .toBuffer();
+    extension = ".png";
+  }
   const { id, url } = await upsertMedia(ctx, {
     alt: image.alt || post.title,
-    data: await readFile(file),
-    filename: `article-${post.slug}-${name}${path.extname(image.local).toLowerCase()}`,
+    data,
+    filename: `article-${post.slug}-${name}${extension}`,
     folder: "Articles",
   });
   return { id, url };
@@ -91,7 +108,8 @@ export const seedPosts: SeedStep = async (ctx) => {
     const eyebrow = CATEGORIES.find((category) => category.slug === categorySlugs[0])?.title ?? "";
 
     // Images from images-map.json (scraped from the live article).
-    const entry = mapped.find((item) => item.slug === post.slug && item.status === "ok");
+    // By source URL: the post slug may have been renamed (avoidPageSlugs), the scraper's was not.
+    const entry = mapped.find((item) => sameUrl(item.sourceUrl, post.url) && item.status === "ok");
     let markdown = post.markdown;
     let coverId: number | null = null;
     if (entry) {
@@ -162,6 +180,7 @@ export const seedPosts: SeedStep = async (ctx) => {
     if (existing) {
       ctx.ids.posts.set(post.slug, existing.id);
       const changed =
+        existing.slug !== post.slug ||
         existing.markdown !== markdown ||
         existing.title !== post.title ||
         existing.excerpt !== excerpt;

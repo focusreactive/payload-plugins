@@ -2,18 +2,50 @@ import type { SeedContext } from "./context";
 import { CATEGORIES } from "./data/categories";
 import { IA } from "./data/ia";
 import { log } from "./log";
+import { SCHEDULED_POST_SLUG } from "./seedWorkflow";
 import { slugify } from "./text";
 
 const DEMO_EMAILS = ["admin@ct.demo", "editor@ct.demo", "author@ct.demo"];
 
 /**
  * `reset`: deletes what the seed owns — imported posts (they carry a sourceUrl), the authors of the
- * dump, the seed's categories, the IA pages and the demo editor/author accounts (the admin account is kept so the
+ * dump, the seed's categories, the IA pages, the demo comments and scheduled post, and the demo editor/author accounts (the admin account is kept so the
  * session running the seed is not locked out). Media stay: they are matched by file name and reused.
  */
 export async function resetSeed(ctx: SeedContext): Promise<void> {
   const { payload } = ctx;
   const context = ctx.writeContext;
+
+  const scheduled = await payload.find({
+    collection: "posts",
+    depth: 0,
+    draft: true,
+    limit: 1,
+    where: { slug: { equals: SCHEDULED_POST_SLUG } },
+  });
+  for (const post of scheduled.docs) {
+    const jobs = await payload.find({
+      collection: "payload-jobs",
+      depth: 0,
+      limit: 100,
+      where: { completedAt: { exists: false }, taskSlug: { equals: "schedulePublish" } },
+    });
+    const ids = jobs.docs
+      .filter((job) => (job.input as { doc?: { value?: number } } | null)?.doc?.value === post.id)
+      .map((job) => job.id);
+    if (ids.length > 0) {
+      await payload.delete({ collection: "payload-jobs", where: { id: { in: ids } } });
+    }
+    await payload.delete({ collection: "posts", context, id: post.id });
+  }
+  log.info(`deleted ${scheduled.docs.length} scheduled demo post`);
+
+  const comments = await payload.delete({
+    collection: "comments",
+    context,
+    where: { "author.email": { in: DEMO_EMAILS } },
+  });
+  log.info(`deleted ${comments.docs.length} demo comments`);
 
   const posts = await payload.delete({
     collection: "posts",

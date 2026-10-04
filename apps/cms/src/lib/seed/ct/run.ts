@@ -2,7 +2,7 @@
  * CT demo seed — `bun run seed:ct [flags]` (see README.md in this folder).
  *
  *   source=<file>         content dump (default .local/ct/content-dump.md)
- *   only=a,b              steps: media,taxonomy,users,posts,pages,chrome,redirects,presets
+ *   only=a,b              steps: media,taxonomy,users,posts,pages,chrome,redirects,presets,workflow
  *   limit-posts=N         seed only the first N selected posts (dry runs)
  *   all-posts             all 191 posts instead of the 40-post selection
  *   reset                 delete what this seed owns before seeding
@@ -21,7 +21,8 @@ import { getPayloadClient } from "@/dal";
 import { emptyResult, STEP_ORDER } from "./context";
 import type { SeedContext, SeedFlags, SeedStep, StepName, StepResult } from "./context";
 import { log } from "./log";
-import { parseDump, selectPosts } from "./parseDump";
+import { IA } from "./data/ia";
+import { avoidPageSlugs, parseDump, selectPosts } from "./parseDump";
 import { resetSeed } from "./reset";
 import { STEPS } from "./steps";
 import type { ImagesMap, ParsedSite } from "./types";
@@ -77,6 +78,9 @@ async function loadSite(flags: SeedFlags): Promise<ParsedSite> {
     );
   }
   const site = parseDump(await readFile(flags.source, "utf-8"));
+  for (const [from, to] of avoidPageSlugs(site.posts, new Set(IA.map((page) => page.slug)))) {
+    log.warn(`post slug "${from}" is a page of the new site — seeded as "${to}"`);
+  }
   await mkdir(flags.localDir, { recursive: true });
   await writeFile(path.join(flags.localDir, "parsed.json"), JSON.stringify(site, null, 2));
   return site;

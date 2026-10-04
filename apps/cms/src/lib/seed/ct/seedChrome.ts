@@ -1,7 +1,8 @@
 import { emptyResult } from "./context";
 import type { SeedContext, SeedStep, StepResult } from "./context";
 import { brandTitle, IA } from "./data/ia";
-import { pageIdByPath, pageLink, urlLink } from "./links";
+import { pageIdByPath, pageLink, urlLink, withoutLabel } from "./links";
+import { sameData } from "./sameData";
 import { CTA_TITLE, FOOTER_NAME, HEADER_NAME } from "./seedPages";
 
 /** Upsert a document of `collection` by its `name`/`title` field. */
@@ -15,9 +16,14 @@ async function upsertByName(
 ): Promise<number> {
   const found = await ctx.payload.find({
     collection,
+    depth: 0,
     limit: 1,
     where: { [field]: { equals: value } },
   });
+  if (found.docs[0] && sameData(data, found.docs[0])) {
+    result.skipped++;
+    return found.docs[0].id;
+  }
   if (found.docs[0]) {
     // Seed data is shaped by hand; the union of three collections' types is not worth spelling out.
     await ctx.payload.update({
@@ -55,7 +61,7 @@ export const seedChrome: SeedStep = async (ctx) => {
     Promise.all(
       paths.map(async (path) => ({
         description: IA.find((page) => page.path === path)?.summary,
-        link: await pageLink(ctx, path, title(path)),
+        link: withoutLabel(await pageLink(ctx, path, title(path))),
         title: title(path),
       }))
     );
@@ -125,7 +131,7 @@ export const seedChrome: SeedStep = async (ctx) => {
             featured: { enabled: false },
             links: [
               ...(await dropdownLinks(["/resources/news"])),
-              { link: await pageLink(ctx, "/blog", "Blog"), title: "Blog" },
+              { link: withoutLabel(await pageLink(ctx, "/blog", "Blog")), title: "Blog" },
               ...(await dropdownLinks([
                 "/resources/case-studies",
                 "/resources/reports",
@@ -150,7 +156,11 @@ export const seedChrome: SeedStep = async (ctx) => {
           label: "Who we are",
           type: "dropdown",
         },
-        { label: "CES 2026", link: await pageLink(ctx, "/ces-2026", "CES 2026"), type: "link" },
+        {
+          label: "CES 2026",
+          link: withoutLabel(await pageLink(ctx, "/ces-2026", "CES 2026")),
+          type: "link",
+        },
       ],
     },
     result
@@ -269,44 +279,50 @@ export const seedChrome: SeedStep = async (ctx) => {
     }
   }
 
-  await ctx.payload.updateGlobal({
-    context: ctx.writeContext,
-    data: {
-      _status: "published",
-      adminPanel: { icon: ctx.ids.media.get("mark"), logo: ctx.ids.media.get("logo") },
-      blog: {
-        description: `Engineering notes, research and news from the ${company} team.`,
-        eyebrow: "Blog",
-        footer,
-        header,
-        meta: {
-          description: `Articles and news from ${company}.`,
-          image: ctx.ids.media.get("og"),
-          robots: "index",
-          title: "Blog",
-        },
-        readMoreLabel: "Read more",
-        relatedPostsLabel: `More from ${company}`,
+  const settings = {
+    _status: "published" as const,
+    adminPanel: { icon: ctx.ids.media.get("mark"), logo: ctx.ids.media.get("logo") },
+    blog: {
+      description: `Engineering notes, research and news from the ${company} team.`,
+      eyebrow: "Blog",
+      footer,
+      header,
+      meta: {
+        description: `Articles and news from ${company}.`,
+        image: ctx.ids.media.get("og"),
+        robots: "index" as const,
         title: "Blog",
       },
-      general: { siteName: company },
-      notFound: {
-        description: "Search the site, or start from the home page.",
-        footer,
-        header,
-        title: "This page moved or never existed",
-      },
-      seo: {
-        defaultDescription:
-          "Open source system software experts: build engineering, Linux, safety-critical and trustable software.",
-        og: { image: ctx.ids.media.get("og"), siteName: company },
-        titleSeparator: "|",
-        titleSuffix: company,
-      },
+      readMoreLabel: "Read more",
+      relatedPostsLabel: `More from ${company}`,
+      title: "Blog",
     },
-    slug: "site-settings",
-  });
-  result.updated++;
+    general: { siteName: company },
+    notFound: {
+      description: "Search the site, or start from the home page.",
+      footer,
+      header,
+      title: "This page moved or never existed",
+    },
+    seo: {
+      defaultDescription:
+        "Open source system software experts: build engineering, Linux, safety-critical and trustable software.",
+      og: { image: ctx.ids.media.get("og"), siteName: company },
+      titleSeparator: "|" as const,
+      titleSuffix: company,
+    },
+  };
+  const current = await ctx.payload.findGlobal({ depth: 0, slug: "site-settings" });
+  if (sameData(settings, current)) {
+    result.skipped++;
+  } else {
+    await ctx.payload.updateGlobal({
+      context: ctx.writeContext,
+      data: settings,
+      slug: "site-settings",
+    });
+    result.updated++;
+  }
 
   return result;
 };

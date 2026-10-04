@@ -8,7 +8,8 @@
       "@/dal": ["./src/lib/dal"],
       "@/dal/*": ["./src/lib/dal/*"],
       "@/*": ["./src/*"],
-      "@payload-config": ["./src/payload.config.ts"]
+      "@payload-config": ["./src/payload.config.ts"],
+      "@ct/legacy-map": ["./src/lib/redirects/legacy.json"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

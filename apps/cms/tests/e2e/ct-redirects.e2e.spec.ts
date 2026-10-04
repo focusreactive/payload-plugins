@@ -1,6 +1,14 @@
 import { expect, test } from "@playwright/test";
 
-import legacy from "../../src/lib/redirects/legacy.json";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+
+// The seed's full map (git-ignored) when present, otherwise the committed extras.
+const dir = path.resolve(import.meta.dirname, "../../src/lib/redirects");
+const file = ["legacy.local.json", "legacy.json"]
+  .map((name) => path.join(dir, name))
+  .find((candidate) => existsSync(candidate))!;
+const legacy: unknown = JSON.parse(readFileSync(file, "utf-8"));
 
 /**
  * Plan §5.4: old addresses answer 308 and land on a page that renders. Samples up to 25 entries
