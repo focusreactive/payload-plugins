@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { abAdapter } from "@/lib/plugins/ab/abAdapter";
+import { lookupLegacyRedirect } from "@/lib/redirects/legacy";
 import { buildInternalPathname } from "@/lib/plugins/ab/buildInternalPathname";
 import type { ABVariantData } from "@/lib/plugins/ab/types";
 
@@ -25,8 +26,27 @@ const resolveAbRewrite = createResolveAbRewrite<ABVariantData>({
   storage: abAdapter,
 });
 
+const ASSET_PATH =
+  /\.(?:png|jpe?g|gif|svg|ico|webp|avif|css|js|map|txt|xml|woff2?|ttf|json|pdf|webmanifest)$/iu;
+
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Files never reach locale routing (the matcher also excludes them; this is the safety net).
+  if (ASSET_PATH.test(pathname)) {
+    return NextResponse.next();
+  }
+
+  // Every old address keeps working (§5.4): static map of the migrated site, query preserved.
+  const legacyTarget = lookupLegacyRedirect(pathname);
+  if (legacyTarget) {
+    const url = request.nextUrl.clone();
+    url.pathname = legacyTarget;
+    return NextResponse.redirect(url, 308);
+  }
+
+  // Unknown dotted paths (e.g. /legacy-campaign.html) continue through locale routing so the CMS
+  // redirects collection (PayloadRedirects) can still resolve them.
   const localeMatch = pathname.match(localeRegex);
 
   const matchedLocale = localeMatch?.[1];
@@ -63,5 +83,8 @@ export default async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|admin|_next|_vercel|.*\\..*).*)"],
+  // Dotted paths now reach the proxy (legacy .html redirects); files are still excluded here.
+  matcher: [
+    "/((?!api|admin|_next|_vercel|.*\\.(?:png|jpe?g|gif|svg|ico|webp|avif|css|js|map|txt|xml|woff2?|ttf|json|pdf|webmanifest)$).*)",
+  ],
 };

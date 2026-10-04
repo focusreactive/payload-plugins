@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { buildLegacyMap } from "@/lib/seed/ct/legacyMap";
 import { insertImages, splitMarkdownBlocks } from "@/lib/seed/ct/markdownImages";
 import {
   cleanBody,
@@ -156,5 +157,28 @@ describe.skipIf(!existsSync(fullDumpPath))("CT dump parser â€” full dump (plan Â
     for (const post of site!.posts) {
       expect(post.markdown).not.toMatch(/^# /mu);
     }
+  });
+});
+
+describe("CT legacy URL map", () => {
+  const site = parseDump(fixture);
+  const map = buildLegacyMap(site.pages, site.posts, site.authors);
+
+  it("maps marketing pages (with and without .html) via their dump entry", () => {
+    expect(map["/automotive.html"]).toBe("/sectors/automotive");
+    expect(map["/automotive"]).toBe("/sectors/automotive");
+  });
+
+  it("maps every post shape, lowercased, to /blog/<slug>", () => {
+    expect(map["/articles/2025/reproducible-builds"]).toBe("/blog/reproducible-builds");
+    expect(map["/articles/2025/reproducible-builds.html"]).toBe("/blog/reproducible-builds");
+    expect(map["/news/example-joins.html"]).toBe("/blog/example-joins");
+    expect(map["/author/jane-doe.html"]).toBe("/blog/author/jane-doe");
+  });
+
+  it("never shadows a page of the new site or emits the home page", () => {
+    expect(Object.keys(map)).not.toContain("/.html");
+    expect(Object.keys(map)).not.toContain("/contact");
+    expect(map["/index.html"]).toBe("/");
   });
 });
