@@ -10,7 +10,9 @@ import { Providers } from "@/lib/context";
 import { AnalyticsProviderClient } from "@/lib/plugins/analytics/AnalyticsProviderClient";
 import type { Locale } from "@/lib/types";
 import { LivePreviewListener } from "@/components/LivePreviewListener";
+import { PlausibleScript } from "@/components/PlausibleScript";
 import { SkipLink } from "@/components/SkipLink";
+import { FEEDS } from "@/lib/config/feeds";
 import { VisualEditingEditRouter } from "@/components/VisualEditingEditRouter";
 
 // CT brand fonts (§6.3). Variable names stay those base.css maps: --font-newsreader → display,
@@ -68,10 +70,14 @@ export default async function RootLayout({ children, params }: Props) {
       data-theme="light"
       className={`${interTight.variable} ${inter.variable} ${ibmPlexMono.variable} ${notoSansJp.variable}`}
     >
-      <head />
+      <head>
+        <link rel="alternate" type="application/atom+xml" title="Atom" href={FEEDS.allAtom} />
+        <link rel="alternate" type="application/rss+xml" title="RSS" href={FEEDS.allRss} />
+        <PlausibleScript />
+      </head>
       <body>
         <SkipLink />
-        <AnalyticsProviderClient measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID!}>
+        <AnalyticsProviderClient measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}>
           <Providers locale={locale as Locale} messages={messages}>
             {draft ? (
               <VisualEditing.Provider available adminBasePath="/admin">

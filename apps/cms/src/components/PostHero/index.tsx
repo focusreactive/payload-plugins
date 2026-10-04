@@ -61,12 +61,21 @@ export async function PostHero({ post, locale }: PostHeroProps) {
             <DisplayHeading as="h1" size="display-1" text={post.title} />
 
             <div className="flex flex-wrap items-center justify-center gap-[18px] text-[0.92rem] text-muted-foreground">
-              {author && (
-                <span className="flex items-center gap-2.5 whitespace-nowrap">
-                  <AuthorAvatar author={author} size="sm" />
-                  {author.name}
-                </span>
-              )}
+              {author &&
+                (author.slug ? (
+                  <Link
+                    href={`${BLOG_CONFIG.basePath}/author/${author.slug}`}
+                    className="flex items-center gap-2.5 whitespace-nowrap underline-offset-[3px] hover:text-primary hover:underline"
+                  >
+                    <AuthorAvatar author={author} size="sm" />
+                    {author.name}
+                  </Link>
+                ) : (
+                  <span className="flex items-center gap-2.5 whitespace-nowrap">
+                    <AuthorAvatar author={author} size="sm" />
+                    {author.name}
+                  </span>
+                ))}
               {author && publishedDate && <DotSeparator />}
               {publishedDate && (
                 <time dateTime={post.publishedAt ?? undefined} className="whitespace-nowrap">
@@ -75,7 +84,9 @@ export async function PostHero({ post, locale }: PostHeroProps) {
               )}
               {(author || publishedDate) && <DotSeparator />}
               <span className="whitespace-nowrap">
-                {t("readTimeLong", { minutes: readingTimeMinutes(post.content) })}
+                {t("readTimeLong", {
+                  minutes: post.readingTime ?? readingTimeMinutes(post.content),
+                })}
               </span>
             </div>
           </div>

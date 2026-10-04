@@ -8,7 +8,7 @@ import { getLastModifiedDate } from "@/lib/utils/getLastModifiedDate";
 import { getServerSideURL } from "@/lib/utils/getURL";
 import type { Locale } from "@/lib/types";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
-import { getAllDocuments, getBlogPageSettings, getPayloadClient } from "@/dal";
+import { getAllDocuments, getPayloadClient } from "@/dal";
 
 type Sitemap = MetadataRoute.Sitemap;
 
@@ -17,12 +17,16 @@ async function generateSitemap(): Promise<Sitemap> {
   const baseUrl = getServerSideURL();
   const changeFrequency: Sitemap[number]["changeFrequency"] = "weekly";
   const locales = I18N_CONFIG.locales.map((locale) => locale.code) as Locale[];
+  // hreflang alternates: the same document in every content locale (untranslated ones fall back).
+  const alternates = (urlFor: (locale: Locale) => string) => ({
+    languages: Object.fromEntries(locales.map((locale) => [locale, urlFor(locale)])),
+  });
   try {
     const sitemap: Sitemap = [];
 
     await Promise.all(
       locales.map(async (locale) => {
-        const [allPages, allPosts, blogSettings] = await Promise.all([
+        const [allPages, allPosts, allAuthors] = await Promise.all([
           getAllDocuments(payload, "page", {
             depth: 1,
             locale,
@@ -52,7 +56,12 @@ async function generateSitemap(): Promise<Sitemap> {
               _status: { equals: "published" },
             },
           }),
-          getBlogPageSettings({ locale }),
+          getAllDocuments(payload, "authors", {
+            locale,
+            overrideAccess: false,
+            select: { slug: true, updatedAt: true },
+            where: { slug: { exists: true } },
+          }),
         ]);
 
         const pages = allPages.filter((page) => {
@@ -75,6 +84,9 @@ async function generateSitemap(): Promise<Sitemap> {
           });
           const isHome = url === homeUrl;
           sitemap.push({
+            alternates: alternates((l) =>
+              buildUrl({ breadcrumbs: page.breadcrumbs, collection: "page", locale: l })
+            ),
             changeFrequency,
             lastModified: page.updatedAt ? new Date(page.updatedAt) : new Date(),
             priority: isHome ? 1 : 0.8,
@@ -93,6 +105,9 @@ async function generateSitemap(): Promise<Sitemap> {
 
         posts.forEach((post) => {
           sitemap.push({
+            alternates: alternates((l) =>
+              buildUrl({ collection: "posts", locale: l, slug: post.slug })
+            ),
             changeFrequency: "monthly",
             lastModified: post.publishedAt
               ? new Date(post.publishedAt)
@@ -105,6 +120,18 @@ async function generateSitemap(): Promise<Sitemap> {
               locale,
               slug: post.slug,
             }),
+          });
+        });
+
+        allAuthors.forEach((author) => {
+          sitemap.push({
+            alternates: alternates((l) =>
+              buildUrl({ collection: "posts", locale: l, slug: `author/${author.slug}` })
+            ),
+            changeFrequency: "monthly",
+            lastModified: author.updatedAt ? new Date(author.updatedAt) : new Date(),
+            priority: 0.5,
+            url: buildUrl({ collection: "posts", locale, slug: `author/${author.slug}` }),
           });
         });
       })

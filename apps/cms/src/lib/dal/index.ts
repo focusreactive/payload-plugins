@@ -13,6 +13,8 @@ export { getPageBySlug } from "./getPageBySlug";
 // Posts
 export { getPostBySlug } from "./getPostBySlug";
 export { getPosts } from "./getPosts";
+export { getAuthorBySlug } from "./getAuthorBySlug";
+export { getFeedPosts } from "./getFeedPosts";
 export type { GetPostsOptions } from "./getPosts";
 export { getRelatedPosts } from "./getRelatedPosts";
 export { searchPosts } from "./searchPosts";
