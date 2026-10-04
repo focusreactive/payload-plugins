@@ -149,6 +149,38 @@ export function extractPageBlockContent(
       );
     case "rawHtml":
       return helpers.compact([html(b.html as string)]);
+    case "postsList":
+    case "videoEmbed":
+      return helpers.compact([
+        paragraph(b.eyebrow as string),
+        heading(2, b.heading as string),
+        paragraph(b.description as string),
+        heading(3, b.title as string),
+      ]);
+    case "caseStudies":
+      return helpers.compact([
+        paragraph(b.eyebrow as string),
+        heading(2, b.heading as string),
+        paragraph(b.description as string),
+        ...asArray<{
+          title?: string;
+          problem?: string;
+          solution?: string;
+          result?: string;
+        }>(b.items).flatMap((c) => [
+          heading(3, c.title),
+          paragraph(c.problem),
+          paragraph(c.solution),
+          paragraph(c.result),
+        ]),
+      ]);
+    case "form":
+      return helpers.compact([
+        paragraph(b.eyebrow as string),
+        heading(2, b.heading as string),
+        paragraph(b.description as string),
+        paragraph(b.consentText as string),
+      ]);
     case "globalSectionSlot": {
       const gid = relationId(b.reference);
       const resolved =

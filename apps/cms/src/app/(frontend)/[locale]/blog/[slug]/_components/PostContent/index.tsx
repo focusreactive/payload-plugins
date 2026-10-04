@@ -4,6 +4,7 @@ import { RichText } from "@/components/shared";
 import { getRelatedPosts } from "@/dal/getRelatedPosts";
 import type { Post } from "@/payload-types";
 
+import { MarkdownBody } from "./components/MarkdownBody";
 import { PostCta } from "./components/PostCta";
 import { PostFaq } from "./components/PostFaq";
 import { RelatedPostsSection } from "./components/RelatedPostsSection";
@@ -31,7 +32,11 @@ export const PostContent: React.FC<PostContentProps> = async ({
       <section className="py-sectionBase">
         <div className="mx-auto w-full max-w-containerMaxW px-containerBase">
           <div className="mx-auto max-w-[720px]">
-            <RichText content={post.content} />
+            {post.contentFormat === "markdown" ? (
+              <MarkdownBody markdown={post.markdown ?? ""} />
+            ) : (
+              post.content && <RichText content={post.content} variant="copy" />
+            )}
           </div>
         </div>
       </section>

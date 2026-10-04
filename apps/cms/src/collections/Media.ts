@@ -30,7 +30,8 @@ const setDefaultFocalPoint: CollectionBeforeChangeHook = ({ data }) => {
 export const Media: CollectionConfig<"media"> = {
   access: {
     create: or(superAdmin, user, author),
-    delete: or(superAdmin, user, author),
+    // Only administrators delete content (§5.7).
+    delete: superAdmin,
     read: anyone,
     update: or(superAdmin, user, author),
   },

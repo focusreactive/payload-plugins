@@ -14,11 +14,13 @@ import { fixBreadcrumbDocIds } from "./hooks/fixBreadcrumbDocIds";
 import { indexPageEmbedding, deletePageEmbedding } from "./hooks/indexEmbedding";
 import { revalidateDelete, revalidatePage } from "./hooks/revalidatePage";
 import { validateReservedSlug, validateReservedPath } from "./hooks/validateReservedSlug";
+import { denyPublishForAuthors } from "@/lib/hooks/denyPublishForAuthors";
 
 export const Page: CollectionConfig<"page"> = {
   access: {
     create: or(superAdmin, user, author),
-    delete: or(superAdmin, user, author),
+    // Only administrators delete content (§5.7).
+    delete: superAdmin,
     read: anyone,
     update: or(superAdmin, user, author),
   },
@@ -95,7 +97,12 @@ export const Page: CollectionConfig<"page"> = {
   hooks: {
     afterChange: [revalidatePage, indexPageEmbedding],
     afterDelete: [revalidateDelete, deletePageEmbedding],
-    beforeChange: [fixBreadcrumbDocIds, validateReservedSlug, validateReservedPath],
+    beforeChange: [
+      denyPublishForAuthors,
+      fixBreadcrumbDocIds,
+      validateReservedSlug,
+      validateReservedPath,
+    ],
   },
   labels: {
     plural: {

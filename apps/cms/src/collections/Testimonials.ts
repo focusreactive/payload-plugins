@@ -5,7 +5,8 @@ import { anyone, or, user, superAdmin } from "@/lib/access";
 export const Testimonials: CollectionConfig<"testimonials"> = {
   access: {
     create: or(superAdmin, user),
-    delete: or(superAdmin, user),
+    // Only administrators delete content (§5.7).
+    delete: superAdmin,
     read: anyone,
     update: or(superAdmin, user),
   },

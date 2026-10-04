@@ -11,6 +11,7 @@ import { Authors } from "@/collections/Authors";
 import { Categories } from "@/collections/Categories";
 import { DocumentEmbeddings } from "@/collections/DocumentEmbeddings";
 import { Footer } from "@/collections/Footer/config";
+import { FormSubmissions } from "@/collections/FormSubmissions";
 import { GlobalBlock } from "@/collections/GlobalBlock/config";
 import { Header } from "@/collections/Header/config";
 import { Media } from "@/collections/Media";
@@ -75,6 +76,7 @@ export default buildConfig({
     Footer,
     GlobalBlock,
     DocumentEmbeddings,
+    FormSubmissions,
   ],
   db: createDatabaseAdapter({
     connectionString: process.env.DATABASE_URL,

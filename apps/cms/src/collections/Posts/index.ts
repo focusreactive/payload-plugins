@@ -4,6 +4,7 @@ import { CardsGridInlineBlock } from "@/blocks/CardsGrid/inlineConfig";
 import { CodeInlineBlock } from "@/blocks/Code/inlineConfig";
 import { CtaBannerInlineBlock } from "@/blocks/CtaBanner/inlineConfig";
 import { LogosInlineBlock } from "@/blocks/Logos/inlineConfig";
+import { VideoEmbedInlineBlock } from "@/blocks/VideoEmbed/inlineConfig";
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
 import { PLATFORM_DEFAULT_MEDIA_SLOT } from "@/lib/constants/mediaDefaults";
@@ -19,15 +20,24 @@ import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
 import { createSharedSlugField } from "@/lib/fields/slugField";
+import { extractLexicalText } from "@/lib/utils/text";
+import type { Post } from "@/payload-types";
 
+import { convertMarkdownEndpoint } from "./endpoints/convertMarkdown";
 import { computeReadingTime } from "./hooks/computeReadingTime";
 import { indexPostEmbedding, deletePostEmbedding } from "./hooks/indexEmbedding";
 import { revalidateDelete, revalidatePost } from "./hooks/revalidatePost";
+import { denyPublishForAuthors } from "@/lib/hooks/denyPublishForAuthors";
+
+function hasLexicalText(value: unknown): boolean {
+  return Boolean(value) && extractLexicalText(value as Post["content"]).trim().length > 0;
+}
 
 export const Posts: CollectionConfig<"posts"> = {
   access: {
     create: or(superAdmin, user, author),
-    delete: or(superAdmin, user, author),
+    // Only administrators delete content (§5.7).
+    delete: superAdmin,
     read: anyone,
     update: or(superAdmin, user, author),
   },
@@ -74,6 +84,7 @@ export const Posts: CollectionConfig<"posts"> = {
   defaultPopulate: {
     authors: true,
     categories: true,
+    contentFormat: true,
     excerpt: true,
     heroImage: true,
     publishedAt: true,
@@ -81,6 +92,7 @@ export const Posts: CollectionConfig<"posts"> = {
     slug: true,
     title: true,
   },
+  endpoints: [convertMarkdownEndpoint],
   fields: [
     {
       tabs: [
@@ -127,6 +139,7 @@ export const Posts: CollectionConfig<"posts"> = {
                   LogosInlineBlock,
                   CodeInlineBlock,
                   CtaBannerInlineBlock,
+                  VideoEmbedInlineBlock,
                 ],
               }),
               label: {
@@ -135,8 +148,34 @@ export const Posts: CollectionConfig<"posts"> = {
               },
               localized: true,
               name: "content",
-              required: true,
+              admin: {
+                condition: (data) => data?.contentFormat !== "markdown",
+              },
+              // Required only for rich-text posts; Markdown posts keep their body in `markdown`.
+              validate: (value: unknown, { siblingData }: { siblingData: Partial<Post> }) =>
+                siblingData?.contentFormat === "markdown" || hasLexicalText(value)
+                  ? true
+                  : "Content is required for rich-text posts",
               type: "richText",
+            },
+            {
+              admin: {
+                condition: (data) => data?.contentFormat === "markdown",
+                description: {
+                  en: "Imported articles keep their Markdown. Use “Convert to rich text” in the sidebar to switch.",
+                  es: "Los artículos importados conservan su Markdown. Use “Convertir a texto enriquecido” para cambiar.",
+                },
+                language: "markdown",
+              },
+              label: { en: "Content (Markdown)", es: "Contenido (Markdown)" },
+              localized: true,
+              name: "markdown",
+              validate: (value: unknown, { siblingData }: { siblingData: Partial<Post> }) =>
+                siblingData?.contentFormat !== "markdown" ||
+                (typeof value === "string" && value.trim().length > 0)
+                  ? true
+                  : "Markdown content is required for Markdown posts",
+              type: "code",
             },
             {
               admin: {
@@ -251,6 +290,51 @@ export const Posts: CollectionConfig<"posts"> = {
     createSharedSlugField("posts"),
     {
       admin: {
+        position: "sidebar",
+        description: {
+          en: "Markdown: imported articles, edited as Markdown. Rich text: the block editor.",
+          es: "Markdown: artículos importados. Texto enriquecido: el editor de bloques.",
+        },
+      },
+      defaultValue: "richText",
+      label: { en: "Content format", es: "Formato del contenido" },
+      name: "contentFormat",
+      options: [
+        { label: { en: "Rich text", es: "Texto enriquecido" }, value: "richText" },
+        { label: "Markdown", value: "markdown" },
+      ],
+      required: true,
+      type: "select",
+    },
+    {
+      admin: {
+        components: { Field: "/components/admin/ConvertToRichText#ConvertToRichText" },
+        condition: (data) => data?.contentFormat === "markdown",
+        position: "sidebar",
+      },
+      name: "convertToRichText",
+      type: "ui",
+    },
+    {
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+        description: {
+          en: "Where this article lived on the old site",
+          es: "Dónde estaba este artículo en el sitio anterior",
+        },
+      },
+      label: { en: "Source URL", es: "URL de origen" },
+      name: "sourceUrl",
+      type: "text",
+    },
+    {
+      admin: { hidden: true },
+      name: "legacyPath",
+      type: "text",
+    },
+    {
+      admin: {
         date: {
           pickerAppearance: "dayAndTime",
         },
@@ -343,7 +427,7 @@ export const Posts: CollectionConfig<"posts"> = {
     },
   ],
   hooks: {
-    beforeChange: [computeReadingTime],
+    beforeChange: [denyPublishForAuthors, computeReadingTime],
     afterChange: [revalidatePost, indexPostEmbedding],
     afterDelete: [revalidateDelete, deletePostEmbedding],
   },

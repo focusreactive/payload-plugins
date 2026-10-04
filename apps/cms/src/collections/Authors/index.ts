@@ -1,16 +1,19 @@
 import type { CollectionConfig } from "payload";
+import { slugField } from "payload";
 
-import { or, user, author, superAdmin } from "@/lib/access";
+import { anyone, or, user, author, superAdmin } from "@/lib/access";
 
 export const Authors: CollectionConfig<"authors"> = {
   access: {
-    create: or(superAdmin, user, author, user),
-    delete: or(superAdmin, user, author, user),
-    read: or(superAdmin, user, author, user),
-    update: or(superAdmin, user, author, user),
+    create: or(superAdmin, user, author),
+    // Only administrators delete content (§5.7).
+    delete: superAdmin,
+    // Author pages (/blog/author/<slug>) are public.
+    read: anyone,
+    update: or(superAdmin, user, author),
   },
   admin: {
-    defaultColumns: ["name", "updatedAt"],
+    defaultColumns: ["name", "slug", "updatedAt"],
     group: "Blog",
     pagination: {
       limits: [20, 50, 100],
@@ -39,6 +42,21 @@ export const Authors: CollectionConfig<"authors"> = {
       relationTo: "media",
       type: "upload",
     },
+    {
+      admin: {
+        description: {
+          en: "One or two sentences shown on the author page",
+          es: "Una o dos frases mostradas en la página del autor",
+        },
+      },
+      label: { en: "Bio", es: "Biografía" },
+      localized: true,
+      name: "bio",
+      type: "textarea",
+    },
+    // Not NOT NULL in the database: existing authors (e.g. on a preview branch of production data)
+    // get their slug generated from the name on the next save.
+    slugField({ required: false, useAsSlug: "name" }),
   ],
   labels: {
     plural: {

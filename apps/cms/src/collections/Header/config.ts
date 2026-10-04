@@ -7,11 +7,13 @@ import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
 
 import { revalidateResourcesUsingHeader } from "./hooks/revalidateResourcesUsingHeader";
+import { denyPublishForAuthors } from "@/lib/hooks/denyPublishForAuthors";
 
 export const Header: CollectionConfig<"header"> = {
   access: {
     create: or(superAdmin, user),
-    delete: or(superAdmin, user),
+    // Only administrators delete content (§5.7).
+    delete: superAdmin,
     read: anyone,
     update: or(superAdmin, user),
   },
@@ -204,6 +206,7 @@ export const Header: CollectionConfig<"header"> = {
   ],
   hooks: {
     afterChange: [revalidateResourcesUsingHeader],
+    beforeChange: [denyPublishForAuthors],
   },
   labels: {
     plural: {

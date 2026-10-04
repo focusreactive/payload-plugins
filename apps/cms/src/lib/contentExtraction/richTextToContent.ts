@@ -179,6 +179,8 @@ function expandBlock(
 
       return nodes;
     }
+    case "videoEmbedInline":
+      return [paragraph(str(fields.title))];
     default:
       return [];
   }

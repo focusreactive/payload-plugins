@@ -54,6 +54,18 @@ export const Users: CollectionConfig<"users"> = {
     useAsTitle: "email",
   },
   auth: true,
+  hooks: {
+    beforeChange: [
+      // The first account ever created (the create-first-user screen) is always an admin.
+      async ({ data, operation, req }) => {
+        if (operation !== "create") {
+          return data;
+        }
+        const { totalDocs } = await req.payload.count({ collection: "users", req });
+        return totalDocs === 0 ? { ...data, role: "admin" } : data;
+      },
+    ],
+  },
   fields: [
     {
       admin: {
@@ -97,7 +109,8 @@ export const Users: CollectionConfig<"users"> = {
         },
         position: "sidebar",
       },
-      defaultValue: "admin",
+      // Least privilege (§5.7); the first account is promoted by `firstUserIsAdmin`.
+      defaultValue: "author",
       label: {
         en: "Role",
         es: "Rol",
@@ -119,9 +132,10 @@ export const Users: CollectionConfig<"users"> = {
           value: "author",
         },
         {
+          // Value kept as `user` (access helpers and existing data); shown as Editor.
           label: {
-            en: "User",
-            es: "Usuario",
+            en: "Editor",
+            es: "Editor",
           },
           value: "user",
         },

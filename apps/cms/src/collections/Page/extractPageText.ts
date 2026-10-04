@@ -1,4 +1,8 @@
 import { extractCardsGridText } from "@/blocks/CardsGrid/extractText";
+import { extractCaseStudiesText } from "@/blocks/CaseStudies/extractText";
+import { extractFormText } from "@/blocks/Form/extractText";
+import { extractPostsListText } from "@/blocks/PostsList/extractText";
+import { extractVideoEmbedText } from "@/blocks/VideoEmbed/extractText";
 import { extractCarouselText } from "@/blocks/Carousel/extractText";
 import { extractChartText } from "@/blocks/Chart/extractText";
 import { extractCtaBandText } from "@/blocks/CtaBand/extractText";
@@ -50,6 +54,18 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
     }
     case "stats": {
       return extractStatsText(block);
+    }
+    case "postsList": {
+      return extractPostsListText(block);
+    }
+    case "caseStudies": {
+      return extractCaseStudiesText(block);
+    }
+    case "form": {
+      return extractFormText(block);
+    }
+    case "videoEmbed": {
+      return extractVideoEmbedText(block);
     }
     default: {
       return "";

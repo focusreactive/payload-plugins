@@ -36,6 +36,7 @@ import * as migration_20260923_132949_add_reset_password_requested_at from './20
 import * as migration_20261001_143037_add_media_storage_prefix from './20261001_143037_add_media_storage_prefix';
 import * as migration_20261004_150441_cards_grid_numbered from './20261004_150441_cards_grid_numbered';
 import * as migration_20261004_151224_footer_social_iso from './20261004_151224_footer_social_iso';
+import * as migration_20261004_153206_ct_content_model from './20261004_153206_ct_content_model';
 
 export const migrations = [
   {
@@ -226,6 +227,11 @@ export const migrations = [
   {
     up: migration_20261004_151224_footer_social_iso.up,
     down: migration_20261004_151224_footer_social_iso.down,
-    name: '20261004_151224_footer_social_iso'
+    name: '20261004_151224_footer_social_iso',
+  },
+  {
+    up: migration_20261004_153206_ct_content_model.up,
+    down: migration_20261004_153206_ct_content_model.down,
+    name: '20261004_153206_ct_content_model'
   },
 ];

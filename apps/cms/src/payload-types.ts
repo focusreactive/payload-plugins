@@ -79,6 +79,7 @@ export interface Config {
     footer: Footer;
     globalBlock: GlobalBlock;
     'document-embeddings': DocumentEmbedding;
+    'form-submissions': FormSubmission;
     redirects: Redirect;
     presets: Preset;
     comments: Comment;
@@ -109,6 +110,7 @@ export interface Config {
     footer: FooterSelect<false> | FooterSelect<true>;
     globalBlock: GlobalBlockSelect<false> | GlobalBlockSelect<true>;
     'document-embeddings': DocumentEmbeddingsSelect<false> | DocumentEmbeddingsSelect<true>;
+    'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     presets: PresetsSelect<false> | PresetsSelect<true>;
     comments: CommentsSelect<false> | CommentsSelect<true>;
@@ -376,6 +378,10 @@ export interface Page {
     | CtaBandBlock
     | NewsletterBlock
     | StatsBlock
+    | PostsListBlock
+    | CaseStudiesBlock
+    | FormBlock
+    | VideoEmbedBlock
     | RawHtmlBlock
     | GlobalSectionSlotBlock
   )[];
@@ -545,7 +551,7 @@ export interface Post {
   title: string;
   excerpt: string;
   heroImage: number | Media;
-  content: {
+  content?: {
     root: {
       type: string;
       children: {
@@ -559,7 +565,11 @@ export interface Post {
       version: number;
     };
     [k: string]: unknown;
-  };
+  } | null;
+  /**
+   * Imported articles keep their Markdown. Use “Convert to rich text” in the sidebar to switch.
+   */
+  markdown?: string | null;
   /**
    * Optional FAQ shown after the article body.
    */
@@ -635,6 +645,15 @@ export interface Post {
    */
   generateSlug?: boolean | null;
   slug: string;
+  /**
+   * Markdown: imported articles, edited as Markdown. Rich text: the block editor.
+   */
+  contentFormat: 'richText' | 'markdown';
+  /**
+   * Where this article lived on the old site
+   */
+  sourceUrl?: string | null;
+  legacyPath?: string | null;
   publishedAt?: string | null;
   /**
    * Estimated reading time in minutes. Auto-calculated from the content on save.
@@ -676,6 +695,15 @@ export interface Author {
    */
   name: string;
   avatar?: (number | null) | Media;
+  /**
+   * One or two sentences shown on the author page
+   */
+  bio?: string | null;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1306,6 +1334,243 @@ export interface StatsBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PostsListBlock".
+ */
+export interface PostsListBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  source: 'latest' | 'category' | 'author';
+  category?: (number | null) | Category;
+  author?: (number | null) | Author;
+  limit: number;
+  layout: 'grid' | 'list' | 'featured';
+  /**
+   * Optional “View all” link under the list
+   */
+  viewAll?: {
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+    label?: string | null;
+  };
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'postsList';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CaseStudiesBlock".
+ */
+export interface CaseStudiesBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  /**
+   * Show only the case studies of one sector (sector pages)
+   */
+  filterSector?: ('all' | 'automotive' | 'agritech' | 'finance' | 'medical' | 'other') | null;
+  items: {
+    title: string;
+    sector: 'automotive' | 'agritech' | 'finance' | 'medical' | 'other';
+    /**
+     * Comma-separated, e.g. Linux, Yocto, ROS 2
+     */
+    technologies?: string | null;
+    problem?: string | null;
+    solution?: string | null;
+    result?: string | null;
+    id?: string | null;
+  }[];
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'caseStudies';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FormBlock".
+ */
+export interface FormBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  /**
+   * Internal: leads land in “Leads”. Mautic: plain HTML posted to your Mautic.
+   */
+  mode: 'internal' | 'mautic';
+  /**
+   * Identifier shown with each submission, e.g. contact, whitepaper-tsf
+   */
+  formName: string;
+  mauticFormId?: string | null;
+  /**
+   * The form id is appended to this URL
+   */
+  mauticActionUrl?: string | null;
+  fields: {
+    /**
+     * lowercase, a–z 0–9 _
+     */
+    name: string;
+    label: string;
+    type: 'text' | 'email' | 'tel' | 'textarea' | 'select' | 'checkbox';
+    placeholder?: string | null;
+    /**
+     * Comma-separated
+     */
+    options?: string | null;
+    width?: ('full' | 'half') | null;
+    required?: boolean | null;
+    id?: string | null;
+  }[];
+  submitLabel?: string | null;
+  successMessage?: string | null;
+  consentText?: string | null;
+  /**
+   * Optional: shown after a successful submit (gated downloads)
+   */
+  successLink?: {
+    type?: ('reference' | 'custom' | 'customPage') | null;
+    newTab?: boolean | null;
+    reference?:
+      | ({
+          relationTo: 'page';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null);
+    url?: string | null;
+    customPage?: ('blog' | 'search') | null;
+    label?: string | null;
+  };
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'form';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VideoEmbedBlock".
+ */
+export interface VideoEmbedBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  provider: 'youtube';
+  /**
+   * The id from the video URL, e.g. dQw4w9WgXcQ
+   */
+  videoId?: string | null;
+  /**
+   * Shown on the poster and used as the player's accessible name
+   */
+  title: string;
+  /**
+   * Optional. Without it a branded poster is generated — nothing loads from YouTube before play.
+   */
+  poster?: (number | null) | Media;
+  aspect?: ('16/9' | '4/3') | null;
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'videoEmbed';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "RawHtmlBlock".
  */
 export interface RawHtmlBlock {
@@ -1374,6 +1639,10 @@ export interface GlobalBlock {
     | CtaBandBlock
     | NewsletterBlock
     | StatsBlock
+    | PostsListBlock
+    | CaseStudiesBlock
+    | FormBlock
+    | VideoEmbedBlock
     | RawHtmlBlock
   )[];
   updatedAt: string;
@@ -1478,6 +1747,35 @@ export interface DocumentEmbedding {
   documentId: string;
   collection: 'page' | 'post';
   locale: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "form-submissions".
+ */
+export interface FormSubmission {
+  id: number;
+  formName: string;
+  email?: string | null;
+  page?: string | null;
+  referrer?: string | null;
+  utm?: {
+    source?: string | null;
+    medium?: string | null;
+    campaign?: string | null;
+    term?: string | null;
+    content?: string | null;
+  };
+  data?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2096,6 +2394,227 @@ export interface Preset {
         blockType: 'stats';
       }
     | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        source: 'latest' | 'category' | 'author';
+        category?: (number | null) | Category;
+        author?: (number | null) | Author;
+        limit: number;
+        layout: 'grid' | 'list' | 'featured';
+        /**
+         * Optional “View all” link under the list
+         */
+        viewAll?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'postsList';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        /**
+         * Show only the case studies of one sector (sector pages)
+         */
+        filterSector?: ('all' | 'automotive' | 'agritech' | 'finance' | 'medical' | 'other') | null;
+        items: {
+          title: string;
+          sector: 'automotive' | 'agritech' | 'finance' | 'medical' | 'other';
+          /**
+           * Comma-separated, e.g. Linux, Yocto, ROS 2
+           */
+          technologies?: string | null;
+          problem?: string | null;
+          solution?: string | null;
+          result?: string | null;
+          id?: string | null;
+        }[];
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'caseStudies';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        /**
+         * Internal: leads land in “Leads”. Mautic: plain HTML posted to your Mautic.
+         */
+        mode: 'internal' | 'mautic';
+        /**
+         * Identifier shown with each submission, e.g. contact, whitepaper-tsf
+         */
+        formName: string;
+        mauticFormId?: string | null;
+        /**
+         * The form id is appended to this URL
+         */
+        mauticActionUrl?: string | null;
+        fields: {
+          /**
+           * lowercase, a–z 0–9 _
+           */
+          name: string;
+          label: string;
+          type: 'text' | 'email' | 'tel' | 'textarea' | 'select' | 'checkbox';
+          placeholder?: string | null;
+          /**
+           * Comma-separated
+           */
+          options?: string | null;
+          width?: ('full' | 'half') | null;
+          required?: boolean | null;
+          id?: string | null;
+        }[];
+        submitLabel?: string | null;
+        successMessage?: string | null;
+        consentText?: string | null;
+        /**
+         * Optional: shown after a successful submit (gated downloads)
+         */
+        successLink?: {
+          type?: ('reference' | 'custom' | 'customPage') | null;
+          newTab?: boolean | null;
+          reference?:
+            | ({
+                relationTo: 'page';
+                value: number | Page;
+              } | null)
+            | ({
+                relationTo: 'posts';
+                value: number | Post;
+              } | null);
+          url?: string | null;
+          customPage?: ('blog' | 'search') | null;
+          label?: string | null;
+        };
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'form';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        provider: 'youtube';
+        /**
+         * The id from the video URL, e.g. dQw4w9WgXcQ
+         */
+        videoId?: string | null;
+        /**
+         * Shown on the poster and used as the player's accessible name
+         */
+        title: string;
+        /**
+         * Optional. Without it a branded poster is generated — nothing loads from YouTube before play.
+         */
+        poster?: (number | null) | Media;
+        aspect?: ('16/9' | '4/3') | null;
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'videoEmbed';
+      }
+    | {
         /**
          * Raw HTML rendered as-is on the page. Use for embeds and one-off markup.
          */
@@ -2559,6 +3078,10 @@ export interface PayloadLockedDocument {
         value: number | DocumentEmbedding;
       } | null)
     | ({
+        relationTo: 'form-submissions';
+        value: number | FormSubmission;
+      } | null)
+    | ({
         relationTo: 'redirects';
         value: number | Redirect;
       } | null)
@@ -2782,6 +3305,10 @@ export interface PageSelect<T extends boolean = true> {
         ctaBand?: T | CtaBandBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
         stats?: T | StatsBlockSelect<T>;
+        postsList?: T | PostsListBlockSelect<T>;
+        caseStudies?: T | CaseStudiesBlockSelect<T>;
+        form?: T | FormBlockSelect<T>;
+        videoEmbed?: T | VideoEmbedBlockSelect<T>;
         rawHtml?: T | RawHtmlBlockSelect<T>;
         globalSectionSlot?: T | GlobalSectionSlotBlockSelect<T>;
       };
@@ -3255,6 +3782,175 @@ export interface StatsBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PostsListBlock_select".
+ */
+export interface PostsListBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  source?: T;
+  category?: T;
+  author?: T;
+  limit?: T;
+  layout?: T;
+  viewAll?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CaseStudiesBlock_select".
+ */
+export interface CaseStudiesBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  filterSector?: T;
+  items?:
+    | T
+    | {
+        title?: T;
+        sector?: T;
+        technologies?: T;
+        problem?: T;
+        solution?: T;
+        result?: T;
+        id?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FormBlock_select".
+ */
+export interface FormBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  mode?: T;
+  formName?: T;
+  mauticFormId?: T;
+  mauticActionUrl?: T;
+  fields?:
+    | T
+    | {
+        name?: T;
+        label?: T;
+        type?: T;
+        placeholder?: T;
+        options?: T;
+        width?: T;
+        required?: T;
+        id?: T;
+      };
+  submitLabel?: T;
+  successMessage?: T;
+  consentText?: T;
+  successLink?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        customPage?: T;
+        label?: T;
+      };
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VideoEmbedBlock_select".
+ */
+export interface VideoEmbedBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  provider?: T;
+  videoId?: T;
+  title?: T;
+  poster?: T;
+  aspect?: T;
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "RawHtmlBlock_select".
  */
 export interface RawHtmlBlockSelect<T extends boolean = true> {
@@ -3306,6 +4002,9 @@ export interface CategoriesSelect<T extends boolean = true> {
 export interface AuthorsSelect<T extends boolean = true> {
   name?: T;
   avatar?: T;
+  bio?: T;
+  generateSlug?: T;
+  slug?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3318,6 +4017,7 @@ export interface PostsSelect<T extends boolean = true> {
   excerpt?: T;
   heroImage?: T;
   content?: T;
+  markdown?: T;
   faq?:
     | T
     | {
@@ -3359,6 +4059,9 @@ export interface PostsSelect<T extends boolean = true> {
       };
   generateSlug?: T;
   slug?: T;
+  contentFormat?: T;
+  sourceUrl?: T;
+  legacyPath?: T;
   publishedAt?: T;
   readingTime?: T;
   categories?: T;
@@ -3542,6 +4245,10 @@ export interface GlobalBlockSelect<T extends boolean = true> {
         ctaBand?: T | CtaBandBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
         stats?: T | StatsBlockSelect<T>;
+        postsList?: T | PostsListBlockSelect<T>;
+        caseStudies?: T | CaseStudiesBlockSelect<T>;
+        form?: T | FormBlockSelect<T>;
+        videoEmbed?: T | VideoEmbedBlockSelect<T>;
         rawHtml?: T | RawHtmlBlockSelect<T>;
       };
   updatedAt?: T;
@@ -3556,6 +4263,28 @@ export interface DocumentEmbeddingsSelect<T extends boolean = true> {
   documentId?: T;
   collection?: T;
   locale?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "form-submissions_select".
+ */
+export interface FormSubmissionsSelect<T extends boolean = true> {
+  formName?: T;
+  email?: T;
+  page?: T;
+  referrer?: T;
+  utm?:
+    | T
+    | {
+        source?: T;
+        medium?: T;
+        campaign?: T;
+        term?: T;
+        content?: T;
+      };
+  data?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3987,6 +4716,167 @@ export interface PresetsSelect<T extends boolean = true> {
                     label?: T;
                     id?: T;
                   };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        postsList?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              source?: T;
+              category?: T;
+              author?: T;
+              limit?: T;
+              layout?: T;
+              viewAll?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        caseStudies?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              filterSector?: T;
+              items?:
+                | T
+                | {
+                    title?: T;
+                    sector?: T;
+                    technologies?: T;
+                    problem?: T;
+                    solution?: T;
+                    result?: T;
+                    id?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        form?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              mode?: T;
+              formName?: T;
+              mauticFormId?: T;
+              mauticActionUrl?: T;
+              fields?:
+                | T
+                | {
+                    name?: T;
+                    label?: T;
+                    type?: T;
+                    placeholder?: T;
+                    options?: T;
+                    width?: T;
+                    required?: T;
+                    id?: T;
+                  };
+              submitLabel?: T;
+              successMessage?: T;
+              consentText?: T;
+              successLink?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    customPage?: T;
+                    label?: T;
+                  };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        videoEmbed?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              provider?: T;
+              videoId?: T;
+              title?: T;
+              poster?: T;
+              aspect?: T;
               section?:
                 | T
                 | {
@@ -4666,6 +5556,29 @@ export interface CtaBannerInline {
   id?: string | null;
   blockName?: string | null;
   blockType: 'ctaBannerInline';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VideoEmbedInline".
+ */
+export interface VideoEmbedInline {
+  provider: 'youtube';
+  /**
+   * The id from the video URL, e.g. dQw4w9WgXcQ
+   */
+  videoId?: string | null;
+  /**
+   * Shown on the poster and used as the player's accessible name
+   */
+  title: string;
+  /**
+   * Optional. Without it a branded poster is generated — nothing loads from YouTube before play.
+   */
+  poster?: (number | null) | Media;
+  aspect?: ('16/9' | '4/3') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'videoEmbedInline';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

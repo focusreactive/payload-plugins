@@ -2,6 +2,7 @@ import { heading, paragraph } from "@focus-reactive/payload-plugin-seo/content";
 import type { ContentExtractor, DocStore } from "@focus-reactive/payload-plugin-seo/content";
 
 import { I18N_CONFIG } from "@/lib/config/i18n";
+import { markdownToPlainText } from "@/lib/markdown/plainText";
 import {
   asArray,
   buildRefQueries,
@@ -11,6 +12,20 @@ import {
 } from "@/lib/contentExtraction";
 import type { LinkResolveCtx, LinkValue, Upload } from "@/lib/contentExtraction";
 import type { Post } from "@/payload-types";
+
+/** Markdown posts: headings become heading nodes, every other block a paragraph (SEO analysis). */
+function markdownToContent(markdown: string | null | undefined) {
+  return (markdown ?? "")
+    .split(/\n{2,}/u)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const match = /^(#{1,6})\s+(.*)$/u.exec(block);
+      return match
+        ? heading(Math.min(6, match[1]!.length) as 1 | 2 | 3 | 4 | 5 | 6, match[2])
+        : paragraph(markdownToPlainText(block));
+    });
+}
 
 const extractPostContent: ContentExtractor = async (values, ctx, { resolveDocs, helpers }) => {
   const post = values as Partial<Post>;
@@ -46,7 +61,9 @@ const extractPostContent: ContentExtractor = async (values, ctx, { resolveDocs, 
     ...authorNodes,
     paragraph(post.excerpt),
     uploadImage(post.heroImage as Upload, docs),
-    ...richTextToContent(post.content, linkCtx),
+    ...(post.contentFormat === "markdown"
+      ? markdownToContent(post.markdown)
+      : richTextToContent(post.content, linkCtx)),
     heading(2, faq?.heading),
     ...asArray<{ question?: string | null; answer?: unknown }>(faq?.items).flatMap((i) => [
       heading(3, i.question),

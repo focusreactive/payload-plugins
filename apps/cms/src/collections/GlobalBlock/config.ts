@@ -5,11 +5,13 @@ import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 
 import { preventDeleteIfReferenced } from "./hooks/preventDeleteIfReferenced";
+import { denyPublishForAuthors } from "@/lib/hooks/denyPublishForAuthors";
 
 export const GlobalBlock: CollectionConfig<"globalBlock"> = {
   access: {
     create: or(superAdmin, user, author),
-    delete: or(superAdmin, user, author),
+    // Only administrators delete content (§5.7).
+    delete: superAdmin,
     read: anyone,
     update: or(superAdmin, user, author),
   },
@@ -54,6 +56,7 @@ export const GlobalBlock: CollectionConfig<"globalBlock"> = {
     },
   ],
   hooks: {
+    beforeChange: [denyPublishForAuthors],
     beforeDelete: [preventDeleteIfReferenced],
   },
   labels: {

@@ -8,7 +8,8 @@ import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 export const Categories: CollectionConfig<"categories"> = {
   access: {
     create: or(superAdmin, user, author),
-    delete: or(superAdmin, user, author),
+    // Only administrators delete content (§5.7).
+    delete: superAdmin,
     read: anyone,
     update: or(superAdmin, user, author),
   },

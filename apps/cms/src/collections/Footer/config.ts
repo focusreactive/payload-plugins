@@ -7,11 +7,13 @@ import { getDefaultMediaId } from "@/dal/getDefaultMediaId";
 import { link } from "@/lib/fields/link";
 
 import { revalidateResourcesUsingFooter } from "./hooks/revalidateResourcesUsingFooter";
+import { denyPublishForAuthors } from "@/lib/hooks/denyPublishForAuthors";
 
 export const Footer: CollectionConfig<"footer"> = {
   access: {
     create: or(superAdmin, user),
-    delete: or(superAdmin, user),
+    // Only administrators delete content (§5.7).
+    delete: superAdmin,
     read: anyone,
     update: or(superAdmin, user),
   },
@@ -242,6 +244,7 @@ export const Footer: CollectionConfig<"footer"> = {
   ],
   hooks: {
     afterChange: [revalidateResourcesUsingFooter],
+    beforeChange: [denyPublishForAuthors],
   },
   labels: {
     plural: {

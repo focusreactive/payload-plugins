@@ -13,6 +13,8 @@ export interface GetPostsOptions {
   overrideAccess?: boolean;
   locale?: Locale;
   category?: string;
+  /** Author slug. */
+  author?: string;
 }
 
 async function getPostsQuery(
@@ -20,7 +22,8 @@ async function getPostsQuery(
   page: number,
   limit: number,
   locale: Locale,
-  category: string | undefined
+  category: string | undefined,
+  author: string | undefined
 ) {
   return await payload.find({
     collection: BLOG_CONFIG.collection,
@@ -49,6 +52,9 @@ async function getPostsQuery(
       ...(category && {
         "categories.slug": { equals: category },
       }),
+      ...(author && {
+        "authors.slug": { equals: author },
+      }),
     },
   });
 }
@@ -59,11 +65,12 @@ const getPostsCached = cache(
     page: number,
     limit: number,
     locale: Locale,
-    category: string | undefined
+    category: string | undefined,
+    author: string | undefined
   ) =>
     scopedCache(
-      () => getPostsQuery(payload, page, limit, locale, category),
-      [page.toString(), limit.toString(), locale, category ?? ""],
+      () => getPostsQuery(payload, page, limit, locale, category, author),
+      [page.toString(), limit.toString(), locale, category ?? "", author ?? ""],
       {
         tags: [cacheTag({ locale, type: "postsList" })],
       }
@@ -71,9 +78,9 @@ const getPostsCached = cache(
 );
 
 export const getPosts = async (payload: Payload, options: GetPostsOptions) => {
-  const { page = 1, limit = BLOG_CONFIG.postsPerPage, locale, category } = options;
+  const { page = 1, limit = BLOG_CONFIG.postsPerPage, locale, category, author } = options;
 
   const resolvedLocale = await resolveLocale(locale);
 
-  return getPostsCached(payload, page, limit, resolvedLocale, category);
+  return getPostsCached(payload, page, limit, resolvedLocale, category, author);
 };

@@ -18,6 +18,7 @@ export const NewsletterBlockComponent: React.FC<NewsletterBlock> = ({
   return (
     <SectionContainer sectionData={{ ...section, id }}>
       <NewsletterSection
+        id={id}
         header={header}
         inputPlaceholder={inputPlaceholder}
         buttonLabel={buttonLabel}

@@ -1,20 +1,25 @@
 import React from "react";
 
 import { CardsGridBlockComponent } from "./CardsGrid/Component";
+import { CaseStudiesBlockComponent } from "./CaseStudies/Component";
 import { CarouselBlockComponent } from "./Carousel/Component";
 import { ChartBlockComponent } from "./Chart/Component";
 import { ContentBlockComponent } from "./Content/Component";
 import { CtaBandBlockComponent } from "./CtaBand/Component";
 import { FaqBlockComponent } from "./Faq/Component";
+import { FormBlockComponent } from "./Form/Component";
 import { HeroBlockComponent } from "./Hero/Component";
 import { LogosBlockComponent } from "./Logos/Component";
 import { NewsletterBlockComponent } from "./Newsletter/Component";
+import { PostsListBlockComponent } from "./PostsList/Component";
 import { RawHtmlBlockComponent } from "./RawHtml/Component";
 import { StatsBlockComponent } from "./Stats/Component";
 import { TestimonialsListBlockComponent } from "./TestimonialsList/Component";
+import { VideoEmbedBlockComponent } from "./VideoEmbed/Component";
 
 export const contentBlockComponents = {
   cardsGrid: CardsGridBlockComponent,
+  caseStudies: CaseStudiesBlockComponent,
   carousel: CarouselBlockComponent,
   chart: ChartBlockComponent,
   content: ContentBlockComponent,
@@ -22,10 +27,13 @@ export const contentBlockComponents = {
   newsletter: NewsletterBlockComponent,
   stats: StatsBlockComponent,
   faq: FaqBlockComponent,
+  form: FormBlockComponent,
   hero: HeroBlockComponent,
   logos: LogosBlockComponent,
+  postsList: PostsListBlockComponent,
   rawHtml: RawHtmlBlockComponent,
   testimonialsList: TestimonialsListBlockComponent,
+  videoEmbed: VideoEmbedBlockComponent,
 };
 
 export type ContentBlockType = keyof typeof contentBlockComponents;
