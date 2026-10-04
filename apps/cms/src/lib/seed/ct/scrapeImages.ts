@@ -6,7 +6,8 @@
  * selected posts on <client-domain>, extracts the images that sit inside the article body, downloads
  * them and writes a mapping the seed uses to put each image back after the right paragraph.
  *
- * Run from the repo root with Bun (no dependencies; uses Bun's built-in HTMLRewriter):
+ * Bun-only script (HTMLRewriter, Bun.sleep, import.meta.main) — excluded from `tsgo` in tsconfig.json;
+ * run it with Bun from the repo root (no dependencies):
  *
  *   bun run apps/cms/src/lib/seed/ct/scrapeImages.ts --dump apps/cms/.local/ct/content-dump.md --out apps/cms/.local/ct
  *
@@ -235,8 +236,8 @@ async function main() {
   const limit = Number.parseInt(arg("limit", "0")!, 10);
 
   const selection: { url: string }[] = selectionPath
-    ? JSON.parse(await readFile(selectionPath, "utf8"))
-    : selectPostsFromDump(await readFile(dumpPath, "utf8"), articles, has("all"));
+    ? JSON.parse(await readFile(selectionPath, "utf-8"))
+    : selectPostsFromDump(await readFile(dumpPath, "utf-8"), articles, has("all"));
   const posts = limit > 0 ? selection.slice(0, limit) : selection;
   console.log(`selected ${selection.length} posts (${selectionPath ? `from ${selectionPath}` : `rule: news + ${has("all") ? "all" : articles} newest articles from ${dumpPath}`})`);
 
@@ -254,7 +255,7 @@ async function main() {
     let httpStatus: number | null = null;
 
     if (fromHtml) {
-      html = await readFile(htmlPath, "utf8").catch(() => null);
+      html = await readFile(htmlPath, "utf-8").catch(() => null);
     } else {
       try {
         const res = await fetchWithRetry(post.url);

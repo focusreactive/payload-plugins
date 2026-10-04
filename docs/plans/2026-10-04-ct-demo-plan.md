@@ -36,9 +36,11 @@ verification & demo script → preview deploy (only after Maksim approves the pu
 
 ### 0.1 Before the implementing session starts (Maksim's checklist)
 
-The implementing agent usually runs in a **cloud sandbox**: no Docker daemon, no local Postgres,
-outbound network limited (the client's site is blocked; Google Fonts, npm, Neon and Vercel Blob
-work). Everything client-specific stays out of git, so it reaches the sandbox through one archive.
+The implementing agent usually runs in a **cloud sandbox**: no Docker daemon; **no raw TCP egress
+except HTTPS via a proxy, so a hosted Postgres on port 5432 (Neon) is unreachable from there** — the
+agent installs Postgres 16 + pgvector inside the sandbox instead (T1). Vercel Blob is reachable only
+if its host is allowed in the environment's Network access; the client archive can also be dropped
+into the session directly. Everything client-specific stays out of git.
 
 1. Locally, on this branch: put the dump at `apps/cms/.local/ct/content-dump.md` and the logo at
    `apps/cms/.local/ct/brand/logo.svg`; run the image scraper (see
@@ -47,10 +49,11 @@ work). Everything client-specific stays out of git, so it reaches the sandbox th
 2. Upload the archive to the Vercel Blob store (unguessable URL, deletable after the demo):
    `bunx vercel blob put apps/cms/.local/ct-local.zip --rw-token "$BLOB_READ_WRITE_TOKEN"`.
 3. Cloud environment variables for the session (environment menu → Edit): `CT_LOCAL_ARCHIVE_URL`
-   (the Blob URL), `DATABASE_URL` (a **dedicated Neon branch for development** — not the preview
-   branch Vercel creates), `PAYLOAD_SECRET`, `PREVIEW_SECRET`, `CRON_SECRET`,
-   `BLOB_READ_WRITE_TOKEN` (media must survive container recycling), optional `OPENAI_API_KEY`;
-   `NPM_TOKEN` is already there.
+   (the Blob URL), `PAYLOAD_SECRET`, `PREVIEW_SECRET`, `CRON_SECRET`, `BLOB_READ_WRITE_TOKEN`,
+   optional `OPENAI_API_KEY`; `NPM_TOKEN` is already there. A Neon `DATABASE_URL` is useful on a
+   laptop but **not** in the sandbox (port 5432 blocked) — the agent uses a local Postgres there.
+   Network access (same menu): allow `*.public.blob.vercel-storage.com` and `blob.vercel-storage.com`
+   so media uploads and the archive download work; otherwise drop the archive into the session.
 4. Deployment Protection on the `cms` Vercel project: the branch preview must open without a Vercel
    login (exception list / share link).
 5. Docker (T12) is written in the sandbox but **built and verified on Maksim's machine**.
@@ -1067,24 +1070,57 @@ adding admin components run `generate:importmap`. Commit scope is `cms`.
 
 **Files:** `apps/cms/.gitignore` (already ignores `.local/`, `public/ct/`, `.env.docker`, `.secrets/`), `apps/cms/.env` (local only)
 
-1. `git fetch origin && git checkout claude/busy-planck-k29mbr`.
-2. **Client sources** (git-ignored): if `CT_LOCAL_ARCHIVE_URL` is set (cloud sandbox),
-   `curl -fsSL "$CT_LOCAL_ARCHIVE_URL" -o /tmp/ct-local.zip && mkdir -p apps/cms/.local && unzip -oq /tmp/ct-local.zip -d apps/cms/.local/`
-   → expect `apps/cms/.local/ct/{content-dump.md,brand/logo.svg,images-map.json,images/}`. On a
-   laptop the folder is prepared by hand (§0.1). If `images-map.json` is missing, continue: posts
-   get generated covers (§5.2).
-3. **Database**: cloud sandbox → `DATABASE_URL` from the environment (dedicated Neon dev branch).
-   Laptop → `cd apps/dev && docker compose up -d postgres` gives `postgres://payload:payload@127.0.0.1:5434/payload`
-   (create a `ct` database on it), or a Neon branch.
-4. `cd apps/cms && cp .env.example .env` and fill `DATABASE_URL`, `PAYLOAD_SECRET`,
-   `NEXT_PUBLIC_SERVER_URL=http://localhost:3333`, `PREVIEW_SECRET`, `CRON_SECRET`,
-   `BLOB_READ_WRITE_TOKEN` (cloud: yes; laptop: optional → `public/media`); GA and OIDC empty;
-   `OPENAI_API_KEY` if available. Values already present as environment variables win over `.env`.
-5. Repo root: `bun install` (`NPM_TOKEN` for the private visual-editing plugin).
-6. `bun run payload migrate && bun run dev` → first admin at `/admin`; `/en` renders.
-7. Baseline `check-types` + `lint` green (note pre-existing warnings).
+**Cloud-sandbox facts (verified 2026-10-04 in the same environment):** outbound traffic is only
+HTTPS through a proxy; raw TCP to any port but 443 is blocked, so **Neon on port 5432 cannot be
+reached from the sandbox** — the environment's `DATABASE_URL` is for Maksim's machine and the
+preview, not for you. `apt-get` works (package managers are allowed). The Vercel Blob host may be
+blocked by the network policy (then `curl` returns 000/403); Maksim can allow
+`*.public.blob.vercel-storage.com` under the environment's Network access, or drop the archive into
+the session directly. Google Fonts, npm and GitHub are reachable.
 
-**Commit:** none unless something had to change (then `chore(cms): CT demo environment notes`).
+1. `git fetch origin && git checkout claude/busy-planck-k29mbr && git pull`.
+2. **Client sources** (git-ignored), in this order of preference:
+   a. Maksim uploaded the archive into the session → find it: `find /root/.claude/uploads -name 'ct-local*.zip'`.
+   b. Otherwise `curl -fsSL "$CT_LOCAL_ARCHIVE_URL" -o /tmp/ct-local.zip` (needs the Blob host allowed).
+   Then `mkdir -p apps/cms/.local && unzip -oq <zip> -d apps/cms/.local/` → expect
+   `apps/cms/.local/ct/{content-dump.md,brand/logo.svg,images-map.json,images/}`. On a laptop the
+   folder is prepared by hand (§0.1). If `images-map.json` is missing, continue: posts get generated
+   covers (§5.2).
+3. **Database — sandbox:** install Postgres 16 + pgvector locally (the schema needs the `vector`
+   extension for `document_embeddings`):
+   ```bash
+   sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq postgresql postgresql-16-pgvector
+   sudo pg_ctlcluster 16 main start
+   sudo su postgres -c "psql -c \"CREATE ROLE ct WITH LOGIN PASSWORD 'ct' SUPERUSER;\" -c \"CREATE DATABASE ct OWNER ct;\""
+   PGPASSWORD=ct psql -h 127.0.0.1 -U ct -d ct -c "CREATE EXTENSION IF NOT EXISTS vector;"
+   ```
+   (drop `sudo` when you are root). Use `DATABASE_URL=postgres://ct:ct@127.0.0.1:5432/ct` for
+   everything you run in the sandbox: put it in `apps/cms/.env` **and** export it in the shell before
+   each command (`export DATABASE_URL=postgres://ct:ct@127.0.0.1:5432/ct`), because the environment
+   variable with the Neon string otherwise wins over `.env`. The container is ephemeral: if it is
+   recycled, repeat this step and re-run the seed (it is idempotent).
+   **Database — laptop:** `cd apps/dev && docker compose up -d postgres` →
+   `postgres://payload:payload@127.0.0.1:5434/payload` (create a `ct` database on it), or a Neon branch.
+4. **Media storage in the sandbox:** if `curl -sS -o /dev/null -w '%{http_code}' https://blob.vercel-storage.com/`
+   is not 2xx/4xx (host blocked), uploads must go to `public/media`: do the T12 change now —
+   `vercelBlobStorage({ ..., enabled: Boolean(process.env.BLOB_READ_WRITE_TOKEN) && process.env.MEDIA_STORAGE !== "local" })`
+   in `lib/plugins/index.ts` — and set `MEDIA_STORAGE=local` in `.env` / the shell. With the host
+   allowed, leave Blob on (files land under the `dev/` prefix).
+5. `apps/cms/.env`: `DATABASE_URL` (sandbox value), `NEXT_PUBLIC_SERVER_URL=http://localhost:3333`,
+   `PAYLOAD_SECRET`, `PREVIEW_SECRET`, `CRON_SECRET` (any values; the environment's win if present),
+   `MEDIA_STORAGE` as decided, GA and OIDC empty, `OPENAI_API_KEY` if available.
+6. **Install:** a plain `bun install` fails in the sandbox because `apps/content-agent-demo` depends on a
+   private git repository. Use the filtered install: `bun install --filter './' --filter cms --filter './packages/*'`
+   (repo root; `NPM_TOKEN` for the private visual-editing plugin). Then **build the plugins first**,
+   Payload cannot load the config without their `dist/`: `bunx turbo run build --filter='./packages/*'`.
+7. `cd apps/cms && bun run payload migrate && bun run dev` → first admin at `/admin`; `/en` renders.
+8. Baseline `check-types` + `lint`: both have **pre-existing** findings on `main` (lint: a few errors
+   such as `no-throw-literal` in `collections/Users`, ~40 warnings). Record them; fix only what your
+   own changes touch. `src/lib/seed/ct/scrapeImages.ts` is Bun-only and excluded from `tsgo` in
+   `tsconfig.json`.
+
+**Commit:** `chore(cms): CT demo sandbox setup notes` — only if something tracked changed (the Blob
+`enabled` switch, for example).
 
 ### T2 — Brand tokens, fonts, base components, motifs
 
