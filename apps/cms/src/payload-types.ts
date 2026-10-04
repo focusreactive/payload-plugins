@@ -1442,6 +1442,26 @@ export interface Footer {
       }[]
     | null;
   /**
+   * Social profiles shown as icons in the footer
+   */
+  socialLinks?:
+    | {
+        platform: 'linkedin' | 'mastodon' | 'bluesky' | 'youtube';
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Certification chips, e.g. ISO 9001 with its certificate number
+   */
+  isoBadges?:
+    | {
+        label: string;
+        certificate?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
    * Copyright text shown at the bottom
    */
   copyrightText?: string | null;
@@ -3481,6 +3501,20 @@ export interface FooterSelect<T extends boolean = true> {
               customPage?: T;
               label?: T;
             };
+        id?: T;
+      };
+  socialLinks?:
+    | T
+    | {
+        platform?: T;
+        url?: T;
+        id?: T;
+      };
+  isoBadges?:
+    | T
+    | {
+        label?: T;
+        certificate?: T;
         id?: T;
       };
   copyrightText?: T;

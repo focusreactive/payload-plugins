@@ -10,15 +10,21 @@ interface DesktopNavProps {
   navItems: HeaderNavItem[];
 }
 
+// §6.6: 15px/500 grey-900, hover = 2px green-500 underline drawn with an inset shadow (as on the
+// live site), active = 3px.
 const itemLinkClassName =
-  "inline-flex items-center rounded-pill px-3.5 py-2 text-[0.95rem] font-medium text-muted-foreground transition-colors duration-150 hover:bg-surface-muted hover:text-foreground focus-visible:bg-surface-muted focus-visible:text-foreground focus-visible:outline-none";
+  "inline-flex min-h-11 items-center px-3 text-[0.9375rem] font-medium text-ct-grey-900 transition-[box-shadow,color] duration-150 hover:shadow-[inset_0_-2px_0_var(--color-ct-green-500)] focus-visible:shadow-[inset_0_-2px_0_var(--color-ct-green-500)]";
 
-const activeItemClassName = "font-bold text-foreground";
+const activeItemClassName = "shadow-[inset_0_-3px_0_var(--color-ct-green-500)] text-ct-dark-blue";
 
 export function DesktopNav({ navItems }: DesktopNavProps) {
   return (
-    <NavigationMenu.Root className="hidden items-center min-[860px]:flex" delayDuration={0}>
-      <NavigationMenu.List className="flex list-none items-center gap-1">
+    <NavigationMenu.Root
+      aria-label="Main"
+      className="relative hidden h-full items-center lg:flex"
+      delayDuration={0}
+    >
+      <NavigationMenu.List className="flex h-full list-none items-center gap-0.5">
         {navItems.map((item, index) => {
           if (item.kind === "link") {
             const newTabProps = item.newTab ? { rel: "noopener noreferrer", target: "_blank" } : {};
@@ -40,21 +46,21 @@ export function DesktopNav({ navItems }: DesktopNavProps) {
           }
 
           return (
-            <NavigationMenu.Item key={`${item.label}-${index}`} className="relative">
+            <NavigationMenu.Item key={`${item.label}-${index}`}>
               <NavigationMenu.Trigger
                 className={cn(
-                  "group",
+                  "group gap-1.5",
                   itemLinkClassName,
-                  "gap-1.5 data-[state=open]:bg-surface-muted data-[state=open]:text-foreground",
+                  "data-[state=open]:shadow-[inset_0_-2px_0_var(--color-ct-green-500)]",
                   item.active && activeItemClassName
                 )}
               >
                 {item.label}
-                <Chevron className="transition-transform duration-200 ease-out group-data-[state=open]:rotate-180 motion-reduce:transition-none" />
+                <Chevron className="text-ct-slate-blue transition-transform duration-200 ease-out group-data-[state=open]:rotate-180 motion-reduce:transition-none" />
               </NavigationMenu.Trigger>
               <NavigationMenu.Content
                 className={cn(
-                  "absolute left-0 top-full z-50 mt-3 rounded-lg border border-border bg-surface p-3.5 shadow-[0_30px_70px_-30px_rgba(10,19,20,0.42)]",
+                  "absolute left-1/2 top-full z-50 mt-3 -translate-x-1/2 rounded-lg border border-ct-grey-300 bg-ct-sand p-4 shadow-[0_24px_60px_-30px_rgba(18,72,83,0.45)]",
                   "data-[state=open]:animate-in data-[state=open]:fade-in data-[state=closed]:animate-out data-[state=closed]:fade-out motion-reduce:animate-none"
                 )}
               >

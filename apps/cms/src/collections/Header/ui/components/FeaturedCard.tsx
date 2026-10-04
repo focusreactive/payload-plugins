@@ -1,58 +1,50 @@
 import * as NavigationMenu from "@radix-ui/react-navigation-menu";
 import NextLink from "next/link";
 
-import { cn } from "@/components/utils";
-import { Eyebrow } from "@/components/Eyebrow";
+import { AbstractBackdrop } from "@/components/AbstractBackdrop";
 import type { HeaderFeatured } from "../types";
 
 interface FeaturedCardProps {
   featured: HeaderFeatured;
 }
 
+const cardClassName =
+  "group relative flex min-h-[220px] flex-col gap-2.5 overflow-hidden rounded-lg bg-ct-dark-blue p-5 text-ct-white";
+
 export function FeaturedCard({ featured }: FeaturedCardProps) {
   const { badge, title, description, link } = featured;
 
   const content = (
     <>
-      {badge && (
-        <Eyebrow tone="accent" prefix="dot" size="md" className="self-start">
-          <span aria-hidden className="size-1.5 rounded-pill bg-accent-foreground opacity-50" />
-          {badge}
-        </Eyebrow>
-      )}
+      <AbstractBackdrop tone="dark" intensity="subtle" />
+      {badge && <span className="relative text-eyebrow text-ct-electric-green">{badge}</span>}
       {title && (
-        <span className="mt-auto font-display text-[1.32rem] font-semibold leading-[1.08] tracking-[-0.01em]">
+        <span className="relative mt-auto text-[1.25rem] font-semibold leading-[1.2] text-ct-white">
           {title}
         </span>
       )}
       {description && (
-        <span className="text-[0.88rem] leading-[1.5] text-white/80">{description}</span>
+        <span className="relative text-[0.875rem] leading-[1.5] text-ct-grey-300">
+          {description}
+        </span>
       )}
       {link && (
-        <span className="inline-flex items-center gap-1.5 text-[0.85rem] font-semibold text-accent">
+        <span className="relative inline-flex items-center gap-1.5 text-[0.875rem] font-semibold text-ct-electric-green">
           {link.label}
-          <span aria-hidden>&rarr;</span>
+          <span aria-hidden className="transition-transform group-hover:translate-x-0.5">
+            →
+          </span>
         </span>
       )}
     </>
   );
-
-  const cardClassName =
-    "flex min-h-[196px] flex-col gap-[9px] rounded-md bg-gradient-to-br from-primary to-deep-900 p-5 text-white";
 
   if (link) {
     const newTabProps = link.newTab ? { rel: "noopener noreferrer", target: "_blank" } : {};
 
     return (
       <NavigationMenu.Link asChild>
-        <NextLink
-          href={link.href}
-          className={cn(
-            cardClassName,
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          )}
-          {...newTabProps}
-        >
+        <NextLink href={link.href} className={cardClassName} {...newTabProps}>
           {content}
         </NextLink>
       </NavigationMenu.Link>

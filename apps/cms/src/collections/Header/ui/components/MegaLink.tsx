@@ -16,21 +16,19 @@ export function MegaLink({ link }: MegaLinkProps) {
       <NextLink
         href={link.href}
         aria-current={link.active ? "page" : undefined}
-        className={cn(
-          "flex flex-col gap-[3px] rounded-sm px-[13px] py-[11px] transition-colors duration-150 hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:outline-none"
-        )}
+        className="group flex flex-col gap-1 rounded-md px-3 py-2.5 transition-colors duration-150 hover:bg-ct-white focus-visible:bg-ct-white"
         {...newTabProps}
       >
         <span
           className={cn(
-            "text-[0.92rem] font-semibold",
-            link.active ? "text-primary" : "text-foreground"
+            "text-[0.9375rem] font-semibold underline-offset-[3px] group-hover:underline",
+            link.active ? "text-ct-racing-green" : "text-ct-dark-blue"
           )}
         >
           {link.label}
         </span>
         {link.description && (
-          <span className="text-[0.8rem] leading-[1.4] text-muted-foreground">
+          <span className="text-[0.8125rem] leading-[1.45] text-ct-grey-700">
             {link.description}
           </span>
         )}

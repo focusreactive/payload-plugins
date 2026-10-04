@@ -24,12 +24,12 @@ export function Header({ brand, navItems, actions, className }: IHeaderProps) {
   return (
     <header
       className={cn(
-        "sticky left-0 top-0 z-[100] bg-background/[0.82] backdrop-blur-[14px] backdrop-saturate-[1.4] transition-[background-color,border-color] duration-200 ease-out motion-reduce:transition-none",
+        "sticky left-0 top-0 z-[100] bg-ct-white/[0.92] backdrop-blur-[12px] transition-[border-color] duration-200 ease-out motion-reduce:transition-none",
         scrolled ? "border-b border-border" : "border-b border-transparent",
         className
       )}
     >
-      <div className="mx-auto flex max-w-containerMaxW items-center justify-between gap-6 px-containerBase py-[15px]">
+      <div className="mx-auto flex h-16 max-w-containerMaxW items-center justify-between gap-6 px-containerBase lg:h-[72px]">
         <Brand brand={brand} />
         <DesktopNav navItems={navItems} />
         <div className="flex items-center gap-2.5">

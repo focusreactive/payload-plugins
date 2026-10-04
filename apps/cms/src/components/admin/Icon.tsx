@@ -4,6 +4,7 @@ import React from "react";
 import { Media } from "@/components/media";
 import { getAdminSettings } from "@/dal/getAdminSettings";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
+import { brandAsset } from "@/lib/utils/brandAsset";
 import type { Media as MediaType } from "@/payload-types";
 
 export default async function Icon() {
@@ -18,5 +19,5 @@ export default async function Icon() {
     );
   }
 
-  return <Image src="/favicon.svg" alt="Icon" width={32} height={32} />;
+  return <Image src={brandAsset("mark.svg", "/favicon.svg")} alt="Icon" width={32} height={32} />;
 }

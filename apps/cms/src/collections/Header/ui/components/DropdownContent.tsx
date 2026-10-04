@@ -6,26 +6,29 @@ interface DropdownContentProps {
   item: HeaderNavDropdownItem;
 }
 
+/** Mega-menu panel (§6.6): eyebrow + links in two columns, plus the dark-blue featured card. */
 export function DropdownContent({ item }: DropdownContentProps) {
-  if (item.layout === "feature") {
-    return (
-      <div className="grid w-[540px] max-w-[min(540px,calc(100vw-48px))] grid-cols-2 gap-2">
-        {item.featured && <FeaturedCard featured={item.featured} />}
-
-        <div className="flex flex-col gap-0.5">
-          {item.links.map((link, index) => (
-            <MegaLink key={`${link.label}-${index}`} link={link} />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const hasFeatured = item.layout === "feature" && item.featured;
 
   return (
-    <div className="grid w-[560px] max-w-[min(560px,calc(100vw-48px))] grid-cols-2 gap-2">
-      {item.links.map((link, index) => (
-        <MegaLink key={`${link.label}-${index}`} link={link} />
-      ))}
+    <div
+      className={
+        hasFeatured
+          ? "grid w-[760px] max-w-[calc(100vw-48px)] grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-4"
+          : "w-[560px] max-w-[calc(100vw-48px)]"
+      }
+    >
+      <div>
+        <p className="px-3 pb-2 pt-1 text-eyebrow text-ct-grey-700">{item.label}</p>
+        <ul className="grid grid-cols-2 gap-x-2 gap-y-0.5">
+          {item.links.map((link, index) => (
+            <li key={`${link.label}-${index}`}>
+              <MegaLink link={link} />
+            </li>
+          ))}
+        </ul>
+      </div>
+      {hasFeatured && item.featured && <FeaturedCard featured={item.featured} />}
     </div>
   );
 }

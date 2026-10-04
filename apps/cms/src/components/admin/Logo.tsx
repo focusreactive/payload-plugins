@@ -4,6 +4,7 @@ import React from "react";
 import { Media } from "@/components/media";
 import { getAdminSettings } from "@/dal/getAdminSettings";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
+import { brandAsset } from "@/lib/utils/brandAsset";
 import type { Media as MediaType } from "@/payload-types";
 
 export default async function Logo() {
@@ -25,7 +26,7 @@ export default async function Logo() {
 
   return (
     <div style={{ padding: "20px 0" }}>
-      <Image src="/logo.svg" alt="Logo" width={150} height={40} />
+      <Image src={brandAsset("logo.svg", "/logo.svg")} alt="Logo" width={150} height={32} />
     </div>
   );
 }

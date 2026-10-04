@@ -154,6 +154,79 @@ export const Footer: CollectionConfig<"footer"> = {
     {
       admin: {
         description: {
+          en: "Social profiles shown as icons in the footer",
+          es: "Perfiles sociales mostrados como iconos en el pie",
+        },
+        initCollapsed: true,
+      },
+      fields: [
+        {
+          type: "row",
+          fields: [
+            {
+              admin: { width: "35%" },
+              label: { en: "Platform", es: "Plataforma" },
+              name: "platform",
+              options: [
+                { label: "LinkedIn", value: "linkedin" },
+                { label: "Mastodon", value: "mastodon" },
+                { label: "Bluesky", value: "bluesky" },
+                { label: "YouTube", value: "youtube" },
+              ],
+              required: true,
+              type: "select",
+            },
+            {
+              admin: { width: "65%" },
+              label: { en: "URL", es: "URL" },
+              name: "url",
+              required: true,
+              type: "text",
+            },
+          ],
+        },
+      ],
+      label: { en: "Social links", es: "Redes sociales" },
+      maxRows: 6,
+      name: "socialLinks",
+      type: "array",
+    },
+    {
+      admin: {
+        description: {
+          en: "Certification chips, e.g. ISO 9001 with its certificate number",
+          es: "Certificaciones, p. ej. ISO 9001 con su número de certificado",
+        },
+        initCollapsed: true,
+      },
+      fields: [
+        {
+          type: "row",
+          fields: [
+            {
+              admin: { width: "40%" },
+              label: { en: "Label", es: "Etiqueta" },
+              name: "label",
+              required: true,
+              type: "text",
+            },
+            {
+              admin: { width: "60%" },
+              label: { en: "Certificate number", es: "Número de certificado" },
+              name: "certificate",
+              type: "text",
+            },
+          ],
+        },
+      ],
+      label: { en: "Certifications", es: "Certificaciones" },
+      maxRows: 4,
+      name: "isoBadges",
+      type: "array",
+    },
+    {
+      admin: {
+        description: {
           en: "Copyright text shown at the bottom",
           es: "Texto de copyright al pie",
         },

@@ -1,7 +1,7 @@
 import NextLink from "next/link";
 
 import { Button } from "@/components/button";
-import { ButtonSize, ButtonVariant } from "@/components/button/types";
+import { ButtonSize } from "@/components/button/types";
 import type { HeaderAction } from "../types";
 
 interface HeaderActionsProps {
@@ -18,12 +18,11 @@ export function HeaderActions({ actions }: HeaderActionsProps) {
           <Button
             key={`${action.label}-${index}`}
             asChild
-            size={ButtonSize.Small}
+            size={ButtonSize.Base}
             variant={action.variant}
           >
             <NextLink href={action.href} {...newTabProps}>
               {action.label}
-              {action.variant === ButtonVariant.Accent && <span aria-hidden>&rarr;</span>}
             </NextLink>
           </Button>
         );
