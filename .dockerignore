@@ -1,0 +1,20 @@
+# Build context for apps/cms/Dockerfile is the monorepo root. Keep it small.
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+**/.git
+**/.env*
+!**/.env.docker.example
+**/.local/**
+!apps/cms/.local/site/**
+**/coverage
+**/playwright-report
+**/test-results
+docs
+.github
+.claude
+.agents
+apps/dev
+apps/content-agent-demo
+apps/multi-tenancy-demo

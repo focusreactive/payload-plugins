@@ -1,0 +1,127 @@
+# CT website — local / on-premise stack.
+#
+#   docker compose up -d                          cms + postgres + edge proxy + cron  → http://localhost:8080
+#   docker compose --profile sso up -d            + Keycloak (admin: http://localhost:8081, admin/admin)
+#   docker compose --profile snapshot run --rm snapshot    mirror the running site into .local/site
+#   docker compose --profile site up -d site      serve that snapshot with the `site` image → http://localhost:8082
+#
+# Build secrets (never committed): .secrets/npm_token, .secrets/database_url — see .env.docker.example.
+# The CMS image is built from the monorepo root; compose sets that context below.
+
+name: ct
+
+x-limits-small: &limits-small
+  deploy: { resources: { limits: { cpus: "0.25", memory: 128M } } }
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ct
+      POSTGRES_PASSWORD: ct
+      POSTGRES_DB: ct
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"            # for running the seed from the host
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ct -d ct"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    deploy: { resources: { limits: { cpus: "1", memory: 1G } } }
+    restart: unless-stopped
+
+  cms:
+    build:
+      context: ../..                       # monorepo root
+      dockerfile: apps/cms/Dockerfile
+      target: cms
+      args:
+        BASE_IMAGE: ${BASE_IMAGE:-debian:trixie-slim}
+      secrets: [npm_token, database_url]
+    env_file: .env.docker
+    environment:
+      PORT: "3000"
+    volumes:
+      - media:/app/apps/cms/public/media   # uploads when Blob storage is not configured
+    expose: ["3000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    deploy: { resources: { limits: { cpus: "2", memory: 2G }, reservations: { memory: 512M } } }
+    restart: unless-stopped
+
+  edge:
+    image: ${BASE_IMAGE:-debian:trixie-slim}
+    command: ["sh", "-c", "apt-get update >/dev/null && apt-get install -y --no-install-recommends nginx-light >/dev/null && exec nginx -c /etc/nginx/edge.conf -g 'daemon off;'"]
+    volumes:
+      - ./docker/nginx-edge.conf:/etc/nginx/edge.conf:ro
+      - media:/srv/media:ro
+    ports:
+      - "8080:8080"
+    depends_on:
+      cms: { condition: service_healthy }
+    <<: *limits-small
+    restart: unless-stopped
+
+  cron:
+    image: curlimages/curl:8.11.1
+    command: ["sh", "/cron.sh"]
+    environment:
+      CMS_URL: http://cms:3000
+      CRON_SECRET: ${CRON_SECRET:?set CRON_SECRET in .env.docker}
+    volumes:
+      - ./docker/cron.sh:/cron.sh:ro
+    depends_on:
+      cms: { condition: service_healthy }
+    <<: *limits-small
+    restart: unless-stopped
+
+  keycloak:
+    profiles: ["sso"]
+    image: quay.io/keycloak/keycloak:26.0
+    command: ["start-dev", "--import-realm", "--http-port=8081"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: http://localhost:8081
+    volumes:
+      - ./docker/keycloak:/opt/keycloak/data/import:ro   # realm-ct.json (users, groups, client)
+    ports:
+      - "8081:8081"
+    deploy: { resources: { limits: { cpus: "1", memory: 1500M } } }
+
+  snapshot:
+    profiles: ["snapshot"]
+    image: ${BASE_IMAGE:-debian:trixie-slim}
+    command: ["sh", "/snapshot.sh"]
+    environment:
+      CMS_URL: http://cms:3000
+      OUT: /out
+    volumes:
+      - ./docker/snapshot.sh:/snapshot.sh:ro
+      - ./.local/site:/out
+    depends_on:
+      cms: { condition: service_healthy }
+
+  site:
+    profiles: ["site"]
+    build:
+      context: ../..
+      dockerfile: apps/cms/Dockerfile
+      target: site
+      args:
+        BASE_IMAGE: ${BASE_IMAGE:-debian:trixie-slim}
+    ports:
+      - "8082:8080"
+    <<: *limits-small
+
+secrets:
+  npm_token:
+    file: ./.secrets/npm_token
+  database_url:
+    file: ./.secrets/database_url
+
+volumes:
+  pgdata:
+  media:

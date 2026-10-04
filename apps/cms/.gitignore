@@ -54,3 +54,12 @@ public/media/*
 !public/media/.gitkeep
 
 generated/
+# Docker (CT demo)
+.env.docker
+.secrets/
+
+# CT demo brand assets are copied in by the seed from .local/ct/brand (client assets stay out of git)
+/public/ct/
+
+# local demo sources (content dump, brand assets, scraped images) — never committed
+.local/

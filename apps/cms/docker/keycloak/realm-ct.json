@@ -1,0 +1,49 @@
+{
+  "realm": "ct",
+  "enabled": true,
+  "displayName": "CT (demo)",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "sslRequired": "none",
+  "groups": [
+    { "name": "cms-admins", "path": "/cms-admins" },
+    { "name": "cms-editors", "path": "/cms-editors" },
+    { "name": "cms-authors", "path": "/cms-authors" }
+  ],
+  "users": [
+    { "username": "admin.demo", "email": "admin@ct.demo", "firstName": "Ada", "lastName": "Admin", "enabled": true, "emailVerified": true, "groups": ["/cms-admins"],
+      "credentials": [{ "type": "password", "value": "ct-demo", "temporary": false }] },
+    { "username": "editor.demo", "email": "editor@ct.demo", "firstName": "Eli", "lastName": "Editor", "enabled": true, "emailVerified": true, "groups": ["/cms-editors"],
+      "credentials": [{ "type": "password", "value": "ct-demo", "temporary": false }] },
+    { "username": "author.demo", "email": "author@ct.demo", "firstName": "Avery", "lastName": "Author", "enabled": true, "emailVerified": true, "groups": ["/cms-authors"],
+      "credentials": [{ "type": "password", "value": "ct-demo", "temporary": false }] }
+  ],
+  "clients": [
+    {
+      "clientId": "ct-cms",
+      "name": "CT CMS",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "ct-cms-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost:8080/api/auth/oidc/callback", "http://localhost:3333/api/auth/oidc/callback"],
+      "webOrigins": ["http://localhost:8080", "http://localhost:3333"],
+      "attributes": { "pkce.code.challenge.method": "S256", "post.logout.redirect.uris": "+" },
+      "defaultClientScopes": ["openid", "profile", "email", "groups"],
+      "protocolMappers": [
+        { "name": "groups", "protocol": "openid-connect", "protocolMapper": "oidc-group-membership-mapper", "consentRequired": false,
+          "config": { "full.path": "false", "claim.name": "groups", "id.token.claim": "true", "access.token.claim": "true", "userinfo.token.claim": "true" } }
+      ]
+    }
+  ],
+  "clientScopes": [
+    { "name": "groups", "protocol": "openid-connect",
+      "attributes": { "include.in.token.scope": "true", "display.on.consent.screen": "false" },
+      "protocolMappers": [
+        { "name": "groups", "protocol": "openid-connect", "protocolMapper": "oidc-group-membership-mapper", "consentRequired": false,
+          "config": { "full.path": "false", "claim.name": "groups", "id.token.claim": "true", "access.token.claim": "true", "userinfo.token.claim": "true" } }
+      ] }
+  ]
+}
