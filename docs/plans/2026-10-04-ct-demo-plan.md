@@ -1280,6 +1280,7 @@ create the demo admin; run the e2e spec against the preview URL; paste URL + dem
 - [ ] `/robots.txt` allows AI agents; `/llms.txt` lists every seeded article; sitemap has author pages + hreflang.
 - [ ] axe: 0 serious/critical on 7 pages × 2 widths; keyboard pass.
 - [ ] `docker compose up` on a clean machine works; image built on `debian:trixie-slim`; runs with `--network none`.
+- [ ] The branch preview on Vercel builds with the unchanged `vercel.json` (migrations applied on the Neon preview branch) and opens without a Vercel login.
 - [ ] Brand: §6.2 tokens only; §6.12 don'ts respected; header/footer sequence matches §6.6.
 - [ ] Raw dump, parsed JSON, covers, media volume, screenshots **not** in git.
 
