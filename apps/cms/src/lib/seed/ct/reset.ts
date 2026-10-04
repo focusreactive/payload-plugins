@@ -1,5 +1,6 @@
 import type { SeedContext } from "./context";
 import { CATEGORIES } from "./data/categories";
+import { IA } from "./data/ia";
 import { log } from "./log";
 import { slugify } from "./text";
 
@@ -7,7 +8,7 @@ const DEMO_EMAILS = ["admin@ct.demo", "editor@ct.demo", "author@ct.demo"];
 
 /**
  * `reset`: deletes what the seed owns — imported posts (they carry a sourceUrl), the authors of the
- * dump, the seed's categories and the demo editor/author accounts (the admin account is kept so the
+ * dump, the seed's categories, the IA pages and the demo editor/author accounts (the admin account is kept so the
  * session running the seed is not locked out). Media stay: they are matched by file name and reused.
  */
 export async function resetSeed(ctx: SeedContext): Promise<void> {
@@ -34,6 +35,13 @@ export async function resetSeed(ctx: SeedContext): Promise<void> {
     where: { slug: { in: CATEGORIES.map((category) => category.slug) } },
   });
   log.info(`deleted ${categories.docs.length} categories`);
+
+  const pages = await payload.delete({
+    collection: "page",
+    context,
+    where: { slug: { in: IA.map((page) => page.slug) } },
+  });
+  log.info(`deleted ${pages.docs.length} pages`);
 
   const users = await payload.delete({
     collection: "users",

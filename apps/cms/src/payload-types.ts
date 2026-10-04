@@ -796,7 +796,10 @@ export interface ContentBlock {
   heading?: string | null;
   description?: string | null;
   layout: 'image-text' | 'text-image';
-  image: number | Media;
+  /**
+   * Optional. Without an image the section is a single prose column with the heading in a side rail.
+   */
+  image?: (number | null) | Media;
   content: {
     root: {
       type: string;
@@ -1129,10 +1132,10 @@ export interface LogosBlock {
   label?: string | null;
   alignVariant?: ('left' | 'center' | 'right') | null;
   items: {
-    image: {
-      image: number | Media;
+    image?: {
+      image?: (number | null) | Media;
     };
-    link: {
+    link?: {
       type?: ('reference' | 'custom' | 'customPage') | null;
       newTab?: boolean | null;
       reference?:
@@ -1146,7 +1149,7 @@ export interface LogosBlock {
           } | null);
       url?: string | null;
       customPage?: ('blog' | 'search') | null;
-      label: string;
+      label?: string | null;
     };
     id?: string | null;
   }[];
@@ -1908,7 +1911,10 @@ export interface Preset {
         heading?: string | null;
         description?: string | null;
         layout: 'image-text' | 'text-image';
-        image: number | Media;
+        /**
+         * Optional. Without an image the section is a single prose column with the heading in a side rail.
+         */
+        image?: (number | null) | Media;
         content: {
           root: {
             type: string;
@@ -2206,10 +2212,10 @@ export interface Preset {
         label?: string | null;
         alignVariant?: ('left' | 'center' | 'right') | null;
         items: {
-          image: {
-            image: number | Media;
+          image?: {
+            image?: (number | null) | Media;
           };
-          link: {
+          link?: {
             type?: ('reference' | 'custom' | 'customPage') | null;
             newTab?: boolean | null;
             reference?:
@@ -2223,7 +2229,7 @@ export interface Preset {
                 } | null);
             url?: string | null;
             customPage?: ('blog' | 'search') | null;
-            label: string;
+            label?: string | null;
           };
           id?: string | null;
         }[];
@@ -5484,10 +5490,10 @@ export interface LogosInlineBlock {
   label?: string | null;
   alignVariant?: ('left' | 'center' | 'right') | null;
   items: {
-    image: {
-      image: number | Media;
+    image?: {
+      image?: (number | null) | Media;
     };
-    link: {
+    link?: {
       type?: ('reference' | 'custom' | 'customPage') | null;
       newTab?: boolean | null;
       reference?:
@@ -5501,7 +5507,7 @@ export interface LogosInlineBlock {
           } | null);
       url?: string | null;
       customPage?: ('blog' | 'search') | null;
-      label: string;
+      label?: string | null;
     };
     id?: string | null;
   }[];

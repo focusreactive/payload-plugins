@@ -12,24 +12,23 @@ export type SeedLink =
 
 const pageIds = new Map<string, number | null>();
 
-/** Id of the page at `path` ("/" = home), looked up by its breadcrumb URL. */
+/** Id of the page at `path` ("/" = home): matched by slug, confirmed by its last breadcrumb. */
 export async function pageIdByPath(ctx: SeedContext, path: string): Promise<number | null> {
   if (pageIds.has(path)) {
     return pageIds.get(path) ?? null;
   }
-  const result =
-    path === "/"
-      ? await ctx.payload.find({
-          collection: "page",
-          limit: 1,
-          where: { slug: { equals: "home" } },
-        })
-      : await ctx.payload.find({
-          collection: "page",
-          limit: 1,
-          where: { "breadcrumbs.url": { equals: path } },
-        });
-  const id = result.docs[0]?.id ?? null;
+  const slug = path === "/" ? "home" : (path.split("/").filter(Boolean).at(-1) ?? "home");
+  const result = await ctx.payload.find({
+    collection: "page",
+    depth: 0,
+    limit: 20,
+    where: { slug: { equals: slug } },
+  });
+  // A breadcrumb trail lists every ancestor's URL, so only the last crumb identifies the page.
+  const match = result.docs.find((doc) =>
+    path === "/" ? doc.slug === "home" : doc.breadcrumbs?.at(-1)?.url === path
+  );
+  const id = match?.id ?? null;
   pageIds.set(path, id);
   return id;
 }

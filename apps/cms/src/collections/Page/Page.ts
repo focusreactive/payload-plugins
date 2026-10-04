@@ -24,6 +24,14 @@ export const Page: CollectionConfig<"page"> = {
     read: anyone,
     update: or(superAdmin, user, author),
   },
+  // Pages referenced from links (cards, menus, redirects) need only their path, not their blocks;
+  // full population made pages linking to siblings exceed Next's 2 MB data-cache limit.
+  defaultPopulate: {
+    breadcrumbs: true,
+    parent: true,
+    slug: true,
+    title: true,
+  },
   admin: {
     components: {
       edit: {

@@ -1,7 +1,8 @@
 import { emptyResult } from "./context";
 import type { SeedContext, SeedStep, StepResult } from "./context";
 import { brandTitle, IA } from "./data/ia";
-import { pageLink, urlLink } from "./links";
+import { pageIdByPath, pageLink, urlLink } from "./links";
+import { CTA_TITLE, FOOTER_NAME, HEADER_NAME } from "./seedPages";
 
 /** Upsert a document of `collection` by its `name`/`title` field. */
 async function upsertByName(
@@ -40,10 +41,6 @@ async function upsertByName(
 function childrenOf(parent: string) {
   return IA.filter((page) => page.parent === parent);
 }
-
-export const HEADER_NAME = "CT header";
-export const FOOTER_NAME = "CT footer";
-export const CTA_TITLE = "Contact CTA";
 
 export const seedChrome: SeedStep = async (ctx) => {
   const result = emptyResult();
@@ -254,6 +251,23 @@ export const seedChrome: SeedStep = async (ctx) => {
     },
     result
   );
+
+  // Pages created before the chrome existed get the CT header and footer now.
+  for (const page of IA) {
+    const id = await pageIdByPath(ctx, page.path);
+    if (!id) {
+      continue;
+    }
+    const doc = await ctx.payload.findByID({ collection: "page", depth: 0, id });
+    if (doc.header !== header || doc.footer !== footer) {
+      await ctx.payload.update({
+        collection: "page",
+        context: ctx.writeContext,
+        data: { footer, header },
+        id,
+      });
+    }
+  }
 
   await ctx.payload.updateGlobal({
     context: ctx.writeContext,

@@ -9,7 +9,9 @@ export enum AlignVariant {
 
 export interface ILogoItem {
   link?: LinkProps;
-  image: PreparedMedia;
+  /** Null → the item renders as a text wordmark (`name`). */
+  image: PreparedMedia | null;
+  name?: string | null;
 }
 
 export interface ILogosProps {

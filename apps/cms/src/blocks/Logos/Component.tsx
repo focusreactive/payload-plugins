@@ -19,7 +19,11 @@ export const LogosBlockComponent: React.FC<LogosBlock> = async ({
   const locale = await resolveLocale();
 
   const logoItems: ILogoItem[] = (items ?? []).map(({ image, link }) => {
-    const { image: rawImage } = image;
+    const rawImage = image?.image;
+    const resolvedLink = link ? prepareLinkProps(link, locale) : undefined;
+    if (!rawImage) {
+      return { image: null, link: resolvedLink, name: link?.label };
+    }
     const width = typeof rawImage === "number" ? 90 : (rawImage.width ?? 90);
     const height = typeof rawImage === "number" ? 30 : (rawImage.height ?? 30);
 
@@ -30,7 +34,8 @@ export const LogosBlockComponent: React.FC<LogosBlock> = async ({
         width,
         height,
       }),
-      link: link ? prepareLinkProps(link, locale) : undefined,
+      link: resolvedLink,
+      name: link?.label,
     };
   });
 

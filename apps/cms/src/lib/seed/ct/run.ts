@@ -6,6 +6,7 @@
  *   limit-posts=N         seed only the first N selected posts (dry runs)
  *   all-posts             all 191 posts instead of the 40-post selection
  *   reset                 delete what this seed owns before seeding
+ *   rebuild-pages         re-run the page recipes over existing pages
  *
  * (`payload run` swallows `--flags`, hence `name=value`.)
  *
@@ -63,6 +64,7 @@ function readFlags(): SeedFlags {
     limitPosts: limit ? Number.parseInt(limit, 10) : null,
     localDir,
     only: only ?? STEP_ORDER,
+    rebuildPages: flag("rebuild-pages") === "true",
     reset: flag("reset") === "true",
     source: path.resolve(process.cwd(), flag("source") ?? path.join(localDir, "content-dump.md")),
   };

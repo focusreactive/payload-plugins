@@ -44,9 +44,14 @@ const fields: Field[] = [
       en: "Image",
       es: "Imagen",
     },
+    admin: {
+      description: {
+        en: "Optional. Without an image the section is a single prose column with the heading in a side rail.",
+        es: "Opcional. Sin imagen la sección es una columna de texto con el encabezado al lado.",
+      },
+    },
     name: "image",
     relationTo: "media",
-    required: true,
     type: "upload",
   },
   {

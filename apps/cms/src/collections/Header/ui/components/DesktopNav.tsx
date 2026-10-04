@@ -13,7 +13,7 @@ interface DesktopNavProps {
 // §6.6: 15px/500 grey-900, hover = 2px green-500 underline drawn with an inset shadow (as on the
 // live site), active = 3px.
 const itemLinkClassName =
-  "inline-flex min-h-11 items-center px-3 text-[0.9375rem] font-medium text-ct-grey-900 transition-[box-shadow,color] duration-150 hover:shadow-[inset_0_-2px_0_var(--color-ct-green-500)] focus-visible:shadow-[inset_0_-2px_0_var(--color-ct-green-500)]";
+  "inline-flex min-h-11 items-center whitespace-nowrap px-3 text-[0.9375rem] font-medium text-ct-grey-900 transition-[box-shadow,color] duration-150 hover:shadow-[inset_0_-2px_0_var(--color-ct-green-500)] focus-visible:shadow-[inset_0_-2px_0_var(--color-ct-green-500)]";
 
 const activeItemClassName = "shadow-[inset_0_-3px_0_var(--color-ct-green-500)] text-ct-dark-blue";
 

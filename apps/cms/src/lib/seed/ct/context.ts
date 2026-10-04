@@ -32,6 +32,8 @@ export interface SeedFlags {
   limitPosts: number | null;
   allPosts: boolean;
   reset: boolean;
+  /** Re-run the page recipes over pages that already exist (they are skipped otherwise). */
+  rebuildPages: boolean;
 }
 
 export interface StepResult {

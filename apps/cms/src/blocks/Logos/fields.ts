@@ -35,7 +35,11 @@ export const logosFields: Field[] = [
   },
   {
     admin: { initCollapsed: true },
-    fields: [imageField("image", { withAspectRatio: false }), link({ appearances: false })],
+    // Image optional: without one the item renders as a text wordmark (its link label), §6.7.
+    fields: [
+      imageField("image", { required: false, withAspectRatio: false }),
+      link({ appearances: false, required: false }),
+    ],
     label: { en: "Logo Items", es: "Logos" },
     localized: true,
     minRows: 1,
