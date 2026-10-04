@@ -1,0 +1,59 @@
+{
+  "common": {
+    "goToHomepage": "Zur Startseite",
+    "page": "Seite",
+    "exitPreview": "Vorschau beenden",
+    "returnToHome": "Zurück zur Startseite",
+    "somethingWentWrong": "Etwas ist schiefgelaufen",
+    "anErrorOccurredWhileLoadingTheBlog": "Beim Laden des Blogs ist ein Fehler aufgetreten: {errorMessage}",
+    "anErrorOccurredWhileLoadingTheSite": "Beim Laden der Website ist ein Fehler aufgetreten: {errorMessage}"
+  },
+  "pageRange": {
+    "docs": {
+      "plural": "Dokumente",
+      "singular": "Dokument"
+    },
+    "posts": {
+      "plural": "Beiträge",
+      "singular": "Beitrag"
+    },
+    "noResults": "Die Suche ergab keine Treffer.",
+    "showing": "{start}{end} von {total} {label}",
+    "showingEnd": " – {end}"
+  },
+  "pagination": {
+    "previous": "Zurück",
+    "next": "Weiter",
+    "goToPreviousPage": "Zur vorherigen Seite",
+    "goToNextPage": "Zur nächsten Seite",
+    "morePages": "Weitere Seiten"
+  },
+  "blog": {
+    "backToJournal": "Zurück zum Blog",
+    "noResults": "Keine Artikel entsprechen Ihrer Suche.",
+    "readTime": "{minutes} Min.",
+    "readTimeLong": "{minutes} Min. Lesezeit",
+    "search": {
+      "all": "Alle",
+      "label": "Artikel durchsuchen",
+      "open": "Artikel durchsuchen",
+      "close": "Suche schließen",
+      "clear": "Suche zurücksetzen"
+    },
+    "newsletter": {
+      "eyebrow": "Newsletter, monatlich",
+      "heading": "Eine durchdachte E-Mail im Monat. Kein Rauschen.",
+      "placeholder": "sie@firma.de",
+      "button": "Abonnieren",
+      "disclaimer": "Kein Spam. Jederzeit abbestellbar."
+    }
+  },
+  "announcements": {
+    "title": "Ankündigungen",
+    "noAnnouncements": "Keine Ankündigungen verfügbar.",
+    "metadata": {
+      "title": "Ankündigungen",
+      "description": "{count, plural, =0 {Keine Ankündigungen} =1 {1 Ankündigung} other {# Ankündigungen}} für Mandant {tenant}"
+    }
+  }
+}

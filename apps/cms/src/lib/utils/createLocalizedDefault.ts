@@ -82,7 +82,8 @@ export function createRichTextState(heading: string, paragraph: string): RichTex
  * defaultValue: createLocalizedDefault({ en: 'Hello', es: 'Hola' })
  */
 export function createLocalizedDefault<T>(
-  translations: Record<Locale, T>
+  // Only `en` is mandatory: locales without a translation fall back to the default locale.
+  translations: Partial<Record<Locale, T>> & { en: T }
 ): (args: DefaultValueArgs) => T {
   const fallback = translations[DEFAULT_LOCALE] ?? (Object.values(translations)[0] as T);
 
@@ -103,9 +104,11 @@ export function createLocalizedDefault<T>(
  * })
  */
 export function createLocalizedRichText(
-  translations: Record<Locale, { heading: string; paragraph: string }>
+  translations: Partial<Record<Locale, { heading: string; paragraph: string }>> & {
+    en: { heading: string; paragraph: string };
+  }
 ): (args: DefaultValueArgs) => RichTextState {
-  const richTextRecord = {} as Record<Locale, RichTextState>;
+  const richTextRecord = {} as Partial<Record<Locale, RichTextState>> & { en: RichTextState };
 
   for (const { code } of I18N_CONFIG.locales) {
     const locale = code as Locale;

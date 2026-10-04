@@ -12,7 +12,8 @@ import type { Locale } from "@/lib/types";
 import { injectSection } from "@/lib/fields/section/injectSection";
 import { sectionHeaderFields } from "@/lib/fields/sectionHeader/sectionHeaderFields";
 
-function buildFaqItems(locale: Locale) {
+// Defaults exist for en/es; other locales fall back to them via createLocalizedDefault.
+function buildFaqItems(locale: Extract<Locale, "en" | "es">) {
   const { question, answer } = DEFAULT_VALUES.blocks.faq;
   return Array.from({ length: 3 }, () => ({
     answer: createRichTextState(answer[locale].heading, answer[locale].paragraph),

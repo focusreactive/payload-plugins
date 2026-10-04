@@ -3,7 +3,7 @@ import type { Field } from "payload";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
 import type { Locale } from "@/lib/types";
 
-type LocalizedDefault = Record<Locale, string>;
+type LocalizedDefault = Partial<Record<Locale, string>> & { en: string };
 
 interface SectionHeaderFieldsOptions {
   eyebrowDefault?: LocalizedDefault;

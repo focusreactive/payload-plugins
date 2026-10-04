@@ -19,9 +19,19 @@ export const I18N_CONFIG: {
       code: "es",
       label: "Spanish",
     },
+    {
+      code: "de",
+      label: "Deutsch",
+    },
+    {
+      code: "ja",
+      label: "日本語",
+    },
   ],
   openGraphLocales: {
     en: "en_US",
     es: "es_ES",
+    de: "de_DE",
+    ja: "ja_JP",
   },
 };
