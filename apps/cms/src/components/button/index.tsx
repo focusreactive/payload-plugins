@@ -8,7 +8,7 @@ import type { ButtonProps } from "./types";
 export { ButtonVariant, ButtonSize } from "./types";
 
 export const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 leading-none whitespace-nowrap transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center gap-2 leading-none whitespace-nowrap transition-colors duration-150 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50",
   {
     defaultVariants: {
       size: ButtonSize.Base,
@@ -16,24 +16,27 @@ export const buttonVariants = cva(
     },
     variants: {
       size: {
-        [ButtonSize.Small]: "px-4 py-[9px] text-[0.82rem]",
-        [ButtonSize.Base]: "px-6 py-[13px] text-[0.95rem]",
-        [ButtonSize.Large]: "px-[30px] py-4 text-[1.02rem]",
+        [ButtonSize.Small]: "min-h-9 px-4 text-[0.875rem]",
+        [ButtonSize.Base]: "min-h-11 px-5 text-[0.9375rem]",
+        [ButtonSize.Large]: "min-h-[52px] px-7 text-base",
       },
       variant: {
         [ButtonVariant.Default]: "p-0 text-foreground hover:text-primary",
+        // Racing green fill on light, electric green on dark (tokens swap per zone).
         [ButtonVariant.Primary]:
-          "rounded-pill font-semibold bg-secondary text-secondary-foreground hover:bg-secondary-hover",
+          "rounded-md font-semibold bg-primary text-primary-foreground hover:bg-primary-hover",
+        // Electric green / dark blue, inverting on hover (the live site's header CTA).
         [ButtonVariant.Accent]:
-          "rounded-pill font-semibold bg-accent text-accent-foreground hover:bg-accent-hover",
+          "rounded-md font-semibold bg-accent text-accent-foreground hover:bg-ct-dark-blue hover:text-ct-electric-green",
         [ButtonVariant.Secondary]:
-          "rounded-pill font-semibold border border-foreground text-foreground hover:bg-foreground hover:text-background",
+          "rounded-md font-semibold border border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground",
         [ButtonVariant.Badge]:
-          "rounded-pill border border-foreground px-3 py-1.5 text-eyebrow text-foreground",
+          "rounded-pill border border-border-strong px-3 py-1.5 text-eyebrow text-foreground",
+        // Text link in the working colour with a trailing arrow.
         [ButtonVariant.Ghost]:
-          "rounded-pill font-semibold bg-surface text-foreground border border-border-strong hover:border-foreground",
+          "px-0 font-semibold text-primary hover:text-link-hover hover:underline underline-offset-[3px] after:content-['→'] after:transition-transform hover:after:translate-x-0.5",
         [ButtonVariant.GhostDark]:
-          "rounded-pill font-semibold bg-secondary text-secondary-foreground hover:bg-secondary-hover",
+          "rounded-md font-semibold bg-secondary text-secondary-foreground hover:bg-secondary-hover",
       },
     },
   }

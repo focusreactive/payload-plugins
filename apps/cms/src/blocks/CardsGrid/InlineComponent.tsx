@@ -6,7 +6,7 @@ import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import type { CardsGridInlineBlock } from "@/payload-types";
 
-export async function CardsGridInlineComponent({ items, columns }: CardsGridInlineBlock) {
+export async function CardsGridInlineComponent({ items, columns, numbered }: CardsGridInlineBlock) {
   const locale = await resolveLocale();
 
   const cards: IDefaultCardProps[] = (items ?? []).map((item) => ({
@@ -21,7 +21,7 @@ export async function CardsGridInlineComponent({ items, columns }: CardsGridInli
 
   return (
     <div className="prose-embedded-block">
-      <CardsGrid items={cards} columns={columns ?? 3} />
+      <CardsGrid items={cards} columns={columns ?? 3} numbered={Boolean(numbered)} />
     </div>
   );
 }

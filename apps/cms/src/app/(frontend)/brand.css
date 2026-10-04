@@ -1,0 +1,222 @@
+/*
+ * CT brand layer (plan §6.2–6.3). Imported right after @repo/tailwind-config/base.css, so these
+ * @theme values and utilities override the boilerplate's tokens without touching the shared package.
+ * Contrast rules: electric/light green and green-400/500 are never text on light backgrounds.
+ */
+
+/* ───────── CT primitives (exact values from the client's production stylesheet) ───────── */
+@theme {
+  --color-ct-white: #ffffff;
+  --color-ct-sand: #f4f3f2;
+  --color-ct-black: #333333;
+  --color-ct-teal: #315850;
+  --color-ct-dark-blue: #124853;
+  --color-ct-slate-blue: #296e72;
+  --color-ct-electric-green: #b5ff6b;
+  --color-ct-light-green: #5ab165;
+  --color-ct-dark-green: #103825;
+  --color-ct-racing-green: #007839;
+  --color-ct-grey-100: #f4f5f2;
+  --color-ct-grey-200: #e9ebe6;
+  --color-ct-grey-300: #d9dbd5;
+  --color-ct-grey-400: #b8b9b4;
+  --color-ct-grey-500: #9a9b99;
+  --color-ct-grey-600: #767774;
+  --color-ct-grey-700: #6a6b67;
+  --color-ct-grey-800: #5d605a;
+  --color-ct-grey-900: #3f423c;
+  --color-ct-green-100: #eaffcd;
+  --color-ct-green-200: #dcf5b8;
+  --color-ct-green-300: #bef76e;
+  --color-ct-green-400: #a4ff1f;
+  --color-ct-green-500: #64a800;
+  --color-ct-green-600: #477703;
+  --color-ct-green-700: #395e03;
+  --color-ct-green-800: #365706;
+  --color-ct-green-900: #2b4405;
+  --color-ct-error: #b55b55;
+
+  /* Inter Tight for display sizes, Inter for everything else (variable names kept from base.css). */
+  --font-display:
+    var(--font-newsreader, "Inter Tight"), var(--font-archivo, Inter), system-ui, sans-serif;
+  --font-sans: var(--font-archivo, Inter), system-ui, -apple-system, sans-serif;
+
+  /* ───────── Semantic roles — LIGHT ───────── */
+  --color-background: var(--color-ct-white);
+  --color-foreground: var(--color-ct-grey-900);
+  --color-heading: var(--color-ct-dark-blue);
+  --color-surface: var(--color-ct-sand);
+  --color-surface-muted: var(--color-ct-grey-200);
+  --color-card: var(--color-ct-white);
+  --color-card-foreground: var(--color-ct-grey-900);
+  --color-popover: var(--color-ct-white);
+  --color-popover-foreground: var(--color-ct-grey-900);
+  --color-primary: var(--color-ct-racing-green);
+  --color-primary-foreground: var(--color-ct-white);
+  --color-primary-hover: var(--color-ct-dark-green);
+  --color-primary-soft: var(--color-ct-green-200);
+  --color-primary-soft-foreground: var(--color-ct-green-800);
+  --color-secondary: var(--color-ct-dark-blue);
+  --color-secondary-foreground: var(--color-ct-white);
+  --color-secondary-hover: var(--color-ct-slate-blue);
+  --color-accent: var(--color-ct-electric-green);
+  --color-accent-hover: var(--color-ct-green-300);
+  --color-accent-foreground: var(--color-ct-dark-blue);
+  --color-highlight: var(--color-ct-light-green);
+  --color-muted: var(--color-ct-grey-200);
+  --color-muted-foreground: var(--color-ct-grey-700);
+  --color-border: var(--color-ct-grey-300);
+  --color-border-strong: var(--color-ct-grey-500);
+  --color-input: var(--color-ct-grey-400);
+  --color-ring: var(--color-ct-racing-green);
+  --color-link-hover: var(--color-ct-slate-blue);
+  --color-destructive: var(--color-ct-error);
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+}
+
+/* ───────── DARK zones (hero bands, footer, featured cards) ───────── */
+.dark-zone,
+[data-theme="dark"],
+[data-theme="dark-gray"] {
+  --color-background: var(--color-ct-dark-blue);
+  --color-foreground: var(--color-ct-white);
+  --color-heading: var(--color-ct-white);
+  --color-surface: #0e3a44;
+  --color-surface-muted: #0b2f37;
+  --color-card: #0e3a44;
+  --color-card-foreground: var(--color-ct-white);
+  --color-popover: #0e3a44;
+  --color-popover-foreground: var(--color-ct-white);
+  --color-primary: var(--color-ct-electric-green);
+  --color-primary-foreground: var(--color-ct-dark-blue);
+  --color-primary-hover: var(--color-ct-green-300);
+  --color-primary-soft: rgba(181, 255, 107, 0.14);
+  --color-primary-soft-foreground: var(--color-ct-electric-green);
+  --color-secondary: var(--color-ct-white);
+  --color-secondary-foreground: var(--color-ct-dark-blue);
+  --color-secondary-hover: var(--color-ct-grey-200);
+  --color-highlight: var(--color-ct-electric-green);
+  --color-muted: #0b2f37;
+  --color-muted-foreground: var(--color-ct-grey-300);
+  --color-border: rgba(255, 255, 255, 0.14);
+  --color-border-strong: rgba(255, 255, 255, 0.32);
+  --color-input: rgba(255, 255, 255, 0.32);
+  --color-ring: var(--color-ct-electric-green);
+  --color-link-hover: var(--color-ct-green-300);
+}
+
+/* Teal variant (= the live site's .scene-darkgreen). */
+[data-theme="dark-gray"] {
+  --color-background: var(--color-ct-teal);
+  --color-surface: #284a43;
+  --color-card: #284a43;
+  --color-popover: #284a43;
+  --color-muted: #22403a;
+  --color-surface-muted: #22403a;
+}
+
+/* Sand variant. */
+[data-theme="light-gray"] {
+  --color-background: var(--color-ct-sand);
+  --color-surface: var(--color-ct-white);
+  --color-surface-muted: var(--color-ct-grey-200);
+  --color-card: var(--color-ct-white);
+}
+
+::selection {
+  background: var(--color-ct-electric-green);
+  color: var(--color-ct-dark-blue);
+}
+
+/* Japanese: Inter has no CJK glyphs. */
+html:lang(ja) {
+  --font-sans: var(--font-ja, "Noto Sans JP"), var(--font-archivo, Inter), system-ui, sans-serif;
+  --font-display: var(--font-ja, "Noto Sans JP"), var(--font-archivo, Inter), system-ui, sans-serif;
+}
+
+/* ───────── Type scale (§6.3) ─────────
+ * base.css defines these with @utility; Tailwind keeps the first @utility of a name, so the CT
+ * values are plain rules in the utilities layer, which come after the generated ones. */
+@layer utilities {
+  .text-display-1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.75rem, 5.5vw, 4.25rem);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+  }
+
+  .text-display-2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.25rem, 4vw, 3.25rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+
+  .text-h-section {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+  }
+
+  .text-h-card {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1.375rem;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+
+  .text-lead {
+    font-size: clamp(1.125rem, 1.5vw, 1.3125rem);
+    line-height: 1.55;
+  }
+
+  .text-small {
+    font-size: 0.9375rem;
+    line-height: 1.55;
+  }
+
+  .text-eyebrow {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.75rem;
+    line-height: 1;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+}
+
+/* Focus is visible everywhere (§6.10). */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Slow drift for the ring backdrop; only runs with motion-safe (§6.10). */
+@keyframes ct-drift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-24px, 18px);
+  }
+}

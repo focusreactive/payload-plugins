@@ -45,7 +45,7 @@ export default async function Page({ params }: Args) {
     <>
       <TrackPage collection="posts" id={post.id} locale={locale} enabled={!draft} />
       <Header data={siteSettings.blog.header as HeaderType} />
-      <main>
+      <main id="main" tabIndex={-1} className="outline-none">
         <ArticleJsonLd
           post={post}
           siteName={siteSettings.general?.siteName as string}

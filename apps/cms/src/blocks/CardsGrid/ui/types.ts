@@ -12,9 +12,12 @@ export interface IDefaultCardProps {
   rounded: "none" | "large";
   backgroundColor: "none" | "light" | "dark" | "light-gray" | "dark-gray" | "gradient-2";
   icon?: React.ReactNode | null;
+  /** 1-based position, rendered as a mono "01" eyebrow when the grid is numbered. */
+  number?: number;
 }
 
 export interface ICardsGridProps {
   items: IDefaultCardProps[];
   columns: number;
+  numbered?: boolean;
 }

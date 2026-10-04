@@ -1,6 +1,6 @@
 import { cn } from "@/components/utils";
 
-export type EyebrowTone = "default" | "primary" | "muted" | "accent" | "outline";
+export type EyebrowTone = "default" | "primary" | "muted" | "accent" | "outline" | "tag";
 
 interface Props {
   children: React.ReactNode;
@@ -11,17 +11,19 @@ interface Props {
   className?: string;
 }
 
+// §6.6: outline on light, accent (electric green) on dark, tag = pill for categories, muted = text only.
 const toneMap: Record<EyebrowTone, string> = {
-  default: "bg-foreground text-background",
-  primary: "bg-primary text-primary-foreground",
-  muted: "text-muted-foreground",
-  accent: "bg-accent text-accent-foreground",
-  outline: "border border-foreground text-foreground",
+  default: "rounded-sm bg-secondary text-secondary-foreground",
+  primary: "rounded-sm bg-primary-soft text-primary-soft-foreground",
+  muted: "!px-0 text-muted-foreground",
+  accent: "rounded-sm bg-accent text-accent-foreground",
+  outline: "rounded-sm border border-border-strong text-heading",
+  tag: "rounded-pill bg-primary-soft text-primary-soft-foreground !normal-case !tracking-normal !font-sans font-medium",
 };
 
 const sizeMap = {
-  sm: "px-2.5 py-1 text-[10px]",
-  md: "px-3.5 py-[7px] text-[0.72rem] font-semibold",
+  sm: "px-2 py-1 text-[11px]",
+  md: "px-2.5 py-[6px] text-[0.75rem]",
 };
 
 export function Eyebrow({
@@ -34,7 +36,7 @@ export function Eyebrow({
   return (
     <span
       className={cn(
-        "inline-flex w-fit items-center gap-1.5 rounded-pill font-mono uppercase tracking-[0.16em] leading-none whitespace-nowrap",
+        "inline-flex w-fit items-center gap-1.5 font-mono font-medium uppercase tracking-[0.14em] leading-none whitespace-nowrap",
         toneMap[tone],
         sizeMap[size],
         className

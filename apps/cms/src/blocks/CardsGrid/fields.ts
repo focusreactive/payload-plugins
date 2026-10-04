@@ -7,12 +7,31 @@ import { CARD_ICONS } from "./icons";
 
 export const cardsGridFields: Field[] = [
   {
-    defaultValue: 3,
-    label: { en: "Columns", es: "Columnas" },
-    max: 4,
-    min: 1,
-    name: "columns",
-    type: "number",
+    type: "row",
+    fields: [
+      {
+        admin: { width: "50%" },
+        defaultValue: 3,
+        label: { en: "Columns", es: "Columnas" },
+        max: 4,
+        min: 1,
+        name: "columns",
+        type: "number",
+      },
+      {
+        admin: {
+          width: "50%",
+          description: {
+            en: "Show 01, 02 … above each card title",
+            es: "Muestra 01, 02 … sobre el título de cada tarjeta",
+          },
+        },
+        defaultValue: false,
+        label: { en: "Numbered", es: "Numeradas" },
+        name: "numbered",
+        type: "checkbox",
+      },
+    ],
   },
   {
     admin: { initCollapsed: true },

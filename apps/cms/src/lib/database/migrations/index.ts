@@ -34,6 +34,7 @@ import * as migration_20260805_120053_group_seo_defaults_under_og_and_x from './
 import * as migration_20260812_125336_add_ab_pending_percentages_to_pages from './20260812_125336_add_ab_pending_percentages_to_pages';
 import * as migration_20260923_132949_add_reset_password_requested_at from './20260923_132949_add_reset_password_requested_at';
 import * as migration_20261001_143037_add_media_storage_prefix from './20261001_143037_add_media_storage_prefix';
+import * as migration_20261004_150441_cards_grid_numbered from './20261004_150441_cards_grid_numbered';
 
 export const migrations = [
   {
@@ -214,6 +215,11 @@ export const migrations = [
   {
     up: migration_20261001_143037_add_media_storage_prefix.up,
     down: migration_20261001_143037_add_media_storage_prefix.down,
-    name: '20261001_143037_add_media_storage_prefix'
+    name: '20261001_143037_add_media_storage_prefix',
+  },
+  {
+    up: migration_20261004_150441_cards_grid_numbered.up,
+    down: migration_20261004_150441_cards_grid_numbered.down,
+    name: '20261004_150441_cards_grid_numbered'
   },
 ];

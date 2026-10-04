@@ -49,7 +49,7 @@ export default async function Page({ params }: Args) {
     <>
       <TrackPage pageRef={pageRef} locale={locale} enabled={!draft} />
       <Header data={page.header as HeaderType} />
-      <main>
+      <main id="main" tabIndex={-1} className="outline-none">
         <div>
           <BreadcrumbsJsonLd items={page.breadcrumbs} locale={locale} />
 

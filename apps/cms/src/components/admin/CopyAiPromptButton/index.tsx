@@ -16,31 +16,32 @@ import { useState } from "react";
  */
 const THEME = {
   colors: {
-    background: "#eef2f3",
-    foreground: "#0a1314",
-    surface: "#ffffff",
-    surfaceMuted: "#dde6e7",
+    background: "#ffffff",
+    foreground: "#3f423c",
+    heading: "#124853",
+    surface: "#f4f3f2",
+    surfaceMuted: "#e9ebe6",
     card: "#ffffff",
-    cardForeground: "#0a1314",
-    muted: "#dde6e7",
-    mutedForeground: "#5a6a6b",
-    primary: "#0d9488",
+    cardForeground: "#3f423c",
+    muted: "#e9ebe6",
+    mutedForeground: "#6a6b67",
+    primary: "#007839",
     primaryForeground: "#ffffff",
-    primaryHover: "#0a7268",
-    secondary: "#0a1314",
+    primaryHover: "#103825",
+    secondary: "#124853",
     secondaryForeground: "#ffffff",
-    accent: "#d8ff3a",
-    accentForeground: "#0a1314",
-    border: "rgba(10, 19, 20, 0.12)",
-    borderStrong: "rgba(10, 19, 20, 0.22)",
-    ring: "#0d9488",
+    accent: "#b5ff6b",
+    accentForeground: "#124853",
+    border: "#d9dbd5",
+    borderStrong: "#9a9b99",
+    ring: "#007839",
   },
   fonts: {
-    display: "'Newsreader', Georgia, 'Times New Roman', serif",
-    sans: "'Archivo', system-ui, -apple-system, sans-serif",
+    display: "'Inter Tight', 'Inter', system-ui, sans-serif",
+    sans: "'Inter', system-ui, -apple-system, sans-serif",
     mono: "'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace",
   },
-  radii: { sm: "8px", md: "16px", lg: "28px", pill: "999px" },
+  radii: { sm: "4px", md: "8px", lg: "12px", pill: "999px" },
 } as const;
 
 const c = THEME.colors;
@@ -71,21 +72,22 @@ FORBIDDEN — never include any of the following. If a brief seems to require th
 - <html>/<head>/<body>, external CSS/JS files, markdown fences, or commentary.
 
 THEME VALUES — use these EXACT literal values directly in your CSS. Do NOT use CSS var(...) references and do NOT invent other colors — write these real values so the section renders correctly even when previewed on its own. These are our design-system colors; stick to them:
-- Surfaces/text: background ${c.background}, foreground/text ${c.foreground}, surface ${c.surface}, surface-muted ${c.surfaceMuted}, card ${c.card}, card text ${c.cardForeground}, muted ${c.muted}, muted text ${c.mutedForeground}
+- Surfaces/text: background ${c.background}, foreground/text ${c.foreground}, headings ${c.heading}, surface ${c.surface}, surface-muted ${c.surfaceMuted}, card ${c.card}, card text ${c.cardForeground}, muted ${c.muted}, muted text ${c.mutedForeground}
 - Brand/actions: primary ${c.primary}, text-on-primary ${c.primaryForeground}, primary hover ${c.primaryHover}, secondary ${c.secondary}, text-on-secondary ${c.secondaryForeground}, accent ${c.accent}, text-on-accent ${c.accentForeground}
 - Borders/rings: border ${c.border}, border-strong ${c.borderStrong}, focus ring ${c.ring}
 - Fonts: headings/display → ${f.display}; body → ${f.sans}; code/labels/eyebrow → ${f.mono}
 - Radii: small ${r.sm}, medium ${r.md}, large ${r.lg}, pill ${r.pill}
 
 TYPOGRAPHY SCALE — match these sizes so headings/body align with the rest of the site:
-- Display 1: font-display, clamp(2.8rem, 7vw, 5.4rem), line-height 0.98, letter-spacing -0.02em
-- Display 2: font-display, clamp(2.2rem, 5vw, 3.6rem), line-height 1.02
-- Section heading: font-display, clamp(1.9rem, 4vw, 3rem), line-height 1.05
-- Card heading: font-display, 1.5rem, line-height 1.1
-- Lead: clamp(1.1rem, 1.6vw, 1.32rem), line-height 1.55
+- Display 1: display font, 700, clamp(2.75rem, 5.5vw, 4.25rem), line-height 1.02, letter-spacing -0.025em
+- Display 2: display font, 700, clamp(2.25rem, 4vw, 3.25rem), line-height 1.05
+- Section heading: body font, 600, clamp(1.75rem, 3vw, 2.5rem), line-height 1.1
+- Card heading: body font, 600, 1.375rem, line-height 1.2
+- Lead: clamp(1.125rem, 1.5vw, 1.3125rem), line-height 1.55
 - Body: 1.0625rem, line-height 1.7
 - Small: 0.9375rem, line-height 1.55
-- Eyebrow/kicker: font-mono, 0.72rem, letter-spacing 0.16em, text-transform uppercase
+- Eyebrow/kicker: font-mono 500, 0.75rem, letter-spacing 0.14em, text-transform uppercase
+- Brand rules: headings in the heading colour; never put the accent (electric green) as text on a light background; buttons use the medium radius (pills are only for tags); no gradients, glows or serif type
 
 SPACING & LAYOUT — this fragment is dropped inside a section that the CMS already controls. The section sets the theme (light/dark), the max content width and horizontal padding, the vertical section padding (top/bottom), and any background. Treat your fragment as pure inner content:
 - The root element must be full width (width: 100%). Do NOT add an outer max-width, do NOT center the whole fragment, and do NOT add a background color or set a theme — the section owns all of that.

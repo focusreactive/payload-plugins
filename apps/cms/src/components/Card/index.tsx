@@ -36,13 +36,13 @@ export const Card: React.FC<{
     <Link className="not-prose" href={href}>
       <article
         className={cn(
-          "border border-border rounded-lg overflow-hidden bg-card hover:cursor-pointer",
+          "group h-full overflow-hidden rounded-lg border border-border bg-card transition-[border-color,box-shadow] duration-200 ease-out hover:cursor-pointer hover:border-primary hover:shadow-[inset_0_3px_0_var(--color-highlight)]",
           className
         )}
       >
         <div className="relative w-full">
           {!heroImage && (
-            <div className="relative w-full aspect-[4/3]">
+            <div className="relative w-full aspect-video">
               <NextImage
                 src="/empty-placeholder.jpg"
                 alt={`${titleToUse} - Placeholder image`}
@@ -57,7 +57,7 @@ export const Card: React.FC<{
             typeof heroImage !== "number" &&
             (() => {
               const media = prepareMediaProps({
-                aspectRatio: ImageAspectRatio["4/3"],
+                aspectRatio: ImageAspectRatio["16/9"],
                 image: heroImage,
               });
               return (
@@ -74,9 +74,9 @@ export const Card: React.FC<{
               );
             })()}
         </div>
-        <div className="p-4">
+        <div className="flex flex-col gap-3 p-7">
           {showCategories && hasCategories && (
-            <div className="flex gap-2 flex-wrap mb-3">
+            <div className="flex flex-wrap gap-2">
               {categories?.map((category, index) => {
                 if (typeof category === "object") {
                   const categoryTitle = category.title || "Untitled category";
@@ -84,7 +84,7 @@ export const Card: React.FC<{
                   return (
                     <span
                       key={index}
-                      className="text-xs font-medium uppercase tracking-wide px-2 py-1 rounded-full bg-muted text-muted-foreground"
+                      className="rounded-pill bg-primary-soft px-2.5 py-1 text-xs font-medium text-primary-soft-foreground"
                     >
                       {categoryTitle}
                     </span>
@@ -95,17 +95,18 @@ export const Card: React.FC<{
               })}
             </div>
           )}
-          {titleToUse && <h3 className="font-bold text-lg">{titleToUse}</h3>}
-          {excerpt && (
-            <div className="mt-2">
-              <p className="text-muted-foreground text-sm line-clamp-3">{excerpt}</p>
-            </div>
-          )}
+          {titleToUse && <h3 className="text-h-card text-heading">{titleToUse}</h3>}
+          {excerpt && <p className="text-small text-muted-foreground line-clamp-3">{excerpt}</p>}
           {readMoreLabel && (
-            <div className="mt-4">
-              <span className="text-sm font-medium text-primary inline-flex items-center gap-1">
+            <div className="mt-auto pt-1">
+              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
                 {readMoreLabel}
-                <span aria-hidden="true">&rsaquo;</span>
+                <span
+                  aria-hidden="true"
+                  className="transition-transform group-hover:translate-x-0.5"
+                >
+                  →
+                </span>
               </span>
             </div>
           )}

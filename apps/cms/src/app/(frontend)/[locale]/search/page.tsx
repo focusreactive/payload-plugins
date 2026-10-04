@@ -28,7 +28,7 @@ export default async function SearchPage({ params, searchParams }: Args) {
     <div className="flex min-h-screen flex-col">
       <TrackPage pageRef={SYNTHETIC_REFS.search} locale={locale} enabled={!draft} />
       <Header data={siteSettings.blog.header as HeaderType} />
-      <main className="grow">
+      <main id="main" tabIndex={-1} className="grow outline-none">
         <div className="mx-auto max-w-2xl px-4 py-8">
           <SearchInput defaultValue={query ?? ""} />
 

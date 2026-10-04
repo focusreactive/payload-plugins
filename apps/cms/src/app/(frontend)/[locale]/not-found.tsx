@@ -35,7 +35,7 @@ export default async function NotFound() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header data={settings.header as HeaderType} disableActive />
-      <main className="flex flex-1 flex-col">
+      <main id="main" tabIndex={-1} className="flex flex-1 flex-col outline-none">
         <section className="flex flex-1 items-center justify-center py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8 lg:py-24">
           <div className="mx-auto max-w-7xl text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">

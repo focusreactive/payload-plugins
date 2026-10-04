@@ -56,18 +56,18 @@ export function NewsletterSection({
                 required
                 placeholder={inputPlaceholder}
                 className={cn(
-                  "min-w-[280px] rounded-pill border border-transparent bg-white px-5 py-3.5",
-                  "text-ink-950 placeholder:text-slate-500",
-                  "outline-none ring-offset-0 focus-visible:ring-2 focus-visible:ring-accent",
+                  "min-h-11 min-w-[280px] rounded-md border border-transparent bg-white px-4",
+                  "text-ct-grey-900 placeholder:text-ct-grey-600",
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                   "text-base"
                 )}
               />
               <button
                 type="submit"
                 className={cn(
-                  "rounded-pill bg-accent px-6 py-3.5",
+                  "min-h-11 rounded-md bg-accent px-5",
                   "text-accent-foreground text-base font-semibold",
-                  "transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+                  "transition-colors hover:bg-ct-white hover:text-ct-dark-blue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 )}
               >
                 {buttonLabel}

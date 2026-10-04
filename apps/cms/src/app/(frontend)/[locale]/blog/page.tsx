@@ -41,7 +41,7 @@ export default async function Page({ searchParams, params }: Props) {
     <>
       <TrackPage pageRef={SYNTHETIC_REFS.blogIndex} locale={locale} enabled={!draft} />
       <Header data={siteSettings.blog.header as HeaderType} />
-      <main>
+      <main id="main" tabIndex={-1} className="outline-none">
         <Suspense>
           <BlogJsonLdWrapper searchParams={searchParams} locale={locale} />
         </Suspense>

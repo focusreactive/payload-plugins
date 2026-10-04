@@ -22,7 +22,7 @@ export function SectionHeader({
   title,
   subtitle,
   align = "left",
-  size = "display-2",
+  size = "h-section",
   className,
 }: SectionHeaderProps) {
   if (!(eyebrow?.text || title || subtitle)) {
@@ -32,17 +32,17 @@ export function SectionHeader({
   return (
     <div
       className={cn(
-        "flex max-w-[720px] flex-col gap-5",
+        "flex max-w-[720px] flex-col gap-4",
         align === "center" && "mx-auto items-center text-center",
         className
       )}
     >
       {eyebrow?.text && (
-        <Eyebrow prefix="dot" tone={eyebrow.variant ?? "accent"}>
+        <Eyebrow prefix="dot" tone={eyebrow.variant ?? "outline"}>
           {eyebrow.text}
         </Eyebrow>
       )}
-      {title && <DisplayHeading as="h2" size={size ?? "display-2"} text={title} />}
+      {title && <DisplayHeading as="h2" size={size ?? "h-section"} text={title} />}
       {subtitle && <div className="text-lead text-muted-foreground">{subtitle}</div>}
     </div>
   );

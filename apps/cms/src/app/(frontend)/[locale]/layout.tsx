@@ -1,5 +1,5 @@
 import type { Viewport } from "next";
-import { Archivo, IBM_Plex_Mono, Newsreader } from "next/font/google";
+import { IBM_Plex_Mono, Inter, Inter_Tight, Noto_Sans_JP } from "next/font/google";
 import { getMessages } from "next-intl/server";
 import { draftMode } from "next/headers";
 import React from "react";
@@ -10,21 +10,22 @@ import { Providers } from "@/lib/context";
 import { AnalyticsProviderClient } from "@/lib/plugins/analytics/AnalyticsProviderClient";
 import type { Locale } from "@/lib/types";
 import { LivePreviewListener } from "@/components/LivePreviewListener";
+import { SkipLink } from "@/components/SkipLink";
 import { VisualEditingEditRouter } from "@/components/VisualEditingEditRouter";
 
-const newsreader = Newsreader({
+// CT brand fonts (§6.3). Variable names stay those base.css maps: --font-newsreader → display,
+// --font-archivo → sans, --font-ibm-plex-mono → mono; --font-ja is switched on for :lang(ja).
+const interTight = Inter_Tight({
   display: "swap",
-  style: ["normal", "italic"],
   subsets: ["latin"],
   variable: "--font-newsreader",
-  weight: ["400", "500", "600"],
+  weight: ["600", "700"],
 });
 
-const archivo = Archivo({
+const inter = Inter({
   display: "swap",
   subsets: ["latin"],
   variable: "--font-archivo",
-  weight: ["400", "500", "600"],
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -34,11 +35,19 @@ const ibmPlexMono = IBM_Plex_Mono({
   weight: ["400", "500"],
 });
 
+const notoSansJp = Noto_Sans_JP({
+  display: "swap",
+  preload: false,
+  subsets: ["latin"],
+  variable: "--font-ja",
+  weight: ["400", "700"],
+});
+
 export const viewport: Viewport = {
   initialScale: 1,
   themeColor: [
-    { color: "#eef2f3", media: "(prefers-color-scheme: light)" },
-    { color: "#08100f", media: "(prefers-color-scheme: dark)" },
+    { color: "#ffffff", media: "(prefers-color-scheme: light)" },
+    { color: "#124853", media: "(prefers-color-scheme: dark)" },
   ],
   width: "device-width",
 };
@@ -57,10 +66,11 @@ export default async function RootLayout({ children, params }: Props) {
     <html
       lang={locale}
       data-theme="light"
-      className={`${newsreader.variable} ${archivo.variable} ${ibmPlexMono.variable}`}
+      className={`${interTight.variable} ${inter.variable} ${ibmPlexMono.variable} ${notoSansJp.variable}`}
     >
       <head />
       <body>
+        <SkipLink />
         <AnalyticsProviderClient measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID!}>
           <Providers locale={locale as Locale} messages={messages}>
             {draft ? (

@@ -74,7 +74,7 @@ export const TestimonialCard: React.FC<{
       {showRating && <StarRow rating={testimonial.rating} />}
 
       {testimonial.content && (
-        <blockquote className="flex-1 font-display text-body-lg leading-relaxed text-foreground">
+        <blockquote className="flex-1 text-body-lg font-medium leading-relaxed text-heading">
           &ldquo;{testimonial.content}&rdquo;
         </blockquote>
       )}

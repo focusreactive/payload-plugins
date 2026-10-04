@@ -87,7 +87,7 @@ export function Chart({ title, subtitle, ranges }: ChartProps) {
     <div className="not-prose rounded-md border border-border bg-surface p-[clamp(18px,3vw,30px)]">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h3 className="font-display text-h-card text-foreground">{title}</h3>
+          <h3 className="text-h-card text-heading">{title}</h3>
           {subtitle ? <p className="mt-1 text-small text-muted-foreground">{subtitle}</p> : null}
         </div>
 

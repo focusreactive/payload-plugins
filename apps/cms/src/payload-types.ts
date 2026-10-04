@@ -948,6 +948,10 @@ export interface CardsGridBlock {
   heading?: string | null;
   description?: string | null;
   columns?: number | null;
+  /**
+   * Show 01, 02 … above each card title
+   */
+  numbered?: boolean | null;
   items: {
     /**
      * Optional icon shown in a tinted tile
@@ -1739,6 +1743,10 @@ export interface Preset {
         heading?: string | null;
         description?: string | null;
         columns?: number | null;
+        /**
+         * Show 01, 02 … above each card title
+         */
+        numbered?: boolean | null;
         items: {
           /**
            * Optional icon shown in a tinted tile
@@ -2951,6 +2959,7 @@ export interface CardsGridBlockSelect<T extends boolean = true> {
   heading?: T;
   description?: T;
   columns?: T;
+  numbered?: T;
   items?:
     | T
     | {
@@ -3701,6 +3710,7 @@ export interface PresetsSelect<T extends boolean = true> {
               heading?: T;
               description?: T;
               columns?: T;
+              numbered?: T;
               items?:
                 | T
                 | {
@@ -4470,6 +4480,10 @@ export interface TaskSchedulePublish {
  */
 export interface CardsGridInlineBlock {
   columns?: number | null;
+  /**
+   * Show 01, 02 … above each card title
+   */
+  numbered?: boolean | null;
   items: {
     /**
      * Optional icon shown in a tinted tile
