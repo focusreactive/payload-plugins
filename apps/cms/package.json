@@ -24,7 +24,8 @@
     "migrate": "cross-env NODE_OPTIONS=--no-deprecation payload migrate",
     "migrate:create": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:create",
     "migrate:status": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:status",
-    "migrate:down": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:down"
+    "migrate:down": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:down",
+    "seed:ct": "cross-env NODE_OPTIONS=--no-deprecation payload run src/lib/seed/ct/run.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "3.0.25",
