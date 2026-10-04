@@ -1,4 +1,13 @@
 import type { SeedStep, StepName } from "./context";
+import { seedMedia } from "./seedMedia";
+import { seedPosts } from "./seedPosts";
+import { seedTaxonomy } from "./seedTaxonomy";
+import { seedUsers } from "./seedUsers";
 
-/** Step registry; T7–T9 fill it in (media, taxonomy, users, posts, pages, chrome, redirects, presets). */
-export const STEPS: Partial<Record<StepName, SeedStep>> = {};
+/** Step registry; pages, chrome, redirects and presets arrive in T8–T9. */
+export const STEPS: Partial<Record<StepName, SeedStep>> = {
+  media: seedMedia,
+  posts: seedPosts,
+  taxonomy: seedTaxonomy,
+  users: seedUsers,
+};
