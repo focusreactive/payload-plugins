@@ -11,6 +11,10 @@ import type { HeroBlock } from "@/payload-types";
 
 type Props = HeroBlock;
 
+function hasRichText(value: HeroBlock["richText"]): boolean {
+  return JSON.stringify(value?.root?.children ?? []).includes('"text":"');
+}
+
 export async function HeroBlockComponent({
   variant,
   eyebrow,
@@ -27,6 +31,7 @@ export async function HeroBlockComponent({
     <SectionContainer sectionData={{ ...section, id }}>
       <Hero
         variant={variant}
+        band={!hasRichText(richText) && !(actions ?? []).length}
         theme={section?.theme ?? null}
         badge={eyebrow}
         title={title ?? ""}

@@ -38,7 +38,8 @@ export function Search({
 
   return (
     <form
-      aria-hidden={!isActive}
+      // inert (not just aria-hidden) so the collapsed search is also out of the tab order.
+      inert={!isActive}
       className={cn(
         "flex items-center justify-center h-10 gap-2.5 rounded-pill bg-transparent overflow-hidden border pl-4 pr-2",
         "transition-[width,opacity,border-color] duration-300 ease-out motion-reduce:transition-none",
@@ -77,7 +78,7 @@ export function Search({
         className={cn(
           "p-0.75 flex-none cursor-pointer rounded-pill bg-surface-muted text-foreground",
           "transition-colors hover:bg-border-strong motion-reduce:transition-none",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
           hideItemsClassName
         )}
         onClick={onClear}

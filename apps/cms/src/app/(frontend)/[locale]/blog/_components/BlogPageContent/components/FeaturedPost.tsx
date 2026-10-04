@@ -67,7 +67,7 @@ export async function FeaturedPost({ post, readMoreLabel, locale, className }: F
           </span>
         </div>
 
-        <h2 className="text-balance text-h-section text-foreground transition-colors group-hover:text-primary motion-reduce:transition-none">
+        <h2 className="text-balance text-h-section text-heading transition-colors group-hover:text-primary motion-reduce:transition-none">
           {post.title}
         </h2>
 

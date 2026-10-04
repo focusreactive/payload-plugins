@@ -80,22 +80,17 @@ function sectionsOf(page: IaPage, sources: ParsedPage[]): PageSections {
   return sources[0] ? splitSections(sources[0].markdown) : { intro: "", sections: [] };
 }
 
-async function cover(
-  ctx: SeedContext,
-  page: IaPage,
-  title: string,
-  eyebrow: string,
-  sand = false
-): Promise<number> {
+/** Motif-only artwork for showcase heroes and reports (the title is already the page's h1). */
+async function cover(ctx: SeedContext, page: IaPage, title: string, sand = false): Promise<number> {
   const { id } = await upsertMedia(ctx, {
     alt: title,
     data: await renderCover({
-      eyebrow,
+      eyebrow: "",
       slug: `page-${page.slug}`,
-      title,
+      title: "",
       variant: sand ? "sand" : "dark",
     }),
-    filename: `cover-page-${page.slug}.jpg`,
+    filename: `pattern-page-${page.slug}.jpg`,
     folder: "Covers",
   });
   return id;
@@ -130,15 +125,7 @@ export const seedPages: SeedStep = async (ctx) => {
           ? 1
           : 0;
     const needsCover = ["HOME", "SERVICE", "REPORTS"].includes(page.recipe);
-    const coverId = needsCover
-      ? await cover(
-          ctx,
-          page,
-          title,
-          page.recipe === "REPORTS" ? "White paper" : "What we do",
-          page.recipe === "REPORTS"
-        )
-      : null;
+    const coverId = needsCover ? await cover(ctx, page, title, page.recipe === "REPORTS") : null;
 
     const existingId = await pageIdByPath(ctx, page.path);
     if (existingId && !ctx.flags.rebuildPages) {

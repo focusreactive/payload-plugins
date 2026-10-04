@@ -10,7 +10,10 @@ import type { Locale } from "@/lib/types";
 import { buttonVariants, ButtonVariant } from "@/components/button";
 import { getPathname } from "@/lib/i18n/navigation";
 import { getNotFoundSettings } from "@/dal/getNotFoundSettings";
-import type { Header as HeaderType, Footer as FooterType } from "@/payload-types";
+import type { Header as HeaderType, Footer as FooterType, Post } from "@/payload-types";
+import { toPostsListItem } from "@/blocks/PostsList/Component";
+import { PostsList } from "@/blocks/PostsList/ui";
+import { getPayloadClient, getPosts } from "@/dal";
 import { Footer } from "@/collections/Footer/Component";
 import { Header } from "@/collections/Header/Component";
 
@@ -31,28 +34,61 @@ export default async function NotFound() {
   ]);
 
   const homeHref = getPathname({ href: "/", locale });
+  const latestPosts = await getPosts(await getPayloadClient(), { limit: 3, locale }).catch(
+    () => null
+  );
+  const latest = (latestPosts?.docs ?? []).map((post) => toPostsListItem(post as Post, locale));
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header data={settings.header as HeaderType} disableActive />
       <main id="main" tabIndex={-1} className="flex flex-1 flex-col outline-none">
-        <section className="flex flex-1 items-center justify-center py-12 px-4 sm:py-16 sm:px-6 md:py-20 md:px-8 lg:py-24">
-          <div className="mx-auto max-w-7xl text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              {settings.title || "404 - Page not found"}
+        {/* §6.8 404: ring mark, one sentence, search box, three latest posts. */}
+        <section className="py-sectionBase">
+          <div className="mx-auto flex w-full max-w-containerMaxW flex-col items-start gap-6 px-containerBase">
+            <svg aria-hidden viewBox="0 0 48 48" className="size-12 text-ct-green-500">
+              <circle cx="24" cy="24" r="21" fill="none" stroke="currentColor" strokeWidth="3" />
+              <circle cx="24" cy="24" r="12" fill="none" stroke="currentColor" strokeWidth="3" />
+            </svg>
+            <h1 className="text-display-2 text-heading">
+              {settings.title || "This page moved or never existed"}
             </h1>
-            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
-              {settings.description ||
-                "Unfortunately, the requested page does not exist or has been deleted."}
+            <p className="max-w-[60ch] text-lead text-muted-foreground">
+              {settings.description || "Search the site, or start from the home page."}
             </p>
-            <NextLink
-              href={homeHref}
-              className={buttonVariants({ variant: ButtonVariant.Primary })}
+            <form
+              action={getPathname({ href: "/search", locale })}
+              method="get"
+              role="search"
+              className="flex w-full max-w-[560px] flex-wrap gap-3"
             >
+              <label htmlFor="not-found-search" className="sr-only">
+                Search
+              </label>
+              <input
+                id="not-found-search"
+                name="query"
+                type="search"
+                placeholder="Search articles and pages"
+                className="ct-input min-w-0 flex-1"
+              />
+              <button type="submit" className={buttonVariants({ variant: ButtonVariant.Primary })}>
+                Search
+              </button>
+            </form>
+            <NextLink href={homeHref} className={buttonVariants({ variant: ButtonVariant.Ghost })}>
               {t("goToHomepage")}
             </NextLink>
           </div>
         </section>
+        {latest.length > 0 && (
+          <section className="bg-ct-sand py-sectionBase">
+            <div className="mx-auto w-full max-w-containerMaxW px-containerBase">
+              <h2 className="mb-10 text-h-section text-heading">Latest articles</h2>
+              <PostsList items={latest} layout="grid" />
+            </div>
+          </section>
+        )}
       </main>
       <Footer data={settings.footer as FooterType} />
     </div>

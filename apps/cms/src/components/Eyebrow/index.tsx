@@ -36,7 +36,7 @@ export function Eyebrow({
   return (
     <span
       className={cn(
-        "inline-flex w-fit items-center gap-1.5 font-mono font-medium uppercase tracking-[0.14em] leading-none whitespace-nowrap",
+        "inline-flex w-fit max-w-full items-center gap-1.5 font-mono font-medium uppercase tracking-[0.14em] leading-[1.3] sm:leading-none sm:whitespace-nowrap",
         toneMap[tone],
         sizeMap[size],
         className

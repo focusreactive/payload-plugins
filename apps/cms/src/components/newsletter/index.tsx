@@ -51,11 +51,19 @@ export function NewsletterSection({
     }
   }
 
+  // §6.7: on light sections the band is a dark-blue card with the ring backdrop.
+  const card = backdropTone !== "dark";
   return (
-    <div>
-      <AbstractBackdrop variant="orbs" tone={backdropTone} intensity="subtle" />
-      <GridLines tone={backdropTone} />
-      <div className="relative z-10 flex flex-col items-center gap-[26px] py-[clamp(56px,8vw,104px)] text-center">
+    <div
+      className={cn(
+        "relative overflow-hidden",
+        card && "dark-zone rounded-lg bg-ct-dark-blue px-6 text-ct-white"
+      )}
+      data-theme={card ? "dark" : undefined}
+    >
+      <AbstractBackdrop tone="dark" intensity="subtle" />
+      {!card && <GridLines tone={backdropTone} />}
+      <div className="relative z-10 flex flex-col items-center gap-[26px] py-[clamp(48px,7vw,96px)] text-center">
         {header && <SectionHeader {...header} align="center" className="max-w-[760px]" />}
 
         <div aria-live="polite" className="ct-form flex flex-col items-center gap-4">

@@ -291,10 +291,10 @@ export const seedChrome: SeedStep = async (ctx) => {
       },
       general: { siteName: company },
       notFound: {
-        description: "This page moved or never existed.",
+        description: "Search the site, or start from the home page.",
         footer,
         header,
-        title: "Page not found",
+        title: "This page moved or never existed",
       },
       seo: {
         defaultDescription:

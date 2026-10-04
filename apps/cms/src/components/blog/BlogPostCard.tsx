@@ -29,7 +29,7 @@ export function BlogPostCard({
         </div>
       )}
 
-      <h3 className="text-h-card text-foreground transition-colors duration-150 group-hover:text-primary motion-reduce:transition-none">
+      <h3 className="text-h-card text-heading transition-colors duration-150 group-hover:text-primary motion-reduce:transition-none">
         {title}
       </h3>
 

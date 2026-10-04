@@ -19,7 +19,7 @@ export async function SearchResults({ query, locale }: SearchResultsProps) {
 
   if (!result.success) {
     return (
-      <div className="mt-6 space-y-2 text-sm text-gray-500">
+      <div className="mt-6 space-y-2 text-sm text-muted-foreground">
         <p>Search unavailable, please try again.</p>
       </div>
     );
@@ -27,7 +27,7 @@ export async function SearchResults({ query, locale }: SearchResultsProps) {
 
   if (!result.data.length) {
     return (
-      <div className="mt-6 space-y-2 text-sm text-gray-500">
+      <div className="mt-6 space-y-2 text-sm text-muted-foreground">
         <p>No results found.</p>
       </div>
     );
@@ -37,7 +37,7 @@ export async function SearchResults({ query, locale }: SearchResultsProps) {
     <div className="mt-6 space-y-8">
       {result.data.map((group) => (
         <section key={group.collection}>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {group.collection === "post" ? "Posts" : "Pages"}
           </h2>
 
@@ -57,7 +57,7 @@ export async function SearchResults({ query, locale }: SearchResultsProps) {
                     sizes="64px"
                   />
                 </div>
-                <span className="text-sm font-medium text-gray-900 line-clamp-2">{item.title}</span>
+                <span className="text-sm font-medium text-heading line-clamp-2">{item.title}</span>
               </Link>
             ))}
           </div>

@@ -14,4 +14,6 @@ export interface IHeroProps {
   text: IRichTextProps;
   image: PreparedMedia;
   links: LinkProps[];
+  /** No lead text and no actions: compact title band (legal, contact, listings — §6.7). */
+  band?: boolean;
 }
