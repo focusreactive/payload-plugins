@@ -34,6 +34,27 @@ Order of work: setup → brand tokens & chrome → content model → locales →
 → seed chrome → seed pages → feeds, redirects, privacy → design polish & a11y → Docker/Keycloak →
 verification & demo script → preview deploy (only after Maksim approves the push).
 
+### 0.1 Before the implementing session starts (Maksim's checklist)
+
+The implementing agent usually runs in a **cloud sandbox**: no Docker daemon, no local Postgres,
+outbound network limited (the client's site is blocked; Google Fonts, npm, Neon and Vercel Blob
+work). Everything client-specific stays out of git, so it reaches the sandbox through one archive.
+
+1. Locally, on this branch: put the dump at `apps/cms/.local/ct/content-dump.md` and the logo at
+   `apps/cms/.local/ct/brand/logo.svg`; run the image scraper (see
+   `docs/plans/2026-10-04-ct-demo-content.md` §2); zip the folder:
+   `cd apps/cms/.local && zip -r ct-local.zip ct`.
+2. Upload the archive to the Vercel Blob store (unguessable URL, deletable after the demo):
+   `bunx vercel blob put apps/cms/.local/ct-local.zip --rw-token "$BLOB_READ_WRITE_TOKEN"`.
+3. Cloud environment variables for the session (environment menu → Edit): `CT_LOCAL_ARCHIVE_URL`
+   (the Blob URL), `DATABASE_URL` (a **dedicated Neon branch for development** — not the preview
+   branch Vercel creates), `PAYLOAD_SECRET`, `PREVIEW_SECRET`, `CRON_SECRET`,
+   `BLOB_READ_WRITE_TOKEN` (media must survive container recycling), optional `OPENAI_API_KEY`;
+   `NPM_TOKEN` is already there.
+4. Deployment Protection on the `cms` Vercel project: the branch preview must open without a Vercel
+   login (exception list / share link).
+5. Docker (T12) is written in the sandbox but **built and verified on Maksim's machine**.
+
 ---
 
 ## 1. Context
@@ -1042,21 +1063,28 @@ Conventions for every task: run `bun run check-types && bun run lint` before com
 schema change run `generate:types` → `payload migrate:create <name>` → `payload migrate`; after
 adding admin components run `generate:importmap`. Commit scope is `cms`.
 
-### T1 — Branch, environment, dump, baseline
+### T1 — Branch, environment, local sources, baseline
 
-**Files:** `apps/cms/.gitignore` (+ `.local/`), `apps/cms/.env` (local only), `apps/dev/docker-compose.yml` (Postgres for local dev)
+**Files:** `apps/cms/.gitignore` (already ignores `.local/`, `public/ct/`, `.env.docker`, `.secrets/`), `apps/cms/.env` (local only)
 
 1. `git fetch origin && git checkout claude/busy-planck-k29mbr`.
-2. Postgres: `cd apps/dev && docker compose up -d postgres` → `postgres://payload:payload@127.0.0.1:5434/payload`
-   (or create a `ct` database on it), or a Neon branch.
-3. `cd apps/cms && cp .env.example .env`: `DATABASE_URL`, `PAYLOAD_SECRET`, `NEXT_PUBLIC_SERVER_URL=http://localhost:3333`,
-   `PREVIEW_SECRET`, `CRON_SECRET`; leave Blob, GA, OIDC empty; `OPENAI_API_KEY` if available.
-4. Repo root: `bun install` (`NPM_TOKEN` for the private visual-editing plugin).
-5. `bun run payload migrate && bun run dev` → first admin at `/admin`; `/en` renders.
-6. `.local/` ignored; put `ct-site-content-dump.md` in `apps/cms/.local/ct/` (§2).
+2. **Client sources** (git-ignored): if `CT_LOCAL_ARCHIVE_URL` is set (cloud sandbox),
+   `curl -fsSL "$CT_LOCAL_ARCHIVE_URL" -o /tmp/ct-local.zip && mkdir -p apps/cms/.local && unzip -oq /tmp/ct-local.zip -d apps/cms/.local/`
+   → expect `apps/cms/.local/ct/{content-dump.md,brand/logo.svg,images-map.json,images/}`. On a
+   laptop the folder is prepared by hand (§0.1). If `images-map.json` is missing, continue: posts
+   get generated covers (§5.2).
+3. **Database**: cloud sandbox → `DATABASE_URL` from the environment (dedicated Neon dev branch).
+   Laptop → `cd apps/dev && docker compose up -d postgres` gives `postgres://payload:payload@127.0.0.1:5434/payload`
+   (create a `ct` database on it), or a Neon branch.
+4. `cd apps/cms && cp .env.example .env` and fill `DATABASE_URL`, `PAYLOAD_SECRET`,
+   `NEXT_PUBLIC_SERVER_URL=http://localhost:3333`, `PREVIEW_SECRET`, `CRON_SECRET`,
+   `BLOB_READ_WRITE_TOKEN` (cloud: yes; laptop: optional → `public/media`); GA and OIDC empty;
+   `OPENAI_API_KEY` if available. Values already present as environment variables win over `.env`.
+5. Repo root: `bun install` (`NPM_TOKEN` for the private visual-editing plugin).
+6. `bun run payload migrate && bun run dev` → first admin at `/admin`; `/en` renders.
 7. Baseline `check-types` + `lint` green (note pre-existing warnings).
 
-**Commit:** `chore(cms): ignore .local scratch dir for CT demo sources`
+**Commit:** none unless something had to change (then `chore(cms): CT demo environment notes`).
 
 ### T2 — Brand tokens, fonts, base components, motifs
 
@@ -1236,7 +1264,8 @@ empty states; mega-menu keyboard; forms; skip link; axe spec (§5.12); Lighthous
    part of this demo.) Before the call: check the project's Deployment Protection — the client must
    open the preview without a Vercel login (disable protection for previews, or share link / bypass
    token).
-5. Prove: `docker build --target cms --build-arg BASE_IMAGE=debian:trixie-slim …`; `docker compose up`
+5. Prove (on a machine with a Docker daemon — the cloud sandbox has none, so hand this step to
+   Maksim with exact commands if you cannot run it): `docker build --target cms --build-arg BASE_IMAGE=debian:trixie-slim …`; `docker compose up`
    → `/en` on `:8080`; `docker run --network none …` serves pages; `--profile sso` Keycloak login
    maps roles; `--profile snapshot` then `--profile site` serves the static mirror on `:8082`.
    Hand-out for the client: `docs/plans/2026-10-04-ct-hosting.md` (update it if anything changes).
@@ -1279,7 +1308,7 @@ create the demo admin; run the e2e spec against the preview URL; paste URL + dem
 - [ ] No cookies on public pages; videos click-to-load via `youtube-nocookie`; Plausible tag only when env set.
 - [ ] `/robots.txt` allows AI agents; `/llms.txt` lists every seeded article; sitemap has author pages + hreflang.
 - [ ] axe: 0 serious/critical on 7 pages × 2 widths; keyboard pass.
-- [ ] `docker compose up` on a clean machine works; image built on `debian:trixie-slim`; runs with `--network none`.
+- [ ] `docker compose up` on a clean machine works (verified by Maksim if the agent has no Docker daemon); image built on `debian:trixie-slim`; runs with `--network none`.
 - [ ] The branch preview on Vercel builds with the unchanged `vercel.json` (migrations applied on the Neon preview branch) and opens without a Vercel login.
 - [ ] Brand: §6.2 tokens only; §6.12 don'ts respected; header/footer sequence matches §6.6.
 - [ ] Raw dump, parsed JSON, covers, media volume, screenshots **not** in git.

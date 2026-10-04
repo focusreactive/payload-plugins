@@ -13,7 +13,9 @@ a dependency-free copy):
 - every entry with `**Template:** T-NEWS-POST` (5), plus
 - the 35 newest entries with `**Template:** T-BLOG-POST` by `**Date:**` (ties broken by order in the dump).
 
-Result on the current dump: 40 posts, 19 distinct authors, dates 2024-08-06 → 2026-09-08. Only the
+Result on the current dump: 40 posts, 19 distinct authors, dates 2024-08-06 → 2026-09-08.
+After the scraper has run, zip `apps/cms/.local/ct` and upload it to Vercel Blob; the implementing
+session downloads it from `CT_LOCAL_ARCHIVE_URL` (plan §0.1 / T1). Only the
 authors of selected posts are seeded; `--all-posts` switches to all 191 posts / 69 authors.
 
 ## 2. Images: why a second pass is needed
