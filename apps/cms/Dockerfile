@@ -68,10 +68,14 @@ WORKDIR /repo
 COPY package.json bun.lock bunfig.toml turbo.json .npmrc ./
 # --parents keeps the directory structure (BuildKit labs syntax, see the first line).
 COPY --parents packages/*/package.json apps/*/package.json ./
+# Filtered install (root + cms + packages): the build context leaves out the other demo apps
+# (.dockerignore), and one of them depends on a private git repository. Not --frozen-lockfile:
+# the lockfile also lists those absent workspaces, so bun would refuse it; versions still come
+# from bun.lock.
 RUN --mount=type=secret,id=npm_token,required=false \
     set -eux; \
     export NPM_TOKEN="$(cat /run/secrets/npm_token 2>/dev/null || true)"; \
-    bun install --frozen-lockfile
+    bun install --filter './' --filter cms --filter './packages/*'
 
 # ──────────────────────────────── stage: build ──────────────────────────────────────────────
 # Builds the workspace plugins and the Next.js app in standalone mode. The standalone output is
@@ -81,12 +85,19 @@ COPY packages ./packages
 COPY apps/cms ./apps/cms
 ENV NEXT_TELEMETRY_DISABLED=1 \
     NODE_OPTIONS=--max-old-space-size=6144
+# Same sequence as vercel.json: plugins → migrations → `next build` (pre-rendering reads the
+# database, so the schema must exist first). NEXT_OUTPUT=standalone switches next.config to the
+# self-contained server output used by the runtime stage.
 RUN --mount=type=secret,id=database_url,required=false \
     set -eux; \
     export DATABASE_URL="$(cat /run/secrets/database_url 2>/dev/null || true)"; \
     export PAYLOAD_SECRET="${PAYLOAD_SECRET:-build-time-only-not-a-secret}"; \
     export NEXT_PUBLIC_SERVER_URL="${NEXT_PUBLIC_SERVER_URL:-http://localhost:3000}"; \
-    bunx turbo run build --filter=cms...
+    export MEDIA_STORAGE=local NEXT_OUTPUT=standalone; \
+    bunx turbo run build --filter='./packages/*'; \
+    cd apps/cms; \
+    bun run migrate; \
+    bun run build
 
 # ──────────────────────────────── stage: cms (runtime) ──────────────────────────────────────
 # What the client runs inside the network. ~ node + the standalone server + static assets.

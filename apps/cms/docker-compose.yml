@@ -23,7 +23,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"            # for running the seed from the host
+      - "5432:5432" # for running the seed from the host
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ct -d ct"]
       interval: 5s
@@ -34,17 +34,21 @@ services:
 
   cms:
     build:
-      context: ../..                       # monorepo root
+      context: ../.. # monorepo root
       dockerfile: apps/cms/Dockerfile
       target: cms
       args:
         BASE_IMAGE: ${BASE_IMAGE:-debian:trixie-slim}
       secrets: [npm_token, database_url]
+      # The build migrates and pre-renders against Postgres: with host networking the build reaches
+      # the compose database published on localhost:5432 (.secrets/database_url =
+      # postgres://ct:ct@localhost:5432/ct). Start it first: `docker compose up -d postgres`.
+      network: host
     env_file: .env.docker
     environment:
       PORT: "3000"
     volumes:
-      - media:/app/apps/cms/public/media   # uploads when Blob storage is not configured
+      - media:/app/apps/cms/public/media # uploads when Blob storage is not configured
     expose: ["3000"]
     depends_on:
       postgres: { condition: service_healthy }
@@ -53,7 +57,12 @@ services:
 
   edge:
     image: ${BASE_IMAGE:-debian:trixie-slim}
-    command: ["sh", "-c", "apt-get update >/dev/null && apt-get install -y --no-install-recommends nginx-light >/dev/null && exec nginx -c /etc/nginx/edge.conf -g 'daemon off;'"]
+    command:
+      [
+        "sh",
+        "-c",
+        "apt-get update >/dev/null && apt-get install -y --no-install-recommends nginx-light >/dev/null && exec nginx -c /etc/nginx/edge.conf -g 'daemon off;'",
+      ]
     volumes:
       - ./docker/nginx-edge.conf:/etc/nginx/edge.conf:ro
       - media:/srv/media:ro
@@ -84,9 +93,12 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # Browser-facing URL (issuer, login page) is localhost:8081; with dynamic backchannel the cms
+      # container reaches token/JWKS/userinfo at keycloak:8081 (OIDC_INTERNAL_ISSUER).
       KC_HOSTNAME: http://localhost:8081
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
     volumes:
-      - ./docker/keycloak:/opt/keycloak/data/import:ro   # realm-ct.json (users, groups, client)
+      - ./docker/keycloak:/opt/keycloak/data/import:ro # realm-ct.json (users, groups, client)
     ports:
       - "8081:8081"
     deploy: { resources: { limits: { cpus: "1", memory: 1500M } } }

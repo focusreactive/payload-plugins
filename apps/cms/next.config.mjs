@@ -9,6 +9,12 @@ const THIRTY_DAYS_IN_SECONDS = 60 * 60 * 24 * 30;
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Docker image only (Dockerfile sets NEXT_OUTPUT=standalone): a self-contained server traced from
+  // the monorepo root, so it lands at .next/standalone/apps/cms/server.js. Vercel keeps its default.
+  ...(process.env.NEXT_OUTPUT === "standalone" && {
+    output: "standalone",
+    outputFileTracingRoot: path.resolve(__dirname, "../.."),
+  }),
   turbopack: {
     root: path.resolve(__dirname, "../.."),
   },

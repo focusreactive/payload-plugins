@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const discovery = await getDiscovery(config.issuer);
+    const discovery = await getDiscovery(config.discoveryIssuer);
     const state = crypto.randomUUID();
 
     const params: Record<string, string> = {

@@ -8,7 +8,8 @@ import { claimsFromIdTokenPayload, claimsFromUserInfoResponse } from "@/lib/auth
 import type { IdTokenPayload } from "@/lib/auth/oidc/claims";
 import { getOIDCConfig } from "@/lib/auth/oidc/config";
 import { getDiscovery } from "@/lib/auth/oidc/discovery";
-import { findOrCreateAdminUser } from "@/lib/auth/utils/user";
+import { groupsFromClaims, roleFromGroups } from "@/lib/auth/oidc/roles";
+import { findOrCreateSsoUser } from "@/lib/auth/utils/user";
 import { getPayloadClient } from "@/dal";
 
 const OAUTH_STATE_COOKIE = "oidc_state";
@@ -67,7 +68,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const discovery = await getDiscovery(config.issuer);
+    const discovery = await getDiscovery(config.discoveryIssuer);
 
     const tokenParams: Record<string, string> = {
       client_id: config.clientId,
@@ -98,6 +99,8 @@ export async function GET(request: Request) {
     const accessToken = tokenData.access_token as string | undefined;
 
     let claims: { email: string; displayName: string };
+    // Groups (Keycloak "Group Membership" mapper) from the id token or UserInfo → CMS role.
+    let groups: string[] = [];
 
     if (idToken) {
       const JWKS = createRemoteJWKSet(new URL(discovery.jwks_uri));
@@ -122,6 +125,7 @@ export async function GET(request: Request) {
         throw new Error("id_token verification failed (issuer/audience mismatch)");
       }
       const raw = claimsFromIdTokenPayload(idPayload);
+      groups = groupsFromClaims(idPayload);
       if (!raw.email && discovery.userinfo_endpoint && accessToken) {
         const userInfoRes = await fetch(discovery.userinfo_endpoint, {
           headers: { Authorization: `Bearer ${accessToken}` },
@@ -153,6 +157,7 @@ export async function GET(request: Request) {
       }
       const userInfo = await userInfoRes.json();
       const raw = claimsFromUserInfoResponse(userInfo);
+      groups = groupsFromClaims(userInfo);
       if (!raw.email) {
         return NextResponse.redirect(
           `${origin}/admin/login?error=${encodeURIComponent("Email not received from IdP")}`
@@ -168,7 +173,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const user = await findOrCreateAdminUser(payload, claims);
+    const user = await findOrCreateSsoUser(payload, claims, roleFromGroups(groups));
 
     const usersCollection = payload.collections.users.config;
     if (!usersCollection?.auth) {

@@ -36,13 +36,17 @@ function normalizeEmailAndName(input: SSOUserInput): {
  * If the user exists and is admin, returns it.
  * If not exists, creates with role admin. If exists and is not admin, error.
  */
-export async function findOrCreateAdminUser(
+/**
+ * Finds the user by email or creates one. The role comes from the IdP groups and is re-applied on
+ * every login, so moving someone between Keycloak groups changes their CMS role (§5.9).
+ */
+export async function findOrCreateSsoUser(
   payload: Payload,
-  profile: SSOUserInput
+  profile: SSOUserInput,
+  role: "admin" | "user" | "author"
 ): Promise<User> {
   const { email, displayName } = normalizeEmailAndName(profile);
 
-  // Find existing user by email
   const existingUsers = await payload.find({
     collection: "users",
     depth: 0,
@@ -56,12 +60,20 @@ export async function findOrCreateAdminUser(
 
   const existingUser = existingUsers.docs[0] as User | undefined;
   if (existingUser) {
-    return existingUser;
+    if (existingUser.role === role) {
+      return existingUser;
+    }
+    const updated = await payload.update({
+      collection: "users",
+      data: { role },
+      id: existingUser.id,
+    });
+    payload.logger.info(`SSO role for ${email}: ${existingUser.role} → ${role}`);
+    return updated as User;
   }
 
-  // User does not exist - create a new admin.
-  // Payload auth requires password at create; for SSO user we set a random password,
-  // so the login is only through IdP (password is not known to the user).
+  // Payload auth requires a password at create; SSO users get a random one, so they can only sign
+  // in through the IdP.
   const randomPassword =
     typeof crypto !== "undefined" && crypto.randomUUID
       ? crypto.randomUUID() + crypto.randomUUID()
@@ -73,11 +85,11 @@ export async function findOrCreateAdminUser(
       email,
       name: displayName,
       password: randomPassword,
-      role: "admin",
+      role,
     },
   });
 
-  payload.logger.info(`New admin created via SSO: ${email}`);
+  payload.logger.info(`New ${role} created via SSO: ${email}`);
 
   return newUser as User;
 }

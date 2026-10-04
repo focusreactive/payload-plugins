@@ -73,7 +73,8 @@ export interface ImagesMap {
 
 // ───────────────────────────── helpers ─────────────────────────────
 
-const BLOCK_SELECTOR = ".post-content p, .post-content h2, .post-content h3, .post-content h4, .post-content h5, .post-content ul, .post-content ol, .post-content pre, .post-content blockquote, .post-content table";
+const BLOCK_SELECTOR =
+  ".post-content p, .post-content h2, .post-content h3, .post-content h4, .post-content h5, .post-content ul, .post-content ol, .post-content pre, .post-content blockquote, .post-content table";
 const IMG_SELECTOR = ".post-content img";
 const SPLASH_SELECTOR = ".post-splash, #splash";
 const OG_SELECTOR = 'meta[property="og:image"]';
@@ -90,8 +91,25 @@ const has = (name: string) => process.argv.includes(`--${name}`);
  * Minimal, dependency-free reader of the content dump: enough to select posts by template and date.
  * The full parser lives in parseDump.ts (seed); keep the selection rule identical in both places.
  */
-export function selectPostsFromDump(markdown: string, articles = 35, all = false): { url: string; date: string; template: string }[] {
-  const months = ["january","february","march","april","may","june","july","august","september","october","november","december"];
+export function selectPostsFromDump(
+  markdown: string,
+  articles = 35,
+  all = false
+): { url: string; date: string; template: string }[] {
+  const months = [
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
+  ];
   const posts: { url: string; date: string; template: string; order: number }[] = [];
   for (const [order, entry] of markdown.split(/\n---\n/u).entries()) {
     const url = entry.match(/\*\*URL:\*\* (\S+)/u)?.[1];
@@ -101,14 +119,21 @@ export function selectPostsFromDump(markdown: string, articles = 35, all = false
     // "Wed 08 January 2025" → 2025-01-08
     const m = dateText.match(/(\d{1,2}) ([A-Za-z]+) (\d{4})/u);
     const month = m ? months.indexOf(m[2].toLowerCase()) : -1;
-    const date = m && month >= 0 ? `${m[3]}-${String(month + 1).padStart(2, "0")}-${m[1].padStart(2, "0")}` : "0000-00-00";
+    const date =
+      m && month >= 0
+        ? `${m[3]}-${String(month + 1).padStart(2, "0")}-${m[1].padStart(2, "0")}`
+        : "0000-00-00";
     posts.push({ url, date, template, order });
   }
   const byDateDesc = (a: { date: string; order: number }, b: { date: string; order: number }) =>
     b.date.localeCompare(a.date) || a.order - b.order;
-  if (all) return posts.sort(byDateDesc).map(({ url, date, template }) => ({ url, date, template }));
+  if (all)
+    return posts.sort(byDateDesc).map(({ url, date, template }) => ({ url, date, template }));
   const news = posts.filter((p) => p.template === "T-NEWS-POST").sort(byDateDesc);
-  const blog = posts.filter((p) => p.template === "T-BLOG-POST").sort(byDateDesc).slice(0, articles);
+  const blog = posts
+    .filter((p) => p.template === "T-BLOG-POST")
+    .sort(byDateDesc)
+    .slice(0, articles);
   return [...news, ...blog].map(({ url, date, template }) => ({ url, date, template }));
 }
 
@@ -140,12 +165,19 @@ function toInt(v: string | null): number | null {
 function safeFileName(url: string, index: number): string {
   const raw = basename(new URL(url).pathname) || `image-${index}`;
   const ext = extname(raw).toLowerCase() || "";
-  const stem = raw.slice(0, raw.length - ext.length).replace(/[^a-zA-Z0-9._-]+/gu, "-").slice(0, 80) || `image-${index}`;
+  const stem =
+    raw
+      .slice(0, raw.length - ext.length)
+      .replace(/[^a-zA-Z0-9._-]+/gu, "-")
+      .slice(0, 80) || `image-${index}`;
   return `${String(index + 1).padStart(2, "0")}-${stem}${ext}`;
 }
 
 /** Parse one page's HTML. Pure function — used by the tests and by --from-html. */
-export function parsePage(html: string, pageUrl: string): Omit<MappedPost, "status" | "httpStatus"> {
+export function parsePage(
+  html: string,
+  pageUrl: string
+): Omit<MappedPost, "status" | "httpStatus"> {
   let blockCount = 0;
   let title: string | null = null;
   const images: MappedImage[] = [];
@@ -166,7 +198,8 @@ export function parsePage(html: string, pageUrl: string): Omit<MappedPost, "stat
     .on(OG_SELECTOR, {
       element(el) {
         const src = absolutize(el.getAttribute("content") ?? "", pageUrl);
-        if (src) push({ src, alt: "", title: null, afterBlock: 0, width: null, height: null, kind: "og" });
+        if (src)
+          push({ src, alt: "", title: null, afterBlock: 0, width: null, height: null, kind: "og" });
       },
     })
     .on(SPLASH_SELECTOR, {
@@ -174,7 +207,16 @@ export function parsePage(html: string, pageUrl: string): Omit<MappedPost, "stat
         const style = el.getAttribute("style") ?? "";
         const m = style.match(/url\((['"]?)([^'")]+)\1\)/u);
         const src = m ? absolutize(m[2], pageUrl) : null;
-        if (src) push({ src, alt: "", title: null, afterBlock: 0, width: null, height: null, kind: "splash" });
+        if (src)
+          push({
+            src,
+            alt: "",
+            title: null,
+            afterBlock: 0,
+            width: null,
+            height: null,
+            kind: "splash",
+          });
       },
     })
     .on(BLOCK_SELECTOR, {
@@ -220,7 +262,7 @@ async function fetchWithRetry(url: string, tries = 3): Promise<Response> {
     }
     await Bun.sleep(500 * (i + 1));
   }
-  throw lastError;
+  throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
 // ───────────────────────────── main ─────────────────────────────
@@ -239,12 +281,18 @@ async function main() {
     ? JSON.parse(await readFile(selectionPath, "utf-8"))
     : selectPostsFromDump(await readFile(dumpPath, "utf-8"), articles, has("all"));
   const posts = limit > 0 ? selection.slice(0, limit) : selection;
-  console.log(`selected ${selection.length} posts (${selectionPath ? `from ${selectionPath}` : `rule: news + ${has("all") ? "all" : articles} newest articles from ${dumpPath}`})`);
+  console.log(
+    `selected ${selection.length} posts (${selectionPath ? `from ${selectionPath}` : `rule: news + ${has("all") ? "all" : articles} newest articles from ${dumpPath}`})`
+  );
 
   await mkdir(join(out, "html"), { recursive: true });
   await mkdir(join(out, "images"), { recursive: true });
 
-  const map: ImagesMap = { generatedAt: new Date().toISOString(), source: selectionPath ?? dumpPath, posts: [] };
+  const map: ImagesMap = {
+    generatedAt: new Date().toISOString(),
+    source: selectionPath ?? dumpPath,
+    posts: [],
+  };
   let downloaded = 0;
   let failed = 0;
 
@@ -271,7 +319,15 @@ async function main() {
     }
 
     if (!html) {
-      map.posts.push({ slug, sourceUrl: post.url, status: "fetch-failed", httpStatus, title: null, blockCount: 0, images: [] });
+      map.posts.push({
+        slug,
+        sourceUrl: post.url,
+        status: "fetch-failed",
+        httpStatus,
+        title: null,
+        blockCount: 0,
+        images: [],
+      });
       failed += 1;
       continue;
     }
@@ -300,14 +356,23 @@ async function main() {
     }
 
     map.posts.push({ ...parsed, status, httpStatus });
-    console.log(`${String(i + 1).padStart(3)}/${posts.length} ${status.padEnd(12)} ${slug}  blocks=${parsed.blockCount} images=${parsed.images.length}`);
+    console.log(
+      `${String(i + 1).padStart(3)}/${posts.length} ${status.padEnd(12)} ${slug}  blocks=${parsed.blockCount} images=${parsed.images.length}`
+    );
   }
 
   await writeFile(join(out, "images-map.json"), JSON.stringify(map, null, 2));
 
-  const inline = map.posts.reduce((n, p) => n + p.images.filter((im) => im.kind === "inline").length, 0);
-  console.log(`\nposts: ${map.posts.length}  ok: ${map.posts.filter((p) => p.status === "ok").length}  failed: ${failed}`);
-  console.log(`images: inline ${inline}, total ${map.posts.reduce((n, p) => n + p.images.length, 0)}, downloaded ${downloaded}`);
+  const inline = map.posts.reduce(
+    (n, p) => n + p.images.filter((im) => im.kind === "inline").length,
+    0
+  );
+  console.log(
+    `\nposts: ${map.posts.length}  ok: ${map.posts.filter((p) => p.status === "ok").length}  failed: ${failed}`
+  );
+  console.log(
+    `images: inline ${inline}, total ${map.posts.reduce((n, p) => n + p.images.length, 0)}, downloaded ${downloaded}`
+  );
   console.log(`map: ${join(out, "images-map.json")}`);
   if (!fromHtml) {
     const saved = await readdir(join(out, "html"));
