@@ -127,6 +127,8 @@ export const plugins: Plugin[] = [
       // Direct Blob URLs. Media `read` is public (`anyone`); do not enable this if read is restricted.
       media: { disablePayloadAccessControl: true, prefix: getMediaStoragePrefix() },
     },
+    // Off without a token (Docker / self-hosted) or when MEDIA_STORAGE=local forces `public/media`.
+    enabled: Boolean(process.env.BLOB_READ_WRITE_TOKEN) && process.env.MEDIA_STORAGE !== "local",
     token: process.env.BLOB_READ_WRITE_TOKEN || "",
   }),
   redirectsPlugin({
