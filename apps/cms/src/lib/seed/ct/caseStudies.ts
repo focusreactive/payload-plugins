@@ -1,5 +1,6 @@
 import type { SeedContext } from "./context";
-import { paragraphs, splitSections } from "./sections";
+import { listItems, paragraphs, splitSections } from "./sections";
+import type { Section } from "./sections";
 
 export interface CaseStudyItem {
   title: string;
@@ -17,14 +18,9 @@ const SECTOR_RULES: [CaseStudyItem["sector"], RegExp][] = [
   ["medical", /medical|health|clinical|patient|device/iu],
 ];
 
-function labelled(body: string, label: RegExp): string | null {
-  const line = body.split("\n").find((entry) => label.test(entry));
-  return line
-    ? line
-        .replace(label, "")
-        .replace(/^[\s:*–-]+/u, "")
-        .trim() || null
-    : null;
+/** The dump gives each study four sub-headings: technologies, problem, solution and result. */
+function part(subsections: Section["subsections"], heading: RegExp): string {
+  return subsections.find((sub) => heading.test(sub.heading))?.body.trim() ?? "";
 }
 
 let cache: CaseStudyItem[] | null = null;
@@ -46,15 +42,28 @@ export function CASE_STUDY_ITEMS(ctx: SeedContext): CaseStudyItem[] {
         "\n\n"
       );
       const plain = paragraphs(text);
+      const technologies = part(sec.subsections, /technolog|tools|stack/iu);
       const sector =
         SECTOR_RULES.find(([, re]) => re.test(`${sec.heading} ${text}`))?.[0] ?? "other";
       return {
-        problem: labelled(text, /^\W*(the\s+)?(problem|challenge)\b\W*/iu) ?? plain[0] ?? "",
-        result:
-          labelled(text, /^\W*(business\s+)?(result|outcome|impact)s?\b\W*/iu) ?? plain[2] ?? "",
+        problem: part(sec.subsections, /problem|challenge/iu) || plain[0] || "",
+        result: part(sec.subsections, /result|outcome|impact/iu) || plain[2] || "",
         sector,
-        solution: labelled(text, /^\W*(\w+\s+)?(solution|approach)\b\W*/iu) ?? plain[1] ?? "",
-        technologies: labelled(text, /^\W*(technolog(y|ies)|tech stack|tools)\b\W*/iu) ?? "",
+        // "Solutions/Technologies" is the technology list, not the solution.
+        solution:
+          sec.subsections
+            .find(
+              (sub) => /solution|approach/iu.test(sub.heading) && !/technolog/iu.test(sub.heading)
+            )
+            ?.body.trim() ||
+          plain[1] ||
+          "",
+        technologies: (listItems(technologies).length > 0
+          ? listItems(technologies)
+          : [technologies]
+        )
+          .filter(Boolean)
+          .join(", "),
         title: sec.heading,
       };
     })

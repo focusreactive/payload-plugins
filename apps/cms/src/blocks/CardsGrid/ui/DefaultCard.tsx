@@ -76,7 +76,12 @@ export default function DefaultCard({
           </span>
         )}
         {title && <h3 className="text-h-card text-heading first-letter:uppercase">{title}</h3>}
-        {description && <p className="text-body-lg text-muted-foreground">{description}</p>}
+        {description && (
+          // Linked cards are teasers for another page: keep them to three lines.
+          <p className={cn("text-body-lg text-muted-foreground", hasLink && "line-clamp-3")}>
+            {description}
+          </p>
+        )}
       </div>
 
       {hasLink && (

@@ -32,7 +32,7 @@ export function CaseStudiesBlockComponent({
     <SectionContainer sectionData={{ ...section, id }}>
       {header && <SectionHeader {...header} className="mb-10" />}
       <CaseStudies
-        labels={{ problem: "The problem", result: "Business result", solution: "CT solution" }}
+        labels={{ problem: "The problem", result: "Business result", solution: "Our solution" }}
         items={visible.map((item) => ({
           problem: item.problem,
           result: item.result,
