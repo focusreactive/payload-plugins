@@ -1,6 +1,7 @@
 import type { Plugin } from "payload";
 
 import type { ValueExcludePredicate } from "./excludeValues.js";
+import type { Enrichment } from "./internal/gate.js";
 
 import { defaultExcludeValues } from "./excludeValues.js";
 import { createAfterOperationHook } from "./internal/afterOperationHook.js";
@@ -22,6 +23,12 @@ export {
   type ValueExcludePredicate,
 } from "./excludeValues.js";
 
+declare module "payload" {
+  interface RequestContext {
+    visualEditing?: boolean;
+  }
+}
+
 const INTERNAL_COLLECTIONS = [
   "payload-preferences",
   "payload-migrations",
@@ -40,6 +47,9 @@ export type VisualEditingPluginConfig = {
    *  Omit to use `defaultExcludeValues` (URL / slug / hash / ISO-date). */
   excludeValues?: ValueExcludePredicate[];
   adminBasePath?: string;
+  /** `'auto'` (default) enriches any Local API draft read outside the admin.
+   *  `'explicit'` enriches only reads that pass `context: { visualEditing: true }`. */
+  enrichment?: Enrichment;
 };
 
 export const visualEditingPlugin =
@@ -49,18 +59,25 @@ export const visualEditingPlugin =
     const skipGlobals = new Set(pluginConfig.skipGlobals);
     const adminBasePath = pluginConfig.adminBasePath ?? "/admin";
     const excludeValues = pluginConfig.excludeValues ?? defaultExcludeValues;
+    const enrichment = pluginConfig.enrichment ?? "auto";
 
     const schemaCache = createSchemaCache({
       excludeFieldNames: pluginConfig.excludeFieldNames,
     });
     const beforeOperation = createBeforeOperationHook();
-    const afterRead = createAfterReadHook(adminBasePath);
-    const afterOperation = createAfterOperationHook({ schemaCache, excludeValues, adminBasePath });
+    const afterRead = createAfterReadHook(adminBasePath, enrichment);
+    const afterOperation = createAfterOperationHook({
+      schemaCache,
+      excludeValues,
+      adminBasePath,
+      enrichment,
+    });
     const globalBeforeRead = createGlobalBeforeReadHook();
     const globalAfterRead = createGlobalAfterReadHook({
       schemaCache,
       excludeValues,
       adminBasePath,
+      enrichment,
     });
     const stripStega = createStripStegaHook();
 

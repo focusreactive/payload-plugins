@@ -59,3 +59,42 @@ describe("shouldEnrich", () => {
     expect(shouldEnrich(makeReq({ pathname: undefined }), "/admin")).toBe(true);
   });
 });
+
+describe("shouldEnrich — explicit enrichment", () => {
+  const withContext = (context: Record<string, unknown>, overrides: Partial<PayloadRequest> = {}) =>
+    makeReq({ ...overrides, context: context as PayloadRequest["context"] });
+
+  it("skips a frontend draft local read without the visualEditing signal", () => {
+    expect(shouldEnrich(makeReq({ pathname: "/" }), "/admin", "explicit")).toBe(false);
+  });
+
+  it("enriches when context.visualEditing=true", () => {
+    const req = withContext({ [DRAFT_CONTEXT_KEY]: true, visualEditing: true });
+    expect(shouldEnrich(req, "/admin", "explicit")).toBe(true);
+  });
+
+  it("enriches on the signal alone, regardless of draft, API or pathname", () => {
+    const req = withContext(
+      { [DRAFT_CONTEXT_KEY]: false, visualEditing: true },
+      { payloadAPI: "REST", pathname: "/admin/collections/pages/2" }
+    );
+    expect(shouldEnrich(req, "/admin", "explicit")).toBe(true);
+  });
+
+  it("skips when context.visualEditing=false", () => {
+    const req = withContext({ [DRAFT_CONTEXT_KEY]: true, visualEditing: false });
+    expect(shouldEnrich(req, "/admin", "explicit")).toBe(false);
+  });
+
+  it("ignores a non-boolean visualEditing value", () => {
+    const req = withContext({ [DRAFT_CONTEXT_KEY]: true, visualEditing: "true" });
+    expect(shouldEnrich(req, "/admin", "explicit")).toBe(false);
+  });
+});
+
+describe("shouldEnrich — auto enrichment", () => {
+  it("is the default mode", () => {
+    const req = makeReq({ pathname: "/" });
+    expect(shouldEnrich(req, "/admin", "auto")).toBe(shouldEnrich(req, "/admin"));
+  });
+});
