@@ -42,6 +42,7 @@ import * as migration_20261004_160120_optional_content_logo_images from './20261
 import * as migration_20261005_070537_ct_cleanup from './20261005_070537_ct_cleanup';
 import * as migration_20261005_071609_vacancies from './20261005_071609_vacancies';
 import * as migration_20261005_072905_mcp_vacancies from './20261005_072905_mcp_vacancies';
+import * as migration_20261005_074159_remove_ab_testing from './20261005_074159_remove_ab_testing';
 
 export const migrations = [
   {
@@ -263,5 +264,10 @@ export const migrations = [
     up: migration_20261005_072905_mcp_vacancies.up,
     down: migration_20261005_072905_mcp_vacancies.down,
     name: '20261005_072905_mcp_vacancies'
+  },
+  {
+    up: migration_20261005_074159_remove_ab_testing.up,
+    down: migration_20261005_074159_remove_ab_testing.down,
+    name: '20261005_074159_remove_ab_testing'
   },
 ];

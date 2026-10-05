@@ -82,7 +82,6 @@ export interface Config {
     presets: Preset;
     comments: Comment;
     'comment-reads': CommentRead;
-    'ab-experiments': AbExperiment;
     'payload-mcp-api-keys': PayloadMcpApiKey;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
@@ -111,7 +110,6 @@ export interface Config {
     presets: PresetsSelect<false> | PresetsSelect<true>;
     comments: CommentsSelect<false> | CommentsSelect<true>;
     'comment-reads': CommentReadsSelect<false> | CommentReadsSelect<true>;
-    'ab-experiments': AbExperimentsSelect<false> | AbExperimentsSelect<true>;
     'payload-mcp-api-keys': PayloadMcpApiKeysSelect<false> | PayloadMcpApiKeysSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -126,11 +124,9 @@ export interface Config {
   fallbackLocale: ('false' | 'none' | 'null') | false | null | ('en' | 'de' | 'ja') | ('en' | 'de' | 'ja')[];
   globals: {
     'site-settings': SiteSetting;
-    _abManifest: _AbManifest;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
-    _abManifest: _AbManifestSelect<false> | _AbManifestSelect<true>;
   };
   locale: 'en' | 'de' | 'ja';
   widgets: {
@@ -353,7 +349,6 @@ export interface FolderInterface {
  */
 export interface Page {
   id: number;
-  _abPassPercentage?: number | null;
   /**
    * The title of the page
    */
@@ -410,19 +405,6 @@ export interface Page {
         label?: string | null;
         id?: string | null;
       }[]
-    | null;
-  /**
-   * The original page this variant belongs to.
-   */
-  _abVariantOf?: (number | null) | Page;
-  _abPendingPercentages?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
     | null;
   folder?: (number | null) | FolderInterface;
   updatedAt: string;
@@ -2702,32 +2684,6 @@ export interface CommentRead {
   createdAt: string;
 }
 /**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ab-experiments".
- */
-export interface AbExperiment {
-  id: number;
-  /**
-   * Internal URL path used as the experiment id; matches GA4 fr_ab_experiment.
-   */
-  manifestKey: string;
-  /**
-   * ID of the original (non-variant) document.
-   */
-  parentDocId: string;
-  parentCollection: string;
-  /**
-   * Locale this experiment row is scoped to; null when localization is disabled.
-   */
-  locale?: string | null;
-  /**
-   * Set to now() when the first variant for this parent+locale is published.
-   */
-  startedAt: string;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
  * API keys control which collections, resources, tools, and prompts MCP clients can access
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3082,10 +3038,6 @@ export interface PayloadLockedDocument {
         value: number | CommentRead;
       } | null)
     | ({
-        relationTo: 'ab-experiments';
-        value: number | AbExperiment;
-      } | null)
-    | ({
         relationTo: 'payload-mcp-api-keys';
         value: number | PayloadMcpApiKey;
       } | null)
@@ -3272,7 +3224,6 @@ export interface MediaSelect<T extends boolean = true> {
  * via the `definition` "page_select".
  */
 export interface PageSelect<T extends boolean = true> {
-  _abPassPercentage?: T;
   title?: T;
   header?: T;
   blocks?:
@@ -3316,8 +3267,6 @@ export interface PageSelect<T extends boolean = true> {
         label?: T;
         id?: T;
       };
-  _abVariantOf?: T;
-  _abPendingPercentages?: T;
   folder?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -4921,19 +4870,6 @@ export interface CommentReadsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ab-experiments_select".
- */
-export interface AbExperimentsSelect<T extends boolean = true> {
-  manifestKey?: T;
-  parentDocId?: T;
-  parentCollection?: T;
-  locale?: T;
-  startedAt?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-mcp-api-keys_select".
  */
 export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
@@ -5228,27 +5164,6 @@ export interface SiteSetting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "_abManifest".
- */
-export interface _AbManifest {
-  id: number;
-  /**
-   * A/B testing manifest. Managed automatically — do not edit manually.
-   */
-  manifest?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  updatedAt?: string | null;
-  createdAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
@@ -5325,16 +5240,6 @@ export interface SiteSettingsSelect<T extends boolean = true> {
             };
       };
   _status?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  globalType?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "_abManifest_select".
- */
-export interface _AbManifestSelect<T extends boolean = true> {
-  manifest?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

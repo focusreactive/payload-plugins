@@ -5,13 +5,12 @@ Production-ready, open-source headless CMS built on [Payload CMS 3](https://payl
 **Features:**
 
 - **Presets** — multiple pre-configured block configurations to build pages faster.
-- **A/B Testing** — native experiments with dynamic % of traffic per variant, controlled inline.
 - **Comments** — inline collaboration for content teams and developers, directly on the field.
 - **Multi-Language + AI Translation** — one-click AI translations on top of Payload's localization plugin.
 - **Scheduled Publishing on Serverless** — works on Vercel and other serverless platforms where Payload's native scheduling can't run.
 - **Site Search** — plain-text Postgres search over page and post titles and post excerpts, scoped to the active locale.
 - **SSO** — OIDC support for Auth0, Keycloak, Okta, and any OIDC-compliant identity provider.
-- **Modular Page Builder** — composable, localizable blocks with preset and A/B-experiment hooks.
+- **Modular Page Builder** — composable, localizable blocks with presets.
 - **AI Development Ready** — `CLAUDE.md`, `AGENTS.md`, `.claude/`, and `.cursor/rules` ship in-repo so Claude Code, Cursor, and other agents are productive on day one.
 
 ## Quick Start
@@ -70,13 +69,6 @@ Multiple pre-configured block configurations you can use to build up your pages.
 
 - Package: [`@focus-reactive/payload-plugin-presets`](https://github.com/focusreactive/payload-plugins)
 - [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-presets)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-presets)
-
-### A/B Testing Plugin for Payload CMS
-
-Native experiments with a dynamic percentage of traffic going to each content variant. Control everything from the same page you're working on — page variants, middleware, and analytics adapters included.
-
-- Package: [`@focus-reactive/payload-plugin-ab`](https://github.com/focusreactive/payload-plugins)
-- [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-ab)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-ab)
 
 ### Comments Plugin for Payload CMS
 

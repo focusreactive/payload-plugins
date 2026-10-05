@@ -1,4 +1,3 @@
-import { abTestingPlugin } from "@focus-reactive/payload-plugin-ab";
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { commentsPlugin } from "@focus-reactive/payload-plugin-comments";
 import { presetsPlugin } from "@focus-reactive/payload-plugin-presets";
@@ -27,14 +26,9 @@ import serverExtractPostContent from "@/collections/Posts/serverExtractPostConte
 import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
 import { getMediaStoragePrefix } from "@/lib/storage/mediaStoragePrefix";
 import { I18N_CONFIG } from "@/lib/config/i18n";
-import { abAdapter } from "@/lib/plugins/ab/abAdapter";
-import { buildVariantData } from "@/lib/plugins/ab/buildVariantData";
-import type { ABVariantData } from "@/lib/plugins/ab/types";
 import { superAdmin, or, authenticated, user } from "@/lib/access";
 import { getServerSideURL } from "@/lib/utils/getURL";
-import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 import { validateRedirectPath } from "@/lib/utils/redirectUrl";
-import { isDev } from "@/lib/utils/isDev";
 import { buildUrl } from "@/lib/utils/path/buildUrl";
 import { normalizeRedirectFields } from "@/lib/hooks/normalizeRedirectFields";
 import { revalidateRedirects } from "@/lib/hooks/revalidateRedirects";
@@ -313,29 +307,6 @@ export const plugins: Plugin[] = [
     }),
   }),
 
-  abTestingPlugin<ABVariantData>({
-    collections: {
-      page: {
-        generatePath: ({ doc: docProp, locale }) => {
-          const doc = docProp as unknown as Page;
-
-          const breadcrumbs = doc.breadcrumbs ?? [];
-          const lastUrl = breadcrumbs.at(-1)?.url ?? "";
-          const restPath = !lastUrl || lastUrl === "/home" ? "" : lastUrl;
-
-          const resolvedLocale = locale ?? I18N_CONFIG.defaultLocale;
-          return shouldIncludeLocalePrefix(resolvedLocale)
-            ? `/${resolvedLocale}${restPath}`
-            : restPath || "/";
-        },
-        generateVariantData: ({ variantDoc, locale }) =>
-          buildVariantData(variantDoc as unknown as Page & { _abPassPercentage?: number }, locale),
-      },
-    },
-    debug: isDev(),
-    storage: abAdapter,
-  }),
-
   analyticsPlugin({
     ga4: {
       measurementId: process.env.GA4_MEASUREMENT_ID!,
@@ -347,9 +318,6 @@ export const plugins: Plugin[] = [
     },
     leadActions: {
       types: ["cta_click", "newsletter_signup"],
-    },
-    ab: {
-      experimentsCollectionSlug: "ab-experiments",
     },
     pages: {
       collections: ["page", "posts"],
@@ -371,7 +339,6 @@ export const plugins: Plugin[] = [
       "presets",
       "comments",
       "comment-reads",
-      "ab-experiments",
       "payload-mcp-api-keys",
     ],
     skipGlobals: ["site-settings"],
@@ -382,6 +349,5 @@ export const plugins: Plugin[] = [
   // Must stay last so it also protects collections and globals added by the plugins above.
   restrictApiAccess({
     collectionsWithPublicFiles: ["media"],
-    globalsWithPublicRead: abAdapter.createGlobal ? [abAdapter.createGlobal(false).slug] : [],
   }),
 ];

@@ -75,13 +75,15 @@ export function createGetFieldTool(
       if (globalConfig) {
         const globalSlug = slug as GlobalSlug;
 
-        const doc = (await req.payload.findGlobal({
-          depth: 1,
-          locale,
-          overrideAccess: false,
-          req,
-          slug: globalSlug,
-        })) as BaseDocument;
+        const doc: BaseDocument = {
+          ...(await req.payload.findGlobal({
+            depth: 1,
+            locale,
+            overrideAccess: false,
+            req,
+            slug: globalSlug,
+          })),
+        };
 
         const resolved = resolvePath(doc, fieldPath);
         if ("error" in resolved) {

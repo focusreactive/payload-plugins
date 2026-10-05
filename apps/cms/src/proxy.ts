@@ -1,30 +1,16 @@
-import { createResolveAbRewrite } from "@focus-reactive/payload-plugin-ab/middleware";
 import createMiddleware from "next-intl/middleware";
-import { draftMode } from "next/headers";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { I18N_CONFIG } from "@/lib/config/i18n";
-import { abAdapter } from "@/lib/plugins/ab/abAdapter";
 import { lookupLegacyRedirect } from "@/lib/redirects/legacy";
-import { buildInternalPathname } from "@/lib/plugins/ab/buildInternalPathname";
-import type { ABVariantData } from "@/lib/plugins/ab/types";
 
-import { abCookies } from "./lib/plugins/ab/abCookies";
 import { routing } from "./lib/i18n/routing";
 
 const intlMiddleware = createMiddleware(routing);
 
 const localeCodes = I18N_CONFIG.locales.map((l) => l.code).join("|");
 const localeRegex = new RegExp(`^/(${localeCodes})(/.*)?$`);
-
-const resolveAbRewrite = createResolveAbRewrite<ABVariantData>({
-  cookies: abCookies,
-  getBucket: (v) => v.bucket,
-  getPassPercentage: (v) => v.passPercentage,
-  getRewritePath: (v) => v.rewritePath,
-  storage: abAdapter,
-});
 
 const ASSET_PATH =
   /\.(?:png|jpe?g|gif|svg|ico|webp|avif|css|js|map|txt|xml|woff2?|ttf|json|pdf|webmanifest)$/iu;
@@ -53,22 +39,6 @@ export default async function middleware(request: NextRequest) {
   const isNextRoute = matchedLocale
     ? pathname.startsWith(`/${matchedLocale}/next/`)
     : pathname.startsWith("/next/");
-
-  const { isEnabled: isDraftMode } = await draftMode();
-
-  if (!isNextRoute && !isDraftMode) {
-    const internalPathname = buildInternalPathname(
-      pathname,
-      matchedLocale,
-      I18N_CONFIG.defaultLocale
-    );
-    const abResponse = await resolveAbRewrite(request, pathname, pathname, internalPathname);
-
-    if (abResponse) {
-      abResponse.headers.set("x-pathname", pathname);
-      return abResponse;
-    }
-  }
 
   if (isNextRoute) {
     const response = NextResponse.next();

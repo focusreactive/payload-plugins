@@ -2,8 +2,8 @@ import type { PayloadRequest } from "payload";
 
 export interface BaseDocument {
   id: string | number;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
   [key: string]: unknown;
 }
 

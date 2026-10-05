@@ -59,7 +59,7 @@ src/
 │   ├── types/                 #   shared types
 │   └── utils/                 #   flat cross-cutting helpers
 ├── messages/                  # Translation JSON (next-intl)
-└── proxy.ts                   # Locale routing + A/B rewrite resolution
+└── proxy.ts                   # Legacy redirects + locale routing
 ```
 
 **Path alias:** `@/*` → `./src/*`. The DAL keeps a stable import root regardless of its file location: `@/dal` → `./src/lib/dal`.
@@ -110,7 +110,6 @@ so a deeply nested field inside a block can overflow and make `payload migrate:c
 - `@focus-reactive/payload-plugin-comments` — inline field comments
 - `@focus-reactive/payload-plugin-scheduling` — scheduled publishing on serverless
 - `@focus-reactive/payload-plugin-translator` — AI translation (OpenAI provider)
-- `@focus-reactive/payload-plugin-ab` — A/B testing with middleware-driven variant rewrites
 - MCP plugin — exposes content tools to AI agents
 
 A plugin's **app-side wiring** (config, adapters, provider components) lives under `src/lib/plugins/<name>/` — e.g. `lib/plugins/ab/` (middleware adapter, cookies, variant data) and `lib/plugins/analytics/` (GA4 provider). The published feature itself lives in the monorepo `packages/payload-plugin-<name>/`.
@@ -123,11 +122,7 @@ Locales live in `src/lib/config/i18n.ts` (`en`, `de`, `ja`). English has no URL 
 
 ### Blocks & Presets
 
-Each block lives in `src/blocks/<BlockName>/`: `config.ts` (Payload block config; supports presets and A/B-experiment fields, and uses `getBlockPreviewImage('BlockName')` for the admin preview thumbnail), `Component.tsx` (the **controller** — Payload-aware, maps block data to props), and `ui/` (the **presentational** section — props in → JSX out, no Payload). Shared building blocks live in `@/components/shared` (and standalone components at `@/components/<Name>`); admin-panel UI in `@/components/admin`. See `src/components/README.md` for the full layout + the lint-enforced `ui/` boundary.
-
-### A/B Testing
-
-The plugin owns the experiment/variant data model. The proxy (`src/proxy.ts`) calls `resolveAbRewrite` to pick a variant and rewrite the request. Visitor identity is cookie-based (`ab_visitor_id`); variant choice is cached per slug.
+Each block lives in `src/blocks/<BlockName>/`: `config.ts` (Payload block config; supports presets, and uses `getBlockPreviewImage('BlockName')` for the admin preview thumbnail), `Component.tsx` (the **controller** — Payload-aware, maps block data to props), and `ui/` (the **presentational** section — props in → JSX out, no Payload). Shared building blocks live in `@/components/shared` (and standalone components at `@/components/<Name>`); admin-panel UI in `@/components/admin`. See `src/components/README.md` for the full layout + the lint-enforced `ui/` boundary.
 
 ### Access Control
 

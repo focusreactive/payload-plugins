@@ -30,7 +30,6 @@
   "dependencies": {
     "@ai-sdk/openai": "3.0.25",
     "@auth0/nextjs-auth0": "4.20.0",
-    "@focus-reactive/payload-plugin-ab": "workspace:*",
     "@focus-reactive/payload-plugin-analytics": "workspace:*",
     "@focus-reactive/payload-plugin-comments": "workspace:*",
     "@focus-reactive/payload-plugin-presets": "workspace:*",

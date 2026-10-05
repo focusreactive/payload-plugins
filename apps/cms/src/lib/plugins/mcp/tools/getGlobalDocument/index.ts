@@ -13,13 +13,14 @@ async function fetchGlobal(
   locale?: Locale,
   full?: boolean
 ): Promise<BaseDocument> {
-  return req.payload.findGlobal({
+  const doc = await req.payload.findGlobal({
     depth: full ? 2 : 1,
     locale,
     overrideAccess: false,
     req,
     slug,
-  }) as Promise<BaseDocument>;
+  });
+  return { ...doc };
 }
 
 export function createGetGlobalDocumentTool(

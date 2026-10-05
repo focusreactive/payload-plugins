@@ -29,7 +29,6 @@ import { CopyAiPromptButton as CopyAiPromptButton_9694d9e75b2ba68d2307fd533ed819
 import { BlocksFieldWithPresets as BlocksFieldWithPresets_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { SeoField as SeoField_8b0de638b8c4dbaba7d1d35a3b22b14d } from '@focus-reactive/payload-plugin-seo/components/SeoField'
 import { SlugField as SlugField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
-import { VariantsField as VariantsField_1e5bf2338fb8c7d4f6284f3e67c93951 } from '@focus-reactive/payload-plugin-ab/admin/VariantsField'
 import { default as default_5a9e6bfe3379b31c0258f532ec5399fb } from '@focus-reactive/payload-plugin-translator/client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.server'
 import { SeoButton as SeoButton_0275c4dc7702e5d88e7eb977a6a3d442 } from '@focus-reactive/payload-plugin-seo/components/SeoButton'
 import { default as default_587142b484744b5573788fdf4a68522a } from '@focus-reactive/payload-plugin-translator/client/widgets/translate-document/ui/TranslateDocument.server'
@@ -89,7 +88,6 @@ export const importMap = {
   "@focus-reactive/payload-plugin-presets/client#BlocksFieldWithPresets": BlocksFieldWithPresets_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-seo/components/SeoField#SeoField": SeoField_8b0de638b8c4dbaba7d1d35a3b22b14d,
   "@payloadcms/next/client#SlugField": SlugField_2b8867833a34864a02ddf429b0728a40,
-  "@focus-reactive/payload-plugin-ab/admin/VariantsField#VariantsField": VariantsField_1e5bf2338fb8c7d4f6284f3e67c93951,
   "@focus-reactive/payload-plugin-translator/client/widgets/bulk-translation-dashboard/ui/BulkTranslationDashboard.server#default": default_5a9e6bfe3379b31c0258f532ec5399fb,
   "@focus-reactive/payload-plugin-seo/components/SeoButton#SeoButton": SeoButton_0275c4dc7702e5d88e7eb977a6a3d442,
   "@focus-reactive/payload-plugin-translator/client/widgets/translate-document/ui/TranslateDocument.server#default": default_587142b484744b5573788fdf4a68522a,
