@@ -1,3 +1,16 @@
+# @focus-reactive/payload-plugin-translator [0.15.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.14.0...@focus-reactive/payload-plugin-translator@0.15.0) (2026-10-05)
+
+
+### Bug Fixes
+
+* **translator:** make the re-translate button preserve hand edits ([9800ab8](https://github.com/focusreactive/payload-plugins/commit/9800ab8caf8fa7506ee203a1c6fc00c700d12be3))
+
+
+### Features
+
+* **translator:** keep provenance fingerprints out of the public record type ([e1707a3](https://github.com/focusreactive/payload-plugins/commit/e1707a30e98f09a30505d297ae5fa2df84635d40))
+* **translator:** refresh a translation whose source moved, not just an empty one ([d67ca3b](https://github.com/focusreactive/payload-plugins/commit/d67ca3b3f7ca381335248a593148d2bc5f6154c6)), closes [#118](https://github.com/focusreactive/payload-plugins/issues/118)
+
 # @focus-reactive/payload-plugin-translator [0.14.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.13.4...@focus-reactive/payload-plugin-translator@0.14.0) (2026-10-02)
 
 
