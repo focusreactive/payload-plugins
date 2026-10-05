@@ -1,3 +1,16 @@
+# @focus-reactive/payload-plugin-translator [0.14.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.13.4...@focus-reactive/payload-plugin-translator@0.14.0) (2026-10-02)
+
+
+### Bug Fixes
+
+* **translator:** let the error say whether a failure must surface ([4b45c72](https://github.com/focusreactive/payload-plugins/commit/4b45c72d1abc95016616b5ca758a3810609939d6))
+* **translator:** stop overriding the host's own read rules ([6f12390](https://github.com/focusreactive/payload-plugins/commit/6f1239028c0367df060e12c7c19d9fa7ece92f26))
+
+
+### Features
+
+* **translator:** check the host's access rules before writing a translation ([e8f636b](https://github.com/focusreactive/payload-plugins/commit/e8f636bf44d9a01841a714771b240f012d7ed957)), closes [#144](https://github.com/focusreactive/payload-plugins/issues/144)
+
 ## @focus-reactive/payload-plugin-translator [0.13.4](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-translator@0.13.3...@focus-reactive/payload-plugin-translator@0.13.4) (2026-09-25)
 
 

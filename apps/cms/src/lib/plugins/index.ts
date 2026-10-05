@@ -25,6 +25,7 @@ import { Posts } from "@/collections/Posts";
 import serverExtractPostContent from "@/collections/Posts/serverExtractPostContent";
 import { Testimonials } from "@/collections/Testimonials";
 import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
+import { getMediaStoragePrefix } from "@/lib/storage/mediaStoragePrefix";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { abAdapter } from "@/lib/plugins/ab/abAdapter";
 import { buildVariantData } from "@/lib/plugins/ab/buildVariantData";
@@ -40,6 +41,7 @@ import { revalidateRedirects } from "@/lib/hooks/revalidateRedirects";
 import type { Page } from "@/payload-types";
 
 import { mcpPluginConfig } from "./mcp";
+import { restrictApiAccess } from "./restrictApiAccess";
 
 const withBlockNameCell = (field: Field): Field => {
   if (field.type !== "blocks" || field.name !== "presetBlock") return field;
@@ -118,20 +120,22 @@ const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
 
 export const plugins: Plugin[] = [
   vercelBlobStorage({
+    alwaysInsertFields: true,
     cacheControlMaxAge: ONE_YEAR_IN_SECONDS,
     clientUploads: true,
     collections: {
       // Direct Blob URLs. Media `read` is public (`anyone`); do not enable this if read is restricted.
-      media: { disablePayloadAccessControl: true },
+      media: { disablePayloadAccessControl: true, prefix: getMediaStoragePrefix() },
     },
-    enabled: process.env.NODE_ENV === "production",
     token: process.env.BLOB_READ_WRITE_TOKEN || "",
   }),
   redirectsPlugin({
     collections: ["page", "posts"],
     overrides: {
       admin: { group: "Settings" },
-      // @ts-expect-error - This is a valid override, mapped fields don't resolve to the same type
+      // @ts-expect-error — `.map()` over the `Field` union returns spread object literals that TS
+      // will not re-narrow to `Field`, so the callback's return type is not assignable to
+      // `FieldsOverride`'s `Field[]`.
       fields: ({ defaultFields }) => {
         const customFields: Field[] = [
           {
@@ -341,6 +345,7 @@ export const plugins: Plugin[] = [
     collections: [PageCollection, Posts, Categories, Authors, Testimonials, Header, Footer].map(
       (col) => JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
     ),
+    access: { check: ({ req }) => Boolean(req.user) },
     runner: createSyncRunner(),
     translationProvider: createOpenAIProvider({
       apiKey: process.env.OPENAI_API_KEY!,
@@ -418,4 +423,10 @@ export const plugins: Plugin[] = [
   }),
 
   mcpPluginConfig,
+
+  // Must stay last so it also protects collections and globals added by the plugins above.
+  restrictApiAccess({
+    collectionsWithPublicFiles: ["media"],
+    globalsWithPublicRead: abAdapter.createGlobal ? [abAdapter.createGlobal(false).slug] : [],
+  }),
 ];

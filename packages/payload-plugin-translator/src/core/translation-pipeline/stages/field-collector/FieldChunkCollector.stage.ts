@@ -1,3 +1,4 @@
+import { TranslatorBug } from "../../../errors/index.js";
 import type { PipelineContext, PipelineStage } from "../../types/index.js";
 import type { TranslationStrategy } from "../../strategies/index.js";
 import { FieldChunkCollector } from "./FieldChunkCollector.js";
@@ -12,7 +13,7 @@ export class FieldChunkCollectorStage implements PipelineStage {
 
   execute(ctx: PipelineContext): PipelineContext {
     if (!ctx.filteredData) {
-      throw new Error("FieldChunkCollectorStage requires filteredData from previous stage");
+      throw new TranslatorBug("FieldChunkCollectorStage requires filteredData from previous stage");
     }
 
     const collector = new FieldChunkCollector(

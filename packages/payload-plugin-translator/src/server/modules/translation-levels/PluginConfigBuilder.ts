@@ -117,8 +117,6 @@ export class PluginConfigBuilder implements LevelContext {
 
   /** The one sink that writes every accumulated contribution into `config`. */
   applyTo(config: Config): Config {
-    // Config modifiers first — a runner's modifier may return a fresh config
-    // object, so everything else must be applied to its result.
     let result = config;
     for (const modify of this.configModifiers) result = modify(result);
 
@@ -133,11 +131,6 @@ export class PluginConfigBuilder implements LevelContext {
     if (!config.admin) config.admin = {};
     if (!config.admin.components) config.admin.components = {};
     if (!config.admin.components.providers) config.admin.components.providers = [];
-    // Not deduplicated. Unlike a duplicate endpoint (a route conflict), a
-    // duplicate admin provider is harmless, and providers have no reliable
-    // identity key across their shapes (`string | { path } | false`, with
-    // distinguishing `serverProps`). The single CacheProvider is added once per
-    // plugin instance.
     config.admin.components.providers.push(...this.adminProviders);
   }
 
@@ -160,9 +153,7 @@ export class PluginConfigBuilder implements LevelContext {
   private registerEndpoints(config: Config): void {
     if (this.endpoints.length === 0) return;
     if (!config.endpoints) config.endpoints = [];
-    // Seed from endpoints already on the config so each (method, path) registers
-    // once — across the levels' contributions AND anything already present (e.g.
-    // the plugin registered twice, or a host route at the same path).
+
     const seen = new Set(config.endpoints.map(endpointKey));
     for (const endpoint of this.endpoints) {
       const key = endpointKey(endpoint);

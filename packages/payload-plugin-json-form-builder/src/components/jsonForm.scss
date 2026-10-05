@@ -1,0 +1,845 @@
+// The json form builder's own styles. Payload's class names are used where its elements are
+// reused, so the admin keeps styling them and a change on their side carries over.
+
+.icon-button {
+  align-items: center;
+  background: var(--theme-elevation-50);
+  border: 0;
+  color: var(--theme-elevation-800);
+  cursor: pointer;
+  display: inline-flex;
+  height: calc(var(--base) * 1.4);
+  justify-content: center;
+  padding: 0;
+  width: calc(var(--base) * 1.6);
+}
+
+.icon-button:disabled {
+  cursor: progress;
+}
+
+.icon-button:hover,
+.icon-button:focus-visible {
+  background: var(--theme-elevation-150);
+  color: var(--theme-elevation-1000);
+}
+
+.icon--eye .stroke,
+.icon--braces .stroke {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2px;
+}
+
+/* JsonFormField is not one of Payload's own fields, so it is drawn as its own card: a hairline box
+   with a header strip, a tag by the name, and everything that belongs to it inside. */
+.json-form {
+  /* The four colours the palette cannot give: a muted red for the ring and the banner, where
+	   Payload's scale only offers the signal red, and a green for the status dot, where its
+	   `--theme-success` is blue. Light is the base and dark overrides it, the way Payload builds its
+	   own palette — so a theme Payload has not resolved yet still lands on the readable half. */
+  --json-form-alarm-bg: var(--theme-error-100);
+  --json-form-alarm-ring: var(--theme-error-250);
+  --json-form-good: #15803d;
+  --json-form-good-dot: #16a34a;
+  border: 1px solid var(--theme-elevation-100);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+html[data-theme="dark"] .json-form {
+  --json-form-alarm-bg: rgb(37 23 24);
+  --json-form-alarm-ring: rgb(90, 36, 36);
+  --json-form-good: #8fd19e;
+  --json-form-good-dot: #4ade80;
+}
+
+.json-form__bar {
+  align-items: center;
+  height: calc(var(--base) * 2.2);
+  /* An accordion's header is `--theme-elevation-50`; this is that, a touch deeper. Mixed towards
+	   black rather than taken a step up the scale, which goes lighter as it rises and so would
+	   brighten the strip in the dark theme instead. */
+  background: color-mix(in srgb, var(--theme-elevation-50), black 8%);
+  border-bottom: 1px solid var(--theme-elevation-100);
+  display: flex;
+  gap: calc(var(--base) / 2);
+  justify-content: space-between;
+  /* No vertical padding of its own: the strip is sized by `height`, and what sits in it centres. */
+  padding: 0 calc(var(--base) * 0.5) 0 var(--base);
+}
+
+.json-form__tools {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+/* Between the one action and the choice of view: they are different kinds of thing. */
+.json-form__split {
+  background: var(--theme-elevation-100);
+  height: 20px;
+  width: 1px;
+}
+
+.json-form__title {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+/* Quiet until the cursor is on them. The ground has to be named again under `:hover`: the plain
+   `.icon-button:hover` weighs the same as this rule and loses only by standing above it. */
+.json-form__tools .icon-button {
+  background: var(--theme-elevation-0);
+  border: 1px solid var(--theme-elevation-100);
+  border-radius: 6px;
+  color: var(--theme-elevation-600);
+  display: grid;
+  height: 32px;
+  place-items: center;
+  width: 32px;
+}
+
+.json-form__tools .icon-button:hover,
+.json-form__tools .icon-button:focus-visible {
+  background: var(--theme-elevation-0);
+  border-color: var(--theme-elevation-250);
+  color: var(--theme-elevation-1000);
+}
+
+.json-form__tools .icon-button svg {
+  height: 20px;
+  width: 20px;
+  display: block;
+}
+
+.json-form__tools .icon-button svg .stroke {
+  stroke-width: 1.8px;
+}
+
+/* The format, said once and quietly — a stamp set into the card's bottom corner rather than a
+   badge beside the title. Only the inner corner is rounded; the card's own radius clips the rest. */
+/* A status line, the way an editor reads one: what the value is and how big it has grown. */
+.json-form__foot {
+  align-items: center;
+  /* No ground of its own: the card's shows through, and only the line separates them. */
+  border-top: 1px solid var(--theme-elevation-100);
+  color: var(--theme-elevation-500);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  gap: calc(var(--base) * 0.7);
+  height: calc(var(--base) * 1.7);
+  padding: 0 var(--base);
+}
+
+/* Said in the status line rather than over the editor: it is a property of the view, not a notice. */
+.json-form__note {
+  margin-left: auto;
+}
+
+/* The dot before the word, drawn rather than written. */
+.json-form__state::before {
+  border-radius: 50%;
+  content: "";
+  display: inline-block;
+  height: 6px;
+  margin-right: calc(var(--base) * 0.3);
+  width: 6px;
+}
+
+.json-form__state--on {
+  color: var(--json-form-good);
+}
+
+.json-form__state--on::before {
+  background: var(--json-form-good-dot);
+}
+
+/* `-600` rather than `-400`: the scale is mirrored between the themes, so this one step reads as a
+   dark red on white and a light red on black. `-400` is dark in both. */
+.json-form__state--off {
+  color: var(--theme-error-600);
+}
+
+.json-form__state--off::before {
+  background: var(--theme-error-500);
+}
+
+/* The ring around the card, and only the ring: the strip's own line under the header stays the
+   line it always was. */
+.json-form--alarmed {
+  border-color: var(--json-form-alarm-ring);
+}
+
+/* What is wrong, said between the header and the thing it is wrong in. The words on this ground
+   are taken from the high end of the error scale, which Payload mirrors between the themes — so
+   one step is dark on the light banner and light on the dark one. */
+.json-form__alarm {
+  background: var(--json-form-alarm-bg);
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-error-500), transparent 70%);
+  list-style: none;
+  margin: 0;
+  padding: calc(var(--base) * 0.4) 0;
+}
+
+.json-form__alarm-row {
+  align-items: baseline;
+  display: flex;
+  gap: calc(var(--base) * 0.6);
+  padding: calc(var(--base) * 0.35) var(--base);
+}
+
+.json-form__alarm-no {
+  color: var(--theme-error-600);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.json-form__alarm-said {
+  display: grid;
+  gap: calc(var(--base) * 0.2);
+  min-width: 0;
+}
+
+.json-form__alarm-message {
+  color: var(--theme-error-800);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* The way to the fault: muted, so the message above it reads first. */
+.json-form__crumbs {
+  color: var(--theme-elevation-600);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  gap: calc(var(--base) * 0.25);
+}
+
+.json-form__crumb-sep {
+  color: var(--theme-elevation-400);
+  margin-right: calc(var(--base) * 0.25);
+}
+
+/* The failing step, told apart by colour alone — a wavy rule under it read as a border in the text. */
+.json-form__crumb--bad {
+  color: var(--theme-error-700);
+}
+
+/* The format, said once beside the name of the field. */
+.json-form__badge {
+  /* The same ground and line as the switch across the strip: both are chips set into the header
+	   rather than drawn on it. */
+  background: var(--theme-elevation-0);
+  border: 1px solid var(--theme-elevation-100);
+  border-radius: var(--style-radius-s);
+  color: var(--theme-elevation-800);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 1px 6px;
+}
+
+/* Two named views rather than one icon that toggles: which one is open is then readable, not
+   guessed. Built as a segmented control, the shape the admin uses for a choice of one. */
+.json-form__views {
+  background: var(--theme-elevation-0);
+  border: 1px solid var(--theme-elevation-100);
+  border-radius: 6px;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+}
+
+.json-form__view {
+  align-items: center;
+  background: none;
+  border: 0;
+  border-radius: calc(var(--style-radius-s) - 1px);
+  color: var(--theme-elevation-600);
+  cursor: pointer;
+  display: flex;
+  font-family: var(--font-body);
+  font-size: 12px;
+  gap: calc(var(--base) * 0.2);
+  padding: calc(var(--base) * 0.2) calc(var(--base) * 0.45);
+}
+
+.json-form__view:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.json-form__view svg {
+  height: calc(var(--base) * 0.9);
+  width: calc(var(--base) * 0.9);
+}
+
+.json-form__view--on {
+  background: var(--theme-elevation-150);
+  color: var(--theme-elevation-1000);
+}
+
+/* Payload's buttons carry a vertical margin meant for a form's foot; in the header strip it would
+   push the box open. */
+.json-form__bar .btn {
+  margin-block: 0;
+}
+
+.json-form__body {
+  padding: var(--base);
+}
+
+/* `.code-editor` is styled as an input, so its own border would sit just inside the card's. */
+.json-form__body--code {
+  padding: 0;
+}
+
+.json-form__body--code .code-editor {
+  border: 0;
+  border-radius: 0;
+}
+
+/* The editor runs edge to edge, so anything said under it has to carry its own room — the body has
+   none to give. */
+.json-form__body--code > p {
+  margin: 0;
+  padding: calc(var(--base) * 0.5) var(--base);
+}
+
+/* Lexical draws no error state of its own, so the box it sits in takes one. */
+.json-form__faulty .rich-text-lexical {
+  border-color: var(--theme-error-500);
+}
+
+/* What is wrong with one field, under that field. Payload's own `field-error` is positioned for the
+   top right of a box; this is a line in the flow, where the eye is already reading. */
+.json-form__fault {
+  color: var(--theme-error-500);
+  font-size: 12px;
+  margin: calc(var(--base) * 0.2) 0 0;
+}
+
+/* What a refused save was about, read at the top of the field rather than hunted for down the
+   sections. Each field says it again under itself. */
+.json-form__notes {
+  color: var(--theme-error-500);
+  display: grid;
+  font-size: 1rem;
+  gap: calc(var(--base) * 0.25);
+  margin: 0 0 calc(var(--base) * 0.75);
+}
+
+.json-form__notes-lead {
+  align-items: center;
+  display: flex;
+  font-weight: 600;
+  gap: calc(var(--base) * 0.4);
+  margin: 0;
+}
+
+/* Numbered, and lined up under the words of the lead rather than under the pill. Not a grid: a
+   list laid out that way loses its markers. */
+.json-form__notes ol {
+  list-style: decimal;
+  margin: 0;
+  padding-left: calc(var(--base) * 2.4);
+}
+
+.json-form__notes li + li {
+  margin-top: calc(var(--base) * 0.15);
+}
+
+/* The spacing Payload puts between any two fields, so the form breathes like the rest. */
+.json-form__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-field, var(--base));
+}
+
+/* The same gap again under the last section, so the button is not welded to it. Said by what else
+   is in the body rather than by what stands next to the button: the sections are wrapped by their
+   own sortable, and an empty field leaves the button alone, where no gap is wanted. */
+.json-form__body > .json-form__add-row.btn:not(:only-child) {
+  margin-top: var(--spacing-field, var(--base));
+}
+
+/* The "⋯" trigger, which `array-actions__button` would have styled had we been able to keep that
+   class. `buttonSize` on the Popup gives it its padding. */
+.json-form__menu {
+  border-radius: 100px;
+  cursor: pointer;
+}
+
+.json-form__menu:hover {
+  background: var(--theme-elevation-0);
+}
+
+/* A switched-off key greyed and struck through — the class sits on the node itself, so this is an
+   accordion's header, a list's heading or a group's. */
+.json-form__hidden > .collapsible__toggle-wrap,
+.json-form__hidden > .array-field__header,
+.json-form__hidden > .group-field__header {
+  background: var(--theme-elevation-50);
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+/* The top-level sections sit closer together than fields do: they are folded headers, not inputs. */
+.json-form__body > .json-form__fields {
+  gap: calc(var(--base) / 2);
+}
+
+.json-form__read-only {
+  color: var(--theme-elevation-700);
+}
+
+.json-form__errors {
+  color: var(--theme-error-500);
+  font-size: 12px;
+  margin: 0;
+  padding: calc(var(--base) * 0.5) calc(var(--base) * 0.75);
+}
+
+/* A drawer over a drawer: `body-scroll-lock` restores the page as soon as one of them unlocks, so
+   the page behind the builder has to be held by hand. */
+body.json-builder-open {
+  overflow: hidden !important;
+}
+
+/* In the drawer's own header, where the title already sits: it never scrolls away. */
+.json-builder__bar {
+  gap: calc(var(--base) * 0.5);
+}
+
+/* The cross is the way out; the button that writes should not sit against it. */
+.json-builder__bar .json-builder__close {
+  margin-left: calc(var(--base) * 0.7);
+}
+
+.json-builder__bar .btn {
+  --btn-padding-inline-end: calc(var(--base) * 1.1);
+  --btn-padding-inline-start: calc(var(--base) * 1.1);
+  margin: 0;
+}
+
+/* The drawer's own scroller holds the header above us, so the grid takes what is left of the screen
+   and each column scrolls on its own. */
+.json-builder__shell .drawer__content-children {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.json-builder {
+  display: grid;
+  flex: 1;
+  gap: 0;
+  grid-template-columns: 19rem minmax(0, 1fr) 23rem;
+  min-height: 0;
+}
+
+/* Payload's buttons carry a bottom margin for a form; here they sit in grids that own the spacing. */
+.json-builder .btn,
+.json-builder__options .btn,
+.json-builder__buttons .btn {
+  margin: 0;
+}
+
+.json-builder__sections,
+.json-builder__canvas,
+.json-builder__settings {
+  align-content: start;
+  display: grid;
+  gap: calc(var(--base) * 0.3);
+  overflow-y: auto;
+  padding: 0 var(--base) var(--base);
+}
+
+.json-builder__sections {
+  border-right: 1px solid var(--theme-elevation-100);
+  padding-left: 0;
+}
+
+/* Adding a section is not one of them, so it stands apart from the list. */
+.json-builder__sections .btn {
+  margin-top: calc(var(--base) * 0.6);
+}
+
+.json-builder__settings {
+  border-left: 1px solid var(--theme-elevation-100);
+  gap: calc(var(--base) * 0.5);
+  overflow-x: hidden;
+  padding-right: 0;
+}
+
+.json-builder__canvas {
+  min-width: 0;
+}
+
+/* A pill carries its own colours, its hover and its picked state; only the row shape is ours. */
+.json-builder__section {
+  --pill-padding-block-end: calc(var(--base) * 0.4);
+  --pill-padding-block-start: calc(var(--base) * 0.4);
+  font-size: 1.05rem;
+  width: 100%;
+}
+
+.json-builder__section .pill__label {
+  display: flex;
+  gap: calc(var(--base) * 0.3);
+  justify-content: space-between;
+  width: 100%;
+}
+
+.json-builder__section-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.json-builder__section-count {
+  opacity: 0.6;
+}
+
+.json-builder__cards {
+  display: grid;
+  gap: calc(var(--base) * 0.4);
+}
+
+.json-builder__card {
+  align-items: center;
+  background: var(--theme-elevation-0);
+  border: 1px solid var(--theme-elevation-100);
+  border-radius: var(--style-radius-m);
+  display: flex;
+  margin: 0;
+}
+
+.json-builder__card:hover {
+  background: var(--theme-elevation-50);
+  border-color: var(--theme-elevation-200);
+}
+
+/* A row that holds fields is a door: it says so by the hand it shows. */
+.json-builder__card--holds .json-builder__card-open {
+  cursor: pointer;
+}
+
+.json-builder__card--holds:hover {
+  border-color: var(--theme-elevation-300);
+}
+
+/* The icon is drawn in a 20px box with room around it, so the pull closes the gap it leaves to its
+   right without moving the handle itself. */
+.json-builder__grip {
+  align-items: center;
+  color: var(--theme-elevation-400);
+  cursor: grab;
+  display: flex;
+  height: 100%;
+  margin-right: -6px;
+  padding-left: calc(var(--base) * 0.5);
+}
+
+.json-builder__grip:active {
+  cursor: grabbing;
+}
+
+/* The row is the door into what it holds, so the whole of it is the handle. */
+.json-builder__card-open {
+  align-items: center;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  flex: 1;
+  gap: calc(var(--base) * 0.6);
+  min-width: 0;
+  padding: calc(var(--base) * 0.7);
+  text-align: left;
+}
+
+.json-builder__trail {
+  align-items: center;
+  border-bottom: 1px solid var(--theme-elevation-100);
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--base) * 0.15);
+  margin-bottom: calc(var(--base) * 0.3);
+  padding-bottom: calc(var(--base) * 0.3);
+}
+
+.json-builder__trail-actions {
+  display: flex;
+  gap: calc(var(--base) * 0.15);
+  margin-left: auto;
+}
+
+.json-builder__crumb {
+  align-items: center;
+  display: inline-flex;
+  gap: calc(var(--base) * 0.15);
+}
+
+.json-builder__arrow {
+  color: var(--theme-elevation-400);
+}
+
+.json-builder__step {
+  background: none;
+  border: 0;
+  border-radius: var(--style-radius-s);
+  color: var(--theme-elevation-700);
+  cursor: pointer;
+  font-size: 1.15rem;
+  padding: 7px 10px;
+}
+
+.json-builder__step:hover {
+  background: var(--theme-elevation-50);
+  color: var(--theme-elevation-1000);
+}
+
+/* Quiet until the card is under the cursor, so a long list reads as content, not as controls. */
+.json-builder__card-actions .icon-button {
+  opacity: 0.45;
+}
+
+.json-builder__card:hover .icon-button,
+.json-builder__card:focus-within .icon-button {
+  opacity: 1;
+}
+
+.json-builder__door {
+  align-items: center;
+  color: var(--theme-elevation-400);
+  display: flex;
+}
+
+.json-builder__drop:hover {
+  background: var(--theme-error-100);
+  color: var(--theme-error-500);
+}
+
+.json-builder__card-open .json-builder__tile {
+  font-size: 1.3rem;
+  height: 3.6rem;
+  width: 3.6rem;
+}
+
+.json-builder__card-text {
+  display: grid;
+  gap: calc(var(--base) * 0.2);
+  min-width: 0;
+}
+
+/* The collapsible's toggle is an absolute layer over its whole header, so anything meant to be
+   clicked there has to be lifted above it. */
+.json-builder__card-actions {
+  align-items: center;
+  display: flex;
+  gap: calc(var(--base) * 0.15);
+  margin-left: auto;
+  padding: 0 calc(var(--base) * 0.5);
+  position: relative;
+  z-index: 1;
+}
+
+.json-builder__name {
+  align-items: baseline;
+  display: flex;
+  font-size: 1.1rem;
+  font-weight: 600;
+  gap: calc(var(--base) * 0.3);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.json-builder__key {
+  color: var(--theme-elevation-500);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.json-builder__marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* A pill is sized for a row of a table; here it is a footnote under a name. */
+.json-builder__marks .pill {
+  --pill-padding-inline-end: calc(var(--base) * 0.3);
+  --pill-padding-inline-start: calc(var(--base) * 0.3);
+  font-size: 12px;
+  line-height: calc(var(--base) * 1);
+}
+
+.json-builder__tile {
+  align-items: center;
+  background: var(--theme-elevation-100);
+  border-radius: var(--style-radius-s);
+  color: var(--theme-elevation-800);
+  display: flex;
+  flex-shrink: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  height: 2.9rem;
+  justify-content: center;
+  width: 2.9rem;
+}
+
+.json-builder__tile--text {
+  background: var(--theme-success-100);
+}
+
+.json-builder__tile--values {
+  background: var(--theme-warning-100);
+}
+
+.json-builder__tile--media {
+  background: var(--theme-error-100);
+}
+
+.json-builder__head {
+  align-items: baseline;
+  display: flex;
+  gap: calc(var(--base) * 0.4);
+  justify-content: space-between;
+}
+
+.json-builder__head h4 {
+  font-size: 1.45rem;
+  margin: 0;
+}
+
+.json-builder__hint,
+.json-builder__unsaved {
+  color: var(--theme-elevation-500);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.json-builder__group {
+  color: var(--theme-elevation-500);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  margin: calc(var(--base) * 0.4) 0 calc(var(--base) * 0.2);
+  text-transform: uppercase;
+}
+
+.json-builder__palette {
+  display: grid;
+  gap: calc(var(--base) * 0.25);
+}
+
+.tip {
+  display: inline-flex;
+}
+
+/* Payload's tooltip is built for two words; ours carries a sentence. */
+.tip-bubble {
+  line-height: 1.4;
+  max-width: 250px;
+  white-space: normal;
+}
+
+/* Payload draws its caret under the tooltip; beside the anchor it has to point the other way. */
+.tip-bubble--left::after {
+  border-bottom: 6px solid transparent;
+  border-left: 6px solid var(--theme-elevation-800);
+  border-right: 0;
+  border-top: 6px solid transparent;
+  bottom: auto;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.json-builder__kind-card {
+  align-items: center;
+  background: none;
+  border: 1px solid var(--theme-elevation-100);
+  border-radius: var(--style-radius-m);
+  column-gap: calc(var(--base) * 0.5);
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 2.9rem minmax(0, 1fr);
+  padding: calc(var(--base) * 0.55);
+  position: relative;
+  text-align: left;
+  width: 100%;
+}
+
+.json-builder__kind-card:hover {
+  background: var(--theme-elevation-50);
+  border-color: var(--theme-elevation-200);
+}
+
+.json-builder__kind-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+/* Payload sizes a drawer inline, by depth, so narrowing one needs the heavier hand. */
+.json-builder__drawer .drawer__content {
+  width: min(600px, 100%) !important;
+}
+
+.json-builder__form {
+  display: grid;
+  gap: calc(var(--base) * 0.9);
+  padding-top: calc(var(--base) * 0.5);
+}
+
+.json-builder__options {
+  display: grid;
+  gap: calc(var(--base) * 0.25);
+  justify-items: start;
+}
+
+.json-builder__option {
+  align-items: center;
+  display: flex;
+  gap: calc(var(--base) * 0.25);
+  margin: 0;
+  width: 100%;
+}
+
+.json-builder__option input {
+  width: 100%;
+}
+
+.json-builder__fault {
+  color: var(--theme-error-500);
+  font-size: 12px;
+  margin: calc(var(--base) * -0.35) 0 0;
+}
+
+.json-builder__buttons {
+  align-items: center;
+  display: flex;
+  gap: var(--base);
+  margin-top: calc(var(--base) * 0.5);
+}
+
+/* Beside the one action that lands, these are ways out: plain text that says so on hover. Payload
+   paints a button through `--color`, read on an inner element, so plain `color` never reaches it. */
+.json-builder__quiet {
+  --color: var(--theme-elevation-600);
+  --hover-color: var(--theme-elevation-1000);
+  font-size: 1.05rem;
+  padding: 0;
+}
+
+.json-builder__quiet:hover {
+  text-decoration: underline;
+}

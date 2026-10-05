@@ -133,6 +133,7 @@
         "@focus-reactive/payload-plugin-ab": "workspace:*",
         "@focus-reactive/payload-plugin-analytics": "workspace:*",
         "@focus-reactive/payload-plugin-comments": "workspace:*",
+        "@focus-reactive/payload-plugin-json-form-builder": "workspace:*",
         "@focus-reactive/payload-plugin-presets": "workspace:*",
         "@focus-reactive/payload-plugin-scheduling": "workspace:*",
         "@focus-reactive/payload-plugin-seo": "workspace:*",
@@ -194,7 +195,7 @@
     },
     "packages/create-ideal-cms": {
       "name": "create-ideal-cms",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "bin": {
         "create-ideal-cms": "./dist/index.js",
       },
@@ -349,6 +350,33 @@
         "react": "^19.0.0",
       },
     },
+    "packages/payload-plugin-json-form-builder": {
+      "name": "@focus-reactive/payload-plugin-json-form-builder",
+      "version": "1.0.0",
+      "dependencies": {
+        "clsx": "2.1.1",
+      },
+      "devDependencies": {
+        "@payloadcms/richtext-lexical": "3.84.1",
+        "@payloadcms/ui": "3.84.1",
+        "@swc/cli": "0.4.0",
+        "@swc/core": "1.7.0",
+        "@types/react": "19.2.9",
+        "copyfiles": "2.4.1",
+        "payload": "3.84.1",
+        "react": "19.2.1",
+        "typescript": "5.9.2",
+      },
+      "peerDependencies": {
+        "@payloadcms/richtext-lexical": "^3.84.0",
+        "@payloadcms/ui": "^3.84.0",
+        "payload": "^3.84.0",
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "@payloadcms/richtext-lexical",
+      ],
+    },
     "packages/payload-plugin-netlify-deploy": {
       "name": "@focus-reactive/payload-plugin-netlify-deploy",
       "version": "1.1.0",
@@ -455,7 +483,7 @@
     },
     "packages/payload-plugin-translator": {
       "name": "@focus-reactive/payload-plugin-translator",
-      "version": "0.13.4",
+      "version": "0.14.0",
       "dependencies": {
         "@hookform/resolvers": "^3.9.0",
         "@radix-ui/react-popover": "^1.1.0",
@@ -816,6 +844,8 @@
     "@focus-reactive/payload-plugin-comments": ["@focus-reactive/payload-plugin-comments@workspace:packages/payload-plugin-comments"],
 
     "@focus-reactive/payload-plugin-html-preview": ["@focus-reactive/payload-plugin-html-preview@workspace:packages/payload-plugin-html-preview"],
+
+    "@focus-reactive/payload-plugin-json-form-builder": ["@focus-reactive/payload-plugin-json-form-builder@workspace:packages/payload-plugin-json-form-builder"],
 
     "@focus-reactive/payload-plugin-netlify-deploy": ["@focus-reactive/payload-plugin-netlify-deploy@workspace:packages/payload-plugin-netlify-deploy"],
 

@@ -1,10 +1,9 @@
+import NextImage from "next/image";
 import type { StaticImageData } from "next/image";
 
 import { cn } from "@/components/utils";
-import { IMAGE_QUALITY } from "@/lib/constants/imageDelivery.mjs";
 
-import type { ImageAspectRatio, ImageOverrides, ImageVariant } from "./types";
-import { VariantImage } from "./VariantImage";
+import type { ImageAspectRatio, ImageOverrides } from "./types";
 
 interface ImageContainerProps {
   aspectRatio?: ImageAspectRatio;
@@ -31,19 +30,9 @@ interface ImageProps {
   onClick?: () => void;
   onLoad?: () => void;
   imageProps?: ImageOverrides;
-  variants?: ImageVariant[];
 }
 
-export function Image({
-  src,
-  alt,
-  width,
-  height,
-  onClick,
-  onLoad,
-  imageProps,
-  variants,
-}: ImageProps) {
+export function Image({ src, alt, width, height, onClick, onLoad, imageProps }: ImageProps) {
   const {
     aspectRatio,
     fit,
@@ -66,7 +55,7 @@ export function Image({
   return (
     <ImageContainer aspectRatio={aspectRatio}>
       <picture className={cn(pictureClassName)}>
-        <VariantImage
+        <NextImage
           alt={alt ?? ""}
           className={cn(className)}
           fill={fill}
@@ -75,10 +64,9 @@ export function Image({
           onClick={onClick}
           onLoad={onLoad}
           priority={priority}
-          quality={quality ?? IMAGE_QUALITY}
+          quality={quality ?? 85}
           src={src}
           style={Object.keys(mergedStyle).length > 0 ? mergedStyle : undefined}
-          variants={variants}
           width={fill ? undefined : width}
           {...rest}
         />

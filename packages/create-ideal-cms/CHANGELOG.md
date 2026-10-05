@@ -1,3 +1,10 @@
+## create-ideal-cms [1.2.1](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.2.0...create-ideal-cms@1.2.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* **cms:** serve media from the adapter URL with plain next/image ([839affe](https://github.com/focusreactive/payload-plugins/commit/839affea6bdef2db221bbfe6ca1c082ca14dee93))
+
 # create-ideal-cms [1.2.0](https://github.com/focusreactive/payload-plugins/compare/create-ideal-cms@1.1.5...create-ideal-cms@1.2.0) (2026-09-07)
 
 

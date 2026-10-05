@@ -33,6 +33,7 @@ import * as migration_20260713_155547_restructure_global_settings from './202607
 import * as migration_20260805_120053_group_seo_defaults_under_og_and_x from './20260805_120053_group_seo_defaults_under_og_and_x';
 import * as migration_20260812_125336_add_ab_pending_percentages_to_pages from './20260812_125336_add_ab_pending_percentages_to_pages';
 import * as migration_20260923_132949_add_reset_password_requested_at from './20260923_132949_add_reset_password_requested_at';
+import * as migration_20261001_143037_add_media_storage_prefix from './20261001_143037_add_media_storage_prefix';
 
 export const migrations = [
   {
@@ -209,5 +210,10 @@ export const migrations = [
     up: migration_20260923_132949_add_reset_password_requested_at.up,
     down: migration_20260923_132949_add_reset_password_requested_at.down,
     name: '20260923_132949_add_reset_password_requested_at',
+  },
+  {
+    up: migration_20261001_143037_add_media_storage_prefix.up,
+    down: migration_20261001_143037_add_media_storage_prefix.down,
+    name: '20261001_143037_add_media_storage_prefix'
   },
 ];

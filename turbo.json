@@ -1,7 +1,6 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
-  "globalEnv": ["BLOB_PUBLIC_BASE_URL"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

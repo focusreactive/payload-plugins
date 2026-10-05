@@ -4,8 +4,8 @@ import { computeSourceFingerprint } from "../../../core/domain/content-projectio
 import type { FieldLike } from "../../../core/kernel/field-traversal/index.js";
 import { isRecordStale } from "../../../core/domain/provenance/index.js";
 import type { ProvenanceKey, ProvenanceStore } from "../../../core/domain/provenance/index.js";
-import type { TransactionScope } from "../../shared/payload/TransactionScope.shapes.js";
-import { killedTheCallersTransaction } from "../../shared/payload/TransactionScope.shapes.js";
+import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
+import { swallowOrThrow } from "../../shared/payload/swallowOrThrow.js";
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
 
@@ -20,7 +20,7 @@ export type StalenessLocale = {
 /** Builds a {@link ProvenanceService} bound to a Payload instance; absent when provenance is disabled. */
 export type ProvenanceServiceFactory = (
   payload: Payload,
-  scope?: TransactionScope
+  scope?: RequestScope
 ) => ProvenanceService;
 
 /**
@@ -30,19 +30,20 @@ export type ProvenanceServiceFactory = (
  * {@link ProvenanceStore} port; the port + `computeSourceFingerprint` + `isRecordStale` stay
  * framework-agnostic in the core.
  *
- * Best-effort by contract: fingerprint/record failures log and no-op rather than failing a translation.
+ * Best-effort by contract, except where swallowing would hide a loss — see
+ * {@link swallowOrThrow}.
  */
 export class ProvenanceService {
   private readonly payload: Payload;
   private readonly store: ProvenanceStore;
   private readonly schemaMap: CollectionSchemaMap;
-  private readonly scope: TransactionScope;
+  private readonly scope: RequestScope;
 
   constructor(
     payload: Payload,
     store: ProvenanceStore,
     schemaMap: CollectionSchemaMap,
-    scope: TransactionScope = {}
+    scope: RequestScope = {}
   ) {
     this.payload = payload;
     this.store = store;
@@ -77,67 +78,74 @@ export class ProvenanceService {
     }
   }
 
-  /** Persist a translation receipt (best-effort; a store failure logs and no-ops). */
   async record(
     key: ProvenanceKey & { sourceLocale: string },
     sourceFingerprint: string
   ): Promise<void> {
-    try {
-      await this.store.upsert({
-        collectionSlug: key.collectionSlug,
-        documentId: key.documentId,
-        targetLocale: key.targetLocale,
-        sourceLocale: key.sourceLocale,
-        sourceFingerprint,
-        translatedAt: new Date().toISOString(),
-        dismissedFingerprint: null,
-      });
-    } catch (error) {
-      this.payload.logger.error({
-        err: error,
-        collection: key.collectionSlug,
-        documentId: key.documentId,
-        targetLocale: key.targetLocale,
-        sourceLocale: key.sourceLocale,
-        msg: "translator: failed to record translation provenance",
-      });
-      if (killedTheCallersTransaction(this.scope, error)) throw error;
-    }
+    await swallowOrThrow(
+      this.scope,
+      () =>
+        this.store.upsert({
+          collectionSlug: key.collectionSlug,
+          documentId: key.documentId,
+          targetLocale: key.targetLocale,
+          sourceLocale: key.sourceLocale,
+          sourceFingerprint,
+          translatedAt: new Date().toISOString(),
+          dismissedFingerprint: null,
+        }),
+      (error) =>
+        this.payload.logger.error({
+          err: error,
+          collection: key.collectionSlug,
+          documentId: key.documentId,
+          targetLocale: key.targetLocale,
+          sourceLocale: key.sourceLocale,
+          msg: "translator: failed to record translation provenance",
+        })
+    );
   }
 
   /**
-   * Per-locale staleness for one document: read every receipt, recompute the current source
-   * fingerprint (write-path-identical), and mark each locale stale on undismissed drift. Returns `[]`
-   * when the collection has no schema. Isolates per-locale failures so one bad record can't blank the rest.
+   * Per-locale staleness for one document. A locale whose fingerprint cannot be recomputed is dropped
+   * from the result; if the caller is inside a transaction, that failure propagates instead and the
+   * locales after it go unreported.
    */
-  async getStaleness(collection: CollectionSlug, documentId: string): Promise<StalenessLocale[]> {
+  async getStaleness(
+    collection: CollectionSlug,
+    documentId: string,
+    user: Record<string, unknown> | null = null
+  ): Promise<StalenessLocale[]> {
     const schema = this.schemaMap.get(collection);
     if (!schema) return [];
 
     const records = await this.store.findByDocument(collection, documentId);
     if (records.length === 0) return [];
 
-    const currentFingerprint = this.makeCurrentFingerprint(collection, documentId, schema);
+    const currentFingerprint = this.makeCurrentFingerprint(collection, documentId, schema, user);
     const locales: StalenessLocale[] = [];
     for (const record of records) {
-      try {
-        const current = await currentFingerprint(record.sourceLocale);
-        locales.push({
-          target_lng: record.targetLocale,
-          source_lng: record.sourceLocale,
-          is_stale: isRecordStale(record, current),
-          translated_at: record.translatedAt,
-        });
-      } catch (error) {
-        this.payload.logger.error({
-          err: error,
-          collection,
-          documentId,
-          targetLocale: record.targetLocale,
-          sourceLocale: record.sourceLocale,
-          msg: "translator: failed to compute staleness for locale",
-        });
-      }
+      const recomputedOrSwallowed = await swallowOrThrow(
+        this.scope,
+        () => currentFingerprint(record.sourceLocale),
+        (error) =>
+          this.payload.logger.error({
+            err: error,
+            collection,
+            documentId,
+            targetLocale: record.targetLocale,
+            sourceLocale: record.sourceLocale,
+            msg: "translator: failed to compute staleness for locale",
+          })
+      );
+      if (recomputedOrSwallowed == null) continue;
+
+      locales.push({
+        target_lng: record.targetLocale,
+        source_lng: record.sourceLocale,
+        is_stale: isRecordStale(record, recomputedOrSwallowed),
+        translated_at: record.translatedAt,
+      });
     }
     return locales;
   }
@@ -145,9 +153,9 @@ export class ProvenanceService {
   /**
    * Acknowledge the current source drift for one target locale: persist the current fingerprint as the
    * dismissed one, so the indicator hides until the source changes again. No-op when the collection has
-   * no schema or the locale has no record.
+   * no schema, the locale has no record, or the source is not readable by this caller.
    */
-  async dismiss(key: ProvenanceKey): Promise<void> {
+  async dismiss(key: ProvenanceKey, user: Record<string, unknown> | null = null): Promise<void> {
     const schema = this.schemaMap.get(key.collectionSlug as CollectionSlug);
     if (!schema) return;
 
@@ -157,31 +165,40 @@ export class ProvenanceService {
     const currentFingerprint = this.makeCurrentFingerprint(
       key.collectionSlug as CollectionSlug,
       key.documentId,
-      schema
+      schema,
+      user
     );
-    await this.store.dismiss(key, await currentFingerprint(record.sourceLocale));
+    const fingerprint = await currentFingerprint(record.sourceLocale);
+    if (fingerprint === null) return;
+
+    await this.store.dismiss(key, fingerprint);
   }
 
   /**
    * Recompute the current source fingerprint the same way the write path does (shared fetch shape +
    * hash). Cached per source locale so a document translated from one source into N locales fetches
-   * the source once.
+   * the source once. Yields `null` when the source is not readable by `user` — that locale is then
+   * simply not reported.
    */
   private makeCurrentFingerprint(
     collection: CollectionSlug,
     documentId: string,
-    schema: FieldLike[]
+    schema: FieldLike[],
+    user: Record<string, unknown> | null
   ) {
     const cache = new Map<string, string>();
-    return async (sourceLocale: string): Promise<string> => {
+    return async (sourceLocale: string): Promise<string | null> => {
       const cached = cache.get(sourceLocale);
       if (cached !== undefined) return cached;
-      const sourceData = await fetchSourceDocument(
-        this.payload,
+      const sourceData = await fetchSourceDocument({
+        payload: this.payload,
         collection,
-        documentId,
-        sourceLocale
-      );
+        id: documentId,
+        locale: sourceLocale,
+        user,
+      });
+      if (!sourceData) return null;
+
       const fingerprint = computeSourceFingerprint(sourceData, schema);
       cache.set(sourceLocale, fingerprint);
       return fingerprint;

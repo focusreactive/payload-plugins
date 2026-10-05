@@ -1,0 +1,297 @@
+import { APIError } from "payload";
+import { TransportError } from "../../../../../translation-providers/shared/errors/index.js";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { Payload, CollectionSlug } from "payload";
+import { SyncTaskRunner } from "../SyncTaskRunner.js";
+import type { TaskHandler } from "../../TaskRunnerProvider.interface.js";
+import type { TaskInput, Task } from "../../types.js";
+import { LazyMap } from "../../../../shared/utils/index.js";
+
+describe("SyncTaskRunner", () => {
+  let mockPayload: Payload;
+  let mockHandler: TaskHandler;
+  let tasks: LazyMap<string, Task>;
+  let runner: SyncTaskRunner;
+
+  beforeEach(() => {
+    mockPayload = {} as Payload;
+    mockHandler = vi.fn().mockResolvedValue(undefined);
+    tasks = new LazyMap<string, Task>({
+      isRemovable: (task) => task.status === "completed" || task.status === "failed",
+      getTimestamp: (task) => new Date(task.updatedAt).getTime(),
+    });
+    runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+  });
+
+  const createInput = (overrides: Partial<TaskInput> = {}): TaskInput => ({
+    collectionSlug: "posts" as CollectionSlug,
+    collectionId: "doc-123",
+    sourceLng: "en",
+    targetLng: "de",
+    strategy: "overwrite",
+    publishOnTranslation: false,
+    ...overrides,
+  });
+
+  describe("enqueue", () => {
+    it("executes handler immediately", async () => {
+      const input = createInput();
+      await runner.enqueue([input]);
+
+      expect(mockHandler).toHaveBeenCalledWith(
+        mockPayload,
+        {
+          collection: "posts",
+          collectionId: "doc-123",
+          sourceLng: "en",
+          targetLng: "de",
+          strategy: "overwrite",
+          publishOnTranslation: false,
+        },
+        {}
+      );
+    });
+
+    it("ignores waitUntil and runs immediately (dev runner — no debounce)", async () => {
+      const input = createInput({ waitUntil: new Date("2999-01-01T00:00:00Z") });
+      await runner.enqueue([input]);
+
+      // Executed now despite the far-future waitUntil; task is completed synchronously.
+      expect(mockHandler).toHaveBeenCalledTimes(1);
+      expect(tasks.get("posts:doc-123:de")?.status).toBe("completed");
+    });
+
+    it("stores completed task in tasks map", async () => {
+      const input = createInput();
+      await runner.enqueue([input]);
+
+      const task = tasks.get("posts:doc-123:de");
+      expect(task).toBeDefined();
+      expect(task?.status).toBe("completed");
+      expect(task?.completedAt).toBeDefined();
+    });
+
+    it("stores a failed task when the handler throws one of ours", async () => {
+      mockHandler = vi.fn().mockRejectedValue(new TransportError("Translation failed"));
+      runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+
+      const input = createInput();
+      await runner.enqueue([input]);
+
+      const task = tasks.get("posts:doc-123:de");
+      expect(task?.status).toBe("failed");
+      expect(task?.error?.message).toBe("Translation failed");
+    });
+
+    it.each([
+      ["a task that succeeded", undefined],
+      ["a task that failed", new TransportError("Translation failed")],
+    ])("%s reports when it finished, not when it started", async (_label, rejection) => {
+      vi.useFakeTimers();
+      try {
+        vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+        mockHandler = vi.fn().mockImplementation(async () => {
+          vi.setSystemTime(new Date("2026-01-01T00:05:00.000Z"));
+          if (rejection) throw rejection;
+        });
+        runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+
+        await runner.enqueue([createInput()]);
+
+        const task = [...tasks.values()][0];
+        expect(task?.createdAt).toBe("2026-01-01T00:00:00.000Z");
+        expect(task?.updatedAt, "a settled task must carry the time it settled").toBe(
+          "2026-01-01T00:05:00.000Z"
+        );
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("finishes the batch for a caller with no transaction to lose", async () => {
+      const fromPayload = new APIError("Validation failed", 400);
+      mockHandler = vi.fn().mockRejectedValueOnce(fromPayload).mockResolvedValueOnce(undefined);
+      runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+
+      await expect(
+        runner.enqueue([createInput({ targetLng: "de" }), createInput({ targetLng: "fr" })]),
+        "nothing of this caller's was rolled back, so one refused locale must not cancel the rest"
+      ).resolves.toBeUndefined();
+
+      expect(mockHandler).toHaveBeenCalledTimes(2);
+      expect(tasks.get("posts:doc-123:de")?.status).toBe("failed");
+      expect(tasks.get("posts:doc-123:fr")?.status).toBe("completed");
+    });
+
+    it("swallows one of ours even inside the caller's transaction", async () => {
+      mockHandler = vi.fn().mockRejectedValue(new TransportError("provider down"));
+      runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+
+      await expect(
+        runner.enqueue([createInput()], { transactionID: "tx-1" }),
+        "a provider failure ran no Payload operation, so the editor's save is still intact"
+      ).resolves.toBeUndefined();
+
+      expect(tasks.get("posts:doc-123:de")?.status).toBe("failed");
+    });
+
+    it("lets a failure that did not come from the translator out", async () => {
+      const fromPayload = new APIError("Validation failed", 400);
+      mockHandler = vi.fn().mockRejectedValue(fromPayload);
+      runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+
+      await expect(
+        runner.enqueue([createInput()], { transactionID: "tx-1" }),
+        "a foreign error means a Payload operation already rolled the editor's save back"
+      ).rejects.toBe(fromPayload);
+    });
+
+    it("records a non-Error throw and still lets it out", async () => {
+      mockHandler = vi.fn().mockRejectedValue("string error");
+      runner = new SyncTaskRunner(mockPayload, mockHandler, tasks);
+
+      const input = createInput();
+      await expect(runner.enqueue([input], { transactionID: "tx-1" })).rejects.toBe("string error");
+
+      const task = tasks.get("posts:doc-123:de");
+      expect(task?.status).toBe("failed");
+      expect(task?.error?.message).toBe("Unknown error");
+    });
+
+    it("processes multiple inputs sequentially", async () => {
+      const inputs = [
+        createInput({ collectionId: "doc-1" }),
+        createInput({ collectionId: "doc-2" }),
+        createInput({ collectionId: "doc-3" }),
+      ];
+
+      await runner.enqueue(inputs);
+
+      expect(mockHandler).toHaveBeenCalledTimes(3);
+      expect(tasks.get("posts:doc-1:de")?.status).toBe("completed");
+      expect(tasks.get("posts:doc-2:de")?.status).toBe("completed");
+      expect(tasks.get("posts:doc-3:de")?.status).toBe("completed");
+    });
+
+    it("creates task with unique id", async () => {
+      const inputs = [
+        createInput({ collectionId: "doc-1" }),
+        createInput({ collectionId: "doc-2" }),
+      ];
+
+      await runner.enqueue(inputs);
+
+      const task1 = tasks.get("posts:doc-1:de");
+      const task2 = tasks.get("posts:doc-2:de");
+      expect(task1?.id).not.toBe(task2?.id);
+    });
+
+    it("sets cancelled to false", async () => {
+      const input = createInput();
+      await runner.enqueue([input]);
+
+      const task = tasks.get("posts:doc-123:de");
+      expect(task?.cancelled).toBe(false);
+    });
+
+    it("overwrites the existing task for the same document AND locale", async () => {
+      const input = createInput();
+      await runner.enqueue([input]);
+
+      const firstTaskId = tasks.get("posts:doc-123:de")?.id;
+
+      await runner.enqueue([input]);
+
+      const secondTaskId = tasks.get("posts:doc-123:de")?.id;
+      expect(secondTaskId).not.toBe(firstTaskId);
+    });
+
+    it("keeps a separate task per target locale for the same document", async () => {
+      // Translating a second locale of the same document must not evict the first — otherwise
+      // findByCollection can only ever return one locale's task (the status-panel overwrite bug).
+      await runner.enqueue([createInput({ targetLng: "de" })]);
+      await runner.enqueue([createInput({ targetLng: "fr" })]);
+
+      expect(tasks.get("posts:doc-123:de")).toBeDefined();
+      expect(tasks.get("posts:doc-123:fr")).toBeDefined();
+
+      const found = await runner.findByCollection("posts" as CollectionSlug, ["doc-123"]);
+      expect(found.map((t) => t.input.targetLng).sort()).toEqual(["de", "fr"]);
+    });
+  });
+
+  describe("cancel", () => {
+    it("is a no-op (sync tasks cannot be cancelled)", async () => {
+      const input = createInput();
+      await runner.enqueue([input]);
+
+      const taskId = tasks.get("posts:doc-123:de")?.id;
+      await runner.cancel([taskId!]);
+
+      // Task should still exist and be completed
+      expect(tasks.get("posts:doc-123:de")?.status).toBe("completed");
+    });
+  });
+
+  describe("run", () => {
+    it("returns not_found error (sync tasks run immediately)", async () => {
+      const result = await runner.run("some-task-id");
+      expect(result).toEqual({ success: false, error: "not_found" });
+    });
+  });
+
+  describe("findByCollection", () => {
+    it("returns tasks for collection", async () => {
+      await runner.enqueue([
+        createInput({ collectionSlug: "posts" as CollectionSlug, collectionId: "doc-1" }),
+        createInput({ collectionSlug: "posts" as CollectionSlug, collectionId: "doc-2" }),
+        createInput({ collectionSlug: "pages" as CollectionSlug, collectionId: "doc-3" }),
+      ]);
+
+      const postTasks = await runner.findByCollection("posts" as CollectionSlug);
+      expect(postTasks).toHaveLength(2);
+      expect(postTasks.every((t) => t.input.collectionSlug === "posts")).toBe(true);
+    });
+
+    it("filters by documentIds when provided", async () => {
+      await runner.enqueue([
+        createInput({ collectionId: "doc-1" }),
+        createInput({ collectionId: "doc-2" }),
+        createInput({ collectionId: "doc-3" }),
+      ]);
+
+      const filteredTasks = await runner.findByCollection("posts" as CollectionSlug, [
+        "doc-1",
+        "doc-3",
+      ]);
+      expect(filteredTasks).toHaveLength(2);
+      expect(filteredTasks.map((t) => t.input.collectionId).sort()).toEqual(["doc-1", "doc-3"]);
+    });
+
+    it("drops finished tasks when asked to exclude them", async () => {
+      await runner.enqueue([createInput({ collectionId: "doc-1" })]);
+
+      const all = await runner.findByCollection("posts" as CollectionSlug);
+      const unfinished = await runner.findByCollection("posts" as CollectionSlug, {
+        excludeCompleted: true,
+      });
+
+      expect(all.map((t) => t.status)).toEqual(["completed"]);
+      expect(unfinished).toEqual([]);
+    });
+
+    it("returns empty array when no tasks match", async () => {
+      await runner.enqueue([createInput()]);
+
+      const tasks = await runner.findByCollection("pages" as CollectionSlug);
+      expect(tasks).toEqual([]);
+    });
+
+    it("returns empty array for empty documentIds", async () => {
+      await runner.enqueue([createInput()]);
+
+      const tasks = await runner.findByCollection("posts" as CollectionSlug, []);
+      expect(tasks).toEqual([]);
+    });
+  });
+});

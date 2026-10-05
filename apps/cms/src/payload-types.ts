@@ -246,6 +246,8 @@ export interface Media {
    * Use this file as default when no image is selected.
    */
   defaultFor?: 'platform_default'[] | null;
+  prefix?: string | null;
+  _objectKey?: string | null;
   folder?: (number | null) | FolderInterface;
   updatedAt: string;
   createdAt: string;
@@ -2641,6 +2643,8 @@ export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   caption?: T;
   defaultFor?: T;
+  prefix?: T;
+  _objectKey?: T;
   folder?: T;
   updatedAt?: T;
   createdAt?: T;

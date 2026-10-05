@@ -2,9 +2,18 @@ import type { CollectionBeforeChangeHook, CollectionConfig } from "payload";
 
 import { revalidateScopedTag } from "@/lib/utils/scopedCache";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
+import {
+  deleteFailedClientUpload,
+  rememberClientUploadKey,
+} from "@/lib/hooks/deleteFailedClientUpload";
+import {
+  protectOtherEnvironmentFilesOnDelete,
+  protectOtherEnvironmentFilesOnReplace,
+} from "@/lib/hooks/protectOtherEnvironmentFiles";
 import { validateMediaUpload } from "@/lib/hooks/validateMediaUpload";
 import { generateRichText } from "@/lib/utils/generateRichText";
 import { DEFAULT_MEDIA_CACHE_TAG } from "@/dal/getDefaultMediaId";
+import type { Media as MediaDoc } from "@/payload-types";
 
 const setDefaultFocalPoint: CollectionBeforeChangeHook = ({ data }) => {
   if (data) {
@@ -75,6 +84,7 @@ export const Media: CollectionConfig<"media"> = {
     },
   ],
   defaultPopulate: {
+    _objectKey: true,
     alt: true,
     filename: true,
     filesize: true,
@@ -82,6 +92,7 @@ export const Media: CollectionConfig<"media"> = {
     focalY: true,
     height: true,
     mimeType: true,
+    prefix: true,
     sizes: true,
     updatedAt: true,
     url: true,
@@ -89,8 +100,9 @@ export const Media: CollectionConfig<"media"> = {
   },
   folders: true,
   hooks: {
-    beforeValidate: [validateMediaUpload],
-    beforeChange: [setDefaultFocalPoint],
+    beforeValidate: [rememberClientUploadKey, validateMediaUpload],
+    beforeChange: [protectOtherEnvironmentFilesOnReplace, setDefaultFocalPoint],
+    beforeDelete: [protectOtherEnvironmentFilesOnDelete],
     afterChange: [
       ({ req }) => {
         if (req?.context?.disableRevalidate) return;
@@ -101,6 +113,7 @@ export const Media: CollectionConfig<"media"> = {
         }
       },
     ],
+    afterError: [deleteFailedClientUpload],
     afterDelete: [
       ({ req }) => {
         if (req?.context?.disableRevalidate) return;
@@ -124,8 +137,11 @@ export const Media: CollectionConfig<"media"> = {
   },
   slug: "media",
   upload: {
+    adminThumbnail: ({ doc }) => {
+      const media = doc as unknown as MediaDoc;
+      return media.sizes?.thumbnail?.url ?? media.url ?? null;
+    },
     crop: false,
-    disableLocalStorage: process.env.NODE_ENV === "production",
     focalPoint: true,
     imageSizes: [
       {
@@ -160,6 +176,6 @@ export const Media: CollectionConfig<"media"> = {
         width: 1200,
       },
     ],
-    staticDir: process.env.NODE_ENV === "production" ? undefined : "public/media",
+    staticDir: "public/media",
   },
 };

@@ -23,10 +23,6 @@ export type CollectionRef = {
  * See docs/DEPRECATIONS.md#jobs-input-collection-field
  */
 export function readCollectionRef(input: PayloadJob["input"]): CollectionRef {
-  // `??` is intentional: `collection_slug` / `collection_id` are `required: true`
-  // in the inputSchema, so they are never an empty string for any job this plugin
-  // writes. The fallback to the legacy shape therefore only fires when the new
-  // field is genuinely absent (i.e. a job queued before the ID-agnostic migration).
   return {
     collectionSlug: (input?.collection_slug ??
       input?.collection?.relationTo ??

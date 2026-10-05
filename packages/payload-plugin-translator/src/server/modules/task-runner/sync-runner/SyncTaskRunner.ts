@@ -5,23 +5,22 @@ import { toTaskFilter } from "../toTaskFilter.js";
 import type { TaskHandler } from "../TaskRunnerProvider.interface.js";
 import type { Task, TaskInput, RunResult, ID } from "../types.js";
 import type { LazyMap } from "../../../shared/utils/index.js";
-import type { TransactionScope } from "../../../shared/payload/TransactionScope.shapes.js";
-import { killedTheCallersTransaction } from "../../../shared/payload/TransactionScope.shapes.js";
+import type { RequestScope } from "../../../shared/payload/RequestScope.shapes.js";
+import { swallowOrThrow } from "../../../shared/payload/swallowOrThrow.js";
 
-/**
- * Synchronous TaskRunner implementation.
- *
- * Executes translations immediately without queuing.
- * Stores results in memory for status queries.
- */
+/** Runs each task inline on enqueue; results live only in memory, so status queries see nothing from a previous process. */
 export class SyncTaskRunner implements TaskRunner {
-  constructor(
-    private readonly payload: Payload,
-    private readonly handler: TaskHandler,
-    private readonly tasks: LazyMap<string, Task>
-  ) {}
+  private readonly payload: Payload;
+  private readonly handler: TaskHandler;
+  private readonly tasks: LazyMap<string, Task>;
 
-  async enqueue(inputs: TaskInput[], scope: TransactionScope = {}): Promise<void> {
+  constructor(payload: Payload, handler: TaskHandler, tasks: LazyMap<string, Task>) {
+    this.payload = payload;
+    this.handler = handler;
+    this.tasks = tasks;
+  }
+
+  async enqueue(inputs: TaskInput[], scope: RequestScope = {}): Promise<void> {
     for (const input of inputs) {
       const key = this.getKey(input.collectionSlug, input.collectionId, input.targetLng);
       const now = new Date().toISOString();
@@ -37,35 +36,36 @@ export class SyncTaskRunner implements TaskRunner {
 
       this.tasks.set(key, task);
 
-      try {
-        await this.handler(
-          this.payload,
-          {
-            collection: input.collectionSlug,
-            collectionId: input.collectionId,
-            sourceLng: input.sourceLng,
-            targetLng: input.targetLng,
-            strategy: input.strategy,
-            publishOnTranslation: input.publishOnTranslation,
-          },
-          scope
-        );
+      const markEvictable = (status: "completed" | "failed", error?: Task["error"]) => {
+        const at = new Date().toISOString();
+        task.status = status;
+        task.updatedAt = at;
+        if (status === "completed") task.completedAt = at;
+        if (error) task.error = error;
+      };
 
-        task.status = "completed";
-        task.completedAt = new Date().toISOString();
-      } catch (error) {
-        task.status = "failed";
-        task.error = {
-          message: error instanceof Error ? error.message : "Unknown error",
-        };
-        // Abandon the remaining locales: with the caller's transaction already rolled back they
-        // would only pile up errors against a dead one.
-        if (killedTheCallersTransaction(scope, error)) throw error;
-      } finally {
-        // `finally`, not after the `try`: the rethrow above must still leave a timestamp, or
-        // `LazyMap` never evicts the failed task.
-        task.updatedAt = new Date().toISOString();
-      }
+      await swallowOrThrow(
+        scope,
+        async () => {
+          await this.handler(
+            this.payload,
+            {
+              collection: input.collectionSlug,
+              collectionId: input.collectionId,
+              sourceLng: input.sourceLng,
+              targetLng: input.targetLng,
+              strategy: input.strategy,
+              publishOnTranslation: input.publishOnTranslation,
+            },
+            scope
+          );
+          markEvictable("completed");
+        },
+        (error) =>
+          markEvictable("failed", {
+            message: error instanceof Error ? error.message : "Unknown error",
+          })
+      );
     }
   }
 
@@ -74,7 +74,6 @@ export class SyncTaskRunner implements TaskRunner {
   }
 
   async run(_taskId: string): Promise<RunResult> {
-    // Sync runner executes tasks immediately, no pending tasks to run
     return { success: false, error: "not_found" };
   }
 
@@ -89,9 +88,6 @@ export class SyncTaskRunner implements TaskRunner {
     for (const [, task] of this.tasks) {
       if (task.input.collectionSlug !== collectionSlug) continue;
       if (wanted && !wanted.has(task.input.collectionId)) continue;
-      // Keyed on `completedAt`, the same field the jobs runner pushes into its where clause. Keying
-      // on `status` instead would agree only by accident: `getJobStatus` happens to check
-      // `completedAt` before `error`, and reordering it would silently split the two runners.
       if (excludeCompleted && task.completedAt) continue;
       results.push(task);
     }
@@ -99,8 +95,6 @@ export class SyncTaskRunner implements TaskRunner {
     return results;
   }
 
-  // Keyed by (document, target locale) so translating a second locale of the same document does not
-  // evict the first — findByCollection must be able to return one task per locale.
   private getKey(collectionSlug: CollectionSlug, collectionId: ID, targetLng: string): string {
     return `${collectionSlug}:${collectionId}:${targetLng}`;
   }
