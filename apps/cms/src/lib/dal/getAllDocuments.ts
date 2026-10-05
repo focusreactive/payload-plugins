@@ -21,6 +21,7 @@ interface FindOptions {
   overrideAccess?: boolean;
   locale?: Locale;
   draft?: boolean;
+  context?: { visualEditing?: boolean };
   pagination: false;
 }
 
@@ -45,6 +46,7 @@ export async function getAllDocuments<TSlug extends CollectionSlug>(
 
   const result = await find({
     collection,
+    context: { visualEditing: draft },
     depth,
     draft,
     locale,
