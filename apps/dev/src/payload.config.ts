@@ -15,6 +15,7 @@ import {
 import { analyticsPlugin } from "@focus-reactive/payload-plugin-analytics";
 import { seoPlugin } from "@focus-reactive/payload-plugin-seo";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
+import { jsonFormPlugin } from "@focus-reactive/payload-plugin-json-form-builder";
 import { buildConfig } from "payload";
 import sharp from "sharp";
 
@@ -22,6 +23,7 @@ import { Articles } from "./collections/Articles";
 import { Media } from "./collections/Media";
 import { Pages } from "./collections/Pages";
 import { Playground } from "./collections/Playground";
+import { JsonFormDemo } from "./globals/JsonFormDemo";
 import { Users } from "./collections/Users";
 import { Header } from "./globals/Header";
 import { abAdapter } from "./lib/ab-testing/dbAdapter";
@@ -54,7 +56,7 @@ export default buildConfig({
     deleteJobOnComplete: false,
   },
   editor: lexicalEditor(),
-  globals: [Header],
+  globals: [JsonFormDemo, Header],
   localization: {
     defaultLocale: "en",
     fallback: true,
@@ -81,6 +83,9 @@ export default buildConfig({
       storage: abAdapter,
     }),
     presetsPlugin(),
+    jsonFormPlugin({
+      richText: { editor: lexicalEditor() },
+    }),
     schedulePublicationPlugin({
       collections: ["pages", "users"],
       secret: "secret",
