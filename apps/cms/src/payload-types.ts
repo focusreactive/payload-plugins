@@ -364,7 +364,6 @@ export interface Page {
     | CardsGridBlock
     | CarouselBlock
     | LogosBlock
-    | ChartBlock
     | CtaBandBlock
     | NewsletterBlock
     | StatsBlock
@@ -1089,53 +1088,6 @@ export interface LogosBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ChartBlock".
- */
-export interface ChartBlock {
-  eyebrow?: string | null;
-  /**
-   * Wrap a word in *asterisks* to accent it in the brand colour.
-   */
-  heading?: string | null;
-  description?: string | null;
-  title: string;
-  subtitle?: string | null;
-  /**
-   * Each range becomes a tab. The first range is shown by default.
-   */
-  ranges: {
-    label: string;
-    dataPoints: {
-      label: string;
-      value: number;
-      id?: string | null;
-    }[];
-    id?: string | null;
-  }[];
-  section?: {
-    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
-    maxWidth?: ('none' | 'base') | null;
-    paddingY?: ('none' | 'base' | 'large') | null;
-    paddingX?: ('none' | 'base') | null;
-    background?: {
-      /**
-       * Upload an image or video. Use the "Background" folder.
-       */
-      media?: (number | null) | Media;
-      overlay?: ('black' | 'white') | null;
-      /**
-       * 0 = transparent, 100 = fully opaque
-       */
-      opacity?: number | null;
-    };
-  };
-  _hidden?: boolean | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'chart';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "CtaBandBlock".
  */
 export interface CtaBandBlock {
@@ -1586,7 +1538,6 @@ export interface GlobalBlock {
     | CardsGridBlock
     | CarouselBlock
     | LogosBlock
-    | ChartBlock
     | CtaBandBlock
     | NewsletterBlock
     | StatsBlock
@@ -2189,49 +2140,6 @@ export interface Preset {
         id?: string | null;
         blockName?: string | null;
         blockType: 'logos';
-      }
-    | {
-        eyebrow?: string | null;
-        /**
-         * Wrap a word in *asterisks* to accent it in the brand colour.
-         */
-        heading?: string | null;
-        description?: string | null;
-        title: string;
-        subtitle?: string | null;
-        /**
-         * Each range becomes a tab. The first range is shown by default.
-         */
-        ranges: {
-          label: string;
-          dataPoints: {
-            label: string;
-            value: number;
-            id?: string | null;
-          }[];
-          id?: string | null;
-        }[];
-        section?: {
-          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
-          maxWidth?: ('none' | 'base') | null;
-          paddingY?: ('none' | 'base' | 'large') | null;
-          paddingX?: ('none' | 'base') | null;
-          background?: {
-            /**
-             * Upload an image or video. Use the "Background" folder.
-             */
-            media?: (number | null) | Media;
-            overlay?: ('black' | 'white') | null;
-            /**
-             * 0 = transparent, 100 = fully opaque
-             */
-            opacity?: number | null;
-          };
-        };
-        _hidden?: boolean | null;
-        id?: string | null;
-        blockName?: string | null;
-        blockType: 'chart';
       }
     | {
         eyebrow?: string | null;
@@ -3235,7 +3143,6 @@ export interface PageSelect<T extends boolean = true> {
         cardsGrid?: T | CardsGridBlockSelect<T>;
         carousel?: T | CarouselBlockSelect<T>;
         logos?: T | LogosBlockSelect<T>;
-        chart?: T | ChartBlockSelect<T>;
         ctaBand?: T | CtaBandBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
         stats?: T | StatsBlockSelect<T>;
@@ -3514,48 +3421,6 @@ export interface LogosBlockSelect<T extends boolean = true> {
               url?: T;
               customPage?: T;
               label?: T;
-            };
-        id?: T;
-      };
-  section?:
-    | T
-    | {
-        theme?: T;
-        maxWidth?: T;
-        paddingY?: T;
-        paddingX?: T;
-        background?:
-          | T
-          | {
-              media?: T;
-              overlay?: T;
-              opacity?: T;
-            };
-      };
-  _hidden?: T;
-  id?: T;
-  blockName?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ChartBlock_select".
- */
-export interface ChartBlockSelect<T extends boolean = true> {
-  eyebrow?: T;
-  heading?: T;
-  description?: T;
-  title?: T;
-  subtitle?: T;
-  ranges?:
-    | T
-    | {
-        label?: T;
-        dataPoints?:
-          | T
-          | {
-              label?: T;
-              value?: T;
-              id?: T;
             };
         id?: T;
       };
@@ -4183,7 +4048,6 @@ export interface GlobalBlockSelect<T extends boolean = true> {
         cardsGrid?: T | CardsGridBlockSelect<T>;
         carousel?: T | CarouselBlockSelect<T>;
         logos?: T | LogosBlockSelect<T>;
-        chart?: T | ChartBlockSelect<T>;
         ctaBand?: T | CtaBandBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
         stats?: T | StatsBlockSelect<T>;
@@ -4456,46 +4320,6 @@ export interface PresetsSelect<T extends boolean = true> {
                           url?: T;
                           customPage?: T;
                           label?: T;
-                        };
-                    id?: T;
-                  };
-              section?:
-                | T
-                | {
-                    theme?: T;
-                    maxWidth?: T;
-                    paddingY?: T;
-                    paddingX?: T;
-                    background?:
-                      | T
-                      | {
-                          media?: T;
-                          overlay?: T;
-                          opacity?: T;
-                        };
-                  };
-              _hidden?: T;
-              id?: T;
-              blockName?: T;
-            };
-        chart?:
-          | T
-          | {
-              eyebrow?: T;
-              heading?: T;
-              description?: T;
-              title?: T;
-              subtitle?: T;
-              ranges?:
-                | T
-                | {
-                    label?: T;
-                    dataPoints?:
-                      | T
-                      | {
-                          label?: T;
-                          value?: T;
-                          id?: T;
                         };
                     id?: T;
                   };

@@ -3,7 +3,6 @@ import React from "react";
 import { CardsGridBlockComponent } from "./CardsGrid/Component";
 import { CaseStudiesBlockComponent } from "./CaseStudies/Component";
 import { CarouselBlockComponent } from "./Carousel/Component";
-import { ChartBlockComponent } from "./Chart/Component";
 import { ContentBlockComponent } from "./Content/Component";
 import { CtaBandBlockComponent } from "./CtaBand/Component";
 import { FaqBlockComponent } from "./Faq/Component";
@@ -21,7 +20,6 @@ export const contentBlockComponents = {
   cardsGrid: CardsGridBlockComponent,
   caseStudies: CaseStudiesBlockComponent,
   carousel: CarouselBlockComponent,
-  chart: ChartBlockComponent,
   content: ContentBlockComponent,
   ctaBand: CtaBandBlockComponent,
   newsletter: NewsletterBlockComponent,

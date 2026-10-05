@@ -98,14 +98,6 @@ export function extractPageBlockContent(
           linkToContentNode(c.link, ctx),
         ]),
       ]);
-    case "chart":
-      return helpers.compact([
-        paragraph(b.eyebrow as string),
-        heading(2, b.heading as string),
-        paragraph(b.description as string),
-        heading(3, b.title as string),
-        paragraph(b.subtitle as string),
-      ]);
     case "logos":
       return helpers.compact([
         paragraph(b.label as string),

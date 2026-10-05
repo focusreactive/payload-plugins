@@ -6,7 +6,6 @@ const PREVIEW_IMAGES: Record<string, string> = {
   "Cards Grid": "/block-preview-images/preview-cards-grid.png",
   "Case Studies": "/block-preview-images/preview-case-studies.png",
   Carousel: "/block-preview-images/preview-carusel.png",
-  Chart: "/block-preview-images/preview-chart.png",
   "CTA Band": "/block-preview-images/preview-cta.png",
   "Content Section": "/block-preview-images/preview-content.png",
   "FAQ Section": "/block-preview-images/preview-faq.png",

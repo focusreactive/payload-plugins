@@ -5,7 +5,6 @@ import { extractPostsListText } from "@/blocks/PostsList/extractText";
 import { extractVacanciesListText } from "@/blocks/VacanciesList/extractText";
 import { extractVideoEmbedText } from "@/blocks/VideoEmbed/extractText";
 import { extractCarouselText } from "@/blocks/Carousel/extractText";
-import { extractChartText } from "@/blocks/Chart/extractText";
 import { extractCtaBandText } from "@/blocks/CtaBand/extractText";
 import { extractNewsletterText } from "@/blocks/Newsletter/extractText";
 import { extractStatsText } from "@/blocks/Stats/extractText";
@@ -27,9 +26,6 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
         block.description,
         extractLexicalText(block.content),
       ]);
-    }
-    case "chart": {
-      return extractChartText(block);
     }
     case "ctaBand": {
       return extractCtaBandText(block);

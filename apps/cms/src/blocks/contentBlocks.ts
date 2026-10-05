@@ -3,7 +3,6 @@ import type { Block } from "payload";
 import { CardsGridBlock } from "./CardsGrid/config";
 import { CaseStudiesBlock } from "./CaseStudies/config";
 import { CarouselBlock } from "./Carousel/config";
-import { ChartBlock } from "./Chart/config";
 import { ContentBlock } from "./Content/config";
 import { CtaBandBlock } from "./CtaBand/config";
 import { FaqBlock } from "./Faq/config";
@@ -24,7 +23,6 @@ export const contentBlocks: Block[] = [
   CardsGridBlock,
   CarouselBlock,
   LogosBlock,
-  ChartBlock,
   CtaBandBlock,
   NewsletterBlock,
   StatsBlock,
