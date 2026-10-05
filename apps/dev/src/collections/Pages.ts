@@ -1,4 +1,3 @@
-import { jsonField } from "@focus-reactive/payload-plugin-json-form-builder";
 import type { CollectionConfig } from "payload";
 import { withFieldTranslation } from "@focus-reactive/payload-plugin-translator";
 
@@ -13,8 +12,6 @@ export const Pages: CollectionConfig = {
     useAsTitle: "title",
   },
   fields: [
-    // Mounted in a collection as well as in the global, so both schema-path shapes are exercised.
-    jsonField({ label: "Settings", name: "settings" }),
     withFieldTranslation({
       localized: true,
       name: "title",

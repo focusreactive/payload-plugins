@@ -111,12 +111,10 @@ export interface Config {
     | ('en' | 'de' | 'fr' | 'es')
     | ('en' | 'de' | 'fr' | 'es')[];
   globals: {
-    'json-form-demo': JsonFormDemo;
     header: Header;
     _abManifest: _AbManifest;
   };
   globalsSelect: {
-    'json-form-demo': JsonFormDemoSelect<false> | JsonFormDemoSelect<true>;
     header: HeaderSelect<false> | HeaderSelect<true>;
     _abManifest: _AbManifestSelect<false> | _AbManifestSelect<true>;
   };
@@ -172,7 +170,6 @@ export interface User {
   resetPasswordExpiration?: string | null;
   salt?: string | null;
   hash?: string | null;
-  resetPasswordRequestedAt?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
   sessions?:
@@ -966,7 +963,6 @@ export interface UsersSelect<T extends boolean = true> {
   resetPasswordExpiration?: T;
   salt?: T;
   hash?: T;
-  resetPasswordRequestedAt?: T;
   loginAttempts?: T;
   lockUntil?: T;
   sessions?:
@@ -1378,39 +1374,6 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "json-form-demo".
- */
-export interface JsonFormDemo {
-  id: number;
-  components?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  jsonFormAnchor?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  updatedAt?: string | null;
-  createdAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header".
  */
 export interface Header {
@@ -1439,17 +1402,6 @@ export interface _AbManifest {
     | null;
   updatedAt?: string | null;
   createdAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "json-form-demo_select".
- */
-export interface JsonFormDemoSelect<T extends boolean = true> {
-  components?: T;
-  jsonFormAnchor?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1530,10 +1482,7 @@ export interface TaskSchedulePublish {
           value: number | Page;
         } | null);
     global?: string | null;
-    user?: {
-      relationTo: 'users';
-      value: number | User;
-    } | null;
+    user?: (number | null) | User;
   };
   output?: unknown;
 }
