@@ -15,7 +15,7 @@ import { CodeInlineComponent } from "@/blocks/Code/InlineComponent";
 import { CtaBannerInlineComponent } from "@/blocks/CtaBanner/InlineComponent";
 import { LogosInlineComponent } from "@/blocks/Logos/InlineComponent";
 import { VideoEmbedInlineComponent } from "@/blocks/VideoEmbed/InlineComponent";
-import { BLOG_CONFIG } from "@/lib/config/blog";
+import { postPath } from "@/lib/config/blog";
 import { cn } from "@/components/utils";
 import { proseVariants } from "@/components/richText/proseVariants";
 import type { ProseVariant } from "@/components/richText/proseVariants";
@@ -36,7 +36,7 @@ const internalDocToHref = ({ linkNode }: { linkNode: SerializedLinkNode }): stri
     throw new TypeError("Expected value to be an object");
   }
   const { slug } = value;
-  return relationTo === "posts" ? `${BLOG_CONFIG.basePath}/${slug}` : `/${slug}`;
+  return relationTo === "posts" ? postPath(slug as string) : `/${slug}`;
 };
 
 const createJsxConverters =

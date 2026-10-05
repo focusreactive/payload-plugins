@@ -51,7 +51,10 @@ export const Header: CollectionConfig<"header"> = {
       },
       defaultValue: createLocalizedDefault({
         en: [
-          { type: "link", link: { label: "Blog", newTab: false, type: "custom", url: "/blog" } },
+          {
+            type: "link",
+            link: { label: "Blog", newTab: false, type: "custom", url: "/updates.html" },
+          },
           { type: "link", link: { label: "Pricing", newTab: false, type: "custom", url: "#" } },
         ],
       }),

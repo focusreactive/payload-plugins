@@ -20,14 +20,14 @@ import { PostContent } from "./_components/PostContent";
 
 interface Args {
   params: Promise<{
-    slug?: string;
+    slug?: string[];
     locale: Locale;
   }>;
 }
 
 export default async function Page({ params }: Args) {
-  const { slug = "", locale } = await params;
-  const decodedSlug = decodeURIComponent(slug);
+  const { slug = [], locale } = await params;
+  const decodedSlug = slug.map((segment) => decodeURIComponent(segment)).join("/");
   const url = buildUrl({ collection: "posts", locale, slug: decodedSlug });
 
   const [post, siteSettings, blogSettings] = await Promise.all([
@@ -76,8 +76,8 @@ export default async function Page({ params }: Args) {
 }
 
 export async function generateMetadata({ params }: Args): Promise<Metadata> {
-  const { slug = "", locale } = await params;
-  const decodedSlug = decodeURIComponent(slug);
+  const { slug = [], locale } = await params;
+  const decodedSlug = slug.map((segment) => decodeURIComponent(segment)).join("/");
   const post = await getPostBySlug({ locale, slug: decodedSlug });
 
   if (!post) {

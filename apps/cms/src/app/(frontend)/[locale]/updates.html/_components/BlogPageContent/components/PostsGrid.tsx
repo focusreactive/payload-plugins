@@ -2,7 +2,7 @@ import { BlogPostCard } from "@/components/blog";
 import { getTranslations } from "next-intl/server";
 import NextImage from "next/image";
 
-import { BLOG_CONFIG } from "@/lib/config/blog";
+import { postPath } from "@/lib/config/blog";
 import { Link } from "@/components/shared";
 import type { Tag } from "@/payload-types";
 
@@ -27,7 +27,7 @@ export async function PostsGrid({ posts }: PostsGridProps) {
         );
 
         return (
-          <Link key={post.slug} href={`${BLOG_CONFIG.basePath}/${post.slug}`} className="block">
+          <Link key={post.slug} href={postPath(post.slug)} className="block">
             <BlogPostCard
               title={post.title}
               excerpt={post.excerpt}

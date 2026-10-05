@@ -1,35 +1,80 @@
-import type { Metadata } from "next";
+import { TrackPage } from "@focus-reactive/payload-plugin-analytics/client";
+import type { Metadata } from "next/types";
+import { draftMode } from "next/headers";
+import React, { Suspense } from "react";
 
-import { getPayloadClient, getPosts } from "@/dal";
+import { SYNTHETIC_REFS } from "@/lib/plugins/analytics/SYNTHETIC_REFS";
+import { I18N_CONFIG } from "@/lib/config/i18n";
+import { generateMeta } from "@/lib/utils/generateMeta";
 import type { Locale } from "@/lib/types";
-import type { Post } from "@/payload-types";
+import { getBlogPageSettings } from "@/dal/getBlogPageSettings";
+import { getSiteSettings } from "@/dal/getSiteSettings";
+import type { Footer as FooterType, Header as HeaderType } from "@/payload-types";
+import { Footer } from "@/collections/Footer/Component";
+import { Header } from "@/collections/Header/Component";
 
-import { ArticleIndex } from "../_components/ArticleIndex";
-
-const PATH = "/updates.html";
+import { BlogJsonLdWrapper } from "./_components/BlogJsonLdWrapper";
+import { BlogPageDynamic } from "./_components/BlogPageDynamic";
+import { BlogPageSkeleton } from "./_components/BlogPageSkeleton";
 
 interface Props {
-  params: Promise<{ locale: Locale }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    q?: string;
+  }>;
+  params: Promise<{
+    locale: Locale;
+  }>;
 }
 
-/** Old blog index: newest articles first, paginated. */
-export default async function UpdatesPage({ params, searchParams }: Props) {
+export const experimental_ppr = true;
+
+export default async function Page({ searchParams, params }: Props) {
   const { locale } = await params;
-  const page = Math.max(1, Number.parseInt((await searchParams).page ?? "1", 10) || 1);
-  const result = await getPosts(await getPayloadClient(), { locale, page });
+  const { isEnabled: draft } = await draftMode();
+
+  const siteSettings = await getSiteSettings({ locale });
 
   return (
-    <ArticleIndex
-      locale={locale}
-      title="Blog"
-      posts={result.docs as Post[]}
-      pagination={{ basePath: PATH, page, totalPages: result.totalPages }}
-    />
+    <>
+      <TrackPage pageRef={SYNTHETIC_REFS.blogIndex} locale={locale} enabled={!draft} />
+      <Header data={siteSettings.blog.header as HeaderType} />
+      <main id="main" tabIndex={-1} className="outline-none">
+        <Suspense>
+          <BlogJsonLdWrapper searchParams={searchParams} locale={locale} />
+        </Suspense>
+        <Suspense fallback={<BlogPageSkeleton />}>
+          <BlogPageDynamic searchParams={searchParams} locale={locale} />
+        </Suspense>
+      </main>
+      <Footer data={siteSettings.blog.footer as FooterType} />
+    </>
   );
 }
 
-export const metadata: Metadata = {
-  alternates: { canonical: PATH },
-  title: "Blog",
-};
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+
+  const blogSettings = await getBlogPageSettings({ locale });
+
+  return generateMeta({
+    collection: "posts",
+    doc: {
+      meta: {
+        description: blogSettings.meta?.description || blogSettings.description,
+        image: blogSettings.meta?.image,
+        robots: blogSettings.meta?.robots,
+        title: blogSettings.meta?.title,
+      },
+      title: blogSettings.title || "Blog",
+    },
+    locale,
+    page: 1,
+  });
+}
+
+export async function generateStaticParams() {
+  return I18N_CONFIG.locales.map((locale) => ({
+    locale: locale.code,
+  }));
+}

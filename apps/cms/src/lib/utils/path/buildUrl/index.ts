@@ -55,7 +55,8 @@ export function buildUrl({
   const breadcrumbsPath = breadcrumbs ? getPathFromBreadcrumbs(breadcrumbs) : undefined;
 
   const relativePath = resolvePath({
-    basePath: BASE_PATHS[collection],
+    // A post lives under /articles; the bare posts URL (and its pages) is the blog listing.
+    basePath: collection === "posts" && slug ? BLOG_CONFIG.postBasePath : BASE_PATHS[collection],
     breadcrumbsPath,
     page,
     slug,

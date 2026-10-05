@@ -70,7 +70,7 @@ export const Footer: CollectionConfig<"footer"> = {
             label: "Company",
             links: [
               { link: { label: "About", newTab: false, type: "custom", url: "#" } },
-              { link: { label: "Blog", newTab: false, type: "custom", url: "/blog" } },
+              { link: { label: "Blog", newTab: false, type: "custom", url: "/updates.html" } },
               { link: { label: "Careers", newTab: false, type: "custom", url: "#" } },
               { link: { label: "Contact", newTab: false, type: "custom", url: "#" } },
             ],

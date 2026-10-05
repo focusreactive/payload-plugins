@@ -170,9 +170,12 @@ describe("CT legacy URL map", () => {
     expect(map["/automotive"]).toBe("/sectors/automotive");
   });
 
-  it("maps every blog post shape, lowercased, to /blog/<slug>", () => {
-    expect(map["/articles/2025/reproducible-builds"]).toBe("/blog/reproducible-builds");
-    expect(map["/articles/2025/reproducible-builds.html"]).toBe("/blog/reproducible-builds");
+  it("keeps a post on its old address and maps the other shapes there", () => {
+    expect(map["/articles/2025/reproducible-builds"]).toBeUndefined();
+    expect(map["/articles/2025/reproducible-builds.html"]).toBe(
+      "/articles/2025/reproducible-builds"
+    );
+    expect(map["/articles/reproducible-builds"]).toBe("/articles/2025/reproducible-builds");
   });
 
   it("leaves news and author pages alone: they keep their old addresses", () => {

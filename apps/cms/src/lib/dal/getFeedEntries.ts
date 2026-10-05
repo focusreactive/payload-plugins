@@ -1,4 +1,4 @@
-import { BLOG_CONFIG } from "@/lib/config/blog";
+import { BLOG_CONFIG, postPath } from "@/lib/config/blog";
 import { FEEDS } from "@/lib/config/feeds";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { NEWS_CONFIG } from "@/lib/config/news";
@@ -27,7 +27,7 @@ function fromPost(post: Post): FeedEntry {
       .filter((entry): entry is Author => typeof entry === "object" && entry !== null)
       .map((entry) => entry.name),
     html: postBodyToHtml(post),
-    path: `${BLOG_CONFIG.basePath}/${post.slug}`,
+    path: postPath(post.slug),
     published: post.publishedAt ?? post.createdAt,
     summary: post.excerpt ?? "",
     tags: (post.tags ?? [])

@@ -4,7 +4,7 @@ import { getPayloadClient, getPosts } from "@/dal";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareSectionHeaderProps } from "@/lib/adapters/prepareSectionHeaderProps";
-import { BLOG_CONFIG } from "@/lib/config/blog";
+import { postPath } from "@/lib/config/blog";
 import type { Locale } from "@/lib/types";
 import { formatPostDate } from "@/lib/utils/formatPostDate";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
@@ -34,7 +34,7 @@ export function toPostsListItem(post: ListedPost, locale: Locale): PostsListItem
       : null,
     date: formatPostDate(post.publishedAt, locale),
     excerpt: post.excerpt,
-    href: `${BLOG_CONFIG.basePath}/${post.slug}`,
+    href: postPath(post.slug),
     image: image ? prepareMediaProps({ aspectRatio: "16/9", image }) : null,
     isoDate: post.publishedAt ?? null,
     readingTime: post.readingTime ?? null,

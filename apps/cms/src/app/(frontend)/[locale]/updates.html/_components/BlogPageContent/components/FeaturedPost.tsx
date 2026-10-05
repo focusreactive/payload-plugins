@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import NextImage from "next/image";
 
-import { BLOG_CONFIG } from "@/lib/config/blog";
+import { postPath } from "@/lib/config/blog";
 import { cn } from "@/components/utils";
 import type { Locale } from "@/lib/types";
 import { Link } from "@/components/shared";
@@ -34,7 +34,7 @@ export async function FeaturedPost({ post, readMoreLabel, locale, className }: F
 
   return (
     <Link
-      href={`${BLOG_CONFIG.basePath}/${post.slug}`}
+      href={postPath(post.slug)}
       className={cn(
         "group grid grid-cols-1 items-center gap-[clamp(28px,5vw,64px)] min-[861px]:grid-cols-[1.15fr_0.85fr]",
         className

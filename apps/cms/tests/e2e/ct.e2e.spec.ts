@@ -25,10 +25,12 @@ test.describe("IA pages (§7) → 200 + h1", () => {
 
 test.describe("blog", () => {
   test("listing, a post and its author page", async ({ page, request }) => {
-    await expectOneH1(page, "/blog");
+    await expectOneH1(page, "/updates.html");
 
     const feed = await (await request.get("/feeds/atom.xml")).text();
-    const post = /<link href="[^"]*?(\/blog\/[^"]+)" rel="alternate"\/>\s*<id>/u.exec(feed)?.[1];
+    const post = /<link href="[^"]*?(\/articles\/[^"]+)" rel="alternate"\/>\s*<id>/u.exec(
+      feed
+    )?.[1];
     test.skip(!post, "no posts seeded");
     await expectOneH1(page, post!);
 
@@ -39,7 +41,7 @@ test.describe("blog", () => {
   });
 
   test("the scheduled demo post is not public yet", async ({ request }) => {
-    const response = await request.get("/blog/scheduled-news-demo");
+    const response = await request.get("/articles/scheduled-news-demo");
     expect(response.status()).toBe(404);
   });
 });
@@ -73,7 +75,7 @@ test.describe("SEO and AI search", () => {
     const response = await request.get("/llms.txt");
     expect(response.status()).toBe(200);
     const body = await response.text();
-    expect(body).toMatch(/\/blog\/[a-z0-9-]+/u);
+    expect(body).toMatch(/\/articles\/[a-z0-9./-]+/u);
     expect(body).not.toContain("scheduled-news-demo");
   });
 });

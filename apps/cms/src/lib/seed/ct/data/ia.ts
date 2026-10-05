@@ -156,7 +156,6 @@ export const EXTRA_LEGACY: Record<string, string> = {
   "/events.html": "/resources/events",
   "/index.html": "/",
   "/join-us.html": "/who-we-are/careers",
-  "/news.html": "/resources/news",
   "/privacy.html": "/privacy-policy",
   "/reports.html": "/resources/reports",
   "/services.html": "/what-we-do",

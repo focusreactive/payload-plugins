@@ -1,9 +1,8 @@
 import { EXTRA_LEGACY, IA, iaBySource } from "./data/ia";
-import { isNewsEntry } from "./parseDump";
+import { articleSlug, isNewsEntry } from "./parseDump";
 import type { ParsedPage, ParsedPost } from "./types";
 
-const BLOG = "/blog";
-const BLOG_KEY = "/blog";
+const ARTICLES = "/articles";
 
 function key(path: string): string {
   return path.toLowerCase().replace(/\/+$/u, "") || "/";
@@ -18,8 +17,13 @@ function variants(path: string): string[] {
   return base.endsWith(".html") ? [base, base.slice(0, -5)] : [base, `${base}.html`];
 }
 
-/** Paths of the new site: an old URL variant must never shadow one of them. */
-const NEW_PATHS = new Set([...IA.map((page) => key(page.path)), BLOG_KEY]);
+/** Pages of the new site, including the old indexes kept as built-in pages: never redirected. */
+const NEW_PAGES = new Set([
+  ...IA.map((page) => key(page.path)),
+  "/news.html",
+  "/updates.html",
+  "/archives.html",
+]);
 
 /**
  * Old URL → new path for the proxy (plan §5.4 / §7 "Legacy map"): marketing pages via their dump
@@ -29,8 +33,11 @@ const NEW_PATHS = new Set([...IA.map((page) => key(page.path)), BLOG_KEY]);
  */
 export function buildLegacyMap(pages: ParsedPage[], posts: ParsedPost[]): Record<string, string> {
   const map: Record<string, string> = {};
+  const blogPosts = posts.filter((entry) => !isNewsEntry(entry));
+  // A post answers on its own old address; no variant may redirect away from a real post.
+  const postPaths = new Set(blogPosts.map((post) => key(`${ARTICLES}/${articleSlug(post)}`)));
   const add = (from: string, to: string) => {
-    if (key(from) !== key(to) && !NEW_PATHS.has(key(from)) && !key(from).startsWith(`${BLOG}/`)) {
+    if (key(from) !== key(to) && !NEW_PAGES.has(key(from)) && !postPaths.has(key(from))) {
       map[key(from)] = to;
     }
   };
@@ -43,9 +50,15 @@ export function buildLegacyMap(pages: ParsedPage[], posts: ParsedPost[]): Record
       }
     }
   }
-  for (const post of posts.filter((entry) => !isNewsEntry(entry))) {
-    for (const from of variants(post.legacyPath)) {
-      add(from, `${BLOG}/${post.slug}`);
+  for (const post of blogPosts) {
+    const target = `${ARTICLES}/${articleSlug(post)}`;
+    const name = target
+      .split("/")
+      .pop()!
+      .replace(/\.html$/u, "");
+    // The old site answered every post with and without the year and the .html suffix.
+    for (const from of [...variants(post.legacyPath), ...variants(`${ARTICLES}/${name}`)]) {
+      add(from, target);
     }
   }
   for (const [from, to] of Object.entries(EXTRA_LEGACY)) {

@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-import { blogHref } from "@/app/(frontend)/[locale]/blog/_components/BlogPageContent/utils/blogHref";
+import { blogHref } from "@/app/(frontend)/[locale]/updates.html/_components/BlogPageContent/utils/blogHref";
 import { BLOG_CONFIG } from "@/lib/config/blog";
 
 import { cn } from "../utils";

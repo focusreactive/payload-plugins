@@ -24,7 +24,7 @@ const linkVariants = cva("transition-all", {
 
 const collectionPaths: Record<string, string> = {
   page: "",
-  posts: BLOG_CONFIG.basePath,
+  posts: BLOG_CONFIG.postBasePath,
 };
 
 interface Props {

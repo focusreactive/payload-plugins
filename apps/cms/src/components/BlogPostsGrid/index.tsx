@@ -26,7 +26,7 @@ export const BlogPostsGrid: React.FC<Props> = (props) => {
               <Card
                 className="h-full"
                 doc={result}
-                basePath={BLOG_CONFIG.basePath}
+                basePath={BLOG_CONFIG.postBasePath}
                 showTags
                 readMoreLabel={readMoreLabel ?? undefined}
               />

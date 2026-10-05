@@ -63,10 +63,15 @@ export async function PostHero({ post, locale }: PostHeroProps) {
 
           <div className="mt-auto flex flex-col gap-5">
             {tags.length > 0 && (
-              <ul className="flex flex-wrap gap-2">
+              <ul className="flex flex-wrap gap-2" aria-label="Tags">
                 {tags.map((tag) => (
                   <li key={tag.id}>
-                    <Eyebrow tone="tag">{tag.title}</Eyebrow>
+                    <Link
+                      href={`${BLOG_CONFIG.tagBasePath}/${tag.slug}`}
+                      className="rounded-pill focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&>span]:transition-colors hover:[&>span]:bg-primary hover:[&>span]:text-primary-foreground"
+                    >
+                      <Eyebrow tone="tag">{tag.title}</Eyebrow>
+                    </Link>
                   </li>
                 ))}
               </ul>

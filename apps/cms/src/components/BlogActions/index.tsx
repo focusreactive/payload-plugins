@@ -1,7 +1,7 @@
 "use client";
 
-import { useBlogFilter } from "@/app/(frontend)/[locale]/blog/_components/BlogPageContent/components/BlogFilterProvider";
-import { blogHref } from "@/app/(frontend)/[locale]/blog/_components/BlogPageContent/utils/blogHref";
+import { useBlogFilter } from "@/app/(frontend)/[locale]/updates.html/_components/BlogPageContent/components/BlogFilterProvider";
+import { blogHref } from "@/app/(frontend)/[locale]/updates.html/_components/BlogPageContent/utils/blogHref";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "../utils";
 import { Search } from "./Search";

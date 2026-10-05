@@ -27,6 +27,7 @@ export { getVacancyBySlug } from "./getVacancyBySlug";
 
 // News
 export { getNewsBySlug } from "./getNewsBySlug";
+export { getAllNews } from "./getAllNews";
 
 // Documents (generic)
 export { getCachedDocument, getCachedDocumentByID } from "./getDocument";

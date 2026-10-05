@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 /** Plan §5.10: the public site sets no cookies and loads nothing from YouTube before a click. */
-const PAGES = ["/", "/contact", "/resources/events", "/blog"];
+const PAGES = ["/", "/contact", "/resources/events", "/updates.html"];
 
 test.describe("privacy", () => {
   test("public pages leave the cookie jar empty", async ({ page, context }) => {

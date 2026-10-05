@@ -367,3 +367,10 @@ export function selectPosts(
 export function isNewsEntry(entry: { template: string }): boolean {
   return entry.template === "T-NEWS-POST";
 }
+
+/** A blog post keeps its old address under /articles: "2025/reproducible-builds", "2019/x.html". */
+export function articleSlug(post: { legacyPath: string; slug: string }): string {
+  return post.legacyPath.startsWith("/articles/")
+    ? post.legacyPath.slice("/articles/".length)
+    : post.slug;
+}

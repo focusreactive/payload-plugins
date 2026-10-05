@@ -20,7 +20,7 @@ export const Card: React.FC<{
   const {
     className,
     doc,
-    basePath = BLOG_CONFIG.basePath,
+    basePath = BLOG_CONFIG.postBasePath,
     showTags,
     title: titleFromProps,
     readMoreLabel,

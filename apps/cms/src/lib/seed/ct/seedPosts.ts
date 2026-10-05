@@ -10,7 +10,7 @@ import { assignTags, TAGS } from "./data/tags";
 import { renderCover } from "./imagery";
 import { log } from "./log";
 import { insertImages } from "./markdownImages";
-import { isNewsEntry, slugFromUrl } from "./parseDump";
+import { articleSlug, isNewsEntry, slugFromUrl } from "./parseDump";
 import { restoreCodeAndTables } from "./restoreCode";
 import type { ImageInsert } from "./markdownImages";
 import { upsertMedia } from "./mediaStore";
@@ -221,7 +221,7 @@ export const seedPosts: SeedStep = async (ctx) => {
         title: post.titleTag ?? post.title,
       },
       publishedAt: londonMorning(post.date),
-      slug: post.slug,
+      slug: articleSlug(post),
       sourceUrl: post.url,
       title: post.title,
     };
@@ -236,7 +236,7 @@ export const seedPosts: SeedStep = async (ctx) => {
     if (existing) {
       ctx.ids.posts.set(post.slug, existing.id);
       const changed =
-        existing.slug !== post.slug ||
+        existing.slug !== articleSlug(post) ||
         existing.markdown !== markdown ||
         existing.title !== post.title ||
         existing.excerpt !== excerpt;

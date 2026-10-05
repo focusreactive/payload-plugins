@@ -3,7 +3,7 @@ import { I18N_CONFIG } from "@/lib/config/i18n";
 import type { Locale } from "@/lib/types";
 import { getPayloadClient } from "@/dal/payload-client";
 
-export type BlogPostStaticParams = { locale: string; slug: string }[];
+export type BlogPostStaticParams = { locale: string; slug: string[] }[];
 
 export async function getBlogPostStaticParams(): Promise<BlogPostStaticParams> {
   const payload = await getPayloadClient();
@@ -30,7 +30,7 @@ export async function getBlogPostStaticParams(): Promise<BlogPostStaticParams> {
       if (post.slug) {
         results.push({
           locale,
-          slug: post.slug,
+          slug: post.slug.split("/"),
         });
       }
     }

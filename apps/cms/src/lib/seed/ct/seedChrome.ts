@@ -127,7 +127,7 @@ export const seedChrome: SeedStep = async (ctx) => {
           dropdown: {
             featured: { enabled: false },
             links: [
-              ...(await dropdownLinks(["/resources/news"])),
+              { link: withoutLabel(urlLink("/news.html", "News")), title: "News & Announcements" },
               { link: withoutLabel(await pageLink(ctx, "/blog", "Blog")), title: "Blog" },
               ...(await dropdownLinks([
                 "/resources/case-studies",
@@ -205,7 +205,7 @@ export const seedChrome: SeedStep = async (ctx) => {
         {
           label: "Resources",
           links: [
-            { link: await pageLink(ctx, "/resources/news", "News") },
+            { link: urlLink("/news.html", "News") },
             { link: await pageLink(ctx, "/blog", "Blog") },
             { link: await pageLink(ctx, "/resources/case-studies", "Case Studies") },
             { link: await pageLink(ctx, "/resources/reports", "Reports") },

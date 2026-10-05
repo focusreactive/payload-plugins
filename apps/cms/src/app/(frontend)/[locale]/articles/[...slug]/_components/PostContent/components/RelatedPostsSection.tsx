@@ -3,7 +3,7 @@ import { BlogPostCard } from "@/components/blog";
 import { getTranslations } from "next-intl/server";
 import NextImage from "next/image";
 
-import { BLOG_CONFIG } from "@/lib/config/blog";
+import { postPath } from "@/lib/config/blog";
 import { Link, SectionContainer } from "@/components/shared";
 import type { Tag, Post } from "@/payload-types";
 
@@ -32,7 +32,7 @@ export async function RelatedPostsSection({ posts, relatedPostsLabel }: RelatedP
           );
 
           return (
-            <Link key={post.slug} href={`${BLOG_CONFIG.basePath}/${post.slug}`} className="block">
+            <Link key={post.slug} href={postPath(post.slug)} className="block">
               <BlogPostCard
                 title={post.title}
                 tag={tag?.title}
