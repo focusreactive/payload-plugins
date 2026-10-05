@@ -43,10 +43,13 @@ jobs:
             "url.https://x-access-token:${PRIVATE_REPO_TOKEN}@github.com/.insteadOf" \
             "https://www.github.com/"
 
+      # Only the publishable packages, which is all this workflow builds and releases. The apps are
+      # left out on purpose: one of them pulls a private repository over git, so installing them made
+      # every release depend on a token the release itself has no use for.
       - name: Install dependencies
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --filter './packages/*'
 
       - name: Build
         run: bunx turbo run build --filter='./packages/*'
