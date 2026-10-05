@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-json-form-builder [1.1.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.1.0...@focus-reactive/payload-plugin-json-form-builder@1.1.1) (2026-10-05)
+
+
+### Bug Fixes
+
+* give a list section its drag handle ([e30a942](https://github.com/focusreactive/payload-plugins/commit/e30a9426d753d39db128a458965f207fc982d0f1))
+
 # @focus-reactive/payload-plugin-json-form-builder [1.1.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.0.4...@focus-reactive/payload-plugin-json-form-builder@1.1.0) (2026-10-05)
 
 

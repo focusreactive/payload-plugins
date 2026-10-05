@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/payload-plugin-json-form-builder",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": false,
   "description": "Edit a Payload JSON field as real admin fields. The shape lives in the value, is built in a drawer, and the site reads plain values by key",
   "license": "MIT",
