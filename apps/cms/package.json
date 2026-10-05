@@ -64,6 +64,7 @@
     "cross-env": "7.0.3",
     "dotenv": "16.4.7",
     "graphql": "16.8.1",
+    "highlight.js": "10.7.3",
     "jose": "6.0.11",
     "lucide-react": "0.562.0",
     "marked": "15.0.12",

@@ -298,3 +298,49 @@ html:lang(ja) {
     display: none;
   }
 }
+
+/* Code listings in migrated articles (CodeBlock): a dark theme close to the old site. */
+.hljs-comment,
+.hljs-quote {
+  color: #8f8b7a;
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-section,
+.hljs-link,
+.hljs-meta,
+.hljs-deletion {
+  color: #f92672;
+}
+.hljs-string,
+.hljs-regexp,
+.hljs-addition,
+.hljs-meta .hljs-string {
+  color: #e6db74;
+}
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet {
+  color: #ae81ff;
+}
+.hljs-title,
+.hljs-built_in,
+.hljs-builtin-name {
+  color: #a6e22e;
+}
+.hljs-attr,
+.hljs-attribute,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-type,
+.hljs-params {
+  color: #fd971f;
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: 700;
+}

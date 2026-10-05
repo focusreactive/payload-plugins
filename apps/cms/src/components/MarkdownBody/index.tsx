@@ -1,3 +1,5 @@
+import { isValidElement } from "react";
+import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -5,7 +7,22 @@ import remarkGfm from "remark-gfm";
 import { proseVariants } from "@/components/richText/proseVariants";
 import { Link } from "@/components/shared";
 
+import { CodeBlock } from "./CodeBlock";
+
+/** A fenced block arrives as <pre><code class="language-x">…</code></pre>. */
+function fencedCode(children: ReactNode): { code: string; language?: string } | null {
+  if (!isValidElement<{ className?: string; children?: ReactNode }>(children)) {
+    return null;
+  }
+  const language = /language-([\w+-]+)/u.exec(children.props.className ?? "")?.[1];
+  return { code: String(children.props.children ?? ""), language };
+}
+
 const components: Components = {
+  pre: ({ children }) => {
+    const fenced = fencedCode(children);
+    return fenced ? <CodeBlock {...fenced} /> : <pre>{children}</pre>;
+  },
   a: ({ href, children }) =>
     href && href.startsWith("/") ? (
       <Link href={href}>{children}</Link>
