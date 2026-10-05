@@ -1,8 +1,8 @@
 "use client";
 
 import { useConfig } from "@payloadcms/ui";
-import { CONFIG_KEY } from './config.js';
-import type { JsonFormClientConfig } from './config.js';
+import { CONFIG_KEY } from "./config.js";
+import type { JsonFormClientConfig } from "./config.js";
 
 export const useJsonFormConfig = (): JsonFormClientConfig => {
   const { config } = useConfig();

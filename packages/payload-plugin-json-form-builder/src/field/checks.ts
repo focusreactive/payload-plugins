@@ -1,12 +1,4 @@
-import {
-  CONTAINER_TYPES,
-  HOLDER_TYPES,
-  isKnown,
-  isObject,
-  isTyped,
-  numberOf,
-  TYPES,
-} from "./typedJson.js";
+import { CONTAINER_TYPES, HOLDER_TYPES, isKnown, isTyped, numberOf, TYPES } from "./typedJson.js";
 import type { ArrayNode, Container, Leaf, NodeType, TypedNode, TypedRoot } from "./typedJson.js";
 
 // `named` only turns on past a row of one unnamed field, which is a plain value, not a field.
@@ -34,7 +26,8 @@ const each = (
     if (Array.isArray(fields))
       fields.forEach((field, at) => go(field, [...path, field.name ?? `#${at + 1}`], true));
   };
-  for (const [key, node] of Object.entries(root)) go(node, [key], false);
+  // A section carries its own name now, so it is judged like every other named node.
+  root.forEach((node, at) => go(node, [node.name ?? `#${at + 1}`], true));
 };
 
 const LEAVES = TYPES.filter((type) => !HOLDER_TYPES.includes(type));
@@ -88,8 +81,29 @@ const empty = (node: Leaf) =>
     ? node.value !== true
     : node.value === undefined || node.value === null || node.value === "";
 
+// Two nodes under one parent with the same name flatten into one, and the later silently wins — the
+// form cannot show the loss and the site never learns of it. An object could not hold two such keys
+// either: `JSON.parse` keeps the last and says nothing. So it is named here, at every level.
+const sameNames = (fields: TypedNode[], path: string[], found: string[]) => {
+  const seen = new Set<string>();
+  for (const field of fields) {
+    const here = [...path, field.name ?? ""].filter(Boolean);
+    if (field.name) {
+      if (seen.has(field.name)) found.push(`${here.join(" → ")}: a second node has this name`);
+      seen.add(field.name);
+    }
+    const rows = (field as ArrayNode).rows;
+    if (Array.isArray(rows)) {
+      rows.forEach((row, at) => sameNames(row, [...here, `${at + 1}`], found));
+    }
+    const kids = (field as Container).fields;
+    if (Array.isArray(kids)) sameNames(kids, here, found);
+  }
+};
+
 export const schemaErrors = (root: TypedRoot): string[] => {
   const found: string[] = [];
+  sameNames(root, [], found);
   each(root, (node, where, named) => {
     const faults = nodeErrors(node, where, named);
     found.push(...faults);
@@ -120,7 +134,6 @@ const KEYS: Record<string, Rule> = {
   minRows: { kind: "number", only: ["array"] },
   name: { kind: "string" },
   options: { kind: "array", needed: ["select"], only: ["select"] },
-  order: { kind: "number" },
   readOnly: { kind: "boolean" },
   required: { kind: "boolean" },
   rows: { kind: "array", needed: ["array"], only: ["array"] },
@@ -183,7 +196,7 @@ const nodeErrors = (node: TypedNode, where: string, named: boolean): string[] =>
 // other field in the admin behaves too, Payload's own `required` included: the save is refused, the
 // field is marked, the form stays modified, and you fix it and press Save again.
 export const jsonErrors = (value: unknown, required?: boolean): string | true => {
-  if (value != null && !isObject(value)) return "This is not valid json.";
+  if (value != null && !Array.isArray(value)) return "This is not valid json.";
   if (required && !isTyped(value)) return "This field is required.";
   if (!isTyped(value)) return true;
   const found = problems(value);

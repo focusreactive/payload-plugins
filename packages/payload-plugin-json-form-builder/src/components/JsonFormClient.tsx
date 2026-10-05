@@ -52,33 +52,25 @@ export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
     setAdding(fresh);
     openModal(builderSlug);
   };
-  // A value stored before `JsonCode` existed can still be a string; it opens in Code, to be mended.
-  const valid = value == null || isObject(value);
+  // Anything that is not a list of sections opens in Code, to be mended by hand.
+  const valid = value == null || Array.isArray(value);
   const [code, setCode] = useState(!valid);
-  const root: TypedRoot = isTyped(value) ? value : {};
+  const root: TypedRoot = isTyped(value) ? value : [];
   const broken = schemaErrors(root).length > 0;
   const asCode = code || broken;
   // Code is open to whoever may build, and read-only to everyone else: it is the same value the form
   // shows, and the one way to mend json the form cannot draw.
   const locked = props.readOnly || !mayBuild;
-  const set = (key: string, node: TypedNode) => setValue({ ...root, [key]: node });
+  const set = (name: string, node: TypedNode) =>
+    setValue(root.map((entry) => (entry.name === name ? node : entry)));
   // Deleting a section is the editor's to make: it is the one piece of the shape that is also a
   // piece of the page, and an edition that does not run it has no use for its fields either.
-  const drop = (key: string) => {
-    const { [key]: _gone, ...rest } = root;
-    setValue(rest);
-  };
+  const drop = (name: string) => setValue(root.filter((entry) => entry.name !== name));
   // Content that was never converted: it has keys but no kinds, so the form cannot draw it and the
   // builder would have nothing to open.
   const untyped = Boolean(value) && !isTyped(value) && Object.keys(value as object).length > 0;
-  // jsonb keeps no key order, so a section sits where its `order` says, and by name when it has none.
-  const sections = Object.entries(root)
-    .filter(([, node]) => visible(node, root))
-    .sort(
-      ([a, one], [b, two]) =>
-        (one.order ?? Number.MAX_SAFE_INTEGER) - (two.order ?? Number.MAX_SAFE_INTEGER) ||
-        a.localeCompare(b)
-    );
+  // A list keeps the order it is written in, so a section sits where it was put.
+  const sections = root.filter((node) => visible(node, root));
   // Nothing built yet: both controls in the strip act on sections, and there are none — so the only
   // thing offered is the button that makes the first one.
   const bare = !sections.length && !untyped && !asCode;
@@ -87,7 +79,7 @@ export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
   // again here, under the sections it is about, and only once a save has actually been turned down.
   const unfilled = showError ? faults(root) : [];
   // Sections are the keys a template reads, which is the one count worth carrying in the foot.
-  const kept = Object.keys(root).length;
+  const kept = root.length;
 
   return (
     <div className={cn("field-type json-form", unfilled.length > 0 && "json-form--alarmed")}>
@@ -185,30 +177,33 @@ export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
           <>
             {sections.length > 0 && (
               <div className="json-form__fields">
-                {sections.map(([key, node]) => (
-                  <JsonNode
-                    faults={showError}
-                    hidden={node.hidden}
-                    id={`${path}.${key}`}
-                    key={key}
-                    label={labelOf(node, key)}
-                    menu={[
-                      hideItem(node, (next) => set(key, next)),
-                      {
-                        className: "json-form__action--remove",
-                        icon: <XIcon />,
-                        label: "Delete",
-                        onClick: () => {
-                          setDropping(key);
-                          openModal(dropSlug);
+                {sections.map((node) => {
+                  const key = node.name ?? "";
+                  return (
+                    <JsonNode
+                      faults={showError}
+                      hidden={node.hidden}
+                      id={`${path}.${key}`}
+                      key={key}
+                      label={labelOf(node, key)}
+                      menu={[
+                        hideItem(node, (next) => set(key, next)),
+                        {
+                          className: "json-form__action--remove",
+                          icon: <XIcon />,
+                          label: "Delete",
+                          onClick: () => {
+                            setDropping(key);
+                            openModal(dropSlug);
+                          },
                         },
-                      },
-                    ]}
-                    node={node}
-                    onChange={(next) => set(key, next)}
-                    top
-                  />
-                ))}
+                      ]}
+                      node={node}
+                      onChange={(next) => set(key, next)}
+                      top
+                    />
+                  );
+                })}
               </div>
             )}
             {untyped && (
@@ -260,7 +255,10 @@ export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
         <JsonBuilder adding={adding} onChange={setValue} root={root} slug={builderSlug} />
       )}
       <ConfirmationModal
-        body={`This will delete "${labelOf(root[dropping], dropping)}" and everything filled in under it.`}
+        body={`This will delete "${labelOf(
+          root.find((node) => node.name === dropping),
+          dropping
+        )}" and everything filled in under it.`}
         confirmLabel="Delete"
         heading="Delete section"
         modalSlug={dropSlug}

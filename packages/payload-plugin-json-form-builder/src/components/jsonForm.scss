@@ -482,6 +482,18 @@ body.json-builder-open {
 }
 
 /* A pill carries its own colours, its hover and its picked state; only the row shape is ours. */
+/* The grip sits outside the pill so a drag never reads as a click into the section. */
+.json-builder__section-list {
+  display: grid;
+  gap: calc(var(--base) * 0.3);
+}
+
+.json-builder__section-row {
+  align-items: center;
+  display: flex;
+  gap: calc(var(--base) * 0.25);
+}
+
 .json-builder__section {
   --pill-padding-block-end: calc(var(--base) * 0.4);
   --pill-padding-block-start: calc(var(--base) * 0.4);

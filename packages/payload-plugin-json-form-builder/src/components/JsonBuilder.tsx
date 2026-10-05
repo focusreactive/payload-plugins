@@ -7,6 +7,9 @@ import {
   Banner,
   Button,
   ConfirmationModal,
+  DraggableSortable,
+  DraggableSortableItem,
+  DragHandleIcon,
   Drawer,
   EditIcon,
   Pill,
@@ -36,10 +39,6 @@ import { GROUPS, KINDS } from "../field/kinds.js";
 import { useJsonFormConfig } from "../useJsonFormConfig.js";
 import { blankNode, TYPES } from "../field/typedJson.js";
 import type { NodeType, TypedNode, TypedRoot } from "../field/typedJson.js";
-
-const bySeat = ([a, one]: [string, TypedNode], [b, two]: [string, TypedNode]) =>
-  (one.order ?? Number.MAX_SAFE_INTEGER) - (two.order ?? Number.MAX_SAFE_INTEGER) ||
-  a.localeCompare(b);
 
 // A strip of tabs holds tabs and nothing else, and a tab is worth nothing anywhere else — so it is
 // offered where it belongs and nowhere besides.
@@ -111,9 +110,10 @@ export const JsonBuilder = ({
     // biome-ignore lint/correctness/useExhaustiveDependencies: the stored value is read on opening only
   }, [showing]);
 
-  const sections = Object.entries(draft).sort(bySeat);
+  // Already in order: the root is a list, and a list is kept the way it is written.
+  const sections = draft;
   const faults = schemaErrors(draft);
-  const section = draft[current];
+  const section = draft.find((node) => node.name === current);
   const here: Spot = { section: current, at };
   const holder = section ? nodeAt(draft, here) : undefined;
   const fields = holder ? shapeOf(holder) : [];
@@ -225,17 +225,44 @@ export const JsonBuilder = ({
       <div className="json-builder">
         <aside className="json-builder__sections">
           <h5 className="json-builder__group">Sections</h5>
-          {sections.map(([entry, held]) => (
-            <Pill
-              className="json-builder__section"
-              key={entry}
-              onClick={() => walk(entry)}
-              pillStyle={entry === current ? "dark" : "light"}
-            >
-              <span className="json-builder__section-name">{held.label || entry}</span>
-              <span className="json-builder__section-count">{shapeOf(held).length}</span>
-            </Pill>
-          ))}
+          {/* Dragged like the fields inside them: the root is a list too, so the order a section is
+					    written in is the order the site reads it. */}
+          <DraggableSortable
+            className="json-builder__section-list"
+            ids={sections.map((held, index) => held.name || `#${index + 1}`)}
+            onDragEnd={({ moveFromIndex, moveToIndex }) =>
+              setDraft(
+                draft.toSpliced(moveFromIndex, 1).toSpliced(moveToIndex, 0, draft[moveFromIndex])
+              )
+            }
+          >
+            {sections.map((held, index) => {
+              const entry = held.name || `#${index + 1}`;
+              return (
+                <DraggableSortableItem id={entry} key={entry}>
+                  {({ attributes, isDragging, listeners, setNodeRef, transform, transition }) => (
+                    <div
+                      className="json-builder__section-row"
+                      ref={setNodeRef}
+                      style={{ transform, transition, zIndex: isDragging ? 1 : undefined }}
+                    >
+                      <span className="json-builder__grip" {...attributes} {...listeners}>
+                        <DragHandleIcon />
+                      </span>
+                      <Pill
+                        className="json-builder__section"
+                        onClick={() => walk(entry)}
+                        pillStyle={entry === current ? "dark" : "light"}
+                      >
+                        <span className="json-builder__section-name">{held.label || entry}</span>
+                        <span className="json-builder__section-count">{shapeOf(held).length}</span>
+                      </Pill>
+                    </div>
+                  )}
+                </DraggableSortableItem>
+              );
+            })}
+          </DraggableSortable>
           <Button
             buttonStyle="secondary"
             onClick={() => start("section", "collapsible")}

@@ -10,12 +10,10 @@ export type LeafType =
   | "checkbox"
   | "select";
 export type Condition = { field: string } & ({ equals: unknown } | { notEquals: unknown });
-// `name` is the key a template reads, `label` the words a person reads, `order` the place a section
-// takes — jsonb keeps no key order, so the only order there is, is the one written down.
+// `name` is the key a template reads, `label` the words a person reads.
 type Base = {
   name?: string;
   label?: string;
-  order?: number;
   required?: boolean;
   readOnly?: boolean;
   description?: string;
@@ -41,7 +39,9 @@ export type ArrayNode = Base & {
   maxRows?: number;
 };
 export type TypedNode = Leaf | Container | ArrayNode;
-export type TypedRoot = Record<string, TypedNode>;
+// Sections are a list, like every other level: an array keeps the order it is written in, where an
+// object would not — jsonb does not preserve key order, and a key cannot be dragged.
+export type TypedRoot = TypedNode[];
 
 export const isObject = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -68,14 +68,11 @@ export const isKnown = (node: TypedNode) => (TYPES as readonly string[]).include
 export const HIDDEN = "hidden";
 
 // A value where nothing is a known kind is content, not a schema: `{ type: 'primary' }` is a button.
-export const isTyped = (value: unknown): value is TypedRoot => {
-  if (!isObject(value) || !Object.keys(value).length) return false;
-  const nodes = Object.values(value);
-  return (
-    nodes.every((node) => isObject(node) && typeof node.type === "string") &&
-    nodes.some((node) => isKnown(node as TypedNode))
-  );
-};
+export const isTyped = (value: unknown): value is TypedRoot =>
+  Array.isArray(value) &&
+  value.length > 0 &&
+  value.every((node) => isObject(node) && typeof node.type === "string") &&
+  value.some((node) => isKnown(node as TypedNode));
 
 const fieldsOf = (fields: TypedNode[]) =>
   Object.fromEntries(
@@ -101,14 +98,9 @@ const flattenNode = (node: TypedNode): unknown => {
 const blankValue = (type: LeafType | string) =>
   type === "checkbox" ? false : type === "number" || type === "date" ? null : "";
 
-export const flatten = (value: unknown) =>
-  isTyped(value)
-    ? Object.fromEntries(
-        Object.entries(value)
-          .filter(([, node]) => !node.hidden)
-          .map(([key, node]) => [key, flattenNode(node)])
-      )
-    : value;
+// The root is a list of named nodes, which is what `fieldsOf` already turns into an object by name —
+// so a section and a field come out the same way, and the site reads both by key.
+export const flatten = (value: unknown) => (isTyped(value) ? fieldsOf(value) : value);
 
 const blankRow = (shape: TypedNode[]): TypedNode[] =>
   shape.map((field) =>
@@ -151,25 +143,12 @@ export const blankNode = (type: NodeType): TypedNode => {
   } as Leaf;
 };
 
-export const visible = (node: TypedNode, siblings: TypedNode[] | TypedRoot): boolean => {
+export const visible = (node: TypedNode, siblings: TypedNode[]): boolean => {
   if (!node.showIf) return true;
-  const sibling = Array.isArray(siblings)
-    ? siblings.find((entry) => entry.name === node.showIf?.field)
-    : siblings[node.showIf.field];
+  const sibling = siblings.find((entry) => entry.name === node.showIf?.field);
   const value = sibling && "value" in sibling ? sibling.value : undefined;
   return "equals" in node.showIf ? value === node.showIf.equals : value !== node.showIf.notEquals;
 };
 
 // Only an emptied list has no row to copy, which is the one case that keeps a `fields`.
 export const rowShape = (node: ArrayNode) => blankRow(node.rows?.[0] ?? node.fields ?? []);
-
-export const flattenSettings = (value: unknown): unknown => {
-  if (Array.isArray(value)) return value.map(flattenSettings);
-  if (!isObject(value)) return value;
-  return Object.fromEntries(
-    Object.entries(value).map(([key, entry]) => [
-      key,
-      key === "settings" && isTyped(entry) ? flatten(entry) : flattenSettings(entry),
-    ])
-  );
-};

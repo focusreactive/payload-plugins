@@ -38,10 +38,13 @@ const dressed = (shape: TypedNode[], row: TypedNode[]): TypedNode[] =>
 
 const childrenOf = (node: TypedNode) => (holdsFields(node) ? shapeOf(node) : undefined);
 
+// A section is a node in the root list, found by the name it is written under.
+const seatOf = (root: TypedRoot, name: string) => root.findIndex((node) => node.name === name);
+
 export const nodeAt = (root: TypedRoot, spot: Spot): TypedNode | undefined =>
   spot.at.reduce<TypedNode | undefined>(
     (node, index) => (node ? childrenOf(node)?.[index] : undefined),
-    root[spot.section]
+    root[seatOf(root, spot.section)]
   );
 
 // One rewrite for every change: the node at the spot is handed to `edit`, and `undefined` drops it.
@@ -62,15 +65,14 @@ export const editAt = (
   spot: Spot,
   edit: (node: TypedNode) => TypedNode | undefined
 ): TypedRoot => {
-  const section = root[spot.section];
+  const seat = seatOf(root, spot.section);
+  const section = root[seat];
   if (!section) return root;
   if (!spot.at.length) {
     const next = edit(section);
-    if (next) return { ...root, [spot.section]: next };
-    const { [spot.section]: _gone, ...rest } = root;
-    return rest;
+    return next ? root.toSpliced(seat, 1, next) : root.toSpliced(seat, 1);
   }
-  return { ...root, [spot.section]: withShape(section, rewrite(shapeOf(section), spot.at, edit)) };
+  return root.toSpliced(seat, 1, withShape(section, rewrite(shapeOf(section), spot.at, edit)));
 };
 
 // A key is what a template writes after a dot, so it is letters and digits and nothing else.
@@ -101,11 +103,11 @@ export const addAt = (root: TypedRoot, spot: Spot, node: TypedNode): TypedRoot =
     ]);
   });
 
-// A section is named by its key, so it carries no `name` of its own.
-export const addSection = (root: TypedRoot, key: string, node: TypedNode): TypedRoot => {
-  const { name: _unnamed, ...rest } = node;
-  return { ...root, [key]: { ...rest, order: Object.keys(root).length } as TypedNode };
-};
+// A section is a node like any other, named by its key, and the end of the list is where it goes.
+export const addSection = (root: TypedRoot, key: string, node: TypedNode): TypedRoot => [
+  ...root,
+  { ...node, name: key } as TypedNode,
+];
 
 export const renameSection = (root: TypedRoot, from: string, to: string): TypedRoot =>
-  Object.fromEntries(Object.entries(root).map(([key, node]) => [key === from ? to : key, node]));
+  root.map((node) => (node.name === from ? { ...node, name: to } : node));
