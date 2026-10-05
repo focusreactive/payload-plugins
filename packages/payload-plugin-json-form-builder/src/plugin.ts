@@ -85,8 +85,11 @@ export const jsonFormPlugin =
       if (found) hosts.push({ fields, prefix });
     };
 
+    // `collection.` and `global.` are not decoration: Payload reads a schema path as exactly three
+    // parts — `[entityType, entitySlug, ...fieldPath]` — so a collection's path without the prefix
+    // is parsed as the entity type being the slug, and the field is never found.
     config.collections = incoming.collections?.map((collection) => {
-      attach(collection.fields, collection.slug);
+      attach(collection.fields, `collection.${collection.slug}`);
       return collection;
     });
     config.globals = incoming.globals?.map((global) => {

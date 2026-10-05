@@ -1,4 +1,5 @@
 import { FieldCommentLabel as FieldCommentLabel_d1361f235be9df6e08bfd730fe68e7c8 } from '@focus-reactive/payload-plugin-comments/components/FieldCommentLabel'
+import { JsonFormField as JsonFormField_ad4683cccb3734571b3db5b890638341 } from '@focus-reactive/payload-plugin-json-form-builder/rsc'
 import { default as default_5be4c9505bfab4c66724e4ccadfc9b28 } from '@focus-reactive/payload-plugin-translator/client/widgets/translate-field-control/ui/TranslateFieldControl'
 import { BlockLabelServerWrapper as BlockLabelServerWrapper_ad8f8fdcc54c2df5d561bf1e2721dc58 } from '@focus-reactive/payload-plugin-presets/rsc'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -31,7 +32,6 @@ import { default as default_587142b484744b5573788fdf4a68522a } from '@focus-reac
 import { BlockLabelWithPresets as BlockLabelWithPresets_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { PresetAdminComponentPreview as PresetAdminComponentPreview_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
 import { PresetAdminComponentCellWrapper as PresetAdminComponentCellWrapper_f0a4a6f21f15d606fa328a5e35f17d11 } from '@focus-reactive/payload-plugin-presets/client'
-import { JsonFormField as JsonFormField_ad4683cccb3734571b3db5b890638341 } from '@focus-reactive/payload-plugin-json-form-builder/rsc'
 import { CommentsHeaderButton as CommentsHeaderButton_30d38dd40c31eff500900a16a2792204 } from '@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton'
 import { CommentsProviderWrapper as CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a } from '@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper'
 import { default as default_5668654bc04fc84f784cb30b290f6f3d } from '@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider'
@@ -41,6 +41,7 @@ import { SectionVisibilityLabel as SectionVisibilityLabel_c7986ed929437589fcd462
 /** @type import('payload').ImportMap */
 export const importMap = {
   "@focus-reactive/payload-plugin-comments/components/FieldCommentLabel#FieldCommentLabel": FieldCommentLabel_d1361f235be9df6e08bfd730fe68e7c8,
+  "@focus-reactive/payload-plugin-json-form-builder/rsc#JsonFormField": JsonFormField_ad4683cccb3734571b3db5b890638341,
   "@focus-reactive/payload-plugin-translator/client/widgets/translate-field-control/ui/TranslateFieldControl#default": default_5be4c9505bfab4c66724e4ccadfc9b28,
   "@focus-reactive/payload-plugin-presets/rsc#BlockLabelServerWrapper": BlockLabelServerWrapper_ad8f8fdcc54c2df5d561bf1e2721dc58,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -73,7 +74,6 @@ export const importMap = {
   "@focus-reactive/payload-plugin-presets/client#BlockLabelWithPresets": BlockLabelWithPresets_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-presets/client#PresetAdminComponentPreview": PresetAdminComponentPreview_f0a4a6f21f15d606fa328a5e35f17d11,
   "@focus-reactive/payload-plugin-presets/client#PresetAdminComponentCellWrapper": PresetAdminComponentCellWrapper_f0a4a6f21f15d606fa328a5e35f17d11,
-  "@focus-reactive/payload-plugin-json-form-builder/rsc#JsonFormField": JsonFormField_ad4683cccb3734571b3db5b890638341,
   "@focus-reactive/payload-plugin-comments/components/CommentsHeaderButton#CommentsHeaderButton": CommentsHeaderButton_30d38dd40c31eff500900a16a2792204,
   "@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper#CommentsProviderWrapper": CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a,
   "@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider#default": default_5668654bc04fc84f784cb30b290f6f3d,
