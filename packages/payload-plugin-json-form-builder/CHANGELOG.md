@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-json-form-builder [1.0.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.0.2...@focus-reactive/payload-plugin-json-form-builder@1.0.3) (2026-10-05)
+
+
+### Bug Fixes
+
+* prefix a collection's schema path the way payload reads it ([6d8bbff](https://github.com/focusreactive/payload-plugins/commit/6d8bbff080ccf060c14be7c64da6bea80538120c))
+
 ## @focus-reactive/payload-plugin-json-form-builder [1.0.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.0.1...@focus-reactive/payload-plugin-json-form-builder@1.0.2) (2026-10-05)
 
 
