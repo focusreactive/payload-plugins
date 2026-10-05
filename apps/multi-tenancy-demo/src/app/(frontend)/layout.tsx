@@ -1,4 +1,4 @@
-import { VisualEditing } from "@fr-private/payload-plugin-visual-editing/client";
+import { VisualEditing } from "@focus-reactive/payload-plugin-visual-editing/client";
 import { draftMode } from "next/headers";
 import React from "react";
 import "./styles.css";

@@ -31,6 +31,7 @@ To add an individual plugin to an existing Payload project, see the install comm
 | [`@focus-reactive/payload-plugin-scheduling`](./packages/payload-plugin-scheduling) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-scheduling)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-scheduling) | Schedule publication plugin — schedule documents to publish at a future date      |
 | [`@focus-reactive/payload-plugin-html-preview`](./packages/payload-plugin-html-preview) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-html-preview)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-html-preview) | HTML preview plugin — live preview and click-to-edit for static and template-rendered sites |
 | [`@focus-reactive/payload-plugin-netlify-deploy`](./packages/payload-plugin-netlify-deploy) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-netlify-deploy)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-netlify-deploy) | Netlify deploy plugin — build, preview and publish Netlify sites from the admin, with the live build log |
+| [`@focus-reactive/payload-plugin-visual-editing`](./packages/payload-plugin-visual-editing) | [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-visual-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-visual-editing) | Visual editing plugin — click-to-edit overlays on your Next.js frontend that deep-link into the admin field |
 
 
 ## A/B Testing Plugin for Payload CMS
@@ -168,6 +169,20 @@ bun add @focus-reactive/payload-plugin-netlify-deploy
 
 - Package: [`@focus-reactive/payload-plugin-netlify-deploy`](./packages/payload-plugin-netlify-deploy)
 - [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-netlify-deploy)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-netlify-deploy)
+
+## Visual Editing Plugin for Payload CMS
+
+Click-to-edit for React/Next.js frontends. Draft content read through the Local API carries invisible field-path markers (Vercel stega); a frontend overlay turns them into Edit badges, and a click opens the exact document and field in the admin — tabs, collapsibles and array rows expanded, the input scrolled into view and focused. Works in Live Preview and in a separate tab.
+
+```bash
+npm install @focus-reactive/payload-plugin-visual-editing
+yarn add @focus-reactive/payload-plugin-visual-editing
+pnpm add @focus-reactive/payload-plugin-visual-editing
+bun add @focus-reactive/payload-plugin-visual-editing
+```
+
+- Package: [`@focus-reactive/payload-plugin-visual-editing`](./packages/payload-plugin-visual-editing)
+- [![npm](https://img.shields.io/npm/v/@focus-reactive/payload-plugin-visual-editing)](https://www.npmjs.com/package/@focus-reactive/payload-plugin-visual-editing)
 
 ## Run Demo Locally
 

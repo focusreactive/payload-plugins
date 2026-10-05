@@ -32,7 +32,7 @@
         "@focus-reactive/payload-plugin-scheduling": "workspace:*",
         "@focus-reactive/payload-plugin-seo": "workspace:*",
         "@focus-reactive/payload-plugin-translator": "workspace:*",
-        "@fr-private/payload-plugin-visual-editing": "^1.0.2",
+        "@focus-reactive/payload-plugin-visual-editing": "workspace:*",
         "@payloadcms/db-postgres": "3.90.1",
         "@payloadcms/live-preview-react": "3.90.1",
         "@payloadcms/next": "3.90.1",
@@ -172,7 +172,7 @@
       "name": "multi-tenancy-demo",
       "version": "1.0.0",
       "dependencies": {
-        "@fr-private/payload-plugin-visual-editing": "^1.0.2",
+        "@focus-reactive/payload-plugin-visual-editing": "workspace:*",
         "@payloadcms/db-sqlite": "3.90.1",
         "@payloadcms/live-preview-react": "3.90.1",
         "@payloadcms/next": "3.90.1",
@@ -517,6 +517,39 @@
         "react": "^18.0.0 || ^19.0.0",
       },
     },
+    "packages/payload-plugin-visual-editing": {
+      "name": "@focus-reactive/payload-plugin-visual-editing",
+      "version": "1.0.0",
+      "dependencies": {
+        "@vercel/stega": "^1.1.0",
+      },
+      "devDependencies": {
+        "@payloadcms/ui": "3.90.1",
+        "@swc/cli": "0.4.0",
+        "@swc/core": "1.7.0",
+        "@testing-library/react": "^16.0.0",
+        "@types/node": "22.19.9",
+        "@types/react": "19.2.9",
+        "@types/react-dom": "19.2.3",
+        "@vitejs/plugin-react": "^4.3.0",
+        "jsdom": "^25.0.0",
+        "next": "16.3.6",
+        "payload": "3.90.1",
+        "react": "19.2.1",
+        "react-dom": "19.2.1",
+        "typescript": "5.9.2",
+        "vitest": "^2.1.0",
+      },
+      "peerDependencies": {
+        "@payloadcms/ui": "^3.79.0",
+        "next": "^14.0.0 || ^15.0.0 || ^16.0.0",
+        "payload": "^3.79.0",
+        "react": "^18.0.0 || ^19.0.0",
+      },
+      "optionalPeers": [
+        "next",
+      ],
+    },
     "packages/tailwind-config": {
       "name": "@repo/tailwind-config",
       "version": "0.2.0",
@@ -824,6 +857,8 @@
 
     "@focus-reactive/payload-plugin-translator": ["@focus-reactive/payload-plugin-translator@workspace:packages/payload-plugin-translator"],
 
+    "@focus-reactive/payload-plugin-visual-editing": ["@focus-reactive/payload-plugin-visual-editing@workspace:packages/payload-plugin-visual-editing"],
+
     "@formatjs/fast-memoize": ["@formatjs/fast-memoize@3.1.6", "", {}, "sha512-H5aexk1Le7T9TPmscacZ+1pR6CTa2n1wq+HDVGXhH8TzUlQQpeXzZs91dRtmFHrbeNbjPFPfQujUqm7MHgVoXQ=="],
 
     "@formatjs/icu-messageformat-parser": ["@formatjs/icu-messageformat-parser@3.5.11", "", { "dependencies": { "@formatjs/icu-skeleton-parser": "2.1.10" } }, "sha512-NVsuNsc2dUVG9+4HBJ/srScxtA/18LqGgwtop/tuN/OIBjVl6QA+0KhfZQddDD9sEh2LeVjLFPGVU3ixa3blcA=="],
@@ -831,8 +866,6 @@
     "@formatjs/icu-skeleton-parser": ["@formatjs/icu-skeleton-parser@2.1.10", "", {}, "sha512-XuSva+8ZGawk8VnD5VD6UeH8KarQ/Z022zgjHDoHmlNiAewstXuuzXc0Hk5pGFSdG+nNw5bfJKXqj1ZXHn9yUA=="],
 
     "@formatjs/intl-localematcher": ["@formatjs/intl-localematcher@0.8.10", "", { "dependencies": { "@formatjs/fast-memoize": "3.1.6" } }, "sha512-P/IC3qws3jH+1fEs+o0RIFgXKRaQlFehjS5W0FPAqdo6hgzawLl+eD0q0JjheQ3XtoOe5n8WSYfX06KQZI/QJA=="],
-
-    "@fr-private/payload-plugin-visual-editing": ["@fr-private/payload-plugin-visual-editing@1.0.2", "", { "dependencies": { "@vercel/stega": "^1.1.0" }, "peerDependencies": { "@payloadcms/ui": "^3.79.0", "next": "^14.0.0 || ^15.0.0 || ^16.0.0", "payload": "^3.79.0", "react": "^18.0.0 || ^19.0.0" }, "optionalPeers": ["next"] }, "sha512-et5sHvoOuHk+PROH1rwBfWOd5mRAsQwIVVYbiJSSaGcAYzELEvc5uwcbyMrd2p0Cx85fOWrL3c7BpsxteyW+SQ=="],
 
     "@google-analytics/data": ["@google-analytics/data@5.2.2", "", { "dependencies": { "google-gax": "^5.0.0" } }, "sha512-W6p4Z8IG5Uol2x9NNYA1IfCGbAClyt/dGHv+d1KO8ML658hBq/RUPg4iXc3whdgiJIu6QkVGgcXUO65lkEiLnA=="],
 

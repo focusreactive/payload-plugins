@@ -1,7 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { visualEditingPlugin } from "@fr-private/payload-plugin-visual-editing";
+import { visualEditingPlugin } from "@focus-reactive/payload-plugin-visual-editing";
 import { sqliteAdapter } from "@payloadcms/db-sqlite";
 import { multiTenantPlugin } from "@payloadcms/plugin-multi-tenant";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
