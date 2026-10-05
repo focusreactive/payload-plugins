@@ -1,3 +1,10 @@
+## @focus-reactive/payload-plugin-json-form-builder [1.0.4](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.0.3...@focus-reactive/payload-plugin-json-form-builder@1.0.4) (2026-10-05)
+
+
+### Bug Fixes
+
+* put the anchor in a global when there is one ([4aab990](https://github.com/focusreactive/payload-plugins/commit/4aab9902e2687cb158f4533170c864e92fa6ecbe))
+
 ## @focus-reactive/payload-plugin-json-form-builder [1.0.3](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.0.2...@focus-reactive/payload-plugin-json-form-builder@1.0.3) (2026-10-05)
 
 
