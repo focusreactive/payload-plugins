@@ -9,8 +9,6 @@ export type {
   TranslationLifecycleCallbacks,
 } from "./server/modules/lifecycle/index.js";
 
-// Provenance — the durable per-locale record shape (opt-in `provenance` sidecar). The store/key and
-// the Payload-backed impl stay internal; consumers only read the sidecar collection.
 export type { TranslationProvenanceRecord } from "./core/index.js";
 
 // Access control
