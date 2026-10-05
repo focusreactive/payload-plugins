@@ -120,9 +120,13 @@ export const JsonBuilder = ({
 
   // Who else stands at this level, which is what the key has to be free of.
   const neighbours = () => {
-    // Sections are a list now, so their names are read off the nodes — `Object.keys` of an array
-    // gives its indexes, and a key would never look taken.
-    if (isSection) return draft.map((node) => node.name ?? "").filter((name) => name !== current);
+    // Sections are a list, so their names are read off the nodes. A section being renamed does not
+    // count its own name as taken; one being created counts every name there is, including the one
+    // standing selected behind the drawer.
+    if (isSection) {
+      const taken = draft.map((node) => node.name ?? "");
+      return making ? taken : taken.filter((name) => name !== current);
+    }
     const names = fields.map((field) => field.name ?? "");
     return making ? names : names.filter((_, index) => index !== picked?.at.at(-1));
   };
