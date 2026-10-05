@@ -66,6 +66,8 @@ export default buildConfig({
 })
 ```
 
+The plugin adds one global of its own — `json-form` — and no collections. It is where the rich text anchor lives, and it is hidden from the admin until you put fields in it (see [`global`](#global)).
+
 ### 3. Add the field
 
 Anywhere a field may go — a collection, a global, a tab, inside a block, several times in one document:
@@ -100,6 +102,7 @@ That is all. Styles travel with the components; there is nothing to import.
 ```ts
 jsonFormPlugin({
   build: true,
+  global: { slug: 'json-form', fields: [] },
   richText: { editor: lexicalEditor(), holds: { headings: true, quotes: true, rules: true } },
   uploads: 'media',
 })
@@ -119,6 +122,19 @@ build: ({ user }) => user?.isStaff   // your own rule
 A role name is matched against `user.role` and `user.roles`, which is where most projects keep it. If yours keeps it somewhere else, pass the predicate.
 
 Set it per field to override the plugin for one place: `jsonField({ build: 'admin' })`.
+
+### `global`
+
+The plugin's own global, added to the config the way a plugin adds a collection — you declare nothing. It is the plugin's place in the schema: the rich text anchor lives there instead of being pushed into a document you own, and the same global is the obvious home for json forms that belong to the site rather than to a page.
+
+```ts
+global: {}                                                  // the default: `json-form`, hidden
+global: { fields: [jsonField({ name: 'components' })] }     // filled, and visible
+global: { slug: 'site-json', label: 'Site JSON' }
+global: false                                               // no global — and no rich text
+```
+
+An empty global is `admin.hidden`, since the only field in it is one nobody can see. Put fields in it and it appears; `admin`, `access`, `label` and `hooks` are passed straight through if you want to say otherwise. `false` leaves the config without the global, which also leaves rich text nowhere to anchor.
 
 ### `richText`
 
@@ -198,7 +214,7 @@ A rich text node stores **html**, not lexical state, so your site can print it w
 
 That means every edit is a round trip: lexical out to html, html back to lexical when the field is reopened. The plugin owns both directions and keeps them in step. If you narrow the editor, narrow `holds` with it — anything the writer emits and the reader cannot parse is content that disappears on the next edit.
 
-**The anchor.** `RenderLexical` mounts an editor by pointing at a richText field Payload has already sanitized; it cannot be built from an editor config alone. A rich text value inside json is not a field to Payload — only a key in an object — so one real field has to exist for the editor to aim at. The plugin adds it for you: a `virtual`, `admin.hidden` richText field in the first collection or global that has a json field. It stores nothing and creates no column. You will see one extra key in that document's generated types, and that is the whole footprint.
+**The anchor.** `RenderLexical` mounts an editor by pointing at a richText field Payload has already sanitized; it cannot be built from an editor config alone. A rich text value inside json is not a field to Payload — only a key in an object — so one real field has to exist for the editor to aim at. The plugin adds it for you: a `virtual`, `admin.hidden` richText field in its own [`global`](#global). It stores nothing and creates no column. You will see one extra key in that global's generated types, and that is the whole footprint.
 
 ---
 
@@ -208,7 +224,7 @@ That means every edit is a round trip: lexical out to html, html back to lexical
 
 **The field renders as Payload's plain JSON textarea** — the import map is stale. Run `payload generate:importmap`.
 
-**Rich text is missing from the palette** — `richText` is `false`, or it is set but no collection or global has a json field yet, so there was nowhere to put the anchor.
+**Rich text is missing from the palette** — `richText` is `false`, or `global` is, so there was nowhere to put the anchor.
 
 **An icon, a colour or a custom node vanishes when the field is reopened** — the editor can write a node the parser does not read. Custom nodes are not supported yet; see below.
 

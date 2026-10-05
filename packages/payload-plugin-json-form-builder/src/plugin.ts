@@ -1,4 +1,4 @@
-import type { Config, Field, JSONField, Plugin, RichTextField } from "payload";
+import type { Config, Field, GlobalConfig, JSONField, Plugin, RichTextField } from "payload";
 import { anchorField } from "./field/anchorField.js";
 import { MARKER } from "./field/index.js";
 import type { BuildGate } from "./field/index.js";
@@ -8,6 +8,25 @@ import type { JsonFormClientConfig } from "./config.js";
 
 const FIELD = "@focus-reactive/payload-plugin-json-form-builder/rsc#JsonFormField";
 const ANCHOR_NAME = "jsonFormAnchor";
+const GLOBAL_SLUG = "json-form";
+
+/**
+ * The global the plugin adds to the config itself. It is the plugin's own place in the schema —
+ * the rich text anchor lives there instead of being pushed into a document somebody else owns —
+ * and it doubles as the one global a project can fill with json forms of its own.
+ */
+export type JsonFormGlobalConfig = {
+  slug?: string;
+  label?: GlobalConfig["label"];
+  access?: GlobalConfig["access"];
+  admin?: GlobalConfig["admin"];
+  hooks?: GlobalConfig["hooks"];
+  /**
+   * Fields of your own — json forms, blocks, anything. Empty by default, and an empty global is
+   * hidden from the admin, since the anchor beside them is never drawn.
+   */
+  fields?: Field[];
+};
 
 export type JsonFormPluginConfig = {
   /**
@@ -15,6 +34,11 @@ export type JsonFormPluginConfig = {
    * behind the document's own update access.
    */
   build?: BuildGate;
+  /**
+   * The plugin's own global. `false` leaves the config without it — and without rich text, which
+   * has nowhere left to anchor.
+   */
+  global?: false | JsonFormGlobalConfig;
   /**
    * `false` turns rich text off — the kind leaves the palette and no anchor is added.
    */
@@ -61,18 +85,13 @@ const freeName = (fields: Field[]) => {
 export const jsonFormPlugin =
   (options: JsonFormPluginConfig = {}): Plugin =>
   (incoming: Config): Config => {
-    const { build = true, richText = false, uploads = "media" } = options;
+    const { build = true, global = {}, richText = false, uploads = "media" } = options;
     const config: Config = { ...incoming };
 
-    // Every host that holds one, in the order the config declares them. The first is where the
-    // anchor goes: it is schema-only, so one anywhere serves every json field in the admin.
-    const hosts: { fields: Field[]; global: boolean; prefix: string }[] = [];
-    const attach = (fields: Field[], prefix: string, global = false) => {
-      let found = false;
+    const attach = (fields: Field[]) => {
       walk(fields, (field) => {
         const own = marked(field);
         if (!own) return;
-        found = true;
         const json = field as JSONField;
         json.admin = {
           ...json.admin,
@@ -82,32 +101,36 @@ export const jsonFormPlugin =
           },
         };
       });
-      if (found) hosts.push({ fields, global, prefix });
     };
 
-    // `collection.` and `global.` are not decoration: Payload reads a schema path as exactly three
-    // parts — `[entityType, entitySlug, ...fieldPath]` — so a collection's path without the prefix
-    // is parsed as the entity type being the slug, and the field is never found.
     config.collections = incoming.collections?.map((collection) => {
-      attach(collection.fields, `collection.${collection.slug}`);
+      attach(collection.fields);
       return collection;
     });
-    config.globals = incoming.globals?.map((global) => {
-      attach(global.fields, `global.${global.slug}`, true);
-      return global;
+    config.globals = incoming.globals?.map((entry) => {
+      attach(entry.fields);
+      return entry;
     });
 
-    // No anchor, no rich text: `RenderLexical` has nothing to point at, so the kind is withdrawn
-    // rather than left to render an empty box nobody can explain.
-    // A global first, a collection only when there is none. The anchor is schema-only, so any host
-    // works — but a global has no versions, and the hidden field then shows up once in the generated
-    // types instead of twice.
+    // The plugin's own global, added the way the presets plugin adds its collection — the consumer
+    // declares nothing. It carries the anchor, and whatever json forms the project wants in a global
+    // of its own go in beside it rather than into a second global somebody has to write.
     let anchor = "";
-    const host = hosts.find((entry) => entry.global) ?? hosts[0];
-    if (richText && host) {
-      const name = freeName(host.fields);
-      host.fields.push(anchorField(name, richText.editor));
-      anchor = `${host.prefix}.${name}`;
+    if (global !== false) {
+      const { slug = GLOBAL_SLUG, label = "JSON form", fields = [], admin, ...rest } = global;
+      attach(fields);
+      const name = richText ? freeName(fields) : "";
+      const own: GlobalConfig = {
+        ...rest,
+        slug,
+        label,
+        admin: { hidden: fields.length === 0, ...admin },
+        fields: richText && name ? [...fields, anchorField(name, richText.editor)] : fields,
+      };
+      config.globals = [...(config.globals ?? []), own];
+      // `global.` is not decoration: Payload reads a schema path as exactly three parts —
+      // `[entityType, entitySlug, ...fieldPath]`, so the field is never found without it.
+      if (name) anchor = `global.${slug}.${name}`;
     }
 
     const client: JsonFormClientConfig = {
