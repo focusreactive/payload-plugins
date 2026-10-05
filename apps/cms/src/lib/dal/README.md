@@ -31,10 +31,11 @@ src/lib/dal/                  (import root: @/dal)
 ├── payload-client.ts         ← the ONLY caller of getPayload({ config })
 ├── getPageBySlug.ts          ← page reads
 ├── getPostBySlug.ts · getPosts.ts · getRelatedPosts.ts   ← post reads + listing + related
+├── getVacancyBySlug.ts · getVacancies.ts                 ← careers reads + open roles
 ├── getGlobals.ts · getSiteSettings.ts · getBlogPageSettings.ts   ← globals
 ├── getDocument.ts · getAllDocuments.ts                   ← generic find / findByID
 ├── getRedirects.ts · getAlternateLocales.ts · getDefaultMediaId.ts
-└── staticParams/             ← generateStaticParams helpers (pages, posts)
+└── staticParams/             ← generateStaticParams helpers (pages, posts, vacancies)
 ```
 
 ## Where the DAL applies — and where it doesn't

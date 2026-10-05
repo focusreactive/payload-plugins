@@ -2,6 +2,7 @@ import { extractCardsGridText } from "@/blocks/CardsGrid/extractText";
 import { extractCaseStudiesText } from "@/blocks/CaseStudies/extractText";
 import { extractFormText } from "@/blocks/Form/extractText";
 import { extractPostsListText } from "@/blocks/PostsList/extractText";
+import { extractVacanciesListText } from "@/blocks/VacanciesList/extractText";
 import { extractVideoEmbedText } from "@/blocks/VideoEmbed/extractText";
 import { extractCarouselText } from "@/blocks/Carousel/extractText";
 import { extractChartText } from "@/blocks/Chart/extractText";
@@ -53,6 +54,9 @@ export function extractPageBlockText(block: Page["blocks"][number]): string {
     }
     case "postsList": {
       return extractPostsListText(block);
+    }
+    case "vacanciesList": {
+      return extractVacanciesListText(block);
     }
     case "caseStudies": {
       return extractCaseStudiesText(block);

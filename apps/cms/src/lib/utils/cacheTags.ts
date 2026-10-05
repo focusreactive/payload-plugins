@@ -3,6 +3,8 @@ import type { Locale } from "@/lib/types";
 export type CacheTagParams =
   | { type: "post"; slug: string; locale: Locale }
   | { type: "postsList"; locale: Locale }
+  | { type: "vacancy"; slug: string; locale: Locale }
+  | { type: "vacanciesList"; locale: Locale }
   | { type: "page"; path: string; locale: Locale }
   | { type: "redirect"; locale: Locale }
   | { type: "sitemap" };
@@ -23,6 +25,12 @@ export function cacheTag(params: CacheTagParams): string {
     }
     case "postsList": {
       return `posts_${locale}`;
+    }
+    case "vacancy": {
+      return `vacancy_${params.slug}_${locale}`;
+    }
+    case "vacanciesList": {
+      return `vacancies_${locale}`;
     }
     case "redirect": {
       return `redirect_${locale}`;

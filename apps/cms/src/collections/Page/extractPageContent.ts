@@ -128,6 +128,7 @@ export function extractPageBlockContent(
     case "rawHtml":
       return helpers.compact([html(b.html as string)]);
     case "postsList":
+    case "vacanciesList":
     case "videoEmbed":
       return helpers.compact([
         paragraph(b.eyebrow as string),

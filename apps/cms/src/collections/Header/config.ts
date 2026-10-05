@@ -185,11 +185,14 @@ export const Header: CollectionConfig<"header"> = {
       type: "array",
     },
     {
-      admin: { initCollapsed: true },
+      admin: {
+        description: "The single button at the right of the header, e.g. Contact us",
+        initCollapsed: true,
+      },
       fields: (link() as GroupField).fields,
-      label: "Actions",
+      label: "Button",
       localized: true,
-      maxRows: 2,
+      maxRows: 1,
       name: "actions",
       type: "array",
     },

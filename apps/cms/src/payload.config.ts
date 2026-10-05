@@ -15,6 +15,7 @@ import { Media } from "@/collections/Media";
 import { Page } from "@/collections/Page/Page";
 import { Posts } from "@/collections/Posts";
 import { Users } from "@/collections/Users";
+import { Vacancies } from "@/collections/Vacancies";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { MAX_UPLOAD_BYTES } from "@/lib/constants/uploadLimits";
 import { createDatabaseAdapter } from "@/lib/database";
@@ -60,7 +61,18 @@ export default buildConfig({
     },
     user: Users.slug,
   },
-  collections: [Users, Media, Page, Categories, Authors, Posts, Header, Footer, GlobalBlock],
+  collections: [
+    Users,
+    Media,
+    Page,
+    Categories,
+    Authors,
+    Posts,
+    Vacancies,
+    Header,
+    Footer,
+    GlobalBlock,
+  ],
   db: createDatabaseAdapter({
     connectionString: process.env.DATABASE_URL,
   }),

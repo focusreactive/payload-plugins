@@ -22,6 +22,7 @@ import { Header } from "@/collections/Header/config";
 import { Page as PageCollection } from "@/collections/Page/Page";
 import serverExtractPageContent from "@/collections/Page/serverExtractPageContent";
 import { Posts } from "@/collections/Posts";
+import { Vacancies } from "@/collections/Vacancies";
 import serverExtractPostContent from "@/collections/Posts/serverExtractPostContent";
 import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
 import { getMediaStoragePrefix } from "@/lib/storage/mediaStoragePrefix";
@@ -278,19 +279,18 @@ export const plugins: Plugin[] = [
     collections: [
       { slug: "page", titleField: "title" },
       { slug: "posts", titleField: "title" },
+      { slug: "vacancies", titleField: "title" },
       { slug: "categories", titleField: "title" },
       { slug: "authors", titleField: "name" },
       { slug: "header", titleField: "name" },
       { slug: "footer", titleField: "name" },
     ],
 
-    translations: {},
-
     usernameFieldPath: "name",
   }),
 
   schedulePublicationPlugin({
-    collections: ["page", "posts"],
+    collections: ["page", "posts", "vacancies"],
     globals: ["site-settings"],
     schedulePublish: {
       timeIntervals: 60,
@@ -299,8 +299,8 @@ export const plugins: Plugin[] = [
   }),
 
   translatorPlugin({
-    collections: [PageCollection, Posts, Categories, Authors, Header, Footer].map((col) =>
-      JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
+    collections: [PageCollection, Posts, Vacancies, Categories, Authors, Header, Footer].map(
+      (col) => JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
     ),
     access: { check: ({ req }) => Boolean(req.user) },
     runner: createSyncRunner(),

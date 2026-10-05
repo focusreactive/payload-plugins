@@ -80,10 +80,7 @@ export const seedChrome: SeedStep = async (ctx) => {
     HEADER_NAME,
     {
       _status: "published",
-      actions: [
-        { ...(await pageLink(ctx, "/contact", "Contact us")), appearance: "accent" },
-        { ...(await pageLink(ctx, "/who-we-are/careers", "Careers")), appearance: "ghost" },
-      ],
+      actions: [{ ...(await pageLink(ctx, "/contact", "Contact us")), appearance: "accent" }],
       logo: ctx.ids.media.get("logo"),
       name: HEADER_NAME,
       navItems: [

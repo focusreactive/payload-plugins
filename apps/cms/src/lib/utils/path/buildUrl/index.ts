@@ -1,4 +1,5 @@
 import { BLOG_CONFIG } from "@/lib/config/blog";
+import { CAREERS_CONFIG } from "@/lib/config/careers";
 import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 import { routing } from "@/lib/i18n/routing";
 import type { Page } from "@/payload-types";
@@ -6,6 +7,12 @@ import type { Page } from "@/payload-types";
 import { getServerSideURL } from "../../getURL";
 import { getPathFromBreadcrumbs } from "../getPathFromBreadcrumbs";
 import { resolvePath } from "./resolvePath";
+
+const BASE_PATHS = {
+  page: undefined,
+  posts: BLOG_CONFIG.basePath,
+  vacancies: CAREERS_CONFIG.basePath,
+} as const;
 
 type BuildUrlOptions = (
   | {
@@ -17,6 +24,11 @@ type BuildUrlOptions = (
       collection: "posts";
       breadcrumbs?: never;
       page?: number;
+    }
+  | {
+      collection: "vacancies";
+      breadcrumbs?: never;
+      page?: never;
     }
 ) & {
   absolute?: boolean;
@@ -39,7 +51,7 @@ export function buildUrl({
   const breadcrumbsPath = breadcrumbs ? getPathFromBreadcrumbs(breadcrumbs) : undefined;
 
   const relativePath = resolvePath({
-    basePath: collection === "posts" ? BLOG_CONFIG.basePath : undefined,
+    basePath: BASE_PATHS[collection],
     breadcrumbsPath,
     page,
     slug,

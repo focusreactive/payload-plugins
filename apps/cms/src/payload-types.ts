@@ -74,6 +74,7 @@ export interface Config {
     categories: Category;
     authors: Author;
     posts: Post;
+    vacancies: Vacancy;
     header: Header;
     footer: Footer;
     globalBlock: GlobalBlock;
@@ -102,6 +103,7 @@ export interface Config {
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     authors: AuthorsSelect<false> | AuthorsSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
+    vacancies: VacanciesSelect<false> | VacanciesSelect<true>;
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
     globalBlock: GlobalBlockSelect<false> | GlobalBlockSelect<true>;
@@ -372,6 +374,7 @@ export interface Page {
     | NewsletterBlock
     | StatsBlock
     | PostsListBlock
+    | VacanciesListBlock
     | CaseStudiesBlock
     | FormBlock
     | VideoEmbedBlock
@@ -508,6 +511,9 @@ export interface Header {
         id?: string | null;
       }[]
     | null;
+  /**
+   * The single button at the right of the header, e.g. Contact us
+   */
   actions?:
     | {
         type?: ('reference' | 'custom' | 'customPage') | null;
@@ -1323,6 +1329,43 @@ export interface PostsListBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VacanciesListBlock".
+ */
+export interface VacanciesListBlock {
+  eyebrow?: string | null;
+  /**
+   * Wrap a word in *asterisks* to accent it in the brand colour.
+   */
+  heading?: string | null;
+  description?: string | null;
+  /**
+   * Shown when no role is open
+   */
+  emptyText?: string | null;
+  section?: {
+    theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+    maxWidth?: ('none' | 'base') | null;
+    paddingY?: ('none' | 'base' | 'large') | null;
+    paddingX?: ('none' | 'base') | null;
+    background?: {
+      /**
+       * Upload an image or video. Use the "Background" folder.
+       */
+      media?: (number | null) | Media;
+      overlay?: ('black' | 'white') | null;
+      /**
+       * 0 = transparent, 100 = fully opaque
+       */
+      opacity?: number | null;
+    };
+  };
+  _hidden?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'vacanciesList';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "CaseStudiesBlock".
  */
 export interface CaseStudiesBlock {
@@ -1566,6 +1609,7 @@ export interface GlobalBlock {
     | NewsletterBlock
     | StatsBlock
     | PostsListBlock
+    | VacanciesListBlock
     | CaseStudiesBlock
     | FormBlock
     | VideoEmbedBlock
@@ -1660,6 +1704,79 @@ export interface Footer {
    * Copyright text shown at the bottom
    */
   copyrightText?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vacancies".
+ */
+export interface Vacancy {
+  id: number;
+  title: string;
+  /**
+   * One or two sentences for the careers list and search results
+   */
+  summary: string;
+  description: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  apply?: {
+    /**
+     * The numeric id of the form in Mautic
+     */
+    mauticFormId?: string | null;
+    /**
+     * The form alias in Mautic, e.g. contactus
+     */
+    mauticFormName?: string | null;
+    /**
+     * Fallback when no Mautic form is set, e.g. jobs@example.com
+     */
+    email?: string | null;
+  };
+  meta?: {
+    title?: string | null;
+    /**
+     * Image used when sharing this page on social media.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+    /**
+     * Allow search engines to index this page
+     */
+    robots?: ('index' | 'noindex') | null;
+  };
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  department?: string | null;
+  /**
+   * e.g. Manchester, UK
+   */
+  location?: string | null;
+  workplace: 'onSite' | 'hybrid' | 'remote';
+  employmentType: 'fullTime' | 'partTime' | 'contract' | 'internship';
+  publishedAt?: string | null;
+  /**
+   * The role leaves the careers list after this day
+   */
+  closesAt?: string | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -2301,6 +2418,39 @@ export interface Preset {
         heading?: string | null;
         description?: string | null;
         /**
+         * Shown when no role is open
+         */
+        emptyText?: string | null;
+        section?: {
+          theme?: ('light' | 'dark' | 'light-gray' | 'dark-gray') | null;
+          maxWidth?: ('none' | 'base') | null;
+          paddingY?: ('none' | 'base' | 'large') | null;
+          paddingX?: ('none' | 'base') | null;
+          background?: {
+            /**
+             * Upload an image or video. Use the "Background" folder.
+             */
+            media?: (number | null) | Media;
+            overlay?: ('black' | 'white') | null;
+            /**
+             * 0 = transparent, 100 = fully opaque
+             */
+            opacity?: number | null;
+          };
+        };
+        _hidden?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'vacanciesList';
+      }
+    | {
+        eyebrow?: string | null;
+        /**
+         * Wrap a word in *asterisks* to accent it in the brand colour.
+         */
+        heading?: string | null;
+        description?: string | null;
+        /**
          * Show only the case studies of one sector (sector pages)
          */
         filterSector?: ('all' | 'automotive' | 'agritech' | 'finance' | 'medical' | 'other') | null;
@@ -2886,6 +3036,10 @@ export interface PayloadLockedDocument {
         value: number | Post;
       } | null)
     | ({
+        relationTo: 'vacancies';
+        value: number | Vacancy;
+      } | null)
+    | ({
         relationTo: 'header';
         value: number | Header;
       } | null)
@@ -3121,6 +3275,7 @@ export interface PageSelect<T extends boolean = true> {
         newsletter?: T | NewsletterBlockSelect<T>;
         stats?: T | StatsBlockSelect<T>;
         postsList?: T | PostsListBlockSelect<T>;
+        vacanciesList?: T | VacanciesListBlockSelect<T>;
         caseStudies?: T | CaseStudiesBlockSelect<T>;
         form?: T | FormBlockSelect<T>;
         videoEmbed?: T | VideoEmbedBlockSelect<T>;
@@ -3603,6 +3758,34 @@ export interface PostsListBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VacanciesListBlock_select".
+ */
+export interface VacanciesListBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  emptyText?: T;
+  section?:
+    | T
+    | {
+        theme?: T;
+        maxWidth?: T;
+        paddingY?: T;
+        paddingX?: T;
+        background?:
+          | T
+          | {
+              media?: T;
+              overlay?: T;
+              opacity?: T;
+            };
+      };
+  _hidden?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "CaseStudiesBlock_select".
  */
 export interface CaseStudiesBlockSelect<T extends boolean = true> {
@@ -3849,6 +4032,41 @@ export interface PostsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vacancies_select".
+ */
+export interface VacanciesSelect<T extends boolean = true> {
+  title?: T;
+  summary?: T;
+  description?: T;
+  apply?:
+    | T
+    | {
+        mauticFormId?: T;
+        mauticFormName?: T;
+        email?: T;
+      };
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
+        robots?: T;
+      };
+  generateSlug?: T;
+  slug?: T;
+  department?: T;
+  location?: T;
+  workplace?: T;
+  employmentType?: T;
+  publishedAt?: T;
+  closesAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
 export interface HeaderSelect<T extends boolean = true> {
@@ -4007,6 +4225,7 @@ export interface GlobalBlockSelect<T extends boolean = true> {
         newsletter?: T | NewsletterBlockSelect<T>;
         stats?: T | StatsBlockSelect<T>;
         postsList?: T | PostsListBlockSelect<T>;
+        vacanciesList?: T | VacanciesListBlockSelect<T>;
         caseStudies?: T | CaseStudiesBlockSelect<T>;
         form?: T | FormBlockSelect<T>;
         videoEmbed?: T | VideoEmbedBlockSelect<T>;
@@ -4450,6 +4669,32 @@ export interface PresetsSelect<T extends boolean = true> {
                     customPage?: T;
                     label?: T;
                   };
+              section?:
+                | T
+                | {
+                    theme?: T;
+                    maxWidth?: T;
+                    paddingY?: T;
+                    paddingX?: T;
+                    background?:
+                      | T
+                      | {
+                          media?: T;
+                          overlay?: T;
+                          opacity?: T;
+                        };
+                  };
+              _hidden?: T;
+              id?: T;
+              blockName?: T;
+            };
+        vacanciesList?:
+          | T
+          | {
+              eyebrow?: T;
+              heading?: T;
+              description?: T;
+              emptyText?: T;
               section?:
                 | T
                 | {
@@ -5099,6 +5344,10 @@ export interface TaskSchedulePublish {
       | ({
           relationTo: 'posts';
           value: number | Post;
+        } | null)
+      | ({
+          relationTo: 'vacancies';
+          value: number | Vacancy;
         } | null);
     global?: 'site-settings' | null;
     user?:

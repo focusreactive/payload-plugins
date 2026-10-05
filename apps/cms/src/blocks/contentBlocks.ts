@@ -14,6 +14,7 @@ import { NewsletterBlock } from "./Newsletter/config";
 import { PostsListBlock } from "./PostsList/config";
 import { RawHtmlBlock } from "./RawHtml/config";
 import { StatsBlock } from "./Stats/config";
+import { VacanciesListBlock } from "./VacanciesList/config";
 import { VideoEmbedBlock } from "./VideoEmbed/config";
 
 export const contentBlocks: Block[] = [
@@ -28,6 +29,7 @@ export const contentBlocks: Block[] = [
   NewsletterBlock,
   StatsBlock,
   PostsListBlock,
+  VacanciesListBlock,
   CaseStudiesBlock,
   FormBlock,
   VideoEmbedBlock,

@@ -134,9 +134,11 @@ export async function Header({ data, disableActive }: Props) {
     navItems: (data.navItems ?? [])
       .map((item) => mapNavItem(item, locale))
       .filter((item): item is HeaderNavItem => item !== null),
+    // Older headers may still store two actions; the header shows one button.
     actions: (data.actions ?? [])
       .map((action) => mapAction(action, locale))
-      .filter((action): action is HeaderAction => action !== null),
+      .filter((action): action is HeaderAction => action !== null)
+      .slice(0, 1),
   };
 
   return <HeaderClient {...props} disableActive={disableActive} />;

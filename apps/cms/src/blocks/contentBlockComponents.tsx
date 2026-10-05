@@ -14,6 +14,7 @@ import { NewsletterBlockComponent } from "./Newsletter/Component";
 import { PostsListBlockComponent } from "./PostsList/Component";
 import { RawHtmlBlockComponent } from "./RawHtml/Component";
 import { StatsBlockComponent } from "./Stats/Component";
+import { VacanciesListBlockComponent } from "./VacanciesList/Component";
 import { VideoEmbedBlockComponent } from "./VideoEmbed/Component";
 
 export const contentBlockComponents = {
@@ -31,6 +32,7 @@ export const contentBlockComponents = {
   logos: LogosBlockComponent,
   postsList: PostsListBlockComponent,
   rawHtml: RawHtmlBlockComponent,
+  vacanciesList: VacanciesListBlockComponent,
   videoEmbed: VideoEmbedBlockComponent,
 };
 

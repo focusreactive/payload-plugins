@@ -18,6 +18,10 @@ export { getFeedPosts } from "./getFeedPosts";
 export type { GetPostsOptions } from "./getPosts";
 export { getRelatedPosts } from "./getRelatedPosts";
 
+// Careers
+export { getOpenVacancies } from "./getVacancies";
+export { getVacancyBySlug } from "./getVacancyBySlug";
+
 // Documents (generic)
 export { getCachedDocument, getCachedDocumentByID } from "./getDocument";
 export { getAllDocuments } from "./getAllDocuments";

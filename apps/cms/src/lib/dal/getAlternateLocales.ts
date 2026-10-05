@@ -17,7 +17,42 @@ type GetAlternateLocalesOptions =
       slug?: string;
       currentLocale: Locale;
       page?: number;
+    }
+  | {
+      collection: "vacancies";
+      slug: string;
+      currentLocale: Locale;
     };
+
+async function publishedSlugAlternates(
+  collection: "vacancies",
+  slug: string
+): Promise<Record<string, string>> {
+  const payload = await getPayloadClient();
+  const languages: Partial<Record<Locale | "x-default", string>> = {};
+
+  for (const { code } of I18N_CONFIG.locales) {
+    const locale = code as Locale;
+    const result = await payload.find({
+      collection,
+      limit: 1,
+      locale,
+      overrideAccess: false,
+      pagination: false,
+      select: { slug: true },
+      where: { _status: { equals: "published" }, slug: { equals: slug } },
+    });
+    if (result.docs.length > 0) {
+      languages[locale] = buildUrl({ collection, locale, slug });
+    }
+  }
+
+  const defaultUrl = languages[I18N_CONFIG.defaultLocale as Locale];
+  if (defaultUrl) {
+    languages["x-default"] = defaultUrl;
+  }
+  return languages;
+}
 
 export async function getAlternateLocales(
   options: GetAlternateLocalesOptions
@@ -25,6 +60,10 @@ export async function getAlternateLocales(
   const payload = await getPayloadClient();
   const locales = I18N_CONFIG.locales.map((l) => l.code as Locale);
   const languages: Partial<Record<Locale | "x-default", string>> = {};
+
+  if (options.collection === "vacancies") {
+    return publishedSlugAlternates("vacancies", options.slug);
+  }
 
   if (options.collection === "posts") {
     if (options.page !== undefined && !options.slug) {

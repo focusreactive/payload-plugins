@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { BLOG_CONFIG } from "@/lib/config/blog";
+import { CAREERS_CONFIG } from "@/lib/config/careers";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { cacheTag } from "@/lib/utils/cacheTags";
 import { scopedCache } from "@/lib/utils/scopedCache";
@@ -26,7 +27,7 @@ async function generateSitemap(): Promise<Sitemap> {
 
     await Promise.all(
       locales.map(async (locale) => {
-        const [allPages, allPosts, allAuthors] = await Promise.all([
+        const [allPages, allPosts, allAuthors, allVacancies] = await Promise.all([
           getAllDocuments(payload, "page", {
             depth: 1,
             locale,
@@ -61,6 +62,12 @@ async function generateSitemap(): Promise<Sitemap> {
             overrideAccess: false,
             select: { slug: true, updatedAt: true },
             where: { slug: { exists: true } },
+          }),
+          getAllDocuments(payload, CAREERS_CONFIG.collection, {
+            locale,
+            overrideAccess: false,
+            select: { meta: true, slug: true, updatedAt: true },
+            where: { _status: { equals: "published" } },
           }),
         ]);
 
@@ -122,6 +129,20 @@ async function generateSitemap(): Promise<Sitemap> {
             }),
           });
         });
+
+        allVacancies
+          .filter((vacancy) => vacancy.meta?.robots !== "noindex")
+          .forEach((vacancy) => {
+            sitemap.push({
+              alternates: alternates((l) =>
+                buildUrl({ collection: "vacancies", locale: l, slug: vacancy.slug })
+              ),
+              changeFrequency,
+              lastModified: vacancy.updatedAt ? new Date(vacancy.updatedAt) : new Date(),
+              priority: 0.6,
+              url: buildUrl({ collection: "vacancies", locale, slug: vacancy.slug }),
+            });
+          });
 
         allAuthors.forEach((author) => {
           sitemap.push({
