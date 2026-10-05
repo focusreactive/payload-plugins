@@ -1,10 +1,14 @@
+import type { Payload } from "payload";
+
 import type { CollectionSchemaMap } from "../../../types/CollectionSchemaMap.js";
 import type { ConfigModifier } from "../../../types/ConfigModifier.js";
 
 import { ProvenanceService } from "./Provenance.service.js";
-import type { ProvenanceServiceFactory } from "./Provenance.service.js";
 import { PayloadProvenanceStore } from "./Provenance.store.js";
 import type { ProvenanceStoreFactory } from "./Provenance.store.js";
+import { fetchSourceDocument } from "../../shared/payload/sourceDocument.js";
+import type { RequestScope } from "../../shared/payload/RequestScope.shapes.js";
+import type { SourceDocumentReader } from "./Provenance.shapes.js";
 import {
   DEFAULT_PROVENANCE_SLUG,
   ensureProvenanceCollectionRegistered,
@@ -23,7 +27,6 @@ export type ProvenanceOption = boolean | { slug?: string } | undefined;
 function resolveProvenanceSlug(option: ProvenanceOption): string | null {
   if (!option) return null;
   if (option === true) return DEFAULT_PROVENANCE_SLUG;
-  // `||` (not `??`) so an empty/blank slug falls back to the default instead of silently disabling.
   return option.slug || DEFAULT_PROVENANCE_SLUG;
 }
 
@@ -40,6 +43,27 @@ export type ProvenanceModule = {
 
 const NOOP: ConfigModifier = (config) => config;
 
+const OUTSIDE_THE_CALLERS_TRANSACTION = undefined;
+
+/** The two things {@link ProvenanceService} needs from Payload, bound to one instance. */
+export const provenanceIo = (payload: Payload) => ({
+  logger: payload.logger,
+  readSource: ({ collection, id, locale, user }: Parameters<SourceDocumentReader>[0]) =>
+    fetchSourceDocument({
+      payload,
+      collection,
+      id,
+      locale,
+      user,
+      scope: OUTSIDE_THE_CALLERS_TRANSACTION,
+    }),
+});
+
+export type ProvenanceServiceFactory = (
+  payload: Payload,
+  scope?: RequestScope
+) => ProvenanceService;
+
 /**
  * Turn the opt-in `provenance` option into a self-contained {@link ProvenanceModule}. This is the one
  * place provenance's config-time wiring lives — `plugin.ts` only calls `configureProvenance(...)` and
@@ -54,16 +78,13 @@ export function configureProvenance(
 
   const storeFactory: ProvenanceStoreFactory = (payload, scope) =>
     new PayloadProvenanceStore(payload, slug, scope);
-  const serviceFactory: ProvenanceServiceFactory = (payload, scope) =>
-    new ProvenanceService(payload, storeFactory(payload, scope), schemaMap, scope);
+
+  const serviceFactory: ProvenanceServiceFactory = (payload, scope = {}) =>
+    new ProvenanceService(storeFactory(payload, scope), schemaMap, scope, provenanceIo(payload));
 
   const configure =
     (managedSlugs: Set<string>): ConfigModifier =>
     (config) => {
-      // `config` infers as Payload's `Config` from the ConfigModifier return type, so this leaf never
-      // names the god-type — it only reads/mutates through narrow helpers below.
-      // Fail fast on a slug collision with a consumer collection (ignoring our own sidecar on a repeat
-      // init, so an idempotent re-run doesn't false-positive).
       assertProvenanceSlugFree(
         slug,
         (config.collections ?? []).filter((collection) => !isProvenanceCollection(collection))

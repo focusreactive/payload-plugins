@@ -1,14 +1,9 @@
-import type { CollectionAfterDeleteHook } from "payload";
+import type { CollectionAfterDeleteHook, CollectionSlug } from "payload";
 
 /**
- * The minimal slice of a Payload collection that provenance's config-time wiring reads and mutates:
- * its `slug`, the sidecar `custom` marker, and the `afterDelete` hook slot. A real `CollectionConfig`
- * is **structurally assignable** to this — call sites pass the live collection with no adapter, and a
- * test passes a plain `{ slug: "posts" }` literal. Keeps `injectProvenanceCleanup` /
- * `ensureProvenanceCollectionRegistered` off the god-`Config`/`CollectionConfig` types.
- *
- * The only Payload type imported here is `CollectionAfterDeleteHook` — a framework callback contract
- * that legitimately stays framework-typed.
+ * The slice of a Payload collection provenance's config-time wiring reads and mutates. A real
+ * `CollectionConfig` is structurally assignable, so call sites pass the live collection and tests
+ * pass `{ slug: "posts" }`.
  */
 export type ManagedCollectionEntry = {
   slug: string;
@@ -24,3 +19,19 @@ export type ManagedCollectionEntry = {
 export type ManagedCollectionsConfig = {
   collections?: ManagedCollectionEntry[];
 };
+
+export type ProvenanceLogger = {
+  error(details: Record<string, unknown>): void;
+};
+
+/**
+ * Reading the source document a translation was made from, bound to a Payload instance by the wiring.
+ *
+ * `null` means not available to this caller, and deliberately does not distinguish refused from absent.
+ */
+export type SourceDocumentReader = (query: {
+  collection: CollectionSlug;
+  id: string;
+  locale: string;
+  user: Record<string, unknown> | null;
+}) => Promise<Record<string, unknown> | null>;

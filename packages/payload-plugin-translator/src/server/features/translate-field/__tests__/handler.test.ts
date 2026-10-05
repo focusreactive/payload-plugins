@@ -101,7 +101,10 @@ const importTranslateContent = async () =>
 
 describe("TranslateFieldHandler", () => {
   it("reads the source-locale value from the saved doc and translates a localized leaf", async () => {
-    (await importTranslateContent()).mockResolvedValue({ title: "Hallo" });
+    (await importTranslateContent()).mockResolvedValue({
+      translatedData: { title: "Hallo" },
+      translatedPaths: ["title"],
+    });
     const findByID = vi.fn().mockResolvedValue({ id: "p1", title: "Hello" });
 
     const res = await handler.handle(makeReqWithPayload(baseBody, findByID));
@@ -151,7 +154,10 @@ describe("TranslateFieldHandler", () => {
 
   it("resolves a field inside a block via the saved doc's blockType and translates it", async () => {
     const translateContent = await importTranslateContent();
-    (translateContent as ReturnType<typeof vi.fn>).mockResolvedValue({ headline: "Hallo" });
+    (translateContent as ReturnType<typeof vi.fn>).mockResolvedValue({
+      translatedData: { headline: "Hallo" },
+      translatedPaths: ["headline"],
+    });
 
     const res = await handler.handle(
       reqWithDoc(
@@ -298,7 +304,10 @@ describe("TranslateFieldHandler", () => {
 
   it("never forwards a translate strategy (field translation always overwrites)", async () => {
     const translateContent = await importTranslateContent();
-    (translateContent as ReturnType<typeof vi.fn>).mockResolvedValue({ title: "Hallo" });
+    (translateContent as ReturnType<typeof vi.fn>).mockResolvedValue({
+      translatedData: { title: "Hallo" },
+      translatedPaths: ["title"],
+    });
 
     await handler.handle(reqWithDoc({ id: "p1", title: "Hello" }));
 

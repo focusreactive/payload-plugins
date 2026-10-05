@@ -10,6 +10,10 @@ export type { ProvenanceStoreFactory } from "./Provenance.store.js";
 export { injectProvenanceCleanup, makeProvenanceCleanupHook } from "./ProvenanceCleanup.hook.js";
 export { assertProvenanceSlugFree } from "./slugGuard.js";
 export { ProvenanceService } from "./Provenance.service.js";
-export type { ProvenanceServiceFactory, StalenessLocale } from "./Provenance.service.js";
-export { configureProvenance } from "./Provenance.wiring.js";
-export type { ProvenanceModule, ProvenanceOption } from "./Provenance.wiring.js";
+export type { StalenessLocale } from "./Provenance.service.js";
+export { configureProvenance, provenanceIo } from "./Provenance.wiring.js";
+export type {
+  ProvenanceModule,
+  ProvenanceOption,
+  ProvenanceServiceFactory,
+} from "./Provenance.wiring.js";

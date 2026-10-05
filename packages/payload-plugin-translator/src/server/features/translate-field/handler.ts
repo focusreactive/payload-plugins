@@ -147,7 +147,7 @@ export class TranslateFieldHandler {
 
     const result: FieldTranslationResult = {
       status: "translated",
-      value: translated[resolution.fieldName],
+      value: translated.translatedData[resolution.fieldName],
     };
     return ServerResponse.success(result);
   };

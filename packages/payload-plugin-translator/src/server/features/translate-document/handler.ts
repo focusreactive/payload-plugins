@@ -21,6 +21,7 @@ import { AUTO_TRANSLATE_SKIP_CONTEXT_KEY } from "../../../types/AutoTranslateCon
 import type { TranslateDocumentInput, TranslateDocumentOutput } from "./model.js";
 import { resolveTargetLayer } from "./targetLayer.js";
 import type { PublishScope, TargetLayer } from "./targetLayer.js";
+import { changedLeaves } from "../../../core/domain/provenance/index.js";
 
 const translatorWriteContext = () => ({ [AUTO_TRANSLATE_SKIP_CONTEXT_KEY]: true });
 
@@ -112,9 +113,15 @@ export class TranslateDocumentHandler implements Handler<
     if (!allowed) throw new TranslationRefused(collection, targetLng);
 
     const provenance = this.provenanceServiceFactory?.(payload, scope);
-    const sourceFingerprint = provenance?.captureFingerprint(collection, sourceData) ?? null;
+    const provenanceKey = {
+      collectionSlug: collection,
+      documentId: String(collectionId),
+      targetLocale: targetLng,
+    };
+    const currentFields = provenance?.captureFingerprint(collection, sourceData) ?? null;
+    const previous = provenance ? await provenance.lastTranslatedFrom(provenanceKey) : null;
 
-    const translatedData = await this.translateOrWrap({
+    const translated = await this.translateOrWrap({
       schema,
       sourceData,
       targetData: currentTargetVersion,
@@ -123,9 +130,11 @@ export class TranslateDocumentHandler implements Handler<
       translationProvider: this.translationProvider,
       strategy,
       inlineMarks: this.inlineMarks,
+      sourceChangedByLeaf: currentFields ? changedLeaves(previous, currentFields) : undefined,
     });
 
-    if (translatedData) {
+    if (translated?.translatedData) {
+      const { translatedData, translatedPaths } = translated;
       await this.refuseUnlessAllowed(payload, input, translatedData, scope, requester);
       await this.saveTranslatedDocument(
         payload,
@@ -136,15 +145,11 @@ export class TranslateDocumentHandler implements Handler<
         requester
       );
 
-      if (provenance && sourceFingerprint !== null) {
+      if (provenance && currentFields !== null) {
         await provenance.record(
-          {
-            collectionSlug: collection,
-            documentId: String(collectionId),
-            targetLocale: targetLng,
-            sourceLocale: sourceLng,
-          },
-          sourceFingerprint
+          { ...provenanceKey, sourceLocale: sourceLng },
+          currentFields,
+          translatedPaths
         );
       }
     }
