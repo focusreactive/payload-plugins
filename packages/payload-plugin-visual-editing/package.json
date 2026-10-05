@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/payload-plugin-visual-editing",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Visual editing for Payload CMS — click-to-edit overlays on your frontend via Vercel stega and a postMessage bridge back to the admin.",
   "license": "MIT",
   "author": "FocusReactive <ship@focusreactive.com>",
