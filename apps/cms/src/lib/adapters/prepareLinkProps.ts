@@ -3,7 +3,7 @@ import type { LinkProps } from "@/components/link/types";
 
 import { CUSTOM_PAGES_CONFIG } from "@/lib/config/customPages";
 import type { CustomPageKey } from "@/lib/config/customPages";
-import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
+import { localizePath } from "@/lib/utils/localePrefix";
 
 interface PayloadLink {
   type?: "reference" | "custom" | "customPage" | null;
@@ -26,13 +26,13 @@ export function prepareLinkProps(link: PayloadLink | null | undefined, locale: s
   let href = "";
 
   if (link.type === "custom" && link.url) {
-    href = link.url;
+    href = localizePath(link.url, locale);
   } else if (link.type === "reference" && link.reference) {
     const value = link.reference.value as Record<string, unknown>;
     if (typeof value === "object" && value !== null) {
       const breadcrumbs = (value.breadcrumbs as { url?: string }[]) ?? [];
       const path = breadcrumbs.at(-1)?.url ?? (value.slug as string) ?? "";
-      href = shouldIncludeLocalePrefix(locale) ? `/${locale}${path}` : path;
+      href = localizePath(path, locale);
     }
   } else if (link.type === "customPage" && link.customPage) {
     const entry = CUSTOM_PAGES_CONFIG[link.customPage as CustomPageKey];

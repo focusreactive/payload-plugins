@@ -1,3 +1,5 @@
+import NextLink from "next/link";
+
 import { Link } from "@/components/shared";
 import { Media } from "@/components/media";
 import { cn } from "@/components/utils";
@@ -165,12 +167,13 @@ export function PostsList({ items, layout, yearSeparators, viewAll, emptyText }:
       )}
 
       {viewAll && (
-        <Link
+        // viewAll.href is already localized; the locale-aware Link would prefix it twice.
+        <NextLink
           href={viewAll.href}
           className="w-fit font-semibold text-primary underline-offset-[3px] hover:text-link-hover hover:underline"
         >
           {viewAll.label} <span aria-hidden>→</span>
-        </Link>
+        </NextLink>
       )}
     </div>
   );

@@ -11,6 +11,7 @@ import React from "react";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
 import { prepareMediaProps } from "@/lib/adapters/prepareMediaProps";
 import { prepareLinkProps } from "@/lib/adapters/prepareLinkProps";
+import { localizePath } from "@/lib/utils/localePrefix";
 import type { Footer as FooterType, Media } from "@/payload-types";
 
 interface Props {
@@ -74,7 +75,7 @@ export async function Footer({ data }: Props) {
   const props: IFooterProps = {
     badges,
     brand: {
-      href: "/",
+      href: localizePath("/", locale),
       label: data.name ?? "",
       logo: logo ? prepareMediaProps({ image: logo }) : null,
     },
