@@ -7,8 +7,8 @@ import { link } from "@/lib/fields/link";
 
 const fields: Field[] = [
   ...sectionHeaderFields({
-    eyebrowDefault: { en: "Get started" },
-    headingDefault: { en: "Start shipping in rhythm." },
+    eyebrowDefault: { en: "Get in touch" },
+    headingDefault: { en: "Find out how Codethink can help you" },
   }),
   {
     admin: {

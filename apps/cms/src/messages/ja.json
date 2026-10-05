@@ -41,11 +41,11 @@
       "clear": "検索をクリア"
     },
     "newsletter": {
-      "eyebrow": "月刊ニュースレター",
-      "heading": "月に一度、厳選したメールをお届けします。",
+      "eyebrow": "ニュースレター",
+      "heading": "エンジニアからのニュースを月に一度お届けします",
       "placeholder": "you@company.co.jp",
       "button": "登録する",
-      "disclaimer": "スパムは送りません。いつでも解除できます。"
+      "disclaimer": "メールは月に一度。いつでも解除できます。"
     }
   },
   "announcements": {

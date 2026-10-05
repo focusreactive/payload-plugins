@@ -11,7 +11,7 @@ const fields: Field[] = [
       {
         admin: { width: "40%" },
         defaultValue: createLocalizedDefault({
-          en: "The Journal, monthly",
+          en: "Newsletter",
         }),
         label: "Eyebrow",
         localized: true,
@@ -21,7 +21,7 @@ const fields: Field[] = [
       {
         admin: { width: "60%" },
         defaultValue: createLocalizedDefault({
-          en: "One thoughtful email a month. No noise.",
+          en: "News from the engineers, once a month",
         }),
         label: "Heading",
         localized: true,
@@ -36,7 +36,7 @@ const fields: Field[] = [
     fields: [
       {
         admin: { width: "50%" },
-        defaultValue: createLocalizedDefault({ en: "you@team.com" }),
+        defaultValue: createLocalizedDefault({ en: "you@company.com" }),
         label: "Input placeholder",
         localized: true,
         name: "inputPlaceholder",
@@ -56,7 +56,7 @@ const fields: Field[] = [
   },
   {
     defaultValue: createLocalizedDefault({
-      en: "No spam. Unsubscribe anytime.",
+      en: "One email a month. Unsubscribe anytime.",
     }),
     label: "Disclaimer",
     localized: true,

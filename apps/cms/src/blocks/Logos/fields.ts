@@ -11,7 +11,7 @@ export const logosFields: Field[] = [
       {
         admin: { width: "60%" },
         defaultValue: createLocalizedDefault({
-          en: "Trusted by 4,000+ teams in rhythm",
+          en: "Clients and Partners",
         }),
         label: "Label",
         localized: true,

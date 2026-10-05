@@ -22,7 +22,7 @@ export const DEFAULT_VALUES = {
     },
     hero: {
       title: {
-        en: "The operating system for teams that ship.",
+        en: "Open Source System Software Experts",
       },
     },
   },
@@ -42,19 +42,19 @@ export const DEFAULT_VALUES = {
     siteSettings: {
       blog: {
         blogDescription: {
-          en: "Blog page description",
+          en: "Engineering notes, research and news from the Codethink team.",
         },
         blogTitle: { en: "Blog" },
-        readMoreLabel: { en: "Read More" },
+        readMoreLabel: { en: "Read more" },
         relatedPostsLabel: {
-          en: "Related Articles",
+          en: "More from Codethink",
         },
       },
       defaultDescription: {
-        en: "My Site Description",
+        en: "Open source system software experts: build engineering, Linux, safety-critical and trustable software.",
       },
       defaultOgDescription: {
-        en: "My Site Description",
+        en: "Open source system software experts: build engineering, Linux, safety-critical and trustable software.",
       },
       notFoundDescription: {
         en: "Unfortunately, the requested page does not exist or has been deleted.",
@@ -62,8 +62,8 @@ export const DEFAULT_VALUES = {
       notFoundTitle: {
         en: "404 - Page not found",
       },
-      seoTitleSuffix: { en: "My Site" },
-      siteName: { en: "Site Name" },
+      seoTitleSuffix: { en: "Codethink" },
+      siteName: { en: "Codethink" },
     },
   },
   richText: {

@@ -35,9 +35,6 @@ export const heroFields: Field[] = [
       },
       {
         admin: { width: "50%" },
-        defaultValue: createLocalizedDefault({
-          en: "New · Cadence 3.0",
-        }),
         label: "Eyebrow",
         localized: true,
         name: "eyebrow",

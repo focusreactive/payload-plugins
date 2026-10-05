@@ -41,11 +41,11 @@
       "clear": "Suche zurücksetzen"
     },
     "newsletter": {
-      "eyebrow": "Newsletter, monatlich",
-      "heading": "Eine durchdachte E-Mail im Monat. Kein Rauschen.",
+      "eyebrow": "Newsletter",
+      "heading": "Neues von unseren Ingenieuren, einmal im Monat",
       "placeholder": "sie@firma.de",
       "button": "Abonnieren",
-      "disclaimer": "Kein Spam. Jederzeit abbestellbar."
+      "disclaimer": "Eine E-Mail im Monat. Jederzeit abbestellbar."
     }
   },
   "announcements": {

@@ -290,7 +290,7 @@ export const SiteSettings: GlobalConfig = {
                         {
                           admin: { width: "40%" },
                           defaultValue: createLocalizedDefault({
-                            en: "The Journal",
+                            en: "Blog",
                           }),
                           label: "Eyebrow",
                           localized: true,

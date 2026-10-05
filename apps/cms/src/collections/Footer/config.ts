@@ -189,7 +189,7 @@ export const Footer: CollectionConfig<"footer"> = {
         description: "Copyright text shown at the bottom",
       },
       defaultValue: createLocalizedDefault({
-        en: "© 2026 Cadence Labs, Inc.",
+        en: "© Codethink Ltd. 2007-2026 All rights reserved.",
       }),
       localized: true,
       name: "copyrightText",

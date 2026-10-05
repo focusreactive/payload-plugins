@@ -9,10 +9,10 @@ const fields: Field[] = [
     admin: { initCollapsed: true },
     defaultValue: createLocalizedDefault({
       en: [
-        { label: "fewer status meetings", value: "70%" },
-        { label: "tools consolidated into one", value: "4→1" },
-        { label: "faster sprint planning", value: "2.5×" },
-        { label: "teams shipping in rhythm", value: "4,000+" },
+        { label: "Founded", value: "2007" },
+        { label: "Certified quality management", value: "ISO 9001" },
+        { label: "Certified information security", value: "ISO 27001" },
+        { label: "Headquartered in", value: "Manchester" },
       ],
     }),
     fields: [

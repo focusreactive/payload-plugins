@@ -41,11 +41,11 @@
       "clear": "Clear search"
     },
     "newsletter": {
-      "eyebrow": "The Journal, monthly",
-      "heading": "One thoughtful email a month. No noise.",
-      "placeholder": "you@team.com",
+      "eyebrow": "Newsletter",
+      "heading": "News from the engineers, once a month",
+      "placeholder": "you@company.com",
       "button": "Subscribe",
-      "disclaimer": "No spam. Unsubscribe anytime."
+      "disclaimer": "One email a month. Unsubscribe anytime."
     }
   },
   "announcements": {
