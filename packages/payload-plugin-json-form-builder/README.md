@@ -5,19 +5,19 @@ Turn a Payload CMS v3 `json` field into real admin fields — text, number, date
 The unusual part: **there is no schema in your repository.** The shape lives inside the value itself. Every node says what it is, so the form can be drawn from the data alone, and changing the shape is a content edit rather than a deploy. Your frontend never sees that bookkeeping: everything outside the app reads plain values by key.
 
 ```jsonc
-// what is stored                          // what your site receives
-{                                          {
-  "hero": {                                  "hero": {
-    "type": "collapsible",                     "title": "Hackathon",
-    "fields": [                                "live": true
-      { "name": "title", "type": "text",     }
-        "value": "Hackathon" },            }
+// what is stored                            // what your site receives
+[                                            {
+  { "name": "hero",                            "hero": {
+    "type": "collapsible",                       "title": "Hackathon",
+    "fields": [                                  "live": true
+      { "name": "title", "type": "text",       }
+        "value": "Hackathon" },              }
       { "name": "live", "type": "checkbox",
-        "value": true }
-    ]
-  }
-}
+        "value": true } ] }
+]
 ```
+
+Sections are a list, like every level inside them, so they keep the order they are written in and are dragged in the form itself. They still reach the site as an object keyed by name — a list of named nodes and an object of keys are the same thing to a template.
 
 ---
 
@@ -174,7 +174,6 @@ Every node also takes:
 | `required` | a save is refused while it is empty, naming the path |
 | `readOnly` | shown, not editable — and everything under it too |
 | `hidden` | kept in the admin, left out of what the site gets |
-| `order` | where it sits; jsonb keeps no key order |
 | `showIf` | `{ field: 'kind', equals: 'video' }` — drawn only while a sibling matches |
 
 ## What your site receives
