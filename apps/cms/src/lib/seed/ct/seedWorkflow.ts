@@ -1,6 +1,6 @@
 import { emptyResult } from "./context";
 import type { SeedContext, SeedStep, StepResult } from "./context";
-import { NEWS_CATEGORY } from "./data/categories";
+import { FALLBACK_TAG, tagDocSlug } from "./data/tags";
 import { pageIdByPath } from "./links";
 import { londonMorning } from "./text";
 
@@ -155,13 +155,13 @@ async function seedScheduledPost(
   let post = existing.docs[0];
 
   if (!post) {
-    const [author, news, cover] = await Promise.all([
+    const [author, tag, cover] = await Promise.all([
       ctx.payload.find({ collection: "authors", depth: 0, limit: 1, sort: "name" }),
       ctx.payload.find({
-        collection: "categories",
+        collection: "tags",
         depth: 0,
         limit: 1,
-        where: { slug: { equals: NEWS_CATEGORY } },
+        where: { slug: { equals: tagDocSlug(FALLBACK_TAG) } },
       }),
       newestImportedPost(ctx),
     ]);
@@ -171,7 +171,7 @@ async function seedScheduledPost(
       data: {
         _status: "draft",
         authors: author.docs[0] ? [author.docs[0].id] : [],
-        categories: news.docs[0] ? [news.docs[0].id] : [],
+        tags: tag.docs[0] ? [tag.docs[0].id] : [],
         content: null,
         excerpt: SCHEDULED_POST.excerpt,
         generateSlug: false,

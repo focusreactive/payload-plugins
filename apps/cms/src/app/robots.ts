@@ -29,10 +29,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
         allow: "/",
         disallow: [
           ...PRIVATE_PATHS,
-          ...["draft", "category", "q", "query"].flatMap((param) => [
-            `/*?${param}=`,
-            `/*&${param}=`,
-          ]),
+          ...["draft", "q", "query"].flatMap((param) => [`/*?${param}=`, `/*&${param}=`]),
         ],
         userAgent: "*",
       },

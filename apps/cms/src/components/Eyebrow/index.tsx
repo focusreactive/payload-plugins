@@ -11,7 +11,7 @@ interface Props {
   className?: string;
 }
 
-// §6.6: outline on light, accent (electric green) on dark, tag = pill for categories, muted = text only.
+// §6.6: outline on light, accent (electric green) on dark, tag = pill for tags, muted = text only.
 const toneMap: Record<EyebrowTone, string> = {
   default: "rounded-sm bg-secondary text-secondary-foreground",
   primary: "rounded-sm bg-primary-soft text-primary-soft-foreground",

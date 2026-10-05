@@ -173,7 +173,7 @@ describe("collectRelationIds", () => {
       )
     ).toEqual([3, 4]);
     expect(
-      collectRelationIds({ blocks: [{ categories: [1, { id: 2 }] }] }, "categories").sort(
+      collectRelationIds({ blocks: [{ tags: [1, { id: 2 }] }] }, "tags").sort(
         (a, b) => Number(a) - Number(b)
       )
     ).toEqual([1, 2]);
@@ -208,10 +208,10 @@ describe("buildRefQueries", () => {
     expect(byCol.posts?.ids).toContain(99);
   });
 
-  it("emits projected parallel queries for links, media, authors, categories", () => {
+  it("emits projected parallel queries for links, media, authors, tags", () => {
     const queries = buildRefQueries({
       authors: [3],
-      categories: [5],
+      tags: [5],
       heroImage: 8,
       blocks: [
         {
@@ -225,7 +225,7 @@ describe("buildRefQueries", () => {
     // selecting url without filename returns url: null.
     expect(byCol.media).toMatchObject({ ids: [8], select: ["url", "filename", "mimeType", "alt"] });
     expect(byCol.authors).toMatchObject({ ids: [3], select: ["name"] });
-    expect(byCol.categories).toMatchObject({ ids: [5], select: ["title"] });
+    expect(byCol.tags).toMatchObject({ ids: [5], select: ["title"] });
   });
 });
 

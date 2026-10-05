@@ -2,13 +2,14 @@ import type { CollectionConfig } from "payload";
 import { slugField } from "payload";
 
 import { anyone, or, user, author, superAdmin } from "@/lib/access";
+import { slugify } from "@/lib/utils/slugify";
 
 export const Authors: CollectionConfig<"authors"> = {
   access: {
     create: or(superAdmin, user, author),
     // Only administrators delete content (§5.7).
     delete: superAdmin,
-    // Author pages (/blog/author/<slug>) are public.
+    // Author pages (/author/<slug>) are public.
     read: anyone,
     update: or(superAdmin, user, author),
   },
@@ -47,7 +48,7 @@ export const Authors: CollectionConfig<"authors"> = {
     },
     // Not NOT NULL in the database: existing authors (e.g. on a preview branch of production data)
     // get their slug generated from the name on the next save.
-    slugField({ required: false, useAsSlug: "name" }),
+    slugField({ required: false, slugify, useAsSlug: "name" }),
   ],
   labels: {
     plural: "Authors",

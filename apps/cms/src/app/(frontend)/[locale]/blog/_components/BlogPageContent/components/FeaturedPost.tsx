@@ -6,7 +6,7 @@ import { cn } from "@/components/utils";
 import type { Locale } from "@/lib/types";
 import { Link } from "@/components/shared";
 import { AuthorAvatar } from "@/components/AuthorAvatar";
-import type { Author, Category } from "@/payload-types";
+import type { Author, Tag } from "@/payload-types";
 
 import type { BlogListPost } from "../types";
 
@@ -20,9 +20,7 @@ interface FeaturedPostProps {
 export async function FeaturedPost({ post, readMoreLabel, locale, className }: FeaturedPostProps) {
   const t = await getTranslations("blog");
 
-  const category = post.categories?.find(
-    (entry): entry is Category => typeof entry === "object" && entry !== null
-  );
+  const tag = post.tags?.find((entry): entry is Tag => typeof entry === "object" && entry !== null);
   const author = post.authors?.find(
     (entry): entry is Author => typeof entry === "object" && entry !== null
   );
@@ -56,9 +54,9 @@ export async function FeaturedPost({ post, readMoreLabel, locale, className }: F
 
       <div className="flex flex-col gap-[18px]">
         <div className="flex flex-wrap items-center gap-3 font-mono text-[0.72rem] uppercase tracking-[0.08em] text-muted-foreground">
-          {category && (
+          {tag && (
             <>
-              <span className="whitespace-nowrap text-primary">{category.title}</span>
+              <span className="whitespace-nowrap text-primary">{tag.title}</span>
               <span aria-hidden className="inline-block size-1 rounded-pill bg-border-strong" />
             </>
           )}

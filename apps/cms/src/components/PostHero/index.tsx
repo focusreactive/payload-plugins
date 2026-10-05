@@ -7,7 +7,7 @@ import NextImage from "next/image";
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import type { Locale } from "@/lib/types";
 import { readingTimeMinutes } from "@/lib/utils/readingTime";
-import type { Author, Category, Post } from "@/payload-types";
+import type { Author, Tag, Post } from "@/payload-types";
 
 import { Link } from "@/components/shared";
 
@@ -25,8 +25,8 @@ function DotSeparator() {
 export async function PostHero({ post, locale }: PostHeroProps) {
   const t = await getTranslations("blog");
 
-  const categories = (post.categories ?? []).filter(
-    (entry): entry is Category => typeof entry === "object" && entry !== null
+  const tags = (post.tags ?? []).filter(
+    (entry): entry is Tag => typeof entry === "object" && entry !== null
   );
   const author = post.authors?.find(
     (entry): entry is Author => typeof entry === "object" && entry !== null
@@ -62,11 +62,11 @@ export async function PostHero({ post, locale }: PostHeroProps) {
           </Link>
 
           <div className="mt-auto flex flex-col gap-5">
-            {categories.length > 0 && (
+            {tags.length > 0 && (
               <ul className="flex flex-wrap gap-2">
-                {categories.map((category) => (
-                  <li key={category.id}>
-                    <Eyebrow tone="tag">{category.title}</Eyebrow>
+                {tags.map((tag) => (
+                  <li key={tag.id}>
+                    <Eyebrow tone="tag">{tag.title}</Eyebrow>
                   </li>
                 ))}
               </ul>
@@ -93,7 +93,7 @@ export async function PostHero({ post, locale }: PostHeroProps) {
               {author &&
                 (author.slug ? (
                   <Link
-                    href={`${BLOG_CONFIG.basePath}/author/${author.slug}`}
+                    href={`${BLOG_CONFIG.authorBasePath}/${author.slug}`}
                     className="flex items-center gap-2.5 whitespace-nowrap text-ct-white underline-offset-[3px] hover:text-ct-electric-green hover:underline"
                   >
                     <AuthorAvatar author={author} size="sm" />

@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { CAREERS_CONFIG } from "@/lib/config/careers";
+import { NEWS_CONFIG } from "@/lib/config/news";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { cacheTag } from "@/lib/utils/cacheTags";
 import { scopedCache } from "@/lib/utils/scopedCache";
@@ -27,7 +28,7 @@ async function generateSitemap(): Promise<Sitemap> {
 
     await Promise.all(
       locales.map(async (locale) => {
-        const [allPages, allPosts, allAuthors, allVacancies] = await Promise.all([
+        const [allPages, allPosts, allAuthors, allVacancies, allNews] = await Promise.all([
           getAllDocuments(payload, "page", {
             depth: 1,
             locale,
@@ -67,6 +68,12 @@ async function generateSitemap(): Promise<Sitemap> {
             locale,
             overrideAccess: false,
             select: { meta: true, slug: true, updatedAt: true },
+            where: { _status: { equals: "published" } },
+          }),
+          getAllDocuments(payload, NEWS_CONFIG.collection, {
+            locale,
+            overrideAccess: false,
+            select: { meta: true, publishedAt: true, slug: true },
             where: { _status: { equals: "published" } },
           }),
         ]);
@@ -144,15 +151,29 @@ async function generateSitemap(): Promise<Sitemap> {
             });
           });
 
+        allNews
+          .filter((news) => news.meta?.robots !== "noindex")
+          .forEach((news) => {
+            sitemap.push({
+              alternates: alternates((l) =>
+                buildUrl({ collection: "news", locale: l, slug: news.slug })
+              ),
+              changeFrequency: "monthly",
+              lastModified: news.publishedAt ? new Date(news.publishedAt) : new Date(),
+              priority: 0.6,
+              url: buildUrl({ collection: "news", locale, slug: news.slug }),
+            });
+          });
+
         allAuthors.forEach((author) => {
           sitemap.push({
             alternates: alternates((l) =>
-              buildUrl({ collection: "posts", locale: l, slug: `author/${author.slug}` })
+              buildUrl({ collection: "authors", locale: l, slug: author.slug })
             ),
             changeFrequency: "monthly",
             lastModified: author.updatedAt ? new Date(author.updatedAt) : new Date(),
             priority: 0.5,
-            url: buildUrl({ collection: "posts", locale, slug: `author/${author.slug}` }),
+            url: buildUrl({ collection: "authors", locale, slug: author.slug }),
           });
         });
       })

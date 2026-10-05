@@ -85,7 +85,7 @@ export const Posts: CollectionConfig<"posts"> = {
   },
   defaultPopulate: {
     authors: true,
-    categories: true,
+    tags: true,
     excerpt: true,
     heroImage: true,
     publishedAt: true,
@@ -307,9 +307,9 @@ export const Posts: CollectionConfig<"posts"> = {
         position: "sidebar",
       },
       hasMany: true,
-      label: "Categories",
-      name: "categories",
-      relationTo: "categories",
+      label: "Tags",
+      name: "tags",
+      relationTo: "tags",
       required: true,
       type: "relationship",
     },
@@ -327,7 +327,7 @@ export const Posts: CollectionConfig<"posts"> = {
     {
       admin: {
         description:
-          "Select up to 3 related posts. If fewer than 3 are selected, additional posts from the same categories will be shown automatically based on publish date.",
+          "Select up to 3 related posts. If fewer than 3 are selected, additional posts from the same tags will be shown automatically based on publish date.",
         position: "sidebar",
       },
       filterOptions: ({ id }) => ({

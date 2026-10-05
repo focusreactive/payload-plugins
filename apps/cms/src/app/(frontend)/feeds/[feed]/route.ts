@@ -1,16 +1,22 @@
-import { getFeedPosts, getSiteSettings } from "@/dal";
+import { getFeedEntries, getSiteSettings } from "@/dal";
+import type { FeedEntry } from "@/dal";
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { FEEDS } from "@/lib/config/feeds";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import type { Locale } from "@/lib/types";
-import { postBodyToHtml } from "@/lib/markdown/toHtml";
 import { getServerSideURL } from "@/lib/utils/getURL";
-import type { Author, Category, Post } from "@/payload-types";
 
 /**
- * RSS and Atom at the old addresses (§5.5): /feeds/all.atom.xml, /feeds/all.rss.xml and
- * /feeds/<category>.atom.xml|.rss.xml. Dotted paths bypass the locale proxy.
+ * RSS and Atom at the old addresses (§5.5): /feeds/atom.xml, /feeds/rss.xml and
+ * /feeds/<tag>.atom.xml|.rss.xml. Dotted paths bypass the locale proxy.
  */
+
+interface FeedMeta {
+  title: string;
+  self: string;
+  site: string;
+  link: string;
+}
 
 function escape(text: string): string {
   return text
@@ -25,44 +31,28 @@ function cdata(html: string): string {
   return `<![CDATA[${html.replaceAll("]]>", "]]]]><![CDATA[>")}]]>`;
 }
 
-function names(post: Post): string[] {
-  return (post.authors ?? [])
-    .filter((author): author is Author => typeof author === "object" && author !== null)
-    .map((author) => author.name);
+function lines(values: string[], render: (value: string) => string): string {
+  return values.map(render).join("\n");
 }
 
-function categoryTitles(post: Post): string[] {
-  return (post.categories ?? [])
-    .filter((category): category is Category => typeof category === "object" && category !== null)
-    .map((category) => category.title);
-}
-
-function categoryTitle(post: Post, slug: string): string {
-  const match = (post.categories ?? []).find(
-    (entry): entry is Category => typeof entry === "object" && entry !== null && entry.slug === slug
-  );
-  return match?.title ?? slug;
-}
-
-function atom(posts: Post[], meta: { title: string; self: string; site: string; link: string }) {
-  const updated = posts[0]?.updatedAt ?? new Date().toISOString();
-  const entries = posts
-    .map((post) => {
-      const link = `${meta.site}${BLOG_CONFIG.basePath}/${post.slug}`;
+function atom(entries: FeedEntry[], meta: FeedMeta) {
+  const updated = entries[0]?.updated ?? new Date().toISOString();
+  const body = entries
+    .map((entry) => {
+      const link = `${meta.site}${entry.path}`;
       return `  <entry>
-    <title>${escape(post.title)}</title>
+    <title>${escape(entry.title)}</title>
     <link href="${escape(link)}" rel="alternate"/>
     <id>${escape(link)}</id>
-    <published>${new Date(post.publishedAt ?? post.createdAt).toISOString()}</published>
-    <updated>${new Date(post.updatedAt).toISOString()}</updated>
-${names(post)
-  .map((name) => `    <author><name>${escape(name)}</name></author>`)
-  .join("\n")}
-${categoryTitles(post)
-  .map((term) => `    <category term="${escape(term)}"/>`)
-  .join("\n")}
-    <summary type="text">${escape(post.excerpt ?? "")}</summary>
-    <content type="html">${escape(postBodyToHtml(post))}</content>
+    <published>${new Date(entry.published).toISOString()}</published>
+    <updated>${new Date(entry.updated).toISOString()}</updated>
+${lines(entry.authors, (name) => `    <author><name>${escape(name)}</name></author>`)}
+${lines(
+  entry.tags.map((tag) => tag.title),
+  (term) => `    <category term="${escape(term)}"/>`
+)}
+    <summary type="text">${escape(entry.summary)}</summary>
+    <content type="html">${escape(entry.html)}</content>
   </entry>`;
     })
     .join("\n");
@@ -73,28 +63,27 @@ ${categoryTitles(post)
   <link href="${escape(meta.self)}" rel="self"/>
   <id>${escape(meta.self)}</id>
   <updated>${new Date(updated).toISOString()}</updated>
-${entries}
+${body}
 </feed>
 `;
 }
 
-function rss(posts: Post[], meta: { title: string; self: string; site: string; link: string }) {
-  const items = posts
-    .map((post) => {
-      const link = `${meta.site}${BLOG_CONFIG.basePath}/${post.slug}`;
+function rss(entries: FeedEntry[], meta: FeedMeta) {
+  const items = entries
+    .map((entry) => {
+      const link = `${meta.site}${entry.path}`;
       return `    <item>
-      <title>${escape(post.title)}</title>
+      <title>${escape(entry.title)}</title>
       <link>${escape(link)}</link>
       <guid isPermaLink="true">${escape(link)}</guid>
-      <pubDate>${new Date(post.publishedAt ?? post.createdAt).toUTCString()}</pubDate>
-${names(post)
-  .map((name) => `      <dc:creator>${escape(name)}</dc:creator>`)
-  .join("\n")}
-${categoryTitles(post)
-  .map((term) => `      <category>${escape(term)}</category>`)
-  .join("\n")}
-      <description>${escape(post.excerpt ?? "")}</description>
-      <content:encoded>${cdata(postBodyToHtml(post))}</content:encoded>
+      <pubDate>${new Date(entry.published).toUTCString()}</pubDate>
+${lines(entry.authors, (name) => `      <dc:creator>${escape(name)}</dc:creator>`)}
+${lines(
+  entry.tags.map((tag) => tag.title),
+  (term) => `      <category>${escape(term)}</category>`
+)}
+      <description>${escape(entry.summary)}</description>
+      <content:encoded>${cdata(entry.html)}</content:encoded>
     </item>`;
     })
     .join("\n");
@@ -111,34 +100,42 @@ ${items}
 `;
 }
 
+function parseFeed(feed: string): { format: "atom" | "rss"; tag?: string } | null {
+  if (feed === "atom.xml" || feed === "rss.xml") {
+    return { format: feed === "atom.xml" ? "atom" : "rss" };
+  }
+  const match = FEEDS.tagPattern.exec(feed);
+  return match ? { format: match[2] as "atom" | "rss", tag: match[1] } : null;
+}
+
 export async function GET(_request: Request, { params }: { params: Promise<{ feed: string }> }) {
   const { feed } = await params;
-  const match = FEEDS.categoryPattern.exec(feed);
-  if (!match) {
+  const parsed = parseFeed(decodeURIComponent(feed));
+  if (!parsed) {
     return new Response("Not found", { status: 404 });
   }
-  const [, name, format] = match as unknown as [string, string, "atom" | "rss"];
-  const category = name === "all" ? undefined : name;
+  const { format, tag } = parsed;
 
   const site = getServerSideURL();
   const settings = await getSiteSettings({ locale: I18N_CONFIG.defaultLocale as Locale });
   const siteName = settings.general?.siteName || "Blog";
-  const posts = await getFeedPosts(category);
-  if (category && posts.length === 0) {
+  const entries = await getFeedEntries(tag);
+  if (tag && entries.length === 0) {
     return new Response("Not found", { status: 404 });
   }
+  const tagTitle = tag ? entries[0]?.tags.find((entry) => entry.slug === tag)?.title : undefined;
 
   const meta = {
     link: `${site}${BLOG_CONFIG.basePath}`,
     self: `${site}/feeds/${feed}`,
     site,
-    title: category ? `${siteName} — ${categoryTitle(posts[0]!, category)}` : siteName,
+    title: tag ? `${siteName} — ${tagTitle ?? tag}` : siteName,
   };
 
-  return new Response(format === "atom" ? atom(posts, meta) : rss(posts, meta), {
+  return new Response(format === "atom" ? atom(entries, meta) : rss(entries, meta), {
     headers: {
       "Cache-Control": "public, max-age=300, s-maxage=3600",
-      "Content-Type": `application/${format === "atom" ? "atom" : "rss"}+xml; charset=utf-8`,
+      "Content-Type": `application/${format}+xml; charset=utf-8`,
     },
   });
 }

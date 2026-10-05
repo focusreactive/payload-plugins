@@ -20,9 +20,7 @@ export const LEGACY_JSON = path.resolve(process.cwd(), "src/lib/redirects/legacy
 export const seedRedirects: SeedStep = async (ctx) => {
   const result = emptyResult();
 
-  // Authors of every post in the dump get their old page mapped (it is cheap and complete).
-  const authors = [...new Set(ctx.posts.map((post) => post.author))];
-  const map = buildLegacyMap(ctx.site.pages, ctx.posts, authors);
+  const map = buildLegacyMap(ctx.site.pages, ctx.posts);
   await writeFile(LEGACY_JSON, `${JSON.stringify(map, null, 2)}\n`);
   log.info(
     `legacy.local.json: ${Object.keys(map).length} entries (rebuild to apply; not committed)`

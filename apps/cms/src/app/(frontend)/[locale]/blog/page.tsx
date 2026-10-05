@@ -21,7 +21,6 @@ import { BlogPageSkeleton } from "./_components/BlogPageSkeleton";
 interface Props {
   searchParams: Promise<{
     page?: string;
-    category?: string;
     q?: string;
   }>;
   params: Promise<{

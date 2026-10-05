@@ -7,6 +7,5 @@
   "/news.html": "/resources/news",
   "/privacy.html": "/privacy-policy",
   "/reports.html": "/resources/reports",
-  "/services.html": "/what-we-do",
-  "/updates.html": "/blog"
+  "/services.html": "/what-we-do"
 }

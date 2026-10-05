@@ -4,7 +4,7 @@ import { RichText } from "@/components/shared";
 import { getRelatedPosts } from "@/dal/getRelatedPosts";
 import type { Post } from "@/payload-types";
 
-import { MarkdownBody } from "./components/MarkdownBody";
+import { MarkdownBody } from "@/components/MarkdownBody";
 import { PostCta } from "./components/PostCta";
 import { PostFaq } from "./components/PostFaq";
 import { RelatedPostsSection } from "./components/RelatedPostsSection";

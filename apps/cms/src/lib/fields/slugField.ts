@@ -1,6 +1,8 @@
 import { slugField as payloadSlugField } from "payload";
 import type { PayloadRequest } from "payload";
 
+import { slugify } from "@/lib/utils/slugify";
+
 /**
  * Shared slug field for Pages and Posts.
  * - required: true
@@ -39,6 +41,7 @@ export const createSharedSlugField = (currentCollection: "page" | "posts") => {
       return field;
     },
     required: true,
+    slugify,
     useAsSlug: "title",
   });
 };

@@ -1,5 +1,6 @@
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { CAREERS_CONFIG } from "@/lib/config/careers";
+import { NEWS_CONFIG } from "@/lib/config/news";
 import { shouldIncludeLocalePrefix } from "@/lib/utils/localePrefix";
 import { routing } from "@/lib/i18n/routing";
 import type { Page } from "@/payload-types";
@@ -9,8 +10,11 @@ import { getPathFromBreadcrumbs } from "../getPathFromBreadcrumbs";
 import { resolvePath } from "./resolvePath";
 
 const BASE_PATHS = {
+  authors: BLOG_CONFIG.authorBasePath,
+  news: NEWS_CONFIG.basePath,
   page: undefined,
   posts: BLOG_CONFIG.basePath,
+  tags: BLOG_CONFIG.tagBasePath,
   vacancies: CAREERS_CONFIG.basePath,
 } as const;
 
@@ -26,7 +30,7 @@ type BuildUrlOptions = (
       page?: number;
     }
   | {
-      collection: "vacancies";
+      collection: "vacancies" | "news" | "authors" | "tags";
       breadcrumbs?: never;
       page?: never;
     }

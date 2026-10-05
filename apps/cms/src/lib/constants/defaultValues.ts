@@ -27,7 +27,7 @@ export const DEFAULT_VALUES = {
     },
   },
   collections: {
-    categories: {
+    tags: {
       title: { en: "Title" },
     },
     page: {

@@ -8,26 +8,19 @@ import { BLOG_CONFIG } from "@/lib/config/blog";
 import type { Locale } from "@/lib/types";
 import { formatPostDate } from "@/lib/utils/formatPostDate";
 import { resolveLocale } from "@/lib/utils/resolveLocale";
-import type { Author, Category, Media, Post, PostsListBlock } from "@/payload-types";
+import type { Author, Tag, Media, Post, PostsListBlock } from "@/payload-types";
 
 import { PostsList } from "./ui";
 import type { PostsListItem, PostsListLayout } from "./ui/types";
 
 type ListedPost = Pick<
   Post,
-  | "slug"
-  | "title"
-  | "excerpt"
-  | "heroImage"
-  | "categories"
-  | "authors"
-  | "publishedAt"
-  | "readingTime"
+  "slug" | "title" | "excerpt" | "heroImage" | "tags" | "authors" | "publishedAt" | "readingTime"
 >;
 
 export function toPostsListItem(post: ListedPost, locale: Locale): PostsListItem {
-  const category = (post.categories ?? []).find(
-    (entry): entry is Category => typeof entry === "object" && entry !== null
+  const tag = (post.tags ?? []).find(
+    (entry): entry is Tag => typeof entry === "object" && entry !== null
   );
   const author = (post.authors ?? []).find(
     (entry): entry is Author => typeof entry === "object" && entry !== null
@@ -45,7 +38,7 @@ export function toPostsListItem(post: ListedPost, locale: Locale): PostsListItem
     image: image ? prepareMediaProps({ aspectRatio: "16/9", image }) : null,
     isoDate: post.publishedAt ?? null,
     readingTime: post.readingTime ?? null,
-    tag: category?.title ?? null,
+    tag: tag?.title ?? null,
     title: post.title,
     year: post.publishedAt ? String(new Date(post.publishedAt).getUTCFullYear()) : null,
   };
@@ -62,7 +55,7 @@ export async function PostsListBlockComponent({
   heading,
   description,
   source,
-  category,
+  tag,
   author,
   limit,
   layout,
@@ -75,7 +68,7 @@ export async function PostsListBlockComponent({
 
   const result = await getPosts(payload, {
     author: source === "author" ? relationSlug(author) : undefined,
-    category: source === "category" ? relationSlug(category) : undefined,
+    tag: source === "tag" ? relationSlug(tag) : undefined,
     limit: limit ?? 3,
     locale,
   });

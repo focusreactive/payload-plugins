@@ -13,14 +13,20 @@ export { getPageBySlug } from "./getPageBySlug";
 // Posts
 export { getPostBySlug } from "./getPostBySlug";
 export { getPosts } from "./getPosts";
+export { getAllPosts } from "./getAllPosts";
 export { getAuthorBySlug } from "./getAuthorBySlug";
-export { getFeedPosts } from "./getFeedPosts";
+export { getTagBySlug } from "./getTagBySlug";
+export { getFeedEntries } from "./getFeedEntries";
+export type { FeedEntry } from "./getFeedEntries";
 export type { GetPostsOptions } from "./getPosts";
 export { getRelatedPosts } from "./getRelatedPosts";
 
 // Careers
 export { getOpenVacancies } from "./getVacancies";
 export { getVacancyBySlug } from "./getVacancyBySlug";
+
+// News
+export { getNewsBySlug } from "./getNewsBySlug";
 
 // Documents (generic)
 export { getCachedDocument, getCachedDocumentByID } from "./getDocument";

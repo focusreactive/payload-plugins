@@ -4,8 +4,9 @@ import { slugField } from "payload";
 import { DEFAULT_VALUES } from "@/lib/constants/defaultValues";
 import { anyone, author, or, superAdmin, user } from "@/lib/access";
 import { createLocalizedDefault } from "@/lib/utils/createLocalizedDefault";
+import { slugify } from "@/lib/utils/slugify";
 
-export const Categories: CollectionConfig<"categories"> = {
+export const Tags: CollectionConfig<"tags"> = {
   access: {
     create: or(superAdmin, user, author),
     // Only administrators delete content (§5.7).
@@ -20,7 +21,7 @@ export const Categories: CollectionConfig<"categories"> = {
   },
   fields: [
     {
-      defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.categories.title),
+      defaultValue: createLocalizedDefault(DEFAULT_VALUES.collections.tags.title),
       label: "Title",
       localized: true,
       name: "title",
@@ -36,12 +37,13 @@ export const Categories: CollectionConfig<"categories"> = {
         return field;
       },
       required: true,
+      slugify,
       useAsSlug: "title",
     }),
   ],
   labels: {
-    plural: "Categories",
-    singular: "Category",
+    plural: "Tags",
+    singular: "Tag",
   },
-  slug: "categories",
+  slug: "tags",
 };

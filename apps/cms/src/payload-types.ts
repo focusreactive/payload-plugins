@@ -71,9 +71,10 @@ export interface Config {
     users: User;
     media: Media;
     page: Page;
-    categories: Category;
+    tags: Tag;
     authors: Author;
     posts: Post;
+    news: News;
     vacancies: Vacancy;
     header: Header;
     footer: Footer;
@@ -99,9 +100,10 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     page: PageSelect<false> | PageSelect<true>;
-    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    tags: TagsSelect<false> | TagsSelect<true>;
     authors: AuthorsSelect<false> | AuthorsSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
+    news: NewsSelect<false> | NewsSelect<true>;
     vacancies: VacanciesSelect<false> | VacanciesSelect<true>;
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
@@ -635,10 +637,10 @@ export interface Post {
    * Estimated reading time in minutes. Auto-calculated from the content on save.
    */
   readingTime?: number | null;
-  categories: (number | Category)[];
+  tags: (number | Tag)[];
   authors: (number | Author)[];
   /**
-   * Select up to 3 related posts. If fewer than 3 are selected, additional posts from the same categories will be shown automatically based on publish date.
+   * Select up to 3 related posts. If fewer than 3 are selected, additional posts from the same tags will be shown automatically based on publish date.
    */
   relatedPosts?: (number | Post)[] | null;
   updatedAt: string;
@@ -647,9 +649,9 @@ export interface Post {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "categories".
+ * via the `definition` "tags".
  */
-export interface Category {
+export interface Tag {
   id: number;
   title: string;
   /**
@@ -1215,8 +1217,8 @@ export interface PostsListBlock {
    */
   heading?: string | null;
   description?: string | null;
-  source: 'latest' | 'category' | 'author';
-  category?: (number | null) | Category;
+  source: 'latest' | 'tag' | 'author';
+  tag?: (number | null) | Tag;
   author?: (number | null) | Author;
   limit: number;
   layout: 'grid' | 'list' | 'featured';
@@ -1637,6 +1639,58 @@ export interface Footer {
    * Copyright text shown at the bottom
    */
   copyrightText?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "news".
+ */
+export interface News {
+  id: number;
+  title: string;
+  /**
+   * One line for the news cards and feeds
+   */
+  excerpt?: string | null;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Body of a release migrated from the old site. Rendered after the text.
+   */
+  markdown?: string | null;
+  meta?: {
+    title?: string | null;
+    /**
+     * Image used when sharing this page on social media.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+    /**
+     * Allow search engines to index this page
+     */
+    robots?: ('index' | 'noindex') | null;
+  };
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  publishedAt: string;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -2254,8 +2308,8 @@ export interface Preset {
          */
         heading?: string | null;
         description?: string | null;
-        source: 'latest' | 'category' | 'author';
-        category?: (number | null) | Category;
+        source: 'latest' | 'tag' | 'author';
+        tag?: (number | null) | Tag;
         author?: (number | null) | Author;
         limit: number;
         layout: 'grid' | 'list' | 'featured';
@@ -2625,17 +2679,17 @@ export interface PayloadMcpApiKey {
      */
     delete?: boolean | null;
   };
-  categories?: {
+  tags?: {
     /**
-     * Allow clients to create categories.
+     * Allow clients to create tags.
      */
     create?: boolean | null;
     /**
-     * Allow clients to update categories.
+     * Allow clients to update tags.
      */
     update?: boolean | null;
     /**
-     * Allow clients to delete categories.
+     * Allow clients to delete tags.
      */
     delete?: boolean | null;
   };
@@ -2709,6 +2763,20 @@ export interface PayloadMcpApiKey {
      */
     delete?: boolean | null;
   };
+  news?: {
+    /**
+     * Allow clients to create news.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update news.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete news.
+     */
+    delete?: boolean | null;
+  };
   vacancies?: {
     /**
      * Allow clients to create vacancies.
@@ -2745,11 +2813,11 @@ export interface PayloadMcpApiKey {
   };
   'payload-mcp-tool'?: {
     /**
-     * Fetch a collection document by ID. Specify collectionSlug (one of: authors, categories, footer, header, media, page, posts, vacancies, users). Returns all top-level fields as a structured overview — complex fields (arrays, blocks, relations, rich text) are summarized with their type and item count. Use getAllDocuments to list documents first, then this tool by ID. Use getField to drill into specific fields. Do NOT pass full: true unless the user explicitly asks to extract the entire content. Pass raw: true to get the full raw JSON — use this when you need structured data for analysis or to construct an update payload. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
+     * Fetch a collection document by ID. Specify collectionSlug (one of: authors, tags, footer, header, media, page, posts, news, vacancies, users). Returns all top-level fields as a structured overview — complex fields (arrays, blocks, relations, rich text) are summarized with their type and item count. Use getAllDocuments to list documents first, then this tool by ID. Use getField to drill into specific fields. Do NOT pass full: true unless the user explicitly asks to extract the entire content. Pass raw: true to get the full raw JSON — use this when you need structured data for analysis or to construct an update payload. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
      */
     getDocument?: boolean | null;
     /**
-     * List collection documents as a formatted summary. Specify collectionSlug (one of: authors, categories, footer, header, media, page, posts, vacancies, users). Returns only scalar summary fields plus admin URL and public URL (where applicable). Objects, relations, arrays, and rich text are omitted from the list output. To get full details for a document, call getDocument with its ID. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
+     * List collection documents as a formatted summary. Specify collectionSlug (one of: authors, tags, footer, header, media, page, posts, news, vacancies, users). Returns only scalar summary fields plus admin URL and public URL (where applicable). Objects, relations, arrays, and rich text are omitted from the list output. To get full details for a document, call getDocument with its ID. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
      */
     getAllDocuments?: boolean | null;
     /**
@@ -2757,7 +2825,7 @@ export interface PayloadMcpApiKey {
      */
     getGlobalDocument?: boolean | null;
     /**
-     * Fetch the full content of a specific field from a collection document or global. slug accepts a collection (authors, categories, footer, header, media, page, posts, vacancies, users) or a global (site-settings). For collections, id is required. For globals, id is ignored. Use dot-notation for nested paths (e.g. "content", "blocks.0", "meta.description"). Rich text fields are returned as Markdown by default. IMPORTANT: You MUST call this with raw: true before any create/update action targeting this field — the raw JSON (block IDs, Lexical nodes, existing array items) is required to construct a valid update payload. Never attempt an update without first reading the field with raw: true.
+     * Fetch the full content of a specific field from a collection document or global. slug accepts a collection (authors, tags, footer, header, media, page, posts, news, vacancies, users) or a global (site-settings). For collections, id is required. For globals, id is ignored. Use dot-notation for nested paths (e.g. "content", "blocks.0", "meta.description"). Rich text fields are returned as Markdown by default. IMPORTANT: You MUST call this with raw: true before any create/update action targeting this field — the raw JSON (block IDs, Lexical nodes, existing array items) is required to construct a valid update payload. Never attempt an update without first reading the field with raw: true.
      */
     getField?: boolean | null;
     /**
@@ -2902,8 +2970,8 @@ export interface PayloadLockedDocument {
         value: number | Page;
       } | null)
     | ({
-        relationTo: 'categories';
-        value: number | Category;
+        relationTo: 'tags';
+        value: number | Tag;
       } | null)
     | ({
         relationTo: 'authors';
@@ -2912,6 +2980,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'posts';
         value: number | Post;
+      } | null)
+    | ({
+        relationTo: 'news';
+        value: number | News;
       } | null)
     | ({
         relationTo: 'vacancies';
@@ -3551,7 +3623,7 @@ export interface PostsListBlockSelect<T extends boolean = true> {
   heading?: T;
   description?: T;
   source?: T;
-  category?: T;
+  tag?: T;
   author?: T;
   limit?: T;
   layout?: T;
@@ -3774,9 +3846,9 @@ export interface GlobalSectionSlotBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "categories_select".
+ * via the `definition` "tags_select".
  */
-export interface CategoriesSelect<T extends boolean = true> {
+export interface TagsSelect<T extends boolean = true> {
   title?: T;
   generateSlug?: T;
   slug?: T;
@@ -3851,9 +3923,33 @@ export interface PostsSelect<T extends boolean = true> {
   legacyPath?: T;
   publishedAt?: T;
   readingTime?: T;
-  categories?: T;
+  tags?: T;
   authors?: T;
   relatedPosts?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "news_select".
+ */
+export interface NewsSelect<T extends boolean = true> {
+  title?: T;
+  excerpt?: T;
+  content?: T;
+  markdown?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
+        robots?: T;
+      };
+  generateSlug?: T;
+  slug?: T;
+  publishedAt?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -4442,7 +4538,7 @@ export interface PresetsSelect<T extends boolean = true> {
               heading?: T;
               description?: T;
               source?: T;
-              category?: T;
+              tag?: T;
               author?: T;
               limit?: T;
               layout?: T;
@@ -4707,7 +4803,7 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
         update?: T;
         delete?: T;
       };
-  categories?:
+  tags?:
     | T
     | {
         create?: T;
@@ -4743,6 +4839,13 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
         delete?: T;
       };
   posts?:
+    | T
+    | {
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  news?:
     | T
     | {
         create?: T;
@@ -5094,6 +5197,10 @@ export interface TaskSchedulePublish {
       | ({
           relationTo: 'posts';
           value: number | Post;
+        } | null)
+      | ({
+          relationTo: 'news';
+          value: number | News;
         } | null)
       | ({
           relationTo: 'vacancies';

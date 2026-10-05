@@ -52,10 +52,10 @@ export interface SeedContext {
   /** Posts this run seeds (selection rule, --all-posts, --limit-posts). */
   posts: ParsedPost[];
   imagesMap: ImagesMap | null;
-  /** Ids shared between steps (media keys, category slugs, author names, page slugs…). */
+  /** Ids shared between steps (media keys, tag slugs, author names, page slugs…). */
   ids: {
     media: Map<string, number>;
-    categories: Map<string, number>;
+    tags: Map<string, number>;
     authors: Map<string, number>;
     pages: Map<string, number>;
     posts: Map<string, number>;

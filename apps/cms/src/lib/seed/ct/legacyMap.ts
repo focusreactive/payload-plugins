@@ -1,5 +1,5 @@
 import { EXTRA_LEGACY, IA, iaBySource } from "./data/ia";
-import { slugify } from "./text";
+import { isNewsEntry } from "./parseDump";
 import type { ParsedPage, ParsedPost } from "./types";
 
 const BLOG = "/blog";
@@ -23,14 +23,11 @@ const NEW_PATHS = new Set([...IA.map((page) => key(page.path)), BLOG_KEY]);
 
 /**
  * Old URL → new path for the proxy (plan §5.4 / §7 "Legacy map"): marketing pages via their dump
- * entry, every seeded post in its old shape (with/without .html; trailing slashes are normalised by
- * the lookup), author pages, and the fixed extras (index, listings, contact…).
+ * entry, every seeded blog post in its old shape (with/without .html; trailing slashes are
+ * normalised by the lookup), and the fixed extras (index, listings, contact…). News, author and tag
+ * pages keep their old addresses, so they need no entry.
  */
-export function buildLegacyMap(
-  pages: ParsedPage[],
-  posts: ParsedPost[],
-  authors: string[]
-): Record<string, string> {
+export function buildLegacyMap(pages: ParsedPage[], posts: ParsedPost[]): Record<string, string> {
   const map: Record<string, string> = {};
   const add = (from: string, to: string) => {
     if (key(from) !== key(to) && !NEW_PATHS.has(key(from)) && !key(from).startsWith(`${BLOG}/`)) {
@@ -46,14 +43,10 @@ export function buildLegacyMap(
       }
     }
   }
-  for (const post of posts) {
+  for (const post of posts.filter((entry) => !isNewsEntry(entry))) {
     for (const from of variants(post.legacyPath)) {
       add(from, `${BLOG}/${post.slug}`);
     }
-  }
-  for (const name of authors) {
-    const slug = slugify(name);
-    add(`/author/${slug}.html`, `${BLOG}/author/${slug}`);
   }
   for (const [from, to] of Object.entries(EXTRA_LEGACY)) {
     add(from, to);

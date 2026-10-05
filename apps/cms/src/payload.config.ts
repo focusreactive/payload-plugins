@@ -7,11 +7,12 @@ import { buildConfig } from "payload";
 import sharp from "sharp";
 
 import { Authors } from "@/collections/Authors";
-import { Categories } from "@/collections/Categories";
+import { Tags } from "@/collections/Tags";
 import { Footer } from "@/collections/Footer/config";
 import { GlobalBlock } from "@/collections/GlobalBlock/config";
 import { Header } from "@/collections/Header/config";
 import { Media } from "@/collections/Media";
+import { News } from "@/collections/News";
 import { Page } from "@/collections/Page/Page";
 import { Posts } from "@/collections/Posts";
 import { Users } from "@/collections/Users";
@@ -65,9 +66,10 @@ export default buildConfig({
     Users,
     Media,
     Page,
-    Categories,
+    Tags,
     Authors,
     Posts,
+    News,
     Vacancies,
     Header,
     Footer,

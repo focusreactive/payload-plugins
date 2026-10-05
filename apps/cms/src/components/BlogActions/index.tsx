@@ -11,21 +11,15 @@ import { SearchTrigger } from "./SearchTrigger";
 const DEBOUNCE_MS = 300;
 
 interface BlogActionsProps {
-  categories: {
+  tags: {
     title: string;
     slug: string;
   }[];
   placeholder: string;
-  activeCategory?: string;
   initialQuery?: string;
 }
 
-export function BlogActions({
-  categories,
-  placeholder,
-  activeCategory,
-  initialQuery,
-}: BlogActionsProps) {
+export function BlogActions({ tags, placeholder, initialQuery }: BlogActionsProps) {
   const { navigate } = useBlogFilter();
 
   const [open, setOpen] = useState(Boolean(initialQuery));
@@ -36,7 +30,7 @@ export function BlogActions({
   const hasQuery = value.trim().length > 0;
 
   const goTo = (query: string) => {
-    navigate(blogHref({ category: activeCategory, q: query }));
+    navigate(blogHref({ q: query }));
   };
 
   const scheduleNavigate = (query: string) => {
@@ -99,7 +93,7 @@ export function BlogActions({
   return (
     <div className="flex flex-col items-center mt-12 py-2">
       <div className={cn("flex sm:justify-center gap-5 mb-3")}>
-        <FilterChips categories={categories} activeCategory={activeCategory} query={value} />
+        <FilterChips tags={tags} query={value} />
 
         <SearchTrigger open={() => setOpen(true)} isHidden={open} />
       </div>

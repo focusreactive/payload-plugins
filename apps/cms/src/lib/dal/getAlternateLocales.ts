@@ -19,13 +19,13 @@ type GetAlternateLocalesOptions =
       page?: number;
     }
   | {
-      collection: "vacancies";
+      collection: "vacancies" | "news";
       slug: string;
       currentLocale: Locale;
     };
 
 async function publishedSlugAlternates(
-  collection: "vacancies",
+  collection: "vacancies" | "news",
   slug: string
 ): Promise<Record<string, string>> {
   const payload = await getPayloadClient();
@@ -61,8 +61,8 @@ export async function getAlternateLocales(
   const locales = I18N_CONFIG.locales.map((l) => l.code as Locale);
   const languages: Partial<Record<Locale | "x-default", string>> = {};
 
-  if (options.collection === "vacancies") {
-    return publishedSlugAlternates("vacancies", options.slug);
+  if (options.collection === "vacancies" || options.collection === "news") {
+    return publishedSlugAlternates(options.collection, options.slug);
   }
 
   if (options.collection === "posts") {

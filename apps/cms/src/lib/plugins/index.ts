@@ -15,7 +15,8 @@ import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
 import type { Field, PayloadRequest, Plugin } from "payload";
 
 import { Authors } from "@/collections/Authors";
-import { Categories } from "@/collections/Categories";
+import { News } from "@/collections/News";
+import { Tags } from "@/collections/Tags";
 import { Footer } from "@/collections/Footer/config";
 import { Header } from "@/collections/Header/config";
 import { Page as PageCollection } from "@/collections/Page/Page";
@@ -273,8 +274,9 @@ export const plugins: Plugin[] = [
     collections: [
       { slug: "page", titleField: "title" },
       { slug: "posts", titleField: "title" },
+      { slug: "news", titleField: "title" },
       { slug: "vacancies", titleField: "title" },
-      { slug: "categories", titleField: "title" },
+      { slug: "tags", titleField: "title" },
       { slug: "authors", titleField: "name" },
       { slug: "header", titleField: "name" },
       { slug: "footer", titleField: "name" },
@@ -284,7 +286,7 @@ export const plugins: Plugin[] = [
   }),
 
   schedulePublicationPlugin({
-    collections: ["page", "posts", "vacancies"],
+    collections: ["page", "posts", "news", "vacancies"],
     globals: ["site-settings"],
     schedulePublish: {
       timeIntervals: 60,
@@ -293,7 +295,7 @@ export const plugins: Plugin[] = [
   }),
 
   translatorPlugin({
-    collections: [PageCollection, Posts, Vacancies, Categories, Authors, Header, Footer].map(
+    collections: [PageCollection, Posts, News, Vacancies, Tags, Authors, Header, Footer].map(
       (col) => JSON.parse(JSON.stringify(col, (_, v) => (typeof v === "function" ? undefined : v)))
     ),
     access: { check: ({ req }) => Boolean(req.user) },
@@ -331,7 +333,7 @@ export const plugins: Plugin[] = [
     skipCollections: [
       "users",
       "media",
-      "categories",
+      "tags",
       "authors",
       "header",
       "footer",

@@ -12,7 +12,8 @@ const legacy: unknown = JSON.parse(readFileSync(file, "utf-8"));
 
 /**
  * Plan §5.4: old addresses answer 308 and land on a page that renders. Samples up to 25 entries
- * across the shapes in the generated map (article shapes, news, marketing .html, author pages).
+ * across the shapes in the generated map (article shapes, marketing .html). News, author and tag
+ * pages keep their old addresses and are not in the map.
  */
 const entries = Object.entries(legacy as Record<string, string>);
 
@@ -20,8 +21,6 @@ const shapes: [string, RegExp][] = [
   ["article with year", /^\/articles\/\d{4}\/[^/]+$/u],
   ["article .html", /^\/articles\/\d{4}\/[^/]+\.html$/u],
   ["article without year", /^\/articles\/[^/]+$/u],
-  ["news", /^\/news\/[^/]+\.html$/u],
-  ["author", /^\/author\/[^/]+\.html$/u],
   ["marketing .html", /^\/[^/]+\.html$/u],
 ];
 

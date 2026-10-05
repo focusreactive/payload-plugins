@@ -27,7 +27,7 @@ export const BlogPostsGrid: React.FC<Props> = (props) => {
                 className="h-full"
                 doc={result}
                 basePath={BLOG_CONFIG.basePath}
-                showCategories
+                showTags
                 readMoreLabel={readMoreLabel ?? undefined}
               />
             </div>

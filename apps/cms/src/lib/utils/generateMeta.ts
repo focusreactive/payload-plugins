@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { I18N_CONFIG } from "@/lib/config/i18n";
 import { getAlternateLocales } from "@/dal/getAlternateLocales";
 import { getSiteSettings } from "@/dal/getSiteSettings";
-import type { Media, Page, Post, Vacancy } from "@/payload-types";
+import type { Media, News, Page, Post, Vacancy } from "@/payload-types";
 
 import type { Locale } from "../types";
 import { buildUrl } from "../utils/path/buildUrl";
@@ -28,10 +28,10 @@ const getImageURL = (image: Media | null | undefined) => {
 };
 
 export const generateMeta = async (args: {
-  doc: Partial<Page | Post | Vacancy> | null;
+  doc: Partial<Page | Post | Vacancy | News> | null;
   overrides?: Partial<Metadata>;
   locale: Locale;
-  collection: "page" | "posts" | "vacancies";
+  collection: "page" | "posts" | "vacancies" | "news" | "authors" | "tags";
   page?: number;
 }): Promise<Metadata> => {
   const { doc, overrides, locale, collection, page } = args;
@@ -73,7 +73,7 @@ export const generateMeta = async (args: {
   const ogTitle = doc?.meta?.title || doc?.title || settings?.seo?.og?.title || siteName;
 
   let canonical: string;
-  if (collection === "posts" || collection === "vacancies") {
+  if (collection !== "page") {
     canonical = buildUrl({
       collection,
       locale,
@@ -110,12 +110,17 @@ export const generateMeta = async (args: {
         slug: doc.slug,
       });
     }
-  } else if (collection === "vacancies" && doc?.slug) {
+  } else if ((collection === "vacancies" || collection === "news") && doc?.slug) {
     languages = await getAlternateLocales({
-      collection: "vacancies",
+      collection,
       currentLocale: locale,
       slug: doc.slug,
     });
+  } else if ((collection === "authors" || collection === "tags") && doc?.slug) {
+    const slug = doc.slug;
+    languages = Object.fromEntries(
+      I18N_CONFIG.locales.map(({ code }) => [code, buildUrl({ collection, locale: code, slug })])
+    );
   } else if (collection === "page") {
     languages = await getAlternateLocales({
       breadcrumbs: (doc as Page)?.breadcrumbs,

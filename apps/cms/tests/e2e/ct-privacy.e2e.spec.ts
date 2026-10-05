@@ -42,7 +42,7 @@ test.describe("privacy", () => {
 });
 
 test("feeds are well-formed and list the newest post first", async ({ request }) => {
-  for (const feed of ["/feeds/all.atom.xml", "/feeds/all.rss.xml"]) {
+  for (const feed of ["/feeds/atom.xml", "/feeds/rss.xml"]) {
     const response = await request.get(feed);
     expect(response.status()).toBe(200);
     const body = await response.text();

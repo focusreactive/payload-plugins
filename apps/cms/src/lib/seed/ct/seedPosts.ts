@@ -5,11 +5,12 @@ import path from "node:path";
 import sharp from "sharp";
 
 import { emptyResult } from "./context";
-import type { SeedContext, SeedStep } from "./context";
-import { assignCategories, CATEGORIES } from "./data/categories";
+import type { SeedContext, SeedStep, StepResult } from "./context";
+import { assignTags, TAGS } from "./data/tags";
 import { renderCover } from "./imagery";
 import { log } from "./log";
 import { insertImages } from "./markdownImages";
+import { isNewsEntry } from "./parseDump";
 import type { ImageInsert } from "./markdownImages";
 import { upsertMedia } from "./mediaStore";
 import { firstParagraph, londonMorning, slugify } from "./text";
@@ -90,6 +91,44 @@ async function generatedCover(
   return id;
 }
 
+/** A press release keeps its old address: /news/<name>.html → News slug "<name>.html". */
+async function upsertNews(ctx: SeedContext, post: ParsedPost, result: StepResult) {
+  const slug = post.legacyPath.split("/").pop() || `${post.slug}.html`;
+  const excerpt = firstParagraph(post.markdown) || post.title;
+  const data = {
+    _status: "published" as const,
+    content: null,
+    excerpt,
+    generateSlug: false,
+    markdown: post.markdown,
+    meta: { description: excerpt, robots: "index" as const, title: post.titleTag ?? post.title },
+    publishedAt: londonMorning(post.date),
+    slug,
+    title: post.title,
+  };
+  const found = await ctx.payload.find({
+    collection: "news",
+    draft: false,
+    limit: 1,
+    where: { slug: { equals: slug } },
+  });
+  const existing = found.docs[0];
+  if (!existing) {
+    await ctx.payload.create({ collection: "news", context: ctx.writeContext, data });
+    result.created++;
+  } else if (existing.markdown !== post.markdown || existing.title !== post.title) {
+    await ctx.payload.update({
+      collection: "news",
+      context: ctx.writeContext,
+      data,
+      id: existing.id,
+    });
+    result.updated++;
+  } else {
+    result.skipped++;
+  }
+}
+
 export const seedPosts: SeedStep = async (ctx) => {
   const result = emptyResult();
   const mapped = ctx.imagesMap?.posts ?? [];
@@ -97,15 +136,19 @@ export const seedPosts: SeedStep = async (ctx) => {
   let imagesPlaced = 0;
 
   for (const post of ctx.posts) {
-    const categorySlugs = assignCategories(post);
-    const categoryIds = categorySlugs
-      .map((slug) => ctx.ids.categories.get(slug))
+    if (isNewsEntry(post)) {
+      await upsertNews(ctx, post, result);
+      continue;
+    }
+    const tagSlugs = assignTags(post);
+    const tagIds = tagSlugs
+      .map((slug) => ctx.ids.tags.get(slug))
       .filter((id): id is number => id !== undefined);
     const authorId = ctx.ids.authors.get(post.author);
-    if (categoryIds.length === 0 || !authorId) {
-      throw new Error(`${post.slug}: run the taxonomy step first (categories/authors missing)`);
+    if (tagIds.length === 0 || !authorId) {
+      throw new Error(`${post.slug}: run the taxonomy step first (tags/authors missing)`);
     }
-    const eyebrow = CATEGORIES.find((category) => category.slug === categorySlugs[0])?.title ?? "";
+    const eyebrow = TAGS.find((tag) => tag.slug === tagSlugs[0])?.title ?? "";
 
     // Images from images-map.json (scraped from the live article).
     // By source URL: the post slug may have been renamed (avoidPageSlugs), the scraper's was not.
@@ -150,7 +193,7 @@ export const seedPosts: SeedStep = async (ctx) => {
     const data = {
       _status: "published" as const,
       authors: [authorId],
-      categories: categoryIds,
+      tags: tagIds,
       content: null,
       excerpt,
       generateSlug: false,

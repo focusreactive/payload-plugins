@@ -1,5 +1,5 @@
 import type { SeedContext } from "./context";
-import { CATEGORIES } from "./data/categories";
+import { TAGS } from "./data/tags";
 import { IA } from "./data/ia";
 import { log } from "./log";
 import { SCHEDULED_POST_SLUG } from "./seedWorkflow";
@@ -9,7 +9,7 @@ const DEMO_EMAILS = ["admin@ct.demo", "editor@ct.demo", "author@ct.demo"];
 
 /**
  * `reset`: deletes what the seed owns — imported posts (they carry a sourceUrl), the authors of the
- * dump, the seed's categories, the IA pages, the demo comments and scheduled post, and the demo editor/author accounts (the admin account is kept so the
+ * dump, the seed's tags, the IA pages, the demo comments and scheduled post, and the demo editor/author accounts (the admin account is kept so the
  * session running the seed is not locked out). Media stay: they are matched by file name and reused.
  */
 export async function resetSeed(ctx: SeedContext): Promise<void> {
@@ -61,12 +61,12 @@ export async function resetSeed(ctx: SeedContext): Promise<void> {
   });
   log.info(`deleted ${authors.docs.length} authors`);
 
-  const categories = await payload.delete({
-    collection: "categories",
+  const tags = await payload.delete({
+    collection: "tags",
     context,
-    where: { slug: { in: CATEGORIES.map((category) => category.slug) } },
+    where: { slug: { in: TAGS.map((tag) => tag.slug) } },
   });
-  log.info(`deleted ${categories.docs.length} categories`);
+  log.info(`deleted ${tags.docs.length} tags`);
 
   const pages = await payload.delete({
     collection: "page",

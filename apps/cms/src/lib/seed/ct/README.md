@@ -48,7 +48,7 @@ written next to the dump for inspection.
 What each step owns:
 
 - `users` — `admin@ct.demo` (Admin), `editor@ct.demo` (Editor), `author@ct.demo` (Author).
-- `posts` — Markdown posts with author, category, date, cover and inline images. A post whose
+- `posts` — Markdown posts with author, tag, date, cover and inline images. A post whose
   slug is taken by a page of the new site is seeded with a suffix (`-news` / `-<year>`), and
   SVGs with active content (draw.io `<foreignObject>` labels) are rasterised to PNG, since
   Payload rejects them.
@@ -74,7 +74,7 @@ bun run build && PORT=3333 bun run start &
 E2E_BASE_URL=http://localhost:3333 bunx playwright test tests/e2e/ct*.e2e.spec.ts
 ```
 
-`ct.e2e.spec.ts` (every IA page → 200 + one h1, blog/author, DE/JA, robots/sitemap/llms),
+`ct.e2e.spec.ts` (every IA page → 200 + one h1, blog, author and tag pages, DE/JA, robots/sitemap/llms),
 `ct-redirects` (25 legacy URLs → 308 → 200), `ct-privacy` (cookies, nocookie video, feeds).
 
 ## Docker

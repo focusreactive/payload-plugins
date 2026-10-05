@@ -3,7 +3,7 @@ import type { Post } from "@/payload-types";
 export type CardPostData = Pick<
   Post,
   | "slug"
-  | "categories"
+  | "tags"
   | "excerpt"
   | "title"
   | "heroImage"

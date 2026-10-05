@@ -7,16 +7,14 @@ import { BlogPageContent } from "./BlogPageContent";
 interface BlogPageDynamicProps {
   searchParams: Promise<{
     page?: string;
-    category?: string;
     q?: string;
   }>;
   locale: Locale;
 }
 
 export async function BlogPageDynamic({ searchParams, locale }: BlogPageDynamicProps) {
-  const { page, category, q } = await searchParams;
+  const { page, q } = await searchParams;
   const pageNumber = page ? Number.parseInt(page, 10) : 1;
-  const activeCategory = category?.trim() || undefined;
   const searchQuery = q?.trim() || undefined;
 
   if (pageNumber < 1 || !Number.isInteger(pageNumber)) {
@@ -26,17 +24,16 @@ export async function BlogPageDynamic({ searchParams, locale }: BlogPageDynamicP
   const payload = await getPayloadClient();
 
   const postsPromise = getPosts(payload, {
-    category: activeCategory,
     locale,
     page: pageNumber,
     query: searchQuery,
   });
 
-  const [posts, blogSettings, allCategories] = await Promise.all([
+  const [posts, blogSettings, allTags] = await Promise.all([
     postsPromise,
     getBlogPageSettings({ locale }),
     payload.find({
-      collection: "categories",
+      collection: "tags",
       depth: 0,
       limit: 100,
       locale,
@@ -59,8 +56,7 @@ export async function BlogPageDynamic({ searchParams, locale }: BlogPageDynamicP
       blogTitle={blogSettings.title}
       searchPlaceholder={blogSettings.searchPlaceholder}
       readMoreLabel={blogSettings.readMoreLabel}
-      categories={allCategories.docs}
-      activeCategory={activeCategory}
+      tags={allTags.docs}
       searchQuery={searchQuery}
       locale={locale}
     />

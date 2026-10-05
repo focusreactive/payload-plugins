@@ -4,7 +4,7 @@ import type { BlogPostCardProps } from "./types";
 export function BlogPostCard({
   title,
   excerpt,
-  category,
+  tag,
   readTime,
   image,
   className,
@@ -22,9 +22,9 @@ export function BlogPostCard({
         {image}
       </div>
 
-      {(category || readTime) && (
+      {(tag || readTime) && (
         <div className="text-muted-foreground flex flex-wrap items-center gap-3 font-mono text-[0.72rem] uppercase tracking-[0.08em]">
-          {category && <span className="text-primary whitespace-nowrap">{category}</span>}
+          {tag && <span className="text-primary whitespace-nowrap">{tag}</span>}
           {readTime && <span className="whitespace-nowrap">{readTime}</span>}
         </div>
       )}

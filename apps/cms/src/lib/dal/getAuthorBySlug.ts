@@ -21,7 +21,7 @@ async function query(slug: string, locale: Locale): Promise<Author | null> {
   return result.docs[0] ?? null;
 }
 
-/** Author for /blog/author/<slug> (public: name, avatar, bio). */
+/** Author for /author/<slug> (public: name, avatar, bio). */
 export const getAuthorBySlug = cache(
   async ({ slug, locale }: { slug: string; locale?: Locale }) => {
     const resolvedLocale = await resolveLocale(locale);

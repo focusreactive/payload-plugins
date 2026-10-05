@@ -52,9 +52,7 @@ const extractPostContent: ContentExtractor = async (values, ctx, { resolveDocs, 
   const authorNodes = asArray<unknown>(post.authors).map((a) =>
     paragraph(named(a, "authors", "name"))
   );
-  const categoryNodes = asArray<unknown>(post.categories).map((c) =>
-    paragraph(named(c, "categories", "title"))
-  );
+  const tagNodes = asArray<unknown>(post.tags).map((c) => paragraph(named(c, "tags", "title")));
 
   return helpers.compact([
     heading(1, post.title),
@@ -72,7 +70,7 @@ const extractPostContent: ContentExtractor = async (values, ctx, { resolveDocs, 
     heading(2, cta?.heading),
     paragraph(cta?.description),
     ...asArray<LinkValue>(cta?.actions).map((a) => linkToContentNode(a, linkCtx)),
-    ...categoryNodes,
+    ...tagNodes,
   ]);
 };
 

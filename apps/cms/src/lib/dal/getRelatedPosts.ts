@@ -10,7 +10,7 @@ const RELATED_POSTS_COUNT = 3;
 /**
  * Returns up to 3 related posts for a given post.
  * Prioritizes manually selected related posts, then backfills
- * from the same categories sorted by publish date (newest first).
+ * from the same tags sorted by publish date (newest first).
  * Excludes the current post from results.
  * If not enough posts match the filters, returns only those available.
  */
@@ -34,11 +34,11 @@ export async function getRelatedPosts({
   const remaining = RELATED_POSTS_COUNT - manualPosts.length;
   const excludeIds = [post.id, ...manualPosts.map((p) => p.id)];
 
-  const categoryIds = (post.categories ?? [])
+  const tagIds = (post.tags ?? [])
     .map((cat) => (typeof cat === "object" ? cat.id : cat))
     .filter(Boolean);
 
-  if (categoryIds.length === 0) {
+  if (tagIds.length === 0) {
     return manualPosts;
   }
 
@@ -52,7 +52,7 @@ export async function getRelatedPosts({
     locale,
     overrideAccess: true,
     select: {
-      categories: true,
+      tags: true,
       heroImage: true,
       publishedAt: true,
       readingTime: true,
@@ -63,7 +63,7 @@ export async function getRelatedPosts({
     where: {
       and: [
         { id: { not_in: excludeIds } },
-        { categories: { in: categoryIds } },
+        { tags: { in: tagIds } },
         ...(!draft ? [{ _status: { equals: "published" } }] : []),
       ],
     },

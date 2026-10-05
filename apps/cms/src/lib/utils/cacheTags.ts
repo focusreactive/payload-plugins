@@ -5,6 +5,8 @@ export type CacheTagParams =
   | { type: "postsList"; locale: Locale }
   | { type: "vacancy"; slug: string; locale: Locale }
   | { type: "vacanciesList"; locale: Locale }
+  | { type: "newsItem"; slug: string; locale: Locale }
+  | { type: "newsList"; locale: Locale }
   | { type: "page"; path: string; locale: Locale }
   | { type: "redirect"; locale: Locale }
   | { type: "sitemap" };
@@ -31,6 +33,12 @@ export function cacheTag(params: CacheTagParams): string {
     }
     case "vacanciesList": {
       return `vacancies_${locale}`;
+    }
+    case "newsItem": {
+      return `news_${params.slug}_${locale}`;
+    }
+    case "newsList": {
+      return `news_list_${locale}`;
     }
     case "redirect": {
       return `redirect_${locale}`;

@@ -12,7 +12,7 @@ export interface GetPostsOptions {
   limit?: number;
   overrideAccess?: boolean;
   locale?: Locale;
-  category?: string;
+  tag?: string;
   /** Author slug. */
   author?: string;
   /** Plain-text search over title and excerpt. */
@@ -24,7 +24,7 @@ async function getPostsQuery(
   page: number,
   limit: number,
   locale: Locale,
-  category: string | undefined,
+  tag: string | undefined,
   author: string | undefined,
   query: string | undefined
 ) {
@@ -37,7 +37,7 @@ async function getPostsQuery(
     page,
     select: {
       authors: true,
-      categories: true,
+      tags: true,
       excerpt: true,
       heroImage: true,
       meta: true,
@@ -52,8 +52,8 @@ async function getPostsQuery(
       _status: {
         equals: "published",
       },
-      ...(category && {
-        "categories.slug": { equals: category },
+      ...(tag && {
+        "tags.slug": { equals: tag },
       }),
       ...(author && {
         "authors.slug": { equals: author },
@@ -71,13 +71,13 @@ const getPostsCached = cache(
     page: number,
     limit: number,
     locale: Locale,
-    category: string | undefined,
+    tag: string | undefined,
     author: string | undefined,
     query: string | undefined
   ) =>
     scopedCache(
-      () => getPostsQuery(payload, page, limit, locale, category, author, query),
-      [page.toString(), limit.toString(), locale, category ?? "", author ?? "", query ?? ""],
+      () => getPostsQuery(payload, page, limit, locale, tag, author, query),
+      [page.toString(), limit.toString(), locale, tag ?? "", author ?? "", query ?? ""],
       {
         tags: [cacheTag({ locale, type: "postsList" })],
       }
@@ -85,9 +85,9 @@ const getPostsCached = cache(
 );
 
 export const getPosts = async (payload: Payload, options: GetPostsOptions) => {
-  const { page = 1, limit = BLOG_CONFIG.postsPerPage, locale, category, author, query } = options;
+  const { page = 1, limit = BLOG_CONFIG.postsPerPage, locale, tag, author, query } = options;
 
   const resolvedLocale = await resolveLocale(locale);
 
-  return getPostsCached(payload, page, limit, resolvedLocale, category, author, query);
+  return getPostsCached(payload, page, limit, resolvedLocale, tag, author, query);
 };

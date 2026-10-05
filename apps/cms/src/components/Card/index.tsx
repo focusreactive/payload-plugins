@@ -13,7 +13,7 @@ export const Card: React.FC<{
   className?: string;
   doc?: CardPostData;
   basePath?: string;
-  showCategories?: boolean;
+  showTags?: boolean;
   title?: string;
   readMoreLabel?: string;
 }> = (props) => {
@@ -21,14 +21,14 @@ export const Card: React.FC<{
     className,
     doc,
     basePath = BLOG_CONFIG.basePath,
-    showCategories,
+    showTags,
     title: titleFromProps,
     readMoreLabel,
   } = props;
 
-  const { slug, categories, excerpt, title, heroImage } = doc || {};
+  const { slug, tags, excerpt, title, heroImage } = doc || {};
 
-  const hasCategories = categories && Array.isArray(categories) && categories.length > 0;
+  const hasTags = tags && Array.isArray(tags) && tags.length > 0;
   const titleToUse = titleFromProps || title;
   const href = `${basePath}/${slug}`;
 
@@ -75,18 +75,18 @@ export const Card: React.FC<{
             })()}
         </div>
         <div className="flex flex-col gap-3 p-7">
-          {showCategories && hasCategories && (
+          {showTags && hasTags && (
             <div className="flex flex-wrap gap-2">
-              {categories?.map((category, index) => {
-                if (typeof category === "object") {
-                  const categoryTitle = category.title || "Untitled category";
+              {tags?.map((tag, index) => {
+                if (typeof tag === "object") {
+                  const tagTitle = tag.title || "Untitled tag";
 
                   return (
                     <span
                       key={index}
                       className="rounded-pill bg-primary-soft px-2.5 py-1 text-xs font-medium text-primary-soft-foreground"
                     >
-                      {categoryTitle}
+                      {tagTitle}
                     </span>
                   );
                 }

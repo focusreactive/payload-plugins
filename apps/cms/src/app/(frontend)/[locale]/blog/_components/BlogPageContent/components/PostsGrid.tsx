@@ -4,7 +4,7 @@ import NextImage from "next/image";
 
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { Link } from "@/components/shared";
-import type { Category } from "@/payload-types";
+import type { Tag } from "@/payload-types";
 
 import type { BlogListPost } from "../types";
 
@@ -22,8 +22,8 @@ export async function PostsGrid({ posts }: PostsGridProps) {
           typeof post.heroImage === "object" && post.heroImage !== null
             ? post.heroImage
             : undefined;
-        const category = post.categories?.find(
-          (entry): entry is Category => typeof entry === "object" && entry !== null
+        const tag = post.tags?.find(
+          (entry): entry is Tag => typeof entry === "object" && entry !== null
         );
 
         return (
@@ -31,7 +31,7 @@ export async function PostsGrid({ posts }: PostsGridProps) {
             <BlogPostCard
               title={post.title}
               excerpt={post.excerpt}
-              category={category?.title}
+              tag={tag?.title}
               readTime={t("readTime", { minutes: post.readingTime ?? 1 })}
               image={
                 <NextImage

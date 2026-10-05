@@ -161,22 +161,22 @@ function postsList(
   opts: {
     heading: string;
     eyebrow?: string;
-    category?: string;
+    tag?: string;
     layout?: "grid" | "list" | "featured";
     limit?: number;
     theme?: Theme;
     viewAll?: SeedLink;
   },
-  categoryId?: number
+  tagId?: number
 ): Block {
   return {
     blockType: "postsList",
-    category: categoryId,
+    tag: tagId,
     eyebrow: opts.eyebrow,
     heading: opts.heading,
     layout: opts.layout ?? "grid",
     limit: opts.limit ?? 3,
-    source: categoryId ? "category" : "latest",
+    source: tagId ? "tag" : "latest",
     viewAll: opts.viewAll ?? { type: "custom", url: "", label: "" },
     ...section(opts.theme ?? "light"),
   };
@@ -188,10 +188,8 @@ function relatedPosts(
   layout: "grid" | "list" = "grid",
   limit = 3
 ): Block {
-  const categoryId = input.page.category
-    ? input.ctx.ids.categories.get(input.page.category)
-    : undefined;
-  return postsList({ heading, layout, limit }, categoryId);
+  const tagId = input.page.tag ? input.ctx.ids.tags.get(input.page.tag) : undefined;
+  return postsList({ heading, layout, limit }, tagId);
 }
 
 function newsletter(theme: Theme = "light"): Block {

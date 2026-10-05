@@ -11,7 +11,7 @@ export enum BlogStyle {
 export interface BlogPostCardProps {
   title: string;
   excerpt?: string | null;
-  category?: string | null;
+  tag?: string | null;
   readTime?: string | null;
   image?: ReactNode;
   className?: string;

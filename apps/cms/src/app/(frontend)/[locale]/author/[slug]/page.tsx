@@ -24,7 +24,8 @@ interface Props {
 
 /** §5.3 / §6.8 AUTHOR: light hero (avatar, name, bio, post count) → posts grid → pagination. */
 export default async function AuthorPage({ params, searchParams }: Props) {
-  const { locale, slug } = await params;
+  const { locale } = await params;
+  const slug = decodeURIComponent((await params).slug);
   const page = Math.max(1, Number.parseInt((await searchParams).page ?? "1", 10) || 1);
   const author = await getAuthorBySlug({ locale, slug });
   if (!author) {
@@ -83,7 +84,7 @@ export default async function AuthorPage({ params, searchParams }: Props) {
               className="mt-10"
               page={page}
               totalPages={result.totalPages}
-              basePath={`${BLOG_CONFIG.basePath}/author/${slug}`}
+              basePath={`${BLOG_CONFIG.authorBasePath}/${slug}`}
             />
           )}
         </SectionContainer>
@@ -107,17 +108,18 @@ export default async function AuthorPage({ params, searchParams }: Props) {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { locale, slug } = await params;
+  const { locale } = await params;
+  const slug = decodeURIComponent((await params).slug);
   const author = await getAuthorBySlug({ locale, slug });
   return generateMeta({
-    collection: "posts",
+    collection: "authors",
     doc: {
       meta: {
         description: author?.bio ?? undefined,
         robots: author ? "index" : "noindex",
         title: author ? `${author.name} — articles` : "Author",
       },
-      slug: `author/${slug}`,
+      slug,
       title: author?.name ?? "Author",
     },
     locale,

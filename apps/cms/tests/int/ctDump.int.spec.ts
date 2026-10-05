@@ -163,18 +163,21 @@ describe.skipIf(!existsSync(fullDumpPath))("CT dump parser â€” full dump (plan Â
 
 describe("CT legacy URL map", () => {
   const site = parseDump(fixture);
-  const map = buildLegacyMap(site.pages, site.posts, site.authors);
+  const map = buildLegacyMap(site.pages, site.posts);
 
   it("maps marketing pages (with and without .html) via their dump entry", () => {
     expect(map["/automotive.html"]).toBe("/sectors/automotive");
     expect(map["/automotive"]).toBe("/sectors/automotive");
   });
 
-  it("maps every post shape, lowercased, to /blog/<slug>", () => {
+  it("maps every blog post shape, lowercased, to /blog/<slug>", () => {
     expect(map["/articles/2025/reproducible-builds"]).toBe("/blog/reproducible-builds");
     expect(map["/articles/2025/reproducible-builds.html"]).toBe("/blog/reproducible-builds");
-    expect(map["/news/example-joins.html"]).toBe("/blog/example-joins");
-    expect(map["/author/jane-doe.html"]).toBe("/blog/author/jane-doe");
+  });
+
+  it("leaves news and author pages alone: they keep their old addresses", () => {
+    expect(map["/news/example-joins.html"]).toBeUndefined();
+    expect(map["/author/jane-doe.html"]).toBeUndefined();
   });
 
   it("never shadows a page of the new site or emits the home page", () => {

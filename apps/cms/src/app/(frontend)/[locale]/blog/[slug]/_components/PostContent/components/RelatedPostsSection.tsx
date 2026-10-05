@@ -5,7 +5,7 @@ import NextImage from "next/image";
 
 import { BLOG_CONFIG } from "@/lib/config/blog";
 import { Link, SectionContainer } from "@/components/shared";
-import type { Category, Post } from "@/payload-types";
+import type { Tag, Post } from "@/payload-types";
 
 interface RelatedPostsSectionProps {
   posts: Post[];
@@ -27,15 +27,15 @@ export async function RelatedPostsSection({ posts, relatedPostsLabel }: RelatedP
             typeof post.heroImage === "object" && post.heroImage !== null
               ? post.heroImage
               : undefined;
-          const category = post.categories?.find(
-            (entry): entry is Category => typeof entry === "object" && entry !== null
+          const tag = post.tags?.find(
+            (entry): entry is Tag => typeof entry === "object" && entry !== null
           );
 
           return (
             <Link key={post.slug} href={`${BLOG_CONFIG.basePath}/${post.slug}`} className="block">
               <BlogPostCard
                 title={post.title}
-                category={category?.title}
+                tag={tag?.title}
                 readTime={t("readTime", { minutes: post.readingTime ?? 1 })}
                 image={
                   <NextImage

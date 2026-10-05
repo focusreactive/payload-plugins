@@ -44,7 +44,7 @@ const registry: McpToolsRegistry = {
       tableFields: [],
       titleField: "name",
     },
-    categories: {
+    tags: {
       skipKeys: ["id"],
       tableFields: ["slug"],
       titleField: "title",
@@ -87,6 +87,18 @@ const registry: McpToolsRegistry = {
       tableFields: ["slug", "_status", "publishedAt", "excerpt"],
       titleField: "title",
     },
+    news: {
+      buildUrl: (doc, locale) =>
+        buildUrl({
+          absolute: false,
+          collection: "news",
+          locale: locale ?? "en",
+          slug: doc?.slug as string,
+        }),
+      skipKeys: ["id", "generateSlug"],
+      tableFields: ["slug", "_status", "publishedAt"],
+      titleField: "title",
+    },
     vacancies: {
       buildUrl: (doc, locale) =>
         buildUrl({
@@ -124,9 +136,9 @@ export const mcpPluginConfig = mcpPlugin({
         update: true,
       },
     },
-    categories: {
+    tags: {
       description:
-        "Blog categories. Each category has a localized title and URL slug. Supports localization (en/de/ja). Use this collection to read, create, update or delete blog categories.",
+        "Blog tags. Each tag has a localized title and URL slug. Supports localization (en/de/ja). Use this collection to read, create, update or delete blog tags.",
       enabled: {
         create: true,
         delete: true,
@@ -176,7 +188,17 @@ export const mcpPluginConfig = mcpPlugin({
     },
     posts: {
       description:
-        "Blog posts. Each post has a title, excerpt, hero image, rich-text body, SEO metadata, categories, authors, and related posts. Supports draft/publish versioning and localization (en/de/ja). Use this collection to read, create, update or delete blog articles.",
+        "Blog posts. Each post has a title, excerpt, hero image, rich-text body, SEO metadata, tags, authors, and related posts. Supports draft/publish versioning and localization (en/de/ja). Use this collection to read, create, update or delete blog articles.",
+      enabled: {
+        create: true,
+        delete: true,
+        find: false,
+        update: true,
+      },
+    },
+    news: {
+      description:
+        "Press releases (news). Each item has a title, date (publishedAt), optional summary, rich-text body (content), optional migrated Markdown body and SEO metadata. No author and no tags. Lives at /news/<slug>; slugs may keep the old .html suffix. Supports draft/publish versioning and localization (en/de/ja). Use this collection to read, create, update or delete press releases.",
       enabled: {
         create: true,
         delete: true,
@@ -229,7 +251,7 @@ export const mcpPluginConfig = mcpPlugin({
 
     return {
       authors: { create: true, delete: true, find: false, update: true },
-      categories: { create: true, delete: true, find: false, update: true },
+      tags: { create: true, delete: true, find: false, update: true },
       footer: { create: true, delete: true, find: false, update: true },
       header: { create: true, delete: true, find: false, update: true },
       media: { create: true, delete: true, find: false, update: true },
@@ -244,6 +266,7 @@ export const mcpPluginConfig = mcpPlugin({
       posts: { create: true, delete: true, find: false, update: true },
       siteSettings: { find: false, update: true },
       users: { create: true, delete: true, find: false, update: true },
+      news: { create: true, delete: true, find: false, update: true },
       vacancies: { create: true, delete: true, find: false, update: true },
       user: LOCAL_DEV_MCP_USER,
     };

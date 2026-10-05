@@ -27,13 +27,13 @@ test.describe("blog", () => {
   test("listing, a post and its author page", async ({ page, request }) => {
     await expectOneH1(page, "/blog");
 
-    const feed = await (await request.get("/feeds/all.atom.xml")).text();
+    const feed = await (await request.get("/feeds/atom.xml")).text();
     const post = /<link href="[^"]*?(\/blog\/[^"]+)" rel="alternate"\/>\s*<id>/u.exec(feed)?.[1];
     test.skip(!post, "no posts seeded");
     await expectOneH1(page, post!);
 
     const sitemap = await (await request.get("/sitemap.xml")).text();
-    const author = /<loc>[^<]*?(\/blog\/author\/[^<]+)<\/loc>/u.exec(sitemap)?.[1];
+    const author = /<loc>[^<]*?(\/author\/[^<]+)<\/loc>/u.exec(sitemap)?.[1];
     expect(author, "sitemap lists author pages").toBeTruthy();
     await expectOneH1(page, author!);
   });

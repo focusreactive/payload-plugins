@@ -25,7 +25,7 @@ export const PostsListBlock: Block = injectSection({
           name: "source",
           options: [
             { label: "Latest posts", value: "latest" },
-            { label: "By category", value: "category" },
+            { label: "By tag", value: "tag" },
             { label: "By author", value: "author" },
           ],
           required: true,
@@ -33,12 +33,12 @@ export const PostsListBlock: Block = injectSection({
         },
         {
           admin: {
-            condition: (_, siblingData) => siblingData?.source === "category",
+            condition: (_, siblingData) => siblingData?.source === "tag",
             width: "33%",
           },
-          label: "Category",
-          name: "category",
-          relationTo: "categories",
+          label: "Tag",
+          name: "tag",
+          relationTo: "tags",
           type: "relationship",
         },
         {

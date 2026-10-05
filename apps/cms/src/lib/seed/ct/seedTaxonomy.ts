@@ -1,38 +1,39 @@
 import { emptyResult } from "./context";
 import type { SeedStep } from "./context";
-import { assignCategories, CATEGORIES } from "./data/categories";
+import { assignTags, TAGS, tagDocSlug } from "./data/tags";
+import { isNewsEntry } from "./parseDump";
 import { renderAvatar } from "./imagery";
 import { upsertMedia } from "./mediaStore";
 import { slugify } from "./text";
 
-/** Categories (11) and the authors referenced by the seeded posts (plan T7 §3–4). */
+/** Tags (11) and the authors referenced by the seeded posts (plan T7 §3–4). */
 export const seedTaxonomy: SeedStep = async (ctx) => {
   const result = emptyResult();
 
-  for (const category of CATEGORIES) {
+  for (const tag of TAGS) {
     const found = await ctx.payload.find({
-      collection: "categories",
+      collection: "tags",
       limit: 1,
-      where: { slug: { equals: category.slug } },
+      where: { slug: { equals: tagDocSlug(tag.slug) } },
     });
     const id =
       found.docs[0]?.id ??
       (
         await ctx.payload.create({
-          collection: "categories",
+          collection: "tags",
           context: ctx.writeContext,
-          data: { generateSlug: false, slug: category.slug, title: category.title },
+          data: { generateSlug: false, slug: tagDocSlug(tag.slug), title: tag.title },
         })
       ).id;
     result[found.docs[0] ? "skipped" : "created"]++;
-    ctx.ids.categories.set(category.slug, id);
+    ctx.ids.tags.set(tag.slug, id);
   }
 
-  // Top category per author → one-line bio.
+  // Top tag per author → one-line bio.
   const topics = new Map<string, Map<string, number>>();
-  for (const post of ctx.posts) {
+  for (const post of ctx.posts.filter((entry) => !isNewsEntry(entry))) {
     const counts = topics.get(post.author) ?? new Map<string, number>();
-    for (const slug of assignCategories(post)) {
+    for (const slug of assignTags(post)) {
       counts.set(slug, (counts.get(slug) ?? 0) + 1);
     }
     topics.set(post.author, counts);
@@ -40,9 +41,10 @@ export const seedTaxonomy: SeedStep = async (ctx) => {
   const company = ctx.site.companyName ?? "CT";
 
   for (const [name, counts] of topics) {
-    const slug = slugify(name);
+    const base = slugify(name);
+    const slug = `${base}.html`;
     const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
-    const topic = CATEGORIES.find((category) => category.slug === top)?.title ?? "Engineering";
+    const topic = TAGS.find((tag) => tag.slug === top)?.title ?? "Engineering";
     const bio =
       name === company
         ? `News and announcements from ${company}.`
@@ -61,7 +63,7 @@ export const seedTaxonomy: SeedStep = async (ctx) => {
     const avatar = await upsertMedia(ctx, {
       alt: name,
       data: await renderAvatar(name),
-      filename: `avatar-${slug}.png`,
+      filename: `avatar-${base}.png`,
       folder: "Avatars",
     });
     const doc = await ctx.payload.create({

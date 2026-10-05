@@ -140,9 +140,9 @@ export function buildRefQueries(values: unknown): DocQuery[] {
     queries.push({ collection: "authors", ids: authors, select: ["name"] });
   }
 
-  const categories = collectRelationIds(values, "categories");
-  if (categories.length > 0) {
-    queries.push({ collection: "categories", ids: categories, select: ["title"] });
+  const tags = collectRelationIds(values, "tags");
+  if (tags.length > 0) {
+    queries.push({ collection: "tags", ids: tags, select: ["title"] });
   }
 
   return queries;

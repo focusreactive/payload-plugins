@@ -23,8 +23,7 @@ interface BlogPageContentProps {
   blogTitle?: string | null;
   searchPlaceholder?: string | null;
   readMoreLabel?: string | null;
-  categories: { title: string; slug: string }[];
-  activeCategory?: string;
+  tags: { title: string; slug: string }[];
   searchQuery?: string;
   locale: Locale;
 }
@@ -37,14 +36,13 @@ export async function BlogPageContent({
   blogTitle,
   searchPlaceholder,
   readMoreLabel,
-  categories,
-  activeCategory,
+  tags,
   searchQuery,
   locale,
 }: BlogPageContentProps) {
   const t = await getTranslations("blog");
 
-  const showFeatured = currentPage === 1 && !activeCategory && !searchQuery && posts.length > 0;
+  const showFeatured = currentPage === 1 && !searchQuery && posts.length > 0;
   const featuredPost = showFeatured ? posts[0] : undefined;
   const gridPosts = showFeatured ? posts.slice(1) : posts;
 
@@ -62,8 +60,7 @@ export async function BlogPageContent({
           </div>
 
           <BlogActions
-            categories={categories}
-            activeCategory={activeCategory}
+            tags={tags}
             initialQuery={searchQuery}
             placeholder={searchPlaceholder ?? ""}
           />
@@ -92,7 +89,7 @@ export async function BlogPageContent({
               basePath={BLOG_CONFIG.basePath}
               page={currentPage}
               totalPages={totalPages}
-              query={{ category: activeCategory, q: searchQuery }}
+              query={{ q: searchQuery }}
             />
           )}
         </div>

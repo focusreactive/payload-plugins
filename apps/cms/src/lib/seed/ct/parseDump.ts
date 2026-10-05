@@ -362,3 +362,8 @@ export function selectPosts(
     .slice(0, articles);
   return [...news, ...blog];
 }
+
+/** Press releases go to the News collection, not the blog. */
+export function isNewsEntry(entry: { template: string }): boolean {
+  return entry.template === "T-NEWS-POST";
+}

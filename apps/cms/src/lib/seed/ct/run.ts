@@ -113,7 +113,7 @@ async function main() {
     flags,
     ids: {
       authors: new Map(),
-      categories: new Map(),
+      tags: new Map(),
       media: new Map(),
       pages: new Map(),
       posts: new Map(),
