@@ -1,0 +1,1 @@
+## @focus-reactive/payload-plugin-json-form-builder [1.0.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.0.0...@focus-reactive/payload-plugin-json-form-builder@1.0.1) (2026-10-05)
