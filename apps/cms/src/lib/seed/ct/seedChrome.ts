@@ -44,6 +44,10 @@ async function upsertByName(
   return doc.id;
 }
 
+function menu(label: string, links: { title: string }[]) {
+  return { dropdown: { featured: { enabled: false }, links }, label, type: "dropdown" as const };
+}
+
 function childrenOf(parent: string) {
   return IA.filter((page) => page.parent === parent);
 }
@@ -57,22 +61,10 @@ export const seedChrome: SeedStep = async (ctx) => {
   const title = (path: string) =>
     brandTitle(IA.find((page) => page.path === path)?.title ?? path, company);
 
-  const dropdownLinks = async (paths: string[]) =>
-    Promise.all(
-      paths.map(async (path) => ({
-        description: IA.find((page) => page.path === path)?.summary,
-        link: withoutLabel(await pageLink(ctx, path, title(path))),
-        title: title(path),
-      }))
-    );
-
-  const featured = async (eyebrow: string, featuredTitle: string, path: string, label: string) => ({
-    enabled: true,
-    eyebrow,
-    link: await pageLink(ctx, path, label),
-    title: featuredTitle,
+  const navLink = async (navTitle: string, path: string) => ({
+    link: withoutLabel(await pageLink(ctx, path, navTitle)),
+    title: navTitle,
   });
-
   const header = await upsertByName(
     ctx,
     "header",
@@ -80,84 +72,51 @@ export const seedChrome: SeedStep = async (ctx) => {
     HEADER_NAME,
     {
       _status: "published",
-      actions: [{ ...(await pageLink(ctx, "/contact", "Contact us")), appearance: "accent" }],
+      actions: [{ ...(await pageLink(ctx, "/contact", "Contact")), appearance: "accent" }],
       logo: ctx.ids.media.get("logo"),
       name: HEADER_NAME,
+      // The old site's menu, label for label (no descriptions, no featured cards).
       navItems: [
-        {
-          dropdown: {
-            featured: await featured(
-              "Featured",
-              "Delivering Trustable Software",
-              "/technology/trustable-software",
-              "Read more"
-            ),
-            links: await dropdownLinks(childrenOf("/what-we-do").map((page) => page.path)),
-          },
-          label: "What we do",
-          type: "dropdown",
-        },
-        {
-          dropdown: {
-            featured: await featured(
-              "Sector",
-              "Automotive: SDV and functional safety",
-              "/sectors/automotive",
-              "Explore"
-            ),
-            links: await dropdownLinks(childrenOf("/sectors").map((page) => page.path)),
-          },
-          label: "Sectors",
-          type: "dropdown",
-        },
-        {
-          dropdown: {
-            featured: await featured(
-              "Download",
-              "Download the TSF safety assessment",
-              "/technology/trustable-software-framework",
-              "Get the assessment"
-            ),
-            links: await dropdownLinks(childrenOf("/technology").map((page) => page.path)),
-          },
-          label: "Technology",
-          type: "dropdown",
-        },
-        {
-          dropdown: {
-            featured: { enabled: false },
-            links: [
-              { link: withoutLabel(urlLink("/news.html", "News")), title: "News & Announcements" },
-              { link: withoutLabel(await pageLink(ctx, "/blog", "Blog")), title: "Blog" },
-              ...(await dropdownLinks([
-                "/resources/case-studies",
-                "/resources/reports",
-                "/resources/events",
-              ])),
-            ],
-          },
-          label: "Resources",
-          type: "dropdown",
-        },
-        {
-          dropdown: {
-            featured: { enabled: false },
-            links: await dropdownLinks([
-              "/who-we-are",
-              "/who-we-are/software-commandments",
-              "/who-we-are/partnerships",
-              "/who-we-are/environmental-policy",
-              "/who-we-are/careers",
-            ]),
-          },
-          label: "Who we are",
-          type: "dropdown",
-        },
-        {
-          label: "CES 2026",
-          link: withoutLabel(await pageLink(ctx, "/ces-2026", "CES 2026")),
-          type: "link",
-        },
+        menu("About Us", [
+          await navLink("About Codethink", "/who-we-are"),
+          await navLink("The Software Commandments", "/who-we-are/software-commandments"),
+          await navLink("Environmental Policy", "/who-we-are/environmental-policy"),
+          await navLink("Careers", "/who-we-are/careers"),
+          await navLink("Codethink Partnerships", "/who-we-are/partnerships"),
+        ]),
+        menu("Our Services", [
+          await navLink("Bare Metal Programming", "/what-we-do/bare-metal-programming"),
+          await navLink("Build Engineering", "/what-we-do/build-engineering"),
+          await navLink("DevOps", "/what-we-do/devops"),
+          await navLink("Embedded Systems", "/what-we-do/embedded-systems"),
+          await navLink("Linux Kernel and BSP Services", "/what-we-do/linux-kernel-bsp"),
+          await navLink("Long-Term Maintainability", "/what-we-do/long-term-maintainability"),
+          await navLink("Delivering Trustable Software", "/technology/trustable-software"),
+        ]),
+        menu("Our Solutions", [
+          await navLink("Codethink Trustable Reproducible Linux (CTRL OS)", "/technology/ctrl-os"),
+          await navLink(
+            "The Trustable Software Framework",
+            "/technology/trustable-software-framework"
+          ),
+        ]),
+        menu("Sectors", [
+          await navLink(
+            "Heavy Equipment & Agriculture Technology",
+            "/sectors/heavy-equipment-agritech"
+          ),
+          await navLink("Automotive", "/sectors/automotive"),
+          await navLink("Financial Services", "/sectors/financial-services"),
+          await navLink("Medical Devices", "/sectors/medical-devices"),
+        ]),
+        menu("Content Hub", [
+          { link: withoutLabel(urlLink("/news.html", "News")), title: "News & Announcements" },
+          await navLink("Blog", "/blog"),
+          await navLink("Case Studies", "/resources/case-studies"),
+          await navLink("Reports & White Papers", "/resources/reports"),
+          await navLink("Event Calendar", "/resources/events"),
+          await navLink("CES 2026", "/ces-2026"),
+        ]),
       ],
     },
     result
