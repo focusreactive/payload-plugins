@@ -23,7 +23,7 @@ import { nodeFault } from "../field/checks.js";
 import { HIDDEN, visible } from "../field/typedJson.js";
 import type { TypedNode } from "../field/typedJson.js";
 
-type Drag = ComponentProps<typeof Collapsible>["dragHandleProps"];
+export type Drag = ComponentProps<typeof Collapsible>["dragHandleProps"];
 type Fold = Pick<ComponentProps<typeof Collapsible>, "isCollapsed" | "onToggle">;
 export type NodeProps = Fold & {
   node: TypedNode;
@@ -123,6 +123,7 @@ export const JsonNode = ({
   if (node.type === "array")
     return (
       <JsonArray
+        drag={drag}
         faults={faults}
         hidden={hidden}
         id={id}

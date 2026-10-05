@@ -18,6 +18,7 @@ import { formatLabels } from "payload/shared";
 import { EyeIcon } from "./icons/EyeIcon.js";
 import { JsonFolded } from "./JsonFolded.js";
 import { isRowHidden, JsonFields, JsonNode, toggleRowHidden } from "./JsonNode.js";
+import type { Drag } from "./JsonNode.js";
 import { JsonRowMenu } from "./JsonRowMenu.js";
 import type { MenuItem } from "./JsonRowMenu.js";
 import { nodeFault } from "../field/checks.js";
@@ -35,6 +36,7 @@ const rowValue = (row: TypedNode[]) =>
 // position would make a dropped row animate twice.
 export const JsonArray = ({
   faults,
+  drag,
   node,
   id,
   label,
@@ -45,6 +47,7 @@ export const JsonArray = ({
   readOnly,
 }: {
   faults?: boolean;
+  drag?: Drag;
   node: ArrayNode;
   id: string;
   label: string;
@@ -297,6 +300,7 @@ export const JsonArray = ({
     <JsonFolded
       actions={menu && <JsonRowMenu items={menu} />}
       className={cn(hidden && "json-form__hidden")}
+      dragHandleProps={drag}
       header={label}
     >
       <div className="field-type array-field">{body}</div>
