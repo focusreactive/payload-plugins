@@ -13,6 +13,10 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # Git hooks are a developer's convenience, and this job does not install the apps, so the pre-push
+  # hook's repo-wide check-types cannot pass here. It would run on the commit semantic-release pushes
+  # back and take the release down with it. CI runs its own checks in their own steps.
+  LEFTHOOK: "0"
 
 jobs:
   release:
