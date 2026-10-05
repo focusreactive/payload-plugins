@@ -66,8 +66,8 @@ export const jsonFormPlugin =
 
     // Every host that holds one, in the order the config declares them. The first is where the
     // anchor goes: it is schema-only, so one anywhere serves every json field in the admin.
-    const hosts: { fields: Field[]; prefix: string }[] = [];
-    const attach = (fields: Field[], prefix: string) => {
+    const hosts: { fields: Field[]; global: boolean; prefix: string }[] = [];
+    const attach = (fields: Field[], prefix: string, global = false) => {
       let found = false;
       walk(fields, (field) => {
         const own = marked(field);
@@ -82,7 +82,7 @@ export const jsonFormPlugin =
           },
         };
       });
-      if (found) hosts.push({ fields, prefix });
+      if (found) hosts.push({ fields, global, prefix });
     };
 
     // `collection.` and `global.` are not decoration: Payload reads a schema path as exactly three
@@ -93,17 +93,21 @@ export const jsonFormPlugin =
       return collection;
     });
     config.globals = incoming.globals?.map((global) => {
-      attach(global.fields, `global.${global.slug}`);
+      attach(global.fields, `global.${global.slug}`, true);
       return global;
     });
 
     // No anchor, no rich text: `RenderLexical` has nothing to point at, so the kind is withdrawn
     // rather than left to render an empty box nobody can explain.
+    // A global first, a collection only when there is none. The anchor is schema-only, so any host
+    // works — but a global has no versions, and the hidden field then shows up once in the generated
+    // types instead of twice.
     let anchor = "";
-    if (richText && hosts[0]) {
-      const name = freeName(hosts[0].fields);
-      hosts[0].fields.push(anchorField(name, richText.editor));
-      anchor = `${hosts[0].prefix}.${name}`;
+    const host = hosts.find((entry) => entry.global) ?? hosts[0];
+    if (richText && host) {
+      const name = freeName(host.fields);
+      host.fields.push(anchorField(name, richText.editor));
+      anchor = `${host.prefix}.${name}`;
     }
 
     const client: JsonFormClientConfig = {
