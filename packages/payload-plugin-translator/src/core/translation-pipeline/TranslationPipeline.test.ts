@@ -822,4 +822,77 @@ describe("TranslationPipeline", () => {
       expect(result!.translatedData.sku).toBe("SKU-123");
     });
   });
+
+  describe("reporting back which leaves it translated", () => {
+    const schema: Field[] = [
+      { name: "title", type: "text", localized: true },
+      { name: "body", type: "text", localized: true },
+      {
+        name: "items",
+        type: "array",
+        fields: [{ name: "label", type: "text", localized: true }],
+      },
+    ];
+    const sourceData = {
+      title: "Hello",
+      body: "World",
+      items: [{ id: "a1", label: "First" }],
+    };
+
+    it("names every leaf it sent, by the same address the receipt is keyed on", async () => {
+      const pipeline = new TranslationPipeline({
+        translationProvider: createMockProvider(),
+        translationStrategy: new OverwriteStrategy(),
+      });
+
+      const result = await pipeline.execute({
+        schema,
+        sourceData,
+        targetData: {},
+        sourceLng: "en",
+        targetLng: "de",
+      });
+
+      expect([...(result?.translatedPaths ?? [])].sort()).toEqual([
+        "body",
+        "items.a1.label",
+        "title",
+      ]);
+    });
+
+    it("names only the leaves the strategy let through", async () => {
+      const pipeline = new TranslationPipeline({
+        translationProvider: createMockProvider(),
+        translationStrategy: new SkipExistingStrategy(),
+      });
+
+      const result = await pipeline.execute({
+        schema,
+        sourceData,
+        targetData: { body: "Welt", items: [{ id: "a1", label: "" }] },
+        sourceLng: "en",
+        targetLng: "de",
+      });
+
+      expect([...(result?.translatedPaths ?? [])].sort()).toEqual(["items.a1.label", "title"]);
+    });
+
+    it("passes the per-leaf answer from the config down to the strategy", async () => {
+      const pipeline = new TranslationPipeline({
+        translationProvider: createMockProvider(),
+        translationStrategy: new SkipExistingStrategy(),
+      });
+
+      const result = await pipeline.execute({
+        schema,
+        sourceData,
+        targetData: { title: "Hallo", body: "Welt", items: [{ id: "a1", label: "Erste" }] },
+        sourceLng: "en",
+        targetLng: "de",
+        sourceChangedByLeaf: { title: true },
+      });
+
+      expect([...(result?.translatedPaths ?? [])]).toEqual(["title"]);
+    });
+  });
 });

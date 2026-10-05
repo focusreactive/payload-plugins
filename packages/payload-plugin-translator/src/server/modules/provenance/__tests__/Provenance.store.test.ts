@@ -1,18 +1,31 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Payload } from "payload";
-import type { TranslationProvenanceRecord } from "../../../../core/domain/provenance/index.js";
+import type { ProvenanceReceipt } from "../../../../core/domain/provenance/index.js";
 import { PayloadProvenanceStore } from "../Provenance.store.js";
 
 const SLUG = "translator-provenance";
 
-const record: TranslationProvenanceRecord = {
+const HASHES = { title: "3a7f1c", body: "91ce04" };
+const SERIALIZED = JSON.stringify(HASHES);
+const DISMISSED_HASHES = { title: "3a7f1c", body: "ffffff" };
+const SERIALIZED_DISMISSED = JSON.stringify(DISMISSED_HASHES);
+const SHA256_HEX_LENGTH = 64;
+const LEGACY = "a".repeat(SHA256_HEX_LENGTH);
+
+const record: ProvenanceReceipt = {
   collectionSlug: "posts",
   documentId: "doc-1",
   targetLocale: "de",
   sourceLocale: "en",
-  sourceFingerprint: "fp-abc",
+  sourceFingerprint: { kind: "fields", hashes: HASHES },
   translatedAt: "2026-07-02T00:00:00.000Z",
   dismissedFingerprint: null,
+};
+
+const row = {
+  ...record,
+  sourceFingerprint: SERIALIZED,
+  dismissedFingerprint: null as string | null,
 };
 
 describe("PayloadProvenanceStore", () => {
@@ -38,19 +51,22 @@ describe("PayloadProvenanceStore", () => {
       setFound([]);
       await store.upsert(record);
       expect(payload.create).toHaveBeenCalledWith(
-        expect.objectContaining({ collection: SLUG, data: expect.objectContaining(record) })
+        expect.objectContaining({
+          collection: SLUG,
+          data: expect.objectContaining({ ...record, sourceFingerprint: SERIALIZED }),
+        })
       );
       expect(payload.update).not.toHaveBeenCalled();
     });
 
     it("updates the existing record in place, never duplicating", async () => {
-      setFound([{ id: 7, ...record }]);
-      await store.upsert({ ...record, sourceFingerprint: "fp-new" });
+      setFound([{ id: 7, ...row }]);
+      await store.upsert({ ...record, sourceFingerprint: { kind: "document", hash: LEGACY } });
       expect(payload.update).toHaveBeenCalledWith(
         expect.objectContaining({
           collection: SLUG,
           id: 7,
-          data: expect.objectContaining({ sourceFingerprint: "fp-new" }),
+          data: expect.objectContaining({ sourceFingerprint: LEGACY }),
         })
       );
       expect(payload.create).not.toHaveBeenCalled();
@@ -76,7 +92,7 @@ describe("PayloadProvenanceStore", () => {
     it("falls back to update when a concurrent writer wins the create race", async () => {
       const findMock = payload.find as ReturnType<typeof vi.fn>;
       findMock.mockResolvedValueOnce({ docs: [] }).mockResolvedValueOnce({
-        docs: [{ id: 9, ...record }],
+        docs: [{ id: 9, ...row }],
       });
       (payload.create as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
         new Error("unique constraint violation")
@@ -85,7 +101,11 @@ describe("PayloadProvenanceStore", () => {
       await expect(store.upsert(record)).resolves.toBeUndefined();
 
       expect(payload.update).toHaveBeenCalledWith(
-        expect.objectContaining({ collection: SLUG, id: 9, data: expect.objectContaining(record) })
+        expect.objectContaining({
+          collection: SLUG,
+          id: 9,
+          data: expect.objectContaining({ ...record, sourceFingerprint: SERIALIZED }),
+        })
       );
     });
 
@@ -102,7 +122,7 @@ describe("PayloadProvenanceStore", () => {
 
   describe("find", () => {
     it("returns the record for the key", async () => {
-      setFound([{ id: 7, ...record }]);
+      setFound([{ id: 7, ...row }]);
       const result = await store.find({
         collectionSlug: "posts",
         documentId: "doc-1",
@@ -124,7 +144,7 @@ describe("PayloadProvenanceStore", () => {
     it("normalizes a Date translatedAt to an ISO-8601 string", async () => {
       // Payload's `date` field may hand back a Date; #50's fingerprint comparison needs a stable ISO
       // string, so toRecord must convert it.
-      setFound([{ id: 7, ...record, translatedAt: new Date("2026-07-02T00:00:00.000Z") }]);
+      setFound([{ id: 7, ...row, translatedAt: new Date("2026-07-02T00:00:00.000Z") }]);
       const result = await store.find({
         collectionSlug: "posts",
         documentId: "doc-1",
@@ -133,14 +153,37 @@ describe("PayloadProvenanceStore", () => {
       expect(result?.translatedAt).toBe("2026-07-02T00:00:00.000Z");
     });
 
-    it("preserves a non-null dismissedFingerprint as a string", async () => {
-      setFound([{ id: 7, ...record, dismissedFingerprint: "fp-dismissed" }]);
+    it("parses a non-null dismissedFingerprint into the union", async () => {
+      setFound([{ id: 7, ...row, dismissedFingerprint: SERIALIZED_DISMISSED }]);
       const result = await store.find({
         collectionSlug: "posts",
         documentId: "doc-1",
         targetLocale: "de",
       });
-      expect(result?.dismissedFingerprint).toBe("fp-dismissed");
+      expect(result?.dismissedFingerprint).toEqual({ kind: "fields", hashes: DISMISSED_HASHES });
+    });
+
+    it("parses a receipt written before per-field fingerprints as the document shape", async () => {
+      setFound([{ id: 7, ...row, sourceFingerprint: LEGACY }]);
+      const result = await store.find({
+        collectionSlug: "posts",
+        documentId: "doc-1",
+        targetLocale: "de",
+      });
+      expect(result?.sourceFingerprint).toEqual({ kind: "document", hash: LEGACY });
+    });
+
+    it("reads a value it cannot make sense of as the old shape, without throwing", async () => {
+      setFound([{ id: 7, ...row, sourceFingerprint: "not a fingerprint" }]);
+      const result = await store.find({
+        collectionSlug: "posts",
+        documentId: "doc-1",
+        targetLocale: "de",
+      });
+      expect(result?.sourceFingerprint).toEqual({
+        kind: "document",
+        hash: "not a fingerprint",
+      });
     });
   });
 
@@ -184,13 +227,13 @@ describe("PayloadProvenanceStore", () => {
 
     it("maps every found doc through toRecord", async () => {
       setFound([
-        { id: 1, ...record },
+        { id: 1, ...row },
         {
           id: 2,
-          ...record,
+          ...row,
           targetLocale: "fr",
           translatedAt: new Date("2026-07-02T00:00:00.000Z"),
-          dismissedFingerprint: "fp-dismissed",
+          dismissedFingerprint: SERIALIZED_DISMISSED,
         },
       ]);
       const result = await store.findByDocument("posts", "doc-1");
@@ -200,7 +243,7 @@ describe("PayloadProvenanceStore", () => {
           ...record,
           targetLocale: "fr",
           translatedAt: "2026-07-02T00:00:00.000Z",
-          dismissedFingerprint: "fp-dismissed",
+          dismissedFingerprint: { kind: "fields", hashes: DISMISSED_HASHES },
         },
       ]);
     });
@@ -215,20 +258,20 @@ describe("PayloadProvenanceStore", () => {
     const key = { collectionSlug: "posts", documentId: "doc-1", targetLocale: "de" };
 
     it("updates dismissedFingerprint on the matched record", async () => {
-      setFound([{ id: 7, ...record }]);
-      await store.dismiss(key, "fp-current");
+      setFound([{ id: 7, ...row }]);
+      await store.dismiss(key, { kind: "fields", hashes: DISMISSED_HASHES });
       expect(payload.update).toHaveBeenCalledWith(
         expect.objectContaining({
           collection: SLUG,
           id: 7,
-          data: { dismissedFingerprint: "fp-current" },
+          data: { dismissedFingerprint: SERIALIZED_DISMISSED },
         })
       );
     });
 
     it("matches the record by the composite key", async () => {
-      setFound([{ id: 7, ...record }]);
-      await store.dismiss(key, "fp-current");
+      setFound([{ id: 7, ...row }]);
+      await store.dismiss(key, { kind: "fields", hashes: DISMISSED_HASHES });
       expect(payload.find).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
@@ -244,7 +287,7 @@ describe("PayloadProvenanceStore", () => {
 
     it("is a no-op when no record exists for the key", async () => {
       setFound([]);
-      await store.dismiss(key, "fp-current");
+      await store.dismiss(key, { kind: "fields", hashes: DISMISSED_HASHES });
       expect(payload.update).not.toHaveBeenCalled();
     });
   });

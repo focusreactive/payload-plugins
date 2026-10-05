@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { isObject } from "../../kernel/utils/isObject.js";
 
 import type { AutoTranslateConfig } from "./types.js";
@@ -10,10 +12,13 @@ import { AUTO_TRANSLATE_CUSTOM_KEY } from "./types.js";
  * unlikely, is possible) is treated as "not opted in" rather than crashing the readers that dereference
  * `targets`.
  */
+// TODO(core-deps): zod in `core` relaxes its dependency-free rule — see the task contract,
+// "Deferred — validation in core". Revisit if `@repo/translator-core` is ever extracted.
+const autoTranslateConfig = z.object({ targets: z.array(z.string()) });
+
+/** The schema is deliberately partial — `.parse` here would strip `strategy`, `debounceMs`, `sourceLocale`. */
 function isAutoTranslateConfig(value: unknown): value is AutoTranslateConfig {
-  if (!isObject(value)) return false;
-  const { targets } = value;
-  return Array.isArray(targets) && targets.every((target) => typeof target === "string");
+  return autoTranslateConfig.safeParse(value).success;
 }
 
 /**

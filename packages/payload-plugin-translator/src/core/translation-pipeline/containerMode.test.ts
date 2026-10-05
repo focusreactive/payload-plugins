@@ -60,9 +60,9 @@ const bracketProvider = (
 type Wrapper = { type: string; fields?: { url?: string }; children?: { text?: string }[] };
 type Paragraph = { children: ({ text?: string } & Partial<Wrapper>)[] };
 
-const paragraphsOf = (data: Record<string, unknown> | null): Paragraph[] => {
-  if (!data) throw new Error("translateContent returned nothing");
-  return (data.body as { root: { children: Paragraph[] } }).root.children;
+const paragraphsOf = (result: { translatedData: Record<string, unknown> } | null): Paragraph[] => {
+  if (!result) throw new Error("translateContent returned nothing");
+  return (result.translatedData.body as { root: { children: Paragraph[] } }).root.children;
 };
 
 describe("container mode", () => {

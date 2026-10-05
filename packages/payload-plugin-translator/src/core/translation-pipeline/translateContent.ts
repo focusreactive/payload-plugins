@@ -4,6 +4,8 @@ import { TranslationPipeline } from "./TranslationPipeline.js";
 import { PlainTextExpander, RichContainerExpander } from "./stages/index.js";
 import { createTranslationStrategy } from "./strategies/index.js";
 import type { TranslationStrategyName } from "./strategies/index.js";
+import type { PipelineResult } from "./types/Pipeline.js";
+import type { ChangedLeaves } from "../domain/provenance/staleness.js";
 
 export type TranslateContentArgs = {
   /** Schema subtree to translate (e.g. `[declaredFieldConfig]`). */
@@ -22,30 +24,23 @@ export type TranslateContentArgs = {
   translationProvider: TranslationProvider;
   /** @default 'overwrite' */
   strategy?: TranslationStrategyName;
+  sourceChangedByLeaf?: ChangedLeaves;
   /**
-   * Translate each rich-text container (paragraph, heading, list item) as one marked string
-   * instead of node by node, so the model may reorder its pieces.
-   *
-   * Ignored unless the provider declares `capabilities.inlineMarks`: a provider that is not a
-   * language model would mangle the marks.
+   * Translate each rich-text container as one marked string instead of node by node, so the model
+   * may reorder its pieces. Silently ignored unless the provider declares `capabilities.inlineMarks`.
    *
    * @default false
    */
   inlineMarks?: boolean;
 };
 
+export type TranslatedContent = PipelineResult;
+
 /**
- * Translate a content object over a schema subtree — no DB, no document.
+ * Translate a content object over a schema subtree — pure: no DB, no document.
  *
- * A thin reusable entry over {@link TranslationPipeline}, which is already pure
- * and walks any `Field[]` + matching data (a subtree + partial data works
- * unchanged). The document level routes through this wrapper today (instead of
- * constructing the pipeline inline); the upcoming field level will too —
- * passing a single declared field's subtree + its current unsaved form value.
- *
- * Only `localized` text/richText leaves are translated; non-localized values
- * are reconciled through unchanged. Returns the translated data (same shape as
- * `sourceData`) or `null` when nothing was translatable.
+ * Only `localized` text/richText leaves are translated; everything else is reconciled through
+ * unchanged. `null` when the subtree held nothing translatable.
  */
 export async function translateContent({
   schema,
@@ -56,7 +51,8 @@ export async function translateContent({
   translationProvider,
   strategy = "overwrite",
   inlineMarks = false,
-}: TranslateContentArgs): Promise<Record<string, unknown> | null> {
+  sourceChangedByLeaf,
+}: TranslateContentArgs): Promise<TranslatedContent | null> {
   const marksUsable = inlineMarks && translationProvider.capabilities?.inlineMarks === true;
 
   const pipeline = new TranslationPipeline({
@@ -65,13 +61,12 @@ export async function translateContent({
     textExpanders: marksUsable ? [new RichContainerExpander(), new PlainTextExpander()] : undefined,
   });
 
-  const result = await pipeline.execute({
+  return await pipeline.execute({
     schema,
     sourceData,
     targetData,
     sourceLng,
     targetLng,
+    sourceChangedByLeaf,
   });
-
-  return result ? result.translatedData : null;
 }

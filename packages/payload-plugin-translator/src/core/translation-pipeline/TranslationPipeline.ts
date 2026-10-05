@@ -61,12 +61,12 @@ export class TranslationPipeline {
       targetData: config.targetData,
       sourceLng: config.sourceLng,
       targetLng: config.targetLng,
+      sourceChangedByLeaf: config.sourceChangedByLeaf,
     };
 
     for (const stage of this.stages) {
       ctx = await stage.execute(ctx);
 
-      // Early exit checks
       if (ctx.fieldChunks !== undefined && ctx.fieldChunks.length === 0) {
         return null;
       }
@@ -81,6 +81,7 @@ export class TranslationPipeline {
 
     return {
       translatedData: ctx.filteredData,
+      translatedPaths: (ctx.fieldChunks ?? []).map((chunk) => chunk.idPath),
     };
   }
 }

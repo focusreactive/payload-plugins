@@ -8,7 +8,9 @@ import type { TranslateDocumentInput } from "../model.js";
 import { asRequester } from "../../../shared/payload/RequestScope.shapes.js";
 
 vi.mock("../../../../core/translation-pipeline/index.js", () => ({
-  translateContent: vi.fn().mockResolvedValue({ title: "Titel" }),
+  translateContent: vi
+    .fn()
+    .mockResolvedValue({ translatedData: { title: "Titel" }, translatedPaths: ["title"] }),
 }));
 
 vi.mock("../translationPermission.js", () => ({

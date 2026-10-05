@@ -4,6 +4,7 @@ import type { LeafFieldLike } from "../../../kernel/field-traversal/types.js";
 import { TextChunkExpander } from "./TextChunkExpander.js";
 import { PlainTextExpander } from "./PlainTextExpander.js";
 import { RichTextExpander } from "./RichTextExpander.js";
+import type { IdPath } from "../../../domain/content-projection/idPath.js";
 
 const createFieldChunk = (
   name: string,
@@ -17,7 +18,7 @@ const createFieldChunk = (
       schema: { name, type, ...overrides } as LeafFieldLike,
       dataRef: data,
       key: name,
-      path: [name],
+      idPath: "name" as IdPath,
     },
     data,
   };
@@ -431,13 +432,13 @@ describe("TextChunkExpander", () => {
           schema: { name: "title", type: "text" } as LeafFieldLike,
           dataRef: data1,
           key: "title",
-          path: ["title"],
+          idPath: "title" as IdPath,
         },
         {
           schema: { name: "description", type: "text" } as LeafFieldLike,
           dataRef: data2,
           key: "description",
-          path: ["description"],
+          idPath: "description" as IdPath,
         },
       ];
 
@@ -476,13 +477,13 @@ describe("TextChunkExpander", () => {
           schema: { name: "content", type: "richText" } as LeafFieldLike,
           dataRef: data1,
           key: "content",
-          path: ["content"],
+          idPath: "content" as IdPath,
         },
         {
           schema: { name: "title", type: "text" } as LeafFieldLike,
           dataRef: data2,
           key: "title",
-          path: ["title"],
+          idPath: "title" as IdPath,
         },
       ];
 
@@ -500,7 +501,7 @@ describe("TextChunkExpander", () => {
           schema: { name: "title", type: "text" } as LeafFieldLike,
           dataRef: data,
           key: "title",
-          path: ["title"],
+          idPath: "title" as IdPath,
         },
       ];
 
@@ -518,7 +519,7 @@ describe("TextChunkExpander", () => {
           schema: { name: "title", type: "text" } as LeafFieldLike,
           dataRef: data,
           key: "title",
-          path: ["title"],
+          idPath: "title" as IdPath,
         },
       ];
 

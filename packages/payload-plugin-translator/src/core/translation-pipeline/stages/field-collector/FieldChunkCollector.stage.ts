@@ -21,7 +21,8 @@ export class FieldChunkCollectorStage implements PipelineStage {
       ctx.filteredData,
       ctx.sourceData,
       ctx.targetData,
-      this.strategy
+      this.strategy,
+      ctx.sourceChangedByLeaf
     );
     return {
       ...ctx,

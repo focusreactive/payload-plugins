@@ -8,7 +8,9 @@ import type { TranslateDocumentInput } from "../model.js";
 import type { ProvenanceServiceFactory } from "../../../modules/provenance/index.js";
 
 vi.mock("../../../../core/translation-pipeline/index.js", () => ({
-  translateContent: vi.fn().mockResolvedValue({ title: "Titel" }),
+  translateContent: vi
+    .fn()
+    .mockResolvedValue({ translatedData: { title: "Titel" }, translatedPaths: ["title"] }),
 }));
 
 const TX = "tx-42";
@@ -84,7 +86,8 @@ describe("TranslateDocumentHandler — the caller's transaction", () => {
 
   it("builds the provenance service on it, so the receipt rolls back with the translation", async () => {
     const serviceFactory = vi.fn().mockReturnValue({
-      captureFingerprint: vi.fn().mockReturnValue("fp"),
+      captureFingerprint: vi.fn().mockReturnValue({ title: "fp" }),
+      lastTranslatedFrom: vi.fn().mockResolvedValue(null),
       record: vi.fn(),
     });
     const provenanceHandler = new TranslateDocumentHandler(

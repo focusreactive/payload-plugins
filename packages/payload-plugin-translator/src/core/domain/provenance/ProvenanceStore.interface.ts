@@ -1,3 +1,5 @@
+import type { SourceFingerprint } from "./SourceFingerprint.js";
+
 /**
  * Translation provenance — the durable record of *what source state a target locale was translated
  * from* (design: `docs/plans/2026-06-26-translation-provenance-and-lifecycle-design.md`).
@@ -8,10 +10,14 @@
  */
 
 /**
- * One provenance receipt: a single `(collection, document, target locale)` translation.
+ * One provenance receipt: a single `(collection, document, target locale)` translation, as a consumer
+ * reads it from the sidecar collection.
  *
  * `documentId` is always a string (Payload ids may be string or number — callers stringify on the
  * way in) and `translatedAt` is an ISO-8601 string, so the record shape is stable across databases.
+ *
+ * The fingerprint columns are not here: how the plugin decides a locale is out of date is its own
+ * business, and the staleness endpoint answers that question without them.
  *
  * @since 0.7.0
  */
@@ -24,20 +30,14 @@ export interface TranslationProvenanceRecord {
   targetLocale: string;
   /** Locale the translation was derived from. */
   sourceLocale: string;
-  /**
-   * Fingerprint of the source content at translation time —
-   * `fingerprint(projectTranslatableContent(sourceDoc, schema))`. Staleness (later, in #50) is
-   * `currentSourceFingerprint !== sourceFingerprint`.
-   */
-  sourceFingerprint: string;
-  /** ISO-8601 timestamp of the last successful translation. */
   translatedAt: string;
-  /**
-   * The source fingerprint an editor acknowledged as "stale but leave it" (#50's dismissable
-   * indicator). `null` until dismissed. Written by #50 — carried here now so no later migration is
-   * needed.
-   */
-  dismissedFingerprint: string | null;
+}
+
+/** The receipt as the plugin holds it: what a consumer sees, plus the fingerprints that drive staleness. */
+export interface ProvenanceReceipt extends TranslationProvenanceRecord {
+  sourceFingerprint: SourceFingerprint | null;
+  /** The fingerprint an editor acknowledged as "stale but leave it" (#50). `null` until dismissed. */
+  dismissedFingerprint: SourceFingerprint | null;
 }
 
 /**
@@ -83,14 +83,14 @@ export interface ProvenanceStore {
    *
    * @param record - The provenance receipt to persist.
    */
-  upsert(record: TranslationProvenanceRecord): Promise<void>;
+  upsert(record: ProvenanceReceipt): Promise<void>;
   /**
    * Look up the record for a key.
    *
    * @param key - The `(collectionSlug, documentId, targetLocale)` identity.
    * @returns The stored record, or `null` if none exists.
    */
-  find(key: ProvenanceKey): Promise<TranslationProvenanceRecord | null>;
+  find(key: ProvenanceKey): Promise<ProvenanceReceipt | null>;
   /**
    * List every record for a document — one per translated target locale. Backs #50's per-locale
    * staleness read for a single document panel.
@@ -99,19 +99,13 @@ export interface ProvenanceStore {
    * @param documentId - Stringified id of the translated document.
    * @returns All provenance receipts for the document (empty when none exist).
    */
-  findByDocument(
-    collectionSlug: string,
-    documentId: string
-  ): Promise<TranslationProvenanceRecord[]>;
+  findByDocument(collectionSlug: string, documentId: string): Promise<ProvenanceReceipt[]>;
   /**
    * Acknowledge the current source drift for one locale without re-translating (#50's dismiss):
    * persist `dismissedFingerprint` so the indicator hides until the source changes again. No-op if
    * the key has no record.
-   *
-   * @param key - The `(collectionSlug, documentId, targetLocale)` identity to dismiss.
-   * @param dismissedFingerprint - The current source fingerprint being acknowledged.
    */
-  dismiss(key: ProvenanceKey, dismissedFingerprint: string): Promise<void>;
+  dismiss(key: ProvenanceKey, dismissedFingerprint: SourceFingerprint): Promise<void>;
   /**
    * Delete every record for a document (all target locales). Used to cascade-clean when the source
    * document is deleted.

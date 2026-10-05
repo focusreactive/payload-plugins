@@ -49,7 +49,10 @@ describe("TranslateDocumentHandler — it asks before it writes", () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    (await pipeline()).mockResolvedValue({ title: "Titel", body: "Text" });
+    (await pipeline()).mockResolvedValue({
+      translatedData: { title: "Titel", body: "Text" },
+      translatedPaths: ["title", "body"],
+    });
     provider = { translate: vi.fn().mockResolvedValue({}) };
     const schemaMap = new Map([
       ["posts" as CollectionSlug, [{ name: "title", type: "text", localized: true }]],
