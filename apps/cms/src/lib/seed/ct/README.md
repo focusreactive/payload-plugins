@@ -75,8 +75,7 @@ E2E_BASE_URL=http://localhost:3333 bunx playwright test tests/e2e/ct*.e2e.spec.t
 ```
 
 `ct.e2e.spec.ts` (every IA page → 200 + one h1, blog/author, DE/JA, robots/sitemap/llms),
-`ct-redirects` (25 legacy URLs → 308 → 200), `ct-privacy` (cookies, nocookie video, feeds),
-`ct-a11y` (axe, 7 pages × 2 widths).
+`ct-redirects` (25 legacy URLs → 308 → 200), `ct-privacy` (cookies, nocookie video, feeds).
 
 ## Docker
 

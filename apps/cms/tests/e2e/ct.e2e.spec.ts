@@ -5,7 +5,7 @@ import { IA } from "../../src/lib/seed/ct/data/ia";
 /**
  * T13 verification (plan §7, §9): every page of the new IA renders with one h1, the blog and its
  * author pages render, DE/JA are switched on, and the SEO/AI endpoints list the seeded content.
- * Legacy redirects, feeds, cookies and axe live in ct-redirects / ct-privacy / ct-a11y.
+ * Legacy redirects, feeds and cookies live in ct-redirects / ct-privacy.
  */
 
 async function expectOneH1(page: import("@playwright/test").Page, path: string) {
