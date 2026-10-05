@@ -41,6 +41,7 @@ import * as migration_20261004_153831_add_de_ja_locales from './20261004_153831_
 import * as migration_20261004_160120_optional_content_logo_images from './20261004_160120_optional_content_logo_images';
 import * as migration_20261005_070537_ct_cleanup from './20261005_070537_ct_cleanup';
 import * as migration_20261005_071609_vacancies from './20261005_071609_vacancies';
+import * as migration_20261005_072905_mcp_vacancies from './20261005_072905_mcp_vacancies';
 
 export const migrations = [
   {
@@ -257,5 +258,10 @@ export const migrations = [
     up: migration_20261005_071609_vacancies.up,
     down: migration_20261005_071609_vacancies.down,
     name: '20261005_071609_vacancies'
+  },
+  {
+    up: migration_20261005_072905_mcp_vacancies.up,
+    down: migration_20261005_072905_mcp_vacancies.down,
+    name: '20261005_072905_mcp_vacancies'
   },
 ];

@@ -95,6 +95,18 @@ const registry: McpToolsRegistry = {
       tableFields: ["slug", "_status", "publishedAt", "excerpt"],
       titleField: "title",
     },
+    vacancies: {
+      buildUrl: (doc, locale) =>
+        buildUrl({
+          absolute: false,
+          collection: "vacancies",
+          locale: locale ?? "en",
+          slug: doc?.slug as string,
+        }),
+      skipKeys: ["id", "generateSlug"],
+      tableFields: ["slug", "_status", "location", "closesAt"],
+      titleField: "title",
+    },
     users: {
       skipKeys: ["id"],
       tableFields: ["name", "role", "email"],
@@ -180,6 +192,16 @@ export const mcpPluginConfig = mcpPlugin({
         update: true,
       },
     },
+    vacancies: {
+      description:
+        "Careers vacancies (job openings). Each vacancy has a title, summary, rich-text description, department, location, workplace (onSite/hybrid/remote), employment type (fullTime/partTime/contract/internship), posted and closing dates, an application group (Mautic form id + alias, or a fallback email) and SEO metadata. Open roles are listed by the Vacancies List page block and live at /careers/<slug>. Supports draft/publish versioning and localization (en/de/ja). Use this collection to read, create, update or delete vacancies.",
+      enabled: {
+        create: true,
+        delete: true,
+        find: false,
+        update: true,
+      },
+    },
     users: {
       description:
         "CMS user accounts. Each user has a name, email, and role (admin/author/user). Authentication-enabled. Use this collection to read, create, update or delete users.",
@@ -230,6 +252,7 @@ export const mcpPluginConfig = mcpPlugin({
       posts: { create: true, delete: true, find: false, update: true },
       siteSettings: { find: false, update: true },
       users: { create: true, delete: true, find: false, update: true },
+      vacancies: { create: true, delete: true, find: false, update: true },
       user: LOCAL_DEV_MCP_USER,
     };
   },

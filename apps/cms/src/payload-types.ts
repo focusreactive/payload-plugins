@@ -2845,6 +2845,20 @@ export interface PayloadMcpApiKey {
      */
     delete?: boolean | null;
   };
+  vacancies?: {
+    /**
+     * Allow clients to create vacancies.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update vacancies.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete vacancies.
+     */
+    delete?: boolean | null;
+  };
   users?: {
     /**
      * Allow clients to create users.
@@ -2867,11 +2881,11 @@ export interface PayloadMcpApiKey {
   };
   'payload-mcp-tool'?: {
     /**
-     * Fetch a collection document by ID. Specify collectionSlug (one of: authors, categories, footer, header, media, page, posts, users). Returns all top-level fields as a structured overview — complex fields (arrays, blocks, relations, rich text) are summarized with their type and item count. Use getAllDocuments to list documents first, then this tool by ID. Use getField to drill into specific fields. Do NOT pass full: true unless the user explicitly asks to extract the entire content. Pass raw: true to get the full raw JSON — use this when you need structured data for analysis or to construct an update payload. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
+     * Fetch a collection document by ID. Specify collectionSlug (one of: authors, categories, footer, header, media, page, posts, vacancies, users). Returns all top-level fields as a structured overview — complex fields (arrays, blocks, relations, rich text) are summarized with their type and item count. Use getAllDocuments to list documents first, then this tool by ID. Use getField to drill into specific fields. Do NOT pass full: true unless the user explicitly asks to extract the entire content. Pass raw: true to get the full raw JSON — use this when you need structured data for analysis or to construct an update payload. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
      */
     getDocument?: boolean | null;
     /**
-     * List collection documents as a formatted summary. Specify collectionSlug (one of: authors, categories, footer, header, media, page, posts, users). Returns only scalar summary fields plus admin URL and public URL (where applicable). Objects, relations, arrays, and rich text are omitted from the list output. To get full details for a document, call getDocument with its ID. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
+     * List collection documents as a formatted summary. Specify collectionSlug (one of: authors, categories, footer, header, media, page, posts, vacancies, users). Returns only scalar summary fields plus admin URL and public URL (where applicable). Objects, relations, arrays, and rich text are omitted from the list output. To get full details for a document, call getDocument with its ID. The response is pre-formatted Markdown — output it verbatim without reformatting or summarizing.
      */
     getAllDocuments?: boolean | null;
     /**
@@ -2879,7 +2893,7 @@ export interface PayloadMcpApiKey {
      */
     getGlobalDocument?: boolean | null;
     /**
-     * Fetch the full content of a specific field from a collection document or global. slug accepts a collection (authors, categories, footer, header, media, page, posts, users) or a global (site-settings). For collections, id is required. For globals, id is ignored. Use dot-notation for nested paths (e.g. "content", "blocks.0", "meta.description"). Rich text fields are returned as Markdown by default. IMPORTANT: You MUST call this with raw: true before any create/update action targeting this field — the raw JSON (block IDs, Lexical nodes, existing array items) is required to construct a valid update payload. Never attempt an update without first reading the field with raw: true.
+     * Fetch the full content of a specific field from a collection document or global. slug accepts a collection (authors, categories, footer, header, media, page, posts, vacancies, users) or a global (site-settings). For collections, id is required. For globals, id is ignored. Use dot-notation for nested paths (e.g. "content", "blocks.0", "meta.description"). Rich text fields are returned as Markdown by default. IMPORTANT: You MUST call this with raw: true before any create/update action targeting this field — the raw JSON (block IDs, Lexical nodes, existing array items) is required to construct a valid update payload. Never attempt an update without first reading the field with raw: true.
      */
     getField?: boolean | null;
     /**
@@ -4969,6 +4983,13 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
         delete?: T;
       };
   posts?:
+    | T
+    | {
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  vacancies?:
     | T
     | {
         create?: T;
