@@ -51,7 +51,7 @@ import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e
 import { SeoClientConfigProvider as SeoClientConfigProvider_f1e7cc56df4c13de864b4f015213d8e2 } from '@focus-reactive/payload-plugin-seo/providers/SeoClientConfigProvider'
 import { CommentsProviderWrapper as CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a } from '@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper'
 import { default as default_5668654bc04fc84f784cb30b290f6f3d } from '@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider'
-import { VisualEditingBridgeProvider as VisualEditingBridgeProvider_673e524fc3ed2dc6764c4e182a583baf } from '@focus-reactive/payload-plugin-visual-editing/admin'
+import { VisualEditingBridgeProvider as VisualEditingBridgeProvider_ec3bc0b0b5b9a6c0c60998da34f40f5d } from '@focus-reactive/payload-plugin-visual-editing/admin'
 import { default as default_7772b5ceb4db588e7e8d7d6ad669ce76 } from '@focus-reactive/payload-plugin-analytics/components/AnalyticsView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { SectionVisibilityLabel as SectionVisibilityLabel_5f6b8b6dd39e89e57e0c331f9970bb73 } from '@/lib/fields/section/SectionVisibilityLabel'
@@ -111,7 +111,7 @@ export const importMap = {
   "@focus-reactive/payload-plugin-seo/providers/SeoClientConfigProvider#SeoClientConfigProvider": SeoClientConfigProvider_f1e7cc56df4c13de864b4f015213d8e2,
   "@focus-reactive/payload-plugin-comments/providers/CommentsProviderWrapper#CommentsProviderWrapper": CommentsProviderWrapper_bc62ec20ac2037360812e296d7662f4a,
   "@focus-reactive/payload-plugin-translator/client/app/cache/CacheProvider#default": default_5668654bc04fc84f784cb30b290f6f3d,
-  "@focus-reactive/payload-plugin-visual-editing/admin#VisualEditingBridgeProvider": VisualEditingBridgeProvider_673e524fc3ed2dc6764c4e182a583baf,
+  "@focus-reactive/payload-plugin-visual-editing/admin#VisualEditingBridgeProvider": VisualEditingBridgeProvider_ec3bc0b0b5b9a6c0c60998da34f40f5d,
   "@focus-reactive/payload-plugin-analytics/components/AnalyticsView#default": default_7772b5ceb4db588e7e8d7d6ad669ce76,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@/lib/fields/section/SectionVisibilityLabel#SectionVisibilityLabel": SectionVisibilityLabel_5f6b8b6dd39e89e57e0c331f9970bb73
