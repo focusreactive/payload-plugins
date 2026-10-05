@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 interface MauticFormProps {
   action: string | null;
@@ -25,7 +25,6 @@ export function MauticForm({
   children,
 }: MauticFormProps) {
   const returnRef = useRef<HTMLInputElement>(null);
-  const [notConnected, setNotConnected] = useState(false);
 
   useEffect(() => {
     if (returnRef.current) {
@@ -43,10 +42,10 @@ export function MauticForm({
       encType="multipart/form-data"
       className={className}
       onSubmit={(event) => {
-        // Until a Mautic URL is set the fields stay usable, but nothing is posted anywhere.
+        // Demo without a Mautic URL: show the same success state Mautic would return to.
         if (!action) {
           event.preventDefault();
-          setNotConnected(true);
+          window.location.hash = successAnchor;
         }
       }}
     >
@@ -54,11 +53,6 @@ export function MauticForm({
       <input type="hidden" name="mauticform[formName]" value={formName} />
       <input ref={returnRef} type="hidden" name="mauticform[return]" value="" />
       {children}
-      {notConnected && (
-        <p role="status" className="w-full text-small text-muted-foreground">
-          Thanks! Form submissions are not connected yet in this demo.
-        </p>
-      )}
     </form>
   );
 }
