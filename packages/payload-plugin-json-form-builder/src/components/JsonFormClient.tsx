@@ -8,6 +8,8 @@ import { useCallback, useState } from "react";
 import {
   Button,
   ConfirmationModal,
+  DraggableSortable,
+  DraggableSortableItem,
   FieldLabel,
   GearIcon,
   ListViewIcon,
@@ -175,36 +177,66 @@ export const JsonFormClient = ({ mayBuild, ...props }: Props) => {
           </>
         ) : (
           <>
+            {/* Dragged where they are read, not behind the gear: moving a section is the editor's
+                work, not a change to the shape. The move is made on the stored list by name rather
+                than by the seat on screen — a section hidden by a condition is still in the list. */}
             {sections.length > 0 && (
-              <div className="json-form__fields">
-                {sections.map((node) => {
-                  const key = node.name ?? "";
+              <DraggableSortable
+                className="json-form__fields"
+                ids={sections.map((node, at) => node.name || `#${at + 1}`)}
+                onDragEnd={({ moveFromIndex, moveToIndex }) => {
+                  const from = root.findIndex(
+                    (node) => node.name === sections[moveFromIndex]?.name
+                  );
+                  const to = root.findIndex((node) => node.name === sections[moveToIndex]?.name);
+                  if (from < 0 || to < 0) return;
+                  setValue(root.toSpliced(from, 1).toSpliced(to, 0, root[from]));
+                }}
+              >
+                {sections.map((node, at) => {
+                  const key = node.name || `#${at + 1}`;
                   return (
-                    <JsonNode
-                      faults={showError}
-                      hidden={node.hidden}
-                      id={`${path}.${key}`}
-                      key={key}
-                      label={labelOf(node, key)}
-                      menu={[
-                        hideItem(node, (next) => set(key, next)),
-                        {
-                          className: "json-form__action--remove",
-                          icon: <XIcon />,
-                          label: "Delete",
-                          onClick: () => {
-                            setDropping(key);
-                            openModal(dropSlug);
-                          },
-                        },
-                      ]}
-                      node={node}
-                      onChange={(next) => set(key, next)}
-                      top
-                    />
+                    <DraggableSortableItem id={key} key={key}>
+                      {({
+                        attributes,
+                        isDragging,
+                        listeners,
+                        setNodeRef,
+                        transform,
+                        transition,
+                      }) => (
+                        <div
+                          ref={setNodeRef}
+                          style={{ transform, transition, zIndex: isDragging ? 1 : undefined }}
+                        >
+                          <JsonNode
+                            drag={props.readOnly ? undefined : { id: key, attributes, listeners }}
+                            faults={showError}
+                            hidden={node.hidden}
+                            id={`${path}.${key}`}
+                            label={labelOf(node, key)}
+                            menu={[
+                              hideItem(node, (next) => set(key, next)),
+                              {
+                                className: "json-form__action--remove",
+                                icon: <XIcon />,
+                                label: "Delete",
+                                onClick: () => {
+                                  setDropping(key);
+                                  openModal(dropSlug);
+                                },
+                              },
+                            ]}
+                            node={node}
+                            onChange={(next) => set(key, next)}
+                            top
+                          />
+                        </div>
+                      )}
+                    </DraggableSortableItem>
                   );
                 })}
-              </div>
+              </DraggableSortable>
             )}
             {untyped && (
               <p className="field-description">

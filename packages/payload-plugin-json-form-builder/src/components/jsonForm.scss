@@ -362,9 +362,10 @@ html[data-theme="dark"] .json-form {
   gap: var(--spacing-field, var(--base));
 }
 
-/* The same gap again under the last section, so the button is not welded to it. On an empty field
-   the button stands alone and the rule does not apply. */
-.json-form__fields + .json-form__add-row.btn {
+/* The same gap again under the last section, so the button is not welded to it. Said by what else
+   is in the body rather than by what stands next to the button: the sections are wrapped by their
+   own sortable, and an empty field leaves the button alone, where no gap is wanted. */
+.json-form__body > .json-form__add-row.btn:not(:only-child) {
   margin-top: var(--spacing-field, var(--base));
 }
 
@@ -482,18 +483,6 @@ body.json-builder-open {
 }
 
 /* A pill carries its own colours, its hover and its picked state; only the row shape is ours. */
-/* The grip sits outside the pill so a drag never reads as a click into the section. */
-.json-builder__section-list {
-  display: grid;
-  gap: calc(var(--base) * 0.3);
-}
-
-.json-builder__section-row {
-  align-items: center;
-  display: flex;
-  gap: calc(var(--base) * 0.25);
-}
-
 .json-builder__section {
   --pill-padding-block-end: calc(var(--base) * 0.4);
   --pill-padding-block-start: calc(var(--base) * 0.4);

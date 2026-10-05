@@ -7,9 +7,6 @@ import {
   Banner,
   Button,
   ConfirmationModal,
-  DraggableSortable,
-  DraggableSortableItem,
-  DragHandleIcon,
   Drawer,
   EditIcon,
   Pill,
@@ -123,7 +120,9 @@ export const JsonBuilder = ({
 
   // Who else stands at this level, which is what the key has to be free of.
   const neighbours = () => {
-    if (isSection) return Object.keys(draft).filter((entry) => entry !== current);
+    // Sections are a list now, so their names are read off the nodes — `Object.keys` of an array
+    // gives its indexes, and a key would never look taken.
+    if (isSection) return draft.map((node) => node.name ?? "").filter((name) => name !== current);
     const names = fields.map((field) => field.name ?? "");
     return making ? names : names.filter((_, index) => index !== picked?.at.at(-1));
   };
@@ -225,44 +224,20 @@ export const JsonBuilder = ({
       <div className="json-builder">
         <aside className="json-builder__sections">
           <h5 className="json-builder__group">Sections</h5>
-          {/* Dragged like the fields inside them: the root is a list too, so the order a section is
-					    written in is the order the site reads it. */}
-          <DraggableSortable
-            className="json-builder__section-list"
-            ids={sections.map((held, index) => held.name || `#${index + 1}`)}
-            onDragEnd={({ moveFromIndex, moveToIndex }) =>
-              setDraft(
-                draft.toSpliced(moveFromIndex, 1).toSpliced(moveToIndex, 0, draft[moveFromIndex])
-              )
-            }
-          >
-            {sections.map((held, index) => {
-              const entry = held.name || `#${index + 1}`;
-              return (
-                <DraggableSortableItem id={entry} key={entry}>
-                  {({ attributes, isDragging, listeners, setNodeRef, transform, transition }) => (
-                    <div
-                      className="json-builder__section-row"
-                      ref={setNodeRef}
-                      style={{ transform, transition, zIndex: isDragging ? 1 : undefined }}
-                    >
-                      <span className="json-builder__grip" {...attributes} {...listeners}>
-                        <DragHandleIcon />
-                      </span>
-                      <Pill
-                        className="json-builder__section"
-                        onClick={() => walk(entry)}
-                        pillStyle={entry === current ? "dark" : "light"}
-                      >
-                        <span className="json-builder__section-name">{held.label || entry}</span>
-                        <span className="json-builder__section-count">{shapeOf(held).length}</span>
-                      </Pill>
-                    </div>
-                  )}
-                </DraggableSortableItem>
-              );
-            })}
-          </DraggableSortable>
+          {sections.map((held, index) => {
+            const entry = held.name || `#${index + 1}`;
+            return (
+              <Pill
+                className="json-builder__section"
+                key={entry}
+                onClick={() => walk(entry)}
+                pillStyle={entry === current ? "dark" : "light"}
+              >
+                <span className="json-builder__section-name">{held.label || entry}</span>
+                <span className="json-builder__section-count">{shapeOf(held).length}</span>
+              </Pill>
+            );
+          })}
           <Button
             buttonStyle="secondary"
             onClick={() => start("section", "collapsible")}
