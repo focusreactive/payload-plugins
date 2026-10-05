@@ -72,7 +72,9 @@ function ListRow({ item }: { item: PostsListItem }) {
             {item.title}
           </Link>
         </h3>
-        {item.excerpt && <p className="max-w-[70ch] text-muted-foreground">{item.excerpt}</p>}
+        {item.excerpt && (
+          <p className="line-clamp-2 max-w-[70ch] text-muted-foreground">{item.excerpt}</p>
+        )}
       </div>
     </li>
   );
@@ -93,7 +95,9 @@ function FeaturedCard({ item }: { item: PostsListItem }) {
             {item.title}
           </Link>
         </h3>
-        {item.excerpt && <p className="max-w-[60ch] text-ct-grey-300">{item.excerpt}</p>}
+        {item.excerpt && (
+          <p className="line-clamp-3 max-w-[60ch] text-ct-grey-300">{item.excerpt}</p>
+        )}
         <PostMeta item={item} className="text-ct-grey-300" />
       </div>
     </article>

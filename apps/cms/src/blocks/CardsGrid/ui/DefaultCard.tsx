@@ -70,9 +70,12 @@ export default function DefaultCard({
 
       <div className="flex flex-1 flex-col gap-3">
         {number !== undefined && (
-          <span className="text-eyebrow text-primary">{String(number).padStart(2, "0")}</span>
+          <span className="flex flex-col gap-3 font-mono text-[1.75rem] leading-none font-semibold tracking-tight text-primary">
+            {String(number).padStart(2, "0")}
+            <span aria-hidden className="h-0.5 w-10 rounded-pill bg-highlight" />
+          </span>
         )}
-        {title && <h3 className="text-h-card text-heading">{title}</h3>}
+        {title && <h3 className="text-h-card text-heading first-letter:uppercase">{title}</h3>}
         {description && <p className="text-body-lg text-muted-foreground">{description}</p>}
       </div>
 

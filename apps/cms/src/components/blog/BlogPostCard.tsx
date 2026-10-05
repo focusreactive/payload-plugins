@@ -33,7 +33,9 @@ export function BlogPostCard({
         {title}
       </h3>
 
-      {excerpt && <p className="text-muted-foreground text-[0.98rem] leading-[1.6]">{excerpt}</p>}
+      {excerpt && (
+        <p className="line-clamp-3 text-muted-foreground text-[0.98rem] leading-[1.6]">{excerpt}</p>
+      )}
     </article>
   );
 }

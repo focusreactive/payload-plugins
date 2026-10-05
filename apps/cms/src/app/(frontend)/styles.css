@@ -7,7 +7,7 @@
   --section-margin-base: clamp(64px, 8vw, 112px);
   --section-margin-large: clamp(96px, 12vw, 160px);
   --container-padding-base: clamp(20px, 5vw, 64px);
-  --container-max-width: 1200px;
+  --container-max-width: 1480px;
 }
 
 @theme {

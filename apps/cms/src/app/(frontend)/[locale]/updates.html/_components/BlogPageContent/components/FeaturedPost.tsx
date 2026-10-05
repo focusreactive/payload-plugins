@@ -69,7 +69,9 @@ export async function FeaturedPost({ post, readMoreLabel, locale, className }: F
           {post.title}
         </h2>
 
-        {post.excerpt && <p className="text-body-lg text-muted-foreground">{post.excerpt}</p>}
+        {post.excerpt && (
+          <p className="line-clamp-3 text-body-lg text-muted-foreground">{post.excerpt}</p>
+        )}
 
         {(author || publishedDate) && (
           <div className="mt-1.5 flex items-center gap-[18px]">
