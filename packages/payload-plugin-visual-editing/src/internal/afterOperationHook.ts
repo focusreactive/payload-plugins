@@ -1,6 +1,7 @@
 import type { CollectionAfterOperationHook, CollectionSlug } from "payload";
 import type { ValueExcludePredicate } from "../excludeValues.js";
 import type { SchemaCache } from "./schemaCache.js";
+import type { Enrichment } from "./gate.js";
 
 import { encodeStega } from "./encodeStega.js";
 import { shouldEnrich } from "./gate.js";
@@ -9,6 +10,7 @@ type Args = {
   schemaCache: SchemaCache;
   excludeValues: readonly ValueExcludePredicate[];
   adminBasePath: string;
+  enrichment?: Enrichment;
 };
 
 // Payload fires afterOperation exactly once per outermost operation.
@@ -21,10 +23,11 @@ export const createAfterOperationHook = ({
   schemaCache,
   excludeValues,
   adminBasePath,
+  enrichment,
 }: Args): CollectionAfterOperationHook => {
   return ({ operation, result, req }) => {
     if (!ENCODING_OPERATIONS.has(operation)) return result;
-    if (!shouldEnrich(req, adminBasePath)) return result;
+    if (!shouldEnrich(req, adminBasePath, enrichment)) return result;
 
     const resolve = (slug: CollectionSlug) => schemaCache.get(slug, req.payload);
 

@@ -17,7 +17,13 @@ export function revalidateGlobalTags(params: { collection: GlobalSlug; locale: L
 
 async function getGlobal(slug: GlobalSlug, depth = 0, locale?: Locale, draft?: boolean) {
   const payload = await getPayloadClient();
-  return await payload.findGlobal({ depth, draft, locale, slug });
+  return await payload.findGlobal({
+    context: { visualEditing: draft },
+    depth,
+    draft,
+    locale,
+    slug,
+  });
 }
 
 export const getCachedGlobal = (

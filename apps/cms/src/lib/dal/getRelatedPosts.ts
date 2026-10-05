@@ -46,6 +46,7 @@ export async function getRelatedPosts({
 
   const { docs: backfillPosts } = await payload.find({
     collection: BLOG_CONFIG.collection,
+    context: { visualEditing: draft },
     depth: 1,
     draft,
     limit: remaining,

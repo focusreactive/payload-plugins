@@ -2,11 +2,19 @@ import type { PayloadRequest } from "payload";
 
 import { DRAFT_CONTEXT_KEY } from "./beforeOperationHook.js";
 
-export const shouldEnrich = (req: PayloadRequest, adminBasePath: string): boolean => {
+export type Enrichment = "auto" | "explicit";
+
+export const shouldEnrich = (
+  req: PayloadRequest,
+  adminBasePath: string,
+  enrichment: Enrichment = "auto"
+): boolean => {
   const context = req.context;
 
   const override = context?.visualEditing;
   if (typeof override === "boolean") return override;
+
+  if (enrichment === "explicit") return false;
 
   if (context?.[DRAFT_CONTEXT_KEY] !== true) return false;
   if (req.payloadAPI !== "local") return false;

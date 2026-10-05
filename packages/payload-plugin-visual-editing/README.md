@@ -35,12 +35,13 @@ export default buildConfig({
       skipGlobals: [],               // global slugs to exclude
       excludeFieldNames: ['tenant'], // extra field names to strip (merged with '_status', 'folder', 'slug')
       adminBasePath: '/admin',       // Payload admin base path (default '/admin')
+      enrichment: 'explicit',        // which reads get stega (default 'auto') — see "Enrichment modes"
     }),
   ],
 })
 ```
 
-This adds enrichment hooks to every non-skipped collection and global, registers the `VisualEditingBridgeProvider` admin component, and adds a `beforeChange` hook that strips stega from writes so markers can never be persisted to the database.
+This adds enrichment hooks to every non-skipped collection and global, registers the `VisualEditingBridgeProvider` admin component, and adds a `beforeChange` hook that strips intact stega markers from writes.
 
 ### 2. Enable drafts on editable collections
 
@@ -130,6 +131,8 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   // render docs[0]
 }
 ```
+
+With `enrichment: 'explicit'`, also pass `context: { visualEditing: draft }` — see [Enrichment modes](#enrichment-modes).
 
 ### 6. Wrap the frontend layout
 
@@ -225,15 +228,37 @@ Clicking the Edit badge on an upload opens the media document's admin page (not 
 
 **Uploads require `depth ≥ 1`** so Payload returns the populated media document alongside its `_meta`. At `depth: 0` the value is a bare id string and no overlay is drawn.
 
+## Enrichment modes
+
+The `enrichment` option decides which reads get stega.
+
+- **`'auto'`** (default) — every Local API read with `draft: true` outside the admin base path is enriched. The plugin can't tell a preview render from any other server code that reads drafts, so plugins, jobs, hooks and scripts receive stega too.
+- **`'explicit'`** — only reads that pass `context: { visualEditing: true }` are enriched. Everything else gets clean data.
+
+```ts
+const { isEnabled: draft } = await draftMode()
+
+await payload.find({
+  collection: 'pages',
+  draft,
+  context: { visualEditing: draft },
+  where: { slug: { equals: slug } },
+})
+```
+
+In either mode `context.visualEditing` wins when set: `true` always enriches, `false` never does. Server code that reads drafts for its own processing should pass `context: { visualEditing: false }` under `'auto'`. The plugin augments Payload's `RequestContext`, so the key is type-checked.
+
+> **Why it matters.** The `beforeChange` strip only removes intact markers. If server code receives stega, transforms the text (an LLM translation, truncation, concatenation) and writes it back, fragments of a damaged marker survive the strip and end up in the database. Use `'explicit'` whenever server code reads drafts and writes derived content.
+
 ## How it works
 
 ### Server pipeline
 
 1. `beforeOperation` stamps `req.context` with the draft flag.
-2. `afterRead` (gated to draft reads served to the frontend Local API — admin-panel reads, identified by their admin pathname, and REST reads are skipped) walks the returned document, attaches `_meta.path` markers to leaf-ish objects, and for rich-text / primitive-terminal types sets `_meta.terminal = true` so outer collection walks don't clobber them.
+2. `afterRead` (gated by the [enrichment mode](#enrichment-modes) — under `'auto'`, draft reads served to the frontend Local API; admin-panel reads, identified by their admin pathname, and REST reads are skipped) walks the returned document, attaches `_meta.path` markers to leaf-ish objects, and for rich-text / primitive-terminal types sets `_meta.terminal = true` so outer collection walks don't clobber them.
 3. `afterOperation` uses the collection's schema to embed Vercel stega into text fields, carrying the field path all the way through SSR into the client DOM.
 4. Before stega is embedded, a small pre-pass walks each enriched doc's schema against its data. Populated `upload:<slug>` values are flipped to `_meta.terminal = true` so their identity is preserved for wrapper-attr consumption on the client (`<img {...withVisualEditingPath(upload)} />`), without embedding zero-width stega into `alt` or `filename`.
-5. `beforeChange` strips stega from every write as a safety net, so markers can never be persisted even if a read is ever mis-classified.
+5. `beforeChange` strips intact stega markers from every write as a safety net. Markers damaged by a text transformation are not recognized — keep stega away from such code with the [enrichment mode](#enrichment-modes).
 
 The schema cache (per slug, memoized) resolves relationship targets lazily so you don't pay for unused collections.
 
@@ -249,6 +274,7 @@ The schema cache (per slug, memoized) resolves relationship targets lazily so yo
 | `skipGlobals` | `string[]` | `[]` | Exclude these global slugs from enrichment. |
 | `excludeFieldNames` | `string[]` | `[]` | Extra field names to strip from the serialized schema. Always merged with `_status`, `folder`, `slug`. |
 | `adminBasePath` | `string` | `/admin` | Payload admin base path. Used to exclude admin reads from enrichment and by the bridge for URL parsing and admin-tab navigation. |
+| `enrichment` | `'auto' \| 'explicit'` | `'auto'` | Which reads get stega: any frontend draft read, or only reads passing `context: { visualEditing: true }`. See [Enrichment modes](#enrichment-modes). |
 
 The `VisualEditing.Provider` (client) also accepts `framedOnly` (restrict the overlay to the CMS preview iframe) and `adminBasePath` (must match the server option).
 
