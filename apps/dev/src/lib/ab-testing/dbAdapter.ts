@@ -1,7 +1,0 @@
-import { payloadGlobalAdapter } from "@focus-reactive/payload-plugin-ab/adapters/payload-global";
-
-import type { VariantData } from "./types";
-
-export const abAdapter = payloadGlobalAdapter<VariantData>({
-  serverURL: process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:4040",
-});
