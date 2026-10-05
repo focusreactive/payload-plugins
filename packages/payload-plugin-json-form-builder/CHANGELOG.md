@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-json-form-builder [1.1.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.0.4...@focus-reactive/payload-plugin-json-form-builder@1.1.0) (2026-10-05)
+
+
+### Features
+
+* give the json form builder a global of its own ([3732710](https://github.com/focusreactive/payload-plugins/commit/3732710fef68aa55a16f0379a7f9b4536fa1d0de))
+
 ## @focus-reactive/payload-plugin-json-form-builder [1.0.4](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.0.3...@focus-reactive/payload-plugin-json-form-builder@1.0.4) (2026-10-05)
 
 
