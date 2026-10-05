@@ -196,6 +196,8 @@ Every node also takes:
 
 Reads from outside the app get plain values, so a template or a React component reads `settings.hero.title` by key. Hidden nodes are left out, so nothing has to check a flag.
 
+An `upload` node stores a url and nothing else, but it does not arrive as one: on the way out it is looked up in your uploads collection by filename and handed over as the document, the way a real `upload` field reads. So a template gets `logo.url`, `logo.alt`, `logo.width` — everything the file knows about itself — and one query answers a whole document however many files it holds. A url that matches no file stays the string it is, which is what a url pasted from elsewhere should be.
+
 Reads from inside the app keep the typed shape, and that is not a setting: the admin draws the form from the types, and a script that read flat values and wrote the document back would erase the shape. A session is what tells the two apart — the admin always has one; a build or a frontend arriving over HTTP does not.
 
 To flatten a value yourself — in a bridge, a migration, a test:
@@ -204,7 +206,7 @@ To flatten a value yourself — in a bridge, a migration, a test:
 import { flatten } from '@focus-reactive/payload-plugin-json-form-builder/shared'
 ```
 
-`/shared` is pure functions only. It pulls in neither React nor the Payload runtime.
+`flatten` takes an optional resolver for upload urls; without one they stay urls, since looking a file up needs the Payload runtime. `/shared` is pure functions only. It pulls in neither React nor the Payload runtime.
 
 ---
 

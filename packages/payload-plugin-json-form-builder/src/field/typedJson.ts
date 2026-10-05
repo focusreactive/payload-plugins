@@ -74,12 +74,18 @@ export const isTyped = (value: unknown): value is TypedRoot =>
   value.every((node) => isObject(node) && typeof node.type === "string") &&
   value.some((node) => isKnown(node as TypedNode));
 
-const fieldsOf = (fields: TypedNode[]) =>
+// What an `upload` value becomes. The default — no resolver — is the url it stores, which is all
+// the value holds; the hook passes one that hands back the Media document instead.
+export type ResolveUpload = (url: string) => unknown;
+
+const fieldsOf = (fields: TypedNode[], resolve?: ResolveUpload) =>
   Object.fromEntries(
-    fields.filter((field) => !field.hidden).map((field) => [field.name, flattenNode(field)])
+    fields
+      .filter((field) => !field.hidden)
+      .map((field) => [field.name, flattenNode(field, resolve)])
   );
 
-const flattenNode = (node: TypedNode): unknown => {
+const flattenNode = (node: TypedNode, resolve?: ResolveUpload): unknown => {
   if (node.type === "array") {
     // A row of one unnamed field is a plain value, not an object of one key.
     return (node.rows ?? [])
@@ -87,12 +93,33 @@ const flattenNode = (node: TypedNode): unknown => {
         (row) =>
           !row.some((field) => field.name === HIDDEN && "value" in field && field.value === true)
       )
-      .map((row) => (row.length === 1 && !row[0].name ? flattenNode(row[0]) : fieldsOf(row)));
+      .map((row) =>
+        row.length === 1 && !row[0].name ? flattenNode(row[0], resolve) : fieldsOf(row, resolve)
+      );
   }
-  if ("fields" in node) return fieldsOf(node.fields);
+  if ("fields" in node) return fieldsOf(node.fields, resolve);
   // An unknown kind is handed over untouched: it may be content this version cannot read.
   if (!isKnown(node)) return node;
-  return node.value ?? blankValue(node.type);
+  const value = node.value ?? blankValue(node.type);
+  if (node.type === "upload" && resolve && typeof value === "string" && value)
+    return resolve(value);
+  return value;
+};
+
+// Every url an `upload` node holds, wherever it sits. The hook reads them before flattening, so one
+// query answers a whole document.
+export const uploadUrls = (value: unknown): string[] => {
+  const found: string[] = [];
+  const walk = (nodes: TypedNode[]) => {
+    for (const node of nodes) {
+      if (node.type === "upload" && typeof node.value === "string" && node.value)
+        found.push(node.value);
+      else if (node.type === "array") for (const row of node.rows ?? []) walk(row);
+      else if ("fields" in node) walk(node.fields);
+    }
+  };
+  if (isTyped(value)) walk(value as TypedNode[]);
+  return found;
 };
 
 const blankValue = (type: LeafType | string) =>
@@ -100,7 +127,8 @@ const blankValue = (type: LeafType | string) =>
 
 // The root is a list of named nodes, which is what `fieldsOf` already turns into an object by name —
 // so a section and a field come out the same way, and the site reads both by key.
-export const flatten = (value: unknown) => (isTyped(value) ? fieldsOf(value) : value);
+export const flatten = (value: unknown, resolve?: ResolveUpload) =>
+  isTyped(value) ? fieldsOf(value, resolve) : value;
 
 const blankRow = (shape: TypedNode[]): TypedNode[] =>
   shape.map((field) =>
