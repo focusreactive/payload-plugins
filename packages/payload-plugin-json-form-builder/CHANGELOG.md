@@ -1,1 +1,8 @@
+## @focus-reactive/payload-plugin-json-form-builder [1.0.2](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.0.1...@focus-reactive/payload-plugin-json-form-builder@1.0.2) (2026-10-05)
+
+
+### Bug Fixes
+
+* let json without field types through ([9099382](https://github.com/focusreactive/payload-plugins/commit/9099382cbba756eaf1af3576729e51f83c53f8a5))
+
 ## @focus-reactive/payload-plugin-json-form-builder [1.0.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.0.0...@focus-reactive/payload-plugin-json-form-builder@1.0.1) (2026-10-05)
