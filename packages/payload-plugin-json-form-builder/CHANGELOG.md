@@ -1,3 +1,10 @@
+# @focus-reactive/payload-plugin-json-form-builder [1.2.0](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.1.1...@focus-reactive/payload-plugin-json-form-builder@1.2.0) (2026-10-05)
+
+
+### Features
+
+* read an upload node as its media document ([0263c71](https://github.com/focusreactive/payload-plugins/commit/0263c71307c24b3688594fb8752dbc7a3a1daea5))
+
 ## @focus-reactive/payload-plugin-json-form-builder [1.1.1](https://github.com/focusreactive/payload-plugins/compare/@focus-reactive/payload-plugin-json-form-builder@1.1.0...@focus-reactive/payload-plugin-json-form-builder@1.1.1) (2026-10-05)
 
 
