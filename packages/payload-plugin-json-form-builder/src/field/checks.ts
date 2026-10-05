@@ -196,7 +196,10 @@ const nodeErrors = (node: TypedNode, where: string, named: boolean): string[] =>
 // other field in the admin behaves too, Payload's own `required` included: the save is refused, the
 // field is marked, the form stays modified, and you fix it and press Save again.
 export const jsonErrors = (value: unknown, required?: boolean): string | true => {
-  if (value != null && !Array.isArray(value)) return "This is not valid json.";
+  // A plain object is not refused: that is what a value looks like before it was given field types,
+  // and the form says so under it rather than holding the whole document hostage. Only a value that
+  // is neither a list nor an object has no reading at all.
+  if (value != null && typeof value !== "object") return "This is not valid json.";
   if (required && !isTyped(value)) return "This field is required.";
   if (!isTyped(value)) return true;
   const found = problems(value);
