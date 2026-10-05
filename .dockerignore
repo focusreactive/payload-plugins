@@ -16,5 +16,4 @@ docs
 .claude
 .agents
 apps/dev
-apps/content-agent-demo
 apps/multi-tenancy-demo

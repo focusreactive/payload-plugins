@@ -1,6 +1,0 @@
-.env
-.next
-node_modules
-media
-next-env.d.ts
-tsconfig.tsbuildinfo

@@ -1,3 +1,0 @@
-{
-  "installCommand": "git config --global --add \"url.https://x-access-token:${PRIVATE_REPO_TOKEN}@github.com/.insteadOf\" \"https://www.github.com/\" && bun install"
-}
