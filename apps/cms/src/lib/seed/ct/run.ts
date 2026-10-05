@@ -2,7 +2,7 @@
  * CT demo seed — `bun run seed:ct [flags]` (see README.md in this folder).
  *
  *   source=<file>         content dump (default .local/ct/content-dump.md)
- *   only=a,b              steps: media,taxonomy,users,posts,pages,chrome,redirects,presets,workflow
+ *   only=a,b              steps: media,taxonomy,users,posts,pages,chrome,redirects,presets,caseStudies,workflow
  *   limit-posts=N         seed only the first N selected posts (dry runs)
  *   all-posts             all 191 posts instead of the 40-post selection
  *   reset                 delete what this seed owns before seeding
